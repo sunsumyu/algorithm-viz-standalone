@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（入度初始化、首轮遍历统计入度2冲突边、并查集初始化、次轮跳过冲突边建树并检测环路、根判环、并查集合并、三大分支终局判定均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   REDUNDANT_EDGE_II_PROBLEM_HTML,
   REDUNDANT_EDGE_II_ANALYSIS_HTML,
   REDUNDANT_EDGE_II_CODE_LANGUAGES,
 } from './redundant-edge-ii-problem-content';
-import template from './redundant-edge-ii.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface RedundantIIStep extends StepBase {
@@ -188,162 +187,144 @@ export function buildRedundantIISteps(): RedundantIIStep[] {
   return steps;
 }
 
-export class RedundantEdgeIIVisualizer extends StepVisualizer<RedundantIIStep> {
-  protected codeLanguages = REDUNDANT_EDGE_II_CODE_LANGUAGES;
-  protected codeLines = REDUNDANT_EDGE_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '冗余连接 II 算法代码调试';
+/** 主视觉：有向图 SVG（冲突/成环/冗余边分类高亮 + 入度标注）+ 边状态表 */
+export function renderRedundantEdgeIICanvas(container: HTMLElement, step: RedundantIIStep): void {
+  const { edges, inDegree, conflictIndex, cycleIndex, currentEdgeIndex, resultEdge, parent, action } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private edgeListBody: HTMLElement | null = null;
-  private metricConflictEl: HTMLElement | null = null;
-  private metricCycleEl: HTMLElement | null = null;
-  private metricResultEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="re2-arrow-normal" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+      </marker>
+      <marker id="re2-arrow-cur" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
+      </marker>
+      <marker id="re2-arrow-red" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  edges.forEach((e, idx) => {
+    const p1 = RE2_NODE_POSITIONS[e[0] - 1];
+    const p2 = RE2_NODE_POSITIONS[e[1] - 1];
+    const isCur = currentEdgeIndex === idx;
+    const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
+    const isConflict = conflictIndex === idx;
+    const isCycle = cycleIndex === idx;
 
-    this.svgCanvas = this.root.querySelector('#re2-svg-canvas');
-    this.edgeListBody = this.root.querySelector('#re2-edge-list-body');
-    this.metricConflictEl = this.root.querySelector('#metric-re2-conflict');
-    this.metricCycleEl = this.root.querySelector('#metric-re2-cycle');
-    this.metricResultEl = this.root.querySelector('#metric-re2-result');
-    this.liveTextEl = this.root.querySelector('#re2-live-text');
+    let strokeColor = '#94a3b8';
+    let strokeWidth = 2;
+    let strokeDash = 'none';
+    let marker = 'url(#re2-arrow-normal)';
 
-    this.bindPlaybackControls();
-
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REDUNDANT_EDGE_II_PROBLEM_HTML,
-      analysisHtml: REDUNDANT_EDGE_II_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RedundantIIStep[] {
-    return buildRedundantIISteps();
-  }
-
-  protected renderStep(step: RedundantIIStep): void {
-    const { edges, conflictIndex, cycleIndex, currentEdgeIndex, resultEdge, parent, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="re2-arrow-normal" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
-          </marker>
-          <marker id="re2-arrow-cur" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="#3b82f6" />
-          </marker>
-          <marker id="re2-arrow-red" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-            <path d="M 0 1 L 10 5 L 0 9 z" fill="#ef4444" />
-          </marker>
-        </defs>`;
-
-      edges.forEach((e, idx) => {
-        const p1 = RE2_NODE_POSITIONS[e[0] - 1];
-        const p2 = RE2_NODE_POSITIONS[e[1] - 1];
-        const isCur = currentEdgeIndex === idx;
-        const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
-        const isConflict = conflictIndex === idx;
-        const isCycle = cycleIndex === idx;
-
-        let strokeColor = '#94a3b8';
-        let strokeWidth = 2;
-        let strokeDash = 'none';
-        let marker = 'url(#re2-arrow-normal)';
-
-        if (isResult) {
-          strokeColor = '#ef4444';
-          strokeWidth = 4;
-          strokeDash = '5,5';
-          marker = 'url(#re2-arrow-red)';
-        } else if (isConflict) {
-          strokeColor = '#f59e0b';
-          strokeWidth = 3;
-          strokeDash = '4,4';
-        } else if (isCycle) {
-          strokeColor = '#ec4899';
-          strokeWidth = 3;
-        } else if (isCur) {
-          strokeColor = '#3b82f6';
-          strokeWidth = 3.5;
-          marker = 'url(#re2-arrow-cur)';
-        }
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" marker-end="${marker}" />`;
-      });
-
-      RE2_NODES.forEach((node) => {
-        const p = RE2_NODE_POSITIONS[node - 1];
-        const isCurNode = currentEdgeIndex >= 0 && (edges[currentEdgeIndex][0] === node || edges[currentEdgeIndex][1] === node);
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isCurNode) {
-          fill = '#dbeafe';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">in:${step.inDegree[node]}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    if (isResult) {
+      strokeColor = '#ef4444';
+      strokeWidth = 4;
+      strokeDash = '5,5';
+      marker = 'url(#re2-arrow-red)';
+    } else if (isConflict) {
+      strokeColor = '#f59e0b';
+      strokeWidth = 3;
+      strokeDash = '4,4';
+    } else if (isCycle) {
+      strokeColor = '#ec4899';
+      strokeWidth = 3;
+    } else if (isCur) {
+      strokeColor = '#3b82f6';
+      strokeWidth = 3.5;
+      marker = 'url(#re2-arrow-cur)';
     }
 
-    if (this.edgeListBody) {
-      this.edgeListBody.innerHTML = edges.map((e, idx) => {
-        const isCur = currentEdgeIndex === idx;
-        const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
-        const isConflict = conflictIndex === idx;
-        const isCycle = cycleIndex === idx;
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" marker-end="${marker}" />`;
+  });
 
-        let statusBadge = '<span class="text-slate-400">常规边</span>';
-        if (isResult) statusBadge = '<span class="text-red-500 font-bold">🎯 最终冗余边</span>';
-        else if (isConflict) statusBadge = '<span class="text-amber-500 font-bold">⚠️ 双父节点冲突边</span>';
-        else if (isCycle) statusBadge = '<span class="text-pink-500 font-bold">🔁 导致成环边</span>';
-        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">检查中</span>';
+  RE2_NODES.forEach((node) => {
+    const p = RE2_NODE_POSITIONS[node - 1];
+    const isCurNode = currentEdgeIndex >= 0 && (edges[currentEdgeIndex][0] === node || edges[currentEdgeIndex][1] === node);
 
-        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">[${e[0]}, ${e[1]}]</td>
-          <td class="px-3 py-1.5 text-center font-mono text-xs">${statusBadge}</td>
-        </tr>`;
-      }).join('');
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isCurNode) {
+      fill = '#dbeafe';
+      stroke = '#3b82f6';
     }
 
-    if (this.metricConflictEl) {
-      this.metricConflictEl.textContent = conflictIndex >= 0 ? `edges[${conflictIndex}] = [${edges[conflictIndex][0]}, ${edges[conflictIndex][1]}]` : '无';
-      this.metricConflictEl.className = `font-mono font-bold ${conflictIndex >= 0 ? 'text-amber-600' : 'text-slate-500'}`;
-    }
-    if (this.metricCycleEl) {
-      this.metricCycleEl.textContent = cycleIndex >= 0 ? `edges[${cycleIndex}] = [${edges[cycleIndex][0]}, ${edges[cycleIndex][1]}]` : '无';
-      this.metricCycleEl.className = `font-mono font-bold ${cycleIndex >= 0 ? 'text-pink-600' : 'text-slate-500'}`;
-    }
-    if (this.metricResultEl) {
-      this.metricResultEl.textContent = resultEdge ? `[${resultEdge[0]}, ${resultEdge[1]}]` : '计算中...';
-      this.metricResultEl.className = `font-mono font-bold ${resultEdge ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">in:${inDegree[node]}</text>`;
+  });
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  svgHtml += `</svg>`;
+
+  const tableRows = edges
+    .map((e, idx) => {
+      const isCur = currentEdgeIndex === idx;
+      const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
+      const isConflict = conflictIndex === idx;
+      const isCycle = cycleIndex === idx;
+
+      let statusBadge = '<span style="color: #94a3b8;">常规边</span>';
+      if (isResult) statusBadge = '<span style="color: #ef4444; font-weight: 700;">🎯 最终冗余边</span>';
+      else if (isConflict) statusBadge = '<span style="color: #f59e0b; font-weight: 700;">⚠️ 双父节点冲突边</span>';
+      else if (isCycle) statusBadge = '<span style="color: #ec4899; font-weight: 700;">🔁 导致成环边</span>';
+      else if (isCur) statusBadge = '<span style="color: #2563eb; font-weight: 700;">检查中</span>';
+
+      return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
+        <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">[${e[0]}, ${e[1]}]</td>
+        <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-size: 11px;">${statusBadge}</td>
+      </tr>`;
+    })
+    .join('');
+
+  const parentStr = parent.slice(1).map((p, i) => `${i + 1}→${p}`).join('  ');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1.4; min-width: 0; height: 100%;">${svgHtml}</div>
+      <div style="flex: 0.6; min-width: 0; align-self: center; display: flex; flex-direction: column; gap: 8px;">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">边</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">状态</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <div style="font-family: monospace; font-size: 10.5px; color: #64748b; text-align: center;">parent: ${parentStr}${action === 'done' ? ' · 判定完成' : ''}</div>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'redundant-edge-ii',
   name: '冗余连接 II (Redundant Connection II)',
-  viewId: 'algo-redundant-edge-ii-view',
-  icon: '🔁',
   category: 'graph',
+  icon: '🔁',
   difficulty: 3,
   levelOrder: 32,
   description: '左程云算法通关课 Class 057：有向图并查集高阶应用，兼顾入度为 2 双父节点冲突与有向环两大难题 (LeetCode 685)',
   learningGoal: '掌握有向树双父节点冲突分析、并查集有向环检验与分支回溯消除策略',
-  template,
-  Visualizer: RedundantEdgeIIVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认有向图 (3 节点 3 边)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-re2-conflict', label: '双父冲突边 conflict', color: '#f59e0b' },
+    { id: 'metric-re2-cycle', label: '成环边 cycle', color: '#ec4899' },
+    { id: 'metric-re2-indegree', label: '入度表 inDegree', color: '#2563eb' },
+    { id: 'metric-re2-uf', label: '并查集 parent', color: '#a855f7' },
+  ],
+  legend: [
+    { label: '检查中', color: '#3b82f6' },
+    { label: '双父节点冲突边', color: '#f59e0b' },
+    { label: '导致成环边', color: '#ec4899' },
+    { label: '最终冗余边', color: '#ef4444' },
+  ],
+  codeLanguages: REDUNDANT_EDGE_II_CODE_LANGUAGES,
+  problemHtml: REDUNDANT_EDGE_II_PROBLEM_HTML,
+  analysisHtml: REDUNDANT_EDGE_II_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildRedundantIISteps(),
+  renderCanvas: (container, step) => renderRedundantEdgeIICanvas(container, step as RedundantIIStep),
 });

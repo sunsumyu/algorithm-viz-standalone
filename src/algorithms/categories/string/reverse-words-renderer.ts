@@ -1,20 +1,14 @@
 /**
- * 翻转字符串里的单词可视化器 — 4-Card 标准现代架构
+ * 翻转字符串里的单词可视化器 — 声明式 4-Card 标准架构
  * LeetCode 151：三步原地反转法
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   REVERSE_WORDS_PROBLEM_HTML,
   REVERSE_WORDS_ANALYSIS_HTML,
   REVERSE_WORDS_CODE_LANGUAGES,
 } from './reverse-words-problem-content';
-import template from './reverse-words.html?raw';
 
 export interface ReverseWordsStep {
   chars: string[];
@@ -29,6 +23,7 @@ export interface ReverseWordsStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
@@ -186,198 +181,134 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
   return steps;
 }
 
-export class ReverseWordsVisualizer extends StepVisualizer<ReverseWordsStep> {
-  protected codeLanguages = REVERSE_WORDS_CODE_LANGUAGES;
-  protected codeLines = REVERSE_WORDS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '翻转字符串里的单词 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ReverseWordsStep[]): ReverseWordsStep[] {
+  const phaseMap: Record<string, string> = {
+    'clean-spaces': 'Step 1: 去空格',
+    'reverse-all': 'Step 2: 整体反转',
+    'reverse-words': 'Step 3: 单词反转',
+    done: '完成',
+  };
+  return steps.map((s) => {
+    let action = '三步反转完成';
+    if (s.phase === 'clean-spaces') action = 'removeExtraSpaces(s)';
+    else if (s.phase === 'reverse-all') action = 'reverse(s, 0, n - 1)';
+    else if (s.phase === 'reverse-words')
+      action = `reverseEachWord(s, [${s.wordStart ?? -1}, ${s.wordEnd ?? -1}])`;
 
-  private trackRowEl: HTMLElement | null = null;
-  private pillStep1El: HTMLElement | null = null;
-  private pillStep2El: HTMLElement | null = null;
-  private pillStep3El: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private metricLeftEl: HTMLElement | null = null;
-  private metricRightEl: HTMLElement | null = null;
-  private metricLengthEl: HTMLElement | null = null;
-  private formulaOpEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rw-track-row');
-    this.pillStep1El = this.root.querySelector('#pill-step-1');
-    this.pillStep2El = this.root.querySelector('#pill-step-2');
-    this.pillStep3El = this.root.querySelector('#pill-step-3');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricLeftEl = this.root.querySelector('#metric-left');
-    this.metricRightEl = this.root.querySelector('#metric-right');
-    this.metricLengthEl = this.root.querySelector('#metric-length');
-    this.formulaOpEl = this.root.querySelector('#formula-op');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rw-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REVERSE_WORDS_PROBLEM_HTML,
-      analysisHtml: REVERSE_WORDS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): ReverseWordsStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const str = sInput?.value || '  the sky is blue  ';
-    return buildReverseWordsSteps(str);
-  }
-
-  protected renderStep(step: ReverseWordsStep): void {
-    const { chars, stage, left, right, wordStart, wordEnd, swapping, phase, message } = step;
-
-    // 1. 渲染字符数组与高亮
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = chars
-        .map((ch, idx) => {
-          const isSpace = ch === ' ';
-          const inWordWindow =
-            wordStart !== undefined && wordEnd !== undefined && idx >= wordStart && idx <= wordEnd;
-          const isLeft = idx === left && phase !== 'done';
-          const isRight = idx === right && phase !== 'done';
-          const isSwapping = swapping && (idx === left || idx === right);
-
-          let cellClass = 'rw-cell-box';
-          if (isSpace) cellClass += ' is-space';
-          if (inWordWindow) cellClass += ' in-word-window';
-          if (isSwapping) cellClass += ' is-swapping';
-          else if (isLeft) cellClass += ' is-left';
-          else if (isRight) cellClass += ' is-right';
-
-          let ptrTags = '';
-          if (isLeft && isRight) {
-            ptrTags = '<span class="rw-ptr-badge left">L</span><span class="rw-ptr-badge right">R</span>';
-          } else if (isLeft) {
-            ptrTags = '<span class="rw-ptr-badge left">left</span>';
-          } else if (isRight) {
-            ptrTags = '<span class="rw-ptr-badge right">right</span>';
-          }
-
-          return `
-            <div class="rw-cell-wrapper">
-              <div class="rw-pointer-tags">${ptrTags}</div>
-              <div class="${cellClass}">
-                <span class="val">${isSpace ? '␣' : ch}</span>
-                <span class="idx">${idx}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 Stage Pills
-    const updatePill = (el: HTMLElement | null, currentStage: number, targetStage: number) => {
-      if (!el) return;
-      el.className = 'rw-stage-pill';
-      if (currentStage === targetStage) el.classList.add('is-active');
-      else if (currentStage > targetStage) el.classList.add('is-done');
+    return {
+      ...s,
+      metrics: {
+        left: s.left >= 0 && s.phase !== 'done' ? String(s.left) : '—',
+        right: s.right >= 0 && s.phase !== 'done' ? String(s.right) : '—',
+        length: `${s.chars.length}`,
+        phase: phaseMap[s.phase] || s.phase,
+        action,
+      },
     };
-    updatePill(this.pillStep1El, stage, 1);
-    updatePill(this.pillStep2El, stage, 2);
-    updatePill(this.pillStep3El, stage, 3);
-
-    // 3. 更新状态监视器
-    if (this.metricLeftEl) this.metricLeftEl.textContent = left >= 0 && phase !== 'done' ? String(left) : '—';
-    if (this.metricRightEl) this.metricRightEl.textContent = right >= 0 && phase !== 'done' ? String(right) : '—';
-    if (this.metricLengthEl) this.metricLengthEl.textContent = `${chars.length}`;
-    if (this.metricPhaseEl) {
-      const phaseMap: Record<string, string> = {
-        'clean-spaces': 'Step 1: 去空格',
-        'reverse-all': 'Step 2: 整体反转',
-        'reverse-words': 'Step 3: 单词反转',
-        done: '完成',
-      };
-      this.metricPhaseEl.textContent = phaseMap[phase] || phase;
-      this.metricPhaseEl.style.color = phase === 'done' ? '#10b981' : '#2563eb';
-    }
-
-    if (this.formulaOpEl) {
-      if (phase === 'clean-spaces') {
-        this.formulaOpEl.textContent = 'removeExtraSpaces(s)';
-      } else if (phase === 'reverse-all') {
-        this.formulaOpEl.textContent = 'reverse(s, 0, n - 1)';
-      } else if (phase === 'reverse-words') {
-        this.formulaOpEl.textContent = `reverseEachWord(s, [${wordStart}, ${wordEnd}])`;
-      } else {
-        this.formulaOpEl.textContent = '三步反转完成';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : swapping ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : swapping ? '#1d4ed8' : '#334155';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : swapping ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      const phaseMap: Record<string, string> = {
-        'clean-spaces': 'Step 1: 去空格',
-        'reverse-all': 'Step 2: 整体反转',
-        'reverse-words': 'Step 3: 单词反转',
-        done: '完成',
-      };
-      badgePhase.textContent = phaseMap[phase] || phase;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：字符数组三阶段反转轨迹（指针徽章 + 单词窗口高亮） */
+export function renderReverseWordsCanvas(container: HTMLElement, step: ReverseWordsStep): void {
+  const { chars, left, right, wordStart, wordEnd, swapping, phase } = step;
+
+  const cellsHtml = chars
+    .map((ch, idx) => {
+      const isSpace = ch === ' ';
+      const inWordWindow =
+        wordStart !== undefined && wordEnd !== undefined && idx >= wordStart && idx <= wordEnd;
+      const isLeft = idx === left && phase !== 'done';
+      const isRight = idx === right && phase !== 'done';
+      const isSwapping = swapping && (idx === left || idx === right);
+
+      let style =
+        'width: 32px; height: 40px; border-radius: 8px; background: #ffffff; border: 2px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);';
+      if (isSpace) style += ' background: #f1f5f9; border-style: dashed; color: #94a3b8;';
+      if (inWordWindow) style += ' border-color: #818cf8; background: #eef2ff;';
+      if (isSwapping) {
+        style +=
+          ' border-color: #10b981; background: #ecfdf5; transform: translateY(-3px) scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);';
+      } else if (isLeft) {
+        style += ' border-color: #2563eb; background: #eff6ff;';
+      } else if (isRight) {
+        style += ' border-color: #f59e0b; background: #fffbeb;';
+      }
+
+      let ptrTags = '';
+      if (isLeft && isRight) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">L</span>' +
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">R</span>';
+      } else if (isLeft) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">left</span>';
+      } else if (isRight) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">right</span>';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <div style="min-height: 18px; display: flex; align-items: center; gap: 3px;">${ptrTags}</div>
+          <div style="${style}">
+            <span style="font-size: 14px; font-weight: 800; color: ${isSpace ? '#94a3b8' : '#0f172a'}; font-family: 'JetBrains Mono', monospace;">${isSpace ? '␣' : ch}</span>
+            <span style="font-size: 8.5px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">${idx}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; overflow: auto;">
+      ${cellsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'reverse-words',
   name: '翻转字符串里的单词（双指针）',
-  viewId: 'algo-reverse-words-view',
   category: 'string',
   description: '移除多余空格并倒序拼接单词',
   icon: '🔃',
   difficulty: 2,
   levelOrder: 2,
   learningGoal: '学会分割-反转-重组的字符串处理模式',
-  template,
-  Visualizer: ReverseWordsVisualizer,
+  inputs: [
+    {
+      id: 's',
+      label: '输入字符串',
+      type: 'text',
+      defaultValue: '  the sky is blue  ',
+      placeholder: '字符串',
+    },
+  ],
+  presets: [
+    { label: '示例 1: ("  the sky is blue  ")', values: { s: '  the sky is blue  ' } },
+    { label: '首尾多空格: ("  hello world  ")', values: { s: '  hello world  ' } },
+    { label: '词间多空格: ("a good   example")', values: { s: 'a good   example' } },
+    { label: '单单词: ("word")', values: { s: 'word' } },
+  ],
+  metrics: [
+    { id: 'left', label: '左指针 left', color: '#3b82f6' },
+    { id: 'right', label: '右指针 right', color: '#f59e0b' },
+    { id: 'length', label: '字符数组有效长度', color: '#10b981' },
+    { id: 'phase', label: '当前阶段', color: '#2563eb' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: 'left 指针', color: '#2563eb' },
+    { label: 'right 指针', color: '#f59e0b' },
+    { label: '交换中', color: '#10b981' },
+    { label: '单词窗口', color: '#818cf8' },
+  ],
+  codeLanguages: REVERSE_WORDS_CODE_LANGUAGES,
+  problemHtml: REVERSE_WORDS_PROBLEM_HTML,
+  analysisHtml: REVERSE_WORDS_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildReverseWordsSteps(String(inputs.s ?? '  the sky is blue  '))),
+  renderCanvas: (container, step) =>
+    renderReverseWordsCanvas(container, step as ReverseWordsStep),
 });

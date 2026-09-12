@@ -1,21 +1,15 @@
 /**
- * 四数之和可视化器 — 4-Card 标准现代架构
+ * 四数之和可视化器 — 声明式 4-Card 标准架构
  * LeetCode 18：双层 for 循环 + 双指针 + 两级去重剪枝
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   FOUR_SUM_PROBLEM_HTML,
   FOUR_SUM_ANALYSIS_HTML,
   FOUR_SUM_CODE_LANGUAGES,
 } from './four-sum-problem-content';
-import template from './four-sum.html?raw';
 
 export interface FourSumStep {
   array: number[];
@@ -41,6 +35,7 @@ export interface FourSumStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function parseFourSumArray(input: string): number[] {
@@ -259,187 +254,160 @@ export function buildFourSumSteps(rawNums: number[], target: number): FourSumSte
   return steps;
 }
 
-export class FourSumVisualizer extends StepVisualizer<FourSumStep> {
-  protected codeLanguages = FOUR_SUM_CODE_LANGUAGES;
-  protected codeLines = FOUR_SUM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '四数之和 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: FourSumStep[]): FourSumStep[] {
+  return steps.map((s) => {
+    return {
+      ...s,
+      metrics: {
+        ij: s.i >= 0 && s.j >= 0 ? `i=${s.array[s.i]}, j=${s.array[s.j]}` : '—',
+        lr: s.left >= 0 && s.right >= 0 ? `L=${s.array[s.left]}, R=${s.array[s.right]}` : '—',
+        sum: s.sum !== null ? String(s.sum) : '—',
+        target: String(s.target),
+      },
+    };
+  });
+}
 
-  private trackRowEl: HTMLElement | null = null;
-  private resultsGridEl: HTMLElement | null = null;
-  private metricIjEl: HTMLElement | null = null;
-  private metricLrEl: HTMLElement | null = null;
-  private metricSumEl: HTMLElement | null = null;
-  private metricTargetEl: HTMLElement | null = null;
-  private formulaIEl: HTMLElement | null = null;
-  private formulaJEl: HTMLElement | null = null;
-  private formulaLeftEl: HTMLElement | null = null;
-  private formulaRightEl: HTMLElement | null = null;
-  private formulaSumEl: HTMLElement | null = null;
-  private formulaTargetEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+export function renderFourSumCanvas(container: HTMLElement, step: FourSumStep): void {
+  const { array, i, j, left, right, results } = step;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  // 1. 排序数组与四指针
+  const trackHtml = array
+    .map((num, idx) => {
+      const isI = i === idx;
+      const isJ = j === idx;
+      const isLeft = left === idx;
+      const isRight = right === idx;
 
-    this.trackRowEl = this.root.querySelector('#fs-track-row');
-    this.resultsGridEl = this.root.querySelector('#fs-results-grid');
-    this.metricIjEl = this.root.querySelector('#metric-ij');
-    this.metricLrEl = this.root.querySelector('#metric-lr');
-    this.metricSumEl = this.root.querySelector('#metric-sum');
-    this.metricTargetEl = this.root.querySelector('#metric-target');
-    this.formulaIEl = this.root.querySelector('#formula-i');
-    this.formulaJEl = this.root.querySelector('#formula-j');
-    this.formulaLeftEl = this.root.querySelector('#formula-left');
-    this.formulaRightEl = this.root.querySelector('#formula-right');
-    this.formulaSumEl = this.root.querySelector('#formula-sum');
-    this.formulaTargetEl = this.root.querySelector('#formula-target');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+      let border = '#cbd5e1';
+      let bg = '#ffffff';
+      let shadow = 'none';
+      let transform = 'none';
+      if (isI) {
+        border = '#3b82f6';
+        bg = '#eff6ff';
+        shadow = '0 0 0 2px rgba(59, 130, 246, 0.25)';
+        transform = 'translateY(-3px)';
+      } else if (isJ) {
+        border = '#8b5cf6';
+        bg = '#f5f3ff';
+        shadow = '0 0 0 2px rgba(139, 92, 246, 0.25)';
+        transform = 'translateY(-3px)';
+      } else if (isLeft) {
+        border = '#10b981';
+        bg = '#f0fdf4';
+        shadow = '0 0 0 2px rgba(16, 185, 129, 0.25)';
+        transform = 'translateY(-3px)';
+      } else if (isRight) {
+        border = '#f59e0b';
+        bg = '#fffbeb';
+        shadow = '0 0 0 2px rgba(245, 158, 11, 0.25)';
+        transform = 'translateY(-3px)';
+      }
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+      const badgeBase =
+        'padding: 1px 4px; border-radius: 4px; font-size: 8.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; white-space: nowrap;';
+      const badges: string[] = [];
+      if (isI) badges.push(`<span style="${badgeBase} background: #3b82f6; color: #ffffff;">i</span>`);
+      if (isJ) badges.push(`<span style="${badgeBase} background: #8b5cf6; color: #ffffff;">j</span>`);
+      if (isLeft) badges.push(`<span style="${badgeBase} background: #10b981; color: #ffffff;">L</span>`);
+      if (isRight) badges.push(`<span style="${badgeBase} background: #f59e0b; color: #ffffff;">R</span>`);
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.fs-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;
-        if (targetInput && btn.dataset.target) targetInput.value = btn.dataset.target;
-        this.start();
-      });
-    });
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative;">
+          <div style="position: absolute; top: -18px; display: flex; align-items: center; gap: 2px;">${badges.join('')}</div>
+          <div style="width: 38px; height: 42px; border-radius: 8px; background: ${bg}; border: 2px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-shadow: ${shadow}; transform: ${transform};">
+            <span style="font-size: 14px; font-weight: 800; color: #0f172a;">${num}</span>
+            <span style="font-size: 8.5px; font-weight: 700; color: #94a3b8;">[${idx}]</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
 
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: FOUR_SUM_PROBLEM_HTML,
-      analysisHtml: FOUR_SUM_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): FourSumStep[] {
-    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const nums = parseFourSumArray(numsInput?.value || '1, 0, -1, 0, -2, 2');
-    const target = parseInt(targetInput?.value || '0', 10);
-    return buildFourSumSteps(nums, isNaN(target) ? 0 : target);
-  }
-
-  protected renderStep(step: FourSumStep): void {
-    const { array, i, j, left, right, sum, target, results, status, message } = step;
-
-    // 1. 渲染排序数组与四指针
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((num, idx) => {
-          const isI = i === idx;
-          const isJ = j === idx;
-          const isLeft = left === idx;
-          const isRight = right === idx;
-
-          let boxClasses = 'fs-cell-box';
-          if (isI) boxClasses += ' is-i';
-          if (isJ) boxClasses += ' is-j';
-          if (isLeft) boxClasses += ' is-left';
-          if (isRight) boxClasses += ' is-right';
-
-          const badges: string[] = [];
-          if (isI) badges.push('<span class="fs-ptr-badge i">i</span>');
-          if (isJ) badges.push('<span class="fs-ptr-badge j">j</span>');
-          if (isLeft) badges.push('<span class="fs-ptr-badge left">L</span>');
-          if (isRight) badges.push('<span class="fs-ptr-badge right">R</span>');
-
-          return `
-            <div class="fs-cell-wrapper">
-              <div class="fs-pointer-tags">${badges.join('')}</div>
-              <div class="${boxClasses}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染已捕获解
-    if (this.resultsGridEl) {
-      if (results.length === 0) {
-        this.resultsGridEl.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">(暂无四元组解)</span>';
-      } else {
-        this.resultsGridEl.innerHTML = results
+  // 2. 已捕获解
+  const resultsHtml =
+    results.length === 0
+      ? '<span style="color: #94a3b8; font-size: 11px;">(暂无四元组解)</span>'
+      : results
           .map(
             ([a, b, c, d]) => `
-          <div class="fs-result-chip">
+          <div style="padding: 2px 7px; border-radius: 6px; background: #f0fdf4; border: 1px solid #86efac; color: #15803d; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
             <span>[${a}, ${b}, ${c}, ${d}]</span>
           </div>
         `
           )
           .join('');
-      }
-    }
 
-    // 3. 更新状态监视器
-    if (this.metricIjEl) {
-      this.metricIjEl.textContent = i >= 0 && j >= 0 ? `i=${array[i]}, j=${array[j]}` : '—';
-    }
-    if (this.metricLrEl) {
-      this.metricLrEl.textContent = left >= 0 && right >= 0 ? `L=${array[left]}, R=${array[right]}` : '—';
-    }
-    if (this.metricSumEl) {
-      this.metricSumEl.textContent = sum !== null ? String(sum) : '—';
-      this.metricSumEl.style.color =
-        sum === target ? '#10b981' : sum !== null && sum < target ? '#3b82f6' : '#f59e0b';
-    }
-    if (this.metricTargetEl) this.metricTargetEl.textContent = String(target);
-
-    if (this.formulaIEl) this.formulaIEl.textContent = i >= 0 ? String(array[i]) : 'nums[i]';
-    if (this.formulaJEl) this.formulaJEl.textContent = j >= 0 ? String(array[j]) : 'nums[j]';
-    if (this.formulaLeftEl) this.formulaLeftEl.textContent = left >= 0 ? String(array[left]) : 'nums[left]';
-    if (this.formulaRightEl) this.formulaRightEl.textContent = right >= 0 ? String(array[right]) : 'nums[right]';
-    if (this.formulaSumEl) this.formulaSumEl.textContent = sum !== null ? String(sum) : 'sum';
-    if (this.formulaTargetEl) this.formulaTargetEl.textContent = String(target);
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'found' ? '#f0fdf4' : '#eff6ff';
-      logEntry.style.color = status === 'found' ? '#15803d' : '#1d4ed8';
-      logEntry.style.border = '1px solid ' + (status === 'found' ? '#bbf7d0' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; justify-content: center; gap: 18px; height: 100%; width: 100%; padding: 24px 12px 12px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">排序后数组</span>
+        <div style="display: flex; align-items: flex-end; justify-content: center; gap: 6px; width: 100%; overflow-x: auto; padding: 4px;">
+          ${trackHtml}
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;">
+        <span style="font-size: 10.5px; font-weight: 700; color: #64748b;">已找到的不重复四元组解</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; padding: 4px; min-height: 32px; width: 100%;">
+          ${resultsHtml}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'four-sum',
   name: '四数之和（排序+双指针）',
-  viewId: 'algo-four-sum-view',
   category: 'hash-table',
   description: '排序后固定 i/j 再双指针求和为 target 的四元组',
   icon: '🎯',
   difficulty: 3,
   levelOrder: 3,
   learningGoal: '掌握嵌套双指针 + 多层去重的四数求和技巧',
-  template,
-  Visualizer: FourSumVisualizer,
+  inputs: [
+    {
+      id: 'nums',
+      label: '数组',
+      type: 'text',
+      defaultValue: '1, 0, -1, 0, -2, 2',
+      placeholder: '逗号分隔',
+      width: '135px',
+    },
+    {
+      id: 'target',
+      label: 'target',
+      type: 'number',
+      defaultValue: 0,
+      width: '40px',
+    },
+  ],
+  presets: [
+    { label: '示例 1: (target=0)', values: { nums: '1, 0, -1, 0, -2, 2', target: 0 } },
+    { label: '全相同: (target=8)', values: { nums: '2, 2, 2, 2, 2', target: 8 } },
+    { label: '对称分布: (target=0)', values: { nums: '-3, -2, -1, 0, 0, 1, 2, 3', target: 0 } },
+  ],
+  metrics: [
+    { id: 'ij', label: '固定 i / j', color: '#3b82f6' },
+    { id: 'lr', label: '双指针 left / right', color: '#10b981' },
+    { id: 'sum', label: '四数之和 sum', color: '#a855f7' },
+    { id: 'target', label: '目标 target', color: '#0f172a' },
+  ],
+  legend: [
+    { label: 'i', color: '#3b82f6' },
+    { label: 'j', color: '#8b5cf6' },
+    { label: 'left', color: '#10b981' },
+    { label: 'right', color: '#f59e0b' },
+  ],
+  codeLanguages: FOUR_SUM_CODE_LANGUAGES,
+  problemHtml: FOUR_SUM_PROBLEM_HTML,
+  analysisHtml: FOUR_SUM_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums = parseFourSumArray(String(inputs.nums ?? '1, 0, -1, 0, -2, 2'));
+    const target = parseInt(String(inputs.target ?? '0'), 10);
+    return withMetrics(buildFourSumSteps(nums, isNaN(target) ? 0 : target));
+  },
+  renderCanvas: (container, step) => renderFourSumCanvas(container, step as FourSumStep),
 });

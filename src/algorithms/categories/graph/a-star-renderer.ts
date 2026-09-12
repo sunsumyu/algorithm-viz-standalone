@@ -3,14 +3,13 @@
  * 评估函数 f(n) = g(n) + h(n)、Open/Closed 列表演变与最优路径重构
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   A_STAR_PROBLEM_HTML,
   A_STAR_ANALYSIS_HTML,
   A_STAR_CODE_LANGUAGES,
 } from './a-star-problem-content';
-import template from './a-star.html?raw';
 
 export interface AStarNode {
   r: number;
@@ -36,6 +35,7 @@ export interface AStarStep extends StepBase {
   statusText: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string | number>;
 }
 
 export const ASTAR_GRID = [
@@ -194,171 +194,113 @@ export function buildAStarSteps(): AStarStep[] {
   return steps;
 }
 
-export class AStarVisualizer extends StepVisualizer<AStarStep> {
-  protected codeLanguages = A_STAR_CODE_LANGUAGES;
-  protected codeLines = A_STAR_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'A* 启发式寻路 代码调试';
-
-  private gridCanvas: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricGValEl: HTMLElement | null = null;
-  private metricHValEl: HTMLElement | null = null;
-  private metricFValEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.gridCanvas = this.root.querySelector('#a-star-grid-container');
-    this.metricCurNodeEl = this.root.querySelector('#metric-current');
-    this.metricFValEl = this.root.querySelector('#metric-f-cost');
-    this.metricGValEl = this.root.querySelector('#metric-gh-cost');
-    this.metricHValEl = this.root.querySelector('#metric-closed-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#as-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: A_STAR_PROBLEM_HTML,
-      analysisHtml: A_STAR_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): AStarStep[] {
-    return buildAStarSteps();
-  }
-
-  protected renderStep(step: AStarStep): void {
-    const { grid, start, goal, currentNode, g, h, f, openSet, closedSet, finalPath, statusText, action } = step;
-    const m = grid.length;
-    const n = grid[0].length;
-
-    // 1. 渲染网格矩阵
-    if (this.gridCanvas) {
-      this.gridCanvas.style.gridTemplateColumns = `repeat(${n}, 38px)`;
-      const openMap = new Set(openSet.map(([r, c]) => `${r},${c}`));
-      const closedMap = new Set(closedSet.map(([r, c]) => `${r},${c}`));
-      const pathMap = new Set(finalPath.map(([r, c]) => `${r},${c}`));
-
-      let html = '';
-      for (let r = 0; r < m; r++) {
-        for (let c = 0; c < n; c++) {
-          const isStart = start[0] === r && start[1] === c;
-          const isGoal = goal[0] === r && goal[1] === c;
-          const isWall = grid[r][c] === 1;
-          const isCurrent = currentNode && currentNode[0] === r && currentNode[1] === c;
-          const isPath = pathMap.has(`${r},${c}`);
-          const isOpen = openMap.has(`${r},${c}`);
-          const isClosed = closedMap.has(`${r},${c}`);
-
-          let cls = 'ast-cell';
-          let label = '';
-          if (isStart) {
-            cls += ' is-start';
-            label = 'S';
-          } else if (isGoal) {
-            cls += ' is-goal';
-            label = 'G';
-          } else if (isWall) {
-            cls += ' is-wall';
-            label = '■';
-          } else if (isPath) {
-            cls += ' is-path';
-            label = '★';
-          } else if (isOpen) {
-            cls += ' is-open';
-            label = 'o';
-          } else if (isClosed) {
-            cls += ' is-closed';
-            label = '·';
-          }
-
-          if (isCurrent) cls += ' is-current';
-
-          html += `<div class="${cls}"><span>${label}</span></div>`;
-        }
-      }
-      this.gridCanvas.innerHTML = html;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurNodeEl) this.metricCurNodeEl.textContent = currentNode ? `(${currentNode[0]}, ${currentNode[1]})` : '—';
-    if (this.metricFValEl) this.metricFValEl.textContent = `${f}`;
-    if (this.metricGValEl) this.metricGValEl.textContent = `${g} / ${h}`;
-    if (this.metricHValEl) this.metricHValEl.textContent = `${step.closedSet.length}`;
-
-    if (this.formulaActionEl) {
-      this.formulaActionEl.textContent = `f(n) = g(${g}) + h(${h}) = ${f}`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done' || action === 'reach-goal'
-          ? '#f0fdf4'
-          : action === 'poll'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done' || action === 'reach-goal'
-          ? '#15803d'
-          : action === 'poll'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done' || action === 'reach-goal'
-          ? '#bbf7d0'
-          : action === 'poll'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeOpen = this.root?.querySelector('#badge-open-count');
-    if (badgeOpen) badgeOpen.textContent = `Open 集合: ${step.openSet.length}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 附加指标卡快照（当前节点 / f 值 / g·h 值 / Closed 集合规模） */
+function withMetrics(steps: AStarStep[]): AStarStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      'metric-as-cur': s.currentNode ? `(${s.currentNode[0]}, ${s.currentNode[1]})` : '—',
+      'metric-as-f': `${s.f}`,
+      'metric-as-gh': `${s.g} / ${s.h}`,
+      'metric-as-closed': `${s.closedSet.length}`,
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：A* 网格沙盘（Open/Closed/路径着色 + f=g+h 公式条） */
+export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void {
+  const { grid, start, goal, currentNode, g, h, f, openSet, closedSet, finalPath } = step;
+  const m = grid.length;
+  const n = grid[0].length;
+
+  const openMap = new Set(openSet.map(([r, c]) => `${r},${c}`));
+  const closedMap = new Set(closedSet.map(([r, c]) => `${r},${c}`));
+  const pathMap = new Set(finalPath.map(([r, c]) => `${r},${c}`));
+
+  const cellBase =
+    'width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; font-size: 11px; font-weight: 800; border: 1.5px solid transparent; box-sizing: border-box;';
+
+  let cellsHtml = '';
+  for (let r = 0; r < m; r++) {
+    for (let c = 0; c < n; c++) {
+      const isStart = start[0] === r && start[1] === c;
+      const isGoal = goal[0] === r && goal[1] === c;
+      const isWall = grid[r][c] === 1;
+      const isCurrent = currentNode && currentNode[0] === r && currentNode[1] === c;
+      const isPath = pathMap.has(`${r},${c}`);
+      const isOpen = openMap.has(`${r},${c}`);
+      const isClosed = closedMap.has(`${r},${c}`);
+
+      let style = cellBase;
+      let label = '';
+      if (isStart) {
+        style += 'background: #dbeafe; color: #1d4ed8; border-color: #3b82f6;';
+        label = 'S';
+      } else if (isGoal) {
+        style += 'background: #dcfce7; color: #15803d; border-color: #22c55e;';
+        label = 'G';
+      } else if (isWall) {
+        style += 'background: #334155; color: #e2e8f0; border-color: #334155;';
+        label = '■';
+      } else if (isPath) {
+        style += 'background: #10b981; color: #ffffff; border-color: #059669; font-weight: 900;';
+        label = '★';
+      } else if (isOpen) {
+        style += 'background: #fef9c3; color: #a16207; border-color: #ca8a04;';
+        label = 'o';
+      } else if (isClosed) {
+        style += 'background: #f1f5f9; color: #64748b; border-color: #cbd5e1;';
+        label = '·';
+      }
+
+      if (isCurrent) {
+        style += 'background: #fed7aa; color: #c2410c; border-color: #ea580c; transform: scale(1.06); box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.4); z-index: 2;';
+      }
+
+      cellsHtml += `<div style="${style}"><span>${label}</span></div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
+      <div style="display: inline-grid; grid-template-columns: repeat(${n}, 38px); gap: 6px; padding: 10px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; user-select: none;">
+        ${cellsHtml}
+      </div>
+      <div style="font-family: monospace; font-size: 11px; font-weight: 700; color: #475569;">f(n) = g(${g}) + h(${h}) = ${f}</div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'a-star',
   name: 'A* 启发式搜索',
-  viewId: 'algo-a-star-view',
   category: 'graph',
   description: '结合实际路径代价与曼哈顿启发距离在网格中快速寻找最优路径',
   icon: '⭐',
   difficulty: 2,
   levelOrder: 9,
   learningGoal: '掌握评估函数 f(n)=g(n)+h(n) 的设计与 Open/Closed 优先队列管理',
-  template,
-  Visualizer: AStarVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认网格 (5×6 含障碍)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-as-cur', label: '当前考察节点', color: '#ea580c' },
+    { id: 'metric-as-f', label: 'f 值 (估计总代价)', color: '#3b82f6' },
+    { id: 'metric-as-gh', label: 'g / h 值', color: '#10b981' },
+    { id: 'metric-as-closed', label: 'Closed 集合数', color: '#64748b' },
+  ],
+  legend: [
+    { label: '起点', color: '#3b82f6' },
+    { label: '终点', color: '#22c55e' },
+    { label: '障碍物', color: '#334155' },
+    { label: '待选 Open', color: '#fef08a' },
+    { label: '当前考察', color: '#ea580c' },
+    { label: '最优路径', color: '#10b981' },
+  ],
+  codeLanguages: A_STAR_CODE_LANGUAGES,
+  problemHtml: A_STAR_PROBLEM_HTML,
+  analysisHtml: A_STAR_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildAStarSteps()),
+  renderCanvas: (container, step) => renderAStarCanvas(container, step as AStarStep),
 });

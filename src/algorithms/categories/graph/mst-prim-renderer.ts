@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V轮外层加点循环、未入树最小点u挑选、纳入inMST标记、权值累加、出边扫描、更优切边更新均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   MST_PRIM_PROBLEM_HTML,
   MST_PRIM_ANALYSIS_HTML,
   MST_PRIM_CODE_LANGUAGES,
 } from './mst-prim-problem-content';
-import template from './mst-prim.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface PrimStep extends StepBase {
@@ -182,150 +181,109 @@ export function buildPrimSteps(): PrimStep[] {
   return steps;
 }
 
-export class PrimVisualizer extends StepVisualizer<PrimStep> {
-  protected codeLanguages = MST_PRIM_CODE_LANGUAGES;
-  protected codeLines = MST_PRIM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'Prim 算法代码调试';
 
-  private svgCanvas: HTMLElement | null = null;
-  private nodeTableBody: HTMLElement | null = null;
-  private metricMstNodesEl: HTMLElement | null = null;
-  private metricTotalWeightEl: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+/** 主视觉：无向图 SVG（MST 高亮 + minDist 切边着色） */
+export function renderMstPrimCanvas(container: HTMLElement, step: PrimStep): void {
+  const { minDist, inMST, mstEdges, currentNode, activeEdge, totalWeight, action } = step;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">`;
 
-    this.svgCanvas = this.root.querySelector('#prim-svg-canvas');
-    this.nodeTableBody = this.root.querySelector('#prim-node-table-body');
-    this.metricMstNodesEl = this.root.querySelector('#metric-mst-nodes');
-    this.metricTotalWeightEl = this.root.querySelector('#metric-total-weight');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.liveTextEl = this.root.querySelector('#prim-live-text');
+  for (const e of PRIM_EDGES) {
+    const p1 = PRIM_NODE_POSITIONS[e.u];
+    const p2 = PRIM_NODE_POSITIONS[e.v];
+    const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
+    const isActive = activeEdge && ((activeEdge.u === e.u && activeEdge.v === e.v) || (activeEdge.u === e.v && activeEdge.v === e.u));
+    const isCut = (inMST[e.u] && !inMST[e.v]) || (!inMST[e.u] && inMST[e.v]);
 
-    this.bindPlaybackControls();
+    let strokeColor = '#cbd5e1';
+    let strokeWidth = 1.8;
+    let strokeDash = 'none';
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: MST_PRIM_PROBLEM_HTML,
-      analysisHtml: MST_PRIM_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    if (isMst) {
+      strokeColor = '#10b981';
+      strokeWidth = 3.5;
+    } else if (isActive && action === 'update-edge') {
+      strokeColor = '#3b82f6';
+      strokeWidth = 3;
+    } else if (isActive) {
+      strokeColor = '#60a5fa';
+      strokeWidth = 2.5;
+    } else if (isCut) {
+      strokeColor = '#f59e0b';
+      strokeWidth = 2;
+      strokeDash = '4,4';
+    }
+
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 - 8;
+
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
+    svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
   }
 
-  protected buildSteps(): PrimStep[] {
-    return buildPrimSteps();
-  }
+  PRIM_NODES.forEach((node) => {
+    const p = PRIM_NODE_POSITIONS[node];
+    const isIn = inMST[node];
+    const isCur = currentNode === node;
+    const dVal = minDist[node];
 
-  protected renderStep(step: PrimStep): void {
-    const { minDist, inMST, mstEdges, currentNode, activeEdge, totalWeight, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">`;
-
-      for (const e of PRIM_EDGES) {
-        const p1 = PRIM_NODE_POSITIONS[e.u];
-        const p2 = PRIM_NODE_POSITIONS[e.v];
-        const isMst = mstEdges.some((me) => (me.u === e.u && me.v === e.v) || (me.u === e.v && me.v === e.u));
-        const isActive = activeEdge && ((activeEdge.u === e.u && activeEdge.v === e.v) || (activeEdge.u === e.v && activeEdge.v === e.u));
-        const isCut = (inMST[e.u] && !inMST[e.v]) || (!inMST[e.u] && inMST[e.v]);
-
-        let strokeColor = '#cbd5e1';
-        let strokeWidth = 1.8;
-        let strokeDash = 'none';
-
-        if (isMst) {
-          strokeColor = '#10b981';
-          strokeWidth = 3.5;
-        } else if (isActive && action === 'update-edge') {
-          strokeColor = '#3b82f6';
-          strokeWidth = 3;
-        } else if (isActive) {
-          strokeColor = '#60a5fa';
-          strokeWidth = 2.5;
-        } else if (isCut) {
-          strokeColor = '#f59e0b';
-          strokeWidth = 2;
-          strokeDash = '4,4';
-        }
-
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 - 8;
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
-        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
-      }
-
-      PRIM_NODES.forEach((node) => {
-        const p = PRIM_NODE_POSITIONS[node];
-        const isIn = inMST[node];
-        const isCur = currentNode === node;
-        const dVal = minDist[node];
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isCur) {
-          fill = '#fef08a';
-          stroke = '#eab308';
-        } else if (isIn) {
-          fill = '#dcfce7';
-          stroke = '#10b981';
-        } else if (dVal !== INF) {
-          fill = '#eff6ff';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isIn ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isCur) {
+      fill = '#fef08a';
+      stroke = '#eab308';
+    } else if (isIn) {
+      fill = '#dcfce7';
+      stroke = '#10b981';
+    } else if (dVal !== INF) {
+      fill = '#eff6ff';
+      stroke = '#3b82f6';
     }
 
-    if (this.nodeTableBody) {
-      this.nodeTableBody.innerHTML = PRIM_NODES.map((node) => {
-        const dVal = minDist[node];
-        const isIn = inMST[node];
-        const isCur = currentNode === node;
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isIn ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+  });
 
-        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1 text-center font-mono font-bold text-slate-800">${node}</td>
-          <td class="px-3 py-1 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
-          <td class="px-3 py-1 text-center font-mono text-xs ${isIn ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${isIn ? '已在生成树' : '等待切入'}</td>
-        </tr>`;
-      }).join('');
-    }
+  svgHtml += `</svg>`;
 
-    if (this.metricMstNodesEl) {
-      this.metricMstNodesEl.textContent = `${inMST.filter(Boolean).length} / ${PRIM_NODES.length}`;
-    }
-    if (this.metricTotalWeightEl) {
-      this.metricTotalWeightEl.textContent = `${totalWeight}`;
-    }
-    if (this.metricCurNodeEl) {
-      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
-    }
-
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
+      ${svgHtml}
+      <div style="font-family: monospace; font-size: 10px; color: #64748b;">节点下方标注 minDist 切边距离（∞ 表示不可达）· 总权值: <strong style="color: #10b981;">${totalWeight}</strong></div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'mst-prim',
   name: 'Prim 最小生成树',
-  viewId: 'algo-mst-prim-view',
   category: 'graph',
   icon: '🌲',
   difficulty: 3,
   levelOrder: 30,
   description: '左程云算法通关课 Class 058：加点法全局贪心生长最小生成树，维护切边最小距离数组 minDist',
   learningGoal: '掌握加点法贪心生长思想、切割性质（Cut Property）与 minDist 切边维护机制',
-  template,
-  Visualizer: PrimVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (5 节点)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-prim-nodes', label: '已入树节点', color: '#10b981' },
+    { id: 'metric-prim-weight', label: '生成树总权值', color: '#10b981' },
+    { id: 'metric-prim-edge', label: '当前切边', color: '#3b82f6' },
+    { id: 'metric-prim-dist', label: 'minDist 数组', color: '#eab308' },
+  ],
+  legend: [
+    { label: '已在生成树', color: '#10b981' },
+    { label: '当前考察', color: '#eab308' },
+    { label: '切边候选', color: '#f59e0b' },
+    { label: '更优更新', color: '#3b82f6' },
+  ],
+  codeLanguages: MST_PRIM_CODE_LANGUAGES,
+  problemHtml: MST_PRIM_PROBLEM_HTML,
+  analysisHtml: MST_PRIM_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildPrimSteps(),
+  renderCanvas: (container, step) => renderMstPrimCanvas(container, step as PrimStep),
 });

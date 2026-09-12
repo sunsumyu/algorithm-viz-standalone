@@ -3,14 +3,13 @@
  * 4-Card 标准现代架构可视化器
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   LIMITED_SHORTEST_PATH_PROBLEM_HTML,
   LIMITED_SHORTEST_PATH_ANALYSIS_HTML,
   LIMITED_SHORTEST_PATH_CODE_LANGUAGES,
 } from './limited-shortest-path-problem-content';
-import template from './limited-shortest-path.html?raw';
 
 export interface LSPStep extends StepBase {
   dist: number[];
@@ -26,6 +25,7 @@ export interface LSPStep extends StepBase {
   statusText: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string | number>;
 }
 
 export const LSP_EDGES = [
@@ -158,199 +158,132 @@ export function buildLSPSteps(): LSPStep[] {
   return steps;
 }
 
-export class LimitedShortestPathVisualizer extends StepVisualizer<LSPStep> {
-  protected codeLanguages = LIMITED_SHORTEST_PATH_CODE_LANGUAGES;
-  protected codeLines = LIMITED_SHORTEST_PATH_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '有限中转最短路径 (LC 787) 代码调试';
-
-  private svgCanvas: HTMLElement | null = null;
-  private metricRoundEl: HTMLElement | null = null;
-  private metricCurEdgeEl: HTMLElement | null = null;
-  private metricRelaxCountEl: HTMLElement | null = null;
-  private metricDstDistEl: HTMLElement | null = null;
-  private distArrayEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.svgCanvas = this.root.querySelector('#lsp-svg-canvas');
-    this.metricRoundEl = this.root.querySelector('#metric-round');
-    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
-    this.metricDstDistEl = this.root.querySelector('#metric-dst-dist');
-    this.distArrayEl = this.root.querySelector('#lsp-dist-array');
-    this.liveTextEl = this.root.querySelector('#lsp-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: LIMITED_SHORTEST_PATH_PROBLEM_HTML,
-      analysisHtml: LIMITED_SHORTEST_PATH_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): LSPStep[] {
-    return buildLSPSteps();
-  }
-
-  protected renderStep(step: LSPStep): void {
-    const { dist, round, maxK, currentEdge, relaxedEdge, relaxCount, target, statusText, action } = step;
-
-    // 1. 绘制有向带权图 SVG
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="lsp-arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
-          </marker>
-          <marker id="lsp-arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
-          </marker>
-          <marker id="lsp-arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
-          </marker>
-        </defs>`;
-
-      // 绘制边与权重
-      for (const e of LSP_EDGES) {
-        const p1 = LSP_NODE_POS[e.u];
-        const p2 = LSP_NODE_POS[e.v];
-        const isCurrent = currentEdge && currentEdge.u === e.u && currentEdge.v === e.v;
-
-        const stroke = isCurrent ? (relaxedEdge ? '#16a34a' : '#2563eb') : '#cbd5e1';
-        const strokeWidth = isCurrent ? 3.5 : 2;
-        const marker = isCurrent ? (relaxedEdge ? 'url(#lsp-arrow-green)' : 'url(#lsp-arrow-blue)') : 'url(#lsp-arrow-gray)';
-
-        const mx = (p1.x + p2.x) / 2;
-        const my = (p1.y + p2.y) / 2 - 6;
-
-        svgHtml += `
-          <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${stroke}" stroke-width="${strokeWidth}" marker-end="${marker}" />
-          <text x="${mx}" y="${my}" fill="${isCurrent ? '#2563eb' : '#64748b'}" font-size="11" font-weight="700" font-family="JetBrains Mono">${e.w}</text>
-        `;
-      }
-
-      // 绘制节点
-      for (const u of LSP_NODES) {
-        const pos = LSP_NODE_POS[u];
-        const d = dist[u] >= 999999 ? 'INF' : dist[u];
-        const isSrc = u === LSP_SOURCE;
-        const isDst = u === target;
-
-        let fill = '#ffffff';
-        let stroke = '#94a3b8';
-        let textColor = '#0f172a';
-
-        if (currentEdge && (currentEdge.u === u || currentEdge.v === u)) {
-          fill = relaxedEdge && currentEdge.v === u ? '#f0fdf4' : '#eff6ff';
-          stroke = relaxedEdge && currentEdge.v === u ? '#16a34a' : '#2563eb';
-          textColor = relaxedEdge && currentEdge.v === u ? '#15803d' : '#1d4ed8';
-        }
-
-        let badge = isSrc ? ' (S)' : isDst ? ' (D)' : '';
-
-        svgHtml += `
-          <g>
-            <circle cx="${pos.x}" cy="${pos.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
-            <text x="${pos.x}" y="${pos.y + 4.5}" text-anchor="middle" font-size="12" font-weight="800" fill="${textColor}" font-family="JetBrains Mono">${u}${badge}</text>
-            <text x="${pos.x}" y="${pos.y + 32}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#64748b" font-family="JetBrains Mono">d:${d}</text>
-          </g>
-        `;
-      }
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricRoundEl) {
-      this.metricRoundEl.textContent = `${round} / ${maxK}`;
-    }
-    if (this.metricCurEdgeEl) {
-      this.metricCurEdgeEl.textContent = currentEdge ? `(${currentEdge.u} -> ${currentEdge.v}) [${currentEdge.w}]` : '—';
-    }
-    if (this.metricRelaxCountEl) {
-      this.metricRelaxCountEl.textContent = `${relaxCount}`;
-    }
-    if (this.metricDstDistEl) {
-      const dstCost = dist[target] >= 999999 ? 'INF' : dist[target];
-      this.metricDstDistEl.textContent = `${dstCost}`;
-    }
-
-    if (this.distArrayEl) {
-      this.distArrayEl.textContent = `[${dist.map((d, i) => `${i}:${d >= 999999 ? 'INF' : d}`).join(', ')}]`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done' || action === 'relax-success'
-          ? '#f0fdf4'
-          : action === 'round-done'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done' || action === 'relax-success'
-          ? '#15803d'
-          : action === 'round-done'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done' || action === 'relax-success'
-          ? '#bbf7d0'
-          : action === 'round-done'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePrice = this.root?.querySelector('#badge-dst-price');
-    if (badgePrice) {
-      const dstCost = dist[target] >= 999999 ? 'INF' : dist[target];
-      badgePrice.textContent = `目标价格: ${dstCost}`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 附加指标卡快照（轮次 / 考察边 / 松弛次数 / 终点最低价格） */
+function withMetrics(steps: LSPStep[]): LSPStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      'metric-lsp-round': `${s.round} / ${s.maxK}`,
+      'metric-lsp-edge': s.currentEdge ? `(${s.currentEdge.u} ➔ ${s.currentEdge.v}) [${s.currentEdge.w}]` : '—',
+      'metric-lsp-relax': `${s.relaxCount}`,
+      'metric-lsp-dst': `${s.dist[s.target] >= 999999 ? 'INF' : s.dist[s.target]}`,
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：航班航线图 SVG（松弛高亮）+ dist 数组芯片条 */
+export function renderLimitedShortestPathCanvas(container: HTMLElement, step: LSPStep): void {
+  const { dist, currentEdge, relaxedEdge, target } = step;
+
+  let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="lsp-arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
+      </marker>
+      <marker id="lsp-arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
+      </marker>
+      <marker id="lsp-arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
+      </marker>
+    </defs>`;
+
+  // 绘制边与权重
+  for (const e of LSP_EDGES) {
+    const p1 = LSP_NODE_POS[e.u];
+    const p2 = LSP_NODE_POS[e.v];
+    const isCurrent = currentEdge && currentEdge.u === e.u && currentEdge.v === e.v;
+
+    const stroke = isCurrent ? (relaxedEdge ? '#16a34a' : '#2563eb') : '#cbd5e1';
+    const strokeWidth = isCurrent ? 3.5 : 2;
+    const marker = isCurrent ? (relaxedEdge ? 'url(#lsp-arrow-green)' : 'url(#lsp-arrow-blue)') : 'url(#lsp-arrow-gray)';
+
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2 - 6;
+
+    svgHtml += `
+      <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${stroke}" stroke-width="${strokeWidth}" marker-end="${marker}" />
+      <text x="${mx}" y="${my}" fill="${isCurrent ? '#2563eb' : '#64748b'}" font-size="11" font-weight="700" font-family="JetBrains Mono">${e.w}</text>
+    `;
+  }
+
+  // 绘制节点
+  for (const u of LSP_NODES) {
+    const pos = LSP_NODE_POS[u];
+    const d = dist[u] >= 999999 ? 'INF' : dist[u];
+    const isSrc = u === LSP_SOURCE;
+    const isDst = u === target;
+
+    let fill = '#ffffff';
+    let stroke = '#94a3b8';
+    let textColor = '#0f172a';
+
+    if (currentEdge && (currentEdge.u === u || currentEdge.v === u)) {
+      fill = relaxedEdge && currentEdge.v === u ? '#f0fdf4' : '#eff6ff';
+      stroke = relaxedEdge && currentEdge.v === u ? '#16a34a' : '#2563eb';
+      textColor = relaxedEdge && currentEdge.v === u ? '#15803d' : '#1d4ed8';
+    }
+
+    let badge = isSrc ? ' (S)' : isDst ? ' (D)' : '';
+
+    svgHtml += `
+      <g>
+        <circle cx="${pos.x}" cy="${pos.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
+        <text x="${pos.x}" y="${pos.y + 4.5}" text-anchor="middle" font-size="12" font-weight="800" fill="${textColor}" font-family="JetBrains Mono">${u}${badge}</text>
+        <text x="${pos.x}" y="${pos.y + 32}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#64748b" font-family="JetBrains Mono">d:${d}</text>
+      </g>
+    `;
+  }
+
+  svgHtml += `</svg>`;
+
+  const distChips = LSP_NODES.map((node) => {
+    const dVal = dist[node];
+    const isTarget = currentEdge && currentEdge.v === node;
+    const chipStyle = isTarget
+      ? 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #93c5fd; background: #eff6ff;'
+      : 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc;';
+    return `<div style="${chipStyle}">
+      <span style="font-size: 10px; color: #64748b; font-family: monospace;">dist[${node}]</span>
+      <span style="font-size: 12px; font-family: monospace; font-weight: 700; color: ${dVal >= 999999 ? '#94a3b8' : '#2563eb'};">${dVal >= 999999 ? 'INF' : dVal}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
+      <div style="width: 100%;">${svgHtml}</div>
+      <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">${distChips}</div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'limited-shortest-path',
   name: '有限最短路 (LC 787)',
-  viewId: 'algo-limited-shortest-path-view',
   category: 'graph',
   description: 'Bellman-Ford 状态备份松弛：限制最多走 K+1 条边求解最便宜航班价格',
   icon: '✈️',
   difficulty: 2,
   levelOrder: 22,
   learningGoal: '掌握 Bellman-Ford 算法在有限边数约束下的状态备份与松弛过程',
-  template,
-  Visualizer: LimitedShortestPathVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认航班图 (K=2)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-lsp-round', label: '当前轮次', color: '#2563eb' },
+    { id: 'metric-lsp-edge', label: '考察航线 (u➔v)', color: '#eab308' },
+    { id: 'metric-lsp-relax', label: '松弛次数', color: '#16a34a' },
+    { id: 'metric-lsp-dst', label: '终点最低价格', color: '#10b981' },
+  ],
+  legend: [
+    { label: '松弛成功', color: '#16a34a' },
+    { label: '正在考察', color: '#2563eb' },
+    { label: '普通航线', color: '#cbd5e1' },
+  ],
+  codeLanguages: LIMITED_SHORTEST_PATH_CODE_LANGUAGES,
+  problemHtml: LIMITED_SHORTEST_PATH_PROBLEM_HTML,
+  analysisHtml: LIMITED_SHORTEST_PATH_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildLSPSteps()),
+  renderCanvas: (container, step) => renderLimitedShortestPathCanvas(container, step as LSPStep),
 });

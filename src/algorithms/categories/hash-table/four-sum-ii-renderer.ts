@@ -1,21 +1,15 @@
 /**
- * 四数相加 II 可视化器 — 4-Card 标准现代架构
+ * 四数相加 II 可视化器 — 声明式 4-Card 标准架构
  * LeetCode 454：分组哈希 (2+2 拆分)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   FOUR_SUM_II_PROBLEM_HTML,
   FOUR_SUM_II_ANALYSIS_HTML,
   FOUR_SUM_II_CODE_LANGUAGES,
 } from './four-sum-ii-problem-content';
-import template from './four-sum-ii.html?raw';
 
 export interface FourSumIIStep {
   a: number[];
@@ -37,6 +31,7 @@ export interface FourSumIIStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function buildFourSumIISteps(
@@ -182,101 +177,53 @@ export function buildFourSumIISteps(
   return steps;
 }
 
-export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
-  protected codeLanguages = FOUR_SUM_II_CODE_LANGUAGES;
-  protected codeLines = FOUR_SUM_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '四数相加 II 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: FourSumIIStep[]): FourSumIIStep[] {
+  return steps.map((s) => {
+    return {
+      ...s,
+      metrics: {
+        phase: s.phase.startsWith('group1') ? 'Group 1 (A+B)' : 'Group 2 (C+D)',
+        target: s.target !== undefined ? String(s.target) : '—',
+        inc: `+${s.increment}`,
+        count: String(s.count),
+      },
+    };
+  });
+}
 
-  private currentDemo = 1;
-  private rowAEl: HTMLElement | null = null;
-  private rowBEl: HTMLElement | null = null;
-  private rowCEl: HTMLElement | null = null;
-  private rowDEl: HTMLElement | null = null;
-  private mapWrapEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private metricTargetEl: HTMLElement | null = null;
-  private metricIncEl: HTMLElement | null = null;
-  private metricCountEl: HTMLElement | null = null;
-  private formulaCalcEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+export function renderFourSumIICanvas(container: HTMLElement, step: FourSumIIStep): void {
+  const { a, b, c, d, idxA, idxB, idxC, idxD, mapEntries, target } = step;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  // 1. 渲染 4 数组
+  const renderRow = (arr: number[], activeIdx: number) =>
+    arr
+      .map((num, idx) => {
+        const isActive = idx === activeIdx;
+        return `
+          <div style="width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; color: ${isActive ? '#1d4ed8' : '#334155'}; background: ${isActive ? '#eff6ff' : '#ffffff'}; border: 1px solid ${isActive ? '#2563eb' : '#cbd5e1'}; transition: all 0.15s; box-shadow: ${isActive ? '0 0 0 2px rgba(37, 99, 235, 0.25)' : '0 1px 2px rgba(0, 0, 0, 0.03)'}; transform: ${isActive ? 'scale(1.08)' : 'none'};">
+            <span>${num}</span>
+          </div>
+        `;
+      })
+      .join('');
 
-    this.rowAEl = this.root.querySelector('#fs2-row-a');
-    this.rowBEl = this.root.querySelector('#fs2-row-b');
-    this.rowCEl = this.root.querySelector('#fs2-row-c');
-    this.rowDEl = this.root.querySelector('#fs2-row-d');
-    this.mapWrapEl = this.root.querySelector('#fs2-map-wrap');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricTargetEl = this.root.querySelector('#metric-target');
-    this.metricIncEl = this.root.querySelector('#metric-inc');
-    this.metricCountEl = this.root.querySelector('#metric-count');
-    this.formulaCalcEl = this.root.querySelector('#formula-calc');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+  const arrayCol = (title: string, arr: number[], activeIdx: number) => `
+    <div style="padding: 2px; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+      <span style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">${title}</span>
+      <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;">${renderRow(arr, activeIdx)}</div>
+    </div>
+  `;
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.fs2-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.currentDemo = parseInt(btn.dataset.demo || '1', 10);
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: FOUR_SUM_II_PROBLEM_HTML,
-      analysisHtml: FOUR_SUM_II_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): FourSumIIStep[] {
-    if (this.currentDemo === 2) {
-      return buildFourSumIISteps([0, 0], [0, 0], [0, 0], [0, 0]);
-    } else if (this.currentDemo === 3) {
-      return buildFourSumIISteps([1, 1], [-1, 2], [0, 1], [0, -2]);
-    }
-    return buildFourSumIISteps([1, 2], [-2, -1], [-1, 2], [0, 2]);
-  }
-
-  protected renderStep(step: FourSumIIStep): void {
-    const { a, b, c, d, phase, idxA, idxB, idxC, idxD, sumAB, sumCD, target, increment, count, mapEntries, message } =
-      step;
-
-    // 1. 渲染 4 数组
-    const renderRow = (arr: number[], activeIdx: number) =>
-      arr
-        .map(
-          (num, idx) => `
-        <div class="fs2-val-cell ${idx === activeIdx ? 'is-active' : ''}">
-          <span>${num}</span>
-        </div>
-      `
-        )
-        .join('');
-
-    if (this.rowAEl) this.rowAEl.innerHTML = renderRow(a, idxA);
-    if (this.rowBEl) this.rowBEl.innerHTML = renderRow(b, idxB);
-    if (this.rowCEl) this.rowCEl.innerHTML = renderRow(c, idxC);
-    if (this.rowDEl) this.rowDEl.innerHTML = renderRow(d, idxD);
-
-    // 2. 渲染 Map
-    if (this.mapWrapEl) {
-      if (mapEntries.length === 0) {
-        this.mapWrapEl.innerHTML = '<span style="color: #94a3b8; font-size: 10.5px;">(Map 当前为空)</span>';
-      } else {
-        this.mapWrapEl.innerHTML = mapEntries
+  // 2. 渲染 Map
+  const mapHtml =
+    mapEntries.length === 0
+      ? '<span style="color: #94a3b8; font-size: 10.5px;">(Map 当前为空)</span>'
+      : mapEntries
           .map(([k, v]) => {
             const isTarget = target !== undefined && k === target;
             return `
-              <div class="fs2-map-chip ${isTarget ? 'is-target' : ''}">
+              <div style="padding: 3px 8px; border-radius: 6px; background: ${isTarget ? '#ecfdf5' : '#ffffff'}; border: 1px solid ${isTarget ? '#10b981' : '#cbd5e1'}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; transition: all 0.15s; box-shadow: ${isTarget ? '0 0 0 2px rgba(16, 185, 129, 0.2)' : '0 1px 2px rgba(0, 0, 0, 0.03)'};">
                 <span style="color: #3b82f6; font-weight: 700;">sum=${k}</span>
                 <span style="color: #94a3b8;">:</span>
                 <span style="color: #10b981; font-weight: 700;">freq=${v}</span>
@@ -284,74 +231,83 @@ export class FourSumIIVisualizer extends StepVisualizer<FourSumIIStep> {
             `;
           })
           .join('');
-      }
-    }
 
-    // 3. 更新状态监视器
-    if (this.metricPhaseEl) {
-      this.metricPhaseEl.textContent = phase.startsWith('group1') ? 'Group 1 (A+B)' : 'Group 2 (C+D)';
-    }
-    if (this.metricTargetEl) {
-      this.metricTargetEl.textContent = target !== undefined ? String(target) : '—';
-    }
-    if (this.metricIncEl) {
-      this.metricIncEl.textContent = `+${increment}`;
-      this.metricIncEl.style.color = increment > 0 ? '#10b981' : '#64748b';
-    }
-    if (this.metricCountEl) this.metricCountEl.textContent = String(count);
-
-    if (this.formulaCalcEl) {
-      if (sumAB !== undefined) {
-        this.formulaCalcEl.textContent = `nums1[${idxA}] + nums2[${idxB}] = ${a[idxA]} + ${b[idxB]} = ${sumAB}`;
-      } else if (sumCD !== undefined && target !== undefined) {
-        this.formulaCalcEl.textContent = `target = 0 - (${c[idxC]} + ${d[idxD]}) = ${target}`;
-      } else {
-        this.formulaCalcEl.textContent = 'target = 0 - (c + d)';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = increment > 0 ? '#f0fdf4' : '#eff6ff';
-      logEntry.style.color = increment > 0 ? '#15803d' : '#1d4ed8';
-      logEntry.style.border = '1px solid ' + (increment > 0 ? '#bbf7d0' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      badgePhase.textContent = phase.startsWith('group1') ? 'Group 1 (A+B)' : 'Group 2 (C+D)';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; justify-content: center; gap: 14px; height: 100%; width: 100%; padding: 12px; box-sizing: border-box;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;">
+        ${arrayCol('nums1 (a)', a, idxA)}
+        ${arrayCol('nums2 (b)', b, idxB)}
+        ${arrayCol('nums3 (c)', c, idxC)}
+        ${arrayCol('nums4 (d)', d, idxD)}
+      </div>
+      <div style="font-size: 11px; font-weight: 700; color: #64748b; align-self: flex-start;">
+        哈希表 Map (Key: a+b 和, Value: 出现次数)
+      </div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; width: 100%; min-height: 28px; align-items: center;">
+        ${mapHtml}
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'four-sum-ii',
   name: '四数相加II（分组哈希）',
-  viewId: 'algo-four-sum-ii-view',
   category: 'hash-table',
   description: '将四数组分为两组，用哈希表统计和为0的元组数',
   icon: '🧮',
   difficulty: 2,
   levelOrder: 4,
   learningGoal: '掌握分组降维 + 哈希表计数优化四重循环',
-  template,
-  Visualizer: FourSumIIVisualizer,
+  inputs: [
+    { id: 'nums1', label: 'nums1', type: 'text', defaultValue: '1, 2', placeholder: '逗号分隔', width: '70px' },
+    { id: 'nums2', label: 'nums2', type: 'text', defaultValue: '-2, -1', placeholder: '逗号分隔', width: '70px' },
+    { id: 'nums3', label: 'nums3', type: 'text', defaultValue: '-1, 2', placeholder: '逗号分隔', width: '70px' },
+    { id: 'nums4', label: 'nums4', type: 'text', defaultValue: '0, 2', placeholder: '逗号分隔', width: '70px' },
+  ],
+  presets: [
+    {
+      label: '示例 1: (2 组有效解)',
+      values: { nums1: '1, 2', nums2: '-2, -1', nums3: '-1, 2', nums4: '0, 2' },
+    },
+    {
+      label: '全零 4 数组: (16 组解)',
+      values: { nums1: '0, 0', nums2: '0, 0', nums3: '0, 0', nums4: '0, 0' },
+    },
+    {
+      label: '单解案例: (1 组解)',
+      values: { nums1: '1, 1', nums2: '-1, 2', nums3: '0, 1', nums4: '0, -2' },
+    },
+  ],
+  metrics: [
+    { id: 'phase', label: '当前阶段', color: '#2563eb' },
+    { id: 'target', label: '待查 Target', color: '#9333ea' },
+    { id: 'inc', label: '单次匹配增量', color: '#f59e0b' },
+    { id: 'count', label: '累计有效元组', color: '#10b981' },
+  ],
+  legend: [
+    { label: 'Group 1: A+B 频次', color: '#2563eb' },
+    { label: 'Group 2: -(C+D) 匹配', color: '#10b981' },
+  ],
+  codeLanguages: FOUR_SUM_II_CODE_LANGUAGES,
+  problemHtml: FOUR_SUM_II_PROBLEM_HTML,
+  analysisHtml: FOUR_SUM_II_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const parse = (v: any, fallback: number[]) => {
+      const arr = String(v ?? '')
+        .split(/[,，\s]+/)
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => Number.isFinite(n));
+      return arr.length > 0 ? arr : fallback;
+    };
+    return withMetrics(
+      buildFourSumIISteps(
+        parse(inputs.nums1, [1, 2]),
+        parse(inputs.nums2, [-2, -1]),
+        parse(inputs.nums3, [-1, 2]),
+        parse(inputs.nums4, [0, 2])
+      )
+    );
+  },
+  renderCanvas: (container, step) => renderFourSumIICanvas(container, step as FourSumIIStep),
 });

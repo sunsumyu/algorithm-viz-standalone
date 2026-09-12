@@ -27,6 +27,58 @@ export interface DpCellDep {
   color?: string;
 }
 
+/**
+ * 快速计算两字符串的全局最优 LCS 匹配下标集合与子序列
+ */
+export function computeLcsMatchedIndices(s1: string, s2: string): {
+  matched1: number[];
+  matched2: number[];
+  lcsStr: string;
+} {
+  const n = s1.length;
+  const m = s2.length;
+  if (n === 0 || m === 0) {
+    return { matched1: [], matched2: [], lcsStr: '' };
+  }
+
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (s1[i - 1] === s2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  const matched1: number[] = [];
+  const matched2: number[] = [];
+  const chars: string[] = [];
+
+  let i = n;
+  let j = m;
+  while (i > 0 && j > 0) {
+    if (s1[i - 1] === s2[j - 1]) {
+      matched1.push(i - 1);
+      matched2.push(j - 1);
+      chars.push(s1[i - 1]);
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  matched1.reverse();
+  matched2.reverse();
+  chars.reverse();
+
+  return { matched1, matched2, lcsStr: chars.join('') };
+}
+
 export function makeLcsStage1Vars(params: {
   i: number;
   j: number;
@@ -35,8 +87,10 @@ export function makeLcsStage1Vars(params: {
   ans?: number;
   isBase?: boolean;
   isMatch?: boolean;
+  p1?: number;
+  p2?: number;
 }): StepVar[] {
-  const { i, j, s1, s2, ans, isBase, isMatch } = params;
+  const { i, j, s1, s2, ans, isBase, isMatch, p1, p2 } = params;
   const list: StepVar[] = [
     { name: 'i', value: String(i), type: 'number' },
     { name: 'j', value: String(j), type: 'number' },
@@ -52,6 +106,12 @@ export function makeLcsStage1Vars(params: {
   }
   if (isBase !== undefined) {
     list.push({ name: 'isBase', value: String(isBase), type: 'boolean' });
+  }
+  if (p1 !== undefined) {
+    list.push({ name: 'p1', value: String(p1), type: 'number' });
+  }
+  if (p2 !== undefined) {
+    list.push({ name: 'p2', value: String(p2), type: 'number' });
   }
   if (ans !== undefined) {
     list.push({ name: 'ans', value: String(ans), type: 'number' });
@@ -695,186 +755,12 @@ export function renderMemoGridCard(
     isReverse: false,
     isGridProblem: false,
     modelId: 'longest-common-subsequence',
+    rowLabels,
+    colLabels,
   };
 
   renderLcsDualSandboxContainer(container, stepData, renderOpts, is3DExplicit, (wrapper) => {
-    const isFinish = (activeI === 0 && activeJ === 0) || (activeI === rows - 1 && activeJ === cols - 1);
-    const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(rows, cols))));
-
-    // 1. 顶部列标尺 (s2 字符列轴)
-    const headerColsHtml = Array.from({ length: cols }, (_, c) => {
-      const isCurCol = c === activeJ;
-      const txt = colLabels && colLabels[c] !== undefined ? colLabels[c] : `${c}`;
-      return `
-        <div style="
-          width: ${cellPx}px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 1px 0;
-          font-family: 'JetBrains Mono', monospace;
-          font-weight: ${isCurCol ? '800' : '600'};
-          color: ${isCurCol ? '#1d4ed8' : '#64748b'};
-          background: ${isCurCol ? '#dbeafe' : 'transparent'};
-          border-radius: 6px;
-          transition: all 0.15s ease;
-        ">
-          <span style="font-size: 11px; font-weight: 800;">${txt}</span>
-          <span style="font-size: 8px; opacity: 0.65;">col${c}</span>
-        </div>
-      `;
-    }).join('');
-
-    // 2. 网格行与立体浮岛单元格
-    const rowsHtml = grid.map((row, r) => {
-      const isCurRow = r === activeI;
-      const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
-
-      const cellsHtml = row.map((val, c) => {
-        const isActive = r === activeI && c === activeJ;
-        const hasValue = val !== -1 && val !== undefined && val !== null;
-
-        let style = `
-          width: ${cellPx}px;
-          height: ${cellPx}px;
-          border-radius: 8px;
-          box-sizing: border-box;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.15s ease;
-        `;
-
-        if (isActive) {
-          style += `
-            background: #dbeafe;
-            border: 2px solid #2563eb;
-            color: #1e40af;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-            transform: scale(1.06);
-            z-index: 20;
-          `;
-        } else if (hasValue) {
-          style += `
-            background: #ecfdf5;
-            border: 1.5px solid #a7f3d0;
-            color: #047857;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-          `;
-        } else {
-          style += `
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            color: #94a3b8;
-          `;
-        }
-
-        const adventurerHtml = isActive
-          ? `
-            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
-              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
-            </div>
-          `
-          : '';
-
-        return `
-          <div class="viz-cell ${isActive ? 'is-cur' : ''}" style="${style}">
-            ${adventurerHtml}
-            <span style="
-              position: absolute;
-              top: 2px;
-              left: 3px;
-              font-size: 8px;
-              font-weight: 700;
-              font-family: 'JetBrains Mono', monospace;
-              color: ${isActive ? '#2563eb' : '#94a3b8'};
-              line-height: 1;
-            ">${r},${c}</span>
-            <span style="
-              font-size: ${cellPx >= 44 ? '13px' : '11px'};
-              font-weight: 800;
-              font-family: 'JetBrains Mono', monospace;
-              margin-top: 5px;
-              z-index: 10;
-            ">${hasValue ? val : '·'}</span>
-          </div>
-        `;
-      }).join('');
-
-      return `
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <!-- 左侧行标尺 (s1 字符行轴) -->
-          <div style="
-            width: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2px 5px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            font-weight: ${isCurRow ? '800' : '600'};
-            color: ${isCurRow ? '#1d4ed8' : '#64748b'};
-            background: ${isCurRow ? '#dbeafe' : 'transparent'};
-            border-radius: 6px;
-            flex-shrink: 0;
-          ">
-            <span style="font-size: 11px; font-weight: 800;">${rLabel}</span>
-            <span style="font-size: 8px; opacity: 0.65;">r${r}</span>
-          </div>
-          <div style="display: flex; gap: 4px;">
-            ${cellsHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    wrapper.innerHTML = `
-      <div style="
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 4px;
-        box-sizing: border-box;
-        overflow: visible;
-        user-select: none;
-      ">
-        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <!-- 顶部列标尺对齐行 -->
-          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-            <div style="width: 44px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">s1 \\ s2</div>
-            <div style="display: flex; gap: 4px;">
-              ${headerColsHtml}
-            </div>
-          </div>
-
-          <!-- 网格主体行 -->
-          ${rowsHtml}
-        </div>
-
-        <!-- 底部微胶囊状态提示 -->
-        <div style="
-          margin-top: 8px;
-          padding: 3px 12px;
-          border-radius: 999px;
-          background: #eff6ff;
-          border: 1px solid #bfdbfe;
-          color: #1e40af;
-          font-size: 10px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        ">
-          <span>🧭 探险家正位于 <b>[${activeI}, ${activeJ}]</b> 处考察备忘录状态</span>
-        </div>
-      </div>
-    `;
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
   });
 }
 
@@ -1101,219 +987,18 @@ export function renderDp2DCard2(
     isReverse: false,
     isGridProblem: false,
     modelId: 'longest-common-subsequence',
+    rowLabels,
+    colLabels,
+    deps: deps?.map((d) => {
+      let type: 'top' | 'left' | 'diag' = 'top';
+      if (d.r === activeI && (d.c === activeJ - 1 || d.c === activeJ + 1)) type = 'left';
+      else if (Math.abs(d.r - activeI) === 1 && Math.abs(d.c - activeJ) === 1) type = 'diag';
+      return { r: d.r, c: d.c, type };
+    }),
   };
 
   renderLcsDualSandboxContainer(container, stepData, renderOpts, is3DExplicit, (wrapper) => {
-    const isFinish = (activeI === rows - 1 && activeJ === cols - 1) || (activeI === 0 && activeJ === 0);
-    const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(rows, cols))));
-
-    // 1. 顶部列标尺 (s2 字符列轴)
-    const headerColsHtml = Array.from({ length: cols }, (_, c) => {
-      const isCurCol = c === activeJ;
-      const txt = colLabels && colLabels[c] !== undefined ? colLabels[c] : `${c}`;
-      return `
-        <div style="
-          width: ${cellPx}px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 1px 0;
-          font-family: 'JetBrains Mono', monospace;
-          font-weight: ${isCurCol ? '800' : '600'};
-          color: ${isCurCol ? '#065f46' : '#64748b'};
-          background: ${isCurCol ? '#d1fae5' : 'transparent'};
-          border-radius: 6px;
-          transition: all 0.15s ease;
-        ">
-          <span style="font-size: 11px; font-weight: 800;">${txt}</span>
-          <span style="font-size: 8px; opacity: 0.65;">col${c}</span>
-        </div>
-      `;
-    }).join('');
-
-    // 2. 网格行与立体浮岛单元格
-    const rowsHtml = dpTable.map((row, r) => {
-      const isCurRow = r === activeI;
-      const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
-
-      const cellsHtml = row.map((val, c) => {
-        const isActive = r === activeI && c === activeJ;
-        const isDep = deps && deps.some((d) => d.r === r && d.c === c);
-        const isCalculated = (r < activeI) || (r === activeI && c <= activeJ);
-
-        // 判断前驱依赖方向标签
-        let depBadge = '';
-        if (isDep) {
-          if (r === activeI - 1 && c === activeJ - 1) {
-            depBadge = '↖️+1';
-          } else if (r === activeI + 1 && c === activeJ + 1) {
-            depBadge = '↘️+1';
-          } else if (r === activeI - 1 && c === activeJ) {
-            depBadge = '⬆️';
-          } else if (r === activeI + 1 && c === activeJ) {
-            depBadge = '⬇️';
-          } else if (r === activeI && c === activeJ - 1) {
-            depBadge = '⬅️';
-          } else if (r === activeI && c === activeJ + 1) {
-            depBadge = '➡️';
-          } else {
-            depBadge = '🔗';
-          }
-        }
-
-        let style = `
-          width: ${cellPx}px;
-          height: ${cellPx}px;
-          border-radius: 8px;
-          box-sizing: border-box;
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.15s ease;
-        `;
-
-        if (isActive) {
-          style += `
-            background: #d1fae5;
-            border: 2px solid #10b981;
-            color: #065f46;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25), 0 4px 6px -1px rgba(16, 185, 129, 0.2);
-            transform: scale(1.06);
-            z-index: 20;
-          `;
-        } else if (isDep) {
-          style += `
-            background: #ede9fe;
-            border: 1.5px dashed #8b5cf6;
-            color: #6d28d9;
-            box-shadow: 0 1px 3px rgba(139, 92, 246, 0.15);
-            z-index: 10;
-          `;
-        } else if (isCalculated) {
-          style += `
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            color: #1e293b;
-          `;
-        } else {
-          style += `
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            color: #94a3b8;
-          `;
-        }
-
-        const adventurerHtml = isActive
-          ? `
-            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
-              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
-            </div>
-          `
-          : '';
-
-        const depBadgeHtml = depBadge
-          ? `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px; font-weight: 800; color: #7c3aed; line-height: 1;">${depBadge}</span>`
-          : '';
-
-        return `
-          <div class="viz-cell ${isActive ? 'is-cur' : isDep ? 'is-top' : ''}" style="${style}">
-            ${adventurerHtml}
-            ${depBadgeHtml}
-            <span style="
-              position: absolute;
-              top: 2px;
-              left: 3px;
-              font-size: 8px;
-              font-weight: 700;
-              font-family: 'JetBrains Mono', monospace;
-              color: ${isActive ? '#059669' : isDep ? '#7c3aed' : '#94a3b8'};
-              line-height: 1;
-            ">${r},${c}</span>
-            <span style="
-              font-size: ${cellPx >= 44 ? '13px' : '11px'};
-              font-weight: 800;
-              font-family: 'JetBrains Mono', monospace;
-              margin-top: 5px;
-              z-index: 10;
-            ">${val !== undefined && val !== null ? val : '·'}</span>
-          </div>
-        `;
-      }).join('');
-
-      return `
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <!-- 左侧行标尺 (s1 字符行轴) -->
-          <div style="
-            width: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2px 5px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            font-weight: ${isCurRow ? '800' : '600'};
-            color: ${isCurRow ? '#065f46' : '#64748b'};
-            background: ${isCurRow ? '#d1fae5' : 'transparent'};
-            border-radius: 6px;
-            flex-shrink: 0;
-          ">
-            <span style="font-size: 11px; font-weight: 800;">${rLabel}</span>
-            <span style="font-size: 8px; opacity: 0.65;">r${r}</span>
-          </div>
-          <div style="display: flex; gap: 4px;">
-            ${cellsHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    wrapper.innerHTML = `
-      <div style="
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 4px;
-        box-sizing: border-box;
-        overflow: visible;
-        user-select: none;
-      ">
-        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <!-- 顶部列标尺对齐行 -->
-          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-            <div style="width: 44px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">s1 \\ s2</div>
-            <div style="display: flex; gap: 4px;">
-              ${headerColsHtml}
-            </div>
-          </div>
-
-          <!-- 网格主体行 -->
-          ${rowsHtml}
-        </div>
-
-        <!-- 底部微胶囊状态提示 -->
-        <div style="
-          margin-top: 8px;
-          padding: 3px 12px;
-          border-radius: 999px;
-          background: #ecfdf5;
-          border: 1px solid #a7f3d0;
-          color: #065f46;
-          font-size: 10px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 5px;
-        ">
-          <span>✨ 探险家正位于 <b>[${activeI}, ${activeJ}]</b> 处填表，综合前驱状态推导最优解</span>
-        </div>
-      </div>
-    `;
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
   });
 }
 
@@ -1435,10 +1120,15 @@ export function renderStage1GridCard(
     })
   );
 
+  const activeStackList: string[] = Array.isArray(step?.activeStack)
+    ? step.activeStack
+    : (step?.activeTrail || []);
+
   const stepData: UniversalStep = {
     i: activeI >= 0 ? activeI : 0,
     j: activeJ >= 0 ? activeJ : 0,
     grid: dummyGrid,
+    activeStack: activeStackList,
     type: '递归探索',
     msg: `f(${activeI}, ${activeJ})`,
   };
@@ -1449,223 +1139,13 @@ export function renderStage1GridCard(
     isReverse: false,
     isGridProblem: false,
     modelId: 'longest-common-subsequence',
+    rowLabels,
+    colLabels,
+    isMatch: (r, c) => Boolean(step?.visitedMap?.[`${r},${c}`]?.isMatch),
   };
 
   renderLcsDualSandboxContainer(container, stepData, renderOpts, is3DExplicit, (wrapper) => {
-    const isFinish = (activeI === rows - 1 && activeJ === cols - 1) || (activeI === 0 && activeJ === 0);
-    const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(rows, cols))));
-
-    const activeTrailSet = new Set<string>(step?.activeTrail || []);
-    const visitedMap = step?.visitedMap || {};
-
-    // 1. 顶部列标尺 (s2 字符列轴)
-    const headerColsHtml = Array.from({ length: cols }, (_, c) => {
-      const isCurCol = c === activeJ;
-      const txt = colLabels && colLabels[c] !== undefined ? colLabels[c] : `${c}`;
-      return `
-        <div style="
-          width: ${cellPx}px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 1px 0;
-          font-family: 'JetBrains Mono', monospace;
-          font-weight: ${isCurCol ? '800' : '600'};
-          color: ${isCurCol ? '#2563eb' : '#64748b'};
-          background: ${isCurCol ? '#dbeafe' : 'transparent'};
-          border-radius: 6px;
-          transition: all 0.15s ease;
-        ">
-          <span style="font-size: 11px; font-weight: 800;">${txt}</span>
-          <span style="font-size: 8px; opacity: 0.65;">col${c}</span>
-        </div>
-      `;
-    }).join('');
-
-    // 2. 网格主体行
-    const rowsHtml = Array.from({ length: rows }, (_, r) => {
-      const isCurRow = r === activeI;
-      const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
-
-      const cellsHtml = Array.from({ length: cols }, (_, c) => {
-        const key = `${r},${c}`;
-        const isActive = r === activeI && c === activeJ;
-        const isTrail = !isActive && activeTrailSet.has(key);
-        const visitedInfo = visitedMap[key];
-        const isVisited = !isActive && !isTrail && Boolean(visitedInfo);
-        const isMatch = visitedInfo?.isMatch;
-
-        let style = `
-          width: ${cellPx}px;
-          height: ${cellPx}px;
-          border-radius: 8px;
-          box-sizing: border-box;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'JetBrains Mono', monospace;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        `;
-
-        let cellContent = '';
-        let badgeHtml = '';
-
-        if (isActive) {
-          style += `
-            background: #eff6ff;
-            border: 2px solid #2563eb;
-            color: #1d4ed8;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(37, 99, 235, 0.25);
-            transform: scale(1.06);
-            z-index: 20;
-          `;
-          cellContent = `<span style="font-size: ${cellPx >= 44 ? '13px' : '11px'}; font-weight: 800; margin-top: 5px; z-index: 10;">👣</span>`;
-        } else if (isTrail) {
-          style += `
-            background: #f0f9ff;
-            border: 1.5px solid #60a5fa;
-            color: #0284c7;
-            box-shadow: 0 1px 3px rgba(56, 189, 248, 0.18);
-            z-index: 10;
-          `;
-          cellContent = `<span style="font-size: 11px; font-weight: 700; opacity: 0.85;">👣</span>`;
-          badgeHtml = `<span style="position: absolute; bottom: 2px; right: 2px; font-size: 7.5px; color: #0284c7; font-weight: 700;">栈</span>`;
-        } else if (isVisited) {
-          if (isMatch) {
-            style += `
-              background: #f0fdf4;
-              border: 1.5px solid #4ade80;
-              color: #15803d;
-              box-shadow: 0 1px 3px rgba(74, 222, 128, 0.15);
-            `;
-            badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">✨</span>`;
-          } else {
-            style += `
-              background: #f8fafc;
-              border: 1px solid #cbd5e1;
-              color: #334155;
-            `;
-          }
-          cellContent = `<span style="font-size: ${cellPx >= 44 ? '13px' : '11px'}; font-weight: 800;">${visitedInfo.val ?? 0}</span>`;
-        } else {
-          style += `
-            background: #ffffff;
-            border: 1px dashed #cbd5e1;
-            color: #94a3b8;
-          `;
-          cellContent = `<span style="font-size: 11px; font-weight: 600;">-</span>`;
-        }
-
-        const adventurerHtml = isActive
-          ? `
-            <div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
-              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
-            </div>
-          `
-          : '';
-
-        const coordColor = isActive
-          ? '#2563eb'
-          : isTrail
-          ? '#0284c7'
-          : isVisited
-          ? (isMatch ? '#16a34a' : '#64748b')
-          : '#94a3b8';
-
-        return `
-          <div class="viz-cell ${isActive ? 'is-cur' : isTrail ? 'is-trail' : isVisited ? 'is-visited' : ''}" style="${style}">
-            ${adventurerHtml}
-            ${badgeHtml}
-            <span style="
-              position: absolute;
-              top: 2px;
-              left: 3px;
-              font-size: 8px;
-              font-weight: 700;
-              font-family: 'JetBrains Mono', monospace;
-              color: ${coordColor};
-              line-height: 1;
-            ">${r},${c}</span>
-            ${cellContent}
-          </div>
-        `;
-      }).join('');
-
-      return `
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <div style="
-            width: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 2px 5px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            font-weight: ${isCurRow ? '800' : '600'};
-            color: ${isCurRow ? '#2563eb' : '#64748b'};
-            background: ${isCurRow ? '#dbeafe' : 'transparent'};
-            border-radius: 6px;
-            flex-shrink: 0;
-          ">
-            <span style="font-size: 11px; font-weight: 800;">${rLabel}</span>
-            <span style="font-size: 8px; opacity: 0.65;">r${r}</span>
-          </div>
-          <div style="display: flex; gap: 4px;">
-            ${cellsHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const visitedCount = Object.keys(visitedMap).length;
-    const trailDepth = activeTrailSet.size || (activeI >= 0 ? 1 : 0);
-
-    wrapper.innerHTML = `
-      <div style="
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 4px;
-        box-sizing: border-box;
-        overflow: visible;
-        user-select: none;
-      ">
-        <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px; background: rgba(248, 250, 252, 0.75); border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-            <div style="width: 44px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">s1 \\ s2</div>
-            <div style="display: flex; gap: 4px;">
-              ${headerColsHtml}
-            </div>
-          </div>
-          ${rowsHtml}
-        </div>
-
-        <div style="
-          margin-top: 8px;
-          padding: 3px 12px;
-          border-radius: 999px;
-          background: #eff6ff;
-          border: 1px solid #bfdbfe;
-          color: #1e40af;
-          font-size: 10px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        ">
-          <span>🧭 考察坐标: <b>[${activeI}, ${activeJ}]</b></span>
-          <span style="opacity: 0.5;">|</span>
-          <span>📌 调用栈深: <b>${trailDepth}</b></span>
-          <span style="opacity: 0.5;">|</span>
-          <span>🎯 已解状态: <b>${visitedCount}</b></span>
-        </div>
-      </div>
-    `;
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
   });
 }
 

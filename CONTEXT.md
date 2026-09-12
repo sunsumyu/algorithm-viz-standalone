@@ -99,9 +99,20 @@
 - **定义**：管理单一活动算法舞台（Single Active Stage Container）与主视口切换的完整生命周期深模块。
 - **职责**：在切换算法时彻底注销上一个算法的定时器、事件监听器并清空 DOM 树，干净挂载新算法实例；对外暴露 `showAlgorithm(id)` 与 `showSelector()` 统合算法舞台展开与主大纲视口折叠；通过发布 `algo:mounted` 与 `algo:selector-shown` 事件解耦全局导航等观察者，从根本上杜绝循环导入、内存泄漏与 ID 冲突。
 
-### CatalogPresenter (算法目录学与卡片沙盘呈现深模块)
-- **定义**：统合算法卡片网格、侧边分类栏与快捷目录抽屉的统一呈现深模块。
-- **职责**：接收 `AlgoSearchCatalog` 领域查询结果，对外暴露 `renderCategoryNav`、`renderCardGrid`、`renderDrawerContent` 以及 `resolveAlgorithmIcon` 极简接口；内部封装三级图标解析回退机制与高亮标签切分，彻底从插件与导航控制器中消除 800+ 行重复的 DOM 拼装、硬编码字典与分散隐式状态。
+### AlgorithmCatalogIndexer (算法目录索引收获器)
+- **定义**：从真实注册表收获全量目录元数据并落盘为生成物、以 vitest 门禁保障新鲜度与完整性的深模块。
+- **职责**：在测试/脚本环境下 eager 加载全部 batch 索引后，从 `getAllManifests()` 投影出 `AlgorithmMetadata[]`（9 字段），渲染为 `algorithm-catalog.generated.ts`（提交入库的生成物源码）；提供调和报告能力（死条目 / 漏收 / 重复 id / 字段分歧），但运行时不参与浏览器链路。
+- **约束**：仅供 `meta:sync` 同步脚本与 `algorithm-catalog-indexer.test.ts` 门禁使用；生产环境的 registry 播种直接消费生成物。
+
+### CategoryConventionLoader (类目约定加载器)
+- **定义**：以目录路径约定派生类目→chunk 映射、取代手写 batch 索引的加载深模块。
+- **状态**：设计完成，尚未实施（候选 C2，独立改动集）。
+
+### StepBase (单步契约值对象基类)
+- **定义**：算法执行轨迹中单个时间点状态切片的通用基类，位于 `step-types.ts`。
+- **包含**：`highlightLines`（语义锚点行号）、`dependencies`（前驱索引）、`vars`（运行变量快照）、`formula`（计算公式文本）。
+- **职责**：作为所有算法 step 接口的值对象基类，确保 CodeSync、指标卡、日志流对全类目免适配；各算法通过 `extends` 声明领域特化字段，而非各自发明 13 字段的 ad-hoc 接口。
+- **约束**：当前仅 DP 家族（`RecursionStepBase`、`MemoStepBase`、`Dp2DStepBase`）在用；其余类目步进接口仍为垂直切片中的独立定义。
 
 ### ModelSynthesisEngine (算法模型合成与语义编译引擎)
 - **定义**：负责根据声明式 `IAlgorithmSpec` 规范合成统一 `IYamlAlgorithmModel` 结构的 DDD 领域引擎。
@@ -137,6 +148,11 @@
 ### AlgorithmExecutionTraceEngine (算法无头执行与轨迹录制编译引擎)
 - **定义**：负责无头执行算法逻辑、编译原子单步轨迹流（`AlgorithmTraceStep[]`）与多语言语义行号自动对齐的 DDD 核心引擎。
 - **职责**：100% 零 DOM / 零 UI 依赖。对外暴露极简流式录制接口 `AlgorithmExecutionTraceEngine.trace((recorder) => { ... }, options)`；内部封装深克隆快照、状态差分、图论/矩阵领域原语标准化，并通过 `CodeStepIndexer` 自动在编译期将 `@step:anchor` 映射到 Java/C++/Python/JS 4 语种真实物理行号，彻底杜绝算法逻辑层手写各语种行号，赋能 100% 纯内存无头单元测试。
+
+### DomainAdapterCatalog (领域画布适配器目录)
+- **定义**：集中收编全库 10 个领域专属画板适配器的元信息注册表（`domain-adapter-catalog.ts`）。
+- **职责**：提供 `findAdapterById(id)` 和 `findAdapterByDomain(keyword)` 查询接口，让开发者快速发现可用适配器（树拓扑、数组轨道、DP 网格、递归树、3D 图论等）。
+- **设计决策**：适配器保持为独立静态工具类，不强制统一接口——因为二叉树 SVG 拓扑、数组双指针轨道、DP 网格体素等视觉形态差异巨大，统一接口会抹平本质差异。
 
 ---
 

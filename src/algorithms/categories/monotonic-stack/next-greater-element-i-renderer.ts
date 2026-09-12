@@ -1,13 +1,10 @@
 /**
- * 下一个更大元素 I 可视化器（单调栈）— 4-Card 标准现代架构
+ * 下一个更大元素 I 可视化器（单调栈）— 声明式 4-Card 标准架构
  * LeetCode 496：母集 nums2 单调栈建表 map(num -> nextGreater)，子集 nums1 O(1) 查表输出答案
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
   HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
@@ -15,7 +12,6 @@ import {
   NEXT_GREATER_ELEMENT_I_ANALYSIS_HTML,
   NEXT_GREATER_ELEMENT_I_CODE_LANGUAGES,
 } from './next-greater-element-i-problem-content';
-import template from './next-greater-element-i.html?raw';
 
 export interface NGE1Step {
   nums1: number[];
@@ -28,6 +24,7 @@ export interface NGE1Step {
   action: 'init' | 'scan_nums2' | 'pop_map' | 'push_nums2' | 'query_nums1' | 'done';
   message: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]): NGE1Step[] {
@@ -170,286 +167,186 @@ export function buildNextGreaterElementISteps(nums1: number[], nums2: number[]):
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class NextGreaterElementIVisualizer extends StepVisualizer<NGE1Step> {
-  protected codeLanguages = NEXT_GREATER_ELEMENT_I_CODE_LANGUAGES;
-  protected codeLines = NEXT_GREATER_ELEMENT_I_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '下一个更大元素 I 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: NGE1Step[]): NGE1Step[] {
+  return steps.map((s) => {
+    const isScanNums2 = s.action === 'scan_nums2' || s.action === 'pop_map' || s.action === 'push_nums2';
+    const cur2 = s.currentIndex2 >= 0 && s.currentIndex2 < s.nums2.length ? s.nums2[s.currentIndex2] : null;
+    const cur1 = s.queryIndex1 >= 0 && s.queryIndex1 < s.nums1.length ? s.nums1[s.queryIndex1] : null;
 
-  private sandboxContainer: HTMLElement | null = null;
-  private elemContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    let action = '🔍 准备就绪';
+    if (s.action === 'pop_map') action = '🔥 出栈确立哈希映射';
+    else if (s.action === 'push_nums2') action = '📥 压栈 (维护单调递减)';
+    else if (s.action === 'query_nums1') action = '📋 查表填入答案';
+    else if (s.action === 'done') action = '🎉 完成';
+    else if (s.action === 'init') action = '初始化';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#nge1-sandbox-container');
-    this.elemContainer = this.root.querySelector('#nge1-elem-container');
-    this.decisionMonitorContainer = this.root.querySelector('#nge1-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#nge1-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.nge1-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const n1El = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
-        const n2El = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
-        if (n1El && btn.dataset.nums1) n1El.value = btn.dataset.nums1;
-        if (n2El && btn.dataset.nums2) n2El.value = btn.dataset.nums2;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: NEXT_GREATER_ELEMENT_I_PROBLEM_HTML,
-      analysisHtml: NEXT_GREATER_ELEMENT_I_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): NGE1Step[] {
-    const n1El = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
-    const n2El = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
-
-    const nums1 = (n1El?.value || '4,1,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const nums2 = (n2El?.value || '1,3,4,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    return buildNextGreaterElementISteps(nums1.length ? nums1 : [4, 1, 2], nums2.length ? nums2 : [1, 3, 4, 2]);
-  }
-
-  protected renderStep(step: NGE1Step): void {
-    const nums1 = step.nums1;
-    const nums2 = step.nums2;
-    const stack = step.stack;
-    const map = step.nextGreaterMap;
-    const answers = step.answers;
-
-    // 1. 渲染双数组与单调栈沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      const curIdx2 = step.currentIndex2;
-      const curIdx1 = step.queryIndex1;
-
-      // nums2 流
-      const nums2Html = nums2
-        .map((num, idx) => {
-          const isCurrent = idx === curIdx2;
-          const inStack = stack.includes(num);
-          const mappedVal = map[num];
-
-          let bg = '#ffffff';
-          let border = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (isCurrent) {
-            bg = '#eff6ff';
-            border = '#2563eb';
-            textColor = '#2563eb';
-          } else if (inStack) {
-            bg = '#fffbeb';
-            border = '#fde68a';
-            textColor = '#d97706';
-          }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-size: 8.5px; color: ${isCurrent ? '#2563eb' : '#94a3b8'}; font-weight: 700;">
-                [${idx}]
-              </span>
-              <div style="width: 44px; height: 44px; border-radius: 10px; background: ${bg}; border: 2px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-                <span>${num}</span>
-                <span style="font-size: 8.5px; color: ${mappedVal !== undefined ? (mappedVal === -1 ? '#ef4444' : '#10b981') : '#94a3b8'}; font-weight: 700;">
-                  ${mappedVal !== undefined ? `&rarr;${mappedVal}` : ''}
-                </span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      // nums1 查询流
-      const nums1Html = nums1
-        .map((num, idx) => {
-          const isQuerying = idx === curIdx1;
-          const ans = answers[idx];
-
-          let bg = '#ffffff';
-          let border = '#e2e8f0';
-
-          if (isQuerying) {
-            bg = '#ecfdf5';
-            border = '#10b981';
-          }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <div style="padding: 3px 8px; border-radius: 8px; background: ${bg}; border: 1.5px solid ${border}; font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #0f172a; display: flex; align-items: center; gap: 4px;">
-                <span>${num}</span>
-                <span style="color: ${ans !== undefined ? (ans === -1 ? '#ef4444' : '#10b981') : '#94a3b8'}; font-weight: 800;">
-                  ${ans !== undefined ? `&rarr; ${ans}` : ''}
-                </span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- nums2 母集单调栈流 -->
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
-            <span>1️⃣ 母集 nums2 (单调栈建立映射):</span>
-            <span style="color: #d97706;">栈内: [${stack.join(', ')}]</span>
-          </div>
-          <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;">
-            ${nums2Html}
-          </div>
-
-          <!-- nums1 子集查询流 -->
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #059669; margin-top: 4px; border-top: 1px dashed #e2e8f0; padding-top: 6px;">
-            <span>2️⃣ 子集 nums1 (查表生成答案):</span>
-            <span>已查: ${answers.length} / ${nums1.length}</span>
-          </div>
-          <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;">
-            ${nums1Html}
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. 渲染当前考察元素 (Card 2 Left)
-    if (this.elemContainer) {
-      const isScanNums2 = step.action === 'scan_nums2' || step.action === 'pop_map' || step.action === 'push_nums2';
-      const cur2 = step.currentIndex2 >= 0 && step.currentIndex2 < nums2.length ? nums2[step.currentIndex2] : null;
-      const cur1 = step.queryIndex1 >= 0 && step.queryIndex1 < nums1.length ? nums1[step.queryIndex1] : null;
-
-      this.elemContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前处理元素:</span>
-            <span style="font-family: monospace; font-weight:800; color: #2563eb; font-size: 12.5px;">
-              ${isScanNums2 && cur2 !== null ? `nums2[${step.currentIndex2}] = ${cur2}` : cur1 !== null ? `nums1[${step.queryIndex1}] = ${cur1}` : '-'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>单调栈顶元素:</span>
-            <span style="font-family: monospace; font-weight:700; color: #d97706;">
-              ${stack.length > 0 ? stack[stack.length - 1] : '（栈空）'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染单调栈建表与查表监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isPopMap = step.action === 'pop_map';
-      const isPush = step.action === 'push_nums2';
-      const isQuery = step.action === 'query_nums1';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>操作状态:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isPopMap ? '#ecfdf5' : isPush ? '#eff6ff' : isQuery ? '#fdf4ff' : '#f8fafc'}; color: ${isPopMap ? '#059669' : isPush ? '#2563eb' : isQuery ? '#c026d3' : '#64748b'}; border: 1px solid ${isPopMap ? '#a7f3d0' : isPush ? '#bfdbfe' : isQuery ? '#f5d0fe' : '#e2e8f0'};">
-              ${isPopMap ? '🔥 出栈确立哈希映射' : isPush ? '📥 压栈 (维护单调递减)' : isQuery ? '📋 查表填入答案' : '🔍 准备就绪'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#2563eb; font-family:monospace;">nums2 单调递减栈建表，nums1 遍历 O(1) 查表</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最终答案看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>答案数组: <strong style="color: #2563eb; font-family: monospace; font-size: 13.5px;">[${answers.join(', ')}]</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">已建立 ${Object.keys(map).length} 个映射</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeMap = this.root?.querySelector('#badge-map-size');
-    if (badgeMap) {
-      badgeMap.textContent = `已建映射: ${Object.keys(map).length} 个`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '步骤';
-
-        if (st.action === 'pop_map') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '映射';
-        } else if (st.action === 'push_nums2') {
-          badgeColor = '#2563eb';
-          badgeBg = '#eff6ff';
-          badgeText = '入栈';
-        } else if (st.action === 'query_nums1') {
-          badgeColor = '#c026d3';
-          badgeBg = '#fdf4ff';
-          badgeText = '查表';
-        } else if (st.action === 'done') {
-          badgeColor = '#10b981';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
-          </div>
-        `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        'cur-elem': isScanNums2 && cur2 !== null ? `nums2[${s.currentIndex2}] = ${cur2}` : cur1 !== null ? `nums1[${s.queryIndex1}] = ${cur1}` : '—',
+        'stack-top': s.stack.length > 0 ? `${s.stack[s.stack.length - 1]}` : '（栈空）',
+        'map-size': `${Object.keys(s.nextGreaterMap).length} 个`,
+        answers: `[${s.answers.join(', ')}]`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderNextGreaterElementICanvas(container: HTMLElement, step: NGE1Step): void {
+  const nums1 = step.nums1;
+  const nums2 = step.nums2;
+  const stack = step.stack;
+  const map = step.nextGreaterMap;
+  const answers = step.answers;
+
+  const curIdx2 = step.currentIndex2;
+  const curIdx1 = step.queryIndex1;
+
+  // nums2 流
+  const nums2Html = nums2
+    .map((num, idx) => {
+      const isCurrent = idx === curIdx2;
+      const inStack = stack.includes(num);
+      const mappedVal = map[num];
+
+      let bg = '#ffffff';
+      let border = '#e2e8f0';
+      let textColor = '#0f172a';
+
+      if (isCurrent) {
+        bg = '#eff6ff';
+        border = '#2563eb';
+        textColor = '#2563eb';
+      } else if (inStack) {
+        bg = '#fffbeb';
+        border = '#fde68a';
+        textColor = '#d97706';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="font-size: 8.5px; color: ${isCurrent ? '#2563eb' : '#94a3b8'}; font-weight: 700;">
+            [${idx}]
+          </span>
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: ${bg}; border: 2px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <span>${num}</span>
+            <span style="font-size: 8.5px; color: ${mappedVal !== undefined ? (mappedVal === -1 ? '#ef4444' : '#10b981') : '#94a3b8'}; font-weight: 700;">
+              ${mappedVal !== undefined ? `&rarr;${mappedVal}` : ''}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  // nums1 查询流
+  const nums1Html = nums1
+    .map((num, idx) => {
+      const isQuerying = idx === curIdx1;
+      const ans = answers[idx];
+
+      let bg = '#ffffff';
+      let border = '#e2e8f0';
+
+      if (isQuerying) {
+        bg = '#ecfdf5';
+        border = '#10b981';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <div style="padding: 3px 8px; border-radius: 8px; background: ${bg}; border: 1.5px solid ${border}; font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #0f172a; display: flex; align-items: center; gap: 4px;">
+            <span>${num}</span>
+            <span style="color: ${ans !== undefined ? (ans === -1 ? '#ef4444' : '#10b981') : '#94a3b8'}; font-weight: 800;">
+              ${ans !== undefined ? `&rarr; ${ans}` : ''}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 12px; box-sizing: border-box;">
+      <!-- nums2 母集单调栈流 -->
+      <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #475569;">
+        <span>1️⃣ 母集 nums2 (单调栈建立映射):</span>
+        <span style="color: #d97706;">栈内: [${stack.join(', ')}]</span>
+      </div>
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;">
+        ${nums2Html}
+      </div>
+
+      <!-- nums1 子集查询流 -->
+      <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; color: #059669; margin-top: 4px; border-top: 1px dashed #e2e8f0; padding-top: 6px;">
+        <span>2️⃣ 子集 nums1 (查表生成答案):</span>
+        <span>已查: ${answers.length} / ${nums1.length}</span>
+      </div>
+      <div style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0;">
+        ${nums1Html}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'next-greater-element-i',
   name: '下一个更大元素 I',
-  viewId: 'algo-next-greater-element-i-view',
   category: 'monotonic-stack',
   description: '单调栈在母集 nums2 中构建下一个更大元素哈希映射，子集 nums1 查表输出答案',
   icon: '🔍',
-  template,
-  Visualizer: NextGreaterElementIVisualizer,
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '掌握单调栈与哈希表结合的高效解题范式，理解子集查询先在母集建表的降维思路',
+  inputs: [
+    {
+      id: 'nums1',
+      label: '子集 nums1',
+      type: 'text',
+      defaultValue: '4,1,2',
+      placeholder: '逗号分隔数字',
+    },
+    {
+      id: 'nums2',
+      label: '母集 nums2',
+      type: 'text',
+      defaultValue: '1,3,4,2',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '示例 1', values: { nums1: '4,1,2', nums2: '1,3,4,2' } },
+    { label: '示例 2', values: { nums1: '2,4', nums2: '1,2,3,4' } },
+    { label: '单调降后升', values: { nums1: '1,3,5,2,4', nums2: '6,5,4,3,2,1,7' } },
+  ],
+  metrics: [
+    { id: 'cur-elem', label: '当前处理元素', color: '#2563eb' },
+    { id: 'stack-top', label: '单调栈顶', color: '#d97706' },
+    { id: 'map-size', label: '已建映射', color: '#059669' },
+    { id: 'answers', label: '答案数组', color: '#2563eb' },
+    { id: 'action', label: '操作状态', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前考察', color: '#2563eb' },
+    { label: '栈内元素', color: '#d97706' },
+    { label: '映射确立', color: '#10b981' },
+  ],
+  codeLanguages: NEXT_GREATER_ELEMENT_I_CODE_LANGUAGES,
+  problemHtml: NEXT_GREATER_ELEMENT_I_PROBLEM_HTML,
+  analysisHtml: NEXT_GREATER_ELEMENT_I_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums1 = String(inputs.nums1 ?? '4,1,2')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    const nums2 = String(inputs.nums2 ?? '1,3,4,2')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    return withMetrics(buildNextGreaterElementISteps(nums1.length ? nums1 : [4, 1, 2], nums2.length ? nums2 : [1, 3, 4, 2]));
+  },
+  renderCanvas: (container, step) => renderNextGreaterElementICanvas(container, step as NGE1Step),
 });

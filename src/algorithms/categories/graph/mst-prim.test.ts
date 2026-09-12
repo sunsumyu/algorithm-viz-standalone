@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
-  PrimVisualizer,
   buildPrimSteps,
 } from './mst-prim-renderer';
 import { MST_PRIM_CODE_LANGUAGES } from './mst-prim-problem-content';
 
 describe('MST Prim (LeftChengYun Class 058)', () => {
-  it('should instantiate PrimVisualizer properly', () => {
-    const viz = new PrimVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildPrimSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

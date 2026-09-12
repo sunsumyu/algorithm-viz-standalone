@@ -1,21 +1,15 @@
 /**
- * 有效的字母异位词可视化器 — 4-Card 标准现代架构
+ * 有效的字母异位词可视化器 — 声明式 4-Card 标准架构
  * LeetCode 242：26 字符哈希计数数组
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   ANAGRAM_PROBLEM_HTML,
   ANAGRAM_ANALYSIS_HTML,
   ANAGRAM_CODE_LANGUAGES,
 } from './anagram-problem-content';
-import template from './anagram.html?raw';
 
 export interface AnagramStep {
   s: string;
@@ -29,6 +23,7 @@ export interface AnagramStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
@@ -138,201 +133,167 @@ export function buildAnagramSteps(s: string, t: string): AnagramStep[] {
   return steps;
 }
 
-export class AnagramVisualizer extends StepVisualizer<AnagramStep> {
-  protected codeLanguages = ANAGRAM_CODE_LANGUAGES;
-  protected codeLines = ANAGRAM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '有效的字母异位词 代码调试';
-
-  private trackSEl: HTMLElement | null = null;
-  private trackTEl: HTMLElement | null = null;
-  private bucketsGridEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private metricCharEl: HTMLElement | null = null;
-  private metricSlotEl: HTMLElement | null = null;
-  private metricResEl: HTMLElement | null = null;
-  private formulaCalcEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackSEl = this.root.querySelector('#an-track-s');
-    this.trackTEl = this.root.querySelector('#an-track-t');
-    this.bucketsGridEl = this.root.querySelector('#an-buckets-grid');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricCharEl = this.root.querySelector('#metric-char');
-    this.metricSlotEl = this.root.querySelector('#metric-slot');
-    this.metricResEl = this.root.querySelector('#metric-res');
-    this.formulaCalcEl = this.root.querySelector('#formula-calc');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.an-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        const tInput = this.root?.querySelector('#input-t') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        if (tInput && btn.dataset.t) tInput.value = btn.dataset.t;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: ANAGRAM_PROBLEM_HTML,
-      analysisHtml: ANAGRAM_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): AnagramStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const tInput = this.root?.querySelector('#input-t') as HTMLInputElement | null;
-    const s = sInput?.value || 'anagram';
-    const t = tInput?.value || 'nagaram';
-    return buildAnagramSteps(s, t);
-  }
-
-  protected renderStep(step: AnagramStep): void {
-    const { s, t, phase, charIndex, currentChar, targetSlot, record, isMatch, message } = step;
-
-    // 1. 渲染 s 和 t 字符串
-    if (this.trackSEl) {
-      this.trackSEl.innerHTML = s
-        .split('')
-        .map((ch, idx) => {
-          const isActive = phase === 'scan-s' && charIndex === idx;
-          return `
-            <div class="an-char-box ${isActive ? 'is-active' : ''}">
-              <span>${ch}</span>
-            </div>
-          `;
-        })
-        .join('');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: AnagramStep[]): AnagramStep[] {
+  return steps.map((s) => {
+    const phaseNames: Record<string, string> = {
+      'check-length': '长度检查',
+      'scan-s': 's 累加计数',
+      'scan-t': 't 抵消扣减',
+      'check-record': '结果判定',
+      done: '完成',
+    };
+    let res: string;
+    if (s.phase === 'check-record' || s.phase === 'done') {
+      res = s.isMatch ? '✓ true (是)' : '✗ false (否)';
+    } else {
+      res = '统计中...';
     }
+    const action =
+      s.currentChar && s.targetSlot !== null
+        ? `'${s.currentChar}' - 'a' = ${s.targetSlot} (record[${s.targetSlot}] = ${s.record[s.targetSlot]})`
+        : `'char' - 'a' = 槽位索引 (0~25)`;
 
-    if (this.trackTEl) {
-      this.trackTEl.innerHTML = t
-        .split('')
-        .map((ch, idx) => {
-          const isActive = phase === 'scan-t' && charIndex === idx;
-          return `
-            <div class="an-char-box ${isActive ? 'is-active' : ''}">
-              <span>${ch}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 26 字符哈希桶
-    if (this.bucketsGridEl) {
-      this.bucketsGridEl.innerHTML = record
-        .map((count, idx) => {
-          const char = String.fromCharCode(97 + idx);
-          const isTarget = targetSlot === idx;
-          let cellClass = 'an-bucket-cell';
-          if (count > 0) cellClass += ' is-pos';
-          else if (count < 0) cellClass += ' is-neg';
-          if (isTarget) cellClass += ' is-target';
-
-          return `
-            <div class="${cellClass}">
-              <span class="an-bucket-char">${char}</span>
-              <span class="an-bucket-count">${count}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricPhaseEl) {
-      const phaseNames: Record<string, string> = {
-        'check-length': '长度检查',
-        'scan-s': 's 累加计数',
-        'scan-t': 't 抵消扣减',
-        'check-record': '结果判定',
-        done: '完成',
-      };
-      this.metricPhaseEl.textContent = phaseNames[phase] || phase;
-    }
-    if (this.metricCharEl) this.metricCharEl.textContent = currentChar ? `'${currentChar}'` : '—';
-    if (this.metricSlotEl) this.metricSlotEl.textContent = targetSlot !== null ? `[${targetSlot}]` : '—';
-    if (this.metricResEl) {
-      if (phase === 'check-record' || phase === 'done') {
-        this.metricResEl.textContent = isMatch ? '✓ true (是)' : '✗ false (否)';
-        this.metricResEl.style.color = isMatch ? '#10b981' : '#ef4444';
-      } else {
-        this.metricResEl.textContent = '统计中...';
-        this.metricResEl.style.color = '#3b82f6';
-      }
-    }
-
-    if (this.formulaCalcEl) {
-      if (currentChar && targetSlot !== null) {
-        this.formulaCalcEl.textContent = `'${currentChar}' - 'a' = ${targetSlot} (record[${targetSlot}] = ${record[targetSlot]})`;
-      } else {
-        this.formulaCalcEl.textContent = `'char' - 'a' = 槽位索引 (0~25)`;
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = phase === 'check-record' ? (isMatch ? '#f0fdf4' : '#fef2f2') : '#eff6ff';
-      logEntry.style.color = phase === 'check-record' ? (isMatch ? '#15803d' : '#b91c1c') : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' + (phase === 'check-record' ? (isMatch ? '#bbf7d0' : '#fecaca') : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      const phaseNames: Record<string, string> = {
-        'check-length': '长度检查',
-        'scan-s': 's 累加计数',
-        'scan-t': 't 抵消扣减',
-        'check-record': '结果判定',
-        done: '完成',
-      };
-      badgePhase.textContent = phaseNames[phase] || phase;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...s,
+      metrics: {
+        phase: phaseNames[s.phase] || s.phase,
+        char: s.currentChar ? `'${s.currentChar}'` : '—',
+        slot: s.targetSlot !== null ? `[${s.targetSlot}]` : '—',
+        res,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderAnagramCanvas(container: HTMLElement, step: AnagramStep): void {
+  const { s, t, phase, charIndex, targetSlot, record } = step;
+
+  // 1. 渲染 s 和 t 字符串轨道
+  const renderTrack = (str: string, activePhase: 'scan-s' | 'scan-t') =>
+    str
+      .split('')
+      .map((ch, idx) => {
+        const isActive = phase === activePhase && charIndex === idx;
+        const bg = isActive ? '#eff6ff' : '#ffffff';
+        const border = isActive ? '#2563eb' : '#cbd5e1';
+        const color = isActive ? '#1d4ed8' : '#334155';
+        const transform = isActive ? 'scale(1.08)' : 'none';
+        const shadow = isActive ? '0 2px 6px rgba(37, 99, 235, 0.2)' : '0 1px 2px rgba(0, 0, 0, 0.03)';
+        return `
+          <div style="width: 26px; height: 28px; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 800; color: ${color}; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; box-shadow: ${shadow}; transform: ${transform};">
+            <span>${ch}</span>
+          </div>
+        `;
+      })
+      .join('');
+
+  // 2. 渲染 26 字符哈希桶
+  const bucketsHtml = record
+    .map((count, idx) => {
+      const char = String.fromCharCode(97 + idx);
+      const isTarget = targetSlot === idx;
+      let bg = '#ffffff';
+      let border = '#cbd5e1';
+      let countColor = '#334155';
+      let transform = 'none';
+      if (count > 0) {
+        bg = '#eff6ff';
+        border = '#93c5fd';
+        countColor = '#1d4ed8';
+      } else if (count < 0) {
+        bg = '#fef2f2';
+        border = '#fca5a5';
+        countColor = '#b91c1c';
+      }
+      if (isTarget) {
+        border = '#2563eb';
+        bg = '#eff6ff';
+        transform = 'scale(1.08)';
+      }
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; padding: 3px 0; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03); transform: ${transform};">
+          <span style="font-weight: 800; color: #475569;">${char}</span>
+          <span style="font-weight: 800; font-size: 10.5px; color: ${countColor};">${count}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; justify-content: center;">
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; min-width: 30px; text-transform: uppercase;">S</span>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">${renderTrack(s, 'scan-s')}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; min-width: 30px; text-transform: uppercase;">T</span>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">${renderTrack(t, 'scan-t')}</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">record[26] 字符频次哈希数组</span>
+        <div style="display: grid; grid-template-columns: repeat(13, 1fr); gap: 5px; width: 100%;">${bucketsHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'anagram',
   name: '有效的字母异位词（哈希计数）',
-  viewId: 'algo-anagram-view',
   category: 'hash-table',
   description: '长度26数组统计频次判断异位词',
   icon: '🔤',
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '用字符频次统计判断字母异位词',
-  template,
-  Visualizer: AnagramVisualizer,
+  inputs: [
+    {
+      id: 's',
+      label: 's',
+      type: 'text',
+      defaultValue: 'anagram',
+      placeholder: '字符串 s',
+      width: '75px',
+    },
+    {
+      id: 't',
+      label: 't',
+      type: 'text',
+      defaultValue: 'nagaram',
+      placeholder: '字符串 t',
+      width: '75px',
+    },
+  ],
+  presets: [
+    { label: '经典匹配: ("anagram", "nagaram")', values: { s: 'anagram', t: 'nagaram' } },
+    { label: '字符失配: ("rat", "car")', values: { s: 'rat', t: 'car' } },
+    { label: '长度不一致: ("ab", "a")', values: { s: 'ab', t: 'a' } },
+    { label: '单词乱序: ("listen", "silent")', values: { s: 'listen', t: 'silent' } },
+  ],
+  metrics: [
+    { id: 'phase', label: '当前阶段', color: '#2563eb' },
+    { id: 'char', label: '当前字符 char', color: '#9333ea' },
+    { id: 'slot', label: '槽位索引 slot', color: '#f59e0b' },
+    { id: 'res', label: '异位词判定', color: '#10b981' },
+    { id: 'action', label: '槽位计算', color: '#2563eb' },
+  ],
+  legend: [
+    { label: 's(+) 累加', color: '#2563eb' },
+    { label: 't(-) 抵消', color: '#dc2626' },
+  ],
+  codeLanguages: ANAGRAM_CODE_LANGUAGES,
+  problemHtml: ANAGRAM_PROBLEM_HTML,
+  analysisHtml: ANAGRAM_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(
+      buildAnagramSteps(
+        String(inputs.s ?? 'anagram') || 'anagram',
+        String(inputs.t ?? 'nagaram') || 'nagaram'
+      )
+    ),
+  renderCanvas: (container, step) => renderAnagramCanvas(container, step as AnagramStep),
 });

@@ -92,9 +92,16 @@ export interface LcsRecStep {
   activeNodeId?: string;
   vars?: StepVar[];
   activeTrail?: string[];
+  activeStack?: string[];
+  fromI?: number;
+  fromJ?: number;
+  grid?: (number | null)[][];
+  historyTrailMap?: Record<string, number>;
   visitedMap?: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }>;
   matchedIndices1?: number[];
   matchedIndices2?: number[];
+  isComparing?: boolean;
+  compareStatusText?: string;
 }
 
 export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecStep[] {
@@ -126,6 +133,7 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
   };
 
   const activeTrailCoords: string[] = [];
+  const historyTrailMap: Record<string, number> = {};
   const visitedMap: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }> = {};
   const currentMatched1: number[] = [];
   const currentMatched2: number[] = [];
@@ -135,6 +143,14 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
       st.vars = makeLcsStage1Vars({ i: st.i, j: st.j, s1, s2 });
     }
     st.activeTrail = [...activeTrailCoords];
+    st.activeStack = [...activeTrailCoords];
+    if (activeTrailCoords.length >= 2) {
+      const prevCoord = activeTrailCoords[activeTrailCoords.length - 2];
+      const [fi, fj] = prevCoord.split(',').map(Number);
+      st.fromI = fi;
+      st.fromJ = fj;
+    }
+    st.historyTrailMap = { ...historyTrailMap };
     st.visitedMap = { ...visitedMap };
     if (!st.matchedIndices1) {
       st.matchedIndices1 = [...currentMatched1];
@@ -214,6 +230,7 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
     // 1. 函数入口栈帧
     stack.push({ label: `f(${i}, ${j})` });
     activeTrailCoords.push(`${i},${j}`);
+    historyTrailMap[`${i},${j}`] = (historyTrailMap[`${i},${j}`] || 0) + 1;
     pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
@@ -381,7 +398,7 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         codeLine: lines.branchRightCall,
         s1,
         s2,
-        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false }),
+        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, p1 }),
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
@@ -404,7 +421,7 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
         codeLine: lines.combineMaxReturn,
         s1,
         s2,
-        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, ans }),
+        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, p1, p2, ans }),
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
@@ -474,6 +491,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
   };
 
   const activeTrailCoords: string[] = [];
+  const historyTrailMap: Record<string, number> = {};
   const visitedMap: Record<string, { val: number; status: 'visited' | 'base' | 'match'; isMatch?: boolean }> = {};
   const currentMatched1: number[] = [];
   const currentMatched2: number[] = [];
@@ -483,6 +501,14 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
       st.vars = makeLcsStage1Vars({ i: st.i, j: st.j, s1, s2 });
     }
     st.activeTrail = [...activeTrailCoords];
+    st.activeStack = [...activeTrailCoords];
+    if (activeTrailCoords.length >= 2) {
+      const prevCoord = activeTrailCoords[activeTrailCoords.length - 2];
+      const [fi, fj] = prevCoord.split(',').map(Number);
+      st.fromI = fi;
+      st.fromJ = fj;
+    }
+    st.historyTrailMap = { ...historyTrailMap };
     st.visitedMap = { ...visitedMap };
     if (!st.matchedIndices1) {
       st.matchedIndices1 = [...currentMatched1];
@@ -505,11 +531,11 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
     codeLine: lines.entry,
     s1,
     s2,
+    isComparing: false,
+    compareStatusText: '主函数入口准备，尚未进入递归比对',
     vars: [
       { name: 's1', value: `"${s1}"`, type: 'string' },
       { name: 's2', value: `"${s2}"`, type: 'string' },
-      { name: 'i', value: `${s1.length - 1}`, type: 'number' },
-      { name: 'j', value: `${s2.length - 1}`, type: 'number' },
     ],
     treeRoot: cloneLcsTree(rootTreeNode),
     activeNodeId: rootTreeNode.id,
@@ -527,11 +553,11 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
     codeLine: lines.callEntry,
     s1,
     s2,
+    isComparing: false,
+    compareStatusText: `准备调用 f(a, b, ${s1.length - 1}, ${s2.length - 1})`,
     vars: [
       { name: 's1', value: `"${s1}"`, type: 'string' },
       { name: 's2', value: `"${s2}"`, type: 'string' },
-      { name: 'i', value: `${s1.length - 1}`, type: 'number' },
-      { name: 'j', value: `${s2.length - 1}`, type: 'number' },
     ],
     treeRoot: cloneLcsTree(rootTreeNode),
     activeNodeId: rootTreeNode.id,
@@ -565,6 +591,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
     // 1. 函数签名帧 (Callee Entry Frame)
     stack.push({ label: `f(${i}, ${j})` });
     activeTrailCoords.push(gridKey);
+    historyTrailMap[gridKey] = (historyTrailMap[gridKey] || 0) + 1;
     pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
@@ -576,6 +603,8 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
       codeLine: lines.fEntry,
       s1,
       s2,
+      isComparing: false,
+      compareStatusText: `进入 f(${i}, ${j})，等待边界检查与比对`,
       metrics: { 'metric-pos': `i=${i}, j=${j}`, 'metric-status': '递归入口' },
       treeRoot: cloneLcsTree(rootTreeNode),
       activeNodeId: currentNode.id,
@@ -605,6 +634,8 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
       codeLine: lines.baseCheck,
       s1,
       s2,
+      isComparing: false,
+      compareStatusText: `正在检查索引边界 (i=${i}, j=${j})`,
       metrics: { 'metric-pos': `i=${i}, j=${j}`, 'metric-status': isBase ? '边界拦截' : '边界有效' },
       treeRoot: cloneLcsTree(rootTreeNode),
       activeNodeId: currentNode.id,
@@ -623,6 +654,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines.baseReturn,
         s1,
         s2,
+        isComparing: false,
         metrics: { 'metric-pos': `i=${i}, j=${j}`, 'metric-status': '边界返回 0', 'metric-ans': '0' },
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
@@ -652,6 +684,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
       codeLine: lines.charCheck,
       s1,
       s2,
+      isComparing: true,
       metrics: { 'metric-pos': `i=${i}, j=${j}`, 'metric-status': isMatch ? '匹配成功' : '字符不匹配' },
       treeRoot: cloneLcsTree(rootTreeNode),
       activeNodeId: currentNode.id,
@@ -670,6 +703,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines.diagMatchCall,
         s1,
         s2,
+        isComparing: true,
         metrics: { 'metric-pos': `i=${i}, j=${j}`, 'metric-status': '对角线递归' },
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
@@ -736,7 +770,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines.branchLeftCall,
         s1,
         s2,
-        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false }),
+        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, p1 }),
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
@@ -759,7 +793,7 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines.combineMaxReturn,
         s1,
         s2,
-        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, ans }),
+        vars: makeLcsStage1Vars({ i, j, s1, s2, isMatch: false, p1, p2, ans }),
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
@@ -1179,6 +1213,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
     memoGrid: memo.map((r) => [...r]),
     s1,
     s2,
+    metrics: { 'metric-ans': `${finalAns}` },
     vars: [
       { name: 'ans', value: `${finalAns}`, type: 'number' },
       { name: 'hitCount', value: `${hitCount}`, type: 'number' },
@@ -1647,6 +1682,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     memoGrid: memo.map((r) => [...r]),
     s1,
     s2,
+    metrics: { 'metric-ans': `${finalAns}` },
     vars: [
       { name: 'ans', value: `${finalAns}`, type: 'number' },
       { name: 'hitCount', value: `${hitCount}`, type: 'number' },
@@ -2233,6 +2269,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
     codeLine: lines3.returnAns,
     s1,
     s2,
+    metrics: { 'metric-ans': `${dp[0][0]}` },
     vars: [
       { name: 'ans', value: `${dp[0][0]}`, type: 'number' },
       { name: 'dp[0][0]', value: `${dp[0][0]}`, type: 'number' },
@@ -2458,6 +2495,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     codeLine: lines3.returnAns,
     s1,
     s2,
+    metrics: { 'metric-ans': `${dp[n][m]}` },
     vars: [
       { name: 'ans', value: `${dp[n][m]}`, type: 'number' },
       { name: 'dp[n][m]', value: `${dp[n][m]}`, type: 'number' },
@@ -2714,6 +2752,7 @@ export function buildLcsStage4Steps(inputs: Record<string, any>): LcsSpaceOptSte
     codeLine: lines4.returnAns,
     s1,
     s2,
+    metrics: { 'metric-ans': `${dp[m]}` },
     vars: [
       { name: 'ans', value: `${dp[m]}`, type: 'number' },
       { name: 'dp[m]', value: `${dp[m]}`, type: 'number' },
@@ -2810,10 +2849,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         );
       },
       renderCustomMetrics: (container, step) => {
+        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+        const eofPos = isForward ? 'back' : 'front';
         renderLcsCard2CompoundView(
           container,
           (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2),
+          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
           (stackBox) =>
             ThreeRecursionStackAdapter.getInstance().render(stackBox, {
               treeRoot: step.treeRoot,
@@ -2868,10 +2909,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         );
       },
       renderCustomMetrics: (container, step) => {
+        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+        const eofPos = isForward ? 'back' : 'front';
         renderLcsCard2CompoundView(
           container,
           (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, true),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2),
+          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
           (stackBox) =>
             ThreeRecursionStackAdapter.getInstance().render(stackBox, {
               treeRoot: step.treeRoot,
@@ -3026,7 +3069,10 @@ function renderStringAlignment(
   curI: number,
   curJ: number,
   matchedIndices1?: number[],
-  matchedIndices2?: number[]
+  matchedIndices2?: number[],
+  isComparing?: boolean,
+  statusDescription?: string,
+  eofPosition?: 'front' | 'back' | 'both' | 'none'
 ): void {
   SequenceAlignmentPresenter.render(container, {
     s1,
@@ -3035,6 +3081,9 @@ function renderStringAlignment(
     curJ,
     matchedIndices1,
     matchedIndices2,
+    isComparing,
+    statusDescription,
+    eofPosition,
   });
 }
 

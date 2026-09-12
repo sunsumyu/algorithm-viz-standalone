@@ -4,22 +4,12 @@
  * 核心：双重循环遍历棋盘 + 1-9 候选数字合法性校验 (isValid) + 立即返回剪枝
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   SUDOKU_PROBLEM_HTML,
   SUDOKU_ANALYSIS_HTML,
   SUDOKU_CODE_LANGUAGES,
 } from './sudoku-problem-content';
-import template from './sudoku.html?raw';
 
 export interface SudokuStep {
   board: string[][];
@@ -33,6 +23,7 @@ export interface SudokuStep {
   filled: number;
   message: string;
   codeLine: number;
+  metrics?: Record<string, string>;
 }
 
 export const DEFAULT_PUZZLE =
@@ -170,218 +161,139 @@ export function buildSudokuSteps(initial: string[][]): SudokuStep[] {
 }
 
 /* ── Visualizer class ─────────────────────────────────────── */
-export class SudokuVisualizer extends StepVisualizer<SudokuStep> {
-  protected codeLanguages = SUDOKU_CODE_LANGUAGES;
-  protected codeLines = SUDOKU_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '解数独 代码调试';
 
-  private boardContainer: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private constraintMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
-  private currentRawPuzzle: string = DEFAULT_PUZZLE;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.boardContainer = this.root.querySelector('#sd-board-container');
-    this.pathStackContainer = this.root.querySelector('#sd-path-stack-container');
-    this.constraintMonitorContainer = this.root.querySelector('#sd-constraint-monitor-container');
-    this.metricsContainer = this.root.querySelector('#sd-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: SudokuStep[]): SudokuStep[] {
+  return steps.map((s) => {
+    const isConflict = s.action === 'reject';
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+    let action = '✓ 校验通过';
+    if (s.action === 'place') action = '✍️ 合法填入';
+    else if (s.action === 'reject') action = '⚔️ 触发冲突 (剪枝)';
+    else if (s.action === 'backtrack') action = '↩️ 回溯';
+    else if (s.action === 'solved') action = '🎉 求解完成';
+    else if (s.action === 'scan') action = '🔍 扫描空格';
+    else if (s.action === 'start') action = '开始';
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.sd-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const preset = btn.dataset.preset;
-        if (preset === 'easy') this.currentRawPuzzle = EASY_PUZZLE;
-        else if (preset === 'simple') this.currentRawPuzzle = SIMPLE_PUZZLE;
-        else this.currentRawPuzzle = DEFAULT_PUZZLE;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SUDOKU_PROBLEM_HTML,
-      analysisHtml: SUDOKU_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SudokuStep[] {
-    const initialBoard = parsePuzzle(this.currentRawPuzzle);
-    const steps = buildSudokuSteps(initialBoard);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((st, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (st.action === 'place') type = 'push';
-      else if (st.action === 'backtrack') type = 'pop';
-      else if (st.action === 'solved') type = 'collect';
-      else if (st.action === 'reject') type = 'prune';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: st.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: SudokuStep): void {
-    const conflictSet = new Set(step.conflicts.map(([r, c]) => `${r},${c}`));
-    const isTrying = step.action === 'try' || step.action === 'reject';
-    const curR = step.row;
-    const curC = step.col;
-
-    // 1. 渲染 9x9 数独棋盘沙盘 (Card 1)
-    if (this.boardContainer) {
-      let gridHtml = `
-        <div style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: 100%; max-width: 360px; aspect-ratio: 1; border: 2.5px solid #0f172a; border-radius: 8px; overflow: hidden; background: #0f172a; gap: 1px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
-      `;
-
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          const isFixed = step.fixed[r][c];
-          const val = step.board[r][c];
-          const isConflictCell = conflictSet.has(`${r},${c}`);
-          const isCurrentFocus = curR === r && curC === c;
-          const isRejectFocus = isCurrentFocus && step.action === 'reject';
-
-          // 3x3 粗边框分隔
-          const borderRight = c % 3 === 2 && c !== 8 ? 'border-right: 2px solid #334155;' : '';
-          const borderBottom = r % 3 === 2 && r !== 8 ? 'border-bottom: 2px solid #334155;' : '';
-
-          let bg = (Math.floor(r / 3) + Math.floor(c / 3)) % 2 === 0 ? '#ffffff' : '#f8fafc';
-          if (isConflictCell || isRejectFocus) {
-            bg = '#fee2e2';
-          } else if (isCurrentFocus) {
-            bg = '#fef08a';
-          } else if (!isFixed && val !== '.') {
-            bg = '#eff6ff';
-          }
-
-          let textColor = '#0f172a';
-          let fontWeight = '600';
-          if (isFixed) {
-            textColor = '#0f172a';
-            fontWeight = '900';
-          } else if (isConflictCell || isRejectFocus) {
-            textColor = '#dc2626';
-            fontWeight = '800';
-          } else if (isCurrentFocus) {
-            textColor = '#b45309';
-            fontWeight = '800';
-          } else if (val !== '.') {
-            textColor = '#2563eb';
-            fontWeight = '800';
-          }
-
-          const displayChar = isCurrentFocus && isTrying ? step.candidate || '?' : val === '.' ? '' : val;
-
-          gridHtml += `
-            <div style="background: ${bg}; ${borderRight} ${borderBottom} display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: ${fontWeight}; color: ${textColor}; user-select: none; transition: background 0.12s;">
-              ${displayChar}
-            </div>
-          `;
-        }
-      }
-      gridHtml += `</div>`;
-      this.boardContainer.innerHTML = gridHtml;
-    }
-
-    // 2. 渲染当前填充路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      const placedStack: string[] = [];
-      for (let r = 0; r < 9; r++) {
-        for (let c = 0; c < 9; c++) {
-          if (!step.fixed[r][c] && step.board[r][c] !== '.') {
-            placedStack.push(`(${r},${c})=${step.board[r][c]}`);
-          }
-        }
-      }
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, placedStack);
-    }
-
-    // 3. 渲染行/列/宫约束监视器 (Card 2 Center)
-    if (this.constraintMonitorContainer) {
-      const isConflict = step.action === 'reject';
-      this.constraintMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>当前尝试格: <strong style="color: #0f172a; font-family: monospace;">${curR !== null ? `(${curR}, ${curC})` : '全局扫描'}</strong></span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isConflict ? '#fef2f2' : '#ecfdf5'}; color: ${isConflict ? '#dc2626' : '#059669'}; border: 1px solid ${isConflict ? '#fecaca' : '#a7f3d0'};">
-              ${isConflict ? '⚔️ 触发冲突 (剪枝)' : step.action === 'place' ? '✍️ 合法填入' : '✓ 校验通过'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 行列排他: <code style="color:#b45309; font-family:monospace;">board[r][i] != k &amp;&amp; board[i][c] != k</code></div>
-            <div>• 3×3宫排他: <code style="color:#b45309; font-family:monospace;">(r/3)*3 + i, (c/3)*3 + j</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染求解进度与统计看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      const percent = Math.min(100, (step.filled / 81) * 100);
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>棋盘填充率: <strong style="color: #0f172a; font-family: monospace; font-size: 12px;">${step.filled}</strong> / 81</span>
-            <span style="font-size: 10.5px; font-weight: 700; color: #2563eb;">${percent.toFixed(0)}% 完成 (尝试: ${step.attempts} 次)</span>
-          </div>
-          <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden;">
-            <div style="background: #2563eb; width: ${percent}%; height: 100%; transition: width 0.2s;"></div>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeProgress = this.root?.querySelector('#badge-progress-count');
-    if (badgeProgress) {
-      badgeProgress.textContent = `填充: ${step.filled} / 81`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.boardContainer) this.boardContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        'try-cell': s.row !== null ? `(${s.row}, ${s.col})` : '全局扫描',
+        candidate: s.candidate || '—',
+        filled: `${s.filled} / 81 (${Math.min(100, (s.filled / 81) * 100).toFixed(0)}%)`,
+        attempts: String(s.attempts),
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：9×9 数独棋盘沙盘 */
+export function renderSudokuCanvas(container: HTMLElement, step: SudokuStep): void {
+  const conflictSet = new Set(step.conflicts.map(([r, c]) => `${r},${c}`));
+  const isTrying = step.action === 'try' || step.action === 'reject';
+  const curR = step.row;
+  const curC = step.col;
+
+  let gridHtml = `
+    <div style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: 100%; max-width: 360px; aspect-ratio: 1; border: 2.5px solid #0f172a; border-radius: 8px; overflow: hidden; background: #0f172a; gap: 1px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);">
+  `;
+
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const isFixed = step.fixed[r][c];
+      const val = step.board[r][c];
+      const isConflictCell = conflictSet.has(`${r},${c}`);
+      const isCurrentFocus = curR === r && curC === c;
+      const isRejectFocus = isCurrentFocus && step.action === 'reject';
+
+      const borderRight = c % 3 === 2 && c !== 8 ? 'border-right: 2px solid #334155;' : '';
+      const borderBottom = r % 3 === 2 && r !== 8 ? 'border-bottom: 2px solid #334155;' : '';
+
+      let bg = (Math.floor(r / 3) + Math.floor(c / 3)) % 2 === 0 ? '#ffffff' : '#f8fafc';
+      if (isConflictCell || isRejectFocus) {
+        bg = '#fee2e2';
+      } else if (isCurrentFocus) {
+        bg = '#fef08a';
+      } else if (!isFixed && val !== '.') {
+        bg = '#eff6ff';
+      }
+
+      let textColor = '#0f172a';
+      let fontWeight = '600';
+      if (isFixed) {
+        textColor = '#0f172a';
+        fontWeight = '900';
+      } else if (isConflictCell || isRejectFocus) {
+        textColor = '#dc2626';
+        fontWeight = '800';
+      } else if (isCurrentFocus) {
+        textColor = '#b45309';
+        fontWeight = '800';
+      } else if (val !== '.') {
+        textColor = '#2563eb';
+        fontWeight = '800';
+      }
+
+      const displayChar = isCurrentFocus && isTrying ? step.candidate || '?' : val === '.' ? '' : val;
+
+      gridHtml += `
+        <div style="background: ${bg}; ${borderRight} ${borderBottom} display: flex; align-items: center; justify-content: center; font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: ${fontWeight}; color: ${textColor}; user-select: none; transition: background 0.12s;">
+          ${displayChar}
+        </div>
+      `;
+    }
+  }
+  gridHtml += `</div>`;
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box; overflow: auto;">
+      ${gridHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'sudoku',
   name: '解数独',
-  viewId: 'algo-sudoku-view',
   category: 'backtracking',
   description: '9×9 棋盘填数回溯，行、列、3×3 宫合法性约束与递归立即返回',
   icon: '🧩',
-  template,
-  Visualizer: SudokuVisualizer,
   difficulty: 3,
   levelOrder: 17,
   learningGoal: '掌握二维双重循环回溯、布尔返回值剪枝与九宫格坐标映射机制',
+  inputs: [
+    {
+      id: 'puzzle',
+      label: '数独谜题 (81 格, . 为空)',
+      type: 'text',
+      defaultValue: DEFAULT_PUZZLE,
+      placeholder: '81 个字符 (数字或 .)',
+    },
+  ],
+  presets: [
+    { label: '经典谜题', values: { puzzle: DEFAULT_PUZZLE } },
+    { label: '简单谜题', values: { puzzle: EASY_PUZZLE } },
+    { label: '已近完成', values: { puzzle: SIMPLE_PUZZLE } },
+  ],
+  metrics: [
+    { id: 'try-cell', label: '当前尝试格', color: '#2563eb' },
+    { id: 'candidate', label: '试探数字', color: '#b45309' },
+    { id: 'filled', label: '填充进度', color: '#10b981' },
+    { id: 'attempts', label: '尝试次数', color: '#f59e0b' },
+    { id: 'action', label: '回溯动作', color: '#dc2626' },
+  ],
+  legend: [
+    { label: '已填入 (可撤销)', color: '#3b82f6' },
+    { label: '当前试探位', color: '#facc15' },
+    { label: '冲突格', color: '#f87171' },
+  ],
+  codeLanguages: SUDOKU_CODE_LANGUAGES,
+  problemHtml: SUDOKU_PROBLEM_HTML,
+  analysisHtml: SUDOKU_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildSudokuSteps(parsePuzzle(String(inputs.puzzle ?? DEFAULT_PUZZLE)))),
+  renderCanvas: (container, step) => renderSudokuCanvas(container, step as SudokuStep),
 });

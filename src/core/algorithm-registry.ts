@@ -10,7 +10,7 @@
 
 import type { IVisualizer } from './interfaces';
 import type { AlgorithmMetadata, AlgorithmManifest } from './registry';
-import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
+import { ALL_ALGORITHM_METADATA } from './algorithm-catalog.generated';
 import { loadAlgorithmBatch } from './algorithm-loader';
 
 export interface ResolvedAlgorithmEntry extends AlgorithmMetadata {

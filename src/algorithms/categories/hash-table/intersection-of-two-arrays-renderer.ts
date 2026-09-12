@@ -1,21 +1,15 @@
 /**
- * 两个数组的交集可视化器 — 4-Card 标准现代架构
+ * 两个数组的交集可视化器 — 声明式 4-Card 标准架构
  * LeetCode 349：哈希集合 HashSet
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   INTERSECTION_ARRAYS_PROBLEM_HTML,
   INTERSECTION_ARRAYS_ANALYSIS_HTML,
   INTERSECTION_ARRAYS_CODE_LANGUAGES,
 } from './intersection-of-two-arrays-problem-content';
-import template from './intersection-of-two-arrays.html?raw';
 
 export interface IntersectionStep {
   nums1: number[];
@@ -30,6 +24,7 @@ export interface IntersectionStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function parseNumArray(input: string, defaultArr: number[]): number[] {
@@ -117,180 +112,166 @@ export function buildIntersectionSteps(nums1: number[], nums2: number[]): Inters
   return steps;
 }
 
-export class IntersectionOfTwoArraysVisualizer extends StepVisualizer<IntersectionStep> {
-  protected codeLanguages = INTERSECTION_ARRAYS_CODE_LANGUAGES;
-  protected codeLines = INTERSECTION_ARRAYS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '两个数组的交集 代码调试';
-
-  private row1El: HTMLElement | null = null;
-  private row2El: HTMLElement | null = null;
-  private set1ChipsEl: HTMLElement | null = null;
-  private resultChipsEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private metricCurValEl: HTMLElement | null = null;
-  private metricHitEl: HTMLElement | null = null;
-  private metricResCountEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.row1El = this.root.querySelector('#ia-row-1');
-    this.row2El = this.root.querySelector('#ia-row-2');
-    this.set1ChipsEl = this.root.querySelector('#ia-set1-chips');
-    this.resultChipsEl = this.root.querySelector('#ia-result-chips');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricCurValEl = this.root.querySelector('#metric-val, #metric-cur-val');
-    this.metricHitEl = this.root.querySelector('#metric-hit');
-    this.metricResCountEl = this.root.querySelector('#metric-res-count');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.ia-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
-        const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
-        if (n1Input && btn.dataset.n1) n1Input.value = btn.dataset.n1;
-        if (n2Input && btn.dataset.n2) n2Input.value = btn.dataset.n2;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: INTERSECTION_ARRAYS_PROBLEM_HTML,
-      analysisHtml: INTERSECTION_ARRAYS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): IntersectionStep[] {
-    const n1Input = this.root?.querySelector('#input-nums1') as HTMLInputElement | null;
-    const n2Input = this.root?.querySelector('#input-nums2') as HTMLInputElement | null;
-    const nums1 = parseNumArray(n1Input?.value || '1, 2, 2, 1', [1, 2, 2, 1]);
-    const nums2 = parseNumArray(n2Input?.value || '2, 2', [2, 2]);
-    return buildIntersectionSteps(nums1, nums2);
-  }
-
-  protected renderStep(step: IntersectionStep): void {
-    const { nums1, nums2, phase, idx1, idx2, currentVal, set1, resultSet, isHit } = step;
-
-    // 1. 渲染 nums1 和 nums2 数组卡槽
-    const renderCells = (arr: number[], activeIdx: number, ptrLabel: string) =>
-      arr
-        .map((num, idx) => {
-          const isCur = idx === activeIdx;
-          const isHitCell = isCur && isHit;
-          return `
-            <div class="ia-cell-unit">
-              <div class="ia-cell-box ${isHitCell ? 'is-hit' : isCur ? 'is-current' : ''}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-              <span class="ia-cell-ptr-tag">${isCur ? (isHitCell ? '🎯命中' : `▼${ptrLabel}`) : ''}</span>
-            </div>
-          `;
-        })
-        .join('');
-
-    if (this.row1El) this.row1El.innerHTML = renderCells(nums1, idx1, 'i');
-    if (this.row2El) this.row2El.innerHTML = renderCells(nums2, idx2, 'j');
-
-    // 2. 渲染 set1 与 resultSet
-    if (this.set1ChipsEl) {
-      this.set1ChipsEl.innerHTML =
-        set1.length === 0
-          ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(空集合 ∅)</span>'
-          : set1
-              .map((num) => {
-                const isNew = phase === 'build-set1' && num === currentVal;
-                return `<div class="ia-set-chip ${isNew ? 'is-new' : ''}"><span style="color:#3b82f6;">#</span> ${num}</div>`;
-              })
-              .join('');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: IntersectionStep[]): IntersectionStep[] {
+  return steps.map((s) => {
+    let hit: string;
+    if (s.phase === 'scan-nums2') {
+      hit = s.isHit ? '✓ 命中' : '✗ 未命中';
+    } else {
+      hit = '—';
     }
-
-    if (this.resultChipsEl) {
-      this.resultChipsEl.innerHTML =
-        resultSet.length === 0
-          ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(暂无交集)</span>'
-          : resultSet
-              .map((num) => {
-                const isNew = phase === 'scan-nums2' && isHit && num === currentVal;
-                return `<div class="ia-set-chip is-res ${isNew ? 'is-new' : ''}"><span>✨</span> ${num}</div>`;
-              })
-              .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricPhaseEl) {
-      this.metricPhaseEl.textContent =
-        phase === 'build-set1' ? '构建 set1' : phase === 'scan-nums2' ? '遍历 nums2 匹配' : '完成';
-    }
-    if (this.metricCurValEl) {
-      this.metricCurValEl.textContent = currentVal !== null ? String(currentVal) : '—';
-    }
-    if (this.metricHitEl) {
-      if (phase === 'scan-nums2') {
-        this.metricHitEl.textContent = isHit ? '✓ 命中' : '✗ 未命中';
-        this.metricHitEl.style.color = isHit ? '#10b981' : '#64748b';
-      } else {
-        this.metricHitEl.textContent = '—';
-        this.metricHitEl.style.color = '#64748b';
-      }
-    }
-    if (this.metricResCountEl) {
-      this.metricResCountEl.textContent = `${resultSet.length} 个`;
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = isHit || phase === 'done' ? '#f0fdf4' : '#eff6ff';
-      logEntry.style.color = isHit || phase === 'done' ? '#15803d' : '#1d4ed8';
-      logEntry.style.border = '1px solid ' + (isHit || phase === 'done' ? '#bbf7d0' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      badgePhase.textContent =
-        phase === 'build-set1' ? '构建 set1' : phase === 'scan-nums2' ? '遍历 nums2 匹配' : '完成';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...s,
+      metrics: {
+        phase:
+          s.phase === 'build-set1' ? '构建 set1' : s.phase === 'scan-nums2' ? '遍历 nums2 匹配' : '完成',
+        'cur-val': s.currentVal !== null ? String(s.currentVal) : '—',
+        hit,
+        'res-count': `${s.resultSet.length} 个`,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderIntersectionCanvas(container: HTMLElement, step: IntersectionStep): void {
+  const { nums1, nums2, phase, idx1, idx2, currentVal, set1, resultSet, isHit } = step;
+
+  // 1. 渲染 nums1 和 nums2 数组卡槽
+  const renderCells = (arr: number[], activeIdx: number, ptrLabel: string) =>
+    arr
+      .map((num, idx) => {
+        const isCur = idx === activeIdx;
+        const isHitCell = isCur && isHit;
+        let border = '#cbd5e1';
+        let bg = '#ffffff';
+        let boxShadow = '0 1px 2px rgba(0, 0, 0, 0.03)';
+        let transform = 'none';
+        if (isHitCell) {
+          border = '#10b981';
+          bg = '#ecfdf5';
+          transform = 'scale(1.08)';
+          boxShadow = '0 2px 6px rgba(16, 185, 129, 0.25)';
+        } else if (isCur) {
+          border = '#2563eb';
+          bg = '#eff6ff';
+          transform = 'scale(1.08)';
+          boxShadow = '0 2px 6px rgba(37, 99, 235, 0.2)';
+        }
+        const ptrTag = isCur ? (isHitCell ? '🎯命中' : `▼${ptrLabel}`) : '';
+        return `
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+            <div style="width: 36px; height: 38px; border-radius: 8px; background: ${bg}; border: 1.5px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: ${boxShadow}; transform: ${transform};">
+              <span style="font-size: 13px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace; line-height: 1.1;">${num}</span>
+              <span style="font-size: 8.5px; font-weight: 700; color: #94a3b8;">[${idx}]</span>
+            </div>
+            <span style="font-size: 8.5px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: #2563eb; height: 12px; line-height: 12px;">${ptrTag}</span>
+          </div>
+        `;
+      })
+      .join('');
+
+  // 2. 渲染 set1 与 resultSet 芯片
+  const set1Html =
+    set1.length === 0
+      ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(空集合 ∅)</span>'
+      : set1
+          .map((num) => {
+            const isNew = phase === 'build-set1' && num === currentVal;
+            const border = isNew ? '#2563eb' : '#bfdbfe';
+            const bg = isNew ? '#dbeafe' : '#eff6ff';
+            return `<div style="padding: 3px 10px; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; color: #1e40af; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; transition: all 0.2s;"><span style="color:#3b82f6;">#</span> ${num}</div>`;
+          })
+          .join('');
+
+  const resultHtml =
+    resultSet.length === 0
+      ? '<span style="color:#94a3b8; font-size:11px; padding: 4px 8px;">(暂无交集)</span>'
+      : resultSet
+          .map((num) => {
+            const isNew = phase === 'scan-nums2' && isHit && num === currentVal;
+            const border = isNew ? '#10b981' : '#a7f3d0';
+            const bg = isNew ? '#d1fae5' : '#ecfdf5';
+            return `<div style="padding: 3px 10px; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; color: #047857; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; transition: all 0.2s;"><span>✨</span> ${num}</div>`;
+          })
+          .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; justify-content: center;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">nums1 (遍历建集合)</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">${renderCells(nums1, idx1, 'i')}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">nums2 (查询 set1)</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">${renderCells(nums2, idx2, 'j')}</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px; width: 100%; padding-top: 4px; border-top: 1px dashed #e2e8f0;">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+          <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">set1</span>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-height: 32px;">${set1Html}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+          <span style="font-size: 11px; font-weight: 700; color: #475569; white-space: nowrap;">resultSet</span>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; min-height: 32px;">${resultHtml}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'intersection-arrays',
   name: '两个数组的交集（哈希集合）',
-  viewId: 'algo-intersection-arrays-view',
   category: 'hash-table',
   description: '用哈希集合求两个数组的交集元素',
   icon: '🔀',
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '掌握用 Set 去重后高效求交集的思路',
-  template,
-  Visualizer: IntersectionOfTwoArraysVisualizer,
+  inputs: [
+    {
+      id: 'nums1',
+      label: 'nums1',
+      type: 'text',
+      defaultValue: '1, 2, 2, 1',
+      placeholder: '逗号分隔',
+      width: '80px',
+    },
+    {
+      id: 'nums2',
+      label: 'nums2',
+      type: 'text',
+      defaultValue: '2, 2',
+      placeholder: '逗号分隔',
+      width: '60px',
+    },
+  ],
+  presets: [
+    { label: '示例 1: [1,2,2,1] & [2,2] ➔ [2]', values: { nums1: '1, 2, 2, 1', nums2: '2, 2' } },
+    { label: '示例 2: [4,9,5] & [9,4..] ➔ [9,4]', values: { nums1: '4, 9, 5', nums2: '9, 4, 9, 8, 4' } },
+    { label: '无交集: [1,2,3] & [4,5,6] ➔ []', values: { nums1: '1, 2, 3', nums2: '4, 5, 6' } },
+    { label: '全重复: [7,7,7] & [7,7] ➔ [7]', values: { nums1: '7, 7, 7', nums2: '7, 7' } },
+  ],
+  metrics: [
+    { id: 'phase', label: '当前阶段', color: '#2563eb' },
+    { id: 'cur-val', label: '当前元素', color: '#9333ea' },
+    { id: 'hit', label: '是否命中 set1', color: '#f59e0b' },
+    { id: 'res-count', label: '交集结果数', color: '#10b981' },
+  ],
+  legend: [
+    { label: 'set1 (nums1去重)', color: '#2563eb' },
+    { label: 'resultSet (交集结果)', color: '#10b981' },
+  ],
+  codeLanguages: INTERSECTION_ARRAYS_CODE_LANGUAGES,
+  problemHtml: INTERSECTION_ARRAYS_PROBLEM_HTML,
+  analysisHtml: INTERSECTION_ARRAYS_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(
+      buildIntersectionSteps(
+        parseNumArray(String(inputs.nums1 ?? '1, 2, 2, 1'), [1, 2, 2, 1]),
+        parseNumArray(String(inputs.nums2 ?? '2, 2'), [2, 2])
+      )
+    ),
+  renderCanvas: (container, step) => renderIntersectionCanvas(container, step as IntersectionStep),
 });

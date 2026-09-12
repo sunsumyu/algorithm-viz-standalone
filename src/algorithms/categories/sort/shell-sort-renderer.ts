@@ -1,17 +1,15 @@
 /**
- * 希尔排序可视化器 — 4-Card 标准现代架构
+ * 希尔排序可视化器 — 声明式 4-Card 标准架构
  * 增量折半、跨步分组插入、逐步粗排到精排
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   SHELL_SORT_PROBLEM_HTML,
   SHELL_SORT_ANALYSIS_HTML,
   SHELL_SORT_CODE_LANGUAGES,
 } from './shell-sort-problem-content';
 import { parseArray } from './bubble-sort-renderer';
-import template from './shell-sort.html?raw';
 
 export interface ShellStep {
   array: number[];
@@ -26,6 +24,7 @@ export interface ShellStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function shellSortSteps(input: number[]): ShellStep[] {
@@ -184,149 +183,113 @@ export function shellSortSteps(input: number[]): ShellStep[] {
   return steps;
 }
 
-export class ShellSortVisualizer extends StepVisualizer<ShellStep> {
-  protected codeLanguages = SHELL_SORT_CODE_LANGUAGES;
-  protected codeLines = SHELL_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '希尔排序 代码调试';
-
-  private barsContainerEl: HTMLElement | null = null;
-  private metricGapEl: HTMLElement | null = null;
-  private metricIEl: HTMLElement | null = null;
-  private metricKeyEl: HTMLElement | null = null;
-  private metricCompShiftEl: HTMLElement | null = null;
-  private formulaGapEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.barsContainerEl = this.root.querySelector('#sh-bars-container');
-    this.metricGapEl = this.root.querySelector('#metric-gap');
-    this.metricIEl = this.root.querySelector('#metric-i');
-    this.metricKeyEl = this.root.querySelector('#metric-key');
-    this.metricCompShiftEl = this.root.querySelector('#metric-comp-shift');
-    this.formulaGapEl = this.root.querySelector('#formula-gap');
-    this.liveTextEl = this.root.querySelector('#sh-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.sh-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SHELL_SORT_PROBLEM_HTML,
-      analysisHtml: SHELL_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): ShellStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '9, 8, 3, 7, 5, 6, 4, 1';
-    const arr = parseArray(raw);
-    return shellSortSteps(arr);
-  }
-
-  protected renderStep(step: ShellStep): void {
-    const { array, gap, i, key, j, comparisons, shifts, phase, message } = step;
-
-    // 1. 渲染柱状图
-    if (this.barsContainerEl) {
-      const maxVal = Math.max(...array, key, 1);
-      this.barsContainerEl.innerHTML = array
-        .map((val, idx) => {
-          const isKey = idx === i && phase === 'pick-key';
-          const isGapPartner = j >= gap && idx === j - gap && phase === 'compare';
-          const isShifting = idx === j && phase === 'shift';
-          const isSorted = phase === 'done';
-
-          let pillarClass = 'sh-bar-pillar';
-          if (isKey) pillarClass += ' is-key';
-          else if (isShifting) pillarClass += ' is-shifting';
-          else if (isGapPartner) pillarClass += ' is-gap-partner';
-          else if (isSorted) pillarClass += ' is-sorted';
-
-          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-          return `
-            <div class="bs-bar-wrapper">
-              <div class="${pillarClass}" style="height: ${heightPct}%;">
-                <span>${val}</span>
-              </div>
-              <span class="bs-bar-idx">${idx}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricGapEl) this.metricGapEl.textContent = gap > 0 ? String(gap) : '—';
-    if (this.metricIEl) this.metricIEl.textContent = i >= 0 ? String(i) : '—';
-    if (this.metricKeyEl) this.metricKeyEl.textContent = key >= 0 ? String(key) : '—';
-    if (this.metricCompShiftEl) {
-      this.metricCompShiftEl.textContent = `${comparisons} / ${shifts}`;
-    }
-
-    if (this.formulaGapEl) {
-      if (gap > 0) {
-        this.formulaGapEl.textContent = `当前增量 gap = ${gap}`;
-      } else {
-        this.formulaGapEl.textContent = 'gap = gap / 2';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'done' ? '#f0fdf4' : st.phase === 'shift' ? '#fff1f2' : '#eff6ff';
-        let color =
-          st.phase === 'done' ? '#15803d' : st.phase === 'shift' ? '#e11d48' : '#1d4ed8';
-        let border =
-          st.phase === 'done' ? '#bbf7d0' : st.phase === 'shift' ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeGap = this.root?.querySelector('#badge-gap');
-    if (badgeGap) badgeGap.textContent = `当前增量: ${gap}`;
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ShellStep[]): ShellStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      gap: s.gap > 0 ? String(s.gap) : '—',
+      i: s.i >= 0 ? String(s.i) : '—',
+      key: s.key >= 0 ? String(s.key) : '—',
+      'comp-shift': `${s.comparisons} / ${s.shifts}`,
+      action: s.gap > 0 ? `当前增量 gap = ${s.gap}` : 'gap = gap / 2',
+    },
+  }));
 }
 
-registerAlgorithm({
+export function renderShellSortCanvas(container: HTMLElement, step: ShellStep): void {
+  const { array, gap, i, key, j, phase } = step;
+
+  const maxVal = Math.max(...array, key, 1);
+  const barsHtml = array
+    .map((val, idx) => {
+      const isKey = idx === i && phase === 'pick-key';
+      const isGapPartner = j >= gap && idx === j - gap && phase === 'compare';
+      const isShifting = idx === j && phase === 'shift';
+      const isSorted = phase === 'done';
+
+      let bg = '#cbd5e1';
+      let border = '#94a3b8';
+      let color = '#334155';
+      let transform = 'none';
+      if (isKey) {
+        bg = '#fef9c3';
+        border = '#eab308';
+        color = '#854d0e';
+        transform = 'scale(1.05)';
+      } else if (isShifting) {
+        bg = '#fef2f2';
+        border = '#ef4444';
+        color = '#b91c1c';
+      } else if (isGapPartner) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+        color = '#1d4ed8';
+      } else if (isSorted) {
+        bg = '#f0fdf4';
+        border = '#22c55e';
+        color = '#15803d';
+      }
+
+      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; box-sizing: border-box;">${val}</div>
+          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
+      ${barsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'shell-sort',
   name: '希尔排序',
-  viewId: 'algo-shell-sort-view',
   category: 'sort',
   description: '逐步演示希尔排序：缩小增量 gap，跨步插入排序',
   icon: '🐚',
   difficulty: 2,
   levelOrder: 4,
   learningGoal: '理解希尔排序的跨步插入和缩小增量过程',
-  template,
-  Visualizer: ShellSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '9, 8, 3, 7, 5, 6, 4, 1',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '9, 8, 3, 7, 5, 6, 4, 1' } },
+    { label: '近有序', values: { array: '1, 3, 2, 5, 4, 7, 6' } },
+    { label: '逆序最坏情形', values: { array: '10, 9, 8, 7, 6, 5, 4' } },
+    { label: '含重复元素', values: { array: '5, 2, 5, 1, 2' } },
+  ],
+  metrics: [
+    { id: 'gap', label: '当前增量 gap', color: '#2563eb' },
+    { id: 'i', label: '当前索引 i', color: '#0f172a' },
+    { id: 'key', label: '待插 key', color: '#eab308' },
+    { id: 'comp-shift', label: '比较 / 后移', color: '#f59e0b' },
+    { id: 'action', label: '增量策略', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '待插 key', color: '#eab308' },
+    { label: 'gap跨度比对', color: '#3b82f6' },
+    { label: 'gap后移搬移', color: '#ef4444' },
+    { label: '最终就位', color: '#22c55e' },
+  ],
+  codeLanguages: SHELL_SORT_CODE_LANGUAGES,
+  problemHtml: SHELL_SORT_PROBLEM_HTML,
+  analysisHtml: SHELL_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(shellSortSteps(parseArray(String(inputs.array ?? '9, 8, 3, 7, 5, 6, 4, 1')))),
+  renderCanvas: (container, step) => renderShellSortCanvas(container, step as ShellStep),
 });

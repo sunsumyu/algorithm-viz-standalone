@@ -3,14 +3,12 @@
  * LeetCode 1005: 绝对值降序排序 + 负数优先翻转 + 剩余奇数次翻转最小绝对值
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   MAXIMIZE_SUM_K_PROBLEM_HTML,
   MAXIMIZE_SUM_K_ANALYSIS_HTML,
   MAXIMIZE_SUM_K_CODE_LANGUAGES,
 } from './maximize-sum-k-problem-content';
-import template from './maximize-sum-k.html?raw';
 
 export interface MaxSumKStep {
   array: number[];
@@ -21,6 +19,8 @@ export interface MaxSumKStep {
   action: 'init' | 'sort' | 'flip_negative' | 'skip_positive' | 'flip_smallest' | 'done';
   message: string;
   codeLine: number;
+  metrics?: Record<string, string>;
+  log?: string;
 }
 
 export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKStep[] {
@@ -136,238 +136,153 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class MaximizeSumKVisualizer extends StepVisualizer<MaxSumKStep> {
-  protected codeLanguages = MAXIMIZE_SUM_K_CODE_LANGUAGES;
-  protected codeLines = MAXIMIZE_SUM_K_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'K 次取反后最大化的数组和 代码调试';
 
-  private sandboxContainer: HTMLElement | null = null;
-  private kContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: MaxSumKStep[]): MaxSumKStep[] {
+  return steps.map((s) => {
+    const isFlipNeg = s.action === 'flip_negative';
+    const isFlipSmall = s.action === 'flip_smallest';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#mk-sandbox-container');
-    this.kContainer = this.root.querySelector('#mk-k-container');
-    this.decisionMonitorContainer = this.root.querySelector('#mk-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#mk-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    let action = '🔍 遍历扫描中';
+    if (isFlipNeg) action = '🔄 贪心1: 大负数优先转正';
+    else if (isFlipSmall) action = '⚖️ 贪心2: 奇数次翻转最小绝对值';
+    else if (s.action === 'done') action = '🎉 完成';
+    else if (s.action === 'sort') action = '🔀 绝对值降序排序';
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.mk-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (numsEl && btn.dataset.nums) numsEl.value = btn.dataset.nums;
-        if (kEl && btn.dataset.k) kEl.value = btn.dataset.k;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: MAXIMIZE_SUM_K_PROBLEM_HTML,
-      analysisHtml: MAXIMIZE_SUM_K_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): MaxSumKStep[] {
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-
-    const rawNums = (numsEl?.value || '2,-3,-1,5,-4')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const k = parseInt(kEl?.value || '2', 10);
-
-    const nums = rawNums.length > 0 ? rawNums : [2, -3, -1, 5, -4];
-    return buildMaxSumKSteps(nums, isNaN(k) ? 2 : k);
-  }
-
-  protected renderStep(step: MaxSumKStep): void {
-    const arr = step.array;
-    const n = arr.length;
-
-    // 1. 渲染绝对值排序与取反沙盘 (Card 1)
-    if (this.sandboxContainer && n > 0) {
-      const curIdx = step.currentIndex;
-      const isDone = step.action === 'done';
-
-      const cellsHtml = arr
-        .map((val, idx) => {
-          const isCurrent = idx === curIdx && !isDone;
-          const isFlipped = step.flippedIndices.includes(idx);
-          const isNegative = val < 0;
-
-          let bg = '#ffffff';
-          let borderColor = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (isCurrent) {
-            bg = '#fff1f2';
-            borderColor = '#e11d48';
-            textColor = '#e11d48';
-          } else if (isFlipped) {
-            bg = '#ecfdf5';
-            borderColor = '#10b981';
-            textColor = '#059669';
-          } else if (isNegative) {
-            bg = '#fef2f2';
-            borderColor = '#fca5a5';
-            textColor = '#dc2626';
-          }
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-              <span style="font-size: 9.5px; color: ${isCurrent ? '#e11d48' : '#94a3b8'}; font-weight: 700;">
-                ${isCurrent ? '📍 当前' : `|${Math.abs(val)}|`}
-              </span>
-              <div style="width: 48px; height: 48px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 5px rgba(0,0,0,0.04); transition: all 0.15s;">
-                <span>${val > 0 ? `+${val}` : val}</span>
-              </div>
-              <span style="font-size: 9px; color: ${isFlipped ? '#059669' : isNegative ? '#dc2626' : '#64748b'}; font-weight: 700;">
-                ${isFlipped ? '✓ 翻转' : isNegative ? '⚠️ 负数' : '正数'}
-              </span>
-            </div>
-          `;
-        })
-        .join('');
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- 排序提示与当前和 -->
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
-            <span>按绝对值降序排列: <code style="color:#e11d48;">|x| desc</code></span>
-            <span>当前数组和: <strong style="color: #059669; font-family: monospace; font-size: 12.5px;">${step.currentSum}</strong></span>
-          </div>
-        </div>
-
-        <!-- 单元格水平条 -->
-        <div style="display: flex; gap: 10px; overflow-x: auto; justify-content: center; padding: 6px 0;">
-          ${cellsHtml}
-        </div>
-      `;
-    }
-
-    // 2. 渲染剩余翻转次数与状态 (Card 2 Left)
-    if (this.kContainer) {
-      this.kContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>剩余可用 K:</span>
-            <span style="font-family: monospace; font-weight:800; color: #e11d48; font-size: 13px;">${step.remainingK}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>已翻转次数:</span>
-            <span style="font-family: monospace; font-weight:700;">${step.flippedIndices.length} 次</span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染两次贪心决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isFlipNeg = step.action === 'flip_negative';
-      const isFlipSmall = step.action === 'flip_smallest';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>贪心策略:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isFlipNeg || isFlipSmall ? '#fff1f2' : '#eff6ff'}; color: ${isFlipNeg || isFlipSmall ? '#e11d48' : '#2563eb'}; border: 1px solid ${isFlipNeg || isFlipSmall ? '#fecdd3' : '#bfdbfe'};">
-              ${isFlipNeg ? '🔄 贪心1: 大负数优先转正' : isFlipSmall ? '⚖️ 贪心2: 奇数次翻转最小绝对值' : '🔍 遍历扫描中'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 规则: 大负数转正增益最大；尾部小正数转负损失最小</div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最终数组最大和看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>最终数组最大和: <strong style="color: #059669; font-family: monospace; font-size: 13.5px;">${step.currentSum}</strong></span>
-            <span style="font-family: monospace; font-weight: 700; color: #475569;">[${arr.join(', ')}]</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeK = this.root?.querySelector('#badge-remaining-k');
-    if (badgeK) {
-      badgeK.textContent = `剩余 K: ${step.remainingK}`;
-    }
-
-
-    // 7. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '步骤';
-
-        if (st.action === 'flip_negative') {
-          badgeColor = '#e11d48';
-          badgeBg = '#fff1f2';
-          badgeText = '负翻正';
-        } else if (st.action === 'flip_smallest') {
-          badgeColor = '#d97706';
-          badgeBg = '#fef3c7';
-          badgeText = '最小翻转';
-        } else if (st.action === 'done') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
-          </div>
-        `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        'remaining-k': String(s.remainingK),
+        flipped: `${s.flippedIndices.length} 次`,
+        sum: String(s.currentSum),
+        array: `[${s.array.join(', ')}]`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：绝对值排序与取反沙盘 */
+export function renderMaximizeSumKCanvas(container: HTMLElement, step: MaxSumKStep): void {
+  const arr = step.array;
+  const n = arr.length;
+
+  if (n === 0) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">输入为空</div>';
+    return;
+  }
+
+  const curIdx = step.currentIndex;
+  const isDone = step.action === 'done';
+
+  const cellsHtml = arr
+    .map((val, idx) => {
+      const isCurrent = idx === curIdx && !isDone;
+      const isFlipped = step.flippedIndices.includes(idx);
+      const isNegative = val < 0;
+
+      let bg = '#ffffff';
+      let borderColor = '#e2e8f0';
+      let textColor = '#0f172a';
+
+      if (isCurrent) {
+        bg = '#fff1f2';
+        borderColor = '#e11d48';
+        textColor = '#e11d48';
+      } else if (isFlipped) {
+        bg = '#ecfdf5';
+        borderColor = '#10b981';
+        textColor = '#059669';
+      } else if (isNegative) {
+        bg = '#fef2f2';
+        borderColor = '#fca5a5';
+        textColor = '#dc2626';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span style="font-size: 9.5px; color: ${isCurrent ? '#e11d48' : '#94a3b8'}; font-weight: 700;">
+            ${isCurrent ? '📍 当前' : `|${Math.abs(val)}|`}
+          </span>
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 5px rgba(0,0,0,0.04); transition: all 0.15s;">
+            <span>${val > 0 ? `+${val}` : val}</span>
+          </div>
+          <span style="font-size: 9px; color: ${isFlipped ? '#059669' : isNegative ? '#dc2626' : '#64748b'}; font-weight: 700;">
+            ${isFlipped ? '✓ 翻转' : isNegative ? '⚠️ 负数' : '正数'}
+          </span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 12px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+        <span>按绝对值降序排列: <code style="color:#e11d48;">|x| desc</code></span>
+        <span>当前数组和: <strong style="color: #059669; font-family: monospace; font-size: 12.5px;">${step.currentSum}</strong></span>
+      </div>
+
+      <div style="display: flex; gap: 10px; overflow-x: auto; justify-content: center; padding: 6px 0;">
+        ${cellsHtml}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'maximize-sum-k',
   name: 'K 次取反后最大化的数组和',
-  viewId: 'algo-maximize-sum-k-view',
   category: 'greedy',
   description: '绝对值降序排序，负数优先转正，剩余奇数次翻转最小绝对值',
   icon: '±',
-  template,
-  Visualizer: MaximizeSumKVisualizer,
   difficulty: 1,
   levelOrder: 7,
   learningGoal: '掌握贪心算法中的绝对值排序策略与奇偶性分类讨论思维',
+  inputs: [
+    {
+      id: 'nums',
+      label: '整数数组',
+      type: 'text',
+      defaultValue: '2,-3,-1,5,-4',
+      placeholder: '逗号分隔整数',
+    },
+    {
+      id: 'k',
+      label: '翻转次数 K',
+      type: 'number',
+      defaultValue: '2',
+      placeholder: 'K',
+    },
+  ],
+  presets: [
+    { label: '示例 1', values: { nums: '2,-3,-1,5,-4', k: '2' } },
+    { label: '示例 2', values: { nums: '3,-1,0,2', k: '3' } },
+    { label: '含零特判', values: { nums: '4,2,3', k: '1' } },
+  ],
+  metrics: [
+    { id: 'remaining-k', label: '剩余可用 K', color: '#e11d48' },
+    { id: 'flipped', label: '已翻转次数', color: '#0f172a' },
+    { id: 'sum', label: '当前数组和', color: '#059669' },
+    { id: 'array', label: '当前数组', color: '#475569' },
+    { id: 'action', label: '贪心策略', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '📍 当前考察', color: '#e11d48' },
+    { label: '✓ 已翻转', color: '#10b981' },
+    { label: '⚠️ 负数', color: '#dc2626' },
+  ],
+  codeLanguages: MAXIMIZE_SUM_K_CODE_LANGUAGES,
+  problemHtml: MAXIMIZE_SUM_K_PROBLEM_HTML,
+  analysisHtml: MAXIMIZE_SUM_K_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const arr = String(inputs.nums ?? '2,-3,-1,5,-4')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    let k = parseInt(String(inputs.k ?? '2'), 10);
+    if (!Number.isFinite(k)) k = 2;
+    return withMetrics(buildMaxSumKSteps(arr.length ? arr : [2, -3, -1, 5, -4], k));
+  },
+  renderCanvas: (container, step) => renderMaximizeSumKCanvas(container, step as MaxSumKStep),
 });

@@ -3,14 +3,13 @@
  * 4-Card 标准现代架构可视化器
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   REACHABLE_PATHS_PROBLEM_HTML,
   REACHABLE_PATHS_ANALYSIS_HTML,
   REACHABLE_PATHS_CODE_LANGUAGES,
 } from './reachable-paths-problem-content';
-import template from './reachable-paths.html?raw';
 
 export interface RPStep extends StepBase {
   nodes: number[];
@@ -22,6 +21,7 @@ export interface RPStep extends StepBase {
   statusText: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string | number>;
 }
 
 export const DAG_NODES = [0, 1, 2, 3];
@@ -132,212 +132,180 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
   return steps;
 }
 
-export class ReachablePathsVisualizer extends StepVisualizer<RPStep> {
-  protected codeLanguages = REACHABLE_PATHS_CODE_LANGUAGES;
-  protected codeLines = REACHABLE_PATHS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '所有可能路径 (LC 797) 代码调试';
-
-  private svgCanvas: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricCurPathEl: HTMLElement | null = null;
-  private metricActionEl: HTMLElement | null = null;
-  private metricTotalPathsEl: HTMLElement | null = null;
-  private allPathsEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.svgCanvas = this.root.querySelector('#rp-svg-canvas');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricCurPathEl = this.root.querySelector('#metric-cur-path');
-    this.metricActionEl = this.root.querySelector('#metric-action');
-    this.metricTotalPathsEl = this.root.querySelector('#metric-total-paths');
-    this.allPathsEl = this.root.querySelector('#rp-all-paths');
-    this.liveTextEl = this.root.querySelector('#rp-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REACHABLE_PATHS_PROBLEM_HTML,
-      analysisHtml: REACHABLE_PATHS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RPStep[] {
-    return buildReachableSteps();
-  }
-
-  protected renderStep(step: RPStep): void {
-    const { nodes, edges, currentNode, currentPath, allPaths, statusText, action } = step;
-
-    // 1. 绘制有向图 SVG
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 450 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
-          </marker>
-          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
-          </marker>
-        </defs>`;
-
-      // 当前路径边的集合
-      const curEdgeSet = new Set<string>();
-      if (currentPath.length > 1) {
-        for (let i = 0; i < currentPath.length - 1; i++) {
-          curEdgeSet.add(`${currentPath[i]}->${currentPath[i + 1]}`);
-        }
-      }
-
-      // 绘制有向边
-      for (const [u, v] of edges) {
-        const p1 = DAG_POSITIONS[u] || { x: 50, y: 50 };
-        const p2 = DAG_POSITIONS[v] || { x: 150, y: 150 };
-        const isCurEdge = curEdgeSet.has(`${u}->${v}`);
-
-        const stroke = isCurEdge ? '#2563eb' : '#cbd5e1';
-        const strokeWidth = isCurEdge ? 3 : 2;
-        const marker = isCurEdge ? 'url(#arrow-blue)' : 'url(#arrow-gray)';
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${stroke}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-      }
-
-      // 绘制节点
-      for (const u of nodes) {
-        const pos = DAG_POSITIONS[u] || { x: 50, y: 50 };
-        const isCurrent = currentNode === u;
-        const inPath = currentPath.includes(u);
-        const isTarget = u === nodes.length - 1;
-
-        let fill = '#ffffff';
-        let stroke = '#94a3b8';
-        let textColor = '#0f172a';
-
-        if (action === 'target-reached' && inPath) {
-          fill = '#f0fdf4';
-          stroke = '#16a34a';
-          textColor = '#15803d';
-        } else if (isCurrent) {
-          fill = '#eff6ff';
-          stroke = '#2563eb';
-          textColor = '#1d4ed8';
-        } else if (inPath) {
-          fill = '#fef9c3';
-          stroke = '#facc15';
-          textColor = '#854d0e';
-        }
-
-        let badge = u === 0 ? ' (S)' : isTarget ? ' (T)' : '';
-
-        svgHtml += `
-          <g>
-            <circle cx="${pos.x}" cy="${pos.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
-            <text x="${pos.x}" y="${pos.y + 4.5}" text-anchor="middle" font-size="12" font-weight="800" fill="${textColor}" font-family="JetBrains Mono">${u}${badge}</text>
-          </g>
-        `;
-      }
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+/** 解析邻接表文本输入（每行一个节点的邻居列表），非法输入回退默认图 */
+function parseGraphInput(raw: string | undefined): number[][] {
+  const fallback = DEFAULT_GRAPH.map((r) => [...r]);
+  if (!raw || !raw.trim()) return fallback;
+  try {
+    const rows = raw
+      .trim()
+      .split('\n')
+      .map((line) => line.trim().split(/[\s,]+/).filter(Boolean).map(Number));
+    if (rows.length === 0 || rows.some((r) => r.some((v) => !Number.isInteger(v) || v < 0))) {
+      return fallback;
     }
-
-    // 2. 更新状态监视器
-    if (this.metricCurNodeEl) {
-      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
-    }
-    if (this.metricCurPathEl) {
-      this.metricCurPathEl.textContent = currentPath.length > 0 ? `[${currentPath.join(' -> ')}]` : '[ ]';
-    }
-    if (this.metricActionEl) {
-      this.metricActionEl.textContent =
-        action === 'target-reached'
-          ? '🎯 找到路径'
-          : action === 'backtrack'
-          ? '↩ 回溯弹出'
-          : action === 'dfs-enter'
-          ? '深入探索'
-          : '准备开始';
-    }
-    if (this.metricTotalPathsEl) {
-      this.metricTotalPathsEl.textContent = `${allPaths.length}`;
-    }
-
-    if (this.allPathsEl) {
-      this.allPathsEl.textContent =
-        allPaths.length > 0 ? allPaths.map((p) => `[${p.join('->')}]`).join(', ') : '[ ]';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done' || action === 'target-reached'
-          ? '#f0fdf4'
-          : action === 'backtrack'
-          ? '#fff7ed'
-          : '#eff6ff';
-      logEntry.style.color =
-        action === 'done' || action === 'target-reached'
-          ? '#15803d'
-          : action === 'backtrack'
-          ? '#c2410c'
-          : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done' || action === 'target-reached'
-          ? '#bbf7d0'
-          : action === 'backtrack'
-          ? '#fed7aa'
-          : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePaths = this.root?.querySelector('#badge-path-count');
-    if (badgePaths) badgePaths.textContent = `已找到: ${allPaths.length} 条路径`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
+    return rows;
+  } catch {
+    return fallback;
   }
 }
 
-registerAlgorithm({
+/** 附加指标卡快照（当前节点 / 当前路径 / 动作 / 已发现路径数） */
+function withMetrics(steps: RPStep[]): RPStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      'metric-rp-cur-node': s.currentNode !== null ? `${s.currentNode}` : '—',
+      'metric-rp-path': s.currentPath.length > 0 ? `[${s.currentPath.join(' ➔ ')}]` : '[ ]',
+      'metric-rp-action':
+        s.action === 'target-reached'
+          ? '🎯 找到路径'
+          : s.action === 'backtrack'
+            ? '↩ 回溯弹出'
+            : s.action === 'dfs-enter'
+              ? '深入探索'
+              : s.action === 'done'
+                ? '搜索完成'
+                : '准备开始',
+      'metric-rp-total': `${s.allPaths.length}`,
+    },
+  }));
+}
+
+/** 主视觉：DAG SVG（当前路径高亮）+ 已收集路径芯片条 */
+export function renderReachablePathsCanvas(container: HTMLElement, step: RPStep): void {
+  const { nodes, edges, currentNode, currentPath, allPaths, action } = step;
+
+  const positions = nodes.map((_, i) => DAG_POSITIONS[i] || { x: 70 + (i % 3) * 140, y: 60 + Math.floor(i / 3) * 70 });
+
+  let svgHtml = `<svg viewBox="0 0 450 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-rp-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
+      </marker>
+      <marker id="arrow-rp-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
+      </marker>
+      <marker id="arrow-rp-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
+      </marker>
+    </defs>`;
+
+  // 当前路径边的集合
+  const curEdgeSet = new Set<string>();
+  if (currentPath.length > 1) {
+    for (let i = 0; i < currentPath.length - 1; i++) {
+      curEdgeSet.add(`${currentPath[i]}->${currentPath[i + 1]}`);
+    }
+  }
+
+  // 绘制有向边
+  for (const [u, v] of edges) {
+    const p1 = positions[u] || { x: 50, y: 50 };
+    const p2 = positions[v] || { x: 150, y: 150 };
+    const isCurEdge = curEdgeSet.has(`${u}->${v}`);
+
+    const stroke = isCurEdge ? '#2563eb' : '#cbd5e1';
+    const strokeWidth = isCurEdge ? 3 : 2;
+    const marker = isCurEdge ? 'url(#arrow-rp-blue)' : 'url(#arrow-rp-gray)';
+
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${stroke}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+  }
+
+  // 绘制节点
+  for (const u of nodes) {
+    const pos = positions[u] || { x: 50, y: 50 };
+    const isCurrent = currentNode === u;
+    const inPath = currentPath.includes(u);
+    const isTarget = u === nodes.length - 1;
+
+    let fill = '#ffffff';
+    let stroke = '#94a3b8';
+    let textColor = '#0f172a';
+
+    if (action === 'target-reached' && inPath) {
+      fill = '#f0fdf4';
+      stroke = '#16a34a';
+      textColor = '#15803d';
+    } else if (isCurrent) {
+      fill = '#eff6ff';
+      stroke = '#2563eb';
+      textColor = '#1d4ed8';
+    } else if (inPath) {
+      fill = '#fef9c3';
+      stroke = '#facc15';
+      textColor = '#854d0e';
+    }
+
+    let badge = u === 0 ? ' (S)' : isTarget ? ' (T)' : '';
+
+    svgHtml += `
+      <g>
+        <circle cx="${pos.x}" cy="${pos.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
+        <text x="${pos.x}" y="${pos.y + 4.5}" text-anchor="middle" font-size="12" font-weight="800" fill="${textColor}" font-family="JetBrains Mono">${u}${badge}</text>
+      </g>
+    `;
+  }
+
+  svgHtml += `</svg>`;
+
+  const pathChips =
+    allPaths.length > 0
+      ? allPaths
+          .map(
+            (p) =>
+              `<span style="padding: 4px 10px; border-radius: 999px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; font-family: monospace; font-size: 11px; font-weight: 700;">[${p.join('➔')}]</span>`
+          )
+          .join('')
+      : `<span style="padding: 4px 10px; border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; font-family: monospace; font-size: 11px; font-weight: 700;">[ ]</span>`;
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
+      <div style="width: 100%;">${svgHtml}</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; width: 100%;">${pathChips}</div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'reachable-paths',
   name: '所有可能的路径 (LC 797)',
-  viewId: 'algo-reachable-paths-view',
   category: 'graph',
   description: '回溯 DFS 搜索有向无环图 (DAG) 中从源点到目标点的所有可能路径',
   icon: '🎯',
   difficulty: 2,
   levelOrder: 21,
   learningGoal: '掌握 DAG 上的深度优先回溯搜索与路径压栈恢复机制',
-  template,
-  Visualizer: ReachablePathsVisualizer,
+  inputs: [
+    {
+      id: 'graph',
+      label: '邻接表 (每行一个节点的邻居)',
+      type: 'text',
+      defaultValue: '1 2\n3\n3\n',
+      placeholder: '每行如 1 2',
+    },
+  ],
+  presets: [
+    { label: '默认 DAG (4 节点)', values: { graph: '1 2\n3\n3\n' } },
+    { label: '链式图 0→1→2→3', values: { graph: '1\n2\n3\n' } },
+    { label: '星形图 (源点直连)', values: { graph: '1 2 3\n\n\n' } },
+    { label: '5 节点 DAG', values: { graph: '1 2\n3\n3 4\n4\n' } },
+  ],
+  metrics: [
+    { id: 'metric-rp-cur-node', label: '当前访问节点', color: '#2563eb' },
+    { id: 'metric-rp-path', label: '当前路径 path', color: '#eab308' },
+    { id: 'metric-rp-action', label: '当前动作', color: '#a855f7' },
+    { id: 'metric-rp-total', label: '已发现路径数', color: '#16a34a' },
+  ],
+  legend: [
+    { label: '当前访问栈 path', color: '#2563eb' },
+    { label: '命中目标路径', color: '#16a34a' },
+    { label: '路径途经节点', color: '#facc15' },
+    { label: '待遍历边', color: '#94a3b8' },
+  ],
+  codeLanguages: REACHABLE_PATHS_CODE_LANGUAGES,
+  problemHtml: REACHABLE_PATHS_PROBLEM_HTML,
+  analysisHtml: REACHABLE_PATHS_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildReachableSteps(parseGraphInput(inputs?.graph))),
+  renderCanvas: (container, step) => renderReachablePathsCanvas(container, step as RPStep),
 });

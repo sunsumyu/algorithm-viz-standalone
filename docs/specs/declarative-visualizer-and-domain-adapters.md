@@ -1,6 +1,6 @@
 # Spec: 声明式配置化可视化器与领域专属画布适配器架构 (Declarative Visualizer & Domain Adapters Spec)
 
-`triage: ready-for-agent`
+`triage: partially-implemented`
 
 ---
 

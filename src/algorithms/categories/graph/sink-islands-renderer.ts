@@ -1,18 +1,16 @@
 /**
- * 沉没孤岛 / 被围绕的区域 (LC 130)
- * 4-Card 标准现代架构可视化器
+ * 沉没孤岛 (LC 130) — 声明式 4-Card 标准架构
+ * 两阶段 DFS：边缘保护标记 + 内部孤岛淹没与还原
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   SINK_ISLANDS_PROBLEM_HTML,
   SINK_ISLANDS_ANALYSIS_HTML,
   SINK_ISLANDS_CODE_LANGUAGES,
 } from './sink-islands-problem-content';
-import template from './sink-islands.html?raw';
 
-export interface SinkStep extends StepBase {
+export interface SinkStep {
   grid: number[][]; // 0: water/sunk, 1: land, 2: protected
   rows: number;
   cols: number;
@@ -22,8 +20,10 @@ export interface SinkStep extends StepBase {
   sunkCount: number;
   action: 'init' | 'border-protect' | 'sink' | 'restore' | 'done';
   statusText: string;
+  message?: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 const DEFAULT_SINK_GRID = [
@@ -156,175 +156,159 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
   return steps;
 }
 
-export class SinkIslandsVisualizer extends StepVisualizer<SinkStep> {
-  protected codeLanguages = SINK_ISLANDS_CODE_LANGUAGES;
-  protected codeLines = SINK_ISLANDS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '沉没孤岛 (LC 130) 代码调试';
+const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
+  classic: {
+    label: '经典 5×5 围岛',
+    grid: DEFAULT_SINK_GRID,
+  },
+  open: {
+    label: '开放边缘 [4×5]',
+    grid: [
+      [1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1],
+      [0, 1, 1, 1, 0],
+      [1, 0, 1, 0, 1],
+    ],
+  },
+  allProtected: {
+    label: '全域连通 [3×4]',
+    grid: [
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 1, 1, 1],
+    ],
+  },
+};
 
-  private gridContainer: HTMLElement | null = null;
-  private metricCurCellEl: HTMLElement | null = null;
-  private metricStageEl: HTMLElement | null = null;
-  private metricProtectedCountEl: HTMLElement | null = null;
-  private metricSunkCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.gridContainer = this.root.querySelector('#sink-grid-container');
-    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
-    this.metricStageEl = this.root.querySelector('#metric-stage');
-    this.metricProtectedCountEl = this.root.querySelector('#metric-protected-count');
-    this.metricSunkCountEl = this.root.querySelector('#metric-sunk-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#sink-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SINK_ISLANDS_PROBLEM_HTML,
-      analysisHtml: SINK_ISLANDS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SinkStep[] {
-    return buildSinkSteps();
-  }
-
-  protected renderStep(step: SinkStep): void {
-    const { grid, rows, cols, currentCell, stage, protectedCount, sunkCount, statusText, action } = step;
-
-    // 1. 渲染 2D 网格
-    if (this.gridContainer) {
-      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      let html = '';
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const val = grid[r][c];
-          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
-
-          let cls = 'sink-cell';
-          let label = String(val);
-
-          if (val === 0) {
-            cls += ' is-water';
-          } else if (val === 1) {
-            cls += ' is-land';
-          } else if (val === 2) {
-            cls += ' is-protected';
-            label = '🛡️';
-          }
-
-          if (isCurrent) {
-            cls += ' is-current';
-            if (action === 'sink') cls += ' is-sunk';
-          }
-
-          html += `<div class="${cls}"><span>${label}</span></div>`;
-        }
-      }
-      this.gridContainer.innerHTML = html;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurCellEl) {
-      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
-    }
-    if (this.metricStageEl) {
-      this.metricStageEl.textContent = stage;
-    }
-    if (this.metricProtectedCountEl) {
-      this.metricProtectedCountEl.textContent = `${protectedCount}`;
-    }
-    if (this.metricSunkCountEl) {
-      this.metricSunkCountEl.textContent = `${sunkCount}`;
-    }
-
-    if (this.formulaActionEl) {
-      this.formulaActionEl.textContent =
-        action === 'border-protect'
-          ? `DFS: (${currentCell ? currentCell.join(',') : ''}) 标记为 2 (受保护)`
-          : action === 'sink'
-          ? `孤岛判定: (${currentCell ? currentCell.join(',') : ''}) 1 -> 0 (淹没)`
-          : action === 'restore'
-          ? `还原: (${currentCell ? currentCell.join(',') : ''}) 2 -> 1 (保护区保留)`
-          : `1. 边缘连通 DFS (1->2) 2. 内部孤岛沉没 (1->0) 与还原 (2->1)`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'sink'
-          ? '#fef2f2'
-          : action === 'border-protect'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'sink'
-          ? '#dc2626'
-          : action === 'border-protect'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'sink'
-          ? '#fecaca'
-          : action === 'border-protect'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeSunk = this.root?.querySelector('#badge-sunk-count');
-    if (badgeSunk) badgeSunk.textContent = `淹没孤岛: ${sunkCount} 格`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 将网格序列化为文本输入（预设值与 inputs.grid 解析共用） */
+function gridToText(grid: number[][]): string {
+  return grid.map((row) => row.join('')).join('\n');
 }
 
-registerAlgorithm({
+function parseGridText(input: string): number[][] {
+  const rows = input
+    .split(/[\r\n]+|;/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) =>
+      line
+        .replace(/[\[\]\s,，]+/g, '')
+        .split('')
+        .map((ch) => (ch === '1' ? 1 : 0))
+    );
+  return rows.length > 0 ? rows : DEFAULT_SINK_GRID;
+}
+
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: SinkStep[]): SinkStep[] {
+  return steps.map((s) => ({
+    ...s,
+    message: s.statusText,
+    metrics: {
+      'metric-cur-cell': s.currentCell ? `(${s.currentCell[0]}, ${s.currentCell[1]})` : '—',
+      'metric-stage': s.stage,
+      'metric-protected-count': `${s.protectedCount}`,
+      'metric-sunk-count': `${s.sunkCount}`,
+      action:
+        s.action === 'border-protect'
+          ? `DFS: (${s.currentCell ? s.currentCell.join(',') : ''}) 标记为 2 (受保护)`
+          : s.action === 'sink'
+          ? `孤岛判定: (${s.currentCell ? s.currentCell.join(',') : ''}) 1 -> 0 (淹没)`
+          : s.action === 'restore'
+          ? `还原: (${s.currentCell ? s.currentCell.join(',') : ''}) 2 -> 1 (保护区保留)`
+          : '1. 边缘连通 DFS (1->2) 2. 内部孤岛沉没 (1->0) 与还原 (2->1)',
+    },
+  }));
+}
+
+export function renderSinkIslandsCanvas(container: HTMLElement, step: SinkStep): void {
+  const { grid, rows, cols, currentCell, action } = step;
+
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const val = grid[r][c];
+      const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
+
+      let bg = '#f1f5f9';
+      let border = '1px solid #cbd5e1';
+      let color = '#94a3b8';
+      let label = String(val);
+
+      if (val === 1) {
+        bg = '#dcfce7';
+        border = '1.5px solid #86efac';
+        color = '#16a34a';
+      } else if (val === 2) {
+        bg = '#e0e7ff';
+        border = '1.5px solid #a5b4fc';
+        color = '#4338ca';
+        label = '🛡️';
+      }
+
+      if (isCurrent && action === 'sink') {
+        bg = '#fee2e2';
+        border = '1.5px solid #fca5a5';
+        color = '#dc2626';
+      }
+
+      let boxShadow = 'none';
+      let transform = 'none';
+      if (isCurrent) {
+        boxShadow = '0 0 0 3px #facc15';
+        transform = 'scale(1.06)';
+      }
+
+      html += `<div style="aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-sizing: border-box; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${boxShadow}; transform: ${transform}; z-index: ${isCurrent ? 10 : 1};"><span>${label}</span></div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; max-width: 560px; margin: 0 auto; padding: 8px; box-sizing: border-box;">
+      ${html}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'sink-islands',
   name: '沉没孤岛 (LC 130)',
-  viewId: 'algo-sink-islands-view',
   category: 'graph',
   description: '两阶段 DFS：从边界出发标记边缘保护区，将内部所有未相连的孤岛淹没',
   icon: '🏝️',
   difficulty: 2,
   levelOrder: 16,
   learningGoal: '掌握逆向思维边界保护 DFS 遍历与多状态标记法',
-  template,
-  Visualizer: SinkIslandsVisualizer,
+  inputs: [
+    {
+      id: 'grid',
+      label: '网格 (每行一串 0/1)',
+      type: 'text',
+      defaultValue: gridToText(DEFAULT_SINK_GRID),
+      placeholder: '每行如 11111',
+    },
+  ],
+  presets: [
+    { label: PRESET_CASES.classic.label, values: { grid: gridToText(PRESET_CASES.classic.grid) } },
+    { label: PRESET_CASES.open.label, values: { grid: gridToText(PRESET_CASES.open.grid) } },
+    { label: PRESET_CASES.allProtected.label, values: { grid: gridToText(PRESET_CASES.allProtected.grid) } },
+  ],
+  metrics: [
+    { id: 'metric-cur-cell', label: '当前格子', color: '#3b82f6' },
+    { id: 'metric-stage', label: '当前阶段', color: '#6366f1' },
+    { id: 'metric-protected-count', label: '保护区格数', color: '#4338ca' },
+    { id: 'metric-sunk-count', label: '已淹没孤岛', color: '#dc2626' },
+    { id: 'action', label: '处理动作', color: '#f59e0b' },
+  ],
+  legend: [
+    { label: '陆地 (1)', color: '#86efac' },
+    { label: '边沿保护 (2)', color: '#a5b4fc' },
+    { label: '已淹没孤岛 (0)', color: '#fca5a5' },
+    { label: '水域 (0)', color: '#94a3b8' },
+  ],
+  codeLanguages: SINK_ISLANDS_CODE_LANGUAGES,
+  problemHtml: SINK_ISLANDS_PROBLEM_HTML,
+  analysisHtml: SINK_ISLANDS_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildSinkSteps(parseGridText(String(inputs?.grid ?? '')))),
+  renderCanvas: (container, step) => renderSinkIslandsCanvas(container, step as SinkStep),
 });

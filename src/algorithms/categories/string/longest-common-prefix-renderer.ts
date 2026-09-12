@@ -1,20 +1,14 @@
 /**
- * 最长公共前缀可视化器 — 4-Card 标准现代架构
+ * 最长公共前缀可视化器 — 声明式 4-Card 标准架构
  * LeetCode 14：纵向逐列扫描
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   LONGEST_COMMON_PREFIX_PROBLEM_HTML,
   LONGEST_COMMON_PREFIX_ANALYSIS_HTML,
   LONGEST_COMMON_PREFIX_CODE_LANGUAGES,
 } from './longest-common-prefix-problem-content';
-import template from './longest-common-prefix.html?raw';
 
 export interface LCPStep {
   strs: string[];
@@ -29,6 +23,7 @@ export interface LCPStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function parseStringList(input: string): string[] {
@@ -173,159 +168,116 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
   return steps;
 }
 
-export class LongestCommonPrefixVisualizer extends StepVisualizer<LCPStep> {
-  protected codeLanguages = LONGEST_COMMON_PREFIX_CODE_LANGUAGES;
-  protected codeLines = LONGEST_COMMON_PREFIX_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '最长公共前缀 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: LCPStep[]): LCPStep[] {
+  return steps.map((s) => {
+    const action =
+      s.row >= 0 && s.col >= 0 && s.phase !== 'done'
+        ? `strs[${s.row}][${s.col}] == strs[0][${s.col}] ('${s.char}')`
+        : 'strs[row][col] == strs[0][col]';
 
-  private matrixWrapEl: HTMLElement | null = null;
-  private metricColEl: HTMLElement | null = null;
-  private metricRowEl: HTMLElement | null = null;
-  private metricCharEl: HTMLElement | null = null;
-  private metricPrefixEl: HTMLElement | null = null;
-  private formulaColEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.matrixWrapEl = this.root.querySelector('#lcp-matrix-wrap');
-    this.metricColEl = this.root.querySelector('#metric-col');
-    this.metricRowEl = this.root.querySelector('#metric-row');
-    this.metricCharEl = this.root.querySelector('#metric-char');
-    this.metricPrefixEl = this.root.querySelector('#metric-prefix');
-    this.formulaColEl = this.root.querySelector('#formula-col');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.lcp-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const strsInput = this.root?.querySelector('#input-strs') as HTMLInputElement | null;
-        if (strsInput && btn.dataset.strs) strsInput.value = btn.dataset.strs;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: LONGEST_COMMON_PREFIX_PROBLEM_HTML,
-      analysisHtml: LONGEST_COMMON_PREFIX_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): LCPStep[] {
-    const strsInput = this.root?.querySelector('#input-strs') as HTMLInputElement | null;
-    const raw = strsInput?.value || 'flower, flow, flight';
-    const strs = parseStringList(raw);
-    return buildLCPSteps(strs);
-  }
-
-  protected renderStep(step: LCPStep): void {
-    const { strs, col, row, char, matchedLen, prefix, isMismatch, phase, message } = step;
-
-    // 1. 渲染多字符串矩阵
-    if (this.matrixWrapEl) {
-      this.matrixWrapEl.innerHTML = strs
-        .map((str, rIdx) => {
-          const cellsHtml = str
-            .split('')
-            .map((ch, cIdx) => {
-              const inCurCol = cIdx === col && phase !== 'done';
-              const isActiveCell = rIdx === row && cIdx === col;
-              const isMatchedPrefix = cIdx < matchedLen;
-              const isCellMismatch = isMismatch && rIdx === row && cIdx === col;
-
-              let cellClass = 'lcp-cell-box';
-              if (isCellMismatch) cellClass += ' is-mismatch';
-              else if (isMatchedPrefix) cellClass += ' is-matched-prefix';
-              else if (isActiveCell) cellClass += ' is-active-cell';
-              else if (inCurCol) cellClass += ' in-current-col';
-
-              return `
-                <div class="${cellClass}">
-                  <span>${ch}</span>
-                </div>
-              `;
-            })
-            .join('');
-
-          return `
-            <div class="lcp-matrix-row">
-              <span class="lcp-str-label">strs[${rIdx}]:</span>
-              <div style="display: flex; gap: 4px;">${cellsHtml}</div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricColEl) this.metricColEl.textContent = col >= 0 && phase !== 'done' ? String(col) : '—';
-    if (this.metricRowEl) this.metricRowEl.textContent = row >= 0 && phase !== 'done' ? String(row) : '—';
-    if (this.metricCharEl) this.metricCharEl.textContent = char ? `'${char}'` : '—';
-    if (this.metricPrefixEl) this.metricPrefixEl.textContent = prefix ? `"${prefix}"` : '""';
-
-    if (this.formulaColEl) {
-      if (row >= 0 && col >= 0 && phase !== 'done') {
-        this.formulaColEl.textContent = `strs[${row}][${col}] == strs[0][${col}] ('${char}')`;
-      } else {
-        this.formulaColEl.textContent = 'strs[row][col] == strs[0][col]';
-      }
-    }
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : isMismatch ? '#fef2f2' : '#eff6ff';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : isMismatch ? '#b91c1c' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : isMismatch ? '#fecaca' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePrefix = this.root?.querySelector('#badge-prefix');
-    if (badgePrefix) {
-      badgePrefix.textContent = phase === 'done' ? (prefix ? `LCP: "${prefix}"` : '无公共前缀') : `LCP: "${prefix}"`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...s,
+      metrics: {
+        col: s.col >= 0 && s.phase !== 'done' ? String(s.col) : '—',
+        row: s.row >= 0 && s.phase !== 'done' ? String(s.row) : '—',
+        char: s.char ? `'${s.char}'` : '—',
+        prefix: s.prefix ? `"${s.prefix}"` : '""',
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：多字符串矩阵纵向逐列扫描 */
+export function renderLongestCommonPrefixCanvas(container: HTMLElement, step: LCPStep): void {
+  const { strs, col, row, matchedLen, isMismatch, phase } = step;
+
+  const rowsHtml = strs
+    .map((str, rIdx) => {
+      const cellsHtml = str
+        .split('')
+        .map((ch, cIdx) => {
+          const inCurCol = cIdx === col && phase !== 'done';
+          const isActiveCell = rIdx === row && cIdx === col;
+          const isMatchedPrefix = cIdx < matchedLen;
+          const isCellMismatch = isMismatch && rIdx === row && cIdx === col;
+
+          let style =
+            'width: 28px; height: 30px; border-radius: 6px; background: #ffffff; border: 1.5px solid #cbd5e1; display: inline-flex; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; font-size: 12.5px; font-weight: 700; color: #334155; transition: all 0.15s;';
+          if (isCellMismatch) {
+            style += ' background: #fef2f2; border-color: #ef4444; color: #b91c1c;';
+          } else if (isMatchedPrefix) {
+            style += ' background: #ecfdf5; border-color: #10b981; color: #047857;';
+          } else if (isActiveCell) {
+            style += ' background: #dbeafe; border-color: #2563eb; color: #1e40af; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);';
+          } else if (inCurCol) {
+            style += ' background: #eff6ff; border-color: #93c5fd; color: #1d4ed8;';
+          }
+
+          return `<div style="${style}"><span>${ch}</span></div>`;
+        })
+        .join('');
+
+      return `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #64748b; min-width: 60px;">strs[${rIdx}]:</span>
+          <div style="display: flex; gap: 4px;">${cellsHtml}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; overflow: auto;">
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 440px;">
+        ${rowsHtml}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'longest-common-prefix',
   name: '最长公共前缀（逐列扫描）',
-  viewId: 'algo-longest-common-prefix-view',
   category: 'string',
   description: '以第一个字符串为基准，逐列比对找公共前缀',
   icon: '📖',
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '理解逐字符纵向比较求公共前缀的思路',
-  template,
-  Visualizer: LongestCommonPrefixVisualizer,
+  inputs: [
+    {
+      id: 'strs',
+      label: '字符串列表',
+      type: 'text',
+      defaultValue: 'flower, flow, flight',
+      placeholder: '逗号分隔',
+    },
+  ],
+  presets: [
+    { label: '示例 1: (["flower","flow","flight"] -> "fl")', values: { strs: 'flower, flow, flight' } },
+    { label: '示例 2: (无前缀 -> "")', values: { strs: 'dog, racecar, car' } },
+    { label: '长前缀: (-> "inters")', values: { strs: 'interspecies, interstellar, interstate' } },
+    { label: '全相同: (-> "prefix")', values: { strs: 'prefix, prefix, prefix' } },
+  ],
+  metrics: [
+    { id: 'col', label: '当前列 col', color: '#2563eb' },
+    { id: 'row', label: '当前行 row', color: '#9333ea' },
+    { id: 'char', label: '基准字符 char', color: '#f59e0b' },
+    { id: 'prefix', label: '当前前缀结果', color: '#10b981' },
+    { id: 'action', label: '列比对', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前列 col', color: '#2563eb' },
+    { label: '公共前缀', color: '#10b981' },
+    { label: '失配列', color: '#ef4444' },
+  ],
+  codeLanguages: LONGEST_COMMON_PREFIX_CODE_LANGUAGES,
+  problemHtml: LONGEST_COMMON_PREFIX_PROBLEM_HTML,
+  analysisHtml: LONGEST_COMMON_PREFIX_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildLCPSteps(parseStringList(String(inputs.strs ?? 'flower, flow, flight')))),
+  renderCanvas: (container, step) =>
+    renderLongestCommonPrefixCanvas(container, step as LCPStep),
 });

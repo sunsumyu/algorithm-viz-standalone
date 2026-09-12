@@ -3,14 +3,12 @@
  * LeetCode 135：双向两次贪心（左向右 + 右向左取 max），求最少分发糖果数
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   CANDY_PROBLEM_HTML,
   CANDY_ANALYSIS_HTML,
   CANDY_CODE_LANGUAGES,
 } from './candy-problem-content';
-import template from './candy.html?raw';
 
 export interface CandyStep {
   ratings: number[];
@@ -20,6 +18,8 @@ export interface CandyStep {
   action: 'init' | 'inc_right' | 'keep_right' | 'inc_left' | 'keep_left' | 'done';
   message: string;
   codeLine: number;
+  metrics?: Record<string, string>;
+  log?: string;
 }
 
 export function buildCandySteps(rawRatings: number[]): CandyStep[] {
@@ -126,241 +126,149 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class CandyVisualizer extends StepVisualizer<CandyStep> {
-  protected codeLanguages = CANDY_CODE_LANGUAGES;
-  protected codeLines = CANDY_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '分发糖果 代码调试';
 
-  private sandboxContainer: HTMLElement | null = null;
-  private childContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: CandyStep[]): CandyStep[] {
+  return steps.map((s) => {
+    const total = s.candies.reduce((acc, v) => acc + v, 0);
+    const idx = s.currentIndex;
+    const isIncR = s.action === 'inc_right';
+    const isIncL = s.action === 'inc_left';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#cd-sandbox-container');
-    this.childContainer = this.root.querySelector('#cd-child-container');
-    this.decisionMonitorContainer = this.root.querySelector('#cd-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#cd-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    let action = '⏩ 评分不高于相邻 (保持)';
+    if (isIncR) action = '📈 右孩子评分高 (+1 奖励)';
+    else if (isIncL) action = '📉 左孩子评分高 (取 max 奖励)';
+    else if (s.action === 'done') action = '✓ 完成';
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+    const phaseText =
+      s.direction === 'left-to-right' ? '➡️ 从左到右 (右 > 左 递增)'
+      : s.direction === 'right-to-left' ? '⬅️ 从右到左 (左 > 右 取 max)'
+      : s.direction === 'done' ? '✓ 完成' : '初始化';
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.cd-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ratingsEl = this.root?.querySelector('#input-ratings') as HTMLInputElement | null;
-        if (ratingsEl && btn.dataset.ratings) ratingsEl.value = btn.dataset.ratings;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: CANDY_PROBLEM_HTML,
-      analysisHtml: CANDY_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): CandyStep[] {
-    const ratingsEl = this.root?.querySelector('#input-ratings') as HTMLInputElement | null;
-    const rawRatings = (ratingsEl?.value || '1,0,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    return buildCandySteps(rawRatings.length ? rawRatings : [1, 0, 2]);
-  }
-
-  protected renderStep(step: CandyStep): void {
-    const ratings = step.ratings;
-    const candies = step.candies;
-    const n = ratings.length;
-
-    // 1. 渲染评分与糖果堆叠沙盘 (Card 1)
-    if (this.sandboxContainer && n > 0) {
-      const curIdx = step.currentIndex;
-      const isDone = step.action === 'done';
-
-      const childrenHtml = ratings
-        .map((r, idx) => {
-          const c = candies[idx] ?? 1;
-          const isCurrent = idx === curIdx && !isDone;
-
-          let bg = '#ffffff';
-          let borderColor = '#e2e8f0';
-          let textColor = '#0f172a';
-
-          if (isCurrent) {
-            bg = '#fef2f2';
-            borderColor = '#ef4444';
-            textColor = '#dc2626';
-          }
-
-          // 糖果堆叠小圆点
-          const candyDots = Array.from({ length: Math.min(c, 6) })
-            .map(() => `<span style="font-size: 10px;">🍬</span>`)
-            .join('');
-
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-              <span style="font-size: 9px; color: ${isCurrent ? '#ef4444' : '#94a3b8'}; font-weight: 700;">
-                ${isCurrent ? '📍 当前' : `[${idx}]`}
-              </span>
-              <div style="width: 52px; min-height: 58px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); gap: 2px;">
-                <span style="font-size: 10px; color: #64748b;">评分: ${r}</span>
-                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; max-width: 44px;">
-                  ${candyDots}
-                </div>
-                <span style="font-size: 11px; color: #ef4444; font-weight: 800;">${c} 颗</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-
-      const totalSoFar = candies.reduce((acc, v) => acc + v, 0);
-
-      this.sandboxContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- 阶段提示与当前总糖果 -->
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
-            <span>遍历阶段: <strong style="color: #ef4444;">${step.direction === 'left-to-right' ? '➡️ 从左到右 (右 > 左 递增)' : step.direction === 'right-to-left' ? '⬅️ 从右到左 (左 > 右 取 max)' : step.direction === 'done' ? '✓ 完成' : '初始化'}</strong></span>
-            <span>当前糖果总数: <strong style="color: #ef4444; font-family: monospace; font-size: 12.5px;">${totalSoFar} 颗</strong></span>
-          </div>
-        </div>
-
-        <!-- 孩子水平流 -->
-        <div style="display: flex; gap: 8px; overflow-x: auto; justify-content: center; padding: 4px 0;">
-          ${childrenHtml}
-        </div>
-      `;
-    }
-
-    // 2. 渲染当前孩子与相邻评分 (Card 2 Left)
-    if (this.childContainer) {
-      const idx = step.currentIndex;
-      const curRating = idx >= 0 && idx < ratings.length ? ratings[idx] : null;
-
-      this.childContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前扫描孩子:</span>
-            <span style="font-family: monospace; font-weight:700; color: #ef4444;">
-              ${idx >= 0 ? `[${idx}] (评分: ${curRating})` : '-'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>该孩子当前糖果:</span>
-            <span style="font-family: monospace; font-weight:700; color: #059669;">
-              ${idx >= 0 ? `${candies[idx]} 颗` : '-'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染两次贪心判定监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isIncR = step.action === 'inc_right';
-      const isIncL = step.action === 'inc_left';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>贪心判定:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isIncR || isIncL ? '#fef2f2' : '#eff6ff'}; color: ${isIncR || isIncL ? '#dc2626' : '#2563eb'}; border: 1px solid ${isIncR || isIncL ? '#fecaca' : '#bfdbfe'};">
-              ${isIncR ? '📈 右孩子评分高 (+1 奖励)' : isIncL ? '📉 左孩子评分高 (取 max 奖励)' : '⏩ 评分不高于相邻 (保持)'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#ef4444; font-family:monospace;">左右两侧分开独立贪心，右向左取 max 兼顾两端</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最少糖果分配方案看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      const total = candies.reduce((acc, v) => acc + v, 0);
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>最少糖果总数: <strong style="color: #ef4444; font-family: monospace; font-size: 13.5px;">${total}</strong> 颗</span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">[${candies.join(', ')}]</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeCandies = this.root?.querySelector('#badge-total-candies');
-    if (badgeCandies) {
-      const total = candies.reduce((acc, v) => acc + v, 0);
-      badgeCandies.textContent = `总糖果: ${total} 颗`;
-    }
-
-
-    // 7. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '步骤';
-
-        if (st.action === 'inc_right') {
-          badgeColor = '#ef4444';
-          badgeBg = '#fef2f2';
-          badgeText = '左→右+1';
-        } else if (st.action === 'inc_left') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '右→左max';
-        } else if (st.action === 'done') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
-          </div>
-        `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        phase: phaseText,
+        'cur-child': idx >= 0 ? `[${idx}] (评分: ${s.ratings[idx]}, ${s.candies[idx]} 颗)` : '—',
+        total: `${total} 颗`,
+        candies: `[${s.candies.join(', ')}]`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：评分与糖果堆叠沙盘 */
+export function renderCandyCanvas(container: HTMLElement, step: CandyStep): void {
+  const ratings = step.ratings;
+  const candies = step.candies;
+  const n = ratings.length;
+
+  if (n === 0) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">输入为空</div>';
+    return;
+  }
+
+  const curIdx = step.currentIndex;
+  const isDone = step.action === 'done';
+
+  const childrenHtml = ratings
+    .map((r, idx) => {
+      const c = candies[idx] ?? 1;
+      const isCurrent = idx === curIdx && !isDone;
+
+      let bg = '#ffffff';
+      let borderColor = '#e2e8f0';
+      let textColor = '#0f172a';
+
+      if (isCurrent) {
+        bg = '#fef2f2';
+        borderColor = '#ef4444';
+        textColor = '#dc2626';
+      }
+
+      const candyDots = Array.from({ length: Math.min(c, 6) })
+        .map(() => `<span style="font-size: 10px;">🍬</span>`)
+        .join('');
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <span style="font-size: 9px; color: ${isCurrent ? '#ef4444' : '#94a3b8'}; font-weight: 700;">
+            ${isCurrent ? '📍 当前' : `[${idx}]`}
+          </span>
+          <div style="width: 52px; min-height: 58px; border-radius: 12px; background: ${bg}; border: 2px solid ${borderColor}; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; font-size: 13px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 2px 4px rgba(0,0,0,0.04); gap: 2px;">
+            <span style="font-size: 10px; color: #64748b;">评分: ${r}</span>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1px; max-width: 44px;">
+              ${candyDots}
+            </div>
+            <span style="font-size: 11px; color: #ef4444; font-weight: 800;">${c} 颗</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  const totalSoFar = candies.reduce((acc, v) => acc + v, 0);
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 12px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
+        <span>遍历阶段: <strong style="color: #ef4444;">${step.direction === 'left-to-right' ? '➡️ 从左到右 (右 > 左 递增)' : step.direction === 'right-to-left' ? '⬅️ 从右到左 (左 > 右 取 max)' : step.direction === 'done' ? '✓ 完成' : '初始化'}</strong></span>
+        <span>当前糖果总数: <strong style="color: #ef4444; font-family: monospace; font-size: 12.5px;">${totalSoFar} 颗</strong></span>
+      </div>
+
+      <div style="display: flex; gap: 8px; overflow-x: auto; justify-content: center; padding: 4px 0;">
+        ${childrenHtml}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'candy',
   name: '分发糖果',
-  viewId: 'algo-candy-view',
   category: 'greedy',
   description: '双向两次贪心遍历，左向右递增与右向左取 max 结合，求最少糖果数',
   icon: '🍬',
-  template,
-  Visualizer: CandyVisualizer,
   difficulty: 3,
   levelOrder: 13,
   learningGoal: '掌握双向两次贪心解题范式，学会将双边相邻约束拆解为单向独立推导',
+  inputs: [
+    {
+      id: 'ratings',
+      label: '孩子评分数组',
+      type: 'text',
+      defaultValue: '1,2,87,87,87,2,1',
+      placeholder: '逗号分隔评分',
+    },
+  ],
+  presets: [
+    { label: '示例 1', values: { ratings: '1,0,2' } },
+    { label: '示例 2', values: { ratings: '1,2,2' } },
+    { label: '波峰分配', values: { ratings: '1,3,4,5,2' } },
+    { label: '平台波谷', values: { ratings: '1,2,87,87,87,2,1' } },
+  ],
+  metrics: [
+    { id: 'phase', label: '遍历阶段', color: '#ef4444' },
+    { id: 'cur-child', label: '当前孩子', color: '#ef4444' },
+    { id: 'total', label: '最少糖果总数', color: '#ef4444' },
+    { id: 'candies', label: '分配方案', color: '#059669' },
+    { id: 'action', label: '贪心判定', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '📍 当前考察孩子', color: '#ef4444' },
+    { label: '🍬 已分配糖果', color: '#f472b6' },
+  ],
+  codeLanguages: CANDY_CODE_LANGUAGES,
+  problemHtml: CANDY_PROBLEM_HTML,
+  analysisHtml: CANDY_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const rawRatings = String(inputs.ratings ?? '1,2,87,87,87,2,1')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    return withMetrics(buildCandySteps(rawRatings.length ? rawRatings : [1, 2, 87, 87, 87, 2, 1]));
+  },
+  renderCanvas: (container, step) => renderCandyCanvas(container, step as CandyStep),
 });

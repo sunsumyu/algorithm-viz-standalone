@@ -1,22 +1,12 @@
 /**
- * 组合问题可视化器（回溯算法）- 100% 对齐 DP 标准模板版本
+ * 组合问题可视化器（回溯算法）— 声明式 4-Card 标准架构
  * LeetCode 77：给定 n 和 k，返回 1...n 中所有可能的 k 个数的组合
  * 基础版：不剪枝，展示回溯搜索决策树的完整结构
- * 布局：
- *   左侧：Card 1 (N-ary 决策树 SVG) + Scrubber 播放条 + Card 2 (状态空间：路径栈、搜索状态、解集箱)
- *   右侧：Card 3 (暗色代码终端：多语言、Tab切换、字号控制) + Card 4 (执行日志流)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import type { HighlightTarget } from '../../../core/code-panel';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  type DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BacktrackStateSpacePresenter,
-  BacktrackLogItem,
 } from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
@@ -30,7 +20,6 @@ import {
   COMBINATION_PROBLEM_HTML,
   COMBINATION_ANALYSIS_HTML,
 } from './combination-problem-content';
-import template from './combination.html?raw';
 
 /* ── Step ─────────────────────────────────────────────────── */
 export interface CombinationStep extends BacktrackTreeStep {
@@ -39,6 +28,7 @@ export interface CombinationStep extends BacktrackTreeStep {
   n: number;
   k: number;
   action: 'push' | 'pop' | 'found' | 'start' | 'end' | 'iterate' | 'check';
+  metrics?: Record<string, string>;
 }
 
 /* ── Build the full decision tree ─────────────────────────── */
@@ -212,8 +202,33 @@ export function combinationSteps(n: number, k: number): CombinationStep[] {
   return steps;
 }
 
-export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
-  protected codeLines: string[] = [
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: CombinationStep[]): CombinationStep[] {
+  return steps.map((s) => {
+    let action = 'backtrack(startIndex, path, res, n, k)';
+    if (s.action === 'start') action = 'backtrack(1, [], res, n, k) 开始搜索';
+    else if (s.action === 'check') action = 'path.size() == k ? 终止判断';
+    else if (s.action === 'found') action = `res.add([${s.path.join(', ')}]) 收集组合`;
+    else if (s.action === 'push') action = `path.add(${s.i}) 做选择`;
+    else if (s.action === 'iterate') action = `backtrack(${s.startIndex}, path) 深入递归`;
+    else if (s.action === 'pop') action = `path.remove() 弹出 ${s.i} 回溯撤销`;
+    else if (s.action === 'end') action = '搜索完成';
+
+    return {
+      ...s,
+      metrics: {
+        start: String(s.startIndex),
+        'cur-i': s.i != null ? String(s.i) : '—',
+        need: String(Math.max(0, s.k - s.path.length)),
+        found: String(s.foundPathIds.length),
+        action,
+      },
+    };
+  });
+}
+
+const COMBINATION_CODE_LANGUAGES: Record<string, string[]> = {
+  java: [
     'public List<List<Integer>> combine(int n, int k) {',
     '    List<List<Integer>> res = new ArrayList<>();',
     '    backtrack(1, new ArrayList<>(), res, n, k);',
@@ -232,237 +247,189 @@ export class CombinationVisualizer extends StepVisualizer<CombinationStep> {
     '        path.remove(path.size() - 1);',
     '    }',
     '}',
-  ];
-  protected codeLanguages: Record<string, string[]> = {
-    java: [
-      'public List<List<Integer>> combine(int n, int k) {',
-      '    List<List<Integer>> res = new ArrayList<>();',
-      '    backtrack(1, new ArrayList<>(), res, n, k);',
-      '    return res;',
-      '}',
-      '',
-      'void backtrack(int startIndex, List<Integer> path,',
-      '               List<List<Integer>> res, int n, int k) {',
-      '    if (path.size() == k) {',
-      '        res.add(new ArrayList<>(path));',
-      '        return;',
-      '    }',
-      '    for (int i = startIndex; i <= n; i++) {',
-      '        path.add(i);',
-      '        backtrack(i + 1, path, res, n, k);',
-      '        path.remove(path.size() - 1);',
-      '    }',
-      '}',
-    ],
-    cpp: [
-      'vector<vector<int>> combine(int n, int k) {',
-      '    vector<vector<int>> res;',
-      '    vector<int> path;',
-      '    backtrack(1, path, res, n, k);',
-      '    return res;',
-      '}',
-      '',
-      'void backtrack(int startIndex, vector<int>& path,',
-      '               vector<vector<int>>& res, int n, int k) {',
-      '    if (path.size() == k) {',
-      '        res.push_back(path);',
-      '        return;',
-      '    }',
-      '    for (int i = startIndex; i <= n; i++) {',
-      '        path.push_back(i);',
-      '        backtrack(i + 1, path, res, n, k);',
-      '        path.pop_back();',
-      '    }',
-      '}',
-    ],
-    python: [
-      'def combine(n: int, k: int) -> List[List[int]]:',
-      '    res = []',
-      '    def backtrack(startIndex: int, path: List[int]):',
-      '        if len(path) == k:',
-      '            res.append(list(path))',
-      '            return',
-      '        for i in range(startIndex, n + 1):',
-      '            path.append(i)',
-      '            backtrack(i + 1, path)',
-      '            path.pop()',
-      '    backtrack(1, [])',
-      '    return res',
-    ],
-    javascript: [
-      'function combine(n, k) {',
-      '    const res = [];',
-      '    const path = [];',
-      '    function backtrack(startIndex) {',
-      '        if (path.length === k) {',
-      '            res.push([...path]);',
-      '            return;',
-      '        }',
-      '        for (let i = startIndex; i <= n; i++) {',
-      '            path.push(i);',
-      '            backtrack(i + 1);',
-      '            path.pop();',
-      '        }',
-      '    }',
-      '    backtrack(1);',
-      '    return res;',
-      '}',
-    ],
-  };
+  ],
+  cpp: [
+    'vector<vector<int>> combine(int n, int k) {',
+    '    vector<vector<int>> res;',
+    '    vector<int> path;',
+    '    backtrack(1, path, res, n, k);',
+    '    return res;',
+    '}',
+    '',
+    'void backtrack(int startIndex, vector<int>& path,',
+    '               vector<vector<int>>& res, int n, int k) {',
+    '    if (path.size() == k) {',
+    '        res.push_back(path);',
+    '        return;',
+    '    }',
+    '    for (int i = startIndex; i <= n; i++) {',
+    '        path.push_back(i);',
+    '        backtrack(i + 1, path, res, n, k);',
+    '        path.pop_back();',
+    '    }',
+    '}',
+  ],
+  python: [
+    'def combine(n: int, k: int) -> List[List[int]]:',
+    '    res = []',
+    '    def backtrack(startIndex: int, path: List[int]):',
+    '        if len(path) == k:',
+    '            res.append(list(path))',
+    '            return',
+    '        for i in range(startIndex, n + 1):',
+    '            path.append(i)',
+    '            backtrack(i + 1, path)',
+    '            path.pop()',
+    '    backtrack(1, [])',
+    '    return res',
+  ],
+  javascript: [
+    'function combine(n, k) {',
+    '    const res = [];',
+    '    const path = [];',
+    '    function backtrack(startIndex) {',
+    '        if (path.length === k) {',
+    '            res.push([...path]);',
+    '            return;',
+    '        }',
+    '        for (let i = startIndex; i <= n; i++) {',
+    '            path.push(i);',
+    '            backtrack(i + 1);',
+    '            path.pop();',
+    '        }',
+    '    }',
+    '    backtrack(1);',
+    '    return res;',
+    '}',
+  ],
+};
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private searchStateContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
+/* ── Card 1 主视觉：决策树沙盘 + 底部状态空间条 ─────────────── */
+export function renderCombinationCanvas(container: HTMLElement, step: CombinationStep): void {
+  // 骨架仅在切换运行（决策树变化）时重建，保证树视口缩放/平移状态跨步保留
+  const skeletonKey = `${step.nodes.length}:${step.nodes[0]?.id ?? ''}`;
+  if (container.dataset.combinationSkeletonKey !== skeletonKey) {
+    const prevTree = container.querySelector<HTMLElement>('#combination-tree-display');
+    resetContainerViewState(prevTree);
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; height: 100%; width: 100%; box-sizing: border-box; gap: 8px;">
+        <div id="combination-tree-display" style="flex: 1; min-height: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;"></div>
+        <div style="display: flex; gap: 8px; height: 112px; flex-shrink: 0;">
+          <div style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">📚 当前路径栈 path</div>
+            <div id="cs-path-stack-container" style="min-height: 24px;"></div>
+          </div>
+          <div style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">🔍 搜索状态</div>
+            <div id="cs-search-state-container"></div>
+          </div>
+          <div style="flex: 1.4; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">✅ 解集箱（合法组合）</div>
+            <div id="cs-result-collection-container" style="min-height: 24px;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    container.dataset.combinationSkeletonKey = skeletonKey;
+  }
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#combination-tree-display');
-    this.pathStackContainer = this.root.querySelector('#cs-path-stack-container');
-    this.searchStateContainer = this.root.querySelector('#cs-search-state-container');
-    this.resultCollectionContainer = this.root.querySelector('#cs-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.cs-chip').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-        const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (nEl) nEl.value = btn.dataset.n || '';
-        if (kEl) kEl.value = btn.dataset.k || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: COMBINATION_PROBLEM_HTML,
-      analysisHtml: COMBINATION_ANALYSIS_HTML,
-      initialLang: 'java',
+  // 1. 渲染 SVG 决策树沙盘
+  const treeDisplay = container.querySelector<HTMLElement>('#combination-tree-display');
+  if (treeDisplay) {
+    renderBacktrackTree({
+      container: treeDisplay,
+      step,
+      cssPrefix: 'cs',
     });
   }
 
-  protected buildSteps(): CombinationStep[] {
-    const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-    let n = parseInt(nEl?.value || '4', 10);
-    let k = parseInt(kEl?.value || '2', 10);
+  // 2. 渲染当前路径栈
+  const pathStackContainer = container.querySelector<HTMLElement>('#cs-path-stack-container');
+  if (pathStackContainer) {
+    BacktrackStateSpacePresenter.renderPathStack(pathStackContainer, step.path, {
+      highlightLast: true,
+      action: step.action === 'push' ? 'push' : step.action === 'pop' ? 'pop' : step.action === 'found' ? 'collect' : 'idle',
+    });
+  }
+
+  // 3. 渲染搜索状态
+  const searchStateContainer = container.querySelector<HTMLElement>('#cs-search-state-container');
+  if (searchStateContainer) {
+    BacktrackStateSpacePresenter.renderVariableWatch(searchStateContainer, [
+      { label: 'startIndex', value: step.startIndex, highlight: true },
+      { label: '当前 i', value: step.i ?? '-' },
+      { label: '目标 k', value: step.k },
+      { label: '还需元素', value: Math.max(0, step.k - step.path.length), highlight: step.path.length === step.k },
+    ]);
+  }
+
+  // 4. 渲染实时解集箱
+  const results: Array<number[]> = [];
+  const foundIds = step.foundPathIds || [];
+  const nodeMap = new Map<string, BacktrackTreeNode>();
+  step.nodes.forEach((nd) => nodeMap.set(nd.id, nd));
+
+  foundIds.forEach((id) => {
+    const nd = nodeMap.get(id);
+    if (nd && nd.path.length === step.k) {
+      results.push([...nd.path] as number[]);
+    }
+  });
+
+  const resultCollectionContainer = container.querySelector<HTMLElement>(
+    '#cs-result-collection-container'
+  );
+  if (resultCollectionContainer) {
+    BacktrackStateSpacePresenter.renderResultCollection(
+      resultCollectionContainer,
+      results,
+      results.length - 1
+    );
+  }
+}
+
+registerDeclarativeAlgorithm({
+  id: 'combination',
+  name: '组合问题（回溯）',
+  category: 'backtracking',
+  description: '使用回溯算法生成所有组合',
+  icon: '🎯',
+  difficulty: 1,
+  levelOrder: 1,
+  learningGoal: '掌握回溯法的基础框架：选择、递归、撤销，理解决策树结构',
+  inputs: [
+    { id: 'n', label: 'n (1..n)', type: 'number', defaultValue: 4, min: 1, max: 8 },
+    { id: 'k', label: 'k (选 k 个)', type: 'number', defaultValue: 2, min: 1, max: 8 },
+  ],
+  presets: [
+    { label: '基础示例', values: { n: 4, k: 2 } },
+    { label: '5 选 3', values: { n: 5, k: 3 } },
+    { label: '6 选 2', values: { n: 6, k: 2 } },
+    { label: '全选 k=n', values: { n: 4, k: 4 } },
+  ],
+  metrics: [
+    { id: 'start', label: 'startIndex', color: '#2563eb' },
+    { id: 'cur-i', label: '当前 i', color: '#a855f7' },
+    { id: 'need', label: '还需元素', color: '#f59e0b' },
+    { id: 'found', label: '已找到组合', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '📍当前探索', color: '#3b82f6' },
+    { label: '✅解集命中', color: '#10b981' },
+    { label: '🔙已回溯', color: '#94a3b8' },
+  ],
+  codeLanguages: COMBINATION_CODE_LANGUAGES,
+  problemHtml: COMBINATION_PROBLEM_HTML,
+  analysisHtml: COMBINATION_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    let n = parseInt(String(inputs.n ?? 4), 10);
+    let k = parseInt(String(inputs.k ?? 2), 10);
     if (!Number.isFinite(n)) n = 4;
     if (!Number.isFinite(k)) k = 2;
     if (k <= 0) k = 1;
     if (n <= 0) n = 1;
-
-    const steps = combinationSteps(n, k);
-
-    // 预计算日志缓存
-    this.cachedLogs = steps.map((s, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (s.action === 'push') type = 'push';
-      else if (s.action === 'pop') type = 'pop';
-      else if (s.action === 'found') type = 'collect';
-
-      return {
-        type,
-        text: s.message,
-        stepNumber: idx + 1,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: CombinationStep): void {
-    // 1. Render Tree SVG
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'cs',
-      });
-    }
-
-    // 2. Render Path Stack in Card 2
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path, {
-        highlightLast: true,
-        action: step.action === 'push' ? 'push' : step.action === 'pop' ? 'pop' : step.action === 'found' ? 'collect' : 'idle',
-      });
-    }
-
-    // 3. Render Search State in Card 2
-    if (this.searchStateContainer) {
-      BacktrackStateSpacePresenter.renderVariableWatch(this.searchStateContainer, [
-        { label: 'startIndex', value: step.startIndex, highlight: true },
-        { label: '当前 i', value: step.i ?? '-' },
-        { label: '目标 k', value: step.k },
-        { label: '还需元素', value: Math.max(0, step.k - step.path.length), highlight: step.path.length === step.k },
-      ]);
-    }
-
-    // 4. Render Result Collection in Card 2 & Badge
-    const results: Array<number[]> = [];
-    const foundIds = step.foundPathIds || [];
-    const nodeMap = new Map<string, BacktrackTreeNode>();
-    step.nodes.forEach(nd => nodeMap.set(nd.id, nd));
-    
-    foundIds.forEach(id => {
-      const nd = nodeMap.get(id);
-      if (nd && nd.path.length === step.k) {
-        results.push([...nd.path] as number[]);
-      }
-    });
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        results,
-        results.length - 1
-      );
-    }
-
-    const badgeResult = this.root?.querySelector('#badge-result-count');
-    if (badgeResult) {
-      badgeResult.textContent = `解集: ${results.length}`;
-    }
-
-    // 5. Render Execution Log Stream (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
-}
-
-registerAlgorithm({
-  id: 'combination',
-  name: '组合问题（回溯）',
-  viewId: 'algo-combination-view',
-  category: 'backtracking',
-  description: '使用回溯算法生成所有组合',
-  icon: '🎯',
-  template,
-  Visualizer: CombinationVisualizer,
-  difficulty: 1,
-  levelOrder: 1,
-  learningGoal: '掌握回溯法的基础框架：选择、递归、撤销，理解决策树结构',
+    return withMetrics(combinationSteps(n, k));
+  },
+  renderCanvas: (container, step) => renderCombinationCanvas(container, step as CombinationStep),
 });

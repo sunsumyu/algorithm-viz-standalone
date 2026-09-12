@@ -1,17 +1,15 @@
 /**
- * 基数排序可视化器 — 4-Card 标准现代架构
+ * 基数排序可视化器 — 声明式 4-Card 标准架构
  * LSD 低位优先、按位计数统计与稳定回填
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   RADIX_SORT_PROBLEM_HTML,
   RADIX_SORT_ANALYSIS_HTML,
   RADIX_SORT_CODE_LANGUAGES,
 } from './radix-sort-problem-content';
 import { parseArray } from './bubble-sort-renderer';
-import template from './radix-sort.html?raw';
 
 export interface RadixStep {
   array: number[];
@@ -28,6 +26,7 @@ export interface RadixStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function radixSortSteps(input: number[]): RadixStep[] {
@@ -231,205 +230,141 @@ export function radixSortSteps(input: number[]): RadixStep[] {
   return steps;
 }
 
-export class RadixSortVisualizer extends StepVisualizer<RadixStep> {
-  protected codeLanguages = RADIX_SORT_CODE_LANGUAGES;
-  protected codeLines = RADIX_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '基数排序 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: RadixStep[]): RadixStep[] {
+  return steps.map((s) => {
+    const expName =
+      s.exp === 1 ? '1 (个位)' : s.exp === 10 ? '10 (十位)' : s.exp === 100 ? '100 (百位)' : s.exp > 0 ? `${s.exp}` : '—';
 
-  private srcTrackEl: HTMLElement | null = null;
-  private countTrackEl: HTMLElement | null = null;
-  private outTrackEl: HTMLElement | null = null;
-  private metricExpEl: HTMLElement | null = null;
-  private metricMaxValEl: HTMLElement | null = null;
-  private metricCurElemEl: HTMLElement | null = null;
-  private metricOutIdxEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    let action = 'digit = (x / exp) % 10';
+    if (s.phase === 'count-digit' && s.digit !== null) action = `count[(${s.curElem} / ${s.exp}) % 10] = count[${s.digit}]++ (${s.count[s.digit]})`;
+    else if (s.phase === 'prefix-sum' && s.digit !== null) action = `count[${s.digit}] += count[${s.digit - 1}] = ${s.count[s.digit]}`;
+    else if (s.phase === 'build-out') action = `output[--count[${s.digit}]] = output[${s.outIdx}] = ${s.curElem}`;
+    else if (s.phase === 'write-back') action = '写回原数组 (当前权位就绪)';
+    else if (s.phase === 'done') action = '基数排序完成';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.srcTrackEl = this.root.querySelector('#rx-src-track');
-    this.countTrackEl = this.root.querySelector('#rx-count-track');
-    this.outTrackEl = this.root.querySelector('#rx-out-track');
-    this.metricExpEl = this.root.querySelector('#metric-exp');
-    this.metricMaxValEl = this.root.querySelector('#metric-max-val');
-    this.metricCurElemEl = this.root.querySelector('#metric-cur-elem');
-    this.metricOutIdxEl = this.root.querySelector('#metric-out-idx');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#rx-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rx-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: RADIX_SORT_PROBLEM_HTML,
-      analysisHtml: RADIX_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RadixStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '170, 45, 75, 90, 802, 24, 2, 66';
-    const arr = parseArray(raw);
-    return radixSortSteps(arr);
-  }
-
-  protected renderStep(step: RadixStep): void {
-    const { array, count, output, exp, maxVal, srcIdx, digit, outIdx, curElem, phase, message } = step;
-
-    // 1. 渲染原数组 (带数位加粗高亮)
-    if (this.srcTrackEl) {
-      this.srcTrackEl.innerHTML = array
-        .map((val, idx) => {
-          const isActive = idx === srcIdx && phase !== 'done';
-          let cellClass = 'rx-cell-box';
-          if (isActive) cellClass += ' is-active-elem';
-
-          const valStr = String(val);
-          const d = exp > 0 ? Math.floor(val / exp) % 10 : 0;
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${valStr}</span>
-              <span class="sub">${exp > 0 ? `d=${d}` : `[${idx}]`}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 Count 计数表 [0..9]
-    if (this.countTrackEl) {
-      this.countTrackEl.innerHTML = count
-        .map((freq, idx) => {
-          const isActive = idx === digit && phase !== 'done';
-          let cellClass = 'rx-cell-box';
-          if (isActive) cellClass += ' is-active-digit';
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${freq}</span>
-              <span class="sub">[${idx}]</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 渲染 Output 缓冲
-    if (this.outTrackEl) {
-      this.outTrackEl.innerHTML = output
-        .map((val, idx) => {
-          const isFilled = val !== null;
-          const isCurrentTarget = idx === outIdx && phase === 'build-out';
-
-          let cellClass = 'rx-cell-box';
-          if (isFilled) cellClass += ' is-filled-out';
-
-          return `
-            <div class="${cellClass}" ${isCurrentTarget ? 'style="box-shadow: 0 0 0 2px rgba(16,185,129,0.5); transform:scale(1.08);"' : ''}>
-              <span class="val">${val !== null ? val : '—'}</span>
-              <span class="sub">[${idx}]</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 4. 更新状态监视器
-    if (this.metricExpEl) {
-      const expName = exp === 1 ? '1 (个位)' : exp === 10 ? '10 (十位)' : exp === 100 ? '100 (百位)' : exp > 0 ? `${exp}` : '—';
-      this.metricExpEl.textContent = expName;
-    }
-    if (this.metricMaxValEl) this.metricMaxValEl.textContent = `${maxVal}`;
-    if (this.metricCurElemEl) {
-      this.metricCurElemEl.textContent = curElem !== null ? `${curElem} (d='${digit}')` : '—';
-    }
-    if (this.metricOutIdxEl) this.metricOutIdxEl.textContent = outIdx >= 0 ? `${outIdx}` : '—';
-
-    if (this.formulaActionEl) {
-      if (phase === 'count-digit') {
-        this.formulaActionEl.textContent = `count[(${curElem} / ${exp}) % 10] = count[${digit}]++ (${count[digit!]})`;
-      } else if (phase === 'prefix-sum') {
-        this.formulaActionEl.textContent = `count[${digit}] += count[${digit! - 1}] = ${count[digit!]}`;
-      } else if (phase === 'build-out') {
-        this.formulaActionEl.textContent = `output[--count[${digit}]] = output[${outIdx}] = ${curElem}`;
-      } else if (phase === 'write-back') {
-        this.formulaActionEl.textContent = '写回原数组 (当前权位就绪)';
-      } else if (phase === 'done') {
-        this.formulaActionEl.textContent = '基数排序完成';
-      } else {
-        this.formulaActionEl.textContent = 'digit = (x / exp) % 10';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 5. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'done' ? '#f0fdf4' : st.phase === 'build-out' ? '#faf5ff' : '#eff6ff';
-        let color =
-          st.phase === 'done' ? '#15803d' : st.phase === 'build-out' ? '#7e22ce' : '#1d4ed8';
-        let border =
-          st.phase === 'done' ? '#bbf7d0' : st.phase === 'build-out' ? '#e9d5ff' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    // 6. 同步代码高亮
-    this.codeTerminal?.highlightLine(step.codeLine);
-
-    const badgeExp = this.root?.querySelector('#badge-exp');
-    if (badgeExp) {
-      badgeExp.textContent = `当前权位: ${exp} (${exp === 1 ? '个位' : exp === 10 ? '十位' : exp === 100 ? '百位' : exp + '位'})`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-    if (this.codeTerminal) this.codeTerminal.highlightLine(0);
-  }
+    return {
+      ...s,
+      metrics: {
+        exp: expName,
+        'max-val': String(s.maxVal),
+        'cur-elem': s.curElem !== null ? `${s.curElem} (d='${s.digit}')` : '—',
+        'out-idx': s.outIdx >= 0 ? `${s.outIdx}` : '—',
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+const CELL_BASE =
+  'min-width: 34px; height: 32px; padding: 0 4px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; font-size: 11.5px; font-weight: 800; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box;';
+
+function rxCell(val: string, sub: string, bg: string, border: string, color: string, extraStyle = ''): string {
+  return `
+    <div style="${CELL_BASE} background: ${bg}; border: 1.5px solid ${border}; color: ${color}; ${extraStyle}">
+      <span>${val}</span>
+      <span style="font-size: 8.5px; font-weight: 600; color: #94a3b8;">${sub}</span>
+    </div>
+  `;
+}
+
+export function renderRadixSortCanvas(container: HTMLElement, step: RadixStep): void {
+  const { array, count, output, exp, srcIdx, digit, outIdx, phase } = step;
+
+  const srcHtml = array
+    .map((val, idx) => {
+      const isActive = idx === srcIdx && phase !== 'done';
+      const d = exp > 0 ? Math.floor(val / exp) % 10 : 0;
+      return rxCell(
+        String(val),
+        exp > 0 ? `d=${d}` : `[${idx}]`,
+        isActive ? '#eff6ff' : '#ffffff',
+        isActive ? '#3b82f6' : '#cbd5e1',
+        '#0f172a',
+      );
+    })
+    .join('');
+
+  const countHtml = count
+    .map((freq, idx) => {
+      const isActive = idx === digit && phase !== 'done';
+      return rxCell(String(freq), `[${idx}]`, isActive ? '#faf5ff' : '#ffffff', isActive ? '#a855f7' : '#cbd5e1', '#0f172a');
+    })
+    .join('');
+
+  const outHtml = output
+    .map((val, idx) => {
+      const isFilled = val !== null;
+      const isCurrentTarget = idx === outIdx && phase === 'build-out';
+      return rxCell(
+        val !== null ? String(val) : '—',
+        `[${idx}]`,
+        isFilled ? '#f0fdf4' : '#ffffff',
+        isFilled ? '#22c55e' : '#cbd5e1',
+        '#0f172a',
+        isCurrentTarget ? 'box-shadow: 0 0 0 2px rgba(16,185,129,0.5); transform: scale(1.08);' : '',
+      );
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 16px 12px; box-sizing: border-box; overflow-y: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">原数组 arr (下划线高亮当前 exp 位):</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${srcHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">10 进制数位计数表 count[0..9]:</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${countHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">当前轮次排序输出 output:</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${outHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'radix-sort',
   name: '基数排序',
-  viewId: 'algo-radix-sort-view',
   category: 'sort',
   description: '逐步演示基数排序：LSD低位优先、按位计数排序与稳定收集',
   icon: '🎯',
   difficulty: 2,
   levelOrder: 10,
   learningGoal: '掌握基数排序的按位切分、桶分配与稳定收集过程',
-  template,
-  Visualizer: RadixSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '170, 45, 75, 90, 802, 24, 2, 66',
+      placeholder: '逗号分隔非负整数',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '170, 45, 75, 90, 802, 24, 2, 66' } },
+    { label: '单位数', values: { array: '5, 3, 9, 1, 7' } },
+    { label: '宽位数差异', values: { array: '1, 22, 333, 4, 5555, 66' } },
+    { label: '含重复数字', values: { array: '12, 21, 12, 21, 11' } },
+  ],
+  metrics: [
+    { id: 'exp', label: '当前权位 exp', color: '#2563eb' },
+    { id: 'max-val', label: '最大值 max', color: '#0f172a' },
+    { id: 'cur-elem', label: '当前元素 (数位)', color: '#a855f7' },
+    { id: 'out-idx', label: '输出下标', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前元素', color: '#3b82f6' },
+    { label: '数位桶统计', color: '#a855f7' },
+    { label: '输出回填', color: '#22c55e' },
+  ],
+  codeLanguages: RADIX_SORT_CODE_LANGUAGES,
+  problemHtml: RADIX_SORT_PROBLEM_HTML,
+  analysisHtml: RADIX_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(radixSortSteps(parseArray(String(inputs.array ?? '170, 45, 75, 90, 802, 24, 2, 66')))),
+  renderCanvas: (container, step) => renderRadixSortCanvas(container, step as RadixStep),
 });

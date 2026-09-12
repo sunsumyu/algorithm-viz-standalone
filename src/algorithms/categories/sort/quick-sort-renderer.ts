@@ -1,17 +1,15 @@
 /**
- * 快速排序可视化器 — 4-Card 标准现代架构
+ * 快速排序可视化器 — 声明式 4-Card 标准架构
  * 递归分治、双指针 Partition、基准值精准归位
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   QUICK_SORT_PROBLEM_HTML,
   QUICK_SORT_ANALYSIS_HTML,
   QUICK_SORT_CODE_LANGUAGES,
 } from './quick-sort-problem-content';
 import { parseArray } from './bubble-sort-renderer';
-import template from './quick-sort.html?raw';
 
 export interface QSStep {
   array: number[];
@@ -30,6 +28,7 @@ export interface QSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function quickSortSteps(input: number[]): QSStep[] {
@@ -237,167 +236,129 @@ export function quickSortSteps(input: number[]): QSStep[] {
   return steps;
 }
 
-export class QuickSortVisualizer extends StepVisualizer<QSStep> {
-  protected codeLanguages = QUICK_SORT_CODE_LANGUAGES;
-  protected codeLines = QUICK_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '快速排序 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: QSStep[]): QSStep[] {
+  return steps.map((s) => {
+    let action = 'partition(arr, left, right)';
+    if (s.swapping) action = `swap(arr[${s.i}], arr[${s.j}]) 交换`;
+    else if (s.phase === 'scan-j') action = `arr[${s.j}] (${s.array[s.j]}) >= pivot (${s.pivotVal}) (j--)`;
+    else if (s.phase === 'scan-i') action = `arr[${s.i}] (${s.array[s.i]}) <= pivot (${s.pivotVal}) (i++)`;
+    else if (s.phase === 'pivot-settled') action = `pivot (${s.pivotVal}) 归位于下标 ${s.i}`;
+    else if (s.phase === 'done') action = '快速排序完成';
 
-  private barsContainerEl: HTMLElement | null = null;
-  private metricRangeEl: HTMLElement | null = null;
-  private metricPivotEl: HTMLElement | null = null;
-  private metricIJEl: HTMLElement | null = null;
-  private metricCompSwapEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.barsContainerEl = this.root.querySelector('#qs-bars-container');
-    this.metricRangeEl = this.root.querySelector('#metric-range');
-    this.metricPivotEl = this.root.querySelector('#metric-pivot');
-    this.metricIJEl = this.root.querySelector('#metric-ij');
-    this.metricCompSwapEl = this.root.querySelector('#metric-comp-swap');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#qs-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.qs-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: QUICK_SORT_PROBLEM_HTML,
-      analysisHtml: QUICK_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): QSStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '6, 1, 2, 7, 9, 3, 4, 5, 10, 8';
-    const arr = parseArray(raw);
-    return quickSortSteps(arr);
-  }
-
-  protected renderStep(step: QSStep): void {
-    const { array, left, right, pivotIdx, pivotVal, i, j, comparisons, swaps, settledIndices, swapping, phase, message } = step;
-
-    // 1. 渲染柱状图
-    if (this.barsContainerEl) {
-      const maxVal = Math.max(...array, 1);
-      this.barsContainerEl.innerHTML = array
-        .map((val, idx) => {
-          const isPivot = idx === pivotIdx && phase !== 'done';
-          const isIPtr = idx === i && phase !== 'done';
-          const isJPtr = idx === j && phase !== 'done';
-          const isSwapping = (idx === i || idx === j || (phase === 'pivot-settled' && (idx === left || idx === i))) && swapping;
-          const isSettled = settledIndices.includes(idx) || phase === 'done';
-
-          let pillarClass = 'qs-bar-pillar';
-          if (isSwapping) pillarClass += ' is-swapping';
-          else if (isPivot) pillarClass += ' is-pivot';
-          else if (isIPtr) pillarClass += ' is-i-ptr';
-          else if (isJPtr) pillarClass += ' is-j-ptr';
-          else if (isSettled) pillarClass += ' is-settled';
-
-          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-          return `
-            <div class="bs-bar-wrapper">
-              <div class="${pillarClass}" style="height: ${heightPct}%;">
-                <span>${val}</span>
-              </div>
-              <span class="bs-bar-idx">${idx}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricRangeEl) {
-      this.metricRangeEl.textContent = left >= 0 && right >= 0 ? `[${left}, ${right}]` : '—';
-    }
-    if (this.metricPivotEl) {
-      this.metricPivotEl.textContent = pivotVal >= 0 && phase !== 'done' ? `${pivotVal}` : '—';
-    }
-    if (this.metricIJEl) {
-      this.metricIJEl.textContent = i >= 0 && j >= 0 ? `[${i}, ${j}]` : '—';
-    }
-    if (this.metricCompSwapEl) {
-      this.metricCompSwapEl.textContent = `${comparisons} / ${swaps}`;
-    }
-
-    if (this.formulaActionEl) {
-      if (swapping) {
-        this.formulaActionEl.textContent = `swap(arr[${i}], arr[${j}]) 交换`;
-      } else if (phase === 'scan-j') {
-        this.formulaActionEl.textContent = `arr[${j}] (${array[j]}) >= pivot (${pivotVal}) (j--)`;
-      } else if (phase === 'scan-i') {
-        this.formulaActionEl.textContent = `arr[${i}] (${array[i]}) <= pivot (${pivotVal}) (i++)`;
-      } else if (phase === 'pivot-settled') {
-        this.formulaActionEl.textContent = `pivot (${pivotVal}) 归位于下标 ${i}`;
-      } else if (phase === 'done') {
-        this.formulaActionEl.textContent = '快速排序完成';
-      } else {
-        this.formulaActionEl.textContent = 'partition(arr, left, right)';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'done' ? '#f0fdf4' : st.swapping ? '#fff1f2' : '#eff6ff';
-        let color =
-          st.phase === 'done' ? '#15803d' : st.swapping ? '#e11d48' : '#1d4ed8';
-        let border =
-          st.phase === 'done' ? '#bbf7d0' : st.swapping ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeRange = this.root?.querySelector('#badge-range');
-    if (badgeRange) {
-      badgeRange.textContent = left >= 0 && right >= 0 ? `区间: [${left}..${right}]` : '未开始';
-    }
-  }
+    return {
+      ...s,
+      metrics: {
+        range: s.left >= 0 && s.right >= 0 ? `[${s.left}, ${s.right}]` : '—',
+        pivot: s.pivotVal >= 0 && s.phase !== 'done' ? `${s.pivotVal}` : '—',
+        ij: s.i >= 0 && s.j >= 0 ? `[${s.i}, ${s.j}]` : '—',
+        'comp-swap': `${s.comparisons} / ${s.swaps}`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderQuickSortCanvas(container: HTMLElement, step: QSStep): void {
+  const { array, left, right, pivotIdx, pivotVal, i, j, settledIndices, swapping, phase } = step;
+
+  const maxVal = Math.max(...array, 1);
+  const barsHtml = array
+    .map((val, idx) => {
+      const isPivot = idx === pivotIdx && phase !== 'done';
+      const isIPtr = idx === i && phase !== 'done';
+      const isJPtr = idx === j && phase !== 'done';
+      const isSwapping =
+        (idx === i || idx === j || (phase === 'pivot-settled' && (idx === left || idx === i))) && swapping;
+      const isSettled = settledIndices.includes(idx) || phase === 'done';
+
+      let bg = '#cbd5e1';
+      let border = '#94a3b8';
+      let color = '#334155';
+      let transform = 'none';
+      if (isSwapping) {
+        bg = '#fef2f2';
+        border = '#ef4444';
+        color = '#b91c1c';
+        transform = 'scale(1.06)';
+      } else if (isPivot) {
+        bg = '#fef9c3';
+        border = '#eab308';
+        color = '#854d0e';
+        transform = 'scale(1.06)';
+      } else if (isIPtr) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+        color = '#1d4ed8';
+      } else if (isJPtr) {
+        bg = '#faf5ff';
+        border = '#a855f7';
+        color = '#7e22ce';
+      } else if (isSettled) {
+        bg = '#f0fdf4';
+        border = '#22c55e';
+        color = '#15803d';
+      }
+
+      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; box-sizing: border-box;">${val}</div>
+          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
+      ${barsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'quick-sort',
   name: '快速排序',
-  viewId: 'algo-quick-sort-view',
   category: 'sort',
   description: '逐步演示快速排序：基准值选择、双向扫描划分、递归分治',
   icon: '⚡',
   difficulty: 2,
   levelOrder: 6,
   learningGoal: '理解快速排序的基准划分、双指针碰撞和递归过程',
-  template,
-  Visualizer: QuickSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '6, 1, 2, 7, 9, 3, 4, 5, 10, 8',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '6, 1, 2, 7, 9, 3, 4, 5, 10, 8' } },
+    { label: '近有序', values: { array: '1, 2, 3, 5, 4, 6, 7' } },
+    { label: '逆序最坏情形', values: { array: '9, 8, 7, 6, 5, 4, 3, 2, 1' } },
+    { label: '含重复元素', values: { array: '3, 1, 3, 2, 1, 3' } },
+  ],
+  metrics: [
+    { id: 'range', label: '划分区间', color: '#2563eb' },
+    { id: 'pivot', label: '基准 pivot', color: '#eab308' },
+    { id: 'ij', label: '双指针 [i, j]', color: '#3b82f6' },
+    { id: 'comp-swap', label: '比较 / 交换', color: '#f59e0b' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '基准 pivot', color: '#eab308' },
+    { label: '左指针 i', color: '#3b82f6' },
+    { label: '右指针 j', color: '#a855f7' },
+    { label: '已就位', color: '#22c55e' },
+  ],
+  codeLanguages: QUICK_SORT_CODE_LANGUAGES,
+  problemHtml: QUICK_SORT_PROBLEM_HTML,
+  analysisHtml: QUICK_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(quickSortSteps(parseArray(String(inputs.array ?? '6, 1, 2, 7, 9, 3, 4, 5, 10, 8')))),
+  renderCanvas: (container, step) => renderQuickSortCanvas(container, step as QSStep),
 });

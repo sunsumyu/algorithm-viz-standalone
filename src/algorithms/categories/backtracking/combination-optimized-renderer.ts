@@ -7,17 +7,10 @@
  *   右侧：Card 3 (暗色代码终端：多语言、Tab切换、字号控制) + Card 4 (执行日志流)
  */
 
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepVisualizer } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/code-panel';
 import { registerAlgorithm } from '../../../core/registry';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -31,7 +24,6 @@ import {
   COMBINATION_PROBLEM_HTML,
   COMBINATION_ANALYSIS_HTML,
 } from './combination-problem-content';
-import template from './combination-optimized.html?raw';
 
 function clampInt(val: string | number, def: number, min: number, max: number): number {
   const n = typeof val === 'number' ? val : parseInt(val, 10);
@@ -234,313 +226,76 @@ export function buildOptimizedSteps(n: number, k: number): BacktrackTreeStep[] {
   return steps;
 }
 
-export class CombinationOptimizedVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLines: string[] = [
-    'public List<List<Integer>> combine(int n, int k) {',
-    '    List<List<Integer>> res = new ArrayList<>();',
-    '    backtrack(1, new ArrayList<>(), res, n, k);',
-    '    return res;',
-    '}',
-    '',
-    'void backtrack(int start, List<Integer> path,',
-    '               List<List<Integer>> res, int n, int k) {',
-    '    if (path.size() == k) {',
-    '        res.add(new ArrayList<>(path));',
-    '        return;',
-    '    }',
-    '    // 剪枝：i <= n - (k - path.size()) + 1',
-    '    for (int i = start; i <= n - (k - path.size()) + 1; i++) {',
-    '        path.add(i);',
-    '        backtrack(i + 1, path, res, n, k);',
-    '        path.remove(path.size() - 1);',
-    '    }',
-    '}',
-  ];
-  protected codeLanguages: Record<string, string[]> = {
-    java: [
-      'public List<List<Integer>> combine(int n, int k) {',
-      '    List<List<Integer>> res = new ArrayList<>();',
-      '    backtrack(1, new ArrayList<>(), res, n, k);',
-      '    return res;',
-      '}',
-      '',
-      'void backtrack(int start, List<Integer> path,',
-      '               List<List<Integer>> res, int n, int k) {',
-      '    if (path.size() == k) {',
-      '        res.add(new ArrayList<>(path));',
-      '        return;',
-      '    }',
-      '    // 剪枝：i <= n - (k - path.size()) + 1',
-      '    for (int i = start; i <= n - (k - path.size()) + 1; i++) {',
-      '        path.add(i);',
-      '        backtrack(i + 1, path, res, n, k);',
-      '        path.remove(path.size() - 1);',
-      '    }',
-      '}',
-    ],
-    cpp: [
-      'vector<vector<int>> combine(int n, int k) {',
-      '    vector<vector<int>> res;',
-      '    vector<int> path;',
-      '    backtrack(1, path, res, n, k);',
-      '    return res;',
-      '}',
-      '',
-      'void backtrack(int start, vector<int>& path,',
-      '               vector<vector<int>>& res, int n, int k) {',
-      '    if (path.size() == k) {',
-      '        res.push_back(path);',
-      '        return;',
-      '    }',
-      '    // 剪枝：i <= n - (k - path.size()) + 1',
-      '    for (int i = start; i <= n - (k - path.size()) + 1; i++) {',
-      '        path.push_back(i);',
-      '        backtrack(i + 1, path, res, n, k);',
-      '        path.pop_back();',
-      '    }',
-      '}',
-    ],
-    python: [
-      'def combine(n: int, k: int) -> List[List[int]]:',
-      '    res = []',
-      '    def backtrack(start: int, path: List[int]):',
-      '        if len(path) == k:',
-      '            res.append(list(path))',
-      '            return',
-      '        # 剪枝：i <= n - (k - len(path)) + 1',
-      '        upper = n - (k - len(path)) + 1',
-      '        for i in range(start, upper + 1):',
-      '            path.append(i)',
-      '            backtrack(i + 1, path)',
-      '            path.pop()',
-      '    backtrack(1, [])',
-      '    return res',
-    ],
-    javascript: [
-      'function combine(n, k) {',
-      '    const res = [];',
-      '    const path = [];',
-      '    function backtrack(start) {',
-      '        if (path.length === k) {',
-      '            res.push([...path]);',
-      '            return;',
-      '        }',
-      '        // 剪枝：i <= n - (k - path.length) + 1',
-      '        const upper = n - (k - path.length) + 1;',
-      '        for (let i = start; i <= upper; i++) {',
-      '            path.push(i);',
-      '            backtrack(i + 1);',
-      '            path.pop();',
-      '        }',
-      '    }',
-      '    backtrack(1);',
-      '    return res;',
-      '}',
-    ],
-  };
 
-  private currentStage: 'naive' | 'pruned' = 'pruned';
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private pruningMonitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#combination-optimized-tree-display');
-    this.pathStackContainer = this.root.querySelector('#co-path-stack-container');
-    this.pruningMonitorContainer = this.root.querySelector('#co-pruning-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#co-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 阶段切换 Tab
-    const stage1Tab = this.root.querySelector('#co-tab-stage1');
-    const stage2Tab = this.root.querySelector('#co-tab-stage2');
-    const modeTag = this.root.querySelector('#header-algo-title');
-
-    stage1Tab?.addEventListener('click', () => {
-      this.currentStage = 'naive';
-      stage1Tab.classList.add('active');
-      stage2Tab?.classList.remove('active');
-      if (modeTag) modeTag.textContent = '完整决策树 (未剪枝)';
-      this.start();
-    });
-
-    stage2Tab?.addEventListener('click', () => {
-      this.currentStage = 'pruned';
-      stage2Tab.classList.add('active');
-      stage1Tab?.classList.remove('active');
-      if (modeTag) modeTag.textContent = '剪枝优化模式';
-      this.start();
-    });
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.co-chip').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-        const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (nEl) nEl.value = btn.dataset.n || '';
-        if (kEl) kEl.value = btn.dataset.k || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: COMBINATION_PROBLEM_HTML,
-      analysisHtml: COMBINATION_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-    const n = clampInt(nEl?.value || '4', 4, 1, 9);
-    const k = clampInt(kEl?.value || '2', 2, 1, 9);
-
-    const steps = this.currentStage === 'naive'
-      ? combinationSteps(n, k)
-      : buildOptimizedSteps(n, k);
-
-    // 预计算日志缓存
-    this.cachedLogs = steps.map((s, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (s.message.includes('add') || s.message.includes('做选择')) type = 'push';
-      else if (s.message.includes('remove') || s.message.includes('撤销') || s.message.includes('回溯')) type = 'pop';
-      else if (s.message.includes('找到') || s.message.includes('收集')) type = 'collect';
-      else if (s.message.includes('剪枝')) type = 'prune';
-
-      return {
-        type,
-        text: s.message,
-        stepNumber: idx + 1,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const nEl = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-    const kEl = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-    const n = clampInt(nEl?.value || '4', 4, 1, 9);
-    const k = clampInt(kEl?.value || '2', 2, 1, 9);
-
-    // 1. Render Tree SVG
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'co',
-      });
-    }
-
-    // 2. Render Path Stack in Card 2
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path, {
-        capacity: k,
-        label: '当前组合 path',
-      });
-    }
-
-    // 3. Render Pruning Monitor (Upper Bound Analysis) in Card 2 Center
-    if (this.pruningMonitorContainer) {
-      const curLen = step.path.length;
-      const needed = k - curLen;
-      const upperBound = n - needed + 1;
-      const isPruned = step.message.includes('剪枝');
-
-      this.pruningMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
-              <span style="font-size: 10px; color: #64748b;">还需元素数 (k - len)</span>
-              <div style="font-size: 13px; font-weight: 800; color: #2563eb; font-family: monospace;">${needed}</div>
-            </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; text-align: center;">
-              <span style="font-size: 10px; color: #64748b;">起始上界 (n - needed + 1)</span>
-              <div style="font-size: 13px; font-weight: 800; color: #059669; font-family: monospace;">i &le; ${upperBound}</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; padding: 4px 8px; border-radius: 6px; background: ${isPruned ? '#fef2f2' : '#eff6ff'}; border: 1px solid ${isPruned ? '#fecaca' : '#bfdbfe'};">
-            <span style="font-weight: 700; color: ${isPruned ? '#dc2626' : '#1d4ed8'};">
-              ${isPruned ? '✂️ 触发剪枝' : '🔍 正常遍历'}
-            </span>
-            <span style="font-family: monospace; font-size: 10.5px; color: ${isPruned ? '#b91c1c' : '#1e40af'};">
-              ${this.currentStage === 'pruned' ? `for (int i = start; i <= ${upperBound}; i++)` : '未开启剪枝上界'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. Render Realtime Result Collection
-    const results: Array<Array<number | string>> = [];
-    const foundIds = step.foundPathIds || [];
-    const nodeMap = new Map<string, BacktrackTreeNode>();
-    step.nodes.forEach(nd => nodeMap.set(nd.id, nd));
-    
-    foundIds.forEach(id => {
-      const nd = nodeMap.get(id);
-      if (nd && nd.path.length === k) {
-        results.push([...nd.path] as number[]);
-      }
-    });
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        results,
-        results.length - 1
-      );
-    }
-
-    const badgeResult = this.root?.querySelector('#badge-result-count');
-    if (badgeResult) {
-      badgeResult.textContent = `解集: ${results.length}`;
-    }
-
-
-    // 7. Render Execution Log Stream (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BacktrackTreeStep[], k: number): BacktrackTreeStep[] {
+  return steps.map((s) => ({
+    ...s,
+    log: s.message,
+    metrics: {
+      path: (s.path || []).length ? `[${(s.path || []).join(' → ')}]` : '[]',
+      'path-len': `${(s.path || []).length} / ${k}`,
+      visited: String(s.visitedNodeIds.length),
+      results: String(s.foundPathIds.length),
+      pruned: String(s.prunedNodeIds.length),
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：SVG 决策树沙盘（backtracking-tree-helper 自注入样式，default nodeLabel） */
+export function renderCombinationOptimizedCanvas(container: HTMLElement, step: BacktrackTreeStep): void {
+  renderBacktrackTree({
+    container,
+    step,
+    cssPrefix: 'co',
+  });
+}
+
+registerDeclarativeAlgorithm({
   id: 'combination-optimized',
   name: '组合（优化）',
-  viewId: 'algo-combination-optimized-view',
   category: 'backtracking',
   description: '剪枝优化：i <= n - (k - path.length) + 1',
   icon: '✂️',
-  template,
-  Visualizer: CombinationOptimizedVisualizer,
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '学会用剪枝优化回溯搜索',
+  modes: [
+    { id: 'naive', label: '阶段 1 · 完整决策树' },
+    { id: 'optimized', label: '阶段 2 · 剪枝优化决策树' },
+  ],
+  inputs: [
+    { id: 'n', label: '范围 1..n', type: 'number', defaultValue: '4' },
+    { id: 'k', label: '选取个数 k', type: 'number', defaultValue: '2' },
+  ],
+  presets: [
+    { label: 'n=4, k=2', values: { n: '4', k: '2' } },
+    { label: 'n=5, k=3', values: { n: '5', k: '3' } },
+    { label: 'n=9, k=2', values: { n: '9', k: '2' } },
+  ],
+  metrics: [
+    { id: 'path', label: '当前路径', color: '#2563eb' },
+    { id: 'path-len', label: '路径长度 / k', color: '#a855f7' },
+    { id: 'visited', label: '已访问节点', color: '#0f172a' },
+    { id: 'results', label: '已收集组合', color: '#10b981' },
+    { id: 'pruned', label: '剪枝次数', color: '#ef4444' },
+  ],
+  legend: [
+    { label: '当前节点', color: '#2563eb' },
+    { label: '收集方案', color: '#10b981' },
+    { label: '剪枝', color: '#ef4444' },
+  ],
+  problemHtml: COMBINATION_PROBLEM_HTML,
+  analysisHtml: COMBINATION_ANALYSIS_HTML,
+  generateSteps: (inputs, mode) => {
+    let n = parseInt(String(inputs.n ?? '4'), 10);
+    let k = parseInt(String(inputs.k ?? '2'), 10);
+    if (!Number.isFinite(n)) n = 4;
+    if (!Number.isFinite(k)) k = 2;
+    n = Math.max(1, Math.min(9, n));
+    k = Math.max(1, Math.min(9, k));
+    const steps = mode === 'optimized' ? buildOptimizedSteps(n, k) : combinationSteps(n, k);
+    return withMetrics(steps, k);
+  },
+  renderCanvas: (container, step) => renderCombinationOptimizedCanvas(container, step as BacktrackTreeStep),
 });

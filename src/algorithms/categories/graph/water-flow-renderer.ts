@@ -1,18 +1,16 @@
 /**
- * 太平洋大西洋水流问题 (LC 417)
- * 4-Card 标准现代架构可视化器
+ * 太平洋大西洋水流 (LC 417) — 声明式 4-Card 标准架构
+ * 逆向多源 DFS：双洋边界逆流登山搜索，求双洋可达性交集
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   WATER_FLOW_PROBLEM_HTML,
   WATER_FLOW_ANALYSIS_HTML,
   WATER_FLOW_CODE_LANGUAGES,
 } from './water-flow-problem-content';
-import template from './water-flow.html?raw';
 
-export interface WFStep extends StepBase {
+export interface WFStep {
   heights: number[][];
   rows: number;
   cols: number;
@@ -25,8 +23,10 @@ export interface WFStep extends StepBase {
   bothCount: number;
   action: 'init' | 'pacific' | 'atlantic' | 'intersect' | 'done';
   statusText: string;
+  message?: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 const DEFAULT_HEIGHTS = [
@@ -180,173 +180,166 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
   return steps;
 }
 
-export class WaterFlowVisualizer extends StepVisualizer<WFStep> {
-  protected codeLanguages = WATER_FLOW_CODE_LANGUAGES;
-  protected codeLines = WATER_FLOW_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '水流问题 (LC 417) 代码调试';
+const PRESET_CASES: Record<string, { label: string; heights: number[][] }> = {
+  classic: {
+    label: '经典地形 [5×5]',
+    heights: DEFAULT_HEIGHTS,
+  },
+  valley: {
+    label: '中央洼地 [4×4]',
+    heights: [
+      [3, 3, 3, 3],
+      [3, 1, 1, 3],
+      [3, 1, 1, 3],
+      [3, 3, 3, 3],
+    ],
+  },
+  slope: {
+    label: '单向斜坡 [3×4]',
+    heights: [
+      [1, 2, 3, 4],
+      [2, 3, 4, 5],
+      [3, 4, 5, 6],
+    ],
+  },
+};
 
-  private gridContainer: HTMLElement | null = null;
-  private metricCurCellEl: HTMLElement | null = null;
-  private metricStageEl: HTMLElement | null = null;
-  private metricPacCountEl: HTMLElement | null = null;
-  private metricAtlCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.gridContainer = this.root.querySelector('#wf-grid-container');
-    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
-    this.metricStageEl = this.root.querySelector('#metric-stage');
-    this.metricPacCountEl = this.root.querySelector('#metric-pac-count');
-    this.metricAtlCountEl = this.root.querySelector('#metric-atl-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#wf-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: WATER_FLOW_PROBLEM_HTML,
-      analysisHtml: WATER_FLOW_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): WFStep[] {
-    return buildWaterFlowSteps();
-  }
-
-  protected renderStep(step: WFStep): void {
-    const { heights, rows, cols, pacReachable, atlReachable, currentCell, stage, pacCount, atlCount, bothCount, statusText, action } = step;
-
-    // 1. 渲染 2D 高度网格
-    if (this.gridContainer) {
-      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      let html = '';
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const h = heights[r][c];
-          const isPac = pacReachable[r][c];
-          const isAtl = atlReachable[r][c];
-          const isBoth = isPac && isAtl;
-          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
-
-          let cls = 'wf-cell';
-          if (isBoth) cls += ' is-both';
-          else if (isPac) cls += ' is-pacific';
-          else if (isAtl) cls += ' is-atlantic';
-
-          if (isCurrent) cls += ' is-current';
-
-          let oceanTag = isBoth ? 'P&A' : isPac ? 'P' : isAtl ? 'A' : '';
-
-          html += `<div class="${cls}">
-            <span style="font-size:12px; font-weight:800;">${h}</span>
-            ${oceanTag ? `<span style="font-size:9px; opacity:0.85;">${oceanTag}</span>` : ''}
-          </div>`;
-        }
-      }
-      this.gridContainer.innerHTML = html;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurCellEl) {
-      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
-    }
-    if (this.metricStageEl) {
-      this.metricStageEl.textContent = stage;
-    }
-    if (this.metricPacCountEl) {
-      this.metricPacCountEl.textContent = `${pacCount}`;
-    }
-    if (this.metricAtlCountEl) {
-      this.metricAtlCountEl.textContent = `${atlCount}`;
-    }
-
-    if (this.formulaActionEl) {
-      this.formulaActionEl.textContent =
-        action === 'pacific'
-          ? `太平洋逆流: (${currentCell ? currentCell.join(',') : ''}) >= 边界，pac[r][c]=true`
-          : action === 'atlantic'
-          ? `大西洋逆流: (${currentCell ? currentCell.join(',') : ''}) >= 边界，atl[r][c]=true`
-          : action === 'intersect'
-          ? `交集命中: pac[${currentCell ? currentCell[0] : 0}][${currentCell ? currentCell[1] : 0}] && atl == true -> 双洋枢纽`
-          : `若 heights[next] >= heights[curr]，则逆流可达`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done' || action === 'intersect'
-          ? '#f0fdf4'
-          : action === 'pacific'
-          ? '#eff6ff'
-          : action === 'atlantic'
-          ? '#fef2f2'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done' || action === 'intersect'
-          ? '#15803d'
-          : action === 'pacific'
-          ? '#1d4ed8'
-          : action === 'atlantic'
-          ? '#dc2626'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done' || action === 'intersect'
-          ? '#bbf7d0'
-          : action === 'pacific'
-          ? '#bfdbfe'
-          : action === 'atlantic'
-          ? '#fecaca'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeBoth = this.root?.querySelector('#badge-both-count');
-    if (badgeBoth) badgeBoth.textContent = `双洋交集: ${bothCount} 处`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 将高度矩阵序列化为文本输入（预设值与 inputs.heights 解析共用） */
+function heightsToText(heights: number[][]): string {
+  return heights.map((row) => row.join(' ')).join('\n');
 }
 
-registerAlgorithm({
+function parseHeightsText(input: string): number[][] {
+  const rows = input
+    .split(/[\r\n]+|;/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) =>
+      line
+        .replace(/[\[\]，]/g, ' ')
+        .split(/[\s,]+/)
+        .filter((t) => t.length > 0)
+        .map((t) => parseInt(t, 10))
+        .map((v) => (Number.isNaN(v) ? 0 : v))
+    );
+  return rows.length > 0 ? rows : DEFAULT_HEIGHTS;
+}
+
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: WFStep[]): WFStep[] {
+  return steps.map((s) => ({
+    ...s,
+    message: s.statusText,
+    metrics: {
+      'metric-cur-cell': s.currentCell ? `(${s.currentCell[0]}, ${s.currentCell[1]})` : '—',
+      'metric-stage': s.stage,
+      'metric-pac-count': `${s.pacCount}`,
+      'metric-atl-count': `${s.atlCount}`,
+      'metric-both-count': `${s.bothCount}`,
+      action:
+        s.action === 'pacific'
+          ? `太平洋逆流: (${s.currentCell ? s.currentCell.join(',') : ''}) >= 边界，pac[r][c]=true`
+          : s.action === 'atlantic'
+          ? `大西洋逆流: (${s.currentCell ? s.currentCell.join(',') : ''}) >= 边界，atl[r][c]=true`
+          : s.action === 'intersect'
+          ? `交集命中: pac[${s.currentCell ? s.currentCell[0] : 0}][${s.currentCell ? s.currentCell[1] : 0}] && atl == true -> 双洋枢纽`
+          : '若 heights[next] >= heights[curr]，则逆流可达',
+    },
+  }));
+}
+
+export function renderWaterFlowCanvas(container: HTMLElement, step: WFStep): void {
+  const { heights, rows, cols, pacReachable, atlReachable, currentCell } = step;
+
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const h = heights[r][c];
+      const isPac = pacReachable[r][c];
+      const isAtl = atlReachable[r][c];
+      const isBoth = isPac && isAtl;
+      const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
+
+      let bg = '#ffffff';
+      let border = '1px solid #cbd5e1';
+      let color = '#334155';
+      let fontWeight = '700';
+      let boxShadow = 'none';
+
+      if (isBoth) {
+        bg = '#fdf4ff';
+        border = '2px solid #c084fc';
+        color = '#7e22ce';
+        fontWeight = '900';
+        boxShadow = '0 2px 6px rgba(192, 132, 252, 0.25)';
+      } else if (isPac) {
+        bg = '#eff6ff';
+        border = '1.5px solid #93c5fd';
+        color = '#1d4ed8';
+      } else if (isAtl) {
+        bg = '#fef2f2';
+        border = '1.5px solid #fca5a5';
+        color = '#b91c1c';
+      }
+
+      let transform = 'none';
+      if (isCurrent) {
+        boxShadow = '0 0 0 3px #facc15';
+        transform = 'scale(1.06)';
+      }
+
+      const oceanTag = isBoth ? 'P&A' : isPac ? 'P' : isAtl ? 'A' : '';
+      html += `<div style="aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: ${fontWeight}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-sizing: border-box; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${boxShadow}; transform: ${transform}; z-index: ${isCurrent ? 10 : 1};"><span style="font-size:12px; font-weight:800;">${h}</span>${oceanTag ? `<span style="font-size:9px; opacity:0.85;">${oceanTag}</span>` : ''}</div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; max-width: 620px; margin: 0 auto; padding: 8px; box-sizing: border-box;">
+      ${html}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'water-flow',
   name: '太平洋大西洋水流 (LC 417)',
-  viewId: 'algo-water-flow-view',
   category: 'graph',
   description: '逆向思维：分别从太平洋与大西洋边界逆流登山搜索，求双洋可达性交集',
   icon: '🌊',
   difficulty: 2,
   levelOrder: 17,
   learningGoal: '掌握逆向多源 DFS/BFS 搜索与双矩阵交集求解技巧',
-  template,
-  Visualizer: WaterFlowVisualizer,
+  inputs: [
+    {
+      id: 'heights',
+      label: '高度矩阵 (每行空格分隔)',
+      type: 'text',
+      defaultValue: heightsToText(DEFAULT_HEIGHTS),
+      placeholder: '每行如 1 2 2 3 5',
+    },
+  ],
+  presets: [
+    { label: PRESET_CASES.classic.label, values: { heights: heightsToText(PRESET_CASES.classic.heights) } },
+    { label: PRESET_CASES.valley.label, values: { heights: heightsToText(PRESET_CASES.valley.heights) } },
+    { label: PRESET_CASES.slope.label, values: { heights: heightsToText(PRESET_CASES.slope.heights) } },
+  ],
+  metrics: [
+    { id: 'metric-cur-cell', label: '当前访问格', color: '#eab308' },
+    { id: 'metric-stage', label: '当前阶段', color: '#2563eb' },
+    { id: 'metric-pac-count', label: '太平洋可达', color: '#3b82f6' },
+    { id: 'metric-atl-count', label: '大西洋可达', color: '#dc2626' },
+    { id: 'metric-both-count', label: '双洋交集', color: '#c084fc' },
+    { id: 'action', label: '逆流判定', color: '#6366f1' },
+  ],
+  legend: [
+    { label: '太平洋可达 (P)', color: '#93c5fd' },
+    { label: '大西洋可达 (A)', color: '#fca5a5' },
+    { label: '双洋交集 (P & A)', color: '#c084fc' },
+  ],
+  codeLanguages: WATER_FLOW_CODE_LANGUAGES,
+  problemHtml: WATER_FLOW_PROBLEM_HTML,
+  analysisHtml: WATER_FLOW_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildWaterFlowSteps(parseHeightsText(String(inputs?.heights ?? '')))),
+  renderCanvas: (container, step) => renderWaterFlowCanvas(container, step as WFStep),
 });

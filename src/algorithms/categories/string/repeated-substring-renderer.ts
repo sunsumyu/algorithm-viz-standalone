@@ -1,21 +1,15 @@
 /**
- * 重复的子字符串可视化器 — 4-Card 标准现代架构
+ * 重复的子字符串可视化器 — 声明式 4-Card 标准架构
  * LeetCode 459：KMP 前缀表周期性整除推导
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   REPEATED_SUBSTRING_PROBLEM_HTML,
   REPEATED_SUBSTRING_ANALYSIS_HTML,
   REPEATED_SUBSTRING_CODE_LANGUAGES,
 } from './repeated-substring-problem-content';
 import { computeNextArray } from './implement-str-str-renderer';
-import template from './repeated-substring.html?raw';
 
 export interface RPSStep {
   s: string;
@@ -31,6 +25,7 @@ export interface RPSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildRPSSteps(s: string): RPSStep[] {
@@ -154,181 +149,121 @@ export function buildRPSSteps(s: string): RPSStep[] {
   return steps;
 }
 
-export class RepeatedSubstringVisualizer extends StepVisualizer<RPSStep> {
-  protected codeLanguages = REPEATED_SUBSTRING_CODE_LANGUAGES;
-  protected codeLines = REPEATED_SUBSTRING_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '重复的子字符串 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: RPSStep[]): RPSStep[] {
+  return steps.map((s) => {
+    const action =
+      s.patternLen > 0
+        ? `${s.n} % (${s.n} - ${s.maxLPS}) = ${s.n % s.patternLen} ${
+            s.isRepeated ? '== 0 (整除)' : '!= 0 (不整除)'
+          }`
+        : 'n % (n - next[n-1]) == 0';
 
-  private trackRowEl: HTMLElement | null = null;
-  private tileRowEl: HTMLElement | null = null;
-  private metricNEl: HTMLElement | null = null;
-  private metricLpsEl: HTMLElement | null = null;
-  private metricPeriodEl: HTMLElement | null = null;
-  private metricResEl: HTMLElement | null = null;
-  private formulaDivEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rps-track-row');
-    this.tileRowEl = this.root.querySelector('#rps-tile-row');
-    this.metricNEl = this.root.querySelector('#metric-n');
-    this.metricLpsEl = this.root.querySelector('#metric-lps');
-    this.metricPeriodEl = this.root.querySelector('#metric-period');
-    this.metricResEl = this.root.querySelector('#metric-res');
-    this.formulaDivEl = this.root.querySelector('#formula-div');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rps-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REPEATED_SUBSTRING_PROBLEM_HTML,
-      analysisHtml: REPEATED_SUBSTRING_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RPSStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const str = sInput?.value || 'abab';
-    return buildRPSSteps(str);
-  }
-
-  protected renderStep(step: RPSStep): void {
-    const { s, next, n, maxLPS, patternLen, patternStr, isRepeated, tiles, phase, message } = step;
-
-    // 1. 渲染字符与 Next 表网格
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = s
-        .split('')
-        .map((ch, idx) => {
-          const inPattern = patternLen > 0 && idx < patternLen && (phase === 'check-period' || phase === 'found');
-          const isLastNode = idx === n - 1;
-
-          let cellClass = 'rps-cell-box';
-          if (inPattern) cellClass += ' in-pattern';
-          if (isLastNode) cellClass += ' is-last-node';
-
-          const nextVal = next[idx] !== undefined ? next[idx] : '-';
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${ch}</span>
-              <span class="next-val">next:${nextVal}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染周期拆解平铺
-    if (this.tileRowEl) {
-      if (tiles.length === 0) {
-        this.tileRowEl.innerHTML =
-          '<span style="color:#94a3b8; font-size:11px; font-style:italic;">(等待周期整除分析...)</span>';
-      } else {
-        this.tileRowEl.innerHTML = tiles
-          .map(
-            (t, tIdx) => `
-          <div class="rps-tile-unit">
-            <span>[${tIdx + 1}] "${t}"</span>
-          </div>
-        `
-          )
-          .join('');
-      }
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricNEl) this.metricNEl.textContent = String(n);
-    if (this.metricLpsEl) this.metricLpsEl.textContent = phase !== 'init' ? String(maxLPS) : '—';
-    if (this.metricPeriodEl) {
-      this.metricPeriodEl.textContent = patternLen > 0 ? `${patternLen} ("${patternStr}")` : '—';
-    }
-    if (this.metricResEl) {
-      if (phase === 'found') {
-        this.metricResEl.textContent = '✓ true';
-        this.metricResEl.style.color = '#10b981';
-      } else if (phase === 'not-found') {
-        this.metricResEl.textContent = '✗ false';
-        this.metricResEl.style.color = '#ef4444';
-      } else {
-        this.metricResEl.textContent = '分析中...';
-        this.metricResEl.style.color = '#3b82f6';
-      }
-    }
-
-    if (this.formulaDivEl) {
-      if (patternLen > 0) {
-        this.formulaDivEl.textContent = `${n} % (${n} - ${maxLPS}) = ${n} % ${patternLen} = ${n % patternLen} ${
-          isRepeated ? '== 0 (整除)' : '!= 0 (不整除)'
-        }`;
-      } else {
-        this.formulaDivEl.textContent = 'n % (n - next[n-1]) == 0';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'found' ? '#f0fdf4' : phase === 'not-found' ? '#fef2f2' : '#eff6ff';
-      logEntry.style.color =
-        phase === 'found' ? '#15803d' : phase === 'not-found' ? '#b91c1c' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'found' ? '#bbf7d0' : phase === 'not-found' ? '#fecaca' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeRes = this.root?.querySelector('#badge-result');
-    if (badgeRes) {
-      badgeRes.textContent = phase === 'found' ? '✓ true' : phase === 'not-found' ? '✗ false' : '分析中...';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...s,
+      metrics: {
+        n: String(s.n),
+        lps: s.phase !== 'init' ? String(s.maxLPS) : '—',
+        period: s.patternLen > 0 ? `${s.patternLen} ("${s.patternStr}")` : '—',
+        res:
+          s.phase === 'found'
+            ? '✓ true'
+            : s.phase === 'not-found'
+            ? '✗ false'
+            : '分析中...',
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：字符 + next 前缀表网格与周期拆解平铺 */
+export function renderRepeatedSubstringCanvas(container: HTMLElement, step: RPSStep): void {
+  const { s, next, n, patternLen, tiles, phase } = step;
+
+  const trackCells = s
+    .split('')
+    .map((ch, idx) => {
+      const inPattern =
+        patternLen > 0 && idx < patternLen && (phase === 'check-period' || phase === 'found');
+      const isLastNode = idx === n - 1;
+
+      let style =
+        'width: 38px; height: 44px; border-radius: 8px; background: #ffffff; border: 2px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);';
+      if (inPattern) style += ' border-color: #2563eb; background: #eff6ff;';
+      if (isLastNode) style += ' border-color: #9333ea; background: #faf5ff; box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);';
+
+      const nextVal = next[idx] !== undefined ? next[idx] : '-';
+
+      return `
+        <div style="${style}">
+          <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${ch}</span>
+          <span style="font-size: 9px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">next:${nextVal}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  const tileHtml =
+    tiles.length === 0
+      ? '<span style="color:#94a3b8; font-size:11px; font-style:italic;">(等待周期整除分析...)</span>'
+      : tiles
+          .map(
+            (t, tIdx) => `
+        <div style="padding: 3px 8px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;">
+          <span>[${tIdx + 1}] "${t}"</span>
+        </div>
+      `
+          )
+          .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; overflow: auto;">
+      <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center;">${trackCells}</div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center;">${tileHtml}</div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'repeated-substring',
   name: '重复的子字符串',
-  viewId: 'algo-repeated-substring-view',
   category: 'string',
   description: '判断字符串是否可由重复子串构成',
   icon: '🔁',
   difficulty: 2,
   levelOrder: 7,
   learningGoal: '掌握用 KMP 前缀表判断重复子串的数学原理',
-  template,
-  Visualizer: RepeatedSubstringVisualizer,
+  inputs: [
+    {
+      id: 's',
+      label: '输入字符串',
+      type: 'text',
+      defaultValue: 'abab',
+      placeholder: '字符串',
+    },
+  ],
+  presets: [
+    { label: '示例 1: ("abab" -> true)', values: { s: 'abab' } },
+    { label: '示例 2: ("aba" -> false)', values: { s: 'aba' } },
+    { label: '示例 3: ("abcabcabcabc" -> true)', values: { s: 'abcabcabcabc' } },
+    { label: '纯单字符: ("aaaa" -> true)', values: { s: 'aaaa' } },
+  ],
+  metrics: [
+    { id: 'n', label: '总长度 n', color: '#0f172a' },
+    { id: 'lps', label: '最长相等前后缀', color: '#9333ea' },
+    { id: 'period', label: '周期元长度 len', color: '#2563eb' },
+    { id: 'res', label: '判定结果', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '最小周期子串', color: '#2563eb' },
+    { label: 'next[n-1] 尾项', color: '#9333ea' },
+  ],
+  codeLanguages: REPEATED_SUBSTRING_CODE_LANGUAGES,
+  problemHtml: REPEATED_SUBSTRING_PROBLEM_HTML,
+  analysisHtml: REPEATED_SUBSTRING_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildRPSSteps(String(inputs.s ?? 'abab'))),
+  renderCanvas: (container, step) =>
+    renderRepeatedSubstringCanvas(container, step as RPSStep),
 });

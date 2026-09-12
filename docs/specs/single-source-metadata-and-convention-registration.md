@@ -1,6 +1,6 @@
 # Spec: 算法目录单一事实源与约定注册 (Single-Source Metadata & Convention Registration Spec)
 
-`triage: awaiting-user-confirmation`
+`triage: implemented`
 
 ---
 

@@ -1,21 +1,15 @@
 /**
- * 两数之和可视化器 — 4-Card 标准现代架构
+ * 两数之和可视化器 — 声明式 4-Card 标准架构
  * LeetCode 1：哈希表一次遍历
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TWO_SUM_PROBLEM_HTML,
   TWO_SUM_ANALYSIS_HTML,
   TWO_SUM_CODE_LANGUAGES,
 } from './two-sum-problem-content';
-import template from './two-sum.html?raw';
 
 export interface TwoSumStep {
   array: number[];
@@ -29,6 +23,7 @@ export interface TwoSumStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function parseArray(input: string): number[] {
@@ -130,116 +125,81 @@ export function buildTwoSumSteps(nums: number[], target: number): TwoSumStep[] {
   return steps;
 }
 
-export class TwoSumVisualizer extends StepVisualizer<TwoSumStep> {
-  protected codeLanguages = TWO_SUM_CODE_LANGUAGES;
-  protected codeLines = TWO_SUM_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '两数之和 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: TwoSumStep[], target: number): TwoSumStep[] {
+  return steps.map((s) => {
+    let action = '初始化 HashMap';
+    if (s.status === 'check') action = `complement = ${target} - ${s.currentVal} = ${s.complement}`;
+    else if (s.status === 'found') action = `命中: ${s.complement} + ${s.currentVal} = ${target}`;
+    else if (s.status === 'insert') action = `map.put(${s.currentVal}, ${s.currentIndex})`;
+    else if (s.status === 'not-found') action = '遍历结束，无解';
 
-  private trackRowEl: HTMLElement | null = null;
-  private mapGridEl: HTMLElement | null = null;
-  private metricIEl: HTMLElement | null = null;
-  private metricCurValEl: HTMLElement | null = null;
-  private metricCompEl: HTMLElement | null = null;
-  private metricStatusEl: HTMLElement | null = null;
-  private formulaTargetEl: HTMLElement | null = null;
-  private formulaNumEl: HTMLElement | null = null;
-  private formulaCompEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+    return {
+      ...s,
+      metrics: {
+        i: s.currentIndex >= 0 ? String(s.currentIndex) : '—',
+        'cur-val': s.currentIndex >= 0 ? String(s.currentVal) : '—',
+        comp: s.currentIndex >= 0 ? String(s.complement) : '—',
+        status:
+          s.status === 'found' ? '✓ 命中配对！' : s.status === 'check' ? '查找中...' : s.status === 'insert' ? '存入 Map' : '等待',
+        action,
+      },
+    };
+  });
+}
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+export function renderTwoSumCanvas(container: HTMLElement, step: TwoSumStep): void {
+  const { array, currentIndex, currentVal, complement, mapEntries, matchedIndices, status } = step;
 
-    this.trackRowEl = this.root.querySelector('#ts-track-row');
-    this.mapGridEl = this.root.querySelector('#ts-map-grid');
-    this.metricIEl = this.root.querySelector('#metric-i');
-    this.metricCurValEl = this.root.querySelector('#metric-cur-val');
-    this.metricCompEl = this.root.querySelector('#metric-comp');
-    this.metricStatusEl = this.root.querySelector('#metric-status');
-    this.formulaTargetEl = this.root.querySelector('#formula-target');
-    this.formulaNumEl = this.root.querySelector('#formula-num');
-    this.formulaCompEl = this.root.querySelector('#formula-comp');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+  // 1. 原数组与指针
+  const cellsHtml = array
+    .map((num, idx) => {
+      const isCurrent = currentIndex === idx && status !== 'found';
+      const isMatched = matchedIndices && (matchedIndices[0] === idx || matchedIndices[1] === idx);
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
+      let bg = '#ffffff';
+      let border = '#cbd5e1';
+      let shadow = '0 1px 2px rgba(0, 0, 0, 0.03)';
+      let transform = 'none';
+      let badge = '';
+      if (isMatched) {
+        bg = '#ecfdf5';
+        border = '#10b981';
+        shadow = '0 0 0 2px rgba(16, 185, 129, 0.25)';
+        transform = 'scale(1.08)';
+        badge =
+          '<span style="background:#22c55e; color:#ffffff; font-size:8.5px; font-weight:700; padding:1px 5px; border-radius:4px; font-family:\'JetBrains Mono\', monospace;">Match</span>';
+      } else if (isCurrent) {
+        bg = '#eff6ff';
+        border = '#2563eb';
+        transform = 'scale(1.08)';
+        badge =
+          '<span style="background:#2563eb; color:#ffffff; font-size:8.5px; font-weight:700; padding:1px 5px; border-radius:4px; font-family:\'JetBrains Mono\', monospace;">i</span>';
+      }
 
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.ts-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (numsInput && btn.dataset.nums) numsInput.value = btn.dataset.nums;
-        if (targetInput && btn.dataset.target) targetInput.value = btn.dataset.target;
-        this.start();
-      });
-    });
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          ${badge}
+          <div style="width: 38px; height: 40px; border-radius: 8px; background: ${bg}; border: 1.5px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: ${shadow}; transform: ${transform};">
+            <span style="font-size: 14px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${num}</span>
+            <span style="font-size: 8.5px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">[${idx}]</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
 
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: TWO_SUM_PROBLEM_HTML,
-      analysisHtml: TWO_SUM_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): TwoSumStep[] {
-    const numsInput = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const nums = parseArray(numsInput?.value || '2, 7, 11, 15');
-    const target = parseInt(targetInput?.value || '9', 10);
-    return buildTwoSumSteps(nums, isNaN(target) ? 9 : target);
-  }
-
-  protected renderStep(step: TwoSumStep): void {
-    const { array, currentIndex, currentVal, complement, mapEntries, matchedIndices, status, message } = step;
-
-    // 1. 渲染原数组与指针
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = array
-        .map((num, idx) => {
-          const isCurrent = currentIndex === idx && status !== 'found';
-          const isMatched = matchedIndices && (matchedIndices[0] === idx || matchedIndices[1] === idx);
-
-          let boxClasses = 'ts-cell-box';
-          if (isMatched) boxClasses += ' is-matched';
-          else if (isCurrent) boxClasses += ' is-current';
-
-          const badges: string[] = [];
-          if (isMatched) {
-            badges.push('<span class="ts-ptr-badge" style="background:#22c55e;">Match</span>');
-          } else if (isCurrent) {
-            badges.push('<span class="ts-ptr-badge">i</span>');
-          }
-
-          return `
-            <div class="ts-cell-wrapper">
-              ${badges.join('')}
-              <div class="${boxClasses}">
-                <span class="val">${num}</span>
-                <span class="idx">[${idx}]</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 HashMap 键值对
-    if (this.mapGridEl) {
-      if (mapEntries.length === 0) {
-        this.mapGridEl.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">(哈希表当前为空)</span>';
-      } else {
-        this.mapGridEl.innerHTML = mapEntries
+  // 2. HashMap 键值对
+  const mapHtml =
+    mapEntries.length === 0
+      ? '<span style="color: #94a3b8; font-size: 11px;">(哈希表当前为空)</span>'
+      : mapEntries
           .map(([key, valIdx]) => {
             const isTarget = (status === 'check' || status === 'found') && key === complement;
-            let chipClass = 'ts-map-chip';
-            if (isTarget) chipClass += ' is-target-key';
-
+            const bg = isTarget ? '#ecfdf5' : '#eff6ff';
+            const border = isTarget ? '#a7f3d0' : '#bfdbfe';
             return `
-              <div class="${chipClass}">
+              <div style="padding: 3px 8px; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px;">
                 <span style="color: #3b82f6; font-weight: 700;">Key: ${key}</span>
                 <span style="color: #94a3b8;">&rarr;</span>
                 <span style="color: #059669; font-weight: 700;">Idx: ${valIdx}</span>
@@ -247,68 +207,71 @@ export class TwoSumVisualizer extends StepVisualizer<TwoSumStep> {
             `;
           })
           .join('');
-      }
-    }
 
-    // 3. 更新状态监视器
-    if (this.metricIEl) this.metricIEl.textContent = currentIndex >= 0 ? String(currentIndex) : '—';
-    if (this.metricCurValEl) this.metricCurValEl.textContent = currentIndex >= 0 ? String(currentVal) : '—';
-    if (this.metricCompEl) this.metricCompEl.textContent = currentIndex >= 0 ? String(complement) : '—';
-    if (this.metricStatusEl) {
-      this.metricStatusEl.textContent =
-        status === 'found' ? '✓ 命中配对！' : status === 'check' ? '查找中...' : status === 'insert' ? '存入 Map' : '等待';
-      this.metricStatusEl.style.color = status === 'found' ? '#10b981' : '#3b82f6';
-    }
-
-    const targetInput = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-    const target = targetInput?.value || '9';
-    if (this.formulaTargetEl) this.formulaTargetEl.textContent = target;
-    if (this.formulaNumEl) this.formulaNumEl.textContent = currentIndex >= 0 ? String(currentVal) : 'nums[i]';
-    if (this.formulaCompEl) this.formulaCompEl.textContent = currentIndex >= 0 ? String(complement) : 'target - nums[i]';
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'found' ? '#f0fdf4' : '#eff6ff';
-      logEntry.style.color = status === 'found' ? '#15803d' : '#1d4ed8';
-      logEntry.style.border = '1px solid ' + (status === 'found' ? '#bbf7d0' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeStatus = this.root?.querySelector('#badge-status');
-    if (badgeStatus) {
-      badgeStatus.textContent =
-        status === 'found' ? '✓ 命中配对！' : status === 'check' ? '查找中...' : status === 'insert' ? '存入 Map' : '等待';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; justify-content: center;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">数组 nums (当前遍历 nums[${currentIndex >= 0 && currentIndex < array.length ? currentIndex : 'i'}] = ${currentIndex >= 0 && currentIndex < array.length ? currentVal : '—'})</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">${cellsHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">哈希映射 Map (Key: 数值 ➔ Value: 下标)</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; min-height: 28px; align-items: center;">${mapHtml}</div>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'two-sum',
   name: '两数之和（哈希表）',
-  viewId: 'algo-two-sum-view',
   category: 'hash-table',
   description: '哈希表一次遍历求两数之和',
   icon: '🔗',
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '理解哈希表如何替代暴力枚举降低时间复杂度',
-  template,
-  Visualizer: TwoSumVisualizer,
+  inputs: [
+    {
+      id: 'nums',
+      label: '数组',
+      type: 'text',
+      defaultValue: '2, 7, 11, 15',
+      placeholder: '逗号分隔',
+      width: '105px',
+    },
+    {
+      id: 'target',
+      label: 'target',
+      type: 'number',
+      defaultValue: 9,
+      width: '60px',
+    },
+  ],
+  presets: [
+    { label: '示例 1: ([2,7,11,15], target=9)', values: { nums: '2, 7, 11, 15', target: 9 } },
+    { label: '示例 2: ([3,2,4], target=6)', values: { nums: '3, 2, 4', target: 6 } },
+    { label: '相同元素: ([3,3], target=6)', values: { nums: '3, 3', target: 6 } },
+    { label: '跨度匹配: (target=12)', values: { nums: '1, 5, 8, 3, 9', target: 12 } },
+  ],
+  metrics: [
+    { id: 'i', label: '当前下标 i', color: '#2563eb' },
+    { id: 'cur-val', label: '当前数值 nums[i]', color: '#9333ea' },
+    { id: 'comp', label: '寻找补数 complement', color: '#f59e0b' },
+    { id: 'status', label: '匹配状态', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前元素 nums[i]', color: '#2563eb' },
+    { label: '目标配对补数', color: '#10b981' },
+  ],
+  codeLanguages: TWO_SUM_CODE_LANGUAGES,
+  problemHtml: TWO_SUM_PROBLEM_HTML,
+  analysisHtml: TWO_SUM_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums = parseArray(String(inputs.nums ?? '2, 7, 11, 15'));
+    const target = parseInt(String(inputs.target ?? '9'), 10);
+    return withMetrics(buildTwoSumSteps(nums, isNaN(target) ? 9 : target), isNaN(target) ? 9 : target);
+  },
+  renderCanvas: (container, step) => renderTwoSumCanvas(container, step as TwoSumStep),
 });

@@ -3,16 +3,7 @@
  * LeetCode 40：每个元素只能用一次，排序后同层去重与剪枝
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -26,7 +17,6 @@ import {
   COMBINATION_SUM_II_ANALYSIS_HTML,
   COMBINATION_SUM_II_CODE_LANGUAGES,
 } from './combination-sum-ii-problem-content';
-import template from './combination-sum-ii.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
 export function buildCombinationSum2Tree(nums: number[], target: number): BacktrackTreeNode {
@@ -287,201 +277,73 @@ export function buildCombinationSum2Steps(nums: number[], target: number): Backt
 }
 
 /* ── Visualizer class ─────────────────────────────────────── */
-export class CombinationSum2Visualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLanguages = COMBINATION_SUM_II_CODE_LANGUAGES;
-  protected codeLines = COMBINATION_SUM_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '组合总和 II 代码调试';
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private dedupMonitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#combination-sum-ii-tree-display');
-    this.pathStackContainer = this.root.querySelector('#cs2-path-stack-container');
-    this.dedupMonitorContainer = this.root.querySelector('#cs2-dedup-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#cs2-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.cs2-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const candEl = this.root?.querySelector('#input-candidates') as HTMLInputElement | null;
-        const targetEl = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-        if (candEl) candEl.value = btn.dataset.candidates || '';
-        if (targetEl) targetEl.value = btn.dataset.target || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: COMBINATION_SUM_II_PROBLEM_HTML,
-      analysisHtml: COMBINATION_SUM_II_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const candEl = this.root?.querySelector('#input-candidates') as HTMLInputElement | null;
-    const targetEl = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-
-    const rawNums = (candEl?.value || '10,1,2,7,6,1,5')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n) && n > 0);
-
-    const nums = rawNums.length > 0 ? rawNums : [10, 1, 2, 7, 6, 1, 5];
-    let target = parseInt(targetEl?.value || '8', 10);
-    if (!Number.isFinite(target) || target <= 0) target = 8;
-    if (target > 30) target = 30;
-
-    const steps = buildCombinationSum2Steps(nums, target);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((s, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (s.message.includes('做选择')) type = 'push';
-      else if (s.message.includes('回溯撤销')) type = 'pop';
-      else if (s.message.includes('找到合法唯一组合')) type = 'collect';
-      else if (s.message.includes('剪枝') || s.message.includes('去重')) type = 'prune';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: s.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const index = this.currentIndex;
-
-    // 1. 渲染 SVG 决策树沙盘
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'cs2',
-        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
-      });
-    }
-
-    // 2. 渲染当前路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
-    }
-
-    // 3. 渲染去重与剪枝监视器 (Card 2 Center)
-    if (this.dedupMonitorContainer) {
-      const curSum = (step.path as number[]).reduce((a, b) => a + b, 0);
-      const targetEl = this.root?.querySelector('#input-target') as HTMLInputElement | null;
-      const target = parseInt(targetEl?.value || '8', 10) || 8;
-      const remaining = target - curSum;
-      const isMatch = curSum === target;
-      const isOver = curSum > target;
-
-      let badgeHtml = '';
-      if (isMatch) {
-        badgeHtml = `<span style="color:#059669; font-weight:700; background:#ecfdf5; padding:2px 6px; border-radius:4px; border:1px solid #a7f3d0;">✓ sum == target</span>`;
-      } else if (isOver) {
-        badgeHtml = `<span style="color:#dc2626; font-weight:700; background:#fef2f2; padding:2px 6px; border-radius:4px; border:1px solid #fecaca;">✕ 剪枝截断</span>`;
-      } else {
-        badgeHtml = `<span style="color:#2563eb; font-weight:700; background:#eff6ff; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe;">尚需 ${remaining}</span>`;
-      }
-
-      this.dedupMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>当前累加和: <strong style="color:#0f172a; font-family:monospace; font-size:12px;">${curSum}</strong> / ${target}</span>
-            ${badgeHtml}
-          </div>
-          <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden; position: relative;">
-            <div style="background: ${isMatch ? '#10b981' : isOver ? '#ef4444' : '#3b82f6'}; width: ${Math.min(100, (curSum / target) * 100)}%; height: 100%; transition: width 0.2s;"></div>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4;">
-            <div>• 树层去重: <code style="color:#b45309; font-family:monospace;">i > start && c[i]==c[i-1] => continue</code></div>
-            <div>• 累加剪枝: <code style="color:#b45309; font-family:monospace;">sum + c[i] > target => break</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染实时解集箱 (Card 2 Bottom)
-    const solutionsUpToNow: Array<Array<number | string>> = [];
-    for (let i = 0; i <= index; i++) {
-      const s = this.steps[i];
-      if (s.message.includes('找到合法唯一组合')) {
-        solutionsUpToNow.push([...s.path]);
-      }
-    }
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        solutionsUpToNow,
-        -1,
-        (solIdx: number) => {
-          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
-            if (
-              this.steps[stepIdx].message.includes('找到合法唯一组合') &&
-              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
-            ) {
-              this.goToStep(stepIdx);
-              break;
-            }
-          }
-        }
-      );
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-result-count');
-    if (badgeCount) {
-      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BacktrackTreeStep[]): BacktrackTreeStep[] {
+  return steps.map((s) => ({
+    ...s,
+    log: s.message,
+    metrics: {
+      path: (s.path || []).length ? `[${(s.path || []).join(' → ')}]` : '[]',
+      visited: String(s.visitedNodeIds.length),
+      results: String(s.foundPathIds.length),
+      pruned: String(s.prunedNodeIds.length),
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：SVG 决策树沙盘（backtracking-tree-helper 自注入样式） */
+export function renderCombinationSumIiCanvas(container: HTMLElement, step: BacktrackTreeStep): void {
+  renderBacktrackTree({
+    container,
+    step,
+    cssPrefix: 'cs2',
+    nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
+  });
+}
+
+registerDeclarativeAlgorithm({
   id: 'combination-sum-ii',
   name: '组合总和 II',
-  viewId: 'algo-combination-sum-ii-view',
   category: 'backtracking',
   description: '含重复元素，每个元素限用一次，同层去重',
   icon: '🎯',
-  template,
-  Visualizer: CombinationSum2Visualizer,
   difficulty: 2,
   levelOrder: 4,
   learningGoal: '掌握经典树层去重 (i > startIndex && c[i]==c[i-1]) 机制',
+  inputs: [
+    { id: 'candidates', label: '候选数组（可含重复）', type: 'text', defaultValue: '10,1,2,7,6,1,5' },
+    { id: 'target', label: '目标和 target', type: 'number', defaultValue: '8' },
+  ],
+  presets: [
+    { label: '示例 1', values: { 'candidates': '10,1,2,7,6,1,5', 'target': '8' } },
+    { label: '示例 2', values: { 'candidates': '2,5,2,1,2', 'target': '5' } },
+    { label: '示例 3', values: { 'candidates': '1,1,2,2', 'target': '4' } },
+  ],
+  metrics: [
+    { id: 'path', label: '当前路径', color: '#2563eb' },
+    { id: 'visited', label: '已访问节点', color: '#a855f7' },
+    { id: 'results', label: '已收集方案', color: '#10b981' },
+    { id: 'pruned', label: '剪枝次数', color: '#ef4444' },
+  ],
+  legend: [
+    { label: '当前节点', color: '#2563eb' },
+    { label: '已访问', color: '#a855f7' },
+    { label: '收集方案', color: '#10b981' },
+    { label: '剪枝', color: '#ef4444' },
+  ],
+  codeLanguages: COMBINATION_SUM_II_CODE_LANGUAGES,
+  problemHtml: COMBINATION_SUM_II_PROBLEM_HTML,
+  analysisHtml: COMBINATION_SUM_II_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const cands = String(inputs.candidates ?? '10,1,2,7,6,1,5')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    let target = parseInt(String(inputs.target ?? '8'), 10);
+    if (!Number.isFinite(target)) target = 8;
+    return withMetrics(buildCombinationSum2Steps(cands.length ? cands : [10, 1, 2, 7, 6, 1, 5], target));
+  },
+  renderCanvas: (container, step) => renderCombinationSumIiCanvas(container, step as BacktrackTreeStep),
 });

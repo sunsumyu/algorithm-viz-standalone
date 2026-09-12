@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（并查集初始化、逐边遍历、边元解构、find寻根、根相等判环、根不等union合并、冗余边截获返回均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   REDUNDANT_EDGE_PROBLEM_HTML,
   REDUNDANT_EDGE_ANALYSIS_HTML,
   REDUNDANT_EDGE_CODE_LANGUAGES,
 } from './redundant-edge-problem-content';
-import template from './redundant-edge.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface RedundantStep extends StepBase {
@@ -142,146 +141,125 @@ export function buildRedundantSteps(): RedundantStep[] {
   return steps;
 }
 
-export class RedundantEdgeVisualizer extends StepVisualizer<RedundantStep> {
-  protected codeLanguages = REDUNDANT_EDGE_CODE_LANGUAGES;
-  protected codeLines = REDUNDANT_EDGE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '冗余连接 算法代码调试';
+/** 主视觉：无向图 SVG（树边/冗余边高亮 + parent 标注）+ 边状态表 */
+export function renderRedundantEdgeCanvas(container: HTMLElement, step: RedundantStep): void {
+  const { currentEdge, treeEdges, redundantEdge, parent, action } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private edgeListBody: HTMLElement | null = null;
-  private metricCurEdgeEl: HTMLElement | null = null;
-  private metricRedundantEl: HTMLElement | null = null;
-  private metricTreeEdgesEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of RE_EDGES) {
+    const p1 = RE_NODE_POSITIONS[e[0] - 1];
+    const p2 = RE_NODE_POSITIONS[e[1] - 1];
+    const isCurrent = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+    const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+    const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
 
-    this.svgCanvas = this.root.querySelector('#re-svg-canvas');
-    this.edgeListBody = this.root.querySelector('#re-edge-list-body');
-    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRedundantEl = this.root.querySelector('#metric-redundant-edge');
-    this.metricTreeEdgesEl = this.root.querySelector('#metric-tree-edges');
-    this.liveTextEl = this.root.querySelector('#re-live-text');
+    let strokeColor = '#cbd5e1';
+    let strokeWidth = 2;
+    let strokeDash = 'none';
 
-    this.bindPlaybackControls();
+    if (isRedundant) {
+      strokeColor = '#ef4444';
+      strokeWidth = 4;
+      strokeDash = '5,5';
+    } else if (isCurrent && action === 'found-redundant') {
+      strokeColor = '#ef4444';
+      strokeWidth = 4;
+      strokeDash = '5,5';
+    } else if (isTree) {
+      strokeColor = '#10b981';
+      strokeWidth = 3.5;
+    } else if (isCurrent) {
+      strokeColor = '#3b82f6';
+      strokeWidth = 3;
+    }
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REDUNDANT_EDGE_PROBLEM_HTML,
-      analysisHtml: REDUNDANT_EDGE_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
   }
 
-  protected buildSteps(): RedundantStep[] {
-    return buildRedundantSteps();
-  }
+  RE_NODES.forEach((node) => {
+    const p = RE_NODE_POSITIONS[node - 1];
+    const isCurrentNode = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
 
-  protected renderStep(step: RedundantStep): void {
-    const { currentEdge, treeEdges, redundantEdge, parent, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">`;
-
-      for (const e of RE_EDGES) {
-        const p1 = RE_NODE_POSITIONS[e[0] - 1];
-        const p2 = RE_NODE_POSITIONS[e[1] - 1];
-        const isCurrent = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
-        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
-        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
-
-        let strokeColor = '#cbd5e1';
-        let strokeWidth = 2;
-        let strokeDash = 'none';
-
-        if (isRedundant) {
-          strokeColor = '#ef4444';
-          strokeWidth = 4;
-          strokeDash = '5,5';
-        } else if (isCurrent && action === 'found-redundant') {
-          strokeColor = '#ef4444';
-          strokeWidth = 4;
-          strokeDash = '5,5';
-        } else if (isTree) {
-          strokeColor = '#10b981';
-          strokeWidth = 3.5;
-        } else if (isCurrent) {
-          strokeColor = '#3b82f6';
-          strokeWidth = 3;
-        }
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-dasharray="${strokeDash}" />`;
-      }
-
-      RE_NODES.forEach((node) => {
-        const p = RE_NODE_POSITIONS[node - 1];
-        const isCurrentNode = currentEdge && (currentEdge[0] === node || currentEdge[1] === node);
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isCurrentNode && (action === 'found-redundant' || action === 'done')) {
-          fill = '#fee2e2';
-          stroke = '#ef4444';
-        } else if (isCurrentNode) {
-          fill = '#dbeafe';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">p:${parent[node]}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isCurrentNode && (action === 'found-redundant' || action === 'done')) {
+      fill = '#fee2e2';
+      stroke = '#ef4444';
+    } else if (isCurrentNode) {
+      fill = '#dbeafe';
+      stroke = '#3b82f6';
     }
 
-    if (this.edgeListBody) {
-      this.edgeListBody.innerHTML = RE_EDGES.map((e) => {
-        const isCur = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
-        const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
-        const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="#64748b" font-size="10" font-family="monospace" text-anchor="middle">p:${parent[node]}</text>`;
+  });
 
-        let statusBadge = '<span class="text-slate-400">待检查</span>';
-        if (isRedundant) statusBadge = '<span class="text-red-500 font-bold">⚠️ 冗余成环边</span>';
-        else if (isTree) statusBadge = '<span class="text-emerald-600 font-bold">✔ 树边 (已合并)</span>';
-        else if (isCur) statusBadge = '<span class="text-blue-600 font-bold">检查中</span>';
+  svgHtml += `</svg>`;
 
-        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">[${e[0]}, ${e[1]}]</td>
-          <td class="px-3 py-1.5 text-center font-mono text-xs">${statusBadge}</td>
-        </tr>`;
-      }).join('');
-    }
+  const tableRows = RE_EDGES.map((e) => {
+    const isCur = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
+    const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
+    const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
 
-    if (this.metricCurEdgeEl) {
-      this.metricCurEdgeEl.textContent = currentEdge ? `[${currentEdge[0]}, ${currentEdge[1]}]` : '—';
-    }
-    if (this.metricRedundantEl) {
-      this.metricRedundantEl.textContent = redundantEdge ? `[${redundantEdge[0]}, ${redundantEdge[1]}]` : '暂未发现';
-      this.metricRedundantEl.className = `font-mono font-bold ${redundantEdge ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
-    }
-    if (this.metricTreeEdgesEl) {
-      this.metricTreeEdgesEl.textContent = `${treeEdges.length} / ${RE_NODES.length - 1}`;
-    }
+    let statusBadge = '<span style="color: #94a3b8;">待检查</span>';
+    if (isRedundant) statusBadge = '<span style="color: #ef4444; font-weight: 700;">⚠️ 冗余成环边</span>';
+    else if (isTree) statusBadge = '<span style="color: #059669; font-weight: 700;">✔ 树边 (已合并)</span>';
+    else if (isCur) statusBadge = '<span style="color: #2563eb; font-weight: 700;">检查中</span>';
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+    return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">[${e[0]}, ${e[1]}]</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-size: 11px;">${statusBadge}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
+      <div style="flex: 0.5; min-width: 0; align-self: center;">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">边</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">状态</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'redundant-edge',
   name: '冗余连接 (Redundant Connection)',
-  viewId: 'algo-redundant-edge-view',
-  icon: '🔗',
   category: 'graph',
+  icon: '🔗',
   difficulty: 2,
   levelOrder: 31,
   description: '左程云算法通关课 Class 056：并查集经典实战，无向图动态加边判环，快速识别导致多余回路的冗余边 (LeetCode 684)',
   learningGoal: '掌握并查集连通性判环机制、动态合并原则与树的环路消除策略',
-  template,
-  Visualizer: RedundantEdgeVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (5 节点 5 边)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-re-cur-edge', label: '当前考察边', color: '#3b82f6' },
+    { id: 'metric-re-redundant', label: '冗余边', color: '#ef4444' },
+    { id: 'metric-re-tree-edges', label: '已合并树边数', color: '#10b981' },
+    { id: 'metric-re-parent', label: 'parent 数组', color: '#a855f7' },
+  ],
+  legend: [
+    { label: '树边 (已合并)', color: '#10b981' },
+    { label: '检查中', color: '#3b82f6' },
+    { label: '冗余成环边', color: '#ef4444' },
+    { label: '待检查', color: '#cbd5e1' },
+  ],
+  codeLanguages: REDUNDANT_EDGE_CODE_LANGUAGES,
+  problemHtml: REDUNDANT_EDGE_PROBLEM_HTML,
+  analysisHtml: REDUNDANT_EDGE_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildRedundantSteps(),
+  renderCanvas: (container, step) => renderRedundantEdgeCanvas(container, step as RedundantStep),
 });

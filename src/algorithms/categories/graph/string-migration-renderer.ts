@@ -3,15 +3,13 @@
  * 4-Card 标准现代架构可视化器
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { DarkCodeTerminalInstance } from '../../../core/renderers/dark-code-terminal-presenter';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   STRING_MIGRATION_PROBLEM_HTML,
   STRING_MIGRATION_ANALYSIS_HTML,
   STRING_MIGRATION_CODE_LANGUAGES,
 } from './string-migration-problem-content';
-import template from './string-migration.html?raw';
 
 export interface SCStep extends StepBase {
   str1: string;
@@ -26,6 +24,7 @@ export interface SCStep extends StepBase {
   statusText: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCStep[] {
@@ -132,161 +131,117 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
   return steps;
 }
 
-export class StringMigrationVisualizer extends StepVisualizer<SCStep> {
-  protected codeLanguages = STRING_MIGRATION_CODE_LANGUAGES;
-  protected codeLines = STRING_MIGRATION_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '旋转字符串 (LC 796) 代码调试';
 
-  private terminalInstance: DarkCodeTerminalInstance | null = null;
-  private goalStripEl: HTMLElement | null = null;
-  private concatStripEl: HTMLElement | null = null;
-  private metricShiftEl: HTMLElement | null = null;
-  private metricWindowStrEl: HTMLElement | null = null;
-  private metricMatchPosEl: HTMLElement | null = null;
-  private metricResultEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.goalStripEl = this.root.querySelector('#sm-goal-strip');
-    this.concatStripEl = this.root.querySelector('#sm-concat-strip');
-    this.metricShiftEl = this.root.querySelector('#metric-shift');
-    this.metricWindowStrEl = this.root.querySelector('#metric-window-str');
-    this.metricMatchPosEl = this.root.querySelector('#metric-match-pos');
-    this.metricResultEl = this.root.querySelector('#metric-result');
-    this.liveTextEl = this.root.querySelector('#sm-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: STRING_MIGRATION_PROBLEM_HTML,
-      analysisHtml: STRING_MIGRATION_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): SCStep[] {
-    return buildStringMigrationSteps();
-  }
-
-  protected renderStep(step: SCStep): void {
-    const { str2, concat, windowStart, windowEnd, shift, matched, matchPos, statusText, phase } = step;
-
-    // 1. 渲染 goal 字符串
-    if (this.goalStripEl) {
-      let goalHtml = '';
-      for (let i = 0; i < str2.length; i++) {
-        goalHtml += `<div class="sm-char-box"><span>${str2[i]}</span></div>`;
-      }
-      this.goalStripEl.innerHTML = goalHtml;
-    }
-
-    // 2. 渲染 concat 字符串与滑动窗口高亮
-    if (this.concatStripEl) {
-      let concatHtml = '';
-      for (let i = 0; i < concat.length; i++) {
-        const inWindow = i >= windowStart && i < windowEnd;
-        let cls = 'sm-char-box';
-        if (inWindow) {
-          cls += matched ? ' is-match' : ' is-in-window';
-        }
-        concatHtml += `<div class="${cls}">
-          <span style="font-size:10px; color:#94a3b8; margin-bottom:-2px;">${i}</span>
-          <span>${concat[i]}</span>
-        </div>`;
-      }
-      this.concatStripEl.innerHTML = concatHtml;
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricShiftEl) {
-      this.metricShiftEl.textContent = `${shift}`;
-    }
-    if (this.metricWindowStrEl) {
-      this.metricWindowStrEl.textContent = phase === 'init' || phase === 'length-check' ? '—' : `"${concat.substring(windowStart, windowEnd)}"`;
-    }
-    if (this.metricMatchPosEl) {
-      this.metricMatchPosEl.textContent = matchPos !== null ? `${matchPos}` : '—';
-    }
-    if (this.metricResultEl) {
-      this.metricResultEl.textContent = phase === 'done' ? (matched ? 'True (有效)' : 'False (无效)') : '匹配中...';
-      this.metricResultEl.style.color = phase === 'done' ? (matched ? '#16a34a' : '#dc2626') : '#2563eb';
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' && matched
-          ? '#f0fdf4'
-          : phase === 'done' && !matched
-          ? '#fef2f2'
-          : phase === 'found'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        phase === 'done' && matched
-          ? '#15803d'
-          : phase === 'done' && !matched
-          ? '#dc2626'
-          : phase === 'found'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' && matched
-          ? '#bbf7d0'
-          : phase === 'done' && !matched
-          ? '#fecaca'
-          : phase === 'found'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeStatus = this.root?.querySelector('#badge-match-status');
-    if (badgeStatus) {
-      badgeStatus.textContent = phase === 'done' ? (matched ? '匹配成功 (True)' : '匹配失败 (False)') : '匹配中...';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: SCStep[]): SCStep[] {
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      shift: String(s.shift),
+      'window-str': s.phase === 'init' || s.phase === 'length-check' ? '—' : `"${s.concat.substring(s.windowStart, s.windowEnd)}"`,
+      'match-pos': s.matchPos !== null ? String(s.matchPos) : '—',
+      result:
+        s.phase === 'done'
+          ? s.matched
+            ? 'True (有效)'
+            : 'False (无效)'
+          : '匹配中...',
+    },
+  }));
 }
 
-registerAlgorithm({
+const CHAR_BOX = 'width: 36px; height: 40px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1.5px solid; transition: all 0.2s; box-sizing: border-box;';
+
+/** 主视觉：goal 字符条 + 双倍拼接滑动窗口字符条 */
+export function renderStringMigrationCanvas(container: HTMLElement, step: SCStep): void {
+  const { str2, concat, windowStart, windowEnd, matched, phase } = step;
+
+  const goalHtml = str2
+    .split('')
+    .map(
+      (ch) => `<div style="${CHAR_BOX} background: #ffffff; border-color: #cbd5e1; color: #0f172a;"><span style="font-size: 14px; font-weight: 700;">${ch}</span></div>`
+    )
+    .join('');
+
+  const concatHtml = concat
+    .split('')
+    .map((ch, i) => {
+      const inWindow = i >= windowStart && i < windowEnd;
+      let bg = '#ffffff';
+      let border = '#cbd5e1';
+      let color = '#0f172a';
+      let transform = 'none';
+      let boxShadow = 'none';
+      if (inWindow && matched) {
+        bg = '#f0fdf4';
+        border = '#22c55e';
+        color = '#15803d';
+        transform = 'translateY(-4px)';
+        boxShadow = '0 4px 8px rgba(34, 197, 94, 0.25)';
+      } else if (inWindow) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+        color = '#1d4ed8';
+        transform = 'translateY(-2px)';
+      }
+      return `<div style="${CHAR_BOX} background: ${bg}; border-color: ${border}; color: ${color}; transform: ${transform}; box-shadow: ${boxShadow};">
+        <span style="font-size: 10px; color: #94a3b8; margin-bottom: -2px;">${i}</span>
+        <span style="font-size: 14px; font-weight: 700;">${ch}</span>
+      </div>`;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 14px; box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <div style="font-size: 10.5px; font-weight: 700; color: #64748b;">goal 字符串:</div>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">${goalHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
+        <div style="font-size: 10.5px; font-weight: 700; color: #64748b;">双倍拼接 s + s（滑动窗口比对）:</div>
+        <div style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;">${concatHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'string-migration',
   name: '旋转字符串 (LC 796)',
-  viewId: 'algo-string-migration-view',
   category: 'graph',
   description: '双倍拼接与滑动窗口子串匹配：验证 goal 是否为源字符串 s 的循环旋转移位',
   icon: '🔤',
   difficulty: 1,
   levelOrder: 24,
   learningGoal: '掌握经典字符串循环旋转的双倍拼接 (s + s) 判定定理与滑动窗口单步匹配',
-  template,
-  Visualizer: StringMigrationVisualizer,
+  inputs: [
+    { id: 's', label: '源字符串 s', type: 'text', defaultValue: 'abcde' },
+    { id: 'goal', label: '目标字符串 goal', type: 'text', defaultValue: 'cdeab' },
+  ],
+  presets: [
+    { label: '示例 1 (可旋转)', values: { s: 'abcde', goal: 'cdeab' } },
+    { label: '示例 2 (不可旋转)', values: { s: 'abcde', goal: 'abced' } },
+    { label: '相同字符串', values: { s: 'aaa', goal: 'aaa' } },
+  ],
+  metrics: [
+    { id: 'shift', label: '旋转移位', color: '#2563eb' },
+    { id: 'window-str', label: '当前窗口子串', color: '#3b82f6' },
+    { id: 'match-pos', label: '匹配位置', color: '#a855f7' },
+    { id: 'result', label: '判定结果', color: '#16a34a' },
+  ],
+  legend: [
+    { label: '窗口扫描中', color: '#3b82f6' },
+    { label: '匹配成功', color: '#22c55e' },
+  ],
+  codeLanguages: STRING_MIGRATION_CODE_LANGUAGES,
+  problemHtml: STRING_MIGRATION_PROBLEM_HTML,
+  analysisHtml: STRING_MIGRATION_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(
+      buildStringMigrationSteps(
+        String(inputs.s ?? 'abcde'),
+        String(inputs.goal ?? 'cdeab')
+      )
+    ),
+  renderCanvas: (container, step) => renderStringMigrationCanvas(container, step as SCStep),
 });

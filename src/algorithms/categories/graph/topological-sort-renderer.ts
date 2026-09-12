@@ -1,20 +1,17 @@
 /**
- * 拓扑排序 (Kahn 算法) 可视化器 — 4-Card 标准现代架构
+ * 拓扑排序 (Kahn 算法) 可视化器 — 声明式 4-Card 标准架构
  * 入度统计、零入度队列进出、邻边剥离与 DAG 拓扑序列重构 (LeetCode 210 / 洛谷 B3644)
- * 深度架构重构：严格解释器级全流程逐行高亮执行（建图、入度统计、0入度扫表入队、队列循环、出队记录、出边遍历、入度自减、新0入度入队、最终完备性校验均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   TOPOLOGICAL_SORT_PROBLEM_HTML,
   TOPOLOGICAL_SORT_ANALYSIS_HTML,
   TOPOLOGICAL_SORT_CODE_LANGUAGES,
 } from './topological-sort-problem-content';
-import template from './topological-sort.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
-export interface TopoStep extends StepBase {
+export interface TopoStep {
   nodes: number[];
   edges: { from: number; to: number }[];
   inDegree: number[];
@@ -174,179 +171,118 @@ export function buildTopoSteps(): TopoStep[] {
   return steps;
 }
 
-export class TopologicalSortVisualizer extends StepVisualizer<TopoStep> {
-  protected codeLanguages = TOPOLOGICAL_SORT_CODE_LANGUAGES;
-  protected codeLines = TOPOLOGICAL_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '拓扑排序 (Kahn 算法) 代码调试';
+export function renderTopologicalSortCanvas(container: HTMLElement, step: TopoStep): void {
+  const { inDegree, queue, order, currentNode, activeEdge } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private degreePillsWrap: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricQueueSizeEl: HTMLElement | null = null;
-  private metricOrderCountEl: HTMLElement | null = null;
-  private metricCycleStatusEl: HTMLElement | null = null;
-  private queueElementsEl: HTMLElement | null = null;
-  private orderElementsEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+  // 1. 有向图 SVG 拓扑图
+  let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-topo" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+      </marker>
+      <marker id="arrow-topo-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of TOPO_EDGES) {
+    const p1 = TOPO_NODE_POSITIONS[e.from];
+    const p2 = TOPO_NODE_POSITIONS[e.to];
+    const isActive = activeEdge && activeEdge.from === e.from && activeEdge.to === e.to;
 
-    this.svgCanvas = this.root.querySelector('#topo-svg-canvas');
-    this.degreePillsWrap = this.root.querySelector('#indegree-pills-wrap');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-elements');
-    this.metricOrderCountEl = this.root.querySelector('#metric-topo-len');
-    this.metricCycleStatusEl = this.root.querySelector('#metric-cycle-status');
-    this.queueElementsEl = this.root.querySelector('#metric-queue-elements');
-    this.orderElementsEl = this.root.querySelector('#topo-result-order');
-    this.liveTextEl = this.root.querySelector('#topo-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
+    const strokeWidth = isActive ? 3.5 : 2;
+    const marker = isActive ? 'url(#arrow-topo-active)' : 'url(#arrow-topo)';
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: TOPOLOGICAL_SORT_PROBLEM_HTML,
-      analysisHtml: TOPOLOGICAL_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
   }
 
-  protected buildSteps(): TopoStep[] {
-    return buildTopoSteps();
-  }
+  const orderSet = new Set(order);
+  const qSet = new Set(queue);
 
-  protected renderStep(step: TopoStep): void {
-    const { inDegree, queue, order, currentNode, activeEdge, statusText, action } = step;
+  TOPO_NODES.forEach((node) => {
+    const p = TOPO_NODE_POSITIONS[node];
+    const isCurrent = currentNode === node;
+    const isOrdered = orderSet.has(node);
+    const inQueue = qSet.has(node);
 
-    // 1. 绘制有向图 SVG 拓扑图
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 260" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="arrow-topo" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-topo-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb" />
-          </marker>
-        </defs>`;
-
-      // 边绘制
-      for (const e of TOPO_EDGES) {
-        const p1 = TOPO_NODE_POSITIONS[e.from];
-        const p2 = TOPO_NODE_POSITIONS[e.to];
-        const isActive = activeEdge && activeEdge.from === e.from && activeEdge.to === e.to;
-
-        const strokeColor = isActive ? '#2563eb' : '#cbd5e1';
-        const strokeWidth = isActive ? 3.5 : 2;
-        const marker = isActive ? 'url(#arrow-topo-active)' : 'url(#arrow-topo)';
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-      }
-
-      // 节点绘制
-      const orderSet = new Set(order);
-      const qSet = new Set(queue);
-
-      TOPO_NODES.forEach((node) => {
-        const p = TOPO_NODE_POSITIONS[node];
-        const isCurrent = currentNode === node;
-        const isOrdered = orderSet.has(node);
-        const inQueue = qSet.has(node);
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isCurrent) {
-          fill = '#fef08a';
-          stroke = '#eab308';
-        } else if (isOrdered) {
-          fill = '#dcfce7';
-          stroke = '#22c55e';
-        } else if (inQueue) {
-          fill = '#dbeafe';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isOrdered ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">in:${inDegree[node]}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isCurrent) {
+      fill = '#fef08a';
+      stroke = '#eab308';
+    } else if (isOrdered) {
+      fill = '#dcfce7';
+      stroke = '#22c55e';
+    } else if (inQueue) {
+      fill = '#dbeafe';
+      stroke = '#3b82f6';
     }
 
-    // 2. 渲染入度小胶囊栏
-    if (this.degreePillsWrap) {
-      this.degreePillsWrap.innerHTML = TOPO_NODES.map((node) => {
-        const deg = inDegree[node];
-        const isZero = deg === 0;
-        return `<div style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:${
-          isZero ? '#ecfdf5' : '#f8fafc'
-        }; border:1px solid ${isZero ? '#a7f3d0' : '#e2e8f0'}; font-size:11px;">
-          <span style="font-weight:700; color:#334155;">节点 ${node}:</span>
-          <span style="font-family:monospace; font-weight:800; color:${
-            isZero ? '#059669' : '#2563eb'
-          };">${deg}</span>
-        </div>`;
-      }).join('');
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
 
-    // 3. 监控指标
-    if (this.metricCurNodeEl) {
-      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
-    }
-    if (this.metricQueueSizeEl) {
-      this.metricQueueSizeEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '空队列';
-    }
-    if (this.metricOrderCountEl) {
-      this.metricOrderCountEl.textContent = `${order.length} / ${TOPO_NODES.length}`;
-    }
-    if (this.metricCycleStatusEl) {
-      const hasCycle = action === 'done' && order.length < TOPO_NODES.length;
-      this.metricCycleStatusEl.textContent = hasCycle ? '有环 (无拓扑序)' : '无环 (DAG)';
-      this.metricCycleStatusEl.className = `font-mono font-bold ${
-        hasCycle ? 'text-red-600' : 'text-emerald-600'
-      }`;
-    }
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isOrdered ? '#15803d' : '#64748b'}" font-size="10.5" font-family="monospace" font-weight="700" text-anchor="middle">in:${inDegree[node]}</text>`;
+  });
 
-    // 4. 拓扑序列结果呈现
-    if (this.orderElementsEl) {
-      this.orderElementsEl.innerHTML =
-        order.length > 0
-          ? order
-              .map(
-                (v) =>
-                  `<span style="display:inline-block; padding:2px 7px; border-radius:4px; background:#dcfce7; color:#15803d; font-family:monospace; font-weight:800; border:1px solid #bbf7d0;">${v}</span>`
-              )
-              .join('<span style="color:#94a3b8; font-weight:bold; margin:0 4px;">➔</span>')
-          : '<span style="color:#94a3b8; font-size:12px;">尚未产生元素</span>';
-    }
+  svgHtml += `</svg>`;
 
-    // 5. 实时解说
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  // 2. 入度小胶囊栏 + 拓扑序列结果
+  const pillsHtml = TOPO_NODES.map((node) => {
+    const deg = inDegree[node];
+    const isZero = deg === 0;
+    return `<div style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:${
+      isZero ? '#ecfdf5' : '#f8fafc'
+    }; border:1px solid ${isZero ? '#a7f3d0' : '#e2e8f0'}; font-size:11px;">
+      <span style="font-weight:700; color:#334155;">节点 ${node}:</span>
+      <span style="font-family:monospace; font-weight:800; color:${
+        isZero ? '#059669' : '#2563eb'
+      };">${deg}</span>
+    </div>`;
+  }).join('');
+
+  const orderHtml =
+    order.length > 0
+      ? order
+          .map(
+            (v) =>
+              `<span style="display:inline-block; padding:2px 7px; border-radius:4px; background:#dcfce7; color:#15803d; font-family:monospace; font-weight:800; border:1px solid #bbf7d0;">${v}</span>`
+          )
+          .join('<span style="color:#94a3b8; font-weight:bold; margin:0 4px;">➔</span>')
+      : '<span style="color:#94a3b8; font-size:12px;">尚未产生元素</span>';
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100%; width: 100%; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0;">${svgHtml}</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">${pillsHtml}</div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px; justify-content: center; min-height: 26px;">${orderHtml}</div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'topological-sort',
   name: '拓扑排序 (Topological Sort)',
-  viewId: 'algo-topological-sort-view',
-  icon: '🔀',
   category: 'graph',
+  description: '左程云算法通关课 Class 059 / 060：基于入度削减的 Kahn 算法，实现有向无环图（DAG）的线性拓扑序列求解与环路检测 (LeetCode 210)',
+  icon: '🔀',
   difficulty: 2,
   levelOrder: 22,
-  description: '左程云算法通关课 Class 059 / 060：基于入度削减的 Kahn 算法，实现有向无环图（DAG）的线性拓扑序列求解与环路检测 (LeetCode 210)',
   learningGoal: '深入理解入度统计、零入度队列进出、邻边消除与有向环判定原理',
-  template,
-  Visualizer: TopologicalSortVisualizer,
+  metrics: [
+    { id: 'metric-cur-node', label: '当前出队点 u', color: '#2563eb' },
+    { id: 'metric-queue-elements', label: '就绪队列', color: '#10b981' },
+    { id: 'metric-topo-len', label: '拓扑序列长度', color: '#a855f7' },
+    { id: 'metric-cycle-status', label: '环路检测', color: '#16a34a' },
+  ],
+  legend: [
+    { label: '当前出队点 u', color: '#eab308' },
+    { label: '入度已为 0（队列中）', color: '#3b82f6' },
+    { label: '已加入排序', color: '#22c55e' },
+  ],
+  codeLanguages: TOPOLOGICAL_SORT_CODE_LANGUAGES,
+  problemHtml: TOPOLOGICAL_SORT_PROBLEM_HTML,
+  analysisHtml: TOPOLOGICAL_SORT_ANALYSIS_HTML,
+  generateSteps: () => buildTopoSteps(),
+  renderCanvas: (container, step) => renderTopologicalSortCanvas(container, step as TopoStep),
 });

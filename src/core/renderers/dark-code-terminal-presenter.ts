@@ -11,7 +11,7 @@
  */
 
 import type { StepVar } from '../interfaces';
-import { highlightTokens, escapeHtml } from '../code-highlighter';
+// highlightTokens / escapeHtml moved to terminal/code-line-renderer.ts
 import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
 import {
   CodePresentationModel,
@@ -19,6 +19,17 @@ import {
   type ProblemDetail,
 } from '../code-presentation-model';
 import { ProblemAnalysisViewer } from '../problem-analysis-viewer';
+import {
+  renderCodeLines,
+  highlightLineInternal as highlightLineImpl,
+  updateFontSize as updateFontSizeImpl,
+  copyCode as copyCodeImpl,
+  updateInlineHint,
+  type CodeLineRendererDeps,
+  type CodeLineRendererState,
+} from './terminal/code-line-renderer';
+import { switchLanguage as switchLanguageImpl, type LanguageSwitcherDeps } from './terminal/language-switcher';
+import { createHoverTooltipManager } from './terminal/hover-tooltip-manager';
 
 export type SingleLangHighlightTarget =
   | number
@@ -380,241 +391,32 @@ export class DarkCodeTerminalPresenter {
       }
     }
 
-    // 4. 渲染代码行 (结合单趟词法扫描进行 Token 级语法高亮)
-    const updateInlineHint = (activeLineEl: HTMLElement | null) => {
-      if (!codeWrapper) return;
-      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
-        if (typeof el.remove === 'function') el.remove();
-        else if (el.parentElement) el.parentElement.removeChild(el);
-      });
 
-      if (!activeLineEl || currentVarsMap.size === 0) return;
-      const rawLine = activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw') || '';
-      if (!rawLine) return;
 
-      const hintSummary = VariableContextResolver.formatInlineSummary(currentVarsMap, rawLine);
-      if (!hintSummary) return;
-
-      const hintEl = DarkCodeTerminalPresenter.createSafeElement('span');
-      hintEl.className = 'algo-code-inline-hint';
-      hintEl.style.cssText =
-        'color: #38bdf8; opacity: 0.85; font-style: italic; font-size: 10.5px; margin-left: 14px; user-select: none; font-weight: 500; display: inline-flex; align-items: center;';
-      hintEl.textContent = hintSummary;
-
-      const textEl = activeLineEl.querySelector?.('.algo-code-line-text') || activeLineEl;
-      if (typeof textEl.appendChild === 'function') {
-        textEl.appendChild(hintEl);
-      }
+    // ── 4. 提取模块：代码行渲染 ──────────────────────────────
+    const rendererDeps: CodeLineRendererDeps = {
+      codeWrapper,
+      codeModel,
+      fontIndicator,
+      btnCopy,
+      createEl: DarkCodeTerminalPresenter.createSafeElement.bind(DarkCodeTerminalPresenter),
+    };
+    const rendererState: CodeLineRendererState = {
+      get currentLang() { return currentLang; },
+      set currentLang(v) { currentLang = v; },
+      get codeFontSize() { return codeFontSize; },
+      set codeFontSize(v) { codeFontSize = v; },
+      activeLineTarget,
+      currentVarsMap,
     };
 
-    const renderCodeLines = () => {
-      if (!codeWrapper) return;
-      const lines = codeModel.getLines(currentLang);
-      const linesHtml = lines
-        .map((line, idx) => {
-          const lineNum = idx + 1;
-          const highlightedCode = highlightTokens(line, currentLang);
-          return `
-            <div class="code-line algo-code-line" data-line="${lineNum}" data-raw="${escapeHtml(line)}" style="font-size: ${codeFontSize}px; padding: 1px 6px; border-radius: 4px; display: flex; align-items: flex-start; gap: 12px; white-space: pre; border-left: 3px solid transparent; transition: background-color 0.15s ease, border-color 0.15s ease;">
-              <span class="code-line-num algo-code-line-number" style="color: #475569; font-size: 10.5px; min-width: 20px; text-align: right; user-select: none;">${lineNum}</span>
-              <span class="code-line-text algo-code-line-text">${highlightedCode}</span>
-            </div>
-          `;
-        })
-        .join('');
-
-      codeWrapper.innerHTML = linesHtml;
-
-      // 若处于 Mock DOM 环境（children 为普通 Array），同步重构子节点供 querySelectorAll 查询
-      if (Array.isArray((codeWrapper as any).children)) {
-        (codeWrapper as any).children = [];
-        lines.forEach((line, idx) => {
-          const lineNum = idx + 1;
-          const lineEl = DarkCodeTerminalPresenter.createSafeElement('div');
-          lineEl.className = 'code-line algo-code-line';
-          lineEl.dataset.line = String(lineNum);
-          lineEl.dataset.raw = line;
-          lineEl.style.fontSize = `${codeFontSize}px`;
-          lineEl.style.padding = '1px 6px';
-          lineEl.style.borderRadius = '4px';
-          lineEl.style.display = 'flex';
-          lineEl.style.alignItems = 'flex-start';
-          lineEl.style.gap = '12px';
-          lineEl.style.whiteSpace = 'pre';
-          lineEl.style.borderLeft = '3px solid transparent';
-
-          const numEl = DarkCodeTerminalPresenter.createSafeElement('span');
-          numEl.className = 'code-line-num algo-code-line-number';
-          numEl.textContent = String(lineNum);
-          lineEl.appendChild(numEl);
-
-          const textEl = DarkCodeTerminalPresenter.createSafeElement('span');
-          textEl.className = 'code-line-text algo-code-line-text';
-          textEl.innerHTML = highlightTokens(line, currentLang);
-          textEl.textContent = line;
-          lineEl.appendChild(textEl);
-
-          if (typeof codeWrapper.appendChild === 'function') {
-            codeWrapper.appendChild(lineEl);
-          } else {
-            (codeWrapper as any).children.push(lineEl);
-          }
-        });
-      }
-
-      if (activeLineTarget != null) {
-        highlightLineInternal(activeLineTarget);
-      }
-    };
-
-    // 5. 高亮代码行逻辑
-    const highlightLineInternal = (target: HighlightTarget | null | undefined) => {
+    const hl = (target: HighlightTarget | null | undefined) => {
+      rendererState.activeLineTarget = target;
       activeLineTarget = target;
-      if (!codeWrapper) return;
-
-      codeWrapper.querySelectorAll<HTMLElement>('.code-line').forEach((el) => {
-        el.classList.remove('active', 'active-line', 'is-active', 'is-context');
-        el.style.backgroundColor = 'transparent';
-        el.style.borderLeftColor = 'transparent';
-        el.style.color = '#cbd5e1';
-        el.style.fontWeight = 'normal';
-      });
-
-      codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
-        if (typeof el.remove === 'function') el.remove();
-        else if (el.parentElement) el.parentElement.removeChild(el);
-      });
-
-      if (target == null) return;
-
-      const markLine = (lineEl: HTMLElement | null) => {
-        if (!lineEl) return;
-        lineEl.classList.add('active', 'active-line', 'is-active');
-        lineEl.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
-        lineEl.style.borderLeftColor = '#2563eb';
-        lineEl.style.color = '#ffffff';
-        lineEl.style.fontWeight = '700';
-        updateInlineHint(lineEl);
-      };
-
-      const markContext = (lineEl: HTMLElement | null) => {
-        if (!lineEl) return;
-        lineEl.classList.add('is-context');
-        lineEl.style.backgroundColor = 'rgba(51, 65, 85, 0.25)';
-        lineEl.style.borderLeftColor = '#64748b';
-      };
-
-      const applyTarget = (t: HighlightTarget | null | undefined) => {
-        if (t == null) return;
-        if (typeof t === 'number') {
-          const lineEl = codeWrapper.querySelector(`[data-line="${t}"]`) as HTMLElement | null;
-          if (lineEl) {
-            markLine(lineEl);
-            if (typeof lineEl.scrollIntoView === 'function') {
-              lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-          }
-        } else if (typeof t === 'string') {
-          const num = parseInt(t, 10);
-          if (!isNaN(num)) {
-            const lineEl = codeWrapper.querySelector(`[data-line="${num}"]`) as HTMLElement | null;
-            if (lineEl) {
-              markLine(lineEl);
-              if (typeof lineEl.scrollIntoView === 'function') {
-                lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-              }
-            }
-          } else {
-            const anchorLine = codeModel.resolveAnchorLine(t, currentLang);
-            if (anchorLine != null) {
-              applyTarget(anchorLine);
-            }
-          }
-        } else if (Array.isArray(t)) {
-          t.forEach((l) => {
-            const lineEl = codeWrapper.querySelector(`[data-line="${l}"]`) as HTMLElement | null;
-            markLine(lineEl);
-          });
-          if (t.length > 0) {
-            const firstEl = codeWrapper.querySelector(`[data-line="${t[0]}"]`) as HTMLElement | null;
-            if (firstEl && typeof firstEl.scrollIntoView === 'function') {
-              firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-          }
-        } else if (typeof t === 'object') {
-          if ('anchor' in t && typeof (t as any).anchor === 'string') {
-            const anchorLine = codeModel.resolveAnchorLine((t as any).anchor, currentLang);
-            if (anchorLine != null) {
-              applyTarget(anchorLine);
-            }
-          } else if ('from' in t && 'to' in t && typeof t.from === 'number' && typeof t.to === 'number') {
-            for (let l = t.from; l <= t.to; l++) {
-              const lineEl = codeWrapper.querySelector(`[data-line="${l}"]`) as HTMLElement | null;
-              markLine(lineEl);
-            }
-            const firstEl = codeWrapper.querySelector(`[data-line="${t.from}"]`) as HTMLElement | null;
-            if (firstEl && typeof firstEl.scrollIntoView === 'function') {
-              firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-          } else if ('primary' in t) {
-            const p = (t as any).primary;
-            const c = (t as any).context;
-            if (p != null) applyTarget(p);
-            if (c != null) {
-              const ctxList = Array.isArray(c) ? c : [c];
-              ctxList.forEach((cl) => {
-                const clEl = codeWrapper.querySelector(`[data-line="${cl}"]`) as HTMLElement | null;
-                markContext(clEl);
-              });
-            }
-          } else {
-            // 多语言字典解包：根据当前激活语言优先匹配
-            const dict = t as Record<string, any>;
-            let resolved = dict[currentLang];
-            if (resolved == null && (currentLang === 'js' || currentLang === 'javascript')) {
-              resolved = dict['javascript'] ?? dict['js'];
-            }
-            if (resolved == null && (currentLang === 'python' || currentLang === 'py')) {
-              resolved = dict['python'] ?? dict['py'];
-            }
-            if (resolved == null && currentLang.includes('cpp')) {
-              resolved = dict['cpp'] ?? dict['c++'];
-            }
-            if (resolved == null) {
-              resolved = dict['java'] ?? Object.values(dict)[0];
-            }
-            if (resolved != null) {
-              applyTarget(resolved);
-            }
-          }
-        }
-      };
-
-      applyTarget(target);
+      highlightLineImpl(target, rendererDeps, rendererState);
     };
 
-    // 6. 切换语言
-    const switchLanguageInternal = (lang: string) => {
-      currentLang = lang;
-      codeModel.setCurrentLanguage(lang);
-      langBtns.forEach((btn) => {
-        const bLang = btn.dataset.lang;
-        const isActive = bLang === currentLang || (currentLang === 'javascript' && bLang === 'js');
-        if (isActive) {
-          btn.classList.add('active');
-        } else {
-          btn.classList.remove('active');
-        }
-        btn.style.background = isActive ? '#334155' : 'transparent';
-        btn.style.color = isActive ? '#93c5fd' : '#64748b';
-      });
-      renderCodeLines();
-      if (config.onLanguageChange) {
-        config.onLanguageChange(currentLang);
-      }
-    };
-
-    // 7. 切换 Tab 看板
+    // ── 5. Tab 切换（内联，逻辑极简） ───────────────────────
     const switchTabInternal = (tab: 'code' | 'problem' | 'analysis') => {
       const setTabStyle = (btn: HTMLElement | null, isActive: boolean) => {
         if (!btn) return;
@@ -632,24 +434,24 @@ export class DarkCodeTerminalPresenter {
           btn.style.boxShadow = 'none';
         }
       };
-
       setTabStyle(btnTabCode, tab === 'code');
       setTabStyle(btnTabProblem, tab === 'problem');
       setTabStyle(btnTabAnalysis, tab === 'analysis');
-
       if (viewCode) viewCode.style.display = tab === 'code' ? 'flex' : 'none';
       if (viewProblem) viewProblem.style.display = tab === 'problem' ? 'flex' : 'none';
       if (viewAnalysis) viewAnalysis.style.display = tab === 'analysis' ? 'flex' : 'none';
     };
 
-    // 8. 调整代码字号
-    const updateFontSize = (delta: number) => {
-      codeFontSize = Math.max(9, Math.min(20, codeFontSize + delta));
-      if (fontIndicator) fontIndicator.textContent = String(codeFontSize);
-      renderCodeLines();
+    // ── 6. 提取模块：语言切换 ────────────────────────────────
+    const switchLangDeps: LanguageSwitcherDeps = {
+      langBtns,
+      onLanguageChange: config.onLanguageChange,
+    };
+    const switchLanguageInternal = (lang: string) => {
+      switchLanguageImpl(lang, switchLangDeps, rendererDeps, rendererState, hl);
     };
 
-    // 事件绑定
+    // ── 7. 事件绑定 ──────────────────────────────────────────
     const onTabCodeClick = () => switchTabInternal('code');
     const onTabProblemClick = () => switchTabInternal('problem');
     const onTabAnalysisClick = () => switchTabInternal('analysis');
@@ -665,240 +467,54 @@ export class DarkCodeTerminalPresenter {
     };
     langBtns.forEach((btn) => btn.addEventListener('click', onLangClick));
 
-    const onFontDecClick = () => updateFontSize(-1);
-    const onFontIncClick = () => updateFontSize(1);
+    const onFontDecClick = () => updateFontSizeImpl(-1, rendererDeps, rendererState, hl);
+    const onFontIncClick = () => updateFontSizeImpl(1, rendererDeps, rendererState, hl);
 
     btnFontDec?.addEventListener('click', onFontDecClick);
     btnFontInc?.addEventListener('click', onFontIncClick);
 
-    // 代码复制到剪贴板功能
-    let copyResetTimer: any = null;
-    const copyCodeInternal = async (): Promise<boolean> => {
-      const lines = codeModel.getLines(currentLang);
-      const fullText = lines.join('\n');
-      let success = false;
-
-      try {
-        if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-          await navigator.clipboard.writeText(fullText);
-          success = true;
-        } else if (typeof document !== 'undefined') {
-          const ta = document.createElement('textarea');
-          ta.value = fullText;
-          ta.style.position = 'fixed';
-          ta.style.opacity = '0';
-          document.body.appendChild(ta);
-          ta.select();
-          success = document.execCommand('copy');
-          document.body.removeChild(ta);
-        }
-      } catch (e) {
-        console.warn('[DarkCodeTerminalPresenter] Clipboard write failed, falling back to execCommand:', e);
-        try {
-          if (typeof document !== 'undefined') {
-            const ta = document.createElement('textarea');
-            ta.value = fullText;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            success = document.execCommand('copy');
-            document.body.removeChild(ta);
-          }
-        } catch {}
-      }
-
-      if (btnCopy) {
-        const copyText = btnCopy.querySelector('.copy-text') || btnCopy;
-        const copyIcon = btnCopy.querySelector('.copy-icon');
-
-        btnCopy.classList.add('copied');
-        btnCopy.style.borderColor = 'rgba(52, 211, 153, 0.5)';
-        btnCopy.style.color = '#34d399';
-        btnCopy.style.background = 'rgba(6, 78, 59, 0.4)';
-        if (copyText) copyText.textContent = '已复制';
-        if (copyIcon) {
-          copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        }
-
-        const targetBtn = btnCopy;
-        if (copyResetTimer) clearTimeout(copyResetTimer);
-        copyResetTimer = setTimeout(() => {
-          targetBtn.classList.remove('copied');
-          targetBtn.style.borderColor = '#334155';
-          targetBtn.style.color = '#94a3b8';
-          targetBtn.style.background = '#0f172a';
-          if (copyText) copyText.textContent = '复制';
-          if (copyIcon) {
-            copyIcon.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-          }
-        }, 1800);
-      }
-
-      return success;
-    };
-
-    const onCopyClick = () => {
-      void copyCodeInternal();
-    };
-
+    const onCopyClick = () => { void copyCodeImpl(rendererDeps, rendererState); };
     btnCopy?.addEventListener('click', onCopyClick);
 
-    // 模态弹窗打开与关闭
     const onOpenModalClick = () => {
-      if (modalProblem) {
-        modalProblem.classList.remove('hidden');
-        modalProblem.style.display = 'flex';
-      }
+      if (modalProblem) { modalProblem.classList.remove('hidden'); modalProblem.style.display = 'flex'; }
     };
     const onCloseModalClick = () => {
-      if (modalProblem) {
-        modalProblem.classList.add('hidden');
-        modalProblem.style.display = 'none';
-      }
+      if (modalProblem) { modalProblem.classList.add('hidden'); modalProblem.style.display = 'none'; }
     };
-
     btnOpenModals.forEach((btn) => btn.addEventListener('click', onOpenModalClick));
     btnCloseModal?.addEventListener('click', onCloseModalClick);
-    modalProblem?.addEventListener('click', (e) => {
-      if (e.target === modalProblem) {
-        onCloseModalClick();
-      }
-    });
+    modalProblem?.addEventListener('click', (e) => { if (e.target === modalProblem) onCloseModalClick(); });
     const onModalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && modalProblem && modalProblem.style.display !== 'none') {
-        onCloseModalClick();
-      }
+      if (e.key === 'Escape' && modalProblem && modalProblem.style.display !== 'none') onCloseModalClick();
     };
     if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
       document.addEventListener('keydown', onModalKeyDown);
     }
 
-    // 智能创建/获取全局单例调试悬停气泡 (Debug Hover Tooltip)
-    let hoverTooltip: HTMLElement | null = null;
-    if (typeof document !== 'undefined' && typeof document.createElement === 'function' && typeof document.getElementById === 'function') {
-      hoverTooltip = document.getElementById('algo-debug-hover-tooltip');
-      if (!hoverTooltip && document.body) {
-        hoverTooltip = document.createElement('div');
-        hoverTooltip.id = 'algo-debug-hover-tooltip';
-        hoverTooltip.className = 'algo-debug-hover-tooltip';
-        hoverTooltip.style.cssText =
-          'display: none; position: fixed; z-index: 99999; pointer-events: none; background: rgba(15, 23, 42, 0.96); border: 1px solid #38bdf8; box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6); border-radius: 6px; padding: 5px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; backdrop-filter: blur(8px); transition: opacity 0.12s ease; opacity: 0; color: #cbd5e1; line-height: 1.4; max-width: 360px; word-break: break-all;';
-        document.body.appendChild(hoverTooltip);
-      }
-    }
+    // ── 8. 提取模块：变量悬停气泡 ────────────────────────────
+    const hoverMgr = createHoverTooltipManager(
+      { codeWrapper, createEl: DarkCodeTerminalPresenter.createSafeElement.bind(DarkCodeTerminalPresenter) },
+      { get currentVarsMap() { return currentVarsMap; }, get currentLang() { return currentLang; } },
+    );
+    hoverMgr.bind();
 
-    let hoverDebounceTimer: any = null;
-    let activeHoveredSpan: HTMLElement | null = null;
+    // ── 9. 首次渲染 ──────────────────────────────────────────
+    renderCodeLines(rendererDeps, rendererState, hl);
 
-    const hideHoverTooltip = () => {
-      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
-      if (activeHoveredSpan) {
-        activeHoveredSpan.style.backgroundColor = '';
-        activeHoveredSpan.style.boxShadow = '';
-        activeHoveredSpan = null;
-      }
-      if (hoverTooltip) {
-        hoverTooltip.style.opacity = '0';
-        hoverTooltip.style.display = 'none';
-      }
-    };
-
-    const onCodeWrapperMouseMove = (e: any) => {
-      if (!hoverTooltip) return;
-      const target = (e.target?.closest?.('.algo-code-ident') || (e.target?.classList?.contains?.('algo-code-ident') ? e.target : null)) as HTMLElement | null;
-
-      if (!target || !codeWrapper || (typeof codeWrapper.contains === 'function' && !codeWrapper.contains(target))) {
-        hideHoverTooltip();
-        return;
-      }
-
-      if (target === activeHoveredSpan) return;
-
-      if (activeHoveredSpan) {
-        activeHoveredSpan.style.backgroundColor = '';
-        activeHoveredSpan.style.boxShadow = '';
-      }
-      activeHoveredSpan = target;
-      target.style.backgroundColor = 'rgba(56, 189, 248, 0.2)';
-      target.style.borderRadius = '2px';
-      target.style.boxShadow = '0 0 0 1px rgba(56, 189, 248, 0.35)';
-
-      if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
-      hoverDebounceTimer = setTimeout(() => {
-        if (!hoverTooltip || activeHoveredSpan !== target) return;
-        const varName = target.dataset?.var || target.textContent?.trim() || '';
-        if (!varName) {
-          hideHoverTooltip();
-          return;
-        }
-
-        const resolved = VariableContextResolver.getVariable(currentVarsMap, varName);
-        if (resolved) {
-          hoverTooltip.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="color: #94a3b8; font-size: 10px;">${resolved.type || 'var'}</span>
-              <span style="color: #f8fafc; font-weight: 700;">${escapeHtml(resolved.name)}</span>
-              <span style="color: #64748b;">=</span>
-              <span style="color: #38bdf8; font-weight: 700;">${escapeHtml(resolved.value)}</span>
-            </div>
-          `;
-        } else {
-          hoverTooltip.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="color: #94a3b8; font-size: 10px;">var</span>
-              <span style="color: #cbd5e1; font-weight: 600;">${escapeHtml(varName)}</span>
-              <span style="color: #64748b; font-style: italic; font-size: 10px;">(当前步骤未捕获)</span>
-            </div>
-          `;
-        }
-
-        if (typeof target.getBoundingClientRect === 'function') {
-          const rect = target.getBoundingClientRect();
-          hoverTooltip.style.display = 'block';
-          hoverTooltip.style.opacity = '1';
-
-          let top = rect.top - (hoverTooltip.offsetHeight || 28) - 6;
-          let left = rect.left;
-          if (top < 10) {
-            top = rect.bottom + 6;
-          }
-          if (typeof window !== 'undefined') {
-            if (left + (hoverTooltip.offsetWidth || 150) > window.innerWidth - 10) {
-              left = window.innerWidth - (hoverTooltip.offsetWidth || 150) - 10;
-            }
-          }
-          if (left < 10) left = 10;
-
-          hoverTooltip.style.top = `${top}px`;
-          hoverTooltip.style.left = `${left}px`;
-        }
-      }, 100);
-    };
-
-    const onCodeWrapperMouseLeave = () => {
-      hideHoverTooltip();
-    };
-
-    if (codeWrapper && typeof codeWrapper.addEventListener === 'function') {
-      codeWrapper.addEventListener('mousemove', onCodeWrapperMouseMove);
-      codeWrapper.addEventListener('mouseleave', onCodeWrapperMouseLeave);
-    }
-
-    // 首次渲染代码
-    renderCodeLines();
-
+    // ── 10. 返回实例 ─────────────────────────────────────────
     return {
       codeModel,
-      highlightLine: (target) => highlightLineInternal(target),
+      highlightLine: (target) => hl(target),
       updateVars: (vars?: StepVar[], stepContext?: unknown) => {
         currentVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
+        rendererState.currentVarsMap = currentVarsMap;
 
         if (codeWrapper) {
           const activeLineEl = (codeWrapper.querySelector?.('.code-line.active') ||
             codeWrapper.querySelector?.('.code-line.is-active')) as HTMLElement | null;
           if (activeLineEl) {
-            updateInlineHint(activeLineEl);
+            updateInlineHint(activeLineEl, rendererDeps, rendererState);
           }
         }
 
@@ -924,29 +540,21 @@ export class DarkCodeTerminalPresenter {
 
         varsWatch.style.display = 'flex';
         varsWatch.innerHTML = vars
-          .map((v) => {
-            return `
-              <div class="var-badge" style="display: inline-flex; align-items: center; gap: 4px; background: #1e293b; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px;">
-                <span class="var-name" style="color: #94a3b8; font-family: monospace;">${v.name}:</span>
-                <span class="var-val" style="color: #38bdf8; font-weight: 700; font-family: monospace;">${v.value}</span>
-              </div>
-            `;
-          })
+          .map((v) => `
+            <div class="var-badge" style="display: inline-flex; align-items: center; gap: 4px; background: #1e293b; border: 1px solid #334155; padding: 1px 6px; border-radius: 4px;">
+              <span class="var-name" style="color: #94a3b8; font-family: monospace;">${v.name}:</span>
+              <span class="var-val" style="color: #38bdf8; font-weight: 700; font-family: monospace;">${v.value}</span>
+            </div>
+          `)
           .join('');
       },
       switchLanguage: (lang) => switchLanguageInternal(lang),
       switchTab: (tab) => switchTabInternal(tab),
       getCurrentLanguage: () => currentLang,
       getFontSize: () => codeFontSize,
-      copyCode: () => copyCodeInternal(),
+      copyCode: () => copyCodeImpl(rendererDeps, rendererState),
       destroy: () => {
-        if (copyResetTimer) clearTimeout(copyResetTimer);
-        if (hoverDebounceTimer) clearTimeout(hoverDebounceTimer);
-        hideHoverTooltip();
-        if (codeWrapper && typeof codeWrapper.removeEventListener === 'function') {
-          codeWrapper.removeEventListener('mousemove', onCodeWrapperMouseMove);
-          codeWrapper.removeEventListener('mouseleave', onCodeWrapperMouseLeave);
-        }
+        hoverMgr.destroy();
         btnCopy?.removeEventListener('click', onCopyClick);
         btnTabCode?.removeEventListener('click', onTabCodeClick);
         btnTabProblem?.removeEventListener('click', onTabProblemClick);
@@ -956,6 +564,9 @@ export class DarkCodeTerminalPresenter {
         btnFontInc?.removeEventListener('click', onFontIncClick);
         btnOpenModals.forEach((btn) => btn.removeEventListener('click', onOpenModalClick));
         btnCloseModal?.removeEventListener('click', onCloseModalClick);
+        if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+          document.removeEventListener('keydown', onModalKeyDown);
+        }
       },
     };
   }

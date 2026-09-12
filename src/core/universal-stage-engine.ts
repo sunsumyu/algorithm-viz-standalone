@@ -41,6 +41,9 @@ export interface UniversalStep {
   topJ?: number;
   leftI?: number;
   leftJ?: number;
+  diagI?: number;
+  diagJ?: number;
+  deps?: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }>;
   activeNodeId?: string;
   treeRoot?: UniversalTreeNode | null;
   // 阶段 3 & 4 空间压缩与转移计算专用元数据

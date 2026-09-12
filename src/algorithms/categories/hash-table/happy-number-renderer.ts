@@ -1,21 +1,15 @@
 /**
- * 快乐数可视化器 — 4-Card 标准现代架构
+ * 快乐数可视化器 — 声明式 4-Card 标准架构
  * LeetCode 202：HashSet 判环
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   HAPPY_NUMBER_PROBLEM_HTML,
   HAPPY_NUMBER_ANALYSIS_HTML,
   HAPPY_NUMBER_CODE_LANGUAGES,
 } from './happy-number-problem-content';
-import template from './happy-number.html?raw';
 
 export interface HappyNumberStep {
   n: number;
@@ -28,6 +22,7 @@ export interface HappyNumberStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function getNextSquareSum(n: number): { sum: number; formula: string } {
@@ -122,152 +117,118 @@ export function buildHappyNumberSteps(initialN: number): HappyNumberStep[] {
   return steps;
 }
 
-export class HappyNumberVisualizer extends StepVisualizer<HappyNumberStep> {
-  protected codeLanguages = HAPPY_NUMBER_CODE_LANGUAGES;
-  protected codeLines = HAPPY_NUMBER_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '快乐数 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: HappyNumberStep[]): HappyNumberStep[] {
+  return steps.map((s) => {
+    let res: string;
+    if (s.status === 'happy') {
+      res = '✓ 快乐数';
+    } else if (s.status === 'cycle') {
+      res = '✗ 死循环';
+    } else {
+      res = '计算中...';
+    }
+    return {
+      ...s,
+      metrics: {
+        n: String(s.n),
+        next: String(s.nextN),
+        'set-size': `${s.seen.length} 个`,
+        res,
+      },
+    };
+  });
+}
 
-  private curNumEl: HTMLElement | null = null;
-  private formulaTextEl: HTMLElement | null = null;
-  private setTrackEl: HTMLElement | null = null;
-  private metricNEl: HTMLElement | null = null;
-  private metricNextEl: HTMLElement | null = null;
-  private metricSetSizeEl: HTMLElement | null = null;
-  private metricResEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+export function renderHappyNumberCanvas(container: HTMLElement, step: HappyNumberStep): void {
+  const { n, formula, seen, cycleNode, status } = step;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  // 1. 渲染数字拆解 (当前数字 + 平方和公式)
+  const formulaText = formula || '等待计算...';
 
-    this.curNumEl = this.root.querySelector('#hn-cur-num');
-    this.formulaTextEl = this.root.querySelector('#hn-formula-text');
-    this.setTrackEl = this.root.querySelector('#hn-set-track');
-    this.metricNEl = this.root.querySelector('#metric-n');
-    this.metricNextEl = this.root.querySelector('#metric-next');
-    this.metricSetSizeEl = this.root.querySelector('#metric-set-size');
-    this.metricResEl = this.root.querySelector('#metric-res');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.hn-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-        if (nInput && btn.dataset.n) nInput.value = btn.dataset.n;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: HAPPY_NUMBER_PROBLEM_HTML,
-      analysisHtml: HAPPY_NUMBER_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): HappyNumberStep[] {
-    const nInput = this.root?.querySelector('#input-n') as HTMLInputElement | null;
-    const n = parseInt(nInput?.value || '19', 10);
-    return buildHappyNumberSteps(isNaN(n) || n <= 0 ? 19 : n);
-  }
-
-  protected renderStep(step: HappyNumberStep): void {
-    const { n, nextN, formula, seen, cycleNode, status, isHappy, message } = step;
-
-    // 1. 渲染数字拆解
-    if (this.curNumEl) this.curNumEl.textContent = String(n);
-    if (this.formulaTextEl) this.formulaTextEl.textContent = formula || '等待计算...';
-
-    // 2. 渲染 HashSet
-    if (this.setTrackEl) {
-      if (seen.length === 0) {
-        this.setTrackEl.innerHTML = '<span style="color: #94a3b8; font-size: 11px;">(HashSet 当前为空)</span>';
-      } else {
-        this.setTrackEl.innerHTML = seen
+  // 2. 渲染 HashSet 轨道
+  const setHtml =
+    seen.length === 0
+      ? '<span style="color: #94a3b8; font-size: 11px;">(HashSet 当前为空)</span>'
+      : seen
           .map((num) => {
             const isCycle = cycleNode === num;
             const isOne = num === 1 || (status === 'happy' && num === seen[seen.length - 1]);
-            let chipClass = 'hn-set-chip';
-            if (isCycle) chipClass += ' is-cycle';
-            else if (isOne) chipClass += ' is-one';
-
+            let bg = '#ffffff';
+            let border = '#cbd5e1';
+            let color = '#334155';
+            if (isCycle) {
+              border = '#ef4444';
+              bg = '#fef2f2';
+              color = '#b91c1c';
+            } else if (isOne) {
+              border = '#10b981';
+              bg = '#ecfdf5';
+              color = '#047857';
+            }
             return `
-              <div class="${chipClass}">
+              <div style="padding: 3px 8px; border-radius: 6px; background: ${bg}; border: 1px solid ${border}; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: ${color}; transition: all 0.15s; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);">
                 <span>${num}</span>
               </div>
             `;
           })
           .join('');
-      }
-    }
 
-    // 3. 更新状态监视器
-    if (this.metricNEl) this.metricNEl.textContent = String(n);
-    if (this.metricNextEl) this.metricNextEl.textContent = String(nextN);
-    if (this.metricSetSizeEl) this.metricSetSizeEl.textContent = `${seen.length} 个`;
-    if (this.metricResEl) {
-      if (status === 'happy') {
-        this.metricResEl.textContent = '✓ 快乐数';
-        this.metricResEl.style.color = '#10b981';
-      } else if (status === 'cycle') {
-        this.metricResEl.textContent = '✗ 死循环';
-        this.metricResEl.style.color = '#ef4444';
-      } else {
-        this.metricResEl.textContent = '计算中...';
-        this.metricResEl.style.color = '#3b82f6';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background = status === 'happy' ? '#f0fdf4' : status === 'cycle' ? '#fef2f2' : '#eff6ff';
-      logEntry.style.color = status === 'happy' ? '#15803d' : status === 'cycle' ? '#b91c1c' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' + (status === 'happy' ? '#bbf7d0' : status === 'cycle' ? '#fecaca' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeStatus = this.root?.querySelector('#badge-status');
-    if (badgeStatus) {
-      badgeStatus.textContent =
-        status === 'happy' ? '✓ 快乐数' : status === 'cycle' ? '✗ 死循环' : '计算中...';
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 12px; justify-content: center; width: 100%;">
+        <span style="font-size: 20px; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: #2563eb; padding: 2px 10px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; box-shadow: 0 1px 2px rgba(37, 99, 235, 0.1);">${n}</span>
+        <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #1e293b;">${formulaText}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; min-height: 28px; justify-content: center;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">seen 集合:</span>
+        ${setHtml}
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'happy-number',
   name: '快乐数（哈希集合判环）',
-  viewId: 'algo-happy-number-view',
   category: 'hash-table',
   description: '用哈希集合检测平方和循环，判断快乐数',
   icon: '😊',
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '掌握用 Set 检测循环的方法',
-  template,
-  Visualizer: HappyNumberVisualizer,
+  inputs: [
+    {
+      id: 'n',
+      label: 'n',
+      type: 'number',
+      defaultValue: 19,
+      placeholder: '正整数 n',
+      width: '50px',
+    },
+  ],
+  presets: [
+    { label: '示例 1: (n = 19 ➔ 快乐数)', values: { n: 19 } },
+    { label: '示例 2: (n = 2 ➔ 死循环)', values: { n: 2 } },
+    { label: '快乐数: (n = 7)', values: { n: 7 } },
+    { label: '死循环: (n = 11)', values: { n: 11 } },
+  ],
+  metrics: [
+    { id: 'n', label: '当前数值 n', color: '#2563eb' },
+    { id: 'next', label: '下一平方和', color: '#9333ea' },
+    { id: 'set-size', label: '已记录数大小', color: '#f59e0b' },
+    { id: 'res', label: '判定结果', color: '#10b981' },
+  ],
+  legend: [
+    { label: '1 (快乐数)', color: '#10b981' },
+    { label: '重复出现 (死循环)', color: '#ef4444' },
+  ],
+  codeLanguages: HAPPY_NUMBER_CODE_LANGUAGES,
+  problemHtml: HAPPY_NUMBER_PROBLEM_HTML,
+  analysisHtml: HAPPY_NUMBER_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const n = parseInt(String(inputs.n ?? '19'), 10);
+    return withMetrics(buildHappyNumberSteps(isNaN(n) || n <= 0 ? 19 : n));
+  },
+  renderCanvas: (container, step) => renderHappyNumberCanvas(container, step as HappyNumberStep),
 });

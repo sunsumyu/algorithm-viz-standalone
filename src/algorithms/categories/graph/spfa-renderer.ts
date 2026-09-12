@@ -4,15 +4,14 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（源点入队与标记、队列循环、出队消标、邻边松弛条件核验、距离更新、进队与在队标记均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   SPFA_PROBLEM_HTML,
   SPFA_ANALYSIS_HTML,
   SPFA_CODE_LANGUAGES,
 } from './spfa-problem-content';
 import { BF_NODES, BF_EDGES, BF_NODE_POSITIONS } from './bellman-ford-renderer';
-import template from './spfa.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface SPFAStep extends StepBase {
@@ -158,147 +157,126 @@ export function buildSPFASteps(): SPFAStep[] {
   return steps;
 }
 
-export class SPFAVisualizer extends StepVisualizer<SPFAStep> {
-  protected codeLanguages = SPFA_CODE_LANGUAGES;
-  protected codeLines = SPFA_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'SPFA 算法代码调试';
+/** 主视觉：有向带权图 SVG（在队着色）+ dist/inQueue 状态表 */
+export function renderSpfaCanvas(container: HTMLElement, step: SPFAStep): void {
+  const { dist, inQueue, currentNode, relaxEdge, action } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private distTableBody: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricQueueSizeEl: HTMLElement | null = null;
-  private metricRelaxCountEl: HTMLElement | null = null;
-  private queueElementsEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-spfa" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+      </marker>
+      <marker id="arrow-spfa-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+      </marker>
+      <marker id="arrow-spfa-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of BF_EDGES) {
+    const p1 = BF_NODE_POSITIONS[e.from];
+    const p2 = BF_NODE_POSITIONS[e.to];
+    const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+    const isRelaxed = isCurrent && action === 'relax';
 
-    this.svgCanvas = this.root.querySelector('#spfa-svg-canvas');
-    this.distTableBody = this.root.querySelector('#spfa-dist-table-body');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricQueueSizeEl = this.root.querySelector('#metric-queue-elements');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
-    this.queueElementsEl = this.root.querySelector('#metric-queue-elements');
-    this.liveTextEl = this.root.querySelector('#spfa-live-text');
+    const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+    const strokeWidth = isCurrent ? 3.5 : 1.8;
+    const marker = isRelaxed ? 'url(#arrow-spfa-relax)' : isCurrent ? 'url(#arrow-spfa-active)' : 'url(#arrow-spfa)';
 
-    this.bindPlaybackControls();
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 + (e.from === 1 && e.to === 2 ? 12 : -8);
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SPFA_PROBLEM_HTML,
-      analysisHtml: SPFA_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#ef4444' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
   }
 
-  protected buildSteps(): SPFAStep[] {
-    return buildSPFASteps();
-  }
+  BF_NODES.forEach((node) => {
+    const p = BF_NODE_POSITIONS[node];
+    const dVal = dist[node];
+    const isInQ = inQueue[node];
+    const isCur = currentNode === node;
+    const isTarget = relaxEdge && relaxEdge.to === node;
 
-  protected renderStep(step: SPFAStep): void {
-    const { dist, queue, inQueue, currentNode, relaxEdge, relaxCount, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="arrow-spfa" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-spfa-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
-          </marker>
-          <marker id="arrow-spfa-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
-          </marker>
-        </defs>`;
-
-      for (const e of BF_EDGES) {
-        const p1 = BF_NODE_POSITIONS[e.from];
-        const p2 = BF_NODE_POSITIONS[e.to];
-        const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
-        const isRelaxed = isCurrent && action === 'relax';
-
-        const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
-        const strokeWidth = isCurrent ? 3.5 : 1.8;
-        const marker = isRelaxed ? 'url(#arrow-spfa-relax)' : isCurrent ? 'url(#arrow-spfa-active)' : 'url(#arrow-spfa)';
-
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 + (e.from === 1 && e.to === 2 ? 12 : -8);
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-        svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#ef4444' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
-      }
-
-      BF_NODES.forEach((node) => {
-        const p = BF_NODE_POSITIONS[node];
-        const dVal = dist[node];
-        const isInQ = inQueue[node];
-        const isCur = currentNode === node;
-        const isTarget = relaxEdge && relaxEdge.to === node;
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isTarget && action === 'relax') {
-          fill = '#dcfce7';
-          stroke = '#10b981';
-        } else if (isCur) {
-          fill = '#fef08a';
-          stroke = '#eab308';
-        } else if (isInQ) {
-          fill = '#dbeafe';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isTarget && action === 'relax') {
+      fill = '#dcfce7';
+      stroke = '#10b981';
+    } else if (isCur) {
+      fill = '#fef08a';
+      stroke = '#eab308';
+    } else if (isInQ) {
+      fill = '#dbeafe';
+      stroke = '#3b82f6';
     }
 
-    if (this.distTableBody) {
-      this.distTableBody.innerHTML = BF_NODES.map((node) => {
-        const dVal = dist[node];
-        const isInQ = inQueue[node];
-        const isCur = currentNode === node;
-        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">${node}</td>
-          <td class="px-3 py-1.5 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
-          <td class="px-3 py-1.5 text-center font-mono font-bold ${isInQ ? 'text-blue-600' : 'text-slate-400'}">${isInQ ? 'true' : 'false'}</td>
-        </tr>`;
-      }).join('');
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+  });
 
-    if (this.metricCurNodeEl) {
-      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
-    }
-    if (this.metricQueueSizeEl) {
-      this.metricQueueSizeEl.textContent = queue.length > 0 ? `[ ${queue.join(', ')} ]` : '空队列';
-    }
-    if (this.metricRelaxCountEl) {
-      this.metricRelaxCountEl.textContent = `${relaxCount}`;
-    }
+  svgHtml += `</svg>`;
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  const tableRows = BF_NODES.map((node) => {
+    const dVal = dist[node];
+    const isInQ = inQueue[node];
+    const isCur = currentNode === node;
+    return `<tr style="${isCur ? 'background: rgba(254, 249, 195, 0.7); font-weight: 600;' : ''}">
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? '#94a3b8' : '#2563eb'};">${dVal === INF ? '∞' : dVal}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: ${isInQ ? '#2563eb' : '#94a3b8'};">${isInQ ? 'true' : 'false'}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
+      <div style="flex: 0.5; min-width: 0; align-self: center;">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">节点</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">dist</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">在队</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'spfa',
   name: 'SPFA 队列优化最短路',
-  viewId: 'algo-spfa-view',
-  icon: '⚡',
   category: 'graph',
+  icon: '⚡',
   difficulty: 3,
   levelOrder: 24,
   description: '左程云算法通关课 Class 061：Bellman-Ford 的队列优化算法，动态维护被更新距离的顶点，快速逼近全局最短路径',
   learningGoal: '深刻理解队列驱动松弛机制、在队标记 inQueue 的作用与负环检测原理',
-  template,
-  Visualizer: SPFAVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (5 节点)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-spfa-queue', label: '就绪队列', color: '#a855f7' },
+    { id: 'metric-spfa-cur', label: '当前出队节点', color: '#fbbf24' },
+    { id: 'metric-spfa-relax', label: '松弛次数', color: '#10b981' },
+    { id: 'metric-spfa-dist', label: 'dist 距离表', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前出队节点', color: '#eab308' },
+    { label: '在队中', color: '#3b82f6' },
+    { label: '松弛目标', color: '#10b981' },
+    { label: '负权边', color: '#ef4444' },
+  ],
+  codeLanguages: SPFA_CODE_LANGUAGES,
+  problemHtml: SPFA_PROBLEM_HTML,
+  analysisHtml: SPFA_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildSPFASteps(),
+  renderCanvas: (container, step) => renderSpfaCanvas(container, step as SPFAStep),
 });

@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V轮外层扫描、未访问最小点u寻找、不可达截断、锁定visited[u]、出边松弛核验、距离缩短更新均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   DIJKSTRA_BASIC_PROBLEM_HTML,
   DIJKSTRA_BASIC_ANALYSIS_HTML,
   DIJKSTRA_BASIC_CODE_LANGUAGES,
 } from './dijkstra-basic-problem-content';
-import template from './dijkstra-basic.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface DJBStep extends StepBase {
@@ -173,148 +172,129 @@ export function buildDJBSteps(): DJBStep[] {
   return steps;
 }
 
-export class DijkstraBasicVisualizer extends StepVisualizer<DJBStep> {
-  protected codeLanguages = DIJKSTRA_BASIC_CODE_LANGUAGES;
-  protected codeLines = DIJKSTRA_BASIC_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '朴素 Dijkstra 代码调试';
+/** 主视觉：有向带权图 SVG + dist 距离状态表 */
+export function renderDijkstraBasicCanvas(container: HTMLElement, step: DJBStep): void {
+  const { dist, visited, currentNode, relaxEdge, action } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private distTableBody: HTMLElement | null = null;
-  private metricCurNodeEl: HTMLElement | null = null;
-  private metricVisitedCountEl: HTMLElement | null = null;
-  private metricRelaxCountEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-djb" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+      </marker>
+      <marker id="arrow-djb-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+      </marker>
+      <marker id="arrow-djb-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of DJB_EDGES) {
+    const p1 = DJB_NODE_POSITIONS[e.from];
+    const p2 = DJB_NODE_POSITIONS[e.to];
+    const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
+    const isRelaxed = isCurrent && action === 'relax';
 
-    this.svgCanvas = this.root.querySelector('#djb-svg-canvas');
-    this.distTableBody = this.root.querySelector('#djb-dist-table-body');
-    this.metricCurNodeEl = this.root.querySelector('#metric-cur-node');
-    this.metricVisitedCountEl = this.root.querySelector('#metric-visited-nodes');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
-    this.liveTextEl = this.root.querySelector('#djb-live-text');
+    const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+    const strokeWidth = isCurrent ? 3.5 : 1.8;
+    const marker = isRelaxed ? 'url(#arrow-djb-relax)' : isCurrent ? 'url(#arrow-djb-active)' : 'url(#arrow-djb)';
 
-    this.bindPlaybackControls();
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 + (e.from === 2 && e.to === 1 ? -12 : 8);
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: DIJKSTRA_BASIC_PROBLEM_HTML,
-      analysisHtml: DIJKSTRA_BASIC_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
   }
 
-  protected buildSteps(): DJBStep[] {
-    return buildDJBSteps();
-  }
+  DJB_NODES.forEach((node) => {
+    const p = DJB_NODE_POSITIONS[node];
+    const dVal = dist[node];
+    const isVisited = visited.has(node);
+    const isCurrent = currentNode === node;
+    const isTarget = relaxEdge && relaxEdge.to === node;
 
-  protected renderStep(step: DJBStep): void {
-    const { dist, visited, currentNode, relaxEdge, relaxCount, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="arrow-djb" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-djb-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
-          </marker>
-          <marker id="arrow-djb-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
-          </marker>
-        </defs>`;
-
-      for (const e of DJB_EDGES) {
-        const p1 = DJB_NODE_POSITIONS[e.from];
-        const p2 = DJB_NODE_POSITIONS[e.to];
-        const isCurrent = relaxEdge && relaxEdge.from === e.from && relaxEdge.to === e.to;
-        const isRelaxed = isCurrent && action === 'relax';
-
-        const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
-        const strokeWidth = isCurrent ? 3.5 : 1.8;
-        const marker = isRelaxed ? 'url(#arrow-djb-relax)' : isCurrent ? 'url(#arrow-djb-active)' : 'url(#arrow-djb)';
-
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 + (e.from === 2 && e.to === 1 ? -12 : 8);
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-        svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="#0f172a" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
-      }
-
-      DJB_NODES.forEach((node) => {
-        const p = DJB_NODE_POSITIONS[node];
-        const dVal = dist[node];
-        const isVisited = visited.has(node);
-        const isCurrent = currentNode === node;
-        const isTarget = relaxEdge && relaxEdge.to === node;
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isCurrent) {
-          fill = '#fef08a';
-          stroke = '#eab308';
-        } else if (isTarget && action === 'relax') {
-          fill = '#dcfce7';
-          stroke = '#10b981';
-        } else if (isVisited) {
-          fill = '#dcfce7';
-          stroke = '#22c55e';
-        } else if (dVal !== INF) {
-          fill = '#eff6ff';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isVisited ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isCurrent) {
+      fill = '#fef08a';
+      stroke = '#eab308';
+    } else if (isTarget && action === 'relax') {
+      fill = '#dcfce7';
+      stroke = '#10b981';
+    } else if (isVisited) {
+      fill = '#dcfce7';
+      stroke = '#22c55e';
+    } else if (dVal !== INF) {
+      fill = '#eff6ff';
+      stroke = '#3b82f6';
     }
 
-    if (this.distTableBody) {
-      this.distTableBody.innerHTML = DJB_NODES.map((node) => {
-        const dVal = dist[node];
-        const isVisited = visited.has(node);
-        const isCur = currentNode === node;
-        return `<tr class="${isCur ? 'bg-yellow-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">${node}</td>
-          <td class="px-3 py-1.5 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
-          <td class="px-3 py-1.5 text-center font-mono font-bold ${isVisited ? 'text-emerald-600' : 'text-slate-400'}">${isVisited ? '已锁定' : '待处理'}</td>
-        </tr>`;
-      }).join('');
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : isVisited ? '#15803d' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+  });
 
-    if (this.metricCurNodeEl) {
-      this.metricCurNodeEl.textContent = currentNode !== null ? `${currentNode}` : '—';
-    }
-    if (this.metricVisitedCountEl) {
-      this.metricVisitedCountEl.textContent = `${visited.size} / ${DJB_NODES.length}`;
-    }
-    if (this.metricRelaxCountEl) {
-      this.metricRelaxCountEl.textContent = `${relaxCount}`;
-    }
+  svgHtml += `</svg>`;
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  const tableRows = DJB_NODES.map((node) => {
+    const dVal = dist[node];
+    const isVisited = visited.has(node);
+    const isCur = currentNode === node;
+    return `<tr style="${isCur ? 'background: rgba(254, 249, 195, 0.7); font-weight: 600;' : ''}">
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? '#94a3b8' : '#2563eb'};">${dVal === INF ? '∞' : dVal}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: ${isVisited ? '#059669' : '#94a3b8'};">${isVisited ? '已锁定' : '待处理'}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
+      <div style="flex: 0.5; min-width: 0; align-self: center;">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">节点</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">dist</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">状态</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'dijkstra-basic',
   name: 'Dijkstra 朴素最短路',
-  viewId: 'algo-dijkstra-basic-view',
-  icon: '📍',
   category: 'graph',
+  icon: '📍',
   difficulty: 2,
   levelOrder: 27,
   description: '左程云算法通关课 Class 061：基于贪心策略与三角不等式松弛的单源最短路算法，适用于无负权图与稠密图',
   learningGoal: '掌握贪心选点、最短路锁定准则以及边松弛操作的核心本质',
-  template,
-  Visualizer: DijkstraBasicVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (5 节点)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-cur-node', label: '当前节点 u', color: '#fbbf24' },
+    { id: 'metric-visited-nodes', label: '已锁定节点', color: '#10b981' },
+    { id: 'metric-relax-count', label: '松弛次数', color: '#a855f7' },
+    { id: 'metric-dist-info', label: 'dist 距离表', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '已确定最短路', color: '#22c55e' },
+    { label: '当前选出节点 u', color: '#eab308' },
+    { label: '正在松弛边', color: '#3b82f6' },
+    { label: '松弛成功', color: '#10b981' },
+  ],
+  codeLanguages: DIJKSTRA_BASIC_CODE_LANGUAGES,
+  problemHtml: DIJKSTRA_BASIC_PROBLEM_HTML,
+  analysisHtml: DIJKSTRA_BASIC_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildDJBSteps(),
+  renderCanvas: (container, step) => renderDijkstraBasicCanvas(container, step as DJBStep),
 });

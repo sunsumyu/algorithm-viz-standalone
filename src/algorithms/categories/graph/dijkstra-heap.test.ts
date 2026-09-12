@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  DijkstraHeapVisualizer,
-  buildDJHSteps,
-} from './dijkstra-heap-renderer';
+import { buildDJHSteps } from './dijkstra-heap-renderer';
 import { DIJKSTRA_HEAP_CODE_LANGUAGES } from './dijkstra-heap-problem-content';
 
 describe('DijkstraHeap (LeftChengYun Class 061)', () => {
-  it('should instantiate DijkstraHeapVisualizer properly', () => {
-    const viz = new DijkstraHeapVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildDJHSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

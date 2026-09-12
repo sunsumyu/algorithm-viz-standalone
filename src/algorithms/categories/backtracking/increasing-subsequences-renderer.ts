@@ -4,16 +4,7 @@
  * 不能排序（要保持原数组顺序）；同层用 Set 去重（未排序无法相邻比较）
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -27,7 +18,6 @@ import {
   INCREASING_SUBSEQUENCES_ANALYSIS_HTML,
   INCREASING_SUBSEQUENCES_CODE_LANGUAGES,
 } from './increasing-subsequences-problem-content';
-import template from './increasing-subsequences.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
 export function buildIncSubTree(nums: number[]): BacktrackTreeNode {
@@ -265,181 +255,70 @@ export function buildIncSubSteps(nums: number[]): BacktrackTreeStep[] {
 }
 
 /* ── Visualizer class ─────────────────────────────────────── */
-export class IncreasingSubsequencesVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLanguages = INCREASING_SUBSEQUENCES_CODE_LANGUAGES;
-  protected codeLines = INCREASING_SUBSEQUENCES_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '非递减子序列 代码调试';
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private monitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#increasing-subsequences-tree-display');
-    this.pathStackContainer = this.root.querySelector('#is-path-stack-container');
-    this.monitorContainer = this.root.querySelector('#is-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#is-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.is-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        if (numsEl) numsEl.value = btn.dataset.nums || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: INCREASING_SUBSEQUENCES_PROBLEM_HTML,
-      analysisHtml: INCREASING_SUBSEQUENCES_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const rawNums = (numsEl?.value || '4,6,7,7')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    const nums = rawNums.length > 0 ? rawNums : [4, 6, 7, 7];
-    if (nums.length > 6) nums.length = 6;
-
-    const steps = buildIncSubSteps(nums);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((st, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (st.message.includes('做选择')) type = 'push';
-      else if (st.message.includes('回溯撤销')) type = 'pop';
-      else if (st.message.includes('收集递增子序列')) type = 'collect';
-      else if (st.message.includes('剪枝') || st.message.includes('去重')) type = 'prune';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: st.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const index = this.currentIndex;
-
-    // 1. 渲染 SVG 决策树沙盘
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'is',
-        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
-      });
-    }
-
-    // 2. 渲染当前路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
-    }
-
-    // 3. 渲染 Set 去重与非递减监视器 (Card 2 Center)
-    if (this.monitorContainer) {
-      const isPruneStep = step.message.includes('剪枝') || step.message.includes('去重');
-      const isLenValid = step.path.length >= 2;
-
-      this.monitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>当前序列长度: <strong style="color: #0f172a; font-family: monospace; font-size: 12px;">${step.path.length}</strong></span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isLenValid ? '#ecfdf5' : '#eff6ff'}; color: ${isLenValid ? '#059669' : '#2563eb'}; border: 1px solid ${isLenValid ? '#a7f3d0' : '#bfdbfe'};">
-              ${isLenValid ? '✓ 满足长度 &ge; 2 (已收集)' : '长度 < 2 (继续探索)'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 去重机制: <code style="color:#b45309; font-family:monospace;">HashSet&lt;Integer&gt; used</code> (每层独立)</div>
-            <div>• 顺序约束: <code style="color:#b45309; font-family:monospace;">nums[i] &ge; path.last()</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染实时解集箱 (Card 2 Bottom)
-    const solutionsUpToNow: Array<Array<number | string>> = [];
-    for (let i = 0; i <= index; i++) {
-      const st = this.steps[i];
-      if (st.message.includes('收集递增子序列')) {
-        solutionsUpToNow.push([...st.path]);
-      }
-    }
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        solutionsUpToNow,
-        -1,
-        (solIdx: number) => {
-          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
-            if (
-              this.steps[stepIdx].message.includes('收集递增子序列') &&
-              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
-            ) {
-              this.goToStep(stepIdx);
-              break;
-            }
-          }
-        }
-      );
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-result-count');
-    if (badgeCount) {
-      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BacktrackTreeStep[]): BacktrackTreeStep[] {
+  return steps.map((s) => ({
+    ...s,
+    log: s.message,
+    metrics: {
+      path: (s.path || []).length ? `[${(s.path || []).join(' → ')}]` : '[]',
+      visited: String(s.visitedNodeIds.length),
+      results: String(s.foundPathIds.length),
+      pruned: String(s.prunedNodeIds.length),
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：SVG 决策树沙盘（backtracking-tree-helper 自注入样式） */
+export function renderIncreasingSubsequencesCanvas(container: HTMLElement, step: BacktrackTreeStep): void {
+  renderBacktrackTree({
+    container,
+    step,
+    cssPrefix: 'is',
+    nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
+  });
+}
+
+registerDeclarativeAlgorithm({
   id: 'increasing-subsequences',
   name: '递增子序列',
-  viewId: 'algo-increasing-subsequences-view',
   category: 'backtracking',
   description: '求数组所有长度 >= 2 的非递减子序列，不能排序，局部 Set 去重',
   icon: '📈',
-  template,
-  Visualizer: IncreasingSubsequencesVisualizer,
   difficulty: 2,
   levelOrder: 11,
   learningGoal: '掌握不能排序时的局部 HashSet 树层去重与非终止型全路径状态收集',
+  inputs: [
+    { id: 'nums', label: '整数数组', type: 'text', defaultValue: '4,6,7,7' },
+  ],
+  presets: [
+    { label: '示例 1', values: { 'nums': '4,6,7,7' } },
+    { label: '示例 2', values: { 'nums': '4,4,3,2,1' } },
+    { label: '示例 3', values: { 'nums': '4,7,6,7' } },
+  ],
+  metrics: [
+    { id: 'path', label: '当前路径', color: '#2563eb' },
+    { id: 'visited', label: '已访问节点', color: '#a855f7' },
+    { id: 'results', label: '已收集方案', color: '#10b981' },
+    { id: 'pruned', label: '剪枝次数', color: '#ef4444' },
+  ],
+  legend: [
+    { label: '当前节点', color: '#2563eb' },
+    { label: '已访问', color: '#a855f7' },
+    { label: '收集方案', color: '#10b981' },
+    { label: '剪枝', color: '#ef4444' },
+  ],
+  codeLanguages: INCREASING_SUBSEQUENCES_CODE_LANGUAGES,
+  problemHtml: INCREASING_SUBSEQUENCES_PROBLEM_HTML,
+  analysisHtml: INCREASING_SUBSEQUENCES_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums = String(inputs.nums ?? '4,6,7,7')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    return withMetrics(buildIncSubSteps(nums.length ? nums : [4, 6, 7, 7]));
+  },
+  renderCanvas: (container, step) => renderIncreasingSubsequencesCanvas(container, step as BacktrackTreeStep),
 });

@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  RedundantEdgeVisualizer,
-  buildRedundantSteps,
-} from './redundant-edge-renderer';
+import { buildRedundantSteps } from './redundant-edge-renderer';
 import { REDUNDANT_EDGE_CODE_LANGUAGES } from './redundant-edge-problem-content';
 
 describe('Redundant Connection (LeftChengYun Class 056 / LC 684)', () => {
-  it('should instantiate RedundantEdgeVisualizer properly', () => {
-    const viz = new RedundantEdgeVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildRedundantSteps();
     expect(steps.length).toBeGreaterThanOrEqual(15);

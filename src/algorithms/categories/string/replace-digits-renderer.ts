@@ -1,20 +1,14 @@
 /**
- * 替换数字可视化器 — 4-Card 标准现代架构
+ * 替换数字可视化器 — 声明式 4-Card 标准架构
  * KamaCoder 54：预扩容与从后向前双指针替换
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   REPLACE_DIGITS_PROBLEM_HTML,
   REPLACE_DIGITS_ANALYSIS_HTML,
   REPLACE_DIGITS_CODE_LANGUAGES,
 } from './replace-digits-problem-content';
-import template from './replace-digits.html?raw';
 
 export interface ReplaceDigitsStep {
   chars: string[];
@@ -27,6 +21,7 @@ export interface ReplaceDigitsStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
@@ -138,170 +133,123 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
   return steps;
 }
 
-export class ReplaceDigitsVisualizer extends StepVisualizer<ReplaceDigitsStep> {
-  protected codeLanguages = REPLACE_DIGITS_CODE_LANGUAGES;
-  protected codeLines = REPLACE_DIGITS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '替换数字 代码调试';
-
-  private trackRowEl: HTMLElement | null = null;
-  private metricOldIdxEl: HTMLElement | null = null;
-  private metricNewIdxEl: HTMLElement | null = null;
-  private metricDigitCountEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private formulaResizeEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rd-track-row');
-    this.metricOldIdxEl = this.root.querySelector('#metric-old-idx');
-    this.metricNewIdxEl = this.root.querySelector('#metric-new-idx');
-    this.metricDigitCountEl = this.root.querySelector('#metric-digit-count');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.formulaResizeEl = this.root.querySelector('#formula-resize');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rd-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REPLACE_DIGITS_PROBLEM_HTML,
-      analysisHtml: REPLACE_DIGITS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): ReplaceDigitsStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const str = sInput?.value || 'a1b2c';
-    return buildReplaceDigitsSteps(str);
-  }
-
-  protected renderStep(step: ReplaceDigitsStep): void {
-    const { chars, oldIndex, newIndex, digitCount, isDigit, phase, message } = step;
-
-    // 1. 渲染扩容字符数组轨与双指针
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = chars
-        .map((ch, idx) => {
-          const isOld = idx === oldIndex && phase !== 'done';
-          const isNew = idx === newIndex && phase !== 'done';
-          const isNumberToken = !isOld && !isNew && (ch === 'n' || ch === 'u' || ch === 'm' || ch === 'b' || ch === 'e' || ch === 'r');
-
-          let cellClass = 'rd-cell-box';
-          if (isOld) cellClass += ' is-old';
-          else if (isNew) cellClass += ' is-new';
-          else if (isNumberToken) cellClass += ' is-number-token';
-
-          let ptrTags = '';
-          if (isOld && isNew) {
-            ptrTags = '<span class="rd-ptr-badge old-ptr">old</span><span class="rd-ptr-badge new-ptr">new</span>';
-          } else if (isOld) {
-            ptrTags = '<span class="rd-ptr-badge old-ptr">old</span>';
-          } else if (isNew) {
-            ptrTags = '<span class="rd-ptr-badge new-ptr">new</span>';
-          }
-
-          return `
-            <div class="rd-cell-wrapper">
-              <div class="rd-pointer-tags">${ptrTags}</div>
-              <div class="${cellClass}">
-                <span class="val">${ch || '&nbsp;'}</span>
-                <span class="idx">${idx}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricOldIdxEl) this.metricOldIdxEl.textContent = oldIndex >= 0 ? String(oldIndex) : '—';
-    if (this.metricNewIdxEl) this.metricNewIdxEl.textContent = newIndex >= 0 ? String(newIndex) : '—';
-    if (this.metricDigitCountEl) this.metricDigitCountEl.textContent = `${digitCount} 个`;
-    if (this.metricPhaseEl) {
-      const phaseMap: Record<string, string> = {
-        count: '统计数字',
-        resize: '预扩容',
-        'replace-letter': '搬移字母',
-        'replace-number': '替换 number',
-        done: '替换完成',
-      };
-      this.metricPhaseEl.textContent = phaseMap[phase] || phase;
-      this.metricPhaseEl.style.color = phase === 'done' ? '#10b981' : isDigit ? '#2563eb' : '#0f172a';
-    }
-
-    if (this.formulaResizeEl) {
-      this.formulaResizeEl.textContent = `newSize = ${chars.length - digitCount * 5} + ${digitCount} * 5 = ${chars.length}`;
-    }
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : isDigit ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : isDigit ? '#1d4ed8' : '#334155';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : isDigit ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      const phaseMap: Record<string, string> = {
-        init: '初始化',
-        resize: '预扩容',
-        'replace-letter': '搬移字母',
-        'replace-number': '替换 number',
-        done: '替换完成',
-      };
-      badgePhase.textContent = phaseMap[phase] || phase;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ReplaceDigitsStep[]): ReplaceDigitsStep[] {
+  const phaseMap: Record<string, string> = {
+    count: '统计数字',
+    resize: '预扩容',
+    'replace-letter': '搬移字母',
+    'replace-number': '替换 number',
+    done: '替换完成',
+  };
+  return steps.map((step) => ({
+    ...step,
+    metrics: {
+      'old-idx': step.oldIndex >= 0 ? String(step.oldIndex) : '—',
+      'new-idx': step.newIndex >= 0 ? String(step.newIndex) : '—',
+      digits: `${step.digitCount} 个`,
+      phase: phaseMap[step.phase] || step.phase,
+      action: `newSize = ${step.chars.length - step.digitCount * 5} + ${step.digitCount} * 5 = ${step.chars.length}`,
+    },
+  }));
 }
 
-registerAlgorithm({
+export function renderReplaceDigitsCanvas(container: HTMLElement, step: ReplaceDigitsStep): void {
+  const { chars, oldIndex, newIndex, phase } = step;
+
+  const cellsHtml = chars
+    .map((ch, idx) => {
+      const isOld = idx === oldIndex && phase !== 'done';
+      const isNew = idx === newIndex && phase !== 'done';
+      const isNumberToken =
+        !isOld && !isNew && ['n', 'u', 'm', 'b', 'e', 'r'].includes(ch);
+
+      let border = '#cbd5e1';
+      let bg = '#ffffff';
+      let valColor = '#0f172a';
+      if (isOld) {
+        border = '#2563eb';
+        bg = '#eff6ff';
+      } else if (isNew) {
+        border = '#f59e0b';
+        bg = '#fffbeb';
+      } else if (isNumberToken) {
+        border = '#10b981';
+        bg = '#ecfdf5';
+        valColor = '#047857';
+      }
+
+      let ptrTags = '';
+      if (isOld && isNew) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">old</span>' +
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">new</span>';
+      } else if (isOld) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">old</span>';
+      } else if (isNew) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">new</span>';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <div style="min-height: 18px; display: flex; align-items: center; gap: 3px;">${ptrTags}</div>
+          <div style="width: 38px; height: 44px; border-radius: 8px; background: ${bg}; border: 2px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+            <span style="font-size: 15px; font-weight: 800; color: ${valColor}; font-family: 'JetBrains Mono', monospace;">${ch || '&nbsp;'}</span>
+            <span style="font-size: 9px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">${idx}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap; justify-content: center; height: 100%; padding: 12px; box-sizing: border-box;">
+      ${cellsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'replace-digits',
   name: '替换数字（单指针遍历）',
-  viewId: 'algo-replace-digits-view',
   category: 'string',
   description: '遍历字符串，将数字字符替换为指定内容',
   icon: '🔢',
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '掌握字符串遍历中条件替换的逻辑',
-  template,
-  Visualizer: ReplaceDigitsVisualizer,
+  inputs: [
+    {
+      id: 's',
+      label: '字符串',
+      type: 'text',
+      defaultValue: 'a1b2c',
+      placeholder: '字符串',
+    },
+  ],
+  presets: [
+    { label: '示例 1: ("a1b2c")', values: { s: 'a1b2c' } },
+    { label: '纯数字: ("123")', values: { s: '123' } },
+    { label: '纯字母: ("hello")', values: { s: 'hello' } },
+    { label: '单个数字: ("a9b")', values: { s: 'a9b' } },
+  ],
+  metrics: [
+    { id: 'old-idx', label: '读取指针 oldIndex', color: '#3b82f6' },
+    { id: 'new-idx', label: '写入指针 newIndex', color: '#f59e0b' },
+    { id: 'digits', label: '数字个数 count', color: '#10b981' },
+    { id: 'phase', label: '当前阶段', color: '#0f172a' },
+    { id: 'action', label: '扩容公式', color: '#2563eb' },
+  ],
+  legend: [
+    { label: 'oldIndex (读)', color: '#2563eb' },
+    { label: 'newIndex (写)', color: '#f59e0b' },
+    { label: '"number"', color: '#10b981' },
+  ],
+  codeLanguages: REPLACE_DIGITS_CODE_LANGUAGES,
+  problemHtml: REPLACE_DIGITS_PROBLEM_HTML,
+  analysisHtml: REPLACE_DIGITS_ANALYSIS_HTML,
+  generateSteps: (inputs) => withMetrics(buildReplaceDigitsSteps(String(inputs.s ?? 'a1b2c'))),
+  renderCanvas: (container, step) => renderReplaceDigitsCanvas(container, step as ReplaceDigitsStep),
 });

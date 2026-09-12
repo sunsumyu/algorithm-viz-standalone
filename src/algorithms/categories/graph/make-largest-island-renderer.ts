@@ -1,18 +1,16 @@
 /**
- * 最大人工岛 (LC 827)
- * 4-Card 标准现代架构可视化器
+ * 最大人工岛 (LC 827) — 声明式 4-Card 标准架构
+ * 两遍扫描：岛屿染色编号缓存面积 + 水域桥接合并求最大面积
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   MAKE_LARGEST_ISLAND_PROBLEM_HTML,
   MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
   MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
 } from './make-largest-island-problem-content';
-import template from './make-largest-island.html?raw';
 
-export interface MLIStep extends StepBase {
+export interface MLIStep {
   grid: number[][];
   islandId: number[][];
   areaMap: Record<number, number>;
@@ -25,8 +23,10 @@ export interface MLIStep extends StepBase {
   bestCell: [number, number] | null;
   action: 'init' | 'label' | 'try' | 'done';
   statusText: string;
+  message?: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 const DEFAULT_GRID = [
@@ -183,168 +183,165 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
   return steps;
 }
 
-export class MakeLargestIslandVisualizer extends StepVisualizer<MLIStep> {
-  protected codeLanguages = MAKE_LARGEST_ISLAND_CODE_LANGUAGES;
-  protected codeLines = MAKE_LARGEST_ISLAND_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '最大人工岛 (LC 827) 代码调试';
+const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
+  classic: {
+    label: '经典对角岛 [3×3]',
+    grid: DEFAULT_GRID,
+  },
+  bigMerge: {
+    label: '一桥三岛 [3×5]',
+    grid: [
+      [1, 0, 1, 0, 1],
+      [1, 1, 0, 1, 1],
+      [1, 0, 1, 0, 1],
+    ],
+  },
+  allWater: {
+    label: '全域水域 [3×3]',
+    grid: [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
+  },
+};
 
-  private gridContainer: HTMLElement | null = null;
-  private metricCurCellEl: HTMLElement | null = null;
-  private metricTryAreaEl: HTMLElement | null = null;
-  private metricBestCellEl: HTMLElement | null = null;
-  private metricMaxAreaEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.gridContainer = this.root.querySelector('#mli-grid-container');
-    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
-    this.metricTryAreaEl = this.root.querySelector('#metric-try-area');
-    this.metricBestCellEl = this.root.querySelector('#metric-best-cell');
-    this.metricMaxAreaEl = this.root.querySelector('#metric-max-area');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#mli-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: MAKE_LARGEST_ISLAND_PROBLEM_HTML,
-      analysisHtml: MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): MLIStep[] {
-    return buildMakeLargestIslandSteps();
-  }
-
-  protected renderStep(step: MLIStep): void {
-    const { grid, islandId, rows, cols, currentCell, tryArea, maxArea, bestCell, statusText, action } = step;
-
-    // 1. 渲染 2D 网格
-    if (this.gridContainer) {
-      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      let html = '';
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const val = grid[r][c];
-          const id = islandId[r][c];
-          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
-          const isBest = bestCell && bestCell[0] === r && bestCell[1] === c;
-
-          let cls = 'mli-cell';
-          let label = val === 0 ? '0' : `ID:${id}`;
-
-          if (val === 0) {
-            cls += ' is-water';
-          } else {
-            cls += ` is-island-${id % 4 + 2}`;
-          }
-
-          if (isCurrent) {
-            cls += ' is-current';
-            if (val === 0) cls += ' is-bridge';
-          } else if (action === 'done' && isBest) {
-            cls += ' is-bridge';
-          }
-
-          html += `<div class="${cls}"><span>${label}</span></div>`;
-        }
-      }
-      this.gridContainer.innerHTML = html;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurCellEl) {
-      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
-    }
-    if (this.metricTryAreaEl) {
-      this.metricTryAreaEl.textContent = `${tryArea}`;
-    }
-    if (this.metricBestCellEl) {
-      this.metricBestCellEl.textContent = bestCell ? `(${bestCell[0]}, ${bestCell[1]})` : '—';
-    }
-    if (this.metricMaxAreaEl) {
-      this.metricMaxAreaEl.textContent = `${maxArea}`;
-    }
-
-    if (this.formulaActionEl) {
-      this.formulaActionEl.textContent =
-        action === 'try'
-          ? `桥接 (${currentCell ? currentCell.join(',') : ''}): 1 + sum(neighborAreas) = ${tryArea}`
-          : action === 'label'
-          ? `DFS 染色: 岛屿 ID 面积缓存完成`
-          : `curArea = 1 + sum(areaMap[neighborId])`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'try'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'try'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'try'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgeMax = this.root?.querySelector('#badge-max-area');
-    if (badgeMax) badgeMax.textContent = `最大面积: ${maxArea} 格`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 将网格序列化为文本输入（预设值与 inputs.grid 解析共用） */
+function gridToText(grid: number[][]): string {
+  return grid.map((row) => row.join('')).join('\n');
 }
 
-registerAlgorithm({
+function parseGridText(input: string): number[][] {
+  const rows = input
+    .split(/[\r\n]+|;/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) =>
+      line
+        .replace(/[\[\]\s,，]+/g, '')
+        .split('')
+        .map((ch) => (ch === '1' ? 1 : 0))
+    );
+  return rows.length > 0 ? rows : DEFAULT_GRID;
+}
+
+/** 岛屿 ID 对应的配色（与图例一致，ID 从 2 开始循环） */
+const ISLAND_COLORS: Record<number, { bg: string; border: string; color: string }> = {
+  2: { bg: '#dcfce7', border: '#86efac', color: '#15803d' },
+  3: { bg: '#eff6ff', border: '#93c5fd', color: '#1d4ed8' },
+  4: { bg: '#faf5ff', border: '#d8b4fe', color: '#7e22ce' },
+  5: { bg: '#fff7ed', border: '#fdba74', color: '#c2410c' },
+};
+
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: MLIStep[]): MLIStep[] {
+  return steps.map((s) => ({
+    ...s,
+    message: s.statusText,
+    metrics: {
+      'metric-cur-cell': s.currentCell ? `(${s.currentCell[0]}, ${s.currentCell[1]})` : '—',
+      'metric-try-area': `${s.tryArea}`,
+      'metric-best-cell': s.bestCell ? `(${s.bestCell[0]}, ${s.bestCell[1]})` : '—',
+      'metric-max-area': `${s.maxArea}`,
+      action:
+        s.action === 'try'
+          ? `桥接 (${s.currentCell ? s.currentCell.join(',') : ''}): 1 + sum(neighborAreas) = ${s.tryArea}`
+          : s.action === 'label'
+          ? 'DFS 染色: 岛屿 ID 面积缓存完成'
+          : 'curArea = 1 + sum(areaMap[neighborId])',
+    },
+  }));
+}
+
+export function renderMakeLargestIslandCanvas(container: HTMLElement, step: MLIStep): void {
+  const { grid, islandId, rows, cols, currentCell, bestCell, action } = step;
+
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const val = grid[r][c];
+      const id = islandId[r][c];
+      const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
+      const isBest = bestCell && bestCell[0] === r && bestCell[1] === c;
+
+      let bg = '#f8fafc';
+      let border = '1px solid #cbd5e1';
+      let color = '#94a3b8';
+      let fontWeight = '700';
+      let label = val === 0 ? '0' : `ID:${id}`;
+
+      if (val !== 0) {
+        const palette = ISLAND_COLORS[id % 4 + 2] || ISLAND_COLORS[2];
+        bg = palette.bg;
+        border = `1.5px solid ${palette.border}`;
+        color = palette.color;
+      }
+
+      let boxShadow = 'none';
+      let transform = 'none';
+      const isBridge = (isCurrent && val === 0) || (action === 'done' && isBest);
+      if (isBridge) {
+        bg = '#fee2e2';
+        border = '2px solid #ef4444';
+        color = '#dc2626';
+        fontWeight = '900';
+        transform = 'scale(1.08)';
+        boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.25)';
+      } else if (isCurrent) {
+        boxShadow = '0 0 0 3px #facc15';
+      }
+
+      html += `<div style="aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: ${fontWeight}; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-sizing: border-box; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${boxShadow}; transform: ${transform}; z-index: ${isCurrent || isBridge ? 10 : 1};"><span>${label}</span></div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; max-width: 560px; margin: 0 auto; padding: 8px; box-sizing: border-box;">
+      ${html}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'make-largest-island',
   name: '最大人工岛 (LC 827)',
-  viewId: 'algo-make-largest-island-view',
   category: 'graph',
   description: '两遍扫描法：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积',
   icon: '🏝️',
   difficulty: 3,
   levelOrder: 19,
   learningGoal: '掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型',
-  template,
-  Visualizer: MakeLargestIslandVisualizer,
+  inputs: [
+    {
+      id: 'grid',
+      label: '网格 (每行一串 0/1)',
+      type: 'text',
+      defaultValue: gridToText(DEFAULT_GRID),
+      placeholder: '每行如 101',
+    },
+  ],
+  presets: [
+    { label: PRESET_CASES.classic.label, values: { grid: gridToText(PRESET_CASES.classic.grid) } },
+    { label: PRESET_CASES.bigMerge.label, values: { grid: gridToText(PRESET_CASES.bigMerge.grid) } },
+    { label: PRESET_CASES.allWater.label, values: { grid: gridToText(PRESET_CASES.allWater.grid) } },
+  ],
+  metrics: [
+    { id: 'metric-cur-cell', label: '当前格子', color: '#3b82f6' },
+    { id: 'metric-try-area', label: '当前合并面积', color: '#f59e0b' },
+    { id: 'metric-best-cell', label: '最佳桥接点', color: '#ef4444' },
+    { id: 'metric-max-area', label: '最大面积', color: '#10b981' },
+    { id: 'action', label: '合并公式', color: '#6366f1' },
+  ],
+  legend: [
+    { label: '岛屿 2', color: '#86efac' },
+    { label: '岛屿 3', color: '#93c5fd' },
+    { label: '岛屿 4', color: '#d8b4fe' },
+    { label: '最佳桥接点 (0->1)', color: '#ef4444' },
+  ],
+  codeLanguages: MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
+  problemHtml: MAKE_LARGEST_ISLAND_PROBLEM_HTML,
+  analysisHtml: MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildMakeLargestIslandSteps(parseGridText(String(inputs?.grid ?? '')))),
+  renderCanvas: (container, step) => renderMakeLargestIslandCanvas(container, step as MLIStep),
 });

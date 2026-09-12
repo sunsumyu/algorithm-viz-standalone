@@ -1,17 +1,15 @@
 /**
- * 归并排序可视化器 — 4-Card 标准现代架构
+ * 归并排序可视化器 — 声明式 4-Card 标准架构
  * 递归分治、双指针归并、临时缓冲区与写回
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   MERGE_SORT_PROBLEM_HTML,
   MERGE_SORT_ANALYSIS_HTML,
   MERGE_SORT_CODE_LANGUAGES,
 } from './merge-sort-problem-content';
 import { parseArray } from './bubble-sort-renderer';
-import template from './merge-sort.html?raw';
 
 export interface MSStep {
   array: number[];
@@ -29,6 +27,7 @@ export interface MSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function mergeSortSteps(input: number[]): MSStep[] {
@@ -275,179 +274,125 @@ export function mergeSortSteps(input: number[]): MSStep[] {
   return steps;
 }
 
-export class MergeSortVisualizer extends StepVisualizer<MSStep> {
-  protected codeLanguages = MERGE_SORT_CODE_LANGUAGES;
-  protected codeLines = MERGE_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '归并排序 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: MSStep[]): MSStep[] {
+  return steps.map((s) => {
+    let action = 'merge(left, mid, right)';
+    if (s.phase === 'divide') action = `mid = (${s.left} + ${s.right}) / 2 = ${s.mid}`;
+    else if (s.phase === 'compare') {
+      action = `arr[${s.p1}] (${s.array[s.p1]}) ${
+        s.array[s.p1] <= s.array[s.p2] ? '<=' : '>'
+      } arr[${s.p2}] (${s.array[s.p2]})`;
+    } else if (s.phase === 'copy-back') action = `copyBack(temp[${s.left}..${s.right}] -> arr)`;
+    else if (s.phase === 'done') action = '归并排序完成';
 
-  private mainTrackEl: HTMLElement | null = null;
-  private tempTrackEl: HTMLElement | null = null;
-  private metricRangeEl: HTMLElement | null = null;
-  private metricP1El: HTMLElement | null = null;
-  private metricP2El: HTMLElement | null = null;
-  private metricCompCopyEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.mainTrackEl = this.root.querySelector('#ms-main-track');
-    this.tempTrackEl = this.root.querySelector('#ms-temp-track');
-    this.metricRangeEl = this.root.querySelector('#metric-range');
-    this.metricP1El = this.root.querySelector('#metric-p1');
-    this.metricP2El = this.root.querySelector('#metric-p2');
-    this.metricCompCopyEl = this.root.querySelector('#metric-comp-copy');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#ms-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.ms-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: MERGE_SORT_PROBLEM_HTML,
-      analysisHtml: MERGE_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): MSStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '38, 27, 43, 3, 9, 82, 10';
-    const arr = parseArray(raw);
-    return mergeSortSteps(arr);
-  }
-
-  protected renderStep(step: MSStep): void {
-    const { array, temp, left, mid, right, p1, p2, comparisons, copies, phase, message } = step;
-
-    // 1. 渲染主数组
-    if (this.mainTrackEl) {
-      this.mainTrackEl.innerHTML = array
-        .map((val, idx) => {
-          const inLeftSeg = left >= 0 && mid >= 0 && idx >= left && idx <= mid;
-          const inRightSeg = mid >= 0 && right >= 0 && idx > mid && idx <= right;
-          const isP1 = idx === p1;
-          const isP2 = idx === p2;
-          const isCopiedBack = phase === 'copy-back' && idx >= left && idx <= right;
-
-          let cellClass = 'ms-cell-box';
-          if (isCopiedBack) cellClass += ' is-copied-back';
-          else if (isP1) cellClass += ' in-left-seg is-p1';
-          else if (isP2) cellClass += ' in-right-seg is-p2';
-          else if (inLeftSeg) cellClass += ' in-left-seg';
-          else if (inRightSeg) cellClass += ' in-right-seg';
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${val}</span>
-              <span class="idx">${idx}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 Temp 辅助缓冲区
-    if (this.tempTrackEl) {
-      this.tempTrackEl.innerHTML = temp
-        .map((val, idx) => {
-          const isFilled = val !== null;
-          let cellClass = 'ms-cell-box';
-          if (isFilled) cellClass += ' is-buffer-filled';
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${val !== null ? val : '—'}</span>
-              <span class="idx">${idx}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricRangeEl) {
-      this.metricRangeEl.textContent =
-        left >= 0 && right >= 0 ? `[${left}, ${mid}, ${right}]` : '—';
-    }
-    if (this.metricP1El) this.metricP1El.textContent = p1 >= 0 ? `${p1} (${array[p1]})` : '—';
-    if (this.metricP2El) this.metricP2El.textContent = p2 >= 0 ? `${p2} (${array[p2]})` : '—';
-    if (this.metricCompCopyEl) {
-      this.metricCompCopyEl.textContent = `${comparisons} / ${copies}`;
-    }
-
-    if (this.formulaActionEl) {
-      if (phase === 'divide') {
-        this.formulaActionEl.textContent = `mid = (${left} + ${right}) / 2 = ${mid}`;
-      } else if (phase === 'compare') {
-        this.formulaActionEl.textContent = `arr[${p1}] (${array[p1]}) ${
-          array[p1] <= array[p2] ? '<=' : '>'
-        } arr[${p2}] (${array[p2]})`;
-      } else if (phase === 'copy-back') {
-        this.formulaActionEl.textContent = `copyBack(temp[${left}..${right}] -> arr)`;
-      } else if (phase === 'done') {
-        this.formulaActionEl.textContent = '归并排序完成';
-      } else {
-        this.formulaActionEl.textContent = 'merge(left, mid, right)';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'done' ? '#f0fdf4' : st.phase === 'copy-back' ? '#faf5ff' : '#eff6ff';
-        let color =
-          st.phase === 'done' ? '#15803d' : st.phase === 'copy-back' ? '#7e22ce' : '#1d4ed8';
-        let border =
-          st.phase === 'done' ? '#bbf7d0' : st.phase === 'copy-back' ? '#e9d5ff' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeRange = this.root?.querySelector('#badge-range');
-    if (badgeRange) {
-      badgeRange.textContent = left >= 0 && right >= 0 ? `区间: [${left}..${right}]` : '未开始';
-    }
-  }
+    return {
+      ...s,
+      metrics: {
+        range: s.left >= 0 && s.right >= 0 ? `[${s.left}, ${s.mid}, ${s.right}]` : '—',
+        p1: s.p1 >= 0 ? `${s.p1} (${s.array[s.p1]})` : '—',
+        p2: s.p2 >= 0 ? `${s.p2} (${s.array[s.p2]})` : '—',
+        'comp-copy': `${s.comparisons} / ${s.copies}`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+const CELL_BASE =
+  'width: 38px; height: 38px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: \'JetBrains Mono\', monospace; font-size: 13px; font-weight: 800; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box;';
+
+function msCell(val: string, idx: string, bg: string, border: string, color: string): string {
+  return `
+    <div style="${CELL_BASE} background: ${bg}; border: 1.5px solid ${border}; color: ${color};">
+      <span>${val}</span>
+      <span style="font-size: 8.5px; font-weight: 600; color: #94a3b8;">${idx}</span>
+    </div>
+  `;
+}
+
+export function renderMergeSortCanvas(container: HTMLElement, step: MSStep): void {
+  const { array, temp, left, mid, right, p1, p2, phase } = step;
+
+  const mainHtml = array
+    .map((val, idx) => {
+      const inLeftSeg = left >= 0 && mid >= 0 && idx >= left && idx <= mid;
+      const inRightSeg = mid >= 0 && right >= 0 && idx > mid && idx <= right;
+      const isP1 = idx === p1;
+      const isP2 = idx === p2;
+      const isCopiedBack = phase === 'copy-back' && idx >= left && idx <= right;
+
+      if (isCopiedBack) return msCell(String(val), `${idx}`, '#faf5ff', '#a855f7', '#7e22ce');
+      if (isP1) return msCell(String(val), `${idx}`, '#eff6ff', '#3b82f6', '#1d4ed8');
+      if (isP2) return msCell(String(val), `${idx}`, '#faf5ff', '#a855f7', '#7e22ce');
+      if (inLeftSeg) return msCell(String(val), `${idx}`, '#eff6ff', '#93c5fd', '#1e40af');
+      if (inRightSeg) return msCell(String(val), `${idx}`, '#faf5ff', '#d8b4fe', '#6b21a8');
+      return msCell(String(val), `${idx}`, '#ffffff', '#cbd5e1', '#0f172a');
+    })
+    .join('');
+
+  const tempHtml = temp
+    .map((val, idx) =>
+      val !== null
+        ? msCell(String(val), `${idx}`, '#f0fdf4', '#22c55e', '#15803d')
+        : msCell('—', `${idx}`, '#ffffff', '#cbd5e1', '#cbd5e1'),
+    )
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 16px 12px; box-sizing: border-box; overflow-y: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">原数组 arr (分治区间 [L..R]):</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${mainHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">辅助 temp 归并缓冲区:</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${tempHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'merge-sort',
   name: '归并排序',
-  viewId: 'algo-merge-sort-view',
   category: 'sort',
   description: '逐步演示归并排序：递归分治、双指针合并',
   icon: '🧩',
   difficulty: 2,
   levelOrder: 5,
   learningGoal: '掌握分治思想和双指针有序归并的过程',
-  template,
-  Visualizer: MergeSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '38, 27, 43, 3, 9, 82, 10',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '38, 27, 43, 3, 9, 82, 10' } },
+    { label: '近有序', values: { array: '1, 3, 2, 5, 4, 7, 6' } },
+    { label: '逆序最坏情形', values: { array: '9, 8, 7, 6, 5, 4, 3' } },
+    { label: '含重复元素', values: { array: '5, 2, 5, 1, 2, 5' } },
+  ],
+  metrics: [
+    { id: 'range', label: '分治区间 [L, M, R]', color: '#2563eb' },
+    { id: 'p1', label: '左段指针 p1', color: '#3b82f6' },
+    { id: 'p2', label: '右段指针 p2', color: '#a855f7' },
+    { id: 'comp-copy', label: '比较 / 回填', color: '#f59e0b' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '左段 p1', color: '#3b82f6' },
+    { label: '右段 p2', color: '#a855f7' },
+    { label: '归并缓冲区', color: '#22c55e' },
+  ],
+  codeLanguages: MERGE_SORT_CODE_LANGUAGES,
+  problemHtml: MERGE_SORT_PROBLEM_HTML,
+  analysisHtml: MERGE_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(mergeSortSteps(parseArray(String(inputs.array ?? '38, 27, 43, 3, 9, 82, 10')))),
+  renderCanvas: (container, step) => renderMergeSortCanvas(container, step as MSStep),
 });

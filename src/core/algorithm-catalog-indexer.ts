@@ -13,9 +13,12 @@
 import { algorithmRegistry } from './algorithm-registry';
 import type { AlgorithmMetadata, AlgorithmManifest } from './registry';
 
-// eager glob 在模块加载瞬间完成全部 30 个 batch 索引的注册副作用，
+// eager glob 在模块加载瞬间触发所有 renderer 的注册副作用，
 // 收获因此天然穷尽所有已接线（wired）的注册，与手工维护的加载清单无关。
-const batchIndexModules = import.meta.glob('../algorithms/batch-*-index.ts', { eager: true });
+// 路径模式与 algorithm-loader.ts 保持一致，但使用 eager: true 确保同步执行。
+const rendererModules = import.meta.glob('../algorithms/categories/**/*-renderer.ts', { eager: true });
+// dp-generated-renderers 不匹配 *-renderer.ts glob，需显式引入（eager 同步）
+const dpGeneratedModule = import.meta.glob('../algorithms/categories/dynamic-programming/dp-generated-renderers.ts', { eager: true });
 
 /** 投影：AlgorithmManifest → 9 字段目录元数据（剥离 template / Visualizer） */
 export function projectCatalogMetadata(manifest: AlgorithmManifest): AlgorithmMetadata {

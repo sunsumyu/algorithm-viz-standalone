@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  BellmanFordVisualizer,
-  buildBFSteps,
-} from './bellman-ford-renderer';
+import { buildBFSteps } from './bellman-ford-renderer';
 import { BELLMAN_FORD_CODE_LANGUAGES } from './bellman-ford-problem-content';
 
 describe('BellmanFord (LeftChengYun Class 061)', () => {
-  it('should instantiate BellmanFordVisualizer properly', () => {
-    const viz = new BellmanFordVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildBFSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

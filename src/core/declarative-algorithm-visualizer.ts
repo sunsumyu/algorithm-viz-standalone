@@ -466,6 +466,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (this.steps.length === 0) {
       this.renderEmptyStepsDiagnostic();
     }
+    this.updateResultDisplay();
   }
 
   /**
@@ -631,6 +632,81 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (this.progressSlider) {
       this.progressSlider.max = String(Math.max(0, this.steps.length - 1));
       this.progressSlider.value = String(this.currentIndex);
+    }
+
+    // 5. 更新 LeetCode 风格输出槽与结算卡片
+    this.updateResultDisplay();
+  }
+
+  /**
+   * 智能提取算法推导序列的最终答案 (LeetCode Return Value)
+   */
+  protected extractFinalAnswer(): string | null {
+    if (!this.steps || this.steps.length === 0) return null;
+    const lastStep = this.steps[this.steps.length - 1] as any;
+    if (!lastStep) return null;
+
+    if (lastStep.metrics && typeof lastStep.metrics === 'object') {
+      if (lastStep.metrics['metric-ans'] != null) return String(lastStep.metrics['metric-ans']);
+      if (lastStep.metrics['最终结果'] != null) return String(lastStep.metrics['最终结果']);
+      if (lastStep.metrics['ans'] != null) return String(lastStep.metrics['ans']);
+      if (lastStep.metrics['result'] != null) return String(lastStep.metrics['result']);
+    }
+    if (lastStep.ans != null) return String(lastStep.ans);
+    if (lastStep.finalVal != null) return String(lastStep.finalVal);
+    if (Array.isArray(lastStep.vars)) {
+      const ansVar = lastStep.vars.find((v: any) => v.name === 'ans' || v.name === 'result' || v.name === '最终结果');
+      if (ansVar && ansVar.value != null) return String(ansVar.value);
+    }
+    return null;
+  }
+
+  /**
+   * 同步 LeetCode 风格顶部常驻输出胶囊、进度条结算徽标与终态 Accepted 卡片
+   */
+  protected updateResultDisplay(): void {
+    if (!this.root) return;
+    const outputCapsule = this.root.querySelector('#dsp-output-capsule') as HTMLElement | null;
+    const outputValEl = this.root.querySelector('#dsp-output-val') as HTMLElement | null;
+    const outputStatusEl = this.root.querySelector('#dsp-output-status') as HTMLElement | null;
+    const playbackCapsule = this.root.querySelector('#dsp-playback-ans-capsule') as HTMLElement | null;
+    const playbackValEl = this.root.querySelector('#dsp-playback-ans-val') as HTMLElement | null;
+
+    const finalAns = this.extractFinalAnswer();
+    const isCompleted = this.steps.length > 0 && this.currentIndex === this.steps.length - 1;
+
+    if (finalAns != null) {
+      if (outputValEl) outputValEl.textContent = finalAns;
+      if (playbackValEl) playbackValEl.textContent = finalAns;
+      if (playbackCapsule) playbackCapsule.style.display = 'inline-flex';
+
+      if (isCompleted) {
+        outputCapsule?.classList.add('is-accepted');
+        if (outputStatusEl) outputStatusEl.style.display = 'inline-block';
+      } else {
+        outputCapsule?.classList.remove('is-accepted');
+        if (outputStatusEl) outputStatusEl.style.display = 'none';
+      }
+    } else {
+      if (outputValEl) outputValEl.textContent = '—';
+      outputCapsule?.classList.remove('is-accepted');
+      if (outputStatusEl) outputStatusEl.style.display = 'none';
+      if (playbackCapsule) playbackCapsule.style.display = 'none';
+    }
+
+    // 当到达最后一步时，在 liveText 解说面板呈现醒目的 Accepted 结算卡
+    if (isCompleted && finalAns != null && this.liveTextEl) {
+      const anyStep = (this.steps[this.currentIndex] || {}) as any;
+      const originalMsg = anyStep.decision || anyStep.message || anyStep.msg || '';
+      this.liveTextEl.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="background: #22c55e; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 10px;">✓ Accepted</span>
+            <span style="font-weight: 700; color: #166534; font-size: 12px;">求解完成！最终返回值: <strong style="color: #15803d; font-size: 14px; text-decoration: underline;">${finalAns}</strong></span>
+          </div>
+          <span style="font-size: 11px; color: #15803d;">共 ${this.steps.length} 步 · ${originalMsg}</span>
+        </div>
+      `;
     }
   }
 

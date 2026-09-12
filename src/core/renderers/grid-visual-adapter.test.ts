@@ -369,4 +369,69 @@ describe('RecursionTreeAdapter Deep Module', () => {
     expect(mockContainer.innerHTML).toContain('dfs(1,6)');
     expect(mockContainer.innerHTML).toContain('🐸');
   });
+
+  it('应该支持渲染带有字符行列标尺与匹配标徽的双串语义网格 (renderLabeledGrid)', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const step = {
+      i: 1,
+      j: 1,
+      grid: [
+        [0, 0],
+        [0, 1]
+      ],
+      activeStack: ['0,0', '1,1']
+    };
+
+    GridVisualAdapter.renderGrid(container, step, {
+      m: 2,
+      n: 2,
+      rowLabels: ['Ø', 'a'],
+      colLabels: ['Ø', 'a'],
+      isMatch: (r, c) => r === 1 && c === 1
+    });
+
+    const mockContainer = container as unknown as MockHTMLElement;
+    expect(mockContainer.innerHTML).toContain('s1 \\ s2');
+    expect(mockContainer.innerHTML).toContain('stage1-grid-board');
+    expect(mockContainer.innerHTML).toContain('stage1-trail-svg');
+    expect(mockContainer.innerHTML).toContain('Ø');
+    expect(mockContainer.innerHTML).toContain('✨');
+  });
+
+  it('应该支持在带标尺网格中精准高亮 2D DP 前驱依赖单元格与未计算单元格', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const step = {
+      i: 1,
+      j: 1,
+      topI: 0,
+      topJ: 1,
+      leftI: 1,
+      leftJ: 0,
+      grid: [
+        [null, 2],
+        [3, -1]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, step, {
+      m: 2,
+      n: 2,
+      rowLabels: ['0', '1'],
+      colLabels: ['0', '1'],
+      deps: [
+        { r: 0, c: 1, type: 'top' },
+        { r: 1, c: 0, type: 'left' }
+      ]
+    });
+
+    const mockContainer = container as unknown as MockHTMLElement;
+    expect(mockContainer.innerHTML).toContain('is-top is-dep');
+    expect(mockContainer.innerHTML).toContain('⬆️');
+    expect(mockContainer.innerHTML).toContain('is-left is-dep');
+    expect(mockContainer.innerHTML).toContain('⬅️');
+    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-top');
+    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-left');
+    expect(mockContainer.innerHTML).toContain('前驱依赖');
+  });
 });
+

@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  SPFAVisualizer,
-  buildSPFASteps,
-} from './spfa-renderer';
+import { buildSPFASteps } from './spfa-renderer';
 import { SPFA_CODE_LANGUAGES } from './spfa-problem-content';
 
 describe('SPFA (LeftChengYun Class 061)', () => {
-  it('should instantiate SPFAVisualizer properly', () => {
-    const viz = new SPFAVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildSPFASteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

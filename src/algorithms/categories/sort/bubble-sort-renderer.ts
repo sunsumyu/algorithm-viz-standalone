@@ -1,16 +1,14 @@
 /**
- * 冒泡排序可视化器 — 4-Card 标准现代架构
+ * 冒泡排序可视化器 — 声明式 4-Card 标准架构
  * 相邻比较、元素交换、末尾冒泡到位、早停优化
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BUBBLE_SORT_PROBLEM_HTML,
   BUBBLE_SORT_ANALYSIS_HTML,
   BUBBLE_SORT_CODE_LANGUAGES,
 } from './bubble-sort-problem-content';
-import template from './bubble-sort.html?raw';
 
 export interface BSStep {
   array: number[];
@@ -26,6 +24,7 @@ export interface BSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function parseArray(input: string): number[] {
@@ -185,156 +184,111 @@ export function bubbleSortSteps(input: number[]): BSStep[] {
   return steps;
 }
 
-export class BubbleSortVisualizer extends StepVisualizer<BSStep> {
-  protected codeLanguages = BUBBLE_SORT_CODE_LANGUAGES;
-  protected codeLines = BUBBLE_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '冒泡排序 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BSStep[]): BSStep[] {
+  return steps.map((s) => {
+    let action = 'compare(arr[j], arr[j+1])';
+    if (s.swapping) action = `swap(arr[${s.j}], arr[${s.jNext}]) 交换`;
+    else if (s.phase === 'pass-done') action = `第 ${s.pass} 轮结束，末尾就位`;
+    else if (s.phase === 'done') action = '排序完成';
 
-  private barsContainerEl: HTMLElement | null = null;
-  private metricPassEl: HTMLElement | null = null;
-  private metricJEl: HTMLElement | null = null;
-  private metricCompSwapEl: HTMLElement | null = null;
-  private metricSortedCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.barsContainerEl = this.root.querySelector('#bs-bars-container');
-    this.metricPassEl = this.root.querySelector('#metric-pass');
-    this.metricJEl = this.root.querySelector('#metric-j');
-    this.metricCompSwapEl = this.root.querySelector('#metric-comp-swap');
-    this.metricSortedCountEl = this.root.querySelector('#metric-sorted-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#bs-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bs-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BUBBLE_SORT_PROBLEM_HTML,
-      analysisHtml: BUBBLE_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BSStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '5, 2, 9, 1, 5, 6';
-    const arr = parseArray(raw);
-    return bubbleSortSteps(arr);
-  }
-
-  protected renderStep(step: BSStep): void {
-    const { array, pass, j, jNext, comparisons, swaps, sortedTail, phase, swapping, message } = step;
-
-    // 1. 渲染柱状图
-    if (this.barsContainerEl) {
-      const maxVal = Math.max(...array, 1);
-      this.barsContainerEl.innerHTML = array
-        .map((val, idx) => {
-          const isComparing = (idx === j || idx === jNext) && !swapping && phase === 'compare';
-          const isSwapping = (idx === j || idx === jNext) && swapping;
-          const isSorted = idx >= array.length - sortedTail || phase === 'done';
-
-          let pillarClass = 'bs-bar-pillar';
-          if (isSwapping) pillarClass += ' is-swapping';
-          else if (isComparing) pillarClass += ' is-comparing';
-          else if (isSorted) pillarClass += ' is-sorted';
-
-          const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-          return `
-            <div class="bs-bar-wrapper">
-              <div class="${pillarClass}" style="height: ${heightPct}%;">
-                <span>${val}</span>
-              </div>
-              <span class="bs-bar-idx">${idx}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricPassEl) this.metricPassEl.textContent = pass >= 0 ? String(pass) : '—';
-    if (this.metricJEl) {
-      this.metricJEl.textContent = j >= 0 && jNext >= 0 ? `[${j}, ${jNext}]` : '—';
-    }
-    if (this.metricCompSwapEl) {
-      this.metricCompSwapEl.textContent = `${comparisons} / ${swaps}`;
-    }
-    if (this.metricSortedCountEl) {
-      this.metricSortedCountEl.textContent = `${sortedTail} / ${array.length}`;
-    }
-
-    if (this.formulaActionEl) {
-      if (swapping) {
-        this.formulaActionEl.textContent = `swap(arr[${j}], arr[${jNext}]) 交换`;
-      } else if (phase === 'compare') {
-        this.formulaActionEl.textContent = `arr[${j}] (${array[j]}) ${
-          array[j] > array[jNext] ? '>' : '<='
-        } arr[${jNext}] (${array[jNext]})`;
-      } else if (phase === 'pass-done') {
-        this.formulaActionEl.textContent = `第 ${pass} 轮结束，末尾就位`;
-      } else if (phase === 'done') {
-        this.formulaActionEl.textContent = '排序完成';
-      } else {
-        this.formulaActionEl.textContent = 'compare(arr[j], arr[j+1])';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg = st.phase === 'done' ? '#f0fdf4' : st.swapping ? '#fff1f2' : '#eff6ff';
-        let color = st.phase === 'done' ? '#15803d' : st.swapping ? '#e11d48' : '#1d4ed8';
-        let border = st.phase === 'done' ? '#bbf7d0' : st.swapping ? '#fecdd3' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeSorted = this.root?.querySelector('#badge-sorted-count');
-    if (badgeSorted) badgeSorted.textContent = `已就位: ${sortedTail}`;
-  }
+    return {
+      ...s,
+      metrics: {
+        pass: s.pass >= 0 ? String(s.pass) : '—',
+        'j-pair': s.j >= 0 && s.jNext >= 0 ? `[${s.j}, ${s.jNext}]` : '—',
+        'comp-swap': `${s.comparisons} / ${s.swaps}`,
+        'sorted-count': `${s.sortedTail} / ${s.array.length}`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderBubbleSortCanvas(container: HTMLElement, step: BSStep): void {
+  const { array, j, jNext, sortedTail, phase, swapping } = step;
+
+  const maxVal = Math.max(...array, 1);
+  const barsHtml = array
+    .map((val, idx) => {
+      const isComparing = (idx === j || idx === jNext) && !swapping && phase === 'compare';
+      const isSwapping = (idx === j || idx === jNext) && swapping;
+      const isSorted = idx >= array.length - sortedTail || phase === 'done';
+
+      let bg = '#cbd5e1';
+      let border = '#94a3b8';
+      let transform = 'none';
+      if (isSwapping) {
+        bg = '#fef2f2';
+        border = '#ef4444';
+        transform = 'scale(1.05)';
+      } else if (isComparing) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+      } else if (isSorted) {
+        bg = '#f0fdf4';
+        border = '#22c55e';
+      }
+
+      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 800; color: #0f172a;">${val}</span>
+          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform};"></div>
+          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
+      ${barsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'bubble-sort',
   name: '冒泡排序',
-  viewId: 'algo-bubble-sort-view',
   category: 'sort',
   description: '逐步演示冒泡排序：相邻元素比较、交换、冒泡到位',
   icon: '🌪️',
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '理解冒泡排序的相邻比较和元素冒泡过程',
-  template,
-  Visualizer: BubbleSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '5, 2, 9, 1, 5, 6',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '5, 2, 9, 1, 5, 6' } },
+    { label: '近有序 (早停)', values: { array: '1, 2, 3, 5, 4, 6, 7' } },
+    { label: '逆序最坏情形', values: { array: '9, 8, 7, 6, 5, 4, 3, 2, 1' } },
+    { label: '含重复元素', values: { array: '4, 4, 2, 2, 8, 8, 1' } },
+  ],
+  metrics: [
+    { id: 'pass', label: '当前轮次', color: '#2563eb' },
+    { id: 'j-pair', label: '比较指针 [j, j+1]', color: '#a855f7' },
+    { id: 'comp-swap', label: '比较 / 交换', color: '#f59e0b' },
+    { id: 'sorted-count', label: '已就位', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '比较中', color: '#3b82f6' },
+    { label: '交换中', color: '#ef4444' },
+    { label: '已就位', color: '#22c55e' },
+  ],
+  codeLanguages: BUBBLE_SORT_CODE_LANGUAGES,
+  problemHtml: BUBBLE_SORT_PROBLEM_HTML,
+  analysisHtml: BUBBLE_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(bubbleSortSteps(parseArray(String(inputs.array ?? '5, 2, 9, 1, 5, 6')))),
+  renderCanvas: (container, step) => renderBubbleSortCanvas(container, step as BSStep),
 });

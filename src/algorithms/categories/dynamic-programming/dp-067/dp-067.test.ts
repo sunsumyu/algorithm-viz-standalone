@@ -192,6 +192,36 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(lastStep.activeNodeId).toBeDefined();
     });
 
+    it('Step 0 / Step 1 初始帧绝对不泄漏递归子函数局部变量，且比对组件呈现等待就绪态', async () => {
+      const { SequenceAlignmentPresenter } = await import('../../../../core/renderers/sequence-alignment-adapter');
+      const steps = buildLcsStage1Steps({ 'input-s1': 'ddde', 'input-s2': 'ace' });
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      // 1. Step 0 在主函数签名行时，vars 中绝不泄漏 i, j 形参
+      const varNames = (step0.vars || []).map((v) => v.name);
+      expect(varNames).toContain('s1');
+      expect(varNames).toContain('s2');
+      expect(varNames).not.toContain('i');
+      expect(varNames).not.toContain('j');
+
+      // 2. 模拟渲染双字符串比对面板，断言绝不出局提示匹配成功或误拉绿勾
+      const mockBox = { innerHTML: '' } as unknown as HTMLElement;
+      SequenceAlignmentPresenter.render(mockBox, {
+        s1: step0.s1,
+        s2: step0.s2,
+        curI: step0.i,
+        curJ: step0.j,
+        isComparing: step0.isComparing,
+        statusDescription: step0.compareStatusText,
+      });
+
+      expect(mockBox.innerHTML).not.toContain('✨ 字符匹配成功');
+      expect(mockBox.innerHTML).not.toContain('纳入公共子序列 (+1)');
+      expect(mockBox.innerHTML).not.toContain('>✓</span>');
+      expect(mockBox.innerHTML).toContain('准备就绪');
+    });
+
     it('阶段 2 记忆化搜索应记录缓存命中并产出剪枝标记树', () => {
       const steps = buildLcsStage2Steps(inputs);
       expect(steps.length).toBeGreaterThan(0);

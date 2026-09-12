@@ -1,11 +1,10 @@
 /**
- * 数字串翻译方案数（解码方法，LeetCode 91）双模式可视化器
- * 模式一：递归树（SVG 增量展开 + 回填 + 重复子问题高亮 + 缩放/聚焦/重置）
+ * 数字串翻译方案数（解码方法，LeetCode 91）双模式可视化器 — 声明式 4-Card 标准架构
+ * 模式一：递归树（SVG 全量重绘 + 回填 + 重复子问题高亮）
  * 模式二：DP 迭代（一维 dp 从右往左填表 + 依赖箭头 + 决策拆解卡片）
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   buildRecursiveSteps,
   buildDpSteps,
@@ -15,614 +14,412 @@ import {
   type DecodeDpStep,
   type DecodeTreeNode,
 } from './decode-ways-steps';
-import template from './decode-ways.html?raw';
 
-type DwStep = DecodeRecStep | DecodeDpStep;
-type Mode = 'rec' | 'dp';
-
-const SVG_NS = 'http://www.w3.org/2000/svg';
 const NODE_R = 22;
 /** 与 decode-ways-steps.ts 的 LEVEL_HEIGHT 保持一致（悬挂死边的落点） */
 const LEVEL_GAP = 92;
 
-export class DecodeWaysVisualizer extends StepVisualizer<DwStep> {
-  protected codeLines = REC_JAVA_CODE;
-  protected codeLanguage = 'java';
-  protected codePanelTitle = '解码方法 Java 源码';
-
-  /* ── 模式状态：两种模式各持独立步骤数组与游标 ── */
-  private mode: Mode = 'rec';
-  private recSteps: DecodeRecStep[] = [];
-  private dpSteps: DecodeDpStep[] = [];
-  private recCursor = 0;
-  private dpCursor = 0;
-  private recNodes = new Map<number, DecodeTreeNode>();
-  private lastInput = '';
-
-  /* ── DOM ── */
-  private inputEl: HTMLInputElement | null = null;
-  private errorEl: HTMLElement | null = null;
-  private tabRec: HTMLElement | null = null;
-  private tabDp: HTMLElement | null = null;
-  private treeWrap: HTMLElement | null = null;
-  private dpWrap: HTMLElement | null = null;
-  private statCalls: HTMLElement | null = null;
-  private statRepeats: HTMLElement | null = null;
-  private statTwo: HTMLElement | null = null;
-  private statFilled: HTMLElement | null = null;
-  private answerEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-
-  /* ── 递归树渲染状态（增量绘制） ── */
-  private treeSvg: SVGSVGElement | null = null;
-  private treeRoot: SVGGElement | null = null;
-  private nodeEls = new Map<number, SVGGElement>();
-  private treeWidth = 800;
-  private treeHeight = 400;
-  private lastTreeIndex = -1;
-  /** 视图变换：缩放 + 平移 */
-  private viewScale = 1;
-  private viewX = 0;
-  private viewY = 0;
-
-  /* ── DP 渲染状态 ── */
-  private dpCharsEl: HTMLElement | null = null;
-  private dpCellsEl: HTMLElement | null = null;
-  private dpArrowsEl: HTMLElement | null = null;
-  private dpFormulaEl: HTMLElement | null = null;
-  private breakdownEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.inputEl = this.root.querySelector('#dw-input');
-    this.errorEl = this.root.querySelector('#dw-error');
-    this.tabRec = this.root.querySelector('#dw-tab-rec');
-    this.tabDp = this.root.querySelector('#dw-tab-dp');
-    this.treeWrap = this.root.querySelector('#dw-tree-wrap');
-    this.dpWrap = this.root.querySelector('#dw-dp-wrap');
-    this.statCalls = this.root.querySelector('#dw-stat-calls');
-    this.statRepeats = this.root.querySelector('#dw-stat-repeats');
-    this.statTwo = this.root.querySelector('#dw-stat-two');
-    this.statFilled = this.root.querySelector('#dw-stat-filled');
-    this.answerEl = this.root.querySelector('#dw-answer');
-    this.logEl = this.root.querySelector('#dw-log');
-    this.dpCharsEl = this.root.querySelector('#dw-dp-chars');
-    this.dpCellsEl = this.root.querySelector('#dw-dp-cells');
-    this.dpArrowsEl = this.root.querySelector('#dw-dp-arrows');
-    this.dpFormulaEl = this.root.querySelector('#dw-dp-formula');
-    this.breakdownEl = this.root.querySelector('#dw-dp-breakdown');
-
-    this.bindPlaybackControls({
-      reset: 'step-reset', prev: 'step-prev', play: 'step-play', next: 'step-next',
-      speed: 'dw-speed', speedLabel: 'dw-speed-label',
-      counter: 'step-counter', message: 'step-message',
-    });
-
-    this.root.querySelector('#dw-start')?.addEventListener('click', () => this.start());
-    this.root.querySelectorAll<HTMLButtonElement>('.dw-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (this.inputEl) this.inputEl.value = btn.dataset.s || '226';
-        this.start();
-      });
-    });
-    this.tabRec?.addEventListener('click', () => this.switchMode('rec'));
-    this.tabDp?.addEventListener('click', () => this.switchMode('dp'));
-    this.root.querySelector('#dw-zoom-in')?.addEventListener('click', () => this.zoomBy(1.25));
-    this.root.querySelector('#dw-zoom-out')?.addEventListener('click', () => this.zoomBy(0.8));
-    this.root.querySelector('#dw-view-reset')?.addEventListener('click', () => this.resetView());
-    this.root.querySelector('#dw-view-focus')?.addEventListener('click', () => this.focusCurrent());
-
-    this.initTreeCanvas();
-    this.initPan();
-  }
-
-  /* ═══════════════════ 输入与步骤构建 ═══════════════════ */
-
-  protected buildSteps(): DwStep[] {
-    const raw = (this.inputEl?.value || '').trim();
-    const ok = /^[0-9]{1,10}$/.test(raw);
-    if (this.errorEl) {
-      this.errorEl.textContent = ok
-        ? ''
-        : raw.length === 0
-          ? '请输入数字串'
-          : /^[0-9]*$/.test(raw)
-            ? `长度需 1~10 位（当前 ${raw.length} 位）`
-            : '仅允许数字字符 0-9';
-    }
-    if (!ok) {
-      this.recSteps = [];
-      this.dpSteps = [];
-      this.recNodes.clear();
-      return [];
-    }
-    this.lastInput = raw;
-
-    const rec = buildRecursiveSteps(raw);
-    const dp = buildDpSteps(raw);
-    this.recSteps = rec.steps;
-    this.dpSteps = dp.steps;
-    this.recNodes = new Map(rec.nodes.map((nd) => [nd.id, nd]));
-    this.recCursor = 0;
-    this.dpCursor = 0;
-
-    // 共享最终答案徽章：两种模式答案一致
-    if (this.answerEl) this.answerEl.textContent = String(rec.answer);
-
-    // 树画布重置 + 依据整棵树尺寸设定 viewBox
-    this.resetTreeCanvas();
-
-    return this.mode === 'rec' ? this.recSteps : this.dpSteps;
-  }
-
-  /* ═══════════════════ 模式切换 ═══════════════════ */
-
-  private switchMode(mode: Mode): void {
-    if (mode === this.mode) return;
-    this.pause();
-    if (this.mode === 'rec') this.recCursor = this.currentIndex;
-    else this.dpCursor = this.currentIndex;
-    this.mode = mode;
-
-    this.steps = mode === 'rec' ? this.recSteps : this.dpSteps;
-    this.currentIndex = mode === 'rec' ? this.recCursor : this.dpCursor;
-
-    this.codePanel?.updateLines(mode === 'rec' ? REC_JAVA_CODE : DP_JAVA_CODE, 'java');
-    this.updateModeVisibility();
-    this.updateStatsVisibility();
-
-    this.render();
-    this.updateButtons();
-  }
-
-  private updateModeVisibility(): void {
-    this.tabRec?.classList.toggle('is-active', this.mode === 'rec');
-    this.tabDp?.classList.toggle('is-active', this.mode === 'dp');
-    this.treeWrap?.classList.toggle('is-hidden', this.mode !== 'rec');
-    this.dpWrap?.classList.toggle('is-hidden', this.mode !== 'dp');
-  }
-
-  private updateStatsVisibility(): void {
-    const recRow = this.root?.querySelector('#dw-stats-rec');
-    const dpRow = this.root?.querySelector('#dw-stats-dp');
-    recRow?.classList.toggle('is-hidden', this.mode !== 'rec');
-    dpRow?.classList.toggle('is-hidden', this.mode !== 'dp');
-  }
-
-  /* ═══════════════════ 步骤渲染分发 ═══════════════════ */
-
-  protected renderStep(step: DwStep): void {
-    if (this.mode === 'rec') {
-      this.renderRecStep(step as DecodeRecStep);
-    } else {
-      this.renderDpStep(step as DecodeDpStep);
-    }
-    this.updateLog(this.logEl);
-  }
-
-  /* ═══════════════════ 递归树渲染（增量） ═══════════════════ */
-
-  private initTreeCanvas(): void {
-    if (!this.treeWrap) return;
-    this.treeSvg = document.createElementNS(SVG_NS, 'svg');
-    this.treeSvg.setAttribute('class', 'dw-tree-svg');
-    this.treeRoot = document.createElementNS(SVG_NS, 'g');
-    this.treeRoot.setAttribute('class', 'dw-tree-root');
-    this.treeSvg.appendChild(this.treeRoot);
-    this.treeWrap.appendChild(this.treeSvg);
-  }
-
-  private resetTreeCanvas(): void {
-    if (!this.treeRoot) return;
-    this.treeRoot.innerHTML = '';
-    this.nodeEls.clear();
-    this.lastTreeIndex = -1;
-    const maxX = Math.max(...[...this.recNodes.values()].map((nd) => nd.x), 200);
-    const maxY = Math.max(...[...this.recNodes.values()].map((nd) => nd.y), 200);
-    this.treeWidth = maxX + 80;
-    this.treeHeight = maxY + 80;
-    this.treeSvg?.setAttribute('viewBox', `0 0 ${this.treeWidth} ${this.treeHeight}`);
-    this.resetView();
-  }
-
-  private renderRecStep(step: DecodeRecStep): void {
-    // 统计徽章与答案
-    if (this.statCalls) this.statCalls.textContent = String(step.stats.calls);
-    if (this.statRepeats) this.statRepeats.textContent = String(step.stats.repeats);
-    if (this.statTwo) this.statTwo.textContent = String(step.stats.twoDigitHits);
-    if (step.answer != null && this.answerEl) this.answerEl.textContent = String(step.answer);
-
-    if (!this.treeRoot) return;
-
-    if (this.currentIndex === this.lastTreeIndex + 1) {
-      this.applyTreeDelta(step);
-    } else {
-      // 回退 / 跳步：全量重建到当前步
-      this.treeRoot.innerHTML = '';
-      this.nodeEls.clear();
-      for (let k = 0; k <= this.currentIndex; k++) {
-        this.applyTreeDelta(this.recSteps[k]);
-      }
-    }
-    this.lastTreeIndex = this.currentIndex;
-
-    this.highlightActiveNode(step.nodeId);
-    this.autoFollow(step.nodeId);
-  }
-
-  /** 应用单个步骤的增量：新增节点 / 边 / 回填值 / 悬挂死边 */
-  private applyTreeDelta(step: DecodeRecStep): void {
-    if (!this.treeRoot) return;
-
-    if (step.type === 'init') {
-      const rootNode = this.recNodes.get(0);
-      if (rootNode && !this.nodeEls.has(0)) {
-        const g = this.makeNode(rootNode);
-        this.treeRoot.appendChild(g);
-        this.nodeEls.set(0, g);
-      }
-      return;
-    }
-
-    if (step.type === 'call' && step.newNode) {
-      const nd = step.newNode;
-      // 边（先画边再画节点，边在节点下层）
-      if (step.edge && step.edge.fromId !== null) {
-        const parent = this.recNodes.get(step.edge.fromId);
-        if (parent) {
-          this.treeRoot.appendChild(
-            this.makeEdge(parent, nd, step.edge.label, step.edge.dead)
-          );
-        }
-      } else if (step.edge && step.edge.dead) {
-        // 悬挂死边（>26 / 越界）：从父节点向右下画虚线短边
-        const from = this.recNodes.get(step.nodeId);
-        if (from) {
-          this.treeRoot.appendChild(this.makeDanglingEdge(from, step.edge.label));
-        }
-      }
-      if (!this.nodeEls.has(nd.id)) {
-        const g = this.makeNode(nd);
-        this.treeRoot.appendChild(g);
-        this.nodeEls.set(nd.id, g);
-      }
-      return;
-    }
-
-    if (step.type === 'branch-2' && step.edge?.dead) {
-      const from = this.recNodes.get(step.nodeId);
-      if (from) this.treeRoot.appendChild(this.makeDanglingEdge(from, step.edge.label));
-      return;
-    }
-
-    if (
-      (step.type === 'base-case' || step.type === 'dead-zero' || step.type === 'return') &&
-      step.returnValue !== undefined
-    ) {
-      this.backfillNode(step.nodeId, step.returnValue, step.type);
-    }
-  }
-
-  private makeNode(nd: DecodeTreeNode): SVGGElement {
-    const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('class', 'dw-node' + (nd.isRepeated ? ' is-repeated' : ''));
-    g.dataset.nodeId = String(nd.id);
-    g.setAttribute('transform', `translate(${nd.x}, ${nd.y})`);
-
-    const circle = document.createElementNS(SVG_NS, 'circle');
-    circle.setAttribute('r', String(NODE_R));
-    g.appendChild(circle);
-
-    const label = document.createElementNS(SVG_NS, 'text');
-    label.setAttribute('class', 'dw-node-label');
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('dy', '5');
-    label.textContent = `f(${nd.i})`;
-    g.appendChild(label);
-
-    const value = document.createElementNS(SVG_NS, 'text');
-    value.setAttribute('class', 'dw-node-value');
-    value.setAttribute('text-anchor', 'middle');
-    value.setAttribute('y', String(-NODE_R - 8));
-    g.appendChild(value);
-
-    return g;
-  }
-
-  private makeEdge(
-    from: DecodeTreeNode,
-    to: DecodeTreeNode,
-    label: string,
-    dead: boolean
-  ): SVGGElement {
-    const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('class', 'dw-edge' + (dead ? ' is-dead' : ''));
-
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const dist = Math.hypot(dx, dy) || 1;
-    const x1 = from.x + (dx / dist) * (NODE_R + 2);
-    const y1 = from.y + (dy / dist) * (NODE_R + 2);
-    const x2 = to.x - (dx / dist) * (NODE_R + 4);
-    const y2 = to.y - (dy / dist) * (NODE_R + 4);
-
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', String(x1));
-    line.setAttribute('y1', String(y1));
-    line.setAttribute('x2', String(x2));
-    line.setAttribute('y2', String(y2));
-    g.appendChild(line);
-
-    if (label) {
-      const text = document.createElementNS(SVG_NS, 'text');
-      text.setAttribute('class', 'dw-edge-label');
-      text.setAttribute('x', String((x1 + x2) / 2));
-      text.setAttribute('y', String((y1 + y2) / 2 - 6));
-      text.setAttribute('text-anchor', 'middle');
-      text.textContent = label;
-      g.appendChild(text);
-    }
-    return g;
-  }
-
-  private makeDanglingEdge(from: DecodeTreeNode, label: string): SVGGElement {
-    const g = document.createElementNS(SVG_NS, 'g');
-    g.setAttribute('class', 'dw-edge is-dead is-dangling');
-    const x2 = from.x + 46;
-    const y2 = from.y + LEVEL_GAP / 2;
-    const line = document.createElementNS(SVG_NS, 'line');
-    line.setAttribute('x1', String(from.x + NODE_R + 2));
-    line.setAttribute('y1', String(from.y + 10));
-    line.setAttribute('x2', String(x2));
-    line.setAttribute('y2', String(y2));
-    g.appendChild(line);
-    const text = document.createElementNS(SVG_NS, 'text');
-    text.setAttribute('class', 'dw-edge-label');
-    text.setAttribute('x', String(x2 + 4));
-    text.setAttribute('y', String(y2 - 4));
-    text.textContent = label;
-    g.appendChild(text);
-    return g;
-  }
-
-  private backfillNode(nodeId: number, value: number, kind: 'base-case' | 'dead-zero' | 'return'): void {
-    const g = this.nodeEls.get(nodeId);
-    if (!g) return;
-    g.classList.remove('is-base', 'is-dead', 'is-returned');
-    if (kind === 'base-case') g.classList.add('is-base');
-    else if (kind === 'dead-zero') g.classList.add('is-dead');
-    else g.classList.add('is-returned');
-    const valueText = g.querySelector('.dw-node-value');
-    if (valueText) valueText.textContent = String(value);
-  }
-
-  private highlightActiveNode(nodeId: number): void {
-    this.nodeEls.forEach((g) => g.classList.remove('is-active'));
-    if (nodeId >= 0) this.nodeEls.get(nodeId)?.classList.add('is-active');
-  }
-
-  /* ═══════════════════ 视图控制：缩放 / 平移 / 聚焦 ═══════════════════
-   * 视图变换在世界坐标上：viewBox 坐标 = world * viewScale + (viewX, viewY)
-   * 元素像素 = viewBox 坐标 × k，k = rect.width / treeWidth
-   */
-
-  private applyView(): void {
-    this.treeRoot?.setAttribute(
-      'transform',
-      `translate(${this.viewX}, ${this.viewY}) scale(${this.viewScale})`
-    );
-  }
-
-  /** 以画布中心为锚缩放 */
-  private zoomBy(factor: number): void {
-    const next = Math.min(3, Math.max(0.3, this.viewScale * factor));
-    const cx = this.treeWidth / 2;
-    const cy = this.treeHeight / 2;
-    const worldX = (cx - this.viewX) / this.viewScale;
-    const worldY = (cy - this.viewY) / this.viewScale;
-    this.viewScale = next;
-    this.viewX = cx - worldX * next;
-    this.viewY = cy - worldY * next;
-    this.applyView();
-  }
-
-  /** viewBox 像素换算基准：viewBox 单位 → 元素像素 */
-  private treeScaleBase(): number {
-    const rect = this.treeSvg?.getBoundingClientRect();
-    if (!rect || !this.treeWidth) return 1;
-    return rect.width / this.treeWidth;
-  }
-
-  private resetView(): void {
-    this.viewScale = 1;
-    this.viewX = 0;
-    this.viewY = 0;
-    this.applyView();
-  }
-
-  /** 聚焦当前活跃节点：居中并轻度放大 */
-  private focusCurrent(): void {
-    const step = this.recSteps[this.currentIndex];
-    const nd = step ? this.recNodes.get(step.nodeId) : undefined;
-    if (!nd) return;
-    this.viewScale = 1.15;
-    this.viewX = this.treeWidth / 2 - nd.x * this.viewScale;
-    this.viewY = this.treeHeight / 2 - nd.y * this.viewScale;
-    this.applyView();
-  }
-
-  /** 播放时若当前节点跑出画布中心区，自动平移跟随（不改缩放） */
-  private autoFollow(nodeId: number): void {
-    const nd = this.recNodes.get(nodeId);
-    if (!nd) return;
-    const vx = nd.x * this.viewScale + this.viewX;
-    const vy = nd.y * this.viewScale + this.viewY;
-    const margin = 90;
-    if (vx < margin || vx > this.treeWidth - margin || vy < margin || vy > this.treeHeight - margin) {
-      this.viewX = this.treeWidth / 2 - nd.x * this.viewScale;
-      this.viewY = this.treeHeight / 2 - nd.y * this.viewScale;
-      this.applyView();
-    }
-  }
-
-  private initPan(): void {
-    const svg = this.treeSvg;
-    if (!svg) return;
-    let dragging = false;
-    let lastX = 0;
-    let lastY = 0;
-    svg.addEventListener('pointerdown', (e) => {
-      dragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      svg.setPointerCapture(e.pointerId);
-    });
-    svg.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const k = this.treeScaleBase();
-      this.viewX += (e.clientX - lastX) / Math.max(k, 1e-6);
-      this.viewY += (e.clientY - lastY) / Math.max(k, 1e-6);
-      lastX = e.clientX;
-      lastY = e.clientY;
-      this.applyView();
-    });
-    const stop = (): void => {
-      dragging = false;
-    };
-    svg.addEventListener('pointerup', stop);
-    svg.addEventListener('pointercancel', stop);
-    svg.addEventListener(
-      'wheel',
-      (e) => {
-        e.preventDefault();
-        this.zoomBy(e.deltaY < 0 ? 1.1 : 0.9);
-      },
-      { passive: false }
-    );
-  }
-
-  /* ═══════════════════ DP 表渲染 ═══════════════════ */
-
-  private renderDpStep(step: DecodeDpStep): void {
-    if (this.statFilled) this.statFilled.textContent = `${step.filledCount}/${this.lastInput.length + 1}`;
-    if (this.dpFormulaEl) {
-      this.dpFormulaEl.textContent = step.formulaSubstituted || step.formula || '';
-    }
-    if (step.answer != null && this.answerEl) this.answerEl.textContent = String(step.answer);
-    this.renderDpTable(step);
-    this.renderDpBreakdown(step);
-  }
-
-  private renderDpTable(step: DecodeDpStep): void {
-    if (!this.dpCharsEl || !this.dpCellsEl) return;
-    const n = this.lastInput.length;
-
-    // 字符格（与 dp 格纵向对齐；dp[i] 对 s[i]，dp[n] 为边界空位）
-    if (this.dpCharsEl.children.length !== n + 1) {
-      this.dpCharsEl.innerHTML = '';
-      for (let i = 0; i <= n; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'dw-char-cell';
-        cell.dataset.idx = String(i);
-        this.dpCharsEl.appendChild(cell);
-      }
-      this.dpCellsEl.innerHTML = '';
-      for (let i = 0; i <= n; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'dw-dp-cell';
-        cell.dataset.idx = String(i);
-        cell.innerHTML = `<span class="dw-dp-idx">dp[${i}]</span><span class="dw-dp-val"></span>`;
-        this.dpCellsEl.appendChild(cell);
-      }
-    }
-    for (let i = 0; i <= n; i++) {
-      const charCell = this.dpCharsEl.children[i] as HTMLElement;
-      const isBoundary = i === n;
-      charCell.textContent = isBoundary ? '␃' : this.lastInput[i];
-      charCell.classList.toggle('is-zero', !isBoundary && this.lastInput[i] === '0');
-      charCell.classList.toggle('is-boundary', isBoundary);
-      charCell.classList.toggle('is-current', !isBoundary && i === step.i && step.type !== 'init' && step.type !== 'done');
-
-      const dpCell = this.dpCellsEl.children[i] as HTMLElement;
-      // 已填判定：filledCount > n - i（init 时仅 dp[n]，之后每步多填一格）
-      const filled = step.filledCount > n - i;
-      const valEl = dpCell.querySelector('.dw-dp-val') as HTMLElement;
-      valEl.textContent = filled ? String(step.dp[i]) : '';
-      dpCell.classList.toggle('is-zero', filled && step.dp[i] === 0 && i !== n);
-      dpCell.classList.toggle('is-current', i === step.i && step.type !== 'done');
-      dpCell.classList.toggle('is-dep', step.deps?.includes(i) ?? false);
-      dpCell.classList.toggle('is-answer', step.type === 'done' && i === 0);
-    }
-
-    this.drawDpArrows(step);
-  }
-
-  /** 依赖格 -> 当前格 的弧线箭头覆盖层 */
-  private drawDpArrows(step: DecodeDpStep): void {
-    if (!this.dpArrowsEl || !this.dpCellsEl) return;
-    const host = this.dpCellsEl;
-    this.dpArrowsEl.innerHTML = '';
-    if (step.type !== 'compute' && step.type !== 'zero') return;
-    const hostRect = host.getBoundingClientRect();
-    const target = host.children[step.i] as HTMLElement | undefined;
-    if (!target) return;
-    const targetRect = target.getBoundingClientRect();
-    const toX = targetRect.left - hostRect.left + targetRect.width / 2;
-    const toY = targetRect.top - hostRect.top + targetRect.height / 2;
-
-    (step.deps ?? []).forEach((depIdx, order) => {
-      const src = host.children[depIdx] as HTMLElement | undefined;
-      if (!src) return;
-      const srcRect = src.getBoundingClientRect();
-      const fromX = srcRect.left - hostRect.left + srcRect.width / 2;
-      const fromY = srcRect.top - hostRect.top + srcRect.height / 2;
-      const path = document.createElementNS(SVG_NS, 'path');
-      // 上弧：从依赖格上方绕到当前格上方
-      const lift = 34;
-      const d = `M ${fromX} ${fromY - 18} Q ${fromX} ${fromY - lift} ${(fromX + toX) / 2} ${fromY - lift} T ${toX} ${toY - 18}`;
-      path.setAttribute('d', d);
-      path.setAttribute('class', 'dw-dp-arrow' + (order === 1 ? ' is-two' : ''));
-      this.dpArrowsEl!.appendChild(path);
-    });
-  }
-
-  private renderDpBreakdown(step: DecodeDpStep): void {
-    if (!this.breakdownEl) return;
-    if (!step.branch1 || !step.branch2) {
-      this.breakdownEl.innerHTML = step.formulaSubstituted
-        ? `<div class="dw-bd-conclusion">${step.formulaSubstituted}</div>`
-        : '';
-      return;
-    }
-    const branch = (b: NonNullable<DecodeDpStep['branch1']>): string => `
-      <div class="dw-bd-branch${b.ok ? '' : ' is-grey'}">
-        <div class="dw-bd-title">${b.title}</div>
-        ${b.ok ? `<div class="dw-bd-formula">${b.formula}</div>` : `<div class="dw-bd-reason">✗ ${b.reason}</div>`}
-      </div>`;
-    this.breakdownEl.innerHTML = `
-      ${branch(step.branch1)}
-      ${branch(step.branch2)}
-      <div class="dw-bd-conclusion">dp[${step.i}] = <strong>${step.dp[step.i]}</strong></div>
-    `;
-  }
-
-  public destroy(): void {
-    this.nodeEls.clear();
-    this.recNodes.clear();
-    super.destroy();
-  }
+/** 递归模式画布步骤：附加节点表 + 累计边/回填/可见集 */
+export interface RecCanvasStep extends DecodeRecStep {
+  mode: 'rec';
+  nodeMap: Record<number, DecodeTreeNode>;
+  revealedIds: number[];
+  edgeList: Array<{ fromId: number; toId: number | null; label: string; dead: boolean }>;
+  backfills: Record<number, { value: number; kind: string }>;
+  metrics?: Record<string, string>;
 }
 
-registerAlgorithm({
+/** DP 模式画布步骤 */
+export interface DpCanvasStep extends DecodeDpStep {
+  mode: 'dp';
+  inputStr: string;
+  metrics?: Record<string, string>;
+}
+
+export type DwCanvasStep = RecCanvasStep | DpCanvasStep;
+
+function parseInput(inputs: Record<string, any>): string {
+  const raw = String(inputs.s ?? '226').trim();
+  return /^[0-9]{1,10}$/.test(raw) ? raw : '226';
+}
+
+/** 递归步骤后处理：把增量事件折算成每步的累计画布状态 */
+function withRecMetrics(steps: DecodeRecStep[], nodeMap: Record<number, DecodeTreeNode>): RecCanvasStep[] {
+  const revealedIds: number[] = [0];
+  const edgeList: RecCanvasStep['edgeList'] = [];
+  const backfills: RecCanvasStep['backfills'] = {};
+
+  return steps.map((st) => {
+    if (st.type === 'call' && st.newNode) {
+      if (!revealedIds.includes(st.nodeId)) revealedIds.push(st.nodeId);
+      if (st.edge && st.edge.fromId !== null && st.edge.fromId !== undefined) {
+        edgeList.push({ fromId: st.edge.fromId, toId: st.nodeId, label: st.edge.label, dead: st.edge.dead });
+      } else if (st.edge && st.edge.dead) {
+        edgeList.push({ fromId: st.nodeId, toId: null, label: st.edge.label, dead: true });
+      }
+    } else if (st.type === 'branch-2' && st.edge && st.edge.dead) {
+      edgeList.push({ fromId: st.nodeId, toId: null, label: st.edge.label, dead: true });
+    }
+
+    if ((st.type === 'base-case' || st.type === 'dead-zero' || st.type === 'return') && st.returnValue !== undefined) {
+      backfills[st.nodeId] = { value: st.returnValue, kind: st.type };
+    }
+
+    return {
+      ...st,
+      mode: 'rec' as const,
+      nodeMap,
+      revealedIds: [...revealedIds],
+      edgeList: edgeList.map((e) => ({ ...e })),
+      backfills: { ...backfills },
+      log: st.message,
+      metrics: {
+        calls: String(st.stats.calls),
+        repeats: String(st.stats.repeats),
+        'two-digit': String(st.stats.twoDigitHits),
+        answer: st.answer != null ? String(st.answer) : '—',
+      },
+    };
+  });
+}
+
+/** DP 步骤后处理 */
+function withDpMetrics(steps: DecodeDpStep[], inputStr: string): DpCanvasStep[] {
+  return steps.map((st) => ({
+    ...st,
+    mode: 'dp' as const,
+    inputStr,
+    log: st.message,
+    metrics: {
+      'cur-cell': `dp[${st.i}]`,
+      filled: `${st.filledCount} / ${inputStr.length + 1}`,
+      formula: st.formulaSubstituted || st.formula || '—',
+      answer: st.answer != null ? String(st.answer) : '—',
+    },
+  }));
+}
+
+/* ═══════════════════ 递归树全量重绘 ═══════════════════ */
+
+function renderRecCanvas(container: HTMLElement, step: RecCanvasStep): void {
+  const nodes = step.revealedIds
+    .slice()
+    .sort((a, b) => a - b)
+    .map((id) => step.nodeMap[id])
+    .filter(Boolean);
+
+  if (nodes.length === 0) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">无节点</div>';
+    return;
+  }
+
+  const maxX = Math.max(...nodes.map((nd) => nd.x), 200);
+  const maxY = Math.max(...nodes.map((nd) => nd.y), 200);
+  const svgW = maxX + 80;
+  const svgH = maxY + 80;
+
+  // 边（先画边再画节点，边在节点下层）
+  const edgesSvg = step.edgeList
+    .map((e) => {
+      const from = step.nodeMap[e.fromId];
+      if (!from) return '';
+      if (e.toId !== null) {
+        const to = step.nodeMap[e.toId];
+        if (!to) return '';
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const x1 = from.x + (dx / dist) * (NODE_R + 2);
+        const y1 = from.y + (dy / dist) * (NODE_R + 2);
+        const x2 = to.x - (dx / dist) * (NODE_R + 4);
+        const y2 = to.y - (dy / dist) * (NODE_R + 4);
+        const lineStyle = e.dead
+          ? 'stroke: rgba(251,113,133,0.55); stroke-dasharray: 5 4;'
+          : 'stroke: rgba(148,163,255,0.45); stroke-width: 1.8;';
+        const label = e.label
+          ? `<text x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle" style="fill: ${e.dead ? '#fda4af' : '#a5b4fc'}; font-size: 10.5px; font-family: ui-monospace, monospace; paint-order: stroke; stroke: rgba(17,15,38,0.9); stroke-width: 3px; pointer-events: none;">${e.label}</text>`
+          : '';
+        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="${lineStyle}" />${label}`;
+      }
+      // 悬挂死边
+      const x2 = from.x + 46;
+      const y2 = from.y + LEVEL_GAP / 2;
+      return `<line x1="${from.x + NODE_R + 2}" y1="${from.y + 10}" x2="${x2}" y2="${y2}" style="stroke: rgba(251,113,133,0.55); stroke-dasharray: 5 4;" /><text x="${x2 + 4}" y="${y2 - 4}" style="fill: #fda4af; font-size: 10.5px; font-family: ui-monospace, monospace; paint-order: stroke; stroke: rgba(17,15,38,0.9); stroke-width: 3px; pointer-events: none;">${e.label}</text>`;
+    })
+    .join('');
+
+  // 节点
+  const nodesSvg = nodes
+    .map((nd) => {
+      const bf = step.backfills[nd.id];
+      const isActive = nd.id === step.nodeId;
+
+      let circleStyle = 'fill: rgba(99,102,241,0.14); stroke: #818cf8; stroke-width: 2;';
+      let labelFill = '#c7d2fe';
+      if (nd.isRepeated) {
+        circleStyle = 'fill: rgba(99,102,241,0.14); stroke: #fbbf24; stroke-width: 2; stroke-dasharray: 4 3;';
+        labelFill = '#fcd34d';
+      }
+      if (bf?.kind === 'base-case') circleStyle = 'fill: rgba(167,243,208,0.28); stroke: #6ee7b7; stroke-width: 2;';
+      else if (bf?.kind === 'dead-zero') {
+        circleStyle = 'fill: rgba(244,63,94,0.25); stroke: #fb7185; stroke-width: 2;';
+        labelFill = '#fda4af';
+      } else if (bf?.kind === 'return') circleStyle = 'fill: rgba(52,211,153,0.22); stroke: #34d399; stroke-width: 2;';
+      if (isActive) circleStyle += ' stroke: #f0abfc; stroke-width: 3;';
+
+      const ringSvg = isActive
+        ? `<circle cx="${nd.x}" cy="${nd.y}" r="${NODE_R + 1}" fill="none" stroke="#f0abfc" stroke-width="2.5" stroke-dasharray="4,3" />`
+        : '';
+
+      return `
+        <g>
+          ${ringSvg}
+          <circle cx="${nd.x}" cy="${nd.y}" r="${NODE_R}" style="${circleStyle}" />
+          <text x="${nd.x}" y="${nd.y + 5}" text-anchor="middle" style="fill: ${labelFill}; font-size: 12px; font-weight: 700; font-family: ui-monospace, monospace; pointer-events: none;">f(${nd.i})</text>
+          <text x="${nd.x}" y="${nd.y - NODE_R - 8}" text-anchor="middle" style="fill: #6ee7b7; font-size: 13px; font-weight: 800; font-family: ui-monospace, monospace; pointer-events: none;">${bf ? bf.value : ''}</text>
+        </g>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; overflow: hidden;">
+      <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%;">
+        ${edgesSvg}
+        ${nodesSvg}
+      </svg>
+    </div>
+  `;
+}
+
+/* ═══════════════════ DP 表全量重绘 ═══════════════════ */
+
+function renderDpCanvas(container: HTMLElement, step: DpCanvasStep): void {
+  const n = step.inputStr.length;
+  let fontSize = '11px';
+
+  // 字符格（dp[i] 对 s[i]，dp[n] 为边界空位）
+  const charsHtml = Array.from({ length: n + 1 }, (_, i) => {
+    const isBoundary = i === n;
+    const isZero = !isBoundary && step.inputStr[i] === '0';
+    const isCurrent = !isBoundary && i === step.i && step.type !== 'init' && step.type !== 'done';
+
+    let bg = 'rgba(99,102,241,0.14)';
+    let border = 'rgba(148,163,255,0.3)';
+    let color = '#c7d2fe';
+    let boxShadow = 'none';
+    if (isZero) {
+      bg = 'rgba(244,63,94,0.18)';
+      border = 'rgba(251,113,133,0.6)';
+      color = '#fda4af';
+    } else if (isBoundary) {
+      bg = 'rgba(52,211,153,0.12)';
+      border = 'rgba(52,211,153,0.4)';
+      color = '#6ee7b7';
+      fontSize = '13px';
+    }
+    if (isCurrent) {
+      border = '#f0abfc';
+      boxShadow = '0 0 0 3px rgba(240,171,252,0.2)';
+    }
+
+    return `
+      <div class="dw-char-cell" data-idx="${i}" style="min-width: 40px; height: 44px; border-radius: 10px; background: ${bg}; border: 1px solid ${border}; color: ${color}; display: flex; align-items: center; justify-content: center; font-family: ui-monospace, monospace; font-size: ${fontSize}; font-weight: 700; box-shadow: ${boxShadow}; transition: all 0.2s;">${isBoundary ? '␃' : step.inputStr[i]}</div>
+    `;
+  }).join('');
+
+  // dp 格
+  const cellsHtml = Array.from({ length: n + 1 }, (_, i) => {
+    const filled = step.filledCount > n - i;
+    const isCurrent = i === step.i && step.type !== 'done';
+    const isDep = step.deps?.includes(i) ?? false;
+    const isZero = filled && step.dp[i] === 0 && i !== n;
+    const isAnswer = step.type === 'done' && i === 0;
+
+    let bg = 'rgba(10,10,30,0.5)';
+    let border = 'rgba(148,163,255,0.22)';
+    let valColor = '#c7d2fe';
+    let transform = 'none';
+    let boxShadow = 'none';
+    if (isDep) {
+      border = '#fbbf24';
+      bg = 'rgba(251,191,36,0.1)';
+      valColor = '#fcd34d';
+    }
+    if (isZero) valColor = '#fb7185';
+    if (isCurrent) {
+      border = '#f0abfc';
+      bg = 'rgba(240,171,252,0.12)';
+      transform = 'translateY(-2px)';
+      boxShadow = '0 4px 14px rgba(240,171,252,0.25)';
+    }
+    if (isAnswer) {
+      border = '#34d399';
+      bg = 'rgba(52,211,153,0.15)';
+      boxShadow = '0 0 16px rgba(52,211,153,0.3)';
+    }
+
+    return `
+      <div class="dw-dp-cell" data-idx="${i}" style="min-width: 56px; height: 62px; border-radius: 10px; background: ${bg}; border: 1px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-family: ui-monospace, monospace; transform: ${transform}; box-shadow: ${boxShadow}; transition: all 0.2s; box-sizing: border-box;">
+        <span style="font-size: 9px; color: #a5b4fc; font-weight: 700;">dp[${i}]</span>
+        <span class="dw-dp-val" style="font-size: 14px; font-weight: 800; color: ${valColor};">${filled ? step.dp[i] : ''}</span>
+      </div>
+    `;
+  }).join('');
+
+  const formula = step.formulaSubstituted || step.formula || '';
+
+  // 决策拆解卡片
+  const branch = (b: NonNullable<DecodeDpStep['branch1']>): string => {
+    const grey = b.ok ? '' : 'opacity: 0.55;';
+    const body = b.ok
+      ? `<div style="font-size: 11px; color: #c7d2fe; font-family: ui-monospace, monospace;">${b.formula ?? ''}</div>`
+      : `<div style="font-size: 10.5px; color: #fda4af; font-weight: 700;">✗ ${b.reason ?? ''}</div>`;
+    return `
+      <div style="flex: 1; border: 1px solid rgba(148,163,255,0.22); border-radius: 10px; padding: 8px 10px; background: rgba(10,10,30,0.5); ${grey}">
+        <div style="font-size: 10.5px; font-weight: 800; color: #818cf8; margin-bottom: 4px;">${b.title}</div>
+        ${body}
+      </div>
+    `;
+  };
+  const breakdownHtml =
+    step.branch1 && step.branch2
+      ? `${branch(step.branch1)}${branch(step.branch2)}<div style="font-size: 12px; color: #6ee7b7; font-family: ui-monospace, monospace; font-weight: 800; text-align: center;">dp[${step.i}] = <strong>${step.dp[step.i]}</strong></div>`
+      : formula
+        ? `<div style="font-size: 11.5px; color: #c7d2fe; font-family: ui-monospace, monospace; text-align: center;">${formula}</div>`
+        : '';
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 14px; box-sizing: border-box; overflow-y: auto; position: relative;">
+      <div class="dw-chars-row" style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">${charsHtml}</div>
+      <div class="dw-cells-row" style="display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; position: relative;">${cellsHtml}</div>
+      <div style="display: flex; gap: 8px; align-items: stretch;">${breakdownHtml}</div>
+    </div>
+  `;
+
+  // 依赖弧线箭头覆盖层（compute/zero 步骤）
+  if (step.type !== 'compute' && step.type !== 'zero') return;
+  const host = container.querySelector<HTMLElement>('.dw-cells-row');
+  if (!host) return;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.position = 'absolute';
+  svg.style.inset = '0';
+  svg.style.pointerEvents = 'none';
+  svg.style.overflow = 'visible';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'dw-arrow-head');
+  marker.setAttribute('viewBox', '0 0 10 10');
+  marker.setAttribute('refX', '8');
+  marker.setAttribute('refY', '5');
+  marker.setAttribute('markerWidth', '6');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('orient', 'auto-start-reverse');
+  const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+  arrowPath.setAttribute('fill', '#fbbf24');
+  marker.appendChild(arrowPath);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+  host.appendChild(svg);
+
+  const hostRect = host.getBoundingClientRect();
+  const target = host.querySelector<HTMLElement>(`.dw-dp-cell[data-idx="${step.i}"]`);
+  if (!target) return;
+  const targetRect = target.getBoundingClientRect();
+  const toX = targetRect.left - hostRect.left + targetRect.width / 2;
+  const toY = targetRect.top - hostRect.top + targetRect.height / 2;
+
+  (step.deps ?? []).forEach((depIdx, order) => {
+    const src = host.querySelector<HTMLElement>(`.dw-dp-cell[data-idx="${depIdx}"]`);
+    if (!src) return;
+    const srcRect = src.getBoundingClientRect();
+    const fromX = srcRect.left - hostRect.left + srcRect.width / 2;
+    const fromY = srcRect.top - hostRect.top + srcRect.height / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const lift = 34;
+    const d = `M ${fromX} ${fromY - 18} Q ${fromX} ${fromY - lift} ${(fromX + toX) / 2} ${fromY - lift} T ${toX} ${toY - 18}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', order === 1 ? '#f0abfc' : '#fbbf24');
+    path.setAttribute('stroke-width', '2.2');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('marker-end', 'url(#dw-arrow-head)');
+    svg.appendChild(path);
+  });
+}
+
+/** 主视觉分发：按步骤 mode 渲染递归树 / DP 表 */
+export function renderDecodeWaysCanvas(container: HTMLElement, step: DwCanvasStep): void {
+  if (step.mode === 'dp') renderDpCanvas(container, step);
+  else renderRecCanvas(container, step);
+}
+
+registerDeclarativeAlgorithm<DwCanvasStep>({
   id: 'decode-ways',
   name: '数字串翻译方案数（解码方法）',
-  viewId: 'algo-decode-ways-view',
   category: 'dynamic-programming',
   description: 'LeetCode 91 双模式演示：递归树展开 vs 一维 DP 从右往左填表',
   icon: '🔓',
-  template,
-  Visualizer: DecodeWaysVisualizer,
   difficulty: 2,
   levelOrder: 3,
   learningGoal: '掌握 s[i]==0 与两位 ≤26 的分支取舍，理解暴力递归到 DP 的演化',
+  modes: [
+    { id: 'rec', label: '🌳 模式一 · 递归树展开' },
+    { id: 'dp', label: '📊 模式二 · DP 迭代填表' },
+  ],
+  stages: [
+    {
+      id: 'main',
+      name: '解码方法',
+      shortName: '双模式',
+      codeLanguages: { java: REC_JAVA_CODE },
+      modeCodeLanguages: {
+        rec: { java: REC_JAVA_CODE },
+        dp: { java: DP_JAVA_CODE },
+      },
+    },
+  ],
+  inputs: [
+    {
+      id: 's',
+      label: '数字串 (1~10 位)',
+      type: 'text',
+      defaultValue: '226',
+      placeholder: '仅数字字符',
+    },
+  ],
+  presets: [
+    { label: '示例 1 (5 种)', values: { s: '226' } },
+    { label: '示例 2 (2 种)', values: { s: '11106' } },
+    { label: '无解 (0 种)', values: { s: '06' } },
+    { label: '单字符边界', values: { s: '10' } },
+  ],
+  metrics: [
+    { id: 'calls', label: '递归调用数', color: '#818cf8' },
+    { id: 'repeats', label: '重复子问题', color: '#fbbf24' },
+    { id: 'two-digit', label: '两位命中', color: '#a855f7' },
+    { id: 'filled', label: '已填格数', color: '#34d399' },
+    { id: 'answer', label: '翻译方案数', color: '#6ee7b7' },
+  ],
+  legend: [
+    { label: '重复子问题', color: '#fbbf24' },
+    { label: '已回填返回值', color: '#34d399' },
+    { label: '死路 (0 方案)', color: '#fb7185' },
+  ],
+  generateSteps: (inputs, mode) => {
+    const raw = parseInput(inputs);
+    if (mode === 'dp') return withDpMetrics(buildDpSteps(raw).steps, raw);
+    const { steps, nodes } = buildRecursiveSteps(raw);
+    const nodeMap: Record<number, DecodeTreeNode> = {};
+    nodes.forEach((nd) => {
+      nodeMap[nd.id] = nd;
+    });
+    return withRecMetrics(steps, nodeMap);
+  },
+  renderCanvas: (container, step) => renderDecodeWaysCanvas(container, step as DwCanvasStep),
 });

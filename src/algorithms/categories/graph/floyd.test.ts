@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  FloydVisualizer,
-  buildFloydSteps,
-} from './floyd-renderer';
+import { buildFloydSteps } from './floyd-renderer';
 import { FLOYD_CODE_LANGUAGES } from './floyd-problem-content';
 
 describe('FloydWarshall (LeftChengYun Class 061)', () => {
-  it('should instantiate FloydVisualizer properly', () => {
-    const viz = new FloydVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildFloydSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

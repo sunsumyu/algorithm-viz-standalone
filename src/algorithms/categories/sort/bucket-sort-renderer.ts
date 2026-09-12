@@ -1,17 +1,15 @@
 /**
- * 桶排序可视化器 — 4-Card 标准现代架构
+ * 桶排序可视化器 — 声明式 4-Card 标准架构
  * 极值范围划分、区间分桶映射、桶内单独排序、顺序归拢回填
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BUCKET_SORT_PROBLEM_HTML,
   BUCKET_SORT_ANALYSIS_HTML,
   BUCKET_SORT_CODE_LANGUAGES,
 } from './bucket-sort-problem-content';
 import { parseArray } from './bubble-sort-renderer';
-import template from './bucket-sort.html?raw';
 
 export interface BucketStep {
   array: (number | null)[];
@@ -27,6 +25,7 @@ export interface BucketStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function bucketSortSteps(input: number[], bucketCount = 5): BucketStep[] {
@@ -183,164 +182,125 @@ export function bucketSortSteps(input: number[], bucketCount = 5): BucketStep[] 
   return steps;
 }
 
-export class BucketSortVisualizer extends StepVisualizer<BucketStep> {
-  protected codeLanguages = BUCKET_SORT_CODE_LANGUAGES;
-  protected codeLines = BUCKET_SORT_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '桶排序 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BucketStep[]): BucketStep[] {
+  return steps.map((s) => {
+    let action = 'bIdx = (val - min) * (k - 1) / (max - min)';
+    if (s.phase === 'scatter') {
+      action = `bIdx = (${s.activeElem} - ${s.minVal}) * ${s.bucketCount - 1} / ${s.maxVal - s.minVal} = ${s.activeBucket}`;
+    } else if (s.phase === 'sort-buckets') action = 'sort(bucket[0..k-1]) 桶内排序';
+    else if (s.phase === 'gather') action = `arr[${s.gatherCount - 1}] = ${s.activeElem} (来自桶 [${s.activeBucket}])`;
+    else if (s.phase === 'done') action = '桶排序完成';
 
-  private bucketsRowEl: HTMLElement | null = null;
-  private mainTrackEl: HTMLElement | null = null;
-  private metricRangeEl: HTMLElement | null = null;
-  private metricBucketCountEl: HTMLElement | null = null;
-  private metricCurElemEl: HTMLElement | null = null;
-  private metricGatherCountEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.bucketsRowEl = this.root.querySelector('#bks-buckets-row');
-    this.mainTrackEl = this.root.querySelector('#bks-main-track');
-    this.metricRangeEl = this.root.querySelector('#metric-range');
-    this.metricBucketCountEl = this.root.querySelector('#metric-bucket-count');
-    this.metricCurElemEl = this.root.querySelector('#metric-cur-elem');
-    this.metricGatherCountEl = this.root.querySelector('#metric-gather-count');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#bks-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.bks-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-        if (arrInput && btn.dataset.arr) arrInput.value = btn.dataset.arr;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BUCKET_SORT_PROBLEM_HTML,
-      analysisHtml: BUCKET_SORT_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BucketStep[] {
-    const arrInput = this.root?.querySelector('#input-array') as HTMLInputElement | null;
-    const raw = arrInput?.value || '29, 25, 3, 49, 9, 37, 21, 43';
-    const arr = parseArray(raw);
-    return bucketSortSteps(arr, 5);
-  }
-
-  protected renderStep(step: BucketStep): void {
-    const { array, buckets, minVal, maxVal, bucketCount, activeBucket, activeElem, gatherCount, phase, message } = step;
-
-    // 1. 渲染 5 个桶容器
-    if (this.bucketsRowEl) {
-      this.bucketsRowEl.innerHTML = buckets
-        .map((items, bIdx) => {
-          const isActive = bIdx === activeBucket && phase !== 'done';
-          const itemsHtml = items
-            .map((item) => `<span class="bks-item-tag">${item}</span>`)
-            .join('');
-
-          return `
-            <div class="bks-bucket-box ${isActive ? 'is-active-bucket' : ''}">
-              <div class="bks-bucket-head">Bucket [${bIdx}]</div>
-              <div class="bks-bucket-items">${itemsHtml || '<span style="font-size:9px;color:#94a3b8;">(空)</span>'}</div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染主数组
-    if (this.mainTrackEl) {
-      this.mainTrackEl.innerHTML = array
-        .map((val, idx) => {
-          const isGathered = val !== null && (phase === 'gather' || phase === 'done');
-          const isActiveElem = idx === gatherCount - 1 && phase === 'gather';
-
-          let cellClass = 'bks-cell-box';
-          if (isActiveElem) cellClass += ' is-active-elem';
-          else if (isGathered) cellClass += ' is-gathered';
-
-          return `
-            <div class="${cellClass}">
-              <span class="val">${val !== null ? val : '—'}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricRangeEl) this.metricRangeEl.textContent = `[${minVal}, ${maxVal}]`;
-    if (this.metricBucketCountEl) this.metricBucketCountEl.textContent = `${bucketCount}`;
-    if (this.metricCurElemEl) this.metricCurElemEl.textContent = activeElem !== null ? `${activeElem}` : '—';
-    if (this.metricGatherCountEl) this.metricGatherCountEl.textContent = `${gatherCount} / ${array.length}`;
-
-    if (this.formulaActionEl) {
-      if (phase === 'scatter') {
-        this.formulaActionEl.textContent = `bIdx = (${activeElem} - ${minVal}) * ${bucketCount - 1} / ${maxVal - minVal} = ${activeBucket}`;
-      } else if (phase === 'sort-buckets') {
-        this.formulaActionEl.textContent = 'sort(bucket[0..k-1]) 桶内排序';
-      } else if (phase === 'gather') {
-        this.formulaActionEl.textContent = `arr[${gatherCount - 1}] = ${activeElem} (来自桶 [${activeBucket}])`;
-      } else if (phase === 'done') {
-        this.formulaActionEl.textContent = '桶排序完成';
-      } else {
-        this.formulaActionEl.textContent = 'bIdx = (val - min) * (k - 1) / (max - min)';
-      }
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = message;
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let bg =
-          st.phase === 'done' ? '#f0fdf4' : st.phase === 'gather' ? '#faf5ff' : '#eff6ff';
-        let color =
-          st.phase === 'done' ? '#15803d' : st.phase === 'gather' ? '#7e22ce' : '#1d4ed8';
-        let border =
-          st.phase === 'done' ? '#bbf7d0' : st.phase === 'gather' ? '#e9d5ff' : '#bfdbfe';
-        return `<div style="padding: 4px 8px; border-radius: 6px; background: ${bg}; color: ${color}; border: 1px solid ${border}; margin-bottom: 4px;">
-          <span style="color:#94a3b8;">[Step ${idx + 1}]</span> ${st.log}
-        </div>`;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.currentIndex + 1} 条记录`;
-      }
-    }
-
-    const badgeRange = this.root?.querySelector('#badge-range');
-    if (badgeRange) badgeRange.textContent = `值域: [${minVal}..${maxVal}]`;
-  }
+    return {
+      ...s,
+      metrics: {
+        range: `[${s.minVal}, ${s.maxVal}]`,
+        'bucket-count': String(s.bucketCount),
+        'cur-elem': s.activeElem !== null ? `${s.activeElem}` : '—',
+        'gather-count': `${s.gatherCount} / ${s.array.length}`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderBucketSortCanvas(container: HTMLElement, step: BucketStep): void {
+  const { array, buckets, activeBucket, gatherCount, phase } = step;
+
+  const bucketsHtml = buckets
+    .map((items, bIdx) => {
+      const isActive = bIdx === activeBucket && phase !== 'done';
+      const itemsHtml = items
+        .map((item) => `<span style="padding: 2px 6px; border-radius: 4px; background: ${isActive ? '#eff6ff' : '#f1f5f9'}; border: 1px solid ${isActive ? '#3b82f6' : '#cbd5e1'}; color: ${isActive ? '#1d4ed8' : '#334155'}; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;">${item}</span>`)
+        .join('');
+
+      return `
+        <div style="flex: 1; min-height: 56px; border-radius: 8px; background: ${isActive ? '#eff6ff' : '#ffffff'}; border: 1.5px solid ${isActive ? '#3b82f6' : '#cbd5e1'}; display: flex; flex-direction: column; padding: 4px; gap: 4px; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
+          <div style="font-size: 9.5px; font-weight: 800; color: #64748b; text-align: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 2px;">Bucket [${bIdx}]</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 3px; align-items: center; justify-content: center; flex: 1;">${itemsHtml || '<span style="font-size:9px;color:#94a3b8;">(空)</span>'}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  const mainHtml = array
+    .map((val, idx) => {
+      const isGathered = val !== null && (phase === 'gather' || phase === 'done');
+      const isActiveElem = idx === gatherCount - 1 && phase === 'gather';
+
+      let bg = '#ffffff';
+      let border = '#cbd5e1';
+      let color = '#0f172a';
+      if (isActiveElem) {
+        bg = '#eff6ff';
+        border = '#3b82f6';
+        color = '#1d4ed8';
+      } else if (isGathered) {
+        bg = '#f0fdf4';
+        border = '#22c55e';
+        color = '#15803d';
+      }
+
+      return `
+        <div style="min-width: 32px; height: 32px; padding: 0 4px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 800; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-sizing: border-box;">${val !== null ? val : '—'}</div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: 16px 12px; box-sizing: border-box; overflow-y: auto;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">分桶容器 (值域线性映射):</div>
+        <div style="display: flex; align-items: stretch; justify-content: center; gap: 8px; width: 100%;">${bucketsHtml}</div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; font-weight: 700; color: #64748b;">主数组 arr (归拢回填):</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; flex-wrap: wrap;">${mainHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'bucket-sort',
   name: '桶排序',
-  viewId: 'algo-bucket-sort-view',
   category: 'sort',
   description: '逐步演示桶排序：区间映射分流、桶内独立排序、顺序归拢回填',
   icon: '🪣',
   difficulty: 2,
   levelOrder: 9,
   learningGoal: '掌握分桶映射思想、数据局部有序化与归拢还原过程',
-  template,
-  Visualizer: BucketSortVisualizer,
+  inputs: [
+    {
+      id: 'array',
+      label: '输入数组',
+      type: 'text',
+      defaultValue: '29, 25, 3, 49, 9, 37, 21, 43',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { array: '29, 25, 3, 49, 9, 37, 21, 43' } },
+    { label: '均匀分布', values: { array: '10, 20, 30, 40, 50, 60, 70' } },
+    { label: '聚集分布', values: { array: '1, 2, 3, 48, 49, 50, 25' } },
+    { label: '含重复元素', values: { array: '5, 3, 5, 1, 3, 5' } },
+  ],
+  metrics: [
+    { id: 'range', label: '值域范围', color: '#2563eb' },
+    { id: 'bucket-count', label: '桶数量 k', color: '#0f172a' },
+    { id: 'cur-elem', label: '当前元素', color: '#3b82f6' },
+    { id: 'gather-count', label: '已归拢 / 总数', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前分发', color: '#3b82f6' },
+    { label: '已归拢回填', color: '#22c55e' },
+  ],
+  codeLanguages: BUCKET_SORT_CODE_LANGUAGES,
+  problemHtml: BUCKET_SORT_PROBLEM_HTML,
+  analysisHtml: BUCKET_SORT_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(bucketSortSteps(parseArray(String(inputs.array ?? '29, 25, 3, 49, 9, 37, 21, 43')), 5)),
+  renderCanvas: (container, step) => renderBucketSortCanvas(container, step as BucketStep),
 });

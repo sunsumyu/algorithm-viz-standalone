@@ -4,16 +4,7 @@
  * 核心：全循环枚举 + used[] 树枝去重标记
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -27,7 +18,6 @@ import {
   PERMUTATION_ANALYSIS_HTML,
   PERMUTATION_CODE_LANGUAGES,
 } from './permutation-problem-content';
-import template from './permutation.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
 export function buildPermutationTree(nums: number[]): BacktrackTreeNode {
@@ -268,196 +258,75 @@ export function buildPermutationSteps(nums: number[]): BacktrackTreeStep[] {
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class PermutationVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLanguages = PERMUTATION_CODE_LANGUAGES;
-  protected codeLines = PERMUTATION_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '全排列 代码调试';
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private usedMonitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#permutation-tree-display');
-    this.pathStackContainer = this.root.querySelector('#pm-path-stack-container');
-    this.usedMonitorContainer = this.root.querySelector('#pm-used-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#pm-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.pm-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        if (numsEl) numsEl.value = btn.dataset.nums || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: PERMUTATION_PROBLEM_HTML,
-      analysisHtml: PERMUTATION_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const rawNums = (numsEl?.value || '1,2,3')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
-    if (nums.length > 4) nums.length = 4; // 防止 N! 爆炸
-
-    const steps = buildPermutationSteps(nums);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((st, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (st.message.includes('做选择')) type = 'push';
-      else if (st.message.includes('回溯撤销')) type = 'pop';
-      else if (st.message.includes('收集排列方案')) type = 'collect';
-      else if (st.message.includes('跳过')) type = 'prune';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: st.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const index = this.currentIndex;
-
-    // 1. 渲染 SVG 决策树沙盘
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'pm',
-        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
-      });
-    }
-
-    // 2. 渲染当前路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
-    }
-
-    // 3. 渲染 used[] 状态监视器 (Card 2 Center)
-    if (this.usedMonitorContainer) {
-      const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-      const rawNums = (numsEl?.value || '1,2,3')
-        .split(/[,，\s]+/)
-        .map((s) => parseInt(s.trim(), 10))
-        .filter((n) => !isNaN(n));
-      const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
-      const curPath = (step.path || []) as number[];
-
-      const cardsHtml = nums
-        .map((num, i) => {
-          const isUsed = curPath.includes(num);
-          return `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 8px; background: ${isUsed ? '#eff6ff' : '#f8fafc'}; border: 1px solid ${isUsed ? '#3b82f6' : '#e2e8f0'}; min-width: 44px;">
-              <span style="font-size: 11px; font-weight: 800; color: ${isUsed ? '#2563eb' : '#0f172a'}; font-family: monospace;">nums[${i}]=${num}</span>
-              <span style="font-size: 9.5px; font-weight: 700; color: ${isUsed ? '#2563eb' : '#94a3b8'};">${isUsed ? 'used: TRUE' : 'FALSE'}</span>
-            </div>
-          `;
-        })
-        .join('');
-
-      this.usedMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            ${cardsHtml}
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 树枝去重: <code style="color:#b45309; font-family:monospace;">if (used[i]) continue</code></div>
-            <div>• 递归与撤销: <code style="color:#b45309; font-family:monospace;">used[i]=true &rarr; dfs &rarr; used[i]=false</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染实时解集箱 (Card 2 Bottom)
-    const solutionsUpToNow: Array<Array<number | string>> = [];
-    for (let i = 0; i <= index; i++) {
-      const st = this.steps[i];
-      if (st.message.includes('收集排列方案')) {
-        solutionsUpToNow.push([...st.path]);
-      }
-    }
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        solutionsUpToNow,
-        -1,
-        (solIdx: number) => {
-          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
-            if (
-              this.steps[stepIdx].message.includes('收集排列方案') &&
-              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
-            ) {
-              this.goToStep(stepIdx);
-              break;
-            }
-          }
-        }
-      );
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-result-count');
-    if (badgeCount) {
-      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BacktrackTreeStep[]): BacktrackTreeStep[] {
+  return steps.map((s) => ({
+    ...s,
+    log: s.message,
+    metrics: {
+      path: (s.path || []).length ? `[${(s.path || []).join(' → ')}]` : '[]',
+      visited: String(s.visitedNodeIds.length),
+      results: String(s.foundPathIds.length),
+      pruned: String(s.prunedNodeIds.length),
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：SVG 决策树沙盘（backtracking-tree-helper 自注入样式） */
+export function renderPermutationCanvas(container: HTMLElement, step: BacktrackTreeStep): void {
+  renderBacktrackTree({
+    container,
+    step,
+    cssPrefix: 'pm',
+    nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
+  });
+}
+
+registerDeclarativeAlgorithm({
   id: 'permutation',
   name: '全排列',
-  viewId: 'algo-permutation-view',
   category: 'backtracking',
   description: '无重复元素全排列，used 数组树枝标记与全循环回溯',
   icon: '🔀',
-  template,
-  Visualizer: PermutationVisualizer,
   difficulty: 2,
   levelOrder: 12,
   learningGoal: '掌握排列问题中从 0 开始的全局循环与 used[] 树枝去重标记机制',
+  inputs: [
+    {
+      id: 'nums',
+      label: '输入数组（无重复）',
+      type: 'text',
+      defaultValue: '1,2,3',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '1,2,3', values: { nums: '1,2,3' } },
+    { label: '1,2', values: { nums: '1,2' } },
+    { label: '1,2,3,4', values: { nums: '1,2,3,4' } },
+  ],
+  metrics: [
+    { id: 'path', label: '当前路径', color: '#2563eb' },
+    { id: 'visited', label: '已访问节点', color: '#a855f7' },
+    { id: 'results', label: '已收集排列', color: '#10b981' },
+    { id: 'pruned', label: '剪枝次数', color: '#ef4444' },
+  ],
+  legend: [
+    { label: '当前节点', color: '#2563eb' },
+    { label: '已访问', color: '#a855f7' },
+    { label: '收集方案', color: '#10b981' },
+    { label: '剪枝', color: '#ef4444' },
+  ],
+  codeLanguages: PERMUTATION_CODE_LANGUAGES,
+  problemHtml: PERMUTATION_PROBLEM_HTML,
+  analysisHtml: PERMUTATION_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums = String(inputs.nums ?? '1,2,3')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    return withMetrics(buildPermutationSteps(nums.length ? nums : [1, 2, 3]));
+  },
+  renderCanvas: (container, step) => renderPermutationCanvas(container, step as BacktrackTreeStep),
 });

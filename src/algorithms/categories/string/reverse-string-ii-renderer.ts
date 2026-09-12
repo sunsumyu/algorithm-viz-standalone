@@ -1,20 +1,14 @@
 /**
- * 反转字符串 II 可视化器 — 4-Card 标准现代架构
+ * 反转字符串 II 可视化器 — 声明式 4-Card 标准架构
  * LeetCode 541：每 2k 步长反转前 k 个字符
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   REVERSE_STRING_II_PROBLEM_HTML,
   REVERSE_STRING_II_ANALYSIS_HTML,
   REVERSE_STRING_II_CODE_LANGUAGES,
 } from './reverse-string-ii-problem-content';
-import template from './reverse-string-ii.html?raw';
 
 export interface ReverseStringIIStep {
   s: string[];
@@ -31,6 +25,7 @@ export interface ReverseStringIIStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildReverseStringIISteps(inputStr: string, k: number): ReverseStringIIStep[] {
@@ -127,189 +122,145 @@ export function buildReverseStringIISteps(inputStr: string, k: number): ReverseS
   return steps;
 }
 
-export class ReverseStringIIVisualizer extends StepVisualizer<ReverseStringIIStep> {
-  protected codeLanguages = REVERSE_STRING_II_CODE_LANGUAGES;
-  protected codeLines = REVERSE_STRING_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '反转字符串 II 代码调试';
-
-  private trackRowEl: HTMLElement | null = null;
-  private metricIEl: HTMLElement | null = null;
-  private metricWindowEl: HTMLElement | null = null;
-  private metricKEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private formulaBoundEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rs2-track-row');
-    this.metricIEl = this.root.querySelector('#metric-i');
-    this.metricWindowEl = this.root.querySelector('#metric-window');
-    this.metricKEl = this.root.querySelector('#metric-k');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.formulaBoundEl = this.root.querySelector('#formula-bound');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rs2-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        if (kInput && btn.dataset.k) kInput.value = btn.dataset.k;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: REVERSE_STRING_II_PROBLEM_HTML,
-      analysisHtml: REVERSE_STRING_II_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): ReverseStringIIStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-    const str = sInput?.value || 'abcdefg';
-    const k = parseInt(kInput?.value || '2', 10);
-    return buildReverseStringIISteps(str, isNaN(k) || k <= 0 ? 2 : k);
-  }
-
-  protected renderStep(step: ReverseStringIIStep): void {
-    const { s, i, k, chunkEnd, windowStart, windowEnd, left, right, swapping, phase, message } = step;
-
-    // 1. 渲染字符数组轨与分段窗口
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = s
-        .map((ch, idx) => {
-          const inChunk = idx >= i && idx <= chunkEnd && phase !== 'done';
-          const inRevWindow = idx >= windowStart && idx <= windowEnd && phase !== 'done';
-          const isLeft = idx === left && phase !== 'done';
-          const isRight = idx === right && phase !== 'done';
-          const isSwapping = swapping && (idx === left || idx === right);
-          const isI = idx === i && phase !== 'done';
-
-          let cellClass = 'rs2-cell-box';
-          if (isSwapping) cellClass += ' is-swapping';
-          else if (isLeft) cellClass += ' is-left';
-          else if (isRight) cellClass += ' is-right';
-          else if (inRevWindow) cellClass += ' in-rev-window';
-          else if (inChunk) cellClass += ' in-chunk';
-
-          let ptrTags = '';
-          if (isI) {
-            ptrTags += '<span class="rs2-ptr-badge i-ptr">i</span>';
-          }
-          if (isLeft && isRight) {
-            ptrTags += '<span class="rs2-ptr-badge left">L</span><span class="rs2-ptr-badge right">R</span>';
-          } else if (isLeft) {
-            ptrTags += '<span class="rs2-ptr-badge left">left</span>';
-          } else if (isRight) {
-            ptrTags += '<span class="rs2-ptr-badge right">right</span>';
-          }
-
-          return `
-            <div class="rs2-cell-wrapper">
-              <div class="rs2-pointer-tags">${ptrTags}</div>
-              <div class="${cellClass}">
-                <span class="val">${ch}</span>
-                <span class="idx">${idx}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: ReverseStringIIStep[]): ReverseStringIIStep[] {
+  const phaseMap: Record<string, string> = {
+    init: '初始化',
+    'select-chunk': '分段锁定',
+    swap: '交换中',
+    advance: '步进',
+    done: '处理完成',
+  };
+  return steps.map((step) => {
+    let action = 'right = min(n - 1, i + k - 1)';
+    if (step.windowStart >= 0 && step.windowEnd >= 0 && step.phase !== 'done') {
+      action = `right = min(${step.s.length - 1}, ${step.i} + ${step.k} - 1) = ${step.windowEnd}`;
+    } else if (step.phase === 'done') {
+      action = '分段反转完成';
     }
 
-    // 2. 更新状态监视器
-    if (this.metricIEl) this.metricIEl.textContent = phase === 'done' ? '—' : String(i);
-    if (this.metricWindowEl) {
-      this.metricWindowEl.textContent =
-        windowStart >= 0 && windowEnd >= 0 && phase !== 'done' ? `[${windowStart}, ${windowEnd}]` : '—';
-    }
-    if (this.metricKEl) this.metricKEl.textContent = `${k} / ${2 * k}`;
-    if (this.metricPhaseEl) {
-      const phaseMap: Record<string, string> = {
-        init: '初始化',
-        'select-chunk': '分段锁定',
-        swap: '交换中',
-        advance: '步进',
-        done: '处理完成',
-      };
-      this.metricPhaseEl.textContent = phaseMap[phase] || phase;
-      this.metricPhaseEl.style.color = phase === 'done' ? '#10b981' : '#0f172a';
-    }
-
-    if (this.formulaBoundEl) {
-      if (windowStart >= 0 && windowEnd >= 0 && phase !== 'done') {
-        this.formulaBoundEl.textContent = `right = min(${s.length - 1}, ${i} + ${k} - 1) = ${windowEnd}`;
-      } else {
-        this.formulaBoundEl.textContent = 'right = min(n - 1, i + k - 1)';
-      }
-    }
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : swapping ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : swapping ? '#1d4ed8' : '#334155';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : swapping ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      const phaseMap: Record<string, string> = {
-        init: '初始化',
-        'select-chunk': '分段锁定',
-        swap: '交换中',
-        advance: '步进',
-        done: '处理完成',
-      };
-      badgePhase.textContent = phaseMap[phase] || phase;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...step,
+      metrics: {
+        i: step.phase === 'done' ? '—' : String(step.i),
+        window:
+          step.windowStart >= 0 && step.windowEnd >= 0 && step.phase !== 'done'
+            ? `[${step.windowStart}, ${step.windowEnd}]`
+            : '—',
+        k: `${step.k} / ${2 * step.k}`,
+        phase: phaseMap[step.phase] || step.phase,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderReverseStringIICanvas(container: HTMLElement, step: ReverseStringIIStep): void {
+  const { s, i, chunkEnd, windowStart, windowEnd, left, right, swapping, phase } = step;
+
+  const cellsHtml = s
+    .map((ch, idx) => {
+      const inChunk = idx >= i && idx <= chunkEnd && phase !== 'done';
+      const inRevWindow = idx >= windowStart && idx <= windowEnd && phase !== 'done';
+      const isLeft = idx === left && phase !== 'done';
+      const isRight = idx === right && phase !== 'done';
+      const isSwapping = swapping && (idx === left || idx === right);
+      const isI = idx === i && phase !== 'done';
+
+      let border = '#cbd5e1';
+      let bg = '#ffffff';
+      let transform = 'none';
+      let boxShadow = 'none';
+      if (isSwapping) {
+        border = '#10b981';
+        bg = '#ecfdf5';
+        transform = 'translateY(-3px) scale(1.05)';
+        boxShadow = '0 4px 10px rgba(16, 185, 129, 0.2)';
+      } else if (isLeft) {
+        border = '#2563eb';
+        bg = '#eff6ff';
+      } else if (isRight) {
+        border = '#f59e0b';
+        bg = '#fffbeb';
+      } else if (inRevWindow || inChunk) {
+        border = '#93c5fd';
+        bg = '#f0fdf4';
+      }
+
+      let ptrTags = '';
+      if (isI) {
+        ptrTags +=
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #9333ea; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">i</span>';
+      }
+      if (isLeft && isRight) {
+        ptrTags +=
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">L</span>' +
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">R</span>';
+      } else if (isLeft) {
+        ptrTags +=
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">left</span>';
+      } else if (isRight) {
+        ptrTags +=
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">right</span>';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <div style="min-height: 18px; display: flex; align-items: center; gap: 3px;">${ptrTags}</div>
+          <div style="width: 44px; height: 48px; border-radius: 10px; background: ${bg}; border: 2px solid ${border}; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; box-shadow: ${boxShadow};">
+            <span style="font-size: 16px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${ch}</span>
+            <span style="font-size: 9px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">${idx}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 8px; flex-wrap: wrap; justify-content: center; height: 100%; padding: 12px; box-sizing: border-box;">
+      ${cellsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'reverse-string-ii',
   name: '反转字符串II（分段反转）',
-  viewId: 'algo-reverse-string-ii-view',
   category: 'string',
   description: '每隔 2k 个字符反转前 k 个字符',
   icon: '🔁',
   difficulty: 1,
   levelOrder: 2,
   learningGoal: '掌握分段处理 + 边界条件的双指针反转',
-  template,
-  Visualizer: ReverseStringIIVisualizer,
+  inputs: [
+    { id: 's', label: '字符串 s', type: 'text', defaultValue: 'abcdefg', placeholder: '例如: abcdefg' },
+    { id: 'k', label: '反转长度 k', type: 'number', defaultValue: 2, min: 1, max: 10 },
+  ],
+  presets: [
+    { label: '示例 1: ("abcdefg", k=2)', values: { s: 'abcdefg', k: 2 } },
+    { label: '示例 2: ("abcd", k=2)', values: { s: 'abcd', k: 2 } },
+    { label: '长字符串: ("abcdefghijk", k=3)', values: { s: 'abcdefghijk', k: 3 } },
+    { label: '单字符: ("a", k=2)', values: { s: 'a', k: 2 } },
+  ],
+  metrics: [
+    { id: 'i', label: '步长下标 i', color: '#9333ea' },
+    { id: 'window', label: '反转区间 [left, right]', color: '#2563eb' },
+    { id: 'k', label: 'k / 2k 步长', color: '#f59e0b' },
+    { id: 'phase', label: '当前阶段', color: '#0f172a' },
+    { id: 'action', label: '边界计算', color: '#2563eb' },
+  ],
+  legend: [
+    { label: 'i 步长 (+2k)', color: '#9333ea' },
+    { label: '[left, right] 反转窗口', color: '#2563eb' },
+  ],
+  codeLanguages: REVERSE_STRING_II_CODE_LANGUAGES,
+  problemHtml: REVERSE_STRING_II_PROBLEM_HTML,
+  analysisHtml: REVERSE_STRING_II_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const str = String(inputs.s ?? 'abcdefg');
+    const rawK = Number(inputs.k ?? 2);
+    const k = isNaN(rawK) || rawK <= 0 ? 2 : rawK;
+    return withMetrics(buildReverseStringIISteps(str, k));
+  },
+  renderCanvas: (container, step) => renderReverseStringIICanvas(container, step as ReverseStringIIStep),
 });

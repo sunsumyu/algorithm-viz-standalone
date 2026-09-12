@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  NegativeCycleVisualizer,
-  buildNCSteps,
-} from './negative-cycle-renderer';
+import { buildNCSteps } from './negative-cycle-renderer';
 import { NEGATIVE_CYCLE_CODE_LANGUAGES } from './negative-cycle-problem-content';
 
 describe('NegativeCycle (LeftChengYun Class 061 / P3385)', () => {
-  it('should instantiate NegativeCycleVisualizer properly', () => {
-    const viz = new NegativeCycleVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for cycle graph', () => {
     const steps = buildNCSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

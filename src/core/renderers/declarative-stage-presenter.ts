@@ -577,6 +577,66 @@ export class DeclarativeStagePresenter {
   #${viewId} .dsp-btn-reset:hover {
     background: #f1f5f9;
   }
+  #${viewId} .dsp-output-capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px;
+    height: 24px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    font-size: 11px;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease;
+  }
+  #${viewId} .dsp-output-capsule.is-accepted {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15) !important;
+  }
+  #${viewId} .dsp-output-label {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 700;
+  }
+  #${viewId} .dsp-output-capsule.is-accepted .dsp-output-label {
+    color: #166534;
+  }
+  #${viewId} .dsp-output-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  #${viewId} .dsp-output-capsule.is-accepted .dsp-output-val {
+    color: #15803d;
+  }
+  #${viewId} .dsp-output-badge-status {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #22c55e;
+    color: #ffffff;
+    font-size: 9.5px;
+    font-weight: 800;
+    line-height: 1.2;
+    display: inline-block;
+  }
+  #${viewId} .dsp-playback-ans-capsule {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 8px;
+    border-radius: 4px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    font-size: 11px;
+    font-weight: 700;
+    color: #166534;
+    margin-left: auto;
+    white-space: nowrap;
+  }
 
   @media (max-width: 1380px) {
     #${viewId} .dsp-badge-mode {
@@ -906,7 +966,7 @@ export class DeclarativeStagePresenter {
       </div>
     </div>
 
-    <!-- 右翼 (对应右面板代码与控制区): 预设案例 + 参数输入 + [应用] + [重置] -->
+    <!-- 右翼 (对应右面板代码与控制区): 预设案例 + 参数输入 + [应用] + [重置] + [LeetCode 输出槽] -->
     <div class="dsp-header-right">
       ${presetSelectHtml}
       ${inputsHtml}
@@ -916,6 +976,11 @@ export class DeclarativeStagePresenter {
       <button id="btn-reset" class="dsp-btn-reset" title="重置状态">
         重置
       </button>
+      <div class="dsp-output-capsule" id="dsp-output-capsule" title="最终执行返回值 (LeetCode Return Value)">
+        <span class="dsp-output-label">输出:</span>
+        <span class="dsp-output-val" id="dsp-output-val">—</span>
+        <span class="dsp-output-badge-status" id="dsp-output-status" style="display: none;">✓ Accepted</span>
+      </div>
     </div>
   </header>
 
@@ -958,6 +1023,10 @@ export class DeclarativeStagePresenter {
             <option value="500" selected>正常</option>
             <option value="200">快速</option>
           </select>
+        </div>
+        <div class="dsp-playback-ans-capsule" id="dsp-playback-ans-capsule" style="display: none;">
+          <span>🏆 最终解:</span>
+          <span id="dsp-playback-ans-val">—</span>
         </div>
       </div>
 

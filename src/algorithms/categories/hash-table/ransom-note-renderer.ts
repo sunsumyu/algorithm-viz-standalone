@@ -1,21 +1,15 @@
 /**
- * 赎金信可视化器 — 4-Card 标准现代架构
+ * 赎金信可视化器 — 声明式 4-Card 标准架构
  * LeetCode 383：26 字符哈希库存数组
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-  HighlightTarget,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   RANSOM_NOTE_PROBLEM_HTML,
   RANSOM_NOTE_ANALYSIS_HTML,
   RANSOM_NOTE_CODE_LANGUAGES,
 } from './ransom-note-problem-content';
-import template from './ransom-note.html?raw';
 
 export interface RansomNoteStep {
   ransomNote: string;
@@ -30,6 +24,7 @@ export interface RansomNoteStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics?: Record<string, string>;
 }
 
 export function buildRansomNoteSteps(ransomNote: string, magazine: string): RansomNoteStep[] {
@@ -158,199 +153,162 @@ export function buildRansomNoteSteps(ransomNote: string, magazine: string): Rans
   return steps;
 }
 
-export class RansomNoteVisualizer extends StepVisualizer<RansomNoteStep> {
-  protected codeLanguages = RANSOM_NOTE_CODE_LANGUAGES;
-  protected codeLines = RANSOM_NOTE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '赎金信 代码调试';
-
-  private trackMagEl: HTMLElement | null = null;
-  private trackRanEl: HTMLElement | null = null;
-  private bucketsGridEl: HTMLElement | null = null;
-  private metricPhaseEl: HTMLElement | null = null;
-  private metricCharEl: HTMLElement | null = null;
-  private metricStockEl: HTMLElement | null = null;
-  private metricResEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackMagEl = this.root.querySelector('#rn-track-mag');
-    this.trackRanEl = this.root.querySelector('#rn-track-ran');
-    this.bucketsGridEl = this.root.querySelector('#rn-buckets-grid');
-    this.metricPhaseEl = this.root.querySelector('#metric-phase');
-    this.metricCharEl = this.root.querySelector('#metric-char');
-    this.metricStockEl = this.root.querySelector('#metric-stock');
-    this.metricResEl = this.root.querySelector('#metric-res');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rn-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const rInput = this.root?.querySelector('#input-ransom') as HTMLInputElement | null;
-        const mInput = this.root?.querySelector('#input-magazine') as HTMLInputElement | null;
-        if (rInput && btn.dataset.r) rInput.value = btn.dataset.r;
-        if (mInput && btn.dataset.m) mInput.value = btn.dataset.m;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: RANSOM_NOTE_PROBLEM_HTML,
-      analysisHtml: RANSOM_NOTE_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RansomNoteStep[] {
-    const rInput = this.root?.querySelector('#input-ransom') as HTMLInputElement | null;
-    const mInput = this.root?.querySelector('#input-magazine') as HTMLInputElement | null;
-    const ransom = rInput?.value || 'aa';
-    const mag = mInput?.value || 'aab';
-    return buildRansomNoteSteps(ransom, mag);
-  }
-
-  protected renderStep(step: RansomNoteStep): void {
-    const {
-      ransomNote,
-      magazine,
-      phase,
-      charIndex,
-      currentChar,
-      targetSlot,
-      record,
-      canConstruct,
-      overdraftSlot,
-      message,
-    } = step;
-
-    // 1. 渲染 magazine 和 ransomNote 字符流
-    if (this.trackMagEl) {
-      this.trackMagEl.innerHTML = magazine
-        .split('')
-        .map((ch, idx) => {
-          const isActive = phase === 'stock-mag' && charIndex === idx;
-          return `
-            <div class="rn-char-box ${isActive ? 'is-active' : ''}">
-              <span>${ch}</span>
-            </div>
-          `;
-        })
-        .join('');
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: RansomNoteStep[]): RansomNoteStep[] {
+  return steps.map((s) => {
+    const phaseNames: Record<string, string> = {
+      'check-length': '长度检查',
+      'stock-mag': '杂志入库',
+      'deduct-ran': '赎金信扣减',
+      done: '完成',
+    };
+    let res: string;
+    if (s.overdraftSlot !== null) {
+      res = '✗ false (不足)';
+    } else if (s.phase === 'done') {
+      res = '✓ true (满足)';
+    } else {
+      res = '计算中...';
     }
 
-    if (this.trackRanEl) {
-      this.trackRanEl.innerHTML = ransomNote
-        .split('')
-        .map((ch, idx) => {
-          const isActive = phase === 'deduct-ran' && charIndex === idx;
-          return `
-            <div class="rn-char-box ${isActive ? 'is-active' : ''}">
-              <span>${ch}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 26 字符库存网格
-    if (this.bucketsGridEl) {
-      this.bucketsGridEl.innerHTML = record
-        .map((count, idx) => {
-          const char = String.fromCharCode(97 + idx);
-          const isTarget = targetSlot === idx;
-          const isOverdraft = overdraftSlot === idx;
-
-          let cellClass = 'rn-bucket-cell';
-          if (isOverdraft) cellClass += ' is-overdraft';
-          else if (count > 0) cellClass += ' is-pos';
-          if (isTarget) cellClass += ' is-target';
-
-          return `
-            <div class="${cellClass}">
-              <span class="rn-bucket-char">${char}</span>
-              <span class="rn-bucket-count">${count}</span>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 3. 更新状态监视器
-    if (this.metricPhaseEl) {
-      const phaseNames: Record<string, string> = {
-        'check-length': '长度检查',
-        'stock-mag': '杂志入库',
-        'deduct-ran': '赎金信扣减',
-        done: '完成',
-      };
-      this.metricPhaseEl.textContent = phaseNames[phase] || phase;
-    }
-    if (this.metricCharEl) this.metricCharEl.textContent = currentChar ? `'${currentChar}'` : '—';
-    if (this.metricStockEl) {
-      this.metricStockEl.textContent = targetSlot !== null ? String(record[targetSlot]) : '—';
-    }
-    if (this.metricResEl) {
-      if (overdraftSlot !== null) {
-        this.metricResEl.textContent = '✗ false (不足)';
-        this.metricResEl.style.color = '#ef4444';
-      } else if (phase === 'done') {
-        this.metricResEl.textContent = '✓ true (满足)';
-        this.metricResEl.style.color = '#10b981';
-      } else {
-        this.metricResEl.textContent = '计算中...';
-        this.metricResEl.style.color = '#3b82f6';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        overdraftSlot !== null ? '#fef2f2' : phase === 'done' ? '#f0fdf4' : '#eff6ff';
-      logEntry.style.color =
-        overdraftSlot !== null ? '#b91c1c' : phase === 'done' ? '#15803d' : '#1d4ed8';
-      logEntry.style.border =
-        '1px solid ' +
-        (overdraftSlot !== null ? '#fecaca' : phase === 'done' ? '#bbf7d0' : '#bfdbfe');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+    return {
+      ...s,
+      metrics: {
+        phase: phaseNames[s.phase] || s.phase,
+        char: s.currentChar ? `'${s.currentChar}'` : '—',
+        stock: s.targetSlot !== null ? String(s.record[s.targetSlot]) : '—',
+        res,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+export function renderRansomNoteCanvas(container: HTMLElement, step: RansomNoteStep): void {
+  const { ransomNote, magazine, phase, charIndex, targetSlot, record, overdraftSlot } = step;
+
+  // 1. 渲染 magazine 和 ransomNote 字符流
+  const renderTrack = (str: string, activePhase: 'stock-mag' | 'deduct-ran') =>
+    str
+      .split('')
+      .map((ch, idx) => {
+        const isActive = phase === activePhase && charIndex === idx;
+        const bg = isActive ? '#eff6ff' : '#ffffff';
+        const border = isActive ? '#3b82f6' : '#cbd5e1';
+        const color = isActive ? '#2563eb' : '#0f172a';
+        const transform = isActive ? 'scale(1.1)' : 'none';
+        const shadow = isActive ? '0 2px 4px rgba(37, 99, 235, 0.2)' : 'none';
+        return `
+          <div style="width: 28px; height: 32px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; color: ${color}; transition: all 0.2s; transform: ${transform}; box-shadow: ${shadow};">
+            <span>${ch}</span>
+          </div>
+        `;
+      })
+      .join('');
+
+  // 2. 渲染 26 字符库存网格
+  const bucketsHtml = record
+    .map((count, idx) => {
+      const char = String.fromCharCode(97 + idx);
+      const isTarget = targetSlot === idx;
+      const isOverdraft = overdraftSlot === idx;
+
+      let bg = '#ffffff';
+      let border = '#e2e8f0';
+      let countColor = '#0f172a';
+      let boxShadow = 'none';
+      let transform = 'none';
+      if (isOverdraft) {
+        bg = '#fef2f2';
+        border = '#ef4444';
+        countColor = '#dc2626';
+      } else if (count > 0) {
+        bg = '#eff6ff';
+        border = '#93c5fd';
+        countColor = '#2563eb';
+      }
+      if (isTarget) {
+        boxShadow = '0 0 0 2px #3b82f6';
+        transform = 'scale(1.08)';
+      }
+      return `
+        <div style="border-radius: 6px; background: ${bg}; border: 1px solid ${border}; padding: 3px 1px; display: flex; flex-direction: column; align-items: center; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; box-shadow: ${boxShadow}; transform: ${transform};">
+          <span style="font-size: 9.5px; font-weight: 700; color: #64748b;">${char}</span>
+          <span style="font-size: 11px; font-weight: 800; color: ${countColor};">${count}</span>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; padding: 10px 12px; box-sizing: border-box; justify-content: center;">
+      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; min-width: 30px; text-transform: uppercase;">MAG</span>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">${renderTrack(magazine, 'stock-mag')}</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; color: #64748b; min-width: 30px; text-transform: uppercase;">RAN</span>
+          <div style="display: flex; gap: 5px; flex-wrap: wrap;">${renderTrack(ransomNote, 'deduct-ran')}</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 11px; font-weight: 700; color: #64748b;">record[26] 字符库存表</span>
+        <div style="display: grid; grid-template-columns: repeat(13, 1fr); gap: 4px; width: 100%; max-width: 540px; margin: 0 auto;">${bucketsHtml}</div>
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'ransom-note',
   name: '赎金信（字符计数）',
-  viewId: 'algo-ransom-note-view',
   category: 'hash-table',
   description: '用字符频率表判断赎金信能否由杂志构造',
   icon: '📰',
   difficulty: 1,
   levelOrder: 5,
   learningGoal: '掌握用 Map 统计字符频率的方法',
-  template,
-  Visualizer: RansomNoteVisualizer,
+  inputs: [
+    {
+      id: 'ransomNote',
+      label: 'ransomNote',
+      type: 'text',
+      defaultValue: 'aa',
+      width: '50px',
+    },
+    {
+      id: 'magazine',
+      label: 'magazine',
+      type: 'text',
+      defaultValue: 'aab',
+      width: '60px',
+    },
+  ],
+  presets: [
+    { label: '示例 1: ("a" / "b" ➔ false)', values: { ransomNote: 'a', magazine: 'b' } },
+    { label: '示例 2: ("aa" / "ab" ➔ false)', values: { ransomNote: 'aa', magazine: 'ab' } },
+    { label: '示例 3: ("aa" / "aab" ➔ true)', values: { ransomNote: 'aa', magazine: 'aab' } },
+    { label: '多字符匹配: ("secret" / "recreates")', values: { ransomNote: 'secret', magazine: 'recreates' } },
+  ],
+  metrics: [
+    { id: 'phase', label: '当前阶段', color: '#3b82f6' },
+    { id: 'char', label: '当前字符', color: '#a855f7' },
+    { id: 'stock', label: '剩余库存量', color: '#f59e0b' },
+    { id: 'res', label: '判定结果', color: '#10b981' },
+  ],
+  legend: [
+    { label: 'magazine(+) 进库', color: '#2563eb' },
+    { label: 'ransomNote(-) 消耗', color: '#dc2626' },
+  ],
+  codeLanguages: RANSOM_NOTE_CODE_LANGUAGES,
+  problemHtml: RANSOM_NOTE_PROBLEM_HTML,
+  analysisHtml: RANSOM_NOTE_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(
+      buildRansomNoteSteps(
+        String(inputs.ransomNote ?? 'aa') || 'aa',
+        String(inputs.magazine ?? 'aab') || 'aab'
+      )
+    ),
+  renderCanvas: (container, step) => renderRansomNoteCanvas(container, step as RansomNoteStep),
 });

@@ -4,16 +4,7 @@
  * 核心：树枝去重 (used[i]) + 树层去重 (nums[i] == nums[i-1] && !used[i-1])
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -27,7 +18,6 @@ import {
   PERMUTATION_II_ANALYSIS_HTML,
   PERMUTATION_II_CODE_LANGUAGES,
 } from './permutation-ii-problem-content';
-import template from './permutation-ii.html?raw';
 
 /* ── Build the full decision tree ─────────────────────────── */
 export function buildPerm2Tree(sorted: number[]): BacktrackTreeNode {
@@ -291,182 +281,75 @@ export function buildPerm2Steps(nums: number[]): BacktrackTreeStep[] {
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class Permutation2Visualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLanguages = PERMUTATION_II_CODE_LANGUAGES;
-  protected codeLines = PERMUTATION_II_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '全排列 II 代码调试';
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private dedupMonitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#permutation-ii-tree-display');
-    this.pathStackContainer = this.root.querySelector('#pm2-path-stack-container');
-    this.dedupMonitorContainer = this.root.querySelector('#pm2-dedup-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#pm2-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.pm2-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        if (numsEl) numsEl.value = btn.dataset.nums || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: PERMUTATION_II_PROBLEM_HTML,
-      analysisHtml: PERMUTATION_II_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const rawNums = (numsEl?.value || '1,1,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    const nums = rawNums.length > 0 ? rawNums : [1, 1, 2];
-    if (nums.length > 4) nums.length = 4;
-
-    const steps = buildPerm2Steps(nums);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((st, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (st.message.includes('做选择')) type = 'push';
-      else if (st.message.includes('回溯撤销')) type = 'pop';
-      else if (st.message.includes('收集唯一排列')) type = 'collect';
-      else if (st.message.includes('跳过') || st.message.includes('剪枝')) type = 'prune';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: st.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const index = this.currentIndex;
-
-    // 1. 渲染 SVG 决策树沙盘
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'pm2',
-        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
-      });
-    }
-
-    // 2. 渲染当前路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
-    }
-
-    // 3. 渲染去重监视器 (Card 2 Center)
-    if (this.dedupMonitorContainer) {
-      const isPruneStep = step.message.includes('树层去重');
-      const isBranchSkip = step.message.includes('树枝跳过');
-
-      this.dedupMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>去重状态:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isPruneStep || isBranchSkip ? '#fef2f2' : '#ecfdf5'}; color: ${isPruneStep || isBranchSkip ? '#dc2626' : '#059669'}; border: 1px solid ${isPruneStep || isBranchSkip ? '#fecaca' : '#a7f3d0'};">
-              ${isPruneStep ? '✂️ 树层去重 (剪枝)' : isBranchSkip ? '🏷️ 树枝已占 (跳过)' : '✅ 正常选取'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 树层去重: <code style="color:#b45309; font-family:monospace;">nums[i] == nums[i-1] && !used[i-1]</code></div>
-            <div>• 树枝去重: <code style="color:#b45309; font-family:monospace;">if (used[i]) continue</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染实时解集箱 (Card 2 Bottom)
-    const solutionsUpToNow: Array<Array<number | string>> = [];
-    for (let i = 0; i <= index; i++) {
-      const st = this.steps[i];
-      if (st.message.includes('收集唯一排列')) {
-        solutionsUpToNow.push([...st.path]);
-      }
-    }
-
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        solutionsUpToNow,
-        -1,
-        (solIdx: number) => {
-          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
-            if (
-              this.steps[stepIdx].message.includes('收集唯一排列') &&
-              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
-            ) {
-              this.goToStep(stepIdx);
-              break;
-            }
-          }
-        }
-      );
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-result-count');
-    if (badgeCount) {
-      badgeCount.textContent = `解集: ${solutionsUpToNow.length}`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
-  }
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: BacktrackTreeStep[]): BacktrackTreeStep[] {
+  return steps.map((s) => ({
+    ...s,
+    log: s.message,
+    metrics: {
+      path: (s.path || []).length ? `[${(s.path || []).join(' → ')}]` : '[]',
+      visited: String(s.visitedNodeIds.length),
+      results: String(s.foundPathIds.length),
+      pruned: String(s.prunedNodeIds.length),
+    },
+  }));
 }
 
-registerAlgorithm({
+/** 主视觉：SVG 决策树沙盘（backtracking-tree-helper 自注入样式） */
+export function renderPermutationIICanvas(container: HTMLElement, step: BacktrackTreeStep): void {
+  renderBacktrackTree({
+    container,
+    step,
+    cssPrefix: 'pm2',
+    nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
+  });
+}
+
+registerDeclarativeAlgorithm({
   id: 'permutation-ii',
   name: '全排列 II',
-  viewId: 'algo-permutation-ii-view',
   category: 'backtracking',
   description: '含重复元素全排列，树层去重 (!used[i-1]) 与树枝标记',
   icon: '🔀',
-  template,
-  Visualizer: Permutation2Visualizer,
   difficulty: 2,
   levelOrder: 13,
   learningGoal: '掌握含重复元素排列中的树层去重 (!used[i-1]) 与树枝占用的本质区别',
+  inputs: [
+    {
+      id: 'nums',
+      label: '输入数组（含重复）',
+      type: 'text',
+      defaultValue: '1,1,2',
+      placeholder: '逗号分隔数字',
+    },
+  ],
+  presets: [
+    { label: '1,1,2', values: { nums: '1,1,2' } },
+    { label: '1,2,2', values: { nums: '1,2,2' } },
+    { label: '1,1,2,2', values: { nums: '1,1,2,2' } },
+  ],
+  metrics: [
+    { id: 'path', label: '当前路径', color: '#2563eb' },
+    { id: 'visited', label: '已访问节点', color: '#a855f7' },
+    { id: 'results', label: '已收集排列', color: '#10b981' },
+    { id: 'pruned', label: '去重剪枝次数', color: '#ef4444' },
+  ],
+  legend: [
+    { label: '当前节点', color: '#2563eb' },
+    { label: '已访问', color: '#a855f7' },
+    { label: '收集方案', color: '#10b981' },
+    { label: '树层去重剪枝', color: '#ef4444' },
+  ],
+  codeLanguages: PERMUTATION_II_CODE_LANGUAGES,
+  problemHtml: PERMUTATION_II_PROBLEM_HTML,
+  analysisHtml: PERMUTATION_II_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const nums = String(inputs.nums ?? '1,1,2')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    return withMetrics(buildPerm2Steps(nums.length ? nums : [1, 1, 2]));
+  },
+  renderCanvas: (container, step) => renderPermutationIICanvas(container, step as BacktrackTreeStep),
 });

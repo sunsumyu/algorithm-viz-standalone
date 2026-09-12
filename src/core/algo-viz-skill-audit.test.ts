@@ -12,7 +12,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { loadAllAlgorithmBatches } from './algorithm-loader';
 import { algorithmRegistry } from './algorithm-registry';
 import { getAllManifests, type AlgorithmManifest } from './registry';
-import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
+import { ALL_ALGORITHM_METADATA } from './algorithm-catalog.generated';
 import { AlgorithmModelRepository } from './model-repository';
 import { AlgorithmStrategyRegistry } from './strategies/algorithm-strategy-registry';
 import { registerBuiltinStrategies } from './strategies';

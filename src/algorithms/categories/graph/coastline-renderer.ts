@@ -1,18 +1,16 @@
 /**
- * 海岸线计算 - Coastline Perimeter (LC 463)
- * 4-Card 标准现代架构可视化器
+ * 岛屿的周长 (LC 463) — 声明式 4-Card 标准架构
+ * 逐格扫描陆地并检查 4 邻域暴露边，实时累计海岸线周长
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   COASTLINE_PROBLEM_HTML,
   COASTLINE_ANALYSIS_HTML,
   COASTLINE_CODE_LANGUAGES,
 } from './coastline-problem-content';
-import template from './coastline.html?raw';
 
-export interface CLStep extends StepBase {
+export interface CLStep {
   grid: number[][];
   rows: number;
   cols: number;
@@ -23,8 +21,10 @@ export interface CLStep extends StepBase {
   cellEdges: number;
   action: 'init' | 'counting' | 'done';
   statusText: string;
+  message?: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 const DEFAULT_GRID = [
@@ -132,168 +132,163 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
   return steps;
 }
 
-export class CoastlineVisualizer extends StepVisualizer<CLStep> {
-  protected codeLanguages = COASTLINE_CODE_LANGUAGES;
-  protected codeLines = COASTLINE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '岛屿周长 (LC 463) 代码调试';
+const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
+  classic: {
+    label: '经典十字岛 [4×4]',
+    grid: DEFAULT_GRID,
+  },
+  ring: {
+    label: '环形湖泊岛 [4×5]',
+    grid: [
+      [1, 1, 1, 1, 1],
+      [1, 0, 0, 0, 1],
+      [1, 0, 0, 0, 1],
+      [1, 1, 1, 1, 1],
+    ],
+  },
+  single: {
+    label: '单格孤岛 [3×3]',
+    grid: [
+      [0, 0, 0],
+      [0, 1, 0],
+      [0, 0, 0],
+    ],
+  },
+};
 
-  private gridContainer: HTMLElement | null = null;
-  private metricCurCellEl: HTMLElement | null = null;
-  private metricCellEdgesEl: HTMLElement | null = null;
-  private metricLandCountEl: HTMLElement | null = null;
-  private metricTotalPerimeterEl: HTMLElement | null = null;
-  private formulaActionEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.gridContainer = this.root.querySelector('#cl-grid-container');
-    this.metricCurCellEl = this.root.querySelector('#metric-cur-cell');
-    this.metricCellEdgesEl = this.root.querySelector('#metric-cell-edges');
-    this.metricLandCountEl = this.root.querySelector('#metric-land-count');
-    this.metricTotalPerimeterEl = this.root.querySelector('#metric-total-perimeter');
-    this.formulaActionEl = this.root.querySelector('#formula-action');
-    this.liveTextEl = this.root.querySelector('#cl-live-text');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: COASTLINE_PROBLEM_HTML,
-      analysisHtml: COASTLINE_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): CLStep[] {
-    return buildCoastlineSteps();
-  }
-
-  protected renderStep(step: CLStep): void {
-    const { grid, rows, cols, currentCell, exposedEdges, perimeter, landCount, cellEdges, statusText, action } = step;
-
-    // 1. 渲染 2D 网格与暴露边
-    if (this.gridContainer) {
-      this.gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-      let html = '';
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const val = grid[r][c];
-          const isLand = val === 1;
-          const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
-          const key = `${r},${c}`;
-          const cellEdgesArr = exposedEdges[key] || [false, false, false, false];
-
-          let cls = 'cl-cell';
-          if (isLand) cls += ' is-land';
-          else cls += ' is-water';
-
-          if (isCurrent) cls += ' is-current';
-
-          let edgeDoms = '';
-          if (isLand) {
-            if (cellEdgesArr[0]) edgeDoms += '<div class="edge-top"></div>';
-            if (cellEdgesArr[1]) edgeDoms += '<div class="edge-right"></div>';
-            if (cellEdgesArr[2]) edgeDoms += '<div class="edge-bottom"></div>';
-            if (cellEdgesArr[3]) edgeDoms += '<div class="edge-left"></div>';
-          }
-
-          html += `<div class="${cls}">
-            ${edgeDoms}
-            <span>${isLand ? '1' : '0'}</span>
-          </div>`;
-        }
-      }
-      this.gridContainer.innerHTML = html;
-    }
-
-    // 2. 更新状态监视器
-    if (this.metricCurCellEl) {
-      this.metricCurCellEl.textContent = currentCell ? `(${currentCell[0]}, ${currentCell[1]})` : '—';
-    }
-    if (this.metricCellEdgesEl) {
-      this.metricCellEdgesEl.textContent = `${cellEdges}`;
-    }
-    if (this.metricLandCountEl) {
-      this.metricLandCountEl.textContent = `${landCount}`;
-    }
-    if (this.metricTotalPerimeterEl) {
-      this.metricTotalPerimeterEl.textContent = `${perimeter}`;
-    }
-
-    if (this.formulaActionEl) {
-      this.formulaActionEl.textContent =
-        currentCell && cellEdges > 0
-          ? `(${currentCell[0]}, ${currentCell[1]}) 外露边 +${cellEdges} -> 累计周长 = ${perimeter}`
-          : `若邻格越界或为水域 (0)，则周长 perimeter++`;
-    }
-
-    if (this.liveTextEl) this.liveTextEl.textContent = statusText;
-
-    // 3. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        action === 'done'
-          ? '#f0fdf4'
-          : action === 'counting'
-          ? '#eff6ff'
-          : '#f8fafc';
-      logEntry.style.color =
-        action === 'done'
-          ? '#15803d'
-          : action === 'counting'
-          ? '#1d4ed8'
-          : '#64748b';
-      logEntry.style.border =
-        '1px solid ' +
-        (action === 'done'
-          ? '#bbf7d0'
-          : action === 'counting'
-          ? '#bfdbfe'
-          : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePerimeter = this.root?.querySelector('#badge-perimeter');
-    if (badgePerimeter) badgePerimeter.textContent = `累计周长: ${perimeter}`;
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+/** 将网格序列化为文本输入（预设值与 inputs.grid 解析共用） */
+function gridToText(grid: number[][]): string {
+  return grid.map((row) => row.join('')).join('\n');
 }
 
-registerAlgorithm({
+function parseGridText(input: string): number[][] {
+  const rows = input
+    .split(/[\r\n]+|;/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) =>
+      line
+        .replace(/[\[\]\s,，]+/g, '')
+        .split('')
+        .map((ch) => (ch === '1' ? 1 : 0))
+    );
+  return rows.length > 0 ? rows : DEFAULT_GRID;
+}
+
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: CLStep[]): CLStep[] {
+  return steps.map((s) => ({
+    ...s,
+    message: s.statusText,
+    metrics: {
+      'metric-cur-cell': s.currentCell ? `(${s.currentCell[0]}, ${s.currentCell[1]})` : '—',
+      'metric-cell-edges': `${s.cellEdges}`,
+      'metric-land-count': `${s.landCount}`,
+      'metric-total-perimeter': `${s.perimeter}`,
+      action:
+        s.currentCell && s.cellEdges > 0
+          ? `(${s.currentCell[0]}, ${s.currentCell[1]}) 外露边 +${s.cellEdges} -> 累计周长 = ${s.perimeter}`
+          : '若邻格越界或为水域 (0)，则周长 perimeter++',
+    },
+  }));
+}
+
+export function renderCoastlineCanvas(container: HTMLElement, step: CLStep): void {
+  const { grid, rows, cols, currentCell, exposedEdges } = step;
+
+  let html = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const val = grid[r][c];
+      const isLand = val === 1;
+      const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
+      const key = `${r},${c}`;
+      const cellEdgesArr = exposedEdges[key] || [false, false, false, false];
+
+      let bg = '#f1f5f9';
+      let border = '1px solid #cbd5e1';
+      let color = '#94a3b8';
+      if (isLand) {
+        bg = '#dcfce7';
+        border = '1.5px solid #86efac';
+        color = '#16a34a';
+      }
+
+      let boxShadow = 'none';
+      let transform = 'none';
+      if (isCurrent) {
+        boxShadow = '0 0 0 3px #facc15';
+        bg = '#fef9c3';
+        color = '#854d0e';
+        transform = 'scale(1.05)';
+      }
+
+      let edgeDoms = '';
+      if (isLand) {
+        if (cellEdgesArr[0])
+          edgeDoms +=
+            '<div style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 4px 4px 0 0;"></div>';
+        if (cellEdgesArr[1])
+          edgeDoms +=
+            '<div style="position: absolute; top: 0; right: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 0 4px 4px 0;"></div>';
+        if (cellEdgesArr[2])
+          edgeDoms +=
+            '<div style="position: absolute; bottom: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 0 0 4px 4px;"></div>';
+        if (cellEdgesArr[3])
+          edgeDoms +=
+            '<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 4px 0 0 4px;"></div>';
+      }
+
+      html += `<div style="aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-sizing: border-box; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${boxShadow}; transform: ${transform}; z-index: ${isCurrent ? 10 : 1};">${edgeDoms}<span>${isLand ? '1' : '0'}</span></div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; max-width: 560px; margin: 0 auto; padding: 8px; box-sizing: border-box;">
+      ${html}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'coastline',
   name: '岛屿的周长 (LC 463)',
-  viewId: 'algo-coastline-view',
   category: 'graph',
   description: '逐格扫描陆地并检查 4 邻域水域与越界边，实时累计岛屿海岸线周长',
   icon: '🌊',
   difficulty: 1,
   levelOrder: 15,
   learningGoal: '掌握网格 4 邻域边界判定与单格边贡献分析法',
-  template,
-  Visualizer: CoastlineVisualizer,
+  inputs: [
+    {
+      id: 'grid',
+      label: '网格 (每行一串 0/1)',
+      type: 'text',
+      defaultValue: gridToText(DEFAULT_GRID),
+      placeholder: '每行如 0100',
+    },
+  ],
+  presets: [
+    { label: PRESET_CASES.classic.label, values: { grid: gridToText(PRESET_CASES.classic.grid) } },
+    { label: PRESET_CASES.ring.label, values: { grid: gridToText(PRESET_CASES.ring.grid) } },
+    { label: PRESET_CASES.single.label, values: { grid: gridToText(PRESET_CASES.single.grid) } },
+  ],
+  metrics: [
+    { id: 'metric-cur-cell', label: '当前格子', color: '#3b82f6' },
+    { id: 'metric-cell-edges', label: '当前暴露边数', color: '#e11d48' },
+    { id: 'metric-land-count', label: '陆地总数', color: '#16a34a' },
+    { id: 'metric-total-perimeter', label: '累计周长', color: '#10b981' },
+    { id: 'action', label: '累计公式', color: '#6366f1' },
+  ],
+  legend: [
+    { label: '陆地 (1)', color: '#86efac' },
+    { label: '水域 (0)', color: '#cbd5e1' },
+    { label: '暴露周长边', color: '#e11d48' },
+  ],
+  codeLanguages: COASTLINE_CODE_LANGUAGES,
+  problemHtml: COASTLINE_PROBLEM_HTML,
+  analysisHtml: COASTLINE_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildCoastlineSteps(parseGridText(String(inputs?.grid ?? '')))),
+  renderCanvas: (container, step) => renderCoastlineCanvas(container, step as CLStep),
 });

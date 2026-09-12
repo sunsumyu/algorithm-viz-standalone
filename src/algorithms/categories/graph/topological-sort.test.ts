@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  TopologicalSortVisualizer,
-  buildTopoSteps,
-} from './topological-sort-renderer';
+import { buildTopoSteps } from './topological-sort-renderer';
 import { TOPOLOGICAL_SORT_CODE_LANGUAGES } from './topological-sort-problem-content';
 
 describe('TopologicalSort (Kahn Algorithm LC 210)', () => {
-  it('should instantiate TopologicalSortVisualizer properly', () => {
-    const viz = new TopologicalSortVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard DAG', () => {
     const steps = buildTopoSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

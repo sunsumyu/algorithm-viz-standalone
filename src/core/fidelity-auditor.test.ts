@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { UniversalFidelityAuditor } from './fidelity-auditor';
 import { algorithmRegistry } from './algorithm-registry';
 import { loadAllAlgorithmBatches } from './algorithm-loader';
-import { ALL_ALGORITHM_METADATA } from './algorithm-manifests-meta';
+import { ALL_ALGORITHM_METADATA } from './algorithm-catalog.generated';
 
 describe('Universal Algorithm Fidelity Auditor', () => {
   it('should audit all registered algorithms and report integrity', async () => {

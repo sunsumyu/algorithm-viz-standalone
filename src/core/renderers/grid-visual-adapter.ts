@@ -14,6 +14,10 @@ export interface GridRenderOptions {
   isReverse?: boolean;
   isGridProblem?: boolean;
   modelId?: string;
+  rowLabels?: string[];
+  colLabels?: string[];
+  isMatch?: (r: number, c: number) => boolean;
+  deps?: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }>;
 }
 
 export interface TreeMeasureResult {
@@ -113,6 +117,11 @@ export class GridVisualAdapter {
     if (!container || !step) return;
     const { m, n, isReverse = false } = options;
     const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : true);
+
+    if (options.rowLabels || options.colLabels) {
+      this.renderLabeledGrid(container, step, options);
+      return;
+    }
 
     container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
     container.innerHTML = '';
@@ -320,8 +329,13 @@ export class GridVisualAdapter {
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (cellVal !== null) {
-          cellEl.className = `viz-cell is-done ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-slate-50 border-slate-300 text-slate-800`;
+          const isCellMatch = options.isMatch?.(r, c);
+          const doneBgClass = isCellMatch
+            ? 'bg-emerald-50/95 border-emerald-400 text-emerald-950 shadow-2xs'
+            : 'bg-emerald-50/90 border-emerald-300 text-slate-800 shadow-2xs';
+          cellEl.className = `viz-cell is-done ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold ${doneBgClass}`;
           cellEl.innerHTML = `
+            ${isCellMatch ? `<span class="absolute top-0.5 right-1 text-[9px]">✨</span>` : ''}
             <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-500">${coordText}</span>
             <span class="cell-val text-sm font-bold mt-2 z-10">${cellVal}</span>
           `;
@@ -370,6 +384,434 @@ export class GridVisualAdapter {
             🌊 边界深水河流 · 越界反弹 🚫
           </span>
         `;
+      }
+    }
+  }
+
+  /**
+   * 渲染带字符标尺的双串/序列语义网格 (Semantic Labeled Grid)
+   */
+  public static renderLabeledGrid(container: HTMLElement, step: any, options: GridRenderOptions): void {
+    if (!container || !step) return;
+    const { m, n, rowLabels, colLabels, isReverse = false } = options;
+    const activeI = step.i ?? 0;
+    const activeJ = step.j ?? 0;
+    const isFinish = (activeI === m - 1 && activeJ === n - 1) || (activeI === 0 && activeJ === 0);
+    const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(m, n))));
+
+    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+    const activeTrailSet = new Set<string>(activeStackList);
+
+    // 1. 顶部列标尺
+    const headerColsHtml = Array.from({ length: n }, (_, c) => {
+      const isCurCol = c === activeJ;
+      const txt = colLabels && colLabels[c] !== undefined ? colLabels[c] : `${c}`;
+      return `
+        <div style="
+          width: ${cellPx}px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 1px 0;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: ${isCurCol ? '800' : '600'};
+          color: ${isCurCol ? '#2563eb' : '#64748b'};
+          background: ${isCurCol ? '#dbeafe' : 'transparent'};
+          border-radius: 6px;
+          transition: all 0.15s ease;
+        ">
+          <span style="font-size: 11px; font-weight: 800;">${txt}</span>
+          <span style="font-size: 8px; opacity: 0.65;">col${c}</span>
+        </div>
+      `;
+    }).join('');
+
+    // 2. 网格主体行
+    const rowsHtml = Array.from({ length: m }, (_, r) => {
+      const isCurRow = r === activeI;
+      const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
+
+      const cellsHtml = Array.from({ length: n }, (_, c) => {
+        const key = `${r},${c}`;
+        const isActive = r === activeI && c === activeJ;
+        const isTrail = !isActive && activeTrailSet.has(key);
+        const cellVal = step.grid?.[r]?.[c] ?? null;
+
+        // 依赖单元格判定 (top / left / diag 或通用 deps)
+        const isTop = !isActive && ((step.topI === r && step.topJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'top' || (d.r === activeI - 1 && d.c === activeJ))) ?? false));
+        const isLeft = !isActive && ((step.leftI === r && step.leftJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'left' || (d.r === activeI && d.c === activeJ - 1))) ?? false));
+        const isDiag = !isActive && ((step.diagI === r && step.diagJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'diag' || (d.r === activeI - 1 && d.c === activeJ - 1))) ?? false));
+        const isGeneralDep = !isActive && !isTop && !isLeft && !isDiag && (options.deps?.some((d) => d.r === r && d.c === c) ?? false);
+        const isDep = isTop || isLeft || isDiag || isGeneralDep;
+
+        const isUncalculated = cellVal === null || cellVal === -1;
+        const isDone = !isActive && !isTrail && !isDep && !isUncalculated;
+        const isMatch = options.isMatch ? options.isMatch(r, c) : false;
+
+        let style = `
+          width: ${cellPx}px;
+          height: ${cellPx}px;
+          border-radius: 8px;
+          box-sizing: border-box;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'JetBrains Mono', monospace;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        `;
+
+        let cellContent = '';
+        let badgeHtml = '';
+
+        if (isActive) {
+          style += `
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 2px 8px rgba(37, 99, 235, 0.25);
+            z-index: 20;
+          `;
+          cellContent = `
+            <div class="adventurer-char-holder" style="position: absolute; top: -26px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
+              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
+            </div>
+            <span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; margin-top: 4px; z-index: 10;">${cellVal !== null && cellVal !== -1 ? cellVal : ''}</span>
+          `;
+        } else if (isTrail) {
+          style += `
+            background: #f0f9ff;
+            border: 1.5px dashed #38bdf8;
+            color: #0284c7;
+            box-shadow: 0 1px 2px rgba(56, 189, 248, 0.15);
+            z-index: 10;
+          `;
+          cellContent = `<span class="animate-pulse" style="font-size: 14px; user-select: none;">👣</span>`;
+        } else if (isTop) {
+          style += `
+            background: #faf5ff;
+            border: 1.5px solid #c084fc;
+            color: #7e22ce;
+            box-shadow: 0 1px 3px rgba(168, 85, 247, 0.15);
+            z-index: 10;
+          `;
+          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">⬆️</span>`;
+          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #7e22ce; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
+        } else if (isLeft) {
+          style += `
+            background: #fffbeb;
+            border: 1.5px solid #fcd34d;
+            color: #b45309;
+            box-shadow: 0 1px 3px rgba(245, 158, 11, 0.15);
+            z-index: 10;
+          `;
+          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">⬅️</span>`;
+          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #b45309; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
+        } else if (isDiag) {
+          style += `
+            background: #ecfeff;
+            border: 1.5px solid #67e8f9;
+            color: #0e7490;
+            box-shadow: 0 1px 3px rgba(6, 182, 212, 0.15);
+            z-index: 10;
+          `;
+          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">↖️</span>`;
+          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #0e7490; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
+        } else if (isGeneralDep) {
+          style += `
+            background: #eef2ff;
+            border: 1.5px solid #a5b4fc;
+            color: #4338ca;
+            box-shadow: 0 1px 3px rgba(99, 102, 241, 0.15);
+            z-index: 10;
+          `;
+          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">🔗</span>`;
+          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #4338ca; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
+        } else if (isDone) {
+          style += `
+            background: #ecfdf5;
+            border: 1.5px solid #a7f3d0;
+            color: #065f46;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+          `;
+          if (isMatch) {
+            badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">✨</span>`;
+          }
+          cellContent = `
+            <span class="cell-val" style="
+              font-size: ${cellPx >= 44 ? '15px' : '13px'};
+              font-weight: 800;
+              color: #065f46;
+              margin-top: 4px;
+            ">${cellVal}</span>
+          `;
+        } else {
+          style += `
+            background: #ffffff;
+            border: 1px dashed #e2e8f0;
+            color: #cbd5e1;
+          `;
+          cellContent = `<span style="font-size: 11px; font-weight: 600; color: #94a3b8;">-</span>`;
+        }
+
+        const coordColor = isActive
+          ? '#2563eb'
+          : isTrail
+          ? '#0284c7'
+          : isTop
+          ? '#7e22ce'
+          : isLeft
+          ? '#b45309'
+          : isDiag
+          ? '#0e7490'
+          : isGeneralDep
+          ? '#4338ca'
+          : isDone
+          ? '#059669'
+          : '#94a3b8';
+
+        const cellClass = `viz-cell ${isActive ? 'is-cur' : isTrail ? 'is-trail' : isTop ? 'is-top is-dep' : isLeft ? 'is-left is-dep' : isDiag ? 'is-diag is-dep' : isGeneralDep ? 'is-dep' : isDone ? 'is-done' : 'is-empty'}`;
+
+        return `
+          <div class="${cellClass}" data-coord="${r},${c}" style="${style}">
+            ${badgeHtml}
+            <span style="
+              position: absolute;
+              top: 2px;
+              left: 3px;
+              font-size: 8px;
+              font-weight: 700;
+              font-family: 'JetBrains Mono', monospace;
+              color: ${coordColor};
+              line-height: 1;
+            ">${r},${c}</span>
+            ${cellContent}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <div style="
+            width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2px 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: ${isCurRow ? '800' : '600'};
+            color: ${isCurRow ? '#2563eb' : '#64748b'};
+            background: ${isCurRow ? '#dbeafe' : 'transparent'};
+            border-radius: 6px;
+            flex-shrink: 0;
+          ">
+            <span style="font-size: 11px; font-weight: 800;">${rLabel}</span>
+            <span style="font-size: 8px; opacity: 0.65;">r${r}</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            ${cellsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const hasDeps = Boolean(
+      (step.topI !== undefined && step.topI >= 0) ||
+      (step.leftI !== undefined && step.leftI >= 0) ||
+      (step.diagI !== undefined && step.diagI >= 0) ||
+      (options.deps && options.deps.length > 0)
+    );
+
+    container.innerHTML = `
+      <div style="
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 4px;
+        box-sizing: border-box;
+        overflow: visible;
+        user-select: none;
+      ">
+        <div class="stage1-grid-board" style="
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 8px 14px;
+          background: rgba(248, 250, 252, 0.75);
+          border-radius: 14px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        ">
+          <svg class="stage1-trail-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25; overflow: visible;">
+            <defs>
+              <marker id="trail-arrow-forward" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#0284c7" />
+              </marker>
+              <marker id="dp-dep-arrow-top" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#9333ea" />
+              </marker>
+              <marker id="dp-dep-arrow-left" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#d97706" />
+              </marker>
+              <marker id="dp-dep-arrow-diag" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#0891b2" />
+              </marker>
+            </defs>
+          </svg>
+
+          <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+            <div style="width: 44px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">s1 \\ s2</div>
+            <div style="display: flex; gap: 4px;">
+              ${headerColsHtml}
+            </div>
+          </div>
+          ${rowsHtml}
+        </div>
+
+        <div style="
+          margin-top: 10px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #64748b;
+        ">
+          <span style="display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #ecfdf5; border: 1px solid #a7f3d0;"></span>
+            已解通
+          </span>
+          ${hasDeps ? `
+          <span style="display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #faf5ff; border: 1px solid #c084fc;"></span>
+            前驱依赖
+          </span>
+          ` : `
+          <span style="display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #f0f9ff; border: 1px dashed #38bdf8;"></span>
+            👣 探索中
+          </span>
+          `}
+          <span style="display: flex; align-items: center; gap: 4px;">
+            🤠 当前探索位置
+          </span>
+        </div>
+      </div>
+    `;
+
+    // 动态绘制 SVG 调用栈连线与依赖箭头
+    const svgEl = typeof container.querySelector === 'function'
+      ? (container.querySelector('.stage1-trail-svg') as SVGSVGElement | null)
+      : null;
+    const boardEl = typeof container.querySelector === 'function'
+      ? (container.querySelector('.stage1-grid-board') as HTMLElement | null)
+      : null;
+    if (svgEl && boardEl && typeof document.createElementNS === 'function') {
+      const boardRect = boardEl.getBoundingClientRect();
+
+      // 1. 调用栈路径安全绳
+      if (activeStackList.length >= 2) {
+        for (let k = 0; k < activeStackList.length - 1; k++) {
+          const coord1 = activeStackList[k];
+          const coord2 = activeStackList[k + 1];
+          const cell1 = boardEl.querySelector(`[data-coord="${coord1}"]`) as HTMLElement | null;
+          const cell2 = boardEl.querySelector(`[data-coord="${coord2}"]`) as HTMLElement | null;
+          if (!cell1 || !cell2) continue;
+
+          const r1 = cell1.getBoundingClientRect();
+          const r2 = cell2.getBoundingClientRect();
+          const x1 = r1.left + r1.width / 2 - boardRect.left;
+          const y1 = r1.top + r1.height / 2 - boardRect.top;
+          const x2 = r2.left + r2.width / 2 - boardRect.left;
+          const y2 = r2.top + r2.height / 2 - boardRect.top;
+
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const sx = x1 + (dx / dist) * 10;
+          const sy = y1 + (dy / dist) * 10;
+          const ex = x2 - (dx / dist) * 12;
+          const ey = y2 - (dy / dist) * 12;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', '#0284c7');
+          line.setAttribute('stroke-width', '2.5');
+          line.setAttribute('stroke-dasharray', '4 2');
+          line.setAttribute('marker-end', 'url(#trail-arrow-forward)');
+          line.setAttribute('class', 'dp-trail-arrow');
+          line.setAttribute('opacity', '0.88');
+          svgEl.appendChild(line);
+        }
+      }
+
+      // 2. 状态转移前驱依赖连线 (DP Table 依赖箭头)
+      const depList: Array<{ coord: string; color: string; marker: string }> = [];
+      if (step.topI !== undefined && step.topJ !== undefined && step.topI >= 0 && step.topJ >= 0) {
+        depList.push({ coord: `${step.topI},${step.topJ}`, color: '#9333ea', marker: 'url(#dp-dep-arrow-top)' });
+      }
+      if (step.leftI !== undefined && step.leftJ !== undefined && step.leftI >= 0 && step.leftJ >= 0) {
+        depList.push({ coord: `${step.leftI},${step.leftJ}`, color: '#d97706', marker: 'url(#dp-dep-arrow-left)' });
+      }
+      if (step.diagI !== undefined && step.diagJ !== undefined && step.diagI >= 0 && step.diagJ >= 0) {
+        depList.push({ coord: `${step.diagI},${step.diagJ}`, color: '#0891b2', marker: 'url(#dp-dep-arrow-diag)' });
+      }
+      if (options.deps && options.deps.length > 0) {
+        for (const d of options.deps) {
+          const c = `${d.r},${d.c}`;
+          if (!depList.some((item) => item.coord === c)) {
+            const color = d.type === 'top' ? '#9333ea' : d.type === 'left' ? '#d97706' : d.type === 'diag' ? '#0891b2' : '#6366f1';
+            const marker = d.type === 'top' ? 'url(#dp-dep-arrow-top)' : d.type === 'left' ? 'url(#dp-dep-arrow-left)' : d.type === 'diag' ? 'url(#dp-dep-arrow-diag)' : 'url(#trail-arrow-forward)';
+            depList.push({ coord: c, color, marker });
+          }
+        }
+      }
+
+      if (depList.length > 0) {
+        const curCell = boardEl.querySelector(`[data-coord="${activeI},${activeJ}"]`) as HTMLElement | null;
+        if (curCell) {
+          const curR = curCell.getBoundingClientRect();
+          const toX = curR.left + curR.width / 2 - boardRect.left;
+          const toY = curR.top + curR.height / 2 - boardRect.top;
+
+          for (const dep of depList) {
+            const fromCell = boardEl.querySelector(`[data-coord="${dep.coord}"]`) as HTMLElement | null;
+            if (!fromCell) continue;
+            const fromR = fromCell.getBoundingClientRect();
+            const fromX = fromR.left + fromR.width / 2 - boardRect.left;
+            const fromY = fromR.top + fromR.height / 2 - boardRect.top;
+
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const sx = fromX + (dx / dist) * 12;
+            const sy = fromY + (dy / dist) * 12;
+            const ex = toX - (dx / dist) * 14;
+            const ey = toY - (dy / dist) * 14;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', String(sx));
+            line.setAttribute('y1', String(sy));
+            line.setAttribute('x2', String(ex));
+            line.setAttribute('y2', String(ey));
+            line.setAttribute('stroke', dep.color);
+            line.setAttribute('stroke-width', '2.2');
+            line.setAttribute('stroke-dasharray', '4 2');
+            line.setAttribute('marker-end', dep.marker);
+            line.setAttribute('class', 'dp-dep-arrow');
+            line.setAttribute('opacity', '0.9');
+            svgEl.appendChild(line);
+          }
+        }
       }
     }
   }

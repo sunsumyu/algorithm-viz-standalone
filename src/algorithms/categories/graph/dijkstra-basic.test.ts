@@ -1,16 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import {
-  DijkstraBasicVisualizer,
-  buildDJBSteps,
-} from './dijkstra-basic-renderer';
+import { buildDJBSteps } from './dijkstra-basic-renderer';
 import { DIJKSTRA_BASIC_CODE_LANGUAGES } from './dijkstra-basic-problem-content';
 
 describe('DijkstraBasic (LeftChengYun Class 061)', () => {
-  it('should instantiate DijkstraBasicVisualizer properly', () => {
-    const viz = new DijkstraBasicVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildDJBSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

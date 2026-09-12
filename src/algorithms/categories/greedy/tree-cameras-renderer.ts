@@ -3,14 +3,12 @@
  * LeetCode 968：后序自底向上推导，0=无覆盖, 1=有摄像头, 2=已覆盖；贪心在叶子父节点装摄像头
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   TREE_CAMERAS_PROBLEM_HTML,
   TREE_CAMERAS_ANALYSIS_HTML,
   TREE_CAMERAS_CODE_LANGUAGES,
 } from './tree-cameras-problem-content';
-import template from './tree-cameras.html?raw';
 
 export interface TreeNode {
   id: number;
@@ -33,6 +31,8 @@ export interface CameraStep {
   action: 'enter' | 'place_camera' | 'covered_by_child' | 'wait_parent' | 'root_camera' | 'done';
   message: string;
   codeLine: number;
+  metrics?: Record<string, string>;
+  log?: string;
 }
 
 export function parseTreeFromArray(arr: (number | null)[]): TreeNode | null {
@@ -226,269 +226,162 @@ function layoutBinaryTree(root: TreeNode | null, width: number, height: number):
   return assignCoords(root, 0, 20, width - 20);
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class TreeCamerasVisualizer extends StepVisualizer<CameraStep> {
-  protected codeLanguages = TREE_CAMERAS_CODE_LANGUAGES;
-  protected codeLines = TREE_CAMERAS_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '监控二叉树 代码调试';
 
-  private sandboxContainer: HTMLElement | null = null;
-  private nodeContainer: HTMLElement | null = null;
-  private decisionMonitorContainer: HTMLElement | null = null;
-  private metricsContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: CameraStep[]): CameraStep[] {
+  return steps.map((s) => {
+    const isPlace = s.action === 'place_camera' || s.action === 'root_camera';
+    const isCover = s.action === 'covered_by_child';
+    const isWait = s.action === 'wait_parent';
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.sandboxContainer = this.root.querySelector('#tc-sandbox-container');
-    this.nodeContainer = this.root.querySelector('#tc-node-container');
-    this.decisionMonitorContainer = this.root.querySelector('#tc-decision-monitor-container');
-    this.metricsContainer = this.root.querySelector('#tc-metrics-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
+    let action = '✓ 遍历完成';
+    if (isPlace) action = '📷 安装摄像头 (覆照父子)';
+    else if (isCover) action = '🛡️ 被子节点摄像头覆盖';
+    else if (isWait) action = '⚪ 暂无覆盖 (留待父节点覆盖)';
 
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.tc-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const tEl = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-        if (tEl && btn.dataset.tree) tEl.value = btn.dataset.tree;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: TREE_CAMERAS_PROBLEM_HTML,
-      analysisHtml: TREE_CAMERAS_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): CameraStep[] {
-    const tEl = this.root?.querySelector('#input-tree') as HTMLInputElement | null;
-    let arr: (number | null)[] = [0, 0, null, 0, 0];
-    try {
-      const parsed = JSON.parse(tEl?.value || '[0,0,null,0,0]');
-      if (Array.isArray(parsed)) {
-        arr = parsed;
-      }
-    } catch {
-      arr = [0, 0, null, 0, 0];
-    }
-
-    const tree = parseTreeFromArray(arr);
-    return buildTreeCameraSteps(tree);
-  }
-
-  protected renderStep(step: CameraStep): void {
-    const root = step.root;
-    const nodeStates = step.nodeStates;
-
-    // 1. 渲染二叉树自适应 SVG 沙盘 (Card 1)
-    if (this.sandboxContainer) {
-      if (!root) {
-        this.sandboxContainer.innerHTML = `<span style="color:#94a3b8; font-size:12px;">空二叉树</span>`;
-        return;
-      }
-
-      const svgW = 540;
-      const svgH = 260;
-      const layoutRoot = layoutBinaryTree(root, svgW, svgH);
-
-      const linesSvg: string[] = [];
-      const nodesSvg: string[] = [];
-
-      function traverse(n: LayoutNode | null) {
-        if (!n) return;
-
-        if (n.left) {
-          linesSvg.push(`
-            <line x1="${n.x}" y1="${n.y}" x2="${n.left.x}" y2="${n.left.y}" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="none" />
-          `);
-          traverse(n.left);
-        }
-        if (n.right) {
-          linesSvg.push(`
-            <line x1="${n.x}" y1="${n.y}" x2="${n.right.x}" y2="${n.right.y}" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="none" />
-          `);
-          traverse(n.right);
-        }
-
-        const state = nodeStates[n.id]; // 0, 1, 2 or undefined
-        const isCurrent = n.id === step.currentNodeId;
-
-        let fill = '#ffffff';
-        let stroke = '#94a3b8';
-        let stateEmoji = '';
-
-        if (state === 1) {
-          fill = '#fef2f2';
-          stroke = '#ef4444';
-          stateEmoji = '📷';
-        } else if (state === 2) {
-          fill = '#eff6ff';
-          stroke = '#3b82f6';
-          stateEmoji = '🛡️';
-        } else if (state === 0) {
-          fill = '#f8fafc';
-          stroke = '#94a3b8';
-          stateEmoji = '⚪';
-        }
-
-        const ringSvg = isCurrent
-          ? `<circle cx="${n.x}" cy="${n.y}" r="23" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4,3" />`
-          : '';
-
-        nodesSvg.push(`
-          <g>
-            ${ringSvg}
-            <circle cx="${n.x}" cy="${n.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
-            <text x="${n.x}" y="${n.y - 1}" text-anchor="middle" dominant-baseline="central" font-size="${stateEmoji ? '11px' : '12px'}" font-weight="800" fill="#0f172a" font-family="'JetBrains Mono', monospace">
-              ${stateEmoji || n.val}
-            </text>
-            <text x="${n.x}" y="${n.y + 26}" text-anchor="middle" font-size="9px" font-weight="700" fill="${isCurrent ? '#ef4444' : '#64748b'}">
-              ${isCurrent ? '📍当前' : `[${n.id}]`}
-            </text>
-          </g>
-        `);
-      }
-
-      traverse(layoutRoot);
-
-      this.sandboxContainer.innerHTML = `
-        <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; max-height: 250px;">
-          ${linesSvg.join('')}
-          ${nodesSvg.join('')}
-        </svg>
-      `;
-    }
-
-    // 2. 渲染当前后序节点 (Card 2 Left)
-    if (this.nodeContainer) {
-      const curId = step.currentNodeId;
-      const st = curId ? nodeStates[curId] : null;
-
-      this.nodeContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between;">
-            <span>当前访问节点:</span>
-            <span style="font-family: monospace; font-weight:800; color: #ef4444; font-size: 12.5px;">
-              ${curId ? `节点 [${curId}]` : '-'}
-            </span>
-          </div>
-          <div style="display: flex; justify-content: space-between;">
-            <span>子节点状态 (左, 右):</span>
-            <span style="font-family: monospace; font-weight:700; color: #2563eb;">
-              ${step.leftState !== null ? `(左: ${step.leftState}, 右: ${step.rightState})` : '-'}
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    // 3. 渲染贪心状态转移决策监视器 (Card 2 Center)
-    if (this.decisionMonitorContainer) {
-      const isPlace = step.action === 'place_camera' || step.action === 'root_camera';
-      const isCover = step.action === 'covered_by_child';
-      const isWait = step.action === 'wait_parent';
-
-      this.decisionMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>贪心判定:</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: ${isPlace ? '#fef2f2' : isCover ? '#eff6ff' : isWait ? '#f8fafc' : '#ecfdf5'}; color: ${isPlace ? '#dc2626' : isCover ? '#2563eb' : isWait ? '#64748b' : '#059669'}; border: 1px solid ${isPlace ? '#fecaca' : isCover ? '#bfdbfe' : isWait ? '#e2e8f0' : '#a7f3d0'};">
-              ${isPlace ? '📷 安装摄像头 (覆照父子)' : isCover ? '🛡️ 被子节点摄像头覆盖' : isWait ? '⚪ 暂无覆盖 (留待父节点覆盖)' : '✓ 遍历完成'}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4; border-top: 1px dashed #e2e8f0; padding-top: 4px;">
-            <div>• 准则: <code style="color:#ef4444; font-family:monospace;">后序左右中自底向上，叶子节点的父节点优先装摄像头</code></div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 4. 渲染最小摄像头安装配置看板 (Card 2 Bottom)
-    if (this.metricsContainer) {
-      this.metricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>最小摄像头数量: <strong style="color: #ef4444; font-family: monospace; font-size: 13.5px;">${step.cameraCount}</strong> 台</span>
-            <span style="font-family: monospace; font-weight: 700; color: #059669;">后序自底向上贪心最优解</span>
-          </div>
-        </div>
-      `;
-    }
-
-    const badgeCam = this.root?.querySelector('#badge-camera-count');
-    if (badgeCam) {
-      badgeCam.textContent = `摄像头: ${step.cameraCount}`;
-    }
-
-
-
-    // 7. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st, idx) => {
-        let badgeColor = '#64748b';
-        let badgeBg = '#f1f5f9';
-        let badgeText = '访问';
-
-        if (st.action === 'place_camera' || st.action === 'root_camera') {
-          badgeColor = '#dc2626';
-          badgeBg = '#fef2f2';
-          badgeText = '装摄像头';
-        } else if (st.action === 'covered_by_child') {
-          badgeColor = '#2563eb';
-          badgeBg = '#eff6ff';
-          badgeText = '已覆盖';
-        } else if (st.action === 'wait_parent') {
-          badgeColor = '#d97706';
-          badgeBg = '#fffbeb';
-          badgeText = '留父覆盖';
-        } else if (st.action === 'done') {
-          badgeColor = '#059669';
-          badgeBg = '#ecfdf5';
-          badgeText = '完成';
-        }
-
-        return `
-          <div style="display: flex; align-items: flex-start; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f8fafc; font-size: 11px;">
-            <span style="color: #94a3b8; font-family: monospace; font-size: 10px; min-width: 24px;">#${idx + 1}</span>
-            <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 5px; border-radius: 4px; font-weight: 700; font-size: 10px;">${badgeText}</span>
-            <span style="color: #334155; flex: 1;">${st.message}</span>
-          </div>
-        `;
-      });
-
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.sandboxContainer) this.sandboxContainer.innerHTML = '';
-  }
+    return {
+      ...s,
+      log: s.message,
+      metrics: {
+        'cur-node': s.currentNodeId ? `节点 [${s.currentNodeId}]` : '—',
+        'children-state': s.leftState !== null ? `(左: ${s.leftState}, 右: ${s.rightState})` : '—',
+        cameras: `${s.cameraCount} 台`,
+        action,
+      },
+    };
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：二叉树自适应 SVG 沙盘 */
+export function renderTreeCamerasCanvas(container: HTMLElement, step: CameraStep): void {
+  const root = step.root;
+  const nodeStates = step.nodeStates;
+
+  if (!root) {
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:12px;">空二叉树</div>';
+    return;
+  }
+
+  const svgW = 540;
+  const svgH = 260;
+  const layoutRoot = layoutBinaryTree(root, svgW, svgH);
+
+  const linesSvg: string[] = [];
+  const nodesSvg: string[] = [];
+
+  function traverse(n: LayoutNode | null): void {
+    if (!n) return;
+
+    if (n.left) {
+      linesSvg.push(`<line x1="${n.x}" y1="${n.y}" x2="${n.left.x}" y2="${n.left.y}" stroke="#cbd5e1" stroke-width="2" />`);
+      traverse(n.left);
+    }
+    if (n.right) {
+      linesSvg.push(`<line x1="${n.x}" y1="${n.y}" x2="${n.right.x}" y2="${n.right.y}" stroke="#cbd5e1" stroke-width="2" />`);
+      traverse(n.right);
+    }
+
+    const state = nodeStates[n.id];
+    const isCurrent = n.id === step.currentNodeId;
+
+    let fill = '#ffffff';
+    let stroke = '#94a3b8';
+    let stateEmoji = '';
+
+    if (state === 1) {
+      fill = '#fef2f2';
+      stroke = '#ef4444';
+      stateEmoji = '📷';
+    } else if (state === 2) {
+      fill = '#eff6ff';
+      stroke = '#3b82f6';
+      stateEmoji = '🛡️';
+    } else if (state === 0) {
+      fill = '#f8fafc';
+      stroke = '#94a3b8';
+      stateEmoji = '⚪';
+    }
+
+    const ringSvg = isCurrent
+      ? `<circle cx="${n.x}" cy="${n.y}" r="23" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4,3" />`
+      : '';
+
+    nodesSvg.push(`
+      <g>
+        ${ringSvg}
+        <circle cx="${n.x}" cy="${n.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
+        <text x="${n.x}" y="${n.y - 1}" text-anchor="middle" dominant-baseline="central" font-size="${stateEmoji ? '11px' : '12px'}" font-weight="800" fill="#0f172a" font-family="'JetBrains Mono', monospace">
+          ${stateEmoji || n.val}
+        </text>
+        <text x="${n.x}" y="${n.y + 26}" text-anchor="middle" font-size="9px" font-weight="700" fill="${isCurrent ? '#ef4444' : '#64748b'}">
+          ${isCurrent ? '📍当前' : `[${n.id}]`}
+        </text>
+      </g>
+    `);
+  }
+
+  traverse(layoutRoot);
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box;">
+      <svg viewBox="0 0 ${svgW} ${svgH}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; max-height: 250px;">
+        ${linesSvg.join('')}
+        ${nodesSvg.join('')}
+      </svg>
+    </div>
+  `;
+}
+
+function parseTreeInput(raw: string): (number | null)[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((v) => (v === null ? null : Number(v)));
+    }
+  } catch {
+    // fall through
+  }
+  return [0, 0, null, 0, 0];
+}
+
+registerDeclarativeAlgorithm({
   id: 'tree-cameras',
   name: '监控二叉树',
-  viewId: 'algo-tree-cameras-view',
   category: 'greedy',
   description: '后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高',
   icon: '📷',
-  template,
-  Visualizer: TreeCamerasVisualizer,
   difficulty: 3,
   levelOrder: 17,
   learningGoal: '掌握二叉树后序遍历与状态机的贪心结合，理解自底向上局部最优推导全局最少的解题范式',
+  inputs: [
+    {
+      id: 'tree',
+      label: '二叉树层序数组 (0/1, null 为空)',
+      type: 'text',
+      defaultValue: '[0,0,null,0,0]',
+      placeholder: '[0,0,null,0,0]',
+    },
+  ],
+  presets: [
+    { label: '示例 1', values: { tree: '[0,0,null,0,0]' } },
+    { label: '示例 2 (需根装摄像头)', values: { tree: '[0,0,null,0,null,0,null,null,1]' } },
+    { label: '两侧子树', values: { tree: '[0,0,0,null,null,null,0]' } },
+  ],
+  metrics: [
+    { id: 'cur-node', label: '当前访问节点', color: '#ef4444' },
+    { id: 'children-state', label: '子节点状态 (左, 右)', color: '#2563eb' },
+    { id: 'cameras', label: '最小摄像头数量', color: '#ef4444' },
+    { id: 'action', label: '贪心判定', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '📷 摄像头', color: '#ef4444' },
+    { label: '🛡️ 已覆盖', color: '#3b82f6' },
+    { label: '⚪ 无覆盖', color: '#94a3b8' },
+  ],
+  codeLanguages: TREE_CAMERAS_CODE_LANGUAGES,
+  problemHtml: TREE_CAMERAS_PROBLEM_HTML,
+  analysisHtml: TREE_CAMERAS_ANALYSIS_HTML,
+  generateSteps: (inputs) =>
+    withMetrics(buildTreeCameraSteps(parseTreeFromArray(parseTreeInput(String(inputs.tree ?? '[0,0,null,0,0]'))))),
+  renderCanvas: (container, step) => renderTreeCamerasCanvas(container, step as CameraStep),
 });

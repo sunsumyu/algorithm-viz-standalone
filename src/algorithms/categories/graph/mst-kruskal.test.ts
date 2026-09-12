@@ -1,16 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
-  KruskalVisualizer,
   buildKruskalSteps,
 } from './mst-kruskal-renderer';
 import { MST_KRUSKAL_CODE_LANGUAGES } from './mst-kruskal-problem-content';
 
 describe('MST Kruskal (LeftChengYun Class 058)', () => {
-  it('should instantiate KruskalVisualizer properly', () => {
-    const viz = new KruskalVisualizer();
-    expect(viz).toBeDefined();
-  });
-
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildKruskalSteps();
     expect(steps.length).toBeGreaterThanOrEqual(20);

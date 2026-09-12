@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V-1轮常规松弛外层、全边扫描、松弛条件更新、第V轮额外检测、负环捕获分支均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   NEGATIVE_CYCLE_PROBLEM_HTML,
   NEGATIVE_CYCLE_ANALYSIS_HTML,
   NEGATIVE_CYCLE_CODE_LANGUAGES,
 } from './negative-cycle-problem-content';
-import template from './negative-cycle.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface NCStep extends StepBase {
@@ -170,170 +169,135 @@ export function buildNCSteps(): NCStep[] {
   return steps;
 }
 
-export class NegativeCycleVisualizer extends StepVisualizer<NCStep> {
-  protected codeLanguages = NEGATIVE_CYCLE_CODE_LANGUAGES;
-  protected codeLines = NEGATIVE_CYCLE_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '负权回路检测 代码调试';
+/** 主视觉：有向带权图 SVG（负环红色高亮）+ dist 数组芯片条 */
+export function renderNegativeCycleCanvas(container: HTMLElement, step: NCStep): void {
+  const { dist, currentEdge, relaxedEdge, hasCycle, cycleEdges } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private metricRoundEl: HTMLElement | null = null;
-  private metricCurEdgeEl: HTMLElement | null = null;
-  private metricRelaxCountEl: HTMLElement | null = null;
-  private metricHasCycleEl: HTMLElement | null = null;
-  private distArrayEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="nc-arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
+      </marker>
+      <marker id="nc-arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
+      </marker>
+      <marker id="nc-arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
+      </marker>
+      <marker id="nc-arrow-red" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of NC_EDGES) {
+    const p1 = NC_NODE_POS[e.u];
+    const p2 = NC_NODE_POS[e.v];
+    const isCurrent = currentEdge && currentEdge.u === e.u && currentEdge.v === e.v;
+    const isCycleEdge = cycleEdges.some((ce) => ce.u === e.u && ce.v === e.v);
 
-    this.svgCanvas = this.root.querySelector('#nc-svg-canvas');
-    this.metricRoundEl = this.root.querySelector('#metric-round');
-    this.metricCurEdgeEl = this.root.querySelector('#metric-cur-edge');
-    this.metricRelaxCountEl = this.root.querySelector('#metric-relax-count');
-    this.metricHasCycleEl = this.root.querySelector('#metric-has-cycle');
-    this.distArrayEl = this.root.querySelector('#nc-dist-array');
-    this.liveTextEl = this.root.querySelector('#nc-live-text');
+    let strokeColor = '#cbd5e1';
+    let strokeWidth = 2;
+    let marker = 'url(#nc-arrow-gray)';
 
-    this.bindPlaybackControls();
+    if (isCycleEdge) {
+      strokeColor = '#dc2626';
+      strokeWidth = 3.5;
+      marker = 'url(#nc-arrow-red)';
+    } else if (isCurrent && relaxedEdge) {
+      strokeColor = '#16a34a';
+      strokeWidth = 3;
+      marker = 'url(#nc-arrow-green)';
+    } else if (isCurrent) {
+      strokeColor = '#2563eb';
+      strokeWidth = 3;
+      marker = 'url(#nc-arrow-blue)';
+    }
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: NEGATIVE_CYCLE_PROBLEM_HTML,
-      analysisHtml: NEGATIVE_CYCLE_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 + (e.u === 1 && e.v === 2 ? -10 : e.u === 3 && e.v === 1 ? 12 : 0);
+
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#dc2626' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
   }
 
-  protected buildSteps(): NCStep[] {
-    return buildNCSteps();
-  }
+  NC_NODES.forEach((node) => {
+    const p = NC_NODE_POS[node];
+    const dVal = dist[node];
+    const isCurrentTarget = currentEdge && currentEdge.v === node;
+    const inCycle = hasCycle && (node === 1 || node === 2 || node === 3);
 
-  protected renderStep(step: NCStep): void {
-    const { dist, round, maxRounds, currentEdge, relaxedEdge, relaxCount, hasCycle, cycleEdges, statusText, action } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 460 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="nc-arrow-gray" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8" />
-          </marker>
-          <marker id="nc-arrow-blue" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#2563eb" />
-          </marker>
-          <marker id="nc-arrow-green" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#16a34a" />
-          </marker>
-          <marker id="nc-arrow-red" markerWidth="8" markerHeight="8" refX="22" refY="4" orient="auto">
-            <path d="M0,0 L8,4 L0,8 Z" fill="#dc2626" />
-          </marker>
-        </defs>`;
-
-      for (const e of NC_EDGES) {
-        const p1 = NC_NODE_POS[e.u];
-        const p2 = NC_NODE_POS[e.v];
-        const isCurrent = currentEdge && currentEdge.u === e.u && currentEdge.v === e.v;
-        const isCycleEdge = cycleEdges.some((ce) => ce.u === e.u && ce.v === e.v);
-
-        let strokeColor = '#cbd5e1';
-        let strokeWidth = 2;
-        let marker = 'url(#nc-arrow-gray)';
-
-        if (isCycleEdge) {
-          strokeColor = '#dc2626';
-          strokeWidth = 3.5;
-          marker = 'url(#nc-arrow-red)';
-        } else if (isCurrent && relaxedEdge) {
-          strokeColor = '#16a34a';
-          strokeWidth = 3;
-          marker = 'url(#nc-arrow-green)';
-        } else if (isCurrent) {
-          strokeColor = '#2563eb';
-          strokeWidth = 3;
-          marker = 'url(#nc-arrow-blue)';
-        }
-
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 + (e.u === 1 && e.v === 2 ? -10 : e.u === 3 && e.v === 1 ? 12 : 0);
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-        svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#dc2626' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
-      }
-
-      NC_NODES.forEach((node) => {
-        const p = NC_NODE_POS[node];
-        const dVal = dist[node];
-        const isCurrentTarget = currentEdge && currentEdge.v === node;
-        const inCycle = hasCycle && (node === 1 || node === 2 || node === 3);
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (inCycle) {
-          fill = '#fee2e2';
-          stroke = '#dc2626';
-        } else if (isCurrentTarget && relaxedEdge) {
-          fill = '#dcfce7';
-          stroke = '#16a34a';
-        } else if (isCurrentTarget) {
-          fill = '#dbeafe';
-          stroke = '#2563eb';
-        } else if (node === 0) {
-          fill = '#eff6ff';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="${dVal >= 999999 ? '#94a3b8' : '#2563eb'}" font-size="10.5" font-family="monospace" font-weight="800" text-anchor="middle">${dVal >= 999999 ? 'INF' : dVal}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (inCycle) {
+      fill = '#fee2e2';
+      stroke = '#dc2626';
+    } else if (isCurrentTarget && relaxedEdge) {
+      fill = '#dcfce7';
+      stroke = '#16a34a';
+    } else if (isCurrentTarget) {
+      fill = '#dbeafe';
+      stroke = '#2563eb';
+    } else if (node === 0) {
+      fill = '#eff6ff';
+      stroke = '#3b82f6';
     }
 
-    if (this.metricRoundEl) {
-      this.metricRoundEl.textContent = `${round} / ${maxRounds}`;
-    }
-    if (this.metricCurEdgeEl) {
-      this.metricCurEdgeEl.textContent = currentEdge ? `(${currentEdge.u})->(${currentEdge.v})` : '—';
-    }
-    if (this.metricRelaxCountEl) {
-      this.metricRelaxCountEl.textContent = `${relaxCount}`;
-    }
-    if (this.metricHasCycleEl) {
-      this.metricHasCycleEl.textContent = hasCycle ? '⚠️ 存在负环' : '未检测到';
-      this.metricHasCycleEl.className = `font-mono font-bold ${hasCycle ? 'text-red-600 animate-pulse' : 'text-slate-500'}`;
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 30}" fill="${dVal >= 999999 ? '#94a3b8' : '#2563eb'}" font-size="10.5" font-family="monospace" font-weight="800" text-anchor="middle">${dVal >= 999999 ? 'INF' : dVal}</text>`;
+  });
 
-    if (this.distArrayEl) {
-      this.distArrayEl.innerHTML = NC_NODES.map((node) => {
-        const dVal = dist[node];
-        const isTarget = currentEdge && currentEdge.v === node;
-        return `<div class="flex flex-col items-center p-1.5 rounded border ${
-          isTarget ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-200'
-        }">
-          <span class="text-[10px] text-slate-500 font-mono">dist[${node}]</span>
-          <span class="text-xs font-mono font-bold ${dVal >= 999999 ? 'text-slate-400' : 'text-blue-600'}">${dVal >= 999999 ? 'INF' : dVal}</span>
-        </div>`;
-      }).join('');
-    }
+  svgHtml += `</svg>`;
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  const distChips = NC_NODES.map((node) => {
+    const dVal = dist[node];
+    const isTarget = currentEdge && currentEdge.v === node;
+    const chipStyle = isTarget
+      ? 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #93c5fd; background: #eff6ff;'
+      : 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc;';
+    return `<div style="${chipStyle}">
+      <span style="font-size: 10px; color: #64748b; font-family: monospace;">dist[${node}]</span>
+      <span style="font-size: 12px; font-family: monospace; font-weight: 700; color: ${dVal >= 999999 ? '#94a3b8' : '#2563eb'};">${dVal >= 999999 ? 'INF' : dVal}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
+      <div style="width: 100%;">${svgHtml}</div>
+      <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">${distChips}</div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'negative-cycle',
   name: '负权回路检测 (Negative Cycle)',
-  viewId: 'algo-negative-cycle-view',
   category: 'graph',
   icon: '🔄',
   difficulty: 3,
   levelOrder: 26,
   description: '左程云算法通关课 Class 061：基于 Bellman-Ford 的第 N 轮松弛判定准则，识别图中使得最短路无下界的负权环 (洛谷 P3385)',
   learningGoal: '掌握负权回路判定定理、第 N 轮额外松弛扫描机制以及无限递减状态识别',
-  template,
-  Visualizer: NegativeCycleVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (含负环)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-nc-round', label: '当前轮次', color: '#2563eb' },
+    { id: 'metric-nc-edge', label: '考察边 (u➔v, w)', color: '#eab308' },
+    { id: 'metric-nc-cycle', label: '负环判定', color: '#10b981' },
+    { id: 'metric-nc-dist', label: 'dist 距离表', color: '#16a34a' },
+  ],
+  legend: [
+    { label: '正在松弛边', color: '#2563eb' },
+    { label: '正常松弛', color: '#16a34a' },
+    { label: '负权回路边', color: '#dc2626' },
+    { label: '负环节点', color: '#fee2e2' },
+  ],
+  codeLanguages: NEGATIVE_CYCLE_CODE_LANGUAGES,
+  problemHtml: NEGATIVE_CYCLE_PROBLEM_HTML,
+  analysisHtml: NEGATIVE_CYCLE_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildNCSteps(),
+  renderCanvas: (container, step) => renderNegativeCycleCanvas(container, step as NCStep),
 });

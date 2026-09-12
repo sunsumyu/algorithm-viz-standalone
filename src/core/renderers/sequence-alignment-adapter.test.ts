@@ -58,4 +58,27 @@ describe('SequenceAlignmentPresenter 通用序列比对适配器测试', () => {
     // 包含常驻匹配标记 ★
     expect(html).toContain('★');
   });
+
+  it('初始准备阶段或非比对帧 (isComparing=false) 即便两字符相同也绝对不触发匹配对勾与 +1 决策', () => {
+    SequenceAlignmentPresenter.render(container, {
+      s1: 'ddde',
+      s2: 'ace',
+      curI: 3, // 'e'
+      curJ: 2, // 'e'
+      isComparing: false,
+      statusDescription: '主函数就绪，尚未进入递归比对',
+    });
+
+    const html = container.innerHTML;
+    expect(html).not.toContain('undefined');
+    // 绝对不能包含纳入公共子序列的决策徽章
+    expect(html).not.toContain('纳入公共子序列 (+1)');
+    expect(html).not.toContain('✨ 字符匹配成功');
+    // 绝对不能有匹配成功绿勾标记
+    expect(html).not.toContain('>✓</span>');
+    // 应呈现准备就绪提示
+    expect(html).toContain('⏳ 准备就绪');
+    expect(html).toContain('主函数就绪，尚未进入递归比对');
+  });
 });
+

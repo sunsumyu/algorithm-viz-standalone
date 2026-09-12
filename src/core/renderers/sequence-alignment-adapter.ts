@@ -26,6 +26,24 @@ export interface SequenceAlignmentOptions {
   matchedIndices2?: number[] | Set<number>;
   customBadgeHtml?: string;
   showEofSentinel?: boolean;
+  /**
+   * 哨兵位置模式：
+   * - 'front': 仅渲染最前方的 Ø 哨兵（适用于自右向左递减的逆推模式）
+   * - 'back': 仅渲染最后方的 Ø 哨兵（适用于自左向右递增的顺推模式，默认值）
+   * - 'both': 双侧均渲染
+   * - 'none': 不渲染哨兵
+   */
+  eofPosition?: 'front' | 'back' | 'both' | 'none';
+  /**
+   * 当前步骤是否真正处于字符比对/匹配采纳状态：
+   * - false: 处于函数入口、边界检查、准备调用等非比对帧；此时即便 s1[curI] === s2[curJ]，也绝不呈现匹配对勾与 +1 决策徽章，保持普通活跃焦点
+   * - true / undefined: 处于比对或匹配帧（默认向后兼容）
+   */
+  isComparing?: boolean;
+  /**
+   * 自定义状态描述文本（当处于等待/准备状态时展示）
+   */
+  statusDescription?: string;
 }
 
 export class SequenceAlignmentPresenter {
@@ -46,7 +64,12 @@ export class SequenceAlignmentPresenter {
       matchedIndices2 = [],
       customBadgeHtml,
       showEofSentinel = true,
+      eofPosition,
+      isComparing,
+      statusDescription,
     } = options;
+
+    const eofPos = eofPosition || (showEofSentinel === false ? 'none' : 'back');
 
     const matchedSet1 = matchedIndices1 instanceof Set ? matchedIndices1 : new Set(matchedIndices1);
     const matchedSet2 = matchedIndices2 instanceof Set ? matchedIndices2 : new Set(matchedIndices2);
@@ -55,14 +78,16 @@ export class SequenceAlignmentPresenter {
     const safeChar1 = curI >= 0 && curI < s1.length ? s1[curI] : null;
     const safeChar2 = curJ >= 0 && curJ < s2.length ? s2[curJ] : null;
     const isBothInBounds = safeChar1 !== null && safeChar2 !== null;
-    const isCurrentMatch = isBothInBounds && safeChar1 === safeChar2;
+
+    // 只有在明确处于比对状态（isComparing !== false）且两字符均在界内且相等时，才判定为当前匹配成功！
+    const isCurrentMatch = isComparing !== false && isBothInBounds && safeChar1 === safeChar2;
 
     const s1RowHtml = this.renderSequenceRow({
       str: s1,
       curIdx: curI,
       matchedSet: matchedSet1,
       isCurrentMatch,
-      showEof: showEofSentinel,
+      eofPos,
     });
 
     const s2RowHtml = this.renderSequenceRow({
@@ -70,21 +95,30 @@ export class SequenceAlignmentPresenter {
       curIdx: curJ,
       matchedSet: matchedSet2,
       isCurrentMatch,
-      showEof: showEofSentinel,
+      eofPos,
     });
 
     // 状态决策 Badge
     let badgeHtml = customBadgeHtml;
     if (!badgeHtml) {
-      if (curI < 0 || curJ < 0) {
+      if (curI < -1 || curJ < -1) {
         badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏱️ 尚未开始比对 (索引未就绪)</span>`;
-      } else if (curI >= s1.length || curJ >= s2.length) {
-        const outInfo = curI >= s1.length && curJ >= s2.length
-          ? '双串均已到达末尾空串'
+      } else if (curI < 0 || curJ < 0 || curI >= s1.length || curJ >= s2.length) {
+        const outInfo = (curI < 0 && curJ < 0)
+          ? '双串均已到达前置空串基底 (i=-1, j=-1)'
+          : curI < 0
+          ? `text1 已到达空串基底 (i=-1)`
+          : curJ < 0
+          ? `text2 已到达空串基底 (j=-1)`
+          : (curI >= s1.length && curJ >= s2.length)
+          ? '双串均已到达末尾空串 (EOF)'
           : curI >= s1.length
           ? `text1 遍历完毕 (索引 ${curI} >= ${s1.length})`
           : `text2 遍历完毕 (索引 ${curJ} >= ${s2.length})`;
         badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 6px;">🛡️ 边界基底：${outInfo}，return 0</span>`;
+      } else if (isComparing === false) {
+        const desc = statusDescription || `等待递归深入或比对指令 (当前定位: s1[${curI}]='${safeChar1}', s2[${curJ}]='${safeChar2}')`;
+        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏳ 准备就绪：${desc}</span>`;
       } else if (isCurrentMatch) {
         badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.15);">✨ 字符匹配成功：s1[${curI}] == s2[${curJ}] ('${safeChar1}') 纳入公共子序列 (+1)</span>`;
       } else {
@@ -135,7 +169,8 @@ export class SequenceAlignmentPresenter {
   }
 
   private static formatIndexText(idx: number, length: number): string {
-    if (idx < 0) return '未就绪';
+    if (idx === -1) return '-1 (空串基底 Ø)';
+    if (idx < -1) return '未就绪';
     if (idx >= length) return `${idx} (越界空串/EOF)`;
     return `${idx}`;
   }
@@ -145,11 +180,18 @@ export class SequenceAlignmentPresenter {
     curIdx: number;
     matchedSet: Set<number>;
     isCurrentMatch: boolean;
-    showEof: boolean;
+    eofPos: 'front' | 'back' | 'both' | 'none';
   }): string {
-    const { str, curIdx, matchedSet, isCurrentMatch, showEof } = params;
+    const { str, curIdx, matchedSet, isCurrentMatch, eofPos } = params;
     const chars = str.split('');
-    const cellsHtml = chars.map((char, idx) => {
+    const cellsHtml: string[] = [];
+
+    if (eofPos === 'front' || eofPos === 'both') {
+      const isPreEofActive = curIdx === -1;
+      cellsHtml.push(this.renderEofCell(isPreEofActive, 'Ø', '前置空串基底 (i = -1)'));
+    }
+
+    chars.forEach((char, idx) => {
       const isCur = idx === curIdx;
       const isMatched = matchedSet.has(idx);
 
@@ -160,16 +202,14 @@ export class SequenceAlignmentPresenter {
         visualState = 'matched';
       } else if (isCur) {
         visualState = 'active';
-      } else if (curIdx >= 0 && idx < curIdx) {
-        visualState = 'visited';
       }
 
-      return this.renderCell(char, idx, visualState);
+      cellsHtml.push(this.renderCell(char, idx, visualState));
     });
 
-    if (showEof) {
-      const isEofActive = curIdx >= str.length;
-      cellsHtml.push(this.renderEofCell(isEofActive));
+    if (eofPos === 'back' || eofPos === 'both') {
+      const isPostEofActive = curIdx >= str.length;
+      cellsHtml.push(this.renderEofCell(isPostEofActive, 'Ø', '后置末尾空串基底 (EOF / Ø)'));
     }
 
     return cellsHtml.join('');
@@ -238,7 +278,7 @@ export class SequenceAlignmentPresenter {
     `;
   }
 
-  private static renderEofCell(isActive: boolean): string {
+  private static renderEofCell(isActive: boolean, symbol: string = 'Ø', title: string = '空串基底 (EOF / Ø)'): string {
     const bg = isActive ? '#fee2e2' : '#f8fafc';
     const color = isActive ? '#dc2626' : '#94a3b8';
     const border = isActive ? '2px solid #ef4444' : '1px dashed #cbd5e1';
@@ -259,8 +299,8 @@ export class SequenceAlignmentPresenter {
         text-align: center;
         min-width: 32px;
         transition: all 0.2s ease;
-      " title="末尾空串基底 (EOF / Ø)">
-        Ø
+      " title="${title}">
+        ${symbol}
         ${isActive ? '<span style="position: absolute; top: -6px; right: -6px; font-size: 9px; background: #ef4444; color: #fff; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;">!</span>' : ''}
       </div>
     `;

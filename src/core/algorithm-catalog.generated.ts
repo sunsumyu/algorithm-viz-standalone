@@ -427,6 +427,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🔢",
     difficulty: 1,
     levelOrder: 15,
+    learningGoal: "掌握 used 数组标记法在排列回溯中的去重与剪枝原理",
   },
   {
     id: "nqueen",

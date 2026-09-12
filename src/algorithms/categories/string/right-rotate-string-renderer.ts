@@ -1,20 +1,14 @@
 /**
- * 右旋转字符串可视化器 — 4-Card 标准现代架构
+ * 右旋转字符串可视化器 — 声明式 4-Card 标准架构
  * KamaCoder 55：三次反转法
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import {
   RIGHT_ROTATE_STRING_PROBLEM_HTML,
   RIGHT_ROTATE_STRING_ANALYSIS_HTML,
   RIGHT_ROTATE_STRING_CODE_LANGUAGES,
 } from './right-rotate-string-problem-content';
-import template from './right-rotate-string.html?raw';
 
 export interface RightRotateStep {
   chars: string[];
@@ -30,6 +24,7 @@ export interface RightRotateStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics?: Record<string, string>;
 }
 
 export function buildRightRotateSteps(inputStr: string, kInput: number): RightRotateStep[] {
@@ -139,196 +134,94 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
   return steps;
 }
 
-export class RightRotateStringVisualizer extends StepVisualizer<RightRotateStep> {
-  protected codeLanguages = RIGHT_ROTATE_STRING_CODE_LANGUAGES;
-  protected codeLines = RIGHT_ROTATE_STRING_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '右旋转字符串 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: RightRotateStep[]): RightRotateStep[] {
+  const statusMap: Record<string, string> = {
+    init: '初始化',
+    stage1: '反转整体',
+    stage2: '反转前部',
+    stage3: '反转后部',
+    done: '旋转完成',
+  };
+  return steps.map((s) => {
+    let action = '三次反转全部完成';
+    if (s.phase === 'stage1') action = `reverse(0, ${s.chars.length - 1})`;
+    else if (s.phase === 'stage2') action = `reverse(0, ${s.k - 1})`;
+    else if (s.phase === 'stage3') action = `reverse(${s.k}, ${s.chars.length - 1})`;
 
-  private trackRowEl: HTMLElement | null = null;
-  private pillStage1El: HTMLElement | null = null;
-  private pillStage2El: HTMLElement | null = null;
-  private pillStage3El: HTMLElement | null = null;
-  private metricStageEl: HTMLElement | null = null;
-  private metricWindowEl: HTMLElement | null = null;
-  private metricKEl: HTMLElement | null = null;
-  private metricStatusEl: HTMLElement | null = null;
-  private formulaOpEl: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-
-    this.trackRowEl = this.root.querySelector('#rr-track-row');
-    this.pillStage1El = this.root.querySelector('#pill-stage-1');
-    this.pillStage2El = this.root.querySelector('#pill-stage-2');
-    this.pillStage3El = this.root.querySelector('#pill-stage-3');
-    this.metricStageEl = this.root.querySelector('#metric-stage');
-    this.metricWindowEl = this.root.querySelector('#metric-window');
-    this.metricKEl = this.root.querySelector('#metric-k');
-    this.metricStatusEl = this.root.querySelector('#metric-status');
-    this.formulaOpEl = this.root.querySelector('#formula-op');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.rr-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-        const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-        if (sInput && btn.dataset.s) sInput.value = btn.dataset.s;
-        if (kInput && btn.dataset.k) kInput.value = btn.dataset.k;
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: RIGHT_ROTATE_STRING_PROBLEM_HTML,
-      analysisHtml: RIGHT_ROTATE_STRING_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): RightRotateStep[] {
-    const sInput = this.root?.querySelector('#input-s') as HTMLInputElement | null;
-    const kInput = this.root?.querySelector('#input-k') as HTMLInputElement | null;
-    const str = sInput?.value || 'abcdefg';
-    const k = parseInt(kInput?.value || '2', 10);
-    return buildRightRotateSteps(str, isNaN(k) || k <= 0 ? 2 : k);
-  }
-
-  protected renderStep(step: RightRotateStep): void {
-    const { chars, stage, windowStart, windowEnd, left, right, k, swapping, phase, message } = step;
-
-    // 1. 渲染字符数组与区间高亮
-    if (this.trackRowEl) {
-      this.trackRowEl.innerHTML = chars
-        .map((ch, idx) => {
-          const inSubWindow =
-            windowStart >= 0 && windowEnd >= 0 && idx >= windowStart && idx <= windowEnd && phase !== 'done';
-          const isLeft = idx === left && phase !== 'done';
-          const isRight = idx === right && phase !== 'done';
-          const isSwapping = swapping && (idx === left || idx === right);
-
-          let cellClass = 'rr-cell-box';
-          if (inSubWindow) cellClass += ' in-sub-window';
-          if (isSwapping) cellClass += ' is-swapping';
-          else if (isLeft) cellClass += ' is-left';
-          else if (isRight) cellClass += ' is-right';
-
-          let ptrTags = '';
-          if (isLeft && isRight) {
-            ptrTags = '<span class="rr-ptr-badge left">L</span><span class="rr-ptr-badge right">R</span>';
-          } else if (isLeft) {
-            ptrTags = '<span class="rr-ptr-badge left">left</span>';
-          } else if (isRight) {
-            ptrTags = '<span class="rr-ptr-badge right">right</span>';
-          }
-
-          return `
-            <div class="rr-cell-wrapper">
-              <div class="rr-pointer-tags">${ptrTags}</div>
-              <div class="${cellClass}">
-                <span class="val">${ch}</span>
-                <span class="idx">${idx}</span>
-              </div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    // 2. 渲染 Stage Pills
-    const updatePill = (el: HTMLElement | null, currentStage: number, targetStage: number) => {
-      if (!el) return;
-      el.className = 'rr-stage-pill';
-      if (currentStage === targetStage) el.classList.add('is-active');
-      else if (currentStage > targetStage) el.classList.add('is-done');
+    return {
+      ...s,
+      metrics: {
+        stage: `Stage ${s.stage}`,
+        window:
+          s.windowStart >= 0 && s.windowEnd >= 0 && s.phase !== 'done'
+            ? `[${s.windowStart}, ${s.windowEnd}]`
+            : '—',
+        k: `${s.k}`,
+        status: statusMap[s.phase] || s.phase,
+        action,
+      },
     };
-    updatePill(this.pillStage1El, stage, 1);
-    updatePill(this.pillStage2El, stage, 2);
-    updatePill(this.pillStage3El, stage, 3);
-
-    // 3. 更新状态监视器
-    if (this.metricStageEl) this.metricStageEl.textContent = `Stage ${stage}`;
-    if (this.metricWindowEl) {
-      this.metricWindowEl.textContent =
-        windowStart >= 0 && windowEnd >= 0 && phase !== 'done' ? `[${windowStart}, ${windowEnd}]` : '—';
-    }
-    if (this.metricKEl) this.metricKEl.textContent = `${k}`;
-    if (this.metricStatusEl) {
-      const statusMap: Record<string, string> = {
-        init: '初始化',
-        stage1: '反转整体',
-        stage2: '反转前部',
-        stage3: '反转后部',
-        done: '旋转完成',
-      };
-      this.metricStatusEl.textContent = statusMap[phase] || phase;
-      this.metricStatusEl.style.color = phase === 'done' ? '#10b981' : '#2563eb';
-    }
-
-    if (this.formulaOpEl) {
-      if (phase === 'stage1') {
-        this.formulaOpEl.textContent = `reverse(0, ${chars.length - 1})`;
-      } else if (phase === 'stage2') {
-        this.formulaOpEl.textContent = `reverse(0, ${k - 1})`;
-      } else if (phase === 'stage3') {
-        this.formulaOpEl.textContent = `reverse(${k}, ${chars.length - 1})`;
-      } else {
-        this.formulaOpEl.textContent = '三次反转全部完成';
-      }
-    }
-
-    // 4. 更新日志流
-    if (this.logContainer) {
-      const stepIndex = this.currentStepIndex;
-      const logEntry = document.createElement('div');
-      logEntry.style.padding = '4px 8px';
-      logEntry.style.borderRadius = '6px';
-      logEntry.style.background =
-        phase === 'done' ? '#f0fdf4' : swapping ? '#eff6ff' : '#f8fafc';
-      logEntry.style.color =
-        phase === 'done' ? '#15803d' : swapping ? '#1d4ed8' : '#334155';
-      logEntry.style.border =
-        '1px solid ' +
-        (phase === 'done' ? '#bbf7d0' : swapping ? '#bfdbfe' : '#e2e8f0');
-      logEntry.innerHTML = `<span style="color:#94a3b8;">[Step ${stepIndex + 1}]</span> ${step.log}`;
-
-      this.logContainer.appendChild(logEntry);
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-
-      if (this.logCountEl) {
-        this.logCountEl.textContent = `${this.logContainer.children.length} 条记录`;
-      }
-    }
-
-    const badgePhase = this.root?.querySelector('#badge-phase');
-    if (badgePhase) {
-      const statusMap: Record<string, string> = {
-        init: '初始化',
-        stage1: '反转整体',
-        stage2: '反转前部',
-        stage3: '反转后部',
-        done: '旋转完成',
-      };
-      badgePhase.textContent = statusMap[phase] || phase;
-    }
-  }
-
-  public reset(): void {
-    super.reset();
-    if (this.logContainer) this.logContainer.innerHTML = '';
-    if (this.logCountEl) this.logCountEl.textContent = '0 条记录';
-  }
+  });
 }
 
-registerAlgorithm({
+/** 主视觉：字符数组三次分段反转轨迹（区间高亮 + 指针徽章） */
+export function renderRightRotateStringCanvas(container: HTMLElement, step: RightRotateStep): void {
+  const { chars, windowStart, windowEnd, left, right, swapping, phase } = step;
+
+  const cellsHtml = chars
+    .map((ch, idx) => {
+      const inSubWindow =
+        windowStart >= 0 && windowEnd >= 0 && idx >= windowStart && idx <= windowEnd && phase !== 'done';
+      const isLeft = idx === left && phase !== 'done';
+      const isRight = idx === right && phase !== 'done';
+      const isSwapping = swapping && (idx === left || idx === right);
+
+      let style =
+        'width: 38px; height: 44px; border-radius: 8px; background: #ffffff; border: 2px solid #cbd5e1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);';
+      if (inSubWindow) style += ' border-color: #818cf8; background: #eef2ff;';
+      if (isSwapping) {
+        style +=
+          ' border-color: #10b981; background: #ecfdf5; transform: translateY(-3px) scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);';
+      } else if (isLeft) {
+        style += ' border-color: #2563eb; background: #eff6ff;';
+      } else if (isRight) {
+        style += ' border-color: #f59e0b; background: #fffbeb;';
+      }
+
+      let ptrTags = '';
+      if (isLeft && isRight) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">L</span>' +
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">R</span>';
+      } else if (isLeft) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #2563eb; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">left</span>';
+      } else if (isRight) {
+        ptrTags =
+          '<span style="font-size: 9.5px; font-weight: 800; font-family: \'JetBrains Mono\', monospace; padding: 1px 5px; border-radius: 4px; color: #ffffff; background: #f59e0b; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">right</span>';
+      }
+
+      return `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+          <div style="min-height: 18px; display: flex; align-items: center; gap: 3px;">${ptrTags}</div>
+          <div style="${style}">
+            <span style="font-size: 15px; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace;">${ch}</span>
+            <span style="font-size: 9px; font-weight: 700; color: #94a3b8; position: absolute; bottom: 2px;">${idx}</span>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 6px; flex-wrap: wrap; justify-content: center; width: 100%; height: 100%; padding: 12px; box-sizing: border-box; overflow: auto;">
+      ${cellsHtml}
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
   id: 'right-rotate-string',
   name: '右旋转字符串（三次反转）',
   viewId: 'algo-right-rotate-view',
@@ -338,6 +231,51 @@ registerAlgorithm({
   difficulty: 1,
   levelOrder: 5,
   learningGoal: '掌握通过分段反转实现字符串旋转的技巧',
-  template,
-  Visualizer: RightRotateStringVisualizer,
+  inputs: [
+    {
+      id: 's',
+      label: '输入字符串',
+      type: 'text',
+      defaultValue: 'abcdefg',
+      placeholder: '字符串',
+    },
+    {
+      id: 'k',
+      label: '旋转位数 k',
+      type: 'number',
+      defaultValue: 2,
+      min: 1,
+      max: 10,
+    },
+  ],
+  presets: [
+    { label: '示例 1: ("abcdefg", k=2)', values: { s: 'abcdefg', k: 2 } },
+    { label: '示例 2: ("lrloseumgh", k=6)', values: { s: 'lrloseumgh', k: 6 } },
+    { label: '对半旋转: ("helloworld", k=5)', values: { s: 'helloworld', k: 5 } },
+    { label: '短字符串: ("abc", k=1)', values: { s: 'abc', k: 1 } },
+  ],
+  metrics: [
+    { id: 'stage', label: '当前阶段', color: '#2563eb' },
+    { id: 'window', label: '反转区间 [L, R]', color: '#9333ea' },
+    { id: 'k', label: '旋转量 k', color: '#f59e0b' },
+    { id: 'status', label: '执行状态', color: '#0f172a' },
+    { id: 'action', label: '当前操作', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '反转区间', color: '#818cf8' },
+    { label: 'left 指针', color: '#2563eb' },
+    { label: 'right 指针', color: '#f59e0b' },
+    { label: '交换中', color: '#10b981' },
+  ],
+  codeLanguages: RIGHT_ROTATE_STRING_CODE_LANGUAGES,
+  problemHtml: RIGHT_ROTATE_STRING_PROBLEM_HTML,
+  analysisHtml: RIGHT_ROTATE_STRING_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const k = parseInt(String(inputs.k ?? '2'), 10);
+    return withMetrics(
+      buildRightRotateSteps(String(inputs.s ?? 'abcdefg'), isNaN(k) || k <= 0 ? 2 : k)
+    );
+  },
+  renderCanvas: (container, step) =>
+    renderRightRotateStringCanvas(container, step as RightRotateStep),
 });

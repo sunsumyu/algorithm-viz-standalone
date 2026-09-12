@@ -25,6 +25,7 @@ import {
   renderSpaceOptCard2,
   DpCellDep,
 } from './dp-067-shared';
+import { GridVisualAdapter } from '../../../../core/renderers/grid-visual-adapter';
 
 // ==========================================
 // 1. 输入解析与类型定义
@@ -680,7 +681,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         );
       },
       renderCustomMetrics: (container, step) => {
-        renderGridMap(container, step.grid, step.i, step.j);
+        renderGridMap(container, step.grid, step.i, step.j, step.callStack);
       },
     },
     {
@@ -817,80 +818,40 @@ function renderGridMap(
   container: HTMLElement,
   grid: number[][],
   activeI: number,
-  activeJ: number
+  activeJ: number,
+  callStack?: Array<{ label: string }>
 ): void {
-  if (!container) return;
+  if (!container || !grid || grid.length === 0) return;
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
 
-  const cellsHtml = grid.map((row, r) => {
-    const tds = row.map((val, c) => {
-      const isCur = r === activeI && c === activeJ;
-      const isPassed = r <= activeI && c <= activeJ;
+  const activeStack = callStack
+    ? callStack
+        .map((item) => {
+          const m = item.label.match(/f\((\d+),\s*(\d+)\)/);
+          return m ? `${m[1]},${m[2]}` : '';
+        })
+        .filter(Boolean)
+    : [];
 
-      let bg = '#ffffff';
-      let border = '1px solid #e2e8f0';
-      let textCol = '#475569';
-      let shadow = 'none';
+  const stepData = {
+    i: activeI,
+    j: activeJ,
+    grid,
+    activeStack,
+  };
 
-      if (isCur) {
-        bg = '#dcfce7';
-        border = '2px solid #16a34a';
-        textCol = '#166534';
-        shadow = '0 2px 6px rgba(22, 163, 74, 0.15)';
-      } else if (isPassed) {
-        bg = '#f0f9ff';
-        border = '1.5px solid #bae6fd';
-        textCol = '#0369a1';
-      }
+  const rowLabels = Array.from({ length: rows }, (_, r) => `r${r}`);
+  const colLabels = Array.from({ length: cols }, (_, c) => `c${c}`);
 
-      return `
-        <td style="
-          padding: 8px 14px;
-          text-align: center;
-          font-family: monospace;
-          font-size: 14px;
-          font-weight: 700;
-          background: ${bg};
-          color: ${textCol};
-          border: ${border};
-          box-shadow: ${shadow};
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        ">
-          <div>${val}</div>
-          <div style="font-size: 10px; font-weight: 500; color: ${isCur ? '#15803d' : isPassed ? '#0284c7' : '#94a3b8'}; margin-top: 2px;">(${r},${c})</div>
-        </td>
-      `;
-    }).join('');
-
-    return `<tr>${tds}</tr>`;
-  }).join('');
-
-  container.innerHTML = `
-    <div style="
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px;
-      box-sizing: border-box;
-      overflow: auto;
-    ">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; font-weight: 700; color: #334155;">网格尺寸: ${rows} × ${cols}</span>
-        <span style="font-size: 11px; color: #0284c7; background: #e0f2fe; padding: 2px 8px; border-radius: 9999px; font-family: monospace; font-weight: 700;">当前游标: (${activeI}, ${activeJ})</span>
-      </div>
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto;">
-        <table style="border-spacing: 8px; border-collapse: separate;">
-          <tbody>
-            ${cellsHtml}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  GridVisualAdapter.renderGrid(container, stepData, {
+    m: rows,
+    n: cols,
+    isGridProblem: true,
+    modelId: 'min-path-sum',
+    rowLabels,
+    colLabels,
+  });
 }
 
 export const MinPathSumVisualizer = Visualizer;

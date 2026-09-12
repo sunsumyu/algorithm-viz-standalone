@@ -1,19 +1,11 @@
 /**
- * 子集可视化器（回溯算法）— 4-Card 标准现代架构
+ * 子集可视化器（回溯算法）— 声明式 4-Card 标准架构
  * LeetCode 78：给定不含重复数字的整数数组，返回所有可能的子集
  * 核心：全树节点收集 (收集树上的每一个状态)
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import {
-  DarkCodeTerminalPresenter,
-  DarkCodeTerminalInstance,
-} from '../../../core/renderers/dark-code-terminal-presenter';
-import {
-  BacktrackStateSpacePresenter,
-  BacktrackLogItem,
-} from '../../../core/renderers/backtrack-state-space-presenter';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { BacktrackStateSpacePresenter } from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -27,7 +19,9 @@ import {
   SUBSET_ANALYSIS_HTML,
   SUBSET_CODE_LANGUAGES,
 } from './subset-problem-content';
-import template from './subset.html?raw';
+
+/** 决策树步骤 + 状态监视器指标 */
+export type SubsetStep = BacktrackTreeStep & { metrics?: Record<string, string> };
 
 /* ── Build the full decision tree ─────────────────────────── */
 export function buildSubsetTree(nums: number[]): BacktrackTreeNode {
@@ -70,12 +64,12 @@ export function buildSubsetTree(nums: number[]): BacktrackTreeNode {
 }
 
 /* ── Generate steps by traversing the tree ────────────────── */
-export function buildSubsetSteps(nums: number[]): BacktrackTreeStep[] {
+export function buildSubsetSteps(nums: number[]): SubsetStep[] {
   const root = buildSubsetTree(nums);
   layoutTree(root);
   const allNodes = flattenTree(root);
 
-  const steps: BacktrackTreeStep[] = [];
+  const steps: SubsetStep[] = [];
   const visitedIds: string[] = ['root'];
   const foundIds: string[] = [];
   const solutions: number[][] = [];
@@ -204,190 +198,184 @@ export function buildSubsetSteps(nums: number[]): BacktrackTreeStep[] {
   return steps;
 }
 
-/* ── Visualizer class ─────────────────────────────────────── */
-export class SubsetVisualizer extends StepVisualizer<BacktrackTreeStep> {
-  protected codeLanguages = SUBSET_CODE_LANGUAGES;
-  protected codeLines = SUBSET_CODE_LANGUAGES['java'];
-  protected codePanelTitle = '子集 代码调试';
+/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
+function withMetrics(steps: SubsetStep[]): SubsetStep[] {
+  const rootNode = steps[0]?.nodes.find((n) => n.id === 'root');
+  const n = rootNode ? rootNode.children.length : 0;
+  const totalPowerSet = Math.pow(2, n);
 
-  private treeDisplay: HTMLElement | null = null;
-  private pathStackContainer: HTMLElement | null = null;
-  private collectorMonitorContainer: HTMLElement | null = null;
-  private resultCollectionContainer: HTMLElement | null = null;
-  private logContainer: HTMLElement | null = null;
-  private logCountEl: HTMLElement | null = null;
-  private cachedLogs: BacktrackLogItem[] = [];
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeDisplay = this.root.querySelector('#subset-tree-display');
-    this.pathStackContainer = this.root.querySelector('#sb-path-stack-container');
-    this.collectorMonitorContainer = this.root.querySelector('#sb-collector-monitor-container');
-    this.resultCollectionContainer = this.root.querySelector('#sb-result-collection-container');
-    this.logContainer = this.root.querySelector('#log-container');
-    this.logCountEl = this.root.querySelector('#log-count');
-
-    // 智能绑定播放控制 (包括生成、重置、前进/后退、播放/暂停、进度条与速度选择)
-    this.bindPlaybackControls();
-
-    // 示例 Chips
-    this.root.querySelectorAll<HTMLButtonElement>('.sb-chip').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-        if (numsEl) numsEl.value = btn.dataset.nums || '';
-        this.start();
-      });
-    });
-
-    // 挂载暗色代码终端深模块
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: SUBSET_PROBLEM_HTML,
-      analysisHtml: SUBSET_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
-  }
-
-  protected buildSteps(): BacktrackTreeStep[] {
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const rawNums = (numsEl?.value || '1,2,3')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-
-    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
-    if (nums.length > 5) nums.length = 5; // 防止组合爆炸
-
-    const steps = buildSubsetSteps(nums);
-
-    // 预计算日志流
-    this.cachedLogs = steps.map((st, idx) => {
-      let type: BacktrackLogItem['type'] = 'info';
-      if (st.message.includes('做选择')) type = 'push';
-      else if (st.message.includes('回溯撤销')) type = 'pop';
-      else if (st.message.includes('收集子集')) type = 'collect';
-
-      return {
-        stepIndex: idx + 1,
-        type,
-        text: st.message,
-      };
-    });
-
-    return steps;
-  }
-
-  protected renderStep(step: BacktrackTreeStep): void {
-    const index = this.currentIndex;
-
-    // 1. 渲染 SVG 决策树沙盘
-    if (this.treeDisplay) {
-      renderBacktrackTree({
-        container: this.treeDisplay,
-        step,
-        cssPrefix: 'sb',
-        nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
-      });
+  return steps.map((s) => {
+    let action = 'backtrack(nums, startIndex=0, path, res)';
+    if (s.message.includes('做选择')) {
+      const m = s.message.match(/path\.add\(([^)]+)\)/);
+      action = `path.add(${m ? m[1] : '?'}) 做选择`;
+    } else if (s.message.includes('向下递归')) {
+      action = 'backtrack(nums, startIndex+1, path, res)';
+    } else if (s.message.includes('回溯撤销')) {
+      const m = s.message.match(/path\.remove\(([^)]+)\)/);
+      action = `path.remove(${m ? m[1] : '?'}) 回溯撤销`;
+    } else if (s.message.includes('收集子集')) {
+      action = `res.add([${s.path.join(', ')}]) 收集子集`;
+    } else if (s.message.includes('搜索完成')) {
+      action = '搜索完成';
     }
 
-    // 2. 渲染当前路径栈 (Card 2 Left)
-    if (this.pathStackContainer) {
-      BacktrackStateSpacePresenter.renderPathStack(this.pathStackContainer, step.path || []);
-    }
+    return {
+      ...s,
+      metrics: {
+        depth: String(s.stats?.depth ?? 0),
+        path: `[${s.path.join(', ')}]`,
+        collected: `${s.foundPathIds.length} / ${totalPowerSet}`,
+        action,
+      },
+    };
+  });
+}
 
-    // 3. 渲染全节点收集监视器 (Card 2 Center)
-    const numsEl = this.root?.querySelector('#input-nums') as HTMLInputElement | null;
-    const rawNums = (numsEl?.value || '1,2,3')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
-    const totalPowerSet = Math.pow(2, nums.length);
-
-    const solutionsUpToNow: Array<Array<number | string>> = [];
-    for (let i = 0; i <= index; i++) {
-      const st = this.steps[i];
-      if (st.message.includes('收集子集')) {
-        solutionsUpToNow.push([...st.path]);
-      }
-    }
-
-    if (this.collectorMonitorContainer) {
-      const percent = Math.min(100, (solutionsUpToNow.length / totalPowerSet) * 100);
-      this.collectorMonitorContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span>幂集收集: <strong style="color: #0f172a; font-family: monospace; font-size: 12px;">${solutionsUpToNow.length}</strong> / 2^${nums.length} = ${totalPowerSet}</span>
-            <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
-              ${percent.toFixed(0)}% 完成
-            </span>
+/* ── Card 1 主视觉：决策树沙盘 + 底部状态空间条 ─────────────── */
+export function renderSubsetCanvas(container: HTMLElement, step: SubsetStep): void {
+  // 骨架仅在切换运行（决策树变化）时重建，保证树视口缩放/平移状态跨步保留
+  const skeletonKey = `${step.nodes.length}:${step.nodes[0]?.id ?? ''}`;
+  if (container.dataset.subsetSkeletonKey !== skeletonKey) {
+    const prevTree = container.querySelector<HTMLElement>('#subset-tree-display');
+    resetContainerViewState(prevTree);
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; height: 100%; width: 100%; box-sizing: border-box; gap: 8px;">
+        <div id="subset-tree-display" style="flex: 1; min-height: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;"></div>
+        <div style="display: flex; gap: 8px; height: 118px; flex-shrink: 0;">
+          <div style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">📚 当前路径栈 path</div>
+            <div id="sb-path-stack-container" style="min-height: 24px;"></div>
           </div>
-          <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden; position: relative;">
-            <div style="background: #10b981; width: ${percent}%; height: 100%; transition: width 0.2s;"></div>
+          <div style="flex: 1; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">📦 幂集收集监视器</div>
+            <div id="sb-collector-monitor-container"></div>
           </div>
-          <div style="font-size: 10.5px; color: #64748b; line-height: 1.4;">
-            <div>• 特征: 每一个节点进入即 <code style="color:#b45309; font-family:monospace;">res.add(path)</code></div>
-            <div>• 无需剪枝，全树展开遍历所有路径</div>
+          <div style="flex: 1.4; min-width: 0; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px 10px; box-sizing: border-box; overflow: auto;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 4px;">✅ 解集箱（已收集子集）</div>
+            <div id="sb-result-collection-container" style="min-height: 24px;"></div>
           </div>
         </div>
-      `;
-    }
-
-    // 4. 渲染实时解集箱 (Card 2 Bottom)
-    if (this.resultCollectionContainer) {
-      BacktrackStateSpacePresenter.renderResultCollection(
-        this.resultCollectionContainer,
-        solutionsUpToNow,
-        -1,
-        (solIdx: number) => {
-          for (let stepIdx = 0; stepIdx < this.steps.length; stepIdx++) {
-            if (
-              this.steps[stepIdx].message.includes('收集子集') &&
-              JSON.stringify(this.steps[stepIdx].path) === JSON.stringify(solutionsUpToNow[solIdx])
-            ) {
-              this.goToStep(stepIdx);
-              break;
-            }
-          }
-        }
-      );
-    }
-
-    const badgeCount = this.root?.querySelector('#badge-result-count');
-    if (badgeCount) {
-      badgeCount.textContent = `解集: ${solutionsUpToNow.length} / ${totalPowerSet}`;
-    }
-
-    // 5. 渲染执行日志流 (Card 4)
-    if (this.logContainer) {
-      BacktrackStateSpacePresenter.renderBacktrackLogStream(
-        this.logContainer,
-        this.cachedLogs.slice(0, this.currentIndex + 1),
-        this.currentIndex
-      );
-    }
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
-    }
+      </div>
+    `;
+    container.dataset.subsetSkeletonKey = skeletonKey;
   }
 
-  public reset(): void {
-    super.reset();
-    resetContainerViewState(this.treeDisplay);
-    if (this.treeDisplay) this.treeDisplay.innerHTML = '';
+  // 1. 渲染 SVG 决策树沙盘
+  const treeDisplay = container.querySelector<HTMLElement>('#subset-tree-display');
+  if (treeDisplay) {
+    renderBacktrackTree({
+      container: treeDisplay,
+      step,
+      cssPrefix: 'sb',
+      nodeLabel: (nd) => (nd.id === 'root' ? '[]' : nd.value),
+    });
+  }
+
+  // 2. 渲染当前路径栈
+  const pathStackContainer = container.querySelector<HTMLElement>('#sb-path-stack-container');
+  if (pathStackContainer) {
+    const isPush = step.message.includes('做选择');
+    const isPop = step.message.includes('回溯撤销');
+    const isCollect = step.message.includes('收集子集');
+    BacktrackStateSpacePresenter.renderPathStack(pathStackContainer, step.path || [], {
+      action: isPush ? 'push' : isPop ? 'pop' : isCollect ? 'collect' : 'idle',
+    });
+  }
+
+  // 3. 渲染全节点收集监视器
+  const rootNode = step.nodes.find((n) => n.id === 'root');
+  const nums = rootNode ? rootNode.children.map((c) => parseInt(c.value, 10)) : [];
+  const totalPowerSet = Math.pow(2, nums.length);
+
+  const nodeMap = new Map(step.nodes.map((n) => [n.id, n]));
+  const solutionsUpToNow: number[][] = step.foundPathIds.map(
+    (id) => [...((nodeMap.get(id)?.path as number[]) ?? [])]
+  );
+
+  const collectorMonitorContainer = container.querySelector<HTMLElement>(
+    '#sb-collector-monitor-container'
+  );
+  if (collectorMonitorContainer) {
+    const percent = Math.min(100, (solutionsUpToNow.length / totalPowerSet) * 100);
+    collectorMonitorContainer.innerHTML = `
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span>幂集收集: <strong style="color: #0f172a; font-family: monospace; font-size: 12px;">${solutionsUpToNow.length}</strong> / 2^${nums.length} = ${totalPowerSet}</span>
+          <span style="padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 10.5px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+            ${percent.toFixed(0)}% 完成
+          </span>
+        </div>
+        <div style="background: #f1f5f9; border-radius: 6px; height: 6px; overflow: hidden; position: relative;">
+          <div style="background: #10b981; width: ${percent}%; height: 100%; transition: width 0.2s;"></div>
+        </div>
+        <div style="font-size: 10.5px; color: #64748b; line-height: 1.4;">
+          <div>• 特征: 每一个节点进入即 <code style="color:#b45309; font-family:monospace;">res.add(path)</code></div>
+          <div>• 无需剪枝，全树展开遍历所有路径</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 4. 渲染实时解集箱
+  const resultCollectionContainer = container.querySelector<HTMLElement>(
+    '#sb-result-collection-container'
+  );
+  if (resultCollectionContainer) {
+    BacktrackStateSpacePresenter.renderResultCollection(
+      resultCollectionContainer,
+      solutionsUpToNow,
+      -1
+    );
   }
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'subset',
   name: '子集',
-  viewId: 'algo-subset-view',
   category: 'backtracking',
   description: '求无重复数组的所有子集（幂集），全节点收集',
   icon: '📦',
-  template,
-  Visualizer: SubsetVisualizer,
   difficulty: 2,
   levelOrder: 9,
   learningGoal: '掌握子集问题的全节点收集特性与 2^N 幂集回溯模型',
+  inputs: [
+    {
+      id: 'nums',
+      label: '数组 nums',
+      type: 'text',
+      defaultValue: '1,2,3',
+      placeholder: '逗号分隔的不同元素（≤5 个）',
+    },
+  ],
+  presets: [
+    { label: '基础示例', values: { nums: '1,2,3' } },
+    { label: '两个元素', values: { nums: '1,2' } },
+    { label: '四个元素', values: { nums: '1,2,3,4' } },
+    { label: '含较大值', values: { nums: '2,4,6,8' } },
+  ],
+  metrics: [
+    { id: 'depth', label: '递归深度', color: '#2563eb' },
+    { id: 'path', label: '路径栈 path', color: '#a855f7' },
+    { id: 'collected', label: '已收集子集', color: '#10b981' },
+    { id: 'action', label: '当前操作', color: '#f59e0b' },
+  ],
+  legend: [
+    { label: '📍当前探索', color: '#3b82f6' },
+    { label: '✅子集收集节点', color: '#10b981' },
+    { label: '🔙已回溯', color: '#94a3b8' },
+  ],
+  codeLanguages: SUBSET_CODE_LANGUAGES,
+  problemHtml: SUBSET_PROBLEM_HTML,
+  analysisHtml: SUBSET_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const rawNums = String(inputs.nums ?? '1,2,3')
+      .split(/[,，\s]+/)
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+    const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
+    if (nums.length > 5) nums.length = 5; // 防止组合爆炸
+    return withMetrics(buildSubsetSteps(nums));
+  },
+  renderCanvas: (container, step) => renderSubsetCanvas(container, step as SubsetStep),
 });

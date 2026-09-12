@@ -4,14 +4,13 @@
  * 深度架构重构：严格解释器级全流程逐行高亮执行（源点初始化、V-1轮外层循环、全边扫描、松弛判断、距离更新、早停检测均发射独立Step）、四语言行号映射
  */
 
-import { StepBase, StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import {
   BELLMAN_FORD_PROBLEM_HTML,
   BELLMAN_FORD_ANALYSIS_HTML,
   BELLMAN_FORD_CODE_LANGUAGES,
 } from './bellman-ford-problem-content';
-import template from './bellman-ford.html?raw';
 import { HighlightTarget } from '../../../core/code-panel';
 
 export interface BFStep extends StepBase {
@@ -159,146 +158,119 @@ export function buildBFSteps(): BFStep[] {
   return steps;
 }
 
-export class BellmanFordVisualizer extends StepVisualizer<BFStep> {
-  protected codeLanguages = BELLMAN_FORD_CODE_LANGUAGES;
-  protected codeLines = BELLMAN_FORD_CODE_LANGUAGES['java'];
-  protected codePanelTitle = 'Bellman-Ford 算法代码调试';
+/** 主视觉：有向带权图 SVG + dist 距离表 */
+export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): void {
+  const { dist, currentEdge, action } = step;
 
-  private svgCanvas: HTMLElement | null = null;
-  private distTableBody: HTMLElement | null = null;
-  private metricRoundEl: HTMLElement | null = null;
-  private metricRoundRelaxEl: HTMLElement | null = null;
-  private metricTotalRelaxEl: HTMLElement | null = null;
-  private metricEarlyStopEl: HTMLElement | null = null;
-  private liveTextEl: HTMLElement | null = null;
+  let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-bf" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+      </marker>
+      <marker id="arrow-bf-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+      </marker>
+      <marker id="arrow-bf-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+      </marker>
+    </defs>`;
 
-  protected initDOMElements(): void {
-    if (!this.root) return;
+  for (const e of BF_EDGES) {
+    const p1 = BF_NODE_POSITIONS[e.from];
+    const p2 = BF_NODE_POSITIONS[e.to];
+    const isCurrent = currentEdge && currentEdge.from === e.from && currentEdge.to === e.to;
+    const isRelaxed = isCurrent && action === 'relax';
 
-    this.svgCanvas = this.root.querySelector('#bf-svg-canvas');
-    this.distTableBody = this.root.querySelector('#bf-dist-table-body');
-    this.metricRoundEl = this.root.querySelector('#metric-cur-round');
-    this.metricRoundRelaxEl = this.root.querySelector('#metric-round-relax');
-    this.metricTotalRelaxEl = this.root.querySelector('#metric-total-relax');
-    this.metricEarlyStopEl = this.root.querySelector('#metric-early-stop');
-    this.liveTextEl = this.root.querySelector('#bf-live-text');
+    const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+    const strokeWidth = isCurrent ? 3.5 : 1.8;
+    const marker = isRelaxed ? 'url(#arrow-bf-relax)' : isCurrent ? 'url(#arrow-bf-active)' : 'url(#arrow-bf)';
 
-    this.bindPlaybackControls();
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 + (e.from === 1 && e.to === 2 ? 12 : -8);
 
-    this.mountTerminal({
-      codeLanguages: this.codeLanguages,
-      problemHtml: BELLMAN_FORD_PROBLEM_HTML,
-      analysisHtml: BELLMAN_FORD_ANALYSIS_HTML,
-      initialLang: 'java',
-    });
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#ef4444' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
   }
 
-  protected buildSteps(): BFStep[] {
-    return buildBFSteps();
-  }
+  BF_NODES.forEach((node) => {
+    const p = BF_NODE_POSITIONS[node];
+    const dVal = dist[node];
+    const isSrc = node === 0;
+    const isTarget = currentEdge && currentEdge.to === node;
 
-  protected renderStep(step: BFStep): void {
-    const { dist, round, maxRounds, currentEdge, roundRelaxCount, totalRelaxCount, action, statusText } = step;
-
-    if (this.svgCanvas) {
-      let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
-        <defs>
-          <marker id="arrow-bf" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-          </marker>
-          <marker id="arrow-bf-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
-          </marker>
-          <marker id="arrow-bf-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
-          </marker>
-        </defs>`;
-
-      for (const e of BF_EDGES) {
-        const p1 = BF_NODE_POSITIONS[e.from];
-        const p2 = BF_NODE_POSITIONS[e.to];
-        const isCurrent = currentEdge && currentEdge.from === e.from && currentEdge.to === e.to;
-        const isRelaxed = isCurrent && action === 'relax';
-
-        const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
-        const strokeWidth = isCurrent ? 3.5 : 1.8;
-        const marker = isRelaxed ? 'url(#arrow-bf-relax)' : isCurrent ? 'url(#arrow-bf-active)' : 'url(#arrow-bf)';
-
-        const midX = (p1.x + p2.x) / 2;
-        const midY = (p1.y + p2.y) / 2 + (e.from === 1 && e.to === 2 ? 12 : -8);
-
-        svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-        svgHtml += `<rect x="${midX - 12}" y="${midY - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-        svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${e.w < 0 ? '#ef4444' : '#0f172a'}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${e.w}</text>`;
-      }
-
-      BF_NODES.forEach((node) => {
-        const p = BF_NODE_POSITIONS[node];
-        const dVal = dist[node];
-        const isSrc = node === 0;
-        const isTarget = currentEdge && currentEdge.to === node;
-
-        let fill = '#ffffff';
-        let stroke = '#cbd5e1';
-        if (isTarget && action === 'relax') {
-          fill = '#dcfce7';
-          stroke = '#10b981';
-        } else if (isSrc) {
-          fill = '#eff6ff';
-          stroke = '#3b82f6';
-        }
-
-        svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-        svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
-      });
-
-      svgHtml += `</svg>`;
-      this.svgCanvas.innerHTML = svgHtml;
+    let fill = '#ffffff';
+    let stroke = '#cbd5e1';
+    if (isTarget && action === 'relax') {
+      fill = '#dcfce7';
+      stroke = '#10b981';
+    } else if (isSrc) {
+      fill = '#eff6ff';
+      stroke = '#3b82f6';
     }
 
-    if (this.distTableBody) {
-      this.distTableBody.innerHTML = BF_NODES.map((node) => {
-        const dVal = dist[node];
-        const isCur = currentEdge && currentEdge.to === node;
-        return `<tr class="${isCur ? 'bg-blue-50/70 font-semibold' : ''}">
-          <td class="px-3 py-1.5 text-center font-mono font-bold text-slate-800">${node}</td>
-          <td class="px-3 py-1.5 text-center font-mono font-extrabold ${dVal === INF ? 'text-slate-400' : 'text-blue-600'}">${dVal === INF ? '∞' : dVal}</td>
-        </tr>`;
-      }).join('');
-    }
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
+  });
 
-    if (this.metricRoundEl) {
-      this.metricRoundEl.textContent = `${round} / ${maxRounds}`;
-    }
-    if (this.metricRoundRelaxEl) {
-      this.metricRoundRelaxEl.textContent = `${roundRelaxCount}`;
-    }
-    if (this.metricTotalRelaxEl) {
-      this.metricTotalRelaxEl.textContent = `${totalRelaxCount}`;
-    }
-    if (this.metricEarlyStopEl) {
-      const isStopped = action === 'done' && round < maxRounds;
-      this.metricEarlyStopEl.textContent = isStopped ? '已触发 (提前收敛)' : '未触发';
-      this.metricEarlyStopEl.className = `font-mono font-bold ${isStopped ? 'text-emerald-600' : 'text-slate-500'}`;
-    }
+  svgHtml += `</svg>`;
 
-    if (this.liveTextEl) {
-      this.liveTextEl.textContent = statusText;
-    }
-  }
+  const tableRows = BF_NODES.map((node) => {
+    const dVal = dist[node];
+    const isCur = currentEdge && currentEdge.to === node;
+    return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? '#94a3b8' : '#2563eb'};">${dVal === INF ? '∞' : dVal}</td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
+      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
+      <div style="flex: 0.5; min-width: 0; align-self: center;">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+          <thead>
+            <tr style="background: #f1f5f9;">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">节点</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">dist</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-registerAlgorithm({
+registerDeclarativeAlgorithm({
   id: 'bellman-ford',
   name: 'Bellman-Ford 最短路',
-  viewId: 'algo-bellman-ford-view',
-  icon: '🛤️',
   category: 'graph',
+  icon: '🛤️',
   difficulty: 3,
   levelOrder: 23,
   description: '左程云算法通关课 Class 061：支持负权边的单源最短路径算法，V-1 轮全边松弛与负权回路判定',
   learningGoal: '深刻理解全边松弛原理、早停判定机制以及负权回路的代数检测法则',
-  template,
-  Visualizer: BellmanFordVisualizer,
+  inputs: [],
+  presets: [
+    { label: '默认图 (5 节点)', values: {} },
+  ],
+  metrics: [
+    { id: 'metric-bf-round', label: '当前轮次 Round', color: '#dc2626' },
+    { id: 'metric-bf-relax', label: '累计松弛次数', color: '#10b981' },
+    { id: 'metric-bf-edge', label: '考察边 (u ➔ v, w)', color: '#3b82f6' },
+    { id: 'metric-bf-dist', label: 'dist 距离表', color: '#2563eb' },
+  ],
+  legend: [
+    { label: '当前考察边', color: '#3b82f6' },
+    { label: '松弛成功', color: '#10b981' },
+    { label: '无需更新', color: '#cbd5e1' },
+    { label: '负权边', color: '#ef4444' },
+  ],
+  codeLanguages: BELLMAN_FORD_CODE_LANGUAGES,
+  problemHtml: BELLMAN_FORD_PROBLEM_HTML,
+  analysisHtml: BELLMAN_FORD_ANALYSIS_HTML,
+  generateSteps: (inputs) => buildBFSteps(),
+  renderCanvas: (container, step) => renderBellmanFordCanvas(container, step as BFStep),
 });

@@ -1,6 +1,6 @@
 # Spec: 代码库架构深化与多态策略流水线重构 (Architecture Deepening & Strategy Pipeline Spec)
 
-`triage: ready-for-agent`
+`triage: implemented`
 
 ---
 

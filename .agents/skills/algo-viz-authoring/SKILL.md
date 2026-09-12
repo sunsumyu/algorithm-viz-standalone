@@ -63,6 +63,14 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 12. **序列/指针状态瞬态蒸发与越界丢失（Transient Highlight & Boundary Vanishing）**：
     - *故障现象*：双字符串/双指针对比中，匹配过的字符在步骤深入后高亮瞬间退为白色；指针一移到边界基底（如越界空串）所有高亮彻底消失，甚至界面抛出 `s1[5] ('undefined')` 脏数据。
     - *根本原因*：仅使用单一瞬态点判断（`idx === curI`），缺乏“待访/已扫/当前焦点/路径锁定”的三态状态机；且未设置末尾 `EOF / Ø` 边界哨兵格子承接越界焦点。
+13. **视图层越权做业务裁决与初始帧作用域泄漏（Visualizer Decision Overreach & Scope Leakage）**：
+    - *故障现象*：算法停在 Step 0（主函数签名行，如 `public static int lcs1(String s1, String s2)`），尚未进入递归函数，变量看板就提前泄漏了子函数的形参 `i: 3, j: 2`；下方“双字符串比对”卡片自动给两端字符打上绿勾并生成了“✨ 字符匹配成功：纳入公共子序列 (+1)”的决策徽章。
+    - *根本原因*：
+      1. 视图呈现器（如 `SequenceAlignmentPresenter`）缺乏比对状态控制（`isComparing`），越权仅根据字符相等就自发判定匹配成功与采纳决策；
+      2. 步进生成器在 Step 0 混淆了主函数作用域与子函数作用域，提前泄漏了子函数形参 `i, j`。
+    - *严格规范*：
+      1. **视图层决策解耦（Renderer Decision Decoupling）**：视觉呈现器必须是纯状态投影，严禁未经 Step 显式授权（如 `isComparing !== false`）擅自推导业务结论；
+      2. **作用域纯洁性（Scope Purity）**：主函数入口帧（Step 0）只保留全局输入参数，游标与比对控件在未就绪时必须呈现待比对/未就绪状态（`isComparing: false` / `curI: -1, curJ: -1`），严禁泄漏未定义的形参。
 
 ---
 
