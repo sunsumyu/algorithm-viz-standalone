@@ -2156,9 +2156,9 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
 
     pushStep({
       curI: i,
-      curJ: m,
-      currentCell: `dp[${i}][${m}]`,
-      currentVal: 0,
+      curJ: m - 1,
+      currentCell: `dp[${i}][${m - 1}]`,
+      currentVal: dp[i][m - 1] ?? 0,
       dpTable: dp.map((r) => [...r]),
       depCells: [],
       decision: `外层倒序遍历第 ${i} 行 (i=${i}, 字符 '${c1}')`,
@@ -2167,9 +2167,9 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
       codeLine: lines3.loopI,
       s1,
       s2,
-      vars: makeLcsStage3Vars({ i, j: m, s1, s2, val: 0 }),
-      treeRoot: buildLcsStateDepTree(i, m, dp, s1, s2, false, true, 2, 'forward'),
-      activeNodeId: `dp-${i}-${m}`,
+      vars: makeLcsStage3Vars({ i, j: m - 1, s1, s2, val: 0 }),
+      treeRoot: buildLcsStateDepTree(i, m - 1, dp, s1, s2, false, true, 2, 'forward'),
+      activeNodeId: `dp-${i}-${m - 1}`,
     });
 
     for (let j = m - 1; j >= 0; j--) {
@@ -3131,17 +3131,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       },
       renderCanvas: (container, step, extra) => {
         const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+        const isReverse = !isForward;
         const gridI = isForward ? step.i : Math.max(0, step.i + 1);
         const gridJ = isForward ? step.j : Math.max(0, step.j + 1);
         renderStage1GridCard(
           container,
-          'LCS 递归探索网格 (i, j)',
+          isReverse ? 'LCS 逆推递归探索网格 (i, j)' : 'LCS 递归探索网格 (i, j)',
           step.s1.length + 1,
           step.s2.length + 1,
           gridI,
           gridJ,
-          ['Ø', ...step.s1.split('')],
-          ['Ø', ...step.s2.split('')],
+          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
           extra?.is3DMode,
           step
         );
@@ -3200,14 +3201,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildLcsStage2ForwardSteps(inputs);
       },
       renderCanvas: (container, step, extra) => {
+        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+        const isReverse = !isForward;
         renderMemoGridCard(
           container,
-          'LCS 备忘录 memo[i][j]',
+          isReverse ? 'LCS 逆推备忘录 memo[i][j]' : 'LCS 备忘录 memo[i][j]',
           step.memoGrid,
           step.i,
           step.j,
-          ['Ø', ...step.s1.split('')],
-          ['Ø', ...step.s2.split('')],
+          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
           extra?.is3DMode
         );
       },
@@ -3265,15 +3268,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         return buildLcsStage3Steps(inputs);
       },
       renderCanvas: (container, step, extra) => {
+        const isReverse = Boolean(step.decision?.includes('倒序') || step.message?.includes('倒序') || step.currentCell?.includes('lcs3Forward') || step.log?.includes('lcs3Forward'));
         renderDp2DCard2(
           container,
-          '二维状态表 dp[i][j]',
+          isReverse ? '逆推二维状态表 dp[i][j]' : '二维状态表 dp[i][j]',
           step.dpTable,
           step.curI,
           step.curJ,
           step.depCells.map((d: DpCellDep) => ({ r: d.r, c: d.c })),
-          ['Ø', ...step.s1.split('')],
-          ['Ø', ...step.s2.split('')],
+          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
           extra?.is3DMode
         );
       },
@@ -3329,16 +3333,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       },
       renderCanvas: (container, step, extra) => {
         const fullGrid = step.dpGrid || [step.dp];
+        const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
         renderStage4RollingGridCard(
           container,
-          '空间压缩切片滚动',
+          isReverse ? '逆推空间压缩切片滚动' : '空间压缩切片滚动',
           fullGrid,
           step.curI,
           step.curJ,
           step.leftUp,
-          ['Ø', ...step.s1.split('')],
-          ['Ø', ...step.s2.split('')],
-          extra?.is3DMode
+          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
+          extra?.is3DMode,
+          isReverse
         );
       },
       renderCustomMetrics: (container, step) => {
@@ -3354,7 +3360,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
               step.curJ,
               regName,
               step.leftUp,
-              ['Ø', ...step.s2.split('')]
+              isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')]
             );
           },
           (subBox) => {

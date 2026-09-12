@@ -28,6 +28,13 @@ export interface DpCellDep {
 }
 
 /**
+ * 统一初始化 DP 状态网格（填入 null 标识未计算，契约式防御误判为已解通）
+ */
+export function createUncalculatedDpGrid(rows: number, cols: number): (number | null)[][] {
+  return Array.from({ length: rows }, () => new Array(cols).fill(null));
+}
+
+/**
  * 快速计算两字符串的全局最优 LCS 匹配下标集合与子序列
  */
 export function computeLcsMatchedIndices(s1: string, s2: string): {
@@ -730,7 +737,8 @@ export function renderMemoGridCard(
   activeJ: number,
   rowLabels?: string[],
   colLabels?: string[],
-  is3DExplicit?: boolean
+  is3DExplicit?: boolean,
+  step?: any
 ): void {
   if (!container) return;
   if (!grid || grid.length === 0) {
@@ -741,10 +749,15 @@ export function renderMemoGridCard(
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
 
+  const activeStackList: string[] = Array.isArray(step?.activeStack)
+    ? step.activeStack
+    : (step?.activeTrail || []);
+
   const stepData: UniversalStep = {
     i: activeI,
     j: activeJ,
     grid: grid.map((row) => row.map((v) => (v === -1 ? null : v))),
+    activeStack: activeStackList,
     type: '记忆化计算',
     msg: `memo[${activeI}][${activeJ}]`,
   };
@@ -948,7 +961,7 @@ export function renderDp2DCard1(
 export function renderDp2DCard2(
   container: HTMLElement,
   title: string,
-  dpTable: number[][],
+  dpTable: (number | null)[][],
   activeI: number,
   activeJ: number,
   deps: Array<{ r: number; c: number }>,
@@ -1114,7 +1127,6 @@ export function renderStage1GridCard(
   const dummyGrid = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) => {
       const k = `${r},${c}`;
-      if (r === activeI && c === activeJ) return 1;
       if (step?.visitedMap?.[k]) return step.visitedMap[k].val ?? 0;
       return null;
     })
@@ -1162,9 +1174,11 @@ export function renderStage4RollingGridCard(
   leftUpVal: number | undefined,
   rowLabels?: string[],
   colLabels?: string[],
-  is3DExplicit?: boolean
+  is3DExplicit?: boolean,
+  isReverse?: boolean
 ): void {
   if (!container) return;
+  const isRev = Boolean(isReverse);
   const rows = dpGrid.length;
   const cols = dpGrid[0]?.length || 0;
 
@@ -1172,20 +1186,20 @@ export function renderStage4RollingGridCard(
     i: curI,
     j: curJ,
     grid: dpGrid,
-    type: '空间压缩滚动',
-    msg: `dp[${curJ}], leftUp=${leftUpVal}`,
+    type: isRev ? '逆推空间压缩滚动' : '空间压缩滚动',
+    msg: `dp[${curJ}], ${isRev ? 'rightDown' : 'leftUp'}=${leftUpVal}`,
   };
 
   const renderOpts: GridRenderOptions = {
     m: rows,
     n: cols,
-    isReverse: false,
+    isReverse: isRev,
     isGridProblem: false,
     modelId: 'longest-common-subsequence',
   };
 
   renderLcsDualSandboxContainer(container, stepData, renderOpts, is3DExplicit, (wrapper) => {
-    const isFinish = curI === rows - 1 && curJ === cols - 1;
+    const isFinish = isRev ? (curI === 0 && curJ === 0) : (curI === rows - 1 && curJ === cols - 1);
     const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(rows, cols))));
 
     // 1. 顶部列标尺
@@ -1215,12 +1229,14 @@ export function renderStage4RollingGridCard(
     // 2. 网格行 (历史已回收行 opacity: 0.4，当前行高亮)
     const rowsHtml = dpGrid.map((row, r) => {
       const isCurRow = r === curI;
-      const isHistorical = r < curI;
+      const isHistorical = isRev ? r > curI : r < curI;
       const rLabel = rowLabels && rowLabels[r] !== undefined ? rowLabels[r] : `${r}`;
 
       const cellsHtml = row.map((val, c) => {
         const isActive = r === curI && c === curJ;
-        const isLeftUpSource = r === curI - 1 && c === curJ - 1;
+        const isDiagonalSource = isRev
+          ? (r === curI + 1 && c === curJ + 1)
+          : (r === curI - 1 && c === curJ - 1);
         const hasValue = val !== undefined && val !== null;
 
         let style = `
@@ -1245,7 +1261,7 @@ export function renderStage4RollingGridCard(
             transform: scale(1.06);
             z-index: 20;
           `;
-        } else if (isLeftUpSource) {
+        } else if (isDiagonalSource) {
           style += `
             background: #ede9fe;
             border: 1.5px dashed #8b5cf6;
@@ -1282,8 +1298,8 @@ export function renderStage4RollingGridCard(
           `
           : '';
 
-        const badgeHtml = isLeftUpSource
-          ? `<span style="position: absolute; top: 1px; right: 2px; font-size: 7.5px; font-weight: 800; color: #7c3aed; line-height: 1;">leftUp</span>`
+        const badgeHtml = isDiagonalSource
+          ? `<span style="position: absolute; top: 1px; right: 2px; font-size: 7.5px; font-weight: 800; color: #7c3aed; line-height: 1;">${isRev ? 'rightDown' : 'leftUp'}</span>`
           : '';
 
         return `
@@ -1297,7 +1313,7 @@ export function renderStage4RollingGridCard(
               font-size: 8px;
               font-weight: 700;
               font-family: 'JetBrains Mono', monospace;
-              color: ${isActive ? '#b45309' : isLeftUpSource ? '#7c3aed' : '#94a3b8'};
+              color: ${isActive ? '#b45309' : isDiagonalSource ? '#7c3aed' : '#94a3b8'};
               line-height: 1;
             ">${r},${c}</span>
             <span style="
@@ -1338,6 +1354,9 @@ export function renderStage4RollingGridCard(
       `;
     }).join('');
 
+    const regLabel = isRev ? 'rightDown' : 'leftUp';
+    const regDirText = isRev ? '暂存右下角' : '暂存左上角';
+
     wrapper.innerHTML = `
       <div style="
         width: 100%;
@@ -1374,7 +1393,7 @@ export function renderStage4RollingGridCard(
           align-items: center;
           gap: 6px;
         ">
-          <span>⚡ 当前滚动推导行: <b>row ${curI}</b> (历史行已内存回收) | 📌 <b>leftUp</b> 暂存左上角: <b>${leftUpVal ?? '0'}</b></span>
+          <span>⚡ 当前${isRev ? '逆推' : ''}滚动推导行: <b>row ${curI}</b> (${isRev ? '下方' : ''}历史行已内存回收) | 📌 <b>${regLabel}</b> ${regDirText}: <b>${leftUpVal ?? '0'}</b></span>
         </div>
       </div>
     `;
