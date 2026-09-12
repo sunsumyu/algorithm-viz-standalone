@@ -18,6 +18,7 @@ import {
   WORD_SEARCH_STAGE4_CODE_LANGUAGES,
 } from './dp-067-stage-codes';
 import { renderRecursionCard1 } from './dp-067-shared';
+import { renderUniversalDpGrid } from '../dp-shared';
 
 export interface WordSearchStep {
   i: number;
@@ -1678,87 +1679,29 @@ function renderBoardGrid(
   const rows = board.length;
   const cols = board[0]?.length || 0;
 
-  const cellsHtml = board.map((row, r) => {
-    const tds = row.map((char, c) => {
-      const isCur = r === activeI && c === activeJ;
-      const pathIdx = path.findIndex(([pr, pc]) => pr === r && pc === c);
-      const inPath = pathIdx >= 0;
+  const displayGrid = board.map((row) =>
+    row.map((char) => (char === '#' ? '🚫' : char))
+  );
 
-      let bg = '#ffffff';
-      let textCol = '#1e293b';
-      let border = '1.5px solid #cbd5e1';
-      let shadow = '0 1px 2px rgba(0,0,0,0.04)';
-      let extra = '';
+  const activeStack = path.map(([pr, pc]) => `${pr},${pc}`);
 
-      if (isCur) {
-        bg = '#dbeafe';
-        textCol = '#1d4ed8';
-        border = '2px solid #3b82f6';
-        shadow = '0 4px 10px rgba(59, 130, 246, 0.25)';
-        extra = 'transform: scale(1.08); z-index: 10;';
-      } else if (inPath) {
-        bg = '#ecfdf5';
-        textCol = '#047857';
-        border = '1.5px solid #10b981';
-        shadow = '0 1px 3px rgba(16, 185, 129, 0.15)';
-      } else if (char === '#') {
-        bg = '#f1f5f9';
-        textCol = '#94a3b8';
-        border = '1.5px dashed #cbd5e1';
-      }
-
-      return `
-        <td style="
-          padding: 8px 14px;
-          text-align: center;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 16px;
-          font-weight: 800;
-          background: ${bg};
-          color: ${textCol};
-          border: ${border};
-          border-radius: 8px;
-          min-width: 44px;
-          min-height: 44px;
-          box-shadow: ${shadow};
-          transition: all 0.15s ease;
-          position: relative;
-          ${extra}
-        ">
-          <div>${char === '#' ? '🚫' : char}</div>
-          ${inPath ? `<div style="font-size:9px; font-weight:700; color:#065f46; background:#d1fae5; border-radius:4px; padding:0 3px; margin-top:2px;">#${pathIdx + 1}</div>` : ''}
-        </td>
-      `;
-    }).join('');
-
-    return `<tr>${tds}</tr>`;
-  }).join('');
-
-  container.innerHTML = `
-    <div style="
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px;
-      box-sizing: border-box;
-      overflow: auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    ">
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
-        <span style="font-size: 11px; font-weight: 700; color: #475569;">网格规模: <strong style="color: #0f172a;">${rows} × ${cols}</strong></span>
-        <span style="font-size: 11px; font-weight: 700; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 1px 8px; border-radius: 10px; font-family: 'JetBrains Mono', monospace;">已锁定路径: ${path.length} 步</span>
-      </div>
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 8px 0;">
-        <table style="border-spacing: 8px; border-collapse: separate;">
-          <tbody>
-            ${cellsHtml}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  renderUniversalDpGrid(container, {
+    title: `🔤 字母网格看板: ${rows} × ${cols}`,
+    badgeText: `已锁定路径: ${path.length} 步`,
+    subTitle: activeI >= 0 && activeJ >= 0 ? `当前光标 (${activeI}, ${activeJ})` : undefined,
+    grid: displayGrid,
+    activeI,
+    activeJ,
+    activeStack,
+    rowLabels: Array.from({ length: rows }, (_, r) => `r${r}`),
+    colLabels: Array.from({ length: cols }, (_, c) => `c${c}`),
+    legend: [
+      { label: '探险家 🤠', color: '#2563eb' },
+      { label: '回溯路径 👣', color: '#0284c7' },
+      { label: '网格字符', color: '#059669' },
+    ],
+    modelId: 'word-search',
+  });
 }
 
 function renderPruneDashboard(container: HTMLElement, step: WordSearchStep): void {

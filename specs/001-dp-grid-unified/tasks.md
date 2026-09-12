@@ -106,6 +106,26 @@
 
 ---
 
+## Phase 9: User Story 6 - 建立统一的 dp-shared.ts 顶层视觉出口 (Priority: P1)
+
+**Goal**: 建立 `src/algorithms/categories/dynamic-programming/dp-shared.ts`，统一重导出底层网格表现适配器、Class 067、背包系列与字符串 DP 阶段卡片，并提供 `renderUniversalDpGrid` 一站式门面，彻底杜绝后续新 DP 算法裸写 table。
+
+- [x] T027 [US6] 创建 `src/algorithms/categories/dynamic-programming/dp-shared.ts`，统一纳管全类目适配器、卡片与通用门面函数
+- [x] T028 [US6] 创建 `src/algorithms/categories/dynamic-programming/dp-shared.test.ts`，验证所有导出函数与 `renderUniversalDpGrid` 正确性
+- [x] T029 [US6] 执行 `npm run typecheck` 与 `algorithm-catalog-indexer.test.ts` 确保类型安全与目录零回归
+
+---
+
+## Phase 10: Class 067 尾部特殊阶段网格统一收敛 (Priority: P2)
+
+**Goal**: 将 `longest-increasing-path-renderer.ts` 的地势矩阵 `renderMatrixTerrain` 与 `word-search-renderer.ts` 的字母棋盘 `renderBoardGrid` 统一收敛至 `renderUniversalDpGrid`，消除遗留的原生 table 拼接。
+
+- [x] T030 将 `longest-increasing-path-renderer.ts` 中的 `renderMatrixTerrain` 重构为委托 `renderUniversalDpGrid`
+- [x] T031 将 `word-search-renderer.ts` 中的 `renderBoardGrid` 重构为委托 `renderUniversalDpGrid`
+- [x] T032 运行 `npm run typecheck` 与全量 DP 测试套件，确保 100% 通过且无回归
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
