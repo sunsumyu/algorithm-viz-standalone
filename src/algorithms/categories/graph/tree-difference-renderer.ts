@@ -241,8 +241,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeDiffStep>({
   legend: [
     { label: '树节点', color: '#1e3a8a' },
     { label: '⭐ LCA 节点', color: '#f59e0b' },
-    { label: '🟢 路径端点', color: '#10b981' },
-    { label: '🔴 覆盖边/点', color: '#ef4444' },
+    { label: '🟢 路径端点', state: 'discovered' },
+    { label: '🔴 覆盖边/点', state: 'swapping' },
   ],
   inputs: [
     {

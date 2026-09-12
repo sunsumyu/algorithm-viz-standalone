@@ -209,9 +209,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecondMstStep>({
   card2Desc: '逐行对齐 Kruskal 贪心加边、树上倍增严格最大/次大边维护及非树边破圈严格大于判定',
   legend: [
     { label: '图节点', color: '#1e3a8a' },
-    { label: '🟢 最小生成树边 (MST)', color: '#10b981' },
+    { label: '🟢 最小生成树边 (MST)', state: 'discovered' },
     { label: '🟡 试探非树边 (黄虚线)', color: '#facc15' },
-    { label: '🔴 被替换树边 (红线)', color: '#ef4444' },
+    { label: '🔴 被替换树边 (红线)', state: 'swapping' },
     { label: '⚪ 普通原图边', color: '#475569' },
   ],
   inputs: [

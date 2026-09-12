@@ -230,7 +230,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<HungarianStep>({
   card2Title: '📊 匹配状态监视器 (match[], visited[])',
   card2Desc: '展示右部配对数组 match[v] 映射、本轮探查标记 visited[v] 与增广路交错腾位全流程',
   legend: [
-    { label: '💖 匹配成功的稳定配对边', color: '#10b981' },
+    { label: '💖 匹配成功的稳定配对边', state: 'discovered' },
     { label: '⚡ 当前正在探索的交错路边', color: '#f59e0b' },
     { label: '⚪ 二分图潜在意向边', color: '#334155' },
     { label: '🤝 协商让位原配节点', color: '#ec4899' },

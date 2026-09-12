@@ -249,7 +249,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedFlowStep>({
   legend: [
     { label: '原图实体节点', color: '#1e3a8a' },
     { label: '⭐ 超级源汇 SS/TT', color: '#f59e0b' },
-    { label: '🟢 满足下界流量边', color: '#10b981' },
+    { label: '🟢 满足下界流量边', state: 'discovered' },
     { label: '🟣 超级补流边', color: '#8b5cf6' },
   ],
   inputs: [

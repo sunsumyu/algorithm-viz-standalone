@@ -246,9 +246,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
   card2Desc: '展示相邻单词偏序提取、入度表、拓扑队列以及前缀/环冲突检测全过程',
   legend: [
     { label: '🔤 火星字符节点', color: '#0369a1' },
-    { label: '🟢 已确定顺序字符', color: '#10b981' },
+    { label: '🟢 已确定顺序字符', state: 'discovered' },
     { label: '⚡ 当前提取/考察边', color: '#f59e0b' },
-    { label: '🚨 异常冲突字符', color: '#ef4444' },
+    { label: '🚨 异常冲突字符', state: 'swapping' },
   ],
   inputs: [
     {

@@ -276,10 +276,10 @@ registerDeclarativeAlgorithm({
     { id: 'metric-prim-dist', label: 'minDist 数组', color: '#eab308' },
   ],
   legend: [
-    { label: '已在生成树', color: '#10b981' },
-    { label: '当前考察', color: '#eab308' },
+    { label: '已在生成树', state: 'discovered' },
+    { label: '当前考察', state: 'pivot' },
     { label: '切边候选', color: '#f59e0b' },
-    { label: '更优更新', color: '#3b82f6' },
+    { label: '更优更新', state: 'comparing' },
   ],
   codeLanguages: MST_PRIM_CODE_LANGUAGES,
   problemHtml: MST_PRIM_PROBLEM_HTML,

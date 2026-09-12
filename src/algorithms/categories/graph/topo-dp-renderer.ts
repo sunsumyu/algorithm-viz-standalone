@@ -239,8 +239,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TopoDPStep>({
   card2Desc: '展示拓扑序入度递减、dp[v] = max(dp[v], dp[u] + w) 动态规划转移与最长路重构',
   legend: [
     { label: '⚡ 当前出队拓扑节点', color: '#f59e0b' },
-    { label: '🏆 最长关键路径节点/边', color: '#10b981' },
-    { label: '📥 队列中待处理', color: '#38bdf8' },
+    { label: '🏆 最长关键路径节点/边', state: 'discovered' },
+    { label: '📥 队列中待处理', state: 'scanning' },
   ],
   inputs: [
     {

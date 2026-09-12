@@ -288,7 +288,7 @@ registerDeclarativeAlgorithm({
     { label: '当前出队点 u', color: '#2563eb' },
     { label: '已访问节点', color: '#16a34a' },
     { label: '最终路径边', color: '#f59e0b' },
-    { label: '未访问节点', color: '#94a3b8' },
+    { label: '未访问节点', state: 'unvisited' },
   ],
   codeLanguages: FIND_ROUTE_CODE_LANGUAGES,
   problemHtml: FIND_ROUTE_PROBLEM_HTML,

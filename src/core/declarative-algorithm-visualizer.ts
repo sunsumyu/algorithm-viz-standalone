@@ -9,6 +9,7 @@ import {
   DeclarativeStagePresenter,
   VisualSlot,
   PresetCaseDef,
+  resolveLegendDotColor,
 } from './renderers/declarative-stage-presenter';
 import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { ThreeViewControlsAdapter } from './renderers/three-view-controls-adapter';
@@ -356,7 +357,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (legendBar) {
       const activeLegend = stage.legend || this.spec.legend || [];
       legendBar.innerHTML = activeLegend
-        .map((lg) => `<div><span class="dsp-legend-dot" style="background: ${lg.color};"></span> ${lg.label}</div>`)
+        .map((lg) => `<div><span class="dsp-legend-dot" style="background: ${resolveLegendDotColor(lg)};"></span> ${lg.label}</div>`)
         .join('');
     }
 

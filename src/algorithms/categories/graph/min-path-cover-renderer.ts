@@ -407,7 +407,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PathCoverStep>({
   legend: [
     { label: '出点集合 (U_out)', color: '#0284c7' },
     { label: '入点集合 (V_in)', color: '#f59e0b' },
-    { label: '🟢 匹配边 / 路径段', color: '#10b981' },
+    { label: '🟢 匹配边 / 路径段', state: 'discovered' },
   ],
   inputs: [],
   presets: [

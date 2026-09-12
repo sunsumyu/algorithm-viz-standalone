@@ -458,9 +458,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<Hull3DStep>({
   card2Title: '🧭 几何拓扑与欧拉示性数监视器',
   card2Desc: '三维多面体顶点数 V、棱边数 E、三角面数 F 与欧拉公式验证',
   legend: [
-    { label: '稳定三角面', color: '#38bdf8' },
-    { label: '🔴 可见面 (Volume>0)', color: '#ef4444' },
-    { label: '🟢 新缝合锥面', color: '#10b981' },
+    { label: '稳定三角面', state: 'scanning' },
+    { label: '🔴 可见面 (Volume>0)', state: 'swapping' },
+    { label: '🟢 新缝合锥面', state: 'discovered' },
     { label: '🟡 地平线边界', color: '#facc15' },
   ],
   inputs: [],

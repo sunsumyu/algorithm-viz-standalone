@@ -289,7 +289,7 @@ registerDeclarativeAlgorithm({
     { label: '陆地 (1)', color: '#16a34a' },
     { label: '水域 (0)', color: '#60a5fa' },
     { label: '队列处理中', color: '#fbbf24' },
-    { label: '沉没/已访问', color: '#94a3b8' },
+    { label: '沉没/已访问', state: 'unvisited' },
   ],
   codeLanguages: ISLANDS_BFS_CODE_LANGUAGES,
   problemHtml: ISLANDS_BFS_PROBLEM_HTML,

@@ -256,10 +256,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
   card2Title: '📊 状态监视器 (distance, visited, 优先队列)',
   card2Desc: '展示当前考察网格平台、瓶颈落差体力值与 Dijkstra 小根堆松弛全过程',
   legend: [
-    { label: '🚀 起点 / 🏁 终点', color: '#a855f7' },
+    { label: '🚀 起点 / 🏁 终点', state: 'secondary' },
     { label: '🧗 当前探索平台', color: '#f59e0b' },
     { label: '🔒 已锁定平台', color: '#065f46' },
-    { label: '🟢 最优体力路径', color: '#10b981' },
+    { label: '🟢 最优体力路径', state: 'discovered' },
     { label: '⛰️ 高山障碍地形', color: '#854d0e' },
   ],
   inputs: [

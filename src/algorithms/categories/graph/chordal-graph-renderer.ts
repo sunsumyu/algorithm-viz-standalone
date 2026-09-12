@@ -358,7 +358,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<ChordalStep>({
     { label: '⭐ 当前选取最大势节点', color: '#f59e0b' },
     { label: '🟢 已入 PEO 序列节点', color: '#065f46' },
     { label: '🟡 对角弦边 (若存在)', color: '#facc15' },
-    { label: '🔴 正在校验/冲突边', color: '#ef4444' },
+    { label: '🔴 正在校验/冲突边', state: 'swapping' },
   ],
   inputs: [
     {

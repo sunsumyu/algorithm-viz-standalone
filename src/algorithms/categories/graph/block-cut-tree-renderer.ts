@@ -259,8 +259,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<BlockCutStep>({
   legend: [
     { label: '⚪ 原图圆点 (节点)', color: '#1e3a8a' },
     { label: '🔲 点双方点 (BCC)', color: '#f59e0b' },
-    { label: '🔴 必经割点', color: '#ef4444' },
-    { label: '🟢 圆方树边 (实线)', color: '#10b981' },
+    { label: '🔴 必经割点', state: 'swapping' },
+    { label: '🟢 圆方树边 (实线)', state: 'discovered' },
     { label: '⚪ 原图边 (虚线)', color: '#475569' },
   ],
   inputs: [

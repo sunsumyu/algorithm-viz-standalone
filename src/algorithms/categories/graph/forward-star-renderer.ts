@@ -347,7 +347,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<ForwardStarStep>({
   card2Desc: '当前加边/遍历指针、头插法跳链路径与相邻出边访问跟踪',
   legend: [
     { label: '正在处理/访问边', color: '#2563eb' },
-    { label: '头插法新边', color: '#10b981' },
+    { label: '头插法新边', state: 'discovered' },
     { label: '原表头前驱 (next)', color: '#d97706' },
   ],
   modes: [

@@ -230,8 +230,8 @@ registerDeclarativeAlgorithm({
     { id: 'result', label: '判定结果', color: '#16a34a' },
   ],
   legend: [
-    { label: '窗口扫描中', color: '#3b82f6' },
-    { label: '匹配成功', color: '#22c55e' },
+    { label: '窗口扫描中', state: 'comparing' },
+    { label: '匹配成功', state: 'sorted' },
   ],
   codeLanguages: STRING_MIGRATION_CODE_LANGUAGES,
   problemHtml: STRING_MIGRATION_PROBLEM_HTML,

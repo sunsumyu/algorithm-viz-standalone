@@ -231,10 +231,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
   card2Title: '📊 秘密状态监视器 (father, 当前已知专家, 撤销节点)',
   card2Desc: '展示按时间步分组 meetings、同批瞬时级联 union 与未连通 0 号节点撤销重置过程',
   legend: [
-    { label: '🤫 知晓秘密专家 (与 0 连通)', color: '#10b981' },
+    { label: '🤫 知晓秘密专家 (与 0 连通)', state: 'discovered' },
     { label: '⚪ 未知秘密专家', color: '#1e293b' },
     { label: '⚡ 当前正在开会', color: '#f59e0b' },
-    { label: '⏪ 撤销重置节点', color: '#ef4444' },
+    { label: '⏪ 撤销重置节点', state: 'swapping' },
   ],
   inputs: [
     {

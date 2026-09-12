@@ -288,7 +288,7 @@ registerDeclarativeAlgorithm({
     { label: '陆地 (1)', color: '#059669' },
     { label: '水域 (0)', color: '#60a5fa' },
     { label: 'DFS 探查中', color: '#fbbf24' },
-    { label: '已沉没计数', color: '#94a3b8' },
+    { label: '已沉没计数', state: 'unvisited' },
   ],
   codeLanguages: MAX_ISLAND_AREA_CODE_LANGUAGES,
   problemHtml: MAX_ISLAND_AREA_PROBLEM_HTML,

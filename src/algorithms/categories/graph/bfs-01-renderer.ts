@@ -220,10 +220,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<BFS01Step>({
   card2Title: '📊 0-1 BFS 状态监视器 (dist[], deque)',
   card2Desc: '展示双端队列队头弹出 pollFirst、0 权插队头 addFirst 与 1 权插队尾 addLast 的两段性维护',
   legend: [
-    { label: '🟢 0 权无损转移边 (插队头)', color: '#10b981' },
-    { label: '🔵 1 权耗损转移边 (插队尾)', color: '#38bdf8' },
+    { label: '🟢 0 权无损转移边 (插队头)', state: 'discovered' },
+    { label: '🔵 1 权耗损转移边 (插队尾)', state: 'scanning' },
     { label: '⚡ 当前出队考察节点', color: '#f59e0b' },
-    { label: '🏆 最优 0-1 最短路径', color: '#a855f7' },
+    { label: '🏆 最优 0-1 最短路径', state: 'secondary' },
   ],
   inputs: [
     {

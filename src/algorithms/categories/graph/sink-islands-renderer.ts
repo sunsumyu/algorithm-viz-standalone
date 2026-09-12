@@ -291,7 +291,7 @@ registerDeclarativeAlgorithm({
     { label: '陆地 (1)', color: '#86efac' },
     { label: '边沿保护 (2)', color: '#a5b4fc' },
     { label: '已淹没孤岛 (0)', color: '#fca5a5' },
-    { label: '水域 (0)', color: '#94a3b8' },
+    { label: '水域 (0)', state: 'unvisited' },
   ],
   codeLanguages: SINK_ISLANDS_CODE_LANGUAGES,
   problemHtml: SINK_ISLANDS_PROBLEM_HTML,

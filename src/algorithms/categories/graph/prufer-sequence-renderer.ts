@@ -192,10 +192,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<PruferStep>({
   card2Desc: '逐行对齐度数统计 deg[]、双指针定位最小叶节点、消除叶节点与父节点推入 Prufer 序列',
   legend: [
     { label: '图节点', color: '#1e3a8a' },
-    { label: '⭐ 当前最小叶子', color: '#10b981' },
+    { label: '⭐ 当前最小叶子', state: 'discovered' },
     { label: '📌 父节点 (写入 Prufer)', color: '#f59e0b' },
-    { label: '⚪ 树边', color: '#38bdf8' },
-    { label: '❌ 已删除边 (红虚线)', color: '#ef4444' },
+    { label: '⚪ 树边', state: 'scanning' },
+    { label: '❌ 已删除边 (红虚线)', state: 'swapping' },
   ],
   inputs: [
     {

@@ -258,8 +258,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<KonigStep>({
   legend: [
     { label: '左部未覆盖点', color: '#1e3a8a' },
     { label: '右部未覆盖点', color: '#581c87' },
-    { label: '🛡️ 最小点覆盖点', color: '#ef4444' },
-    { label: '🟢 匹配边 (实线)', color: '#10b981' },
+    { label: '🛡️ 最小点覆盖点', state: 'swapping' },
+    { label: '🟢 匹配边 (实线)', state: 'discovered' },
     { label: '⚪ 非匹配边 (虚线)', color: '#475569' },
   ],
   inputs: [

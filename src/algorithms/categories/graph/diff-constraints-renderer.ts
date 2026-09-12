@@ -285,11 +285,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<DiffConstraintStep>
   card2Title: '📊 约束系统解状态监视器 (dist, count, SPFA 队列)',
   card2Desc: '展示不等式向有向边同构转化、超级源点初始化、最短路收敛解与负权环矛盾判定全流程',
   legend: [
-    { label: '🌐 超级源点 (Node 0)', color: '#a855f7' },
+    { label: '🌐 超级源点 (Node 0)', state: 'secondary' },
     { label: '🔵 变量节点 (x1, x2, x3)', color: '#0369a1' },
     { label: '⚡ 当前松弛考察边', color: '#f59e0b' },
-    { label: '❌ 负权回路报警边', color: '#ef4444' },
-    { label: '🟢 可行解确定边', color: '#10b981' },
+    { label: '❌ 负权回路报警边', state: 'swapping' },
+    { label: '🟢 可行解确定边', state: 'discovered' },
   ],
   inputs: [
     {

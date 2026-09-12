@@ -298,7 +298,7 @@ registerDeclarativeAlgorithm({
     { label: '未访问陆地 (1)', color: '#86efac' },
     { label: '正在探索 (DFS)', color: '#93c5fd' },
     { label: '已计入总面积', color: '#4ade80' },
-    { label: '水域 (0)', color: '#94a3b8' },
+    { label: '水域 (0)', state: 'unvisited' },
   ],
   codeLanguages: TOTAL_ISLAND_AREA_CODE_LANGUAGES,
   problemHtml: TOTAL_ISLAND_AREA_PROBLEM_HTML,

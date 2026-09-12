@@ -487,7 +487,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<PrefixOptStep>({
   legend: [
     { label: '原图实体节点 (1..5)', color: '#0284c7' },
     { label: '⭐ 前缀辅助虚点 (P1..P5)', color: '#f59e0b' },
-    { label: '级联链/透传边', color: '#10b981' },
+    { label: '级联链/透传边', state: 'discovered' },
     { label: '外部查询连边 (S1/S2)', color: '#ec4899' },
   ],
   inputs: [

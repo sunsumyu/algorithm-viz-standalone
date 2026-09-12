@@ -334,10 +334,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
   card2Title: '📊 网络状态监视器 (distance[], visited[], PQ 优先队列)',
   card2Desc: '展示从源点 k 出发 Dijkstra 信号广播向外扩散、松弛各节点到达时间与全网收齐时间 max(dist[i])',
   legend: [
-    { label: '📡 广播发射源点 (k)', color: '#a855f7' },
-    { label: '✔ 信号已接收锁定', color: '#10b981' },
+    { label: '📡 广播发射源点 (k)', state: 'secondary' },
+    { label: '✔ 信号已接收锁定', state: 'discovered' },
     { label: '⚡ 当前波前扩散点', color: '#f59e0b' },
-    { label: '❌ 信号不可达孤立点', color: '#ef4444' },
+    { label: '❌ 信号不可达孤立点', state: 'swapping' },
   ],
   inputs: [
     {

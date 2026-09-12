@@ -170,7 +170,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
   legend: [
     { label: '情侣对节点 (C0..Cn-1)', color: '#1e3a8a' },
     { label: '🛋️ 当前考察沙发人员', color: '#f59e0b' },
-    { label: '🟢 置换环连边', color: '#10b981' },
+    { label: '🟢 置换环连边', state: 'discovered' },
   ],
   inputs: [
     {

@@ -252,9 +252,9 @@ registerDeclarativeAlgorithm({
     { id: 'metric-re-parent', label: 'parent 数组', color: '#a855f7' },
   ],
   legend: [
-    { label: '树边 (已合并)', color: '#10b981' },
-    { label: '检查中', color: '#3b82f6' },
-    { label: '冗余成环边', color: '#ef4444' },
+    { label: '树边 (已合并)', state: 'discovered' },
+    { label: '检查中', state: 'comparing' },
+    { label: '冗余成环边', state: 'swapping' },
     { label: '待检查', color: '#cbd5e1' },
   ],
   codeLanguages: REDUNDANT_EDGE_CODE_LANGUAGES,

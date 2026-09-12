@@ -301,7 +301,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
     { label: '🔵 第 0 层原价机票', color: '#0369a1' },
     { label: '🌸 第 1 层免票优惠', color: '#db2777' },
     { label: '⚡ 当前出堆考察状态', color: '#f59e0b' },
-    { label: '🟢 最优分层最短路', color: '#10b981' },
+    { label: '🟢 最优分层最短路', state: 'discovered' },
   ],
   inputs: [
     {

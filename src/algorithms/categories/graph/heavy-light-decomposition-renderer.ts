@@ -254,7 +254,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<HLDStep>({
   legend: [
     { label: '图节点', color: '#1e3a8a' },
     { label: '⭐ 重链顶点 (Top)', color: '#f59e0b' },
-    { label: '👑 根节点 (Root)', color: '#10b981' },
+    { label: '👑 根节点 (Root)', state: 'discovered' },
     { label: '🟡 重边 (实线)', color: '#facc15' },
     { label: '⚪ 轻边 (虚线)', color: '#475569' },
   ],

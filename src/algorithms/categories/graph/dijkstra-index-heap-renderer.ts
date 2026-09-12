@@ -269,8 +269,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
   card2Desc: '展示反向索引表 where[u] 三态映射 (-1 未入堆, >=0 堆中位置, -2 已锁定) 与 decreaseKey 原地更新',
   legend: [
     { label: '⚡ 当前堆顶出堆节点', color: '#f59e0b' },
-    { label: '✔ 已锁定最短路节点 (where=-2)', color: '#10b981' },
-    { label: '📥 处于小根堆中 (where>=0)', color: '#38bdf8' },
+    { label: '✔ 已锁定最短路节点 (where=-2)', state: 'discovered' },
+    { label: '📥 处于小根堆中 (where>=0)', state: 'scanning' },
     { label: '⚪ 未入堆节点 (where=-1)', color: '#1e293b' },
   ],
   inputs: [

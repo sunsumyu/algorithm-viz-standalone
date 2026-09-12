@@ -6,6 +6,8 @@
 
 import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
 import { PresetCasePresenter, PresetCaseDef } from './preset-case-presenter';
+import { PLAYBACK_SPEED_PRESETS } from './playback-speed-presets';
+import { visualState, type VisualStateId } from './visual-state-tokens';
 
 export type { PresetCaseDef };
 
@@ -36,7 +38,15 @@ export interface MetricCardDef {
 
 export interface LegendItemDef {
   label: string;
-  color: string;
+  /** 语义状态令牌（渲染期由当前主题解析色值，与 color 二选一） */
+  state?: VisualStateId;
+  /** 直接色值（分类色/装饰色与 state 二选一） */
+  color?: string;
+}
+
+/** 解析图例色点的最终色值：显式 color 优先，语义 state 交由当前主题解析 */
+export function resolveLegendDotColor(lg: LegendItemDef): string {
+  return lg.color ?? visualState(lg.state ?? 'idle').border;
 }
 
 /**
@@ -226,7 +236,7 @@ export class DeclarativeStagePresenter {
     const legendHtml = activeLegend
       .map(
         (lg) =>
-          `<div><span class="dsp-legend-dot" style="background: ${lg.color};"></span> ${lg.label}</div>`
+          `<div><span class="dsp-legend-dot" style="background: ${resolveLegendDotColor(lg)};"></span> ${lg.label}</div>`
       )
       .join('');
 
@@ -1019,9 +1029,7 @@ export class DeclarativeStagePresenter {
         </div>
         <div style="display: flex; align-items: center; gap: 4px; margin-left: 4px;">
           <select id="select-speed" class="dsp-select" style="width: 60px;">
-            <option value="1200">慢速</option>
-            <option value="500" selected>正常</option>
-            <option value="200">快速</option>
+            ${PLAYBACK_SPEED_PRESETS.map((p) => `<option value="${p.ms}"${p.default ? ' selected' : ''}>${p.label}</option>`).join('\n            ')}
           </select>
         </div>
         <div class="dsp-playback-ans-capsule" id="dsp-playback-ans-capsule" style="display: none;">

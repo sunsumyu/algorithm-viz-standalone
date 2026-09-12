@@ -234,11 +234,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<StateBFSItem>({
   card2Title: '📊 状态空间监视器 (keyMask, 步数, 三元组)',
   card2Desc: '展示位掩码二进制位图、当前持有的钥匙状态、以及状态空间三维去重 (r, c, mask)',
   legend: [
-    { label: '🚀 起点 (@)', color: '#38bdf8' },
+    { label: '🚀 起点 (@)', state: 'scanning' },
     { label: '🔑 钥匙 (a, b)', color: '#f59e0b' },
-    { label: '⚡ 当前探寻位置', color: '#eab308' },
+    { label: '⚡ 当前探寻位置', state: 'pivot' },
     { label: '🧱 障碍阻挡 (#)', color: '#334155' },
-    { label: '🟢 探索轨迹路径', color: '#10b981' },
+    { label: '🟢 探索轨迹路径', state: 'discovered' },
   ],
   inputs: [
     {

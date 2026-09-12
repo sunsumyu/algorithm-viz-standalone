@@ -385,7 +385,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeKnapStep>({
   card2Desc: '树上泛化物品合并、已选课程集合与最大累计学分',
   legend: [
     { label: '未选课程', color: '#1e3a8a' },
-    { label: '🟢 已选课程 (最优解)', color: '#10b981' },
+    { label: '🟢 已选课程 (最优解)', state: 'discovered' },
     { label: '👑 超级源点 S0', color: '#f59e0b' },
   ],
   inputs: [

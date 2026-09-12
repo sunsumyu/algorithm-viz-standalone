@@ -233,9 +233,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<LCAStep>({
   card2Desc: '逐行对齐 DFS 树深度与倍增表递推、阶段一深度对齐跃升、阶段二二进制试跳与两点最短距离计算',
   legend: [
     { label: '图节点', color: '#1e3a8a' },
-    { label: '⭐ 查询节点 u / v', color: '#ef4444' },
+    { label: '⭐ 查询节点 u / v', state: 'swapping' },
     { label: '👑 最近公共祖先 LCA', color: '#f59e0b' },
-    { label: '🟢 试跳路径边', color: '#10b981' },
+    { label: '🟢 试跳路径边', state: 'discovered' },
     { label: '⚪ 普通树边', color: '#475569' },
   ],
   inputs: [

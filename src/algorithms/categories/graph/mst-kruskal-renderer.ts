@@ -272,9 +272,9 @@ registerDeclarativeAlgorithm({
     { id: 'metric-kruskal-uf', label: '并查集 parent', color: '#a855f7' },
   ],
   legend: [
-    { label: '已加入 MST', color: '#10b981' },
-    { label: '当前考察边', color: '#3b82f6' },
-    { label: '环路舍弃', color: '#ef4444' },
+    { label: '已加入 MST', state: 'discovered' },
+    { label: '当前考察边', state: 'comparing' },
+    { label: '环路舍弃', state: 'swapping' },
   ],
   codeLanguages: MST_KRUSKAL_CODE_LANGUAGES,
   problemHtml: MST_KRUSKAL_PROBLEM_HTML,

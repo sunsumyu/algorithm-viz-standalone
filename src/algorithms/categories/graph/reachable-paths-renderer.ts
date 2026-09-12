@@ -301,7 +301,7 @@ registerDeclarativeAlgorithm({
     { label: '当前访问栈 path', color: '#2563eb' },
     { label: '命中目标路径', color: '#16a34a' },
     { label: '路径途经节点', color: '#facc15' },
-    { label: '待遍历边', color: '#94a3b8' },
+    { label: '待遍历边', state: 'unvisited' },
   ],
   codeLanguages: REACHABLE_PATHS_CODE_LANGUAGES,
   problemHtml: REACHABLE_PATHS_PROBLEM_HTML,

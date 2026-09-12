@@ -236,7 +236,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<BiBFSStep>({
     { label: '🔵 正向波前扩展词', color: '#0369a1' },
     { label: '🌸 反向波前扩展词', color: '#db2777' },
     { label: '💥 双向碰撞相遇词', color: '#f59e0b' },
-    { label: '🟢 最优接龙完整路径', color: '#10b981' },
+    { label: '🟢 最优接龙完整路径', state: 'discovered' },
   ],
   inputs: [
     {

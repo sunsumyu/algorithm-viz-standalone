@@ -317,10 +317,10 @@ registerDeclarativeAlgorithm({
     { id: 'metric-re2-uf', label: '并查集 parent', color: '#a855f7' },
   ],
   legend: [
-    { label: '检查中', color: '#3b82f6' },
+    { label: '检查中', state: 'comparing' },
     { label: '双父节点冲突边', color: '#f59e0b' },
     { label: '导致成环边', color: '#ec4899' },
-    { label: '最终冗余边', color: '#ef4444' },
+    { label: '最终冗余边', state: 'swapping' },
   ],
   codeLanguages: REDUNDANT_EDGE_II_CODE_LANGUAGES,
   problemHtml: REDUNDANT_EDGE_II_PROBLEM_HTML,

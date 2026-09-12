@@ -381,7 +381,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CentroidTreeStep>({
   legend: [
     { label: '原树节点', color: '#0284c7' },
     { label: '👑 点分树根节点', color: '#f59e0b' },
-    { label: '🟢 当前活跃/查询链节点', color: '#10b981' },
+    { label: '🟢 当前活跃/查询链节点', state: 'discovered' },
   ],
   inputs: [],
   presets: [

@@ -248,10 +248,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<TarjanSCCStep>({
   card2Title: '📊 Tarjan 状态监视器 (dfn, low, inStack, sccId)',
   card2Desc: '展示时间戳 dfn 与追溯值 low 的回溯更新、栈维护强连通节点与跨分量 DAG 缩点重建',
   legend: [
-    { label: 'SCC #1 强连通分量', color: '#10b981' },
-    { label: 'SCC #2 强连通分量', color: '#a855f7' },
+    { label: 'SCC #1 强连通分量', state: 'discovered' },
+    { label: 'SCC #2 强连通分量', state: 'secondary' },
     { label: '⚡ 当前递归节点', color: '#f59e0b' },
-    { label: '📥 处于辅助栈中', color: '#38bdf8' },
+    { label: '📥 处于辅助栈中', state: 'scanning' },
   ],
   inputs: [
     {

@@ -735,9 +735,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeIntersectStep>(
   card2Title: '🧭 LCA 包含判定监视器',
   card2Desc: 'LCA(P1)、LCA(P2) 树上深度与路径包含关系验证',
   legend: [
-    { label: '路径一 (P1)', color: '#38bdf8' },
+    { label: '路径一 (P1)', state: 'scanning' },
     { label: '路径二 (P2)', color: '#f59e0b' },
-    { label: '🟢 相交交集点', color: '#10b981' },
+    { label: '🟢 相交交集点', state: 'discovered' },
   ],
   inputs: [
     {

@@ -232,7 +232,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<DominatorStep>({
   legend: [
     { label: '图节点', color: '#1e3a8a' },
     { label: '⭐ 当前分析点', color: '#f59e0b' },
-    { label: '🟢 根节点 (Root)', color: '#10b981' },
+    { label: '🟢 根节点 (Root)', state: 'discovered' },
     { label: '🟣 支配树边 (紫色)', color: '#8b5cf6' },
     { label: '⚪ 原图边 (灰线)', color: '#475569' },
   ],

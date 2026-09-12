@@ -272,7 +272,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<GoodPathsStep>({
   card2Desc: '展示按边端点最大点权升序加边过程，利用并查集维护各分量中当前最大点权的频次并计算组合数',
   legend: [
     { label: '普通树边 (虚线)', color: '#475569' },
-    { label: '已激活加边 (绿实线)', color: '#10b981' },
+    { label: '已激活加边 (绿实线)', state: 'discovered' },
     { label: '当前连接边 (金色)', color: '#facc15' },
   ],
   inputs: [

@@ -283,7 +283,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<GameStep>({
     { label: '左部点 (L)', color: '#0284c7' },
     { label: '右部点 (R)', color: '#7c3aed' },
     { label: '👑 先手必胜点', color: '#f59e0b' },
-    { label: '🔴 匹配边 (红实线)', color: '#ef4444' },
+    { label: '🔴 匹配边 (红实线)', state: 'swapping' },
     { label: '⚪ 非匹配边 (灰虚线)', color: '#475569' },
   ],
   inputs: [

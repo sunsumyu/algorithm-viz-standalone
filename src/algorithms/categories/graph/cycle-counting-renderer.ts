@@ -232,9 +232,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<CycleStep>({
   legend: [
     { label: '图节点', color: '#1e3a8a' },
     { label: '⭐ 起点 u', color: '#f59e0b' },
-    { label: '🟢 中继点 v', color: '#10b981' },
-    { label: '🟣 终点 w', color: '#a855f7' },
-    { label: '➡️ 定向边', color: '#38bdf8' },
+    { label: '🟢 中继点 v', state: 'discovered' },
+    { label: '🟣 终点 w', state: 'secondary' },
+    { label: '➡️ 定向边', state: 'scanning' },
   ],
   inputs: [
     {

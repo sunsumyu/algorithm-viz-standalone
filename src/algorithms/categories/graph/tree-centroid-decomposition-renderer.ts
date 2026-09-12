@@ -210,7 +210,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<StaticCentroidStep>
     { label: '普通图节点', color: '#1e3a8a' },
     { label: '👑 当前分治重心', color: '#f59e0b' },
     { label: '🔒 已隔离重心 (Vis)', color: '#065f46' },
-    { label: '⚪ 普通树边', color: '#38bdf8' },
+    { label: '⚪ 普通树边', state: 'scanning' },
     { label: '❌ 隔离切断边 (虚线)', color: '#475569' },
   ],
   inputs: [

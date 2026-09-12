@@ -404,8 +404,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<PlanarStep>({
   legend: [
     { label: '原图网格节点 (S, 1..4, T)', color: '#0284c7' },
     { label: '⭐ 对偶点 (S*, T*, F1..F4)', color: '#f59e0b' },
-    { label: '🔴 最小割被切原边', color: '#ef4444' },
-    { label: '🟢 对偶图最优最短路径', color: '#10b981' },
+    { label: '🔴 最小割被切原边', state: 'swapping' },
+    { label: '🟢 对偶图最优最短路径', state: 'discovered' },
   ],
   inputs: [],
   presets: [

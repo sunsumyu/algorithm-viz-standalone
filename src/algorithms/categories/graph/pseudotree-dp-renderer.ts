@@ -246,9 +246,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<PseudotreeStep>({
   legend: [
     { label: '基环节点', color: '#f59e0b' },
     { label: '外挂子树节点', color: '#1e3a8a' },
-    { label: '⭐ 最优独立集选点', color: '#10b981' },
-    { label: '❌ 破环断边 (红虚线)', color: '#ef4444' },
-    { label: '🟢 树形边 (实线)', color: '#38bdf8' },
+    { label: '⭐ 最优独立集选点', state: 'discovered' },
+    { label: '❌ 破环断边 (红虚线)', state: 'swapping' },
+    { label: '🟢 树形边 (实线)', state: 'scanning' },
   ],
   inputs: [
     {

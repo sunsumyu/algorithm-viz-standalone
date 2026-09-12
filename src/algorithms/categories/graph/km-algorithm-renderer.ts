@@ -264,7 +264,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
   legend: [
     { label: '🔵 左部节点 L', color: '#0284c7' },
     { label: '🌸 右部节点 R', color: '#db2777' },
-    { label: '🟢 最佳匹配边', color: '#10b981' },
+    { label: '🟢 最佳匹配边', state: 'discovered' },
     { label: '⚡ 当前探查边', color: '#f59e0b' },
     { label: '⚖️ 相等子图待选边', color: '#334155' },
   ],

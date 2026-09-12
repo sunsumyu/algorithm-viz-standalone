@@ -180,7 +180,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
   card2Desc: '展示当前弧 head[u] 动态删边、递归调用栈与死胡同回溯倒序构建欧拉回路全过程',
   legend: [
     { label: '⚡ 当前遍历活跃顶点', color: '#f59e0b' },
-    { label: '✔ 已完整走过的有向边', color: '#10b981' },
+    { label: '✔ 已完整走过的有向边', state: 'discovered' },
     { label: '⚪ 待访问边', color: '#64748b' },
   ],
   inputs: [

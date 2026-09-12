@@ -207,8 +207,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<KruskalTreeStep>({
   legend: [
     { label: '原图实体节点 (1..n)', color: '#1e3a8a' },
     { label: '💎 边权虚节点 (n+1..2n-1)', color: '#f59e0b' },
-    { label: '👑 重构树根节点', color: '#10b981' },
-    { label: '🟢 重构树边 (实线)', color: '#10b981' },
+    { label: '👑 重构树根节点', state: 'discovered' },
+    { label: '🟢 重构树边 (实线)', state: 'discovered' },
     { label: '⚪ 原图边 (灰虚线)', color: '#475569' },
   ],
   inputs: [

@@ -270,12 +270,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<AStarJourneyStep>({
   card2Title: '📊 启发式状态监视器 (gScore, fScore, OpenSet)',
   card2Desc: '展示曼哈顿启发式 h(x,y)、实际移动代价 g(x,y) 与综合估价 f = g + h 的优先队列定向搜索',
   legend: [
-    { label: '🚀 起点 / 🏁 终点', color: '#a855f7' },
+    { label: '🚀 起点 / 🏁 终点', state: 'secondary' },
     { label: '⚡ 当前出堆探索格', color: '#f59e0b' },
-    { label: '📥 OpenSet 待探索波前', color: '#38bdf8' },
+    { label: '📥 OpenSet 待探索波前', state: 'scanning' },
     { label: '🔒 ClosedSet 已锁定格', color: '#065f46' },
     { label: '🧱 障碍物阻挡格', color: '#334155' },
-    { label: '🟢 最优路径轨迹', color: '#10b981' },
+    { label: '🟢 最优路径轨迹', state: 'discovered' },
   ],
   inputs: [
     {

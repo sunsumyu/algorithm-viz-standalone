@@ -251,8 +251,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<DinicStep>({
   card2Title: '📊 网络流状态监视器 (level[], cur[], 最大流)',
   card2Desc: '展示 BFS 层次图划分 level[u]、当前弧优化指针 cur[u] 与多路阻塞流增广全流程',
   legend: [
-    { label: '🌊 已饱和满载边 (flow = cap)', color: '#ef4444' },
-    { label: '💧 部分载流边 (flow < cap)', color: '#38bdf8' },
+    { label: '🌊 已饱和满载边 (flow = cap)', state: 'swapping' },
+    { label: '💧 部分载流边 (flow < cap)', state: 'scanning' },
     { label: '⚪ 零流量空载边', color: '#64748b' },
     { label: '⚡ 当前增广路径阻塞流', color: '#f59e0b' },
   ],

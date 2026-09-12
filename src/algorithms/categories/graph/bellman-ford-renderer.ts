@@ -271,10 +271,10 @@ registerDeclarativeAlgorithm({
     { id: 'metric-bf-dist', label: 'dist 距离表', color: '#2563eb' },
   ],
   legend: [
-    { label: '当前考察边', color: '#3b82f6' },
-    { label: '松弛成功', color: '#10b981' },
+    { label: '当前考察边', state: 'comparing' },
+    { label: '松弛成功', state: 'discovered' },
     { label: '无需更新', color: '#cbd5e1' },
-    { label: '负权边', color: '#ef4444' },
+    { label: '负权边', state: 'swapping' },
   ],
   codeLanguages: BELLMAN_FORD_CODE_LANGUAGES,
   problemHtml: BELLMAN_FORD_PROBLEM_HTML,

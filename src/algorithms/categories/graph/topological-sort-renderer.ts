@@ -276,9 +276,9 @@ registerDeclarativeAlgorithm({
     { id: 'metric-cycle-status', label: '环路检测', color: '#16a34a' },
   ],
   legend: [
-    { label: '当前出队点 u', color: '#eab308' },
-    { label: '入度已为 0（队列中）', color: '#3b82f6' },
-    { label: '已加入排序', color: '#22c55e' },
+    { label: '当前出队点 u', state: 'pivot' },
+    { label: '入度已为 0（队列中）', state: 'comparing' },
+    { label: '已加入排序', state: 'sorted' },
   ],
   codeLanguages: TOPOLOGICAL_SORT_CODE_LANGUAGES,
   problemHtml: TOPOLOGICAL_SORT_PROBLEM_HTML,

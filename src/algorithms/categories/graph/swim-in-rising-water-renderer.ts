@@ -241,7 +241,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
     { label: '未淹没平台', color: '#1e293b' },
     { label: '🌊 已淹没水面', color: '#0369a1' },
     { label: '🏊 当前探索节点', color: '#facc15' },
-    { label: '🟢 最优瓶颈路径', color: '#10b981' },
+    { label: '🟢 最优瓶颈路径', state: 'discovered' },
   ],
   inputs: [
     {

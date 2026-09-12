@@ -272,9 +272,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
   card2Desc: '逐行对齐关键点 DFN 排序、单调栈维护极浅祖先、LCA 连边构建与 O(K) 树形 DP 求解',
   legend: [
     { label: '普通原树节点', color: '#1e3a8a' },
-    { label: '⭐ 关键点 (Key Nodes)', color: '#ef4444' },
+    { label: '⭐ 关键点 (Key Nodes)', state: 'swapping' },
     { label: '🟣 虚树节点 (包含 LCA)', color: '#8b5cf6' },
-    { label: '🟢 虚树边 (粗绿线)', color: '#10b981' },
+    { label: '🟢 虚树边 (粗绿线)', state: 'discovered' },
     { label: '⚪ 原树边 (灰虚线)', color: '#475569' },
   ],
   inputs: [

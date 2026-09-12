@@ -283,8 +283,8 @@ registerDeclarativeAlgorithm({
   ],
   legend: [
     { label: '当前节点', color: '#2563eb' },
-    { label: '已访问', color: '#22c55e' },
-    { label: '反向图边', color: '#a855f7' },
+    { label: '已访问', state: 'sorted' },
+    { label: '反向图边', state: 'secondary' },
   ],
   codeLanguages: STRONGLY_CONNECTED_CODE_LANGUAGES,
   problemHtml: STRONGLY_CONNECTED_PROBLEM_HTML,

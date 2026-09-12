@@ -274,9 +274,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MCMFStep>({
   card2Title: '📊 费用流状态监视器 (dist, 流量, 前驱路)',
   card2Desc: '展示残量网络弧容量/流量、单位费用、SPFA 最短路径以及累积费用核算全过程',
   legend: [
-    { label: '🚀 源点 S / 🏁 汇点 T', color: '#a855f7' },
+    { label: '🚀 源点 S / 🏁 汇点 T', state: 'secondary' },
     { label: '🔵 网络中继节点', color: '#0369a1' },
-    { label: '🟢 当前最短增广路径', color: '#10b981' },
+    { label: '🟢 当前最短增广路径', state: 'discovered' },
     { label: '🧱 满流饱和弧', color: '#dc2626' },
     { label: '⚡ 未饱和可行弧', color: '#334155' },
   ],

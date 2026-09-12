@@ -791,8 +791,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<MixedEulerStep>({
   card2Title: '🧭 入出度差额 D[u] 与满流监视器',
   card2Desc: '无向边初始方向、差额 D[u]=(in-out)/2 与网络流反向调整',
   legend: [
-    { label: '原始有向边', color: '#38bdf8' },
-    { label: '🔄 反转有向边', color: '#10b981' },
+    { label: '原始有向边', state: 'scanning' },
+    { label: '🔄 反转有向边', state: 'discovered' },
     { label: '度数平衡节点', color: '#0284c7' },
   ],
   inputs: [

@@ -220,9 +220,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BridgeStep>({
   card2Title: '📊 Tarjan 判定监视器 (dfn, low, isCut, bridges)',
   card2Desc: '展示时间戳 dfn 与追溯值 low、割点条件 low[v] >= dfn[u] 与割边桥条件 low[v] > dfn[u]',
   legend: [
-    { label: '🚩 关键割点', color: '#ef4444' },
+    { label: '🚩 关键割点', state: 'swapping' },
     { label: '🌉 关键割边 (桥)', color: '#f59e0b' },
-    { label: '⚡ 当前 DFS 访问节点', color: '#38bdf8' },
+    { label: '⚡ 当前 DFS 访问节点', state: 'scanning' },
     { label: '⚪ 普通节点', color: '#1e293b' },
   ],
   inputs: [

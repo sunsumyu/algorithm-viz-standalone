@@ -208,10 +208,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<ClosureStep>({
   card2Desc: '逐行对齐正权连 S、负权连 T、依赖边赋无穷大 cap=∞ 及残量网络 S-可达集闭合性判定',
   legend: [
     { label: 'S 源点 / T 汇点', color: '#f59e0b' },
-    { label: '🟢 正权实验节点', color: '#10b981' },
-    { label: '🔴 负权仪器节点', color: '#ef4444' },
+    { label: '🟢 正权实验节点', state: 'discovered' },
+    { label: '🔴 负权仪器节点', state: 'swapping' },
     { label: '👑 所选闭合子图点', color: '#f59e0b' },
-    { label: '⚪ 割边 (红虚线)', color: '#ef4444' },
+    { label: '⚪ 割边 (红虚线)', state: 'swapping' },
   ],
   inputs: [
     {

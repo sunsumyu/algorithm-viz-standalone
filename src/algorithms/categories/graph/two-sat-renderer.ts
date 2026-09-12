@@ -321,7 +321,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<TwoSATStep>({
   card2Title: '📊 Tarjan 多数组 (dfn, low, scc, inStack) 实时监控器',
   card2Desc: '逐行对齐 Tarjan 缩点与 2-SAT 求解指令，实时跟踪时间戳 dfn[]、祖先回溯 low[] 与 SCC 分量编号',
   legend: [
-    { label: '布尔正文字 (True)', color: '#38bdf8' },
+    { label: '布尔正文字 (True)', state: 'scanning' },
     { label: '布尔逆文字 (False)', color: '#f43f5e' },
     { label: '⭐ 当前活跃节点', color: '#f59e0b' },
     { label: '🔴 蕴涵有向边', color: '#64748b' },

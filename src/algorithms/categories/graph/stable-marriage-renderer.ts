@@ -226,9 +226,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MarriageStep>({
   legend: [
     { label: '男士节点 (M1..Mn)', color: '#1e3a8a' },
     { label: '女士节点 (W1..Wn)', color: '#831843' },
-    { label: '🟢 确立婚约 (实线)', color: '#10b981' },
+    { label: '🟢 确立婚约 (实线)', state: 'discovered' },
     { label: '🟡 正在求婚 (金色)', color: '#facc15' },
-    { label: '🔴 婉拒求婚 (红色)', color: '#ef4444' },
+    { label: '🔴 婉拒求婚 (红色)', state: 'swapping' },
   ],
   inputs: [
     {

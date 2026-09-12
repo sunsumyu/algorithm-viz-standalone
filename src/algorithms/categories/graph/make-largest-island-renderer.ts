@@ -323,7 +323,7 @@ registerDeclarativeAlgorithm({
     { label: '岛屿 2', color: '#86efac' },
     { label: '岛屿 3', color: '#93c5fd' },
     { label: '岛屿 4', color: '#d8b4fe' },
-    { label: '最佳桥接点 (0->1)', color: '#ef4444' },
+    { label: '最佳桥接点 (0->1)', state: 'swapping' },
   ],
   codeLanguages: MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
   problemHtml: MAKE_LARGEST_ISLAND_PROBLEM_HTML,

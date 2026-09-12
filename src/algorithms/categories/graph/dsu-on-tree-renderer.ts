@@ -254,7 +254,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<DSUTreeStep>({
   legend: [
     { label: '普通轻节点', color: '#1e3a8a' },
     { label: '👑 重儿子 (Heavy Son)', color: '#f59e0b' },
-    { label: '🟢 活跃操作子树', color: '#10b981' },
+    { label: '🟢 活跃操作子树', state: 'discovered' },
     { label: '🟡 重边 (实线)', color: '#facc15' },
     { label: '⚪ 轻边 (虚线)', color: '#475569' },
   ],

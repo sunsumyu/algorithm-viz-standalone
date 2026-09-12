@@ -387,9 +387,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MinMeanStep>({
   card2Title: '🧭 二分区间 [L, R] 与负环判定监视器',
   card2Desc: '二分平均值 λ、新边权 w\'=w-λ 与 SPFA 负权回路高亮',
   legend: [
-    { label: '正权边 (w\' ≥ 0)', color: '#38bdf8' },
+    { label: '正权边 (w\' ≥ 0)', state: 'scanning' },
     { label: '负权边 (w\' < 0)', color: '#facc15' },
-    { label: '🔴 负权回路 (Negative Cycle)', color: '#ef4444' },
+    { label: '🔴 负权回路 (Negative Cycle)', state: 'swapping' },
   ],
   inputs: [
     {

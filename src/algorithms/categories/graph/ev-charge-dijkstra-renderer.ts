@@ -219,8 +219,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
   card2Desc: '逐行对齐原地充电 p+1 与公路行驶放电 p-w、分层状态扩维与 Dijkstra 堆优化',
   legend: [
     { label: '🏙️ 城市站点', color: '#1e3a8a' },
-    { label: '🔋 原地充电 (单价 charge[u])', color: '#10b981' },
-    { label: '🚗 公路行驶 (耗电/耗时 w)', color: '#38bdf8' },
+    { label: '🔋 原地充电 (单价 charge[u])', state: 'discovered' },
+    { label: '🚗 公路行驶 (耗电/耗时 w)', state: 'scanning' },
     { label: '👑 当前出堆最优状态', color: '#f59e0b' },
   ],
   inputs: [
