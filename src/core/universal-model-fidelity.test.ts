@@ -23,6 +23,7 @@ describe('🛡️ Universal Model Fidelity & Anchor Spec Guard', () => {
     expect(modelIds).toContain('unique-paths');
     expect(modelIds).toContain('unique-paths-ii');
     expect(modelIds).toContain('min-path-sum');
+    expect(modelIds).toContain('longest-common-subsequence');
   });
 
   modelIds.forEach((modelId) => {

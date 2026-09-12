@@ -17,6 +17,7 @@ import deleteOperationForTwoStringsModel from './models/delete-operation-for-two
 import editDistanceModel from './models/edit-distance.yaml';
 import palindromicSubstringsModel from './models/palindromic-substrings.yaml';
 import longestPalindromicSubsequenceModel from './models/longest-palindromic-subsequence.yaml';
+import longestCommonSubsequenceModel from './models/longest-common-subsequence.yaml';
 import partitionEqualSubsetSumModel from './models/partition-equal-subset-sum.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
@@ -42,6 +43,7 @@ export class AlgorithmModelRepository {
     ['edit-distance', editDistanceModel as IYamlAlgorithmModel],
     ['palindromic-substrings', palindromicSubstringsModel as IYamlAlgorithmModel],
     ['longest-palindromic-subsequence', longestPalindromicSubsequenceModel as IYamlAlgorithmModel],
+    ['longest-common-subsequence', longestCommonSubsequenceModel as IYamlAlgorithmModel],
     ['partition-equal-subset-sum', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
     ['partition-subset', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
   ]);
