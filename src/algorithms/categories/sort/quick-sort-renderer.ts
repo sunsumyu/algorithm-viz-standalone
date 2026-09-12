@@ -4,6 +4,8 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { BarsCanvasAdapter } from '../../../core/renderers/bars-canvas-adapter';
+import type { VisualStateId } from '../../../core/renderers/visual-state-tokens';
 import {
   QUICK_SORT_PROBLEM_HTML,
   QUICK_SORT_ANALYSIS_HTML,
@@ -260,62 +262,23 @@ function withMetrics(steps: QSStep[]): QSStep[] {
 }
 
 export function renderQuickSortCanvas(container: HTMLElement, step: QSStep): void {
-  const { array, left, right, pivotIdx, pivotVal, i, j, settledIndices, swapping, phase } = step;
+  const { array, left, right, pivotIdx, i, j, settledIndices, swapping, phase } = step;
 
-  const maxVal = Math.max(...array, 1);
-  const barsHtml = array
-    .map((val, idx) => {
-      const isPivot = idx === pivotIdx && phase !== 'done';
-      const isIPtr = idx === i && phase !== 'done';
-      const isJPtr = idx === j && phase !== 'done';
-      const isSwapping =
-        (idx === i || idx === j || (phase === 'pivot-settled' && (idx === left || idx === i))) && swapping;
-      const isSettled = settledIndices.includes(idx) || phase === 'done';
+  const states: VisualStateId[] = array.map((_, idx) => {
+    if (
+      (idx === i || idx === j || (phase === 'pivot-settled' && (idx === left || idx === i))) &&
+      swapping
+    ) {
+      return 'swapping';
+    }
+    if (idx === pivotIdx && phase !== 'done') return 'pivot';
+    if (idx === i && phase !== 'done') return 'comparing';
+    if (idx === j && phase !== 'done') return 'secondary';
+    if (settledIndices.includes(idx) || phase === 'done') return 'sorted';
+    return 'idle';
+  });
 
-      let bg = '#cbd5e1';
-      let border = '#94a3b8';
-      let color = '#334155';
-      let transform = 'none';
-      if (isSwapping) {
-        bg = '#fef2f2';
-        border = '#ef4444';
-        color = '#b91c1c';
-        transform = 'scale(1.06)';
-      } else if (isPivot) {
-        bg = '#fef9c3';
-        border = '#eab308';
-        color = '#854d0e';
-        transform = 'scale(1.06)';
-      } else if (isIPtr) {
-        bg = '#eff6ff';
-        border = '#3b82f6';
-        color = '#1d4ed8';
-      } else if (isJPtr) {
-        bg = '#faf5ff';
-        border = '#a855f7';
-        color = '#7e22ce';
-      } else if (isSettled) {
-        bg = '#f0fdf4';
-        border = '#22c55e';
-        color = '#15803d';
-      }
-
-      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; box-sizing: border-box;">${val}</div>
-          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
-        </div>
-      `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
-      ${barsHtml}
-    </div>
-  `;
+  BarsCanvasAdapter.render(container, { values: array, states, emphasisScale: 1.06 });
 }
 
 registerDeclarativeAlgorithm({

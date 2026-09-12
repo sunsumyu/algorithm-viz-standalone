@@ -4,6 +4,8 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { BarsCanvasAdapter } from '../../../core/renderers/bars-canvas-adapter';
+import type { VisualStateId } from '../../../core/renderers/visual-state-tokens';
 import {
   SHELL_SORT_PROBLEM_HTML,
   SHELL_SORT_ANALYSIS_HTML,
@@ -200,53 +202,15 @@ function withMetrics(steps: ShellStep[]): ShellStep[] {
 export function renderShellSortCanvas(container: HTMLElement, step: ShellStep): void {
   const { array, gap, i, key, j, phase } = step;
 
-  const maxVal = Math.max(...array, key, 1);
-  const barsHtml = array
-    .map((val, idx) => {
-      const isKey = idx === i && phase === 'pick-key';
-      const isGapPartner = j >= gap && idx === j - gap && phase === 'compare';
-      const isShifting = idx === j && phase === 'shift';
-      const isSorted = phase === 'done';
+  const states: VisualStateId[] = array.map((_, idx) => {
+    if (idx === i && phase === 'pick-key') return 'pivot';
+    if (idx === j && phase === 'shift') return 'swapping';
+    if (j >= gap && idx === j - gap && phase === 'compare') return 'comparing';
+    if (phase === 'done') return 'sorted';
+    return 'idle';
+  });
 
-      let bg = '#cbd5e1';
-      let border = '#94a3b8';
-      let color = '#334155';
-      let transform = 'none';
-      if (isKey) {
-        bg = '#fef9c3';
-        border = '#eab308';
-        color = '#854d0e';
-        transform = 'scale(1.05)';
-      } else if (isShifting) {
-        bg = '#fef2f2';
-        border = '#ef4444';
-        color = '#b91c1c';
-      } else if (isGapPartner) {
-        bg = '#eff6ff';
-        border = '#3b82f6';
-        color = '#1d4ed8';
-      } else if (isSorted) {
-        bg = '#f0fdf4';
-        border = '#22c55e';
-        color = '#15803d';
-      }
-
-      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; box-sizing: border-box;">${val}</div>
-          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
-        </div>
-      `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
-      ${barsHtml}
-    </div>
-  `;
+  BarsCanvasAdapter.render(container, { values: array, states, emphasisScale: 1.05 });
 }
 
 registerDeclarativeAlgorithm({

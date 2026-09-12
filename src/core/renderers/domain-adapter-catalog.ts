@@ -101,6 +101,14 @@ export const DOMAIN_ADAPTER_CATALOG: readonly DomainAdapterEntry[] = [
     usageCount: 4,
   },
   {
+    id: 'bars-canvas',
+    name: '排序柱状沙盘适配器',
+    domain: 'sort (冒泡/选择/插入/希尔/快排/堆排)',
+    adapter: null as any, // 懒引用，避免循环依赖
+    renderMethod: 'render',
+    usageCount: 6,
+  },
+  {
     id: 'three-graph',
     name: '3D 图拓扑适配器',
     domain: 'graph (最短路/Dijkstra)',

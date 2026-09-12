@@ -4,6 +4,8 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { BarsCanvasAdapter } from '../../../core/renderers/bars-canvas-adapter';
+import type { VisualStateId } from '../../../core/renderers/visual-state-tokens';
 import {
   SELECTION_SORT_PROBLEM_HTML,
   SELECTION_SORT_ANALYSIS_HTML,
@@ -201,58 +203,15 @@ function withMetrics(steps: SSStep[]): SSStep[] {
 export function renderSelectionSortCanvas(container: HTMLElement, step: SSStep): void {
   const { array, i, minIdx, j, sortedCount, phase, swapping } = step;
 
-  const maxVal = Math.max(...array, 1);
-  const barsHtml = array
-    .map((val, idx) => {
-      const isTargetI = idx === i && phase !== 'done';
-      const isCurrentMin = idx === minIdx && phase !== 'done';
-      const isScanningJ = idx === j && !swapping && phase === 'compare';
-      const isSwapping = (idx === i || idx === minIdx) && swapping;
-      const isSorted = idx < sortedCount || phase === 'done';
+  const states: VisualStateId[] = array.map((_, idx) => {
+    if ((idx === i || idx === minIdx) && swapping) return 'swapping';
+    if (idx === minIdx && phase !== 'done') return 'pivot';
+    if (idx === j && !swapping && phase === 'compare') return 'scanning';
+    if (idx < sortedCount || phase === 'done') return 'sorted';
+    return 'comparing';
+  });
 
-      let bg = '#cbd5e1';
-      let border = '#94a3b8';
-      let color = '#334155';
-      let transform = 'none';
-      if (isSwapping) {
-        bg = '#fef2f2';
-        border = '#ef4444';
-        color = '#b91c1c';
-        transform = 'scale(1.06)';
-      } else if (isCurrentMin) {
-        bg = '#fef9c3';
-        border = '#eab308';
-        color = '#854d0e';
-      } else if (isScanningJ) {
-        bg = '#f0fdf4';
-        border = '#38bdf8';
-        color = '#0369a1';
-      } else if (isSorted) {
-        bg = '#f0fdf4';
-        border = '#22c55e';
-        color = '#15803d';
-      } else if (isTargetI) {
-        bg = '#eff6ff';
-        border = '#2563eb';
-        color = '#1d4ed8';
-      }
-
-      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; color: ${color}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform}; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; box-sizing: border-box;">${val}</div>
-          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
-        </div>
-      `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
-      ${barsHtml}
-    </div>
-  `;
+  BarsCanvasAdapter.render(container, { values: array, states, emphasisScale: 1.06 });
 }
 
 registerDeclarativeAlgorithm({

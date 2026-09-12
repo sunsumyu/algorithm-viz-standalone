@@ -4,6 +4,8 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { BarsCanvasAdapter } from '../../../core/renderers/bars-canvas-adapter';
+import type { VisualStateId } from '../../../core/renderers/visual-state-tokens';
 import {
   BUBBLE_SORT_PROBLEM_HTML,
   BUBBLE_SORT_ANALYSIS_HTML,
@@ -208,45 +210,17 @@ function withMetrics(steps: BSStep[]): BSStep[] {
 export function renderBubbleSortCanvas(container: HTMLElement, step: BSStep): void {
   const { array, j, jNext, sortedTail, phase, swapping } = step;
 
-  const maxVal = Math.max(...array, 1);
-  const barsHtml = array
-    .map((val, idx) => {
-      const isComparing = (idx === j || idx === jNext) && !swapping && phase === 'compare';
-      const isSwapping = (idx === j || idx === jNext) && swapping;
-      const isSorted = idx >= array.length - sortedTail || phase === 'done';
+  const states: VisualStateId[] = array.map((_, idx) => {
+    const isSwapping = (idx === j || idx === jNext) && swapping;
+    if (isSwapping) return 'swapping';
+    const isComparing = (idx === j || idx === jNext) && !swapping && phase === 'compare';
+    if (isComparing) return 'comparing';
+    const isSorted = idx >= array.length - sortedTail || phase === 'done';
+    if (isSorted) return 'sorted';
+    return 'idle';
+  });
 
-      let bg = '#cbd5e1';
-      let border = '#94a3b8';
-      let transform = 'none';
-      if (isSwapping) {
-        bg = '#fef2f2';
-        border = '#ef4444';
-        transform = 'scale(1.05)';
-      } else if (isComparing) {
-        bg = '#eff6ff';
-        border = '#3b82f6';
-      } else if (isSorted) {
-        bg = '#f0fdf4';
-        border = '#22c55e';
-      }
-
-      const heightPct = Math.max(18, Math.round((val / maxVal) * 100));
-
-      return `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; max-width: 44px; height: 100%; justify-content: flex-end; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);">
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 800; color: #0f172a;">${val}</span>
-          <div style="width: 100%; border-radius: 6px 6px 2px 2px; background: ${bg}; border: 1.5px solid ${border}; min-height: 12px; height: ${heightPct}%; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); transform: ${transform};"></div>
-          <span style="font-size: 9.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8;">${idx}</span>
-        </div>
-      `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <div style="display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 100%; width: 100%; padding: 16px 12px 10px; box-sizing: border-box;">
-      ${barsHtml}
-    </div>
-  `;
+  BarsCanvasAdapter.render(container, { values: array, states, valuePosition: 'above', emphasisScale: 1.05 });
 }
 
 registerDeclarativeAlgorithm({

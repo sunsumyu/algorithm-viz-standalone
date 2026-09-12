@@ -149,6 +149,16 @@
 - **定义**：负责无头执行算法逻辑、编译原子单步轨迹流（`AlgorithmTraceStep[]`）与多语言语义行号自动对齐的 DDD 核心引擎。
 - **职责**：100% 零 DOM / 零 UI 依赖。对外暴露极简流式录制接口 `AlgorithmExecutionTraceEngine.trace((recorder) => { ... }, options)`；内部封装深克隆快照、状态差分、图论/矩阵领域原语标准化，并通过 `CodeStepIndexer` 自动在编译期将 `@step:anchor` 映射到 Java/C++/Python/JS 4 语种真实物理行号，彻底杜绝算法逻辑层手写各语种行号，赋能 100% 纯内存无头单元测试。
 
+### VisualStateTokens (视觉状态语义令牌层)
+- **定义**：全库渲染器「状态 → 颜色」语义词汇的唯一权威出处（Single Source of Truth），位于 `src/core/renderers/visual-state-tokens.ts`。
+- **包含**：语义状态词汇表（idle / comparing / scanning / swapping / sorted / pivot / secondary）与主题配置（当前 light；暗色主题 = 新增一份 VisualTheme 配置）。
+- **职责**：渲染器只引用语义状态名，`visualState(state)` 负责解析具体色值；语义色漂移从此不可能，主题化从改上万处内联 hex 退化为换一份配置。
+
+### BarsCanvasAdapter (排序柱状沙盘适配器深模块)
+- **定义**：收敛排序家族（冒泡/选择/插入/希尔/快排/堆排）柱状沙盘的 VisualAdapter 深模块，已注册于 DomainAdapterCatalog（id: bars-canvas）。
+- **职责**：渲染器声明每根柱子的语义状态（`states: VisualStateId[]`），适配器统一输出几何（柱高归一化/柱宽上限/强调缩放）与配色；纯计算 `computeBarsVisual` 与薄 DOM `render` 分离，可无头测试。
+- **价值**：排序渲染器收缩为纯状态推导逻辑，算法单测可升级为无头断言状态序列。
+
 ### DomainAdapterCatalog (领域画布适配器目录)
 - **定义**：集中收编全库 10 个领域专属画板适配器的元信息注册表（`domain-adapter-catalog.ts`）。
 - **职责**：提供 `findAdapterById(id)` 和 `findAdapterByDomain(keyword)` 查询接口，让开发者快速发现可用适配器（树拓扑、数组轨道、DP 网格、递归树、3D 图论等）。
