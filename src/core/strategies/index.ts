@@ -20,6 +20,9 @@ import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
+import { UniversalStringDpStrategy } from './universal-string-dp-strategy';
+
+export { UniversalStringDpStrategy };
 
 export function registerBuiltinStrategies(): void {
   // Tree DP (树型 DP 专题 — 第078讲、第079讲)
@@ -86,7 +89,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-increasing-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-continuous-increasing-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-repeated-subarray'));
-  AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-common-subsequence'));
+  AlgorithmStrategyRegistry.register(new UniversalStringDpStrategy('longest-common-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('uncrossed-lines'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('is-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('max-subarray-dp'));

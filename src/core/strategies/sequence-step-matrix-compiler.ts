@@ -6,6 +6,7 @@ import { compileEditDistanceStage1or2, compileEditDistanceStage3, compileEditDis
 import { compileDistinctSubsequencesStage1or2, compileDistinctSubsequencesStage3, compileDistinctSubsequencesStage4 } from './sequence-distinctsubsequences-compiler';
 import { compileLongestPalindromicStage1or2, compileLongestPalindromicStage3, compileLongestPalindromicStage4 } from './sequence-longestpalindromic-compiler';
 import { compilePalindromicSubstringsStage1or2, compilePalindromicSubstringsStage3, compilePalindromicSubstringsStage4 } from './sequence-palindromicsubstrings-compiler';
+import { compileLcsStage1or2, compileLcsStage3, compileLcsStage4 } from './sequence-lcs-compiler';
 
 /**
  * 序列与字符串 DP 步骤矩阵编译器门面 (SequenceStepMatrixCompiler Facade)
@@ -73,4 +74,15 @@ export class SequenceStepMatrixCompiler {
     return compilePalindromicSubstringsStage4(model, anchorMap);
   }
 
+  public static compileLcsStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLcsStage1or2(model, isMemo, anchorMap, direction);
+  }
+
+  public static compileLcsStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLcsStage3(model, anchorMap, direction);
+  }
+
+  public static compileLcsStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
+    return compileLcsStage4(model, anchorMap);
+  }
 }
