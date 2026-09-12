@@ -6,6 +6,8 @@
  * 全部函数采用命名选项对象 (opts) 签名。
  */
 
+import { GridVisualAdapter, type GridRenderOptions } from './grid-visual-adapter';
+
 // ==========================================
 // 1. 递归阶段 Card 1: 运行时调用栈
 // ==========================================
@@ -142,49 +144,29 @@ export function renderSpecialMemoCard2(
   opts: SpecialMemoCard2Options
 ): void {
   const { title, memo, curI, curJ } = opts;
-  const isHit = opts.isHit ?? false;
   const rows = memo?.length || 0;
   const cols = memo?.[0]?.length || 0;
 
-  let tableHtml = '<table style="border-collapse:collapse; width:100%; font-family:\'JetBrains Mono\', monospace; font-size:11px;">';
-  tableHtml += '<thead><tr><th style="padding:6px; color:#64748b; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700;">i \\ j</th>';
-  for (let j = 0; j < cols; j++) {
-    const isColActive = j === curJ;
-    tableHtml += `<th style="padding:6px; color:${isColActive ? '#d97706' : '#64748b'}; border:1px solid #e2e8f0; background:${
-      isColActive ? '#fef3c7' : '#f8fafc'
-    }; font-weight:700;">${j}</th>`;
-  }
-  tableHtml += '</tr></thead><tbody>';
+  const rowLabels = memo?.map((_, i) => `#${i + 1}`) || [];
+  const colLabels = Array.from({ length: cols }, (_, j) => `${j}`);
 
-  for (let i = 0; i < rows; i++) {
-    const isRowActive = i === curI;
-    tableHtml += `<tr><td style="padding:6px; color:${isRowActive ? '#2563eb' : '#64748b'}; border:1px solid #e2e8f0; background:${
-      isRowActive ? '#eff6ff' : '#f8fafc'
-    }; font-weight:700; text-align:center;">#${i + 1}</td>`;
-    for (let j = 0; j < cols; j++) {
-      const val = memo[i][j];
-      const isCur = i === curI && j === curJ;
-      let bg = '#ffffff';
-      let textColor = '#cbd5e1';
-      let text = '·';
-      let border = '#e2e8f0';
+  const stepData = {
+    i: curI,
+    j: curJ,
+    grid: memo?.map((row) => row.map((v) => (v === -1 ? null : v))) || [],
+    type: opts.isHit ? '缓存命中' : '未命中试算',
+    msg: `${title} [${curI}, ${curJ}]`,
+  };
 
-      if (val !== -1) {
-        bg = '#f0fdf4';
-        textColor = '#16a34a';
-        text = val >= 1_000_000_000 ? 'INF' : `${val}`;
-      }
-      if (isCur) {
-        bg = isHit ? '#dcfce7' : '#dbeafe';
-        border = isHit ? '#16a34a' : '#2563eb';
-        textColor = isHit ? '#15803d' : '#1d4ed8';
-      }
-
-      tableHtml += `<td style="padding:6px; text-align:center; border:1px solid ${border}; background:${bg}; color:${textColor}; font-weight:${isCur || val !== -1 ? 700 : 400};">${text}</td>`;
-    }
-    tableHtml += '</tr>';
-  }
-  tableHtml += '</tbody></table>';
+  const renderOpts: GridRenderOptions = {
+    m: rows,
+    n: cols,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'knapsack-special-memo',
+    rowLabels,
+    colLabels,
+  };
 
   container.innerHTML = `
     <div style="display:flex; flex-direction:column; height:100%; width:100%; box-sizing:border-box;">
@@ -192,11 +174,15 @@ export function renderSpecialMemoCard2(
         <span style="font-size:12px; font-weight:700; color:#0f172a;">🎯 ${title}</span>
         <span style="font-size:11px; color:#64748b;">· = 未探查, 数值 = 缓存结果</span>
       </div>
-      <div style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-        ${tableHtml}
+      <div class="special-memo-grid-wrapper" style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
       </div>
     </div>
   `;
+
+  const wrapper = container.querySelector('.special-memo-grid-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
 }
 
 // ==========================================
@@ -283,47 +269,34 @@ export function renderSpecial2DCard2(
   const rows = dp?.length || 0;
   const cols = dp?.[0]?.length || 0;
 
-  let tableHtml = '<table style="border-collapse:collapse; width:100%; font-family:\'JetBrains Mono\', monospace; font-size:11px;">';
-  tableHtml += '<thead><tr><th style="padding:6px; color:#64748b; border:1px solid #e2e8f0; background:#f8fafc; font-weight:700;">i \\ j</th>';
-  for (let j = 0; j < cols; j++) {
-    const isColActive = j === curJ;
-    tableHtml += `<th style="padding:6px; color:${isColActive ? '#d97706' : '#64748b'}; border:1px solid #e2e8f0; background:${
-      isColActive ? '#fef3c7' : '#f8fafc'
-    }; font-weight:700;">${j}</th>`;
-  }
-  tableHtml += '</tr></thead><tbody>';
+  const rowLabels = dp?.map((_, i) => `#${i}`) || [];
+  const colLabels = Array.from({ length: cols }, (_, j) => `${j}`);
 
-  for (let i = 0; i < rows; i++) {
-    const isRowActive = i === curI;
-    tableHtml += `<tr><td style="padding:6px; color:${isRowActive ? '#2563eb' : '#64748b'}; border:1px solid #e2e8f0; background:${
-      isRowActive ? '#eff6ff' : '#f8fafc'
-    }; font-weight:700; text-align:center;">#${i}</td>`;
-    for (let j = 0; j < cols; j++) {
-      const val = dp[i][j];
-      const isCur = i === curI && j === curJ;
-      const isDep = depCells.some((d) => d.r === i && d.c === j);
+  const deps = (depCells || []).map((d) => {
+    let type: 'top' | 'left' | 'diag' | undefined;
+    if (d.r === curI - 1 && d.c === curJ) type = 'top';
+    else if (d.r === curI && d.c < curJ) type = 'left';
+    else if (d.r < curI && d.c < curJ) type = 'diag';
+    return { r: d.r, c: d.c, type };
+  });
 
-      let bg = '#ffffff';
-      let border = '#e2e8f0';
-      let textColor = '#334155';
+  const stepData = {
+    i: curI,
+    j: curJ,
+    grid: dp || [],
+    msg: `${title} [${curI}, ${curJ}]`,
+  };
 
-      if (isDep) {
-        bg = '#fef3c7';
-        border = '#f59e0b';
-        textColor = '#b45309';
-      }
-      if (isCur) {
-        bg = '#dbeafe';
-        border = '#2563eb';
-        textColor = '#1d4ed8';
-      }
-
-      const displayVal = val >= 1_000_000_000 ? 'INF' : `${val}`;
-      tableHtml += `<td style="padding:6px; text-align:center; border:1px solid ${border}; background:${bg}; color:${textColor}; font-weight:${isCur || isDep ? 700 : 400};">${displayVal}</td>`;
-    }
-    tableHtml += '</tr>';
-  }
-  tableHtml += '</tbody></table>';
+  const renderOpts: GridRenderOptions = {
+    m: rows,
+    n: cols,
+    isReverse: false,
+    isGridProblem: false,
+    modelId: 'knapsack-special-2d',
+    rowLabels,
+    colLabels,
+    deps,
+  };
 
   container.innerHTML = `
     <div style="display:flex; flex-direction:column; height:100%; width:100%; box-sizing:border-box;">
@@ -334,9 +307,13 @@ export function renderSpecial2DCard2(
           <span style="color:#d97706;">■ 依赖格</span>
         </div>
       </div>
-      <div style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
-        ${tableHtml}
+      <div class="special-2d-grid-wrapper" style="flex:1; min-height:0; overflow:auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:6px; box-shadow:0 1px 2px rgba(0,0,0,0.03);">
       </div>
     </div>
   `;
+
+  const wrapper = container.querySelector('.special-2d-grid-wrapper') as HTMLElement | null;
+  if (wrapper) {
+    GridVisualAdapter.renderGrid(wrapper, stepData, renderOpts);
+  }
 }

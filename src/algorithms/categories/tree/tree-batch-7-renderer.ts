@@ -1,19 +1,44 @@
 /**
- * 树算法批量渲染器 - Batch 7
+ * 树算法批量渲染器 - Batch 7（声明式 4-Card 标准架构）
  * 包含: 最小深度、平衡二叉树、左叶子之和、二叉树所有路径、完全二叉树节点个数、找树左下角的值
  */
 
-import { StepVisualizer } from '../../../core/step-visualizer';
-import { registerAlgorithm } from '../../../core/registry';
-import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog } from './tree-template';
-import minDepthHtml from './min-depth.html?raw';
-import balancedHtml from './balanced.html?raw';
-import leftLeavesHtml from './left-leaves.html?raw';
-import allPathsHtml from './all-paths.html?raw';
-import countNodesHtml from './count-nodes.html?raw';
-import bottomLeftHtml from './bottom-left.html?raw';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { TreeNode, buildTreeFromArr, renderTreeSVG } from './tree-template';
 
-// ========== Level 11: 二叉树最小深度 ==========
+/** 通用：树层数组输入解析（空串按空树处理交给 buildTreeFromArr） */
+function parseTreeInput(raw: unknown, fallback: (number | null)[]): (number | null)[] {
+  const text = String(raw ?? '').trim();
+  if (!text) return fallback;
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) return parsed.map((v) => (v === null ? null : Number(v)));
+  } catch {
+    // 逗号分隔兜底
+    return text
+      .split(/[,，\s]+/)
+      .map((s) => (s === 'null' ? null : Number.isFinite(Number(s)) ? Number(s) : null));
+  }
+  return fallback;
+}
+
+/** 通用：树 SVG 主视觉（渲染深模块 renderTreeSVG） */
+function renderTreeCanvas(
+  container: HTMLElement,
+  tree: TreeNode | null,
+  highlight: Set<number>,
+  primaryColor: string,
+  secondary?: Set<number>,
+  secondaryColor?: string,
+): void {
+  container.innerHTML = '';
+  container.style.width = '100%';
+  container.style.height = '100%';
+  renderTreeSVG(container, tree, highlight, primaryColor, secondary, secondaryColor);
+}
+
+/* ═══════════════════ Level 11: 二叉树最小深度 ═══════════════════ */
+
 interface MinDepthStep {
   tree: TreeNode | null;
   current: number | null;
@@ -22,6 +47,7 @@ interface MinDepthStep {
   message: string;
   log: string;
   codeLine?: number | number[];
+  metrics?: Record<string, string>;
 }
 
 function buildMinDepthSteps(root: TreeNode | null): MinDepthStep[] {
@@ -37,7 +63,7 @@ function buildMinDepthSteps(root: TreeNode | null): MinDepthStep[] {
 
   const dfs = (node: TreeNode | null, depth: number): number => {
     if (!node) return 0;
-    
+
     steps.push({
       tree: root, current: node.val, depth, minDepth: minDepth === Infinity ? null : minDepth,
       message: `访问节点 ${node.val}，当前深度 ${depth}`,
@@ -83,74 +109,64 @@ function buildMinDepthSteps(root: TreeNode | null): MinDepthStep[] {
   return steps;
 }
 
-class MinDepthVisualizer extends StepVisualizer<MinDepthStep> {
-  protected codeLines = [
-    'public int minDepth(TreeNode root) {',
-    '  if (root == null) return 0;',
-    '  if (root.left == null && root.right == null) return 1;',
-    '  int left = root.left != null ? minDepth(root.left) : Integer.MAX_VALUE;',
-    '  int right = root.right != null ? minDepth(root.right) : Integer.MAX_VALUE;',
-    '  return Math.min(left, right) + 1;',
-    '}',
-  ];
-  protected codePanelTitle = '最小深度 (Java)';
-
-  private treeData: (number | null)[] = [3, 9, 20, null, null, 15, 7];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#md-tree');
-    this.logEl = this.root.querySelector('#md-log');
-    this.curEl = this.root.querySelector('#md-cur');
-    this.depthEl = this.root.querySelector('#md-depth');
-    this.resultEl = this.root.querySelector('#md-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [3, 9, 20, null, null, 15, 7]; this.start(); },
-      '2': () => { this.treeData = [2, null, 3, null, 4, null, 5, null, 6]; this.start(); },
-      '3': () => { this.treeData = [1, 2]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): MinDepthStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildMinDepthSteps(root);
-  }
-
-  protected renderStep(step: MinDepthStep): void {
-    if (this.treeEl) {
-      renderTreeSVG(this.treeEl, step.tree, step.current != null ? new Set([step.current]) : new Set(), '#fab387');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = step.minDepth != null ? String(step.minDepth) : '?';
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<MinDepthStep>({
   id: 'min-depth',
   name: '二叉树最小深度',
-  viewId: 'algo-min-depth-view',
   category: 'tree',
   description: '从根节点到最近叶子节点的最短路径上的节点数量',
   icon: '📏',
-  template: minDepthHtml,
-  Visualizer: MinDepthVisualizer,
   difficulty: 1,
   levelOrder: 11,
   learningGoal: '理解最小深度与最大深度的区别，注意只有单侧子树的情况',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[3,9,20,null,null,15,7]' },
+  ],
+  presets: [
+    { label: '示例 1', values: { tree: '[3,9,20,null,null,15,7]' } },
+    { label: '示例 2 (单侧链)', values: { tree: '[2,null,3,null,4,null,5,null,6]' } },
+    { label: '示例 3', values: { tree: '[1,2]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#fab387' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'result', label: '最小深度', color: '#10b981' },
+  ],
+  legend: [
+    { label: '当前访问', color: '#fab387' },
+  ],
+  codeLanguages: {
+    java: [
+      'public int minDepth(TreeNode root) {',
+      '  if (root == null) return 0;',
+      '  if (root.left == null && root.right == null) return 1;',
+      '  int left = root.left != null ? minDepth(root.left) : Integer.MAX_VALUE;',
+      '  int right = root.right != null ? minDepth(root.right) : Integer.MAX_VALUE;',
+      '  return Math.min(left, right) + 1;',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    return buildMinDepthSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        result: s.minDepth != null ? String(s.minDepth) : '?',
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      step.current != null ? new Set([step.current]) : new Set(),
+      '#fab387',
+    ),
 });
 
-// ========== Level 12: 平衡二叉树 ==========
+/* ═══════════════════ Level 12: 平衡二叉树 ═══════════════════ */
+
 interface BalancedStep {
   tree: TreeNode | null;
   current: number | null;
@@ -160,6 +176,7 @@ interface BalancedStep {
   message: string;
   log: string;
   codeLine?: number | number[];
+  metrics?: Record<string, string>;
 }
 
 function buildBalancedSteps(root: TreeNode | null): BalancedStep[] {
@@ -220,78 +237,68 @@ function buildBalancedSteps(root: TreeNode | null): BalancedStep[] {
   return steps;
 }
 
-class BalancedVisualizer extends StepVisualizer<BalancedStep> {
-  protected codeLines = [
-    'public boolean isBalanced(TreeNode root) {',
-    '  private int getHeight(TreeNode node) {',
-    '    if (node == null) return 0;',
-    '    int leftH = getHeight(node.left);',
-    '    int rightH = getHeight(node.right);',
-    '    if (Math.abs(leftH - rightH) > 1) return -1;',
-    '    return Math.max(leftH, rightH) + 1;',
-    '  }',
-    '  return getHeight(root) != -1;',
-    '}',
-  ];
-  protected codePanelTitle = '平衡二叉树 (Java)';
-
-  private treeData: (number | null)[] = [3, 9, 20, null, null, 15, 7];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#bl-tree');
-    this.logEl = this.root.querySelector('#bl-log');
-    this.curEl = this.root.querySelector('#bl-cur');
-    this.depthEl = this.root.querySelector('#bl-depth');
-    this.resultEl = this.root.querySelector('#bl-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [3, 9, 20, null, null, 15, 7]; this.start(); },
-      '2': () => { this.treeData = [1, 2, 2, 3, 3, null, null, 4, 4]; this.start(); },
-      '3': () => { this.treeData = [1, 2, 3, 4, 5, 6, null, 7, 8, null, null, 9, 10]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): BalancedStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildBalancedSteps(root);
-  }
-
-  protected renderStep(step: BalancedStep): void {
-    if (this.treeEl) {
-      const color = step.balanced === false ? '#f38ba8' : '#a6e3a1';
-      renderTreeSVG(this.treeEl, step.tree, step.current != null ? new Set([step.current]) : new Set(), color);
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = step.balanced != null ? (step.balanced ? '是' : '否') : '?';
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<BalancedStep>({
   id: 'balanced',
   name: '平衡二叉树',
-  viewId: 'algo-balanced-view',
   category: 'tree',
   description: '判断二叉树是否为平衡二叉树（任意节点左右子树高度差不超过1）',
   icon: '⚖️',
-  template: balancedHtml,
-  Visualizer: BalancedVisualizer,
   difficulty: 1,
   levelOrder: 12,
   learningGoal: '理解平衡二叉树的定义，掌握递归判断方法',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[3,9,20,null,null,15,7]' },
+  ],
+  presets: [
+    { label: '示例 1 (平衡)', values: { tree: '[3,9,20,null,null,15,7]' } },
+    { label: '示例 2 (不平衡)', values: { tree: '[1,2,2,3,3,null,null,4,4]' } },
+    { label: '示例 3 (大树)', values: { tree: '[1,2,3,4,5,6,null,7,8,null,null,9,10]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#a6e3a1' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'result', label: '是否平衡', color: '#10b981' },
+  ],
+  legend: [
+    { label: '当前访问', color: '#a6e3a1' },
+    { label: '检测到不平衡', color: '#f38ba8' },
+  ],
+  codeLanguages: {
+    java: [
+      'public boolean isBalanced(TreeNode root) {',
+      '  private int getHeight(TreeNode node) {',
+      '    if (node == null) return 0;',
+      '    int leftH = getHeight(node.left);',
+      '    int rightH = getHeight(node.right);',
+      '    if (Math.abs(leftH - rightH) > 1) return -1;',
+      '    return Math.max(leftH, rightH) + 1;',
+      '  }',
+      '  return getHeight(root) != -1;',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    return buildBalancedSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        result: s.balanced != null ? (s.balanced ? '是' : '否') : '?',
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      step.current != null ? new Set([step.current]) : new Set(),
+      step.balanced === false ? '#f38ba8' : '#a6e3a1',
+    ),
 });
 
-// ========== Level 13: 左叶子之和 ==========
+/* ═══════════════════ Level 13: 左叶子之和 ═══════════════════ */
+
 interface LeftLeavesStep {
   tree: TreeNode | null;
   current: number | null;
@@ -302,6 +309,7 @@ interface LeftLeavesStep {
   log: string;
   codeLine?: number | number[];
   leftNodes: Set<number>;
+  metrics?: Record<string, string>;
 }
 
 function buildLeftLeavesSteps(root: TreeNode | null): LeftLeavesStep[] {
@@ -355,75 +363,68 @@ function buildLeftLeavesSteps(root: TreeNode | null): LeftLeavesStep[] {
   return steps;
 }
 
-class LeftLeavesVisualizer extends StepVisualizer<LeftLeavesStep> {
-  protected codeLines = [
-    'public int sumOfLeftLeaves(TreeNode root) {',
-    '  private int dfs(TreeNode node, boolean isLeft) {',
-    '    if (node == null) return 0;',
-    '    if (node.left == null && node.right == null && isLeft) return node.val;',
-    '    return dfs(node.left, true) + dfs(node.right, false);',
-    '  }',
-    '  return dfs(root, false);',
-    '}',
-  ];
-  protected codePanelTitle = '左叶子之和 (Java)';
-
-  private treeData: (number | null)[] = [3, 9, 20, null, null, 15, 7];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#ll-tree');
-    this.logEl = this.root.querySelector('#ll-log');
-    this.curEl = this.root.querySelector('#ll-cur');
-    this.depthEl = this.root.querySelector('#ll-depth');
-    this.resultEl = this.root.querySelector('#ll-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [3, 9, 20, null, null, 15, 7]; this.start(); },
-      '2': () => { this.treeData = [1, 2, 3, 4, 5]; this.start(); },
-      '3': () => { this.treeData = [1]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): LeftLeavesStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildLeftLeavesSteps(root);
-  }
-
-  protected renderStep(step: LeftLeavesStep): void {
-    if (this.treeEl) {
-      renderTreeSVG(this.treeEl, step.tree, step.leftNodes, '#a6e3a1', step.current != null ? new Set([step.current]) : undefined, '#fab387');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = String(step.sum);
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<LeftLeavesStep>({
   id: 'left-leaves',
   name: '左叶子之和',
-  viewId: 'algo-left-leaves-view',
   category: 'tree',
   description: '计算二叉树中所有左叶子节点的值之和',
   icon: '🍃',
-  template: leftLeavesHtml,
-  Visualizer: LeftLeavesVisualizer,
   difficulty: 1,
   levelOrder: 13,
   learningGoal: '理解左叶子的定义，掌握递归时传递方向信息的方法',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[3,9,20,null,null,15,7]' },
+  ],
+  presets: [
+    { label: '示例 1', values: { tree: '[3,9,20,null,null,15,7]' } },
+    { label: '示例 2', values: { tree: '[1,2,3,4,5]' } },
+    { label: '示例 3 (单节点)', values: { tree: '[1]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#fab387' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'result', label: '左叶子之和', color: '#10b981' },
+  ],
+  legend: [
+    { label: '左叶子', color: '#a6e3a1' },
+    { label: '当前访问', color: '#fab387' },
+  ],
+  codeLanguages: {
+    java: [
+      'public int sumOfLeftLeaves(TreeNode root) {',
+      '  private int dfs(TreeNode node, boolean isLeft) {',
+      '    if (node == null) return 0;',
+      '    if (node.left == null && node.right == null && isLeft) return node.val;',
+      '    return dfs(node.left, true) + dfs(node.right, false);',
+      '  }',
+      '  return dfs(root, false);',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [3, 9, 20, null, null, 15, 7]));
+    return buildLeftLeavesSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        result: String(s.sum),
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      step.leftNodes,
+      '#a6e3a1',
+      step.current != null ? new Set([step.current]) : undefined,
+      '#fab387',
+    ),
 });
 
-// ========== Level 14: 二叉树所有路径 ==========
+/* ═══════════════════ Level 14: 二叉树所有路径 ═══════════════════ */
+
 interface AllPathsStep {
   tree: TreeNode | null;
   current: number | null;
@@ -433,6 +434,7 @@ interface AllPathsStep {
   message: string;
   log: string;
   codeLine?: number | number[];
+  metrics?: Record<string, string>;
 }
 
 function buildAllPathsSteps(root: TreeNode | null): AllPathsStep[] {
@@ -494,83 +496,78 @@ function buildAllPathsSteps(root: TreeNode | null): AllPathsStep[] {
   return steps;
 }
 
-class AllPathsVisualizer extends StepVisualizer<AllPathsStep> {
-  protected codeLines = [
-    'public List<String> binaryTreePaths(TreeNode root) {',
-    '  List<String> result = new ArrayList<>();',
-    '  private void dfs(TreeNode node, List<Integer> path) {',
-    '    if (node == null) return;',
-    '    path.add(node.val);',
-    '    if (node.left == null && node.right == null) {',
-    '      result.add(path.stream().map(String::valueOf)',
-    '          .collect(Collectors.joining("->")));',
-    '    }',
-    '    dfs(node.left, path);',
-    '    dfs(node.right, path);',
-    '    path.remove(path.size() - 1);',
-    '  }',
-    '  dfs(root, new ArrayList<>());',
-    '  return result;',
-    '}',
-  ];
-  protected codePanelTitle = '二叉树所有路径 (Java)';
-
-  private treeData: (number | null)[] = [1, 2, 3, null, 5];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#ap-tree');
-    this.logEl = this.root.querySelector('#ap-log');
-    this.curEl = this.root.querySelector('#ap-cur');
-    this.depthEl = this.root.querySelector('#ap-depth');
-    this.resultEl = this.root.querySelector('#ap-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [1, 2, 3, null, 5]; this.start(); },
-      '2': () => { this.treeData = [1, 2, 3, 4, 5, 6, 7]; this.start(); },
-      '3': () => { this.treeData = [1]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): AllPathsStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildAllPathsSteps(root);
-  }
-
-  protected renderStep(step: AllPathsStep): void {
-    if (this.treeEl) {
-      renderTreeSVG(this.treeEl, step.tree, new Set(step.path), '#fab387', step.current != null ? new Set([step.current]) : undefined, '#f9e2af');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = String(step.allPaths.length);
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<AllPathsStep>({
   id: 'all-paths',
   name: '二叉树所有路径',
-  viewId: 'algo-all-paths-view',
   category: 'tree',
   description: '返回所有从根节点到叶子节点的路径',
   icon: '🛤️',
-  template: allPathsHtml,
-  Visualizer: AllPathsVisualizer,
   difficulty: 1,
   levelOrder: 14,
   learningGoal: '掌握回溯法收集路径的技巧',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[1,2,3,null,5]' },
+  ],
+  presets: [
+    { label: '示例 1', values: { tree: '[1,2,3,null,5]' } },
+    { label: '示例 2 (满树)', values: { tree: '[1,2,3,4,5,6,7]' } },
+    { label: '示例 3 (单节点)', values: { tree: '[1]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#f9e2af' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'path', label: '当前路径', color: '#fab387' },
+    { id: 'result', label: '已收集路径数', color: '#10b981' },
+  ],
+  legend: [
+    { label: '路径经过', color: '#fab387' },
+    { label: '当前访问', color: '#f9e2af' },
+  ],
+  codeLanguages: {
+    java: [
+      'public List<String> binaryTreePaths(TreeNode root) {',
+      '  List<String> result = new ArrayList<>();',
+      '  private void dfs(TreeNode node, List<Integer> path) {',
+      '    if (node == null) return;',
+      '    path.add(node.val);',
+      '    if (node.left == null && node.right == null) {',
+      '      result.add(path.stream().map(String::valueOf)',
+      '          .collect(Collectors.joining("->")));',
+      '    }',
+      '    dfs(node.left, path);',
+      '    dfs(node.right, path);',
+      '    path.remove(path.size() - 1);',
+      '  }',
+      '  dfs(root, new ArrayList<>());',
+      '  return result;',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [1, 2, 3, null, 5]));
+    return buildAllPathsSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        path: s.path.length ? s.path.join('->') : '—',
+        result: String(s.allPaths.length),
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      new Set(step.path),
+      '#fab387',
+      step.current != null ? new Set([step.current]) : undefined,
+      '#f9e2af',
+    ),
 });
 
-// ========== Level 15: 完全二叉树节点个数 ==========
+/* ═══════════════════ Level 15: 完全二叉树节点个数 ═══════════════════ */
+
 interface CountNodesStep {
   tree: TreeNode | null;
   current: number | null;
@@ -580,6 +577,7 @@ interface CountNodesStep {
   log: string;
   codeLine?: number | number[];
   visitedNodes: Set<number>;
+  metrics?: Record<string, string>;
 }
 
 function buildCountNodesSteps(root: TreeNode | null): CountNodesStep[] {
@@ -633,71 +631,64 @@ function buildCountNodesSteps(root: TreeNode | null): CountNodesStep[] {
   return steps;
 }
 
-class CountNodesVisualizer extends StepVisualizer<CountNodesStep> {
-  protected codeLines = [
-    'public int countNodes(TreeNode root) {',
-    '  if (root == null) return 0;',
-    '  return countNodes(root.left) + countNodes(root.right) + 1;',
-    '}',
-  ];
-  protected codePanelTitle = '完全二叉树节点个数 (Java)';
-
-  private treeData: (number | null)[] = [1, 2, 3, 4, 5, 6];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#cn-tree');
-    this.logEl = this.root.querySelector('#cn-log');
-    this.curEl = this.root.querySelector('#cn-cur');
-    this.depthEl = this.root.querySelector('#cn-depth');
-    this.resultEl = this.root.querySelector('#cn-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [1, 2, 3, 4, 5, 6]; this.start(); },
-      '2': () => { this.treeData = []; this.start(); },
-      '3': () => { this.treeData = [1]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): CountNodesStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildCountNodesSteps(root);
-  }
-
-  protected renderStep(step: CountNodesStep): void {
-    if (this.treeEl) {
-      renderTreeSVG(this.treeEl, step.tree, step.visitedNodes, '#a6e3a1', step.current != null ? new Set([step.current]) : undefined, '#fab387');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = String(step.count);
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<CountNodesStep>({
   id: 'count-nodes',
   name: '完全二叉树节点个数',
-  viewId: 'algo-count-nodes-view',
   category: 'tree',
   description: '计算完全二叉树的节点总数',
   icon: '🔢',
-  template: countNodesHtml,
-  Visualizer: CountNodesVisualizer,
   difficulty: 1,
   levelOrder: 15,
   learningGoal: '理解完全二叉树的性质，掌握递归计数方法',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[1,2,3,4,5,6]' },
+  ],
+  presets: [
+    { label: '示例 1 (完全)', values: { tree: '[1,2,3,4,5,6]' } },
+    { label: '示例 2 (空树)', values: { tree: '[]' } },
+    { label: '示例 3 (单节点)', values: { tree: '[1]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#fab387' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'result', label: '节点计数', color: '#10b981' },
+  ],
+  legend: [
+    { label: '已访问', color: '#a6e3a1' },
+    { label: '当前访问', color: '#fab387' },
+  ],
+  codeLanguages: {
+    java: [
+      'public int countNodes(TreeNode root) {',
+      '  if (root == null) return 0;',
+      '  return countNodes(root.left) + countNodes(root.right) + 1;',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [1, 2, 3, 4, 5, 6]));
+    return buildCountNodesSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        result: String(s.count),
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      step.visitedNodes,
+      '#a6e3a1',
+      step.current != null ? new Set([step.current]) : undefined,
+      '#fab387',
+    ),
 });
 
-// ========== Level 16: 找树左下角的值 ==========
+/* ═══════════════════ Level 16: 找树左下角的值 ═══════════════════ */
+
 interface BottomLeftStep {
   tree: TreeNode | null;
   current: number | null;
@@ -707,6 +698,7 @@ interface BottomLeftStep {
   message: string;
   log: string;
   codeLine?: number | number[];
+  metrics?: Record<string, string>;
 }
 
 function buildBottomLeftSteps(root: TreeNode | null): BottomLeftStep[] {
@@ -762,81 +754,73 @@ function buildBottomLeftSteps(root: TreeNode | null): BottomLeftStep[] {
   return steps;
 }
 
-class BottomLeftVisualizer extends StepVisualizer<BottomLeftStep> {
-  protected codeLines = [
-    'public int findBottomLeftValue(TreeNode root) {',
-    '  int maxDepth = -1;',
-    '  int[] bottomLeft = {0};',
-    '  private void dfs(TreeNode node, int depth) {',
-    '    if (node == null) return;',
-    '    if (node.left == null && node.right == null && depth > maxDepth) {',
-    '      maxDepth = depth;',
-    '      bottomLeft[0] = node.val;',
-    '    }',
-    '    dfs(node.left, depth + 1);',
-    '    dfs(node.right, depth + 1);',
-    '  }',
-    '  dfs(root, 0);',
-    '  return bottomLeft[0];',
-    '}',
-  ];
-  protected codePanelTitle = '找树左下角的值 (Java)';
-
-  private treeData: (number | null)[] = [2, 1, 3];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#blv-tree');
-    this.logEl = this.root.querySelector('#blv-log');
-    this.curEl = this.root.querySelector('#blv-cur');
-    this.depthEl = this.root.querySelector('#blv-depth');
-    this.resultEl = this.root.querySelector('#blv-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.treeData = [2, 1, 3]; this.start(); },
-      '2': () => { this.treeData = [1, null, 2, null, null, 3, null, null, 4]; this.start(); },
-      '3': () => { this.treeData = [1, 2, 3, 4, null, 5, 6, null, null, 7]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): BottomLeftStep[] {
-    const root = buildTreeFromArr(this.treeData);
-    return buildBottomLeftSteps(root);
-  }
-
-  protected renderStep(step: BottomLeftStep): void {
-    if (this.treeEl) {
-      const highlight = step.bottomLeft != null ? new Set<number>([step.bottomLeft]) : new Set<number>();
-      const secondary = step.current != null ? new Set<number>([step.current]) : undefined;
-      renderTreeSVG(this.treeEl, step.tree, highlight, '#f9e2af', secondary, '#fab387');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = step.bottomLeft != null ? String(step.bottomLeft) : '?';
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
+registerDeclarativeAlgorithm<BottomLeftStep>({
   id: 'bottom-left',
   name: '找树左下角的值',
-  viewId: 'algo-bottom-left-view',
   category: 'tree',
   description: '找出二叉树最底层最左边节点的值',
   icon: '🎯',
-  template: bottomLeftHtml,
-  Visualizer: BottomLeftVisualizer,
   difficulty: 1,
   levelOrder: 16,
   learningGoal: '掌握通过深度比较找到最底层最左节点的方法',
+  inputs: [
+    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[2,1,3]' },
+  ],
+  presets: [
+    { label: '示例 1', values: { tree: '[2,1,3]' } },
+    { label: '示例 2 (右偏链)', values: { tree: '[1,null,2,null,null,3,null,null,4]' } },
+    { label: '示例 3 (大树)', values: { tree: '[1,2,3,4,null,5,6,null,null,7]' } },
+  ],
+  metrics: [
+    { id: 'cur', label: '当前节点', color: '#fab387' },
+    { id: 'depth', label: '当前深度', color: '#2563eb' },
+    { id: 'max-depth', label: '最深层深', color: '#a855f7' },
+    { id: 'result', label: '左下角值', color: '#10b981' },
+  ],
+  legend: [
+    { label: '当前答案', color: '#f9e2af' },
+    { label: '当前访问', color: '#fab387' },
+  ],
+  codeLanguages: {
+    java: [
+      'public int findBottomLeftValue(TreeNode root) {',
+      '  int maxDepth = -1;',
+      '  int[] bottomLeft = {0};',
+      '  private void dfs(TreeNode node, int depth) {',
+      '    if (node == null) return;',
+      '    if (node.left == null && node.right == null && depth > maxDepth) {',
+      '      maxDepth = depth;',
+      '      bottomLeft[0] = node.val;',
+      '    }',
+      '    dfs(node.left, depth + 1);',
+      '    dfs(node.right, depth + 1);',
+      '  }',
+      '  dfs(root, 0);',
+      '  return bottomLeft[0];',
+      '}',
+    ].join('\n'),
+  },
+  generateSteps: (inputs) => {
+    const root = buildTreeFromArr(parseTreeInput(inputs.tree, [2, 1, 3]));
+    return buildBottomLeftSteps(root).map((s) => ({
+      ...s,
+      metrics: {
+        cur: s.current != null ? String(s.current) : '-',
+        depth: String(s.depth),
+        'max-depth': s.maxDepth >= 0 ? String(s.maxDepth) : '-',
+        result: s.bottomLeft != null ? String(s.bottomLeft) : '?',
+      },
+    }));
+  },
+  renderCanvas: (container, step) =>
+    renderTreeCanvas(
+      container,
+      step.tree,
+      step.bottomLeft != null ? new Set<number>([step.bottomLeft]) : new Set<number>(),
+      '#f9e2af',
+      step.current != null ? new Set([step.current]) : undefined,
+      '#fab387',
+    ),
 });
 
 export {};
