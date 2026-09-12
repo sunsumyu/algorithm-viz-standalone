@@ -7,6 +7,7 @@
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
+import { parseNumericGrid } from '../../../core/input-primitives';
 import {
   BUY_LAND_PROBLEM_HTML,
   BUY_LAND_ANALYSIS_HTML,
@@ -33,22 +34,7 @@ export interface BLStep {
 }
 
 export function parseGrid(input: string): number[][] {
-  const rows = input.split(/[;；]+/).map((r) => r.trim()).filter(Boolean);
-  const grid: number[][] = [];
-  for (const r of rows) {
-    const nums = r
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => Number.isFinite(n));
-    if (nums.length > 0) grid.push(nums);
-  }
-  return grid.length > 0
-    ? grid
-    : [
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 9],
-      ];
+  return parseNumericGrid(input, [[1,2,3],[4,5,6],[7,8,9]]);
 }
 
 export function buildBuyLandSteps(grid: number[][], budget: number): BLStep[] {

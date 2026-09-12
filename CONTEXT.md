@@ -161,7 +161,7 @@
 
 ### InputPrimitives (声明式输入解析原语深模块)
 - **定义**：收敛全库渲染器输入解析样板（split / parseInt / filter 曾复制于 90 个文件）的纯函数原语模块，位于 `src/core/input-primitives.ts`。
-- **包含**：`parseNumberList` / `parseNumber` / `parseText` / `parseTreeArray` / `parseIntervals` / `parseCommandList`。
+- **包含**：`parseNumberList` / `parseNumber` / `parseText` / `parseTreeArray` / `parseIntervals` / `parseCommandList` / `parseNumericGrid` / `parseBinaryGrid` / `parseGridInput`。
 - **职责**：统一分隔符容忍（半角/全角逗号+空白）、统一空值回退语义（列表类空结果回退；树层序区分合法空树 `[]` 与解析失败）；100% 零 DOM，可无头表驱动测试。
 
 ### DomainAdapterCatalog (领域画布适配器目录)

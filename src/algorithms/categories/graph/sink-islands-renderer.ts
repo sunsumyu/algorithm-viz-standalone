@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 import {
   SINK_ISLANDS_PROBLEM_HTML,
   SINK_ISLANDS_ANALYSIS_HTML,
@@ -185,20 +186,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : DEFAULT_SINK_GRID;
-}
-
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: SinkStep[]): SinkStep[] {
   return steps.map((s) => ({
@@ -309,6 +296,6 @@ registerDeclarativeAlgorithm({
   codeLanguages: SINK_ISLANDS_CODE_LANGUAGES,
   problemHtml: SINK_ISLANDS_PROBLEM_HTML,
   analysisHtml: SINK_ISLANDS_ANALYSIS_HTML,
-  generateSteps: (inputs) => withMetrics(buildSinkSteps(parseGridText(String(inputs?.grid ?? '')))),
+  generateSteps: (inputs) => withMetrics(buildSinkSteps(parseBinaryGrid(inputs?.grid, DEFAULT_SINK_GRID))),
   renderCanvas: (container, step) => renderSinkIslandsCanvas(container, step as SinkStep),
 });

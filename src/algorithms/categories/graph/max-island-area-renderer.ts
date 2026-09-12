@@ -10,6 +10,7 @@ import {
   MAX_ISLAND_AREA_CODE_LANGUAGES,
 } from './max-island-area-problem-content';
 import { CellState } from './islands-renderer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 
 export interface MIAStep {
   grid: number[][];
@@ -174,20 +175,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : PRESET_CASES.classic.grid;
-}
-
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: MIAStep[]): MIAStep[] {
   return steps.map((s) => ({
@@ -306,6 +293,6 @@ registerDeclarativeAlgorithm({
   codeLanguages: MAX_ISLAND_AREA_CODE_LANGUAGES,
   problemHtml: MAX_ISLAND_AREA_PROBLEM_HTML,
   analysisHtml: MAX_ISLAND_AREA_ANALYSIS_HTML,
-  generateSteps: (inputs) => withMetrics(buildMIASteps(parseGridText(String(inputs?.grid ?? '')))),
+  generateSteps: (inputs) => withMetrics(buildMIASteps(parseBinaryGrid(inputs?.grid, PRESET_CASES.classic.grid))),
   renderCanvas: (container, step) => renderMaxIslandAreaCanvas(container, step as MIAStep),
 });

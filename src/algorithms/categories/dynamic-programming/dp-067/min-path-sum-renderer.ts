@@ -26,33 +26,14 @@ import {
   DpCellDep,
 } from './dp-067-shared';
 import { GridVisualAdapter } from '../../../../core/renderers/grid-visual-adapter';
+import { parseGridInput } from '../../../core/input-primitives';
 
 // ==========================================
 // 1. 输入解析与类型定义
 // ==========================================
 
-export function parseGridInput(inputs: Record<string, any>): number[][] {
-  const raw = inputs?.['input-grid'];
-  if (!raw) {
-    return [
-      [1, 3, 1],
-      [1, 5, 1],
-      [4, 2, 1],
-    ];
-  }
-  try {
-    const parsed = JSON.parse(String(raw));
-    if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
-      return parsed;
-    }
-  } catch {
-    // fallback
-  }
-  return [
-    [1, 3, 1],
-    [1, 5, 1],
-    [4, 2, 1],
-  ];
+function parseGrid(raw: unknown): number[][] {
+  return parseGridInput(raw, [[1,3,1],[1,5,1],[4,2,1]]);
 }
 
 // ==========================================
@@ -73,7 +54,7 @@ export interface MinPathRecStep {
 }
 
 export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPathRecStep[] {
-  const grid = parseGridInput(inputs);
+  const grid = parseGrid(inputs?.['input-grid']);
   const m = grid.length;
   const n = grid[0].length;
   const steps: MinPathRecStep[] = [];
@@ -204,7 +185,7 @@ export interface MinPathMemoStep {
 }
 
 export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPathMemoStep[] {
-  const grid = parseGridInput(inputs);
+  const grid = parseGrid(inputs?.['input-grid']);
   const m = grid.length;
   const n = grid[0].length;
   const steps: MinPathMemoStep[] = [];
@@ -378,7 +359,7 @@ export interface MinPath2DStep {
 }
 
 export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath2DStep[] {
-  const grid = parseGridInput(inputs);
+  const grid = parseGrid(inputs?.['input-grid']);
   const m = grid.length;
   const n = grid[0].length;
   const steps: MinPath2DStep[] = [];
@@ -510,7 +491,7 @@ export interface MinPathSpaceOptStep {
 }
 
 export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPathSpaceOptStep[] {
-  const grid = parseGridInput(inputs);
+  const grid = parseGrid(inputs?.['input-grid']);
   const m = grid.length;
   const n = grid[0].length;
   const steps: MinPathSpaceOptStep[] = [];

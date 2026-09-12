@@ -6,6 +6,9 @@ import {
   parseTreeArray,
   parseIntervals,
   parseCommandList,
+  parseNumericGrid,
+  parseBinaryGrid,
+  parseGridInput,
 } from './input-primitives';
 
 describe('parseNumberList', () => {
@@ -84,6 +87,22 @@ describe('parseIntervals', () => {
     expect(parseIntervals('not json', fb)).toBe(fb);
     expect(parseIntervals('[]', fb)).toBe(fb);
     expect(parseIntervals('[[1]]', fb)).toBe(fb);
+  });
+});
+
+describe('parseGridInput', () => {
+  it('JSON 二维数组解析', () => {
+    const fb = [[0]];
+    expect(parseGridInput('[[1,3],[4,5]]', fb)).toEqual([[1, 3], [4, 5]]);
+  });
+
+  it('空输入回退', () => {
+    expect(parseGridInput('', [[1]])).toEqual([[1]]);
+    expect(parseGridInput(undefined, [[2]])).toEqual([[2]]);
+  });
+
+  it('JSON 失败时用 parseNumericGrid 词法兜底', () => {
+    expect(parseGridInput('1,2;3,4', [])).toEqual([[1, 2], [3, 4]]);
   });
 });
 

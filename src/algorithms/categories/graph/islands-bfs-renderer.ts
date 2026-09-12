@@ -10,6 +10,7 @@ import {
   ISLANDS_BFS_CODE_LANGUAGES,
 } from './islands-bfs-problem-content';
 import { CellState } from './islands-renderer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 
 export interface IslandsBFSStep {
   grid: number[][];
@@ -170,20 +171,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : PRESET_CASES.classic.grid;
-}
-
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: IslandsBFSStep[]): IslandsBFSStep[] {
   return steps.map((s) => ({
@@ -308,6 +295,6 @@ registerDeclarativeAlgorithm({
   problemHtml: ISLANDS_BFS_PROBLEM_HTML,
   analysisHtml: ISLANDS_BFS_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildIslandsBFSSteps(parseGridText(String(inputs?.grid ?? '')))),
+    withMetrics(buildIslandsBFSSteps(parseBinaryGrid(inputs?.grid, PRESET_CASES.classic.grid))),
   renderCanvas: (container, step) => renderIslandsBFSCanvas(container, step as IslandsBFSStep),
 });

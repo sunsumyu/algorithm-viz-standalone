@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 import {
   MAKE_LARGEST_ISLAND_PROBLEM_HTML,
   MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
@@ -211,20 +212,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : DEFAULT_GRID;
-}
-
 /** 岛屿 ID 对应的配色（与图例一致，ID 从 2 开始循环） */
 const ISLAND_COLORS: Record<number, { bg: string; border: string; color: string }> = {
   2: { bg: '#dcfce7', border: '#86efac', color: '#15803d' },
@@ -342,6 +329,6 @@ registerDeclarativeAlgorithm({
   problemHtml: MAKE_LARGEST_ISLAND_PROBLEM_HTML,
   analysisHtml: MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildMakeLargestIslandSteps(parseGridText(String(inputs?.grid ?? '')))),
+    withMetrics(buildMakeLargestIslandSteps(parseBinaryGrid(inputs?.grid, DEFAULT_GRID))),
   renderCanvas: (container, step) => renderMakeLargestIslandCanvas(container, step as MLIStep),
 });

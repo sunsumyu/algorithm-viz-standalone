@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 import {
   ISLANDS_PROBLEM_HTML,
   ISLANDS_ANALYSIS_HTML,
@@ -177,20 +178,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : PRESET_CASES.classic.grid;
-}
-
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: IslandsStep[]): IslandsStep[] {
   return steps.map((s) => {
@@ -314,6 +301,6 @@ registerDeclarativeAlgorithm({
   problemHtml: ISLANDS_PROBLEM_HTML,
   analysisHtml: ISLANDS_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildIslandsSteps(parseGridText(String(inputs?.grid ?? '')))),
+    withMetrics(buildIslandsSteps(parseBinaryGrid(inputs?.grid, PRESET_CASES.classic.grid))),
   renderCanvas: (container, step) => renderIslandsCanvas(container, step as IslandsStep),
 });

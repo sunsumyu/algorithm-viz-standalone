@@ -25,29 +25,11 @@ import {
   renderDp2DCard2,
   DpCellDep,
 } from './dp-067-shared';
+import { renderUniversalDpGrid } from '../dp-shared';
+import { parseGridInput } from '../../../core/input-primitives';
 
-export function parseMatrixInputs(inputs: Record<string, any>): number[][] {
-  const raw = inputs?.['input-matrix'];
-  if (!raw) {
-    return [
-      [9, 9, 4],
-      [6, 6, 8],
-      [2, 1, 1],
-    ];
-  }
-  try {
-    const parsed = JSON.parse(String(raw));
-    if (Array.isArray(parsed) && Array.isArray(parsed[0])) {
-      return parsed;
-    }
-  } catch {
-    // fallback
-  }
-  return [
-    [9, 9, 4],
-    [6, 6, 8],
-    [2, 1, 1],
-  ];
+function parseMatrix(raw: unknown): number[][] {
+  return parseGridInput(raw, [[9,9,4],[6,6,8],[2,1,1]]);
 }
 
 // ==========================================
@@ -68,7 +50,7 @@ export interface LipRecStep {
 }
 
 export function buildLipStage1Steps(inputs: Record<string, any>): LipRecStep[] {
-  const matrix = parseMatrixInputs(inputs);
+  const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
   const steps: LipRecStep[] = [];
@@ -197,7 +179,7 @@ export interface LipMemoStep {
 }
 
 export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] {
-  const matrix = parseMatrixInputs(inputs);
+  const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
   const steps: LipMemoStep[] = [];
@@ -326,7 +308,7 @@ export interface Lip2DStep {
 
 
 export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
-  const matrix = parseMatrixInputs(inputs);
+  const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
   const steps: Lip2DStep[] = [];
@@ -527,7 +509,7 @@ export interface LipStage4Step {
 }
 
 export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[] {
-  const matrix = parseMatrixInputs(inputs);
+  const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
   const steps: LipStage4Step[] = [];
@@ -938,7 +920,6 @@ function renderMatrixTerrain(
   const rows = matrix.length;
   const cols = matrix[0]?.length || 0;
 
-  // 找极值计算地势热力背景
   let min = Infinity;
   let max = -Infinity;
   for (let r = 0; r < rows; r++) {
@@ -947,79 +928,26 @@ function renderMatrixTerrain(
       if (matrix[r][c] > max) max = matrix[r][c];
     }
   }
-  const range = Math.max(1, max - min);
 
-  const cellsHtml = matrix.map((row, r) => {
-    const tds = row.map((val, c) => {
-      const isCur = r === activeI && c === activeJ;
-      const pathIdx = bestPath ? bestPath.findIndex(([pr, pc]) => pr === r && pc === c) : -1;
-      const inBest = pathIdx >= 0;
+  const activeStack = bestPath ? bestPath.map(([pr, pc]) => `${pr},${pc}`) : [];
 
-      const norm = (val - min) / range;
-      let bg = norm > 0.6 ? '#f1f5f9' : norm > 0.3 ? '#f8fafc' : '#ffffff';
-      let border = '1px solid #e2e8f0';
-      let textCol = '#334155';
-      let shadow = 'none';
-
-      if (isCur) {
-        bg = '#e0f2fe';
-        border = '2px solid #0284c7';
-        textCol = '#0369a1';
-        shadow = '0 2px 6px rgba(2, 132, 199, 0.2)';
-      } else if (inBest) {
-        bg = '#dcfce7';
-        border = '2px solid #16a34a';
-        textCol = '#166534';
-        shadow = '0 2px 6px rgba(22, 163, 74, 0.2)';
-      }
-
-      return `
-        <td style="
-          padding: 8px 14px;
-          text-align: center;
-          font-family: monospace;
-          font-size: 14px;
-          font-weight: 800;
-          background: ${bg};
-          border: ${border};
-          color: ${textCol};
-          box-shadow: ${shadow};
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        ">
-          <div>${val}</div>
-          ${inBest ? `<div style="font-size: 9px; font-weight: 700; color:#15803d; margin-top:2px;">#${pathIdx + 1}</div>` : `<div style="font-size: 9px; color:#94a3b8; margin-top:2px;">(${r},${c})</div>`}
-        </td>
-      `;
-    }).join('');
-
-    return `<tr>${tds}</tr>`;
-  }).join('');
-
-  container.innerHTML = `
-    <div style="
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px;
-      box-sizing: border-box;
-      overflow: auto;
-    ">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; font-weight: 700; color: #334155;">地势矩阵: ${rows} × ${cols} (值范围 ${min} ~ ${max})</span>
-        ${bestPath ? `<span style="font-size:11px; color:#166534; background:#dcfce7; padding:2px 8px; border-radius:9999px; font-family:monospace; font-weight:700;">最长递增步数: ${bestPath.length}</span>` : `<span style="font-size:11px; color:#0284c7; background:#e0f2fe; padding:2px 8px; border-radius:9999px; font-family:monospace; font-weight:700;">当前位置: (${activeI}, ${activeJ})</span>`}
-      </div>
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto;">
-        <table style="border-spacing: 8px; border-collapse: separate;">
-          <tbody>
-            ${cellsHtml}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  renderUniversalDpGrid(container, {
+    title: `⛰️ 地势矩阵: ${rows} × ${cols}`,
+    badgeText: bestPath ? `最长递增步数: ${bestPath.length}` : `当前坐标: (${activeI}, ${activeJ})`,
+    subTitle: `地势范围 ${min} ~ ${max}`,
+    grid: matrix,
+    activeI,
+    activeJ,
+    activeStack,
+    rowLabels: Array.from({ length: rows }, (_, r) => `r${r}`),
+    colLabels: Array.from({ length: cols }, (_, c) => `c${c}`),
+    legend: [
+      { label: '探险家 🤠', color: '#2563eb' },
+      { label: '最优链 👣', color: '#0284c7' },
+      { label: '地势网格', color: '#059669' },
+    ],
+    modelId: 'longest-increasing-path',
+  });
 }
 
 export const LongestIncreasingPathVisualizer = Visualizer;

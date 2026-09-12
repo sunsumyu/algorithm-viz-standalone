@@ -86,3 +86,95 @@ export function parseCommandList(raw: unknown): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
 }
+
+const ROW_SEPARATOR = /[\r\n;；]+/;
+
+/**
+ * 解析数值二维网格（分号/换行分行，逗号/空格分列）。
+ * JSON 二维数组优先；失败则按行列分隔符词法兜底。
+ */
+export function parseNumericGrid(raw: unknown, fallback: number[][]): number[][] {
+  const text = coerceRaw(raw).trim();
+  if (text.length === 0) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+      return parsed
+        .map((row) =>
+          Array.isArray(row)
+            ? row.map((v) => (Number.isFinite(Number(v)) ? Number(v) : 0))
+            : []
+        )
+        .filter((row) => row.length > 0);
+    }
+  } catch {
+    // fallback to lexical parsing
+  }
+  const rows = text
+    .split(ROW_SEPARATOR)
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .map((r) =>
+      r
+        .split(/[,，\s]+/)
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => Number.isFinite(n))
+    )
+    .filter((row) => row.length > 0);
+  return rows.length > 0 ? rows : fallback;
+}
+
+/**
+ * 解析二进制网格（0/1 字符矩阵）。
+ * 支持格式：`1100;1010`、`[1,1,0,0];[1,0,1,0]`、换行分隔。
+ * 先尝试 JSON 二维数组，失败则逐行拆字符（跳过括号/逗号/空白）。
+ */
+export function parseBinaryGrid(raw: unknown, fallback: number[][]): number[][] {
+  const text = coerceRaw(raw).trim();
+  if (text.length === 0) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+      const grid = parsed
+        .map((row) =>
+          Array.isArray(row) ? row.map((v) => (v === 1 || v === '1' ? 1 : 0)) : []
+        )
+        .filter((row) => row.length > 0);
+      if (grid.length > 0) return grid;
+    }
+  } catch {
+    // fallback to character splitting
+  }
+  const rows = text
+    .split(ROW_SEPARATOR)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) =>
+      line
+        .replace(/[\[\]\s,，]+/g, '')
+        .split('')
+        .map((ch) => (ch === '1' ? 1 : 0))
+    )
+    .filter((row) => row.length > 0);
+  return rows.length > 0 ? rows : fallback;
+}
+
+/**
+ * 从 inputs record 中按指定字段名解析二维数值网格。
+ * 优先 JSON.parse（处理 [[1,2],[3,4]]），失败则用 parseNumericGrid 词法兜底。
+ */
+export function parseGridInput(raw: unknown, fallback: number[][]): number[][] {
+  const text = coerceRaw(raw).trim();
+  if (text.length === 0) return fallback;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+      return parsed.map((row) =>
+        Array.isArray(row) ? row.map((v) => (Number.isFinite(Number(v)) ? Number(v) : 0)) : []
+      );
+    }
+  } catch {
+    // fallback to delimiter parsing
+  }
+  return parseNumericGrid(text, fallback);
+}

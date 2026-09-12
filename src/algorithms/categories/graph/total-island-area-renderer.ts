@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseBinaryGrid } from '../../../core/input-primitives';
 import {
   TOTAL_ISLAND_AREA_PROBLEM_HTML,
   TOTAL_ISLAND_AREA_ANALYSIS_HTML,
@@ -194,20 +195,6 @@ function gridToText(grid: number[][]): string {
   return grid.map((row) => row.join('')).join('\n');
 }
 
-function parseGridText(input: string): number[][] {
-  const rows = input
-    .split(/[\r\n]+|;/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) =>
-      line
-        .replace(/[\[\]\s,，]+/g, '')
-        .split('')
-        .map((ch) => (ch === '1' ? 1 : 0))
-    );
-  return rows.length > 0 ? rows : DEFAULT_GRID;
-}
-
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: TotalIslandAreaStep[]): TotalIslandAreaStep[] {
   return steps.map((s) => ({
@@ -317,7 +304,7 @@ registerDeclarativeAlgorithm({
   problemHtml: TOTAL_ISLAND_AREA_PROBLEM_HTML,
   analysisHtml: TOTAL_ISLAND_AREA_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildTotalIslandAreaSteps(parseGridText(String(inputs?.grid ?? '')))),
+    withMetrics(buildTotalIslandAreaSteps(parseBinaryGrid(inputs?.grid, DEFAULT_GRID))),
   renderCanvas: (container, step) =>
     renderTotalIslandAreaCanvas(container, step as TotalIslandAreaStep),
 });
