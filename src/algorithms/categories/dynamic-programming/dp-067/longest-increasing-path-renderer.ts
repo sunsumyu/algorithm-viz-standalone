@@ -26,7 +26,7 @@ import {
   DpCellDep,
 } from './dp-067-shared';
 import { renderUniversalDpGrid } from '../dp-shared';
-import { parseGridInput } from '../../../core/input-primitives';
+import { parseGridInput } from '../../../../core/input-primitives';
 
 function parseMatrix(raw: unknown): number[][] {
   return parseGridInput(raw, [[9,9,4],[6,6,8],[2,1,1]]);

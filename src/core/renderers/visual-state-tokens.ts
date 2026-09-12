@@ -11,13 +11,15 @@
 
 /** 视觉状态语义词汇（全库统一，禁止渲染器自造色值表达状态） */
 export type VisualStateId =
-  | 'idle' /** 默认 / 未触及 */
-  | 'comparing' /** 比较中 / 主指针 */
-  | 'scanning' /** 扫描中 / 次级探测 */
+  | 'idle' /** 默认 / 未触及 / 未访问 */
+  | 'comparing' /** 比较中 / 主指针 / 已发现 */
+  | 'scanning' /** 扫描中 / 次级探测 / 已松弛 */
   | 'swapping' /** 交换 / 搬移（强调态） */
-  | 'sorted' /** 已就位 / 已完成 */
-  | 'pivot' /** 基准 / 当前极值（强调态） */
-  | 'secondary'; /** 次级指针 / 反向段 */
+  | 'sorted' /** 已就位 / 已完成 / 已锁定 */
+  | 'pivot' /** 基准 / 当前极值 / 当前节点（强调态） */
+  | 'secondary' /** 次级指针 / 反向段 */
+  | 'discovered' /** 图论：已发现但未处理 / 边松弛成功 */
+  | 'unvisited'; /** 图论：待处理 / 未访问节点 */
 
 /** 单个语义状态的完整视觉样式 */
 export interface VisualStateStyle {
@@ -49,6 +51,8 @@ const LIGHT_THEME: VisualTheme = {
     sorted: { bg: '#f0fdf4', border: '#22c55e', text: '#15803d', scale: null },
     pivot: { bg: '#fef9c3', border: '#eab308', text: '#854d0e', scale: 1.05 },
     secondary: { bg: '#faf5ff', border: '#a855f7', text: '#7e22ce', scale: null },
+    discovered: { bg: '#ecfdf5', border: '#10b981', text: '#047857', scale: null },
+    unvisited: { bg: '#f8fafc', border: '#94a3b8', text: '#64748b', scale: null },
   },
 };
 

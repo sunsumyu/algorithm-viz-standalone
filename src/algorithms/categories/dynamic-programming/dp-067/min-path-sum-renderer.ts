@@ -26,7 +26,7 @@ import {
   DpCellDep,
 } from './dp-067-shared';
 import { GridVisualAdapter } from '../../../../core/renderers/grid-visual-adapter';
-import { parseGridInput } from '../../../core/input-primitives';
+import { parseGridInput } from '../../../../core/input-primitives';
 
 // ==========================================
 // 1. 输入解析与类型定义

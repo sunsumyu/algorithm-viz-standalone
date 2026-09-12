@@ -15,6 +15,8 @@ const ALL_STATES: VisualStateId[] = [
   'sorted',
   'pivot',
   'secondary',
+  'discovered',
+  'unvisited',
 ];
 
 describe('VisualStateTokens (视觉状态语义令牌层)', () => {
@@ -32,7 +34,7 @@ describe('VisualStateTokens (视觉状态语义令牌层)', () => {
   it('仅强调态 (swapping / pivot) 携带缩放语义', () => {
     expect(visualState('swapping').scale).not.toBeNull();
     expect(visualState('pivot').scale).not.toBeNull();
-    for (const state of ['idle', 'comparing', 'scanning', 'sorted', 'secondary'] as VisualStateId[]) {
+    for (const state of ['idle', 'comparing', 'scanning', 'sorted', 'secondary', 'discovered', 'unvisited'] as VisualStateId[]) {
       expect(visualState(state).scale, `${state} should not scale`).toBeNull();
     }
   });
@@ -41,6 +43,11 @@ describe('VisualStateTokens (视觉状态语义令牌层)', () => {
     expect(visualState('sorted').border).toBe('#22c55e');
     expect(visualState('swapping').border).toBe('#ef4444');
     expect(visualState('comparing').border).toBe('#3b82f6');
+  });
+
+  it('图论令牌色系：discovered 翠绿、unvisited 浅灰', () => {
+    expect(visualState('discovered').border).toBe('#10b981');
+    expect(visualState('unvisited').border).toBe('#94a3b8');
   });
 
   it('未知状态应安全回退 idle（健壮性）', () => {
