@@ -46,14 +46,14 @@ describe('UniversalStringDpStrategy', () => {
     const step0 = steps[0];
     expect(step0.type).toBe('init');
     // 单元格 (1, 1) 在初始状态必须为 null（未计算状态防御）
-    expect(step0.grid[1][1]).toBeNull();
+    expect(step0.grid![1][1]).toBeNull();
     // 首行首列空串基底必须为 0
-    expect(step0.grid[0][0]).toBe(0);
-    expect(step0.grid[0][1]).toBe(0);
+    expect(step0.grid![0][0]).toBe(0);
+    expect(step0.grid![0][1]).toBe(0);
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.type).toBe('return');
-    expect(lastStep.grid[5][3]).toBe(3);
+    expect(lastStep.grid![5][3]).toBe(3);
   });
 
   it('Stage 4 一维空间优化必须能够记录 leftUp 暂存并在末尾返回 3', () => {
@@ -63,6 +63,6 @@ describe('UniversalStringDpStrategy', () => {
     });
     expect(steps.length).toBeGreaterThan(0);
     const lastStep = steps[steps.length - 1];
-    expect(lastStep.grid[0][3]).toBe(3);
+    expect(lastStep.grid![0][3]).toBe(3);
   });
 });

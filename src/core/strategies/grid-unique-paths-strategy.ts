@@ -22,15 +22,17 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
     const { stage, m, n, direction, isMemo, stageVariant, anchorMap } = params;
+    const effectiveM = m ?? Number(model.params?.m?.default ?? model.defaultParams?.m ?? 3);
+    const effectiveN = n ?? Number(model.params?.n?.default ?? model.defaultParams?.n ?? 3);
 
     switch (stage) {
       case 1:
       case 2:
-        return this.generateStage1or2(model, m, n, direction === 'reverse' ? 'reverse' : 'forward', Boolean(isMemo), anchorMap, stageVariant);
+        return this.generateStage1or2(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', Boolean(isMemo), anchorMap, stageVariant);
       case 3:
-        return this.generateStage3(model, m, n, direction === 'reverse' ? 'reverse' : 'forward', anchorMap);
+        return this.generateStage3(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', anchorMap);
       case 4:
-        return this.generateStage4(model, m, n, direction === 'reverse' ? 'reverse' : 'forward', (stageVariant === 'for' ? 'for' : 'if'), anchorMap);
+        return this.generateStage4(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', (stageVariant === 'for' ? 'for' : 'if'), anchorMap);
       default:
         return [];
     }

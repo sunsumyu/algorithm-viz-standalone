@@ -39,6 +39,7 @@ import {
   makeLcsStage3Vars,
   makeLcsStage4Vars,
   DpCellDep,
+  createUncalculatedDpGrid,
 } from './dp-067-shared';
 
 export function parseLcsInputs(inputs: Record<string, any>) {
@@ -854,6 +855,7 @@ export interface LcsMemoStep {
   treeRoot?: LcsTreeNode | null;
   activeNodeId?: string;
   vars?: StepVar[];
+  activeStack?: string[];
 }
 
 export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemoStep[] {
@@ -864,6 +866,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
   const memo: number[][] = Array.from({ length: n }, () => new Array(m).fill(-1));
   let hitCount = 0;
   let missCount = 0;
+  const activeForwardCoords: string[] = [];
 
   let nodeIdCounter = 0;
   const rootTreeNode: LcsTreeNode = {
@@ -890,6 +893,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
   };
 
   const pushStep = (st: LcsMemoStep) => {
+    st.activeStack = [...activeForwardCoords];
     if (!st.vars) {
       st.vars = makeLcsStage2Vars({
         i: st.i,
@@ -982,6 +986,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
   function fForward(i: number, j: number, parentNode?: LcsTreeNode, edgeLabel?: string): number {
     if (steps.length > 600) return 0;
     callCount++;
+    activeForwardCoords.push(`${i},${j}`);
 
     let currentNode: LcsTreeNode;
     if (!parentNode) {
@@ -1042,6 +1047,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      activeForwardCoords.pop();
       return 0;
     }
 
@@ -1071,6 +1077,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         treeRoot: cloneLcsTree(rootTreeNode),
         activeNodeId: currentNode.id,
       });
+      activeForwardCoords.pop();
       return cached;
     }
 
@@ -1192,6 +1199,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
       activeNodeId: currentNode.id,
     });
 
+    activeForwardCoords.pop();
     return ans;
   }
 
@@ -1236,6 +1244,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
   const steps: LcsMemoStep[] = [];
   const memo: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(-1));
   const stack: Array<{ label: string }> = [];
+  const activeCoords: string[] = [];
   let hitCount = 0;
   let missCount = 0;
   let callCount = 0;
@@ -1267,6 +1276,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
   };
 
   const pushStep = (st: LcsMemoStep) => {
+    st.activeStack = [...activeCoords];
     if (!st.vars) {
       st.vars = makeLcsStage2Vars({
         i: st.i,
@@ -1377,6 +1387,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
 
     // 1. 函数签名帧 (Callee Entry Frame)
     stack.push({ label: `f(${i}, ${j})` });
+    activeCoords.push(`${i},${j}`);
     pushStep({
       currentCall: `fMemo(${i}, ${j})`,
       i,
@@ -1450,6 +1461,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         activeNodeId: currentNode.id,
       });
       stack.pop();
+      activeCoords.pop();
       return 0;
     }
 
@@ -1509,6 +1521,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         activeNodeId: currentNode.id,
       });
       stack.pop();
+      activeCoords.pop();
       return cached;
     }
 
@@ -1661,6 +1674,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     }
 
     stack.pop();
+    activeCoords.pop();
     return res;
   }
 
@@ -1704,7 +1718,7 @@ export interface Lcs2DStep {
   curJ: number;
   currentCell: string;
   currentVal: number;
-  dpTable: number[][];
+  dpTable: (number | null)[][];
   depCells: DpCellDep[];
   decision: string;
   message: string;
@@ -1725,7 +1739,7 @@ export interface Lcs2DStep {
 export function buildLcsStateDepTree(
   targetI: number,
   targetJ: number,
-  dp: number[][],
+  dp: (number | null)[][],
   s1: string,
   s2: string,
   isMatch?: boolean,
@@ -1749,7 +1763,7 @@ export function buildLcsStateDepTree(
     }
     const c1 = s1[targetI];
     const c2 = s2[targetJ];
-    const curVal = isCalculated ? dp[targetI][targetJ] : '?';
+    const curVal = isCalculated ? (dp[targetI]?.[targetJ] ?? 0) : '?';
     const matchFlag = isMatch !== undefined ? isMatch : c1 === c2;
 
     const rootNode: LcsTreeNode = {
@@ -1789,7 +1803,7 @@ export function buildLcsStateDepTree(
           children: [],
         };
       }
-      const val = dp[r][c];
+      const val = dp[r]?.[c] ?? 0;
       const node: LcsTreeNode = {
         id: `${pathId}-dp-${r}-${c}`,
         r,
@@ -1905,7 +1919,7 @@ export function buildLcsStateDepTree(
 
   const c1 = s1[targetI - 1];
   const c2 = s2[targetJ - 1];
-  const curVal = isCalculated ? dp[targetI][targetJ] : '?';
+  const curVal = isCalculated ? (dp[targetI]?.[targetJ] ?? 0) : '?';
   const matchFlag = isMatch !== undefined ? isMatch : c1 === c2;
 
   const rootNode: LcsTreeNode = {
@@ -1947,7 +1961,7 @@ export function buildLcsStateDepTree(
       };
     }
 
-    const val = dp[r][c];
+    const val = dp[r]?.[c] ?? 0;
     const node: LcsTreeNode = {
       id: `${pathId}-dp-${r}-${c}`,
       r,
@@ -1978,8 +1992,8 @@ export function buildLcsStateDepTree(
           )
         );
       } else {
-        const up = dp[r - 1][c];
-        const left = dp[r][c - 1];
+        const up = dp[r - 1]?.[c] ?? 0;
+        const left = dp[r]?.[c - 1] ?? 0;
         const upGreater = up >= left;
         node.children.push(
           expandPredecessor(
@@ -2022,8 +2036,8 @@ export function buildLcsStateDepTree(
     );
     rootNode.children.push(diagChild);
   } else {
-    const upVal = dp[targetI - 1][targetJ];
-    const leftVal = dp[targetI][targetJ - 1];
+    const upVal = dp[targetI - 1]?.[targetJ] ?? 0;
+    const leftVal = dp[targetI]?.[targetJ - 1] ?? 0;
     const isUpGreater = upVal >= leftVal;
 
     const upChild = expandPredecessor(
@@ -2060,7 +2074,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
   const n = s1.length;
   const m = s2.length;
   const steps: Lcs2DStep[] = [];
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  const dp: (number | null)[][] = createUncalculatedDpGrid(n + 1, m + 1);
 
   const lines3 = {
     entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
@@ -2111,6 +2125,9 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
   });
 
   // Step 1: 表分配与边界初始化
+  for (let j = 0; j <= m; j++) dp[n][j] = 0;
+  for (let i = 0; i <= n; i++) dp[i][m] = 0;
+
   pushStep({
     curI: n,
     curJ: m,
@@ -2162,7 +2179,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         curI: i,
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
-        currentVal: dp[i][j],
+        currentVal: dp[i][j] ?? 0,
         dpTable: dp.map((r) => [...r]),
         depCells: [],
         decision: `内层倒序处理第 ${j} 列 (j=${j}, 字符 '${c2}')`,
@@ -2171,7 +2188,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         codeLine: lines3.loopJ,
         s1,
         s2,
-        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] }),
+        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] ?? 0 }),
         treeRoot: buildLcsStateDepTree(i, j, dp, s1, s2, isMatch, false, 2, 'forward'),
         activeNodeId: `dp-${i}-${j}`,
       });
@@ -2181,7 +2198,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         curI: i,
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
-        currentVal: dp[i][j],
+        currentVal: dp[i][j] ?? 0,
         dpTable: dp.map((r) => [...r]),
         depCells: [],
         decision: isMatch
@@ -2196,13 +2213,13 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         codeLine: lines3.checkChar,
         s1,
         s2,
-        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch }),
+        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] ?? 0, isMatch }),
         treeRoot: buildLcsStateDepTree(i, j, dp, s1, s2, isMatch, false, 2, 'forward'),
         activeNodeId: `dp-${i}-${j}`,
       });
 
       if (isMatch) {
-        const diagVal = dp[i + 1][j + 1];
+        const diagVal = dp[i + 1][j + 1] ?? 0;
         dp[i][j] = 1 + diagVal;
         const depCells: DpCellDep[] = [
           { r: i + 1, c: j + 1, label: `↘️dp[${i + 1}][${j + 1}]=${diagVal}`, color: '#10b981' },
@@ -2212,7 +2229,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           curI: i,
           curJ: j,
           currentCell: `dp[${i}][${j}] = ${dp[i][j]}`,
-          currentVal: dp[i][j],
+          currentVal: dp[i][j]!,
           dpTable: dp.map((r) => [...r]),
           depCells,
           decision: `对角线状态转移：1 + dp[${i + 1}][${j + 1}] = 1 + ${diagVal} = ${dp[i][j]}`,
@@ -2221,16 +2238,16 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           codeLine: lines3.diagMatch,
           s1,
           s2,
-          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch: true, diag: diagVal }),
+          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j]!, isMatch: true, diag: diagVal }),
           treeRoot: buildLcsStateDepTree(i, j, dp, s1, s2, true, true, 2, 'forward'),
           activeNodeId: `dp-${i}-${j}`,
         });
       } else {
-        const downVal = dp[i + 1][j];
-        const rightVal = dp[i][j + 1];
+        const downVal = dp[i + 1][j] ?? 0;
+        const rightVal = dp[i][j + 1] ?? 0;
         dp[i][j] = Math.max(downVal, rightVal);
         const depCells: DpCellDep[] = [
-          { r: i + 1, c: j, label: `⬇️dp[${i + 1}][${j}]=${downVal}`, color: '#6366f1' },
+          { r: i + 1, c: j + 1, label: `⬇️dp[${i + 1}][${j}]=${downVal}`, color: '#6366f1' },
           { r: i, c: j + 1, label: `➡️dp[${i}][${j + 1}]=${rightVal}`, color: '#f59e0b' },
         ];
 
@@ -2238,7 +2255,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           curI: i,
           curJ: j,
           currentCell: `dp[${i}][${j}] = ${dp[i][j]}`,
-          currentVal: dp[i][j],
+          currentVal: dp[i][j]!,
           dpTable: dp.map((r) => [...r]),
           depCells,
           decision: `下右择优决策：max(⬇️${downVal}, ➡️${rightVal}) = ${dp[i][j]}`,
@@ -2247,7 +2264,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           codeLine: lines3.branchMax,
           s1,
           s2,
-          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch: false, up: downVal, left: rightVal }),
+          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j]!, isMatch: false, up: downVal, left: rightVal }),
           treeRoot: buildLcsStateDepTree(i, j, dp, s1, s2, false, true, 2, 'forward'),
           activeNodeId: `dp-${i}-${j}`,
         });
@@ -2260,7 +2277,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
     curI: 0,
     curJ: 0,
     currentCell: `dp[0][0] = ${dp[0][0]}`,
-    currentVal: dp[0][0],
+    currentVal: dp[0][0] ?? 0,
     dpTable: dp.map((r) => [...r]),
     depCells: [],
     decision: `🎉 顺推后缀二维表递推完成！全局最优解 dp[0][0] = ${dp[0][0]}`,
@@ -2291,7 +2308,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
   const n = s1.length;
   const m = s2.length;
   const steps: Lcs2DStep[] = [];
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  const dp: (number | null)[][] = createUncalculatedDpGrid(n + 1, m + 1);
 
   const lines3 = {
     entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
@@ -2341,7 +2358,10 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     activeNodeId: 'dp-0-0',
   });
 
-  // Step 1: 表分配
+  // Step 1: 表分配与边界初始化
+  for (let j = 0; j <= m; j++) dp[0][j] = 0;
+  for (let i = 0; i <= n; i++) dp[i][0] = 0;
+
   pushStep({
     curI: 0,
     curJ: 0,
@@ -2393,7 +2413,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         curI: i,
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
-        currentVal: dp[i][j],
+        currentVal: dp[i][j] ?? 0,
         dpTable: dp.map((r) => [...r]),
         depCells: [],
         decision: `内层循环处理第 ${j} 列 (j=${j}, 字符 '${c2}')`,
@@ -2402,7 +2422,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines3.loopJ,
         s1,
         s2,
-        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] }),
+        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] ?? 0 }),
         treeRoot: buildLcs2DDepTree(i, j, dp, s1, s2, isMatch, false),
         activeNodeId: `dp-${i}-${j}`,
       });
@@ -2412,7 +2432,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         curI: i,
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
-        currentVal: dp[i][j],
+        currentVal: dp[i][j] ?? 0,
         dpTable: dp.map((r) => [...r]),
         depCells: [],
         decision: `字符比对：s1[${i - 1}]('${c1}') 与 s2[${j - 1}]('${c2}')`,
@@ -2423,18 +2443,18 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         codeLine: lines3.checkChar,
         s1,
         s2,
-        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch }),
+        vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j] ?? 0, isMatch }),
         treeRoot: buildLcs2DDepTree(i, j, dp, s1, s2, isMatch, false),
         activeNodeId: `dp-${i}-${j}`,
       });
 
       if (isMatch) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
+        dp[i][j] = (dp[i - 1][j - 1] ?? 0) + 1;
         pushStep({
           curI: i,
           curJ: j,
           currentCell: `dp[${i}][${j}]`,
-          currentVal: dp[i][j],
+          currentVal: dp[i][j]!,
           dpTable: dp.map((r) => [...r]),
           depCells: [
             {
@@ -2450,19 +2470,19 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
           codeLine: lines3.diagMatch,
           s1,
           s2,
-          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch: true, diag: dp[i - 1][j - 1] }),
+          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j]!, isMatch: true, diag: dp[i - 1][j - 1] ?? 0 }),
           treeRoot: buildLcs2DDepTree(i, j, dp, s1, s2, true, true),
           activeNodeId: `dp-${i}-${j}`,
         });
       } else {
-        const up = dp[i - 1][j];
-        const left = dp[i][j - 1];
+        const up = dp[i - 1][j] ?? 0;
+        const left = dp[i][j - 1] ?? 0;
         dp[i][j] = Math.max(up, left);
         pushStep({
           curI: i,
           curJ: j,
           currentCell: `dp[${i}][${j}]`,
-          currentVal: dp[i][j],
+          currentVal: dp[i][j]!,
           dpTable: dp.map((r) => [...r]),
           depCells: [
             { r: i - 1, c: j, label: `上方 [${i - 1}][${j}]`, color: 'rgba(129, 140, 248, 0.2)' },
@@ -2474,7 +2494,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
           codeLine: lines3.branchMax,
           s1,
           s2,
-          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j], isMatch: false, up, left }),
+          vars: makeLcsStage3Vars({ i, j, s1, s2, val: dp[i][j]!, isMatch: false, up, left }),
           treeRoot: buildLcs2DDepTree(i, j, dp, s1, s2, false, true),
           activeNodeId: `dp-${i}-${j}`,
         });
@@ -2486,7 +2506,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     curI: n,
     curJ: m,
     currentCell: `dp[${n}][${m}]`,
-    currentVal: dp[n][m],
+    currentVal: dp[n][m] ?? 0,
     dpTable: dp.map((r) => [...r]),
     depCells: [],
     decision: `🎉 二维表填表完成！最终 LCS 长度 = dp[${n}][${m}] = ${dp[n][m]}`,
@@ -2798,9 +2818,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   problemHtml: DP_067_PROBLEMS['longest-common-subsequence'].problemHtml,
   analysisHtml: DP_067_PROBLEMS['longest-common-subsequence'].analysisHtml,
   modes: [
-    { id: 'forward', label: '顺推 (从首开始)' },
-    { id: 'reverse', label: '逆推 (从尾开始)' },
+    { id: 'forward', label: '顺推' },
+    { id: 'reverse', label: '逆推' },
   ],
+  defaultMode: 'forward',
   defaultStage: 'stage-1',
   buildSteps: buildLcsStage1Steps,
 
@@ -2826,11 +2847,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: LCS_STAGE1_FORWARD_CODE_LANGUAGES,
       modeCodeLanguages: {
-        reverse: LCS_STAGE1_CODE_LANGUAGES,
         forward: LCS_STAGE1_FORWARD_CODE_LANGUAGES,
+        reverse: LCS_STAGE1_CODE_LANGUAGES,
       },
       has3D: true,
-      buildSteps: buildLcsStage1Steps,
+      buildSteps: (inputs: Record<string, any>, mode?: string) => {
+        if (mode === 'reverse') {
+          return buildLcsStage1Steps(inputs);
+        }
+        return buildLcsStage1ForwardSteps(inputs);
+      },
       renderCanvas: (container, step, extra) => {
         const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
         const gridI = isForward ? step.i : Math.max(0, step.i + 1);
@@ -2891,11 +2917,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: LCS_STAGE2_FORWARD_CODE_LANGUAGES,
       modeCodeLanguages: {
-        reverse: LCS_STAGE2_CODE_LANGUAGES,
         forward: LCS_STAGE2_FORWARD_CODE_LANGUAGES,
+        reverse: LCS_STAGE2_CODE_LANGUAGES,
       },
       has3D: true,
-      buildSteps: buildLcsStage2Steps,
+      buildSteps: (inputs: Record<string, any>, mode?: string) => {
+        if (mode === 'reverse') {
+          return buildLcsStage2Steps(inputs);
+        }
+        return buildLcsStage2ForwardSteps(inputs);
+      },
       renderCanvas: (container, step, extra) => {
         renderMemoGridCard(
           container,
@@ -2949,13 +2980,18 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         { label: '依赖前驱单元格', color: '#6366f1' },
         { label: '已计算', color: '#64748b' },
       ],
-      codeLanguages: LCS_STAGE3_FORWARD_CODE_LANGUAGES,
+      codeLanguages: LCS_STAGE3_CODE_LANGUAGES,
       modeCodeLanguages: {
-        reverse: LCS_STAGE3_CODE_LANGUAGES,
-        forward: LCS_STAGE3_FORWARD_CODE_LANGUAGES,
+        forward: LCS_STAGE3_CODE_LANGUAGES,
+        reverse: LCS_STAGE3_FORWARD_CODE_LANGUAGES,
       },
       has3D: true,
-      buildSteps: buildLcsStage3Steps,
+      buildSteps: (inputs: Record<string, any>, mode?: string) => {
+        if (mode === 'reverse') {
+          return buildLcsStage3ForwardSteps(inputs);
+        }
+        return buildLcsStage3Steps(inputs);
+      },
       renderCanvas: (container, step, extra) => {
         renderDp2DCard2(
           container,

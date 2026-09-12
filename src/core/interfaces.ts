@@ -242,6 +242,7 @@ export interface IYamlAlgorithmModel {
   description?: string;
   defaultStage?: string;
   defaultParams?: Record<string, any>;
+  params?: Record<string, any>;
   problem?: IAlgorithmProblemMeta;
   analysis?: Record<string, { title?: string; content?: string }>;
   faqs?: IAlgorithmFaqItem[];

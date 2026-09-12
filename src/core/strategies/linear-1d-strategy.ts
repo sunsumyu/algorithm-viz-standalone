@@ -34,7 +34,7 @@ export class Linear1DStrategy implements IAlgorithmStrategy {
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
     const { stage, m, n, isMemo, anchorMap } = params;
-    const len = Math.max(m, n);
+    const len = Math.max(m ?? 0, n ?? 0) || Number(model.params?.n?.default ?? model.defaultParams?.n ?? 5);
 
     return LinearStepMatrixCompiler.compile(model, {
       modelId: this.modelId,
