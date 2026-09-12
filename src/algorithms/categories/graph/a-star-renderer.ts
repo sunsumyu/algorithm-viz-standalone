@@ -5,6 +5,7 @@
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepBase } from '../../../core/step-visualizer';
+import { visualState } from '../../../core/renderers/visual-state-tokens';
 import {
   A_STAR_PROBLEM_HTML,
   A_STAR_ANALYSIS_HTML,
@@ -210,6 +211,13 @@ function withMetrics(steps: AStarStep[]): AStarStep[] {
 /** 主视觉：A* 网格沙盘（Open/Closed/路径着色 + f=g+h 公式条） */
 export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void {
   const { grid, start, goal, currentNode, g, h, f, openSet, closedSet, finalPath } = step;
+
+  const idleStyle = visualState('idle');
+  const comparingStyle = visualState('comparing');
+  const sortedStyle = visualState('sorted');
+  const pivotStyle = visualState('pivot');
+  const discoveredStyle = visualState('discovered');
+  const unvisitedStyle = visualState('unvisited');
   const m = grid.length;
   const n = grid[0].length;
 
@@ -249,7 +257,7 @@ export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void
         style += 'background: #fef9c3; color: #a16207; border-color: #ca8a04;';
         label = 'o';
       } else if (isClosed) {
-        style += 'background: #f1f5f9; color: #64748b; border-color: #cbd5e1;';
+        style += 'background: ${unvisitedStyle.bg}; color: #64748b; border-color: #cbd5e1;';
         label = '·';
       }
 
@@ -263,10 +271,10 @@ export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void
 
   container.innerHTML = `
     <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
-      <div style="display: inline-grid; grid-template-columns: repeat(${n}, 38px); gap: 6px; padding: 10px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; user-select: none;">
+      <div style="display: inline-grid; grid-template-columns: repeat(${n}, 38px); gap: 6px; padding: 10px; background: ${idleStyle.bg}; border-radius: 12px; border: 1px solid #e2e8f0; user-select: none;">
         ${cellsHtml}
       </div>
-      <div style="font-family: monospace; font-size: 11px; font-weight: 700; color: #475569;">f(n) = g(${g}) + h(${h}) = ${f}</div>
+      <div style="font-family: monospace; font-size: 11px; font-weight: 700; color: ${unvisitedStyle.text};">f(n) = g(${g}) + h(${h}) = ${f}</div>
     </div>
   `;
 }

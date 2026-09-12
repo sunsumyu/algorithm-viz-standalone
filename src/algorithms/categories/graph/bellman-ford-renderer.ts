@@ -12,6 +12,7 @@ import {
   BELLMAN_FORD_CODE_LANGUAGES,
 } from './bellman-ford-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { visualState } from '../../../core/renderers/visual-state-tokens';
 
 export interface BFStep extends StepBase {
   nodes: number[];
@@ -162,16 +163,23 @@ export function buildBFSteps(): BFStep[] {
 export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): void {
   const { dist, currentEdge, action } = step;
 
-  let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
+  const idleStyle = visualState('idle');
+  const comparingStyle = visualState('comparing');
+  const sortedStyle = visualState('sorted');
+  const pivotStyle = visualState('pivot');
+  const discoveredStyle = visualState('discovered');
+  const unvisitedStyle = visualState('unvisited');
+
+let svgHtml = `<svg viewBox="0 0 500 250" style="width:100%; height:100%; max-height:240px;">
     <defs>
       <marker id="arrow-bf" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${idleStyle.border}" />
       </marker>
       <marker id="arrow-bf-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981" />
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${discoveredStyle.border}" />
       </marker>
       <marker id="arrow-bf-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3b82f6" />
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${comparingStyle.border}" />
       </marker>
     </defs>`;
 
@@ -181,7 +189,7 @@ export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): v
     const isCurrent = currentEdge && currentEdge.from === e.from && currentEdge.to === e.to;
     const isRelaxed = isCurrent && action === 'relax';
 
-    const strokeColor = isRelaxed ? '#10b981' : isCurrent ? '#3b82f6' : '#cbd5e1';
+    const strokeColor = isRelaxed ? discoveredStyle.border : isCurrent ? comparingStyle.border : idleStyle.border;
     const strokeWidth = isCurrent ? 3.5 : 1.8;
     const marker = isRelaxed ? 'url(#arrow-bf-relax)' : isCurrent ? 'url(#arrow-bf-active)' : 'url(#arrow-bf)';
 
@@ -199,18 +207,18 @@ export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): v
     const isSrc = node === 0;
     const isTarget = currentEdge && currentEdge.to === node;
 
-    let fill = '#ffffff';
-    let stroke = '#cbd5e1';
+    let fill = idleStyle.bg;
+    let stroke = idleStyle.border;
     if (isTarget && action === 'relax') {
-      fill = '#dcfce7';
-      stroke = '#10b981';
+      fill = discoveredStyle.bg;
+      stroke = discoveredStyle.border;
     } else if (isSrc) {
-      fill = '#eff6ff';
-      stroke = '#3b82f6';
+      fill = comparingStyle.bg;
+      stroke = comparingStyle.border;
     }
 
     svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="#0f172a" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="${idleStyle.text}" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
     svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dVal === INF ? '#94a3b8' : '#2563eb'}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">${dVal === INF ? '∞' : dVal}</text>`;
   });
 
@@ -221,7 +229,7 @@ export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): v
     const isCur = currentEdge && currentEdge.to === node;
     return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
       <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? '#94a3b8' : '#2563eb'};">${dVal === INF ? '∞' : dVal}</td>
+      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? unvisitedStyle.text : comparingStyle.text};">${dVal === INF ? '∞' : dVal}</td>
     </tr>`;
   }).join('');
 
@@ -229,11 +237,11 @@ export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): v
     <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
       <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
       <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
+        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: ${idleStyle.bg}; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
           <thead>
-            <tr style="background: #f1f5f9;">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">节点</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">dist</th>
+            <tr style="background: ${unvisitedStyle.bg};">
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">节点</th>
+              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">dist</th>
             </tr>
           </thead>
           <tbody>${tableRows}</tbody>
