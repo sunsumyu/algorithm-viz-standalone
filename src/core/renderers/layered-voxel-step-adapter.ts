@@ -6,7 +6,7 @@
  * 3. 累积维护 K × M × N 状态空间立方体与跨层依赖关系 (Inter-layer Dependencies)。
  */
 
-import type { DpTraceStep } from '../../algorithms/categories/dynamic-programming/engine/types';
+import type { DpTraceStep } from '../dp-engine/types';
 import type { UniversalStep } from '../universal-stage-engine';
 
 export type VoxelStatus = 'empty' | 'computed' | 'active' | 'dependency' | 'target';

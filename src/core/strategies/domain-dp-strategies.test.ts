@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { AlgorithmStrategyRegistry } from './algorithm-strategy-registry';
 import { registerBuiltinStrategies } from './index';
 import { AlgorithmModelRepository } from '../model-repository';
+import '../../algorithms/categories/dynamic-programming/specs';
 
 describe('Domain DP Strategies (背包、序列与一维独立算法策略)', () => {
   registerBuiltinStrategies();

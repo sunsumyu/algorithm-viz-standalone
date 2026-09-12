@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { DpStepEngine } from '../algorithms/categories/dynamic-programming/engine/dp-step-engine';
+import { DpStepEngine } from './dp-engine/dp-step-engine';
 // 触发全量 DP Spec 集中注册
 import '../algorithms/categories/dynamic-programming/specs';
 import { AlgorithmModelRepository } from './model-repository';
 import { TreeDpStrategy } from './strategies/tree-dp-strategy';
-import type { LanguageKey } from '../algorithms/categories/dynamic-programming/engine/types';
+import type { LanguageKey } from './dp-engine/types';
 
 describe('DP Full Regression Suite (全量动态规划规格、多语言行号与高亮联动扫描)', () => {
   const allSpecs = DpStepEngine.getAll();

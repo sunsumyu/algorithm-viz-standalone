@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { VisualizerAppController } from './visualizer-app-controller';
 import { AlgorithmModelRepository } from './model-repository';
+import '../algorithms/categories/dynamic-programming/specs';
 
 // Lightweight Mock DOM
 class MockElement {

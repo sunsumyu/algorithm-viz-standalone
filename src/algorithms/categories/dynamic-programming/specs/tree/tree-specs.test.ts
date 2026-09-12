@@ -13,6 +13,7 @@ import { MinimumScoreAfterRemovalsSpec } from './minimum-score-after-removals.sp
 import type { AlgorithmSpec } from '../../engine/types';
 import { TreeDpStrategy } from '../../../../../core/strategies/tree-dp-strategy';
 import { AlgorithmModelRepository } from '../../../../../core/model-repository';
+import '../index';
 
 describe('Tree DP Specs Suite', () => {
   const specs: AlgorithmSpec[] = [

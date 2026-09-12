@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
-import type { DpTraceStep } from '../../algorithms/categories/dynamic-programming/engine/types';
+import type { DpTraceStep } from '../dp-engine/types';
 
 describe('LayeredVoxelStepAdapter', () => {
   it('应该正确初始化空的多层 3D 立方体网格', () => {

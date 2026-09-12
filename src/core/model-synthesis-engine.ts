@@ -6,7 +6,7 @@
  */
 
 import type { IYamlAlgorithmModel } from './interfaces';
-import { DpStepEngine } from '../algorithms/categories/dynamic-programming/engine/dp-step-engine';
+import { DpStepEngine } from './dp-engine/dp-step-engine';
 import { StageCodeCompiler } from './compilers/stage-code-compiler';
 
 export class ModelSynthesisEngine {

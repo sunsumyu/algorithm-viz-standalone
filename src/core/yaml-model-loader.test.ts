@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { YamlModelLoader } from './yaml-model-loader';
-import uniquePathsYaml from '../algorithms/specs/models/unique-paths.yaml?raw';
+import uniquePathsYaml from './models/unique-paths.yaml?raw';
 
 describe('YamlModelLoader', () => {
   it('should successfully parse unique-paths.yaml into a valid model', () => {

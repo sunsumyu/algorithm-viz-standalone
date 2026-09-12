@@ -6,25 +6,24 @@
 
 import type { IYamlAlgorithmModel } from './interfaces';
 import { YamlModelLoader, type CompiledStageViewConfig } from './yaml-model-loader';
-import uniquePathsModel from '../algorithms/specs/models/unique-paths.yaml';
-import uniquePathsIiModel from '../algorithms/specs/models/unique-paths-ii.yaml';
-import minimumPathSumModel from '../algorithms/specs/models/minimum-path-sum.yaml';
-import fibonacciModel from '../algorithms/specs/models/fibonacci.yaml';
-import climbStairsModel from '../algorithms/specs/models/climb-stairs.yaml';
-import knapsack01Model from '../algorithms/specs/models/knapsack-01.yaml';
-import distinctSubsequencesModel from '../algorithms/specs/models/distinct-subsequences.yaml';
-import deleteOperationForTwoStringsModel from '../algorithms/specs/models/delete-operation-for-two-strings.yaml';
-import editDistanceModel from '../algorithms/specs/models/edit-distance.yaml';
-import palindromicSubstringsModel from '../algorithms/specs/models/palindromic-substrings.yaml';
-import longestPalindromicSubsequenceModel from '../algorithms/specs/models/longest-palindromic-subsequence.yaml';
-import partitionEqualSubsetSumModel from '../algorithms/specs/models/partition-equal-subset-sum.yaml';
-import { DpStepEngine } from '../algorithms/categories/dynamic-programming/engine/dp-step-engine';
+import uniquePathsModel from './models/unique-paths.yaml';
+import uniquePathsIiModel from './models/unique-paths-ii.yaml';
+import minimumPathSumModel from './models/minimum-path-sum.yaml';
+import fibonacciModel from './models/fibonacci.yaml';
+import climbStairsModel from './models/climb-stairs.yaml';
+import knapsack01Model from './models/knapsack-01.yaml';
+import distinctSubsequencesModel from './models/distinct-subsequences.yaml';
+import deleteOperationForTwoStringsModel from './models/delete-operation-for-two-strings.yaml';
+import editDistanceModel from './models/edit-distance.yaml';
+import palindromicSubstringsModel from './models/palindromic-substrings.yaml';
+import longestPalindromicSubsequenceModel from './models/longest-palindromic-subsequence.yaml';
+import partitionEqualSubsetSumModel from './models/partition-equal-subset-sum.yaml';
+import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
   bridgeSemanticLinesToAnchorMap,
   resolveSemanticLine,
 } from './model-synthesis-engine';
-import '../algorithms/categories/dynamic-programming/specs';
 
 export { bridgeSemanticLinesToAnchorMap, resolveSemanticLine };
 

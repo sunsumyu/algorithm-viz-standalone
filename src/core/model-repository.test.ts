@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AlgorithmModelRepository, bridgeSemanticLinesToAnchorMap } from './model-repository';
+import '../algorithms/categories/dynamic-programming/specs';
 
 describe('AlgorithmModelRepository Deep Module', () => {
   it('应该成功预加载并获取 unique-paths 算法模型', () => {
