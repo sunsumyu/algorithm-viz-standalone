@@ -33,7 +33,7 @@ export class UniversalStringDpStrategy implements IAlgorithmStrategy {
       case 3:
         return SequenceStepMatrixCompiler.compileLcsStage3(model, anchorMap, dir);
       case 4:
-        return SequenceStepMatrixCompiler.compileLcsStage4(model, anchorMap);
+        return SequenceStepMatrixCompiler.compileLcsStage4(model, anchorMap, dir);
       default:
         return [];
     }

@@ -82,7 +82,7 @@ export class SequenceStepMatrixCompiler {
     return compileLcsStage3(model, anchorMap, direction);
   }
 
-  public static compileLcsStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileLcsStage4(model, anchorMap);
+  public static compileLcsStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLcsStage4(model, anchorMap, direction);
   }
 }

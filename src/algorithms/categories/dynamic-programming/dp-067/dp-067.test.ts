@@ -18,6 +18,7 @@ import {
   buildLcsStage2Steps,
   buildLcsStage3Steps,
   buildLcsStage4Steps,
+  buildLcsStage4ReverseSteps,
   buildLcsStateDepTree,
 } from './longest-common-subsequence-renderer';
 import {
@@ -279,6 +280,13 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(steps.length).toBeGreaterThan(0);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.dp[3]).toBe(3);
+    });
+
+    it('逆推模式：阶段 4 逆推空间压缩应正确倒序记录 rightDown 寄存器变化且最终结果为 dp[0]=3', () => {
+      const steps = buildLcsStage4ReverseSteps(inputs);
+      expect(steps.length).toBeGreaterThan(0);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.dp[0]).toBe(3);
     });
 
     // ----------------------------------------------------
@@ -785,6 +793,77 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       // 验证至少有若干步骤成功记录了匹配路径字符 (matchedIndices)
       const matchedSteps = forwardSteps.filter((s) => (s.matchedIndices1?.length || 0) > 0);
       expect(matchedSteps.length, '递归深入时必须正确累积并传递路径匹配字符集').toBeGreaterThan(0);
+    });
+
+    it('Stage 2 记忆化搜索必须在步进中正确记录 activeStack 调用栈并在沙盘中呈现 👣 足迹', () => {
+      const steps = buildLcsStage2Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' });
+      expect(steps.length).toBeGreaterThan(0);
+
+      // 验证步进序列中存在深层递归调用（activeStack 包含多级前驱）
+      const deepSteps = steps.filter((s) => (s.activeStack?.length || 0) >= 2);
+      expect(deepSteps.length, 'Stage 2 递归调用时必须保持 activeStack 深度记录').toBeGreaterThan(0);
+
+      const targetStep = deepSteps[0];
+      const mockBoardWrapper = {
+        innerHTML: '',
+        classList: { remove: () => {}, add: () => {}, contains: () => false },
+      };
+      const mockContainer = {
+        innerHTML: '',
+        querySelector: (sel: string) => {
+          if (sel === '#lcs-2d-board-wrapper') return mockBoardWrapper;
+          return null;
+        },
+      } as unknown as HTMLElement;
+
+      renderMemoGridCard(
+        mockContainer,
+        'LCS 备忘录',
+        targetStep.memoGrid,
+        targetStep.i,
+        targetStep.j,
+        ['Ø', ...targetStep.s1.split('')],
+        ['Ø', ...targetStep.s2.split('')],
+        false,
+        targetStep
+      );
+
+      // 验证底层的 GridVisualAdapter 正确在 2D 板卡中渲染了脉冲足迹 👣
+      expect(mockBoardWrapper.innerHTML).toContain('👣');
+    });
+
+    it('Stage 1 递归探索完成步时，探险家位于末尾单元格 (5, 3) 必须显示真实计算结果 3 而非硬编码 1', () => {
+      const mockBoardWrapper = {
+        innerHTML: '',
+        classList: { remove: () => {}, add: () => {}, contains: () => false },
+      };
+
+      const mockContainer = {
+        innerHTML: '',
+        querySelector: (sel: string) => {
+          if (sel === '#lcs-2d-board-wrapper') return mockBoardWrapper;
+          return null;
+        },
+      } as unknown as HTMLElement;
+
+      const steps = buildLcsStage1Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' });
+      const lastStep = steps[steps.length - 1];
+
+      renderStage1GridCard(
+        mockContainer,
+        'LCS 递归探索网格 (i, j)',
+        6,
+        4,
+        5,
+        3,
+        ['Ø', 'a', 'b', 'c', 'd', 'e'],
+        ['Ø', 'a', 'c', 'e'],
+        false,
+        lastStep
+      );
+
+      // 验证右下角活动单元格 (5, 3) 必须展示最终匹配总长 3，而不是错误硬编码的 1
+      expect(mockBoardWrapper.innerHTML).toContain('>3<');
     });
   });
 });

@@ -65,4 +65,15 @@ describe('UniversalStringDpStrategy', () => {
     const lastStep = steps[steps.length - 1];
     expect(lastStep.grid![0][3]).toBe(3);
   });
+
+  it('Stage 4 逆推一维空间优化必须能够倒序滚动并汇聚于 dp[0]=3', () => {
+    const steps = strategy.generateSteps(model, {
+      stage: 4,
+      direction: 'reverse',
+    });
+    expect(steps.length).toBeGreaterThan(0);
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.type).toBe('return');
+    expect(lastStep.grid![0][0]).toBe(3);
+  });
 });

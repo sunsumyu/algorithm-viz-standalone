@@ -388,7 +388,8 @@ export function compileLcsStage3(
 
 export function compileLcsStage4(
   model: IYamlAlgorithmModel,
-  anchorMap?: Record<string, number>
+  anchorMap?: Record<string, number>,
+  direction: 'forward' | 'reverse' = 'forward'
 ): UniversalStep[] {
   const s1 = ((model.defaultParams as any)?.s1 || (model.defaultParams as any)?.text1 || 'abcde') as string;
   const s2 = ((model.defaultParams as any)?.s2 || (model.defaultParams as any)?.text2 || 'ace') as string;
@@ -406,6 +407,87 @@ export function compileLcsStage4(
   const lineTransferMatch = anchorMap?.transfer_match || 10;
   const lineTransferDiff = anchorMap?.transfer_diff || 12;
   const lineReturn = anchorMap?.return || 16;
+
+  if (direction === 'reverse') {
+    steps.push({
+      type: 'init',
+      i: m,
+      j: n,
+      grid: [Array.from(dp1d)],
+      line: lineInit,
+      tag: `创建逆推一维滚动数组 dp[0..${n}]`,
+      log: `| ⚡ 逆推空间压缩：仅维护一维数组 dp[${n + 1}] 全部置为 0，目标汇聚在 dp[0]`,
+      msg: `创建大小为 <code>${n + 1}</code> 的一维滚动向量，空间复杂度极限压缩至 <strong>O(N)</strong>。`,
+      gridHighlight: { i: 0, j: n },
+    });
+
+    for (let i = m - 1; i >= 0; i--) {
+      let rightDown = 0;
+      const c1 = s1[i];
+
+      steps.push({
+        type: 'row-start',
+        i,
+        j: n,
+        grid: [Array.from(dp1d)],
+        line: linePreInit,
+        tag: `第 ${i} 行逆推开始 (rightDown=0)`,
+        log: `| 🔁 进入第 ${i} 行逆推滚动 (字符 '${c1}')，重置 rightDown = 0`,
+        msg: `开始倒序计算第 <code>${i}</code> 行（字符 <code>'${c1}'</code>），暂存右下角 <code>rightDown = 0</code>。`,
+        gridHighlight: { i: 0, j: n },
+      });
+
+      for (let j = n - 1; j >= 0; j--) {
+        const c2 = s2[j];
+        const isMatch = c1 === c2;
+        const backup = dp1d[j]; // 备份下方旧值
+
+        if (isMatch) {
+          dp1d[j] = rightDown + 1;
+          steps.push({
+            type: 'update',
+            i,
+            j,
+            grid: [Array.from(dp1d)],
+            line: lineTransferMatch,
+            tag: `匹配: dp[${j}] = rightDown+1 = ${dp1d[j]}`,
+            log: `| ✨ 逆推字符匹配 '${c1}' == '${c2}'：dp[${j}] = rightDown + 1 = ${dp1d[j]}`,
+            msg: `✨ 字符匹配成功：利用暂存的 <code>rightDown (${rightDown}) + 1 = <strong>${dp1d[j]}</strong></code> 更新。`,
+            gridHighlight: { i: 0, j },
+          });
+        } else {
+          dp1d[j] = Math.max(backup, dp1d[j + 1]);
+          steps.push({
+            type: 'update',
+            i,
+            j,
+            grid: [Array.from(dp1d)],
+            line: lineTransferDiff,
+            tag: `择优: max(旧值, 右方) = ${dp1d[j]}`,
+            log: `| ➡️ 逆推字符不匹配：dp[${j}] = max(下方旧值=${backup}, 右方新值=${dp1d[j + 1]}) = ${dp1d[j]}`,
+            msg: `字符不同：择优继承 <code>max(下方旧值=${backup}, 右方新值=${dp1d[j + 1]}) = <strong>${dp1d[j]}</strong></code>。`,
+            gridHighlight: { i: 0, j },
+          });
+        }
+
+        rightDown = backup; // 寄存器推移
+      }
+    }
+
+    steps.push({
+      type: 'return',
+      i: 0,
+      j: 0,
+      grid: [Array.from(dp1d)],
+      line: lineReturn,
+      tag: `逆推空间压缩最终解: ${dp1d[0]}`,
+      log: `| 🏆 逆推空间压缩计算完成！最终 LCS = dp[0] = ${dp1d[0]}`,
+      msg: `🏆 一维滚动逆推完成！最终最长公共子序列长度汇聚于 <strong>dp[0] = ${dp1d[0]}</strong>。`,
+      gridHighlight: { i: 0, j: 0 },
+    });
+
+    return steps;
+  }
 
   steps.push({
     type: 'init',

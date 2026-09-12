@@ -201,3 +201,35 @@ stages:
               // @step:return 返回一维数组末尾最终解
               return dp[n];
           }
+      rolling_1d_reverse:
+        name: 逆推一维滚动数组 (带 rightDown 对角线暂存)
+        desc: rightDown 记录右下角旧值，dp[j] 代表下方，dp[j+1] 代表右侧，倒序更新
+        code: |
+          public int longestCommonSubsequenceReverse(String text1, String text2) {
+              int m = text1.length(), n = text2.length();
+              // @step:init 创建逆推一维状态数组 dp[0..n]
+              int[] dp = new int[n + 1];
+
+              // @step:loop_i 外层遍历 text1 每一行 (倒序)
+              for (int i = m - 1; i >= 0; i--) {
+                  // @step:pre_init 暂存每行末列的右下角 rightDown
+                  int rightDown = 0;
+
+                  // @step:loop_j 内层遍历 text2 (倒序)
+                  for (int j = n - 1; j >= 0; j--) {
+                      int backup = dp[j]; // 暂存未覆盖前的下方旧值
+                      // @step:cond 后缀字符是否匹配
+                      if (text1.charAt(i) == text2.charAt(j)) {
+                          // @step:transfer_match 字符相同：右下对角线加 1
+                          dp[j] = rightDown + 1;
+                      } else {
+                          // @step:transfer_diff 字符不同：max(下方旧值, 右方新值)
+                          dp[j] = Math.max(dp[j], dp[j + 1]);
+                      }
+                      // @step:shift_pre 寄存器推移
+                      rightDown = backup;
+                  }
+              }
+              // @step:return 返回一维数组首项最终解
+              return dp[0];
+          }

@@ -19,6 +19,7 @@ import {
   LCS_STAGE2_CODE_LANGUAGES,
   LCS_STAGE3_CODE_LANGUAGES,
   LCS_STAGE4_CODE_LANGUAGES,
+  LCS_STAGE4_REVERSE_CODE_LANGUAGES,
   LCS_STAGE1_FORWARD_CODE_LANGUAGES,
   LCS_STAGE2_FORWARD_CODE_LANGUAGES,
   LCS_STAGE3_FORWARD_CODE_LANGUAGES,
@@ -2784,6 +2785,277 @@ export function buildLcsStage4Steps(inputs: Record<string, any>): LcsSpaceOptSte
   return steps;
 }
 
+export function buildLcsStage4ReverseSteps(inputs: Record<string, any>): LcsSpaceOptStep[] {
+  const { s1, s2 } = parseLcsInputs(inputs);
+  const n = s1.length;
+  const m = s2.length;
+  const steps: LcsSpaceOptStep[] = [];
+  const dp = new Array(m + 1).fill(0);
+  const fullGrid: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+
+  const lines4Reverse = {
+    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
+    allocDp: { java: 4, cpp: 4, python: 4, javascript: 4 },
+    loopI: { java: 5, cpp: 5, python: 5, javascript: 5 },
+    initLeftUp: { java: 6, cpp: 6, python: 6, javascript: 6 },
+    loopJ: { java: 7, cpp: 7, python: 7, javascript: 7 },
+    backup: { java: 8, cpp: 8, python: 8, javascript: 8 },
+    checkMatch: { java: 9, cpp: 9, python: 9, javascript: 9 },
+    diagMatch: { java: 10, cpp: 10, python: 10, javascript: 10 },
+    mismatchMax: { java: 12, cpp: 12, python: 12, javascript: 12 },
+    shiftLeftUp: { java: 14, cpp: 14, python: 13, javascript: 14 },
+    returnAns: { java: 17, cpp: 17, python: 14, javascript: 17 },
+  };
+
+  const pushStep = (s: Omit<LcsSpaceOptStep, 'dpGrid'>) => {
+    const vars = s.vars || [
+      { name: 'i', value: String(s.curI), type: 'number' },
+      { name: 'j', value: String(s.curJ), type: 'number' },
+      { name: 'rightDown', value: String(s.leftUp), type: 'number' },
+      { name: 'dp[j]', value: String(s.dp[s.curJ] ?? 0), type: 'number' },
+    ];
+    steps.push({
+      ...s,
+      vars,
+      dpGrid: fullGrid.map((r) => [...r]),
+    });
+  };
+
+  pushStep({
+    curI: n,
+    curJ: m,
+    dp: [...dp],
+    leftUp: 0,
+    decision: `主函数入口：lcs4Reverse("${s1}", "${s2}")`,
+    message: `利用逆推倒序一维滚动数组与 rightDown 右下角暂存寄存器，倒序求解后缀最长公共子序列`,
+    log: `| 📥 进入 lcs4Reverse: s1="${s1}", s2="${s2}"`,
+    codeLine: lines4Reverse.entry,
+    s1,
+    s2,
+    vars: [
+      { name: 's1', value: `"${s1}"`, type: 'string' },
+      { name: 's2', value: `"${s2}"`, type: 'string' },
+      { name: 'i', value: `${n}`, type: 'number' },
+      { name: 'j', value: `${m}`, type: 'number' },
+    ],
+  });
+
+  pushStep({
+    curI: n,
+    curJ: m,
+    dp: [...dp],
+    leftUp: 0,
+    decision: `初始化逆推一维数组: int[] dp = new int[${m + 1}] 全部为 0`,
+    message: `dp[j] 初始全为 0，代表后缀空串边界 (目标解最终汇聚在 dp[0])`,
+    log: `| 📋 分配逆推一维滚动数组: dp[${m + 1}] = 0`,
+    codeLine: lines4Reverse.allocDp,
+    s1,
+    s2,
+    vars: [
+      { name: 'dp[0]', value: '0', type: 'number' },
+      { name: 'rightDown', value: '0', type: 'number' },
+      { name: 's1', value: `"${s1}"`, type: 'string' },
+      { name: 's2', value: `"${s2}"`, type: 'string' },
+    ],
+  });
+
+  for (let i = n - 1; i >= 0; i--) {
+    let rightDown = 0;
+    const c1 = s1[i];
+
+    pushStep({
+      curI: i,
+      curJ: m,
+      dp: [...dp],
+      leftUp: 0,
+      decision: `外层逆推循环处理第 ${i} 行 (i=${i}, 字符 '${c1}')`,
+      message: `固定后缀字符 s1[${i}]，从最后一行向上倒序逐列滚动更新`,
+      log: `| 🔄 逆推处理第 ${i} 行: i=${i}, s1[${i}]='${c1}'`,
+      codeLine: lines4Reverse.loopI,
+      s1,
+      s2,
+      vars: [
+        { name: 'i', value: String(i), type: 'number' },
+        { name: 's1[i]', value: `"${c1}"`, type: 'string' },
+        { name: 'rightDown', value: '0', type: 'number' },
+      ],
+    });
+
+    pushStep({
+      curI: i,
+      curJ: m,
+      dp: [...dp],
+      leftUp: 0,
+      decision: `每行行末初始化右下角寄存器：rightDown = 0`,
+      message: `每行末尾字符的右下角对应越界空串后缀，故 rightDown 置 0`,
+      log: `| 💾 行末初始化: rightDown = 0`,
+      codeLine: lines4Reverse.initLeftUp,
+      s1,
+      s2,
+      vars: [
+        { name: 'i', value: String(i), type: 'number' },
+        { name: 'rightDown', value: '0', type: 'number' },
+      ],
+    });
+
+    for (let j = m - 1; j >= 0; j--) {
+      const c2 = s2[j];
+
+      pushStep({
+        curI: i,
+        curJ: j,
+        dp: [...dp],
+        leftUp: rightDown,
+        decision: `内层逆推循环处理第 ${j} 列 (j=${j}, 字符 '${c2}')`,
+        message: `准备对 dp[${j}] 执行细粒度三步走（暂存旧值 ➔ 转移计算 ➔ 寄存器推移）`,
+        log: `|   🔄 逆推处理列 j=${j}: s2[${j}]='${c2}'`,
+        codeLine: lines4Reverse.loopJ,
+        s1,
+        s2,
+        vars: [
+          { name: 'i', value: String(i), type: 'number' },
+          { name: 'j', value: String(j), type: 'number' },
+          { name: 's1[i]', value: `"${c1}"`, type: 'string' },
+          { name: 's2[j]', value: `"${c2}"`, type: 'string' },
+          { name: 'rightDown', value: String(rightDown), type: 'number' },
+          { name: 'dp[j]', value: String(dp[j]), type: 'number' },
+        ],
+      });
+
+      // 步骤 1: 暂存旧值
+      const backup = dp[j];
+      pushStep({
+        curI: i,
+        curJ: j,
+        dp: [...dp],
+        leftUp: rightDown,
+        decision: `1. 暂存旧值：int backup = dp[${j}] (${backup})`,
+        message: `在覆盖 dp[${j}] 之前将其暂存，它代表下方 dp[i+1][j]，将作为前一列 j-1 计算时的右下角对角线`,
+        log: `|   💾 【暂存旧值】backup = dp[${j}] (${backup})，为前一列对角线留底`,
+        codeLine: lines4Reverse.backup,
+        s1,
+        s2,
+        vars: [
+          { name: 'i', value: String(i), type: 'number' },
+          { name: 'j', value: String(j), type: 'number' },
+          { name: 'backup', value: String(backup), type: 'number' },
+          { name: 'rightDown', value: String(rightDown), type: 'number' },
+        ],
+      });
+
+      // 字符比对
+      const isMatch = c1 === c2;
+      pushStep({
+        curI: i,
+        curJ: j,
+        dp: [...dp],
+        leftUp: rightDown,
+        decision: `比对后缀字符：s1[${i}]('${c1}') 与 s2[${j}]('${c2}')`,
+        message: isMatch
+          ? `✨ 后缀字符相同 ('${c1}' == '${c2}')！将使用 rightDown(${rightDown}) + 1 更新`
+          : `后缀字符不同 ('${c1}' != '${c2}')，将取旧值 backup(${backup}) 与右侧 dp[${j + 1}] 较大值`,
+        log: `|   🔍 【字符比对】s1[${i}]('${c1}') 与 s2[${j}]('${c2}'): ${isMatch ? '匹配' : '不匹配'}`,
+        codeLine: lines4Reverse.checkMatch,
+        s1,
+        s2,
+        vars: [
+          { name: 'i', value: String(i), type: 'number' },
+          { name: 'j', value: String(j), type: 'number' },
+          { name: 'match', value: String(isMatch), type: 'boolean' },
+          { name: 'rightDown', value: String(rightDown), type: 'number' },
+        ],
+      });
+
+      // 步骤 2: 转移计算
+      if (isMatch) {
+        dp[j] = rightDown + 1;
+        fullGrid[i][j] = dp[j];
+        pushStep({
+          curI: i,
+          curJ: j,
+          dp: [...dp],
+          leftUp: rightDown,
+          decision: `2. 逆推转移：✨ 字符匹配！dp[${j}] = rightDown + 1 = ${rightDown} + 1 = ${dp[j]}`,
+          message: `利用暂存的右下角 rightDown(${rightDown}) 完成逆向状态转移`,
+          log: `|   ↘️ 【右下对角线转移】dp[${j}] = rightDown + 1 = ${dp[j]}`,
+          codeLine: lines4Reverse.diagMatch,
+          s1,
+          s2,
+          vars: [
+            { name: 'i', value: String(i), type: 'number' },
+            { name: 'j', value: String(j), type: 'number' },
+            { name: 'dp[j]', value: String(dp[j]), type: 'number' },
+            { name: 'rightDown', value: String(rightDown), type: 'number' },
+          ],
+        });
+      } else {
+        dp[j] = Math.max(backup, dp[j + 1]);
+        fullGrid[i][j] = dp[j];
+        pushStep({
+          curI: i,
+          curJ: j,
+          dp: [...dp],
+          leftUp: rightDown,
+          decision: `2. 逆推转移：不匹配。dp[${j}] = max(下方${backup}, 右侧${dp[j + 1]}) = ${dp[j]}`,
+          message: `backup 代表下方 dp[i+1][j]，dp[j+1] 代表右侧，下右选优`,
+          log: `|   ⬇️➡️ 【下右选优】dp[${j}] = max(下方=${backup}, 右侧=${dp[j + 1]}) = ${dp[j]}`,
+          codeLine: lines4Reverse.mismatchMax,
+          s1,
+          s2,
+          vars: [
+            { name: 'i', value: String(i), type: 'number' },
+            { name: 'j', value: String(j), type: 'number' },
+            { name: 'dp[j]', value: String(dp[j]), type: 'number' },
+            { name: 'rightDown', value: String(rightDown), type: 'number' },
+          ],
+        });
+      }
+
+      // 步骤 3: 寄存器推移
+      rightDown = backup;
+      pushStep({
+        curI: i,
+        curJ: j,
+        dp: [...dp],
+        leftUp: rightDown,
+        decision: `3. 寄存器推移：rightDown = backup (${backup})`,
+        message: `将暂存的旧值赋予 rightDown，为前一列 j=${j - 1} 的右下角对角线依赖做好准备`,
+        log: `|   ⏪ 【寄存器推移】rightDown = backup (${backup})，推移至前一列对角线`,
+        codeLine: lines4Reverse.shiftLeftUp,
+        s1,
+        s2,
+        vars: [
+          { name: 'i', value: String(i), type: 'number' },
+          { name: 'j', value: String(j), type: 'number' },
+          { name: 'rightDown', value: String(rightDown), type: 'number' },
+        ],
+      });
+    }
+  }
+
+  pushStep({
+    curI: 0,
+    curJ: 0,
+    dp: [...dp],
+    leftUp: 0,
+    decision: `🎉 逆推空间压缩求解完成！LCS 最终长度 = dp[0] = ${dp[0]}`,
+    message: `全部后缀状态倒序递推完成，成功将空间复杂度降至 O(min(N, M))，结果汇聚于 dp[0]`,
+    log: `| 🎯 逆推空间压缩求解完成: 最终 LCS 长度 dp[0] = ${dp[0]}`,
+    codeLine: lines4Reverse.returnAns,
+    s1,
+    s2,
+    metrics: { 'metric-ans': `${dp[0]}` },
+    vars: [
+      { name: 'ans', value: `${dp[0]}`, type: 'number' },
+      { name: 'dp[0]', value: `${dp[0]}`, type: 'number' },
+      { name: 'i', value: '0', type: 'number' },
+      { name: 'j', value: '0', type: 'number' },
+    ],
+  });
+
+  return steps;
+}
+
 // ==========================================
 // 5. 声明式 Visualizer
 // ==========================================
@@ -3044,8 +3316,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         { label: '已回收历史行', color: '#94a3b8' },
       ],
       codeLanguages: LCS_STAGE4_CODE_LANGUAGES,
+      modeCodeLanguages: {
+        forward: LCS_STAGE4_CODE_LANGUAGES,
+        reverse: LCS_STAGE4_REVERSE_CODE_LANGUAGES,
+      },
       has3D: true,
-      buildSteps: buildLcsStage4Steps,
+      buildSteps: (inputs: Record<string, any>, mode?: string) => {
+        if (mode === 'reverse') {
+          return buildLcsStage4ReverseSteps(inputs);
+        }
+        return buildLcsStage4Steps(inputs);
+      },
       renderCanvas: (container, step, extra) => {
         const fullGrid = step.dpGrid || [step.dp];
         renderStage4RollingGridCard(
@@ -3064,18 +3345,34 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         renderLcsCard2CompoundView(
           container,
           (subBox) => {
+            const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
+            const regName = isReverse ? 'rightDown' : 'leftUp';
             renderSpaceOptCard2(
               subBox,
               `一维滚动数组 dp[0..${step.dp.length - 1}]`,
               step.dp,
               step.curJ,
-              'leftUp',
+              regName,
               step.leftUp,
               ['Ø', ...step.s2.split('')]
             );
           },
           (subBox) => {
-            renderStringAlignment(subBox, step.s1, step.s2, step.curI - 1, step.curJ - 1);
+            const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
+            const s1Idx = isReverse ? step.curI : step.curI - 1;
+            const s2Idx = isReverse ? step.curJ : step.curJ - 1;
+            renderStringAlignment(
+              subBox,
+              step.s1,
+              step.s2,
+              s1Idx,
+              s2Idx,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              isReverse ? 'front' : 'back'
+            );
           },
           (stackBox) =>
             ThreeRecursionStackAdapter.getInstance().render(stackBox, {
