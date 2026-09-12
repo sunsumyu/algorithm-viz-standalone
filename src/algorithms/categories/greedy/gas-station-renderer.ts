@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   GAS_STATION_PROBLEM_HTML,
   GAS_STATION_ANALYSIS_HTML,
@@ -284,14 +285,8 @@ registerDeclarativeAlgorithm({
   problemHtml: GAS_STATION_PROBLEM_HTML,
   analysisHtml: GAS_STATION_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const gas = String(inputs.gas ?? '1,2,3,4,5')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const cost = String(inputs.cost ?? '3,4,5,1,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const gas = parseNumberList(inputs.gas, '1,2,3,4,5');
+    const cost = parseNumberList(inputs.cost, '3,4,5,1,2');
     return withMetrics(
       buildGasStationSteps(gas.length ? gas : [1, 2, 3, 4, 5], cost.length ? cost : [3, 4, 5, 1, 2])
     );

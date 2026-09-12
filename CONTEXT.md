@@ -159,6 +159,11 @@
 - **职责**：渲染器声明每根柱子的语义状态（`states: VisualStateId[]`），适配器统一输出几何（柱高归一化/柱宽上限/强调缩放）与配色；纯计算 `computeBarsVisual` 与薄 DOM `render` 分离，可无头测试。
 - **价值**：排序渲染器收缩为纯状态推导逻辑，算法单测可升级为无头断言状态序列。
 
+### InputPrimitives (声明式输入解析原语深模块)
+- **定义**：收敛全库渲染器输入解析样板（split / parseInt / filter 曾复制于 90 个文件）的纯函数原语模块，位于 `src/core/input-primitives.ts`。
+- **包含**：`parseNumberList` / `parseNumber` / `parseText` / `parseTreeArray` / `parseIntervals` / `parseCommandList`。
+- **职责**：统一分隔符容忍（半角/全角逗号+空白）、统一空值回退语义（列表类空结果回退；树层序区分合法空树 `[]` 与解析失败）；100% 零 DOM，可无头表驱动测试。
+
 ### DomainAdapterCatalog (领域画布适配器目录)
 - **定义**：集中收编全库 10 个领域专属画板适配器的元信息注册表（`domain-adapter-catalog.ts`）。
 - **职责**：提供 `findAdapterById(id)` 和 `findAdapterByDomain(keyword)` 查询接口，让开发者快速发现可用适配器（树拓扑、数组轨道、DP 网格、递归树、3D 图论等）。

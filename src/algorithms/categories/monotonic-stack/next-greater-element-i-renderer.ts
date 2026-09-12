@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
@@ -338,14 +339,8 @@ registerDeclarativeAlgorithm({
   problemHtml: NEXT_GREATER_ELEMENT_I_PROBLEM_HTML,
   analysisHtml: NEXT_GREATER_ELEMENT_I_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums1 = String(inputs.nums1 ?? '4,1,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
-    const nums2 = String(inputs.nums2 ?? '1,3,4,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const nums1 = parseNumberList(inputs.nums1, '4,1,2');
+    const nums2 = parseNumberList(inputs.nums2, '1,3,4,2');
     return withMetrics(buildNextGreaterElementISteps(nums1.length ? nums1 : [4, 1, 2], nums2.length ? nums2 : [1, 3, 4, 2]));
   },
   renderCanvas: (container, step) => renderNextGreaterElementICanvas(container, step as NGE1Step),

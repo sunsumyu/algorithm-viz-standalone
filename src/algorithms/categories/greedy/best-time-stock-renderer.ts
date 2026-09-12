@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   BEST_TIME_STOCK_PROBLEM_HTML,
   BEST_TIME_STOCK_ANALYSIS_HTML,
@@ -306,10 +307,7 @@ registerDeclarativeAlgorithm({
   problemHtml: BEST_TIME_STOCK_PROBLEM_HTML,
   analysisHtml: BEST_TIME_STOCK_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawPrices = String(inputs.prices ?? '7,1,5,3,6,4')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawPrices = parseNumberList(inputs.prices, '7,1,5,3,6,4');
     return withMetrics(buildStockSteps(rawPrices.length > 0 ? rawPrices : [7, 1, 5, 3, 6, 4]));
   },
   renderCanvas: (container, step) => renderBestTimeStockCanvas(container, step as StockStep),

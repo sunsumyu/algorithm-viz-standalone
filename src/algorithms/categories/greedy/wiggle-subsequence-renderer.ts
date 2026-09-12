@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
   WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
@@ -273,10 +274,7 @@ registerDeclarativeAlgorithm({
   problemHtml: WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
   analysisHtml: WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = String(inputs.nums ?? '1,7,4,9,2,5')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const nums = parseNumberList(inputs.nums, '1,7,4,9,2,5');
     return withMetrics(wiggleSubsequenceSteps(nums.length ? nums : [1, 7, 4, 9, 2, 5]));
   },
   renderCanvas: (container, step) => renderWiggleSubsequenceCanvas(container, step as WiggleStep),

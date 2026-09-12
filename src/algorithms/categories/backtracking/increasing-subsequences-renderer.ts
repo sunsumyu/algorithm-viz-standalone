@@ -5,6 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -314,10 +315,7 @@ registerDeclarativeAlgorithm({
   problemHtml: INCREASING_SUBSEQUENCES_PROBLEM_HTML,
   analysisHtml: INCREASING_SUBSEQUENCES_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = String(inputs.nums ?? '4,6,7,7')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const nums = parseNumberList(inputs.nums, '4,6,7,7');
     return withMetrics(buildIncSubSteps(nums.length ? nums : [4, 6, 7, 7]));
   },
   renderCanvas: (container, step) => renderIncreasingSubsequencesCanvas(container, step as BacktrackTreeStep),

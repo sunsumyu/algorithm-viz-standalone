@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   MAXIMIZE_SUM_K_PROBLEM_HTML,
   MAXIMIZE_SUM_K_ANALYSIS_HTML,
@@ -276,10 +277,7 @@ registerDeclarativeAlgorithm({
   problemHtml: MAXIMIZE_SUM_K_PROBLEM_HTML,
   analysisHtml: MAXIMIZE_SUM_K_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const arr = String(inputs.nums ?? '2,-3,-1,5,-4')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const arr = parseNumberList(inputs.nums, '2,-3,-1,5,-4');
     let k = parseInt(String(inputs.k ?? '2'), 10);
     if (!Number.isFinite(k)) k = 2;
     return withMetrics(buildMaxSumKSteps(arr.length ? arr : [2, -3, -1, 5, -4], k));

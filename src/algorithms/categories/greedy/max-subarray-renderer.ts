@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   MAX_SUBARRAY_PROBLEM_HTML,
   MAX_SUBARRAY_ANALYSIS_HTML,
@@ -279,10 +280,7 @@ registerDeclarativeAlgorithm({
   problemHtml: MAX_SUBARRAY_PROBLEM_HTML,
   analysisHtml: MAX_SUBARRAY_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawNums = String(inputs.nums ?? '-2,1,-3,4,-1,2,1,-5,4')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawNums = parseNumberList(inputs.nums, '-2,1,-3,4,-1,2,1,-5,4');
     return withMetrics(buildMaxSubarraySteps(rawNums.length > 0 ? rawNums : [-2, 1, -3, 4, -1, 2, 1, -5, 4]));
   },
   renderCanvas: (container, step) => renderMaxSubarrayCanvas(container, step as MSSStep),

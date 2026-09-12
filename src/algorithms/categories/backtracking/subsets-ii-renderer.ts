@@ -6,6 +6,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -286,10 +287,7 @@ registerDeclarativeAlgorithm({
   problemHtml: SUBSETS_II_PROBLEM_HTML,
   analysisHtml: SUBSETS_II_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = String(inputs.nums ?? '1,2,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const nums = parseNumberList(inputs.nums, '1,2,2');
     return withMetrics(buildSubsets2Steps(nums.length ? nums : [1, 2, 2]));
   },
   renderCanvas: (container, step) => renderSubsetsIiCanvas(container, step as BacktrackTreeStep),

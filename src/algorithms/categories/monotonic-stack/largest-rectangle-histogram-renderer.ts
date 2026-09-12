@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   LARGEST_RECTANGLE_HISTOGRAM_PROBLEM_HTML,
@@ -344,10 +345,7 @@ registerDeclarativeAlgorithm({
   problemHtml: LARGEST_RECTANGLE_HISTOGRAM_PROBLEM_HTML,
   analysisHtml: LARGEST_RECTANGLE_HISTOGRAM_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawHeights = String(inputs.heights ?? '2,1,5,6,2,3')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawHeights = parseNumberList(inputs.heights, '2,1,5,6,2,3');
     return withMetrics(
       buildLargestRectangleHistogramSteps(rawHeights.length ? rawHeights : [2, 1, 5, 6, 2, 3])
     );

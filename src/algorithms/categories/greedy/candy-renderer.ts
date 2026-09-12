@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   CANDY_PROBLEM_HTML,
   CANDY_ANALYSIS_HTML,
@@ -264,10 +265,7 @@ registerDeclarativeAlgorithm({
   problemHtml: CANDY_PROBLEM_HTML,
   analysisHtml: CANDY_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawRatings = String(inputs.ratings ?? '1,2,87,87,87,2,1')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawRatings = parseNumberList(inputs.ratings, '1,2,87,87,87,2,1');
     return withMetrics(buildCandySteps(rawRatings.length ? rawRatings : [1, 2, 87, 87, 87, 2, 1]));
   },
   renderCanvas: (container, step) => renderCandyCanvas(container, step as CandyStep),

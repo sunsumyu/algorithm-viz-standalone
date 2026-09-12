@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -337,10 +338,7 @@ registerDeclarativeAlgorithm({
   problemHtml: COMBINATION_SUM_II_PROBLEM_HTML,
   analysisHtml: COMBINATION_SUM_II_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const cands = String(inputs.candidates ?? '10,1,2,7,6,1,5')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const cands = parseNumberList(inputs.candidates, '10,1,2,7,6,1,5');
     let target = parseInt(String(inputs.target ?? '8'), 10);
     if (!Number.isFinite(target)) target = 8;
     return withMetrics(buildCombinationSum2Steps(cands.length ? cands : [10, 1, 2, 7, 6, 1, 5], target));

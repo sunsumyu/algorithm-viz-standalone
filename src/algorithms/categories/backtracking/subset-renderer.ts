@@ -5,6 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import { BacktrackStateSpacePresenter } from '../../../core/renderers/backtrack-state-space-presenter';
 import {
   BacktrackTreeNode,
@@ -369,10 +370,7 @@ registerDeclarativeAlgorithm({
   problemHtml: SUBSET_PROBLEM_HTML,
   analysisHtml: SUBSET_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawNums = String(inputs.nums ?? '1,2,3')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawNums = parseNumberList(inputs.nums, '1,2,3');
     const nums = rawNums.length > 0 ? Array.from(new Set(rawNums)) : [1, 2, 3];
     if (nums.length > 5) nums.length = 5; // 防止组合爆炸
     return withMetrics(buildSubsetSteps(nums));

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   LEMONADE_PROBLEM_HTML,
   LEMONADE_ANALYSIS_HTML,
@@ -314,10 +315,7 @@ registerDeclarativeAlgorithm({
   problemHtml: LEMONADE_PROBLEM_HTML,
   analysisHtml: LEMONADE_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawBills = String(inputs.bills ?? '5,5,5,10,20')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawBills = parseNumberList(inputs.bills, '5,5,5,10,20');
     return withMetrics(buildLemonadeSteps(rawBills.length ? rawBills : [5, 5, 5, 10, 20]));
   },
   renderCanvas: (container, step) => renderLemonadeCanvas(container, step as LemonadeStep),

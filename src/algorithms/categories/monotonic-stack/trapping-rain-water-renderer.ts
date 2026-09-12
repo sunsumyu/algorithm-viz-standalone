@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   TRAPPING_RAIN_WATER_PROBLEM_HTML,
@@ -349,10 +350,7 @@ registerDeclarativeAlgorithm({
   problemHtml: TRAPPING_RAIN_WATER_PROBLEM_HTML,
   analysisHtml: TRAPPING_RAIN_WATER_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawHeights = String(inputs.height ?? '0,1,0,2,1,0,1,3,2,1,2,1')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawHeights = parseNumberList(inputs.height, '0,1,0,2,1,0,1,3,2,1,2,1');
     return withMetrics(
       buildTrappingRainWaterSteps(
         rawHeights.length ? rawHeights : [0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]

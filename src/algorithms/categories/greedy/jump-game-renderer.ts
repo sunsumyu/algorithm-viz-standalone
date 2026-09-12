@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   JUMP_GAME_PROBLEM_HTML,
   JUMP_GAME_ANALYSIS_HTML,
@@ -268,10 +269,7 @@ registerDeclarativeAlgorithm({
   problemHtml: JUMP_GAME_PROBLEM_HTML,
   analysisHtml: JUMP_GAME_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawNums = String(inputs.nums ?? '2,3,1,1,4')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawNums = parseNumberList(inputs.nums, '2,3,1,1,4');
     return withMetrics(buildJumpGameSteps(rawNums.length > 0 ? rawNums : [2, 3, 1, 1, 4]));
   },
   renderCanvas: (container, step) => renderJumpGameCanvas(container, step as JumpStep),

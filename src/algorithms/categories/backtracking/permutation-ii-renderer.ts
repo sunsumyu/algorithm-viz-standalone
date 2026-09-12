@@ -5,6 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   BacktrackTreeNode,
   BacktrackTreeStep,
@@ -345,10 +346,7 @@ registerDeclarativeAlgorithm({
   problemHtml: PERMUTATION_II_PROBLEM_HTML,
   analysisHtml: PERMUTATION_II_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const nums = String(inputs.nums ?? '1,1,2')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const nums = parseNumberList(inputs.nums, '1,1,2');
     return withMetrics(buildPerm2Steps(nums.length ? nums : [1, 1, 2]));
   },
   renderCanvas: (container, step) => renderPermutationIICanvas(container, step as BacktrackTreeStep),

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { parseNumberList } from '../../../core/input-primitives';
 import {
   HighlightTarget,
 } from '../../../core/renderers/dark-code-terminal-presenter';
@@ -284,10 +285,7 @@ registerDeclarativeAlgorithm({
   problemHtml: DAILY_TEMPERATURES_PROBLEM_HTML,
   analysisHtml: DAILY_TEMPERATURES_ANALYSIS_HTML,
   generateSteps: (inputs) => {
-    const rawTemps = String(inputs.temperatures ?? '73,74,75,71,69,72,76,73')
-      .split(/[,，\s]+/)
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !isNaN(n));
+    const rawTemps = parseNumberList(inputs.temperatures, '73,74,75,71,69,72,76,73');
     return withMetrics(buildDailyTemperaturesSteps(rawTemps.length ? rawTemps : [73, 74, 75, 71, 69, 72, 76, 73]));
   },
   renderCanvas: (container, step) => renderDailyTemperaturesCanvas(container, step as DailyTempStep),
