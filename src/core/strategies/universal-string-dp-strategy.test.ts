@@ -56,6 +56,22 @@ describe('UniversalStringDpStrategy', () => {
     expect(lastStep.grid![5][3]).toBe(3);
   });
 
+  it('Stage 3 逆推严格二维表末行末列基底为 0，且最终解汇聚于 dp[0][0]=3', () => {
+    const steps = strategy.generateSteps(model, {
+      stage: 3,
+      direction: 'reverse',
+    });
+    expect(steps.length).toBeGreaterThan(0);
+    const step0 = steps[0];
+    expect(step0.type).toBe('init');
+    expect(step0.grid![0][0]).toBeNull();
+    expect(step0.grid![5][3]).toBe(0);
+
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.type).toBe('return');
+    expect(lastStep.grid![0][0]).toBe(3);
+  });
+
   it('Stage 4 一维空间优化必须能够记录 leftUp 暂存并在末尾返回 3', () => {
     const steps = strategy.generateSteps(model, {
       stage: 4,

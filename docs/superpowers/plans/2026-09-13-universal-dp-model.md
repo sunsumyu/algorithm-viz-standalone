@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: `IYamlAlgorithmModel` 兼容结构，包含 `id`, `name`, `directions`, `stages` (1~4 阶段)，以及对应的多语言代码块。
 
-- [ ] **Step 1: 编写模型保真度验证测试**
+- [x] **Step 1: 编写模型保真度验证测试**
 
 在 `src/core/universal-model-fidelity.test.ts` 中增加针对 `longest-common-subsequence` 的 YAML 模型解析断言：
 
@@ -47,12 +47,12 @@ it('longest-common-subsequence 模型应严格遵循黄金基准结构', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试以确认其失败**
+- [x] **Step 2: 运行测试以确认其失败**
 
 运行：`npx vitest run src/core/universal-model-fidelity.test.ts`  
 预期：FAIL（提示模型尚未创建或找不到文件）
 
-- [ ] **Step 3: 创建完整 YAML 模型文件**
+- [x] **Step 3: 创建完整 YAML 模型文件**
 
 在 `src/core/models/longest-common-subsequence.yaml` 中编写完整规范，严格对齐 `unique-paths-ii.yaml` 格式：
 - `defaultParams`: `s1: "abcde"`, `s2: "ace"`
@@ -61,12 +61,12 @@ it('longest-common-subsequence 模型应严格遵循黄金基准结构', () => {
   - `reverse`: `label: "逆推 (N→0 倒序)"`, 后缀 DP 模型，目标在 `dp[0][0]`
 - `stages`: 包含 stage-1 (递归), stage-2 (记忆化), stage-3 (严格二维表), stage-4 (一维滚动 + leftUp 暂存) 及其 Java/CPP/Python/JS 代码和代码锚点。
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 运行：`npx vitest run src/core/universal-model-fidelity.test.ts`  
 预期：PASS
 
-- [ ] **Step 5: 提交代码**
+- [x] **Step 5: 提交代码**
 
 ```bash
 git add src/core/models/longest-common-subsequence.yaml src/core/universal-model-fidelity.test.ts
@@ -86,7 +86,7 @@ git commit -m "feat(dp): add longest-common-subsequence golden yaml model"
 - Consumes: `IAlgorithmStrategy`, `StageExecutionParams`, `UniversalStep`, `createUncalculatedDpGrid`
 - Produces: `UniversalStringDpStrategy` 类，支持 `canHandle(modelId: string)` 与 `generateSteps(...)`
 
-- [ ] **Step 1: 编写通用策略引擎的单元测试**
+- [x] **Step 1: 编写通用策略引擎的单元测试**
 
 创建 `src/core/strategies/universal-string-dp-strategy.test.ts`：
 
@@ -117,12 +117,12 @@ describe('UniversalStringDpStrategy', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试确认其失败**
+- [x] **Step 2: 运行测试确认其失败**
 
 运行：`npx vitest run src/core/strategies/universal-string-dp-strategy.test.ts`  
 预期：FAIL（找不到 `universal-string-dp-strategy`）
 
-- [ ] **Step 3: 实现 `UniversalStringDpStrategy`**
+- [x] **Step 3: 实现 `UniversalStringDpStrategy`**
 
 在 `src/core/strategies/universal-string-dp-strategy.ts` 中实现：
 1. `generateStage1or2`：统一生成带有 `activeStack` 安全绳连线的 DFS 递归树，遇字符匹配走对角线分支，不匹配走 max 分支；stage 2 自动生成带 memo 缓存命中剪枝帧；
@@ -135,12 +135,12 @@ describe('UniversalStringDpStrategy', () => {
 3. `generateStage4`：统一一维空间压缩与 `leftUp` 寄存器备份步进。
 并在 `src/core/strategies/index.ts` 中导出并注册。
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 运行：`npx vitest run src/core/strategies/universal-string-dp-strategy.test.ts`  
 预期：PASS
 
-- [ ] **Step 5: 提交代码**
+- [x] **Step 5: 提交代码**
 
 ```bash
 git add src/core/strategies/universal-string-dp-strategy.ts src/core/strategies/universal-string-dp-strategy.test.ts src/core/strategies/index.ts
