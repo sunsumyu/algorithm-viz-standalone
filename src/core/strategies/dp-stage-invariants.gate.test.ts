@@ -330,5 +330,149 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
         }
       }
     });
+
+    it('Longest Common Subsequence (LCS) 阶段 1 / 阶段 2 递归零跳步门禁：匹配与分支深入前必须发射独立拦截帧，子递归返回发射 branch-return', async () => {
+      const { AlgorithmModelRepository } = await import('../model-repository');
+      const { SequenceStepMatrixCompiler } = await import('./sequence-step-matrix-compiler');
+
+      const model = AlgorithmModelRepository.getModel('longest-common-subsequence');
+      const stage1Config = AlgorithmModelRepository.getCompiledStage('longest-common-subsequence', 'stage-1', 'forward');
+      const steps1 = SequenceStepMatrixCompiler.compileLcsStage1or2(
+        model,
+        false,
+        stage1Config.anchorMap,
+        'forward'
+      );
+
+      expect(steps1.length).toBeGreaterThan(10);
+      expect(stage1Config.anchorMap?.match_branch).toBeDefined();
+      expect(stage1Config.anchorMap?.branch_p1).toBeDefined();
+      expect(stage1Config.anchorMap?.branch_p2).toBeDefined();
+
+      let matchCount = 0;
+      let p1Count = 0;
+      let p2Count = 0;
+
+      for (let i = 0; i < steps1.length - 1; i++) {
+        const step = steps1[i];
+        if (step.type === 'match-eval') {
+          const nextStep = steps1[i + 1];
+          // 字符比对之后紧跟的必须是 branch-call，严禁直接跳进下一层 dfs
+          expect(nextStep.type, `步骤 #${i} 字符比对后下一步必须是 branch-call 拦截帧`).toBe('branch-call');
+          if (step.tag?.includes('匹配') && !step.tag?.includes('不匹配')) {
+            expect(nextStep.line, `匹配分支第一步必须高亮 match_branch 调用行`).toBe(stage1Config.anchorMap?.match_branch);
+          } else {
+            expect(nextStep.line, `不匹配分支第一步必须高亮 branch_p1 调用行`).toBe(stage1Config.anchorMap?.branch_p1);
+          }
+        }
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.match_branch) matchCount++;
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.branch_p1) p1Count++;
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.branch_p2) p2Count++;
+      }
+
+      expect(matchCount, '必须存在 match_branch 拦截帧').toBeGreaterThan(0);
+      expect(p1Count, '必须存在 branch_p1 拦截帧').toBeGreaterThan(0);
+      expect(p2Count, '必须存在 branch_p2 拦截帧').toBeGreaterThan(0);
+
+      // 验证调用-返回闭环 (Call-Return Parity)：子递归返回后发射 branch-return
+      const branchReturns1 = steps1.filter((st) => st.type === 'branch-return');
+      expect(branchReturns1.length, 'LCS 必须发射 branch-return 步骤帧').toBeGreaterThan(0);
+      branchReturns1.forEach((st) => {
+        expect([
+          stage1Config.anchorMap?.match_branch,
+          stage1Config.anchorMap?.branch_p1,
+          stage1Config.anchorMap?.branch_p2
+        ]).toContain(st.line);
+      });
+
+      // 阶段 2 (记忆化)
+      const stage2Config = AlgorithmModelRepository.getCompiledStage('longest-common-subsequence', 'stage-2', 'forward');
+      const steps2 = SequenceStepMatrixCompiler.compileLcsStage1or2(
+        model,
+        true,
+        stage2Config.anchorMap,
+        'forward'
+      );
+
+      for (let i = 0; i < steps2.length - 1; i++) {
+        const step = steps2[i];
+        if (step.type === 'match-eval') {
+          const nextStep = steps2[i + 1];
+          expect(nextStep.type, `Stage 2 步骤 #${i} 比对后下一步必须是 branch-call`).toBe('branch-call');
+        }
+      }
+    });
+
+    it('Longest Palindromic Subsequence (LPS) 阶段 1 / 阶段 2 区间递归零跳步门禁：端点匹配与分支深入前必须发射独立拦截帧，子递归返回发射 branch-return', async () => {
+      const { AlgorithmModelRepository } = await import('../model-repository');
+      const { SequenceStepMatrixCompiler } = await import('./sequence-step-matrix-compiler');
+
+      const model = AlgorithmModelRepository.getModel('longest-palindromic-subsequence');
+      const stage1Config = AlgorithmModelRepository.getCompiledStage('longest-palindromic-subsequence', 'stage-1', 'forward');
+      const steps1 = SequenceStepMatrixCompiler.compileLongestPalindromicStage1or2(
+        model,
+        false,
+        stage1Config.anchorMap,
+        'forward'
+      );
+
+      expect(steps1.length).toBeGreaterThan(10);
+      expect(stage1Config.anchorMap?.match_branch).toBeDefined();
+      expect(stage1Config.anchorMap?.branch_left).toBeDefined();
+      expect(stage1Config.anchorMap?.branch_right).toBeDefined();
+
+      let matchCount = 0;
+      let leftCount = 0;
+      let rightCount = 0;
+
+      for (let i = 0; i < steps1.length - 1; i++) {
+        const step = steps1[i];
+        if (step.type === 'match-eval') {
+          const nextStep = steps1[i + 1];
+          // 字符比对之后紧跟的必须是 branch-call，严禁直接跳进下一层 dfs
+          expect(nextStep.type, `步骤 #${i} 字符比对后下一步必须是 branch-call 拦截帧`).toBe('branch-call');
+          if (step.tag?.includes('相同') && !step.tag?.includes('不同')) {
+            expect(nextStep.line, `匹配分支第一步必须高亮 match_branch 调用行`).toBe(stage1Config.anchorMap?.match_branch);
+          } else {
+            expect(nextStep.line, `不匹配分支第一步必须高亮 branch_left 调用行`).toBe(stage1Config.anchorMap?.branch_left);
+          }
+        }
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.match_branch) matchCount++;
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.branch_left) leftCount++;
+        if (step.type === 'branch-call' && step.line === stage1Config.anchorMap?.branch_right) rightCount++;
+      }
+
+      expect(matchCount, '必须存在 match_branch 拦截帧').toBeGreaterThan(0);
+      expect(leftCount, '必须存在 branch_left 拦截帧').toBeGreaterThan(0);
+      expect(rightCount, '必须存在 branch_right 拦截帧').toBeGreaterThan(0);
+
+      // 验证调用-返回闭环 (Call-Return Parity)：子递归返回后发射 branch-return
+      const branchReturns1 = steps1.filter((st) => st.type === 'branch-return');
+      expect(branchReturns1.length, 'LPS 必须发射 branch-return 步骤帧').toBeGreaterThan(0);
+      branchReturns1.forEach((st) => {
+        expect([
+          stage1Config.anchorMap?.match_branch,
+          stage1Config.anchorMap?.branch_left,
+          stage1Config.anchorMap?.branch_right
+        ]).toContain(st.line);
+      });
+
+      // 阶段 2 (记忆化)
+      const stage2Config = AlgorithmModelRepository.getCompiledStage('longest-palindromic-subsequence', 'stage-2', 'forward');
+      const steps2 = SequenceStepMatrixCompiler.compileLongestPalindromicStage1or2(
+        model,
+        true,
+        stage2Config.anchorMap,
+        'forward'
+      );
+
+      for (let i = 0; i < steps2.length - 1; i++) {
+        const step = steps2[i];
+        if (step.type === 'match-eval') {
+          const nextStep = steps2[i + 1];
+          expect(nextStep.type, `Stage 2 步骤 #${i} 比对后下一步必须是 branch-call`).toBe('branch-call');
+        }
+      }
+    });
   });
 });

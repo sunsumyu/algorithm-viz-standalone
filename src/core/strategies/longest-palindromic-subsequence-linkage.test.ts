@@ -38,8 +38,8 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
     expect(steps[0].line).toBe(anchorMap.entry);
 
     // 必须存在左右两分支独立探索步骤
-    const hasLeftBranch = steps.some(s => s.type === 'diff-branch-left');
-    const hasRightBranch = steps.some(s => s.type === 'diff-branch-right');
+    const hasLeftBranch = steps.some(s => s.type === 'diff-branch-left' || (s.type === 'branch-call' && (s.varName === 'skipLeft' || s.line === anchorMap.branch_left)));
+    const hasRightBranch = steps.some(s => s.type === 'diff-branch-right' || (s.type === 'branch-call' && (s.varName === 'skipRight' || s.line === anchorMap.branch_right)));
     expect(hasLeftBranch, '必须包含舍弃左端的独立探索步进').toBe(true);
     expect(hasRightBranch, '必须包含舍弃右端的独立探索步进').toBe(true);
 

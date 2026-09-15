@@ -388,11 +388,16 @@ export class StageNavigationCoordinator {
           <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span> 剪枝/剔除</span>
         `;
       } else if (!isGridProblem) {
+        const isReverse = currentDirection === 'reverse';
+        const topLabel = isReverse ? '参考下方' : '参考上方';
+        const leftLabel = isReverse ? '参考右方' : '参考左方';
+        const diagLabel = isReverse ? '参考右下' : '参考左上';
         legendBar.innerHTML = `
           <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-slate-100 border border-slate-300"></span> 已求解</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> 参考上方</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> 参考左方</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已求解</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-cyan-100 border border-cyan-400"></span> ↖️${diagLabel}(匹配/替换)</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> ⬆️${topLabel}(删除)</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> ⬅️${leftLabel}(插入)</span>
         `;
       }
     }

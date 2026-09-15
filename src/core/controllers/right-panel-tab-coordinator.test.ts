@@ -7,7 +7,7 @@ class MockElement {
   public classList = {
     classes: new Set<string>(),
     add(cls: string) { this.classes.add(cls); },
-    remove(cls: string) { this.classes.delete(cls); },
+    remove(...clsList: string[]) { clsList.forEach(cls => this.classes.delete(cls)); },
     contains(cls: string) { return this.classes.has(cls); }
   };
   public className = '';
@@ -15,13 +15,65 @@ class MockElement {
   public dataset: Record<string, string> = {};
   public textContent = '';
   public scrollTop = 100;
+  public parentElement: MockElement | null = null;
   public listeners: Record<string, Function[]> = {};
 
   constructor(public tagName = 'div') {}
 
   public appendChild(child: any) {
+    child.parentElement = this;
     this.children.push(child);
     return child;
+  }
+
+  public prepend(child: any) {
+    child.parentElement = this;
+    this.children.unshift(child);
+    return child;
+  }
+
+  public remove() {
+    if (this.parentElement) {
+      const idx = this.parentElement.children.indexOf(this);
+      if (idx !== -1) this.parentElement.children.splice(idx, 1);
+    }
+  }
+
+  public querySelectorAll(selector: string): any[] {
+    const res: any[] = [];
+    const check = (node: any) => {
+      const cls = selector.replace(/^\./, '');
+      if (node.classList?.contains(cls) || node.className?.includes(cls)) res.push(node);
+      node.children?.forEach(check);
+    };
+    this.children.forEach(check);
+    return res;
+  }
+
+  public querySelector(selector: string): any | null {
+    const match = selector.match(/\.code-line\[data-line="(\d+)"\]/);
+    if (match) {
+      const line = match[1];
+      const find = (node: any): any | null => {
+        if (node.dataset?.line === line) return node;
+        for (const child of node.children || []) {
+          const f = find(child);
+          if (f) return f;
+        }
+        return null;
+      };
+      return find(this);
+    }
+    const cls = selector.replace(/^\./, '');
+    const find = (node: any): any | null => {
+      if (node.classList?.contains(cls) || node.className?.includes(cls)) return node;
+      for (const child of node.children || []) {
+        const f = find(child);
+        if (f) return f;
+      }
+      return null;
+    };
+    return find(this);
   }
 
   public addEventListener(event: string, fn: Function) {
@@ -120,5 +172,67 @@ describe('RightPanelTabCoordinator (右侧多看板选项卡与代码面板协�
 
     const sizeMin = RightPanelTabCoordinator.setCodeFontSize(5);
     expect(sizeMin).toBe(9.5);
+  });
+
+  it('updateCodeHighlight 在 isReturn=true 时应挂载 return-line 与 code-return-icon，并在下次切换时完全清理', () => {
+    const container = new MockElement('div');
+    const line10 = new MockElement('div');
+    line10.classList.add('code-line');
+    line10.dataset.line = '10';
+    line10.dataset.rawCode = 'int useMatch = dfs(s, t, i + 1, j + 1);';
+    container.appendChild(line10);
+
+    const line11 = new MockElement('div');
+    line11.classList.add('code-line');
+    line11.dataset.line = '11';
+    line11.dataset.rawCode = 'int skipChar = dfs(s, t, i + 1, j);';
+    container.appendChild(line11);
+
+    // 1. 触发普通调用
+    RightPanelTabCoordinator.updateCodeHighlight(container as any, 10, undefined, 'java', false);
+    expect(line10.classList.contains('active-line')).toBe(true);
+    expect(line10.classList.contains('return-line')).toBe(false);
+    expect(line10.querySelector('.code-return-icon')).toBeNull();
+
+    // 2. 触发递归返回
+    RightPanelTabCoordinator.updateCodeHighlight(container as any, 10, undefined, 'java', true);
+    expect(line10.classList.contains('active-line')).toBe(true);
+    expect(line10.classList.contains('return-line')).toBe(true);
+    const returnIcon = line10.querySelector('.code-return-icon');
+    expect(returnIcon).not.toBeNull();
+    expect(returnIcon?.textContent).toContain('↩');
+
+    // 3. 推进到下一行普通调用，上一行的 return-line 与 icon 必须被干净清理
+    RightPanelTabCoordinator.updateCodeHighlight(container as any, 11, undefined, 'java', false);
+    expect(line10.classList.contains('active-line')).toBe(false);
+    expect(line10.classList.contains('return-line')).toBe(false);
+    expect(line10.querySelector('.code-return-icon')).toBeNull();
+    expect(line11.classList.contains('active-line')).toBe(true);
+    expect(line11.classList.contains('return-line')).toBe(false);
+  });
+
+  it('updateCodeHighlight 传入 stepContext 时应自动解析变量并在行末生成 algo-code-inline-hint', () => {
+    const container = new MockElement('div');
+    const line10 = new MockElement('div');
+    line10.classList.add('code-line');
+    line10.dataset.line = '10';
+    line10.dataset.rawCode = 'for (int l = 0; l <= n - len; l++) {';
+    container.appendChild(line10);
+
+    const mockStep = {
+      l: 4,
+      n: 5,
+      len: 2,
+      log: 'for l = 4 (l <= 3) -> false',
+    };
+
+    RightPanelTabCoordinator.updateCodeHighlight(container as any, 10, undefined, 'java', false, mockStep);
+
+    expect(line10.classList.contains('active-line')).toBe(true);
+    const inlineHint = line10.querySelector('.algo-code-inline-hint');
+    expect(inlineHint).not.toBeNull();
+    expect(inlineHint?.textContent).toContain('l: 4');
+    expect(inlineHint?.textContent).toContain('len: 2');
+    expect(inlineHint?.textContent).toContain('n: 5');
   });
 });

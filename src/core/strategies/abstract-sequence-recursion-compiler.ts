@@ -303,10 +303,28 @@ export abstract class AbstractSequenceRecursionCompiler {
     const cond = this.evalCondition(i, j, ctx);
     const lineMatch = cond.lineKey ? (ctx.anchorMap?.[cond.lineKey] || 10) : (ctx.anchorMap?.match || 10);
 
+    // 提前解析所有候选分支，并在网格中以专属多色标示进行分支预告
+    const branches = cond.isMatch
+      ? this.getMatchBranches(i, j, ctx, cond)
+      : this.getMismatchBranches(i, j, ctx, cond);
+
+    const candidateDeps = branches.map((b) => {
+      const isDiag = b.nextI !== i && b.nextJ !== j;
+      const isVertical = b.nextI !== i && b.nextJ === j;
+      const bType: 'diag' | 'top' | 'left' = isDiag ? 'diag' : isVertical ? 'top' : 'left';
+      return {
+        r: b.nextI,
+        c: b.nextJ,
+        type: bType,
+        label: b.tag
+      };
+    });
+
     emitStep({
       type: 'match-eval',
       i,
       j,
+      deps: candidateDeps,
       grid: JSON.parse(JSON.stringify(ctx.gridState)),
       activeStack: [...ctx.activeStack],
       visited: [...ctx.visitedCells],
@@ -320,10 +338,6 @@ export abstract class AbstractSequenceRecursionCompiler {
     });
 
     // 5. 分支调度与执行 (Branch Dispatch)
-    const branches = cond.isMatch
-      ? this.getMatchBranches(i, j, ctx, cond)
-      : this.getMismatchBranches(i, j, ctx, cond);
-
     const branchResults: number[] = [];
 
     for (let bIdx = 0; bIdx < branches.length; bIdx++) {

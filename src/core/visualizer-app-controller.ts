@@ -283,7 +283,8 @@ export class VisualizerAppController {
     }
 
     // 3. 代码逐行高亮与行内局部表达式聚焦
-    this.updateCodeHighlight(step.line, step.highlightText);
+    const isReturn = step.type === 'branch-return';
+    this.updateCodeHighlight(step.line, step.highlightText, isReturn, step);
 
     // 4. URL Hash 状态持久化
     this.syncStateToHash(index);
@@ -372,9 +373,9 @@ export class VisualizerAppController {
     StateSpacePresenter.renderFullVisuals(step, this.m, this.n, this.currentStage);
   }
 
-  private updateCodeHighlight(line?: number, highlightText?: string): void {
+  private updateCodeHighlight(line?: number, highlightText?: string, isReturn: boolean = false, stepContext?: UniversalStep): void {
     const container = document.getElementById('code-container-box') || document.getElementById('code-display-container');
-    RightPanelTabCoordinator.updateCodeHighlight(container, line, highlightText, 'java');
+    RightPanelTabCoordinator.updateCodeHighlight(container, line, highlightText, 'java', isReturn, stepContext);
   }
 
   private updateHeaderMeta(stageConfig: any): void {

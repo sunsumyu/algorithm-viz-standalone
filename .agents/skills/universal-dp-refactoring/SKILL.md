@@ -127,7 +127,10 @@ Renderer（`*-renderer.ts`）只负责：
 - **分支调用点物理拦截（Call-Site Interception Invariant）**：
   在触发任何子递归（如 `dfs(nextI, nextJ)`）之前，顶层抽象基类**物理强制先发射高亮本分支调用语句（如 `int useMatch = dfs(...)` / `int delWord1 = dfs(...)` / `int replace = dfs(...)`）的独立步进帧！**
   严禁从条件检查行直接瞬移跳入子函数签名行；
-- **回溯恢复完整性**：分支返回后，若存在次选分支（如 `skipChar` 或三向决策），必须先高亮次选分支语句，再下潜子调用；
+- **调用-返回闭环（Call-Return Parity & Backtracking Assignment）**：
+  子递归计算完成返回父层时，基类**强制发射 `branch-return` 回溯赋值步骤帧**，焦点重新回到调用者的分支赋值行，展示该局部变量已被赋值（例如 `useMatch = 1` / `replace = 2`），完美再现 CPU 调用栈入栈与退栈回溯的物理现实，严禁子递归返回后直接飞入下一分支或 combine 语句；
+- **分支沙盘元数据先验注入（Grid Dependency Injection）**：
+  在发射 `branch-call` 时，自动注入 `targetI`, `targetJ`, `branchIndex`, `branchType`（`diag` / `top` / `left`）与 `deps` 依赖项，驱动 2D 坐标沙盘即时点亮对角线/上方/左侧决策方向箭头与高亮格；
 - **调用树与足迹生命周期**：基类统一管理 `activeStack`、`UniversalTreeNode`、`memoCache`，严禁业务层自行维护导致的跨阶段污染。
 
 ### 3.2 阶段 3：全量继承 `AbstractSequenceTableCompiler`

@@ -1,4 +1,6 @@
 import { highlightTokens } from '../code-highlighter';
+import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
+import { createHoverTooltipManager, type HoverTooltipHandle } from '../renderers/terminal/hover-tooltip-manager';
 
 export interface RightPanelTabOptions {
   modelId: string;
@@ -25,6 +27,42 @@ export interface CodePanelUpdateOptions {
  * 3. 协调变体切换时代码内容与标题的动态注入与容器滚动重置
  */
 export class RightPanelTabCoordinator {
+  private static hoverTooltipHandle: HoverTooltipHandle | null = null;
+  public static currentVarsMap: Map<string, ResolvedVariable> = new Map();
+  public static currentStep: unknown = undefined;
+  private static hoverTooltipBoundContainer: HTMLElement | null = null;
+
+  /**
+   * 绑定鼠标悬停变量气泡管理器 (HoverTooltipManager)
+   */
+  public static bindHoverTooltip(container: HTMLElement | null, language: string = 'java'): void {
+    if (!container || typeof document === 'undefined') return;
+    if (this.hoverTooltipBoundContainer === container && this.hoverTooltipHandle) return;
+
+    if (this.hoverTooltipHandle) {
+      this.hoverTooltipHandle.destroy();
+      this.hoverTooltipHandle = null;
+    }
+
+    this.hoverTooltipBoundContainer = container;
+    this.hoverTooltipHandle = createHoverTooltipManager(
+      {
+        codeWrapper: container,
+        createEl: (tag: string, id?: string) => {
+          const el = document.createElement(tag);
+          if (id) el.id = id;
+          return el;
+        }
+      },
+      {
+        get currentVarsMap() { return RightPanelTabCoordinator.currentVarsMap; },
+        currentLang: language,
+        get currentStep() { return RightPanelTabCoordinator.currentStep; }
+      }
+    );
+    this.hoverTooltipHandle.bind();
+  }
+
   /**
    * 切换右侧面板展示视图
    */
@@ -140,7 +178,10 @@ export class RightPanelTabCoordinator {
     }
 
     const codeContainer = document.getElementById('code-container-box') || document.getElementById('code-display-container');
-    if (codeContainer) codeContainer.scrollTop = 0;
+    if (codeContainer) {
+      codeContainer.scrollTop = 0;
+      this.bindHoverTooltip(codeContainer, 'java');
+    }
   }
 
   /**
@@ -196,9 +237,20 @@ export class RightPanelTabCoordinator {
     container: HTMLElement | null,
     line?: number,
     highlightText?: string,
-    language: string = 'java'
+    language: string = 'java',
+    isReturn: boolean = false,
+    stepContext?: unknown
   ): void {
     if (!container || line === undefined) return;
+
+    // 0. 更新变量上下文与确保悬停管理器已绑定
+    if (stepContext) {
+      this.currentStep = stepContext;
+      this.currentVarsMap = VariableContextResolver.resolve(stepContext, language);
+    }
+    if (this.hoverTooltipBoundContainer !== container) {
+      this.bindHoverTooltip(container, language);
+    }
 
     // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复）
     container.querySelectorAll('.code-line').forEach(el => {
@@ -207,18 +259,49 @@ export class RightPanelTabCoordinator {
         htmlEl.innerHTML = highlightTokens(htmlEl.dataset.rawCode, language);
         delete htmlEl.dataset.isDirty;
       }
-      htmlEl.classList.remove('active-line');
+      htmlEl.classList.remove('active-line', 'return-line');
+      const oldIcon = htmlEl.querySelector('.code-return-icon');
+      if (oldIcon) oldIcon.remove();
     });
+    // 清理全局行末变量注释
+    container.querySelectorAll('.algo-code-inline-hint').forEach(el => el.remove());
 
     const activeLineEl = container.querySelector(`.code-line[data-line="${line}"]`) as HTMLElement | null;
     if (activeLineEl) {
       activeLineEl.classList.add('active-line');
+      if (isReturn) {
+        activeLineEl.classList.add('return-line');
+      }
 
       // 2. 若存在行内目标子串，通过纯文本 Lexer 重新生成带聚焦状态的 HTML（单向数据流，零 DOM 破坏）
       const rawCode = activeLineEl.dataset.rawCode;
       if (rawCode && highlightText) {
         activeLineEl.innerHTML = highlightTokens(rawCode, language, highlightText);
         activeLineEl.dataset.isDirty = 'true';
+      }
+
+      // 若为递归返回行，在代码行首部注入回溯指示图标 ↩
+      if (isReturn && !activeLineEl.querySelector('.code-return-icon')) {
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'code-return-icon';
+        iconSpan.classList?.add('code-return-icon');
+        iconSpan.textContent = '↩ ';
+        iconSpan.title = '递归返回至此行并完成赋值';
+        activeLineEl.prepend(iconSpan);
+      }
+
+      // 3. 注入行末幽灵变量提示 (基于 VariableContextResolver)
+      const rawLine = activeLineEl.dataset?.rawCode || activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw-code') || activeLineEl.getAttribute?.('data-raw') || '';
+      if (rawLine && this.currentVarsMap.size > 0 && !activeLineEl.querySelector('.algo-code-inline-hint')) {
+        const hintSummary = VariableContextResolver.formatInlineSummary(this.currentVarsMap, rawLine);
+        if (hintSummary) {
+          const hintEl = document.createElement('span');
+          hintEl.className = 'algo-code-inline-hint';
+          hintEl.style.cssText =
+            'color: #38bdf8; opacity: 0.85; font-style: italic; font-size: 10.5px; margin-left: 14px; user-select: none; font-weight: 500; display: inline-flex; align-items: center;';
+          hintEl.textContent = hintSummary;
+          activeLineEl.appendChild(hintEl);
+        }
       }
 
       // 3. 自动滚动居中

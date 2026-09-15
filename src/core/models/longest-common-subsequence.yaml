@@ -119,15 +119,15 @@ stages:
             source: |
               class Solution {
                   public int longestCommonSubsequence(String text1, String text2) {
-                      return dfs(text1, text2, 0, 0);
+                      return dfs(text1, text2, 0, 0); // @step:return
                   }
                   private int dfs(String s1, String s2, int i, int j) { // @step:entry
                       if (i == s1.length() || j == s2.length()) return 0; // @step:boundary // 达到任一串末尾
                       if (s1.charAt(i) == s2.charAt(j)) { // @step:match
                           return 1 + dfs(s1, s2, i + 1, j + 1); // @step:match_branch // 深入匹配分支
                       }
-                      int p1 = dfs(s1, s2, i + 1, j); // @step:diff // 跳过 s1[i]
-                      int p2 = dfs(s1, s2, i, j + 1); // @step:diff_left // 跳过 s2[j]
+                      int p1 = dfs(s1, s2, i + 1, j); // @step:branch_p1 // 跳过 s1[i]
+                      int p2 = dfs(s1, s2, i, j + 1); // @step:branch_p2 // 跳过 s2[j]
                       return Math.max(p1, p2); // @step:combine // 汇总分支最大值
                   }
               }
@@ -136,15 +136,15 @@ stages:
             source: |
               class Solution {
                   public int longestCommonSubsequence(String text1, String text2) {
-                      return dfs(text1, text2, text1.length(), text2.length());
+                      return dfs(text1, text2, text1.length(), text2.length()); // @step:return
                   }
                   private int dfs(String s1, String s2, int i, int j) { // @step:entry
                       if (i == 0 || j == 0) return 0; // @step:boundary // 任一串为空串
                       if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:match
                           return 1 + dfs(s1, s2, i - 1, j - 1); // @step:match_branch // 深入前驱对角线
                       }
-                      int p1 = dfs(s1, s2, i - 1, j); // @step:diff // 缩减 s1
-                      int p2 = dfs(s1, s2, i, j - 1); // @step:diff_left // 缩减 s2
+                      int p1 = dfs(s1, s2, i - 1, j); // @step:branch_p1 // 缩减 s1
+                      int p2 = dfs(s1, s2, i, j - 1); // @step:branch_p2 // 缩减 s2
                       return Math.max(p1, p2); // @step:combine // 汇总分支最大值
                   }
               }
@@ -174,7 +174,7 @@ stages:
                   public int longestCommonSubsequence(String text1, String text2) {
                       int m = text1.length(), n = text2.length();
                       Integer[][] memo = new Integer[m + 1][n + 1];
-                      return dfs(text1, text2, 0, 0, memo);
+                      return dfs(text1, text2, 0, 0, memo); // @step:return
                   }
                   private int dfs(String s1, String s2, int i, int j, Integer[][] memo) { // @step:entry
                       if (i == s1.length() || j == s2.length()) return 0; // @step:boundary // 空串边界
@@ -182,8 +182,8 @@ stages:
                       if (s1.charAt(i) == s2.charAt(j)) { // @step:match
                           return memo[i][j] = 1 + dfs(s1, s2, i + 1, j + 1, memo); // @step:match_branch
                       }
-                      int p1 = dfs(s1, s2, i + 1, j, memo); // @step:diff
-                      int p2 = dfs(s1, s2, i, j + 1, memo); // @step:diff_left
+                      int p1 = dfs(s1, s2, i + 1, j, memo); // @step:branch_p1
+                      int p2 = dfs(s1, s2, i, j + 1, memo); // @step:branch_p2
                       return memo[i][j] = Math.max(p1, p2); // @step:combine
                   }
               }
@@ -194,7 +194,7 @@ stages:
                   public int longestCommonSubsequence(String text1, String text2) {
                       int m = text1.length(), n = text2.length();
                       Integer[][] memo = new Integer[m + 1][n + 1];
-                      return dfs(text1, text2, m, n, memo);
+                      return dfs(text1, text2, m, n, memo); // @step:return
                   }
                   private int dfs(String s1, String s2, int i, int j, Integer[][] memo) { // @step:entry
                       if (i == 0 || j == 0) return 0; // @step:boundary // 空串基底
@@ -202,8 +202,8 @@ stages:
                       if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:match
                           return memo[i][j] = 1 + dfs(s1, s2, i - 1, j - 1, memo); // @step:match_branch
                       }
-                      int p1 = dfs(s1, s2, i - 1, j, memo); // @step:diff
-                      int p2 = dfs(s1, s2, i, j - 1, memo); // @step:diff_left
+                      int p1 = dfs(s1, s2, i - 1, j, memo); // @step:branch_p1
+                      int p2 = dfs(s1, s2, i, j - 1, memo); // @step:branch_p2
                       return memo[i][j] = Math.max(p1, p2); // @step:combine
                   }
               }

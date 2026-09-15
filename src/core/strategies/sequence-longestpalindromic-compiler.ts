@@ -1,6 +1,13 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
-import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
-import { cloneTree } from './strategy-helpers';
+import type { UniversalStep } from '../universal-stage-engine';
+import {
+  AbstractIntervalRecursionCompiler,
+  type IntervalRecursionContext,
+  type IntervalBoundaryResult,
+  type IntervalConditionResult,
+  type IntervalBranchSpec,
+  type IntervalCombineResult
+} from './abstract-interval-recursion-compiler';
 import {
   AbstractIntervalTableCompiler,
   type IntervalTableContext,
@@ -9,382 +16,170 @@ import {
   type IntervalReturnInfo
 } from './abstract-interval-table-compiler';
 
+class LongestPalindromicRecursionCompiler extends AbstractIntervalRecursionCompiler {
+  protected extractString(model: IYamlAlgorithmModel): string {
+    return ((model.defaultParams as any)?.s || 'bbbab') as string;
+  }
+
+  protected checkBoundary(
+    i: number,
+    j: number,
+    ctx: IntervalRecursionContext
+  ): IntervalBoundaryResult {
+    if (i > j) {
+      return {
+        isBase: true,
+        val: 0,
+        lineKey: 'boundary_cross',
+        tag: 'Base Case i > j (空区间)',
+        log: `| 🎬 满足 Base Case: i > j (i=${i}, j=${j}) 为空区间，返回 0`,
+        msg: `🎬 满足 <code>i > j</code>：区间交叉为空，返回 <strong>0</strong>。`
+      };
+    }
+    if (i === j) {
+      return {
+        isBase: true,
+        val: 1,
+        lineKey: 'boundary_single',
+        tag: `Base Case i=j (单字符 '${ctx.s[i]}')`,
+        log: `| 🎬 满足 Base Case: i == j == ${i}，单字符 '${ctx.s[i]}' 自身为回文，返回 1`,
+        msg: `🎬 满足 <code>i == j == ${i}</code>：单字符 <code>'${ctx.s[i]}'</code> 本身构成长度为 1 的回文，返回 <strong>1</strong>。`
+      };
+    }
+    return { isBase: false };
+  }
+
+  protected evalCondition(
+    i: number,
+    j: number,
+    ctx: IntervalRecursionContext
+  ): IntervalConditionResult {
+    const charI = ctx.s[i];
+    const charJ = ctx.s[j];
+    const isMatch = charI === charJ;
+
+    return {
+      isMatch,
+      charI,
+      charJ,
+      lineKey: 'match',
+      tag: isMatch ? `两端相同 '${charI}'` : `端点不同 '${charI}'!='${charJ}'`,
+      log: isMatch
+        ? `| 🔀 两端字符相同 s[${i}] == s[${j}] ('${charI}')，贡献长度 +2，深入 dfs(${i + 1}, ${j - 1})`
+        : `| 🔀 端点不同 s[${i}]('${charI}') != s[${j}]('${charJ}')，分裂为双向分支`,
+      msg: isMatch
+        ? `🔀 两端字符相同 <code>s[${i}] == s[${j}] == '${charI}'</code>，贡献回文长度 2，进入 <code>dfs(${i + 1}, ${j - 1})</code>。`
+        : `比对端点：<code>s[${i}] ('${charI}') != s[${j}] ('${charJ}')</code>，两字符不同，分别尝试舍弃左端或右端字符。`
+    };
+  }
+
+  protected getMatchBranches(
+    i: number,
+    j: number,
+    ctx: IntervalRecursionContext,
+    cond: IntervalConditionResult
+  ): IntervalBranchSpec[] {
+    return [
+      {
+        nextI: i + 1,
+        nextJ: j - 1,
+        lineKey: 'match_branch',
+        varName: 'pMatch',
+        branchType: 'diag',
+        tag: `两端相同深入 dfs(${i + 1}, ${j - 1})`,
+        log: `| 🎯 两端字符相同，深入子问题 dfs(${i + 1}, ${j - 1})`,
+        msg: `🎯 两端相同，深入子区间 <code>dfs(${i + 1}, ${j - 1})</code>。`
+      }
+    ];
+  }
+
+  protected getMismatchBranches(
+    i: number,
+    j: number,
+    ctx: IntervalRecursionContext,
+    cond: IntervalConditionResult
+  ): IntervalBranchSpec[] {
+    return [
+      {
+        nextI: i + 1,
+        nextJ: j,
+        lineKey: 'branch_left',
+        varName: 'skipLeft',
+        branchType: 'bottom',
+        tag: `舍弃左端 s[${i}]('${cond.charI}')`,
+        log: `| ➡️ 分支 1: 舍弃左端字符，深入 dfs(${i + 1}, ${j})`,
+        msg: `➡️ 分支 1：尝试舍弃左端字符 <code>s[${i}] ('${cond.charI}')</code>，计算 <code>skipLeft = dfs(${i + 1}, ${j})</code>。`
+      },
+      {
+        nextI: i,
+        nextJ: j - 1,
+        lineKey: 'branch_right',
+        varName: 'skipRight',
+        branchType: 'left',
+        tag: `舍弃右端 s[${j}]('${cond.charJ}')`,
+        log: `| ➡️ 分支 2: 舍弃右端字符，深入 dfs(${i}, ${j - 1})`,
+        msg: `➡️ 分支 2：尝试舍弃右端字符 <code>s[${j}] ('${cond.charJ}')</code>，计算 <code>skipRight = dfs(${i}, ${j - 1})</code>。`
+      }
+    ];
+  }
+
+  protected combineBranches(
+    branchResults: number[],
+    isMatch: boolean,
+    i: number,
+    j: number,
+    ctx: IntervalRecursionContext
+  ): IntervalCombineResult {
+    if (isMatch) {
+      const subRes = branchResults[0] ?? 0;
+      const res = subRes + 2;
+      return {
+        val: res,
+        lineKey: 'match_branch',
+        tag: `dfs(${i + 1},${j - 1}) + 2 = ${res}`,
+        log: `| ✨ 端点匹配更新: dfs(${i}, ${j}) = dfs(${i + 1}, ${j - 1}) + 2 = ${res}${ctx.isMemo ? ' [存入备忘录]' : ''}`,
+        msg: `✨ 端点匹配结果：<code>dfs(${i}, ${j}) = dfs(${i + 1}, ${j - 1}) + 2 = <strong>${res}</strong></code>。`
+      };
+    } else {
+      const valLeft = branchResults[0] ?? 0;
+      const valRight = branchResults[1] ?? 0;
+      const res = Math.max(valLeft, valRight);
+      return {
+        val: res,
+        lineKey: 'combine',
+        tag: `max(${valLeft}, ${valRight}) = ${res}`,
+        log: `| ✨ 合并分支: dfs(${i}, ${j}) = max(舍左=${valLeft}, 舍右=${valRight}) = ${res}${ctx.isMemo ? ' [存入备忘录]' : ''}`,
+        msg: `✨ 汇总分支决策：<code>max(舍左=${valLeft}, 舍右=${valRight}) = <strong>${res}</strong></code>。`
+      };
+    }
+  }
+
+  protected formatFinalReturn(
+    total: number,
+    ctx: IntervalRecursionContext
+  ): { tag: string; log: string; msg: string } {
+    return {
+      tag: '最终答案',
+      log: `| 🏆 最长回文子序列演化完成！longestPalindromeSubseq("${ctx.s}") = ${total}`,
+      msg: `🏆 演化计算完成！字符串 <code>"${ctx.s}"</code> 的最长回文子序列长度为 <strong>${total}</strong>。`
+    };
+  }
+}
+
+const lpsRecursionCompiler = new LongestPalindromicRecursionCompiler();
 
 export function compileLongestPalindromicStage1or2(
-    model: IYamlAlgorithmModel,
-    isMemo: boolean = false,
-    anchorMap?: Record<string, number>,
-    direction: 'forward' | 'reverse' = 'forward'
-  ): UniversalStep[] {
-    const s = ((model.defaultParams as any)?.s || 'bbbab') as string;
-    const n = s.length;
-
-    const generated: UniversalStep[] = [];
-    const memoCache: Record<string, number> = {};
-    const gridState: (number | null)[][] = Array.from({ length: n }, () => new Array(n).fill(null));
-    const activeStack: string[] = [];
-    const visitedCells: Set<string> = new Set();
-    let nodeIdCounter = 0;
-    let callCount = 0;
-    const MAX_RECORDED_CALLS = 100;
-
-    const lineMainEntry = anchorMap?.entry || 1;
-    const lineMemoInit = anchorMap?.memo_init || 3;
-    const lineCallDfs = anchorMap?.call_dfs || (isMemo ? 4 : 2);
-    const lineDfsEntry = anchorMap?.dfs_entry || (isMemo ? 6 : 4);
-    const lineBoundaryCross = anchorMap?.boundary_cross || (isMemo ? 7 : 5);
-    const lineBoundarySingle = anchorMap?.boundary_single || (isMemo ? 8 : 6);
-    const lineCacheHit = anchorMap?.cache_hit || (isMemo ? 9 : 7);
-    const lineMatch = anchorMap?.match || (isMemo ? 10 : 7);
-    const lineMatchBranch = anchorMap?.match_branch || (isMemo ? 11 : 8);
-    const lineBranchLeft = anchorMap?.branch_left || anchorMap?.diff || (isMemo ? 13 : 10);
-    const lineBranchRight = anchorMap?.branch_right || (isMemo ? 14 : 11);
-    const lineCombine = anchorMap?.combine || (isMemo ? 16 : 13);
-    const lineReturn = anchorMap?.return || lineMainEntry;
-
-    const rootNode: UniversalTreeNode = {
-      id: `node-${++nodeIdCounter}`,
-      r: 0,
-      c: n - 1,
-      val: `dfs(0, ${n - 1})`,
-      status: 'current',
-      children: []
-    };
-
-    // Step 0: 主函数入口帧 (生命周期闭环不变量)
-    generated.push({
-      type: 'entry',
-      i: 0,
-      j: n - 1,
-      grid: JSON.parse(JSON.stringify(gridState)),
-      activeStack: [],
-      visited: [],
-      line: lineMainEntry,
-      tag: `longestPalindromeSubseq("${s}")`,
-      log: `| 🎯 主函数入口：求解 longestPalindromeSubseq(s="${s}")，规模 n=${n}`,
-      msg: `主函数入口：接收参数 <code>s = "${s}"</code>（长度 <code>${n}</code>），准备求解最长回文子序列长度。`,
-      gridHighlight: { i: 0, j: n - 1 },
-      activeNodeId: rootNode.id,
-      treeRoot: cloneTree(rootNode)
-    });
-
-    if (isMemo) {
-      generated.push({
-        type: 'init',
-        i: 0,
-        j: n - 1,
-        grid: JSON.parse(JSON.stringify(gridState)),
-        activeStack: [],
-        visited: [],
-        line: lineMemoInit,
-        tag: `初始化 memo[${n}][${n}]`,
-        log: `| 📦 创建 Integer[${n}][${n}] 备忘录缓存矩阵`,
-        msg: `创建 <code>${n}×${n}</code> 的备忘录矩阵 <code>memo</code>，初始化全部为 null。`,
-        gridHighlight: { i: 0, j: n - 1 },
-        activeNodeId: rootNode.id,
-        treeRoot: cloneTree(rootNode)
-      });
-    }
-
-    generated.push({
-      type: 'call',
-      i: 0,
-      j: n - 1,
-      grid: JSON.parse(JSON.stringify(gridState)),
-      activeStack: [],
-      visited: [],
-      line: lineCallDfs,
-      tag: `调用 dfs(0, ${n - 1})`,
-      log: `| 🚀 主函数调用 dfs(s, 0, ${n - 1}${isMemo ? ', memo' : ''})，启动区间推演`,
-      msg: `调用辅助递归函数 <code>dfs(s, 0, ${n - 1}${isMemo ? ', memo' : ''})</code>，从全串区间开始深入搜索。`,
-      gridHighlight: { i: 0, j: n - 1 },
-      activeNodeId: rootNode.id,
-      treeRoot: cloneTree(rootNode)
-    });
-
-    function dfs(i: number, j: number, currentTreeNode?: UniversalTreeNode): number {
-      callCount++;
-      const shouldRecord = isMemo || callCount <= MAX_RECORDED_CALLS;
-      const key = `${i},${j}`;
-      activeStack.push(key);
-      visitedCells.add(key);
-      if (currentTreeNode) currentTreeNode.status = 'current';
-
-      if (shouldRecord && currentTreeNode) {
-        generated.push({
-          type: 'entry',
-          i,
-          j,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineDfsEntry,
-          tag: `dfs(${i}, ${j})`,
-          log: `| 📥 进入 dfs(i=${i}, j=${j}) [子串="${s.slice(i, j + 1)}"]`,
-          msg: `进入函数 <code>dfs(i = ${i}, j = ${j})</code>，求解子串 <code>s[${i}..${j}] "${s.slice(i, j + 1)}"</code> 的最长回文子序列长度。`,
-          gridHighlight: { i, j },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: cloneTree(rootNode)
-        });
-      }
-
-      if (i > j) {
-        if (currentTreeNode) {
-          currentTreeNode.status = 'base';
-          currentTreeNode.tag = '= 0 (空区间)';
-        }
-
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'boundary',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBoundaryCross,
-            tag: 'Base Case i > j (空区间)',
-            log: `| 🎬 满足 Base Case: i > j (i=${i}, j=${j}) 为空区间，返回 0`,
-            msg: `🎬 满足 <code>i > j</code>：区间交叉为空，返回 <strong>0</strong>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        activeStack.pop();
-        return 0;
-      }
-
-      if (i === j) {
-        gridState[i][i] = 1;
-        if (currentTreeNode) {
-          currentTreeNode.status = 'base';
-          currentTreeNode.tag = '= 1 (单字符)';
-        }
-
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'boundary',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBoundarySingle,
-            tag: `Base Case i=j (单字符 '${s[i]}')`,
-            log: `| 🎬 满足 Base Case: i == j == ${i}，单字符 '${s[i]}' 自身为回文，返回 1`,
-            msg: `🎬 满足 <code>i == j == ${i}</code>：单字符 <code>'${s[i]}'</code> 本身构成长度为 1 的回文，返回 <strong>1</strong>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        activeStack.pop();
-        return 1;
-      }
-
-      if (isMemo && memoCache[key] !== undefined) {
-        if (currentTreeNode) {
-          currentTreeNode.status = 'pruned';
-          currentTreeNode.tag = `⚡=${memoCache[key]}`;
-        }
-
-        generated.push({
-          type: 'cache-hit',
-          i,
-          j,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineCacheHit,
-          tag: '⚡ 备忘录命中',
-          log: `| ⚡ 【备忘录命中剪枝】memo[${i}][${j}] 已缓存 ${memoCache[key]}！直接 O(1) 返回`,
-          msg: `⚡ 【备忘录剪枝】<code>memo[${i}][${j}]</code> 已命中缓存 <strong>${memoCache[key]}</strong>，直接返回！`,
-          gridHighlight: { i, j },
-          activeNodeId: currentTreeNode?.id,
-          treeRoot: cloneTree(rootNode)
-        });
-        activeStack.pop();
-        return memoCache[key];
-      }
-
-      const isMatch = s[i] === s[j];
-      let res = 0;
-
-      if (isMatch) {
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'match-branch',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineMatch,
-            tag: `两端相同 '${s[i]}'`,
-            log: `| 🔀 两端字符相同 s[${i}] == s[${j}] ('${s[i]}')，贡献长度 +2，深入 dfs(${i + 1}, ${j - 1})`,
-            msg: `🔀 两端字符相同 <code>s[${i}] == s[${j}] == '${s[i]}'</code>，贡献回文长度 2，进入 <code>dfs(${i + 1}, ${j - 1})</code>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-
-        let childNode: UniversalTreeNode | undefined;
-        if (shouldRecord && currentTreeNode) {
-          childNode = {
-            id: `node-${++nodeIdCounter}`,
-            r: i + 1,
-            c: j - 1,
-            val: `dfs(${i + 1},${j - 1})`,
-            status: 'normal',
-            children: []
-          };
-          currentTreeNode.children.push(childNode);
-        }
-        res = dfs(i + 1, j - 1, childNode) + 2;
-
-        if (isMemo) memoCache[key] = res;
-        gridState[i][j] = res;
-
-        if (currentTreeNode) {
-          currentTreeNode.status = 'visited';
-          currentTreeNode.tag = `= ${res}`;
-        }
-
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'update',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineMatchBranch,
-            tag: '端点匹配 +2 结果',
-            log: `| ✨ 端点匹配更新: dfs(${i}, ${j}) = dfs(${i + 1}, ${j - 1}) + 2 = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
-            msg: `✨ 端点匹配结果：<code>dfs(${i}, ${j}) = dfs(${i + 1}, ${j - 1}) + 2 = <strong>${res}</strong></code>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-      } else {
-        // 分支 1: 舍弃左端 s[i] -> dfs(i+1, j)
-        let childLeft: UniversalTreeNode | undefined;
-        if (shouldRecord && currentTreeNode) {
-          childLeft = {
-            id: `node-${++nodeIdCounter}`,
-            r: i + 1,
-            c: j,
-            val: `dfs(${i + 1},${j})`,
-            status: 'normal',
-            children: []
-          };
-          currentTreeNode.children.push(childLeft);
-
-          generated.push({
-            type: 'diff-branch-left',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBranchLeft,
-            tag: `舍弃左端 s[${i}]('${s[i]}')`,
-            log: `| ⏩ 端点不同 s[${i}]('${s[i]}') != s[${j}]('${s[j]}')，分支 1：舍弃左端，深入探索 dfs(${i + 1}, ${j})`,
-            msg: `⏩ 端点不同 <code>s[${i}] ('${s[i]}') != s[${j}] ('${s[j]}')</code>，分支 1：尝试舍弃左端字符 <code>s[${i}]</code>，计算 <code>skipLeft = dfs(${i + 1}, ${j})</code>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        const valLeft = dfs(i + 1, j, childLeft);
-
-        // 分支 2: 舍弃右端 s[j] -> dfs(i, j-1)
-        let childRight: UniversalTreeNode | undefined;
-        if (shouldRecord && currentTreeNode) {
-          childRight = {
-            id: `node-${++nodeIdCounter}`,
-            r: i,
-            c: j - 1,
-            val: `dfs(${i},${j - 1})`,
-            status: 'normal',
-            children: []
-          };
-          currentTreeNode.children.push(childRight);
-
-          generated.push({
-            type: 'diff-branch-right',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBranchRight,
-            tag: `舍弃右端 s[${j}]('${s[j]}')`,
-            log: `| ⏩ 端点不同，分支 2：舍弃右端，深入探索 dfs(${i}, ${j - 1})`,
-            msg: `⏩ 端点不同，分支 2：尝试舍弃右端字符 <code>s[${j}] ('${s[j]}')</code>，计算 <code>skipRight = dfs(${i}, ${j - 1})</code>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        const valRight = dfs(i, j - 1, childRight);
-
-        res = Math.max(valLeft, valRight);
-
-        if (isMemo) memoCache[key] = res;
-        gridState[i][j] = res;
-
-        if (currentTreeNode) {
-          currentTreeNode.status = 'visited';
-          currentTreeNode.tag = `= ${res}`;
-        }
-
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'update',
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineCombine,
-            tag: '取舍弃左右较大值',
-            log: `| ✨ 合并分支: dfs(${i}, ${j}) = max(舍左=${valLeft}, 舍右=${valRight}) = ${res}${isMemo ? ' [存入备忘录]' : ''}`,
-            msg: `✨ 汇总分支决策：<code>max(舍左=${valLeft}, 舍右=${valRight}) = <strong>${res}</strong></code>。`,
-            gridHighlight: { i, j },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-      }
-
-      activeStack.pop();
-      return res;
-    }
-
-    const total = dfs(0, n - 1, rootNode);
-
-    generated.push({
-      type: 'return',
-      i: 0,
-      j: n - 1,
-      grid: JSON.parse(JSON.stringify(gridState)),
-      activeStack: [],
-      visited: [...visitedCells],
-      line: lineReturn,
-      tag: '最终答案',
-      log: `| 🏆 最长回文子序列演化完成！longestPalindromeSubseq("${s}") = ${total}`,
-      msg: `🏆 演化计算完成！字符串 <code>"${s}"</code> 的最长回文子序列长度为 <strong>${total}</strong>。`,
-      gridHighlight: { i: 0, j: n - 1 },
-      activeNodeId: rootNode.id,
-      treeRoot: cloneTree(rootNode)
-    });
-
-    return generated;
+  model: IYamlAlgorithmModel,
+  isMemo: boolean = false,
+  anchorMap?: Record<string, number>,
+  direction: 'forward' | 'reverse' = 'forward'
+): UniversalStep[] {
+  const normalizedAnchorMap: Record<string, number> = { ...(anchorMap || {}) };
+  if (!normalizedAnchorMap.branch_left && normalizedAnchorMap.diff) {
+    normalizedAnchorMap.branch_left = normalizedAnchorMap.diff;
   }
+  return lpsRecursionCompiler.compile(model, isMemo, normalizedAnchorMap);
+}
 
 class LongestPalindromicTableCompiler extends AbstractIntervalTableCompiler {
   protected extractString(model: IYamlAlgorithmModel): string {
