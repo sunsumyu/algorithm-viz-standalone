@@ -91,10 +91,10 @@ export class YamlModelLoader {
    * 编译单段带有 @step:anchor 标签的源码，生成纯净代码、行号高亮 HTML 与语义锚点索引表
    */
   public static compileSource(snippet: any, lang: string = 'java'): CompiledCodeResult {
-    const rawSource = snippet?.source || snippet?.code;
+    const rawSource = typeof snippet === 'string' ? snippet : (snippet?.source || snippet?.code);
     if (!snippet || typeof rawSource !== 'string') {
       return {
-        title: snippet?.title || snippet?.name || '',
+        title: typeof snippet === 'object' ? (snippet?.title || snippet?.name || '') : '',
         cleanSource: '',
         codeHtml: '',
         lineCount: 0,
@@ -239,7 +239,8 @@ export class YamlModelLoader {
           if ('source' in variant.code) {
             snippet = variant.code as any;
           } else {
-            snippet = variant.code[direction] || variant.code.forward;
+            const raw = variant.code[direction] || variant.code.forward;
+            snippet = typeof raw === 'string' ? { title: vTitle, source: raw } : raw;
           }
         }
         if (snippet) {
