@@ -10,6 +10,7 @@ import {
   TOTAL_ISLAND_AREA_ANALYSIS_HTML,
   TOTAL_ISLAND_AREA_CODE_LANGUAGES,
 } from './total-island-area-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3],
@@ -65,8 +66,8 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
   let currentArea = 0;
 
   steps.push({
-    grid: grid.map((r) => [...r]),
-    states: states.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
+    states: snapshotGrid2D(states),
     rows: R,
     cols: C,
     currentCell: null,
@@ -87,8 +88,8 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
         states[r][c] = 'visited';
 
         steps.push({
-          grid: grid.map((row) => [...row]),
-          states: states.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
+          states: snapshotGrid2D(states),
           rows: R,
           cols: C,
           currentCell: [r, c],
@@ -113,8 +114,8 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
               queue.push([nr, nc]);
 
               steps.push({
-                grid: grid.map((row) => [...row]),
-                states: states.map((row) => [...row]),
+                grid: snapshotGrid2D(grid),
+                states: snapshotGrid2D(states),
                 rows: R,
                 cols: C,
                 currentCell: [nr, nc],
@@ -138,8 +139,8 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
         }
 
         steps.push({
-          grid: grid.map((row) => [...row]),
-          states: states.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
+          states: snapshotGrid2D(states),
           rows: R,
           cols: C,
           currentCell: null,
@@ -156,8 +157,8 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
   }
 
   steps.push({
-    grid: grid.map((row) => [...row]),
-    states: states.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
+    states: snapshotGrid2D(states),
     rows: R,
     cols: C,
     currentCell: null,

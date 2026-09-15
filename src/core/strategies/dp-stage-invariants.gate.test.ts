@@ -235,6 +235,14 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
       expect(del1Count, '必须存在 branch_del1 拦截帧').toBeGreaterThan(0);
       expect(del2Count, '必须存在 branch_del2 拦截帧').toBeGreaterThan(0);
 
+      // 验证调用-返回闭环 (Call-Return Parity)：子递归返回后发射 branch-return
+      const branchReturns1 = steps1.filter((st) => st.type === 'branch-return');
+      expect(branchReturns1.length, 'Delete Distance 必须发射 branch-return 步骤帧').toBeGreaterThan(0);
+      branchReturns1.forEach((st) => {
+        expect([stage1Config.anchorMap?.branch_del1, stage1Config.anchorMap?.branch_del2]).toContain(st.line);
+        expect(st.tag).toMatch(/(delWord1|delWord2|分支返回)/);
+      });
+
       // 阶段 2 (记忆化)
       const stage2Config = AlgorithmModelRepository.getCompiledStage('delete-operation-for-two-strings', 'stage-2', 'forward');
       const steps2 = SequenceStepMatrixCompiler.compileDeleteDistanceStage1or2(
@@ -292,6 +300,18 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
       expect(replaceCount, '必须存在 branch_replace 拦截帧').toBeGreaterThan(0);
       expect(deleteCount, '必须存在 branch_delete 拦截帧').toBeGreaterThan(0);
       expect(insertCount, '必须存在 branch_insert 拦截帧').toBeGreaterThan(0);
+
+      // 验证调用-返回闭环 (Call-Return Parity)：三向子递归返回后发射 branch-return
+      const branchReturns1 = steps1.filter((st) => st.type === 'branch-return');
+      expect(branchReturns1.length, 'Edit Distance 必须发射 branch-return 步骤帧').toBeGreaterThan(0);
+      branchReturns1.forEach((st) => {
+        expect([
+          stage1Config.anchorMap?.branch_replace,
+          stage1Config.anchorMap?.branch_delete,
+          stage1Config.anchorMap?.branch_insert
+        ]).toContain(st.line);
+        expect(st.tag).toMatch(/(replace|delete|insert|分支返回)/);
+      });
 
       // 阶段 2 (记忆化)
       const stage2Config = AlgorithmModelRepository.getCompiledStage('edit-distance', 'stage-2', 'forward');

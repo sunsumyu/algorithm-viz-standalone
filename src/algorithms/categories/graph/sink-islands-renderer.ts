@@ -10,6 +10,7 @@ import {
   SINK_ISLANDS_ANALYSIS_HTML,
   SINK_ISLANDS_CODE_LANGUAGES,
 } from './sink-islands-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3],
@@ -54,13 +55,13 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
   const steps: SinkStep[] = [];
   const R = initialGrid.length;
   const C = initialGrid[0].length;
-  const grid = initialGrid.map((r) => [...r]);
+  const grid = snapshotGrid2D(initialGrid);
 
   let protectedCount = 0;
   let sunkCount = 0;
 
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     rows: R,
     cols: C,
     currentCell: null,
@@ -80,7 +81,7 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
     protectedCount++;
 
     steps.push({
-      grid: grid.map((row) => [...row]),
+      grid: snapshotGrid2D(grid),
       rows: R,
       cols: C,
       currentCell: [r, c],
@@ -117,7 +118,7 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
         grid[r][c] = 0;
         sunkCount++;
         steps.push({
-          grid: grid.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
           rows: R,
           cols: C,
           currentCell: [r, c],
@@ -132,7 +133,7 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
       } else if (grid[r][c] === 2) {
         grid[r][c] = 1;
         steps.push({
-          grid: grid.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
           rows: R,
           cols: C,
           currentCell: [r, c],
@@ -149,7 +150,7 @@ export function buildSinkSteps(initialGrid: number[][] = DEFAULT_SINK_GRID): Sin
   }
 
   steps.push({
-    grid: grid.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
     rows: R,
     cols: C,
     currentCell: null,

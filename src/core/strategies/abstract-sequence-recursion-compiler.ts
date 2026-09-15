@@ -343,6 +343,7 @@ export abstract class AbstractSequenceRecursionCompiler {
         targetJ: branch.nextJ,
         branchIndex: bIdx,
         branchType,
+        varName: branch.varName,
         diagI: branchType === 'diag' ? branch.nextI : undefined,
         diagJ: branchType === 'diag' ? branch.nextJ : undefined,
         topI: branchType === 'top' ? branch.nextI : undefined,

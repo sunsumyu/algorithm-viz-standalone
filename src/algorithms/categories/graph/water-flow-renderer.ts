@@ -9,6 +9,7 @@ import {
   WATER_FLOW_ANALYSIS_HTML,
   WATER_FLOW_CODE_LANGUAGES,
 } from './water-flow-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3],
@@ -64,11 +65,11 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
   let atlCount = 0;
 
   steps.push({
-    heights: heights.map((r) => [...r]),
+    heights: snapshotGrid2D(heights),
     rows: R,
     cols: C,
-    pacReachable: pac.map((r) => [...r]),
-    atlReachable: atl.map((r) => [...r]),
+    pacReachable: snapshotGrid2D(pac),
+    atlReachable: snapshotGrid2D(atl),
     currentCell: null,
     stage: '准备开始',
     pacCount: 0,
@@ -87,11 +88,11 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
     pacCount++;
 
     steps.push({
-      heights: heights.map((row) => [...row]),
+      heights: snapshotGrid2D(heights),
       rows: R,
       cols: C,
-      pacReachable: pac.map((row) => [...row]),
-      atlReachable: atl.map((row) => [...row]),
+      pacReachable: snapshotGrid2D(pac),
+      atlReachable: snapshotGrid2D(atl),
       currentCell: [r, c],
       stage: '太平洋逆流搜索',
       pacCount,
@@ -118,11 +119,11 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
     atlCount++;
 
     steps.push({
-      heights: heights.map((row) => [...row]),
+      heights: snapshotGrid2D(heights),
       rows: R,
       cols: C,
-      pacReachable: pac.map((row) => [...row]),
-      atlReachable: atl.map((row) => [...row]),
+      pacReachable: snapshotGrid2D(pac),
+      atlReachable: snapshotGrid2D(atl),
       currentCell: [r, c],
       stage: '大西洋逆流搜索',
       pacCount,
@@ -149,11 +150,11 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
       if (pac[r][c] && atl[r][c]) {
         bothCount++;
         steps.push({
-          heights: heights.map((row) => [...row]),
+          heights: snapshotGrid2D(heights),
           rows: R,
           cols: C,
-          pacReachable: pac.map((row) => [...row]),
-          atlReachable: atl.map((row) => [...row]),
+          pacReachable: snapshotGrid2D(pac),
+          atlReachable: snapshotGrid2D(atl),
           currentCell: [r, c],
           stage: '双洋交集枢纽',
           pacCount,
@@ -169,11 +170,11 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
   }
 
   steps.push({
-    heights: heights.map((row) => [...row]),
+    heights: snapshotGrid2D(heights),
     rows: R,
     cols: C,
-    pacReachable: pac.map((row) => [...row]),
-    atlReachable: atl.map((row) => [...row]),
+    pacReachable: snapshotGrid2D(pac),
+    atlReachable: snapshotGrid2D(atl),
     currentCell: null,
     stage: '分析完成',
     pacCount,

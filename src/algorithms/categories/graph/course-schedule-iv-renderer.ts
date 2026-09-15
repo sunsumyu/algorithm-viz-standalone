@@ -11,6 +11,7 @@
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepBase } from '../../../core/step-visualizer';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number> = {
   init: 4,
@@ -146,7 +147,7 @@ export function buildCourseScheduleIVSteps(
   steps.push({
     numCourses,
     prerequisites,
-    closure: closure.map((row) => [...row]),
+    closure: snapshotGrid2D(closure),
     activeU: -1,
     activeV: -1,
     queryResults: [],
@@ -173,7 +174,7 @@ export function buildCourseScheduleIVSteps(
           steps.push({
             numCourses,
             prerequisites,
-            closure: closure.map((row) => [...row]),
+            closure: snapshotGrid2D(closure),
             activeU: i,
             activeV: nxt,
             queryResults: [],
@@ -200,7 +201,7 @@ export function buildCourseScheduleIVSteps(
     steps.push({
       numCourses,
       prerequisites,
-      closure: closure.map((row) => [...row]),
+      closure: snapshotGrid2D(closure),
       activeU: qu,
       activeV: qv,
       queryResults: [...queryResults],
@@ -215,7 +216,7 @@ export function buildCourseScheduleIVSteps(
   steps.push({
     numCourses,
     prerequisites,
-    closure: closure.map((row) => [...row]),
+    closure: snapshotGrid2D(closure),
     activeU: -1,
     activeV: -1,
     queryResults: [...queryResults],

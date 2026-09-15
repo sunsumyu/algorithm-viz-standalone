@@ -162,6 +162,7 @@ class DeleteDistanceRecursionCompiler extends AbstractSequenceRecursionCompiler 
         nextI: del1I,
         nextJ: del1J,
         lineKey: 'branch_del1',
+        varName: 'delWord1',
         tag: `删word1字符 '${char1}'`,
         log: `| ➡️ 执行 delWord1 = dfs(${del1I}, ${del1J})：删去 word1[${isForward ? i : i - 1}]='${char1}'`,
         msg: `➡️ 进入 else 分支：执行 <code>delWord1 = dfs(${del1I}, ${del1J})</code>，尝试删去 word1 字符 <code>'${char1}'</code>。`,
@@ -171,6 +172,7 @@ class DeleteDistanceRecursionCompiler extends AbstractSequenceRecursionCompiler 
         nextI: del2I,
         nextJ: del2J,
         lineKey: 'branch_del2',
+        varName: 'delWord2',
         tag: `删word2字符 '${char2}'`,
         log: `| ➡️ 执行 delWord2 = dfs(${del2I}, ${del2J})：删去 word2[${isForward ? j : j - 1}]='${char2}'`,
         msg: `➡️ 继续执行 <code>delWord2 = dfs(${del2I}, ${del2J})</code>，尝试删去 word2 字符 <code>'${char2}'</code>。`,
@@ -322,10 +324,9 @@ class DeleteDistanceTableCompiler extends AbstractSequenceTableCompiler {
         return {
           val,
           lineKey: 'transfer_match',
-          topI: i - 1,
-          topJ: j,
-          leftI: i - 1,
-          leftJ: j - 1,
+          diagI: i - 1,
+          diagJ: j - 1,
+          diagVal: val,
           tag: `字符匹配继承 dp[${i - 1}][${j - 1}]=${val}`,
           log: `| 🎯 字符相同: dp[${i}][${j}] = dp[${i - 1}][${j - 1}] = ${val}`,
           msg: `字符相同 <code>'${cond.char1}' == '${cond.char2}'</code>：无损继承左上角 <code>dp[${i - 1}][${j - 1}] = <strong>${val}</strong></code>。`
@@ -341,6 +342,9 @@ class DeleteDistanceTableCompiler extends AbstractSequenceTableCompiler {
           topJ: j,
           leftI: i,
           leftJ: j - 1,
+          topVal: del1,
+          leftVal: del2,
+          operator: 'min',
           tag: `两向最小+1: dp[${i}][${j}]=${val}`,
           log: `| 🔀 字符不同: dp[${i}][${j}] = min(删word1=${del1}, 删word2=${del2}) + 1 = ${val}`,
           msg: `字符不同：<code>min(删word1=${del1}, 删word2=${del2}) + 1 = <strong>${val}</strong></code>。`
@@ -352,10 +356,9 @@ class DeleteDistanceTableCompiler extends AbstractSequenceTableCompiler {
         return {
           val,
           lineKey: 'transfer_match',
-          topI: i + 1,
-          topJ: j,
-          leftI: i + 1,
-          leftJ: j + 1,
+          diagI: i + 1,
+          diagJ: j + 1,
+          diagVal: val,
           tag: `字符匹配继承 dp[${i + 1}][${j + 1}]=${val}`,
           log: `| 🎯 [逆推] 字符相同: dp[${i}][${j}] = dp[${i + 1}][${j + 1}] = ${val}`,
           msg: `字符相同 <code>'${cond.char1}' == '${cond.char2}'</code>：无损继承右下角 <code>dp[${i + 1}][${j + 1}] = <strong>${val}</strong></code>。`
@@ -371,6 +374,9 @@ class DeleteDistanceTableCompiler extends AbstractSequenceTableCompiler {
           topJ: j,
           leftI: i,
           leftJ: j + 1,
+          topVal: del1,
+          leftVal: del2,
+          operator: 'min',
           tag: `逆推两向最小+1: dp[${i}][${j}]=${val}`,
           log: `| 🔀 [逆推] 字符不同: dp[${i}][${j}] = min(删word1=${del1}, 删word2=${del2}) + 1 = ${val}`,
           msg: `字符不同：<code>min(删word1=${del1}, 删word2=${del2}) + 1 = <strong>${val}</strong></code>。`

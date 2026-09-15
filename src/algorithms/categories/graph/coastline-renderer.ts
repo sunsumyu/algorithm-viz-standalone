@@ -10,6 +10,7 @@ import {
   COASTLINE_ANALYSIS_HTML,
   COASTLINE_CODE_LANGUAGES,
 } from './coastline-problem-content';
+import { snapshotGrid2D, snapshotDict } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3],
@@ -62,7 +63,7 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
   }
 
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     rows: R,
     cols: C,
     currentCell: null,
@@ -105,11 +106,11 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
       }
 
       steps.push({
-        grid: grid.map((r) => [...r]),
+        grid: snapshotGrid2D(grid),
         rows: R,
         cols: C,
         currentCell: [r, c],
-        exposedEdges: JSON.parse(JSON.stringify(exposedEdges)),
+        exposedEdges: snapshotDict(exposedEdges),
         perimeter,
         landCount,
         cellEdges: cellEdgeCount,
@@ -122,11 +123,11 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
   }
 
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     rows: R,
     cols: C,
     currentCell: null,
-    exposedEdges: JSON.parse(JSON.stringify(exposedEdges)),
+    exposedEdges: snapshotDict(exposedEdges),
     perimeter,
     landCount,
     cellEdges: 0,

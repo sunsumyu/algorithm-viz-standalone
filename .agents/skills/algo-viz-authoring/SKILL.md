@@ -116,6 +116,10 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
     - *故障现象*：单面板/单语种场景在 `steps.push` 里直接写 `codeLine: 18`、`codeLine: [12, 13]`（graph 类目曾积累 205 处），行号与代码模板之间没有任何命名映射。
     - *根本原因*：以为“只有一个语种就不需要字典”，把行号当一次性魔法数字；模板一旦改行，无人知道哪些使用点需要跟着改。
     - *严格规范*：即便单面板/单语种，也必须在文件顶部集中定义 `const lines: Record<string, number | number[]> = { init: 2, mark: [12, 13], ... }`（纯数字场景可用 `Record<string, number>`），使用点只写 `codeLine: lines.mark`。锚点名从步骤语义字段（`action`/`status`/`mode`）派生；同一语义命中不同行用序号后缀区分（`match` / `match2`，同 `calcLca1` 的既有约定）。
+22. **使用点手写网格深拷贝（Hand-Written Grid Deep Copies at Usage Sites）**：
+    - *故障现象*：步骤快照里直接写 `grid: grid.map((row) => [...row])`、`states: JSON.parse(JSON.stringify(states))`（graph 类目曾 10 文件 15 处，一处遗漏嵌套行拷贝即步进间状态串扰）。
+    - *根本原因*：以为 `[...grid]` 或随手一行 `map` 展开就是深拷贝，忽略了二维数组外层共享内层引用；快照原语没有成为肌肉记忆。
+    - *严格规范*：网格/数组/字典快照必须调用 `GridSnapshotPrimitives`（`src/core/strategies/grid-snapshot.ts`）：二维网格 `snapshotGrid2D(grid)`、一维数组 `snapshotArray1D(arr)`、含 null 的 DP 表 `snapshotDpGrid(grid)`、字典 `snapshotDict(dict)`。dynamic-programming / grid / graph 类目文件中的手写深拷贝模式由门禁 4 直接红灯（见 CONTEXT.md「GridSnapshotPrimitives」）。
 
 ---
 

@@ -11,6 +11,7 @@ import {
 } from './max-island-area-problem-content';
 import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: 2,
@@ -47,7 +48,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
   const snapshot = (extra: Partial<MIAStep>): void => {
     steps.push({
       grid,
-      states: states.map((r) => [...r]),
+      states: snapshotGrid2D(states),
       current: extra.current ?? null,
       scan: extra.scan ?? null,
       currentArea: extra.currentArea ?? 0,

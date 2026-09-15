@@ -10,6 +10,7 @@ import {
   MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
   MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
 } from './make-largest-island-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3],
@@ -54,13 +55,13 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
   const steps: MLIStep[] = [];
   const R = initialGrid.length;
   const C = initialGrid[0].length;
-  const grid = initialGrid.map((r) => [...r]);
+  const grid = snapshotGrid2D(initialGrid);
   const islandId = Array.from({ length: R }, () => Array(C).fill(0));
   const areaMap: Record<number, number> = {};
 
   steps.push({
-    grid: grid.map((r) => [...r]),
-    islandId: islandId.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
+    islandId: snapshotGrid2D(islandId),
     areaMap: {},
     rows: R,
     cols: C,
@@ -106,8 +107,8 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
         }
 
         steps.push({
-          grid: grid.map((row) => [...row]),
-          islandId: islandId.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
+          islandId: snapshotGrid2D(islandId),
           areaMap: { ...areaMap },
           rows: R,
           cols: C,
@@ -152,8 +153,8 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
 
         const neighborStr = Array.from(seenIds).join(', ');
         steps.push({
-          grid: grid.map((row) => [...row]),
-          islandId: islandId.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
+          islandId: snapshotGrid2D(islandId),
           areaMap: { ...areaMap },
           rows: R,
           cols: C,
@@ -172,8 +173,8 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
   }
 
   steps.push({
-    grid: grid.map((row) => [...row]),
-    islandId: islandId.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
+    islandId: snapshotGrid2D(islandId),
     areaMap: { ...areaMap },
     rows: R,
     cols: C,

@@ -10,6 +10,7 @@ import {
   REACHABLE_PATHS_ANALYSIS_HTML,
   REACHABLE_PATHS_CODE_LANGUAGES,
 } from './reachable-paths-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 const lines: Record<string, number | number[]> = {
   init: [1, 2, 3, 4],
@@ -142,7 +143,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
 
 /** 解析邻接表文本输入（每行一个节点的邻居列表），非法输入回退默认图 */
 function parseGraphInput(raw: string | undefined): number[][] {
-  const fallback = DEFAULT_GRAPH.map((r) => [...r]);
+  const fallback = snapshotGrid2D(DEFAULT_GRAPH);
   if (!raw || !raw.trim()) return fallback;
   try {
     const rows = raw
