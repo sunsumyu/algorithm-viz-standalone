@@ -27,9 +27,14 @@ export class DpTableVisualAdapter {
 
     const topLabel = isReverse ? '下方' : '上方';
     const leftLabel = isReverse ? '右方' : '左方';
+    const diagLabel = isReverse ? '右下' : '左上';
     const topTxt = step.topVal !== undefined ? step.topVal : (step.topI >= 0 && step.topJ >= 0 ? step.grid?.[step.topI]?.[step.topJ] ?? '-' : '-');
     const leftTxt = step.leftVal !== undefined ? step.leftVal : (step.leftI >= 0 && step.leftJ >= 0 ? step.grid?.[step.leftI]?.[step.leftJ] ?? '-' : '-');
+    const diagTxt = step.diagVal !== undefined ? step.diagVal : (step.diagI >= 0 && step.diagJ >= 0 ? step.grid?.[step.diagI]?.[step.diagJ] ?? '-' : '-');
     const curVal = step.sumVal !== undefined ? step.sumVal : (step.i >= 0 && step.j >= 0 ? step.grid?.[step.i]?.[step.j] ?? '-' : '-');
+    const hasDiag = (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) || step.diagVal !== undefined;
+    const hasTop = (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) || step.topVal !== undefined;
+    const hasLeft = (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) || step.leftVal !== undefined;
 
     if (step.type === 'obstacle-cell' || step.type === 'obstacle-hit' || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && step.i >= 0 && step.j >= 0)) {
       equationWrapper.innerHTML = `
@@ -45,7 +50,42 @@ export class DpTableVisualAdapter {
           <span class="font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded">dp[${step.i}][${step.j}] = ${curVal}</span>
         </div>
       `;
-    } else if (step.type === 'transfer' || (step.topI >= 0 || step.leftI >= 0)) {
+    } else if (hasDiag && hasTop && hasLeft) {
+      // 🌟 三向分支决策看板（如编辑距离字符不匹配：min(替换, 删除, 插入) + 1）
+      equationWrapper.innerHTML = `
+        <div class="flex items-center justify-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
+          <span class="text-slate-500 font-bold text-xs">min(</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-50 text-cyan-700 font-bold border border-cyan-300 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${diagLabel}(替换):</span> <span class="font-extrabold">${diagTxt}</span>
+          </div>
+          <span class="text-slate-400 font-bold text-xs">,</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${topLabel}(删除):</span> <span class="font-extrabold">${topTxt}</span>
+          </div>
+          <span class="text-slate-400 font-bold text-xs">,</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}(插入):</span> <span class="font-extrabold">${leftTxt}</span>
+          </div>
+          <span class="text-slate-500 font-bold text-xs">) + 1 =</span>
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+          </div>
+        </div>
+      `;
+    } else if (hasDiag && !hasTop && !hasLeft) {
+      // 🌟 单独对角继承（如编辑距离/LCS 字符匹配无损继承）
+      equationWrapper.innerHTML = `
+        <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
+          <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 text-cyan-700 font-bold border border-cyan-300 shadow-2xs">
+            <span class="animal-cat text-sm">🐱</span> <span>${diagLabel}(对角匹配):</span> <span class="font-extrabold">${diagTxt}</span>
+          </div>
+          <span class="text-slate-400 font-bold text-xs">➔</span>
+          <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+          </div>
+        </div>
+      `;
+    } else if (step.type === 'transfer' || (hasTop || hasLeft)) {
       equationWrapper.innerHTML = `
         <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
           <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
@@ -91,6 +131,7 @@ export class DpTableVisualAdapter {
         const isCur = step.i === r && step.j === c;
         const isTop = step.topI === r && step.topJ === c;
         const isLeft = step.leftI === r && step.leftJ === c;
+        const isDiag = step.diagI === r && step.diagJ === c;
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
         const val = step.grid?.[r]?.[c] ?? null;
 
@@ -103,6 +144,13 @@ export class DpTableVisualAdapter {
             <span class="absolute -top-3 -right-1 text-sm"><span class="animal-frog">🐸</span></span>
             <span class="text-sm font-extrabold">${val !== null ? val : (isObstacle ? 0 : '-')}</span>
             <span class="text-[8px] font-sans text-emerald-700 font-semibold leading-none">当前</span>
+          `;
+        } else if (isDiag) {
+          cellClass += 'bg-cyan-100/90 border-cyan-400 text-cyan-900 font-bold ring-1 ring-cyan-300 shadow-xs';
+          content = `
+            <span class="absolute -top-3 -right-1 text-sm"><span class="animal-cat">🐱</span></span>
+            <span class="text-sm font-bold">${val !== null ? val : '-'}</span>
+            <span class="text-[8px] font-sans text-cyan-600 font-semibold leading-none">${diagLabel}</span>
           `;
         } else if (isTop) {
           cellClass += 'bg-purple-100/90 border-purple-400 text-purple-900 font-bold ring-1 ring-purple-300 shadow-xs';

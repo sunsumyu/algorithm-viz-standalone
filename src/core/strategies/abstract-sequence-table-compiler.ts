@@ -46,6 +46,12 @@ export interface TransferResult {
   topJ?: number;
   leftI?: number;
   leftJ?: number;
+  diagI?: number;
+  diagJ?: number;
+  topVal?: number;
+  leftVal?: number;
+  diagVal?: number;
+  operator?: string;
 }
 
 export interface ReturnInfo {
@@ -228,6 +234,12 @@ export abstract class AbstractSequenceTableCompiler {
             topJ: transRes.topJ,
             leftI: transRes.leftI,
             leftJ: transRes.leftJ,
+            diagI: transRes.diagI,
+            diagJ: transRes.diagJ,
+            topVal: transRes.topVal,
+            leftVal: transRes.leftVal,
+            diagVal: transRes.diagVal,
+            operator: transRes.operator,
             grid: JSON.parse(JSON.stringify(dp)),
             tag: transRes.tag,
             log: transRes.log,
@@ -289,6 +301,12 @@ export abstract class AbstractSequenceTableCompiler {
             topJ: transRes.topJ,
             leftI: transRes.leftI,
             leftJ: transRes.leftJ,
+            diagI: transRes.diagI,
+            diagJ: transRes.diagJ,
+            topVal: transRes.topVal,
+            leftVal: transRes.leftVal,
+            diagVal: transRes.diagVal,
+            operator: transRes.operator,
             grid: JSON.parse(JSON.stringify(dp)),
             tag: transRes.tag,
             log: transRes.log,

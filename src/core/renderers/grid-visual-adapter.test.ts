@@ -434,7 +434,68 @@ describe('RecursionTreeAdapter Deep Module', () => {
     expect(mockContainer.innerHTML).toContain('⬅️');
     expect(mockContainer.innerHTML).toContain('dp-dep-arrow-top');
     expect(mockContainer.innerHTML).toContain('dp-dep-arrow-left');
-    expect(mockContainer.innerHTML).toContain('前驱依赖');
+    expect(mockContainer.innerHTML).toContain('⬆️ 垂直(删除)');
+  });
+
+  it('应该在二维状态网络中以三种颜色与专属标记标示三个递归分支（对角/垂直/水平）', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const step = {
+      i: 1,
+      j: 1,
+      diagI: 0,
+      diagJ: 0,
+      topI: 0,
+      topJ: 1,
+      leftI: 1,
+      leftJ: 0,
+      grid: [
+        [1, 2],
+        [3, null]
+      ]
+    };
+
+    // 1. 在带字符标尺的网络中渲染
+    GridVisualAdapter.renderGrid(container, step, {
+      m: 2,
+      n: 2,
+      rowLabels: ['a', 'b'],
+      colLabels: ['x', 'y'],
+      deps: [
+        { r: 0, c: 0, type: 'diag', label: '替换/匹配分支' },
+        { r: 0, c: 1, type: 'top', label: '删除分支' },
+        { r: 1, c: 0, type: 'left', label: '插入分支' }
+      ]
+    });
+
+    const mockContainer = container as unknown as MockHTMLElement;
+    // 验证三个分支的专有 CSS 类与标记
+    expect(mockContainer.innerHTML).toContain('is-diag is-dep');
+    expect(mockContainer.innerHTML).toContain('↖️');
+    expect(mockContainer.innerHTML).toContain('is-top is-dep');
+    expect(mockContainer.innerHTML).toContain('⬆️');
+    expect(mockContainer.innerHTML).toContain('is-left is-dep');
+    expect(mockContainer.innerHTML).toContain('⬅️');
+
+    // 验证三个分支的专属 SVG 箭头 marker
+    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-diag');
+    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-top');
+    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-left');
+
+    // 验证底部三色分支专属图例
+    expect(mockContainer.innerHTML).toContain('↖️ 对角(匹配/替换)');
+    expect(mockContainer.innerHTML).toContain('⬆️ 垂直(删除)');
+    expect(mockContainer.innerHTML).toContain('⬅️ 水平(插入)');
+
+    // 2. 在通用无标尺网格中渲染，检查子单元格 className
+    const plainContainer = new MockHTMLElement() as unknown as HTMLElement;
+    GridVisualAdapter.renderGrid(plainContainer, step, { m: 2, n: 2 });
+    const mockPlain = plainContainer as unknown as MockHTMLElement;
+    const cell00 = mockPlain.children[0]; // (0,0) 对角依赖
+    const cell01 = mockPlain.children[1]; // (0,1) 上方依赖
+    const cell10 = mockPlain.children[2]; // (1,0) 左侧依赖
+    expect(cell00.className).toContain('is-diag');
+    expect(cell01.className).toContain('is-top');
+    expect(cell10.className).toContain('is-left');
   });
 });
 

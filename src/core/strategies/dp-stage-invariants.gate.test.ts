@@ -165,6 +165,39 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
       }
     });
 
+    it('Distinct Subsequences 阶段 1 必须具备调用-返回闭环 (Call-Return Parity)：子递归返回后必须发射 branch-return 回到对应分支赋值行', async () => {
+      const { AlgorithmModelRepository } = await import('../model-repository');
+      const { SequenceStepMatrixCompiler } = await import('./sequence-step-matrix-compiler');
+
+      const model = AlgorithmModelRepository.getModel('distinct-subsequences');
+      const stage1Config = AlgorithmModelRepository.getCompiledStage('distinct-subsequences', 'stage-1', 'forward');
+      const steps = SequenceStepMatrixCompiler.compileDistinctSubsequencesStage1or2(
+        model,
+        false,
+        stage1Config.anchorMap,
+        'forward'
+      );
+
+      // 1. 验证存在 branch-return 步骤
+      const branchReturns = steps.filter((st) => st.type === 'branch-return');
+      expect(branchReturns.length, '必须发射 branch-return 步骤帧').toBeGreaterThan(0);
+
+      // 2. 验证每个 branch-return 步骤行号必须严格落在 branch_match 或 branch_skip 行上
+      const validLines = [stage1Config.anchorMap?.branch_match, stage1Config.anchorMap?.branch_skip];
+      branchReturns.forEach((st) => {
+        expect(validLines).toContain(st.line);
+        expect(st.tag).toMatch(/(useMatch|skipChar|分支返回)/);
+        expect(st.log).toMatch(/↩️ 子分支 dfs/);
+      });
+
+      // 3. 验证紧随退栈之后的第一步行为：当从深层栈返回到父层时，下一个具有相同栈深度的动作必须回到 branch-return
+      const returnIndices: number[] = [];
+      steps.forEach((st, idx) => {
+        if (st.type === 'branch-return') returnIndices.push(idx);
+      });
+      expect(returnIndices.length).toBeGreaterThan(0);
+    });
+
     it('Delete Operation for Two Strings 阶段 1 / 阶段 2 递归零跳步门禁：不匹配时必须先发射 branch-call 高亮 branch_del1 与 branch_del2', async () => {
       const { AlgorithmModelRepository } = await import('../model-repository');
       const { SequenceStepMatrixCompiler } = await import('./sequence-step-matrix-compiler');

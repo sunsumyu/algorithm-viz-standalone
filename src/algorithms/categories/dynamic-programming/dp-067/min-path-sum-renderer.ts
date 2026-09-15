@@ -36,7 +36,7 @@ import { snapshotGrid2D } from "../../../../core/strategies/grid-snapshot";
 // ==========================================
 
 function parseGrid(raw: unknown): number[][] {
-  return parseGridInput(raw, [[1,3,1],[1,5,1],[4,2,1]]);
+  return parseGridInput(raw, [[1, 3, 1], [1, 5, 1], [4, 2, 1]]);
 }
 
 // ==========================================
@@ -620,7 +620,7 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
         dp: [...dp],
         grid,
         decision: `滚动覆盖更新 dp[${j}] = min(上一行同列=${prevUp}, 本行左侧=${prevLeft}) + ${grid[i][j]} = ${dp[j]}`,
-        message: `旧 dp[${j}] 代表上方值，新 dp[${j-1}] 代表左方值，完美原地更新`,
+        message: `旧 dp[${j}] 代表上方值，新 dp[${j - 1}] 代表左方值，完美原地更新`,
         log: `dp[${j}] = ${dp[j]}`,
         codeLine: lines.colLoop,
         metrics: { 'metric-space': `O(${n})`, 'metric-val': `${dp[j]}` },
@@ -903,11 +903,11 @@ function renderGridMap(
 
   const activeStack = callStack
     ? callStack
-        .map((item) => {
-          const m = item.label.match(/f\((\d+),\s*(\d+)\)/);
-          return m ? `${m[1]},${m[2]}` : '';
-        })
-        .filter(Boolean)
+      .map((item) => {
+        const m = item.label.match(/f\((\d+),\s*(\d+)\)/);
+        return m ? `${m[1]},${m[2]}` : '';
+      })
+      .filter(Boolean)
     : [];
 
   const stepData = {

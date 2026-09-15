@@ -46,6 +46,7 @@ export interface RecursionBranchSpec {
   nextI: number;
   nextJ: number;
   lineKey: string;
+  varName?: string;
   tag: string;
   log: string;
   msg: string;
@@ -329,11 +330,31 @@ export abstract class AbstractSequenceRecursionCompiler {
       const branch = branches[bIdx];
       const lineBranch = ctx.anchorMap?.[branch.lineKey] || lineMatch;
 
+      const isDiag = branch.nextI !== i && branch.nextJ !== j;
+      const isVertical = branch.nextI !== i && branch.nextJ === j;
+      const branchType: 'diag' | 'top' | 'left' = isDiag ? 'diag' : isVertical ? 'top' : 'left';
+
       // 🌟【强制拦截点】：在进入子递归前，必须先发射高亮本分支调用行（如 int useMatch = dfs(...)）的步进帧！
       emitStep({
         type: 'branch-call',
         i,
         j,
+        targetI: branch.nextI,
+        targetJ: branch.nextJ,
+        branchIndex: bIdx,
+        branchType,
+        diagI: branchType === 'diag' ? branch.nextI : undefined,
+        diagJ: branchType === 'diag' ? branch.nextJ : undefined,
+        topI: branchType === 'top' ? branch.nextI : undefined,
+        topJ: branchType === 'top' ? branch.nextJ : undefined,
+        leftI: branchType === 'left' ? branch.nextI : undefined,
+        leftJ: branchType === 'left' ? branch.nextJ : undefined,
+        deps: [{
+          r: branch.nextI,
+          c: branch.nextJ,
+          type: branchType,
+          label: branch.tag
+        }],
         grid: JSON.parse(JSON.stringify(ctx.gridState)),
         activeStack: [...ctx.activeStack],
         visited: [...ctx.visitedCells],
@@ -372,6 +393,25 @@ export abstract class AbstractSequenceRecursionCompiler {
       if (branch.recordMatchIndices) {
         ctx.currentMatched1.pop();
         ctx.currentMatched2.pop();
+      }
+
+      // 🌟【强制闭环点】：子递归返回后，发射回溯赋值帧，焦点重新回到调用者代码行并完成变量赋值！
+      if (branch.varName || branches.length > 1) {
+        emitStep({
+          type: 'branch-return',
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(ctx.gridState)),
+          activeStack: [...ctx.activeStack],
+          visited: [...ctx.visitedCells],
+          line: lineBranch,
+          tag: branch.varName ? `${branch.varName} = ${val}` : `分支返回: ${val}`,
+          log: `| ↩️ 子分支 dfs(${branch.nextI}, ${branch.nextJ}) 计算完毕返回 ${val}${branch.varName ? `，已赋值给 ${branch.varName}` : ''}`,
+          msg: `↩️ 子分支计算完毕返回 <strong>${val}</strong>${branch.varName ? `，已赋值给局部变量 <code>${branch.varName}</code>` : ''}。`,
+          gridHighlight: { i, j },
+          activeNodeId: currentNode.id,
+          treeRoot: cloneTree(ctx.rootNode)
+        });
       }
     }
 

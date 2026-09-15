@@ -198,8 +198,9 @@ export class GridVisualAdapter {
         const key = `${r},${c}`;
         const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? null) : null);
         const isStandingCell = (r === activeStandingI && c === activeStandingJ);
-        const isTop = step.topI === r && step.topJ === c;
-        const isLeft = step.leftI === r && step.leftJ === c;
+        const isTop = (step.topI === r && step.topJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'top') ?? false);
+        const isLeft = (step.leftI === r && step.leftJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'left') ?? false);
+        const isDiag = (step.diagI === r && step.diagJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'diag') ?? false);
         const isFinish = isReverse ? (r === 0 && c === 0) : (r === m - 1 && c === n - 1);
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
 
@@ -361,6 +362,13 @@ export class GridVisualAdapter {
           `;
         } else if (isLeft) {
           cellEl.className = `viz-cell is-left ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-400 shadow-2xs`;
+          cellEl.innerHTML = `
+            <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+            <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
+            <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
+          `;
+        } else if (isDiag) {
+          cellEl.className = `viz-cell is-diag ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-cyan-50/90 border-cyan-400 text-cyan-900 shadow-2xs`;
           cellEl.innerHTML = `
             <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
@@ -748,8 +756,16 @@ export class GridVisualAdapter {
           </span>
           ${hasDeps ? `
           <span style="display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #ecfeff; border: 1px solid #67e8f9;"></span>
+            ↖️ 对角(匹配/替换)
+          </span>
+          <span style="display: flex; align-items: center; gap: 4px;">
             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #faf5ff; border: 1px solid #c084fc;"></span>
-            前驱依赖
+            ⬆️ 垂直(删除)
+          </span>
+          <span style="display: flex; align-items: center; gap: 4px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #fffbeb; border: 1px solid #fcd34d;"></span>
+            ⬅️ 水平(插入)
           </span>
           ` : `
           <span style="display: flex; align-items: center; gap: 4px;">

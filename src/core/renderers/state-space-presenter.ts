@@ -207,6 +207,7 @@ export class StateSpacePresenter {
       colLabels,
       isMatch,
       cornerLabel,
+      deps: (step as any).deps,
     });
   }
 

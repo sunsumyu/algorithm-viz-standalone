@@ -334,10 +334,9 @@ export function compileEditDistanceStage1or2(
         return {
           val,
           lineKey: 'transfer_match',
-          topI: i - 1,
-          topJ: j,
-          leftI: i - 1,
-          leftJ: j - 1,
+          diagI: i - 1,
+          diagJ: j - 1,
+          diagVal: val,
           tag: `字符匹配继承 dp[${i - 1}][${j - 1}]=${val}`,
           log: `| 🎯 字符相同: dp[${i}][${j}] = dp[${i - 1}][${j - 1}] = ${val}`,
           msg: `字符相同 <code>'${cond.char1}' == '${cond.char2}'</code>：无损继承左上角 <code>dp[${i - 1}][${j - 1}] = <strong>${val}</strong></code>。`
@@ -350,10 +349,16 @@ export function compileEditDistanceStage1or2(
         return {
           val,
           lineKey: 'transfer_diff',
+          diagI: i - 1,
+          diagJ: j - 1,
           topI: i - 1,
           topJ: j,
           leftI: i,
           leftJ: j - 1,
+          diagVal: rep,
+          topVal: del,
+          leftVal: ins,
+          operator: 'min',
           tag: `三向最小+1: dp[${i}][${j}]=${val}`,
           log: `| 🔀 字符不同: dp[${i}][${j}] = min(替换=${rep}, 删除=${del}, 插入=${ins}) + 1 = ${val}`,
           msg: `字符不同：<code>min(替换=${rep}, 删除=${del}, 插入=${ins}) + 1 = <strong>${val}</strong></code>。`
@@ -365,10 +370,9 @@ export function compileEditDistanceStage1or2(
         return {
           val,
           lineKey: 'transfer_match',
-          topI: i + 1,
-          topJ: j,
-          leftI: i + 1,
-          leftJ: j + 1,
+          diagI: i + 1,
+          diagJ: j + 1,
+          diagVal: val,
           tag: `字符匹配继承 dp[${i + 1}][${j + 1}]=${val}`,
           log: `| 🎯 [逆推] 字符相同: dp[${i}][${j}] = dp[${i + 1}][${j + 1}] = ${val}`,
           msg: `字符相同 <code>'${cond.char1}' == '${cond.char2}'</code>：无损继承右下角 <code>dp[${i + 1}][${j + 1}] = <strong>${val}</strong></code>。`
@@ -381,10 +385,16 @@ export function compileEditDistanceStage1or2(
         return {
           val,
           lineKey: 'transfer_diff',
+          diagI: i + 1,
+          diagJ: j + 1,
           topI: i + 1,
           topJ: j,
           leftI: i,
           leftJ: j + 1,
+          diagVal: rep,
+          topVal: del,
+          leftVal: ins,
+          operator: 'min',
           tag: `逆推三向最小+1: dp[${i}][${j}]=${val}`,
           log: `| 🔀 [逆推] 字符不同: dp[${i}][${j}] = min(替换=${rep}, 删除=${del}, 插入=${ins}) + 1 = ${val}`,
           msg: `字符不同：<code>min(替换=${rep}, 删除=${del}, 插入=${ins}) + 1 = <strong>${val}</strong></code>。`

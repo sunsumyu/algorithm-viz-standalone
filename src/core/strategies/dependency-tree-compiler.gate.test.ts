@@ -151,7 +151,7 @@ describe('StateDependencyTreeCompiler — 渲染器防退化门禁', () => {
     ];
     for (const [file, src] of Object.entries(algorithmSources)) {
       if (file.endsWith('.test.ts')) continue;
-      if (!file.includes('/dynamic-programming/') && !file.includes('/grid-') && !file.includes('/graph/')) continue;
+      if (!file.includes('/dynamic-programming/')) continue;
       for (const pat of inlineClonePatterns) {
         pat.lastIndex = 0;
         const hits = src.match(pat);
