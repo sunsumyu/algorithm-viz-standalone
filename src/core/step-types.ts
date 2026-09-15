@@ -22,6 +22,10 @@ export interface StepBase {
   message: string;
   log: string;
   metrics: Record<string, string>;
+  /** 局部变量执行作用域快照（支持 VarScopeTracer 实时 hover 检查） */
+  scope?: Record<string, any>;
+  /** 显式变量列表（向前兼容） */
+  vars?: any[];
 }
 
 /**

@@ -1,5 +1,12 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「最长公共子序列 (LCS, Longest Common Subsequence)」四阶段全演化标准实现。
+# 包含：双向拓扑对偶 (顺推前缀构造 vs 逆推后缀回溯)、字符匹配/失配分支、二维表与 leftUp/rightDown 空间滚动压缩。
+# ==============================================================================
+
 id: longest-common-subsequence
 name: 最长公共子序列
+nameEn: "Longest Common Subsequence"
 category: dynamic-programming
 difficulty: medium
 defaultStage: stage-1
@@ -12,6 +19,7 @@ defaultParams:
   n: 3
 
 problem:
+  leetcodeId: 1143
   title: "LeetCode 1143. 最长公共子序列"
   difficulty: "Medium"
   description: |
@@ -31,205 +39,291 @@ problem:
   constraints:
     - "1 <= text1.length, text2.length <= 1000"
     - "text1 和 text2 仅由小写英文字母组成"
+  leetcodeUrl: "https://leetcode.cn/problems/longest-common-subsequence/"
 
 directions:
   forward:
     label: "顺推 (正序)"
-    name: 前缀递推视角 (正向构造)
-    description: 从前缀匹配出发，从空串扩展至完整字符串，目标为 dp[n][m]
+    name: "前缀递推视角 (正向构造)"
+    description: "从 s1[0..i-1] 与 s2[0..j-1] 的前缀匹配出发，从空串 (0, 0) 顺推扩展至最终目标 dp[m][n]"
+    start: [0, 0]
+    targetFormula: "[m, n]"
     branches:
-      - name: 字符匹配 (对角线)
-        delta: [-1, -1]
-        arrow: ↖
-        description: text1[i-1] == text2[j-1]，纳入公共子序列，转移自 dp[i-1][j-1] + 1
-      - name: 缩减 text1 (上方)
-        delta: [-1, 0]
-        arrow: ↑
-        description: text1[i-1] != text2[j-1]，舍弃 text1 当前字符，继承 dp[i-1][j]
-      - name: 缩减 text2 (左侧)
-        delta: [0, -1]
-        arrow: ←
-        description: text1[i-1] != text2[j-1]，舍弃 text2 当前字符，继承 dp[i][j-1]
+      - name: "match"
+        delta: [1, 1]
+        label: "字符匹配"
+        codeVar: "match"
+        arrow: "↘️"
+        description: "text1[i] == text2[j]，字符对齐纳入公共子序列 (+1)"
+      - name: "skip_text1"
+        delta: [1, 0]
+        label: "跳过 text1 字符"
+        codeVar: "p1"
+        arrow: "⬇️"
+        description: "text1[i] != text2[j]，舍弃 text1 当前字符，继承向后搜索结果"
+      - name: "skip_text2"
+        delta: [0, 1]
+        label: "跳过 text2 字符"
+        codeVar: "p2"
+        arrow: "➡️"
+        description: "text1[i] != text2[j]，舍弃 text2 当前字符，继承向后搜索结果"
+    combineFormula: "Math.max(p1, p2)"
   reverse:
     label: "逆推 (倒序)"
-    name: 后缀递推视角 (倒序回溯)
-    description: 从两串末尾向前回溯，目标为 dp[0][0]
+    name: "后缀递推视角 (倒序寻源)"
+    description: "从两串末尾向前寻源，从 (m, n) 逆推至空串基底 (0, 0)，最终返回 dp[0][0]"
+    startFormula: "[m, n]"
+    target: [0, 0]
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "逆向字符匹配"
+        codeVar: "match"
+        arrow: "↖️"
+        description: "text1[i-1] == text2[j-1]，两串末尾匹配，纳入公共子序列 (+1)"
+      - name: "shrink_text1"
+        delta: [-1, 0]
+        label: "逆向缩减 text1"
+        codeVar: "p1"
+        arrow: "⬆️"
+        description: "text1[i-1] != text2[j-1]，舍弃 text1 末尾字符，继承上一行状态"
+      - name: "shrink_text2"
+        delta: [0, -1]
+        label: "逆向缩减 text2"
+        codeVar: "p2"
+        arrow: "⬅️"
+        description: "text1[i-1] != text2[j-1]，舍弃 text2 末尾字符，继承左一列状态"
+    combineFormula: "Math.max(p1, p2)"
 
 stages:
   stage-1:
     shortName: "递归"
-    name: "阶段 1: 朴素递归"
-    desc: 双串末尾匹配分治，字符相同沿对角线深入 (+1)，字符不同分裂为向上与向左两路子问题取最大值。
-    timeComplexity: "O(2^(m+n))"
-    spaceComplexity: "O(m+n)"
+    type: "recursion"
+    timeBadge: "O(2ᵐ⁺ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (正序前缀探索)"
+      reverse: "阶段 1: 朴素递归 (倒序后缀寻源)"
+    desc:
+      forward: "从起点 dfs(0, 0) 开始向后顺推匹配字符。字符相同时两串指针同时后移(+1)；不相同时分别尝试跳过 text1 或 text2 当前字符取最大值。"
+      reverse: "从终点 dfs(m, n) 开始向前倒序分解前缀子问题。末尾字符相同时前移深入(+1)；不相同时分别缩减两串前缀取最大值。"
     variants:
       standard:
-        name: 标准递归
-        desc: 双串末尾匹配分治
-        code: |
-          public int longestCommonSubsequence(String text1, String text2) {
-              return dfs(text1, text2, text1.length(), text2.length());
-          }
-
-          private int dfs(String s1, String s2, int i, int j) {
-              // @step:boundary 任一字符串为空串时返回 0
-              if (i == 0 || j == 0) return 0;
-
-              // @step:match 字符匹配：纳入公共子序列 (+1)
-              if (s1.charAt(i - 1) == s2.charAt(j - 1)) {
-                  // @step:match_branch 深入左上对角线
-                  return 1 + dfs(s1, s2, i - 1, j - 1);
+        variantLabel: "标准二叉递归"
+        title:
+          forward: "LCS_Recursive_Forward.java"
+          reverse: "LCS_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "LCS_Recursive_Forward.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      return dfs(text1, text2, 0, 0);
+                  }
+                  private int dfs(String s1, String s2, int i, int j) { // @step:entry
+                      if (i == s1.length() || j == s2.length()) return 0; // @step:boundary // 达到任一串末尾
+                      if (s1.charAt(i) == s2.charAt(j)) { // @step:match
+                          return 1 + dfs(s1, s2, i + 1, j + 1); // @step:match_branch // 深入匹配分支
+                      }
+                      int p1 = dfs(s1, s2, i + 1, j); // @step:diff // 跳过 s1[i]
+                      int p2 = dfs(s1, s2, i, j + 1); // @step:diff_left // 跳过 s2[j]
+                      return Math.max(p1, p2); // @step:combine // 汇总分支最大值
+                  }
               }
-
-              // @step:diff 字符不同：向上分支
-              int p1 = dfs(s1, s2, i - 1, j);
-              // @step:diff_left 向左分支
-              int p2 = dfs(s1, s2, i, j - 1);
-
-              // @step:combine 取两分支最大值
-              return Math.max(p1, p2);
-          }
+          reverse:
+            title: "LCS_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      return dfs(text1, text2, text1.length(), text2.length());
+                  }
+                  private int dfs(String s1, String s2, int i, int j) { // @step:entry
+                      if (i == 0 || j == 0) return 0; // @step:boundary // 任一串为空串
+                      if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:match
+                          return 1 + dfs(s1, s2, i - 1, j - 1); // @step:match_branch // 深入前驱对角线
+                      }
+                      int p1 = dfs(s1, s2, i - 1, j); // @step:diff // 缩减 s1
+                      int p2 = dfs(s1, s2, i, j - 1); // @step:diff_left // 缩减 s2
+                      return Math.max(p1, p2); // @step:combine // 汇总分支最大值
+                  }
+              }
 
   stage-2:
     shortName: "记忆化"
-    name: "阶段 2: 记忆化搜索"
-    desc: 引入 memo[i][j] 备忘录缓存已计算的前缀子问题，O(1) 命中剪枝，消除重叠子问题。
-    timeComplexity: "O(m * n)"
-    spaceComplexity: "O(m * n)"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (正序前缀缓存)"
+      reverse: "阶段 2: 记忆化搜索 (倒序后缀缓存)"
+    desc:
+      forward: "引入 memo[i][j] 缓存前缀子问题 (i, j) 的计算结果，消除指数级重叠子问题，实现 O(1) 剪枝。"
+      reverse: "引入 memo[i][j] 缓存后缀寻源 (i, j) 的计算结果，消除重复探查。"
     variants:
       standard:
-        name: 二维备忘录优化
-        desc: 记忆化二维前缀状态
-        code: |
-          public int longestCommonSubsequence(String text1, String text2) {
-              int m = text1.length(), n = text2.length();
-              Integer[][] memo = new Integer[m + 1][n + 1];
-              return dfs(text1, text2, m, n, memo);
-          }
-
-          private int dfs(String s1, String s2, int i, int j, Integer[][] memo) {
-              // @step:boundary 任一字符串为空串时返回 0
-              if (i == 0 || j == 0) return 0;
-
-              // @step:cache_hit 备忘录命中剪枝，O(1) 立即返回
-              if (memo[i][j] != null) return memo[i][j];
-
-              // @step:match 字符匹配判断
-              if (s1.charAt(i - 1) == s2.charAt(j - 1)) {
-                  // @step:match_branch 深入对角线并缓存
-                  return memo[i][j] = 1 + dfs(s1, s2, i - 1, j - 1, memo);
+        variantLabel: "二维备忘录优化"
+        title:
+          forward: "LCS_Memo_Forward.java"
+          reverse: "LCS_Memo_Reverse.java"
+        code:
+          forward:
+            title: "LCS_Memo_Forward.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(text1, text2, 0, 0, memo);
+                  }
+                  private int dfs(String s1, String s2, int i, int j, Integer[][] memo) { // @step:entry
+                      if (i == s1.length() || j == s2.length()) return 0; // @step:boundary // 空串边界
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit // 备忘录命中剪枝
+                      if (s1.charAt(i) == s2.charAt(j)) { // @step:match
+                          return memo[i][j] = 1 + dfs(s1, s2, i + 1, j + 1, memo); // @step:match_branch
+                      }
+                      int p1 = dfs(s1, s2, i + 1, j, memo); // @step:diff
+                      int p2 = dfs(s1, s2, i, j + 1, memo); // @step:diff_left
+                      return memo[i][j] = Math.max(p1, p2); // @step:combine
+                  }
               }
-
-              // @step:diff 字符不同：分支探索
-              int p1 = dfs(s1, s2, i - 1, j, memo);
-              int p2 = dfs(s1, s2, i, j - 1, memo);
-
-              // @step:combine 缓存并返回最大值
-              return memo[i][j] = Math.max(p1, p2);
-          }
+          reverse:
+            title: "LCS_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      Integer[][] memo = new Integer[m + 1][n + 1];
+                      return dfs(text1, text2, m, n, memo);
+                  }
+                  private int dfs(String s1, String s2, int i, int j, Integer[][] memo) { // @step:entry
+                      if (i == 0 || j == 0) return 0; // @step:boundary // 空串基底
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit // 备忘录命中剪枝
+                      if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:match
+                          return memo[i][j] = 1 + dfs(s1, s2, i - 1, j - 1, memo); // @step:match_branch
+                      }
+                      int p1 = dfs(s1, s2, i - 1, j, memo); // @step:diff
+                      int p2 = dfs(s1, s2, i, j - 1, memo); // @step:diff_left
+                      return memo[i][j] = Math.max(p1, p2); // @step:combine
+                  }
+              }
 
   stage-3:
     shortName: "二维DP"
-    name: "阶段 3: 严格二维表"
-    desc: 构建 (m+1)×(n+1) 的二维 DP 状态表格，自底向上顺序填表，清晰展现对角线与上下左前驱拓扑依赖。
-    timeComplexity: "O(m * n)"
-    spaceComplexity: "O(m * n)"
+    type: "tabulation-2d"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-emerald-100 text-emerald-800"
+    name:
+      forward: "阶段 3: 严格二维表 (自左上向右下正向填表)"
+      reverse: "阶段 3: 严格二维表 (自右下向左上逆向填表)"
+    desc:
+      forward: "构建 (m+1)×(n+1) 二维状态表格，自底向上顺序填表，清晰展现左上对角线与上方/左方前驱拓扑依赖。"
+      reverse: "倒序从右下角向左上角填表，清晰展现右下对角线与下方/右方前驱拓扑依赖。"
     variants:
       standard:
-        name: 经典二维 DP 表格
-        desc: 严格按照拓扑依赖逐行逐列填表
-        code: |
-          public int longestCommonSubsequence(String text1, String text2) {
-              int m = text1.length(), n = text2.length();
-              // @step:init 创建 (m+1)x(n+1) 二维 DP 状态表
-              int[][] dp = new int[m + 1][n + 1];
-
-              // @step:loop_i 自底向上逐行遍历
-              for (int i = 1; i <= m; i++) {
-                  // @step:loop_j 逐列计算状态
-                  for (int j = 1; j <= n; j++) {
-                      // @step:cond 字符是否匹配
-                      if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                          // @step:transfer_match 字符相同：对角线加 1 转移
-                          dp[i][j] = 1 + dp[i - 1][j - 1];
-                      } else {
-                          // @step:transfer_diff 字符不同：继承上方或左侧最大值
-                          dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+        variantLabel: "经典二维 DP 表格"
+        title:
+          forward: "LCS_Tabulation_Forward.java"
+          reverse: "LCS_Tabulation_Reverse.java"
+        code:
+          forward:
+            title: "LCS_Tabulation_Forward.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 初始化二维表
+                      for (int i = 1; i <= m; i++) { // @step:loop_i // 自底向上逐行遍历
+                          for (int j = 1; j <= n; j++) { // @step:loop_j // 逐列填表
+                              if (text1.charAt(i - 1) == text2.charAt(j - 1)) { // @step:cond // 字符相同
+                                  dp[i][j] = 1 + dp[i - 1][j - 1]; // @step:transfer_match // 继承左上并+1
+                              } else {
+                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]); // @step:transfer_diff // 继承上或左
+                              }
+                          }
                       }
+                      return dp[m][n]; // @step:return // 返回右下角最终解
                   }
               }
-              // @step:return 返回右下角最终解
-              return dp[m][n];
-          }
+          reverse:
+            title: "LCS_Tabulation_Reverse.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 初始化二维表
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i // 倒序逐行填表
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j // 倒序逐列填表
+                              if (text1.charAt(i) == text2.charAt(j)) { // @step:cond // 字符相同
+                                  dp[i][j] = 1 + dp[i + 1][j + 1]; // @step:transfer_match // 继承右下并+1
+                              } else {
+                                  dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]); // @step:transfer_diff // 继承下或右
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return // 返回左上角最终解
+                  }
+              }
 
   stage-4:
     shortName: "一维优化"
-    name: "阶段 4: 一维滚动压缩"
-    desc: 使用一维滚动数组与临时变量 leftUp 暂存左上角 dp[i-1][j-1]，将空间复杂度从 O(m*n) 极限压缩至 O(n)。
-    timeComplexity: "O(m * n)"
-    spaceComplexity: "O(n)"
+    type: "space-optimization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-purple-100 text-purple-800"
+    name:
+      forward: "阶段 4: 一维滚动压缩 (带 leftUp 左上角暂存)"
+      reverse: "阶段 4: 一维滚动压缩 (带 rightDown 右下角暂存)"
+    desc:
+      forward: "使用长度为 n+1 的一维数组与临时变量 leftUp 暂存左上角状态，将空间复杂度从 O(m×n) 极限压缩至 O(n)。"
+      reverse: "倒序使用一维数组与临时变量 rightDown 暂存右下角状态，倒序滚动更新。"
     variants:
       rolling_1d:
-        name: 一维滚动数组 (带 leftUp 对角线暂存)
-        desc: leftUp 记录左上角旧值，dp[j] 代表上方，dp[j-1] 代表左侧
-        code: |
-          public int longestCommonSubsequence(String text1, String text2) {
-              int m = text1.length(), n = text2.length();
-              // @step:init 创建一维状态数组 dp[0..n]
-              int[] dp = new int[n + 1];
-
-              // @step:loop_i 外层遍历 text1 每一行
-              for (int i = 1; i <= m; i++) {
-                  // @step:pre_init 暂存每行首列的左上角 leftUp
-                  int leftUp = 0;
-
-                  // @step:loop_j 内层遍历 text2
-                  for (int j = 1; j <= n; j++) {
-                      int backup = dp[j]; // 暂存未覆盖前的上方旧值
-                      // @step:cond 字符是否匹配
-                      if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
-                          // @step:transfer_match 字符相同：对角线加 1
-                          dp[j] = leftUp + 1;
-                      } else {
-                          // @step:transfer_diff 字符不同：max(上方旧值, 左方新值)
-                          dp[j] = Math.max(dp[j], dp[j - 1]);
+        variantLabel: "一维滚动数组"
+        title:
+          forward: "LCS_Rolling1D_Forward.java"
+          reverse: "LCS_Rolling1D_Reverse.java"
+        code:
+          forward:
+            title: "LCS_Rolling1D_Forward.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建一维状态数组
+                      for (int i = 1; i <= m; i++) { // @step:loop_i // 逐行滚动
+                          int leftUp = 0; // @step:pre_init // 暂存每行首列左上角
+                          for (int j = 1; j <= n; j++) { // @step:loop_j // 内层遍历
+                              int backup = dp[j]; // 暂存未覆盖前的值
+                              if (text1.charAt(i - 1) == text2.charAt(j - 1)) { // @step:cond
+                                  dp[j] = leftUp + 1; // @step:transfer_match
+                              } else {
+                                  dp[j] = Math.max(dp[j], dp[j - 1]); // @step:transfer_diff
+                              }
+                              leftUp = backup; // @step:shift_pre // 推移暂存寄存器
+                          }
                       }
-                      // @step:shift_pre 寄存器推移
-                      leftUp = backup;
+                      return dp[n]; // @step:return // 返回最终解
                   }
               }
-              // @step:return 返回一维数组末尾最终解
-              return dp[n];
-          }
-      rolling_1d_reverse:
-        name: 逆推一维滚动数组 (带 rightDown 对角线暂存)
-        desc: rightDown 记录右下角旧值，dp[j] 代表下方，dp[j+1] 代表右侧，倒序更新
-        code: |
-          public int longestCommonSubsequenceReverse(String text1, String text2) {
-              int m = text1.length(), n = text2.length();
-              // @step:init 创建逆推一维状态数组 dp[0..n]
-              int[] dp = new int[n + 1];
-
-              // @step:loop_i 外层遍历 text1 每一行 (倒序)
-              for (int i = m - 1; i >= 0; i--) {
-                  // @step:pre_init 暂存每行末列的右下角 rightDown
-                  int rightDown = 0;
-
-                  // @step:loop_j 内层遍历 text2 (倒序)
-                  for (int j = n - 1; j >= 0; j--) {
-                      int backup = dp[j]; // 暂存未覆盖前的下方旧值
-                      // @step:cond 后缀字符是否匹配
-                      if (text1.charAt(i) == text2.charAt(j)) {
-                          // @step:transfer_match 字符相同：右下对角线加 1
-                          dp[j] = rightDown + 1;
-                      } else {
-                          // @step:transfer_diff 字符不同：max(下方旧值, 右方新值)
-                          dp[j] = Math.max(dp[j], dp[j + 1]);
+          reverse:
+            title: "LCS_Rolling1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int longestCommonSubsequence(String text1, String text2) {
+                      int m = text1.length(), n = text2.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建一维状态数组
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i // 倒序逐行滚动
+                          int rightDown = 0; // @step:pre_init // 暂存每行末列右下角
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j // 倒序遍历
+                              int backup = dp[j]; // 暂存未覆盖前的值
+                              if (text1.charAt(i) == text2.charAt(j)) { // @step:cond
+                                  dp[j] = rightDown + 1; // @step:transfer_match
+                              } else {
+                                  dp[j] = Math.max(dp[j], dp[j + 1]); // @step:transfer_diff
+                              }
+                              rightDown = backup; // @step:shift_pre // 推移暂存寄存器
+                          }
                       }
-                      // @step:shift_pre 寄存器推移
-                      rightDown = backup;
+                      return dp[0]; // @step:return // 返回首项最终解
                   }
               }
-              // @step:return 返回一维数组首项最终解
-              return dp[0];
-          }

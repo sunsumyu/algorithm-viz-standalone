@@ -10,6 +10,14 @@ import {
   LIMITED_SHORTEST_PATH_ANALYSIS_HTML,
   LIMITED_SHORTEST_PATH_CODE_LANGUAGES,
 } from './limited-shortest-path-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3, 4],
+  relaxsuccess: [9, 10],
+  relaxskip: 8,
+  rounddone: 6,
+  done: 13,
+};
 
 export interface LSPStep extends StepBase {
   dist: number[];
@@ -72,7 +80,7 @@ export function buildLSPSteps(): LSPStep[] {
     action: 'init',
     statusText: `初始化：起点=${LSP_SOURCE}，终点=${LSP_TARGET}，最多允许中转 ${LSP_K} 次（最多走 ${LSP_K + 1} 条边）。dist[${LSP_SOURCE}]=0，其余=INF。`,
     log: `初始化: src=${LSP_SOURCE}, dst=${LSP_TARGET}, K=${LSP_K}`,
-    codeLine: [1, 2, 3, 4],
+    codeLine: lines.init,
   });
 
   for (let round = 1; round <= LSP_K + 1; round++) {
@@ -99,7 +107,7 @@ export function buildLSPSteps(): LSPStep[] {
           action: 'relax-success',
           statusText: `第 ${round} 轮，航线 (${e.u})->(${e.v}) 价格=${e.w}：clone[${e.u}]+${e.w}=${clone[e.u] + e.w} < ${oldVal === INF ? 'INF' : oldVal}，松弛成功！更新 dist[${e.v}]=${dist[e.v]}。`,
           log: `[第 ${round} 轮] 松弛成功: (${e.u})->(${e.v})，价格更新为 ${dist[e.v]}`,
-          codeLine: [9, 10],
+          codeLine: lines.relaxsuccess,
         });
       } else {
         const reason = clone[e.u] === INF ? `前驱 dist[${e.u}]=INF` : `${clone[e.u]}+${e.w} >= dist[${e.v}] (${dist[e.v]})`;
@@ -116,7 +124,7 @@ export function buildLSPSteps(): LSPStep[] {
           action: 'relax-skip',
           statusText: `第 ${round} 轮，航线 (${e.u})->(${e.v}) 价格=${e.w}：${reason}，跳过不更新。`,
           log: `[第 ${round} 轮] 航线 (${e.u})->(${e.v}): 无需松弛`,
-          codeLine: 8,
+          codeLine: lines.relaxskip,
         });
       }
     }
@@ -134,7 +142,7 @@ export function buildLSPSteps(): LSPStep[] {
       action: 'round-done',
       statusText: `✓ 第 ${round} 轮松弛迭代完成（已允许最多经过 ${round} 条边）。`,
       log: `✓ 完成第 ${round} 轮松弛，当前终点最低价格 = ${dist[LSP_TARGET] === INF ? 'INF' : dist[LSP_TARGET]}`,
-      codeLine: 6,
+      codeLine: lines.rounddone,
     });
   }
 
@@ -152,7 +160,7 @@ export function buildLSPSteps(): LSPStep[] {
     action: 'done',
     statusText: `🎉 有限最短路算法完成！在最多 ${LSP_K} 站中转内，从城市 ${LSP_SOURCE} 到城市 ${LSP_TARGET} 的最低总价格为 ${finalCost}。`,
     log: `✓ 求解完成: 最低总价格 = ${finalCost}`,
-    codeLine: 13,
+    codeLine: lines.done,
   });
 
   return steps;

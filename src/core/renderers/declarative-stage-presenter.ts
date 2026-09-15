@@ -25,6 +25,7 @@ import {
 import type { DeclarativeAlgorithmSpec } from './declarative-stage-spec';
 
 export * from './declarative-stage-spec';
+export { renderMetricsHtml } from './declarative-stage-fragments';
 
 export class DeclarativeStagePresenter {
   /**
@@ -36,11 +37,20 @@ export class DeclarativeStagePresenter {
       ctx.curStageId || spec.defaultStage || (spec.stages && spec.stages.length > 0 ? spec.stages[0].id : undefined);
 
     const stageTabsHtml = renderStageTabsHtml(spec.stages, activeStageId);
-    const modeBarHtml = renderModeBarHtml(spec.modes);
+    let activeModeId = spec.defaultMode || (spec.modes && spec.modes.length > 0 ? spec.modes[0].id : undefined);
+    if (typeof localStorage !== 'undefined' && spec.id) {
+      try {
+        const savedMode = localStorage.getItem(`algo-mode-${spec.id}`);
+        if (savedMode && spec.modes?.some((m) => m.id === savedMode)) {
+          activeModeId = savedMode;
+        }
+      } catch {}
+    }
+    const modeBarHtml = renderModeBarHtml(spec.modes, activeModeId);
     const inputsHtml = renderInputsHtml(spec.inputs);
     const presetSelectHtml = renderPresetSelectHtml(spec);
     const legendHtml = renderLegendHtml(ctx.curStage?.legend || spec.legend);
-    const metricsHtml = renderMetricsHtml(spec.metrics);
+    const metricsHtml = renderMetricsHtml(ctx.curStage?.metrics || spec.metrics);
 
     return `
 ${renderStageStyles(ctx.viewId)}

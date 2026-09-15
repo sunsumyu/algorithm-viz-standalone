@@ -9,6 +9,14 @@ import {
   FIND_ROUTE_ANALYSIS_HTML,
   FIND_ROUTE_CODE_LANGUAGES,
 } from './find-route-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3],
+  explore: [11, 12, 13],
+  found: [16, 17],
+  explore2: [18, 19, 20, 21],
+  done: 25,
+};
 
 export interface FRStep {
   nodes: number[];
@@ -77,7 +85,7 @@ export function buildFRSteps(): FRStep[] {
     action: 'init',
     statusText: `无向图包含 ${nodes.length} 个节点和 ${edges.length} 条边。目标：判断从起点 ${source} 到终点 ${dest} 是否存在路径。`,
     log: `初始化: source=${source}, destination=${dest}`,
-    codeLine: [1, 2, 3],
+    codeLine: lines.init,
   });
 
   visited.add(source);
@@ -96,7 +104,7 @@ export function buildFRSteps(): FRStep[] {
     action: 'explore',
     statusText: `起点 ${source} 加入队列并标记为已访问，启动 BFS 连通性搜索。`,
     log: `起点入队: ${source}`,
-    codeLine: [11, 12, 13],
+    codeLine: lines.explore,
   });
 
   let foundPath: number[] = [];
@@ -128,7 +136,7 @@ export function buildFRSteps(): FRStep[] {
         action: 'found',
         statusText: `🎉 成功搜索到终点 ${dest}！重构最优路径: [${foundPath.join(' -> ')}]。`,
         log: `✓ 命中目标: 到达节点 ${dest}，路径存在！`,
-        codeLine: [16, 17],
+        codeLine: lines.found,
       });
       break;
     }
@@ -152,7 +160,7 @@ export function buildFRSteps(): FRStep[] {
           action: 'explore',
           statusText: `节点 ${u} 探测到邻居 ${v}，将其加入遍历队列。`,
           log: `扩展邻居: ${u} -> ${v}，入队`,
-          codeLine: [18, 19, 20, 21],
+          codeLine: lines.explore2,
         });
       }
     }
@@ -173,7 +181,7 @@ export function buildFRSteps(): FRStep[] {
       ? `🎉 搜索完成！起点 ${source} 与终点 ${dest} 连通，路径为: [${foundPath.join(' -> ')}]。`
       : `❌ 搜索结束，队列为空，起点 ${source} 无法到达终点 ${dest}。`,
     log: `✓ 算法执行完毕，连通性结果 = ${isFound}`,
-    codeLine: 25,
+    codeLine: lines.done,
   });
 
   return steps;

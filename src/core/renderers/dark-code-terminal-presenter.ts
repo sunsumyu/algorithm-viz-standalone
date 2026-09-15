@@ -370,9 +370,14 @@ public static mount(
   }
 
   // ── 8. 提取模块：变量悬停气泡 ────────────────────────────
+  let currentStepContext: unknown = null;
   const hoverMgr = createHoverTooltipManager(
     { codeWrapper, createEl: DarkCodeTerminalPresenter.createSafeElement.bind(DarkCodeTerminalPresenter) },
-    { get currentVarsMap() { return currentVarsMap; }, get currentLang() { return currentLang; } },
+    {
+      get currentVarsMap() { return currentVarsMap; },
+      get currentLang() { return currentLang; },
+      get currentStep() { return currentStepContext; },
+    },
   );
   hoverMgr.bind();
 
@@ -384,6 +389,7 @@ public static mount(
     codeModel,
     highlightLine: (target) => hl(target),
     updateVars: (vars?: StepVar[], stepContext?: unknown) => {
+      currentStepContext = stepContext;
       currentVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
       rendererState.currentVarsMap = currentVarsMap;
 

@@ -738,7 +738,12 @@ export function renderMemoGridCard(
   rowLabels?: string[],
   colLabels?: string[],
   is3DExplicit?: boolean,
-  step?: any
+  step?: any,
+  extraOptions?: {
+    modelId?: string;
+    isUpperTriangle?: boolean;
+    cornerLabel?: string;
+  }
 ): void {
   if (!container) return;
   if (!grid || grid.length === 0) {
@@ -749,9 +754,7 @@ export function renderMemoGridCard(
   const rows = grid.length;
   const cols = grid[0]?.length || 0;
 
-  const activeStackList: string[] = Array.isArray(step?.activeStack)
-    ? step.activeStack
-    : (step?.activeTrail || []);
+  const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
 
   const stepData: UniversalStep = {
     i: activeI,
@@ -767,7 +770,9 @@ export function renderMemoGridCard(
     n: cols,
     isReverse: false,
     isGridProblem: false,
-    modelId: 'longest-common-subsequence',
+    modelId: extraOptions?.modelId || 'longest-common-subsequence',
+    isUpperTriangle: extraOptions?.isUpperTriangle,
+    cornerLabel: extraOptions?.cornerLabel,
     rowLabels,
     colLabels,
   };
@@ -967,7 +972,12 @@ export function renderDp2DCard2(
   deps: Array<{ r: number; c: number }>,
   rowLabels?: string[],
   colLabels?: string[],
-  is3DExplicit?: boolean
+  is3DExplicit?: boolean,
+  extraOptions?: {
+    modelId?: string;
+    isUpperTriangle?: boolean;
+    cornerLabel?: string;
+  }
 ): void {
   if (!container) return;
   if (!dpTable || dpTable.length === 0) {
@@ -999,7 +1009,9 @@ export function renderDp2DCard2(
     n: cols,
     isReverse: false,
     isGridProblem: false,
-    modelId: 'longest-common-subsequence',
+    modelId: extraOptions?.modelId || 'longest-common-subsequence',
+    isUpperTriangle: extraOptions?.isUpperTriangle,
+    cornerLabel: extraOptions?.cornerLabel,
     rowLabels,
     colLabels,
     deps: deps?.map((d) => {
@@ -1120,7 +1132,12 @@ export function renderStage1GridCard(
   rowLabels?: string[],
   colLabels?: string[],
   is3DExplicit?: boolean,
-  step?: any
+  step?: any,
+  extraOptions?: {
+    modelId?: string;
+    isUpperTriangle?: boolean;
+    cornerLabel?: string;
+  }
 ): void {
   if (!container) return;
 
@@ -1132,9 +1149,7 @@ export function renderStage1GridCard(
     })
   );
 
-  const activeStackList: string[] = Array.isArray(step?.activeStack)
-    ? step.activeStack
-    : (step?.activeTrail || []);
+  const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
 
   const stepData: UniversalStep = {
     i: activeI >= 0 ? activeI : 0,
@@ -1150,7 +1165,9 @@ export function renderStage1GridCard(
     n: cols,
     isReverse: false,
     isGridProblem: false,
-    modelId: 'longest-common-subsequence',
+    modelId: extraOptions?.modelId || 'longest-common-subsequence',
+    isUpperTriangle: extraOptions?.isUpperTriangle,
+    cornerLabel: extraOptions?.cornerLabel,
     rowLabels,
     colLabels,
     isMatch: (r, c) => Boolean(step?.visitedMap?.[`${r},${c}`]?.isMatch),

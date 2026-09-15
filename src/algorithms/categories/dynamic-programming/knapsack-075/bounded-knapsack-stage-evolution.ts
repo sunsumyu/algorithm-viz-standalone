@@ -11,6 +11,10 @@
 import { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { getBoundedKnapsackAnchor, type BoundedKnapsackKind } from './bounded-knapsack-stage-codes';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
+import { Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { cloneStateDepTree } from '../../../../core/strategies/tree-clone';
+import { RecursionTraceTracker, type TrackerTreeNode } from '../../../../core/strategies/recursion-trace-tracker';
 
 // ==========================================
 // 1. 阶段 1：多重背包暴力递归步骤生成器
@@ -35,41 +39,16 @@ export function buildBoundedNaiveRecursionSteps(
   cList: number[],
   maxSteps = 800
 ): BoundedRecursionStep[] {
-  const steps: BoundedRecursionStep[] = [];
   const n = Math.min(vList.length, wList.length, cList.length);
-  const callStack: Array<{ i: number; remCap: number; label: string }> = [];
 
-  interface RecTreeNode {
-    id: string;
-    label: string;
-    val: string;
-    status: 'current' | 'visited' | 'base' | 'pruned';
-    tag?: string;
-    children: RecTreeNode[];
-  }
+  // 骨架（保险丝/栈快照/stepIndex/totalSteps/树深克隆快照）由 RecursionTraceTracker 引擎托管
+  const tracker = new RecursionTraceTracker<BoundedRecursionStep, { i: number; remCap: number; label: string }>({
+    maxSteps,
+    resolveLine: (anchor) => getBoundedKnapsackAnchor(1, 'bounded-naive' as BoundedKnapsackKind, anchor),
+  }, true);
 
-  function cloneTree(node: RecTreeNode | null): RecTreeNode | null {
-    if (!node) return null;
-    return {
-      id: node.id,
-      label: node.label,
-      val: node.val,
-      status: node.status,
-      tag: node.tag,
-      children: node.children.map(cloneTree).filter(Boolean) as RecTreeNode[],
-    };
-  }
-
-  let nodeSeq = 0;
-  const treeRoot: RecTreeNode = {
-    id: 'node-root',
-    label: `dfs(0, ${t})`,
-    val: `dfs(0, ${t})`,
-    status: 'current',
-    children: [],
-  };
-
-  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'bounded-naive' as BoundedKnapsackKind, anchor);
+  const treeRoot: TrackerTreeNode = tracker.spawnNode(null, `dfs(0, ${t})`);
+  treeRoot.id = 'node-root';
 
   const pushStep = (
     action: string,
@@ -79,15 +58,11 @@ export function buildBoundedNaiveRecursionSteps(
     k: number | undefined,
     decision: string,
     message: string,
-    activeId?: string,
+    activeNode?: TrackerTreeNode,
     retVal?: number
   ) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    if (activeNode) tracker.focus(activeNode);
+    tracker.pushStep(action, codeKey, {
       i,
       remCap,
       k,
@@ -95,18 +70,15 @@ export function buildBoundedNaiveRecursionSteps(
       vList,
       wList,
       cList,
-      callStack: [...callStack],
       decision,
       message,
       log: `[DFS] i=${i} remCap=${remCap} k=${k ?? '-'} | ${action}: ${message}`,
       returnValue: retVal,
-      treeRoot: cloneTree(treeRoot),
-      activeNodeId: activeId || treeRoot.id,
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, remCap=${remCap})` : '越界终止',
         'metric-cur-item': i < n ? `宝物 #${i + 1} (重:${wList[i]}, 价:${vList[i]}, 上限:${cList[i]})` : '无',
         'metric-branch-k': k !== undefined ? `尝试选 ${k} 件` : '—',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
@@ -119,24 +91,17 @@ export function buildBoundedNaiveRecursionSteps(
     undefined,
     '启动多重背包顶层递归',
     `🚀 启动多重背包顶层暴力尝试：从宝物 #1 开始决策，背包总容量 remCap=${t}。`,
-    treeRoot.id
+    treeRoot
   );
 
-  function dfs(i: number, remCap: number, depth: number, parentNode?: RecTreeNode): number {
-    if (steps.length >= maxSteps) return 0;
+  function dfs(i: number, remCap: number, depth: number, parentNode?: TrackerTreeNode): number {
+    if (tracker.exhausted) return 0;
     const frameLabel = `dfs(i=${i}, remCap=${remCap})`;
-    callStack.push({ i, remCap, label: frameLabel });
+    tracker.enterFrame({ i, remCap, label: frameLabel });
 
-    let curNode: RecTreeNode;
+    let curNode: TrackerTreeNode;
     if (parentNode) {
-      curNode = {
-        id: `node-${++nodeSeq}`,
-        label: frameLabel,
-        val: frameLabel,
-        status: 'current',
-        children: [],
-      };
-      parentNode.children.push(curNode);
+      curNode = tracker.spawnNode(parentNode, frameLabel);
     } else {
       curNode = treeRoot;
       curNode.status = 'current';
@@ -150,7 +115,7 @@ export function buildBoundedNaiveRecursionSteps(
       undefined,
       '进入递归函数栈帧',
       `📥 进入栈帧 ${frameLabel}：当前剩余容量 remCap=${remCap}。`,
-      curNode.id
+      curNode
     );
 
     pushStep(
@@ -165,13 +130,13 @@ export function buildBoundedNaiveRecursionSteps(
         : remCap <= 0
         ? `🛑 背包已满：剩余可用容量 remCap=${remCap} <= 0，返回 0 收益。`
         : `✅ 边界检查通过：剩余容量 remCap=${remCap} > 0 且还有可用宝物件数。`,
-      curNode.id
+      curNode
     );
 
     if (i >= n || remCap <= 0) {
       curNode.status = 'base';
       curNode.tag = '边界 0';
-      callStack.pop();
+      tracker.exitFrame();
       return 0;
     }
 
@@ -183,7 +148,7 @@ export function buildBoundedNaiveRecursionSteps(
       undefined,
       '初始化最大收益 maxVal = 0',
       `💡 初始化当前状态最大收益 maxVal = 0，准备枚举宝物 #${i + 1} 选取件数 k。`,
-      curNode.id
+      curNode
     );
 
     let maxVal = 0;
@@ -192,7 +157,7 @@ export function buildBoundedNaiveRecursionSteps(
     const val = vList[i];
 
     for (let k = 0; k <= maxK && k * weight <= remCap; k++) {
-      if (steps.length >= maxSteps) break;
+      if (tracker.exhausted) break;
 
       pushStep(
         'loopK',
@@ -202,7 +167,7 @@ export function buildBoundedNaiveRecursionSteps(
         k,
         `枚举选取件数 k = ${k} 件`,
         `🔍 枚举决策：尝试选择 ${k} 件宝物 #${i + 1}（耗重 ${k * weight} <= ${remCap}，获得直接价值 ${k * val}）。`,
-        curNode.id
+        curNode
       );
 
       const subVal = dfs(i + 1, remCap - k * weight, depth + 1, curNode);
@@ -219,7 +184,7 @@ export function buildBoundedNaiveRecursionSteps(
         k,
         `回溯评估：k=${k} 总收益 = ${totalCandidate}`,
         `✨ 评估分支 k=${k}：后续收益 ${subVal} + 当前价值 ${k * val} = ${totalCandidate}，刷新当前最大值 maxVal=${maxVal}。`,
-        curNode.id
+        curNode
       );
     }
 
@@ -234,18 +199,16 @@ export function buildBoundedNaiveRecursionSteps(
       undefined,
       `返回最优收益 maxVal = ${maxVal}`,
       `📤 结束当前栈帧 ${frameLabel}：在剩余容量 ${remCap} 下宝物 #${i + 1} 的所有件数试算完毕，返回最优收益 ${maxVal}。`,
-      curNode.id,
+      curNode,
       maxVal
     );
 
-    callStack.pop();
+    tracker.exitFrame();
     return maxVal;
   }
 
   dfs(0, t, 0, undefined);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 // ==========================================
@@ -296,7 +259,7 @@ export function buildBoundedNaiveMemoSteps(
       remCap,
       k,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
+      memoGrid: snapshotGrid2D(memo),
       hitCount,
       missCount,
       decision,
@@ -460,6 +423,7 @@ export function buildBoundedNaive2DSteps(
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(0));
 
   const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'bounded-naive' as BoundedKnapsackKind, anchor);
+  const tracker = new Dp2DTraceTracker<Bounded2DStep>({ resolveLine });
 
   const pushStep = (
     action: string,
@@ -471,15 +435,11 @@ export function buildBoundedNaive2DSteps(
     decision: string,
     message: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
       curK,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -579,9 +539,7 @@ export function buildBoundedNaive2DSteps(
     `🎉 多重背包严格二维 DP 填表完毕！在总容量 ${t} 下，考察完全部 ${n} 种宝物的全局最大价值为 ${dp[n][t]}！`
   );
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 // ==========================================
@@ -632,7 +590,7 @@ export function buildBinarySplitRecursionSteps(
   derivedItemsOrVList: DerivedItem[] | number[],
   maxStepsOrWList: number | number[] = 800,
   cList?: number[]
-) {
+): BoundedRecursionStep[] {
   let derivedItems: DerivedItem[];
   let maxSteps = 800;
   if (Array.isArray(maxStepsOrWList) && Array.isArray(cList)) {
@@ -642,41 +600,13 @@ export function buildBinarySplitRecursionSteps(
     if (typeof maxStepsOrWList === 'number') maxSteps = maxStepsOrWList;
   }
 
-  const steps: any[] = [];
   const m = derivedItems.length;
-  const callStack: Array<{ idx: number; remCap: number; label: string }> = [];
-
-  interface RecTreeNode {
-    id: string;
-    label: string;
-    val: string;
-    status: 'current' | 'visited' | 'base' | 'pruned';
-    tag?: string;
-    children: RecTreeNode[];
-  }
-
-  function cloneTree(node: RecTreeNode | null): RecTreeNode | null {
-    if (!node) return null;
-    return {
-      id: node.id,
-      label: node.label,
-      val: node.val,
-      status: node.status,
-      tag: node.tag,
-      children: node.children.map(cloneTree).filter(Boolean) as RecTreeNode[],
-    };
-  }
-
-  let nodeSeq = 0;
-  const treeRoot: RecTreeNode = {
-    id: 'node-root',
-    label: `dfs(0, ${t})`,
-    val: `dfs(0, ${t})`,
-    status: 'current',
-    children: [],
-  };
-
-  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'binary-split' as BoundedKnapsackKind, anchor);
+  const tracker = new RecursionTraceTracker<BoundedRecursionStep, { i: number; remCap: number; label: string }>({
+    maxSteps,
+    resolveLine: (anchor) => getBoundedKnapsackAnchor(1, 'binary-split' as BoundedKnapsackKind, anchor),
+  }, true);
+  const treeRoot = tracker.spawnNode(null, `dfs(0, ${t})`);
+  treeRoot.id = 'node-root';
 
   const pushStep = (
     action: string,
@@ -685,90 +615,69 @@ export function buildBinarySplitRecursionSteps(
     remCap: number,
     decision: string,
     message: string,
-    activeId?: string,
+    activeNode?: TrackerTreeNode,
     retVal?: number
   ) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    if (activeNode) tracker.focus(activeNode);
+    tracker.pushStep(action, codeKey, {
       i: idx,
       remCap,
       n: m,
-      callStack: [...callStack],
+      vList: derivedItems.map((item) => item.val),
+      wList: derivedItems.map((item) => item.weight),
+      cList: derivedItems.map((item) => item.multiplier),
       decision,
       message,
       log: `[DFS Derived] idx=${idx} remCap=${remCap} | ${action}: ${message}`,
       returnValue: retVal,
-      treeRoot: cloneTree(treeRoot),
-      activeNodeId: activeId || treeRoot.id,
       metrics: {
         'metric-cur-state': idx < m ? `dfs(idx=${idx}, remCap=${remCap})` : '越界终止',
         'metric-cur-item': idx < m ? `衍生包 #${idx + 1} (权:${derivedItems[idx].multiplier}, 重:${derivedItems[idx].weight}, 价:${derivedItems[idx].val})` : '无',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
 
-  pushStep('callRoot', 'callRoot', 0, t, '启动衍生01包暴力递归', `🚀 启动衍生 01 背包暴力分治：共 ${m} 个二进制位权衍生包，初始容量 remCap=${t}。`, treeRoot.id);
+  pushStep('callRoot', 'callRoot', 0, t, '启动衍生01包暴力递归', `🚀 启动衍生 01 背包暴力分治：共 ${m} 个二进制位权衍生包，初始容量 remCap=${t}。`, treeRoot);
 
-  function dfs(idx: number, remCap: number, parentNode?: RecTreeNode): number {
-    if (steps.length >= maxSteps) return 0;
+  function dfs(idx: number, remCap: number, parentNode?: TrackerTreeNode): number {
+    if (tracker.exhausted) return 0;
     const label = `dfs(${idx}, ${remCap})`;
-    callStack.push({ idx, remCap, label });
+    tracker.enterFrame({ i: idx, remCap, label });
+    const curNode = parentNode ? tracker.spawnNode(parentNode, label) : treeRoot;
+    if (!parentNode) curNode.status = 'current';
 
-    let curNode: RecTreeNode;
-    if (parentNode) {
-      curNode = {
-        id: `node-${++nodeSeq}`,
-        label,
-        val: label,
-        status: 'current',
-        children: [],
-      };
-      parentNode.children.push(curNode);
-    } else {
-      curNode = treeRoot;
-      curNode.status = 'current';
-    }
-
-    pushStep('fnEnter', 'fnEnter', idx, remCap, '进入栈帧', `📥 进入栈帧 ${label}。`, curNode.id);
+    pushStep('fnEnter', 'fnEnter', idx, remCap, '进入栈帧', `📥 进入栈帧 ${label}。`, curNode);
 
     if (idx >= m || remCap <= 0) {
       curNode.status = 'base';
       curNode.tag = '边界 0';
-      pushStep('baseCheck', 'baseCheck', idx, remCap, '触底终止', `🛑 递归边界触底 (idx>=${m} 或 remCap<=0)，直接返回 0。`, curNode.id, 0);
-      callStack.pop();
+      pushStep('baseCheck', 'baseCheck', idx, remCap, '触底终止', `🛑 递归边界触底 (idx>=${m} 或 remCap<=0)，直接返回 0。`, curNode, 0);
+      tracker.exitFrame();
       return 0;
     }
 
-    pushStep('baseCheck', 'baseCheck', idx, remCap, '边界检查通过', `✅ 剩余容量 remCap=${remCap}，继续考察衍生包 #${idx + 1}。`, curNode.id);
-
+    pushStep('baseCheck', 'baseCheck', idx, remCap, '边界检查通过', `✅ 剩余容量 remCap=${remCap}，继续考察衍生包 #${idx + 1}。`, curNode);
     const item = derivedItems[idx];
     const p1 = dfs(idx + 1, remCap, curNode);
-    pushStep('branchNoPick', 'branchNoPick', idx, remCap, '分支 1：不选当前衍生包', `🌿 分支 1：不选衍生包 #${idx + 1}，后续收益 = ${p1}。`, curNode.id);
+    pushStep('branchNoPick', 'branchNoPick', idx, remCap, '分支 1：不选当前衍生包', `🌿 分支 1：不选衍生包 #${idx + 1}，后续收益 = ${p1}。`, curNode);
 
     let p2 = 0;
     if (remCap >= item.weight) {
       p2 = dfs(idx + 1, remCap - item.weight, curNode) + item.val;
-      pushStep('branchPick', 'branchPick', idx, remCap, '分支 2：选入当前衍生包', `💎 分支 2：选入衍生包 #${idx + 1} (重:${item.weight}, 价:${item.val})，总收益 = ${p2}。`, curNode.id);
+      pushStep('branchPick', 'branchPick', idx, remCap, '分支 2：选入当前衍生包', `💎 分支 2：选入衍生包 #${idx + 1} (重:${item.weight}, 价:${item.val})，总收益 = ${p2}。`, curNode);
     }
 
     const res = Math.max(p1, p2);
     curNode.status = 'visited';
     curNode.tag = `=${res}`;
-    pushStep('returnMax', 'returnMax', idx, remCap, `返回最优解 max(${p1}, ${p2}) = ${res}`, `📤 栈帧 ${label} 决策完毕：返回最优值 ${res}。`, curNode.id, res);
-
-    callStack.pop();
+    pushStep('returnMax', 'returnMax', idx, remCap, `返回最优解 max(${p1}, ${p2}) = ${res}`, `📤 栈帧 ${label} 决策完毕：返回最优值 ${res}。`, curNode, res);
+    tracker.exitFrame();
     return res;
   }
 
   dfs(0, t);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildBinarySplitMemoSteps(
@@ -804,7 +713,7 @@ export function buildBinarySplitMemoSteps(
       i: idx,
       remCap,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
+      memoGrid: snapshotGrid2D(memo),
       hitCount,
       missCount,
       decision,
@@ -868,7 +777,7 @@ export function buildBinarySplit2DSteps(
   derivedItemsOrVList: DerivedItem[] | number[],
   wListOrIgnored?: number[],
   cList?: number[]
-) {
+): Bounded2DStep[] {
   let derivedItems: DerivedItem[];
   if (Array.isArray(wListOrIgnored) && Array.isArray(cList)) {
     derivedItems = splitItemsBinary(derivedItemsOrVList as number[], wListOrIgnored, cList);
@@ -876,21 +785,17 @@ export function buildBinarySplit2DSteps(
     derivedItems = derivedItemsOrVList as DerivedItem[];
   }
 
-  const steps: any[] = [];
   const m = derivedItems.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(t + 1).fill(0));
 
   const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'binary-split' as BoundedKnapsackKind, anchor);
+  const tracker = new Dp2DTraceTracker<Bounded2DStep>({ resolveLine });
 
   const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -929,9 +834,7 @@ export function buildBinarySplit2DSteps(
 
   pushStep('returnAns', 'returnAns', m, t, [{ label: `dp[${m}][${t}]`, val: dp[m][t], r: m, c: t }], `最终最优收益：dp[${m}][${t}] = ${dp[m][t]}`, `🎉 二维 DP 填表完毕！衍生包全部决策完毕，最大收益为 ${dp[m][t]}！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 // ==========================================
@@ -943,12 +846,13 @@ export function buildCoinsChangeRecursionSteps(
   valList: number[],
   cntList: number[],
   maxSteps = 800
-) {
-  const steps: any[] = [];
+): BoundedRecursionStep[] {
   const n = Math.min(valList.length, cntList.length);
-  const callStack: Array<{ i: number; remCap: number; label: string }> = [];
-
-  const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(1, 'coins-change' as BoundedKnapsackKind, anchor);
+  // 骨架（保险丝/栈快照/stepIndex/totalSteps）由 RecursionTraceTracker 引擎托管
+  const tracker = new RecursionTraceTracker<BoundedRecursionStep, { i: number; remCap: number; label: string }>({
+    maxSteps,
+    resolveLine: (anchor) => getBoundedKnapsackAnchor(1, 'coins-change' as BoundedKnapsackKind, anchor),
+  });
 
   const pushStep = (
     action: string,
@@ -960,24 +864,21 @@ export function buildCoinsChangeRecursionSteps(
     message: string,
     retVal?: number
   ) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       k,
       n,
-      callStack: [...callStack],
+      vList: valList,
+      wList: valList,
+      cList: cntList,
       decision,
       message,
       log: `[DFS Coins] i=${i} rem=${rem} k=${k ?? '-'} | ${action}: ${message}`,
       returnValue: retVal,
       metrics: {
         'metric-cur-state': `check(i=${i}, rem=${rem})`,
-        'metric-stack-depth': `${callStack.length} 层`,
+        'metric-stack-depth': `${tracker.depth} 层`,
         'metric-cur-coin': i < n ? `货币 #${i + 1} (面值 ${valList[i]}, 限 ${cntList[i]} 张)` : '无更多货币',
         'metric-rem-money': rem <= 0 ? (rem === 0 ? '恰好凑齐 0 元' : `溢出 ${-rem} 元`) : `待凑 ${rem} 元`,
       },
@@ -985,19 +886,20 @@ export function buildCoinsChangeRecursionSteps(
   };
 
   function dfs(i: number, rem: number): boolean {
-    if (steps.length >= maxSteps) return false;
-    callStack.push({ i, remCap: rem, label: `check(i=${i}, rem=${rem})` });
+    if (tracker.exhausted) return false;
+    const label = `check(i=${i}, rem=${rem})`;
+    tracker.enterFrame({ i, remCap: rem, label });
     pushStep('fnEnter', 'fnEnter', i, rem, undefined, '进入递归函数', `⚡ 进入 check(i=${i}, rem=${rem})：考察货币 #${i + 1}，剩余待凑金额 ${rem} 元。`);
 
     if (rem === 0) {
       pushStep('baseZero', 'baseZero', i, rem, undefined, '基底命中：金额恰好凑齐', `🎯 剩余待凑金额为 0 元，成功凑齐！返回 true。`, 1);
-      callStack.pop();
+      tracker.exitFrame();
       return true;
     }
 
     if (i === n || rem < 0) {
       pushStep('baseBound', 'baseBound', i, rem, undefined, '基底越界：货币耗尽或金额超出', `❌ 货币耗尽且金额尚未凑齐，返回 false。`, 0);
-      callStack.pop();
+      tracker.exitFrame();
       return false;
     }
 
@@ -1008,23 +910,21 @@ export function buildCoinsChangeRecursionSteps(
       const ok = dfs(i + 1, rem - k * v);
       if (ok) {
         pushStep('returnTrue', 'returnTrue', i, rem, k, `子调用成功，立即返回 true`, `✨ 找到可行找零组合！通过使用 ${k} 张货币 #${i + 1} 成功凑齐！`, 1);
-        callStack.pop();
+        tracker.exitFrame();
         return true;
       }
     }
 
     pushStep('returnFalse', 'returnFalse', i, rem, undefined, '所有枚举张数均无法凑齐，返回 false', `⏸️ 枚举货币 #${i + 1} 的 0..${c} 张后均无法凑出目标金额，返回 false。`, 0);
-    callStack.pop();
+    tracker.exitFrame();
     return false;
   }
 
   for (let target = 1; target <= m; target++) {
-    if (steps.length >= maxSteps) break;
+    if (tracker.exhausted) break;
     dfs(0, target);
   }
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildCoinsChangeMemoSteps(
@@ -1063,7 +963,7 @@ export function buildCoinsChangeMemoSteps(
       hitCount,
       missCount,
       cachedVal,
-      memoGrid: memo.map((row) => [...row]),
+      memoGrid: snapshotGrid2D(memo),
       decision,
       message,
       log: `[Memo Coins] i=${i} rem=${rem} hit=${memoHit} | ${action}: ${message}`,
@@ -1128,13 +1028,13 @@ export function buildCoinsChange2DSteps(
   m: number,
   valList: number[],
   cntList: number[]
-) {
-  const steps: any[] = [];
+): Bounded2DStep[] {
   const n = Math.min(valList.length, cntList.length);
   const dp: boolean[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(false));
   dp[0][0] = true;
 
   const resolveLine = (anchor: string) => getBoundedKnapsackAnchor(3, 'coins-change' as BoundedKnapsackKind, anchor);
+  const tracker = new Dp2DTraceTracker<Bounded2DStep>({ resolveLine });
 
   const pushStep = (
     action: string,
@@ -1145,11 +1045,7 @@ export function buildCoinsChange2DSteps(
     decision: string,
     message: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
       dpTable: dp.map((row) => row.map((v) => (v ? 1 : 0))),
@@ -1208,8 +1104,6 @@ export function buildCoinsChange2DSteps(
   pushStep('countKinds', 'countKinds', n, m, [], `统计可凑出的金额总种类`, `📊 统计 dp[${n}][1..${m}] 中为 true 的单元格总数，共 ${kinds} 种！`);
   pushStep('returnAns', 'returnAns', n, m, [], `最终答案：共 ${kinds} 种面值`, `🎉 二维 DP 状态表推导完毕！可找零的不同金额种类总数为 ${kinds} 种！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 

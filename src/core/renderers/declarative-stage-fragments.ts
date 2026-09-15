@@ -92,7 +92,7 @@ export function renderPresetSelectHtml(spec: DeclarativeAlgorithmSpec): string {
 }
 
 /** 3. 顺推 / 逆推 方向切换器（像素级复用《不同路径》dir-tabs-container 模板） */
-export function renderModeBarHtml(modes: ModeOptionDef[] | undefined): string {
+export function renderModeBarHtml(modes: ModeOptionDef[] | undefined, activeModeId?: string): string {
   if (!modes || modes.length === 0) return '';
   const modeChipsHtml = modes
     .map((m, i) => {
@@ -101,7 +101,7 @@ export function renderModeBarHtml(modes: ModeOptionDef[] | undefined): string {
       const cleanLabel = isForward ? '顺推' : isReverse ? '逆推' : m.label.replace(/\(.*\)/, '').replace(/（.*）/, '').trim() || m.label;
       const arrowSymbol = isForward ? '→' : isReverse ? '←' : '';
       const iconClass = isForward ? 'fa-arrow-right' : isReverse ? 'fa-arrow-left' : '';
-      const isActive = i === 0;
+      const isActive = activeModeId ? m.id === activeModeId : i === 0;
       return `
             <button class="dir-tab-btn dsp-mode-chip px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-xs transition-all flex items-center gap-1 border ${
               isActive ? 'active bg-blue-600 text-white shadow-sm font-bold border-blue-600' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold'

@@ -159,6 +159,18 @@ export const MaxSubarraySpec: AlgorithmSpec = {
     dp[0] = nums[0];
     let maxSum = nums[0];
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: [7, 8], context: [6] },
+      cpp: { primary: [7, 8], context: [6] },
+      python: { primary: [6, 7], context: [5] },
+      javascript: { primary: [6, 7], context: [5] },
+    },
+      returnAns: { java: 11, cpp: 11, python: 8, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -194,7 +206,7 @@ export const MaxSubarraySpec: AlgorithmSpec = {
       message: `🎯 函数入口：最大子数组和。初始 nums: [${nums.join(', ')}]，dp[0] = ${nums[0]}。`,
       log: `entry: nums=[${nums.join(',')}]`,
       vars: makeVars({ i: 0, curNum: nums[0], curDp: nums[0], mx: nums[0], changed: ['nums', 'i', 'ni', 'dpi', 'mx'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i < n; i++) {
@@ -217,12 +229,7 @@ export const MaxSubarraySpec: AlgorithmSpec = {
           : `🛑 重新起步：前缀 dp[${i - 1}] (${prev}) <= 0 为负增益，丢弃前缀从自身起步 dp[${i}] = ${best}。`,
         log: `dp[${i}] = ${best}`,
         vars: makeVars({ i, curNum: nums[i], prevDp: prev, curDp: best, mx: maxSum, changed: ['i', 'ni', 'dpPrev', 'dpi', 'mx'] }),
-        codeLine: {
-          java: { primary: [7, 8], context: [6] },
-          cpp: { primary: [7, 8], context: [6] },
-          python: { primary: [6, 7], context: [5] },
-          javascript: { primary: [6, 7], context: [5] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -232,7 +239,7 @@ export const MaxSubarraySpec: AlgorithmSpec = {
       message: `🏁 算法结束：全局最大连续子数组和为 ${maxSum}。`,
       log: `return: maxSum=${maxSum}`,
       vars: makeVars({ mx: maxSum, changed: ['mx'] }),
-      codeLine: { java: 11, cpp: 11, python: 8, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

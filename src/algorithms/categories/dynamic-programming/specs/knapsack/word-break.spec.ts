@@ -181,6 +181,18 @@ export const WordBreakSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(n + 1).fill('false');
     dp[0] = 'true';
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 9, context: [7, 8] },
+      cpp: { primary: 9, context: [7, 8] },
+      python: { primary: 8, context: [6, 7] },
+      javascript: { primary: 7, context: [5, 6] },
+    },
+      returnAns: { java: 14, cpp: 14, python: 10, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -217,7 +229,7 @@ export const WordBreakSpec: AlgorithmSpec = {
       message: `🎯 函数入口：单词拆分。目标串 "${s}"，字典 [${wordDict.join(', ')}]。`,
       log: `entry: s="${s}", dict=[${wordDict.join(',')}]`,
       vars: makeVars({ changed: ['s', 'dict'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i <= n; i++) {
@@ -237,12 +249,7 @@ export const WordBreakSpec: AlgorithmSpec = {
             message: `✨ 匹配成功！前缀 s[0..${j}] 可拆分 (dp[${j}]=true)，且后缀 "${sub}" 存在于字典 $\rightarrow$ dp[${i}] = true。`,
             log: `match: dp[${i}]=true via s[${j}..${i}]="${sub}"`,
             vars: makeVars({ i, j, sub, inDict: true, curDp: 'true', changed: ['i', 'j', 'sub', 'inD', 'dp'] }),
-            codeLine: {
-              java: { primary: 9, context: [7, 8] },
-              cpp: { primary: 9, context: [7, 8] },
-              python: { primary: 8, context: [6, 7] },
-              javascript: { primary: 7, context: [5, 6] },
-            },
+            codeLine: LINES.transfer,
           });
           break;
         }
@@ -257,7 +264,7 @@ export const WordBreakSpec: AlgorithmSpec = {
       message: `🏁 算法结束：字符串 "${s}" 能否由字典拆分拼接：${finalAns ? 'true (可以 ✓)' : 'false (不能 ✗)'}。`,
       log: `return: dp[${n}] = ${finalAns}`,
       vars: makeVars({ curDp: String(finalAns), changed: ['dp'] }),
-      codeLine: { java: 14, cpp: 14, python: 10, javascript: 13 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

@@ -11,6 +11,13 @@
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepBase } from '../../../core/step-visualizer';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number> = {
+  init: 4,
+  propagate: 24,
+  query: 29,
+  finish: 31,
+};
 
 export interface CourseScheduleIVStep extends StepBase {
   numCourses: number;
@@ -146,7 +153,7 @@ export function buildCourseScheduleIVSteps(
     phase: 'init',
     message: `算法启动：课程总数 ${numCourses}，直接先修依赖有 ${prerequisites.length} 条。建立入度数组与邻接表。`,
     log: `初始化先修图，直接先修标记就绪`,
-    codeLine: 4,
+    codeLine: lines.init,
   });
 
   // 拓扑排序传播
@@ -173,7 +180,7 @@ export function buildCourseScheduleIVSteps(
             phase: 'propagate',
             message: `传递闭包更新：因为课程 ${i} 是课程 ${cur} 的先修，而 ${cur} -> ${nxt}，故课程 ${i} 也是课程 ${nxt} 的先修！`,
             log: `传递闭包: isPre[${i}][${nxt}] = true`,
-            codeLine: 24,
+            codeLine: lines.propagate,
           });
         }
       }
@@ -200,7 +207,7 @@ export function buildCourseScheduleIVSteps(
       phase: 'query',
       message: `执行查询 [${qu} -> ${qv}]：闭包矩阵 isPre[${qu}][${qv}] = ${ans}。课程 ${qu} ${ans ? '是' : '不是'} 课程 ${qv} 的先修。`,
       log: `查询 query(${qu}, ${qv}) => ${ans}`,
-      codeLine: 29,
+      codeLine: lines.query,
     });
   }
 
@@ -215,7 +222,7 @@ export function buildCourseScheduleIVSteps(
     phase: 'finish',
     message: `全部先修查询处理完毕！通过传递闭包矩阵在 O(1) 内完成了每项可达性回答。`,
     log: `算法执行完毕，返回查询结果集`,
-    codeLine: 31,
+    codeLine: lines.finish,
   });
 
   return steps;

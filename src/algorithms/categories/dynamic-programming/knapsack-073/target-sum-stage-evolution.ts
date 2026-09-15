@@ -10,6 +10,9 @@ import { HighlightTarget } from '../../../../core/code-panel';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { TARGET_SUM_STAGE1_CODE_LANGUAGES, TARGET_SUM_STAGE2_CODE_LANGUAGES, TARGET_SUM_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
+import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
 
 type CallFrame = { i: number; rem: number; label: string };
 
@@ -39,26 +42,22 @@ interface TargetSum2DStep extends Dp2DStepBase {
 // ==========================================
 
 export function buildTargetSumRecursionSteps(nums: number[], target: number, maxSteps = 800): TargetSumRecursionStep[] {
-  const steps: TargetSumRecursionStep[] = [];
   const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
   const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
   const t = isValid ? Math.floor((sum + target) / 2) : -1;
   const n = nums.length;
-  const callStack: Array<{ i: number; rem: number; label: string }> = [];
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(1, 'target-sum', anchor);
+  // 骨架（保险丝/栈快照/stepIndex/totalSteps）由 RecursionTraceTracker 引擎托管
+  const tracker = new RecursionTraceTracker<TargetSumRecursionStep, CallFrame>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(1, 'target-sum', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, rem: number, decision: string, message: string, retVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       n,
-      callStack: [...callStack],
       decision,
       message,
       log: `[DFS] i=${i} rem=${rem} | ${action}: ${message}`,
@@ -66,28 +65,28 @@ export function buildTargetSumRecursionSteps(nums: number[], target: number, max
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界回溯',
         'metric-cur-num': i < n ? `nums[${i}]=${nums[i]}` : '—',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
 
   if (!isValid || t < 0) {
     pushStep('check', 'check', 0, 0, '校验失败', `🛑 奇偶性校验失败或绝对值越界：sum=${sum}, target=${target}，无整数解，返回 0 种方案。`, 0);
-    return steps;
+    return tracker.finalize();
   }
 
   pushStep('callRoot', 'callRoot', 0, t, '启动暴力递归', `🚀 启动目标和暴力分治：转化正子集目标和 t=${t}，nums 长度=${n}。`);
 
   function dfs(i: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     const label = `dfs(i=${i}, rem=${rem})`;
-    callStack.push({ i, rem, label });
+    tracker.enterFrame({ i, rem, label });
     pushStep('fnEnter', 'fnEnter', i, rem, '进入栈帧', `📥 进入栈帧 ${label}。`);
 
     if (i === n) {
       const ans = rem === 0 ? 1 : 0;
       pushStep('baseCheck', 'baseCheck', i, rem, `触底判定: rem=${rem}`, ans === 1 ? `✅ 恰好凑齐目标和！返回 1 种有效方案。` : `❌ 未能恰好凑齐 (剩余 rem=${rem})，返回 0。`, ans);
-      callStack.pop();
+      tracker.exitFrame();
       return ans;
     }
 
@@ -104,27 +103,24 @@ export function buildTargetSumRecursionSteps(nums: number[], target: number, max
 
     const totalWays = p1 + p2;
     pushStep('returnSum', 'returnSum', i, rem, `方案累加: p1+p2=${totalWays}`, `📤 栈帧 ${label} 汇聚：返回两分支方案和 ${p1} + ${p2} = ${totalWays} 种。`, totalWays);
-    callStack.pop();
+    tracker.exitFrame();
     return totalWays;
   }
 
   dfs(0, t);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps = 800): TargetSumMemoStep[] {
   const steps: TargetSumMemoStep[] = [];
-  const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
-  const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
-  const t = isValid ? Math.floor((sum + target) / 2) : -1;
   const n = nums.length;
+  const t = Math.floor((nums.reduce((a, b) => a + Math.abs(b), 0) + target) / 2);
+  const isValid = nums.reduce((a, b) => a + Math.abs(b), 0) >= Math.abs(target) && (nums.reduce((a, b) => a + Math.abs(b), 0) + target) % 2 === 0;
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'target-sum', anchor);
 
   if (!isValid || t < 0) {
-    steps.push({
+    return [{
       stepIndex: 1,
       totalSteps: 1,
       action: 'check',
@@ -139,27 +135,22 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
       message: `🛑 奇偶性或越界无解，直接返回 0。`,
       log: 'check: invalid',
       metrics: {},
-    });
-    return steps;
+    }];
   }
 
   const memo: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(null));
-  let hitCount = 0;
-  let missCount = 0;
+  // 骨架（stepIndex/totalSteps/hitCount/missCount/codeLine）由 MemoTraceTracker 引擎托管
+  const tracker = new MemoTraceTracker<TargetSumMemoStep>({
+    maxSteps,
+    resolveLine,
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, rem: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
-      hitCount,
-      missCount,
+      memoGrid: snapshotGrid2D(memo),
       decision,
       message,
       log: `[MEMO] i=${i} rem=${rem} | ${action}: ${message}`,
@@ -167,8 +158,8 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界触底',
         'metric-cache-status': memoHit ? '🎯 Cache HIT' : '⚪ Cache MISS',
-        'metric-hit-count': `${hitCount}`,
-        'metric-miss-count': `${missCount}`,
+        'metric-hit-count': `${tracker.hitCount}`,
+        'metric-miss-count': `${tracker.missCount}`,
       },
     });
   };
@@ -176,7 +167,7 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
   pushStep('callRoot', 'callRoot', 0, t, false, '启动记忆化搜索', `🚀 启动记忆化搜索：创建备忘录表格 memo[${n + 1}][${t + 1}]。`);
 
   function dfsMemo(i: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     pushStep('fnEnter', 'fnEnter', i, rem, false, '进入栈帧', `📥 进入栈帧 dfs(i=${i}, rem=${rem})。`);
 
     if (i === n) {
@@ -186,13 +177,13 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
     }
 
     if (memo[i][rem] !== null) {
-      hitCount++;
+      tracker.registerHit();
       const val = memo[i][rem]!;
       pushStep('memoCheck', 'memoCheck', i, rem, true, `命中缓存 memo[${i}][${rem}] = ${val}`, `🎯 缓存命中！复用已求方案数 ${val}，直接剪枝！`, val);
       return val;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', i, rem, false, `未命中缓存 memo[${i}][${rem}]`, `⚪ 缓存未命中：首次探访，计算分支。`);
 
     const p1 = dfsMemo(i + 1, rem);
@@ -211,9 +202,7 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
   }
 
   dfsMemo(0, t);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum2DStep[] {
@@ -225,16 +214,13 @@ export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(0));
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'target-sum', anchor);
+  const tracker = new Dp2DTraceTracker<TargetSum2DStep>({ resolveLine });
 
   const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -249,7 +235,7 @@ export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum
 
   if (!isValid) {
     pushStep('initDp', 'initDp', 0, 0, [], '无解返回 0', `🛑 奇偶性或绝对值不满足，无法凑出 target，直接返回 0。`);
-    return steps;
+    return tracker.finalize();
   }
 
   dp[0][0] = 1;
@@ -278,7 +264,5 @@ export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum
 
   pushStep('returnAns', 'returnAns', n, t, [{ label: `dp[${n}][${t}]`, val: dp[n][t], r: n, c: t }], `最终方案数: dp[${n}][${t}]=${dp[n][t]}`, `🎉 二维动态规划填表完毕！恰好凑齐正子集和 ${t} 的方案数（即目标和 ${target} 的表达式总数）为 ${dp[n][t]} 种！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }

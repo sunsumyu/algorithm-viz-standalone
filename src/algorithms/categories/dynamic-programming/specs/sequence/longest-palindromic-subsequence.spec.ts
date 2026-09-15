@@ -186,6 +186,24 @@ export const LongestPalindromicSubsequenceSpec: AlgorithmSpec = {
 
     for (let i = 0; i < n; i++) dp[i][i] = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 10, context: [8, 9] },
+      cpp: { primary: 10, context: [8, 9] },
+      python: { primary: 8, context: [6, 7] },
+      javascript: { primary: 8, context: [6, 7] },
+    },
+      transfer2: {
+      java: { primary: 12, context: [8, 9] },
+      cpp: { primary: 12, context: [8, 9] },
+      python: { primary: 10, context: [6, 7] },
+      javascript: { primary: 10, context: [6, 7] },
+    },
+      line0: { java: 16, cpp: 16, python: 11, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -221,7 +239,7 @@ export const LongestPalindromicSubsequenceSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最长回文子序列。字符串 "${s}"，初始化对角线 dp[i][i] = 1。`,
       log: `entry: s="${s}", n=${n}`,
       vars: makeVars({ changed: ['s'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = n - 1; i >= 0; i--) {
@@ -242,12 +260,7 @@ export const LongestPalindromicSubsequenceSpec: AlgorithmSpec = {
             message: `✨ 两端匹配加 2：s[${i}] 与 s[${j}] 均为 '${c1}'，由内层子序列 + 2 $\rightarrow$ dp[${i}][${j}] = ${next}。`,
             log: `match: dp[${i}][${j}] = ${next}`,
             vars: makeVars({ i, j, ci: c1, cj: c2, curDp: next, changed: ['i', 'j', 'ci', 'cj', 'dp'] }),
-            codeLine: {
-              java: { primary: 10, context: [8, 9] },
-              cpp: { primary: 10, context: [8, 9] },
-              python: { primary: 8, context: [6, 7] },
-              javascript: { primary: 8, context: [6, 7] },
-            },
+            codeLine: LINES.transfer,
           });
         } else {
           const d1 = dp[i + 1][j] as number;
@@ -264,12 +277,7 @@ export const LongestPalindromicSubsequenceSpec: AlgorithmSpec = {
             message: `⏩ 两端不同 ('${c1}' != '${c2}')：取【舍弃 s[${i}] (${d1})】与【舍弃 s[${j}] (${d2})】的最大值 $\rightarrow$ dp[${i}][${j}] = ${best}。`,
             log: `diff: dp[${i}][${j}] = ${best}`,
             vars: makeVars({ i, j, ci: c1, cj: c2, curDp: best, changed: ['i', 'j', 'ci', 'cj', 'dp'] }),
-            codeLine: {
-              java: { primary: 12, context: [8, 9] },
-              cpp: { primary: 12, context: [8, 9] },
-              python: { primary: 10, context: [6, 7] },
-              javascript: { primary: 10, context: [6, 7] },
-            },
+            codeLine: LINES.transfer2,
           });
         }
       }
@@ -283,7 +291,7 @@ export const LongestPalindromicSubsequenceSpec: AlgorithmSpec = {
       message: `🏁 算法结束：字符串 "${s}" 的最长回文子序列长度为 dp[0][${n - 1}] = ${finalAns}。`,
       log: `return: dp[0][${n - 1}] = ${finalAns}`,
       vars: makeVars({ curDp: finalAns, changed: ['dp'] }),
-      codeLine: { java: 16, cpp: 16, python: 11, javascript: 14 },
+      codeLine: LINES.line0,
     });
 
     return steps;

@@ -162,6 +162,19 @@ export const StockIiSpec: AlgorithmSpec = {
     const n = prices.length;
     const dp: DpCell[][] = Array.from({ length: n }, () => ['-', '-']);
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: [5, 6], cpp: [6, 7], python: 5, javascript: [4, 5] },
+      transfer: {
+      java: { primary: [8, 9], context: [7] },
+      cpp: { primary: [8, 9], context: [7] },
+      python: { primary: [7, 8], context: [6] },
+      javascript: { primary: [7, 8], context: [6] },
+    },
+      returnAns: { java: 11, cpp: 12, python: 9, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -194,7 +207,7 @@ export const StockIiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：买卖股票的最佳时机 II（多次交易）。股价序列 [${prices.join(', ')}]。`,
       log: `entry: prices=[${prices.join(',')}]`,
       vars: makeVars({ changed: ['prices'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (n <= 1) return steps;
@@ -210,7 +223,7 @@ export const StockIiSpec: AlgorithmSpec = {
       message: `🎬 初始化第 0 天：买入持有现金 dp[0][0] = -$${prices[0]}；不持有现金 dp[0][1] = $0。`,
       log: `init day 0: hold=-${prices[0]}, unhold=0`,
       vars: makeVars({ i: 0, curP: prices[0], hold: -prices[0], unhold: 0, changed: ['h', 'u'] }),
-      codeLine: { java: [5, 6], cpp: [6, 7], python: 5, javascript: [4, 5] },
+      codeLine: LINES.init,
     });
 
     // Loops
@@ -241,12 +254,7 @@ export const StockIiSpec: AlgorithmSpec = {
         message: `⚡ 第 ${i} 天 (股价 $${p})：\n• 持有状态：${isBuyBetter ? `用前期累计利润 $${prevUnhold} 今日买入最优 (现金 $${nextHold})` : `保持昨日持有 (现金 $${nextHold})`}\n• 不持有状态：${isSellBetter ? `今日卖出套现最优 (昨日持有 $${prevHold} + 卖出 $${p} = $${sellToday})` : `保持不持有 (利润 $${prevUnhold})`} $\rightarrow$ dp[${i}][1] = $${nextUnhold}。`,
         log: `day ${i}: hold=${nextHold}, unhold=${nextUnhold}`,
         vars: makeVars({ i, curP: p, hold: nextHold, unhold: nextUnhold, changed: ['i', 'p', 'h', 'u'] }),
-        codeLine: {
-          java: { primary: [8, 9], context: [7] },
-          cpp: { primary: [8, 9], context: [7] },
-          python: { primary: [7, 8], context: [6] },
-          javascript: { primary: [7, 8], context: [6] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -258,7 +266,7 @@ export const StockIiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：多次买卖股票的最大累计利润为 dp[${n - 1}][1] = $${ans}。`,
       log: `return: dp[${n - 1}][1] = ${ans}`,
       vars: makeVars({ i: n - 1, hold: dp[n - 1][0], unhold: ans, changed: ['u'] }),
-      codeLine: { java: 11, cpp: 12, python: 9, javascript: 10 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

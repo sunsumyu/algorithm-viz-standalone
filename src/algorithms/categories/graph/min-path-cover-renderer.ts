@@ -11,6 +11,20 @@ import {
   MIN_PATH_COVER_PROBLEM_HTML,
   MIN_PATH_COVER_ANALYSIS_HTML,
 } from './min-path-cover-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 29,
+  init2: 37,
+  match: 43,
+  match2: 18,
+  match3: 20,
+  match4: 45,
+  match5: 25,
+  recover: 48,
+  recover2: 50,
+  done: 50,
+  done2: 51,
+};
 
 export interface PathCoverStep {
   splitMatches: Array<[number, number]>;
@@ -56,7 +70,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'init',
       message: '🚀 [函数入口] solve: DAG 拆点建立二分图，每个点 u 拆为出点 u_out 与入点 v_in。',
       log: '初始化 DAG 最小路径覆盖，节点数 n = 4',
-      codeLine: 29,
+      codeLine: lines.init,
     })
   );
 
@@ -70,7 +84,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'init',
       message: '📦 [初始化状态] match[1..4] 置为 0，初始 4 个孤立点各自构成独立路径，覆盖数 = 4。',
       log: 'match = new int[5]; minPaths = 4',
-      codeLine: 37,
+      codeLine: lines.init2,
     })
   );
 
@@ -86,7 +100,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '🔍 [节点 1 寻增广路] i = 1，清空 vis 访问标记，准备为出点 1_out 寻找可用入点。',
       log: 'for i = 1: Arrays.fill(vis, false); dfs(1)',
-      codeLine: 43,
+      codeLine: lines.match,
     })
   );
 
@@ -101,7 +115,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '⚡ [尝试边 (1, 2)] 遍历邻接点 v = 2，标记 vis[2] = true。',
       log: '| dfs(1): 考察边 1 -> 2, vis[2] = true',
-      codeLine: 18,
+      codeLine: lines.match2,
     })
   );
 
@@ -116,7 +130,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '✓ [匹配成功 (1➔2)] 检测到 match[2] == 0，入点 2_in 未被占用，成功匹配 match[2] = 1！',
       log: '| match[2] == 0 -> match[2] = 1, return true',
-      codeLine: 20,
+      codeLine: lines.match3,
     })
   );
 
@@ -131,7 +145,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '📈 [匹配数 +1] 成功增广一条匹配边，匹配数 maxMatch = 1，路径 [1] 与 [2] 合并为 [1 ➔ 2]！',
       log: 'maxMatch++ -> 1; 路径数 = 4 - 1 = 3',
-      codeLine: 45,
+      codeLine: lines.match4,
     })
   );
 
@@ -147,7 +161,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '🔍 [节点 2 寻增广路] i = 2，清空 vis 访问标记，准备为出点 2_out 寻找可用入点。',
       log: 'for i = 2: Arrays.fill(vis, false); dfs(2)',
-      codeLine: 43,
+      codeLine: lines.match,
     })
   );
 
@@ -162,7 +176,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '⚡ [尝试边 (2, 3)] 遍历邻接点 v = 3，标记 vis[3] = true。',
       log: '| dfs(2): 考察边 2 -> 3, vis[3] = true',
-      codeLine: 18,
+      codeLine: lines.match2,
     })
   );
 
@@ -180,7 +194,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '✓ [匹配成功 (2➔3)] 检测到 match[3] == 0，入点 3_in 尚未被占用，成功匹配 match[3] = 2！',
       log: '| match[3] == 0 -> match[3] = 2, return true',
-      codeLine: 20,
+      codeLine: lines.match3,
     })
   );
 
@@ -198,7 +212,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '📈 [匹配数 +1] 再次增广成功，匹配数 maxMatch = 2，路径扩展为 [1 ➔ 2 ➔ 3]，剩余路径数 = 2！',
       log: 'maxMatch++ -> 2; 路径数 = 4 - 2 = 2',
-      codeLine: 45,
+      codeLine: lines.match4,
     })
   );
 
@@ -217,7 +231,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '🔍 [节点 3 寻增广路] i = 3，清空 vis 访问标记，准备为出点 3_out 寻找可用入点。',
       log: 'for i = 3: Arrays.fill(vis, false); dfs(3)',
-      codeLine: 43,
+      codeLine: lines.match,
     })
   );
 
@@ -235,7 +249,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '⚡ [尝试边 (3, 4)] 遍历邻接点 v = 4，标记 vis[4] = true。',
       log: '| dfs(3): 考察边 3 -> 4, vis[4] = true',
-      codeLine: 18,
+      codeLine: lines.match2,
     })
   );
 
@@ -254,7 +268,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '✓ [匹配成功 (3➔4)] 检测到 match[4] == 0，入点 4_in 尚未被占用，成功匹配 match[4] = 3！',
       log: '| match[4] == 0 -> match[4] = 3, return true',
-      codeLine: 20,
+      codeLine: lines.match3,
     })
   );
 
@@ -273,7 +287,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '📈 [匹配数 +1] 再次增广成功，匹配数 maxMatch = 3，整图路径贯通为一条：[1 ➔ 2 ➔ 3 ➔ 4]！',
       log: 'maxMatch++ -> 3; 路径数 = 4 - 3 = 1',
-      codeLine: 45,
+      codeLine: lines.match4,
     })
   );
 
@@ -293,7 +307,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '🔍 [节点 4 寻增广路] i = 4，出点 4_out 为 DAG 终点，出度为 0。',
       log: 'for i = 4: adj[4] 为空',
-      codeLine: 43,
+      codeLine: lines.match,
     })
   );
 
@@ -312,7 +326,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'match',
       message: '🛑 [无出边增广结束] 节点 4 没有任何出边，dfs(4) 直接返回 false，匹配数保持 3。',
       log: '| dfs(4) -> false (无出边)',
-      codeLine: 25,
+      codeLine: lines.match5,
     })
   );
 
@@ -330,7 +344,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'recover',
       message: '🎯 [匈牙利循环结束] 所有 4 个出点遍历匹配完毕，二分图最大匹配数确定为 3。',
       log: '循环结束：maxMatch = 3',
-      codeLine: 48,
+      codeLine: lines.recover,
     })
   );
 
@@ -348,7 +362,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'recover',
       message: '👑 [柯尼希/路径覆盖定理] 最小不相交路径数 = n - maxMatch = 4 - 3 = 1！',
       log: 'int minPaths = n - maxMatch = 4 - 3 = 1',
-      codeLine: 50,
+      codeLine: lines.recover2,
     })
   );
 
@@ -366,7 +380,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'done',
       message: '🔗 [路径追踪验证] 从未被作为入点匹配的起始点 1 出发，依次沿 match 追踪：1 ➔ 2 ➔ 3 ➔ 4。',
       log: '追踪路径：1 -> 2 -> 3 -> 4 覆盖全图',
-      codeLine: 50,
+      codeLine: lines.done,
     })
   );
 
@@ -384,7 +398,7 @@ export function buildMinPathCoverSteps(): PathCoverStep[] {
       status: 'done',
       message: '🎉 [求解圆满完成] 返回最小路径覆盖数 1，路径集合为 {[1 ➔ 2 ➔ 3 ➔ 4]}，100% 节点覆盖！',
       log: '✓ return minPaths = 1; 算法求解完毕！',
-      codeLine: 51,
+      codeLine: lines.done2,
     })
   );
 

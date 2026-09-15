@@ -9,6 +9,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
 import { TreeNode } from './tree-template';
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 import {
   BUILD_TREE_PROBLEM_HTML,
   BUILD_TREE_ANALYSIS_HTML,
@@ -32,13 +33,9 @@ export interface BTStep {
   codeLine: number | number[];
 }
 
+// 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
 function cloneTree(node: TreeNode | null): TreeNode | null {
-  if (!node) return null;
-  return {
-    val: node.val,
-    left: cloneTree(node.left),
-    right: cloneTree(node.right),
-  };
+  return cloneStateDepTree(node);
 }
 
 export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] {

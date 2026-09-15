@@ -177,6 +177,18 @@ export const LongestRepeatedSubarraySpec: AlgorithmSpec = {
     );
 
     let maxLen = 0;
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 9, context: [7, 8] },
+      cpp: { primary: 9, context: [7, 8] },
+      python: { primary: 8, context: [6, 7] },
+      javascript: { primary: 8, context: [5, 6] },
+    },
+      line0: { java: 15, cpp: 15, python: 10, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -216,7 +228,7 @@ export const LongestRepeatedSubarraySpec: AlgorithmSpec = {
       message: `🎯 函数入口：最长重复子数组。nums1: [${nums1.join(', ')}]，nums2: [${nums2.join(', ')}]。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ changed: ['n1', 'n2'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i <= m; i++) {
@@ -237,12 +249,7 @@ export const LongestRepeatedSubarraySpec: AlgorithmSpec = {
             message: `✨ 元素相等匹配：nums1[${i - 1}] 与 nums2[${j - 1}] 均为 '${a}'，连续子数组长度累加至 ${next}。`,
             log: `match: dp[${i}][${j}] = ${next}`,
             vars: makeVars({ i, j, v1: a, v2: b, curDp: next, mx: maxLen, changed: ['i', 'j', 'v1', 'v2', 'dp', 'mx'] }),
-            codeLine: {
-              java: { primary: 9, context: [7, 8] },
-              cpp: { primary: 9, context: [7, 8] },
-              python: { primary: 8, context: [6, 7] },
-              javascript: { primary: 8, context: [5, 6] },
-            },
+            codeLine: LINES.transfer,
           });
         }
       }
@@ -254,7 +261,7 @@ export const LongestRepeatedSubarraySpec: AlgorithmSpec = {
       message: `🏁 算法结束：最长公共连续子数组长度为 ${maxLen}。`,
       log: `return: maxLen=${maxLen}`,
       vars: makeVars({ mx: maxLen, changed: ['mx'] }),
-      codeLine: { java: 15, cpp: 15, python: 10, javascript: 13 },
+      codeLine: LINES.line0,
     });
 
     return steps;

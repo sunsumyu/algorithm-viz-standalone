@@ -114,6 +114,26 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       expect(hasReturn).toBe(true);
     });
 
+    it('3.3b 阶段 1 RecursionTraceTracker 骨架不变量：stepIndex 连续/栈快照独立/totalSteps 回填/保险丝', async () => {
+      const { buildTargetSumRecursionSteps } = await import('./target-sum-stage-evolution');
+      const steps = buildTargetSumRecursionSteps([1, 1, 1, 1], 0);
+      // stepIndex 严格 1..N
+      expect(steps.map((s) => s.stepIndex)).toEqual(steps.map((_, i) => i + 1));
+      // totalSteps 全部回填为总步数
+      expect(steps.every((s) => s.totalSteps === steps.length)).toBe(true);
+      // 栈快照逐步独立：最深栈帧步骤的 callStack 长度 = 该步 depth
+      const maxDepth = Math.max(...steps.map((s) => s.callStack.length));
+      expect(maxDepth).toBeGreaterThan(1);
+      expect(steps.some((s) => s.callStack.length === 1)).toBe(true);
+      // 保险丝：小上限截断不抛异常
+      const fused = buildTargetSumRecursionSteps([1, 1, 1, 1], 0, 5);
+      expect(fused.length).toBeLessThanOrEqual(5);
+      expect(fused.every((s) => s.totalSteps === fused.length)).toBe(true);
+      // 决策语义不回归：根调用 → fnEnter 起步
+      expect(steps[0].callStack.length).toBe(0);
+      expect(steps[1].action).toBe('fnEnter');
+    });
+
     it('3.4 阶段 2 记忆化搜索记录缓存命中并返回与递归一致的方案数', async () => {
       const { buildTargetSumMemoSteps } = await import('./target-sum-stage-evolution');
       const steps = buildTargetSumMemoSteps([1, 1, 1, 1], 0);

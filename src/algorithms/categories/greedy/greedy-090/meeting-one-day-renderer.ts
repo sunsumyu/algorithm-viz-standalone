@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  MEETING_ONE_DAY_STAGE1_CODES,
-  MEETING_ONE_DAY_STAGE1_LINES,
-  MEETING_ONE_DAY_STAGE2_CODES,
-  MEETING_ONE_DAY_STAGE2_LINES,
-  MEETING_ONE_DAY_STAGE3_CODES,
-  MEETING_ONE_DAY_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { MEETING_ONE_DAY_STAGE1_CODES, MEETING_ONE_DAY_STAGE2_CODES, MEETING_ONE_DAY_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderGanttTimeline,
@@ -82,12 +75,11 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
     decision: '初始化参会日程',
     message: `载入 ${events.length} 场候选会议，时间范围 [Day ${minD}, Day ${maxD}]`,
     log: `[Init] 载入 ${events.length} 场会议。`,
-    codeLine: {
-      java: stage === 1 ? MEETING_ONE_DAY_STAGE1_LINES.java.init : stage === 2 ? MEETING_ONE_DAY_STAGE2_LINES.java.sort : MEETING_ONE_DAY_STAGE3_LINES.java.intro,
-      cpp: stage === 1 ? MEETING_ONE_DAY_STAGE1_LINES.cpp.init : stage === 2 ? MEETING_ONE_DAY_STAGE2_LINES.cpp.sort : MEETING_ONE_DAY_STAGE3_LINES.cpp.intro,
-      python: stage === 1 ? MEETING_ONE_DAY_STAGE1_LINES.python.init : stage === 2 ? MEETING_ONE_DAY_STAGE2_LINES.python.sort : MEETING_ONE_DAY_STAGE3_LINES.python.intro,
-      javascript: stage === 1 ? MEETING_ONE_DAY_STAGE1_LINES.javascript.init : stage === 2 ? MEETING_ONE_DAY_STAGE2_LINES.javascript.sort : MEETING_ONE_DAY_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor(
+      'meeting-one-day',
+      stage === 1 ? 1 : stage === 2 ? 2 : 3,
+      stage === 1 ? 'init' : stage === 2 ? 'sort' : 'intro'
+    ),
   });
 
   if (stage === 1) {
@@ -110,12 +102,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
         decision: `探索 Day ${day} 的参会选择`,
         message: `在 Day ${day}，暴力搜索所有包含该天的会议进行试探性分配`,
         log: `[DFS Try] Day=${day}`,
-        codeLine: {
-          java: MEETING_ONE_DAY_STAGE1_LINES.java.loop,
-          cpp: MEETING_ONE_DAY_STAGE1_LINES.cpp.loop,
-          python: MEETING_ONE_DAY_STAGE1_LINES.python.loop,
-          javascript: MEETING_ONE_DAY_STAGE1_LINES.javascript.loop,
-        },
+        codeLine: getGreedy090Anchor('meeting-one-day', 1, 'loop'),
       });
 
       // 选一个尚未参加且合法的
@@ -138,12 +125,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
           decision: `选派参加 ${candidate.name}`,
           message: `Day ${day} 安排参加 ${candidate.name}，累计已参加 ${attended} 场会议`,
           log: `[DFS Pick] Day ${day} -> ${candidate.name}`,
-          codeLine: {
-            java: MEETING_ONE_DAY_STAGE1_LINES.java.pick,
-            cpp: MEETING_ONE_DAY_STAGE1_LINES.cpp.pick,
-            python: MEETING_ONE_DAY_STAGE1_LINES.python.pick,
-            javascript: MEETING_ONE_DAY_STAGE1_LINES.javascript.pick,
-          },
+          codeLine: getGreedy090Anchor('meeting-one-day', 1, 'pick'),
         });
       }
     }
@@ -183,12 +165,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
       decision: '按开始时间排序预处理',
       message: '所有会议按开始日 startDay 升序排列完毕，便于时间指针推进时顺次入堆',
       log: '[Sort] 会议按开始日排序完毕。',
-      codeLine: {
-        java: MEETING_ONE_DAY_STAGE2_LINES.java.sort,
-        cpp: MEETING_ONE_DAY_STAGE2_LINES.cpp.sort,
-        python: MEETING_ONE_DAY_STAGE2_LINES.python.sort,
-        javascript: MEETING_ONE_DAY_STAGE2_LINES.javascript.sort,
-      },
+      codeLine: getGreedy090Anchor('meeting-one-day', 2, 'sort'),
     });
 
     const heap = new SimpleHeap<{ end: number; item: GanttIntervalItem }>((a, b) => a.end - b.end);
@@ -220,12 +197,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
           decision: `Day ${day}: 激活今日开启的会议`,
           message: `时间推进到 Day ${day}，将所有在今天开启的会议截止日压入小根堆，堆内候选数: ${heap.size()}`,
           log: `[Heap Add] Day ${day}, 堆内元素: ${heap.toArray().map((x) => x.end).join(',')}`,
-          codeLine: {
-            java: MEETING_ONE_DAY_STAGE2_LINES.java.addToday,
-            cpp: MEETING_ONE_DAY_STAGE2_LINES.cpp.addToday,
-            python: MEETING_ONE_DAY_STAGE2_LINES.python.addToday,
-            javascript: MEETING_ONE_DAY_STAGE2_LINES.javascript.addToday,
-          },
+          codeLine: getGreedy090Anchor('meeting-one-day', 2, 'addToday'),
         });
       }
 
@@ -251,12 +223,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
           decision: `Day ${day}: 淘汰已过期失效的会议`,
           message: `移除了 ${expiredCount} 场截止日已早于 Day ${day} 的过期会议`,
           log: `[Heap Expired] 淘汰 ${expiredCount} 场过期会议。`,
-          codeLine: {
-            java: MEETING_ONE_DAY_STAGE2_LINES.java.removeExpired,
-            cpp: MEETING_ONE_DAY_STAGE2_LINES.cpp.removeExpired,
-            python: MEETING_ONE_DAY_STAGE2_LINES.python.removeExpired,
-            javascript: MEETING_ONE_DAY_STAGE2_LINES.javascript.removeExpired,
-          },
+          codeLine: getGreedy090Anchor('meeting-one-day', 2, 'removeExpired'),
         });
       }
 
@@ -280,12 +247,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
           decision: `Day ${day}: 贪心参加堆顶会议 ${best.item.name}`,
           message: `弹出小根堆堆顶最早截止的 ${best.item.name} (截止日: Day ${best.end})，在今天打卡参会！累计参会: ${attendedCount}`,
           log: `[Attend] Day ${day} 参加 ${best.item.name}`,
-          codeLine: {
-            java: MEETING_ONE_DAY_STAGE2_LINES.java.attend,
-            cpp: MEETING_ONE_DAY_STAGE2_LINES.cpp.attend,
-            python: MEETING_ONE_DAY_STAGE2_LINES.python.attend,
-            javascript: MEETING_ONE_DAY_STAGE2_LINES.javascript.attend,
-          },
+          codeLine: getGreedy090Anchor('meeting-one-day', 2, 'attend'),
         });
       }
     }
@@ -303,12 +265,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
       decision: '小根堆贪心推演完成',
       message: `推演结束：在 [Day ${minD}, Day ${maxD}] 期间，最多可成功参加 ${attendedCount} 场会议！`,
       log: `[Done] 贪心完成，最终总参会数=${attendedCount}`,
-      codeLine: {
-        java: MEETING_ONE_DAY_STAGE2_LINES.java.ret,
-        cpp: MEETING_ONE_DAY_STAGE2_LINES.cpp.ret,
-        python: MEETING_ONE_DAY_STAGE2_LINES.python.ret,
-        javascript: MEETING_ONE_DAY_STAGE2_LINES.javascript.ret,
-      },
+      codeLine: getGreedy090Anchor('meeting-one-day', 2, 'ret'),
     });
 
     return steps;
@@ -331,12 +288,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
     decision: '早截止失效不可逆反证假设',
     message: '反证设问：Day 1 可选会议 A (end=2) 与 B (end=4)。贪心选择优先打卡 A，将 B 留给后续',
     log: '[Proof Start] 比较早截止 A 与晚截止 B',
-    codeLine: {
-      java: MEETING_ONE_DAY_STAGE3_LINES.java.intro,
-      cpp: MEETING_ONE_DAY_STAGE3_LINES.cpp.intro,
-      python: MEETING_ONE_DAY_STAGE3_LINES.python.intro,
-      javascript: MEETING_ONE_DAY_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor('meeting-one-day', 3, 'intro'),
   });
 
   steps.push({
@@ -355,12 +307,7 @@ export function buildMeetingOneDaySteps(rawInput: string, stage: number): Meetin
     decision: '时间裕度单调优势',
     message: '若逆序在 Day 1 参加 B：留到 Day 2 以后，A 很快在 Day 2 之后永久过期失效；而 B 宽容至 Day 4。将宽容度高的任务留给未来，必然严格不劣！',
     log: '[Proof Invariant] B 的生存期严格包含 A 的剩余生存期。',
-    codeLine: {
-      java: MEETING_ONE_DAY_STAGE3_LINES.java.compare,
-      cpp: MEETING_ONE_DAY_STAGE3_LINES.cpp.compare,
-      python: MEETING_ONE_DAY_STAGE3_LINES.python.compare,
-      javascript: MEETING_ONE_DAY_STAGE3_LINES.javascript.compare,
-    },
+    codeLine: getGreedy090Anchor('meeting-one-day', 3, 'compare'),
   });
 
   return steps;

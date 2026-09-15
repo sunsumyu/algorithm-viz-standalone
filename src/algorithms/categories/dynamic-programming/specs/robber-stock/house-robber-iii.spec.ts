@@ -184,6 +184,14 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       },
     };
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 10, cpp: 11, python: 10, javascript: 11 },
+      guard2: { java: [10, 11], cpp: [11, 12], python: [10, 11], javascript: [11, 13] },
+      returnAns: { java: 4, cpp: 5, python: 4, javascript: 3 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -214,7 +222,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：打家劫舍 III（树形 DP）。采用后序遍历（左右根）自底向上计算二元状态 [不偷, 偷]。`,
       log: `entry: tree rob`,
       vars: makeVars({ node: 'Root(3)', val: 3, changed: ['nd', 'v'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Leaf n2_r (3)
@@ -223,7 +231,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `🍃 访问叶子节点 (3)：左空右空 [0, 0] $\rightarrow$ 偷得 $3，不偷得 $0 $\rightarrow$ 返回 [0, 3]。`,
       log: `leaf (3) => [0, 3]`,
       vars: makeVars({ node: '叶子(3)', val: 3, notRob: 0, rob: 3, changed: ['nd', 'v', 'nr', 'r'] }),
-      codeLine: { java: 10, cpp: 11, python: 10, javascript: 11 },
+      codeLine: LINES.guard,
     });
 
     // Step 2: Leaf n3_r (1)
@@ -232,7 +240,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `🍃 访问叶子节点 (1)：左空右空 [0, 0] $\rightarrow$ 偷得 $1，不偷得 $0 $\rightarrow$ 返回 [0, 1]。`,
       log: `leaf (1) => [0, 1]`,
       vars: makeVars({ node: '叶子(1)', val: 1, notRob: 0, rob: 1, changed: ['nd', 'v', 'nr', 'r'] }),
-      codeLine: { java: 10, cpp: 11, python: 10, javascript: 11 },
+      codeLine: LINES.guard,
     });
 
     // Step 3: Node n2 (2)
@@ -244,7 +252,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `⚡ 回溯节点 (2)：左子[0, 0]，右子[0, 3]。\n• 偷本节点：2 + 0 + 0 = $2\n• 不偷本节点：0 + max(0, 3) = $3\n$\rightarrow$ 返回 [3, 2]。`,
       log: `node (2) => [3, 2]`,
       vars: makeVars({ node: '节点(2)', val: 2, notRob: 3, rob: 2, changed: ['nd', 'v', 'nr', 'r'] }),
-      codeLine: { java: [10, 11], cpp: [11, 12], python: [10, 11], javascript: [11, 13] },
+      codeLine: LINES.guard2,
     });
 
     // Step 4: Node n3 (3)
@@ -256,7 +264,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `⚡ 回溯节点 (3)：左子[0, 0]，右子[0, 1]。\n• 偷本节点：3 + 0 + 0 = $3\n• 不偷本节点：0 + max(0, 1) = $1\n$\rightarrow$ 返回 [1, 3]。`,
       log: `node (3) => [1, 3]`,
       vars: makeVars({ node: '节点(3)', val: 3, notRob: 1, rob: 3, changed: ['nd', 'v', 'nr', 'r'] }),
-      codeLine: { java: [10, 11], cpp: [11, 12], python: [10, 11], javascript: [11, 13] },
+      codeLine: LINES.guard2,
     });
 
     // Step 5: Root (3)
@@ -272,7 +280,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `👑 汇聚根节点 (3)：左子[3, 2]，右子[1, 3]。\n• 偷根节点：3 + 3 + 1 = $7\n• 不偷根节点：max(3, 2) + max(1, 3) = 3 + 3 = $6\n$\rightarrow$ 根状态 [6, 7]。`,
       log: `root (3) => [6, 7], ans = 7`,
       vars: makeVars({ node: '根节点(3)', val: 3, notRob: rootNotRob, rob: rootRob, changed: ['nd', 'v', 'nr', 'r'] }),
-      codeLine: { java: [10, 11], cpp: [11, 12], python: [10, 11], javascript: [11, 13] },
+      codeLine: LINES.guard2,
     });
 
     // Step 6: Return
@@ -281,7 +289,7 @@ export const HouseRobberIiiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：全局最高偷窃金额为 Math.max(6, 7) = $${finalAns}。`,
       log: `return: max(6, 7) = 7`,
       vars: makeVars({ node: '计算完成', notRob: rootNotRob, rob: rootRob, changed: ['nd'] }),
-      codeLine: { java: 4, cpp: 5, python: 4, javascript: 3 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

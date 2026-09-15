@@ -182,5 +182,55 @@ describe('DeclarativeStagePresenter Engine Guard', () => {
     expect(manifest?.name).toBe('结构化槽位算法');
     expect(manifest?.template).toBe(template);
   });
+
+  it('should support defaultMode and persist user mode selection to localStorage', () => {
+    const mockStorage: Record<string, string> = {};
+    (globalThis as any).localStorage = {
+      getItem: (k: string) => mockStorage[k] || null,
+      setItem: (k: string, v: string) => { mockStorage[k] = v; },
+      removeItem: (k: string) => { delete mockStorage[k]; },
+      clear: () => { for (const k in mockStorage) delete mockStorage[k]; },
+    };
+
+    const modeSpec = {
+      id: 'test-mode-algo',
+      name: '模式测试算法',
+      category: 'dynamic-programming',
+      codeLanguages: { java: ['code'] },
+      problemHtml: '<div></div>',
+      analysisHtml: '<div></div>',
+      modes: [
+        { id: 'forward', label: '顺推' },
+        { id: 'reverse', label: '逆推' },
+      ],
+      defaultMode: 'reverse',
+      buildSteps: (_inputs: any, mode?: string) => [{ message: 'step', mode: mode || 'default' }],
+    };
+
+    // 1. 验证生成的模板正确高亮 defaultMode
+    const template = DeclarativeStagePresenter.generateTemplate(modeSpec);
+    expect(template).toContain('data-mode="reverse"');
+    const reverseBtnRegex = /<button[^>]*class="[^"]*\bactive\b[^"]*"[^>]*data-mode="reverse"/;
+    expect(reverseBtnRegex.test(template)).toBe(true);
+
+    // 2. 初始实例化时当前模式为 defaultMode ('reverse')
+    const { Visualizer } = createDeclarativeVisualizer(modeSpec);
+    const viz1 = new Visualizer();
+    expect(viz1.getCurrentMode()).toBe('reverse');
+
+    // 3. 用户切换模式为顺推 -> 保存到 localStorage
+    viz1.setMode('forward');
+    expect(viz1.getCurrentMode()).toBe('forward');
+    expect(mockStorage['algo-mode-test-mode-algo']).toBe('forward');
+
+    // 4. 再次打开该算法 -> 自动恢复用户记忆的顺推模式
+    const viz2 = new Visualizer();
+    expect(viz2.getCurrentMode()).toBe('forward');
+
+    // 5. 模板在有用户持久化偏好时，优先高亮记忆的模式
+    const template2 = DeclarativeStagePresenter.generateTemplate(modeSpec);
+    const forwardBtnRegex = /<button[^>]*class="[^"]*\bactive\b[^"]*"[^>]*data-mode="forward"/;
+    expect(forwardBtnRegex.test(template2)).toBe(true);
+  });
 });
 

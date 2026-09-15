@@ -11,6 +11,20 @@ import {
   TREE_KNAPSACK_PROBLEM_HTML,
   TREE_KNAPSACK_ANALYSIS_HTML,
 } from './tree-knapsack-dp-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  root: 36,
+  root2: 18,
+  merge: 22,
+  merge2: 19,
+  leaf: 22,
+  leaf2: 19,
+  merge3: 28,
+  merge4: 31,
+  root3: 28,
+  done: 57,
+  done2: 58,
+};
 
 export interface TreeKnapStep {
   curNode: number;
@@ -60,7 +74,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'root',
       message: '🚀 [函数入口] solve: 建立超级源点 S0 连接所有无前置要求的根课程，初始化 DP 空间。',
       log: `solve(n=5, V=${V}): 初始化虚拟超级根 S0 与树形邻接表`,
-      codeLine: 36,
+      codeLine: lines.root,
       subtreeSize: 0,
     })
   );
@@ -75,7 +89,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'root',
       message: '📦 [初始化 S0] weight[0]=0, value[0]=0, sz[0]=0，准备递归遍历子树。',
       log: 'dfs(0): sz[0] = 0, dp[0][0] = 0',
-      codeLine: 18,
+      codeLine: lines.root2,
       subtreeSize: 0,
     })
   );
@@ -90,7 +104,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '🌲 [递归子树 C1(高数)] 深入节点 1，消耗体积 1，学分价值 2。',
       log: '| dfs(1): 遍历子节点 1(高数)',
-      codeLine: 22,
+      codeLine: lines.merge,
       subtreeSize: 0,
     })
   );
@@ -105,7 +119,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '📝 [初始化 C1 状态] 必须修读高数自身：sz[1] = 1, dp[1][1] = 2。',
       log: '| sz[1] = 1, dp[1][1] = 2',
-      codeLine: 19,
+      codeLine: lines.merge2,
       subtreeSize: 1,
     })
   );
@@ -120,7 +134,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [递归子树 C2(线代)] 考察课程 2，先修课为高数，体积 1，学分 5。',
       log: '| | dfs(2): 访问子节点 2(线代)',
-      codeLine: 22,
+      codeLine: lines.leaf,
       subtreeSize: 0,
     })
   );
@@ -135,7 +149,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [叶子 C2 独立状态] sz[2] = 1, dp[2][1] = 5，无子节点，返回上层。',
       log: '| | sz[2] = 1, dp[2][1] = 5, 叶子回溯',
-      codeLine: 19,
+      codeLine: lines.leaf2,
       subtreeSize: 1,
     })
   );
@@ -150,7 +164,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '➕ [合并子树 C2] 上下界优化 limit = min(V, 1+1) = 2：dp[1][2] = max(..., dp[1][1] + dp[2][1]) = 2 + 5 = 7！',
       log: '| 合并 C2: dp[1][2] = 2 + 5 = 7',
-      codeLine: 28,
+      codeLine: lines.merge3,
       subtreeSize: 1,
     })
   );
@@ -165,7 +179,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '📐 [更新 C1 子树大小] sz[1] += sz[2] = 1 + 1 = 2。',
       log: '| sz[1] 累加更新为 2',
-      codeLine: 31,
+      codeLine: lines.merge4,
       subtreeSize: 2,
     })
   );
@@ -180,7 +194,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [递归子树 C3(微积分)] 考察课程 3，先修课为高数，体积 1，学分 3。',
       log: '| | dfs(3): 访问子节点 3(微积分)',
-      codeLine: 22,
+      codeLine: lines.leaf,
       subtreeSize: 0,
     })
   );
@@ -195,7 +209,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [叶子 C3 独立状态] sz[3] = 1, dp[3][1] = 3，无子节点，返回上层。',
       log: '| | sz[3] = 1, dp[3][1] = 3, 叶子回溯',
-      codeLine: 19,
+      codeLine: lines.leaf2,
       subtreeSize: 1,
     })
   );
@@ -210,7 +224,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '➕ [合并子树 C3] limit = min(V, 2+1) = 3：dp[1][3] = dp[1][2] + dp[3][1] = 7 + 3 = 10！同时保持 dp[1][2] = max(7, 2+3) = 7。',
       log: '| 合并 C3: dp[1][3] = 7 + 3 = 10',
-      codeLine: 28,
+      codeLine: lines.merge3,
       subtreeSize: 2,
     })
   );
@@ -225,7 +239,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '📐 [C1 子树合并完毕] sz[1] += sz[3] = 3，dp[1] = [0, 2, 7, 10]，回溯到根 S0。',
       log: '| sz[1] 累加为 3, dfs(1) 执行结束回溯',
-      codeLine: 31,
+      codeLine: lines.merge4,
       subtreeSize: 3,
     })
   );
@@ -240,7 +254,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'root',
       message: '👑 [S0 合并子树 C1] S0 体积为 0，将 C1 状态复制进 dp[0]，当前 dp[0] = [0, 2, 7, 10]，sz[0] = 3。',
       log: 'S0 合并 C1: dp[0] 扩展为 [0, 2, 7, 10]',
-      codeLine: 28,
+      codeLine: lines.root3,
       subtreeSize: 3,
     })
   );
@@ -255,7 +269,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '🌲 [递归子树 C4(数据结构)] 深入第二分支，无先修课（直接连 S0），体积 1，学分价值 4。',
       log: '| dfs(4): 访问子节点 4(数据结构)',
-      codeLine: 22,
+      codeLine: lines.merge,
       subtreeSize: 0,
     })
   );
@@ -270,7 +284,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '📝 [初始化 C4 状态] sz[4] = 1, dp[4][1] = 4。',
       log: '| sz[4] = 1, dp[4][1] = 4',
-      codeLine: 19,
+      codeLine: lines.merge2,
       subtreeSize: 1,
     })
   );
@@ -285,7 +299,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [递归子树 C5(算法导论)] 考察课程 5，先修课为数据结构，体积 1，学分 6。',
       log: '| | dfs(5): 访问子节点 5(算法导论)',
-      codeLine: 22,
+      codeLine: lines.leaf,
       subtreeSize: 0,
     })
   );
@@ -300,7 +314,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'leaf',
       message: '🍃 [叶子 C5 独立状态] sz[5] = 1, dp[5][1] = 6，叶子无子树，返回上层。',
       log: '| | sz[5] = 1, dp[5][1] = 6, 叶子回溯',
-      codeLine: 19,
+      codeLine: lines.leaf2,
       subtreeSize: 1,
     })
   );
@@ -315,7 +329,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'merge',
       message: '➕ [合并子树 C5] limit = min(V, 1+1) = 2：dp[4][2] = dp[4][1] + dp[5][1] = 4 + 6 = 10，sz[4] 更新为 2。',
       log: '| 合并 C5: dp[4][2] = 4 + 6 = 10; sz[4] = 2',
-      codeLine: 28,
+      codeLine: lines.merge3,
       subtreeSize: 2,
     })
   );
@@ -333,7 +347,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'root',
       message: `👑 [S0 融合两棵大子树] 在超级根处进行最终卷积合并：分配容量组合（C1 分配 2 选高数+线代=7，C4 分配 1 选数据结构=4），总价值高达 ${ansVal}！`,
       log: `S0 卷积合并 C1 与 C4: dp[0][${V}] = ${ansVal}`,
-      codeLine: 28,
+      codeLine: lines.root3,
       subtreeSize: 5,
     })
   );
@@ -348,7 +362,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'done',
       message: '🎯 [DFS 回溯完毕] 树形依赖背包的所有子树已严格按上下界复杂度 O(N*V) 完成合并。',
       log: 'dfs(0) 结束，所有依赖路径与泛化物品合并完成',
-      codeLine: 57,
+      codeLine: lines.done,
       subtreeSize: 5,
     })
   );
@@ -363,7 +377,7 @@ export function buildTreeKnapsackSteps(maxCapacity: number): TreeKnapStep[] {
       status: 'done',
       message: `🎉 [求解成功] 返回 dp[0][${V}] = ${ansVal}！最优选修方案为：[${ansChosen.join(', ')}]，总学分价值达到最大化！`,
       log: `✓ return dp[0][${V}] = ${ansVal}; 算法执行完毕！`,
-      codeLine: 58,
+      codeLine: lines.done2,
       subtreeSize: 5,
     })
   );

@@ -273,6 +273,46 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(mismatchTree.children.length).toBe(2);
       expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬆️'))).toBe(true);
       expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬅️'))).toBe(true);
+
+      // 4. 最优依赖链 (胜者链) 应不受展开深度限制，一路追溯到边界基底，完整呈现答案 3 的三次 +1 匹配推导
+      const chain: ReturnType<typeof buildLcsStateDepTree>[] = [matchTree];
+      let cursor = matchTree;
+      while (cursor.children.length > 0) {
+        cursor = cursor.children.find((c) => c.status !== 'normal')!;
+        chain.push(cursor);
+      }
+      expect(chain.map((n) => `${n.r},${n.c}`)).toEqual(['5,3', '4,2', '3,2', '2,1', '1,1', '0,0']);
+      expect(chain[chain.length - 1].status).toBe('base');
+      expect(chain[chain.length - 1].val).toBe('dp[0][0] = 0');
+      // 链上两次匹配转移 ('c' 与 'a') 的边标签
+      expect(chain[2].children[0].edgeLabel).toContain("'c'");
+      expect(chain[4].children[0].edgeLabel).toContain("'a'");
+
+      // 5. 落选分支: dp[4][1] 保持浅层截断叶子；dp[2][1] 的落选侧 dp[2][0] 直接落在边界基底
+      const rejectedBranch = chain[1].children.find((c) => c.status === 'normal')!;
+      expect(rejectedBranch.val).toBe('dp[4][1] = 1');
+      expect(rejectedBranch.children.length).toBe(0);
+      const otherSide = chain[3].children.find((c) => c.val === 'dp[2][0] = 0')!;
+      expect(otherSide.status).toBe('base');
+
+      // 6. 顺推方向 (forward) 的胜者链同样应追溯到边界基底 (后缀表: dp[i][j] = LCS(s1[i..], s2[j..]))
+      const dpSuffix = [
+        [3, 2, 1, 0],
+        [2, 2, 1, 0],
+        [2, 2, 1, 0],
+        [1, 1, 1, 0],
+        [1, 1, 1, 0],
+        [0, 0, 0, 0],
+      ];
+      const forwardTree = buildLcsStateDepTree(0, 0, dpSuffix, 'abcde', 'ace', true, true, 2, 'forward');
+      const forwardCells: string[] = ['0,0'];
+      let forwardCursor = forwardTree;
+      while (forwardCursor.children.length > 0) {
+        forwardCursor = forwardCursor.children.find((c) => c.status !== 'normal')!;
+        forwardCells.push(`${forwardCursor.r},${forwardCursor.c}`);
+      }
+      expect(forwardCells).toEqual(['0,0', '1,1', '2,1', '3,2', '4,2', '5,3']);
+      expect(forwardCursor.status).toBe('base');
     });
 
     it('阶段 4 空间压缩应正确记录 leftUp 寄存器变化且最终结果为 3', () => {
@@ -591,7 +631,7 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
 
     it('单词搜索阶段 4 必须不存在高亮死锁，且 DFS 与预处理均有独立步进', () => {
       const steps = buildWordSearchStage4Steps(wordSearchInputs);
-      const lineSequence = steps.map((s) => s.codeLine?.['java']);
+      const lineSequence = steps.map((s) => (s.codeLine as Record<string, number> | undefined)?.['java']);
       
       // 验证存在预处理行（行 2~8）
       expect(lineSequence.some((l) => l !== undefined && l >= 2 && l <= 8)).toBe(true);

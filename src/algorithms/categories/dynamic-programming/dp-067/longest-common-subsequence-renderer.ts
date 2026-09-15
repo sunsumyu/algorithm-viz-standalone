@@ -8,12 +8,14 @@
  * 阶段 4: 空间压缩 dp[j] + leftUp 暂存寄存器
  */
 
-import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
-import { registerAlgorithm } from '../../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { captureScope } from '../../../../core/strategies/scope-capture';
 import { DP_067_PROBLEMS } from './dp-067-problem-content';
 import { RecursionTreeAdapter } from '../../../../core/renderers/recursion-tree-adapter';
 import { ThreeRecursionStackAdapter } from '../../../../core/renderers/three-recursion-stack-adapter';
 import { SequenceAlignmentPresenter } from '../../../../core/renderers/sequence-alignment-adapter';
+import { cloneStateDepTree as cloneLcsTree } from '../../../../core/strategies/tree-clone';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 import {
   LCS_STAGE1_CODE_LANGUAGES,
   LCS_STAGE2_CODE_LANGUAGES,
@@ -23,8 +25,12 @@ import {
   LCS_STAGE1_FORWARD_CODE_LANGUAGES,
   LCS_STAGE2_FORWARD_CODE_LANGUAGES,
   LCS_STAGE3_FORWARD_CODE_LANGUAGES,
+  getDp067Anchor,
+  type ResolvedLineTarget,
 } from './dp-067-stage-codes';
 import type { StepVar } from '../../../../core/interfaces';
+import { compileStateDependencyTree, type StateDependencyRule } from '../../../../core/strategies/dependency-tree-compiler';
+import { makeLcsEdgePresentation, type LcsEdgeDef } from '../../../../core/strategies/lcs-edge-presentation';
 import {
   renderRecursionCard1,
   renderMemoCard1,
@@ -49,6 +55,48 @@ export function parseLcsInputs(inputs: Record<string, any>) {
   return { s1, s2 };
 }
 
+export function lcsStepScope(step: {
+  i?: number;
+  j?: number;
+  curI?: number;
+  curJ?: number;
+  s1?: string;
+  s2?: string;
+  dp?: number[];
+  dpTable?: any;
+  memoGrid?: any;
+  leftUp?: number;
+  vars?: StepVar[];
+  [key: string]: any;
+}): Record<string, any> {
+  const i = step.curI ?? step.i ?? 0;
+  const j = step.curJ ?? step.j ?? 0;
+  const scope: Record<string, any> = {
+    i,
+    j,
+    curI: i,
+    curJ: j,
+  };
+  if (step.s1) scope.s1 = step.s1;
+  if (step.s2) scope.s2 = step.s2;
+  if (step.leftUp !== undefined) scope.leftUp = step.leftUp;
+  if (step.dp) scope.dp = [...step.dp];
+  if (step.dpTable) scope.dpTable = step.dpTable;
+  if (step.memoGrid) scope.memoGrid = step.memoGrid;
+  if (step.vars) {
+    for (const v of step.vars) {
+      if (v.name.includes('[') || v.name.includes('.')) continue;
+      let val: any = v.value;
+      if (val === 'true') val = true;
+      else if (val === 'false') val = false;
+      else if (typeof val === 'string' && val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+      else if (!isNaN(Number(val)) && typeof val === 'string' && val.trim() !== '') val = Number(val);
+      scope[v.name] = val;
+    }
+  }
+  return captureScope(scope);
+}
+
 // ==========================================
 // 1. Stage 1: 暴力递归
 // ==========================================
@@ -64,20 +112,6 @@ export interface LcsTreeNode {
   children: LcsTreeNode[];
 }
 
-export function cloneLcsTree(node: LcsTreeNode | null): LcsTreeNode | null {
-  if (!node) return null;
-  return {
-    id: node.id,
-    r: node.r,
-    c: node.c,
-    val: node.val,
-    edgeLabel: node.edgeLabel,
-    status: node.status,
-    tag: node.tag,
-    children: (node.children || []).map((c) => cloneLcsTree(c)!),
-  };
-}
-
 export interface LcsRecStep {
   currentCall: string;
   i: number;
@@ -86,13 +120,14 @@ export interface LcsRecStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   s1: string;
   s2: string;
   metrics?: Record<string, any>;
   treeRoot?: LcsTreeNode | null;
   activeNodeId?: string;
   vars?: StepVar[];
+  scope?: Record<string, any>;
   activeTrail?: string[];
   activeStack?: string[];
   fromI?: number;
@@ -122,16 +157,16 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
   };
 
   const lines = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    callEntry: { java: 5, cpp: 3, python: 11, javascript: 11 },
-    fEntry: { java: 7, cpp: 5, python: 2, javascript: 2 },
-    baseCheck: { java: 8, cpp: 6, python: 3, javascript: 3 },
-    baseReturn: { java: 9, cpp: 7, python: 4, javascript: 4 },
-    charCheck: { java: 11, cpp: 9, python: 5, javascript: 5 },
-    diagMatchCall: { java: 12, cpp: 10, python: 6, javascript: 6 },
-    branchDownCall: { java: 14, cpp: 12, python: 7, javascript: 7 },
-    branchRightCall: { java: 15, cpp: 13, python: 8, javascript: 8 },
-    combineMaxReturn: { java: 16, cpp: 14, python: 9, javascript: 9 },
+    entry: getDp067Anchor(1, 'lcs-forward', 'entry'),
+    callEntry: getDp067Anchor(1, 'lcs-forward', 'callEntry'),
+    fEntry: getDp067Anchor(1, 'lcs-forward', 'fEntry'),
+    baseCheck: getDp067Anchor(1, 'lcs-forward', 'baseCheck'),
+    baseReturn: getDp067Anchor(1, 'lcs-forward', 'baseReturn'),
+    charCheck: getDp067Anchor(1, 'lcs-forward', 'charCheck'),
+    diagMatchCall: getDp067Anchor(1, 'lcs-forward', 'diagMatchCall'),
+    branchDownCall: getDp067Anchor(1, 'lcs-forward', 'branchDownCall'),
+    branchRightCall: getDp067Anchor(1, 'lcs-forward', 'branchRightCall'),
+    combineMaxReturn: getDp067Anchor(1, 'lcs-forward', 'combineMaxReturn'),
   };
 
   const activeTrailCoords: string[] = [];
@@ -159,6 +194,9 @@ export function buildLcsStage1ForwardSteps(inputs: Record<string, any>): LcsRecS
     }
     if (!st.matchedIndices2) {
       st.matchedIndices2 = [...currentMatched2];
+    }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
     }
     steps.push(st);
   };
@@ -480,16 +518,16 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
   };
 
   const lines = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    callEntry: { java: 5, cpp: 3, python: 10, javascript: 12 },
-    fEntry: { java: 7, cpp: 5, python: 3, javascript: 3 },
-    baseCheck: { java: 8, cpp: 6, python: 4, javascript: 4 },
-    baseReturn: { java: 9, cpp: 7, python: 5, javascript: 5 },
-    charCheck: { java: 11, cpp: 9, python: 6, javascript: 7 },
-    diagMatchCall: { java: 12, cpp: 10, python: 7, javascript: 8 },
-    branchUpCall: { java: 14, cpp: 12, python: 8, javascript: 10 },
-    branchLeftCall: { java: 15, cpp: 13, python: 9, javascript: 11 },
-    combineMaxReturn: { java: 16, cpp: 14, python: 10, javascript: 12 },
+    entry: getDp067Anchor(1, 'longest-common-subsequence', 'entry'),
+    callEntry: getDp067Anchor(1, 'longest-common-subsequence', 'callEntry'),
+    fEntry: getDp067Anchor(1, 'longest-common-subsequence', 'fEntry'),
+    baseCheck: getDp067Anchor(1, 'longest-common-subsequence', 'baseCheck'),
+    baseReturn: getDp067Anchor(1, 'longest-common-subsequence', 'baseReturn'),
+    charCheck: getDp067Anchor(1, 'longest-common-subsequence', 'charCheck'),
+    diagMatchCall: getDp067Anchor(1, 'longest-common-subsequence', 'diagMatchCall'),
+    branchUpCall: getDp067Anchor(1, 'longest-common-subsequence', 'branchUpCall'),
+    branchLeftCall: getDp067Anchor(1, 'longest-common-subsequence', 'branchLeftCall'),
+    combineMaxReturn: getDp067Anchor(1, 'longest-common-subsequence', 'combineMaxReturn'),
   };
 
   const activeTrailCoords: string[] = [];
@@ -517,6 +555,9 @@ export function buildLcsStage1Steps(inputs: Record<string, any>, mode?: string):
     }
     if (!st.matchedIndices2) {
       st.matchedIndices2 = [...currentMatched2];
+    }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
     }
     steps.push(st);
   };
@@ -847,7 +888,7 @@ export interface LcsMemoStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   memoGrid: number[][];
   cachedVal?: number;
   s1: string;
@@ -856,6 +897,7 @@ export interface LcsMemoStep {
   treeRoot?: LcsTreeNode | null;
   activeNodeId?: string;
   vars?: StepVar[];
+  scope?: Record<string, any>;
   activeStack?: string[];
 }
 
@@ -880,17 +922,17 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
   };
 
   const lines2 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocMemo: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    callEntry: { java: 5, cpp: 5, python: 12, javascript: 12 },
-    fEntry: { java: 7, cpp: 7, python: 5, javascript: 5 },
-    baseCheck: { java: 8, cpp: 8, python: 6, javascript: 6 },
-    memoCheck: { java: 9, cpp: 9, python: 7, javascript: 7 },
-    charCheck: { java: 10, cpp: 10, python: 8, javascript: 8 },
-    diagMatchCall: { java: 11, cpp: 11, python: 9, javascript: 9 },
-    branchDownCall: { java: 13, cpp: 13, python: 10, javascript: 10 },
-    branchRightCall: { java: 14, cpp: 14, python: 11, javascript: 11 },
-    combineReturn: { java: 16, cpp: 16, python: 13, javascript: 13 },
+    entry: getDp067Anchor(2, 'lcs-forward', 'entry'),
+    allocMemo: getDp067Anchor(2, 'lcs-forward', 'allocMemo'),
+    callEntry: getDp067Anchor(2, 'lcs-forward', 'callEntry'),
+    fEntry: getDp067Anchor(2, 'lcs-forward', 'fEntry'),
+    baseCheck: getDp067Anchor(2, 'lcs-forward', 'baseCheck'),
+    memoCheck: getDp067Anchor(2, 'lcs-forward', 'memoCheck'),
+    charCheck: getDp067Anchor(2, 'lcs-forward', 'charCheck'),
+    diagMatchCall: getDp067Anchor(2, 'lcs-forward', 'diagMatchCall'),
+    branchDownCall: getDp067Anchor(2, 'lcs-forward', 'branchDownCall'),
+    branchRightCall: getDp067Anchor(2, 'lcs-forward', 'branchRightCall'),
+    combineReturn: getDp067Anchor(2, 'lcs-forward', 'combineReturn'),
   };
 
   const pushStep = (st: LcsMemoStep) => {
@@ -904,6 +946,9 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         memoVal: st.i >= 0 && st.i < n && st.j >= 0 && st.j < m ? memo[st.i][st.j] : undefined,
         hit: st.memoHit,
       });
+    }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
     }
     steps.push(st);
   };
@@ -920,7 +965,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
     message: `准备利用 ${n}×${m} 备忘录矩阵自首部向右下顺推探索剪枝`,
     log: `| 📥 进入 lcs2Forward: s1="${s1}", s2="${s2}"`,
     codeLine: lines2.entry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -945,7 +990,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
     message: '分配 O(N×M) 状态缓存，后续重复子问题将直接 O(1) 命中并剪枝',
     log: `| 📋 分配并初始化 memo[${n}][${m}] 为 -1`,
     codeLine: lines2.allocMemo,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -969,7 +1014,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
     message: `从两字符串首字符位置开始顺推搜索`,
     log: `| 🚀 启动顺推记忆化递归 f(0, 0, memo)`,
     codeLine: lines2.callEntry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -1017,7 +1062,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
       message: `探查后缀 s1[${i}..] 与 s2[${j}..]`,
       log: `| ▶️ 进入 f(i=${i}, j=${j})`,
       codeLine: lines2.fEntry,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2 }),
@@ -1041,7 +1086,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         message: '空串公共子序列长度恒为 0，向上回溯',
         log: `| 🛑 【边界基底】f(i=${i}, j=${j}) 触碰边界，return 0`,
         codeLine: lines2.baseCheck,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, ans: 0 }),
@@ -1071,7 +1116,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         message: `子问题 (${i}, ${j}) 此前已被计算过，直接复用缓存并剪枝整个子树`,
         log: `| 🎯 【缓存命中】memo[${i}][${j}] = ${cached}，剪枝返回！`,
         codeLine: lines2.memoCheck,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: cached, hit: true, ans: cached }),
@@ -1100,7 +1145,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         : `两字符不同 ('${c1}' != '${c2}')，向下与向右分叉探索`,
       log: `| ⚠️ 【未命中】首次计算 f(i=${i}, j=${j})，进行字符比较`,
       codeLine: lines2.charCheck,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: -1, hit: false }),
@@ -1121,7 +1166,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         message: `公共字符 '${c1}' 纳入 LCS (+1)，向右下顺推深入`,
         log: `| ↘️ 顺推深入: 1 + f(${i + 1}, ${j + 1})`,
         codeLine: lines2.diagMatchCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1143,7 +1188,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         message: `忽略 s1[${i}]，深入向下子问题`,
         log: `| ⬇️ 向下分支: f(${i + 1}, ${j})`,
         codeLine: lines2.branchDownCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1163,7 +1208,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
         message: `忽略 s2[${j}]，深入向右子问题`,
         log: `| ➡️ 向右分支: f(${i}, ${j + 1})`,
         codeLine: lines2.branchRightCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1192,7 +1237,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
       message: `子问题 (${i}, ${j}) 计算完毕，缓存结果为 ${ans}，返回上层`,
       log: `| 💾 【回填缓存】memo[${i}][${j}] = ${ans}，return ${ans}`,
       codeLine: lines2.combineReturn,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: ans, hit: false, ans }),
@@ -1219,7 +1264,7 @@ export function buildLcsStage2ForwardSteps(inputs: Record<string, any>): LcsMemo
     message: `全部子问题搜索与剪枝回溯结束，全局最终解: ${finalAns}`,
     log: `| ✅ 顺推记忆化搜索结束: 命中 ${hitCount} 次，计算 ${missCount} 次，最终最优解 = ${finalAns}`,
     codeLine: lines2.entry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     metrics: { 'metric-ans': `${finalAns}` },
@@ -1261,19 +1306,19 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
   };
 
   const lines2 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocMemo: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    callEntry: { java: 6, cpp: 5, python: 17, javascript: 18 },
-    fEntry: { java: 8, cpp: 7, python: 5, javascript: 5 },
-    baseCheck: { java: 9, cpp: 8, python: 6, javascript: 6 },
-    baseReturn: { java: 10, cpp: 9, python: 7, javascript: 7 },
-    memoCheck: { java: 12, cpp: 11, python: 8, javascript: 9 },
-    memoHitReturn: { java: 13, cpp: 12, python: 9, javascript: 10 },
-    charCheck: { java: 15, cpp: 14, python: 10, javascript: 12 },
-    diagMatchCall: { java: 16, cpp: 15, python: 11, javascript: 13 },
-    branchUpCall: { java: 18, cpp: 17, python: 13, javascript: 15 },
-    branchLeftCall: { java: 19, cpp: 18, python: 14, javascript: 16 },
-    combineStoreReturn: { java: 20, cpp: 19, python: 15, javascript: 17 },
+    entry: getDp067Anchor(2, 'longest-common-subsequence', 'entry'),
+    allocMemo: getDp067Anchor(2, 'longest-common-subsequence', 'allocMemo'),
+    callEntry: getDp067Anchor(2, 'longest-common-subsequence', 'callEntry'),
+    fEntry: getDp067Anchor(2, 'longest-common-subsequence', 'fEntry'),
+    baseCheck: getDp067Anchor(2, 'longest-common-subsequence', 'baseCheck'),
+    baseReturn: getDp067Anchor(2, 'longest-common-subsequence', 'baseReturn'),
+    memoCheck: getDp067Anchor(2, 'longest-common-subsequence', 'memoCheck'),
+    memoHitReturn: getDp067Anchor(2, 'longest-common-subsequence', 'memoHitReturn'),
+    charCheck: getDp067Anchor(2, 'longest-common-subsequence', 'charCheck'),
+    diagMatchCall: getDp067Anchor(2, 'longest-common-subsequence', 'diagMatchCall'),
+    branchUpCall: getDp067Anchor(2, 'longest-common-subsequence', 'branchUpCall'),
+    branchLeftCall: getDp067Anchor(2, 'longest-common-subsequence', 'branchLeftCall'),
+    combineStoreReturn: getDp067Anchor(2, 'longest-common-subsequence', 'combineStoreReturn'),
   };
 
   const pushStep = (st: LcsMemoStep) => {
@@ -1287,6 +1332,9 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         memoVal: st.i >= 0 && st.i <= n && st.j >= 0 && st.j <= m ? memo[st.i][st.j] : undefined,
         hit: st.memoHit,
       });
+    }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
     }
     steps.push(st);
   };
@@ -1303,7 +1351,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     message: `准备利用 ${n + 1}×${m + 1} 备忘录消除重叠子问题`,
     log: `| 📥 进入 lcs2: s1="${s1}", s2="${s2}"`,
     codeLine: lines2.entry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -1328,7 +1376,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     message: '全部元素置为 -1，标识所有子问题处于未求解状态',
     log: `| 📋 分配并初始化 memo[${n + 1}][${m + 1}] 为 -1`,
     codeLine: lines2.allocMemo,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -1352,7 +1400,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     message: `自顶向下进入递归核心过程，当前考察最大规模问题 (${n}, ${m})`,
     log: `| 🚀 执行 return f(s1, s2, i=${n}, j=${m}, memo) 启动记忆化递归`,
     codeLine: lines2.callEntry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     vars: [
@@ -1400,7 +1448,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
       message: `考察前缀子串 s1[0..${i - 1}] 与 s2[0..${j - 1}]`,
       log: `${indent}▶️ 进入 f(i=${i}, j=${j}) [第 ${callCount} 次调用]`,
       codeLine: lines2.fEntry,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2 }),
@@ -1433,7 +1481,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         ? `${indent}🛡️ 【边界检查】f(i=${i}, j=${j}) 触碰边界 (${i === 0 ? 'i==0' : 'j==0'})`
         : `${indent}🛡️ 【边界检查】f(i=${i}, j=${j}) 索引有效 (i>0 && j>0)`,
       codeLine: lines2.baseCheck,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2, ans: isBase ? 0 : undefined }),
@@ -1454,7 +1502,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `空串公共子序列长度为 0，向上层回溯`,
         log: `${indent}🛑 【边界返回】f(i=${i}, j=${j}) 达到空串基底，return 0`,
         codeLine: lines2.baseReturn,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, ans: 0 }),
@@ -1486,7 +1534,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         ? `${indent}🎯 【缓存命中】f(i=${i}, j=${j}) memo[${i}][${j}] = ${memo[i][j]}，触发剪枝！`
         : `${indent}⚠️ 【缓存未命中】f(i=${i}, j=${j}) memo[${i}][${j}] == -1，继续计算`,
       codeLine: lines2.memoCheck,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: memo[i][j], hit: isHit, ans: isHit ? memo[i][j] : undefined }),
@@ -1514,7 +1562,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `剪除整个递归子树，O(1) 立即返回已缓存结果 ${cached}`,
         log: `${indent}↩️ 【剪枝返回】f(i=${i}, j=${j}) 直接返回缓存值 ${cached}`,
         codeLine: lines2.memoHitReturn,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: cached, hit: true, ans: cached }),
@@ -1548,7 +1596,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         ? `${indent}🔍 【字符比较】f(i=${i}, j=${j}) s1[${i - 1}]('${c1}') == s2[${j - 1}]('${c2}')，匹配成功！`
         : `${indent}🔍 【字符比较】f(i=${i}, j=${j}) s1[${i - 1}]('${c1}') != s2[${j - 1}]('${c2}')，不匹配`,
       codeLine: lines2.charCheck,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       s1,
       s2,
       vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: -1, hit: false }),
@@ -1569,7 +1617,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `当前字符 '${c1}' 匹配 (+1)，递归求解缩小规模后的子问题`,
         log: `${indent}↖️ 【对角线递归】f(i=${i}, j=${j}) 字符相同，深入探索子问题 f(i=${i - 1}, j=${j - 1})`,
         codeLine: lines2.diagMatchCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1596,7 +1644,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `子问题 (${i}, ${j}) 求解完成并存入备忘录供后续复用，向上返回 ${res}`,
         log: `${indent}💾 【记忆存入】f(i=${i}, j=${j}) memo[${i}][${j}] = 1 + ${sub} = ${res}，return ${res}`,
         codeLine: lines2.diagMatchCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: res, hit: false, ans: res }),
@@ -1616,7 +1664,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `忽略 s1[${i - 1}]('${c1}')，探索子问题 f(${i - 1}, ${j})`,
         log: `${indent}⬆️ 【向上分支】f(i=${i}, j=${j}) 忽略 s1[${i - 1}]('${c1}')，深入探索子问题 f(i=${i - 1}, j=${j})`,
         codeLine: lines2.branchUpCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1637,7 +1685,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `忽略 s2[${j - 1}]('${c2}')，探索子问题 f(${i}, ${j - 1})`,
         log: `${indent}⬅️ 【向左分支】f(i=${i}, j=${j}) 忽略 s2[${j - 1}]('${c2}')，深入探索子问题 f(i=${i}, j=${j - 1})`,
         codeLine: lines2.branchLeftCall,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, hit: false }),
@@ -1665,7 +1713,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
         message: `取两路决策较大值存入备忘录，向上返回 ${res}`,
         log: `${indent}💾 【记忆存入】f(i=${i}, j=${j}) memo[${i}][${j}] = max(${p1}, ${p2}) = ${res}，return ${res}`,
         codeLine: lines2.combineStoreReturn,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         s1,
         s2,
         vars: makeLcsStage2Vars({ i, j, s1, s2, memoVal: res, hit: false, ans: res }),
@@ -1694,7 +1742,7 @@ export function buildLcsStage2Steps(inputs: Record<string, any>, mode?: string):
     message: `依托 ${n + 1}×${m + 1} 备忘录剪枝，消除全部重叠子问题，根节点得出全局最优解 LCS = ${finalAns}`,
     log: `| 🎯 记忆化搜索结束: 全局最优解 LCS("${s1}", "${s2}") = ${finalAns} (命中剪枝 ${hitCount} 次，计算 ${missCount} 次)`,
     codeLine: lines2.entry,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     s1,
     s2,
     metrics: { 'metric-ans': `${finalAns}` },
@@ -1724,18 +1772,21 @@ export interface Lcs2DStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   s1: string;
   s2: string;
   metrics?: Record<string, any>;
   treeRoot?: LcsTreeNode | null;
   activeNodeId?: string;
   vars?: StepVar[];
+  scope?: Record<string, any>;
 }
 
 /**
  * 阶段 3: 构造多层级状态依赖拓扑展开树 (State Dependency Topological Tree)
- * 递归展开当前目标单元格 dp[targetI][targetJ] 的前驱依赖链，展示 DP 状态的有向无环拓扑关系 (DAG 展开)
+ * 委托顶层 StateDependencyTreeCompiler：胜者链（标准 traceback 路径）无条件追溯到边界基底，
+ * 落选分支按 maxExpandDepth 预算截断。本函数仅注入 LCS 领域规则（字符匹配取对角 +1，
+ * 不匹配时上/左择大；顺推方向为下/右择大），不再自持展开策略。
  */
 export function buildLcsStateDepTree(
   targetI: number,
@@ -1745,326 +1796,108 @@ export function buildLcsStateDepTree(
   s2: string,
   isMatch?: boolean,
   isCalculated = false,
-  maxExpandDepth = 2,
+  maxExpandDepth?: number,
   direction: 'forward' | 'reverse' = 'reverse'
 ): LcsTreeNode {
-  if (direction === 'forward') {
-    const n = s1.length;
-    const m = s2.length;
-    if (targetI >= n || targetJ >= m) {
-      return {
-        id: `dp-${targetI}-${targetJ}`,
-        r: targetI,
-        c: targetJ,
-        val: `dp[${targetI}][${targetJ}] = 0`,
-        status: 'base',
-        tag: '🛡️边界基底',
-        children: [],
-      };
-    }
-    const c1 = s1[targetI];
-    const c2 = s2[targetJ];
-    const curVal = isCalculated ? (dp[targetI]?.[targetJ] ?? 0) : '?';
-    const matchFlag = isMatch !== undefined ? isMatch : c1 === c2;
+  const n = s1.length;
+  const m = s2.length;
+  const forward = direction === 'forward';
 
-    const rootNode: LcsTreeNode = {
-      id: `dp-${targetI}-${targetJ}`,
-      r: targetI,
-      c: targetJ,
-      val: `dp[${targetI}][${targetJ}] = ${curVal}`,
-      status: 'current',
-      tag: isCalculated
-        ? matchFlag
-          ? '↘️对角线(+1)'
-          : '🔀下右择大'
-        : matchFlag
-        ? '✨字符匹配待转移'
-        : '⚠️字符不同待择优',
-      children: [],
-    };
+  // 顺推考察前缀 s1[r]/s2[c]，逆推考察后缀 s1[r-1]/s2[c-1]
+  const char1 = (r: number) => (forward ? s1[r] : s1[r - 1]);
+  const char2 = (c: number) => (forward ? s2[c] : s2[c - 1]);
+  const isBaseState = (r: number, c: number) => (forward ? r >= n || c >= m : r === 0 || c === 0);
 
-    function expandForwardPredecessor(
-      r: number,
-      c: number,
-      edgeLabel: string,
-      tag: string | undefined,
-      status: 'visited' | 'normal' | 'base',
-      pathId: string,
-      currentDepth: number
-    ): LcsTreeNode {
-      if (r >= n || c >= m) {
+  const rootMatch = isMatch !== undefined ? isMatch : char1(targetI) === char2(targetJ);
+  const rootVal = isCalculated ? (dp[targetI]?.[targetJ] ?? 0) : '?';
+
+  /**
+   * 声明式边呈现工厂 — 将原 `childDepth === 1` 的双路径分支重构为 2-row 表。
+   * 传入 depthAt 时，引擎传入 1 表示根邻接层（rich tags）、其它为 deeper（sparse tags）。
+   */
+  const rule: StateDependencyRule<{ r: number; c: number }> = {
+    key: (s) => `dp-${s.r}-${s.c}`,
+    coord: (s) => ({ r: s.r, c: s.c }),
+    label: (s) => ({ val: `dp[${s.r}][${s.c}] = ${dp[s.r]?.[s.c] ?? 0}` }),
+    isBase: (s) => isBaseState(s.r, s.c),
+    baseLabel: (s) => ({
+      val: `dp[${s.r}][${s.c}] = 0`,
+      tag:
+        !forward && s.r === targetI && s.c === targetJ
+          ? targetI === 0 && targetJ === 0
+            ? '🛡️双空串基底'
+            : targetI === 0
+            ? '🛡️s1为空基底'
+            : '🛡️s2为空基底'
+          : '🛡️边界基底',
+    }),
+    dependencies: (s, childDepth) => {
+      if (isBaseState(s.r, s.c)) return [];
+      const a = char1(s.r);
+      const b = char2(s.c);
+      const p = makeLcsEdgePresentation(a, b, forward, isCalculated, childDepth);
+
+      if (a === b) {
+        return [
+          {
+            state: { r: forward ? s.r + 1 : s.r - 1, c: forward ? s.c + 1 : s.c - 1 },
+            edgeLabel: p.matchLabel(),
+            tag: p.matchTag(),
+            status: 'visited',
+            isWinner: true,
+          },
+        ];
+      }
+
+      const firstVal = forward ? dp[s.r + 1]?.[s.c] ?? 0 : dp[s.r - 1]?.[s.c] ?? 0;
+      const secondVal = forward ? dp[s.r]?.[s.c + 1] ?? 0 : dp[s.r]?.[s.c - 1] ?? 0;
+      const firstGreater = firstVal >= secondVal;
+
+      const edgeDefs = forward
+        ? [
+            { dr: 1, dc: 0, drop: a, dir: '⬇️', name: '下', zhName: '下方', cand: '下方候选' },
+            { dr: 0, dc: 1, drop: b, dir: '➡️', name: '右', zhName: '向右', cand: '右方候选' },
+          ]
+        : [
+            { dr: -1, dc: 0, drop: a, dir: '⬆️', name: '上', zhName: '上方', cand: '上方候选' },
+            { dr: 0, dc: -1, drop: b, dir: '⬅️', name: '左', zhName: '向左', cand: '左方候选' },
+          ];
+
+      return edgeDefs.map((e, idx) => {
+        const isWin = idx === 0 ? firstGreater : !firstGreater;
         return {
-          id: `${pathId}-dp-${r}-${c}`,
-          r,
-          c,
-          val: `dp[${r}][${c}] = 0`,
-          edgeLabel,
-          status: 'base',
-          tag: '🛡️边界基底',
-          children: [],
+          state: { r: s.r + e.dr, c: s.c + e.dc },
+          edgeLabel: p.mismatchLabel(e),
+          tag: p.mismatchTag(isWin, e),
+          status: p.mismatchStatus(isWin),
+          isWinner: isWin,
         };
-      }
-      const val = dp[r]?.[c] ?? 0;
-      const node: LcsTreeNode = {
-        id: `${pathId}-dp-${r}-${c}`,
-        r,
-        c,
-        val: `dp[${r}][${c}] = ${val}`,
-        edgeLabel,
-        status,
-        tag,
-        children: [],
-      };
-      if (currentDepth < maxExpandDepth) {
-        const charA = s1[r];
-        const charB = s2[c];
-        if (charA === charB) {
-          node.children.push(
-            expandForwardPredecessor(
-              r + 1,
-              c + 1,
-              `↘️'${charA}'(+1)`,
-              '右下前驱',
-              'visited',
-              `${pathId}-diag`,
-              currentDepth + 1
-            )
-          );
-        } else {
-          const down = dp[r + 1]?.[c] ?? 0;
-          const right = dp[r]?.[c + 1] ?? 0;
-          const downGreater = down >= right;
-          node.children.push(
-            expandForwardPredecessor(
-              r + 1,
-              c,
-              `⬇️下(舍'${charA}')`,
-              downGreater ? '👑大' : undefined,
-              downGreater ? 'visited' : 'normal',
-              `${pathId}-down`,
-              currentDepth + 1
-            ),
-            expandForwardPredecessor(
-              r,
-              c + 1,
-              `➡️右(舍'${charB}')`,
-              !downGreater ? '👑大' : undefined,
-              !downGreater ? 'visited' : 'normal',
-              `${pathId}-right`,
-              currentDepth + 1
-            )
-          );
-        }
-      }
-      return node;
-    }
-
-    if (matchFlag) {
-      rootNode.children.push(
-        expandForwardPredecessor(
-          targetI + 1,
-          targetJ + 1,
-          `↘️匹配('${c1}'=='${c2}') +1`,
-          isCalculated ? '👑+1贡献源' : '待转移',
-          'visited',
-          'root-diag',
-          1
-        )
-      );
-    } else {
-      const downVal = dp[targetI + 1]?.[targetJ] ?? 0;
-      const rightVal = dp[targetI]?.[targetJ + 1] ?? 0;
-      const isDownGreater = downVal >= rightVal;
-      rootNode.children.push(
-        expandForwardPredecessor(
-          targetI + 1,
-          targetJ,
-          `⬇️下方(舍弃'${c1}')`,
-          isCalculated ? (isDownGreater ? '👑较大胜出' : '🥈次优') : '下方候选',
-          isCalculated && isDownGreater ? 'visited' : 'normal',
-          'root-down',
-          1
-        ),
-        expandForwardPredecessor(
-          targetI,
-          targetJ + 1,
-          `➡️向右(舍弃'${c2}')`,
-          isCalculated ? (!isDownGreater ? '👑较大胜出' : '🥈次优') : '右方候选',
-          isCalculated && !isDownGreater ? 'visited' : 'normal',
-          'root-right',
-          1
-        )
-      );
-    }
-
-    return rootNode;
-  }
-
-  if (targetI === 0 || targetJ === 0) {
-    const baseTag =
-      targetI === 0 && targetJ === 0
-        ? '🛡️双空串基底'
-        : targetI === 0
-        ? '🛡️s1为空基底'
-        : '🛡️s2为空基底';
-    return {
-      id: `dp-${targetI}-${targetJ}`,
-      r: targetI,
-      c: targetJ,
-      val: `dp[${targetI}][${targetJ}] = 0`,
-      status: 'base',
-      tag: baseTag,
-      children: [],
-    };
-  }
-
-  const c1 = s1[targetI - 1];
-  const c2 = s2[targetJ - 1];
-  const curVal = isCalculated ? (dp[targetI]?.[targetJ] ?? 0) : '?';
-  const matchFlag = isMatch !== undefined ? isMatch : c1 === c2;
-
-  const rootNode: LcsTreeNode = {
-    id: `dp-${targetI}-${targetJ}`,
-    r: targetI,
-    c: targetJ,
-    val: `dp[${targetI}][${targetJ}] = ${curVal}`,
-    status: 'current',
-    tag: isCalculated
-      ? matchFlag
-        ? '↖️对角线(+1)'
-        : '🔀上左择大'
-      : matchFlag
-      ? '✨字符匹配待转移'
-      : '⚠️字符不同待择优',
-    children: [],
+      });
+    },
   };
 
-  function expandPredecessor(
-    r: number,
-    c: number,
-    edgeLabel: string,
-    tag: string | undefined,
-    status: 'visited' | 'normal' | 'base',
-    pathId: string,
-    currentDepth: number
-  ): LcsTreeNode {
-    // 边界基底
-    if (r === 0 || c === 0) {
-      return {
-        id: `${pathId}-dp-${r}-${c}`,
-        r,
-        c,
-        val: `dp[${r}][${c}] = 0`,
-        edgeLabel,
-        status: 'base',
-        tag: '🛡️边界基底',
-        children: [],
-      };
+  return compileStateDependencyTree(
+    { r: targetI, c: targetJ },
+    rule,
+    {
+      rootId: `dp-${targetI}-${targetJ}`,
+      rootVal: `dp[${targetI}][${targetJ}] = ${rootVal}`,
+      rootStatus: 'current',
+      rootTag: isCalculated
+        ? rootMatch
+          ? forward
+            ? '↘️对角线(+1)'
+            : '↖️对角线(+1)'
+          : forward
+          ? '🔀下右择大'
+          : '🔀上左择大'
+        : rootMatch
+        ? '✨字符匹配待转移'
+        : '⚠️字符不同待择优',
+      maxExpandDepth,
+      maxChainLength: n + m + 2,
     }
-
-    const val = dp[r]?.[c] ?? 0;
-    const node: LcsTreeNode = {
-      id: `${pathId}-dp-${r}-${c}`,
-      r,
-      c,
-      val: `dp[${r}][${c}] = ${val}`,
-      edgeLabel,
-      status,
-      tag,
-      children: [],
-    };
-
-    // 若未达到最大展开深度，则继续向下挖掘次级前驱
-    if (currentDepth < maxExpandDepth) {
-      const charA = s1[r - 1];
-      const charB = s2[c - 1];
-      const prevMatched = charA === charB;
-
-      if (prevMatched) {
-        node.children.push(
-          expandPredecessor(
-            r - 1,
-            c - 1,
-            `↖️'${charA}'(+1)`,
-            '对角前驱',
-            'visited',
-            `${pathId}-diag`,
-            currentDepth + 1
-          )
-        );
-      } else {
-        const up = dp[r - 1]?.[c] ?? 0;
-        const left = dp[r]?.[c - 1] ?? 0;
-        const upGreater = up >= left;
-        node.children.push(
-          expandPredecessor(
-            r - 1,
-            c,
-            `⬆️上(舍'${charA}')`,
-            upGreater ? '👑大' : undefined,
-            upGreater ? 'visited' : 'normal',
-            `${pathId}-up`,
-            currentDepth + 1
-          )
-        );
-        node.children.push(
-          expandPredecessor(
-            r,
-            c - 1,
-            `⬅️左(舍'${charB}')`,
-            !upGreater ? '👑大' : undefined,
-            !upGreater ? 'visited' : 'normal',
-            `${pathId}-left`,
-            currentDepth + 1
-          )
-        );
-      }
-    }
-
-    return node;
-  }
-
-  // 展开第 1 层前驱 (Depth 1)
-  if (matchFlag) {
-    const diagChild = expandPredecessor(
-      targetI - 1,
-      targetJ - 1,
-      `↖️匹配('${c1}'=='${c2}') +1`,
-      isCalculated ? '👑+1贡献源' : '待转移',
-      'visited',
-      `root-diag`,
-      1
-    );
-    rootNode.children.push(diagChild);
-  } else {
-    const upVal = dp[targetI - 1]?.[targetJ] ?? 0;
-    const leftVal = dp[targetI]?.[targetJ - 1] ?? 0;
-    const isUpGreater = upVal >= leftVal;
-
-    const upChild = expandPredecessor(
-      targetI - 1,
-      targetJ,
-      `⬆️上方(舍弃'${c1}')`,
-      isCalculated ? (isUpGreater ? '👑较大胜出' : '🥈次优') : '上方候选',
-      isCalculated && isUpGreater ? 'visited' : 'normal',
-      `root-up`,
-      1
-    );
-
-    const leftChild = expandPredecessor(
-      targetI,
-      targetJ - 1,
-      `⬅️向左(舍弃'${c2}')`,
-      isCalculated ? (!isUpGreater ? '👑较大胜出' : '🥈次优') : '左方候选',
-      isCalculated && !isUpGreater ? 'visited' : 'normal',
-      `root-left`,
-      1
-    );
-
-    rootNode.children.push(upChild, leftChild);
-  }
-
-  return rootNode;
+  ) as LcsTreeNode;
 }
 
 /** 兼容旧版调用的别名导出 */
@@ -2078,14 +1911,14 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
   const dp: (number | null)[][] = createUncalculatedDpGrid(n + 1, m + 1);
 
   const lines3 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocDp: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    loopI: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    loopJ: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    checkChar: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    diagMatch: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    branchMax: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    returnAns: { java: 14, cpp: 14, python: 11, javascript: 14 },
+    entry: getDp067Anchor(3, 'lcs-forward', 'entry'),
+    allocDp: getDp067Anchor(3, 'lcs-forward', 'allocDp'),
+    loopI: getDp067Anchor(3, 'lcs-forward', 'loopI'),
+    loopJ: getDp067Anchor(3, 'lcs-forward', 'loopJ'),
+    checkChar: getDp067Anchor(3, 'lcs-forward', 'checkChar'),
+    diagMatch: getDp067Anchor(3, 'lcs-forward', 'diagMatch'),
+    branchMax: getDp067Anchor(3, 'lcs-forward', 'branchMax'),
+    returnAns: getDp067Anchor(3, 'lcs-forward', 'returnAns'),
   };
 
   const pushStep = (st: Lcs2DStep) => {
@@ -2098,6 +1931,9 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         val: st.currentVal,
       });
     }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
+    }
     steps.push(st);
   };
 
@@ -2107,7 +1943,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
     curJ: 0,
     currentCell: 'lcs3Forward',
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `主函数入口：lcs3Forward("${s1}", "${s2}")`,
     message: `准备利用 ${n + 1}×${m + 1} 后缀二维表自底向上倒序填表 (求解 dp[0][0])`,
@@ -2134,7 +1970,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
     curJ: m,
     currentCell: `dp[${n}][${m}]`,
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: '初始化第 n 行与第 m 列为 0 (后缀空串基底)',
     message: 'dp[n][j] 与 dp[i][m] 代表后缀空串与任何串的 LCS 均为 0',
@@ -2159,7 +1995,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
       curJ: m - 1,
       currentCell: `dp[${i}][${m - 1}]`,
       currentVal: dp[i][m - 1] ?? 0,
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       depCells: [],
       decision: `外层倒序遍历第 ${i} 行 (i=${i}, 字符 '${c1}')`,
       message: `固定 s1[${i}]('${c1}')，内层倒序考察 s2 的每个字符`,
@@ -2181,7 +2017,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
         currentVal: dp[i][j] ?? 0,
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         depCells: [],
         decision: `内层倒序处理第 ${j} 列 (j=${j}, 字符 '${c2}')`,
         message: `考察后缀子问题 dp[${i}][${j}]: "${s1.slice(i)}" 与 "${s2.slice(j)}"`,
@@ -2200,7 +2036,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
         currentVal: dp[i][j] ?? 0,
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         depCells: [],
         decision: isMatch
           ? `✨ 字符匹配成功：s1[${i}]('${c1}') == s2[${j}]('${c2}')`
@@ -2231,7 +2067,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           curJ: j,
           currentCell: `dp[${i}][${j}] = ${dp[i][j]}`,
           currentVal: dp[i][j]!,
-          dpTable: dp.map((r) => [...r]),
+          dpTable: snapshotGrid2D(dp),
           depCells,
           decision: `对角线状态转移：1 + dp[${i + 1}][${j + 1}] = 1 + ${diagVal} = ${dp[i][j]}`,
           message: `纳入公共字符 '${c1}' (+1)，状态从右下角 (${i + 1}, ${j + 1}) 成功转移`,
@@ -2257,7 +2093,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
           curJ: j,
           currentCell: `dp[${i}][${j}] = ${dp[i][j]}`,
           currentVal: dp[i][j]!,
-          dpTable: dp.map((r) => [...r]),
+          dpTable: snapshotGrid2D(dp),
           depCells,
           decision: `下右择优决策：max(⬇️${downVal}, ➡️${rightVal}) = ${dp[i][j]}`,
           message: `舍弃 s1[${i}] 或 s2[${j}]，选择带来更大公共子序列长度的后继分支`,
@@ -2279,7 +2115,7 @@ export function buildLcsStage3ForwardSteps(inputs: Record<string, any>): Lcs2DSt
     curJ: 0,
     currentCell: `dp[0][0] = ${dp[0][0]}`,
     currentVal: dp[0][0] ?? 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `🎉 顺推后缀二维表递推完成！全局最优解 dp[0][0] = ${dp[0][0]}`,
     message: `全部单元格倒序推导完毕，首部全局答案提取自左上角 dp[0][0] = ${dp[0][0]}`,
@@ -2312,14 +2148,14 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
   const dp: (number | null)[][] = createUncalculatedDpGrid(n + 1, m + 1);
 
   const lines3 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocDp: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    loopI: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    loopJ: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    checkChar: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    diagMatch: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    branchMax: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    returnAns: { java: 14, cpp: 14, python: 11, javascript: 14 },
+    entry: getDp067Anchor(3, 'longest-common-subsequence', 'entry'),
+    allocDp: getDp067Anchor(3, 'longest-common-subsequence', 'allocDp'),
+    loopI: getDp067Anchor(3, 'longest-common-subsequence', 'loopI'),
+    loopJ: getDp067Anchor(3, 'longest-common-subsequence', 'loopJ'),
+    checkChar: getDp067Anchor(3, 'longest-common-subsequence', 'checkChar'),
+    diagMatch: getDp067Anchor(3, 'longest-common-subsequence', 'diagMatch'),
+    branchMax: getDp067Anchor(3, 'longest-common-subsequence', 'branchMax'),
+    returnAns: getDp067Anchor(3, 'longest-common-subsequence', 'returnAns'),
   };
 
   const pushStep = (st: Lcs2DStep) => {
@@ -2332,6 +2168,9 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         val: st.currentVal,
       });
     }
+    if (!st.scope) {
+      st.scope = lcsStepScope(st);
+    }
     steps.push(st);
   };
 
@@ -2341,7 +2180,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     curJ: 0,
     currentCell: 'lcs3',
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `主函数入口：lcs3("${s1}", "${s2}")`,
     message: `准备利用 ${n + 1}×${m + 1} 严格二维表自底向上填表`,
@@ -2368,7 +2207,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     curJ: 0,
     currentCell: 'dp[0][0]',
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: '初始化第 0 行与第 0 列为 0（空串基底）',
     message: 'dp[0][j] 与 dp[i][0] 代表空串与任何串的 LCS 均为 0',
@@ -2393,7 +2232,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
       curJ: 0,
       currentCell: `dp[${i}][0]`,
       currentVal: 0,
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       depCells: [],
       decision: `外层循环进入第 ${i} 行 (i=${i}, 字符 '${c1}')`,
       message: `固定 s1[${i - 1}]('${c1}')，内层遍历 s2 的每个字符`,
@@ -2415,7 +2254,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
         currentVal: dp[i][j] ?? 0,
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         depCells: [],
         decision: `内层循环处理第 ${j} 列 (j=${j}, 字符 '${c2}')`,
         message: `考察子问题 dp[${i}][${j}]: "${s1.slice(0, i)}" 与 "${s2.slice(0, j)}"`,
@@ -2434,7 +2273,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
         currentVal: dp[i][j] ?? 0,
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         depCells: [],
         decision: `字符比对：s1[${i - 1}]('${c1}') 与 s2[${j - 1}]('${c2}')`,
         message: isMatch
@@ -2456,7 +2295,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
           curJ: j,
           currentCell: `dp[${i}][${j}]`,
           currentVal: dp[i][j]!,
-          dpTable: dp.map((r) => [...r]),
+          dpTable: snapshotGrid2D(dp),
           depCells: [
             {
               r: i - 1,
@@ -2484,7 +2323,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
           curJ: j,
           currentCell: `dp[${i}][${j}]`,
           currentVal: dp[i][j]!,
-          dpTable: dp.map((r) => [...r]),
+          dpTable: snapshotGrid2D(dp),
           depCells: [
             { r: i - 1, c: j, label: `上方 [${i - 1}][${j}]`, color: 'rgba(129, 140, 248, 0.2)' },
             { r: i, c: j - 1, label: `左方 [${i}][${j - 1}]`, color: 'rgba(56, 189, 248, 0.2)' },
@@ -2508,7 +2347,7 @@ export function buildLcsStage3Steps(inputs: Record<string, any>, mode?: string):
     curJ: m,
     currentCell: `dp[${n}][${m}]`,
     currentVal: dp[n][m] ?? 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `🎉 二维表填表完成！最终 LCS 长度 = dp[${n}][${m}] = ${dp[n][m]}`,
     message: `全部单元格自底向上递推结束，右下角单元格即为全局最优解`,
@@ -2542,12 +2381,13 @@ export interface LcsSpaceOptStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   s1: string;
   s2: string;
   metrics?: Record<string, any>;
   dpGrid?: number[][];
   vars?: StepVar[];
+  scope?: Record<string, any>;
 }
 
 export function buildLcsStage4Steps(inputs: Record<string, any>): LcsSpaceOptStep[] {
@@ -2559,17 +2399,17 @@ export function buildLcsStage4Steps(inputs: Record<string, any>): LcsSpaceOptSte
   const fullGrid: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
 
   const lines4 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocDp: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    loopI: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    initLeftUp: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    loopJ: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    backup: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    checkMatch: { java: 9, cpp: 9, python: 9, javascript: 9 },
-    diagMatch: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    mismatchMax: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    shiftLeftUp: { java: 14, cpp: 14, python: 13, javascript: 14 },
-    returnAns: { java: 17, cpp: 17, python: 14, javascript: 17 },
+    entry: getDp067Anchor(4, 'longest-common-subsequence', 'entry'),
+    allocDp: getDp067Anchor(4, 'longest-common-subsequence', 'allocDp'),
+    loopI: getDp067Anchor(4, 'longest-common-subsequence', 'loopI'),
+    initLeftUp: getDp067Anchor(4, 'longest-common-subsequence', 'initLeftUp'),
+    loopJ: getDp067Anchor(4, 'longest-common-subsequence', 'loopJ'),
+    backup: getDp067Anchor(4, 'longest-common-subsequence', 'backup'),
+    checkMatch: getDp067Anchor(4, 'longest-common-subsequence', 'checkMatch'),
+    diagMatch: getDp067Anchor(4, 'longest-common-subsequence', 'diagMatch'),
+    mismatchMax: getDp067Anchor(4, 'longest-common-subsequence', 'mismatchMax'),
+    shiftLeftUp: getDp067Anchor(4, 'longest-common-subsequence', 'shiftLeftUp'),
+    returnAns: getDp067Anchor(4, 'longest-common-subsequence', 'returnAns'),
   };
 
   const pushStep = (s: Omit<LcsSpaceOptStep, 'dpGrid'>) => {
@@ -2584,7 +2424,8 @@ export function buildLcsStage4Steps(inputs: Record<string, any>): LcsSpaceOptSte
     steps.push({
       ...s,
       vars,
-      dpGrid: fullGrid.map((r) => [...r]),
+      scope: s.scope || lcsStepScope({ ...s, vars, curI: s.curI, curJ: s.curJ, s1, s2 }),
+      dpGrid: snapshotGrid2D(fullGrid),
     });
   };
 
@@ -2794,17 +2635,17 @@ export function buildLcsStage4ReverseSteps(inputs: Record<string, any>): LcsSpac
   const fullGrid: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
 
   const lines4Reverse = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocDp: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    loopI: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    initLeftUp: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    loopJ: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    backup: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    checkMatch: { java: 9, cpp: 9, python: 9, javascript: 9 },
-    diagMatch: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    mismatchMax: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    shiftLeftUp: { java: 14, cpp: 14, python: 13, javascript: 14 },
-    returnAns: { java: 17, cpp: 17, python: 14, javascript: 17 },
+    entry: getDp067Anchor(4, 'longest-common-subsequence', 'entry'),
+    allocDp: getDp067Anchor(4, 'longest-common-subsequence', 'allocDp'),
+    loopI: getDp067Anchor(4, 'longest-common-subsequence', 'loopI'),
+    initLeftUp: getDp067Anchor(4, 'longest-common-subsequence', 'initLeftUp'),
+    loopJ: getDp067Anchor(4, 'longest-common-subsequence', 'loopJ'),
+    backup: getDp067Anchor(4, 'longest-common-subsequence', 'backup'),
+    checkMatch: getDp067Anchor(4, 'longest-common-subsequence', 'checkMatch'),
+    diagMatch: getDp067Anchor(4, 'longest-common-subsequence', 'diagMatch'),
+    mismatchMax: getDp067Anchor(4, 'longest-common-subsequence', 'mismatchMax'),
+    shiftLeftUp: getDp067Anchor(4, 'longest-common-subsequence', 'shiftLeftUp'),
+    returnAns: getDp067Anchor(4, 'longest-common-subsequence', 'returnAns'),
   };
 
   const pushStep = (s: Omit<LcsSpaceOptStep, 'dpGrid'>) => {
@@ -2817,7 +2658,8 @@ export function buildLcsStage4ReverseSteps(inputs: Record<string, any>): LcsSpac
     steps.push({
       ...s,
       vars,
-      dpGrid: fullGrid.map((r) => [...r]),
+      scope: s.scope || lcsStepScope({ ...s, vars, curI: s.curI, curJ: s.curJ, s1, s2 }),
+      dpGrid: snapshotGrid2D(fullGrid),
     });
   };
 
@@ -3060,17 +2902,32 @@ export function buildLcsStage4ReverseSteps(inputs: Record<string, any>): LcsSpac
 // 5. 声明式 Visualizer
 // ==========================================
 
-const { template, Visualizer } = createDeclarativeVisualizer<any>({
+export const LongestCommonSubsequenceDeclarativeResult = registerDeclarativeAlgorithm<any>({
   id: 'longest-common-subsequence',
   name: '最长公共子序列 (LCS)',
   category: 'dynamic-programming',
+  description: '左程云算法讲解067 Code03：LeetCode 1143 最长公共子序列，经典双串对角线依赖与 leftUp 寄存器暂存优化',
+  icon: '🔀',
+  difficulty: 2,
+  levelOrder: 103,
+  learningGoal: '掌握双串样本对应模型的分类讨论，理解对角线依赖在空间压缩中需要 leftUp 暂存器的本质原因',
   badge: {
     mode: '双串样本对应模型 · 对角线依赖',
     complexity: 'O(N×M) · O(min(N,M))',
   },
-  card1Title: '🔤 双字符串动态指针与对齐舱',
-  card2Title: '📈 动态规划状态推导表与向量',
-  card2Desc: '展示双串匹配推导、对角线转移以及 leftUp 寄存器暂存机制',
+  primaryVisual: {
+    title: '🔤 双字符串动态指针与对齐舱',
+    render: (container, step) => {
+      renderStringAlignment(container, step.s1, step.s2, step.i, step.j);
+    },
+  },
+  auxiliaryVisual: {
+    title: '📈 动态规划状态推导表与向量',
+    desc: '展示双串匹配推导、对角线转移以及 leftUp 寄存器暂存机制',
+    render: (container, step) => {
+      RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, false);
+    },
+  },
   legend: [
     { label: '字符匹配', color: '#10b981' },
     { label: '字符不匹配', color: '#64748b' },
@@ -3109,9 +2966,52 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '双串模型 · 暴力递归',
         complexity: 'O(2^(N+M)) · O(N+M) 栈深',
       },
-      card1Title: '🔤 双串字符对齐与比较 (text1 × text2)',
-      card2Title: '🌿 递归搜索调用树 (Recursive Call Tree)',
-      card2Desc: '展现实时 DFS 调用分支，字符匹配沿对角线探查，不匹配时分裂为向左与向上子问题。',
+      primaryVisual: {
+        title: '🔤 双串字符对齐与比较 (text1 × text2)',
+        render: (container, step, extra) => {
+          const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+          const isReverse = !isForward;
+          const gridI = isForward ? step.i : Math.max(0, step.i + 1);
+          const gridJ = isForward ? step.j : Math.max(0, step.j + 1);
+          renderStage1GridCard(
+            container,
+            isReverse ? 'LCS 逆推递归探索网格 (i, j)' : 'LCS 递归探索网格 (i, j)',
+            step.s1.length + 1,
+            step.s2.length + 1,
+            gridI,
+            gridJ,
+            isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+            isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
+            extra?.is3DMode,
+            step
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '🌿 递归搜索调用树 (Recursive Call Tree)',
+        desc: '展现实时 DFS 调用分支，字符匹配沿对角线探查，不匹配时分裂为向左与向上子问题。',
+        render: (container, step) => {
+          const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+          const eofPos = isForward ? 'back' : 'front';
+          renderLcsCard2CompoundView(
+            container,
+            (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
+            (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
+            (stackBox) =>
+              ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+                treeRoot: step.treeRoot,
+                activeNodeId: step.activeNodeId,
+                currentCall: step.currentCall,
+                i: step.i,
+                j: step.j,
+                s1: step.s1,
+                s2: step.s2,
+                vars: step.vars,
+                callStack: step.callStack,
+              })
+          );
+        },
+      },
       legend: [
         { label: '当前比对字符', color: '#0284c7' },
         { label: '字符匹配 (+1)', color: '#16a34a' },
@@ -3129,45 +3029,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         }
         return buildLcsStage1ForwardSteps(inputs);
       },
-      renderCanvas: (container, step, extra) => {
-        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
-        const isReverse = !isForward;
-        const gridI = isForward ? step.i : Math.max(0, step.i + 1);
-        const gridJ = isForward ? step.j : Math.max(0, step.j + 1);
-        renderStage1GridCard(
-          container,
-          isReverse ? 'LCS 逆推递归探索网格 (i, j)' : 'LCS 递归探索网格 (i, j)',
-          step.s1.length + 1,
-          step.s2.length + 1,
-          gridI,
-          gridJ,
-          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
-          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
-          extra?.is3DMode,
-          step
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
-        const eofPos = isForward ? 'back' : 'front';
-        renderLcsCard2CompoundView(
-          container,
-          (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
-          (stackBox) =>
-            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
-              treeRoot: step.treeRoot,
-              activeNodeId: step.activeNodeId,
-              currentCall: step.currentCall,
-              i: step.i,
-              j: step.j,
-              s1: step.s1,
-              s2: step.s2,
-              vars: step.vars,
-              callStack: step.callStack,
-            })
-        );
-      },
     },
     {
       id: 'stage-2',
@@ -3180,9 +3041,48 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '双串模型 · 记忆化搜索',
         complexity: 'O(N×M) · O(N×M) 备忘录',
       },
-      card1Title: '🎯 2D 备忘录矩阵 memo[i][j]',
-      card2Title: '💾 记忆化搜索剪枝树 与 🔤 双字符串比对',
-      card2Desc: '遇重复子问题直接命中缓存并剪枝回溯，杜绝指数级爆炸；支持一键切换字符比对卡片。',
+      primaryVisual: {
+        title: '🎯 2D 备忘录矩阵 memo[i][j]',
+        render: (container, step, extra) => {
+          const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+          const isReverse = !isForward;
+          renderMemoGridCard(
+            container,
+            isReverse ? 'LCS 逆推备忘录 memo[i][j]' : 'LCS 备忘录 memo[i][j]',
+            step.memoGrid,
+            step.i,
+            step.j,
+            isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+            isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
+            extra?.is3DMode
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '💾 记忆化搜索剪枝树 与 🔤 双字符串比对',
+        desc: '遇重复子问题直接命中缓存并剪枝回溯，杜绝指数级爆炸；支持一键切换字符比对卡片。',
+        render: (container, step) => {
+          const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
+          const eofPos = isForward ? 'back' : 'front';
+          renderLcsCard2CompoundView(
+            container,
+            (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, true),
+            (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
+            (stackBox) =>
+              ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+                treeRoot: step.treeRoot,
+                activeNodeId: step.activeNodeId,
+                currentCall: step.currentCall,
+                i: step.i,
+                j: step.j,
+                s1: step.s1,
+                s2: step.s2,
+                vars: step.vars,
+                callStack: step.callStack,
+              })
+          );
+        },
+      },
       legend: [
         { label: '缓存命中 (Hit)', color: '#10b981' },
         { label: '未命中算值 (Miss)', color: '#ef4444' },
@@ -3200,41 +3100,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         }
         return buildLcsStage2ForwardSteps(inputs);
       },
-      renderCanvas: (container, step, extra) => {
-        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
-        const isReverse = !isForward;
-        renderMemoGridCard(
-          container,
-          isReverse ? 'LCS 逆推备忘录 memo[i][j]' : 'LCS 备忘录 memo[i][j]',
-          step.memoGrid,
-          step.i,
-          step.j,
-          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
-          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
-          extra?.is3DMode
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        const isForward = Boolean(step.currentCall?.toLowerCase().includes('forward'));
-        const eofPos = isForward ? 'back' : 'front';
-        renderLcsCard2CompoundView(
-          container,
-          (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, true),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.i, step.j, step.matchedIndices1, step.matchedIndices2, step.isComparing, step.compareStatusText, eofPos),
-          (stackBox) =>
-            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
-              treeRoot: step.treeRoot,
-              activeNodeId: step.activeNodeId,
-              currentCall: step.currentCall,
-              i: step.i,
-              j: step.j,
-              s1: step.s1,
-              s2: step.s2,
-              vars: step.vars,
-              callStack: step.callStack,
-            })
-        );
-      },
     },
     {
       id: 'stage-3',
@@ -3247,9 +3112,45 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '双串样本对应模型 · 状态依赖拓扑树',
         complexity: 'O(N×M) · O(N×M)',
       },
-      card1Title: '📊 严格二维状态表 dp[i][j]',
-      card2Title: '🌲 状态依赖拓扑展开树 与 🔤 双字符串比对',
-      card2Desc: '基于 DAG 拓扑反向展开当前格点的直接前驱与次级依赖链路；支持一键切换双串比对视图。',
+      primaryVisual: {
+        title: '📊 严格二维状态表 dp[i][j]',
+        render: (container, step, extra) => {
+          const isReverse = Boolean(step.decision?.includes('倒序') || step.message?.includes('倒序') || step.currentCell?.includes('lcs3Forward') || step.log?.includes('lcs3Forward'));
+          renderDp2DCard2(
+            container,
+            isReverse ? '逆推二维状态表 dp[i][j]' : '二维状态表 dp[i][j]',
+            step.dpTable,
+            step.curI,
+            step.curJ,
+            step.depCells.map((d: DpCellDep) => ({ r: d.r, c: d.c })),
+            isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+            isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
+            extra?.is3DMode
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '🌲 状态依赖拓扑展开树 与 🔤 双字符串比对',
+        desc: '基于 DAG 反向展开依赖拓扑：最优依赖链一路追溯到边界基底，落选分支浅层展示；支持一键切换双串比对视图。',
+        render: (container, step) => {
+          renderLcsCard2CompoundView(
+            container,
+            (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
+            (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.curI, step.curJ),
+            (stackBox) =>
+              ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+                treeRoot: step.treeRoot,
+                activeNodeId: step.activeNodeId,
+                currentCall: `dp[${step.curI}][${step.curJ}]`,
+                i: step.curI,
+                j: step.curJ,
+                s1: step.s1,
+                s2: step.s2,
+                vars: step.vars,
+              })
+          );
+        },
+      },
       legend: [
         { label: '当前填表单元格', color: '#10b981' },
         { label: '依赖前驱单元格', color: '#6366f1' },
@@ -3267,38 +3168,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         }
         return buildLcsStage3Steps(inputs);
       },
-      renderCanvas: (container, step, extra) => {
-        const isReverse = Boolean(step.decision?.includes('倒序') || step.message?.includes('倒序') || step.currentCell?.includes('lcs3Forward') || step.log?.includes('lcs3Forward'));
-        renderDp2DCard2(
-          container,
-          isReverse ? '逆推二维状态表 dp[i][j]' : '二维状态表 dp[i][j]',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          step.depCells.map((d: DpCellDep) => ({ r: d.r, c: d.c })),
-          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
-          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
-          extra?.is3DMode
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        renderLcsCard2CompoundView(
-          container,
-          (treeBox) => RecursionTreeAdapter.renderRecursionTree(treeBox, step.treeRoot, step.activeNodeId, false),
-          (strBox) => renderStringAlignment(strBox, step.s1, step.s2, step.curI, step.curJ),
-          (stackBox) =>
-            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
-              treeRoot: step.treeRoot,
-              activeNodeId: step.activeNodeId,
-              currentCall: `dp[${step.curI}][${step.curJ}]`,
-              i: step.curI,
-              j: step.curJ,
-              s1: step.s1,
-              s2: step.s2,
-              vars: step.vars,
-            })
-        );
-      },
     },
     {
       id: 'stage-4',
@@ -3311,9 +3180,73 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '双串模型 · leftUp 寄存器暂存优化',
         complexity: 'O(N×M) · O(M) 空间',
       },
-      card1Title: '⚡ 空间压缩切片滚动沙盘 dp[j]',
-      card2Title: '📈 空间压缩一维向量 与 🔤 双字符串比对',
-      card2Desc: '利用一维滚动数组与 leftUp 寄存器暂存历史状态；支持一键切换双字符串字符比对。',
+      primaryVisual: {
+        title: '⚡ 空间压缩切片滚动沙盘 dp[j]',
+        render: (container, step, extra) => {
+          const fullGrid = step.dpGrid || [step.dp];
+          const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
+          renderStage4RollingGridCard(
+            container,
+            isReverse ? '逆推空间压缩切片滚动' : '空间压缩切片滚动',
+            fullGrid,
+            step.curI,
+            step.curJ,
+            step.leftUp,
+            isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
+            isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
+            extra?.is3DMode,
+            isReverse
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '📈 空间压缩一维向量 与 🔤 双字符串比对',
+        desc: '利用一维滚动数组与 leftUp 寄存器暂存历史状态；支持一键切换双字符串字符比对。',
+        render: (container, step) => {
+          renderLcsCard2CompoundView(
+            container,
+            (subBox) => {
+              const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
+              const regName = isReverse ? 'rightDown' : 'leftUp';
+              renderSpaceOptCard2(
+                subBox,
+                `一维滚动数组 dp[0..${step.dp.length - 1}]`,
+                step.dp,
+                step.curJ,
+                regName,
+                step.leftUp,
+                isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')]
+              );
+            },
+            (subBox) => {
+              const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
+              const s1Idx = isReverse ? step.curI : step.curI - 1;
+              const s2Idx = isReverse ? step.curJ : step.curJ - 1;
+              renderStringAlignment(
+                subBox,
+                step.s1,
+                step.s2,
+                s1Idx,
+                s2Idx,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                isReverse ? 'front' : 'back'
+              );
+            },
+            (stackBox) =>
+              ThreeRecursionStackAdapter.getInstance().render(stackBox, {
+                currentCall: `dp[${step.curJ}]`,
+                i: step.curI,
+                j: step.curJ,
+                s1: step.s1,
+                s2: step.s2,
+                vars: step.vars,
+              })
+          );
+        },
+      },
       legend: [
         { label: '当前滚动行', color: '#f59e0b' },
         { label: 'leftUp 暂存格', color: '#8b5cf6' },
@@ -3331,74 +3264,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         }
         return buildLcsStage4Steps(inputs);
       },
-      renderCanvas: (container, step, extra) => {
-        const fullGrid = step.dpGrid || [step.dp];
-        const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
-        renderStage4RollingGridCard(
-          container,
-          isReverse ? '逆推空间压缩切片滚动' : '空间压缩切片滚动',
-          fullGrid,
-          step.curI,
-          step.curJ,
-          step.leftUp,
-          isReverse ? [...step.s1.split(''), 'Ø'] : ['Ø', ...step.s1.split('')],
-          isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')],
-          extra?.is3DMode,
-          isReverse
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        renderLcsCard2CompoundView(
-          container,
-          (subBox) => {
-            const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
-            const regName = isReverse ? 'rightDown' : 'leftUp';
-            renderSpaceOptCard2(
-              subBox,
-              `一维滚动数组 dp[0..${step.dp.length - 1}]`,
-              step.dp,
-              step.curJ,
-              regName,
-              step.leftUp,
-              isReverse ? [...step.s2.split(''), 'Ø'] : ['Ø', ...step.s2.split('')]
-            );
-          },
-          (subBox) => {
-            const isReverse = Boolean(step.decision?.includes('逆推') || step.log?.includes('Reverse') || step.log?.includes('逆推'));
-            const s1Idx = isReverse ? step.curI : step.curI - 1;
-            const s2Idx = isReverse ? step.curJ : step.curJ - 1;
-            renderStringAlignment(
-              subBox,
-              step.s1,
-              step.s2,
-              s1Idx,
-              s2Idx,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              isReverse ? 'front' : 'back'
-            );
-          },
-          (stackBox) =>
-            ThreeRecursionStackAdapter.getInstance().render(stackBox, {
-              currentCall: `dp[${step.curJ}]`,
-              i: step.curI,
-              j: step.curJ,
-              s1: step.s1,
-              s2: step.s2,
-              vars: step.vars,
-            })
-        );
-      },
     },
   ],
-  renderCanvas: (container, step) => {
-    renderStringAlignment(container, step.s1, step.s2, step.i, step.j);
-  },
-  renderCustomMetrics: (container, step) => {
-    RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, false);
-  },
 });
 
 function renderStringAlignment(
@@ -3426,18 +3293,4 @@ function renderStringAlignment(
   });
 }
 
-export const LongestCommonSubsequenceVisualizer = Visualizer;
-
-registerAlgorithm({
-  id: 'longest-common-subsequence',
-  name: '最长公共子序列 (LCS)',
-  viewId: 'algo-longest-common-subsequence-view',
-  category: 'dynamic-programming',
-  description: '左程云算法讲解067 Code03：LeetCode 1143 最长公共子序列，经典双串对角线依赖与 leftUp 寄存器暂存优化',
-  icon: '🔀',
-  template,
-  Visualizer,
-  difficulty: 2,
-  levelOrder: 103,
-  learningGoal: '掌握双串样本对应模型的分类讨论，理解对角线依赖在空间压缩中需要 leftUp 暂存器的本质原因',
-});
+export const LongestCommonSubsequenceVisualizer = LongestCommonSubsequenceDeclarativeResult.Visualizer;

@@ -7,15 +7,18 @@
 
 import type { UniversalStep } from '../universal-stage-engine';
 import { GridVisualAdapter, RecursionTreeAdapter, MemoSlotVisualAdapter } from './grid-visual-adapter';
+import { SequenceAlignmentPresenter } from './sequence-alignment-adapter';
 import { ThreeGridVisualAdapter } from './three-grid-visual-adapter';
 import { ThreeLayeredVoxelAdapter } from './three-layered-voxel-adapter';
 import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
+import { AlgorithmModelRepository } from '../model-repository';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
   stage3SubView?: 'matrix' | 'tree';
+  card2SubView?: 'tree' | 'alignment' | 'stack';
   step: UniversalStep;
   m: number;
   n: number;
@@ -149,13 +152,61 @@ export class StateSpacePresenter {
       }
     }
 
+    let rowLabels: string[] | undefined;
+    let colLabels: string[] | undefined;
+    let isMatch: ((r: number, c: number) => boolean) | undefined;
+    let cornerLabel: string | undefined;
+
+    let sStr: string | undefined = typeof (step as any).s === 'string'
+      ? (step as any).s
+      : ((step as any).s1 || (step as any).word1 || (step as any).text1);
+    let tStr: string | undefined = typeof (step as any).t === 'string'
+      ? (step as any).t
+      : ((step as any).s2 || (step as any).word2 || (step as any).text2);
+
+    if (!sStr || !tStr) {
+      if (AlgorithmModelRepository.hasModel(modelId)) {
+        const model = AlgorithmModelRepository.getModel(modelId);
+        const params = model.defaultParams as any;
+        if (params) {
+          sStr = typeof params.s === 'string'
+            ? params.s
+            : (typeof params.s1 === 'string'
+                ? params.s1
+                : (typeof params.word1 === 'string'
+                    ? params.word1
+                    : params.text1));
+          tStr = typeof params.t === 'string'
+            ? params.t
+            : (typeof params.s2 === 'string'
+                ? params.s2
+                : (typeof params.word2 === 'string'
+                    ? params.word2
+                    : params.text2));
+        }
+      }
+    }
+
+    if (sStr && tStr && effectiveM === sStr.length + 1 && effectiveN === tStr.length + 1) {
+      rowLabels = ['Ø', ...sStr.split('')];
+      colLabels = ['Ø', ...tStr.split('')];
+      isMatch = (r, c) => r > 0 && c > 0 && sStr![r - 1] === tStr![c - 1];
+      const lbl1 = (step as any).label1 || 's';
+      const lbl2 = (step as any).label2 || 't';
+      cornerLabel = `${lbl1}(i) \\ ${lbl2}(j)`;
+    }
+
     // 2. 2D 平面网格/槽位沙盘渲染
     GridVisualAdapter.renderGrid(container, step, {
       m: effectiveM,
       n: effectiveN,
       isReverse,
       modelId,
-      isGridProblem
+      isGridProblem,
+      rowLabels,
+      colLabels,
+      isMatch,
+      cornerLabel,
     });
   }
 
@@ -199,13 +250,20 @@ export class StateSpacePresenter {
         GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse });
       }
     } else if (currentStage === 'stage-1' || currentStage === 'stage-2') {
-      // 阶段 1 / 阶段 2: 递归分支搜索树 / 记忆化剪枝树
-      RecursionTreeAdapter.renderRecursionTree(
-        container,
-        step.treeRoot,
-        step.activeNodeId,
-        currentStage === 'stage-2'
-      );
+      // 阶段 1 / 阶段 2: 复合子视图调度 (递归树 / 双串比对 / 调用栈与变量)
+      const subView = options.card2SubView || 'tree';
+      if (subView === 'alignment') {
+        this.renderSequenceAlignmentCard2(container, step, options);
+      } else if (subView === 'stack') {
+        this.renderCallStackCard2(container, step, options);
+      } else {
+        RecursionTreeAdapter.renderRecursionTree(
+          container,
+          step.treeRoot,
+          step.activeNodeId,
+          currentStage === 'stage-2'
+        );
+      }
     }
   }
 
@@ -535,6 +593,158 @@ export class StateSpacePresenter {
    */
   public static reset3DCamera(): void {
     ThreeGridVisualAdapter.getInstance().resetCameraPosition();
+  }
+
+  /**
+   * 渲染 Card 2 【🔤 字符串比对】复合子视图
+   */
+  public static renderSequenceAlignmentCard2(
+    container: HTMLElement,
+    step: UniversalStep,
+    options: StateSpacePresentationOptions
+  ): void {
+    if (!container) return;
+
+    const s1 = (step as any).s1 || (step as any).s || '';
+    const s2 = (step as any).s2 || (step as any).t || '';
+
+    if (!s1 || !s2) {
+      container.innerHTML = `
+        <div class="w-full h-full flex flex-col items-center justify-center p-4 text-center text-slate-400 select-none">
+          <i class="fa-solid fa-code-compare text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
+          <div class="text-xs font-bold text-slate-600 dark:text-slate-300">非双字符串比对问题</div>
+          <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">当前题目不具备双序列指针，请切换为【🌲 递归树】或【📋 调用栈】视图。</div>
+        </div>
+      `;
+      return;
+    }
+
+    const curI = (step as any).curI !== undefined ? (step as any).curI : (step.i !== undefined ? step.i : 0);
+    const curJ = (step as any).curJ !== undefined ? (step as any).curJ : (step.j !== undefined ? step.j : 0);
+
+    SequenceAlignmentPresenter.render(container, {
+      s1,
+      s2,
+      curI,
+      curJ,
+      label1: (step as any).label1 || '母串 S',
+      label2: (step as any).label2 || '目标 T',
+      matchedIndices1: (step as any).matchedIndices1,
+      matchedIndices2: (step as any).matchedIndices2,
+      isComparing: (step as any).isComparing !== undefined ? (step as any).isComparing : true,
+      statusDescription: step.msg || step.log || step.tag
+    });
+  }
+
+  /**
+   * 渲染 Card 2 【📋 调用栈与变量】复合子视图
+   */
+  public static renderCallStackCard2(
+    container: HTMLElement,
+    step: UniversalStep,
+    options: StateSpacePresentationOptions
+  ): void {
+    if (!container) return;
+
+    const rawStack: Array<{ label: string; coord?: string }> = (step as any).callStack ||
+      (step.activeStack && step.activeStack.length > 0
+        ? step.activeStack.map((item: string) => ({ label: `dfs(${item})`, coord: item }))
+        : [{ label: `dfs(${step.i ?? 0}, ${step.j ?? 0})`, coord: `${step.i ?? 0},${step.j ?? 0}` }]);
+
+    const currentCall = (step as any).currentCall ||
+      rawStack[rawStack.length - 1]?.label ||
+      `dfs(${step.i ?? 0}, ${step.j ?? 0})`;
+
+    const stackItemsHtml = rawStack.length > 0
+      ? rawStack
+          .slice(-8)
+          .reverse()
+          .map((item, idx) => {
+            const isTop = idx === 0;
+            const frameNum = rawStack.length - idx;
+            return `
+              <div class="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-mono transition-all ${
+                isTop
+                  ? 'bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 shadow-xs font-bold'
+                  : 'bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+              }">
+                <span class="flex items-center gap-1.5">
+                  <span class="inline-block w-1.5 h-1.5 rounded-full ${isTop ? 'bg-blue-500 animate-pulse' : 'bg-slate-400'}"></span>
+                  <span class="${isTop ? 'font-black' : 'font-semibold'}">${isTop ? '👉 TOP (栈顶)' : `FRAME #${frameNum}`}</span>
+                </span>
+                <span class="font-bold">${item.label}</span>
+              </div>
+            `;
+          })
+          .join('')
+      : `<div class="text-slate-400 text-xs text-center py-4">调用栈为空 (未进入递归)</div>`;
+
+    // 提取局部变量信息
+    const s1 = (step as any).s1 || (step as any).s;
+    const s2 = (step as any).s2 || (step as any).t;
+    const curI = step.i !== undefined ? step.i : 0;
+    const curJ = step.j !== undefined ? step.j : 0;
+    const char1 = (s1 && curI >= 0 && curI < s1.length) ? `"${s1[curI]}"` : '-';
+    const char2 = (s2 && curJ >= 0 && curJ < s2.length) ? `"${s2[curJ]}"` : '-';
+    const isCacheHit = step.type === 'cache-hit';
+
+    container.innerHTML = `
+      <div class="w-full h-full flex flex-col gap-2 p-2 box-border overflow-hidden select-none">
+        <!-- 头部：当前递归与栈深 -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 flex items-center justify-between shadow-2xs flex-shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">当前探查:</span>
+            <span class="text-xs font-extrabold text-blue-600 dark:text-blue-400 font-mono">${currentCall}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10.5px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full font-mono">
+              深度: ${rawStack.length}
+            </span>
+            ${isCacheHit ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 px-1.5 py-0.5 rounded">🎯 命中缓存</span>` : ''}
+          </div>
+        </div>
+
+        <!-- 局部变量实时监视板 -->
+        <div class="grid grid-cols-4 gap-1.5 flex-shrink-0">
+          <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded p-1.5 text-center">
+            <div class="text-[9.5px] text-slate-400 font-medium">指标 i</div>
+            <div class="text-xs font-bold font-mono text-slate-700 dark:text-slate-200">${curI}</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded p-1.5 text-center">
+            <div class="text-[9.5px] text-slate-400 font-medium">指标 j</div>
+            <div class="text-xs font-bold font-mono text-slate-700 dark:text-slate-200">${curJ}</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded p-1.5 text-center">
+            <div class="text-[9.5px] text-slate-400 font-medium">s[i]</div>
+            <div class="text-xs font-bold font-mono text-blue-600 dark:text-blue-400">${char1}</div>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded p-1.5 text-center">
+            <div class="text-[9.5px] text-slate-400 font-medium">t[j]</div>
+            <div class="text-xs font-bold font-mono text-indigo-600 dark:text-indigo-400">${char2}</div>
+          </div>
+        </div>
+
+        <!-- 运行时刻调用栈列表 -->
+        <div class="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-lg p-2 flex-1 min-h-[90px] flex flex-col gap-1.5 overflow-hidden">
+          <div class="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300 pb-1 border-b border-slate-200 dark:border-slate-700/60 flex-shrink-0">
+            <span>📚 运行时刻调用栈 (Call Stack)</span>
+            <span class="text-[10px] text-slate-400 font-normal">最近 8 帧</span>
+          </div>
+          <div class="flex flex-col gap-1.5 overflow-y-auto flex-1 pr-0.5">
+            ${stackItemsHtml}
+          </div>
+        </div>
+
+        <!-- 步骤说明栏 -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs text-slate-600 dark:text-slate-300 shadow-2xs flex-shrink-0">
+          <div class="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-0.5">
+            <i class="fa-solid fa-circle-info text-blue-500 text-[10px]"></i>
+            <span>动作决策:</span>
+          </div>
+          <div class="text-[11.5px] leading-relaxed">${step.msg || step.log || step.tag || '递归探索中...'}</div>
+        </div>
+      </div>
+    `;
   }
 }
 

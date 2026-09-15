@@ -6,6 +6,11 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './graph-summary.html?raw';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  overview: 0,
+  summaryDone: 6,
+};
 
 interface GSStep {
   activeCategory: string;
@@ -107,7 +112,7 @@ function buildGSSteps(): GSStep[] {
     detail: null,
     message: '图论算法全景概览。包含遍历搜索、并查集、最小生成树、拓扑排序、最短路径五大领域。点击分类卡片查看详情。',
     log: '总览: 图论算法全景',
-    codeLine: 0,
+    codeLine: lines.overview,
   });
 
   for (const cat of GS_CATEGORIES) {
@@ -131,7 +136,7 @@ function buildGSSteps(): GSStep[] {
     detail: null,
     message: '图论总结完成！五大领域构成了图论的核心知识体系，是面试和竞赛的必考内容。',
     log: '总结完成',
-    codeLine: 6,
+    codeLine: lines.summaryDone,
   });
 
   return steps;

@@ -158,6 +158,15 @@ export const UniqueBstSpec: AlgorithmSpec = {
   },
   generateSteps: (input: { n?: number } | number): DpTraceStep[] => {
     const n = typeof input === 'number' ? input : (input?.n || 3);
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      init: { java: 4, cpp: 5, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 6, python: 5, javascript: 4 },
+      line0: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      returnAns: { java: 10, cpp: 11, python: 8, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
     const numDp: number[] = Array(n + 1).fill(0);
@@ -198,7 +207,7 @@ export const UniqueBstSpec: AlgorithmSpec = {
       formula: `numTrees(${n})`,
       metrics: { i: '-', j: '-', '左子树 dp[j-1]': '-', '右子树 dp[i-j]': '-', 'dp[i]': '-' },
       vars: makeVars({ changed: ['n'] }),
-      codeLine: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: dp[0] = 1
@@ -212,7 +221,7 @@ export const UniqueBstSpec: AlgorithmSpec = {
       formula: 'dp[0] = 1',
       metrics: { i: 0, j: '-', '左子树 dp[j-1]': '-', '右子树 dp[i-j]': '-', 'dp[i]': 1 },
       vars: makeVars({ currentDp: 1, changed: ['dp', 'dpi'] }),
-      codeLine: { java: 4, cpp: 5, python: 4, javascript: 3 },
+      codeLine: LINES.init,
     });
 
     for (let i = 1; i <= n; i++) {
@@ -225,7 +234,7 @@ export const UniqueBstSpec: AlgorithmSpec = {
         formula: `for (int i = 1; i <= ${n}; i++) [i = ${i}]`,
         metrics: { i, j: '-', '左子树 dp[j-1]': '-', '右子树 dp[i-j]': '-', 'dp[i]': numDp[i] || '-' },
         vars: makeVars({ i, changed: ['i'] }),
-        codeLine: { java: 5, cpp: 6, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 1; j <= i; j++) {
@@ -244,7 +253,7 @@ export const UniqueBstSpec: AlgorithmSpec = {
           formula: `dp[${i}] += dp[${j - 1}] × dp[${i - j}] = ${leftCount} × ${rightCount} = ${addCount}`,
           metrics: { i, j, '左子树 dp[j-1]': leftCount, '右子树 dp[i-j]': rightCount, 'dp[i]': numDp[i] },
           vars: makeVars({ i, j, left: leftCount, right: rightCount, currentDp: numDp[i], changed: ['j', 'left', 'right', 'dp', 'dpi'] }),
-          codeLine: { java: 7, cpp: 8, python: 7, javascript: 6 },
+          codeLine: LINES.line0,
         });
       }
     }
@@ -258,7 +267,7 @@ export const UniqueBstSpec: AlgorithmSpec = {
       formula: `return dp[${n}] = ${dp[n]}`,
       metrics: { i: n, j: '-', '左子树 dp[j-1]': '-', '右子树 dp[i-j]': '-', 'dp[i]': numDp[n] },
       vars: makeVars({ i: n, currentDp: numDp[n], changed: ['dpi'] }),
-      codeLine: { java: 10, cpp: 11, python: 8, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

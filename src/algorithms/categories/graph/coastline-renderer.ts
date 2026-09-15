@@ -10,6 +10,12 @@ import {
   COASTLINE_ANALYSIS_HTML,
   COASTLINE_CODE_LANGUAGES,
 } from './coastline-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3],
+  counting: [8, 9, 10, 11, 12, 13],
+  done: 18,
+};
 
 export interface CLStep {
   grid: number[][];
@@ -67,7 +73,7 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
     action: 'init',
     statusText: `初始化 ${R}×${C} 网格，共发现 ${landCount} 个陆地格子。开始逐格检查暴露边。`,
     log: `初始化: ${R}×${C} 网格，陆地总数 = ${landCount}`,
-    codeLine: [1, 2, 3],
+    codeLine: lines.init,
   });
 
   const exposedEdges: Record<string, boolean[]> = {};
@@ -110,7 +116,7 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
         action: 'counting',
         statusText: `检查陆地格子 (${r}, ${c}): 暴露边 [${dirParts.join(', ')}]，共 ${cellEdgeCount} 条。当前累计周长 = ${perimeter}。`,
         log: `格子 (${r},${c}): +${cellEdgeCount} 边 [${dirParts.join(',')}] → 累计周长 = ${perimeter}`,
-        codeLine: [8, 9, 10, 11, 12, 13],
+        codeLine: lines.counting,
       });
     }
   }
@@ -127,7 +133,7 @@ export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
     action: 'done',
     statusText: `🎉 海岸线计算完成！总周长 = ${perimeter}。共扫描 ${landCount} 个陆地格子。`,
     log: `✓ 计算完成: 岛屿总周长 = ${perimeter}`,
-    codeLine: 18,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -12,6 +12,7 @@ import {
   A_STAR_JOURNEY_ANALYSIS_HTML,
 } from './a-star-journey-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface AStarJourneyStep {
   grid: number[][];
@@ -123,7 +124,7 @@ export function buildAStarJourneySteps(preset: string = 'classic_3x4'): AStarJou
 
     const pathCopy = finalPath.map(([r, c]) => [r, c] as [number, number]);
     const fMapCopy = { ...fRecord };
-    const distGridCopy = distance.map((row) => [...row]);
+    const distGridCopy = snapshotGrid2D(distance);
 
     const coordStr = `(${curR}, ${curC})`;
     const fStr = `f=${curF} (g:${curG} + h:${h(curR, curC)})`;
@@ -137,7 +138,7 @@ export function buildAStarJourneySteps(preset: string = 'classic_3x4'): AStarJou
             : '初始化起点';
 
     steps.push({
-      grid: grid.map((r) => [...r]),
+      grid: snapshotGrid2D(grid),
       curR,
       curC,
       openSet,

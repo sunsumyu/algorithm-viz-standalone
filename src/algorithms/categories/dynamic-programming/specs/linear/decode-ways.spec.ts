@@ -199,6 +199,17 @@ export const DecodeWaysSpec: AlgorithmSpec = {
     const rawStr = typeof input === 'string' ? input : (input?.s || input?.str || '226');
     const s = rawStr || '226';
     const n = s.length;
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      guard: { java: 3, cpp: 4, python: 4, javascript: 2 },
+      init: { java: 6, cpp: 7, python: 7, javascript: 5 },
+      line0: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      loopOuter: { java: 8, cpp: 9, python: 8, javascript: 6 },
+      guard2: { java: [11, 12], cpp: [12, 13], python: [10, 11], javascript: [7, 8] },
+      returnAns: { java: 14, cpp: 15, python: 13, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep({ source: s.split(''), ...step }));
     const numDp: number[] = Array(n + 1).fill(0);
@@ -236,7 +247,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
       formula: `numDecodings("${s}")`,
       metrics: { i: '-', one: '-', two: '-', answer: '-' },
       vars: makeVars({ changed: ['s', 'n'] }),
-      codeLine: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (s.length === 0 || s[0] === '0') {
@@ -248,7 +259,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
         formula: 'return 0',
         metrics: { i: 0, one: '0', two: '-', answer: 0 },
         vars: makeVars({ currentDp: 0, changed: ['dpi'] }),
-        codeLine: { java: 3, cpp: 4, python: 4, javascript: 2 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -264,7 +275,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
       formula: 'dp[0] = 1',
       metrics: { i: 0, one: '-', two: '-', answer: 1 },
       vars: makeVars({ currentDp: 1, changed: ['dp', 'dpi'] }),
-      codeLine: { java: 6, cpp: 7, python: 7, javascript: 5 },
+      codeLine: LINES.init,
     });
 
     // Step 2: dp[1] = 1
@@ -278,7 +289,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
       formula: 'dp[1] = 1',
       metrics: { i: 1, one: s[0], two: '-', answer: 1 },
       vars: makeVars({ one: s[0], currentDp: 1, changed: ['dp', 'dpi'] }),
-      codeLine: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      codeLine: LINES.line0,
     });
 
     for (let i = 2; i <= n; i++) {
@@ -295,7 +306,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
         formula: `for (int i = 2; i <= ${n}; i++) [i = ${i}]`,
         metrics: { i, one: String(one), two: String(two), answer: '待计算' },
         vars: makeVars({ i, one, two, changed: ['i', 'one', 'two'] }),
-        codeLine: { java: 8, cpp: 9, python: 8, javascript: 6 },
+        codeLine: LINES.loopOuter,
       });
 
       if (one >= 1 && one <= 9) {
@@ -318,7 +329,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
         formula: `dp[${i}] = ${one >= 1 && one <= 9 ? `dp[${i - 1}]` : '0'} + ${two >= 10 && two <= 26 ? `dp[${i - 2}]` : '0'} = ${dp[i]}`,
         metrics: { i, one: String(one), two: String(two), answer: numDp[i] },
         vars: makeVars({ i, one, two, currentDp: numDp[i], changed: ['dp', 'dpi'] }),
-        codeLine: { java: [11, 12], cpp: [12, 13], python: [10, 11], javascript: [7, 8] },
+        codeLine: LINES.guard2,
       });
     }
 
@@ -331,7 +342,7 @@ export const DecodeWaysSpec: AlgorithmSpec = {
       formula: `return dp[${n}] = ${dp[n]}`,
       metrics: { i: n, one: '-', two: '-', answer: numDp[n] },
       vars: makeVars({ i: n, currentDp: numDp[n], changed: ['dpi'] }),
-      codeLine: { java: 14, cpp: 15, python: 13, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

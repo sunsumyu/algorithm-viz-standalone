@@ -161,6 +161,46 @@ export const MinCostSpec: AlgorithmSpec = {
     const raw = Array.isArray(input) ? input : (input?.nums || [10, 15, 20]);
     const nums = raw.length ? raw : [10, 15, 20];
     const n = nums.length;
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: {
+      java: 2,
+      cpp: 3,
+      python: 2,
+      javascript: 1,
+    },
+      init: {
+      java: 5,
+      cpp: 6,
+      python: 5,
+      javascript: 4,
+    },
+      line0: {
+      java: 6,
+      cpp: 7,
+      python: 5,
+      javascript: 5,
+    },
+      loopOuter: {
+      java: 7,
+      cpp: 8,
+      python: 6,
+      javascript: 6,
+    },
+      line1: {
+      java: 8,
+      cpp: 9,
+      python: 7,
+      javascript: 7,
+    },
+      returnAns: {
+      java: 10,
+      cpp: 11,
+      python: 8,
+      javascript: 9,
+    },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep({ source: nums.map(String), ...step }));
     const numDp: number[] = Array(n + 1).fill(0);
@@ -204,12 +244,7 @@ export const MinCostSpec: AlgorithmSpec = {
       formula: 'minCostClimbingStairs(cost)',
       metrics: { i: '-', from1: '-', from2: '-', answer: '-' },
       vars: makeVars({ changed: ['cost', 'n'] }),
-      codeLine: {
-        java: 2,
-        cpp: 3,
-        python: 2,
-        javascript: 1,
-      },
+      codeLine: LINES.entry,
     });
 
     // Step 1: dp[0] = 0;
@@ -230,12 +265,7 @@ export const MinCostSpec: AlgorithmSpec = {
       formula: 'dp[0] = 0',
       metrics: { i: 0, from1: '-', from2: '-', answer: 0 },
       vars: makeVars({ currentDp: 0, changed: ['dp', 'dpi'] }),
-      codeLine: {
-        java: 5,
-        cpp: 6,
-        python: 5,
-        javascript: 4,
-      },
+      codeLine: LINES.init,
     });
 
     // Step 2: dp[1] = 0;
@@ -256,12 +286,7 @@ export const MinCostSpec: AlgorithmSpec = {
       formula: 'dp[1] = 0',
       metrics: { i: 1, from1: '-', from2: '-', answer: 0 },
       vars: makeVars({ currentDp: 0, changed: ['dp', 'dpi'] }),
-      codeLine: {
-        java: 6,
-        cpp: 7,
-        python: 5,
-        javascript: 5,
-      },
+      codeLine: LINES.line0,
     });
 
     for (let i = 2; i <= n; i++) {
@@ -287,12 +312,7 @@ export const MinCostSpec: AlgorithmSpec = {
         formula: `for (int i = 2; i <= ${n}; i++) [i = ${i}]`,
         metrics: { i, from1: `${numDp[i - 1]}+${nums[i - 1]}`, from2: `${numDp[i - 2]}+${nums[i - 2]}`, answer: '待计算' },
         vars: makeVars({ i, from1: c1, from2: c2, changed: ['i', 'c1', 'c2'] }),
-        codeLine: {
-          java: 7,
-          cpp: 8,
-          python: 6,
-          javascript: 6,
-        },
+        codeLine: LINES.loopOuter,
       });
 
       // Step: state calculation
@@ -317,12 +337,7 @@ export const MinCostSpec: AlgorithmSpec = {
         formula: `dp[${i}] = min(dp[${i - 1}]+cost[${i - 1}], dp[${i - 2}]+cost[${i - 2}]) = min(${c1}, ${c2}) = ${dp[i]}`,
         metrics: { i, from1: c1, from2: c2, answer: numDp[i] },
         vars: makeVars({ i, from1: c1, from2: c2, currentDp: numDp[i], changed: ['dp', 'dpi'] }),
-        codeLine: {
-          java: 8,
-          cpp: 9,
-          python: 7,
-          javascript: 7,
-        },
+        codeLine: LINES.line1,
       });
     }
 
@@ -343,12 +358,7 @@ export const MinCostSpec: AlgorithmSpec = {
       formula: `i = ${n + 1} <= ${n} ➔ false (循环终止)`,
       metrics: { i: n + 1, from1: '-', from2: '-', answer: numDp[n] },
       vars: makeVars({ i: n + 1, currentDp: numDp[n], changed: ['i'] }),
-      codeLine: {
-        java: 7,
-        cpp: 8,
-        python: 6,
-        javascript: 6,
-      },
+      codeLine: LINES.loopOuter,
     });
 
     // Step: return
@@ -369,12 +379,7 @@ export const MinCostSpec: AlgorithmSpec = {
       formula: `return dp[${n}] = ${dp[n]}`,
       metrics: { i: n, from1: numDp[Math.max(0, n - 1)] + nums[Math.max(0, n - 1)], from2: numDp[Math.max(0, n - 2)] + nums[Math.max(0, n - 2)], answer: numDp[n] },
       vars: makeVars({ i: n, currentDp: numDp[n], changed: ['dpi'] }),
-      codeLine: {
-        java: 10,
-        cpp: 11,
-        python: 8,
-        javascript: 9,
-      },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

@@ -167,6 +167,21 @@ export const HouseRobberSpec: AlgorithmSpec = {
     const n = nums.length;
     const dp: DpCell[] = Array(n).fill('-');
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      init: { java: 6, cpp: 7, python: 6, javascript: 5 },
+      line0: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      transfer: {
+      java: { primary: 9, context: [8] },
+      cpp: { primary: 10, context: [9] },
+      python: { primary: 9, context: [8] },
+      javascript: { primary: 8, context: [7] },
+    },
+      returnAns: { java: 11, cpp: 12, python: 10, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -210,7 +225,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
           totalStolen: 0,
         },
       },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (n === 0) return steps;
@@ -223,7 +238,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
         message: `🏁 只有一间房屋：直接偷窃第 0 间，获得最大金额 $${nums[0]}。`,
         log: `only one house: dp[0]=${nums[0]}`,
         vars: makeVars({ i: 0, curNum: nums[0], curDp: nums[0], action: '🥷 偷窃第0间', changed: ['dpi', 'act'] }),
-        codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -247,7 +262,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
           totalStolen: nums[0],
         },
       },
-      codeLine: { java: 6, cpp: 7, python: 6, javascript: 5 },
+      codeLine: LINES.init,
     });
 
     dp[1] = Math.max(nums[0], nums[1]);
@@ -271,7 +286,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
           totalStolen: dp[1] as number,
         },
       },
-      codeLine: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      codeLine: LINES.line0,
     });
 
     // Loops
@@ -302,12 +317,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
             totalStolen: best,
           },
         },
-        codeLine: {
-          java: { primary: 9, context: [8] },
-          cpp: { primary: 10, context: [9] },
-          python: { primary: 9, context: [8] },
-          javascript: { primary: 8, context: [7] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -327,7 +337,7 @@ export const HouseRobberSpec: AlgorithmSpec = {
           totalStolen: ans,
         },
       },
-      codeLine: { java: 11, cpp: 12, python: 10, javascript: 10 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

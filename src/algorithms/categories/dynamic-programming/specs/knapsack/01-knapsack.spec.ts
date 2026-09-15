@@ -205,6 +205,32 @@ export const Knapsack01Spec: AlgorithmSpec = {
       Array.from({ length: bagWeight + 1 }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      loopOuter: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      loopInner: { java: 6, cpp: 6, python: 6, javascript: 5 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 8, context: [6, 7] },
+      python: { primary: 8, context: [6, 7] },
+      javascript: { primary: 7, context: [5, 6] },
+    },
+      transfer2: {
+      java: { primary: 9, context: [6, 7] },
+      cpp: { primary: 9, context: [6, 7] },
+      python: { primary: 9, context: [6, 7] },
+      javascript: { primary: 8, context: [5, 6] },
+    },
+      transfer3: {
+      java: { primary: 11, context: [6, 7] },
+      cpp: { primary: 11, context: [6, 7] },
+      python: { primary: 11, context: [6, 7] },
+      javascript: { primary: 10, context: [5, 6] },
+    },
+      returnAns: { java: 15, cpp: 15, python: 13, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -251,7 +277,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Initialize first row (item 0)
@@ -274,7 +300,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
           action: 'include',
         },
       },
-      codeLine: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      codeLine: LINES.loopOuter,
     });
 
     // Loops
@@ -297,7 +323,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
             action: 'evaluate',
           },
         },
-        codeLine: { java: 6, cpp: 6, python: 6, javascript: 5 },
+        codeLine: LINES.loopInner,
       });
 
       for (let j = 0; j <= bagWeight; j++) {
@@ -315,12 +341,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
             : `🔍 容量检查：当前背包容量 ${j} < 物品重量 ${curWeight} 【装不下，只能不放】。`,
           log: `check: item=${i}, cap=${j}, canFit=${canFit}`,
           vars: makeVars({ i, j, curW: curWeight, curV: curValue, changed: ['j'] }),
-          codeLine: {
-            java: { primary: 8, context: [6, 7] },
-            cpp: { primary: 8, context: [6, 7] },
-            python: { primary: 8, context: [6, 7] },
-            javascript: { primary: 7, context: [5, 6] },
-          },
+          codeLine: LINES.transfer,
         });
 
         let resultVal: number;
@@ -346,12 +367,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
                 action: 'exclude',
               },
             },
-            codeLine: {
-              java: { primary: 9, context: [6, 7] },
-              cpp: { primary: 9, context: [6, 7] },
-              python: { primary: 9, context: [6, 7] },
-              javascript: { primary: 8, context: [5, 6] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const notTake = (dp[i - 1][j] as number) || 0;
@@ -378,12 +394,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
                 action: isTakeWinner ? 'include' : 'exclude',
               },
             },
-            codeLine: {
-              java: { primary: 11, context: [6, 7] },
-              cpp: { primary: 11, context: [6, 7] },
-              python: { primary: 11, context: [6, 7] },
-              javascript: { primary: 10, context: [5, 6] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -406,7 +417,7 @@ export const Knapsack01Spec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 15, cpp: 15, python: 13, javascript: 14 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

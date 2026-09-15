@@ -7,14 +7,16 @@
  * 阶段 4: 空间压缩 dp[j] 一维滚动优化
  */
 
-import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
-import { registerAlgorithm } from '../../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { captureScope } from '../../../../core/strategies/scope-capture';
+import type { HighlightTarget } from '../../../../core/code-panel';
 import { DP_067_PROBLEMS } from './dp-067-problem-content';
 import {
   MIN_PATH_SUM_STAGE1_CODE_LANGUAGES,
   MIN_PATH_SUM_STAGE2_CODE_LANGUAGES,
   MIN_PATH_SUM_STAGE3_CODE_LANGUAGES,
   MIN_PATH_SUM_STAGE4_CODE_LANGUAGES,
+  getDp067Anchor,
 } from './dp-067-stage-codes';
 import {
   renderRecursionCard1,
@@ -27,6 +29,7 @@ import {
 } from './dp-067-shared';
 import { GridVisualAdapter } from '../../../../core/renderers/grid-visual-adapter';
 import { parseGridInput } from '../../../../core/input-primitives';
+import { snapshotGrid2D } from "../../../../core/strategies/grid-snapshot";
 
 // ==========================================
 // 1. 输入解析与类型定义
@@ -48,9 +51,10 @@ export interface MinPathRecStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: HighlightTarget;
   grid: number[][];
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPathRecStep[] {
@@ -60,17 +64,30 @@ export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPath
   const steps: MinPathRecStep[] = [];
   const stack: Array<{ label: string }> = [];
 
+  const pushStep = (st: Omit<MinPathRecStep, 'scope'> & { scope?: Record<string, any> }) => {
+    st.scope = st.scope || captureScope({
+      m,
+      n,
+      i: st.i,
+      j: st.j,
+      val: grid[st.i]?.[st.j],
+      grid,
+      ans: st.metrics?.['metric-ans'] ? Number(st.metrics['metric-ans']) : undefined,
+    });
+    steps.push(st as MinPathRecStep);
+  };
+
   const lines = {
-    enter: { java: 6, cpp: 2, python: 3, javascript: 3 },
-    baseOrigin: { java: 7, cpp: 3, python: 4, javascript: 4 },
-    baseRow0: { java: 8, cpp: 4, python: 5, javascript: 5 },
-    baseCol0: { java: 9, cpp: 5, python: 6, javascript: 6 },
-    returnMin: { java: 10, cpp: 6, python: 7, javascript: 7 },
+    enter: getDp067Anchor(1, 'min-path-sum', 'enter'),
+    baseOrigin: getDp067Anchor(1, 'min-path-sum', 'baseOrigin'),
+    baseRow0: getDp067Anchor(1, 'min-path-sum', 'baseRow0'),
+    baseCol0: getDp067Anchor(1, 'min-path-sum', 'baseCol0'),
+    returnMin: getDp067Anchor(1, 'min-path-sum', 'returnMin'),
   };
 
   function f(i: number, j: number): number {
     stack.push({ label: `f(${i}, ${j})` });
-    steps.push({
+    pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
       j,
@@ -84,7 +101,7 @@ export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPath
     });
 
     if (i === 0 && j === 0) {
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -101,7 +118,7 @@ export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPath
     }
 
     if (i === 0) {
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -120,7 +137,7 @@ export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPath
     }
 
     if (j === 0) {
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -142,7 +159,7 @@ export function buildMinPathSumStage1Steps(inputs: Record<string, any>): MinPath
     const leftVal = f(i, j - 1);
     const ans = grid[i][j] + Math.min(upVal, leftVal);
 
-    steps.push({
+    pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
       j,
@@ -177,11 +194,12 @@ export interface MinPathMemoStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: HighlightTarget;
   memoGrid: number[][];
   cachedVal?: number;
   grid: number[][];
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPathMemoStep[] {
@@ -193,16 +211,32 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
   let hitCount = 0;
   let missCount = 0;
 
-  const lines = {
-    init: { java: 6, cpp: 12, python: 12, javascript: 12 },
-    checkMemo: { java: 9, cpp: 6, python: 5, javascript: 6 },
-    baseOrigin: { java: 10, cpp: 7, python: 6, javascript: 7 },
-    baseRow0: { java: 11, cpp: 8, python: 7, javascript: 8 },
-    baseCol0: { java: 12, cpp: 9, python: 8, javascript: 9 },
-    memoStore: { java: 13, cpp: 10, python: 10, javascript: 10 },
+  const pushStep = (st: Omit<MinPathMemoStep, 'scope'> & { scope?: Record<string, any> }) => {
+    st.scope = st.scope || captureScope({
+      m,
+      n,
+      i: st.i,
+      j: st.j,
+      hitCount: st.hitCount,
+      missCount: st.missCount,
+      memoHit: st.memoHit,
+      cachedVal: st.cachedVal,
+      memoGrid: st.memoGrid,
+      val: grid[st.i]?.[st.j],
+    });
+    steps.push(st as MinPathMemoStep);
   };
 
-  steps.push({
+  const lines = {
+    init: getDp067Anchor(2, 'min-path-sum', 'init'),
+    checkMemo: getDp067Anchor(2, 'min-path-sum', 'checkMemo'),
+    baseOrigin: getDp067Anchor(2, 'min-path-sum', 'baseOrigin'),
+    baseRow0: getDp067Anchor(2, 'min-path-sum', 'baseRow0'),
+    baseCol0: getDp067Anchor(2, 'min-path-sum', 'baseCol0'),
+    memoStore: getDp067Anchor(2, 'min-path-sum', 'memoStore'),
+  };
+
+  pushStep({
     currentCall: `minPathSum2(grid)`,
     i: m - 1,
     j: n - 1,
@@ -213,7 +247,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
     message: `创建 ${m}×${n} 的备忘录矩阵并全部初始化为 -1，从右下角 (${m - 1}, ${n - 1}) 启动带缓存求解`,
     log: `call f(grid, ${m - 1}, ${n - 1})`,
     codeLine: lines.init,
-    memoGrid: memo.map((r) => [...r]),
+    memoGrid: snapshotGrid2D(memo),
     grid,
     metrics: { 'metric-memo-hit': '0', 'metric-status': '启动递归' },
   });
@@ -221,7 +255,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
   function fMemo(i: number, j: number): number {
     if (memo[i][j] !== -1) {
       hitCount++;
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -233,7 +267,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
         message: `坐标 (${i}, ${j}) 此前已被探查并计算过，直接复用缓存值 ${memo[i][j]}，剪掉整棵子树！`,
         log: `hit memo[${i}][${j}] = ${memo[i][j]}`,
         codeLine: lines.checkMemo,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         grid,
         metrics: { 'metric-memo-hit': `${hitCount}`, 'metric-status': '命中剪枝' },
       });
@@ -241,7 +275,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
     }
 
     missCount++;
-    steps.push({
+    pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
       j,
@@ -252,7 +286,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
       message: `首次访问 (${i}, ${j})，继续向下求解`,
       log: `miss memo[${i}][${j}]`,
       codeLine: lines.checkMemo,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       grid,
       metrics: { 'metric-memo-miss': `${missCount}`, 'metric-status': '展开探索' },
     });
@@ -260,7 +294,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
     let res: number;
     if (i === 0 && j === 0) {
       res = grid[0][0];
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -272,12 +306,12 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
         message: `到达终点/起点 (0, 0)，直接获取底线代价 ${res}`,
         log: `base (0,0) = ${res}`,
         codeLine: lines.baseOrigin,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         grid,
         metrics: { 'metric-pos': `(0,0)`, 'metric-status': '起点基准' },
       });
     } else if (i === 0) {
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -288,13 +322,13 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
         message: `位于第一行，只能沿着左边界推进，递归求解左侧单元格并累加当前格值 ${grid[i][j]}`,
         log: `base row0 (${i}, ${j}) -> (${i}, ${j - 1})`,
         codeLine: lines.baseRow0,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         grid,
         metrics: { 'metric-pos': `(${i}, ${j})`, 'metric-status': '左侧推进' },
       });
       res = fMemo(0, j - 1) + grid[0][j];
     } else if (j === 0) {
-      steps.push({
+      pushStep({
         currentCall: `f(${i}, ${j})`,
         i,
         j,
@@ -305,7 +339,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
         message: `位于第一列，只能沿着上边界下推，递归求解上方单元格并累加当前格值 ${grid[i][j]}`,
         log: `base col0 (${i}, ${j}) -> (${i - 1}, ${j})`,
         codeLine: lines.baseCol0,
-        memoGrid: memo.map((r) => [...r]),
+        memoGrid: snapshotGrid2D(memo),
         grid,
         metrics: { 'metric-pos': `(${i}, ${j})`, 'metric-status': '上方推进' },
       });
@@ -315,7 +349,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
     }
 
     memo[i][j] = res;
-    steps.push({
+    pushStep({
       currentCall: `f(${i}, ${j})`,
       i,
       j,
@@ -327,7 +361,7 @@ export function buildMinPathSumStage2Steps(inputs: Record<string, any>): MinPath
       message: `子问题 (${i}, ${j}) 求解完成，将结果 ${res} 存入备忘录供后续共享`,
       log: `store memo[${i}][${j}] = ${res}`,
       codeLine: lines.memoStore,
-      memoGrid: memo.map((r) => [...r]),
+      memoGrid: snapshotGrid2D(memo),
       grid,
       metrics: { 'metric-memo-store': `[${i}][${j}]=${res}` },
     });
@@ -353,9 +387,10 @@ export interface MinPath2DStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: HighlightTarget;
   grid: number[][];
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath2DStep[] {
@@ -365,22 +400,35 @@ export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath
   const steps: MinPath2DStep[] = [];
   const dp: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
 
+  const pushStep = (st: Omit<MinPath2DStep, 'scope'> & { scope?: Record<string, any> }) => {
+    st.scope = st.scope || captureScope({
+      m,
+      n,
+      i: st.curI,
+      j: st.curJ,
+      currentVal: st.currentVal,
+      val: grid[st.curI]?.[st.curJ],
+      dpTable: st.dpTable,
+    });
+    steps.push(st as MinPath2DStep);
+  };
+
   const lines = {
-    origin: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    firstRow: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    firstCol: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    innerLoop: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    returnAns: { java: 13, cpp: 13, python: 11, javascript: 13 },
+    origin: getDp067Anchor(3, 'min-path-sum', 'origin'),
+    firstRow: getDp067Anchor(3, 'min-path-sum', 'firstRow'),
+    firstCol: getDp067Anchor(3, 'min-path-sum', 'firstCol'),
+    innerLoop: getDp067Anchor(3, 'min-path-sum', 'innerLoop'),
+    returnAns: getDp067Anchor(3, 'min-path-sum', 'returnAns'),
   };
 
   // 1. 起点
   dp[0][0] = grid[0][0];
-  steps.push({
+  pushStep({
     curI: 0,
     curJ: 0,
     currentCell: 'dp[0][0]',
     currentVal: dp[0][0],
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `初始化起点: dp[0][0] = grid[0][0] = ${grid[0][0]}`,
     message: `起点只有自身权值，无需前驱累加`,
@@ -393,12 +441,12 @@ export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath
   // 2. 第一行
   for (let j = 1; j < n; j++) {
     dp[0][j] = dp[0][j - 1] + grid[0][j];
-    steps.push({
+    pushStep({
       curI: 0,
       curJ: j,
       currentCell: `dp[0][${j}]`,
       currentVal: dp[0][j],
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       depCells: [{ r: 0, c: j - 1, label: '左方单元格', color: 'rgba(56, 189, 248, 0.2)' }],
       decision: `第一行递推: dp[0][${j}] = dp[0][${j - 1}] + grid[0][${j}] = ${dp[0][j]}`,
       message: `在第 0 行只能向右走，路径累加左侧值 ${dp[0][j - 1]} 与当前权值 ${grid[0][j]}`,
@@ -412,12 +460,12 @@ export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath
   // 3. 第一列
   for (let i = 1; i < m; i++) {
     dp[i][0] = dp[i - 1][0] + grid[i][0];
-    steps.push({
+    pushStep({
       curI: i,
       curJ: 0,
       currentCell: `dp[${i}][0]`,
       currentVal: dp[i][0],
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       depCells: [{ r: i - 1, c: 0, label: '上方单元格', color: 'rgba(129, 140, 248, 0.2)' }],
       decision: `第一列递推: dp[${i}][0] = dp[${i - 1}][0] + grid[${i}][0] = ${dp[i][0]}`,
       message: `在第 0 列只能向下走，路径累加上方值 ${dp[i - 1][0]} 与当前权值 ${grid[i][0]}`,
@@ -434,12 +482,12 @@ export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath
       const up = dp[i - 1][j];
       const left = dp[i][j - 1];
       dp[i][j] = Math.min(up, left) + grid[i][j];
-      steps.push({
+      pushStep({
         curI: i,
         curJ: j,
         currentCell: `dp[${i}][${j}]`,
         currentVal: dp[i][j],
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         depCells: [
           { r: i - 1, c: j, label: '上方 [i-1][j]', color: 'rgba(129, 140, 248, 0.2)' },
           { r: i, c: j - 1, label: '左方 [i][j-1]', color: 'rgba(56, 189, 248, 0.2)' },
@@ -455,12 +503,12 @@ export function buildMinPathSumStage3Steps(inputs: Record<string, any>): MinPath
   }
 
   // 最终完成
-  steps.push({
+  pushStep({
     curI: m - 1,
     curJ: n - 1,
     currentCell: `dp[${m - 1}][${n - 1}]`,
     currentVal: dp[m - 1][n - 1],
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `🎉 填表结束！右下角终点最小路径和 = ${dp[m - 1][n - 1]}`,
     message: `整个二维表格自上而下、自左向右递推完成`,
@@ -485,9 +533,10 @@ export interface MinPathSpaceOptStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: HighlightTarget;
   metrics?: Record<string, any>;
   path?: Array<[number, number]>;
+  scope?: Record<string, any>;
 }
 
 export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPathSpaceOptStep[] {
@@ -497,17 +546,30 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
   const steps: MinPathSpaceOptStep[] = [];
   const dp = new Array(n).fill(0);
 
+  const pushStep = (st: Omit<MinPathSpaceOptStep, 'scope'> & { scope?: Record<string, any> }) => {
+    st.scope = st.scope || captureScope({
+      m,
+      n,
+      i: st.curI,
+      j: st.curJ,
+      currentVal: st.dp[st.curJ],
+      val: grid[st.curI]?.[st.curJ],
+      dp: [...st.dp],
+    });
+    steps.push(st as MinPathSpaceOptStep);
+  };
+
   const lines = {
-    init: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    firstRow: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    rowLoop: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    firstCol: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    colLoop: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    returnAns: { java: 13, cpp: 13, python: 11, javascript: 13 },
+    init: getDp067Anchor(4, 'min-path-sum', 'init'),
+    firstRow: getDp067Anchor(4, 'min-path-sum', 'firstRow'),
+    rowLoop: getDp067Anchor(4, 'min-path-sum', 'rowLoop'),
+    firstCol: getDp067Anchor(4, 'min-path-sum', 'firstCol'),
+    colLoop: getDp067Anchor(4, 'min-path-sum', 'colLoop'),
+    returnAns: getDp067Anchor(4, 'min-path-sum', 'returnAns'),
   };
 
   dp[0] = grid[0][0];
-  steps.push({
+  pushStep({
     curI: 0,
     curJ: 0,
     dp: [...dp],
@@ -521,7 +583,7 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
 
   for (let j = 1; j < n; j++) {
     dp[j] = dp[j - 1] + grid[0][j];
-    steps.push({
+    pushStep({
       curI: 0,
       curJ: j,
       dp: [...dp],
@@ -536,7 +598,7 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
 
   for (let i = 1; i < m; i++) {
     dp[0] += grid[i][0];
-    steps.push({
+    pushStep({
       curI: i,
       curJ: 0,
       dp: [...dp],
@@ -552,7 +614,7 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
       const prevUp = dp[j];
       const prevLeft = dp[j - 1];
       dp[j] = Math.min(prevUp, prevLeft) + grid[i][j];
-      steps.push({
+      pushStep({
         curI: i,
         curJ: j,
         dp: [...dp],
@@ -566,7 +628,7 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
     }
   }
 
-  steps.push({
+  pushStep({
     curI: m - 1,
     curJ: n - 1,
     dp: [...dp],
@@ -585,17 +647,41 @@ export function buildMinPathSumStage4Steps(inputs: Record<string, any>): MinPath
 // 6. 声明式 Visualizer 构建与注册
 // ==========================================
 
-const { template, Visualizer } = createDeclarativeVisualizer<any>({
+export const MinPathSumDeclarativeResult = registerDeclarativeAlgorithm<any>({
   id: 'min-path-sum',
   name: '最小路径和 (LeetCode 64)',
   category: 'dynamic-programming',
+  description: '左程云算法讲解067 Code01：LeetCode 64 最小路径和，从递归到二维DP与空间压缩完整演化',
+  icon: '📉',
+  difficulty: 2,
+  levelOrder: 101,
+  learningGoal: '掌握二维网格DP的递归抽象、状态转移方程推导及一维滚动数组空间压缩技巧',
   badge: {
     mode: '二维网格 DP · 空间压缩',
-    complexity: 'O(M×N) · O(min(M,N))',
+    complexity: 'O(M×N) · O(min(M,N)) 空间',
   },
-  card1Title: '🗺️ 网格地图实时探索与足迹',
-  card2Title: '📈 动态规划状态推导表与向量',
-  card2Desc: '展示从左上角到右下角的路径优化推导过程',
+  primaryVisual: {
+    title: '🗺️ 网格地图实时探索与足迹',
+    render: (container, step) => {
+      const i = step.curI ?? step.i ?? 0;
+      const j = step.curJ ?? step.j ?? 0;
+      renderGridMap(container, step.grid, i, j);
+    },
+  },
+  auxiliaryVisual: {
+    title: '📈 动态规划一维压缩向量 dp[j]',
+    desc: '展示从左上角到右下角的路径优化推导过程',
+    render: (container, step) => {
+      if (step.dp) {
+        renderSpaceOptCard2(
+          container,
+          `一维滚动压缩向量 dp[0..${step.dp.length - 1}]`,
+          step.dp,
+          step.curJ
+        );
+      }
+    },
+  },
   legend: [
     { label: '当前网格', color: '#10b981' },
     { label: '已计算格子', color: '#3b82f6' },
@@ -643,8 +729,25 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '二维网格 · 暴力递归',
         complexity: 'O(2^(M+N)) · O(M+N) 栈深',
       },
-      card1Title: '🌿 递归调用栈与坐标探查',
-      card2Title: '🗺️ 原生网格与当前递归位置',
+      primaryVisual: {
+        title: '🌿 递归调用栈与坐标探查',
+        render: (container, step) => {
+          renderRecursionCard1(
+            container,
+            step.currentCall,
+            step.callStack,
+            `<div style="font-size:12px; font-weight:700; color:#0284c7;">${step.decision}</div>
+             <div style="font-size:11px; color:#64748b; margin-top:4px;">${step.message}</div>`
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '🗺️ 原生网格与当前递归位置',
+        desc: '在网格上实时展示 DFS 探查坐标与递归路径回溯。',
+        render: (container, step) => {
+          renderGridMap(container, step.grid, step.i, step.j, step.callStack);
+        },
+      },
       legend: [
         { label: '当前探查 (i,j)', color: '#10b981' },
         { label: '已扫网格', color: '#0284c7' },
@@ -652,18 +755,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: MIN_PATH_SUM_STAGE1_CODE_LANGUAGES,
       buildSteps: buildMinPathSumStage1Steps,
-      renderCanvas: (container, step) => {
-        renderRecursionCard1(
-          container,
-          step.currentCall,
-          step.callStack,
-          `<div style="font-size:12px; font-weight:700; color:#0284c7;">${step.decision}</div>
-           <div style="font-size:11px; color:#64748b; margin-top:4px;">${step.message}</div>`
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        renderGridMap(container, step.grid, step.i, step.j, step.callStack);
-      },
     },
     {
       id: 'stage-2',
@@ -676,8 +767,34 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '二维网格 · 记忆化搜索',
         complexity: 'O(M×N) · O(M×N) 备忘录',
       },
-      card1Title: '💾 备忘录缓存命中与剪枝率',
-      card2Title: '🎯 2D 备忘录缓存矩阵 memo[i][j]',
+      primaryVisual: {
+        title: '💾 备忘录缓存命中与剪枝率',
+        render: (container, step) => {
+          renderMemoCard1(
+            container,
+            step.currentCall,
+            step.memoHit,
+            step.hitCount,
+            step.missCount,
+            step.decision,
+            step.message,
+            step.cachedVal
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '🎯 2D 备忘录缓存矩阵 memo[i][j]',
+        desc: '展示二维 memo 网格缓存状态，绿色代表命中剪枝，红色代表未命中需计算。',
+        render: (container, step) => {
+          renderMemoGridCard(
+            container,
+            '备忘录矩阵 memo[i][j]',
+            step.memoGrid,
+            step.i,
+            step.j
+          );
+        },
+      },
       legend: [
         { label: '缓存命中 (Hit)', color: '#10b981' },
         { label: '未命中算值 (Miss)', color: '#ef4444' },
@@ -685,27 +802,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: MIN_PATH_SUM_STAGE2_CODE_LANGUAGES,
       buildSteps: buildMinPathSumStage2Steps,
-      renderCanvas: (container, step) => {
-        renderMemoCard1(
-          container,
-          step.currentCall,
-          step.memoHit,
-          step.hitCount,
-          step.missCount,
-          step.decision,
-          step.message,
-          step.cachedVal
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        renderMemoGridCard(
-          container,
-          '备忘录矩阵 memo[i][j]',
-          step.memoGrid,
-          step.i,
-          step.j
-        );
-      },
     },
     {
       id: 'stage-3',
@@ -718,8 +814,33 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '二维网格 · 严格二维表递推',
         complexity: 'O(M×N) · O(M×N)',
       },
-      card1Title: '📐 状态转移推导与前驱依赖',
-      card2Title: '📊 严格二维状态依赖表 dp[i][j]',
+      primaryVisual: {
+        title: '📐 状态转移推导与前驱依赖',
+        render: (container, step) => {
+          renderDp2DCard1(
+            container,
+            step.currentCell,
+            step.currentVal,
+            step.depCells,
+            step.decision,
+            step.message
+          );
+        },
+      },
+      auxiliaryVisual: {
+        title: '📊 严格二维状态依赖表 dp[i][j]',
+        desc: '按行从左向右严格递推，当前格由上、左两前驱状态的最小值转移而来。',
+        render: (container, step) => {
+          renderDp2DCard2(
+            container,
+            '二维状态表 dp[i][j]',
+            step.dpTable,
+            step.curI,
+            step.curJ,
+            step.depCells.map((d: DpCellDep) => ({ r: d.r, c: d.c }))
+          );
+        },
+      },
       legend: [
         { label: '当前填表单元格', color: '#10b981' },
         { label: '上方前驱 [i-1][j]', color: '#6366f1' },
@@ -728,26 +849,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: MIN_PATH_SUM_STAGE3_CODE_LANGUAGES,
       buildSteps: buildMinPathSumStage3Steps,
-      renderCanvas: (container, step) => {
-        renderDp2DCard1(
-          container,
-          step.currentCell,
-          step.currentVal,
-          step.depCells,
-          step.decision,
-          step.message
-        );
-      },
-      renderCustomMetrics: (container, step) => {
-        renderDp2DCard2(
-          container,
-          '二维状态表 dp[i][j]',
-          step.dpTable,
-          step.curI,
-          step.curJ,
-          step.depCells.map((d: DpCellDep) => ({ r: d.r, c: d.c }))
-        );
-      },
     },
     {
       id: 'stage-4',
@@ -760,8 +861,24 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '二维网格 · 空间压缩一维滚动',
         complexity: 'O(M×N) · O(N) 空间',
       },
-      card1Title: '🗺️ 原生网格动态足迹与最优路径',
-      card2Title: '📈 动态规划一维压缩向量 dp[j]',
+      primaryVisual: {
+        title: '🗺️ 原生网格动态足迹与最优路径',
+        render: (container, step) => {
+          renderGridMap(container, step.grid, step.curI, step.curJ);
+        },
+      },
+      auxiliaryVisual: {
+        title: '📈 动态规划一维压缩向量 dp[j]',
+        desc: '展示仅用一维数组就地滚动的空间优化过程，空间复杂度从 O(M×N) 降至 O(N)。',
+        render: (container, step) => {
+          renderSpaceOptCard2(
+            container,
+            `一维滚动压缩向量 dp[0..${step.dp.length - 1}]`,
+            step.dp,
+            step.curJ
+          );
+        },
+      },
       legend: [
         { label: '当前处理网格', color: '#10b981' },
         { label: '当前更新 dp[j]', color: '#f59e0b' },
@@ -769,30 +886,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: MIN_PATH_SUM_STAGE4_CODE_LANGUAGES,
       buildSteps: buildMinPathSumStage4Steps,
-      renderCanvas: (container, step) => {
-        renderGridMap(container, step.grid, step.curI, step.curJ);
-      },
-      renderCustomMetrics: (container, step) => {
-        renderSpaceOptCard2(
-          container,
-          `一维滚动压缩向量 dp[0..${step.dp.length - 1}]`,
-          step.dp,
-          step.curJ
-        );
-      },
     },
   ],
-  renderCanvas: (container, step) => {
-    renderGridMap(container, step.grid, step.curI, step.curJ);
-  },
-  renderCustomMetrics: (container, step) => {
-    renderSpaceOptCard2(
-      container,
-      `一维滚动压缩向量 dp[0..${step.dp.length - 1}]`,
-      step.dp,
-      step.curJ
-    );
-  },
 });
 
 function renderGridMap(
@@ -835,18 +930,4 @@ function renderGridMap(
   });
 }
 
-export const MinPathSumVisualizer = Visualizer;
-
-registerAlgorithm({
-  id: 'min-path-sum',
-  name: '最小路径和 (LeetCode 64)',
-  viewId: 'algo-min-path-sum-view',
-  category: 'dynamic-programming',
-  description: '左程云算法讲解067 Code01：LeetCode 64 最小路径和，从递归到二维DP与空间压缩完整演化',
-  icon: '📉',
-  template,
-  Visualizer,
-  difficulty: 2,
-  levelOrder: 101,
-  learningGoal: '掌握二维网格DP的递归抽象、状态转移方程推导及一维滚动数组空间压缩技巧',
-});
+export const MinPathSumVisualizer = MinPathSumDeclarativeResult.Visualizer;

@@ -175,6 +175,19 @@ export const UniquePathsSpec: AlgorithmSpec = {
       Array.from({ length: n }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      loopOuter: { java: [4, 5], cpp: 4, python: 3, javascript: 2 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [4, 5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      returnAns: { java: 11, cpp: 10, python: 7, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -206,7 +219,7 @@ export const UniquePathsSpec: AlgorithmSpec = {
       message: `🎯 函数入口：计算 ${m} × ${n} 网格从左上角起点 (0, 0) 🚩 到右下角终点 (${m - 1}, ${n - 1}) 🏆 的不同路径数。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ i: 0, j: 0, curDp: 1, changed: ['m', 'n', 'i', 'j'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Initialize boundaries
@@ -220,7 +233,7 @@ export const UniquePathsSpec: AlgorithmSpec = {
       message: `🎬 边界初始化：第一行只能一路向右（路径数均为 1），第一列只能一路向下（路径数均为 1）。`,
       log: `init: dp[i][0]=1, dp[0][j]=1`,
       vars: makeVars({ i: 0, j: 0, curDp: 1, changed: ['dpij'] }),
-      codeLine: { java: [4, 5], cpp: 4, python: 3, javascript: 2 },
+      codeLine: LINES.loopOuter,
     });
 
     // Loops
@@ -240,12 +253,7 @@ export const UniquePathsSpec: AlgorithmSpec = {
           message: `⚡ 状态转移：到达 (${i}, ${j}) = 来自上方 (${fromTop} 条) + 来自左方 (${fromLeft} 条) $\rightarrow$ dp[${i}][${j}] = ${sum} 条路径。`,
           log: `update: dp[${i}][${j}] = ${sum}`,
           vars: makeVars({ i, j, curDp: sum, changed: ['i', 'j', 'dpij'] }),
-          codeLine: {
-            java: { primary: 8, context: [6, 7] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [4, 5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -258,7 +266,7 @@ export const UniquePathsSpec: AlgorithmSpec = {
       message: `🏁 算法结束：到达右下角终点 (${m - 1}, ${n - 1}) 的不同路径总数为 dp[${m - 1}][${n - 1}] = ${ans} 条。`,
       log: `return: dp[${m - 1}][${n - 1}] = ${ans}`,
       vars: makeVars({ i: m - 1, j: n - 1, curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 11, cpp: 10, python: 7, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

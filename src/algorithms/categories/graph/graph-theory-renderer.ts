@@ -6,6 +6,15 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './graph-theory.html?raw';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 0,
+  matrixView: [1, 2],
+  listView: [3, 4],
+  addEdge: [5, 6],
+  removeEdge: [7, 8],
+  summary: 9,
+};
 
 interface GTStep {
   nodes: number[];
@@ -70,7 +79,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '这是一个包含 5 个节点、6 条边的无向无权图。可以通过按钮切换邻接矩阵或邻接表视图。',
     log: '初始化图: V=5, E=6',
-    codeLine: 0,
+    codeLine: lines.init,
   });
 
   steps.push({
@@ -86,7 +95,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '邻接矩阵表示：matrix[i][j]=1 表示节点 i 和 j 之间有边。空间复杂度 O(V²)，适合稠密图。',
     log: '切换到邻接矩阵视图',
-    codeLine: [1, 2],
+    codeLine: lines.matrixView,
   });
 
   steps.push({
@@ -102,7 +111,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '邻接表表示：每个节点维护一个邻居列表。空间复杂度 O(V+E)，适合稀疏图。',
     log: '切换到邻接表视图',
-    codeLine: [3, 4],
+    codeLine: lines.listView,
   });
 
   // Add edge 2->4
@@ -122,7 +131,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '添加边 (2, 4)：在邻接矩阵中设置 matrix[2][4]=matrix[4][2]=1；在邻接表中将 4 加入 2 的列表、2 加入 4 的列表。',
     log: '添加边 (2, 4), E=7',
-    codeLine: [5, 6],
+    codeLine: lines.addEdge,
   });
 
   // Remove edge 1->3
@@ -142,7 +151,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '删除边 (1, 3)：在邻接矩阵中设置 matrix[1][3]=matrix[3][1]=0；在邻接表中移除对应项。',
     log: '删除边 (1, 3), E=6',
-    codeLine: [7, 8],
+    codeLine: lines.removeEdge,
   });
 
   steps.push({
@@ -158,7 +167,7 @@ function buildInitialSteps(): GTStep[] {
     graphType: '无向无权',
     message: '图的基本操作总结：添加边 O(1)（矩阵）/ O(E)（表），删除边 O(1)（矩阵）/ O(E)（表），查询邻接 O(1)（矩阵）/ O(degree)（表）。',
     log: '演示完成',
-    codeLine: 9,
+    codeLine: lines.summary,
   });
 
   return steps;

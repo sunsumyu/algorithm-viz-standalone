@@ -459,7 +459,7 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     if (this.codeTerminal && typeof this.codeTerminal.updateVars === 'function') {
       this.codeTerminal.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : [], step);
     } else if (this.codePanel) {
-      this.codePanel.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : []);
+      this.codePanel.updateVars(effectiveVars && effectiveVars.length > 0 ? effectiveVars : [], step);
     }
   }
 

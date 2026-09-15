@@ -460,7 +460,7 @@ function setupSidebarSplitter(): void {
     direction: 'horizontal',
     targetElement: sidebar,
     containerElement: mainLayout,
-    defaultSize: 280,
+    defaultSize: 295,
     minSize: 180,
     maxSize: 480,
     maxRatio: 0.42,

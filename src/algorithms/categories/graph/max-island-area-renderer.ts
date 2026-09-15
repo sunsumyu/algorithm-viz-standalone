@@ -11,6 +11,15 @@ import {
 } from './max-island-area-problem-content';
 import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 2,
+  mark: [12, 13],
+  found: [5, 6],
+  updatemax: 6,
+  scan: [4, 5],
+  done: 9,
+};
 
 export interface MIAStep {
   grid: number[][];
@@ -54,7 +63,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
     action: 'init',
     message: `初始化 ${m}×${n} 二进制矩阵。准备扫描统计最大岛屿面积。`,
     log: `初始化矩阵 ${m}x${n}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   const dfs = (r: number, c: number, runningAreaRef: { val: number }): number => {
@@ -73,7 +82,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
       action: 'mark',
       message: `访问并沉没陆地 (${r}, ${c})，当前岛屿面积累加至 ${runningAreaRef.val}。`,
       log: `  沉没陆地 (${r}, ${c}) -> 面积=${runningAreaRef.val}`,
-      codeLine: [12, 13],
+      codeLine: lines.mark,
     });
 
     for (const [dr, dc] of dirs) {
@@ -98,7 +107,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
           action: 'found',
           message: `🎯 在 (${r}, ${c}) 发现新岛屿！启动 DFS 递归计算该连通块面积。`,
           log: `发现新岛屿起点 (${r}, ${c})`,
-          codeLine: [5, 6],
+          codeLine: lines.found,
         });
 
         const thisArea = dfs(r, c, areaRef);
@@ -112,7 +121,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
           action: 'update-max',
           message: `岛屿面积计算完毕：${thisArea}。更新全局最大面积 max(${prevMax}, ${thisArea}) = ${maxArea}。`,
           log: `本岛面积=${thisArea}, maxArea=${maxArea}`,
-          codeLine: 6,
+          codeLine: lines.updatemax,
         });
       } else {
         snapshot({
@@ -122,7 +131,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
           action: 'scan',
           message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已统计陆地'}，跳过。`,
           log: `扫描 (${r}, ${c}): 跳过`,
-          codeLine: [4, 5],
+          codeLine: lines.scan,
         });
       }
     }
@@ -135,7 +144,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
     currentArea: 0,
     message: `🎉 全网格扫描探索完成！最大岛屿面积为 ${maxArea}。`,
     log: `✓ 统计完成: maxArea = ${maxArea}`,
-    codeLine: 9,
+    codeLine: lines.done,
   });
 
   return steps;

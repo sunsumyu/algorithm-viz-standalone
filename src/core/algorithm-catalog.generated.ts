@@ -1146,34 +1146,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 48,
   },
   {
-    id: "is-subsequence",
-    name: "判断子序列",
-    viewId: "is-subsequence",
-    category: "dynamic-programming",
-    description: "双指针或 DP 判定 s 是否为 t 的子序列。",
-    icon: "🔍",
-    difficulty: 1,
-    levelOrder: 49,
-  },
-  {
     id: "distinct-subsequences",
     name: "不同的子序列",
     viewId: "distinct-subsequences",
     category: "dynamic-programming",
     description: "在字符串 s 的子序列中 t 出现的次数。",
     icon: "🧮",
-    difficulty: 1,
-    levelOrder: 50,
-  },
-  {
-    id: "delete-operation-for-two-strings",
-    name: "两个字符串的删除操作",
-    viewId: "delete-operation-for-two-strings",
-    category: "dynamic-programming",
-    description: "使两字符串相同所需的最小删除步数：直接 DP 或 word1.len + word2.len - 2*LCS。",
-    icon: "🗑️",
-    difficulty: 1,
-    levelOrder: 51,
+    difficulty: 3,
+    levelOrder: 49,
   },
   {
     id: "edit-distance",
@@ -1183,7 +1163,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。",
     icon: "✏️",
     difficulty: 1,
-    levelOrder: 52,
+    levelOrder: 50,
   },
   {
     id: "edit-distance-summary",
@@ -1193,7 +1173,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "子序列匹配与增删改查四部曲：判断子序列、不同子序列、两个字符串的删除操作、编辑距离。",
     icon: "✍️",
     difficulty: 1,
-    levelOrder: 53,
+    levelOrder: 51,
   },
   {
     id: "palindromic-substrings",
@@ -1203,7 +1183,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "统计字符串中回文子串的总数目（区间 DP 从下往上遍历）。",
     icon: "🪞",
     difficulty: 1,
-    levelOrder: 54,
+    levelOrder: 52,
   },
   {
     id: "tree-dp-theory",
@@ -1213,7 +1193,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型动态规划的核心思想：后序遍历自底向上汇聚信息，每个节点向父节点汇报完成决策所需的充分信息元组。",
     icon: "🌲",
     difficulty: 2,
-    levelOrder: 55,
+    levelOrder: 53,
     learningGoal: "掌握树型DP\"信息汇报元组\"设计范式，学会从子节点收集信息、在当前节点完成决策",
   },
   {
@@ -1224,7 +1204,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。",
     icon: "📏",
     difficulty: 1,
-    levelOrder: 56,
+    levelOrder: 54,
   },
   {
     id: "max-path-sum",
@@ -1234,7 +1214,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。",
     icon: "🏔️",
     difficulty: 1,
-    levelOrder: 57,
+    levelOrder: 55,
   },
   {
     id: "largest-bst-subtree",
@@ -1244,7 +1224,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。",
     icon: "🔍",
     difficulty: 1,
-    levelOrder: 58,
+    levelOrder: 56,
   },
   {
     id: "tree-diameter",
@@ -1254,7 +1234,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。",
     icon: "📐",
     difficulty: 1,
-    levelOrder: 59,
+    levelOrder: 57,
   },
   {
     id: "binary-tree-cameras",
@@ -1264,7 +1244,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。",
     icon: "📷",
     difficulty: 1,
-    levelOrder: 60,
+    levelOrder: 58,
   },
   {
     id: "course-selection",
@@ -1274,7 +1254,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。",
     icon: "🎓",
     difficulty: 1,
-    levelOrder: 61,
+    levelOrder: 59,
   },
   {
     id: "minimum-fuel-cost",
@@ -1284,7 +1264,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。",
     icon: "⛽",
     difficulty: 1,
-    levelOrder: 62,
+    levelOrder: 60,
   },
   {
     id: "longest-path-different-characters",
@@ -1294,7 +1274,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。",
     icon: "🔤",
     difficulty: 1,
-    levelOrder: 63,
+    levelOrder: 61,
   },
   {
     id: "party-without-boss",
@@ -1304,7 +1284,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。",
     icon: "🎭",
     difficulty: 1,
-    levelOrder: 64,
+    levelOrder: 62,
   },
   {
     id: "height-removal-queries",
@@ -1314,7 +1294,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。",
     icon: "✂️",
     difficulty: 1,
-    levelOrder: 65,
+    levelOrder: 63,
   },
   {
     id: "minimum-score-after-removals",
@@ -1324,7 +1304,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。",
     icon: "🪓",
     difficulty: 1,
-    levelOrder: 66,
+    levelOrder: 64,
   },
   {
     id: "can-i-win",
@@ -1334,7 +1314,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。",
     icon: "🎲",
     difficulty: 1,
-    levelOrder: 67,
+    levelOrder: 65,
   },
   {
     id: "matchsticks-to-square",
@@ -1344,7 +1324,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP / 回溯：判断一组火柴能否恰好拼成一个正方形。将火柴分入 4 条等长边 (LeetCode 473)。",
     icon: "🔥",
     difficulty: 1,
-    levelOrder: 68,
+    levelOrder: 66,
   },
   {
     id: "partition-k-equal-subsets",
@@ -1354,7 +1334,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP / 回溯：将 n 个数划分为 k 个和相等的子集。回溯搜索 + 排序剪枝 (LeetCode 698)。",
     icon: "📦",
     difficulty: 1,
-    levelOrder: 69,
+    levelOrder: 67,
   },
   {
     id: "tsp-bitmask-dp",
@@ -1364,7 +1344,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "经典状压DP：dp[S][i] 表示经过集合 S 中所有城市且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。",
     icon: "🗺️",
     difficulty: 1,
-    levelOrder: 70,
+    levelOrder: 68,
   },
   {
     id: "dp-final-summary",
@@ -1374,7 +1354,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 71,
+    levelOrder: 69,
   },
   {
     id: "knapsack-01-standard",

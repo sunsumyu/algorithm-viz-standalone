@@ -10,6 +10,16 @@ import {
   ISLANDS_ANALYSIS_HTML,
   ISLANDS_CODE_LANGUAGES,
 } from './islands-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 2,
+  mark: [12, 13],
+  enter: [14, 15, 16, 17],
+  backtrack: 18,
+  found: [5, 6, 7],
+  scan: [4, 5],
+  done: 10,
+};
 
 export type CellState = 'water' | 'land' | 'visited';
 
@@ -58,7 +68,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
     action: 'init',
     message: `初始化 ${m}×${n} 网格。准备双重循环扫描寻找未访问的陆地 (1)。`,
     log: `初始化网格 ${m}x${n}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   const dfs = (r: number, c: number, callStack: [number, number][]): void => {
@@ -73,7 +83,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
       action: 'mark',
       message: `DFS 沉岛：标记格 (${r}, ${c}) 为已访问（沉没）。`,
       log: `  沉没陆地 (${r}, ${c})`,
-      codeLine: [12, 13],
+      codeLine: lines.mark,
     });
 
     for (const [dr, dc] of dirs) {
@@ -87,7 +97,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
           action: 'enter',
           message: `从 (${r}, ${c}) 向邻格 (${nr}, ${nc}) 发起深度优先扩散。`,
           log: `  深入扩散 (${r},${c}) -> (${nr},${nc})`,
-          codeLine: [14, 15, 16, 17],
+          codeLine: lines.enter,
         });
         dfs(nr, nc, callStack);
       }
@@ -101,7 +111,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
       action: 'backtrack',
       message: `回溯：格 (${r}, ${c}) 四周邻格已探索完毕。`,
       log: `  回溯离开 (${r}, ${c})`,
-      codeLine: 18,
+      codeLine: lines.backtrack,
     });
   };
 
@@ -115,7 +125,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
           action: 'found',
           message: `🎯 在 (${r}, ${c}) 发现新岛屿起点！当前岛屿总数 = ${count}。启动 DFS 沉岛扩散。`,
           log: `[新岛屿 #${count}] 发现起点 (${r}, ${c})`,
-          codeLine: [5, 6, 7],
+          codeLine: lines.found,
         });
         dfs(r, c, []);
       } else {
@@ -125,7 +135,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
           action: 'scan',
           message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已访问陆地'}，跳过。`,
           log: `扫描 (${r}, ${c}): ${states[r][c]}`,
-          codeLine: [4, 5],
+          codeLine: lines.scan,
         });
       }
     }
@@ -137,7 +147,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
     scan: null,
     message: `🎉 全网格扫描探索完成！共发现 ${count} 座独立岛屿，共计访问 ${visitedLand} 格陆地。`,
     log: `✓ 探索完成: 岛屿总数 = ${count}`,
-    codeLine: 10,
+    codeLine: lines.done,
   });
 
   return steps;

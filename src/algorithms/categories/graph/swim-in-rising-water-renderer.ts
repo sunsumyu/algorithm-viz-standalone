@@ -13,6 +13,7 @@ import {
   SWIM_IN_RISING_WATER_ANALYSIS_HTML,
 } from './swim-in-rising-water-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface SwimStep {
   grid: number[][];
@@ -102,8 +103,8 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
     t: number = curWaterLevel
   ): void {
     const pqSnap = pq.map((item) => ({ ...item }));
-    const distSnap = dist.map((row) => [...row]);
-    const visSnap = visited.map((row) => [...row]);
+    const distSnap = snapshotGrid2D(dist);
+    const visSnap = snapshotGrid2D(visited);
     const pathSnap = finalPath ? finalPath.map((p) => ({ ...p })) : undefined;
 
     steps.push({

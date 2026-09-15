@@ -396,6 +396,9 @@ describe('RecursionTreeAdapter Deep Module', () => {
     expect(mockContainer.innerHTML).toContain('stage1-trail-svg');
     expect(mockContainer.innerHTML).toContain('Ø');
     expect(mockContainer.innerHTML).toContain('✨');
+    expect(mockContainer.innerHTML).toContain('i=1');
+    expect(mockContainer.innerHTML).toContain('j=1');
+    expect(mockContainer.innerHTML).toContain('(i=1, j=1)');
   });
 
   it('应该支持在带标尺网格中精准高亮 2D DP 前驱依赖单元格与未计算单元格', () => {

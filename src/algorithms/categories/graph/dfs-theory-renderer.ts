@@ -6,6 +6,15 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './dfs-theory.html?raw';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 0,
+  visit: [1, 2, 3],
+  explore: [4, 5],
+  explore2: [4, 6],
+  backtrack: 7,
+  done: 8,
+};
 
 interface DFSStep {
   nodes: number[];
@@ -60,7 +69,7 @@ function buildDFSSteps(): DFSStep[] {
     action: 'init',
     message: '初始化图：6 个节点、5 条边的无向图。从节点 0 开始 DFS 遍历。',
     log: '初始化图，起点 = 0',
-    codeLine: 0,
+    codeLine: lines.init,
   });
 
   const dfs = (u: number, parent: number): void => {
@@ -79,7 +88,7 @@ function buildDFSSteps(): DFSStep[] {
       action: 'visit',
       message: `访问节点 ${u}，标记为已访问，加入递归栈（深度 ${stack.length}）。`,
       log: `DFS(${u}): 访问并标记`,
-      codeLine: [1, 2, 3],
+      codeLine: lines.visit,
     });
 
     for (const v of adjList[u]) {
@@ -97,7 +106,7 @@ function buildDFSSteps(): DFSStep[] {
           action: 'explore',
           message: `发现未访问邻居 ${v}，递归深入 DFS(${v})。`,
           log: `DFS(${u}): 探索邻居 ${v}`,
-          codeLine: [4, 5],
+          codeLine: lines.explore,
         });
         dfs(v, u);
       } else {
@@ -113,7 +122,7 @@ function buildDFSSteps(): DFSStep[] {
           action: 'explore',
           message: `邻居 ${v} 已访问过，跳过。`,
           log: `DFS(${u}): 跳过已访问的 ${v}`,
-          codeLine: [4, 6],
+          codeLine: lines.explore2,
         });
       }
     }
@@ -131,7 +140,7 @@ function buildDFSSteps(): DFSStep[] {
       action: 'backtrack',
       message: `节点 ${u} 所有邻居处理完毕，回溯到${stack.length > 0 ? `节点 ${stack[stack.length - 1]}` : '起点（栈空）'}。`,
       log: `DFS(${u}): 回溯`,
-      codeLine: 7,
+      codeLine: lines.backtrack,
     });
   };
 
@@ -149,7 +158,7 @@ function buildDFSSteps(): DFSStep[] {
     action: 'done',
     message: `DFS 遍历完成！遍历顺序: [${traversalOrder.join(', ')}]。所有 ${visited.size} 个节点均已访问。`,
     log: `DFS 完成，顺序: [${traversalOrder.join(', ')}]`,
-    codeLine: 8,
+    codeLine: lines.done,
   });
 
   return steps;

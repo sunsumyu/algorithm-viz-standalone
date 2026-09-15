@@ -165,6 +165,19 @@ export const TriangleSpec: AlgorithmSpec = {
       Array.from({ length: i + 1 }, (_, j) => triangle[i][j])
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      loopOuter: { java: 5, cpp: 5, python: 3, javascript: 3 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 8, context: [6, 7] },
+      python: { primary: 6, context: [4, 5] },
+      javascript: { primary: 7, context: [5, 6] },
+    },
+      returnAns: { java: 11, cpp: 11, python: 7, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -196,7 +209,7 @@ export const TriangleSpec: AlgorithmSpec = {
       message: `🎯 函数入口：三角形最小路径和。共 ${n} 层，采用自底向上（Bottom-Up）逆向推导。`,
       log: `entry: n=${n}`,
       vars: makeVars({ changed: ['n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init bottom layer
@@ -205,7 +218,7 @@ export const TriangleSpec: AlgorithmSpec = {
       message: `🎬 初始化最底层（第 ${n - 1} 层）：[${triangle[n - 1].join(', ')}]，自身即为向下的最小路径和。`,
       log: `init bottom: [${triangle[n - 1].join(',')}]`,
       vars: makeVars({ i: n - 1, changed: ['dpij'] }),
-      codeLine: { java: 5, cpp: 5, python: 3, javascript: 3 },
+      codeLine: LINES.loopOuter,
     });
 
     // Loops (自底向上: i 从 n-2 倒序到 0)
@@ -227,12 +240,7 @@ export const TriangleSpec: AlgorithmSpec = {
           message: `⚡ 状态转移：节点 (${i}, ${j}) (权值 ${selfVal}) 比较两个下一层子分支【正下方 (${leftChild})】vs【右下方 (${rightChild})】$\rightarrow$ 选择较小值 ${minChild}，dp[${i}][${j}] = ${resultVal}。`,
           log: `update: dp[${i}][${j}] = ${resultVal}`,
           vars: makeVars({ i, j, curVal: selfVal, curDp: resultVal, changed: ['i', 'j', 't', 'dpij'] }),
-          codeLine: {
-            java: { primary: 8, context: [6, 7] },
-            cpp: { primary: 8, context: [6, 7] },
-            python: { primary: 6, context: [4, 5] },
-            javascript: { primary: 7, context: [5, 6] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -244,7 +252,7 @@ export const TriangleSpec: AlgorithmSpec = {
       message: `🏁 算法结束：三角形自顶向下的最小路径总和为顶点汇聚值 dp[0][0] = ${ans}。`,
       log: `return: dp[0][0] = ${ans}`,
       vars: makeVars({ i: 0, j: 0, curVal: triangle[0][0], curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 11, cpp: 11, python: 7, javascript: 10 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

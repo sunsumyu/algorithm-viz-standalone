@@ -12,6 +12,7 @@ import {
   PATH_MIN_EFFORT_ANALYSIS_HTML,
 } from './path-min-effort-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface EffortStep {
   grid: number[][];
@@ -133,9 +134,9 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     }
 
     steps.push({
-      grid: grid.map((r) => [...r]),
-      dist: distance.map((r) => [...r]),
-      visited: visited.map((r) => [...r]),
+      grid: snapshotGrid2D(grid),
+      dist: snapshotGrid2D(distance),
+      visited: snapshotGrid2D(visited),
       curR,
       curC,
       minEffortSoFar,

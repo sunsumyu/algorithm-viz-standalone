@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  MEETING_MONOPOLY_STAGE1_CODES,
-  MEETING_MONOPOLY_STAGE1_LINES,
-  MEETING_MONOPOLY_STAGE2_CODES,
-  MEETING_MONOPOLY_STAGE2_LINES,
-  MEETING_MONOPOLY_STAGE3_CODES,
-  MEETING_MONOPOLY_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { MEETING_MONOPOLY_STAGE1_CODES, MEETING_MONOPOLY_STAGE2_CODES, MEETING_MONOPOLY_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderGanttTimeline,
@@ -81,12 +74,11 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
     decision: '初始化会议时间轴',
     message: `载入 ${meetings.length} 场待调度会议，时间跨度 [${minT}, ${maxT}]`,
     log: `[Init] 载入 ${meetings.length} 场会议。`,
-    codeLine: {
-      java: stage === 1 ? MEETING_MONOPOLY_STAGE1_LINES.java.init : stage === 2 ? MEETING_MONOPOLY_STAGE2_LINES.java.sort : MEETING_MONOPOLY_STAGE3_LINES.java.intro,
-      cpp: stage === 1 ? MEETING_MONOPOLY_STAGE1_LINES.cpp.init : stage === 2 ? MEETING_MONOPOLY_STAGE2_LINES.cpp.sort : MEETING_MONOPOLY_STAGE3_LINES.cpp.intro,
-      python: stage === 1 ? MEETING_MONOPOLY_STAGE1_LINES.python.init : stage === 2 ? MEETING_MONOPOLY_STAGE2_LINES.python.sort : MEETING_MONOPOLY_STAGE3_LINES.python.intro,
-      javascript: stage === 1 ? MEETING_MONOPOLY_STAGE1_LINES.javascript.init : stage === 2 ? MEETING_MONOPOLY_STAGE2_LINES.javascript.sort : MEETING_MONOPOLY_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor(
+      'meeting-monopoly',
+      stage === 1 ? 1 : stage === 2 ? 2 : 3,
+      stage === 1 ? 'init' : stage === 2 ? 'sort' : 'intro'
+    ),
   });
 
   if (stage === 1) {
@@ -112,12 +104,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
         decision: `考察会议 ${it.name}`,
         message: `枚举考察 ${it.name} [${it.start}, ${it.end}]，当前上一会议结束时间 = ${lastE === -Infinity ? '无' : lastE}`,
         log: `[DFS Probe] 评估 ${it.name}`,
-        codeLine: {
-          java: MEETING_MONOPOLY_STAGE1_LINES.java.check,
-          cpp: MEETING_MONOPOLY_STAGE1_LINES.cpp.check,
-          python: MEETING_MONOPOLY_STAGE1_LINES.python.check,
-          javascript: MEETING_MONOPOLY_STAGE1_LINES.javascript.check,
-        },
+        codeLine: getGreedy090Anchor('meeting-monopoly', 1, 'check'),
       });
 
       if (it.start >= lastE) {
@@ -137,12 +124,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
           decision: `选入会议 ${it.name}`,
           message: `时间不冲突 (start ${it.start} >= lastEnd ${lastE === it.end ? 'OK' : ''})，递归分支选入该会议！`,
           log: `[DFS Pick] 选入 ${it.name}`,
-          codeLine: {
-            java: MEETING_MONOPOLY_STAGE1_LINES.java.pick,
-            cpp: MEETING_MONOPOLY_STAGE1_LINES.cpp.pick,
-            python: MEETING_MONOPOLY_STAGE1_LINES.python.pick,
-            javascript: MEETING_MONOPOLY_STAGE1_LINES.javascript.pick,
-          },
+          codeLine: getGreedy090Anchor('meeting-monopoly', 1, 'pick'),
         });
       } else {
         it.status = 'discarded';
@@ -159,12 +141,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
           decision: `发生冲突，放弃 ${it.name}`,
           message: `该会议开始时刻 ${it.start} 早于当前占用结束时刻 ${lastE}，发生独占冲突，分支放弃`,
           log: `[DFS Skip] 放弃 ${it.name}`,
-          codeLine: {
-            java: MEETING_MONOPOLY_STAGE1_LINES.java.skip,
-            cpp: MEETING_MONOPOLY_STAGE1_LINES.cpp.skip,
-            python: MEETING_MONOPOLY_STAGE1_LINES.python.skip,
-            javascript: MEETING_MONOPOLY_STAGE1_LINES.javascript.skip,
-          },
+          codeLine: getGreedy090Anchor('meeting-monopoly', 1, 'skip'),
         });
       }
     }
@@ -195,12 +172,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
       decision: '按结束时间升序重排',
       message: `核心贪心预处理：将所有会议按结束时间 end 从小到大重排完毕！`,
       log: '[Sort] 会议按结束时间排序完成。',
-      codeLine: {
-        java: MEETING_MONOPOLY_STAGE2_LINES.java.sort,
-        cpp: MEETING_MONOPOLY_STAGE2_LINES.cpp.sort,
-        python: MEETING_MONOPOLY_STAGE2_LINES.python.sort,
-        javascript: MEETING_MONOPOLY_STAGE2_LINES.javascript.sort,
-      },
+      codeLine: getGreedy090Anchor('meeting-monopoly', 2, 'sort'),
     });
 
     let selected = 0;
@@ -223,12 +195,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
         decision: `检查会议 ${it.name} [${it.start}, ${it.end}]`,
         message: `考察当前结束最早的待选会议 ${it.name}，开始时间=${it.start}，当前会议室空闲时刻=${curEnd === -Infinity ? '初始时刻' : curEnd}`,
         log: `[Greedy Check] 检查 ${it.name}`,
-        codeLine: {
-          java: MEETING_MONOPOLY_STAGE2_LINES.java.check,
-          cpp: MEETING_MONOPOLY_STAGE2_LINES.cpp.check,
-          python: MEETING_MONOPOLY_STAGE2_LINES.python.check,
-          javascript: MEETING_MONOPOLY_STAGE2_LINES.javascript.check,
-        },
+        codeLine: getGreedy090Anchor('meeting-monopoly', 2, 'check'),
       });
 
       if (it.start >= curEnd) {
@@ -249,12 +216,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
           decision: `贪心采纳会议 ${it.name}`,
           message: `由于 ${it.start} >= ${curEnd === it.end ? '前次结束' : curEnd}，相容入库！时间游标推进至 curEnd = ${curEnd}`,
           log: `[Greedy Pick] 采纳 ${it.name}, curEnd=${curEnd}`,
-          codeLine: {
-            java: MEETING_MONOPOLY_STAGE2_LINES.java.update,
-            cpp: MEETING_MONOPOLY_STAGE2_LINES.cpp.update,
-            python: MEETING_MONOPOLY_STAGE2_LINES.python.update,
-            javascript: MEETING_MONOPOLY_STAGE2_LINES.javascript.update,
-          },
+          codeLine: getGreedy090Anchor('meeting-monopoly', 2, 'update'),
         });
       } else {
         it.status = 'discarded';
@@ -271,12 +233,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
           decision: `冲突淘汰 ${it.name}`,
           message: `会议 ${it.name} 开始时间 ${it.start} < 上一会议结束时间 ${curEnd}，发生独占冲突，果断舍弃！`,
           log: `[Greedy Drop] 冲突放弃 ${it.name}`,
-          codeLine: {
-            java: MEETING_MONOPOLY_STAGE2_LINES.java.loop,
-            cpp: MEETING_MONOPOLY_STAGE2_LINES.cpp.loop,
-            python: MEETING_MONOPOLY_STAGE2_LINES.python.loop,
-            javascript: MEETING_MONOPOLY_STAGE2_LINES.javascript.loop,
-          },
+          codeLine: getGreedy090Anchor('meeting-monopoly', 2, 'loop'),
         });
       }
     }
@@ -293,12 +250,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
       decision: '贪心推演完成',
       message: `推演结束：最多可参加 ${selected} 场互不冲突的独占会议（等价于最少删除 ${items.length - selected} 场冲突会议）`,
       log: `[Done] 贪心完成，最多参会=${selected}`,
-      codeLine: {
-        java: MEETING_MONOPOLY_STAGE2_LINES.java.ret,
-        cpp: MEETING_MONOPOLY_STAGE2_LINES.cpp.ret,
-        python: MEETING_MONOPOLY_STAGE2_LINES.python.ret,
-        javascript: MEETING_MONOPOLY_STAGE2_LINES.javascript.ret,
-      },
+      codeLine: getGreedy090Anchor('meeting-monopoly', 2, 'ret'),
     });
 
     return steps;
@@ -321,12 +273,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
     decision: '贪心不劣性数学归纳反证',
     message: '数学归纳法：贪心解选取的第 r 个区间结束时刻 g_r.end 永远 <= 最优解 opt_r.end',
     log: '[Proof] 归纳证明 g_r.end <= opt_r.end',
-    codeLine: {
-      java: MEETING_MONOPOLY_STAGE3_LINES.java.base,
-      cpp: MEETING_MONOPOLY_STAGE3_LINES.cpp.base,
-      python: MEETING_MONOPOLY_STAGE3_LINES.python.base,
-      javascript: MEETING_MONOPOLY_STAGE3_LINES.javascript.base,
-    },
+    codeLine: getGreedy090Anchor('meeting-monopoly', 3, 'base'),
   });
 
   steps.push({
@@ -345,12 +292,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
     decision: '相容时间区间严格包含',
     message: '由于 g_r 结束更早，给未来留下的可用时间段 [g_r.end, +∞) 严格包含了 [opt_r.end, +∞)。任何能与 opt_r 相容的后续区间，必能与 g_r 相容！',
     log: '[Proof Step] 贪心解留出更大后序相容区间。',
-    codeLine: {
-      java: MEETING_MONOPOLY_STAGE3_LINES.java.step,
-      cpp: MEETING_MONOPOLY_STAGE3_LINES.cpp.step,
-      python: MEETING_MONOPOLY_STAGE3_LINES.python.step,
-      javascript: MEETING_MONOPOLY_STAGE3_LINES.javascript.step,
-    },
+    codeLine: getGreedy090Anchor('meeting-monopoly', 3, 'step'),
   });
 
   steps.push({
@@ -369,12 +311,7 @@ export function buildMeetingMonopolySteps(rawInput: string, stage: number): Meet
     decision: '反证结论收敛：贪心即最优',
     message: '由归纳假设可知，贪心算法容纳的会议总数必满足 m >= k。因此不可能存在包含更多会议的合法排期，贪心解必是全局最优解！',
     log: '[Proof Verified] 贪心最优性证明成立。',
-    codeLine: {
-      java: MEETING_MONOPOLY_STAGE3_LINES.java.conclusion,
-      cpp: MEETING_MONOPOLY_STAGE3_LINES.cpp.conclusion,
-      python: MEETING_MONOPOLY_STAGE3_LINES.python.conclusion,
-      javascript: MEETING_MONOPOLY_STAGE3_LINES.javascript.conclusion,
-    },
+    codeLine: getGreedy090Anchor('meeting-monopoly', 3, 'conclusion'),
   });
 
   return steps;

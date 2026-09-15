@@ -181,6 +181,18 @@ export const OnesAndZeroesSpec: AlgorithmSpec = {
       Array.from({ length: n + 1 }, () => 0)
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 13, context: [11, 12] },
+      cpp: { primary: 13, context: [11, 12] },
+      python: { primary: 9, context: [7, 8] },
+      javascript: { primary: 11, context: [9, 10] },
+    },
+      line0: { java: 18, cpp: 18, python: 10, javascript: 15 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -221,7 +233,7 @@ export const OnesAndZeroesSpec: AlgorithmSpec = {
       message: `🎯 函数入口：一和零（二维费用背包）。共有 ${strs.length} 个字符串，限制最多 ${m} 个 '0' 与 ${n} 个 '1'。`,
       log: `entry: m=${m}, n=${n}, strs=[${strs.join(',')}]`,
       vars: makeVars({ changed: ['strs', 'm', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let k = 0; k < strs.length; k++) {
@@ -249,12 +261,7 @@ export const OnesAndZeroesSpec: AlgorithmSpec = {
               message: `⚡ 选入 "${s}" (含 ${zeros} 个 '0', ${ones} 个 '1')：在容量上限 (${i}, ${j}) 下，子集长度提升至 ${best}。`,
               log: `dp[${i}][${j}] = ${best}`,
               vars: makeVars({ strIdx: k, curStr: s, cur0: zeros, cur1: ones, i, j, curDp: best, changed: ['s', 'c', 'ij', 'dp'] }),
-              codeLine: {
-                java: { primary: 13, context: [11, 12] },
-                cpp: { primary: 13, context: [11, 12] },
-                python: { primary: 9, context: [7, 8] },
-                javascript: { primary: 11, context: [9, 10] },
-              },
+              codeLine: LINES.transfer,
             });
           }
         }
@@ -269,7 +276,7 @@ export const OnesAndZeroesSpec: AlgorithmSpec = {
       message: `🏁 算法结束：在最多 ${m} 个 0 和 ${n} 个 1 的约束下，最大子集长度为 dp[${m}][${n}] = ${finalAns}。`,
       log: `return: dp[${m}][${n}] = ${finalAns}`,
       vars: makeVars({ curDp: finalAns, changed: ['dp'] }),
-      codeLine: { java: 18, cpp: 18, python: 10, javascript: 15 },
+      codeLine: LINES.line0,
     });
 
     return steps;

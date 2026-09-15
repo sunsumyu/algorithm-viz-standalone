@@ -198,6 +198,26 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
       Array.from({ length: n }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      loopOuter: { java: [6, 7], cpp: [6, 7], python: [6, 7], javascript: [5, 6] },
+      transfer: {
+      java: { primary: 10, context: [8, 9] },
+      cpp: { primary: 10, context: [8, 9] },
+      python: { primary: 10, context: [8, 9] },
+      javascript: { primary: 9, context: [7, 8] },
+    },
+      transfer2: {
+      java: { primary: 11, context: [8, 9] },
+      cpp: { primary: 11, context: [8, 9] },
+      python: { primary: 11, context: [8, 9] },
+      javascript: { primary: 11, context: [7, 8] },
+    },
+      returnAns: { java: 14, cpp: 15, python: 13, javascript: 15 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -254,7 +274,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：不同路径 II。带障碍网格规模 ${m} × ${n}，图中已标记出 🚧 障碍物位置。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ changed: ['m', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (grid[0][0] === 1 || grid[m - 1][n - 1] === 1) {
@@ -265,7 +285,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
         message: `❌ 快速剪枝：${grid[0][0] === 1 ? '起点 (0,0)' : '终点 (m-1,n-1)'} 处为障碍物 🚧，无法通行，直接返回 0。`,
         log: `blocked start/end: return 0`,
         vars: makeVars({ isObs: true, curDp: 0 }),
-        codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -293,7 +313,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
       message: `🎬 边界初始化：首行与首列只能单方向前进，一旦遇到障碍物 🚧，后续格子路径数均为 0。`,
       log: `init boundaries with obstacle check`,
       vars: makeVars({ curDp: 1, changed: ['dpij'] }),
-      codeLine: { java: [6, 7], cpp: [6, 7], python: [6, 7], javascript: [5, 6] },
+      codeLine: LINES.loopOuter,
     });
 
     // Loops
@@ -312,12 +332,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
             message: `🚧 遇到障碍物：坐标 (${i}, ${j}) 为障碍物，机器人无法站立，设置 dp[${i}][${j}] = 0。`,
             log: `obstacle at (${i},${j}): dp=0`,
             vars: makeVars({ i, j, isObs: true, curDp: 0, changed: ['i', 'j', 'obs', 'dpij'] }),
-            codeLine: {
-              java: { primary: 10, context: [8, 9] },
-              cpp: { primary: 10, context: [8, 9] },
-              python: { primary: 10, context: [8, 9] },
-              javascript: { primary: 9, context: [7, 8] },
-            },
+            codeLine: LINES.transfer,
           });
         } else {
           const fromTop = (dp[i - 1][j] as number) || 0;
@@ -334,12 +349,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
             message: `⚡ 状态转移：坐标 (${i}, ${j}) 无障碍 $\rightarrow$ 来自上方 (${fromTop}) + 来自左方 (${fromLeft}) = ${sum} 条路径。`,
             log: `update: dp[${i}][${j}] = ${sum}`,
             vars: makeVars({ i, j, isObs: false, curDp: sum, changed: ['i', 'j', 'obs', 'dpij'] }),
-            codeLine: {
-              java: { primary: 11, context: [8, 9] },
-              cpp: { primary: 11, context: [8, 9] },
-              python: { primary: 11, context: [8, 9] },
-              javascript: { primary: 11, context: [7, 8] },
-            },
+            codeLine: LINES.transfer2,
           });
         }
       }
@@ -353,7 +363,7 @@ export const UniquePathsIiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：避开障碍物到达终点的不同路径总数为 dp[${m - 1}][${n - 1}] = ${ans} 条。`,
       log: `return: dp[${m - 1}][${n - 1}] = ${ans}`,
       vars: makeVars({ i: m - 1, j: n - 1, curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 14, cpp: 15, python: 13, javascript: 15 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

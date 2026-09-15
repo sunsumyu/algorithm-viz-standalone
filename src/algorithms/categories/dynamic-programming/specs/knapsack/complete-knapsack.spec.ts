@@ -158,6 +158,20 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
     const n = weights.length;
     const dp: DpCell[] = Array(bagWeight + 1).fill(0);
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 4, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [4, 5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      returnAns: { java: 10, cpp: 10, python: 8, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -204,7 +218,7 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init
@@ -215,7 +229,7 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
       message: `🎬 初始化：dp[0..${bagWeight}] 初始为 0。`,
       log: `init dp = 0`,
       vars: makeVars({ curDp: 0, changed: ['dpj'] }),
-      codeLine: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     // Loops (完全背包: 外层物品, 内层正序 j 从 weight 到 bagWeight)
@@ -238,7 +252,7 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
             action: 'evaluate',
           },
         },
-        codeLine: { java: 5, cpp: 5, python: 4, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = curWeight; j <= bagWeight; j++) {
@@ -268,12 +282,7 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
               action: isTakeWinner ? 'include' : 'exclude',
             },
           },
-          codeLine: {
-            java: { primary: 7, context: [5, 6] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [4, 5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -295,7 +304,7 @@ export const CompleteKnapsackSpec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 10, cpp: 10, python: 8, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

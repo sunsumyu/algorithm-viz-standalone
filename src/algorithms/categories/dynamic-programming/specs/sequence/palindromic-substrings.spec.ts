@@ -178,6 +178,20 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
     );
 
     let count = 0;
+    // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 4, javascript: 4 },
+      loopOuter: { java: 6, cpp: 6, python: 6, javascript: 6 },
+      transfer: (isPal: boolean) => ({
+        java: { primary: isPal ? 8 : 6, context: [4, 5] },
+        cpp: { primary: isPal ? 8 : 6, context: [4, 5] },
+        python: { primary: isPal ? 8 : 6, context: [4, 5] },
+        javascript: { primary: isPal ? 8 : 6, context: [4, 5] },
+      }),
+      line1: { java: 14, cpp: 14, python: 11, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -217,7 +231,7 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
       message: `🎯 函数入口：统计字符串 s = "${s}" 中所有回文子串的数目。`,
       log: `entry: s="${s}"`,
       vars: makeVars({ changed: ['s', 'n', 'count'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Loops (i backwards from n-1 to 0, j from i to n-1)
@@ -232,7 +246,7 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
         message: `🔄 外层倒序循环：左端点 i = ${i} ('${charI}')，从右往左推进以满足状态依赖。`,
         log: `outer loop: i=${i}`,
         vars: makeVars({ i, c1: charI, changed: ['i', 'c1'] }),
-        codeLine: { java: 4, cpp: 4, python: 4, javascript: 4 },
+        codeLine: LINES.line0,
       });
 
       for (let j = i; j < n; j++) {
@@ -250,7 +264,7 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
           message: `🔍 考察区间 [${i}..${j}] ("${sub}")：两端字符 s[${i}] ('${charI}') 与 s[${j}] ('${charJ}') ${sameChar ? '相同 ✓' : '不同 ✗'}。`,
           log: `compare: s[${i}]='${charI}', s[${j}]='${charJ}'`,
           vars: makeVars({ i, j, c1: charI, c2: charJ, changed: ['j', 'c2'] }),
-          codeLine: { java: 6, cpp: 6, python: 6, javascript: 6 },
+          codeLine: LINES.loopOuter,
         });
 
         // State Transfer
@@ -279,12 +293,7 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
             : `❌ 【非回文】"${sub}" 不是回文子串，dp[${i}][${j}] = false。`,
           log: `update: dp[${i}][${j}]=${isPal}, count=${count}`,
           vars: makeVars({ i, j, c1: charI, c2: charJ, curDp: isPal, curCount: count, changed: isPal ? ['dpij', 'count'] : ['dpij'] }),
-          codeLine: {
-            java: { primary: isPal ? 8 : 6, context: [4, 5] },
-            cpp: { primary: isPal ? 8 : 6, context: [4, 5] },
-            python: { primary: isPal ? 8 : 6, context: [4, 5] },
-            javascript: { primary: isPal ? 8 : 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer(isPal),
         });
       }
     }
@@ -296,7 +305,7 @@ export const PalindromicSubstringsSpec: AlgorithmSpec = {
       message: `🏁 算法结束：返回全局回文子串总数 count = ${count}。`,
       log: `return: count=${count}`,
       vars: makeVars({ curCount: count, changed: ['count'] }),
-      codeLine: { java: 14, cpp: 14, python: 11, javascript: 13 },
+      codeLine: LINES.line1,
     });
 
     return steps;

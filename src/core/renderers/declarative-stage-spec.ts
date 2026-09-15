@@ -139,6 +139,7 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   problemContent?: any;
   stages?: DeclarativeStageSpec<TStep>[];
   defaultStage?: string;
+  defaultMode?: string;
   buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
   generateSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
   renderCanvas?: (container: HTMLElement, step: TStep, extra?: any) => void;

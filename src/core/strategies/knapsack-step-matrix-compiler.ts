@@ -367,8 +367,11 @@ export class KnapsackStepMatrixCompiler {
     const lineOddCheck = anchorMap?.odd_check || 4;
     const lineInit = anchorMap?.init || 4;
     const lineInitRow = anchorMap?.init_row || anchorMap?.init_val || 5;
-    const lineCond = anchorMap?.cond || anchorMap?.init_val || 9;
-    const lineTransferMax = anchorMap?.transfer_max || anchorMap?.transfer || 11;
+    const lineLoopI = anchorMap?.loop_i || 6;
+    const lineLoopJ = anchorMap?.loop_j || 7;
+    const lineCond = anchorMap?.cond || 8;
+    const lineTransferSkip = anchorMap?.transfer_skip || anchorMap?.init_val || (lineCond + 1);
+    const lineTransferMax = anchorMap?.transfer_max || anchorMap?.transfer || (lineCond + 3);
     const lineReturn = anchorMap?.return || 15;
 
     if (oddCheck?.hasOddFail) {
@@ -427,26 +430,68 @@ export class KnapsackStepMatrixCompiler {
       msg: `初始化第 0 件物品行：当背包容量 <code>j >= ${w0}</code> 时，可装入物品 0，<code>dp[0][j] = ${v0}</code>。`
     });
 
-    // 2. 双重循环填表
+    // 2. 双重循环填表 (强制发射 loop-outer -> loop-inner -> cond -> transfer 零跳步流水线)
     for (let i = 1; i < n; i++) {
       const wi = items[i].weight;
       const vi = items[i].value;
 
+      steps.push({
+        type: 'loop-outer',
+        line: lineLoopI,
+        i,
+        j: 0,
+        grid: JSON.parse(JSON.stringify(dp)),
+        tag: `考察物品 item[${i}] (w=${wi}, v=${vi})`,
+        log: `| 🔁 外层循环: 考察第 ${i} 件物品 (重量 ${wi}, 价值 ${vi})`,
+        msg: `外层循环：考察物品 <code>item[${i}]</code>（重量 <code>${wi}</code>，价值 <code>${vi}</code>）。`,
+        gridHighlight: { i, j: 0 }
+      });
+
       for (let j = 0; j <= capacity; j++) {
-        if (j < wi) {
+        steps.push({
+          type: 'loop-inner',
+          line: lineLoopJ,
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: `容量 j = ${j}`,
+          log: `| ➡️ 内层循环: 考察背包容量 j = ${j}/${capacity}`,
+          msg: `内层循环：当前背包容量 <code>j = ${j}</code>。`,
+          gridHighlight: { i, j }
+        });
+
+        const isEnough = j >= wi;
+        steps.push({
+          type: 'cond',
+          line: lineCond,
+          i,
+          j,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: isEnough ? `容量充足: ${j} >= ${wi}` : `容量不足: ${j} < ${wi}`,
+          log: isEnough
+            ? `| 🔍 容量检查: j=${j} >= w=${wi}，可尝试放入第 ${i} 件物品`
+            : `| 🔍 容量检查: j=${j} < w=${wi}，容量不足无法放入`,
+          msg: isEnough
+            ? `容量充足：<code>j (${j}) >= w (${wi})</code>，可在「不放」与「放入」两决策中择优。`
+            : `容量不足：<code>j (${j}) < w (${wi})</code>，无法放入该物品，直接继承上方状态。`,
+          gridHighlight: { i, j }
+        });
+
+        if (!isEnough) {
           dp[i][j] = dp[i - 1][j] ?? 0;
           steps.push({
-            type: 'update',
-            line: lineCond,
+            type: 'transfer',
+            line: lineTransferSkip,
             i,
             j,
+            val: dp[i][j],
             topI: i - 1,
             topJ: j,
             grid: JSON.parse(JSON.stringify(dp)),
             gridHighlight: { i, j },
-            tag: `容量不足: dp[${i}][${j}] = ${dp[i][j]}`,
+            tag: `容量不足继承: dp[${i}][${j}] = ${dp[i][j]}`,
             log: `| ⚠️ 容量不足 (j=${j} < w=${wi}): dp[${i}][${j}] 继承上方 dp[${i - 1}][${j}] = ${dp[i][j]}`,
-            msg: `容量不足 (<code>${j} < ${wi}</code>)：无法装入第 <code>${i}</code> 件物品，继承上方状态 <code>dp[${i - 1}][${j}] = <strong>${dp[i][j]}</strong></code>。`
+            msg: `容量不足：直接继承上方旧值 <code>dp[${i - 1}][${j}] = <strong>${dp[i][j]}</strong></code>。`
           });
         } else {
           const valNotTake = dp[i - 1][j] ?? 0;
@@ -454,10 +499,11 @@ export class KnapsackStepMatrixCompiler {
           dp[i][j] = isCountKind ? (valNotTake + (dp[i - 1][j - wi] ?? 0)) : Math.max(valNotTake, valTake);
 
           steps.push({
-            type: 'update',
+            type: 'transfer',
             line: lineTransferMax,
             i,
             j,
+            val: dp[i][j],
             topI: i - 1,
             topJ: j,
             leftI: i - 1,
@@ -466,7 +512,7 @@ export class KnapsackStepMatrixCompiler {
             gridHighlight: { i, j },
             tag: `决策取优: dp[${i}][${j}] = ${dp[i][j]}`,
             log: `| 📦 状态转移: dp[${i}][${j}] = max(不放:${valNotTake}, 放:${valTake}) = ${dp[i][j]}`,
-            msg: `状态转移：<code>dp[${i}][${j}] = max(dp[${i - 1}][${j}], dp[${i - 1}][${j - wi}] + ${vi}) = <strong>${dp[i][j]}</strong></code>。`
+            msg: `状态转移：<code>dp[${i}][${j}] = max(dp[${i - 1}][${j}] (${valNotTake}), dp[${i - 1}][${j - wi}] + ${vi} (${valTake})) = <strong>${dp[i][j]}</strong></code>。`
           });
         }
       }

@@ -1524,6 +1524,74 @@ export const LPS_STAGE4_CODE_LANGUAGES: Record<string, string[]> = {
   ],
 };
 
+export const LPS_STAGE1_FORWARD_CODE_LANGUAGES = LPS_STAGE1_CODE_LANGUAGES;
+export const LPS_STAGE2_FORWARD_CODE_LANGUAGES = LPS_STAGE2_CODE_LANGUAGES;
+export const LPS_STAGE4_REVERSE_CODE_LANGUAGES = LPS_STAGE4_CODE_LANGUAGES;
+
+export const LPS_STAGE3_REVERSE_CODE_LANGUAGES: Record<string, string[]> = {
+  java: [
+    '// 阶段 3: 严格区间 DP (逆推视角：按区间长度 len 从小到大递推)',
+    'public static int lps3Reverse(String s) {',
+    '    int n = s.length();',
+    '    int[][] dp = new int[n][n];',
+    '    for (int i = 0; i < n; i++) dp[i][i] = 1;',
+    '    for (int len = 2; len <= n; len++) {',
+    '        for (int l = 0; l <= n - len; l++) {',
+    '            int r = l + len - 1;',
+    '            if (s.charAt(l) == s.charAt(r)) dp[l][r] = 2 + (len == 2 ? 0 : dp[l + 1][r - 1]);',
+    '            else dp[l][r] = Math.max(dp[l + 1][r], dp[l][r - 1]);',
+    '        }',
+    '    }',
+    '    return dp[0][n - 1];',
+    '}',
+  ],
+  cpp: [
+    '// 阶段 3: 严格区间 DP (逆推视角：按区间长度 len 从小到大递推)',
+    'int lps3Reverse(string s) {',
+    '    int n = s.size();',
+    '    vector<vector<int>> dp(n, vector<int>(n, 0));',
+    '    for (int i = 0; i < n; ++i) dp[i][i] = 1;',
+    '    for (int len = 2; len <= n; ++len) {',
+    '        for (int l = 0; l <= n - len; ++l) {',
+    '            int r = l + len - 1;',
+    '            if (s[l] == s[r]) dp[l][r] = 2 + (len == 2 ? 0 : dp[l + 1][r - 1]);',
+    '            else dp[l][r] = max(dp[l + 1][r], dp[l][r - 1]);',
+    '        }',
+    '    }',
+    '    return dp[0][n - 1];',
+    '}',
+  ],
+  python: [
+    '# 阶段 3: 严格区间 DP (逆推视角：按区间长度 len 从小到大递推)',
+    'def lps3Reverse(s: str) -> int:',
+    '    n = len(s)',
+    '    dp = [[0] * n for _ in range(n)]',
+    '    for i in range(n): dp[i][i] = 1',
+    '    for len_ in range(2, n + 1):',
+    '        for l in range(n - len_ + 1):',
+    '            r = l + len_ - 1',
+    '            if s[l] == s[r]: dp[l][r] = 2 + (0 if len_ == 2 else dp[l + 1][r - 1])',
+    '            else: dp[l][r] = max(dp[l + 1][r], dp[l][r - 1])',
+    '    return dp[0][n - 1]',
+  ],
+  javascript: [
+    '// 阶段 3: 严格区间 DP (逆推视角：按区间长度 len 从小到大递推)',
+    'export function lps3Reverse(s) {',
+    '  const n = s.length;',
+    '  const dp = Array.from({ length: n }, () => new Array(n).fill(0));',
+    '  for (let i = 0; i < n; i++) dp[i][i] = 1;',
+    '  for (let len = 2; len <= n; len++) {',
+    '    for (let l = 0; l <= n - len; l++) {',
+    '      const r = l + len - 1;',
+    '      if (s[l] === s[r]) dp[l][r] = 2 + (len === 2 ? 0 : dp[l + 1][r - 1]);',
+    '      else dp[l][r] = Math.max(dp[l + 1][r], dp[l][r - 1]);',
+    '    }',
+    '  }',
+    '  return dp[0][n - 1];',
+    '}',
+  ],
+};
+
 // ==========================================
 // 5. Code05 二叉树结构数 (牛客网)
 // ==========================================
@@ -2129,3 +2197,347 @@ export const LIP_STAGE4_CODE_LANGUAGES: Record<string, string[]> = {
     '}',
   ],
 };
+
+// ==========================================
+// 语义锚点查找表与解析器
+// ==========================================
+export type Dp067Kind =
+  | 'min-path-sum'
+  | 'word-search'
+  | 'lcs-forward'
+  | 'lps-forward'
+  | 'longest-common-subsequence'
+  | 'longest-palindromic-subsequence'
+  | 'tree-count'
+  | 'longest-increasing-path';
+
+export interface ResolvedLineTarget {
+  java: number;
+  cpp: number;
+  python: number;
+  javascript: number;
+}
+
+const DP067_ANCHOR_MAP: Record<string, ResolvedLineTarget> = {
+  // min-path-sum: stage 1
+  'min-path-sum:s1:enter': { java: 6, cpp: 2, python: 3, javascript: 3 },
+  'min-path-sum:s1:baseOrigin': { java: 7, cpp: 3, python: 4, javascript: 4 },
+  'min-path-sum:s1:baseRow0': { java: 8, cpp: 4, python: 5, javascript: 5 },
+  'min-path-sum:s1:baseCol0': { java: 9, cpp: 5, python: 6, javascript: 6 },
+  'min-path-sum:s1:returnMin': { java: 10, cpp: 6, python: 7, javascript: 7 },
+
+  // min-path-sum: stage 2
+  'min-path-sum:s2:init': { java: 6, cpp: 12, python: 12, javascript: 12 },
+  'min-path-sum:s2:checkMemo': { java: 9, cpp: 6, python: 5, javascript: 6 },
+  'min-path-sum:s2:baseOrigin': { java: 10, cpp: 7, python: 6, javascript: 7 },
+  'min-path-sum:s2:baseRow0': { java: 11, cpp: 8, python: 7, javascript: 8 },
+  'min-path-sum:s2:baseCol0': { java: 12, cpp: 9, python: 8, javascript: 9 },
+  'min-path-sum:s2:memoStore': { java: 14, cpp: 11, python: 10, javascript: 11 },
+
+  // min-path-sum: stage 3
+  'min-path-sum:s3:origin': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'min-path-sum:s3:firstRow': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'min-path-sum:s3:firstCol': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'min-path-sum:s3:innerLoop': { java: 10, cpp: 9, python: 9, javascript: 9 },
+  'min-path-sum:s3:returnAns': { java: 13, cpp: 12, python: 11, javascript: 12 },
+
+  // min-path-sum: stage 4
+  'min-path-sum:s4:init': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'min-path-sum:s4:firstRow': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'min-path-sum:s4:rowLoop': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'min-path-sum:s4:firstCol': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'min-path-sum:s4:colLoop': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'min-path-sum:s4:returnAns': { java: 13, cpp: 13, python: 11, javascript: 13 },
+
+  // word-search: stage 1
+  'word-search:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'word-search:s1:dimensions': { java: 3, cpp: 3, python: 3, javascript: 3 },
+  'word-search:s1:allocVisited': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'word-search:s1:outerI': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'word-search:s1:outerJ': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'word-search:s1:callDfs': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'word-search:s1:returnFalse': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'word-search:s1:dfsEntry': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'word-search:s1:checkTargetFound': { java: 13, cpp: 13, python: 13, javascript: 13 },
+  'word-search:s1:checkBounds': { java: 14, cpp: 14, python: 14, javascript: 14 },
+  'word-search:s1:checkVisitedOrMismatch': { java: 15, cpp: 15, python: 15, javascript: 15 },
+  'word-search:s1:markVisited': { java: 16, cpp: 16, python: 16, javascript: 16 },
+  'word-search:s1:branchDown': { java: 17, cpp: 17, python: 17, javascript: 17 },
+  'word-search:s1:branchUp': { java: 18, cpp: 18, python: 18, javascript: 18 },
+  'word-search:s1:branchRight': { java: 19, cpp: 19, python: 19, javascript: 19 },
+  'word-search:s1:branchLeft': { java: 20, cpp: 20, python: 20, javascript: 20 },
+  'word-search:s1:backtrackRestore': { java: 21, cpp: 21, python: 21, javascript: 21 },
+  'word-search:s1:returnResult': { java: 22, cpp: 22, python: 22, javascript: 22 },
+
+  // word-search: stage 2
+  'word-search:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'word-search:s2:allocMemo': { java: 3, cpp: 3, python: 3, javascript: 3 },
+  'word-search:s2:outerI': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'word-search:s2:outerJ': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'word-search:s2:callDfs': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'word-search:s2:returnFalse': { java: 9, cpp: 9, python: 9, javascript: 9 },
+  'word-search:s2:dfsEntry': { java: 11, cpp: 11, python: 11, javascript: 11 },
+  'word-search:s2:checkTarget': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'word-search:s2:checkBounds': { java: 13, cpp: 13, python: 13, javascript: 13 },
+  'word-search:s2:checkMemo': { java: 14, cpp: 14, python: 14, javascript: 14 },
+  'word-search:s2:markZero': { java: 15, cpp: 15, python: 15, javascript: 15 },
+  'word-search:s2:branchDown': { java: 16, cpp: 16, python: 16, javascript: 16 },
+  'word-search:s2:branchRight': { java: 17, cpp: 17, python: 17, javascript: 17 },
+  'word-search:s2:restore': { java: 18, cpp: 18, python: 18, javascript: 18 },
+  'word-search:s2:writeMemo': { java: 19, cpp: 19, python: 19, javascript: 19 },
+
+  // word-search: stage 3
+  'word-search:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'word-search:s3:toCharArray': { java: 3, cpp: 3, python: 3, javascript: 3 },
+  'word-search:s3:outerI': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'word-search:s3:outerJ': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'word-search:s3:callDfs': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'word-search:s3:returnFalse': { java: 9, cpp: 9, python: 9, javascript: 9 },
+  'word-search:s3:dfsEntry': { java: 11, cpp: 11, python: 11, javascript: 11 },
+  'word-search:s3:checkTargetFound': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'word-search:s3:checkBoundsAndMismatch': { java: 13, cpp: 13, python: 13, javascript: 13 },
+  'word-search:s3:saveTmpChar': { java: 14, cpp: 14, python: 14, javascript: 14 },
+  'word-search:s3:markZero': { java: 15, cpp: 15, python: 15, javascript: 15 },
+  'word-search:s3:branchDown': { java: 16, cpp: 16, python: 16, javascript: 16 },
+  'word-search:s3:branchUp': { java: 17, cpp: 17, python: 17, javascript: 17 },
+  'word-search:s3:branchRight': { java: 18, cpp: 18, python: 18, javascript: 18 },
+  'word-search:s3:branchLeft': { java: 19, cpp: 19, python: 19, javascript: 19 },
+  'word-search:s3:restoreTmpChar': { java: 20, cpp: 20, python: 20, javascript: 20 },
+  'word-search:s3:returnResult': { java: 21, cpp: 21, python: 21, javascript: 21 },
+
+  // word-search: stage 4
+  'word-search:s4:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'word-search:s4:allocCount': { java: 3, cpp: 3, python: 3, javascript: 3 },
+  'word-search:s4:countBoard': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'word-search:s4:toChars': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'word-search:s4:checkWordCount': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'word-search:s4:checkFreq': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'word-search:s4:compareEnds': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'word-search:s4:decideDirection': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'word-search:s4:reverseWord': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'word-search:s4:outerI': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'word-search:s4:outerJ': { java: 11, cpp: 11, python: 11, javascript: 11 },
+  'word-search:s4:callDfs': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'word-search:s4:returnFalse': { java: 15, cpp: 15, python: 15, javascript: 15 },
+  'word-search:s4:dfsEntry': { java: 17, cpp: 17, python: 17, javascript: 17 },
+  'word-search:s4:baseSuccess': { java: 18, cpp: 18, python: 18, javascript: 18 },
+  'word-search:s4:checkTargetFound': { java: 18, cpp: 18, python: 18, javascript: 18 },
+  'word-search:s4:boundsCheck': { java: 19, cpp: 19, python: 19, javascript: 19 },
+  'word-search:s4:checkBoundsAndMismatch': { java: 19, cpp: 19, python: 19, javascript: 19 },
+  'word-search:s4:saveTmpChar': { java: 20, cpp: 20, python: 20, javascript: 20 },
+  'word-search:s4:saveChar': { java: 20, cpp: 20, python: 20, javascript: 20 },
+  'word-search:s4:markZero': { java: 21, cpp: 21, python: 21, javascript: 21 },
+  'word-search:s4:branchDown': { java: 22, cpp: 22, python: 22, javascript: 22 },
+  'word-search:s4:branchUp': { java: 23, cpp: 23, python: 23, javascript: 23 },
+  'word-search:s4:branchRight': { java: 24, cpp: 24, python: 24, javascript: 24 },
+  'word-search:s4:branchLeft': { java: 25, cpp: 25, python: 25, javascript: 25 },
+  'word-search:s4:restoreTmpChar': { java: 26, cpp: 26, python: 26, javascript: 26 },
+  'word-search:s4:restore': { java: 26, cpp: 26, python: 26, javascript: 26 },
+  'word-search:s4:returnResult': { java: 27, cpp: 27, python: 27, javascript: 27 },
+  'word-search:s4:returnFound': { java: 27, cpp: 27, python: 27, javascript: 27 },
+
+  // tree-count: stage 1
+  'tree-count:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'tree-count:s1:enter': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'tree-count:s1:baseN0': { java: 3, cpp: 3, python: 3, javascript: 3 },
+  'tree-count:s1:baseM0': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'tree-count:s1:loopK': { java: 7, cpp: 7, python: 6, javascript: 8 },
+  'tree-count:s1:returnSum': { java: 9, cpp: 9, python: 6, javascript: 10 },
+
+  // tree-count: stage 2
+  'tree-count:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'tree-count:s2:checkMemo': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'tree-count:s2:enumK': { java: 7, cpp: 7, python: 6, javascript: 8 },
+  'tree-count:s2:calcSum': { java: 8, cpp: 8, python: 6, javascript: 9 },
+  'tree-count:s2:memoStore': { java: 10, cpp: 10, python: 6, javascript: 11 },
+
+  // tree-count: stage 3
+  'tree-count:s3:initBase': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'tree-count:s3:colLoop': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'tree-count:s3:calcCell': { java: 12, cpp: 12, python: 8, javascript: 12 },
+  'tree-count:s3:returnAns': { java: 15, cpp: 15, python: 9, javascript: 15 },
+
+  // tree-count: stage 4
+  'tree-count:s4:initBase': { java: 6, cpp: 4, python: 4, javascript: 5 },
+  'tree-count:s4:colLoop': { java: 7, cpp: 5, python: 5, javascript: 6 },
+  'tree-count:s4:calcCell': { java: 10, cpp: 9, python: 8, javascript: 10 },
+  'tree-count:s4:swapPrev': { java: 12, cpp: 11, python: 9, javascript: 11 },
+  'tree-count:s4:returnAns': { java: 14, cpp: 13, python: 10, javascript: 13 },
+
+  // longest-common-subsequence: stage 1
+  'longest-common-subsequence:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-common-subsequence:s1:callEntry': { java: 5, cpp: 3, python: 10, javascript: 12 },
+  'longest-common-subsequence:s1:fEntry': { java: 7, cpp: 5, python: 3, javascript: 3 },
+  'longest-common-subsequence:s1:baseCheck': { java: 8, cpp: 6, python: 4, javascript: 4 },
+  'longest-common-subsequence:s1:baseReturn': { java: 9, cpp: 7, python: 5, javascript: 5 },
+  'longest-common-subsequence:s1:charCheck': { java: 11, cpp: 9, python: 6, javascript: 7 },
+  'longest-common-subsequence:s1:diagMatchCall': { java: 12, cpp: 10, python: 7, javascript: 8 },
+  'longest-common-subsequence:s1:branchUpCall': { java: 14, cpp: 12, python: 8, javascript: 10 },
+  'longest-common-subsequence:s1:branchLeftCall': { java: 15, cpp: 13, python: 9, javascript: 11 },
+  'longest-common-subsequence:s1:combineMaxReturn': { java: 16, cpp: 14, python: 10, javascript: 12 },
+  // longest-common-subsequence: stage 2
+  'longest-common-subsequence:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-common-subsequence:s2:allocMemo': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'longest-common-subsequence:s2:callEntry': { java: 6, cpp: 5, python: 17, javascript: 18 },
+  'longest-common-subsequence:s2:fEntry': { java: 8, cpp: 7, python: 5, javascript: 5 },
+  'longest-common-subsequence:s2:baseCheck': { java: 9, cpp: 8, python: 6, javascript: 6 },
+  'longest-common-subsequence:s2:baseReturn': { java: 10, cpp: 9, python: 7, javascript: 7 },
+  'longest-common-subsequence:s2:memoCheck': { java: 12, cpp: 11, python: 8, javascript: 9 },
+  'longest-common-subsequence:s2:memoHitReturn': { java: 13, cpp: 12, python: 9, javascript: 10 },
+  'longest-common-subsequence:s2:charCheck': { java: 15, cpp: 14, python: 10, javascript: 12 },
+  'longest-common-subsequence:s2:diagMatchCall': { java: 16, cpp: 15, python: 11, javascript: 13 },
+  'longest-common-subsequence:s2:branchUpCall': { java: 18, cpp: 17, python: 13, javascript: 15 },
+  'longest-common-subsequence:s2:branchLeftCall': { java: 19, cpp: 18, python: 14, javascript: 16 },
+  'longest-common-subsequence:s2:combineStoreReturn': { java: 20, cpp: 19, python: 15, javascript: 17 },
+  // longest-common-subsequence: stage 3
+  'longest-common-subsequence:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-common-subsequence:s3:allocDp': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'longest-common-subsequence:s3:loopI': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'longest-common-subsequence:s3:loopJ': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'longest-common-subsequence:s3:checkChar': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'longest-common-subsequence:s3:diagMatch': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'longest-common-subsequence:s3:branchMax': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'longest-common-subsequence:s3:returnAns': { java: 14, cpp: 14, python: 11, javascript: 14 },
+  // longest-common-subsequence: stage 4
+  'longest-common-subsequence:s4:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-common-subsequence:s4:allocDp': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'longest-common-subsequence:s4:loopI': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'longest-common-subsequence:s4:initLeftUp': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'longest-common-subsequence:s4:loopJ': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'longest-common-subsequence:s4:backup': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'longest-common-subsequence:s4:checkMatch': { java: 9, cpp: 9, python: 9, javascript: 9 },
+  'longest-common-subsequence:s4:diagMatch': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'longest-common-subsequence:s4:mismatchMax': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'longest-common-subsequence:s4:shiftLeftUp': { java: 14, cpp: 14, python: 13, javascript: 14 },
+  'longest-common-subsequence:s4:returnAns': { java: 17, cpp: 17, python: 14, javascript: 17 },
+  // lcs-forward: stage 1
+  'lcs-forward:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'lcs-forward:s1:callEntry': { java: 5, cpp: 3, python: 11, javascript: 11 },
+  'lcs-forward:s1:fEntry': { java: 7, cpp: 5, python: 2, javascript: 2 },
+  'lcs-forward:s1:baseCheck': { java: 8, cpp: 6, python: 3, javascript: 3 },
+  'lcs-forward:s1:baseReturn': { java: 9, cpp: 7, python: 4, javascript: 4 },
+  'lcs-forward:s1:charCheck': { java: 11, cpp: 9, python: 5, javascript: 5 },
+  'lcs-forward:s1:diagMatchCall': { java: 12, cpp: 10, python: 6, javascript: 6 },
+  'lcs-forward:s1:branchDownCall': { java: 14, cpp: 12, python: 7, javascript: 7 },
+  'lcs-forward:s1:branchRightCall': { java: 15, cpp: 13, python: 8, javascript: 8 },
+  'lcs-forward:s1:combineMaxReturn': { java: 16, cpp: 14, python: 9, javascript: 9 },
+  // lcs-forward: stage 2
+  'lcs-forward:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'lcs-forward:s2:allocMemo': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'lcs-forward:s2:callEntry': { java: 5, cpp: 5, python: 12, javascript: 12 },
+  'lcs-forward:s2:fEntry': { java: 7, cpp: 7, python: 5, javascript: 5 },
+  'lcs-forward:s2:baseCheck': { java: 8, cpp: 8, python: 6, javascript: 6 },
+  'lcs-forward:s2:memoCheck': { java: 9, cpp: 9, python: 7, javascript: 7 },
+  'lcs-forward:s2:charCheck': { java: 10, cpp: 10, python: 8, javascript: 8 },
+  'lcs-forward:s2:diagMatchCall': { java: 11, cpp: 11, python: 9, javascript: 9 },
+  'lcs-forward:s2:branchDownCall': { java: 13, cpp: 13, python: 10, javascript: 10 },
+  'lcs-forward:s2:branchRightCall': { java: 14, cpp: 14, python: 11, javascript: 11 },
+  'lcs-forward:s2:combineReturn': { java: 16, cpp: 16, python: 13, javascript: 13 },
+  // lcs-forward: stage 3
+  'lcs-forward:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'lcs-forward:s3:allocDp': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'lcs-forward:s3:loopI': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'lcs-forward:s3:loopJ': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'lcs-forward:s3:checkChar': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'lcs-forward:s3:diagMatch': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'lcs-forward:s3:branchMax': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'lcs-forward:s3:returnAns': { java: 14, cpp: 14, python: 11, javascript: 14 },
+
+  // longest-palindromic-subsequence: stage 1（顺推/逆推行号一致，共用默认 kind）
+  'longest-palindromic-subsequence:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-palindromic-subsequence:s1:enter': { java: 5, cpp: 2, python: 3, javascript: 3 },
+  'longest-palindromic-subsequence:s1:base1': { java: 6, cpp: 3, python: 4, javascript: 4 },
+  'longest-palindromic-subsequence:s1:base2': { java: 7, cpp: 4, python: 5, javascript: 5 },
+  'longest-palindromic-subsequence:s1:match': { java: 8, cpp: 5, python: 6, javascript: 6 },
+  'longest-palindromic-subsequence:s1:mismatch': { java: 9, cpp: 6, python: 7, javascript: 7 },
+
+  // longest-palindromic-subsequence: stage 2（逆推行号）
+  'longest-palindromic-subsequence:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-palindromic-subsequence:s2:outOfBounds': { java: 6, cpp: 5, python: 4, javascript: 5 },
+  'longest-palindromic-subsequence:s2:baseSingle': { java: 7, cpp: 6, python: 5, javascript: 6 },
+  'longest-palindromic-subsequence:s2:cacheHit': { java: 6, cpp: 5, python: 4, javascript: 5 },
+  'longest-palindromic-subsequence:s2:match': { java: 9, cpp: 8, python: 7, javascript: 8 },
+  'longest-palindromic-subsequence:s2:mismatch': { java: 10, cpp: 9, python: 8, javascript: 9 },
+
+  // longest-palindromic-subsequence: stage 3（逆推行号）
+  'longest-palindromic-subsequence:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-palindromic-subsequence:s3:alloc': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'longest-palindromic-subsequence:s3:initDiag': { java: 5, cpp: 5, python: 5, javascript: 5 },
+  'longest-palindromic-subsequence:s3:lenLoop': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'longest-palindromic-subsequence:s3:lLoop': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'longest-palindromic-subsequence:s3:calcR': { java: 8, cpp: 8, python: 8, javascript: 8 },
+  'longest-palindromic-subsequence:s3:match': { java: 9, cpp: 9, python: 9, javascript: 9 },
+  'longest-palindromic-subsequence:s3:mismatch': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'longest-palindromic-subsequence:s3:return': { java: 13, cpp: 13, python: 11, javascript: 13 },
+
+  // longest-palindromic-subsequence: stage 4（顺推/逆推行号一致，共用默认 kind）
+  'longest-palindromic-subsequence:s4:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-palindromic-subsequence:s4:allocDp': { java: 4, cpp: 4, python: 4, javascript: 4 },
+  'longest-palindromic-subsequence:s4:baseDiag': { java: 6, cpp: 6, python: 6, javascript: 6 },
+  'longest-palindromic-subsequence:s4:initLeftDown': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'longest-palindromic-subsequence:s4:backup': { java: 9, cpp: 9, python: 9, javascript: 9 },
+  'longest-palindromic-subsequence:s4:match': { java: 10, cpp: 10, python: 10, javascript: 10 },
+  'longest-palindromic-subsequence:s4:mismatch': { java: 11, cpp: 11, python: 11, javascript: 11 },
+  'longest-palindromic-subsequence:s4:shiftLeftDown': { java: 12, cpp: 12, python: 12, javascript: 12 },
+  'longest-palindromic-subsequence:s4:returnAns': { java: 15, cpp: 15, python: 15, javascript: 15 },
+
+  // lps-forward: stage 2（顺推行号）
+  'lps-forward:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'lps-forward:s2:outOfBounds': { java: 8, cpp: 6, python: 5, javascript: 6 },
+  'lps-forward:s2:baseSingle': { java: 9, cpp: 7, python: 6, javascript: 7 },
+  'lps-forward:s2:cacheHit': { java: 10, cpp: 8, python: 7, javascript: 8 },
+  'lps-forward:s2:match': { java: 11, cpp: 9, python: 8, javascript: 9 },
+  'lps-forward:s2:mismatch': { java: 12, cpp: 10, python: 9, javascript: 10 },
+
+  // lps-forward: stage 3（顺推行号）
+  'lps-forward:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'lps-forward:s3:alloc': { java: 5, cpp: 4, python: 4, javascript: 4 },
+  'lps-forward:s3:outerLoop': { java: 6, cpp: 5, python: 5, javascript: 5 },
+  'lps-forward:s3:initDiag': { java: 7, cpp: 6, python: 6, javascript: 6 },
+  'lps-forward:s3:len2Check': { java: 8, cpp: 7, python: 7, javascript: 7 },
+  'lps-forward:s3:len2Match': { java: 8, cpp: 7, python: 7, javascript: 7 },
+  'lps-forward:s3:len2Mismatch': { java: 8, cpp: 7, python: 7, javascript: 7 },
+  'lps-forward:s3:innerLoop': { java: 9, cpp: 8, python: 8, javascript: 8 },
+  'lps-forward:s3:match': { java: 10, cpp: 9, python: 9, javascript: 9 },
+  'lps-forward:s3:mismatch': { java: 11, cpp: 10, python: 10, javascript: 10 },
+  'lps-forward:s3:return': { java: 14, cpp: 13, python: 11, javascript: 13 },
+
+  // longest-increasing-path: stage 1
+  'longest-increasing-path:s1:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-increasing-path:s1:enter': { java: 11, cpp: 2, python: 2, javascript: 2 },
+  'longest-increasing-path:s1:dirsLoop': { java: 16, cpp: 7, python: 6, javascript: 7 },
+  'longest-increasing-path:s1:returnAns': { java: 20, cpp: 11, python: 8, javascript: 11 },
+
+  // longest-increasing-path: stage 2
+  'longest-increasing-path:s2:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-increasing-path:s2:checkMemo': { java: 13, cpp: 3, python: 3, javascript: 3 },
+  'longest-increasing-path:s2:missExpand': { java: 14, cpp: 4, python: 4, javascript: 4 },
+  'longest-increasing-path:s2:memoStore': { java: 22, cpp: 12, python: 9, javascript: 12 },
+
+  // longest-increasing-path: stage 3
+  'longest-increasing-path:s3:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-increasing-path:s3:initOut': { java: 4, cpp: 4, python: 3, javascript: 4 },
+  'longest-increasing-path:s3:calcOut': { java: 10, cpp: 10, python: 9, javascript: 10 },
+  'longest-increasing-path:s3:initQueue': { java: 15, cpp: 15, python: 10, javascript: 15 },
+  'longest-increasing-path:s3:whileQueue': { java: 17, cpp: 17, python: 12, javascript: 17 },
+  'longest-increasing-path:s3:incLevel': { java: 18, cpp: 18, python: 13, javascript: 18 },
+  'longest-increasing-path:s3:pollNode': { java: 21, cpp: 21, python: 16, javascript: 20 },
+  'longest-increasing-path:s3:relaxNeighbor': { java: 25, cpp: 25, python: 20, javascript: 24 },
+  'longest-increasing-path:s3:returnLevel': { java: 30, cpp: 30, python: 22, javascript: 30 },
+
+  // longest-increasing-path: stage 4
+  'longest-increasing-path:s4:entry': { java: 2, cpp: 2, python: 2, javascript: 2 },
+  'longest-increasing-path:s4:findMax': { java: 7, cpp: 7, python: 7, javascript: 7 },
+  'longest-increasing-path:s4:initPath': { java: 11, cpp: 11, python: 8, javascript: 11 },
+  'longest-increasing-path:s4:whileLoop': { java: 13, cpp: 13, python: 10, javascript: 13 },
+  'longest-increasing-path:s4:findNext': { java: 16, cpp: 16, python: 13, javascript: 16 },
+  'longest-increasing-path:s4:stepNext': { java: 18, cpp: 18, python: 15, javascript: 18 },
+  'longest-increasing-path:s4:returnPath': { java: 23, cpp: 23, python: 17, javascript: 23 },
+};
+
+export function getDp067Anchor(stage: number, kind: Dp067Kind, anchor: string): ResolvedLineTarget {
+  const key = `${kind}:s${stage}:${anchor}`;
+  const target = DP067_ANCHOR_MAP[key];
+  if (target) return target;
+  return { java: 1, cpp: 1, python: 1, javascript: 1 };
+}

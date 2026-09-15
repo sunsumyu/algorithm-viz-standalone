@@ -131,4 +131,53 @@ describe('StageNavigationCoordinator (阶段演化导航与 Tab 状态协调深�
     StageNavigationCoordinator.updateStage3SubViewTabs('stage-4', 'tree', false);
     expect(mockBar.classList.contains('hidden')).toBe(true);
   });
+
+  it('应该在顺推和逆推代码完全同构（假双向）时自动降级隐藏方向 Tab', () => {
+    const isomorphicModel = {
+      ...mockModel,
+      stages: {
+        'stage-1': {
+          code: {
+            forward: { source: 'int a = 1;\nreturn a;' },
+            reverse: { source: 'int a = 1;\n// 相同逻辑\nreturn a;' }
+          }
+        }
+      }
+    } as any;
+
+    expect(StageNavigationCoordinator.areDirectionsIsomorphic(isomorphicModel)).toBe(true);
+
+    StageNavigationCoordinator.renderDirectionTabs(container as any, {
+      model: isomorphicModel,
+      currentDirection: 'forward',
+      onSelectDirection: vi.fn()
+    });
+
+    expect(container.classList.contains('hidden')).toBe(true);
+  });
+
+  it('当顺推与逆推代码存在实质差异时，不应隐藏方向 Tab', () => {
+    const differentModel = {
+      ...mockModel,
+      stages: {
+        'stage-1': {
+          code: {
+            forward: { source: 'return dfs(i + 1, j);' },
+            reverse: { source: 'return dfs(i - 1, j);' }
+          }
+        }
+      }
+    } as any;
+
+    expect(StageNavigationCoordinator.areDirectionsIsomorphic(differentModel)).toBe(false);
+
+    StageNavigationCoordinator.renderDirectionTabs(container as any, {
+      model: differentModel,
+      currentDirection: 'forward',
+      onSelectDirection: vi.fn()
+    });
+
+    expect(container.classList.contains('hidden')).toBe(false);
+    expect(container.children.length).toBe(2);
+  });
 });

@@ -10,6 +10,14 @@ import {
   STRING_MIGRATION_ANALYSIS_HTML,
   STRING_MIGRATION_CODE_LANGUAGES,
 } from './string-migration-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 1,
+  lengthcheck: 2,
+  concat: 3,
+  windowCheck: 4,
+  done: 5,
+};
 
 export interface SCStep extends StepBase {
   str1: string;
@@ -44,7 +52,7 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
     phase: 'init',
     statusText: `初始化：源串 s="${str1}"（长度 ${n}），目标串 goal="${str2}"（长度 ${str2.length}）。`,
     log: `初始化: s="${str1}", goal="${str2}"`,
-    codeLine: 1,
+    codeLine: lines.init,
   });
 
   if (n !== str2.length) {
@@ -60,7 +68,7 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
       phase: 'length-check',
       statusText: `❌ 两字符串长度不等（${n} ≠ ${str2.length}），goal 绝不可能通过 s 旋转得到，直接返回 false。`,
       log: `长度不等: ${n} ≠ ${str2.length} -> false`,
-      codeLine: 2,
+      codeLine: lines.lengthcheck,
     });
     return steps;
   }
@@ -77,7 +85,7 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
     phase: 'concat',
     statusText: `构建双倍拼接串 concat = s + s = "${concat}"。只要 goal 是其子串，则满足旋转等价性。`,
     log: `双倍拼接: "${concat}"`,
-    codeLine: 3,
+    codeLine: lines.concat,
   });
 
   let foundMatch = false;
@@ -101,7 +109,7 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
         isMatch ? '=== goal！匹配成功！' : `≠ "${str2}"`
       }。当前左旋偏移量 shift=${i}。`,
       log: `位移 shift=${i}: "${windowStr}" ${isMatch ? '✓ 匹配' : '✗ 不匹配'}`,
-      codeLine: 4,
+      codeLine: lines.windowCheck,
     });
 
     if (isMatch) {
@@ -125,7 +133,7 @@ export function buildStringMigrationSteps(str1 = 'abcde', str2 = 'cdeab'): SCSte
       ? `🎉 判定成功！goal 是 s 经过左旋 ${finalShift} 步后的旋转字符串（返回 true）。`
       : `❌ 遍历完毕未找到匹配，goal 不是 s 的旋转字符串（返回 false）。`,
     log: `✓ 判定完成: 结果 = ${foundMatch}${foundMatch ? ` (偏移量=${finalShift})` : ''}`,
-    codeLine: 5,
+    codeLine: lines.done,
   });
 
   return steps;

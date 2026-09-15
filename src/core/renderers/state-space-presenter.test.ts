@@ -282,4 +282,64 @@ describe('StateSpacePresenter (Deep Facade & Scoped Container)', () => {
       });
     }).not.toThrow();
   });
+
+  it('Card 2 在 Stage 1/2 下应支持复合子视图切换 (tree, alignment, stack)', () => {
+    const card2 = new MockElement('memo-array-container');
+    const step: UniversalStep = {
+      stepIndex: 1,
+      type: 'dfs-call',
+      i: 1,
+      j: 2,
+      treeRoot: { id: 'root', val: 'dfs(0,0)', children: [] } as any,
+      activeNodeId: 'root',
+      s1: 'rabbbit',
+      s2: 'rabbit',
+      callStack: [
+        { label: 'dfs(0,0)', depth: 1 },
+        { label: 'dfs(1,2)', depth: 2 }
+      ] as any,
+      msg: '探索字符匹配'
+    };
+
+    // 1. tree 模式：调用 RecursionTreeAdapter
+    StateSpacePresenter.renderCard2(card2 as any, {
+      currentStage: 'stage-1',
+      card2SubView: 'tree',
+      step,
+      m: 7,
+      n: 6,
+      modelId: 'distinct-subsequences'
+    });
+    expect(RecursionTreeAdapter.renderRecursionTree).toHaveBeenCalledWith(
+      card2,
+      step.treeRoot,
+      step.activeNodeId,
+      false
+    );
+
+    // 2. stack 模式：渲染运行时调用栈与局部变量面板
+    StateSpacePresenter.renderCard2(card2 as any, {
+      currentStage: 'stage-1',
+      card2SubView: 'stack',
+      step,
+      m: 7,
+      n: 6,
+      modelId: 'distinct-subsequences'
+    });
+    expect(card2.innerHTML).toContain('运行时刻调用栈');
+    expect(card2.innerHTML).toContain('dfs(1,2)');
+    expect(card2.innerHTML).toContain('TOP (栈顶)');
+
+    // 3. alignment 模式：包含母串 S 与目标 T
+    StateSpacePresenter.renderCard2(card2 as any, {
+      currentStage: 'stage-2',
+      card2SubView: 'alignment',
+      step,
+      m: 7,
+      n: 6,
+      modelId: 'distinct-subsequences'
+    });
+    expect(card2.innerHTML).toContain('母串 S');
+    expect(card2.innerHTML).toContain('目标 T');
+  });
 });

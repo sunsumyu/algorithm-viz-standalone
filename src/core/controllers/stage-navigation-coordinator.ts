@@ -11,6 +11,7 @@ export interface DirectionTabOptions {
   model: IYamlAlgorithmModel;
   currentDirection: 'forward' | 'reverse';
   onSelectDirection: (dirKey: 'forward' | 'reverse') => void;
+  currentStage?: string;
 }
 
 /**
@@ -18,7 +19,7 @@ export interface DirectionTabOptions {
  * 
  * 职责：
  * 1. 渲染顶部 4/5 阶段演化 Tab（包含数字标号、阶段简称、复杂度时空徽章、主题色彩）
- * 2. 渲染顺推 / 逆推方向切换器（包含自动隐藏单方向模型、图标与语义标签）
+ * 2. 渲染顺推 / 逆推方向切换器（包含自动隐藏单方向模型、同构假双向防呆降级、图标与语义标签）
  * 3. 封装激活态类名切换与事件通知
  */
 export class StageNavigationCoordinator {
@@ -28,6 +29,64 @@ export class StageNavigationCoordinator {
     'stage-3': '二维DP',
     'stage-4': '一维优化',
   };
+
+  /**
+   * 规范化源码文本以供等价性比对（忽略空白行、首尾空白、单行注释差异）
+   */
+  public static normalizeCodeSource(source?: string): string {
+    if (!source) return '';
+    return source
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith('//') && !line.startsWith('#'))
+      .join('\n');
+  }
+
+  /**
+   * 判断当前算法模型中声明的顺推和逆推代码是否完全同构（假双向防呆）
+   */
+  public static areDirectionsIsomorphic(model: IYamlAlgorithmModel, currentStage?: string): boolean {
+    if (!model || !model.directions || !model.stages) return false;
+    const dirKeys = Object.keys(model.directions);
+    if (!dirKeys.includes('forward') || !dirKeys.includes('reverse')) return false;
+
+    const stagesToCheck = currentStage && model.stages[currentStage]
+      ? [model.stages[currentStage]]
+      : Object.values(model.stages);
+
+    let checkedCount = 0;
+    let identicalCount = 0;
+
+    for (const stage of stagesToCheck) {
+      if (!stage) continue;
+      // 1. 检查 direct code
+      const fCode = stage.code?.forward?.source;
+      const rCode = stage.code?.reverse?.source;
+      if (fCode && rCode) {
+        checkedCount++;
+        if (this.normalizeCodeSource(fCode) === this.normalizeCodeSource(rCode)) {
+          identicalCount++;
+        }
+      }
+
+      // 2. 检查 variants
+      if (stage.variants) {
+        for (const variant of Object.values(stage.variants)) {
+          const vfCode = variant.code?.forward?.source;
+          const vrCode = variant.code?.reverse?.source;
+          if (vfCode && vrCode) {
+            checkedCount++;
+            if (this.normalizeCodeSource(vfCode) === this.normalizeCodeSource(vrCode)) {
+              identicalCount++;
+            }
+          }
+        }
+      }
+    }
+
+    // 若检测到有效代码且全部阶段均一模一样，判定为假双向同构
+    return checkedCount > 0 && checkedCount === identicalCount;
+  }
 
   /**
    * 渲染阶段演化选项卡
@@ -51,7 +110,7 @@ export class StageNavigationCoordinator {
       btn.title = `${stageSpec.name || stageKey} ${timeBadge}`;
 
       const themeClass = stageKey === 'stage-4'
-        ? (isActive ? 'active bg-amber-500 text-white shadow-sm shadow-amber-500/20 border-amber-500 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
+        ? (isActive ? 'active bg-purple-600 text-white shadow-sm shadow-purple-600/20 border-purple-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
         : stageKey === 'stage-3'
         ? (isActive ? 'active bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 border-emerald-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold')
         : (isActive ? 'active bg-blue-600 text-white shadow-sm shadow-blue-500/20 border-blue-600 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-white border-transparent font-semibold');
@@ -84,6 +143,13 @@ export class StageNavigationCoordinator {
       container.classList.add('hidden');
       return;
     }
+
+    // 防呆检测：若声明了多个方向，但顺推与逆推代码完全同构，则视为伪双向，自动降级隐藏
+    if (this.areDirectionsIsomorphic(options.model, options.currentStage)) {
+      container.classList.add('hidden');
+      return;
+    }
+
     container.classList.remove('hidden');
     container.innerHTML = '';
 
@@ -346,18 +412,73 @@ export class StageNavigationCoordinator {
 
     if (currentStage !== 'stage-3' || !isStage32D) {
       bar.classList.add('hidden');
+      bar.classList.remove('inline-flex');
       return;
     }
     bar.classList.remove('hidden');
+    bar.classList.add('inline-flex');
 
     const btnMatrix = document.getElementById('btn-subview-matrix');
     const btnTree = document.getElementById('btn-subview-tree');
 
-    const activeCls = 'active px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white shadow-2xs transition flex items-center gap-1';
-    const inactiveCls = 'px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition flex items-center gap-1';
+    const activeCls = 'active px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white shadow-2xs transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
+    const inactiveCls = 'px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
 
     if (btnMatrix) btnMatrix.className = stage3SubView === 'matrix' ? activeCls : inactiveCls;
     if (btnTree) btnTree.className = stage3SubView === 'tree' ? activeCls : inactiveCls;
+  }
+
+  /**
+   * 同步阶段 1/2 卡片 2 复合子视图切换按钮高亮状态 (支持横向药丸与下拉菜单双向同步)
+   */
+  public static updateCard2SubViewTabs(
+    currentStage: string,
+    card2SubView: 'tree' | 'alignment' | 'stack',
+    isStringProblem: boolean
+  ): void {
+    if (typeof document === 'undefined') return;
+    const bar = document.getElementById('card2-subview-bar');
+    const selectEl = document.getElementById('card2-subview-select') as HTMLSelectElement | null;
+
+    if (currentStage !== 'stage-1' && currentStage !== 'stage-2') {
+      if (bar) {
+        bar.classList.add('hidden');
+        bar.classList.remove('inline-flex');
+      }
+      if (selectEl) {
+        selectEl.classList.add('hidden');
+      }
+      return;
+    }
+
+    if (bar) {
+      bar.classList.remove('hidden');
+      bar.classList.add('inline-flex');
+    }
+
+    const btnTree = document.getElementById('btn-card2-tree');
+    const btnAlign = document.getElementById('btn-card2-alignment');
+    const btnStack = document.getElementById('btn-card2-stack');
+
+    if (btnAlign) {
+      btnAlign.style.display = isStringProblem ? '' : 'none';
+    }
+
+    const activeCls = 'active px-2 py-0.5 rounded text-[11px] font-bold bg-blue-600 text-white shadow-2xs transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
+    const inactiveCls = 'px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
+
+    if (btnTree) btnTree.className = card2SubView === 'tree' ? activeCls : inactiveCls;
+    if (btnAlign) btnAlign.className = card2SubView === 'alignment' ? activeCls : inactiveCls;
+    if (btnStack) btnStack.className = card2SubView === 'stack' ? activeCls : inactiveCls;
+
+    if (selectEl) {
+      selectEl.value = card2SubView;
+      const optAlign = selectEl.querySelector('option[value="alignment"]') as HTMLOptionElement | null;
+      if (optAlign) {
+        optAlign.disabled = !isStringProblem;
+        optAlign.hidden = !isStringProblem;
+      }
+    }
   }
 }
 

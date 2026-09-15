@@ -16,6 +16,9 @@
 import { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
 import { type RecursionStepBase, type MemoStepBase } from '../../../../core/step-types';
 import { getSpecialKnapsackAnchor } from './knapsack-special-stage-codes';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
+import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
 
 // ==========================================
 // 1. 购买足量干草 (Buying Hay) 数据结构与步骤生成器
@@ -32,14 +35,15 @@ export interface BuyingHayRecursionStep extends RecursionStepBase<{ i: number; r
 export function buildBuyingHayRecursionSteps(
   h: number,
   cost: number[],
-  val: number[]
+  val: number[],
+  maxSteps = 800
 ): BuyingHayRecursionStep[] {
-  const steps: BuyingHayRecursionStep[] = [];
   const n = cost.length;
   const INF = 1_000_000_000;
-  const callStack: Array<{ i: number; remH: number; label: string }> = [];
-
-  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(1, 'buying-hay', anchor);
+  const tracker = new RecursionTraceTracker<BuyingHayRecursionStep, { i: number; remH: number; label: string }>({
+    maxSteps,
+    resolveLine: (anchor) => getSpecialKnapsackAnchor(1, 'buying-hay', anchor),
+  });
 
   const pushStep = (
     action: string,
@@ -50,102 +54,64 @@ export function buildBuyingHayRecursionSteps(
     decision: string,
     retVal?: number
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
+    tracker.pushStep(action, lineKey, {
       i,
       remH,
       h,
       cost,
       val,
-      callStack: [...callStack],
       decision,
       message: msg,
       log: `[递归] (i=${i}, remH=${remH}) ${action}: ${msg}`,
       returnValue: retVal,
       metrics: {
         'metric-cur-state': `dfs(i=${i}, remH=${remH})`,
-        'metric-stack-depth': `${callStack.length} 层`,
+        'metric-stack-depth': `${tracker.depth} 层`,
         'metric-cur-supplier': i < n ? `供货商 #${i + 1} (${cost[i]}元/${val[i]}磅)` : '无更多供应商',
         'metric-rem-weight': remH <= 0 ? `已达标 (超额 ${-remH} 磅)` : `还差 ${remH} 磅`,
       },
     });
   };
 
-  pushStep('callRoot', 'callRoot', 0, h, `🚀 启动干草采购暴力递归：dfs(i=0, remH=${h})`, '从首家供货商开始');
+  pushStep('callRoot', 'callRoot', 0, h, '🚀 启动干草采购暴力递归：dfs(i=0, remH=${h})', '从首家供货商开始');
 
   function dfs(i: number, remH: number): number {
-    callStack.push({ i, remH, label: `dfs(${i}, ${remH})` });
+    if (tracker.exhausted) return INF;
+    const label = `dfs(${i}, ${remH})`;
+    tracker.enterFrame({ i, remH, label });
     pushStep('fnEnter', 'fnEnter', i, remH, `⚡ 进入 dfs(i=${i}, remH=${remH})，剩余需求 ${remH} 磅`, `考察供货商 #${i + 1}`);
 
-    // 基底 1: 需求已达标
     if (remH <= 0) {
-      pushStep(
-        'baseCheckSatisfied',
-        'baseCheckSatisfied',
-        i,
-        remH,
-        `✅ 磅数已达标 (remH=${remH} <= 0)，无需再购买，花费 0 元`,
-        '达标基底 (花费 0)',
-        0
-      );
-      callStack.pop();
+      pushStep('baseCheckSatisfied', 'baseCheckSatisfied', i, remH, `✅ 磅数已达标 (remH=${remH} <= 0)，无需再购买，花费 0 元`, '达标基底 (花费 0)', 0);
+      tracker.exitFrame();
       return 0;
     }
 
-    // 基底 2: 供货商已耗尽
     if (i === n) {
-      pushStep(
-        'baseCheckExhausted',
-        'baseCheckExhausted',
-        i,
-        remH,
-        `❌ 全部供应商已考察完毕但仍欠缺 ${remH} 磅，方案不可行，返回 INF`,
-        '耗尽基底 (不可行)',
-        INF
-      );
-      callStack.pop();
+      pushStep('baseCheckExhausted', 'baseCheckExhausted', i, remH, `❌ 全部供应商已考察完毕但仍欠缺 ${remH} 磅，方案不可行，返回 INF`, '耗尽基底 (不可行)', INF);
+      tracker.exitFrame();
       return INF;
     }
 
-    // 分支 1: 不买当前第 i 家
     pushStep('branchNoPick', 'branchNoPick', i, remH, `🌿 分支 1：放弃供货商 #${i + 1}，转向下一家 dfs(${i + 1}, ${remH})`, '不买当前家');
     const p1 = dfs(i + 1, remH);
 
-    // 分支 2: 买 1 包当前第 i 家 (完全背包同层递推)
-    pushStep(
-      'branchPick',
-      'branchPick',
-      i,
-      remH,
-      `🌿 分支 2：购买 1 包供货商 #${i + 1} (${val[i]} 磅)，花费 ${cost[i]} 元，继续允许购买 dfs(${i}, ${remH - val[i]})`,
-      '买 1 包当前家'
-    );
+    pushStep('branchPick', 'branchPick', i, remH, `🌿 分支 2：购买 1 包供货商 #${i + 1} (${val[i]} 磅)，花费 ${cost[i]} 元，继续允许购买 dfs(${i}, ${remH - val[i]})`, '买 1 包当前家');
     const p2 = dfs(i, remH - val[i]) + cost[i];
 
     const ans = Math.min(p1, p2);
-    pushStep(
-      'returnMin',
-      'returnMin',
-      i,
-      remH,
-      `🏁 比较两路决策：不买=${p1 >= INF ? 'INF' : p1 + '元'} vs 购买=${p2 >= INF ? 'INF' : p2 + '元'} -> 优选 ${ans >= INF ? 'INF' : ans + '元'}`,
-      ans >= INF ? '两路均不可行' : `最优花费 ${ans} 元`,
-      ans
-    );
-    callStack.pop();
+    pushStep('returnMin', 'returnMin', i, remH, `🏁 比较两路决策：不买=${p1 >= INF ? 'INF' : p1 + '元'} vs 购买=${p2 >= INF ? 'INF' : p2 + '元'} -> 优选 ${ans >= INF ? 'INF' : ans + '元'}`, ans >= INF ? '两路均不可行' : `最优花费 ${ans} 元`, ans);
+    tracker.exitFrame();
     return ans;
   }
 
   dfs(0, h);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export interface BuyingHayMemoStep extends MemoStepBase {
+  curI: number;
+  curJ: number;
   remH: number;
   h: number;
   cost: number[];
@@ -157,16 +123,17 @@ export interface BuyingHayMemoStep extends MemoStepBase {
 export function buildBuyingHayMemoSteps(
   h: number,
   cost: number[],
-  val: number[]
+  val: number[],
+  maxSteps = 800
 ): BuyingHayMemoStep[] {
-  const steps: BuyingHayMemoStep[] = [];
   const n = cost.length;
   const INF = 1_000_000_000;
   const memo: number[][] = Array.from({ length: n }, () => new Array(h + 1).fill(-1));
-  let hitCount = 0;
-  let missCount = 0;
 
-  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(2, 'buying-hay', anchor);
+  const tracker = new MemoTraceTracker<BuyingHayMemoStep>({
+    maxSteps,
+    resolveLine: (anchor) => getSpecialKnapsackAnchor(2, 'buying-hay', anchor),
+  });
 
   const pushStep = (
     action: string,
@@ -177,28 +144,24 @@ export function buildBuyingHayMemoSteps(
     msg: string,
     decision: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
+    tracker.pushStep(action, lineKey, {
+      curI: i,
+      curJ: remH,
       i,
       remH,
       h,
       cost,
       val,
-      memo: memo.map((r) => [...r]),
+      memo: snapshotGrid2D(memo),
       cacheHit: isHit,
-      hitCount,
-      missCount,
       decision,
       message: msg,
       log: `[记忆化] (i=${i}, remH=${remH}) ${action}: ${msg}`,
       metrics: {
         'metric-cur-state': `memo[${i >= 0 ? i : '—'}][${remH >= 0 ? remH : '—'}]`,
-        'metric-hit-rate': `${hitCount + missCount > 0 ? ((hitCount / (hitCount + missCount)) * 100).toFixed(1) : '0'}%`,
-        'metric-cache-hits': `${hitCount} 次`,
-        'metric-cache-miss': `${missCount} 次`,
+        'metric-hit-rate': `${tracker.hitCount + tracker.missCount > 0 ? ((tracker.hitCount / (tracker.hitCount + tracker.missCount)) * 100).toFixed(1) : '0'}%`,
+        'metric-cache-hits': `${tracker.hitCount} 次`,
+        'metric-cache-miss': `${tracker.missCount} 次`,
       },
     });
   };
@@ -212,21 +175,13 @@ export function buildBuyingHayMemoSteps(
     pushStep('fnEnter', 'fnEnter', i, remH, false, `⚡ 进入 dfsMemo(i=${i}, remH=${remH})`, '探查备忘录缓存');
 
     if (memo[i][remH] !== -1) {
-      hitCount++;
+      tracker.registerHit();
       const cached = memo[i][remH];
-      pushStep(
-        'memoCheck',
-        'memoCheck',
-        i,
-        remH,
-        true,
-        `🎯 命中缓存！memo[${i}][${remH}] 已有结果 ${cached >= INF ? 'INF' : cached + '元'}，立即剪枝返回！`,
-        'Cache Hit'
-      );
+      pushStep('memoCheck', 'memoCheck', i, remH, true, `🎯 命中缓存！memo[${i}][${remH}] 已有结果 ${cached >= INF ? 'INF' : cached + '元'}，立即剪枓返回！`, 'Cache Hit');
       return cached;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', i, remH, false, `💨 缓存未命中：memo[${i}][${remH}] === -1，准备递归求解`, 'Cache Miss');
 
     const p1 = dfsMemo(i + 1, remH);
@@ -234,22 +189,12 @@ export function buildBuyingHayMemoSteps(
     const ans = Math.min(p1, p2);
 
     memo[i][remH] = ans;
-    pushStep(
-      'memoStore',
-      'memoStore',
-      i,
-      remH,
-      false,
-      `💾 存入备忘录：memo[${i}][${remH}] = ${ans >= INF ? 'INF' : ans + '元'}，后续同状态直接复用`,
-      '写入缓存'
-    );
+    pushStep('memoStore', 'memoStore', i, remH, false, `💾 存入备忘录：memo[${i}][${remH}] = ${ans >= INF ? 'INF' : ans + '元'}，后续同状态直接复用`, '写入缓存');
     return ans;
   }
 
   dfsMemo(0, h);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export interface BuyingHay2DStep {
@@ -257,8 +202,8 @@ export interface BuyingHay2DStep {
   totalSteps: number;
   action: string;
   codeLine: HighlightTarget;
-  i: number;
-  j: number;
+  curI: number;
+  curJ: number;
   h: number;
   m: number;
   dp: number[][];
@@ -274,7 +219,6 @@ export function buildBuyingHay2DSteps(
   cost: number[],
   val: number[]
 ): BuyingHay2DStep[] {
-  const steps: BuyingHay2DStep[] = [];
   const n = cost.length;
   const maxv = Math.max(...val);
   const m = h + maxv;
@@ -282,6 +226,7 @@ export function buildBuyingHay2DSteps(
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(INF));
 
   const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(3, 'buying-hay', anchor);
+  const tracker = new Dp2DTraceTracker<BuyingHay2DStep>({ resolveLine });
 
   const pushStep = (
     action: string,
@@ -292,16 +237,12 @@ export function buildBuyingHay2DSteps(
     msg: string,
     decision: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
-      i,
-      j,
+    tracker.pushStep(action, lineKey, {
+      curI: i,
+      curJ: j,
       h,
       m,
-      dp: dp.map((r) => [...r]),
+      dp: snapshotGrid2D(dp),
       depCells,
       decision,
       message: msg,
@@ -375,9 +316,7 @@ export function buildBuyingHay2DSteps(
     `全局最低花费 ${ans} 元`
   );
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 // ==========================================
@@ -395,11 +334,11 @@ export function buildCoinsFromPilesRecursionSteps(
   piles: number[][],
   k: number
 ): CoinsFromPilesRecursionStep[] {
-  const steps: CoinsFromPilesRecursionStep[] = [];
   const n = piles.length;
-  const callStack: Array<{ i: number; remK: number; label: string }> = [];
-
-  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(1, 'coins-from-piles', anchor);
+  // 骨架（保险丝/栈快照/stepIndex/totalSteps）由 RecursionTraceTracker 引擎托管
+  const tracker = new RecursionTraceTracker<CoinsFromPilesRecursionStep, { i: number; remK: number; label: string }>({
+    resolveLine: (anchor) => getSpecialKnapsackAnchor(1, 'coins-from-piles', anchor),
+  });
 
   const pushStep = (
     action: string,
@@ -410,23 +349,18 @@ export function buildCoinsFromPilesRecursionSteps(
     decision: string,
     retVal?: number
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
+    tracker.pushStep(action, lineKey, {
       i,
       remK,
       k,
       piles,
-      callStack: [...callStack],
       decision,
       message: msg,
       log: `[递归] (pile=${i}, remK=${remK}) ${action}: ${msg}`,
       returnValue: retVal,
       metrics: {
         'metric-cur-state': `dfs(i=${i}, remK=${remK})`,
-        'metric-stack-depth': `${callStack.length} 层`,
+        'metric-stack-depth': `${tracker.depth} 层`,
         'metric-cur-pile': i < n ? `硬币栈 #${i + 1} (${piles[i].length}枚)` : '栈已耗尽',
         'metric-rem-k': `还需拿取 ${remK} 枚`,
       },
@@ -436,12 +370,14 @@ export function buildCoinsFromPilesRecursionSteps(
   pushStep('callRoot', 'callRoot', 0, k, `🚀 启动硬币挑选暴力递归：dfs(i=0, remK=${k})`, '从首个硬币栈探索');
 
   function dfs(i: number, remK: number): number {
-    callStack.push({ i, remK, label: `dfs(${i}, ${remK})` });
+    if (tracker.exhausted) return 0;
+    const label = `dfs(${i}, ${remK})`;
+    tracker.enterFrame({ i, remK, label });
     pushStep('fnEnter', 'fnEnter', i, remK, `⚡ 进入 dfs(i=${i}, remK=${remK})，剩余需取 ${remK} 枚`, `考察栈 #${i + 1}`);
 
     if (i === n || remK === 0) {
       pushStep('baseCheck', 'baseCheck', i, remK, `✅ 基础条件满足 (栈已完或 remK=0)，返回收益 0`, 'Base Case 0', 0);
-      callStack.pop();
+      tracker.exitFrame();
       return 0;
     }
 
@@ -451,8 +387,8 @@ export function buildCoinsFromPilesRecursionSteps(
 
     // 分支 c: 当前栈拿 c 枚 (1..min(len, remK))
     let sum = 0;
-    const t = Math.min(piles[i].length, remK);
-    for (let c = 1; c <= t; c++) {
+    const takeLimit = Math.min(piles[i].length, remK);
+    for (let c = 1; c <= takeLimit; c++) {
       sum += piles[i][c - 1];
       pushStep(
         'loopCoins',
@@ -467,17 +403,17 @@ export function buildCoinsFromPilesRecursionSteps(
     }
 
     pushStep('returnMax', 'returnMax', i, remK, `🏁 栈 #${i + 1} 互斥选择完毕，该状态最高可得面值 ${maxVal}！`, `最优面值 ${maxVal}`, maxVal);
-    callStack.pop();
+    tracker.exitFrame();
     return maxVal;
   }
 
   dfs(0, k);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export interface CoinsFromPilesMemoStep extends MemoStepBase {
+  curI: number;
+  curJ: number;
   remK: number;
   k: number;
   piles: number[][];
@@ -487,15 +423,16 @@ export interface CoinsFromPilesMemoStep extends MemoStepBase {
 
 export function buildCoinsFromPilesMemoSteps(
   piles: number[][],
-  k: number
+  k: number,
+  maxSteps = 800
 ): CoinsFromPilesMemoStep[] {
-  const steps: CoinsFromPilesMemoStep[] = [];
   const n = piles.length;
   const memo: number[][] = Array.from({ length: n }, () => new Array(k + 1).fill(-1));
-  let hitCount = 0;
-  let missCount = 0;
 
-  const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(2, 'coins-from-piles', anchor);
+  const tracker = new MemoTraceTracker<CoinsFromPilesMemoStep>({
+    maxSteps,
+    resolveLine: (anchor) => getSpecialKnapsackAnchor(2, 'coins-from-piles', anchor),
+  });
 
   const pushStep = (
     action: string,
@@ -506,27 +443,23 @@ export function buildCoinsFromPilesMemoSteps(
     msg: string,
     decision: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
+    tracker.pushStep(action, lineKey, {
+      curI: i,
+      curJ: remK,
       i,
       remK,
       k,
       piles,
-      memo: memo.map((r) => [...r]),
+      memo: snapshotGrid2D(memo),
       cacheHit: isHit,
-      hitCount,
-      missCount,
       decision,
       message: msg,
       log: `[记忆化] (i=${i}, remK=${remK}) ${action}: ${msg}`,
       metrics: {
         'metric-cur-state': `memo[${i >= 0 ? i : '—'}][${remK >= 0 ? remK : '—'}]`,
-        'metric-hit-rate': `${hitCount + missCount > 0 ? ((hitCount / (hitCount + missCount)) * 100).toFixed(1) : '0'}%`,
-        'metric-cache-hits': `${hitCount} 次`,
-        'metric-cache-miss': `${missCount} 次`,
+        'metric-hit-rate': `${tracker.hitCount + tracker.missCount > 0 ? ((tracker.hitCount / (tracker.hitCount + tracker.missCount)) * 100).toFixed(1) : '0'}%`,
+        'metric-cache-hits': `${tracker.hitCount} 次`,
+        'metric-cache-miss': `${tracker.missCount} 次`,
       },
     });
   };
@@ -535,16 +468,17 @@ export function buildCoinsFromPilesMemoSteps(
 
   function dfsMemo(i: number, remK: number): number {
     if (i === n || remK === 0) return 0;
+
     pushStep('fnEnter', 'fnEnter', i, remK, false, `⚡ 进入 dfsMemo(i=${i}, remK=${remK})`, '探查备忘录');
 
     if (memo[i][remK] !== -1) {
-      hitCount++;
+      tracker.registerHit();
       const cached = memo[i][remK];
-      pushStep('memoCheck', 'memoCheck', i, remK, true, `🎯 命中缓存！memo[${i}][${remK}] = ${cached}，立即剪枝返回！`, 'Cache Hit');
+      pushStep('memoCheck', 'memoCheck', i, remK, true, `🎯 命中缓存！memo[${i}][${remK}] = ${cached}，立即剪枓返回！`, 'Cache Hit');
       return cached;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', i, remK, false, `💨 缓存未命中：memo[${i}][${remK}] === -1，展开组内互斥尝试`, 'Cache Miss');
 
     let maxVal = dfsMemo(i + 1, remK);
@@ -556,14 +490,12 @@ export function buildCoinsFromPilesMemoSteps(
     }
 
     memo[i][remK] = maxVal;
-    pushStep('memoStore', 'memoStore', i, remK, false, `💾 写入备忘录：memo[${i}][${remK}] = ${maxVal}，供后续剪枝`, '写入缓存');
+    pushStep('memoStore', 'memoStore', i, remK, false, `💾 写入备忘录：memo[${i}][${remK}] = ${maxVal}，供后续剪枓`, '写入缓存');
     return maxVal;
   }
 
   dfsMemo(0, k);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export interface CoinsFromPiles2DStep {
@@ -571,8 +503,8 @@ export interface CoinsFromPiles2DStep {
   totalSteps: number;
   action: string;
   codeLine: HighlightTarget;
-  i: number;
-  j: number;
+  curI: number;
+  curJ: number;
   k: number;
   dp: number[][];
   preSum: number[];
@@ -587,11 +519,11 @@ export function buildCoinsFromPiles2DSteps(
   piles: number[][],
   k: number
 ): CoinsFromPiles2DStep[] {
-  const steps: CoinsFromPiles2DStep[] = [];
   const n = piles.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(0));
 
   const resolveLine = (anchor: string) => getSpecialKnapsackAnchor(3, 'coins-from-piles', anchor);
+  const tracker = new Dp2DTraceTracker<CoinsFromPiles2DStep>({ resolveLine });
 
   const pushStep = (
     action: string,
@@ -603,15 +535,11 @@ export function buildCoinsFromPiles2DSteps(
     msg: string,
     decision: string
   ) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(lineKey),
-      i,
-      j,
+    tracker.pushStep(action, lineKey, {
+      curI: i,
+      curJ: j,
       k,
-      dp: dp.map((r) => [...r]),
+      dp: snapshotGrid2D(dp),
       preSum: [...preSum],
       depCells,
       decision,
@@ -666,7 +594,5 @@ export function buildCoinsFromPiles2DSteps(
 
   pushStep('returnAns', 'returnAns', n, k, [], [], `🎉 二维 DP 递推完成！考虑全部 ${n} 个栈在容量限制 ${k} 下，最大面值为 dp[${n}][${k}] = ${dp[n][k]}！`, `最终最大面值 ${dp[n][k]}`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }

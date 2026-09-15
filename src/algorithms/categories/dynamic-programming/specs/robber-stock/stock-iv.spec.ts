@@ -183,6 +183,18 @@ export const StockIvSpec: AlgorithmSpec = {
       dp[0][2 * j + 1] = -prices[0];
     }
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: [11, 12], context: [9, 10] },
+      cpp: { primary: [11, 12], context: [9, 10] },
+      python: { primary: [9, 10], context: [7, 8] },
+      javascript: { primary: [10, 11], context: [8, 9] },
+    },
+      line0: { java: 16, cpp: 16, python: 11, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -213,7 +225,7 @@ export const StockIvSpec: AlgorithmSpec = {
       message: `🎯 函数入口：买卖股票 IV。最多允许完成 k = ${k} 笔交易，构建 2k+1 = ${2 * k + 1} 状态机。`,
       log: `entry: k=${k}, prices=[${prices.join(',')}]`,
       vars: makeVars({ changed: ['prices', 'k'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i < n; i++) {
@@ -230,12 +242,7 @@ export const StockIvSpec: AlgorithmSpec = {
         message: `⚡ 第 ${i} 天 (股价 $${p})：完成 ${k} 组买卖状态递推，当前最大净利润为 $${dp[i][2 * k]}。`,
         log: `day ${i}: ans=${dp[i][2 * k]}`,
         vars: makeVars({ i, curP: p, ans: (dp[i][2 * k] as number), changed: ['i', 'p', 'ans'] }),
-        codeLine: {
-          java: { primary: [11, 12], context: [9, 10] },
-          cpp: { primary: [11, 12], context: [9, 10] },
-          python: { primary: [9, 10], context: [7, 8] },
-          javascript: { primary: [10, 11], context: [8, 9] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -247,7 +254,7 @@ export const StockIvSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最多完成 ${k} 笔交易的最大利润为 dp[${n - 1}][${2 * k}] = $${finalAns}。`,
       log: `return: ans=${finalAns}`,
       vars: makeVars({ ans: finalAns, changed: ['ans'] }),
-      codeLine: { java: 16, cpp: 16, python: 11, javascript: 14 },
+      codeLine: LINES.line0,
     });
 
     return steps;

@@ -10,6 +10,14 @@ import {
   TOTAL_ISLAND_AREA_ANALYSIS_HTML,
   TOTAL_ISLAND_AREA_CODE_LANGUAGES,
 } from './total-island-area-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3],
+  found: [7, 8, 9],
+  explore: [17, 18, 19, 20],
+  islanddone: 8,
+  done: 12,
+};
 
 type CellState = 'water' | 'land' | 'visited' | 'explored';
 
@@ -68,7 +76,7 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
     action: 'init',
     statusText: `初始化 ${R}×${C} 网格地图，开始遍历寻找所有连通岛屿并计算总面积。`,
     log: `初始化: ${R}×${C} 网格`,
-    codeLine: [1, 2, 3],
+    codeLine: lines.init,
   });
 
   for (let r = 0; r < R; r++) {
@@ -90,7 +98,7 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
           action: 'found',
           statusText: `扫描到 (${r}, ${c}) 为陆地！发现第 ${islandCount} 座岛屿，启动 DFS 探索连通面积。`,
           log: `发现岛屿 #${islandCount} 于 (${r}, ${c})`,
-          codeLine: [7, 8, 9],
+          codeLine: lines.found,
         });
 
         const queue: [number, number][] = [[r, c]];
@@ -116,7 +124,7 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
                 action: 'explore',
                 statusText: `DFS 扩展至 (${nr}, ${nc})，当前岛屿面积增长为 ${currentArea}。`,
                 log: `扩展陆地 (${nr}, ${nc}) -> 当前岛屿面积 = ${currentArea}`,
-                codeLine: [17, 18, 19, 20],
+                codeLine: lines.explore,
               });
             }
           }
@@ -141,7 +149,7 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
           action: 'island-done',
           statusText: `岛屿 #${islandCount} 探索完成，面积为 ${currentArea} 格。累计总面积更新为 ${totalArea}。`,
           log: `✓ 岛屿 #${islandCount} 结算: 面积 = ${currentArea}，累计总面积 = ${totalArea}`,
-          codeLine: 8,
+          codeLine: lines.islanddone,
         });
       }
     }
@@ -159,7 +167,7 @@ export function buildTotalIslandAreaSteps(grid: number[][] = DEFAULT_GRID): Tota
     action: 'done',
     statusText: `🎉 孤岛总面积统计完成！共发现 ${islandCount} 座独立岛屿，总面积为 ${totalArea} 格。`,
     log: `✓ 统计完成: 岛屿总数 = ${islandCount}，总面积 = ${totalArea}`,
-    codeLine: 12,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -167,6 +167,20 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(amount + 1).fill(0);
     dp[0] = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      loopOuter: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      loopInner: { java: 6, cpp: 6, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 8, context: [6, 7] },
+      python: { primary: 7, context: [5, 6] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      line0: { java: 11, cpp: 11, python: 9, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -209,7 +223,7 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init
@@ -229,7 +243,7 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
           action: 'match',
         },
       },
-      codeLine: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      codeLine: LINES.loopOuter,
     });
 
     // Loops (完全背包组合数: 外层 coins, 内层 j 从 coin 到 amount)
@@ -252,7 +266,7 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
             action: 'drop',
           },
         },
-        codeLine: { java: 6, cpp: 6, python: 5, javascript: 4 },
+        codeLine: LINES.loopInner,
       });
 
       for (let j = coin; j <= amount; j++) {
@@ -279,12 +293,7 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
               action: prev > 0 ? 'match' : 'idle',
             },
           },
-          codeLine: {
-            java: { primary: 8, context: [6, 7] },
-            cpp: { primary: 8, context: [6, 7] },
-            python: { primary: 7, context: [5, 6] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -306,7 +315,7 @@ export const CoinChangeIiSpec: AlgorithmSpec = {
           action: 'match',
         },
       },
-      codeLine: { java: 11, cpp: 11, python: 9, javascript: 9 },
+      codeLine: LINES.line0,
     });
 
     return steps;

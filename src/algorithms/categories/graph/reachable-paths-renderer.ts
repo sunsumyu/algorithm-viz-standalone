@@ -10,6 +10,14 @@ import {
   REACHABLE_PATHS_ANALYSIS_HTML,
   REACHABLE_PATHS_CODE_LANGUAGES,
 } from './reachable-paths-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3, 4],
+  dfsenter: [8, 9],
+  targetreached: [10, 11, 12],
+  backtrack: 16,
+  done: 6,
+};
 
 export interface RPStep extends StepBase {
   nodes: number[];
@@ -64,7 +72,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
     action: 'init',
     statusText: `初始化 DAG 图结构，节点 0 为起点，节点 ${target} 为目标终点。`,
     log: `初始化: 0 -> ${target} 所有路径搜索`,
-    codeLine: [1, 2, 3, 4],
+    codeLine: lines.init,
   });
 
   const dfs = (node: number) => {
@@ -77,7 +85,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
       action: 'dfs-enter',
       statusText: `递归进入节点 ${node}，当前路径: [${currentPath.join(' -> ')}]。`,
       log: `访问节点: ${node}，路径: [${currentPath.join(' -> ')}]`,
-      codeLine: [8, 9],
+      codeLine: lines.dfsenter,
     });
 
     if (node === target) {
@@ -91,7 +99,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
         action: 'target-reached',
         statusText: `🎉 到达终点 ${target}！收集一条完整有效路径: [${currentPath.join(' -> ')}]。`,
         log: `✓ 命中目标: 找到路径 #${allPaths.length} [${currentPath.join(' -> ')}]`,
-        codeLine: [10, 11, 12],
+        codeLine: lines.targetreached,
       });
       return;
     }
@@ -110,7 +118,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
         action: 'backtrack',
         statusText: `回溯：从节点 ${next} 返回，当前路径恢复为 [${currentPath.join(' -> ')}]。`,
         log: `回溯返回: 节点 ${node}，弹出 ${next}`,
-        codeLine: 16,
+        codeLine: lines.backtrack,
       });
     }
   };
@@ -126,7 +134,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
     action: 'done',
     statusText: `🎉 路径搜索完成！从 0 到 ${target} 共发现 ${allPaths.length} 条所有可能路径。`,
     log: `✓ 搜索完毕: 共输出 ${allPaths.length} 条路径方案`,
-    codeLine: 6,
+    codeLine: lines.done,
   });
 
   return steps;

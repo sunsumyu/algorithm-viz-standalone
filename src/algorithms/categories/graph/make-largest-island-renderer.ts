@@ -10,6 +10,13 @@ import {
   MAKE_LARGEST_ISLAND_ANALYSIS_HTML,
   MAKE_LARGEST_ISLAND_CODE_LANGUAGES,
 } from './make-largest-island-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3],
+  label: [7, 8, 9, 10],
+  try: [19, 20, 21, 22, 23, 24],
+  done: 29,
+};
 
 export interface MLIStep {
   grid: number[][];
@@ -65,7 +72,7 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
     action: 'init',
     statusText: `初始化 ${R}×${C} 网格。第一阶段：通过 DFS 对各个独立岛屿进行编号染色 (ID >= 2) 并统计面积。`,
     log: `初始化: ${R}×${C} 二进制网格`,
-    codeLine: [1, 2, 3],
+    codeLine: lines.init,
   });
 
   let currentId = 2;
@@ -112,7 +119,7 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
           action: 'label',
           statusText: `发现新岛屿并染色为 ID=${currentId}，总面积 = ${area}。`,
           log: `岛屿 ID ${currentId}: 染色完成，面积 = ${area}`,
-          codeLine: [7, 8, 9, 10],
+          codeLine: lines.label,
         });
 
         currentId++;
@@ -158,7 +165,7 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
           action: 'try',
           statusText: `尝试在水域 (${r}, ${c}) 填海造陆：连通相邻岛屿 [${neighborStr || '无'}]，合并后总面积 = 1 + ${curArea - 1} = ${curArea}。当前最大面积 = ${maxArea}。`,
           log: `测试水域 (${r},${c}): 合并面积 = ${curArea} (相邻岛屿: ${neighborStr || '无'})`,
-          codeLine: [19, 20, 21, 22, 23, 24],
+          codeLine: lines.try,
         });
       }
     }
@@ -178,7 +185,7 @@ export function buildMakeLargestIslandSteps(initialGrid: number[][] = DEFAULT_GR
     action: 'done',
     statusText: `🎉 最大人工岛计算完成！最佳填海位置为 ${bestCell ? `(${bestCell[0]}, ${bestCell[1]})` : '无需填海'}，最大可能面积为 ${maxArea} 格。`,
     log: `✓ 求解完成: 最大人工岛面积 = ${maxArea}，最佳桥接点 = ${bestCell ? `(${bestCell[0]}, ${bestCell[1]})` : '无'}`,
-    codeLine: 29,
+    codeLine: lines.done,
   });
 
   return steps;

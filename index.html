@@ -156,7 +156,7 @@
 
     /* ========== Sidebar ========== */
     .sidebar {
-      width: 280px;
+      width: 295px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
@@ -166,7 +166,7 @@
     }
 
     .sidebar-header {
-      padding: 1rem 1.15rem 0.75rem;
+      padding: 1rem 1rem 0.75rem;
       border-bottom: 1px solid #e2e8f0;
       background: #ffffff;
       flex-shrink: 0;
@@ -841,17 +841,18 @@
       border-radius: 8px;
       margin-top: 0.5rem;
       border: 1px solid #e2e8f0;
-      gap: 2px;
+      gap: 3px;
     }
 
     .sidebar-course-btn {
       flex: 1;
+      min-width: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      padding: 5px 8px;
-      font-size: 0.78rem;
+      gap: 4px;
+      padding: 5px 6px;
+      font-size: 0.76rem;
       font-weight: 600;
       color: #64748b;
       background: transparent;
@@ -861,6 +862,12 @@
       transition: all 0.2s ease;
       white-space: nowrap;
       user-select: none;
+    }
+
+    .sidebar-course-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .sidebar-course-btn:hover {
@@ -894,6 +901,7 @@
       background: #e2e8f0;
       color: #64748b;
       font-family: monospace;
+      flex-shrink: 0;
     }
 
     .sidebar-course-btn.active .sidebar-course-count {

@@ -11,6 +11,9 @@ import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '..
 import { DEPENDENT_STAGE1_CODE_LANGUAGES, DEPENDENT_STAGE2_CODE_LANGUAGES, DEPENDENT_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
 import { DependentItem } from './dependent-knapsack-renderer';
+import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
+import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 type DependentCallFrame = { g: number; rem: number; label: string };
 
@@ -80,23 +83,18 @@ export function parseDependentGroups(m: number, rawItems: (DependentItem | null)
 
 export function buildDependentRecursionSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800): DependentRecursionStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: DependentRecursionStep[] = [];
   const G = groups.length;
-  const callStack: Array<{ g: number; rem: number; label: string }> = [];
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(1, 'dependent', anchor);
+  const tracker = new RecursionTraceTracker<DependentRecursionStep, DependentCallFrame>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(1, 'dependent', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, g: number, rem: number, decision: string, message: string, retVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i: g,
       remCap: rem,
       n: G,
-      callStack: [...callStack],
       decision,
       message,
       log: `[DFS] g=${g} remBudget=${rem} | ${action}: ${message}`,
@@ -104,7 +102,7 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
       metrics: {
         'metric-cur-state': g < G ? `dfs(g=${g}, rem=${rem})` : '边界触底',
         'metric-cur-group': g < G ? `#${groups[g].mainId} 主件组 (${groups[g].combos.length}方案)` : '—',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
@@ -112,14 +110,14 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
   pushStep('callRoot', 'callRoot', 0, budget, '启动主附依赖递归', `🚀 启动有依赖背包递归分治：共 ${G} 个主件组，总预算 budget=${budget}。`);
 
   function dfs(g: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     const label = `dfs(g=${g}, rem=${rem})`;
-    callStack.push({ g, rem, label });
+    tracker.enterFrame({ g, rem, label });
     pushStep('fnEnter', 'fnEnter', g, rem, '进入栈帧', `📥 进入栈帧 ${label}。`);
 
     if (g === G || rem <= 0) {
       pushStep('baseCheck', 'baseCheck', g, rem, '触底终止', `🛑 边界触底 (g>=${G} 或 rem<=0)，返回 0。`);
-      callStack.pop();
+      tracker.exitFrame();
       return 0;
     }
 
@@ -139,39 +137,30 @@ export function buildDependentRecursionSteps(budget: number, m: number, rawItems
     }
 
     pushStep('returnMax', 'returnMax', g, rem, `返回最优决策收益: ${ans}`, `📤 栈帧 ${label} 汇聚：主件组 #${grp.mainId} 返回最优值 ${ans}。`, ans);
-    callStack.pop();
+    tracker.exitFrame();
     return ans;
   }
 
   dfs(0, budget);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildDependentMemoSteps(budget: number, m: number, rawItems: (DependentItem | null)[], maxSteps = 800): DependentMemoStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: DependentMemoStep[] = [];
   const G = groups.length;
   const memo: (number | null)[][] = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(null));
-  let hitCount = 0;
-  let missCount = 0;
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'dependent', anchor);
+  const tracker = new MemoTraceTracker<DependentMemoStep>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(2, 'dependent', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, g: number, rem: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i: g,
       remCap: rem,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
-      hitCount,
-      missCount,
+      memoGrid: snapshotGrid2D(memo),
       decision,
       message,
       log: `[MEMO] g=${g} remBudget=${rem} | ${action}: ${message}`,
@@ -179,8 +168,8 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
       metrics: {
         'metric-cur-state': g < G ? `dfs(g=${g}, rem=${rem})` : '边界触底',
         'metric-cache-status': memoHit ? '🎯 Cache HIT' : '⚪ Cache MISS',
-        'metric-hit-count': `${hitCount}`,
-        'metric-miss-count': `${missCount}`,
+        'metric-hit-count': `${tracker.hitCount}`,
+        'metric-miss-count': `${tracker.missCount}`,
       },
     });
   };
@@ -188,7 +177,7 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
   pushStep('callRoot', 'callRoot', 0, budget, false, '启动记忆化搜索', `🚀 启动有依赖背包记忆化搜索：初始化备忘录 memo[${G + 1}][${budget + 1}]。`);
 
   function dfsMemo(g: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     pushStep('fnEnter', 'fnEnter', g, rem, false, '进入栈帧', `📥 进入栈帧 dfs(g=${g}, rem=${rem})。`);
 
     if (g === G || rem <= 0) {
@@ -197,13 +186,13 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
     }
 
     if (memo[g][rem] !== null) {
-      hitCount++;
+      tracker.registerHit();
       const val = memo[g][rem]!;
       pushStep('memoCheck', 'memoCheck', g, rem, true, `命中缓存 memo[${g}][${rem}] = ${val}`, `🎯 缓存命中！直接复用结果 ${val}，剪除冗余分支！`, val);
       return val;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', g, rem, false, `未命中缓存 memo[${g}][${rem}]`, `⚪ 缓存未命中：首次访问主件组 #${groups[g].mainId}。`);
 
     const grp = groups[g];
@@ -225,28 +214,22 @@ export function buildDependentMemoSteps(budget: number, m: number, rawItems: (De
   }
 
   dfsMemo(0, budget);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildDependent2DSteps(budget: number, m: number, rawItems: (DependentItem | null)[]): Dependent2DStep[] {
   const groups = parseDependentGroups(m, rawItems);
-  const steps: Dependent2DStep[] = [];
   const G = groups.length;
   const dp: number[][] = Array.from({ length: G + 1 }, () => new Array(budget + 1).fill(0));
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'dependent', anchor);
+  const tracker = new Dp2DTraceTracker<Dependent2DStep>({ resolveLine });
 
   const pushStep = (action: string, codeKey: string, curG: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI: curG,
       curJ,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -286,7 +269,5 @@ export function buildDependent2DSteps(budget: number, m: number, rawItems: (Depe
 
   pushStep('returnAns', 'returnAns', G, budget, [{ label: `dp[${G}][${budget}]`, val: dp[G][budget], r: G, c: budget }], `最终最大总收益: dp[${G}][${budget}] = ${dp[G][budget]}`, `🎉 二维 DP 填表完毕！主件组全部决策完毕，最大收益为 ${dp[G][budget]}！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }

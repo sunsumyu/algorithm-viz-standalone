@@ -1265,3 +1265,67 @@ export const ABS_VALUE_ADD_STAGE3_LINES: Record<string, Record<string, number>> 
   python: { intro: 2, closed: 2, gcd: 3, multiples: 4, conclusion: 4 },
   javascript: { intro: 2, closed: 2, gcd: 2, multiples: 3, conclusion: 3 },
 };
+
+// ==========================================
+// 锚点集中解析接缝：renderer 使用点统一 getGreedy090Anchor(algo, stage, anchor) 单调用
+// 消除"同一 codeLine 按 java/cpp/python/javascript 四行各写一遍访问/三元"的展开形态。
+// ==========================================
+
+export type Greedy090Algo =
+  | 'cutting-bamboo'
+  | 'max-product-k'
+  | 'meeting-monopoly'
+  | 'meeting-one-day'
+  | 'ipo'
+  | 'abs-value-add';
+
+const GREEDY_090_LINES: Record<Greedy090Algo, Record<number, Record<string, Record<string, number>>>> = {
+  'cutting-bamboo': {
+    1: CUTTING_BAMBOO_STAGE1_LINES,
+    2: CUTTING_BAMBOO_STAGE2_LINES,
+    3: CUTTING_BAMBOO_STAGE3_LINES,
+  },
+  'max-product-k': {
+    1: MAX_PRODUCT_K_STAGE1_LINES,
+    2: MAX_PRODUCT_K_STAGE2_LINES,
+    3: MAX_PRODUCT_K_STAGE3_LINES,
+  },
+  'meeting-monopoly': {
+    1: MEETING_MONOPOLY_STAGE1_LINES,
+    2: MEETING_MONOPOLY_STAGE2_LINES,
+    3: MEETING_MONOPOLY_STAGE3_LINES,
+  },
+  'meeting-one-day': {
+    1: MEETING_ONE_DAY_STAGE1_LINES,
+    2: MEETING_ONE_DAY_STAGE2_LINES,
+    3: MEETING_ONE_DAY_STAGE3_LINES,
+  },
+  ipo: {
+    1: IPO_STAGE1_LINES,
+    2: IPO_STAGE2_LINES,
+    3: IPO_STAGE3_LINES,
+  },
+  'abs-value-add': {
+    1: ABS_VALUE_ADD_STAGE1_LINES,
+    2: ABS_VALUE_ADD_STAGE2_LINES,
+    3: ABS_VALUE_ADD_STAGE3_LINES,
+  },
+};
+
+const GREEDY_090_FALLBACK = { java: 1, cpp: 1, python: 1, javascript: 1 };
+
+/** 按 算法 × 阶段 × 锚点 取四语种行号组；miss 时兜底全 1（与 dp-067 接缝语义一致） */
+export function getGreedy090Anchor(
+  algo: Greedy090Algo,
+  stage: number,
+  anchor: string
+): { java: number; cpp: number; python: number; javascript: number } {
+  const group = GREEDY_090_LINES[algo]?.[stage];
+  if (!group) return { ...GREEDY_090_FALLBACK };
+  return {
+    java: group.java?.[anchor] ?? 1,
+    cpp: group.cpp?.[anchor] ?? 1,
+    python: group.python?.[anchor] ?? 1,
+    javascript: group.javascript?.[anchor] ?? 1,
+  };
+}

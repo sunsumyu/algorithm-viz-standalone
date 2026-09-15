@@ -186,16 +186,34 @@
               <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">空间优化: 只保存当前行的数据，不断滚动覆盖。</p>
             </div>
             <div class="flex items-center gap-2">
-              <!-- 阶段 3 专用：DP 矩阵与依赖树切换 Tab -->
-              <div id="stage3-subview-bar" class="hidden items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
-                <button id="btn-subview-matrix" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1">
-                  <i class="fa-solid fa-table-cells"></i> <span>DP 状态表</span>
+              <!-- 阶段 1/2 卡片 2 复合子视图切换器 (横向排列药丸) -->
+              <div id="card2-subview-bar" class="hidden inline-flex flex-row items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold whitespace-nowrap flex-shrink-0">
+                <button id="btn-card2-tree" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-network-wired text-[10px]"></i> <span>调用树</span>
                 </button>
-                <button id="btn-subview-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1">
-                  <i class="fa-solid fa-network-wired"></i> <span>状态依赖树</span>
+                <button id="btn-card2-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-font text-[10px]"></i> <span>串比对</span>
+                </button>
+                <button id="btn-card2-stack" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-layer-group text-[10px]"></i> <span>调用栈</span>
                 </button>
               </div>
-              <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">长度: n</span>
+              <!-- 阶段 1/2 卡片 2 复合子视图下拉选择器 (极简下拉模式) -->
+              <select id="card2-subview-select" class="hidden text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 cursor-pointer outline-none transition whitespace-nowrap">
+                <option value="tree">🌲 调用树</option>
+                <option value="alignment">🔤 串比对</option>
+                <option value="stack">📋 调用栈</option>
+              </select>
+              <!-- 阶段 3 专用：DP 矩阵与依赖树切换 Tab -->
+              <div id="stage3-subview-bar" class="hidden inline-flex flex-row items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold whitespace-nowrap flex-shrink-0">
+                <button id="btn-subview-matrix" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-table-cells text-[10px]"></i> <span>DP 状态表</span>
+                </button>
+                <button id="btn-subview-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-network-wired text-[10px]"></i> <span>状态依赖树</span>
+                </button>
+              </div>
+              <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap flex-shrink-0">长度: n</span>
             </div>
           </div>
 

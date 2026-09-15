@@ -11,6 +11,13 @@ import {
   A_STAR_ANALYSIS_HTML,
   A_STAR_CODE_LANGUAGES,
 } from './a-star-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [3, 4, 5],
+  reachgoal: 7,
+  poll: [6, 8],
+  done: 18,
+};
 
 export interface AStarNode {
   r: number;
@@ -90,7 +97,7 @@ export function buildAStarSteps(): AStarStep[] {
     action: 'init',
     statusText: `初始化 A* 寻路：起点 (${start[0]}, ${start[1]})，终点 (${goal[0]}, ${goal[1]})。起点启发距离 h=${h0}，推入 Open Set。`,
     log: `初始化: 起点 (0,0) -> 终点 (4,5), h=${h0}`,
-    codeLine: [3, 4, 5],
+    codeLine: lines.init,
   });
 
   let foundGoalNode: AStarNode | null = null;
@@ -124,7 +131,7 @@ export function buildAStarSteps(): AStarStep[] {
         action: 'reach-goal',
         statusText: `🎯 成功到达目标终点 (${goal[0]}, ${goal[1]})！总实际代价 g=${cur.g}。开始重构最优路径。`,
         log: `到达终点 (${goal[0]}, ${goal[1]}): 步长 g=${cur.g}`,
-        codeLine: 7,
+        codeLine: lines.reachgoal,
       });
       break;
     }
@@ -143,7 +150,7 @@ export function buildAStarSteps(): AStarStep[] {
       action: 'poll',
       statusText: `选取 Open Set 中 f 最小节点 (${cur.r}, ${cur.c})：g=${cur.g}, h=${cur.h} -> f=${cur.f}，移入 Closed Set 并拓展邻格。`,
       log: `考察格 (${cur.r}, ${cur.c}): f=${cur.f} (g=${cur.g}, h=${cur.h})`,
-      codeLine: [6, 8],
+      codeLine: lines.poll,
     });
 
     for (const [dr, dc] of dirs) {
@@ -188,7 +195,7 @@ export function buildAStarSteps(): AStarStep[] {
       action: 'done',
       statusText: `🎉 A* 启发式最优路径探索完成！路径长度为 ${foundGoalNode.path.length} 格。`,
       log: `✓ 最优路径重构完成: 长度 ${foundGoalNode.path.length}`,
-      codeLine: 18,
+      codeLine: lines.done,
     });
   }
 

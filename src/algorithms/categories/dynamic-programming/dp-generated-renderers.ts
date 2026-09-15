@@ -337,11 +337,31 @@ function bagDef(id: string, name: string, description: string, icon: string, kin
   };
 }
 
-function strDef(id: string, name: string, description: string, icon: string, kind: string, s = 'abcde', t = 'ace'): DemoDef {
+function strDef(
+  id: string,
+  name: string,
+  description: string,
+  icon: string,
+  kind: string,
+  s = 'abcde',
+  t = 'ace',
+  difficulty?: 1 | 2 | 3,
+  examples?: Array<{ label: string; values: Record<string, any> }>
+): DemoDef {
   return {
-    id, name, description, icon,
-    inputs: [{ id: 's', label: 's/数组1', value: s, width: 150 }, { id: 't', label: 't/数组2', value: t, width: 150 }],
-    examples: [{ label: '示例1', values: { s, t } }, { label: '示例2', values: { s: 'abc', t: 'abc' } }],
+    id,
+    name,
+    description,
+    icon,
+    difficulty,
+    inputs: [
+      { id: 's', label: '字符串 s', value: s, width: 150 },
+      { id: 't', label: '目标串 t', value: t, width: 150 },
+    ],
+    examples: examples || [
+      { label: '示例1', values: { s, t } },
+      { label: '示例2', values: { s: 'abc', t: 'abc' } },
+    ],
     build: makeEngineBuilder(kind),
   };
 }
@@ -459,9 +479,20 @@ const demos: DemoDef[] = [
   strDef('longest-repeated-subarray', '最长重复子数组', '两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。', '🧩', 'longest-repeated-subarray', '1,2,3,2,1', '3,2,1,4,7'),
   strDef('uncrossed-lines', '不相交的线', '连线不相交等价于两数组的最长公共子序列 (LCS)。', '🧶', 'uncrossed-lines', '1,4,2', '1,2,4'),
   numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
-  strDef('is-subsequence', '判断子序列', '双指针或 DP 判定 s 是否为 t 的子序列。', '🔍', 'is-subsequence', 'abc', 'ahbgdc'),
-  strDef('distinct-subsequences', '不同的子序列', '在字符串 s 的子序列中 t 出现的次数。', '🧮', 'distinct-subsequences', 'rabbbit', 'rabbit'),
-  strDef('delete-operation-for-two-strings', '两个字符串的删除操作', '使两字符串相同所需的最小删除步数：直接 DP 或 word1.len + word2.len - 2*LCS。', '🗑️', 'delete-operation-for-two-strings', 'sea', 'eat'),
+  strDef(
+    'distinct-subsequences',
+    '不同的子序列',
+    '在字符串 s 的子序列中 t 出现的次数。',
+    '🧮',
+    'distinct-subsequences',
+    'rabbbit',
+    'rabbit',
+    3,
+    [
+      { label: 'LeetCode 样例 1 ("rabbbit", "rabbit" Ans=3)', values: { s: 'rabbbit', t: 'rabbit' } },
+      { label: 'LeetCode 样例 2 ("babgbag", "bag" Ans=5)', values: { s: 'babgbag', t: 'bag' } },
+    ]
+  ),
   strDef('edit-distance', '编辑距离', '将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。', '✏️', 'edit-distance', 'horse', 'ros'),
   {
     id: 'palindromic-substrings',

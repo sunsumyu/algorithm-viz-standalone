@@ -255,6 +255,18 @@ export const EditDistanceSpec: AlgorithmSpec = {
       }
     }
 
+    // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: (isMatch: boolean) => ({
+        java: { primary: isMatch ? 10 : 12, context: [7, 8] },
+        cpp: { primary: isMatch ? 10 : 12, context: [7, 8] },
+        python: { primary: isMatch ? 9 : 11, context: [6, 7] },
+        javascript: { primary: isMatch ? 9 : 11, context: [6, 7] },
+      }),
+      returnAns: { java: 16, cpp: 16, python: 13, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const cellStepMap = new Map<string, number>();
 
@@ -310,7 +322,7 @@ export const EditDistanceSpec: AlgorithmSpec = {
       log: `entry: word1="${s1}", word2="${s2}"`,
       vars: makeVars({ changed: ['w1', 'w2', 'm', 'n'] }),
       metrics: { i: 0, j: 0, answer: 0, status: '初始化' },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Loops
@@ -397,12 +409,7 @@ export const EditDistanceSpec: AlgorithmSpec = {
             conclusion: `最优决策为【${actionDesc}】，最小步数 = ${resultVal}`,
           },
           metrics: { i, j, answer: resultVal, status: '状态转移' },
-          codeLine: {
-            java: { primary: isMatch ? 10 : 12, context: [7, 8] },
-            cpp: { primary: isMatch ? 10 : 12, context: [7, 8] },
-            python: { primary: isMatch ? 9 : 11, context: [6, 7] },
-            javascript: { primary: isMatch ? 9 : 11, context: [6, 7] },
-          },
+          codeLine: LINES.transfer(isMatch),
         });
       }
     }
@@ -423,7 +430,7 @@ export const EditDistanceSpec: AlgorithmSpec = {
       log: `return: dp[${m}][${n}]=${ans}`,
       vars: makeVars({ curDp: ans, changed: ['dpij'] }),
       metrics: { i: m, j: n, answer: ans, status: '已完成' },
-      codeLine: { java: 16, cpp: 16, python: 13, javascript: 14 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

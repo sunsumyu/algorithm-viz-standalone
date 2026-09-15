@@ -186,6 +186,32 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
       Array.from({ length: n + 1 }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      transfer2: {
+      java: { primary: 8, context: [5, 6] },
+      cpp: { primary: 8, context: [5, 6] },
+      python: { primary: 7, context: [5] },
+      javascript: { primary: 7, context: [4, 5] },
+    },
+      transfer3: {
+      java: { primary: 10, context: [5, 6] },
+      cpp: { primary: 10, context: [5, 6] },
+      python: { primary: 9, context: [5] },
+      javascript: { primary: 9, context: [4, 5] },
+    },
+      line1: { java: 14, cpp: 14, python: 12, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -225,7 +251,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
       message: `🎯 函数入口：计算在 s = "${s1}" 的子序列中 t = "${s2}" 出现的总方案数。`,
       log: `entry: s="${s1}", t="${s2}"`,
       vars: makeVars({ changed: ['s', 't', 'm', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Boundaries (first col = 1, first row = 0 except [0][0])
@@ -239,7 +265,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
       message: '🎬 边界初始化：当目标 t 为空串时，从 s[0..i-1] 均有 1 种全删方案匹配空串 (dp[i][0] = 1)。',
       log: 'init: dp[i][0]=1, dp[0][j]=0',
       vars: makeVars({ changed: ['dpij'] }),
-      codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     // Loops
@@ -254,7 +280,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
         message: `🔄 外层循环：i = ${i}，考察 s[${i - 1}] = '${char1}' (前缀 "${s1.slice(0, i)}")。`,
         log: `outer loop: i=${i}, char1='${char1}'`,
         vars: makeVars({ i, c1: char1, changed: ['i', 'c1'] }),
-        codeLine: { java: 5, cpp: 5, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 1; j <= n; j++) {
@@ -274,12 +300,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
             : `🔍 比对字符：s[${i - 1}] ('${char1}') !== t[${j - 1}] ('${char2}') 【不匹配，只能不用 s[${i - 1}]】。`,
           log: `compare: s[${i-1}]='${char1}', t[${j-1}]='${char2}'`,
           vars: makeVars({ i, j, c1: char1, c2: char2, changed: ['j', 'c2'] }),
-          codeLine: {
-            java: { primary: 7, context: [5, 6] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
 
         let resultVal: number;
@@ -299,12 +320,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (匹配)：【用 s[${i - 1}] 匹配方案 (${diag})】+ 【不用 s[${i - 1}] 方案 (${up})】= ${resultVal} 种方案。`,
             log: `match update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, c1: char1, c2: char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 8, context: [5, 6] },
-              cpp: { primary: 8, context: [5, 6] },
-              python: { primary: 7, context: [5] },
-              javascript: { primary: 7, context: [4, 5] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const up = (dp[i - 1][j] as number) || 0;
@@ -321,12 +337,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (不匹配)：继承上方不用当前字符的方案数 dp[${i - 1}][${j}] = ${up}。`,
             log: `nomatch update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, c1: char1, c2: char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 10, context: [5, 6] },
-              cpp: { primary: 10, context: [5, 6] },
-              python: { primary: 9, context: [5] },
-              javascript: { primary: 9, context: [4, 5] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -341,7 +352,7 @@ export const DistinctSubsequencesSpec: AlgorithmSpec = {
       message: `🏁 算法结束：返回在 "${s1}" 的子序列中出现 "${s2}" 的不同方案总数 dp[${m}][${n}] = ${ans} 种。`,
       log: `return: dp[${m}][${n}]=${ans}`,
       vars: makeVars({ curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 14, cpp: 14, python: 12, javascript: 13 },
+      codeLine: LINES.line1,
     });
 
     return steps;

@@ -19,6 +19,12 @@ import palindromicSubstringsModel from './models/palindromic-substrings.yaml';
 import longestPalindromicSubsequenceModel from './models/longest-palindromic-subsequence.yaml';
 import longestCommonSubsequenceModel from './models/longest-common-subsequence.yaml';
 import partitionEqualSubsetSumModel from './models/partition-equal-subset-sum.yaml';
+import houseRobberModel from './models/house-robber.yaml';
+import houseRobber2Model from './models/house-robber-ii.yaml';
+import houseRobber3Model from './models/house-robber-iii.yaml';
+import stock1Model from './models/best-time-to-buy-and-sell-stock.yaml';
+import stock2Model from './models/best-time-to-buy-and-sell-stock-ii.yaml';
+import stock3Model from './models/best-time-to-buy-and-sell-stock-iii.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -46,6 +52,12 @@ export class AlgorithmModelRepository {
     ['longest-common-subsequence', longestCommonSubsequenceModel as IYamlAlgorithmModel],
     ['partition-equal-subset-sum', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
     ['partition-subset', partitionEqualSubsetSumModel as IYamlAlgorithmModel],
+    ['house-robber', houseRobberModel as IYamlAlgorithmModel],
+    ['house-robber-ii', houseRobber2Model as IYamlAlgorithmModel],
+    ['house-robber-iii', houseRobber3Model as IYamlAlgorithmModel],
+    ['best-time-to-buy-and-sell-stock', stock1Model as IYamlAlgorithmModel],
+    ['best-time-to-buy-and-sell-stock-ii', stock2Model as IYamlAlgorithmModel],
+    ['best-time-to-buy-and-sell-stock-iii', stock3Model as IYamlAlgorithmModel],
   ]);
 
   // 不可变阶段编译缓存表

@@ -10,6 +10,7 @@ import {
   VisualSlot,
   PresetCaseDef,
   resolveLegendDotColor,
+  renderMetricsHtml,
 } from './renderers/declarative-stage-presenter';
 import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { ThreeViewControlsAdapter } from './renderers/three-view-controls-adapter';
@@ -36,6 +37,20 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
     super();
     this.spec = spec;
+
+    if (spec.modes && spec.modes.length > 0) {
+      let initialMode = spec.defaultMode || spec.modes[0].id;
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const savedMode = localStorage.getItem(`algo-mode-${spec.id}`);
+          if (savedMode && spec.modes.some((m) => m.id === savedMode)) {
+            initialMode = savedMode;
+          }
+        } catch {}
+      }
+      this.currentMode = initialMode;
+    }
+
     if (spec.stages && spec.stages.length > 0) {
       let initialStage = spec.defaultStage || spec.stages[0].id;
       if (typeof localStorage !== 'undefined') {
@@ -45,9 +60,6 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
             initialStage = savedStage;
           }
         } catch {}
-      }
-      if (spec.modes && spec.modes.length > 0) {
-        this.currentMode = spec.modes[0].id;
       }
       this.currentStageId = initialStage;
       const curStage = spec.stages.find((s) => s.id === this.currentStageId) || spec.stages[0];
@@ -69,9 +81,6 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       this.codeLanguages = normalized;
       this.codeLines = normalized['java'] || Object.values(normalized)[0] || [];
     } else {
-      if (spec.modes && spec.modes.length > 0) {
-        this.currentMode = spec.modes[0].id;
-      }
       const rawLangs = spec.codeLanguages || spec.sourceCodes || {};
       const normalized: Record<string, string[]> = {};
       for (const [k, v] of Object.entries(rawLangs)) {
@@ -108,18 +117,24 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     // 绑定标准播放控制
     this.bindPlaybackControls();
 
+    // 同步模式按钮初始激活状态 (以实际记忆或 defaultMode 为准)
+    this.root.querySelectorAll<HTMLButtonElement>('.dir-tab-btn, .dsp-mode-chip').forEach((btn) => {
+      const bMode = btn.dataset.mode || btn.dataset.dir || '';
+      const isActive = bMode === this.currentMode;
+      if (isActive) {
+        btn.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+        btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+      } else {
+        btn.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+        btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+      }
+    });
+
     // 绑定模式切换 (顺推 / 逆推 dir-tab-btn)
     this.root.querySelectorAll<HTMLButtonElement>('.dir-tab-btn, .dsp-mode-chip').forEach((btn) => {
       btn.addEventListener('click', () => {
-        this.root?.querySelectorAll('.dir-tab-btn, .dsp-mode-chip').forEach((b) => {
-          b.classList.remove('active', 'bg-blue', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
-          b.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
-        });
-        btn.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
-        btn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
-        this.currentMode = btn.dataset.mode || btn.dataset.dir || '';
-        this.syncTerminalCode();
-        this.start();
+        const mode = btn.dataset.mode || btn.dataset.dir || '';
+        this.setMode(mode);
       });
     });
 
@@ -371,6 +386,25 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         btnToggle3D.style.display = 'none';
       }
     }
+
+    // 3.3 同步 Card 2 阶段专属指标卡片 (Metrics Grid)，杜绝跨 Stage 残留污染
+    const metricsGrid = this.root?.querySelector('.dsp-left-section .dsp-card:last-child .dsp-metrics-grid');
+    if (metricsGrid) {
+      const activeMetrics = stage.metrics || this.spec.metrics || [];
+      metricsGrid.innerHTML = renderMetricsHtml(activeMetrics);
+      this.metricElements.clear();
+      activeMetrics.forEach((m) => {
+        const metricId = m.id.startsWith('metric-') ? m.id : `metric-${m.id}`;
+        const el = this.root?.querySelector(`#${metricId}`) as HTMLElement | null;
+        if (el) {
+          el.textContent = '—';
+          this.metricElements.set(m.id, el);
+          this.metricElements.set(metricId, el);
+          const bareId = m.id.startsWith('metric-') ? m.id.slice(7) : m.id;
+          this.metricElements.set(bareId, el);
+        }
+      });
+    }
   }
 
   /**
@@ -426,6 +460,31 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
   public getCurrentStage(): string | undefined {
     return this.currentStageId;
+  }
+
+  public getCurrentMode(): string | undefined {
+    return this.currentMode;
+  }
+
+  public setMode(mode: string): void {
+    this.currentMode = mode;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(`algo-mode-${this.spec.id}`, mode);
+      } catch {}
+    }
+    this.root?.querySelectorAll<HTMLButtonElement>('.dir-tab-btn, .dsp-mode-chip').forEach((b) => {
+      const bMode = b.dataset.mode || b.dataset.dir || '';
+      if (bMode === mode) {
+        b.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+        b.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+      } else {
+        b.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-sm', 'font-bold', 'border-blue-600');
+        b.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-white', 'border-transparent', 'font-semibold');
+      }
+    });
+    this.syncTerminalCode();
+    this.start();
   }
 
   /**
@@ -760,6 +819,8 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   const template = DeclarativeStagePresenter.generateTemplate(spec);
 
   class GeneratedVisualizer extends DeclarativeAlgorithmVisualizer<TStep> {
+    public static readonly spec = spec;
+    public readonly spec = spec;
     constructor() {
       super(spec);
     }

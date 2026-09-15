@@ -47,9 +47,14 @@ describe('KnapsackStepMatrixCompiler Pipeline Deep Module Guard', () => {
   it('should compile Stage 3 (2D DP Tabulation) with valid state matrix', () => {
     const steps = KnapsackStepMatrixCompiler.compile(sampleConfig, 3);
     expect(steps.length).toBeGreaterThan(10);
-    const updateSteps = steps.filter(s => s.type === 'update');
-    expect(updateSteps.length).toBeGreaterThan(0);
-    expect(updateSteps[0].grid).toBeDefined();
+    const transferSteps = steps.filter(s => s.type === 'transfer' || s.type === 'update');
+    expect(transferSteps.length).toBeGreaterThan(0);
+    expect(transferSteps[0].grid).toBeDefined();
+
+    // 零跳步断言
+    expect(steps.some(s => s.type === 'loop-outer')).toBe(true);
+    expect(steps.some(s => s.type === 'loop-inner')).toBe(true);
+    expect(steps.some(s => s.type === 'cond')).toBe(true);
   });
 
   it('should compile Stage 4 (1D Rolling Compression) with 1D dp slots', () => {

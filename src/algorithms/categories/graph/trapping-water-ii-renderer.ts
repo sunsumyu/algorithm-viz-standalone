@@ -11,6 +11,7 @@ import {
   TRAPPING_WATER_II_PROBLEM_HTML,
   TRAPPING_WATER_II_ANALYSIS_HTML,
 } from './trapping-water-ii-problem-content';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface Trap2Step {
   grid: number[][];
@@ -50,7 +51,7 @@ export function buildTrappingWaterIISteps(preset: string = 'classic_3x6'): Trap2
   const n = grid.length;
   const m = grid[0].length;
 
-  const waterLevel: number[][] = grid.map((row) => [...row]);
+  const waterLevel: number[][] = snapshotGrid2D(grid);
   const visited: boolean[][] = Array.from({ length: n }, () => new Array(m).fill(false));
   const heap: Array<{ r: number; c: number; w: number }> = [];
 
@@ -89,9 +90,9 @@ export function buildTrappingWaterIISteps(preset: string = 'classic_3x6'): Trap2
               : '四周木桶边界初始化';
 
     steps.push({
-      grid: grid.map((row) => [...row]),
-      waterLevel: waterLevel.map((row) => [...row]),
-      visited: visited.map((row) => [...row]),
+      grid: snapshotGrid2D(grid),
+      waterLevel: snapshotGrid2D(waterLevel),
+      visited: snapshotGrid2D(visited),
       curR,
       curC,
       curBoardHeight,

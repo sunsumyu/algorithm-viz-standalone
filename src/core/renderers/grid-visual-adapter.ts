@@ -16,6 +16,8 @@ export interface GridRenderOptions {
   modelId?: string;
   rowLabels?: string[];
   colLabels?: string[];
+  cornerLabel?: string;
+  isUpperTriangle?: boolean;
   isMatch?: (r: number, c: number) => boolean;
   deps?: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }>;
 }
@@ -32,6 +34,42 @@ import { DpTableVisualAdapter } from './dp-table-visual-adapter';
 import { SpatialFlowVisualAdapter } from './spatial-flow-visual-adapter';
 
 export class GridVisualAdapter {
+  /**
+   * 通用足迹提取器：从步骤中自动推导探索足迹坐标集合
+   * 支持 activeStack, activeTrail 以及通用调用栈 callStack/stack/frames
+   */
+  public static extractActiveTrail(step: any): string[] {
+    if (!step) return [];
+    if (Array.isArray(step.activeStack) && step.activeStack.length > 0) {
+      return step.activeStack.map(String);
+    }
+    if (Array.isArray(step.activeTrail) && step.activeTrail.length > 0) {
+      return step.activeTrail.map(String);
+    }
+    const stack = step.callStack || step.stack || step.frames;
+    if (Array.isArray(stack) && stack.length > 0) {
+      const coords: string[] = [];
+      for (const item of stack) {
+        if (item && typeof item === 'object') {
+          const r = item.i ?? item.l ?? item.r_coord ?? item.row;
+          const c = item.j ?? item.r ?? item.c_coord ?? item.col;
+          if (typeof r === 'number' && typeof c === 'number') {
+            coords.push(`${r},${c}`);
+            continue;
+          }
+        }
+        if (typeof item === 'string') {
+          const m = item.match(/(?:f\s*\()?\s*(-?\d+)\s*,\s*(-?\d+)\s*\)?/);
+          if (m) {
+            coords.push(`${m[1]},${m[2]}`);
+          }
+        }
+      }
+      if (coords.length > 0) return coords;
+    }
+    return [];
+  }
+
   /**
    * 生成探险家小人矢量 SVG
    */
@@ -150,7 +188,7 @@ export class GridVisualAdapter {
       ? step.fromJ
       : (isStepOutOfBounds ? Math.min(n - 1, Math.max(0, step.j)) : (m === 1 ? (step.j ?? step.currentJ ?? step.activeSlot ?? step.highlightSlots?.[0] ?? step.currentI ?? step.i ?? 0) : (step.j ?? 0)));
 
-    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+    const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
     const activeTrailSet = new Set<string>(activeStackList);
 
     const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
@@ -399,8 +437,13 @@ export class GridVisualAdapter {
     const isFinish = (activeI === m - 1 && activeJ === n - 1) || (activeI === 0 && activeJ === 0);
     const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(m, n))));
 
-    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+    const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
     const activeTrailSet = new Set<string>(activeStackList);
+
+    const isHalfTriangle = Boolean(options.isUpperTriangle || options.modelId === 'longest-palindromic-subsequence');
+    const isIntervalModel = Boolean(isHalfTriangle || options.cornerLabel === 'l \\ r' || (options.cornerLabel && options.cornerLabel.includes('l')));
+    const rowSubLabelPrefix = isIntervalModel ? 'l=' : 'i=';
+    const colSubLabelPrefix = isIntervalModel ? 'r=' : 'j=';
 
     // 1. 顶部列标尺
     const headerColsHtml = Array.from({ length: n }, (_, c) => {
@@ -422,7 +465,7 @@ export class GridVisualAdapter {
           transition: all 0.15s ease;
         ">
           <span style="font-size: 11px; font-weight: 800;">${txt}</span>
-          <span style="font-size: 8px; opacity: 0.65;">col${c}</span>
+          <span style="font-size: 8px; opacity: ${isCurCol ? '0.95' : '0.65'}; font-weight: ${isCurCol ? '700' : '500'};">${colSubLabelPrefix}${c}</span>
         </div>
       `;
     }).join('');
@@ -465,7 +508,18 @@ export class GridVisualAdapter {
         let cellContent = '';
         let badgeHtml = '';
 
-        if (isActive) {
+        const isHalfTriangle = Boolean(options.isUpperTriangle || options.modelId === 'longest-palindromic-subsequence');
+        const isBelowDiag = isHalfTriangle && r > c;
+
+        if (isBelowDiag) {
+          style += `
+            background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 4px, #f1f5f9 4px, #f1f5f9 8px);
+            border: 1px dashed #e2e8f0;
+            color: #cbd5e1;
+            opacity: 0.35;
+          `;
+          cellContent = `<span style="font-size: 10px; font-weight: 700; color: #cbd5e1; user-select: none;">✕</span>`;
+        } else if (isActive) {
           style += `
             background: #eff6ff;
             border: 2px solid #3b82f6;
@@ -555,7 +609,9 @@ export class GridVisualAdapter {
           cellContent = `<span style="font-size: 11px; font-weight: 600; color: #94a3b8;">-</span>`;
         }
 
-        const coordColor = isActive
+        const coordColor = isBelowDiag
+          ? '#e2e8f0'
+          : isActive
           ? '#2563eb'
           : isTrail
           ? '#0284c7'
@@ -571,7 +627,7 @@ export class GridVisualAdapter {
           ? '#059669'
           : '#94a3b8';
 
-        const cellClass = `viz-cell ${isActive ? 'is-cur' : isTrail ? 'is-trail' : isTop ? 'is-top is-dep' : isLeft ? 'is-left is-dep' : isDiag ? 'is-diag is-dep' : isGeneralDep ? 'is-dep' : isDone ? 'is-done' : 'is-empty'}`;
+        const cellClass = `viz-cell ${isBelowDiag ? 'is-disabled' : isActive ? 'is-cur' : isTrail ? 'is-trail' : isTop ? 'is-top is-dep' : isLeft ? 'is-left is-dep' : isDiag ? 'is-diag is-dep' : isGeneralDep ? 'is-dep' : isDone ? 'is-done' : 'is-empty'}`;
 
         return `
           <div class="${cellClass}" data-coord="${r},${c}" style="${style}">
@@ -585,6 +641,7 @@ export class GridVisualAdapter {
               font-family: 'JetBrains Mono', monospace;
               color: ${coordColor};
               line-height: 1;
+              ${isBelowDiag ? 'display: none;' : ''}
             ">${r},${c}</span>
             ${cellContent}
           </div>
@@ -594,11 +651,11 @@ export class GridVisualAdapter {
       return `
         <div style="display: flex; align-items: center; gap: 4px;">
           <div style="
-            width: 44px;
+            width: 48px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 2px 5px;
+            padding: 2px 4px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             font-weight: ${isCurRow ? '800' : '600'};
@@ -608,7 +665,7 @@ export class GridVisualAdapter {
             flex-shrink: 0;
           ">
             <span style="font-size: 11px; font-weight: 800;">${rLabel}</span>
-            <span style="font-size: 8px; opacity: 0.65;">r${r}</span>
+            <span style="font-size: 8px; opacity: ${isCurRow ? '0.95' : '0.65'}; font-weight: ${isCurRow ? '700' : '500'};">${rowSubLabelPrefix}${r}</span>
           </div>
           <div style="display: flex; gap: 4px;">
             ${cellsHtml}
@@ -616,6 +673,8 @@ export class GridVisualAdapter {
         </div>
       `;
     }).join('');
+
+    const cornerTitle = options.cornerLabel || (isHalfTriangle ? 'l \\ r' : 's1 \\ s2');
 
     const hasDeps = Boolean(
       (step.topI !== undefined && step.topI >= 0) ||
@@ -666,7 +725,7 @@ export class GridVisualAdapter {
           </svg>
 
           <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
-            <div style="width: 44px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">s1 \\ s2</div>
+            <div style="width: 48px; flex-shrink: 0; text-align: center; font-size: 9px; font-weight: 700; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">${cornerTitle}</div>
             <div style="display: flex; gap: 4px;">
               ${headerColsHtml}
             </div>
@@ -695,11 +754,11 @@ export class GridVisualAdapter {
           ` : `
           <span style="display: flex; align-items: center; gap: 4px;">
             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #f0f9ff; border: 1px dashed #38bdf8;"></span>
-            👣 探索中
+            🐾 探索中
           </span>
           `}
           <span style="display: flex; align-items: center; gap: 4px;">
-            🤠 当前探索位置
+            🤠 当前位置 <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #2563eb; background: #eff6ff; padding: 1px 4px; border-radius: 4px; border: 1px solid #bfdbfe;">(i=${activeI}, j=${activeJ})</span>
           </span>
         </div>
       </div>

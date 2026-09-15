@@ -163,6 +163,18 @@ export const LastStoneWeightIiSpec: AlgorithmSpec = {
     const target = Math.floor(sum / 2);
     const dp: DpCell[] = Array(target + 1).fill(0);
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 11, context: [9, 10] },
+      cpp: { primary: 10, context: [8, 9] },
+      python: { primary: 8, context: [6, 7] },
+      javascript: { primary: 7, context: [5, 6] },
+    },
+      line0: { java: 14, cpp: 13, python: 9, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -200,7 +212,7 @@ export const LastStoneWeightIiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最后一块石头的重量 II。石头总重量 sum = ${sum}，转化为容量 target = ⌊${sum}/2⌋ = ${target} 的 0-1 背包问题。`,
       log: `entry: sum=${sum}, target=${target}`,
       vars: makeVars({ changed: ['st', 'sum', 'tgt'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 0; i < stones.length; i++) {
@@ -223,12 +235,7 @@ export const LastStoneWeightIiSpec: AlgorithmSpec = {
             : `⏩ 跳过第 ${i} 块石头 (重 ${stone})：保持历史承重 ${best}。`,
           log: `dp[${j}] = ${best}`,
           vars: makeVars({ i, j, curStone: stone, curDp: best, changed: ['i', 'j', 'sti', 'dpj'] }),
-          codeLine: {
-            java: { primary: 11, context: [9, 10] },
-            cpp: { primary: 10, context: [8, 9] },
-            python: { primary: 8, context: [6, 7] },
-            javascript: { primary: 7, context: [5, 6] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -241,7 +248,7 @@ export const LastStoneWeightIiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：第一堆最大重量 dp[${target}] = ${dp[target]}，两堆石头最小差值为 ${sum} - 2 × ${dp[target]} = ${finalAns}。`,
       log: `return: diff=${finalAns}`,
       vars: makeVars({ curDp: dp[target], ans: finalAns, changed: ['dpj', 'ans'] }),
-      codeLine: { java: 14, cpp: 13, python: 9, javascript: 10 },
+      codeLine: LINES.line0,
     });
 
     return steps;

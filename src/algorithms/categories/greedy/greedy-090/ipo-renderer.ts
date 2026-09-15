@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  IPO_STAGE1_CODES,
-  IPO_STAGE1_LINES,
-  IPO_STAGE2_CODES,
-  IPO_STAGE2_LINES,
-  IPO_STAGE3_CODES,
-  IPO_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { IPO_STAGE1_CODES, IPO_STAGE2_CODES, IPO_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderIPOTwoHeapMarket,
@@ -81,12 +74,11 @@ export function buildIPOSteps(
     decision: '初始化资本与项目市场',
     message: `初始本金 w = $${w}，最多投资 k = ${k} 轮。候选项目总数: ${allProjects.length}`,
     log: `[Init] w=${w}, k=${k}, 项目数=${allProjects.length}`,
-    codeLine: {
-      java: stage === 1 ? IPO_STAGE1_LINES.java.init : stage === 2 ? IPO_STAGE2_LINES.java.init : IPO_STAGE3_LINES.java.intro,
-      cpp: stage === 1 ? IPO_STAGE1_LINES.cpp.init : stage === 2 ? IPO_STAGE2_LINES.cpp.init : IPO_STAGE3_LINES.cpp.intro,
-      python: stage === 1 ? IPO_STAGE1_LINES.python.init : stage === 2 ? IPO_STAGE2_LINES.python.init : IPO_STAGE3_LINES.python.intro,
-      javascript: stage === 1 ? IPO_STAGE1_LINES.javascript.init : stage === 2 ? IPO_STAGE2_LINES.javascript.init : IPO_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor(
+      'ipo',
+      stage === 1 ? 1 : stage === 2 ? 2 : 3,
+      stage === 1 ? 'init' : stage === 2 ? 'init' : 'intro'
+    ),
   });
 
   if (stage === 1) {
@@ -115,12 +107,7 @@ export function buildIPOSteps(
         decision: `DFS 递归分支尝试: 投资 ${pick.name}`,
         message: `在当前本金下，暴力探索选择 ${pick.name} (门槛 $${pick.cost}, 纯利 +$${pick.profit})，探索其子树最终收益`,
         log: `[DFS Try] 投资 ${pick.name}, 资本 -> $${curW}`,
-        codeLine: {
-          java: IPO_STAGE1_LINES.java.pick,
-          cpp: IPO_STAGE1_LINES.cpp.pick,
-          python: IPO_STAGE1_LINES.python.pick,
-          javascript: IPO_STAGE1_LINES.javascript.pick,
-        },
+        codeLine: getGreedy090Anchor('ipo', 1, 'pick'),
       });
     }
     return steps;
@@ -160,12 +147,7 @@ export function buildIPOSteps(
           decision: `第 ${round + 1} 轮: 解锁可投资项目`,
           message: `当前资本为 $${curW}，从小根堆转移所有启动金 <= $${curW} 的项目到大根堆。目前可投资池有 ${profitHeap.size()} 个项目`,
           log: `[Unlock] 资本 $${curW}, 可选池数量=${profitHeap.size()}`,
-          codeLine: {
-            java: IPO_STAGE2_LINES.java.unlock,
-            cpp: IPO_STAGE2_LINES.cpp.unlock,
-            python: IPO_STAGE2_LINES.python.unlock,
-            javascript: IPO_STAGE2_LINES.javascript.unlock,
-          },
+          codeLine: getGreedy090Anchor('ipo', 2, 'unlock'),
         });
       }
 
@@ -182,12 +164,7 @@ export function buildIPOSteps(
           decision: '资本不足，无法解锁更多项目',
           message: `大根堆为空且当前资本 $${curW} 无法启动任何剩余未解锁项目，提前终止投资`,
           log: `[Early Stop] 本金不足以启动任何项目，终止。`,
-          codeLine: {
-            java: IPO_STAGE2_LINES.java.check,
-            cpp: IPO_STAGE2_LINES.cpp.check,
-            python: IPO_STAGE2_LINES.python.check,
-            javascript: IPO_STAGE2_LINES.javascript.check,
-          },
+          codeLine: getGreedy090Anchor('ipo', 2, 'check'),
         });
         break;
       }
@@ -210,12 +187,7 @@ export function buildIPOSteps(
         decision: `第 ${round + 1} 轮: 投资最优项目 ${best.name}`,
         message: `贪心挑选大根堆堆顶纯利润最大的 ${best.name} (纯利 +$${best.profit})，资本扩充至 $${curW}！`,
         log: `[Invest] 落地 ${best.name}, 资本由 $${curW - best.profit} -> $${curW}`,
-        codeLine: {
-          java: IPO_STAGE2_LINES.java.invest,
-          cpp: IPO_STAGE2_LINES.cpp.invest,
-          python: IPO_STAGE2_LINES.python.invest,
-          javascript: IPO_STAGE2_LINES.javascript.invest,
-        },
+        codeLine: getGreedy090Anchor('ipo', 2, 'invest'),
       });
     }
 
@@ -230,12 +202,7 @@ export function buildIPOSteps(
       decision: '双堆贪心收敛完成',
       message: `全部投资结束：经过 ${doneCount} 轮投资，最终获得的最大资本为 $${curW}`,
       log: `[Done] 最终最大资本=$${curW}`,
-      codeLine: {
-        java: IPO_STAGE2_LINES.java.ret,
-        cpp: IPO_STAGE2_LINES.cpp.ret,
-        python: IPO_STAGE2_LINES.python.ret,
-        javascript: IPO_STAGE2_LINES.javascript.ret,
-      },
+      codeLine: getGreedy090Anchor('ipo', 2, 'ret'),
     });
 
     return steps;
@@ -253,12 +220,7 @@ export function buildIPOSteps(
     decision: '资本扩张超集支配反证假设',
     message: '反证设问：假设在已解锁集合中，不选利润最大的 p_max，而选择另一项目 p_other (p_other < p_max)',
     log: '[Proof Start] 假设选次优项目 p_other < p_max',
-    codeLine: {
-      java: IPO_STAGE3_LINES.java.assume,
-      cpp: IPO_STAGE3_LINES.cpp.assume,
-      python: IPO_STAGE3_LINES.python.assume,
-      javascript: IPO_STAGE3_LINES.javascript.assume,
-    },
+    codeLine: getGreedy090Anchor('ipo', 3, 'assume'),
   });
 
   steps.push({
@@ -272,12 +234,7 @@ export function buildIPOSteps(
     decision: '超集支配律：高资本解锁范围单调占优',
     message: '由于 w + p_max > w + p_other，更高的资本意味着下一次能解锁的项目集合必是超集 (S_other ⊆ S_max)。选 p_max 绝不会损失任何未来机会，且拥有更大的探索自由度！',
     log: '[Proof Invariant] 资本单调递增，高资本解拥有超集支配权。',
-    codeLine: {
-      java: IPO_STAGE3_LINES.java.superset,
-      cpp: IPO_STAGE3_LINES.cpp.superset,
-      python: IPO_STAGE3_LINES.python.superset,
-      javascript: IPO_STAGE3_LINES.javascript.superset,
-    },
+    codeLine: getGreedy090Anchor('ipo', 3, 'superset'),
   });
 
   steps.push({
@@ -291,12 +248,7 @@ export function buildIPOSteps(
     decision: '贪心最优性证明成立',
     message: '无论是从本轮纯收益，还是从后续解锁项目的超集支配性来看，贪心选择大根堆堆顶均在所有维度上完全支配其他策略，局部最优必为全局最优！',
     log: '[Proof Verified] IPO 双堆贪心证明成立。',
-    codeLine: {
-      java: IPO_STAGE3_LINES.java.conclusion,
-      cpp: IPO_STAGE3_LINES.cpp.conclusion,
-      python: IPO_STAGE3_LINES.python.conclusion,
-      javascript: IPO_STAGE3_LINES.javascript.conclusion,
-    },
+    codeLine: getGreedy090Anchor('ipo', 3, 'conclusion'),
   });
 
   return steps;

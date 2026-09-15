@@ -6,6 +6,16 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './bfs-theory.html?raw';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 0,
+  enqueue: [1, 2],
+  dequeue: [3, 4],
+  explore: [5, 6, 7],
+  explore2: [5, 8],
+  enqueue2: 9,
+  done: 10,
+};
 
 interface BFSStep {
   nodes: number[];
@@ -63,7 +73,7 @@ function buildBFSSteps(): BFSStep[] {
     action: 'init',
     message: '初始化图：6 个节点、5 条边的无向图。从节点 0 开始 BFS 层序遍历。',
     log: '初始化图，起点 = 0',
-    codeLine: 0,
+    codeLine: lines.init,
   });
 
   // Enqueue start node
@@ -83,7 +93,7 @@ function buildBFSSteps(): BFSStep[] {
     action: 'enqueue',
     message: '将起点 0 标记为已访问并入队。队列: [0]',
     log: '入队: 0',
-    codeLine: [1, 2],
+    codeLine: lines.enqueue,
   });
 
   let currentLevel = 0;
@@ -106,7 +116,7 @@ function buildBFSSteps(): BFSStep[] {
       action: 'dequeue',
       message: `出队节点 ${u}（第 ${currentLevel} 层），准备探索其所有未访问邻居。`,
       log: `出队: ${u} (第 ${currentLevel} 层)`,
-      codeLine: [3, 4],
+      codeLine: lines.dequeue,
     });
 
     levelSize--;
@@ -128,7 +138,7 @@ function buildBFSSteps(): BFSStep[] {
           action: 'explore',
           message: `发现未访问邻居 ${v}，标记已访问并入队。队列: [${queue.join(', ')}]`,
           log: `探索邻居 ${v}，入队`,
-          codeLine: [5, 6, 7],
+          codeLine: lines.explore,
         });
       } else {
         steps.push({
@@ -144,7 +154,7 @@ function buildBFSSteps(): BFSStep[] {
           action: 'explore',
           message: `邻居 ${v} 已访问过，跳过。`,
           log: `跳过已访问的 ${v}`,
-          codeLine: [5, 8],
+          codeLine: lines.explore2,
         });
       }
     }
@@ -166,7 +176,7 @@ function buildBFSSteps(): BFSStep[] {
         action: 'enqueue',
         message: `第 ${currentLevel - 1} 层处理完毕，进入第 ${currentLevel} 层。队列中还有 ${queue.length} 个节点。`,
         log: `进入第 ${currentLevel} 层`,
-        codeLine: 9,
+        codeLine: lines.enqueue2,
       });
     }
   }
@@ -184,7 +194,7 @@ function buildBFSSteps(): BFSStep[] {
     action: 'done',
     message: `BFS 遍历完成！遍历顺序: [${traversalOrder.join(', ')}]。共 ${currentLevel + 1} 层，所有 ${visited.size} 个节点均已访问。BFS 保证层序遍历，可求无权图最短路径。`,
     log: `BFS 完成，顺序: [${traversalOrder.join(', ')}]`,
-    codeLine: 10,
+    codeLine: lines.done,
   });
 
   return steps;

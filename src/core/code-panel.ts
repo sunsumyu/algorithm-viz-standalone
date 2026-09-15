@@ -112,8 +112,8 @@ export class CodePanel {
   }
 
   /** 同步变量监视面板 */
-  public updateVars(vars?: StepVar[]): void {
-    this.terminal.updateVars(vars);
+  public updateVars(vars?: StepVar[], stepContext?: unknown): void {
+    this.terminal.updateVars(vars, stepContext);
   }
 
   /** 手动切换编程语言 */

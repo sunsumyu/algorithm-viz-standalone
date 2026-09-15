@@ -189,6 +189,30 @@ export const MaximalSquareSpec: AlgorithmSpec = {
     );
 
     let maxSide = 0;
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 7, context: [6] },
+      cpp: { primary: 7, context: [6] },
+      python: { primary: 6, context: [5] },
+      javascript: { primary: 6, context: [5] },
+    },
+      transfer2: {
+      java: { primary: 9, context: [6, 7] },
+      cpp: { primary: 9, context: [6, 7] },
+      python: { primary: 8, context: [5, 6] },
+      javascript: { primary: 8, context: [5, 6] },
+    },
+      transfer3: {
+      java: { primary: 10, context: [6, 7] },
+      cpp: { primary: 10, context: [6, 7] },
+      python: { primary: 9, context: [5, 6] },
+      javascript: { primary: 9, context: [5, 6] },
+    },
+      returnAns: { java: 15, cpp: 15, python: 12, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -224,7 +248,7 @@ export const MaximalSquareSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最大正方形。网格规模 ${m} × ${n}，寻找只包含 1 的最大正方形面积。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ changed: ['m', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Loops
@@ -242,12 +266,7 @@ export const MaximalSquareSpec: AlgorithmSpec = {
             message: `⚪ 元素为 '0'：坐标 (${i}, ${j}) 无法作为正方形右下角，dp[${i}][${j}] = 0。`,
             log: `dp[${i}][${j}] = 0`,
             vars: makeVars({ i, j, curVal: val, curDp: 0, changed: ['i', 'j', 'mat', 'dpij'] }),
-            codeLine: {
-              java: { primary: 7, context: [6] },
-              cpp: { primary: 7, context: [6] },
-              python: { primary: 6, context: [5] },
-              javascript: { primary: 6, context: [5] },
-            },
+            codeLine: LINES.transfer,
           });
         } else if (i === 0 || j === 0) {
           dp[i][j] = 1;
@@ -259,12 +278,7 @@ export const MaximalSquareSpec: AlgorithmSpec = {
             message: `🎬 边界 '1'：处于第 ${i === 0 ? '0 行' : '0 列'} 边缘，最大边长为 1。`,
             log: `boundary: dp[${i}][${j}] = 1`,
             vars: makeVars({ i, j, curVal: val, curDp: 1, curMax: maxSide, changed: ['i', 'j', 'mat', 'dpij', 'mx'] }),
-            codeLine: {
-              java: { primary: 9, context: [6, 7] },
-              cpp: { primary: 9, context: [6, 7] },
-              python: { primary: 8, context: [5, 6] },
-              javascript: { primary: 8, context: [5, 6] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const topVal = dp[i - 1][j] as number;
@@ -283,12 +297,7 @@ export const MaximalSquareSpec: AlgorithmSpec = {
             message: `⚡ 三向短板转移：比较【上:${topVal}】、【左:${leftVal}】、【左上:${topLeftVal}】，短板为 ${minNeighbor} $\rightarrow$ 扩张边长 dp[${i}][${j}] = ${resultVal}。当前最大边长 maxSide = ${maxSide}。`,
             log: `update: dp[${i}][${j}] = ${resultVal}, maxSide = ${maxSide}`,
             vars: makeVars({ i, j, curVal: val, curDp: resultVal, curMax: maxSide, changed: ['i', 'j', 'mat', 'dpij', 'mx'] }),
-            codeLine: {
-              java: { primary: 10, context: [6, 7] },
-              cpp: { primary: 10, context: [6, 7] },
-              python: { primary: 9, context: [5, 6] },
-              javascript: { primary: 9, context: [5, 6] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -300,7 +309,7 @@ export const MaximalSquareSpec: AlgorithmSpec = {
       message: `🏁 算法结束：只包含 1 的最大正方形边长为 ${maxSide}，最大面积为 ${maxSide} × ${maxSide} = ${maxArea}。`,
       log: `return: maxArea = ${maxArea}`,
       vars: makeVars({ curMax: maxSide, curDp: maxArea, changed: ['dpij', 'mx'] }),
-      codeLine: { java: 15, cpp: 15, python: 12, javascript: 14 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

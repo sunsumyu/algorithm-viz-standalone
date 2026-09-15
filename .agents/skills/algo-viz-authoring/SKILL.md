@@ -71,6 +71,51 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
     - *严格规范*：
       1. **视图层决策解耦（Renderer Decision Decoupling）**：视觉呈现器必须是纯状态投影，严禁未经 Step 显式授权（如 `isComparing !== false`）擅自推导业务结论；
       2. **作用域纯洁性（Scope Purity）**：主函数入口帧（Step 0）只保留全局输入参数，游标与比对控件在未就绪时必须呈现待比对/未就绪状态（`isComparing: false` / `curI: -1, curJ: -1`），严禁泄漏未定义的形参。
+14. **函数形参错位导致底层视图抛出 `[undefined]` / `NaN`（Parameter Misalignment & Undefined Propagation）**：
+    - *故障现象*：树节点或备忘录卡片标题冒出 `🐸 ?? [undefined]`，或单元格显示 `NaN`。
+    - *根本原因*：调用通用渲染函数（如 `renderMemoGridCard`）时传参顺序错位（例如将形参 `curL, curR` 传在了 `activeI, activeJ` 之后，或者少传一个占位形参），导致字符串和数字错位填入了 `activeI`，底层解析 `nodeId`、`metric` 失败。
+    - *严格规范*：所有通用渲染器必须声明具备严格类型的 Typescript 参数对象或严格按函数签名调用，严禁盲目传参。
+15. **跨 Stage 状态与 DOM 指标残留污染（Cross-Stage Metric Leakage & DOM Pollution）**：
+    - *故障现象*：切换到阶段 2 或阶段 1 时，下方指标栏依然残留着阶段 4 专属的 `LEFTDOWN 寄存器: 3`，或者阶段 3 的旧卡片数据未被清空。
+    - *根本原因*：上层视图呈现器（`declarative-stage-presenter.ts` / `declarative-algorithm-visualizer.ts`）在切 Stage 时没有动态重构当前阶段专属的 `metricsGrid`，而是直接沿用了全局 spec 的通用指标或者留存了旧 DOM。
+    - *严格规范*：
+      1. 切 Stage 时优先读取 `ctx.curStage?.metrics`；
+      2. 每次切换 Stage 必须对非当前阶段的指标卡片进行强制重置与彻底解构，杜绝跨阶段脏数据污染。
+16. **走过的路漏掉足迹与超类自动推导铁律（Missing Footprints & Superclass Auto-Inference Invariant）**：
+    - *故障现象*：递归探索或网格遍历深入到深层（如 `f(1, 3)`）时，图例写着 `🐾 探索中`，但此前经过的父调用节点（如 `(0, 4)`）却退化为白色空单元格 `-`，完全没有足迹，SVG 探索路径安全绳也消失不见。
+    - *根本原因*：
+      1. 步进生成器虽然维护了递归调用栈，但未将路径坐标填充至 `activeTrail` / `activeStack`；
+      2. 父类适配器（`GridVisualAdapter`）此前缺乏自动推导能力，子类未显式传参时直接降级为空数组 `[]`，导致足迹丢失。
+    - *严格规范*：
+      1. **超类统一推导（Superclass Auto-Inference）**：父类/公共适配层必须内建通用足迹提取器（`GridVisualAdapter.extractActiveTrail(step)`），即便子类未传 `activeTrail`，也能自动从通用的 `callStack` / `stack`（对象数组或 `f(0, 4)` 字符串）中 100% 自动解析出足迹坐标集合；
+      2. **接口契约硬约束**：`UniversalStep` 和各 Stage 步进接口显式要求 `activeTrail` 与 `callStack`，让小人走过的调用路径始终保持 `🐾 探索中` 呼吸高亮，并在节点间绘制探索安全绳虚线与箭头；
+      3. **回溯解通变色**：只有在递归真正完成并返回落盘时，节点才出栈并从 `🐾 探索中` 转换为绿色 `⚪ 已解通`。
+17. **半三角/区间模型空间越界与下三角脏数据泄漏（Upper-Triangle Matrix Boundary Invariant）**：
+    - *故障现象*：LPS 等区间 DP 矩阵的下半部分 `r > c`（$l > r$）被当成正常未计算单元格显示为 `-`，甚至误填入数据。
+    - *根本原因*：区间 DP 的左边界不可能大于右边界，下三角属于无意义的死区空间。
+    - *严格规范*：必须通过 `isHalfTriangle` 统一约束，下三角矩阵单元格一律强制渲染为斜纹遮罩背景（`repeating-linear-gradient`）和禁止占位符 `✕`，彻底隔离有效计算区与非法死区。
+18. **循环条件不成立静默跳过与循环头判定帧丢失铁律（Loop Condition False Silent Skip Invariant）**：
+    - *故障现象*：内层 `for` 循环因初值越界不满足条件（如 $l = 4$ 时 $r = 6 < 5$ 为假，或 $l = 3$ 时 $r = 5 < 5$ 为假）时，代码光标完全不经过该 `for` 循环头，直接静默跳过。学习者根本不知道为什么代码跳过了循环体。
+    - *根本原因*：步进生成器在 `if (l + 2 < n)` 外部加了守卫，条件不满足时直接不发射步骤帧。
+    - *严格规范*：**所有循环头无论条件是否成立，光标都必须高亮跳转至循环头行进行显式求值！**
+      1. 条件成立时：高亮循环头，日志记录 `for r = ${r} (r < n) -> true` 并进入循环体；
+      2. 条件不成立时：高亮循环头，决策与日志明确显示 `for r = ${r} (r < n) -> false`，清晰告知学习者“此循环因条件不成立而跳过/退出”，绝不允许静默跳步。
+19. **复合语句与三元运算符单行压缩导致高亮粒度失效铁律（Ternary Operator & Branch Unfolding Invariant）**：
+    - *故障现象*：单行三元表达式（如 `dp[l][l + 1] = s[l] == s[l + 1] ? 2 : 1;`），执行时整行被高亮，学习者根本看不出当前到底命中了真分支（2）还是假分支（1）。
+    - *根本原因*：为了代码紧凑将多分支状态压缩在单行，而代码面板的高亮粒度是物理行级别的。
+    - *严格规范*：**教学演示代码严禁将决策分支压缩在单行三元表达式中！必须展开为显式的多行 `if-else`**：
+      1. 条件检查行：`if (l + 1 < n) {`
+      2. 匹配赋值行：`if (s[l] == s[l + 1]) dp[l][l + 1] = 2;`
+      3. 不匹配赋值行：`else dp[l][l + 1] = 1;`
+      运行时光标必须精准跳至真正被执行的具体赋值行，杜绝“一整行高亮不知道执行了哪部分”的含混现象。
+20. **四键行组在使用点四行展开（Quad-Key Expansion at Usage Sites）**：
+    - *故障现象*：一个 `codeLine` 对象里 java/cpp/python/javascript 各占一行，每行重复同一套 stage/分支三元链（如 `java: stage === 1 ? S1.java.init : stage === 2 ? S2.java.init : S3.java.intro` × 4 行 × 65 处）。
+    - *根本原因*：缺少“按锚点取整组行号”的集中接缝，把语言维度和阶段分派逻辑缠在了每个使用点。
+    - *严格规范*：多阶段算法族的行号必须经 `StageCodeRegistry`（`createStageCodeRegistry(prefix, map)` → `registry.getAnchor(stage, kind, anchor)`）单调用取得；**严禁在同一 codeLine 处按四语种各写一行访问/三元**。单算法场景也应在文件顶部集中定义 lines 字典后引用（见 2.1）。
+21. **使用点裸写行号字面量（Bare Inline Line Numbers at Usage Sites）**：
+    - *故障现象*：单面板/单语种场景在 `steps.push` 里直接写 `codeLine: 18`、`codeLine: [12, 13]`（graph 类目曾积累 205 处），行号与代码模板之间没有任何命名映射。
+    - *根本原因*：以为“只有一个语种就不需要字典”，把行号当一次性魔法数字；模板一旦改行，无人知道哪些使用点需要跟着改。
+    - *严格规范*：即便单面板/单语种，也必须在文件顶部集中定义 `const lines: Record<string, number | number[]> = { init: 2, mark: [12, 13], ... }`（纯数字场景可用 `Record<string, number>`），使用点只写 `codeLine: lines.mark`。锚点名从步骤语义字段（`action`/`status`/`mode`）派生；同一语义命中不同行用序号后缀区分（`match` / `match2`，同 `calcLca1` 的既有约定）。
 
 ---
 
@@ -79,12 +124,23 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 ### 2.1 相对行号与四语言映射准则
 - **基准统一**：代码高亮行号必须严格对应各个语言代码数组（`codeLanguages[lang]`）的 **1-based 相对行号**（第 1 行下标为 1）。
   $$\forall step, \quad 1 \le \text{step.codeLine}[lang] \le \text{codeLanguages}[lang].\text{length}$$
-- **严禁单一数字硬编码**：由于 Java、C++、Python、JavaScript 语法不同，代码行数天然存在差异，**严禁使用单值数字作为行号**，必须显式定义映射字典：
+- **严禁单一数字硬编码**：由于 Java、C++、Python、JavaScript 语法不同，代码行数天然存在差异，**严禁使用单值数字作为行号**。取行号有两级形态，优先用锚点路线：
   ```typescript
   // ❌ 严禁：单一硬编码行号，非 Java 语言必定错位
   codeLine: 7
 
-  // ✅ 正确：显式定义多语言映射字典
+  // ✅ 首选：@step: 锚点路线 —— 模板自带标签，行号由 CodeStepIndexer 编译得出，
+  //    模板改行行号自动跟随，永不漂移（多阶段算法族用 StageCodeRegistry）
+  //    模板里：'int cur = dfs(i + 1, j); // @step:branch_down // ⬇️ 向下探索'
+  import { codeStepIndexer } from '.../core/code-step-indexer';
+  const { cleanCode, anchorIndex } = codeStepIndexer.register('my-algo', {
+    java: [...], cpp: [...], python: [...], javascript: [...],
+  });
+  codeLine: codeStepIndexer.resolveHighlight('my-algo', 'branch_down', 'java') // 按锚点取行
+  // 多阶段算法族（stage × kind）：
+  // codeLine: registry.getAnchor(stage, kind, 'branch_down')  ← createStageCodeRegistry 工厂
+
+  // ✅ 退路：显式定义多语言映射字典（行号手写，改模板时必须人工同步）
   const lines = {
     entry:     { java: 2, cpp: 2, python: 2, javascript: 2 },
     guard:     { java: 3, cpp: 3, python: 3, javascript: 3 },
@@ -94,6 +150,7 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
     returnAns: { java: 15, cpp: 14, python: 12, javascript: 14 },
   };
   ```
+  无论哪级形态，行号字典/锚点查询必须**集中在文件顶部或 stage-codes 常量文件**，使用点只引用（`codeLine: lines.entry`），严禁在使用点按四语种四行展开（见故障 20），也严禁在使用点裸写行号字面量——单面板/单语种场景同样必须集中成 lines 字典（见故障 21）。
 
 ### 2.2 完整生命周期闭环不变量 (Full Lifecycle Invariant)
 每一个算法推演步进必须具备完整的生命周期，严禁直接跳到循环中：
@@ -396,7 +453,7 @@ export function buildStandardAlgorithmSteps(inputs: Record<string, any>): AlgoSt
 
 ### 8.2 终极提交前审查 Checklist (Pre-submission Checklist)
 - [ ] **行号自查**：所有行号来自独立代码片段（1-based），杜绝外部大文件行号（无 500+ / 600+ 超界行）。
-- [ ] **四语言齐备**：Java、C++、Python、JavaScript 行号字典完备映射，无单值硬编码。
+- [ ] **四语言齐备**：Java、C++、Python、JavaScript 行号字典完备映射，无单值硬编码；优先走 `@step:` 锚点路线（`CodeStepIndexer` / `StageCodeRegistry`），手写 lines 字典仅作退路且必须集中在文件顶部；使用点无四语种四行展开。
 - [ ] **生命周期闭环**：包含 Step 0（入口行）与收敛返回行，不跳步、不突兀。
 - [ ] **预处理推演**：循环预处理有显式可视化帧，杜绝后台静默执行。
 - [ ] **演化阶段对称**：四阶段 Tab、Card 标题、代码片段与推演逻辑 100% 语义对应。

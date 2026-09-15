@@ -170,6 +170,19 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
     const n = prices.length;
     const dp: DpCell[][] = Array.from({ length: n }, () => ['-', '-', '-']);
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: [5, 7], cpp: [6, 8], python: 5, javascript: [4, 6] },
+      transfer: {
+      java: { primary: [9, 11], context: [8] },
+      cpp: { primary: [10, 12], context: [9] },
+      python: { primary: [8, 10], context: [7] },
+      javascript: { primary: [8, 10], context: [7] },
+    },
+      returnAns: { java: 13, cpp: 14, python: 11, javascript: 12 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -205,7 +218,7 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
       message: `🎯 函数入口：买卖股票含冷冻期。股价 [${prices.join(', ')}]。卖出次日为冷冻期，不可买入。`,
       log: `entry: prices=[${prices.join(',')}]`,
       vars: makeVars({ changed: ['prices'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (n <= 1) return steps;
@@ -222,7 +235,7 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
       message: `🎬 初始化第 0 天：买入持有 dp[0][0] = -$${prices[0]}；冷冻与非冷冻均为 $0。`,
       log: `init: s0=-${prices[0]}, s1=0, s2=0`,
       vars: makeVars({ i: 0, curP: prices[0], s0: -prices[0], s1: 0, s2: 0, changed: ['s0', 's1', 's2'] }),
-      codeLine: { java: [5, 7], cpp: [6, 8], python: 5, javascript: [4, 6] },
+      codeLine: LINES.init,
     });
 
     // Loops
@@ -248,12 +261,7 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
         message: `⚡ 第 ${i} 天 (股价 $${p})：\n• 持有状态：dp[${i}][0] = $${dp[i][0]}\n• 刚卖出冷冻：dp[${i}][1] = $${dp[i][1]}\n• 非冷冻自由：dp[${i}][2] = $${dp[i][2]}。`,
         log: `day ${i}: s0=${dp[i][0]}, s1=${dp[i][1]}, s2=${dp[i][2]}`,
         vars: makeVars({ i, curP: p, s0: dp[i][0], s1: dp[i][1], s2: dp[i][2], changed: ['i', 'p', 's0', 's1', 's2'] }),
-        codeLine: {
-          java: { primary: [9, 11], context: [8] },
-          cpp: { primary: [10, 12], context: [9] },
-          python: { primary: [8, 10], context: [7] },
-          javascript: { primary: [8, 10], context: [7] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -265,7 +273,7 @@ export const StockWithCooldownSpec: AlgorithmSpec = {
       message: `🏁 算法结束：含冷冻期最大利润为 Math.max(${dp[n - 1][1]}, ${dp[n - 1][2]}) = $${finalAns}。`,
       log: `return: ans=${finalAns}`,
       vars: makeVars({ i: n - 1, s1: dp[n - 1][1], s2: dp[n - 1][2], changed: ['s2'] }),
-      codeLine: { java: 13, cpp: 14, python: 11, javascript: 12 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

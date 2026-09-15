@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  CUTTING_BAMBOO_STAGE1_CODES,
-  CUTTING_BAMBOO_STAGE1_LINES,
-  CUTTING_BAMBOO_STAGE2_CODES,
-  CUTTING_BAMBOO_STAGE2_LINES,
-  CUTTING_BAMBOO_STAGE3_CODES,
-  CUTTING_BAMBOO_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { CUTTING_BAMBOO_STAGE1_CODES, CUTTING_BAMBOO_STAGE2_CODES, CUTTING_BAMBOO_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderPartitionBars,
@@ -50,12 +43,7 @@ export function buildBambooStage1Steps(n: number): BambooStep[] {
     decision: '初始化暴力尝试',
     message: `开始暴力尝试：探索正整数 ${safeN} 分割成多段的所有可能乘积`,
     log: `[Init] 开始探索 n=${safeN} 的所有切分组合。`,
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE1_LINES.java.init,
-      cpp: CUTTING_BAMBOO_STAGE1_LINES.cpp.init,
-      python: CUTTING_BAMBOO_STAGE1_LINES.python.init,
-      javascript: CUTTING_BAMBOO_STAGE1_LINES.javascript.init,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 1, 'init'),
     stageNum: 1,
   });
 
@@ -73,12 +61,7 @@ export function buildBambooStage1Steps(n: number): BambooStep[] {
       decision: '小规模边界特判',
       message: `按题意要求至少切成 2 段：n=${safeN} 必须拆分为 1 和 ${safeN - 1}，最大乘积为 ${ans}`,
       log: `[Base] n=${safeN} <= 3，答案为 ${ans}。`,
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE1_LINES.java.base,
-        cpp: CUTTING_BAMBOO_STAGE1_LINES.cpp.base,
-        python: CUTTING_BAMBOO_STAGE1_LINES.python.base,
-        javascript: CUTTING_BAMBOO_STAGE1_LINES.javascript.base,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 1, 'base'),
       stageNum: 1,
     });
     return steps;
@@ -116,12 +99,7 @@ export function buildBambooStage1Steps(n: number): BambooStep[] {
       decision: `枚举切分: 首段 ${cut}`,
       message: `首刀试探切出长度 ${cut}，剩余部分长度 ${rest}，递归评估分支乘积 = ${prod}`,
       log: `[DFS Try] 首刀=${cut}, 剩余=${rest}, 分支乘积=${prod}`,
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE1_LINES.java.loop,
-        cpp: CUTTING_BAMBOO_STAGE1_LINES.cpp.loop,
-        python: CUTTING_BAMBOO_STAGE1_LINES.python.loop,
-        javascript: CUTTING_BAMBOO_STAGE1_LINES.javascript.loop,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 1, 'loop'),
       stageNum: 1,
     });
   }
@@ -135,12 +113,7 @@ export function buildBambooStage1Steps(n: number): BambooStep[] {
     decision: '暴力搜索完成',
     message: `全部分支搜索完毕，在小规模 n=${safeN} 下找到的最优组合乘积为 ${bestProd}`,
     log: `[DFS Done] 暴力完成，最优乘积=${bestProd}`,
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE1_LINES.java.ret,
-      cpp: CUTTING_BAMBOO_STAGE1_LINES.cpp.ret,
-      python: CUTTING_BAMBOO_STAGE1_LINES.python.ret,
-      javascript: CUTTING_BAMBOO_STAGE1_LINES.javascript.ret,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 1, 'ret'),
     stageNum: 1,
   });
 
@@ -161,12 +134,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
     decision: '启动贪心模运算推演',
     message: `开始贪心求解：总长度 n = ${n}，考察对 3 取模的余数决定最终切分策略`,
     log: `[Greedy Start] n=${n}, 考察模3特征。`,
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE2_LINES.java.check2,
-      cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.check2,
-      python: CUTTING_BAMBOO_STAGE2_LINES.python.check2,
-      javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.check2,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'check2'),
     stageNum: 2,
   });
 
@@ -183,12 +151,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
       decision: '特判 n=2',
       message: '特判边界：长度 2 必须拆成两段 1，乘积为 1',
       log: '[Base] n=2, return 1.',
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE2_LINES.java.check2,
-        cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.check2,
-        python: CUTTING_BAMBOO_STAGE2_LINES.python.check2,
-        javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.check2,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'check2'),
       stageNum: 2,
     });
     return steps;
@@ -207,12 +170,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
       decision: '特判 n=3',
       message: '特判边界：长度 3 必须拆为至少两段，最优拆法 1 × 2 = 2',
       log: '[Base] n=3, return 2.',
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE2_LINES.java.check3,
-        cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.check3,
-        python: CUTTING_BAMBOO_STAGE2_LINES.python.check3,
-        javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.check3,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'check3'),
       stageNum: 2,
     });
     return steps;
@@ -231,12 +189,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
     decision: '余数分析',
     message: `分析余数情况：n % 3 = ${rem}。当余数是 1 时需退回一个 3 组成 2×2；余数是 2 时直接乘 2；余数是 0 时全拆 3`,
     log: `[Remainder] rem=${rem}, m=${m}`,
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE2_LINES.java.mod3,
-      cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.mod3,
-      python: CUTTING_BAMBOO_STAGE2_LINES.python.mod3,
-      javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.mod3,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'mod3'),
     stageNum: 2,
   });
 
@@ -257,12 +210,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
       decision: '余数 1 退换处理 (2 × 2)',
       message: `关键贪心修正：若保留长度 1，对乘积没有任何增益；借出一个 3 变为 4，拆成 2 × 2 产生乘积 4！3 的个数变为 ${m}`,
       log: `[Rem 1 Fix] 借出1个3，构成 2*2，剩余3的个数 m=${m}`,
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE2_LINES.java.rem1,
-        cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.rem1,
-        python: CUTTING_BAMBOO_STAGE2_LINES.python.rem1,
-        javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.rem1,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'rem1'),
       stageNum: 2,
     });
     partsList.push({ length: 2, label: '2', color: '#3b82f6' });
@@ -278,12 +226,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
       decision: '余数 2 独立保留',
       message: `余数为 2，直接作为单独一段（乘积 × 2），无需退还 3`,
       log: `[Rem 2] 独立保留一段 2，3 的个数 m=${m}`,
-      codeLine: {
-        java: CUTTING_BAMBOO_STAGE2_LINES.java.rem2,
-        cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.rem2,
-        python: CUTTING_BAMBOO_STAGE2_LINES.python.rem2,
-        javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.rem2,
-      },
+      codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'rem2'),
       stageNum: 2,
     });
     partsList.push({ length: 2, label: '2', color: '#3b82f6' });
@@ -314,12 +257,7 @@ export function buildBambooStage2Steps(n: number): BambooStep[] {
     decision: '快速幂求模收敛',
     message: `利用快速幂在 O(log m) 时间内求出 3^${m} 对 10^9+7 的余数，再与尾巴系数 ${ans} 相乘得出全局最优解`,
     log: `[Fast Power] 3^${m} mod ${MOD} = ${powerRes}, Final Answer = ${finalProd}`,
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE2_LINES.java.pow,
-      cpp: CUTTING_BAMBOO_STAGE2_LINES.cpp.pow,
-      python: CUTTING_BAMBOO_STAGE2_LINES.python.pow,
-      javascript: CUTTING_BAMBOO_STAGE2_LINES.javascript.pow,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 2, 'pow'),
     stageNum: 2,
   });
 
@@ -342,12 +280,7 @@ export function buildBambooStage3Steps(n: number): BambooStep[] {
     decision: '连续极值反证法引入',
     message: '数学证明视角：将离散整数拆分推广为实数域函数 f(x) = x^(1/x) 并求导寻驻点',
     log: '[Proof Start] 构建实数导数模型 f(x) = x^(1/x)',
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE3_LINES.java.intro,
-      cpp: CUTTING_BAMBOO_STAGE3_LINES.cpp.intro,
-      python: CUTTING_BAMBOO_STAGE3_LINES.python.intro,
-      javascript: CUTTING_BAMBOO_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 3, 'intro'),
     stageNum: 3,
   });
 
@@ -363,12 +296,7 @@ export function buildBambooStage3Steps(n: number): BambooStep[] {
     decision: '求导寻得驻点 e',
     message: "导数在 x < e 时大于0（单调增），在 x > e 时小于0（单调减）。驻点 x = e ≈ 2.718 处取得连续全局唯一最大值！",
     log: "[Proof Deriv] x = e 是极大值点。",
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE3_LINES.java.deriv,
-      cpp: CUTTING_BAMBOO_STAGE3_LINES.cpp.deriv,
-      python: CUTTING_BAMBOO_STAGE3_LINES.python.deriv,
-      javascript: CUTTING_BAMBOO_STAGE3_LINES.javascript.deriv,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 3, 'deriv'),
     stageNum: 3,
   });
 
@@ -384,12 +312,7 @@ export function buildBambooStage3Steps(n: number): BambooStep[] {
     decision: '离散取整贪心成立',
     message: '离散正整数中与自然常数 e 最近的数是 3，其次是 2。相同总和 6 时，两个 3 乘积为 9，三个 2 乘积只有 8。故贪心尽全力拆 3 为全局唯一最优解！',
     log: '[Proof Verified] 3^2 > 2^3，尽力拆3贪心策略数学证明成立。',
-    codeLine: {
-      java: CUTTING_BAMBOO_STAGE3_LINES.java.comp,
-      cpp: CUTTING_BAMBOO_STAGE3_LINES.cpp.comp,
-      python: CUTTING_BAMBOO_STAGE3_LINES.python.comp,
-      javascript: CUTTING_BAMBOO_STAGE3_LINES.javascript.comp,
-    },
+    codeLine: getGreedy090Anchor('cutting-bamboo', 3, 'comp'),
     stageNum: 3,
   });
 

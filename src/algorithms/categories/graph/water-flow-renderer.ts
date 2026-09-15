@@ -9,6 +9,14 @@ import {
   WATER_FLOW_ANALYSIS_HTML,
   WATER_FLOW_CODE_LANGUAGES,
 } from './water-flow-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3],
+  pacific: [20, 21, 22, 23],
+  atlantic: [20, 21, 22, 23],
+  intersect: [14, 15, 16],
+  done: 18,
+};
 
 export interface WFStep {
   heights: number[][];
@@ -69,7 +77,7 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
     action: 'init',
     statusText: `初始化 ${R}×${C} 高度网格。水从高向低流，采用逆向思维：从双洋边界逆流向更高或等高格子搜索。`,
     log: `初始化: ${R}×${C} 地形高度矩阵`,
-    codeLine: [1, 2, 3],
+    codeLine: lines.init,
   });
 
   // 1. 太平洋搜索 (左边界和上边界)
@@ -92,7 +100,7 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
       action: 'pacific',
       statusText: `太平洋逆流登山访问 (${r}, ${c}) [高度=${heights[r][c]}]，标记为太平洋可达。当前太平洋可达: ${pacCount} 格。`,
       log: `太平洋可达: (${r}, ${c}) 高度=${heights[r][c]}`,
-      codeLine: [20, 21, 22, 23],
+      codeLine: lines.pacific,
     });
 
     for (const [dr, dc] of DIRS) {
@@ -123,7 +131,7 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
       action: 'atlantic',
       statusText: `大西洋逆流登山访问 (${r}, ${c}) [高度=${heights[r][c]}]，标记为大西洋可达。当前大西洋可达: ${atlCount} 格。`,
       log: `大西洋可达: (${r}, ${c}) 高度=${heights[r][c]}`,
-      codeLine: [20, 21, 22, 23],
+      codeLine: lines.atlantic,
     });
 
     for (const [dr, dc] of DIRS) {
@@ -154,7 +162,7 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
           action: 'intersect',
           statusText: `坐标 (${r}, ${c}) 既能流向太平洋又能流向大西洋！找到第 ${bothCount} 处双洋枢纽。`,
           log: `★ 双洋交集: (${r}, ${c}) [高度=${heights[r][c]}]`,
-          codeLine: [14, 15, 16],
+          codeLine: lines.intersect,
         });
       }
     }
@@ -174,7 +182,7 @@ export function buildWaterFlowSteps(heights: number[][] = DEFAULT_HEIGHTS): WFSt
     action: 'done',
     statusText: `🎉 太平洋大西洋水流分析完成！共发现 ${bothCount} 个格子既可流向太平洋也可流向大西洋。`,
     log: `✓ 分析完成: 双洋连通点共 ${bothCount} 处`,
-    codeLine: 18,
+    codeLine: lines.done,
   });
 
   return steps;

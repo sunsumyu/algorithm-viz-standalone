@@ -8,6 +8,7 @@
 
 import { DpDemoStep, DpTreeNode, clone1d } from './dp-demo-visualizer';
 import { KeyPointsData } from '../../../core/code-panel';
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 
 export type EvolutionModeId = 'naive-recursive' | 'memo-topdown' | 'tabulation-bottomup' | 'space-optimized';
 
@@ -395,15 +396,9 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
     };
   }
 
+  // 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
   function cloneTree(node: DpTreeNode | null): DpTreeNode | null {
-    if (!node) return null;
-    return {
-      id: node.id,
-      val: node.val,
-      status: node.status,
-      tag: node.tag,
-      children: node.children ? node.children.map(cloneTree).filter((c): c is DpTreeNode => c !== null) : [],
-    };
+    return cloneStateDepTree(node);
   }
 
   function recurse(k: number, currentSubtree: DpTreeNode): number {
@@ -494,15 +489,9 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
     };
   }
 
+  // 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
   function cloneTree(node: DpTreeNode | null): DpTreeNode | null {
-    if (!node) return null;
-    return {
-      id: node.id,
-      val: node.val,
-      status: node.status,
-      tag: node.tag,
-      children: node.children ? node.children.map(cloneTree).filter((c): c is DpTreeNode => c !== null) : [],
-    };
+    return cloneStateDepTree(node);
   }
 
   function recurse(k: number, currentSubtree: DpTreeNode): number {

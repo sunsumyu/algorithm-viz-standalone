@@ -177,6 +177,13 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
     }
 
     const n = nums.length;
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 4, cpp: 4, python: 4, javascript: 4 },
+      returnAns: { java: 6, cpp: 6, python: 5, javascript: 6 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -212,7 +219,7 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：打家劫舍 II（环形）。首尾房 0 与 ${n - 1} 环形相邻，不可同时被偷。采用【化环为链破圈法】。`,
       log: `entry: nums=[${nums.join(',')}]`,
       vars: makeVars({ stage: '入口准备', changed: ['nums', 'n', 'st'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (n === 1) {
@@ -222,7 +229,7 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
         message: `🏁 只有 1 间房：直接偷走 nums[0] = $${nums[0]}。`,
         log: `only one: ans=${nums[0]}`,
         vars: makeVars({ curMax: nums[0], changed: ['mx'] }),
-        codeLine: { java: 4, cpp: 4, python: 4, javascript: 4 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -243,7 +250,7 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
       message: `🎬 阶段一【包含首房，放弃尾房】：考察区间 [0 .. ${n - 2}]，线性 DP 求得最优值 = $${ans1}。`,
       log: `range [0..${n-2}]: ans1=${ans1}`,
       vars: makeVars({ stage: '阶段一 [0..n-2]', range: `[0..${n - 2}]`, curAns1: ans1, curMax: ans1, changed: ['st', 'rg', 'a1', 'mx'] }),
-      codeLine: { java: 6, cpp: 6, python: 5, javascript: 6 },
+      codeLine: LINES.returnAns,
     });
 
     // Phase 2: Range [1 .. n-1]
@@ -262,7 +269,7 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
       message: `🎬 阶段二【包含尾房，放弃首房】：考察区间 [1 .. ${n - 1}]，线性 DP 求得最优值 = $${ans2}。`,
       log: `range [1..${n-1}]: ans2=${ans2}`,
       vars: makeVars({ stage: '阶段二 [1..n-1]', range: `[1..${n - 1}]`, curAns1: ans1, curAns2: ans2, curMax: Math.max(ans1, ans2), changed: ['st', 'rg', 'a2', 'mx'] }),
-      codeLine: { java: 6, cpp: 6, python: 5, javascript: 6 },
+      codeLine: LINES.returnAns,
     });
 
     const finalAns = Math.max(ans1, ans2);
@@ -271,7 +278,7 @@ export const HouseRobberIiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：两方案取最大值 Math.max(${ans1}, ${ans2}) = $${finalAns}。`,
       log: `return: max(${ans1}, ${ans2}) = ${finalAns}`,
       vars: makeVars({ stage: '计算结束', curAns1: ans1, curAns2: ans2, curMax: finalAns, changed: ['st', 'mx'] }),
-      codeLine: { java: 6, cpp: 6, python: 5, javascript: 6 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

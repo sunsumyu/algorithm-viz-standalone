@@ -1,12 +1,20 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
-import { cloneTree, build2DDPDependencyTree, findNodeIdByCoord } from './strategy-helpers';
+import { cloneTree } from './strategy-helpers';
+import {
+  AbstractIntervalTableCompiler,
+  type IntervalTableContext,
+  type IntervalConditionEvalResult,
+  type IntervalTransferResult,
+  type IntervalReturnInfo
+} from './abstract-interval-table-compiler';
 
 
 export function compileLongestPalindromicStage1or2(
     model: IYamlAlgorithmModel,
     isMemo: boolean = false,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
     const s = ((model.defaultParams as any)?.s || 'bbbab') as string;
     const n = s.length;
@@ -378,116 +386,105 @@ export function compileLongestPalindromicStage1or2(
     return generated;
   }
 
-export function compileLongestPalindromicStage3(
-    model: IYamlAlgorithmModel,
-    anchorMap?: Record<string, number>
-  ): UniversalStep[] {
-    const s = ((model.defaultParams as any)?.s || 'bbbab') as string;
-    const n = s.length;
-
-    const steps: UniversalStep[] = [];
-    const dp: (number | null)[][] = Array.from({ length: n }, () => new Array(n).fill(null));
-
-    const lineInit = anchorMap?.init || 4;
-    const lineInitDiag = anchorMap?.init_diag || 6;
-    const lineTransferMatch = anchorMap?.transfer_match || 14;
-    const lineTransferDiff = anchorMap?.transfer_diff || 16;
-    const lineReturn = anchorMap?.return || 20;
-
-    steps.push({
-      type: 'init',
-      line: lineInit,
-      i: 0,
-      j: 0,
-      grid: JSON.parse(JSON.stringify(dp)),
-      tag: '创建 n×n 状态表',
-      log: `| 📦 创建 ${n}×${n} 的二维 DP 状态表格 (上三角)`,
-      msg: `创建 <code>${n}×${n}</code> 的二维 DP 表格，<code>dp[i][j]</code> 表示子串 <code>s[i..j]</code> 的最长回文子序列长度。`
-    });
-
-    for (let i = 0; i < n; i++) {
-      dp[i][i] = 1;
-      steps.push({
+class LongestPalindromicTableCompiler extends AbstractIntervalTableCompiler {
+  protected extractString(model: IYamlAlgorithmModel): string {
+    return ((model.defaultParams as any)?.s || 'bbbab') as string;
+  }
+  protected getInitMessage(ctx: IntervalTableContext): string {
+    return `创建 <code>${ctx.n}×${ctx.n}</code> 的二维 DP 表格，<code>dp[i][j]</code> 表示子串 <code>s[i..j]</code> 的最长回文子序列长度。`;
+  }
+  protected getInnerLoopStartOffset(): number {
+    return 1; // j 从 i+1 开始
+  }
+  protected override performDiagInit(ctx: IntervalTableContext, emitStep: (stepData: any) => void): void {
+    const lineInitDiag = ctx.anchorMap.init_diag || 6;
+    for (let i = 0; i < ctx.n; i++) {
+      ctx.dp[i][i] = 1;
+      emitStep({
         type: 'init-diag',
         line: lineInitDiag,
         i,
         j: i,
-        grid: JSON.parse(JSON.stringify(dp)),
+        val: 1,
+        grid: JSON.parse(JSON.stringify(ctx.dp)),
         tag: `对角线初始化: dp[${i}][${i}] = 1`,
-        log: `| 🎬 对角线单字符初始化: dp[${i}][${i}] = 1 ('${s[i]}')`,
-        msg: `对角线初始化：单字符 <code>'${s[i]}'</code> 回文长度必然为 <code>dp[${i}][${i}] = 1</code>。`
+        log: `| 🎬 对角线单字符初始化: dp[${i}][${i}] = 1 ('${ctx.s[i]}')`,
+        msg: `对角线初始化：单字符 <code>'${ctx.s[i]}'</code> 回文长度必然为 <code>dp[${i}][${i}] = 1</code>。`,
+        gridHighlight: { i, j: i }
       });
     }
-
-    for (let i = n - 1; i >= 0; i--) {
-      for (let j = i + 1; j < n; j++) {
-        const isMatch = s[i] === s[j];
-
-        if (isMatch) {
-          const fromDiag = dp[i + 1][j - 1] ?? 0;
-          const sum = fromDiag + 2;
-          dp[i][j] = sum;
-
-          steps.push({
-            type: 'transfer',
-            line: lineTransferMatch,
-            i,
-            j,
-            topI: i + 1,
-            topJ: j - 1,
-            leftI: -1,
-            leftJ: -1,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: `端点相同 '${s[i]}': dp[${i+1}][${j-1}] + 2 = ${sum}`,
-            log: `| 🔄 端点字符相同 s[${i}] == s[${j}] ('${s[i]}'): dp[${i}][${j}] = dp[${i + 1}][${j - 1}] (${fromDiag}) + 2 = ${sum}`,
-            msg: `端点字符相同 <code>s[${i}] == s[${j}] == '${s[i]}'</code>：<code>dp[${i}][${j}] = dp[${i + 1}][${j - 1}] (${fromDiag}) + 2 = <strong>${sum}</strong></code>。`
-          });
-        } else {
-          const fromDown = dp[i + 1][j] ?? 0;
-          const fromLeft = dp[i][j - 1] ?? 0;
-          const maxVal = Math.max(fromDown, fromLeft);
-          dp[i][j] = maxVal;
-
-          steps.push({
-            type: 'transfer',
-            line: lineTransferDiff,
-            i,
-            j,
-            topI: i + 1,
-            topJ: j,
-            leftI: i,
-            leftJ: j - 1,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: `端点不同: max(下, 左) = ${maxVal}`,
-            log: `| 🔄 端点字符不同 s[${i}]('${s[i]}') != s[${j}]('${s[j]}'): dp[${i}][${j}] = max(下=${fromDown}, 左=${fromLeft}) = ${maxVal}`,
-            msg: `端点字符不同 <code>s[${i}] ('${s[i]}') != s[${j}] ('${s[j]}')</code>：<code>dp[${i}][${j}] = max(下 ${fromDown}, 左 ${fromLeft}) = <strong>${maxVal}</strong></code>。`
-          });
-        }
-      }
-    }
-
-    steps.push({
-      type: 'return',
-      line: lineReturn,
-      i: 0,
-      j: n - 1,
-      grid: JSON.parse(JSON.stringify(dp)),
-      tag: '返回最终结果',
-      log: `| 🏆 上三角填表完成！最长回文子序列长度 dp[0][${n - 1}] = ${dp[0][n - 1]}`,
-      msg: `🏆 二维上三角填表全部完成！字符串 <code>"${s}"</code> 的最长回文子序列长度为: <strong>${dp[0][n - 1]}</strong>。`
-    });
-
-    for (const step of steps) {
-      step.treeRoot = build2DDPDependencyTree(n, n, 'forward', undefined, step.grid, step.i, step.j);
-      step.activeNodeId = findNodeIdByCoord(step.treeRoot, step.i, step.j);
-    }
-
-    return steps;
   }
+  protected evaluateCondition(i: number, j: number, ctx: IntervalTableContext): IntervalConditionEvalResult {
+    const c1 = ctx.s[i];
+    const c2 = ctx.s[j];
+    const isMatch = c1 === c2;
+    const tag = isMatch ? `端点相同 '${c1}' == '${c2}'` : `端点不同 '${c1}' != '${c2}'`;
+    const log = isMatch
+      ? `| 🔍 比对端点 s[${i}]('${c1}') 与 s[${j}]('${c2}')：相同！`
+      : `| 🔍 比对端点 s[${i}]('${c1}') 与 s[${j}]('${c2}')：不同！`;
+    const msg = isMatch
+      ? `端点字符相同：<code>s[${i}] == s[${j}] == '${c1}'</code>，可向内层继承并加 2。`
+      : `端点字符不同：<code>s[${i}] ('${c1}') != s[${j}] ('${c2}')</code>，择优舍弃左端或右端字符。`;
+    return { isMatch, charI: c1, charJ: c2, tag, log, msg };
+  }
+  protected computeTransfer(i: number, j: number, cond: IntervalConditionEvalResult, ctx: IntervalTableContext): IntervalTransferResult {
+    if (cond.isMatch) {
+      const fromDiag = ctx.dp[i + 1][j - 1] ?? 0;
+      const sum = fromDiag + 2;
+      return {
+        val: sum,
+        lineKey: 'transfer_match',
+        topI: i + 1,
+        topJ: j - 1,
+        leftI: -1,
+        leftJ: -1,
+        tag: `端点相同 '${cond.charI}': dp[${i+1}][${j-1}] + 2 = ${sum}`,
+        log: `| 🔄 端点字符相同 s[${i}] == s[${j}] ('${cond.charI}'): dp[${i}][${j}] = dp[${i + 1}][${j - 1}] (${fromDiag}) + 2 = ${sum}`,
+        msg: `端点字符相同 <code>s[${i}] == s[${j}] == '${cond.charI}'</code>：<code>dp[${i}][${j}] = dp[${i + 1}][${j - 1}] (${fromDiag}) + 2 = <strong>${sum}</strong></code>。`
+      };
+    } else {
+      const fromDown = ctx.dp[i + 1][j] ?? 0;
+      const fromLeft = ctx.dp[i][j - 1] ?? 0;
+      const maxVal = Math.max(fromDown, fromLeft);
+      return {
+        val: maxVal,
+        lineKey: 'transfer_diff',
+        topI: i + 1,
+        topJ: j,
+        leftI: i,
+        leftJ: j - 1,
+        tag: `端点不同: max(下, 左) = ${maxVal}`,
+        log: `| 🔄 端点字符不同 s[${i}]('${cond.charI}') != s[${j}]('${cond.charJ}'): dp[${i}][${j}] = max(下=${fromDown}, 左=${fromLeft}) = ${maxVal}`,
+        msg: `端点字符不同 <code>s[${i}] ('${cond.charI}') != s[${j}] ('${cond.charJ}')</code>：<code>dp[${i}][${j}] = max(下 ${fromDown}, 左 ${fromLeft}) = <strong>${maxVal}</strong></code>。`
+      };
+    }
+  }
+  protected getReturnInfo(ctx: IntervalTableContext): IntervalReturnInfo {
+    const ans = ctx.dp[0][ctx.n - 1] ?? 0;
+    return {
+      i: 0,
+      j: ctx.n - 1,
+      val: ans,
+      tag: '返回最终结果',
+      log: `| 🏆 上三角填表完成！最长回文子序列长度 dp[0][${ctx.n - 1}] = ${ans}`,
+      msg: `🏆 二维上三角填表全部完成！字符串 <code>"${ctx.s}"</code> 的最长回文子序列长度为: <strong>${ans}</strong>。`
+    };
+  }
+}
+
+export function compileLongestPalindromicStage3(
+  model: IYamlAlgorithmModel,
+  anchorMap?: Record<string, number>,
+  direction: 'forward' | 'reverse' = 'forward'
+): UniversalStep[] {
+  const compiler = new LongestPalindromicTableCompiler();
+  return compiler.compile(model, anchorMap || {});
+}
 
 export function compileLongestPalindromicStage4(
     model: IYamlAlgorithmModel,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
     const s = ((model.defaultParams as any)?.s || 'bbbab') as string;
     const n = s.length;
@@ -505,10 +502,15 @@ export function compileLongestPalindromicStage4(
     steps.push({
       type: 'init',
       line: lineInit,
-      i: 0,
-      j: 0,
+      i: n - 1,
+      j: n - 1,
+      curL: n - 1,
+      curR: n - 1,
       activeSlot: 0,
       memo: [...memo],
+      dp: [...memo],
+      leftDown: 0,
+      s,
       memoSnapshot: [...memo],
       grid: JSON.parse(JSON.stringify(gridState)),
       tag: '初始化一维状态数组',
@@ -526,10 +528,15 @@ export function compileLongestPalindromicStage4(
         line: lineLoopI,
         i,
         j: i,
+        curL: i,
+        curR: i,
         activeSlot: i,
         slotMode: 'updated',
         memoj: 1,
         memo: [...memo],
+        dp: [...memo],
+        leftDown: pre,
+        s,
         memoSnapshot: [...memo],
         grid: JSON.parse(JSON.stringify(gridState)),
         tag: `第 ${i} 行单字符初始化 memo[${i}] = 1`,
@@ -551,12 +558,17 @@ export function compileLongestPalindromicStage4(
             line: lineAssignMatch,
             i,
             j,
+            curL: i,
+            curR: j,
             activeSlot: j,
             slotMode: 'updated',
             down: temp,
             right: pre,
             memoj: sum,
             memo: [...memo],
+            dp: [...memo],
+            leftDown: pre,
+            s,
             memoSnapshot: [...memo],
             grid: JSON.parse(JSON.stringify(gridState)),
             tag: `端点相同: pre(${pre}) + 2 = ${sum}`,
@@ -575,12 +587,17 @@ export function compileLongestPalindromicStage4(
             line: lineCalcMax,
             i,
             j,
+            curL: i,
+            curR: j,
             activeSlot: j,
             slotMode: 'updated',
             down: downVal,
             right: leftVal,
             memoj: maxVal,
             memo: [...memo],
+            dp: [...memo],
+            leftDown: pre,
+            s,
             memoSnapshot: [...memo],
             grid: JSON.parse(JSON.stringify(gridState)),
             tag: `端点不同: max(下, 左) = ${maxVal}`,
@@ -598,12 +615,17 @@ export function compileLongestPalindromicStage4(
       line: lineReturn,
       i: 0,
       j: n - 1,
+      curL: 0,
+      curR: n - 1,
       activeSlot: n - 1,
       slotMode: 'final',
       down: memo[n - 1],
       right: memo[n - 1],
       memoj: memo[n - 1],
       memo: [...memo],
+      dp: [...memo],
+      leftDown: memo[n - 2] ?? 0,
+      s,
       memoSnapshot: [...memo],
       grid: JSON.parse(JSON.stringify(gridState)),
       tag: '最终答案',

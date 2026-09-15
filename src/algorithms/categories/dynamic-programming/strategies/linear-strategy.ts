@@ -4,7 +4,41 @@
  */
 
 import { DpDemoStep, DpTreeNode } from '../dp-demo-visualizer';
+import { cloneStateDepTree } from '../../../../core/strategies/tree-clone';
 import { IEvolutionStrategy, EvolutionCodeContext, EvolutionStepContext, StageCodeConfig, AlgoCategory } from './types';
+
+// 演示步骤行号集中表：各 stage 多语言模板的语义锚点（值与原硬编码逐位一致）
+const LINEAR_DEMO_LINES = {
+  // space-optimized 阶段（滚动变量 O(1) 演示）
+  spEntry: { java: 4, python: 3, cpp: 4, javascript: 2 },
+  spLoop: {
+    java: { primary: 5, context: 4 },
+    python: { primary: 4, context: 3 },
+    cpp: { primary: 5, context: 4 },
+    javascript: { primary: 3, context: 2 },
+  },
+  spCompute: {
+    java: { primary: 6, context: 5 },
+    python: { primary: 5, context: 4 },
+    cpp: { primary: 6, context: 5 },
+    javascript: { primary: 4, context: 3 },
+  },
+  spSlide: {
+    java: { primary: [7, 8], context: 5 },
+    python: { primary: 6, context: 4 },
+    cpp: { primary: [7, 8], context: 5 },
+    javascript: { primary: [5, 6], context: 3 },
+  },
+  spReturn: { java: 10, python: 7, cpp: 10, javascript: 7 },
+  // naive-recursive / memo-topdown 阶段（递归树演示）
+  entry: { naive: { java: 3, python: 6, cpp: 3, javascript: 6 }, memo: { java: 4, python: 9, cpp: 6, javascript: 8 } },
+  enterDfs: { naive: { java: 5, python: 3, cpp: 4, javascript: 2 }, memo: { java: 7, python: 4, cpp: 8, javascript: 3 } },
+  baseCase: { naive: { java: 6, python: 4, cpp: 5, javascript: 3 }, memo: { java: 8, python: 5, cpp: 9, javascript: 4 } },
+  memoHit: { java: 9, python: 6, cpp: 10, javascript: 5 }, // 仅 memo 阶段执行
+  branchLeft: { naive: { java: 7, python: 5, cpp: 6, javascript: 4 }, memo: { java: 10, python: 7, cpp: 11, javascript: 6 } },
+  branchRight: { naive: { java: 8, python: 5, cpp: 6, javascript: 4 }, memo: { java: 10, python: 7, cpp: 11, javascript: 6 } },
+  merge: { naive: { java: 9, python: 5, cpp: 6, javascript: 4 }, memo: { java: 10, python: 8, cpp: 11, javascript: 6 } },
+};
 
 export class LinearEvolutionStrategy implements IEvolutionStrategy {
   canHandle(category: AlgoCategory): boolean {
@@ -532,7 +566,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
         rollingVars: { prev2: '-', prev1: '-', curr: '-', activeCard: 'none', rule: 'solve()' },
         message: `🚀 【主函数入口】初始化滚动变量 prev2 = 1, prev1 = 1，准备 O(1) 空间递推。`,
         log: `entry: solve()`,
-        codeLine: { java: 4, python: 3, cpp: 4, javascript: 2 },
+        codeLine: LINEAR_DEMO_LINES.spEntry,
         metrics: { '当前执行阶段': '🚀 主函数入口', '空间复杂度': 'O(1) 常数空间' },
         vars: [
           { name: '输入规模 n', value: String(n), type: 'number' },
@@ -556,12 +590,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           rollingVars: { prev2, prev1, curr: '-', activeCard: 'none', rule: `for i = ${i} <= ${n}` },
           message: `🔄 【循环条件判断】推进到第 ${i} 步 (i <= ${n})，准备根据前两项递推计算当前项。`,
           log: `for i = ${i}`,
-          codeLine: {
-            java: { primary: 5, context: 4 },
-            python: { primary: 4, context: 3 },
-            cpp: { primary: 5, context: 4 },
-            javascript: { primary: 3, context: 2 },
-          },
+          codeLine: LINEAR_DEMO_LINES.spLoop,
           metrics: { prev2, prev1, i, '空间复杂度': 'O(1)' },
           vars: [
             { name: 'i (当前步)', value: String(i), type: 'number', changed: true },
@@ -576,12 +605,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           rollingVars: { prev2, prev1, curr: currVal, activeCard: 'curr', rule: `curr = ${currVal}` },
           message: `✨ 【计算当前最优解 curr】推进到第 ${i} 步：curr = prev1 (${prev1}) + prev2 (${prev2}) = ${currVal}。`,
           log: `step ${i}: curr = ${currVal}`,
-          codeLine: {
-            java: { primary: 6, context: 5 },
-            python: { primary: 5, context: 4 },
-            cpp: { primary: 6, context: 5 },
-            javascript: { primary: 4, context: 3 },
-          },
+          codeLine: LINEAR_DEMO_LINES.spCompute,
           metrics: { prev2, prev1, curr: currVal, i, '空间复杂度': 'O(1)' },
           vars: [
             { name: 'i (当前步)', value: String(i), type: 'number' },
@@ -597,12 +621,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           rollingVars: { prev2: prev1, prev1: currVal, curr: currVal, activeCard: 'prev1', rule: `prev2=${prev1}, prev1=${currVal}` },
           message: `🔄 【滚动覆写前移】滑动窗口前移：prev2 = ${prev1}; prev1 = ${currVal};。`,
           log: `slide: prev2=${prev1}, prev1=${currVal}`,
-          codeLine: {
-            java: { primary: [7, 8], context: 5 },
-            python: { primary: 6, context: 4 },
-            cpp: { primary: [7, 8], context: 5 },
-            javascript: { primary: [5, 6], context: 3 },
-          },
+          codeLine: LINEAR_DEMO_LINES.spSlide,
           metrics: { prev2: prev1, prev1: currVal, i, '空间复杂度': 'O(1)' },
           vars: [
             { name: 'prev2 (前移更新)', value: String(prev1), type: 'number', changed: true },
@@ -619,7 +638,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
         rollingVars: { prev2, prev1, curr: finalAnswer, activeCard: 'prev1', rule: `return ${finalAnswer};` },
         message: `🏁 【计算完毕返回】执行 return prev1 (${finalAnswer})，全程仅使用 O(1) 常数额外空间。`,
         log: `return: ${finalAnswer}`,
-        codeLine: { java: 10, python: 7, cpp: 10, javascript: 7 },
+        codeLine: LINEAR_DEMO_LINES.spReturn,
         metrics: { answer: finalAnswer, '空间复杂度': 'O(1) 常数空间' },
         vars: [
           { name: '最终最优解', value: String(finalAnswer), type: 'number', changed: true },
@@ -645,15 +664,9 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
         };
       }
 
+      // 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
       function cloneTree(node: DpTreeNode | null): DpTreeNode | null {
-        if (!node) return null;
-        return {
-          id: node.id,
-          val: node.val,
-          status: node.status,
-          tag: node.tag,
-          children: node.children ? node.children.map(cloneTree).filter((c): c is DpTreeNode => c !== null) : [],
-        };
+        return cloneStateDepTree(node);
       }
 
       const problemScale = Math.min(n, 5);
@@ -665,9 +678,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
         tree: cloneTree(rootTree),
         message: `🚀 【主函数入口】准备自顶向下分治递归求解 f(${problemScale})。`,
         log: `entry: f(${problemScale})`,
-        codeLine: isMemo
-          ? { java: 4, python: 9, cpp: 6, javascript: 8 }
-          : { java: 3, python: 6, cpp: 3, javascript: 6 },
+        codeLine: isMemo ? LINEAR_DEMO_LINES.entry.memo : LINEAR_DEMO_LINES.entry.naive,
         metrics: { '当前执行阶段': '🚀 主函数入口', '目标规模': `f(${problemScale})`, '总函数调用': 0 },
         vars: [
           { name: 'i (子问题规模)', value: String(problemScale), type: 'number' },
@@ -686,9 +697,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `📥 【进入 helper 函数】求解 f(i = ${k})，当前递归深度 depth = ${depth}。`,
           log: `helper(${k}) [调用 #${calls}]`,
-          codeLine: isMemo
-            ? { java: 7, python: 4, cpp: 8, javascript: 3 }
-            : { java: 5, python: 3, cpp: 4, javascript: 2 },
+          codeLine: isMemo ? LINEAR_DEMO_LINES.enterDfs.memo : LINEAR_DEMO_LINES.enterDfs.naive,
           metrics: { '当前子问题': `f(${k})`, '递归深度': depth, '总函数调用': calls },
           vars: [
             { name: 'i (子问题规模)', value: String(k), type: 'number', changed: true },
@@ -708,9 +717,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `🍃 【Base Case 命中】子问题规模 i = ${k} <= 2，直接返回基础值 ${val}。`,
             log: `base: f(${k}) ➔ ${val}`,
-            codeLine: isMemo
-              ? { java: 8, python: 5, cpp: 9, javascript: 4 }
-              : { java: 6, python: 4, cpp: 5, javascript: 3 },
+            codeLine: isMemo ? LINEAR_DEMO_LINES.baseCase.memo : LINEAR_DEMO_LINES.baseCase.naive,
             metrics: { '当前子问题': `f(${k})`, '返回值': val, '总函数调用': calls },
             vars: [
               { name: 'i (子问题规模)', value: String(k), type: 'number' },
@@ -731,7 +738,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `⚡ 【备忘录命中剪枝】memo[${k}] 命中缓存 ${cached}！直接 O(1) 查表返回。`,
             log: `memo hit: memo[${k}] = ${cached}`,
-            codeLine: { java: 9, python: 6, cpp: 10, javascript: 5 },
+            codeLine: LINEAR_DEMO_LINES.memoHit,
             metrics: { '当前子问题': `f(${k})`, '命中缓存': cached, '剪枝效率': 'O(1)' },
             vars: [
               { name: 'i (子问题规模)', value: String(k), type: 'number' },
@@ -748,9 +755,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `👈 【执行左分支调用】准备调用 helper(i - 1) 即 helper(${k - 1})。`,
           log: `call left: helper(${k - 1})`,
-          codeLine: isMemo
-            ? { java: 10, python: 7, cpp: 11, javascript: 6 }
-            : { java: 7, python: 5, cpp: 6, javascript: 4 },
+          codeLine: isMemo ? LINEAR_DEMO_LINES.branchLeft.memo : LINEAR_DEMO_LINES.branchLeft.naive,
           metrics: { '当前子问题': `f(${k})`, '执行动作': '👈 左分支递归' },
           vars: [
             { name: 'i (子问题规模)', value: String(k), type: 'number' },
@@ -769,9 +774,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `👉 【执行右分支调用】准备调用 helper(i - 2) 即 helper(${k - 2})。`,
           log: `call right: helper(${k - 2})`,
-          codeLine: isMemo
-            ? { java: 10, python: 7, cpp: 11, javascript: 6 }
-            : { java: 8, python: 5, cpp: 6, javascript: 4 },
+          codeLine: isMemo ? LINEAR_DEMO_LINES.branchRight.memo : LINEAR_DEMO_LINES.branchRight.naive,
           metrics: { '当前子问题': `f(${k})`, '执行动作': '👉 右分支递归' },
           vars: [
             { name: 'i (子问题规模)', value: String(k), type: 'number' },
@@ -798,9 +801,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
             ? `💾 【写入备忘录并返回】回溯至 f(${k})：memo[${k}] = ${leftVal} + ${rightVal} = ${total}，return ${total}。`
             : `🔄 【回溯归并】回溯至 f(${k})：合并 left (${leftVal}) + right (${rightVal}) ➔ return ${total}。`,
           log: `merge: f(${k}) = ${total}`,
-          codeLine: isMemo
-            ? { java: 10, python: 8, cpp: 11, javascript: 6 }
-            : { java: 9, python: 5, cpp: 6, javascript: 4 },
+          codeLine: isMemo ? LINEAR_DEMO_LINES.merge.memo : LINEAR_DEMO_LINES.merge.naive,
           metrics: { '当前子问题': `f(${k})`, '合并结果': total },
           vars: [
             { name: 'i (子问题规模)', value: String(k), type: 'number' },
@@ -822,9 +823,7 @@ export class LinearEvolutionStrategy implements IEvolutionStrategy {
         tree: cloneTree(rootTree),
         message: `🏁 【全局推演完毕】自顶向下分治求解完成！最终求得 f(${problemScale}) = ${finalLinearAns}。`,
         log: `final return: solve(${problemScale}) = ${finalLinearAns}`,
-        codeLine: isMemo
-          ? { java: 4, python: 9, cpp: 6, javascript: 8 }
-          : { java: 3, python: 6, cpp: 3, javascript: 6 },
+        codeLine: isMemo ? LINEAR_DEMO_LINES.entry.memo : LINEAR_DEMO_LINES.entry.naive,
         metrics: { '最终计算结果': finalLinearAns, '算法状态': '🏁 推演完成' },
         vars: [
           { name: '最终计算结果', value: String(finalLinearAns), type: 'number', changed: true },

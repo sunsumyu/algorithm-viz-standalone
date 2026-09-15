@@ -10,6 +10,15 @@ import {
   STRONGLY_CONNECTED_ANALYSIS_HTML,
   STRONGLY_CONNECTED_CODE_LANGUAGES,
 } from './strongly-connected-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: [1, 2, 3, 4],
+  forwarddfs: [16, 17, 18],
+  done: 6,
+  reversebuild: [7, 8, 9, 10, 11],
+  reversedfs: [16, 17, 18],
+  done2: 14,
+};
 
 export interface SCCStep extends StepBase {
   nodes: number[];
@@ -68,7 +77,7 @@ export function buildSCCSteps(): SCCStep[] {
     action: 'init',
     statusText: `初始化：包含 ${nodes.length} 个节点和 ${originalEdges.length} 条有向边。Kosaraju 算法第一阶段：从节点 0 出发做正向 DFS 遍历。`,
     log: `初始化: ${nodes.length} 节点有向图`,
-    codeLine: [1, 2, 3, 4],
+    codeLine: lines.init,
   });
 
   // 1. 正向 DFS
@@ -86,7 +95,7 @@ export function buildSCCSteps(): SCCStep[] {
       action: 'forward-dfs',
       statusText: `正向 DFS 访问节点 ${u}，已访问节点: [${Array.from(visitedForward).join(', ')}]。`,
       log: `正向访问: 节点 ${u}`,
-      codeLine: [16, 17, 18],
+      codeLine: lines.forwarddfs,
     });
 
     for (const v of adjList[u]) {
@@ -112,7 +121,7 @@ export function buildSCCSteps(): SCCStep[] {
       action: 'done',
       statusText: `❌ 正向 DFS 从节点 0 出发未能访问所有节点（仅访问了 ${visitedForward.size}/${nodes.length}），该图不是强连通图。`,
       log: `判定失败: 正向未全达 -> 不是强连通`,
-      codeLine: 6,
+      codeLine: lines.done,
     });
     return steps;
   }
@@ -129,7 +138,7 @@ export function buildSCCSteps(): SCCStep[] {
     action: 'reverse-build',
     statusText: `正向 DFS 全可达！现在反转所有边的方向 (u->v 变为 v->u)，第二阶段：从节点 0 出发做反向 DFS 遍历。`,
     log: `构建反向图: 反转所有边的方向`,
-    codeLine: [7, 8, 9, 10, 11],
+    codeLine: lines.reversebuild,
   });
 
   // 3. 反向 DFS
@@ -147,7 +156,7 @@ export function buildSCCSteps(): SCCStep[] {
       action: 'reverse-dfs',
       statusText: `反向 DFS 访问节点 ${u}，已访问节点: [${Array.from(visitedReverse).join(', ')}]。`,
       log: `反向访问: 节点 ${u}`,
-      codeLine: [16, 17, 18],
+      codeLine: lines.reversedfs,
     });
 
     for (const v of revAdjList[u]) {
@@ -174,7 +183,7 @@ export function buildSCCSteps(): SCCStep[] {
       ? `🎉 检测完成！正向 DFS 与反向 DFS 均能完全遍历所有节点，该有向图是【强连通图】(返回 true)！`
       : `❌ 检测完成！反向 DFS 未能遍历所有节点，该有向图不是强连通图 (返回 false)。`,
     log: `✓ 判定完成: 强连通性 = ${reverseAllReached}`,
-    codeLine: 14,
+    codeLine: lines.done2,
   });
 
   return steps;

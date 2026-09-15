@@ -12,6 +12,7 @@ import {
   STATE_COMPRESSION_BFS_ANALYSIS_HTML,
 } from './state-compression-bfs-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface StateBFSItem {
   grid: string[][];
@@ -91,7 +92,7 @@ export function buildStateBFSSteps(preset: string = 'classic_3x3'): StateBFSItem
               : '算法初始化';
 
     steps.push({
-      grid: grid.map((row) => [...row]),
+      grid: snapshotGrid2D(grid),
       curR,
       curC,
       keyMask,

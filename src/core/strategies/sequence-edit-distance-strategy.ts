@@ -15,16 +15,17 @@ export class SequenceEditDistanceStrategy implements IAlgorithmStrategy {
   }
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
-    const { stage, isMemo, anchorMap } = params;
+    const { stage, isMemo, anchorMap, direction } = params;
+    const dir = direction === 'reverse' ? 'reverse' : 'forward';
 
     switch (stage) {
       case 1:
       case 2:
-        return this.generateStage1or2(model, Boolean(isMemo), anchorMap);
+        return this.generateStage1or2(model, Boolean(isMemo), anchorMap, dir);
       case 3:
-        return this.generateStage3(model, anchorMap);
+        return this.generateStage3(model, anchorMap, dir);
       case 4:
-        return this.generateStage4(model, anchorMap);
+        return this.generateStage4(model, anchorMap, dir);
       default:
         return [];
     }
@@ -33,22 +34,25 @@ export class SequenceEditDistanceStrategy implements IAlgorithmStrategy {
   public generateStage1or2(
     model: IYamlAlgorithmModel,
     isMemo: boolean = false,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction?: 'forward' | 'reverse'
   ): UniversalStep[] {
-    return SequenceStepMatrixCompiler.compileEditDistanceStage1or2(model, isMemo, anchorMap);
+    return SequenceStepMatrixCompiler.compileEditDistanceStage1or2(model, isMemo, anchorMap, direction);
   }
 
   public generateStage3(
     model: IYamlAlgorithmModel,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction?: 'forward' | 'reverse'
   ): UniversalStep[] {
-    return SequenceStepMatrixCompiler.compileEditDistanceStage3(model, anchorMap);
+    return SequenceStepMatrixCompiler.compileEditDistanceStage3(model, anchorMap, direction);
   }
 
   public generateStage4(
     model: IYamlAlgorithmModel,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction?: 'forward' | 'reverse'
   ): UniversalStep[] {
-    return SequenceStepMatrixCompiler.compileEditDistanceStage4(model, anchorMap);
+    return SequenceStepMatrixCompiler.compileEditDistanceStage4(model, anchorMap, direction);
   }
 }

@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  MAX_PRODUCT_K_STAGE1_CODES,
-  MAX_PRODUCT_K_STAGE1_LINES,
-  MAX_PRODUCT_K_STAGE2_CODES,
-  MAX_PRODUCT_K_STAGE2_LINES,
-  MAX_PRODUCT_K_STAGE3_CODES,
-  MAX_PRODUCT_K_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { MAX_PRODUCT_K_STAGE1_CODES, MAX_PRODUCT_K_STAGE2_CODES, MAX_PRODUCT_K_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderPartitionBars,
@@ -53,12 +46,7 @@ export function buildMaxProductKStage1Steps(n: number, k: number): MaxProductKSt
     decision: '启动暴力 DFS 枚举',
     message: `开始暴力尝试：将 ${safeN} 拆分为 ${safeK} 个正整数，穷举所有分支评估最大乘积`,
     log: `[DFS Init] n=${safeN}, k=${safeK}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE1_LINES.java.init,
-      cpp: MAX_PRODUCT_K_STAGE1_LINES.cpp.init,
-      python: MAX_PRODUCT_K_STAGE1_LINES.python.init,
-      javascript: MAX_PRODUCT_K_STAGE1_LINES.javascript.init,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 1, 'init'),
     stageNum: 1,
   });
 
@@ -73,12 +61,7 @@ export function buildMaxProductKStage1Steps(n: number, k: number): MaxProductKSt
       decision: 'k=1 特判',
       message: `只有 1 份时无需拆分，乘积为 ${safeN}`,
       log: `[Base] k=1, ans=${safeN}`,
-      codeLine: {
-        java: MAX_PRODUCT_K_STAGE1_LINES.java.base,
-        cpp: MAX_PRODUCT_K_STAGE1_LINES.cpp.base,
-        python: MAX_PRODUCT_K_STAGE1_LINES.python.base,
-        javascript: MAX_PRODUCT_K_STAGE1_LINES.javascript.base,
-      },
+      codeLine: getGreedy090Anchor('max-product-k', 1, 'base'),
       stageNum: 1,
     });
     return steps;
@@ -119,12 +102,7 @@ export function buildMaxProductKStage1Steps(n: number, k: number): MaxProductKSt
       decision: `枚举第一份 = ${cur}`,
       message: `试探分支：第一份取 ${cur}，剩余 ${rest}，递归评估该子树的乘积`,
       log: `[DFS Try] cur=${cur}, rest=${rest}, estProd=${estProd}`,
-      codeLine: {
-        java: MAX_PRODUCT_K_STAGE1_LINES.java.loop,
-        cpp: MAX_PRODUCT_K_STAGE1_LINES.cpp.loop,
-        python: MAX_PRODUCT_K_STAGE1_LINES.python.loop,
-        javascript: MAX_PRODUCT_K_STAGE1_LINES.javascript.loop,
-      },
+      codeLine: getGreedy090Anchor('max-product-k', 1, 'loop'),
       stageNum: 1,
     });
   }
@@ -139,12 +117,7 @@ export function buildMaxProductKStage1Steps(n: number, k: number): MaxProductKSt
     decision: '暴力搜索完成',
     message: `全部分支搜索完毕，在 n=${safeN}, k=${safeK} 下的最大乘积为 ${bestProd}`,
     log: `[DFS Done] 最优乘积=${bestProd}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE1_LINES.java.ret,
-      cpp: MAX_PRODUCT_K_STAGE1_LINES.cpp.ret,
-      python: MAX_PRODUCT_K_STAGE1_LINES.python.ret,
-      javascript: MAX_PRODUCT_K_STAGE1_LINES.javascript.ret,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 1, 'ret'),
     stageNum: 1,
   });
 
@@ -166,12 +139,7 @@ export function buildMaxProductKStage2Steps(n: number, k: number): MaxProductKSt
     decision: '启动均分贪心推演',
     message: `开始均分贪心计算：将数字 ${n} 分为 ${k} 份，利用除法与取模求得基数 a 与余数 b`,
     log: `[Greedy Start] n=${n}, k=${k}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE2_LINES.java.div,
-      cpp: MAX_PRODUCT_K_STAGE2_LINES.cpp.div,
-      python: MAX_PRODUCT_K_STAGE2_LINES.python.div,
-      javascript: MAX_PRODUCT_K_STAGE2_LINES.javascript.div,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 2, 'div'),
     stageNum: 2,
   });
 
@@ -188,12 +156,7 @@ export function buildMaxProductKStage2Steps(n: number, k: number): MaxProductKSt
     decision: '商与余数均分计算',
     message: `基础数值分配：每份至少分得基数 a = ${a}；多出来的余数 b = ${b} 个 1 均匀分给其中的 ${b} 份`,
     log: `[Div & Mod] a=${a}, b=${b}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE2_LINES.java.rem,
-      cpp: MAX_PRODUCT_K_STAGE2_LINES.cpp.rem,
-      python: MAX_PRODUCT_K_STAGE2_LINES.python.rem,
-      javascript: MAX_PRODUCT_K_STAGE2_LINES.javascript.rem,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 2, 'rem'),
     stageNum: 2,
   });
 
@@ -232,12 +195,7 @@ export function buildMaxProductKStage2Steps(n: number, k: number): MaxProductKSt
     decision: '确定划分结构',
     message: `最优划分由 ${b} 个 ${a + 1} 和 ${k - b} 个 ${a} 构成，任何两份之间差值至多为 1`,
     log: `[Partition Plan] ${b} 份为 ${a + 1}, ${k - b} 份为 ${a}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE2_LINES.java.p1,
-      cpp: MAX_PRODUCT_K_STAGE2_LINES.cpp.p1,
-      python: MAX_PRODUCT_K_STAGE2_LINES.python.p1,
-      javascript: MAX_PRODUCT_K_STAGE2_LINES.javascript.p1,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 2, 'p1'),
     stageNum: 2,
   });
 
@@ -251,12 +209,7 @@ export function buildMaxProductKStage2Steps(n: number, k: number): MaxProductKSt
     decision: '快速幂乘积收敛',
     message: `快速幂得出最终最大乘积结果：${finalAns} (对 10^9+7 取模)`,
     log: `[Fast Power Done] Final Result = ${finalAns}`,
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE2_LINES.java.ret,
-      cpp: MAX_PRODUCT_K_STAGE2_LINES.cpp.ret,
-      python: MAX_PRODUCT_K_STAGE2_LINES.python.ret,
-      javascript: MAX_PRODUCT_K_STAGE2_LINES.javascript.ret,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 2, 'ret'),
     stageNum: 2,
   });
 
@@ -279,12 +232,7 @@ export function buildMaxProductKStage3Steps(n: number, k: number): MaxProductKSt
     decision: '设定反证前提',
     message: '反证法设问：如果最优解中存在极差 >= 2 的两份数，能否通过靠近均值获得更大乘积？',
     log: '[Proof Start] 假设存在 x - y >= 2',
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE3_LINES.java.intro,
-      cpp: MAX_PRODUCT_K_STAGE3_LINES.cpp.intro,
-      python: MAX_PRODUCT_K_STAGE3_LINES.python.intro,
-      javascript: MAX_PRODUCT_K_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 3, 'intro'),
     stageNum: 3,
   });
 
@@ -301,12 +249,7 @@ export function buildMaxProductKStage3Steps(n: number, k: number): MaxProductKSt
     decision: '代数展开比较',
     message: '展开公式：(x - 1)(y + 1) - xy = xy + x - y - 1 - xy = (x - y) - 1。因为 x - y >= 2，所以增量 Δ >= 1 > 0 严格成立！',
     log: '[Proof Calc] (x-1)(y+1) - xy = (x-y) - 1 >= 1 > 0',
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE3_LINES.java.delta,
-      cpp: MAX_PRODUCT_K_STAGE3_LINES.cpp.delta,
-      python: MAX_PRODUCT_K_STAGE3_LINES.python.delta,
-      javascript: MAX_PRODUCT_K_STAGE3_LINES.javascript.delta,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 3, 'delta'),
     stageNum: 3,
   });
 
@@ -323,12 +266,7 @@ export function buildMaxProductKStage3Steps(n: number, k: number): MaxProductKSt
     decision: '反证结论收敛',
     message: '代数证明完毕：只要两数之差大于等于 2，移花接木各取 1 必定使乘积严格增大。因此全局最优解中任意两份的差绝对不可能超过 1，均分定理得证！',
     log: '[Proof Verified] 均分极差 <= 1 贪心最优性证明成立。',
-    codeLine: {
-      java: MAX_PRODUCT_K_STAGE3_LINES.java.conclusion,
-      cpp: MAX_PRODUCT_K_STAGE3_LINES.cpp.conclusion,
-      python: MAX_PRODUCT_K_STAGE3_LINES.python.conclusion,
-      javascript: MAX_PRODUCT_K_STAGE3_LINES.javascript.conclusion,
-    },
+    codeLine: getGreedy090Anchor('max-product-k', 3, 'conclusion'),
     stageNum: 3,
   });
 

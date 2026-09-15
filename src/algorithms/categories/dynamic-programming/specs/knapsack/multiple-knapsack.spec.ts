@@ -164,6 +164,13 @@ export const MultipleKnapsackSpec: AlgorithmSpec = {
 
     const n = weights.length;
     const dp: DpCell[] = Array(bagWeight + 1).fill(0);
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      line0: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      line1: { java: 8, cpp: 8, python: 7, javascript: 7 },
+      returnAns: { java: 12, cpp: 12, python: 9, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -172,7 +179,7 @@ export const MultipleKnapsackSpec: AlgorithmSpec = {
       message: `🎬 多重背包初始化：容量上限 ${bagWeight}`,
       log: `init: dp[0..${bagWeight}] = 0`,
       vars: [{ name: 'bagWeight', value: String(bagWeight), type: 'number' }],
-      codeLine: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     for (let i = 0; i < n; i++) {
@@ -200,7 +207,7 @@ export const MultipleKnapsackSpec: AlgorithmSpec = {
                 { name: 'k (件数)', value: String(k), type: 'number' },
                 { name: 'dp[j]', value: String(dp[j]), type: 'number' },
               ],
-              codeLine: { java: 8, cpp: 8, python: 7, javascript: 7 },
+              codeLine: LINES.line1,
             });
           }
         }
@@ -213,7 +220,7 @@ export const MultipleKnapsackSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最大总价值为 ${dp[bagWeight]}`,
       log: `return: dp[${bagWeight}] = ${dp[bagWeight]}`,
       vars: [{ name: 'maxVal', value: String(dp[bagWeight]), type: 'number' }],
-      codeLine: { java: 12, cpp: 12, python: 9, javascript: 10 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

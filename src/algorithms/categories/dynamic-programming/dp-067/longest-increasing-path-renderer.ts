@@ -8,14 +8,17 @@
  * 阶段 4: 最长递增路径全景回溯与地貌热力图
  */
 
-import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { registerDeclarativeAlgorithm, createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
+import { captureScope } from '../../../../core/strategies/scope-capture';
 import { DP_067_PROBLEMS } from './dp-067-problem-content';
 import {
   LIP_STAGE1_CODE_LANGUAGES,
   LIP_STAGE2_CODE_LANGUAGES,
   LIP_STAGE3_CODE_LANGUAGES,
   LIP_STAGE4_CODE_LANGUAGES,
+  getDp067Anchor,
+  type ResolvedLineTarget,
 } from './dp-067-stage-codes';
 import {
   renderRecursionCard1,
@@ -27,9 +30,36 @@ import {
 } from './dp-067-shared';
 import { renderUniversalDpGrid } from '../dp-shared';
 import { parseGridInput } from '../../../../core/input-primitives';
+import { snapshotGrid2D } from "../../../../core/strategies/grid-snapshot";
 
 function parseMatrix(raw: unknown): number[][] {
   return parseGridInput(raw, [[9,9,4],[6,6,8],[2,1,1]]);
+}
+
+function createLipStepsArray<T extends { scope?: Record<string, any> }>(
+  extractScope?: (item: T) => Record<string, any>
+): [T[], T[]] {
+  const rawSteps: T[] = [];
+  const steps: T[] = new Proxy(rawSteps, {
+    get(target, prop, receiver) {
+      if (prop === 'push') {
+        return (...items: T[]) => {
+          for (const item of items) {
+            if (!item.scope) {
+              const baseVars = extractScope ? extractScope(item) : {};
+              item.scope = captureScope({
+                ...baseVars,
+                ...item,
+              });
+            }
+          }
+          return target.push(...items);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+  return [steps, rawSteps];
 }
 
 // ==========================================
@@ -45,22 +75,25 @@ export interface LipRecStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildLipStage1Steps(inputs: Record<string, any>): LipRecStep[] {
   const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
-  const steps: LipRecStep[] = [];
+  const [steps, rawSteps] = createLipStepsArray<LipRecStep>((item) => ({
+    val: item.matrix?.[item.i]?.[item.j],
+  }));
   const stack: Array<{ label: string }> = [];
 
   const lines = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    enter: { java: 11, cpp: 2, python: 2, javascript: 2 },
-    dirsLoop: { java: 16, cpp: 7, python: 6, javascript: 7 },
-    returnAns: { java: 20, cpp: 11, python: 8, javascript: 11 },
+    entry: getDp067Anchor(1, 'longest-increasing-path', 'entry'),
+    enter: getDp067Anchor(1, 'longest-increasing-path', 'enter'),
+    dirsLoop: getDp067Anchor(1, 'longest-increasing-path', 'dirsLoop'),
+    returnAns: getDp067Anchor(1, 'longest-increasing-path', 'returnAns'),
   };
 
   steps.push({
@@ -154,7 +187,7 @@ export function buildLipStage1Steps(inputs: Record<string, any>): LipRecStep[] {
   }
 
   dfs(startI, startJ);
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -171,18 +204,28 @@ export interface LipMemoStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   memoGrid: number[][];
   cachedVal?: number;
   matrix: number[][];
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] {
+  const lines2 = {
+    entry: getDp067Anchor(2, 'longest-increasing-path', 'entry'),
+    checkMemo: getDp067Anchor(2, 'longest-increasing-path', 'checkMemo'),
+    missExpand: getDp067Anchor(2, 'longest-increasing-path', 'missExpand'),
+    memoStore: getDp067Anchor(2, 'longest-increasing-path', 'memoStore'),
+  };
   const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
-  const steps: LipMemoStep[] = [];
+  const [steps, rawSteps] = createLipStepsArray<LipMemoStep>((item) => ({
+    val: item.matrix?.[item.i]?.[item.j],
+    memoVal: item.memoGrid?.[item.i]?.[item.j],
+  }));
   const dp: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
   let hitCount = 0;
   let missCount = 0;
@@ -197,8 +240,8 @@ export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] 
     decision: `主函数入口：初始化 ${m}×${n} 记忆化备忘录 dp`,
     message: `以 dp[i][j] 缓存由 (i, j) 出发的最长递增步数`,
     log: `enter longestIncreasingPath2`,
-    codeLine: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    memoGrid: dp.map((r) => [...r]),
+    codeLine: lines2.entry,
+    memoGrid: snapshotGrid2D(dp),
     matrix,
     metrics: { 'metric-status': '函数入口', 'metric-hits': '0' },
   });
@@ -217,8 +260,8 @@ export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] 
         decision: `🎯 命中备忘录: dp[${i}][${j}] = ${dp[i][j]}`,
         message: `坐标 (${i}, ${j}) 曾被探查过，直接复用其作为起点的最长延伸步数！`,
         log: `hit dp[${i}][${j}] = ${dp[i][j]}`,
-        codeLine: { java: 13, cpp: 3, python: 3, javascript: 3 },
-        memoGrid: dp.map((r) => [...r]),
+        codeLine: lines2.checkMemo,
+        memoGrid: snapshotGrid2D(dp),
         matrix,
         metrics: { 'metric-status': '命中剪枝', 'metric-hits': `${hitCount}` },
       });
@@ -236,8 +279,8 @@ export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] 
       decision: `⚠️ 未命中备忘录: 首次探查 (${i}, ${j})[值=${matrix[i][j]}]`,
       message: `向四方寻找严格更高格位展开搜索`,
       log: `miss dp[${i}][${j}]`,
-      codeLine: { java: 14, cpp: 4, python: 4, javascript: 4 },
-      memoGrid: dp.map((r) => [...r]),
+      codeLine: lines2.missExpand,
+      memoGrid: snapshotGrid2D(dp),
       matrix,
       metrics: { 'metric-status': '展开探索', 'metric-misses': `${missCount}` },
     });
@@ -269,8 +312,8 @@ export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] 
       decision: `💾 计算完成存入备忘录: dp[${i}][${j}] = ${dp[i][j]}`,
       message: `以 (${i}, ${j}) 为起点的最长递增路径长度 ${dp[i][j]} 写入 memo`,
       log: `store dp[${i}][${j}] = ${dp[i][j]}`,
-      codeLine: { java: 22, cpp: 12, python: 9, javascript: 12 },
-      memoGrid: dp.map((r) => [...r]),
+      codeLine: lines2.memoStore,
+      memoGrid: snapshotGrid2D(dp),
       matrix,
       metrics: { 'metric-status': '写入备忘录', 'metric-val': `${dp[i][j]}` },
     });
@@ -284,7 +327,7 @@ export function buildLipStage2Steps(inputs: Record<string, any>): LipMemoStep[] 
     }
   }
 
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -301,9 +344,10 @@ export interface Lip2DStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   matrix: number[][];
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 
@@ -311,20 +355,23 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
   const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
-  const steps: Lip2DStep[] = [];
+  const [steps, rawSteps] = createLipStepsArray<Lip2DStep>((item) => ({
+    matrixVal: item.matrix?.[item.curI]?.[item.curJ],
+    dpVal: item.dpTable?.[item.curI]?.[item.curJ],
+  }));
   const dp: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
   const outdegree: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
 
   const lines3 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    initOut: { java: 4, cpp: 4, python: 3, javascript: 4 },
-    calcOut: { java: 10, cpp: 10, python: 9, javascript: 10 },
-    initQueue: { java: 15, cpp: 15, python: 10, javascript: 15 },
-    whileQueue: { java: 17, cpp: 17, python: 12, javascript: 17 },
-    incLevel: { java: 18, cpp: 18, python: 13, javascript: 18 },
-    pollNode: { java: 21, cpp: 21, python: 16, javascript: 20 },
-    relaxNeighbor: { java: 25, cpp: 25, python: 20, javascript: 24 },
-    returnLevel: { java: 30, cpp: 30, python: 22, javascript: 30 },
+    entry: getDp067Anchor(3, 'longest-increasing-path', 'entry'),
+    initOut: getDp067Anchor(3, 'longest-increasing-path', 'initOut'),
+    calcOut: getDp067Anchor(3, 'longest-increasing-path', 'calcOut'),
+    initQueue: getDp067Anchor(3, 'longest-increasing-path', 'initQueue'),
+    whileQueue: getDp067Anchor(3, 'longest-increasing-path', 'whileQueue'),
+    incLevel: getDp067Anchor(3, 'longest-increasing-path', 'incLevel'),
+    pollNode: getDp067Anchor(3, 'longest-increasing-path', 'pollNode'),
+    relaxNeighbor: getDp067Anchor(3, 'longest-increasing-path', 'relaxNeighbor'),
+    returnLevel: getDp067Anchor(3, 'longest-increasing-path', 'returnLevel'),
   };
 
   steps.push({
@@ -332,7 +379,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
     curJ: 0,
     currentCell: '入口初始化',
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: '🌐 拓扑序与拓扑排序分层推演启动: longestIncreasingPath3(matrix)',
     message: '统计每个单元格的出度（走向严格更大邻居的边数），从出度为 0 的局部汇点开始分层剥洋葱！',
@@ -366,7 +413,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
     curJ: 0,
     currentCell: '出度统计完毕',
     currentVal: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: '📊 全局出度表统计完成：出度为 0 的格子是局部极大值（无法再向更高邻居延伸）',
     message: '出度为 0 的单元格即拓扑汇点，路径长度底线为 1',
@@ -390,7 +437,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
     curJ: queue[0]?.[1] ?? 0,
     currentCell: `队列就绪: ${queue.length} 个汇点`,
     currentVal: 1,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `📥 将全部出度为 0 的极大值点加入 BFS 队列，共 ${queue.length} 个汇点`,
     message: `这批单元格是所有最长递增路径的终点，从第 1 层开始反向拓扑推进`,
@@ -408,7 +455,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
       curJ: queue[0][1],
       currentCell: `进入第 ${level} 层拓扑分层`,
       currentVal: level,
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       depCells: [],
       decision: `🌊 BFS 分层拓扑推演：当前拓扑层级 level = ${level}，队列含 ${queue.length} 个节点`,
       message: `本层节点能形成的最大递增路径长度至少为 ${level}`,
@@ -428,7 +475,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
         curJ: c,
         currentCell: `dp[${r}][${c}]`,
         currentVal: level,
-        dpTable: dp.map((row) => [...row]),
+        dpTable: snapshotGrid2D(dp),
         depCells: deps,
         decision: `弹出汇点 (${r}, ${c})[值=${matrix[r][c]}]，确定其路径长度 dp[${r}][${c}] = ${level}`,
         message: `向四方更小邻居反向推进拓扑偏序`,
@@ -456,7 +503,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
               curJ: nj,
               currentCell: `邻居 (${ni}, ${nj})`,
               currentVal: level + 1,
-              dpTable: dp.map((row) => [...row]),
+              dpTable: snapshotGrid2D(dp),
               depCells: deps,
               decision: `邻居 (${ni}, ${nj})[值=${matrix[ni][nj]} < ${matrix[r][c]}] 出度减至 0，入队加入下一层！`,
               message: `消除入边依赖，进入下一拓扑层级`,
@@ -477,7 +524,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
     curJ: 0,
     currentCell: '拓扑推演完成',
     currentVal: level,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     depCells: [],
     decision: `🎉 拓扑排序完成，矩阵中最长递增路径长度为 ${level}`,
     message: `最大拓扑层级即为最长递增链的长度`,
@@ -487,7 +534,7 @@ export function buildLipStage3Steps(inputs: Record<string, any>): Lip2DStep[] {
     metrics: { 'metric-status': '求解完毕', 'metric-val': `${level}` },
   });
 
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -504,15 +551,20 @@ export interface LipStage4Step {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: ResolvedLineTarget;
   metrics?: Record<string, any>;
+  scope?: Record<string, any>;
 }
 
 export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[] {
   const matrix = parseMatrix(inputs?.['input-matrix']);
   const m = matrix.length;
   const n = matrix[0].length;
-  const steps: LipStage4Step[] = [];
+  const [steps, rawSteps] = createLipStepsArray<LipStage4Step>((item) => ({
+    matrixVal: item.matrix?.[item.curI]?.[item.curJ],
+    dpVal: item.dpTable?.[item.curI]?.[item.curJ],
+    pathLen: item.bestPath?.length,
+  }));
   const dp: number[][] = Array.from({ length: m }, () => new Array(n).fill(0));
 
   function dfs(i: number, j: number): number {
@@ -548,19 +600,19 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
   }
 
   const lines4 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    findMax: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    initPath: { java: 11, cpp: 11, python: 8, javascript: 11 },
-    whileLoop: { java: 13, cpp: 13, python: 10, javascript: 13 },
-    findNext: { java: 16, cpp: 16, python: 13, javascript: 16 },
-    stepNext: { java: 18, cpp: 18, python: 15, javascript: 18 },
-    returnPath: { java: 23, cpp: 23, python: 17, javascript: 23 },
+    entry: getDp067Anchor(4, 'longest-increasing-path', 'entry'),
+    findMax: getDp067Anchor(4, 'longest-increasing-path', 'findMax'),
+    initPath: getDp067Anchor(4, 'longest-increasing-path', 'initPath'),
+    whileLoop: getDp067Anchor(4, 'longest-increasing-path', 'whileLoop'),
+    findNext: getDp067Anchor(4, 'longest-increasing-path', 'findNext'),
+    stepNext: getDp067Anchor(4, 'longest-increasing-path', 'stepNext'),
+    returnPath: getDp067Anchor(4, 'longest-increasing-path', 'returnPath'),
   };
 
   steps.push({
     curI: 0,
     curJ: 0,
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     matrix,
     maxLen: 0,
     bestPath: [],
@@ -574,7 +626,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
   steps.push({
     curI: bestStart[0],
     curJ: bestStart[1],
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     matrix,
     maxLen: globalMax,
     bestPath: [],
@@ -590,7 +642,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
   steps.push({
     curI: bestStart[0],
     curJ: bestStart[1],
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     matrix,
     maxLen: globalMax,
     bestPath: [...path],
@@ -607,7 +659,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
     steps.push({
       curI: cr,
       curJ: cc,
-      dpTable: dp.map((r) => [...r]),
+      dpTable: snapshotGrid2D(dp),
       matrix,
       maxLen: globalMax,
       bestPath: [...path],
@@ -640,7 +692,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
         steps.push({
           curI: ni,
           curJ: nj,
-          dpTable: dp.map((r) => [...r]),
+          dpTable: snapshotGrid2D(dp),
           matrix,
           maxLen: globalMax,
           bestPath: [...path],
@@ -660,7 +712,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
       steps.push({
         curI: next[0],
         curJ: next[1],
-        dpTable: dp.map((r) => [...r]),
+        dpTable: snapshotGrid2D(dp),
         matrix,
         maxLen: globalMax,
         bestPath: [...path],
@@ -678,7 +730,7 @@ export function buildLipStage4Steps(inputs: Record<string, any>): LipStage4Step[
   steps.push({
     curI: bestStart[0],
     curJ: bestStart[1],
-    dpTable: dp.map((r) => [...r]),
+    dpTable: snapshotGrid2D(dp),
     matrix,
     maxLen: globalMax,
     bestPath: path,

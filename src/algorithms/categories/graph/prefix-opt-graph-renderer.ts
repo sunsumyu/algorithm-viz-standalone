@@ -11,6 +11,24 @@ import {
   PREFIX_OPT_PROBLEM_HTML,
   PREFIX_OPT_ANALYSIS_HTML,
 } from './prefix-opt-graph-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  naiveInit: 12,
+  naiveChain: 24,
+  naiveQuery: 44,
+  naiveDone: 44,
+  naiveDone2: 12,
+  prefixInit: 15,
+  prefixInit2: 30,
+  prefixChain: 34,
+  prefixChain2: 37,
+  prefixChain3: 38,
+  prefixQuery: 44,
+  prefixQuery2: 46,
+  prefixQuery3: 47,
+  prefixQuery4: 51,
+  prefixDone: 47,
+};
 
 export interface PrefixOptStep {
   mode: 'naive' | 'prefix';
@@ -41,7 +59,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'init',
       message: '1. [朴素建图初始化] 载入 5 个实体节点 u1..u5。朴素建图不引入任何辅助中继虚点。',
       log: '初始化：5 个实体节点，当前边数 0',
-      codeLine: 12,
+      codeLine: lines.naiveInit,
       metrics: {
         'metric-opt-mode': '朴素两两稠密建图',
         'metric-edge-count': '0 条边',
@@ -71,7 +89,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
         status: 'chain',
         message: `${i + 2}. [朴素两两连边] 节点 ${u} 向区间节点 ${v} 建立有向边 (${u} ➔ ${v})，累积第 ${edgeCount} 条边。`,
         log: `朴素直接连边：u${u} ➔ u${v} (边数 ${edgeCount})`,
-        codeLine: 24,
+        codeLine: lines.naiveChain,
         metrics: {
           'metric-opt-mode': '朴素两两稠密建图',
           'metric-edge-count': `${edgeCount} 条边`,
@@ -95,7 +113,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
         status: 'query',
         message: `${12 + target}. [外部查询连边] 源节点 S1 向区间 [1, 4] 独立直连边：S1 ➔ ${target} (第 ${edgeCount} 条边)！`,
         log: `区间直连边：S1 ➔ u${target} (边数 ${edgeCount})`,
-        codeLine: 44,
+        codeLine: lines.naiveQuery,
         metrics: {
           'metric-opt-mode': '朴素两两稠密建图',
           'metric-edge-count': `${edgeCount} 条边`,
@@ -119,7 +137,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
         status: 'query',
         message: `${16 + target}. [外部查询连边] 源节点 S2 向区间 [1, 2] 独立直连边：S2 ➔ ${target} (第 ${edgeCount} 条边)！`,
         log: `区间直连边：S2 ➔ u${target} (边数 ${edgeCount})`,
-        codeLine: 44,
+        codeLine: lines.naiveQuery,
         metrics: {
           'metric-opt-mode': '朴素两两稠密建图',
           'metric-edge-count': `${edgeCount} 条边`,
@@ -138,7 +156,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '19. [朴素建图弊端分析] 5 个节点仅 2 个区间查询，总边数就激增至 16 条！',
       log: '分析：朴素建图边数高达 16 条，极大增加空间占用',
-      codeLine: 44,
+      codeLine: lines.naiveDone,
       metrics: {
         'metric-opt-mode': '朴素两两稠密建图',
         'metric-edge-count': `${edgeCount} 条边`,
@@ -155,7 +173,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '20. [规模扩展推演] 若 N=10^5，朴素建图边数将突破 10^10 条，造成不可避免的 MLE 内存超限！',
       log: '推演：N=10^5 时边数超 10^10，必须引入前缀优化建图',
-      codeLine: 12,
+      codeLine: lines.naiveDone2,
       metrics: {
         'metric-opt-mode': '朴素两两稠密建图',
         'metric-edge-count': `${edgeCount} 条边`,
@@ -172,7 +190,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '21. [总结] 朴素建图宣告结束。建议切换至「前缀优化建图」模式体验 O(N) 线性压缩。',
       log: '✓ 朴素演示结束：边数 16 条 (O(N^2) 复杂度)',
-      codeLine: 12,
+      codeLine: lines.naiveDone2,
       metrics: {
         'metric-opt-mode': '朴素两两稠密建图',
         'metric-edge-count': `${edgeCount} 条边`,
@@ -190,7 +208,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'init',
       message: '1. [前缀优化建图初始化] 载入 5 个实体节点 1..5，准备构建前缀中继辅助链 P1..P5。',
       log: '初始化：分配实体节点 1..5，启动前缀虚点链构建',
-      codeLine: 15,
+      codeLine: lines.prefixInit,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': '0 条边',
@@ -208,7 +226,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'init',
       message: '2. [前缀虚点映射] 实体节点 1..5 分别映射前缀虚点 P1..P5 (编号 6..10)，代表前缀集合 [1..i]。',
       log: '映射前缀虚点：P1..P5 对应前缀区间 [1..i]',
-      codeLine: 30,
+      codeLine: lines.prefixInit2,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': '0 条边',
@@ -241,7 +259,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
         status: 'chain',
         message: `${stepIdx++}. [前缀下垂透传] 添加有向边 P${item.p} ➔ ${item.u}：前缀虚点向对应实体点建立透传连接。`,
         log: `下垂边：P${item.p} ➔ u${item.u} (当前总边数 ${edges})`,
-        codeLine: 34,
+        codeLine: lines.prefixChain,
         metrics: {
           'metric-opt-mode': '前缀优化建图 (O(N))',
           'metric-edge-count': `${edges} 条边`,
@@ -263,7 +281,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
           status: 'chain',
           message: `${stepIdx++}. [前缀级联继承] 添加有向边 P${item.p} ➔ P${item.cascade}：若选 P${item.p}，前缀链自动级联覆盖至 [1..${item.cascade}]！`,
           log: `级联边：P${item.p} ➔ P${item.cascade} (当前总边数 ${edges})`,
-          codeLine: 37,
+          codeLine: lines.prefixChain2,
           metrics: {
             'metric-opt-mode': '前缀优化建图 (O(N))',
             'metric-edge-count': `${edges} 条边`,
@@ -283,7 +301,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'chain',
       message: '12. [前缀链闭环构建完毕] 5 个虚点共消耗 9 条边 (5 条下垂边 + 4 条级联边)，完成对任意前缀区间的线性抽象！',
       log: '前缀辅助链构建完毕：9 条边实现全区间前缀传递能力',
-      codeLine: 38,
+      codeLine: lines.prefixChain3,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -303,7 +321,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '13. [区间连边申请 Q1] 外部源节点 S1 需要向区间 [1, 4] 内所有 4 个实体节点建立有向边。',
       log: '查询 Q1：S1 ➔ [1..4]，朴素需 4 条边',
-      codeLine: 44,
+      codeLine: lines.prefixQuery,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -325,7 +343,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '14. [O(1) 连边优化生效] 仅需单向连接 1 条边 S1 ➔ P4！朴素需要 4 条边，此处省去 3 条边！',
       log: '优化连边：S1 ➔ P4 (仅消耗 1 条边！)',
-      codeLine: 46,
+      codeLine: lines.prefixQuery2,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -345,7 +363,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '15. [连通性等价验证] 路径展开：S1 ➔ P4 ➔ 4；同时 P4 ➔ P3 ➔ 3 ➔ P2 ➔ 2 ➔ P1 ➔ 1，完全等价于直连 [1..4]！',
       log: '验证：通过 P4 级联链无损覆盖实体节点 4, 3, 2, 1',
-      codeLine: 47,
+      codeLine: lines.prefixQuery3,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -365,7 +383,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '16. [区间连边申请 Q2] 外部源节点 S2 需要向区间 [1, 2] 建立连边约束。',
       log: '查询 Q2：S2 ➔ [1..2]，朴素需 2 条边',
-      codeLine: 44,
+      codeLine: lines.prefixQuery,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -387,7 +405,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '17. [O(1) 连边优化生效] 仅需添加 1 条边 S2 ➔ P2，通过 P2 ➔ P1 自动覆盖节点 2 与 1！',
       log: '优化连边：S2 ➔ P2 (仅消耗 1 条边！)',
-      codeLine: 46,
+      codeLine: lines.prefixQuery2,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -407,7 +425,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'query',
       message: '18. [2-SAT 至多选一拓展] 在 2-SAT 中，若选中 u_i，则添加边 u_i ➔ ¬P_{i-1}，前缀所有互斥命题皆在 O(1) 内闭合！',
       log: '拓展：2-SAT 至多选一约束 ui ➔ ¬P_{i-1} 实现 O(N) 互斥',
-      codeLine: 51,
+      codeLine: lines.prefixQuery4,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -425,7 +443,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '19. [边数大对比] 朴素模式下需 16 条边；前缀优化模式下包含全部骨架与查询仅需 11 条边，查询越多优势越明显！',
       log: '对比：总边数 11 条 vs 朴素 16 条',
-      codeLine: 47,
+      codeLine: lines.prefixDone,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -442,7 +460,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '20. [高阶拓展] 前缀优化是一维特例。针对任意区间 [l, r] 或树上路径连边，可拓展为线段树优化建图与倍增优化建图！',
       log: '拓展：线段树/倍增建图将任意区间连边压缩至 O(M log N)',
-      codeLine: 47,
+      codeLine: lines.prefixDone,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,
@@ -459,7 +477,7 @@ export function buildPrefixOptSteps(mode: 'naive' | 'prefix'): PrefixOptStep[] {
       status: 'done',
       message: '21. [前缀优化建图完毕] 完美实现严格 O(N) 边数压缩，内存安全无冗余！',
       log: '✓ 前缀优化建图全流程演示完成：总边数 11 条 (严格线性 O(N))',
-      codeLine: 47,
+      codeLine: lines.prefixDone,
       metrics: {
         'metric-opt-mode': '前缀优化建图 (O(N))',
         'metric-edge-count': `${edges} 条边`,

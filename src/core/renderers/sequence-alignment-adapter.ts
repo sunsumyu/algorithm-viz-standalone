@@ -101,28 +101,47 @@ export class SequenceAlignmentPresenter {
     // 状态决策 Badge
     let badgeHtml = customBadgeHtml;
     if (!badgeHtml) {
-      if (curI < -1 || curJ < -1) {
-        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏱️ 尚未开始比对 (索引未就绪)</span>`;
-      } else if (curI < 0 || curJ < 0 || curI >= s1.length || curJ >= s2.length) {
-        const outInfo = (curI < 0 && curJ < 0)
-          ? '双串均已到达前置空串基底 (i=-1, j=-1)'
-          : curI < 0
-          ? `text1 已到达空串基底 (i=-1)`
-          : curJ < 0
-          ? `text2 已到达空串基底 (j=-1)`
-          : (curI >= s1.length && curJ >= s2.length)
-          ? '双串均已到达末尾空串 (EOF)'
-          : curI >= s1.length
-          ? `text1 遍历完毕 (索引 ${curI} >= ${s1.length})`
-          : `text2 遍历完毕 (索引 ${curJ} >= ${s2.length})`;
-        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 6px;">🛡️ 边界基底：${outInfo}，return 0</span>`;
-      } else if (isComparing === false) {
-        const desc = statusDescription || `等待递归深入或比对指令 (当前定位: s1[${curI}]='${safeChar1}', s2[${curJ}]='${safeChar2}')`;
-        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏳ 准备就绪：${desc}</span>`;
-      } else if (isCurrentMatch) {
-        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.15);">✨ 字符匹配成功：s1[${curI}] == s2[${curJ}] ('${safeChar1}') 纳入公共子序列 (+1)</span>`;
+      if (statusDescription) {
+        const cleanDesc = statusDescription.replace(/<[^>]*>/g, '').replace(/^\|\s*/, '');
+        const isSuccessBase = cleanDesc.includes('返回 1') || cleanDesc.includes('匹配完毕') || cleanDesc.includes('匹配成功');
+        const isFailBase = cleanDesc.includes('返回 0') || cleanDesc.includes('耗尽') || cleanDesc.includes('为空');
+
+        if (isSuccessBase) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.15);">🏆 达成有效方案：${cleanDesc}</span>`;
+        } else if (isFailBase) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 6px;">🛡️ 边界基底：${cleanDesc}</span>`;
+        } else if (isComparing === false) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏳ 准备就绪：${cleanDesc}</span>`;
+        } else if (isCurrentMatch) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.15);">✨ 字符匹配成功：s1[${curI}] == s2[${curJ}] ('${safeChar1}') 纳入匹配路径</span>`;
+        } else if (curI >= s1.length || curJ >= s2.length || curI < 0 || curJ < 0) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 6px;">🛡️ 边界基底：${cleanDesc}</span>`;
+        } else {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 10px; border-radius: 6px;">🔍 ${cleanDesc}</span>`;
+        }
       } else {
-        badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 10px; border-radius: 6px;">🔍 字符比对：s1[${curI}]('${safeChar1}') != s2[${curJ}]('${safeChar2}')，双向分支择大</span>`;
+        if (curI < -1 || curJ < -1) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏱️ 尚未开始比对 (索引未就绪)</span>`;
+        } else if (curI < 0 || curJ < 0 || curI >= s1.length || curJ >= s2.length) {
+          const outInfo = (curI < 0 && curJ < 0)
+            ? '双串均已到达前置空串基底 (i=-1, j=-1)'
+            : curI < 0
+            ? `text1 已到达空串基底 (i=-1)`
+            : curJ < 0
+            ? `text2 已到达空串基底 (j=-1)`
+            : (curI >= s1.length && curJ >= s2.length)
+            ? '双串均已到达末尾空串 (EOF)'
+            : curI >= s1.length
+            ? `text1 遍历完毕 (索引 ${curI} >= ${s1.length})`
+            : `text2 遍历完毕 (索引 ${curJ} >= ${s2.length})`;
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 6px;">🛡️ 边界基底：${outInfo}</span>`;
+        } else if (isComparing === false) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 6px;">⏳ 准备就绪：定位 s1[${curI}]='${safeChar1}', s2[${curJ}]='${safeChar2}'</span>`;
+        } else if (isCurrentMatch) {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(22, 163, 74, 0.15);">✨ 字符匹配成功：s1[${curI}] == s2[${curJ}] ('${safeChar1}')</span>`;
+        } else {
+          badgeHtml = `<span style="font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 10px; border-radius: 6px;">🔍 字符比对：s1[${curI}]('${safeChar1}') != s2[${curJ}]('${safeChar2}')</span>`;
+        }
       }
     }
 
@@ -231,11 +250,11 @@ export class SequenceAlignmentPresenter {
         extraBadge = '<span style="position: absolute; top: -6px; right: -6px; font-size: 9px; background: #16a34a; color: #fff; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;">✓</span>';
         break;
       case 'matched':
-        bg = '#f0fdf4';
-        color = '#16a34a';
-        border = '1.5px solid #86efac';
-        shadow = '0 1px 4px rgba(22, 163, 74, 0.15)';
-        extraBadge = '<span style="position: absolute; top: -5px; right: -5px; font-size: 8px; color: #16a34a;">★</span>';
+        bg = '#ecfdf5';
+        color = '#15803d';
+        border = '2px solid #86efac';
+        shadow = '0 1px 4px rgba(22, 163, 74, 0.18)';
+        extraBadge = '<span style="position: absolute; top: -6px; right: -6px; font-size: 8.5px; background: #22c55e; color: #ffffff; border-radius: 50%; width: 13px; height: 13px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 1px 2px rgba(0,0,0,0.12);" title="已匹配">★</span>';
         break;
       case 'active':
         bg = '#e0f2fe';

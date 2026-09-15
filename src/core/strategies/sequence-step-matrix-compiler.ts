@@ -14,52 +14,52 @@ import { compileLcsStage1or2, compileLcsStage3, compileLcsStage4 } from './seque
  * 保留原类静态方法接口，5 个 sequence-*-strategy 消费方零改动。
  */
 export class SequenceStepMatrixCompiler {
-  public static compileDeleteDistanceStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDeleteDistanceStage1or2(model, isMemo, anchorMap);
+  public static compileDeleteDistanceStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileDeleteDistanceStage1or2(model, isMemo, anchorMap, direction);
   }
 
-  public static compileDeleteDistanceStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDeleteDistanceStage3(model, anchorMap);
+  public static compileDeleteDistanceStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileDeleteDistanceStage3(model, anchorMap, direction);
   }
 
-  public static compileDeleteDistanceStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDeleteDistanceStage4(model, anchorMap);
+  public static compileDeleteDistanceStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileDeleteDistanceStage4(model, anchorMap, direction);
   }
 
-  public static compileEditDistanceStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileEditDistanceStage1or2(model, isMemo, anchorMap);
+  public static compileEditDistanceStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileEditDistanceStage1or2(model, isMemo, anchorMap, direction);
   }
 
-  public static compileEditDistanceStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileEditDistanceStage3(model, anchorMap);
+  public static compileEditDistanceStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileEditDistanceStage3(model, anchorMap, direction);
   }
 
-  public static compileEditDistanceStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileEditDistanceStage4(model, anchorMap);
+  public static compileEditDistanceStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileEditDistanceStage4(model, anchorMap, direction);
   }
 
-  public static compileDistinctSubsequencesStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDistinctSubsequencesStage1or2(model, isMemo, anchorMap);
+  public static compileDistinctSubsequencesStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction: 'forward' | 'reverse' = 'forward'): UniversalStep[] {
+    return compileDistinctSubsequencesStage1or2(model, isMemo, anchorMap, direction);
   }
 
-  public static compileDistinctSubsequencesStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDistinctSubsequencesStage3(model, anchorMap);
+  public static compileDistinctSubsequencesStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction: 'forward' | 'reverse' = 'forward'): UniversalStep[] {
+    return compileDistinctSubsequencesStage3(model, anchorMap, direction);
   }
 
-  public static compileDistinctSubsequencesStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileDistinctSubsequencesStage4(model, anchorMap);
+  public static compileDistinctSubsequencesStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction: 'forward' | 'reverse' = 'forward'): UniversalStep[] {
+    return compileDistinctSubsequencesStage4(model, anchorMap, direction);
   }
 
-  public static compileLongestPalindromicStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileLongestPalindromicStage1or2(model, isMemo, anchorMap);
+  public static compileLongestPalindromicStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLongestPalindromicStage1or2(model, isMemo, anchorMap, direction);
   }
 
-  public static compileLongestPalindromicStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileLongestPalindromicStage3(model, anchorMap);
+  public static compileLongestPalindromicStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLongestPalindromicStage3(model, anchorMap, direction);
   }
 
-  public static compileLongestPalindromicStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>): UniversalStep[] {
-    return compileLongestPalindromicStage4(model, anchorMap);
+  public static compileLongestPalindromicStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {
+    return compileLongestPalindromicStage4(model, anchorMap, direction);
   }
 
   public static compilePalindromicSubstringsStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>): UniversalStep[] {

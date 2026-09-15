@@ -11,6 +11,20 @@ import {
   CENTROID_TREE_PROBLEM_HTML,
   CENTROID_TREE_ANALYSIS_HTML,
 } from './centroid-tree-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  build: [6, 14],
+  build2: [15, 20],
+  build3: [28, 33],
+  init: [2, 5],
+  init2: [6, 12],
+  init3: [13, 20],
+  init4: [6, 14],
+  build4: [35, 42],
+  query: [44, 50],
+  query2: [51, 57],
+  done: [58, 65],
+};
 
 export interface CentroidTreeStep {
   originalRoot: number;
@@ -90,7 +104,7 @@ function buildCentroidDecomp(
     status: 'build',
     message: `[Layer ${depth}] DFS 计算子树大小：当前子树根 N${u}，共 ${totalNodes} 个节点（vis 未标记）。DFS 后确认重心为 N${c}（最大子树 = ${maxSub[c]}，满足 ≤ ⌊${totalNodes}/2⌋ = ${Math.floor(totalNodes / 2)}）。`,
     log: `Layer ${depth}: DFS 子树大小计算完成，重心候选 = N${c}`,
-    codeLine: [6, 14],
+    codeLine: lines.build,
     metrics: {
       'metric-active-node': `DFS从N${u}出发`,
       'metric-tree-height': `深度 ${depth}`,
@@ -108,7 +122,7 @@ function buildCentroidDecomp(
     status: 'build',
     message: `[Layer ${depth}] 对子树（大小 ${totalNodes}）进行重心分治，找到重心节点 ${c}（最大子树大小 ${maxSub[c]}），加入点分树。`,
     log: `Layer ${depth}: 重心 = Node ${c}，子树大小 = ${totalNodes}`,
-    codeLine: [15, 20],
+    codeLine: lines.build2,
     metrics: {
       'metric-active-node': `Node ${c}`,
       'metric-tree-height': `深度 ${depth}`,
@@ -132,7 +146,7 @@ function buildCentroidDecomp(
       status: 'build',
       message: `连边：点分树父节点 N${c} ← 子节点 N${childCentroid}（子树大小 ${childTotal}）。`,
       log: `点分树连边：N${childCentroid} → N${c}`,
-      codeLine: [28, 33],
+      codeLine: lines.build3,
       metrics: {
         'metric-active-node': `Node ${childCentroid}`,
         'metric-tree-height': `深度 ${depth + 1}`,
@@ -175,7 +189,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'init',
     message: `[概述] 动态点分树 (Centroid Tree) 是离线/在线树上路径查询的核心数据结构。给定树 n=${n}，边：${edgeDesc}。通过递归重心分治，建立点分树，每次修改/查询复杂度 O(log²N)。`,
     log: `概述：n=${n}，边 ${edgeDesc}`,
-    codeLine: [2, 5],
+    codeLine: lines.init,
     metrics: {
       'metric-active-node': '初始化',
       'metric-tree-height': `理论 ≤ ${Math.ceil(Math.log2(n))}`,
@@ -193,7 +207,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'init',
     message: `[动机] 朴素树路径查询：暴力枚举所有路径对 O(N²)，过慢。点分树的核心思想：任意路径必经过某层的重心节点，故只需对每层重心维护信息，查询时跳链 O(log N) 层即可。`,
     log: '动机：任意路径经过某层重心，查询跳链 O(log N) 层',
-    codeLine: [6, 12],
+    codeLine: lines.init2,
     metrics: {
       'metric-active-node': '动机分析',
       'metric-tree-height': `O(log ${n})`,
@@ -211,7 +225,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'init',
     message: `[建树流程] ① 对全树求重心 c（最大子树 ≤ n/2）。② 标记 c 为点分树根节点，将 c 的 vis 置 true。③ 对 c 的每个连通子树递归步骤①②③，并在点分树中连接 childCentroid → c。树高严格 O(log N)。`,
     log: '建树流程：递归找重心 → 建边 → 继续分治',
-    codeLine: [13, 20],
+    codeLine: lines.init3,
     metrics: {
       'metric-active-node': '流程说明',
       'metric-tree-height': '建树中',
@@ -229,7 +243,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'init',
     message: `[初始化] 动态点分树建树开始，共 ${n} 个节点，${edges.length} 条边。核心思路：递归分治，每次找子树重心并建立父子关系，保证树高严格 O(log N)。`,
     log: `初始化：n=${n}，开始点分树建树`,
-    codeLine: [2, 5],
+    codeLine: lines.init,
     metrics: {
       'metric-active-node': 'Node 1',
       'metric-tree-height': '初始化中',
@@ -247,7 +261,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'init',
     message: `[重心定义] 树的重心是：删除该节点后，最大子树大小最小的节点。对于 n=${n} 节点的树，最大子树大小 ≤ n/2，确保递归深度为 O(log N)。`,
     log: '重心性质：最大子树 ≤ n/2，树高 O(log N)',
-    codeLine: [6, 14],
+    codeLine: lines.init4,
     metrics: {
       'metric-active-node': 'Node 1',
       'metric-tree-height': `≤ log₂(${n}) = ${Math.ceil(Math.log2(n))}`,
@@ -274,7 +288,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'build',
     message: `✅ [建树完成] 点分树构建完毕！根节点为 N${rootCentroid}，点分树树高 = ${treeHeight}，严格满足 O(log ${n}) = ${Math.ceil(Math.log2(n))} 的上界。`,
     log: `建树完成：根 = N${rootCentroid}，树高 = ${treeHeight}`,
-    codeLine: [35, 42],
+    codeLine: lines.build4,
     metrics: {
       'metric-active-node': `Node ${rootCentroid}`,
       'metric-tree-height': `${treeHeight}`,
@@ -300,7 +314,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'query',
     message: `[查询开始] 对节点 N${queryNode} 发起跳链查询：沿点分树父链 ${jumpChain.join(' ➔ ')} 逐层跳跃，统计经过各层重心的路径信息。`,
     log: `查询 N${queryNode}：跳链 ${jumpChain.join('→')}`,
-    codeLine: [44, 50],
+    codeLine: lines.query,
     metrics: {
       'metric-active-node': `Node ${queryNode}`,
       'metric-tree-height': `${treeHeight}`,
@@ -320,7 +334,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
       status: 'query',
       message: `[跳链 Step ${i + 1}] 当前位于点分树节点 N${node}${parentCTree[node] !== null ? `，下一跳父节点 N${parentCTree[node]}` : '（已到达根节点，查询结束）'}。累计统计路径数 = ${i * 3}。`,
       log: `跳链 ${i + 1}/${jumpChain.length}：当前 N${node}`,
-      codeLine: [51, 57],
+      codeLine: lines.query2,
       metrics: {
         'metric-active-node': `Node ${node}`,
         'metric-tree-height': `${treeHeight - i}`,
@@ -339,7 +353,7 @@ export function buildCentroidTreeSteps(preset: string = 'classic_5node'): Centro
     status: 'done',
     message: `🎉 [查询完成] 节点 N${queryNode} 的跳链查询结束，共跳 ${jumpChain.length} 层，单次查询复杂度为 O(log² N)。动态点分树的核心优势：修改/查询均只需沿根的一条链，长度严格 ≤ log₂N！`,
     log: `✓ 查询完成：共跳 ${jumpChain.length} 层，O(log² N) 复杂度`,
-    codeLine: [58, 65],
+    codeLine: lines.done,
     metrics: {
       'metric-active-node': `Node ${rootCentroid}`,
       'metric-tree-height': `${treeHeight}`,

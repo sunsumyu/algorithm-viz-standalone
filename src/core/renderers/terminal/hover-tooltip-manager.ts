@@ -18,6 +18,7 @@ export interface HoverTooltipDeps {
 export interface HoverTooltipState {
   currentVarsMap: Map<string, ResolvedVariable>;
   currentLang: string;
+  currentStep?: unknown;
 }
 
 export interface HoverTooltipHandle {
@@ -94,8 +95,11 @@ export function createHoverTooltipManager(
         return;
       }
 
-      const resolved = VariableContextResolver.getVariable(state.currentVarsMap, varName);
+      const resolved = VariableContextResolver.getVariable(state.currentVarsMap, varName, state.currentStep);
       if (resolved) {
+        const detailHtml = resolved.detail
+          ? `<div style="font-size: 10px; color: #a5b4fc; margin-top: 3px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 3px;">${escapeHtml(resolved.detail)}</div>`
+          : '';
         hoverTooltip.innerHTML = `
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="color: #94a3b8; font-size: 10px;">${resolved.type || 'var'}</span>
@@ -103,6 +107,7 @@ export function createHoverTooltipManager(
             <span style="color: #64748b;">=</span>
             <span style="color: #38bdf8; font-weight: 700;">${escapeHtml(resolved.value)}</span>
           </div>
+          ${detailHtml}
         `;
       } else {
         hoverTooltip.innerHTML = `

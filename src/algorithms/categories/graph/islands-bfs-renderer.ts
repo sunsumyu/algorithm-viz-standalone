@@ -11,6 +11,15 @@ import {
 } from './islands-bfs-problem-content';
 import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  init: 2,
+  found: [6, 7, 8, 9],
+  poll: 11,
+  enqueue: [14, 15, 16],
+  scan: 5,
+  done: 20,
+};
 
 export interface IslandsBFSStep {
   grid: number[][];
@@ -57,7 +66,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
     action: 'init',
     message: `初始化 ${m}×${n} 网格。准备双重循环扫描寻找未访问陆地 (1)。`,
     log: `初始化网格 ${m}x${n}`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let r = 0; r < m; r++) {
@@ -75,7 +84,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
           action: 'found',
           message: `🎯 在 (${r}, ${c}) 发现新岛屿起点！count = ${count}。起点入队并立即染色标记。`,
           log: `[新岛屿 #${count}] 发现起点 (${r}, ${c}) 并入队`,
-          codeLine: [6, 7, 8, 9],
+          codeLine: lines.found,
         });
 
         while (q.length > 0) {
@@ -88,7 +97,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
             action: 'poll',
             message: `出队 (${cr}, ${cc})：检查四周邻格是否存在连通陆地。`,
             log: `  出队 (${cr}, ${cc})`,
-            codeLine: 11,
+            codeLine: lines.poll,
           });
 
           for (const [dr, dc] of dirs) {
@@ -106,7 +115,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
                 action: 'enqueue',
                 message: `发现邻接陆地 (${nr}, ${nc})：立即染色沉没并推入队列。`,
                 log: `  发现陆地 (${nr}, ${nc}) -> 入队`,
-                codeLine: [14, 15, 16],
+                codeLine: lines.enqueue,
               });
             }
           }
@@ -118,7 +127,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
           action: 'scan',
           message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已访问陆地'}，跳过。`,
           log: `扫描 (${r}, ${c}): ${states[r][c]}`,
-          codeLine: 5,
+          codeLine: lines.scan,
         });
       }
     }
@@ -130,7 +139,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
     scan: null,
     message: `🎉 全网格 BFS 扫描探索完成！共发现 ${count} 座独立岛屿，共计访问 ${visitedLand} 格陆地。`,
     log: `✓ BFS 探索完成: 岛屿总数 = ${count}`,
-    codeLine: 20,
+    codeLine: lines.done,
   });
 
   return steps;

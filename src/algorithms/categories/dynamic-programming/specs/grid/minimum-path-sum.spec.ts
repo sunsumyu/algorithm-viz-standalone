@@ -183,6 +183,19 @@ export const MinimumPathSumSpec: AlgorithmSpec = {
       Array.from({ length: n }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: [5, 6, 7], cpp: [6, 7, 8], python: [5, 6, 7], javascript: [4, 5, 6] },
+      transfer: {
+      java: { primary: 10, context: [8, 9] },
+      cpp: { primary: 10, context: [8, 9] },
+      python: { primary: 9, context: [7, 8] },
+      javascript: { primary: 9, context: [7, 8] },
+    },
+      returnAns: { java: 13, cpp: 13, python: 11, javascript: 12 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -215,7 +228,7 @@ export const MinimumPathSumSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最小路径和。输入网格规模 ${m} × ${n}。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ changed: ['m', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init boundaries
@@ -228,7 +241,7 @@ export const MinimumPathSumSpec: AlgorithmSpec = {
       message: `🎬 初始化边界：起点 dp[0][0] = ${grid[0][0]}，首行首列只能单向直行，累加前缀权重。`,
       log: `init: start=${grid[0][0]}`,
       vars: makeVars({ i: 0, j: 0, curVal: grid[0][0], curDp: grid[0][0], changed: ['dpij'] }),
-      codeLine: { java: [5, 6, 7], cpp: [6, 7, 8], python: [5, 6, 7], javascript: [4, 5, 6] },
+      codeLine: LINES.init,
     });
 
     // Loops
@@ -250,12 +263,7 @@ export const MinimumPathSumSpec: AlgorithmSpec = {
           message: `⚡ 状态转移：比较【来自上方 (${topVal})】vs【来自左方 (${leftVal})】，选择较优的【${isFromTop ? '上方' : '左方'}】+ 当前格子权值 ${cellWeight} $\rightarrow$ dp[${i}][${j}] = ${resultVal}。`,
           log: `update: dp[${i}][${j}] = ${resultVal}`,
           vars: makeVars({ i, j, curVal: cellWeight, curDp: resultVal, changed: ['i', 'j', 'grid', 'dpij'] }),
-          codeLine: {
-            java: { primary: 10, context: [8, 9] },
-            cpp: { primary: 10, context: [8, 9] },
-            python: { primary: 9, context: [7, 8] },
-            javascript: { primary: 9, context: [7, 8] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -267,7 +275,7 @@ export const MinimumPathSumSpec: AlgorithmSpec = {
       message: `🏁 算法结束：到达右下角 (${m - 1}, ${n - 1}) 的最小路径总和为 dp[${m - 1}][${n - 1}] = ${ans}。`,
       log: `return: dp[${m - 1}][${n - 1}] = ${ans}`,
       vars: makeVars({ i: m - 1, j: n - 1, curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 13, cpp: 13, python: 11, javascript: 12 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

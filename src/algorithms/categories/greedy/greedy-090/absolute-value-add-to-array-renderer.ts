@@ -10,14 +10,7 @@
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
 import { GREEDY_090_PROBLEMS } from './greedy-090-problem-content';
-import {
-  ABS_VALUE_ADD_STAGE1_CODES,
-  ABS_VALUE_ADD_STAGE1_LINES,
-  ABS_VALUE_ADD_STAGE2_CODES,
-  ABS_VALUE_ADD_STAGE2_LINES,
-  ABS_VALUE_ADD_STAGE3_CODES,
-  ABS_VALUE_ADD_STAGE3_LINES,
-} from './greedy-090-stage-codes';
+import { ABS_VALUE_ADD_STAGE1_CODES, ABS_VALUE_ADD_STAGE2_CODES, ABS_VALUE_ADD_STAGE3_CODES, getGreedy090Anchor } from './greedy-090-stage-codes';
 import {
   Greedy090Step,
   renderGcdDiffusionGrid,
@@ -77,12 +70,11 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
     decision: '初始化数组状态',
     message: `初始数组: [${initArr.join(', ')}]，探索任意两数差值绝对值的闭包生成过程`,
     log: `[Init] 初始数组: ${initArr.join(',')}`,
-    codeLine: {
-      java: stage === 1 ? ABS_VALUE_ADD_STAGE1_LINES.java.init : stage === 2 ? ABS_VALUE_ADD_STAGE2_LINES.java.init : ABS_VALUE_ADD_STAGE3_LINES.java.intro,
-      cpp: stage === 1 ? ABS_VALUE_ADD_STAGE1_LINES.cpp.init : stage === 2 ? ABS_VALUE_ADD_STAGE2_LINES.cpp.init : ABS_VALUE_ADD_STAGE3_LINES.cpp.intro,
-      python: stage === 1 ? ABS_VALUE_ADD_STAGE1_LINES.python.init : stage === 2 ? ABS_VALUE_ADD_STAGE2_LINES.python.init : ABS_VALUE_ADD_STAGE3_LINES.python.intro,
-      javascript: stage === 1 ? ABS_VALUE_ADD_STAGE1_LINES.javascript.init : stage === 2 ? ABS_VALUE_ADD_STAGE2_LINES.javascript.init : ABS_VALUE_ADD_STAGE3_LINES.javascript.intro,
-    },
+    codeLine: getGreedy090Anchor(
+      'abs-value-add',
+      stage === 1 ? 1 : stage === 2 ? 2 : 3,
+      stage === 1 ? 'init' : stage === 2 ? 'init' : 'intro'
+    ),
   });
 
   if (stage === 1) {
@@ -106,12 +98,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
         decision: `第 ${round} 轮扩散排查`,
         message: `开始第 ${round} 轮两两作差扫描，当前集合包含 ${beforeSize} 个元素`,
         log: `[Round ${round}] 集合大小=${beforeSize}`,
-        codeLine: {
-          java: ABS_VALUE_ADD_STAGE1_LINES.java.whileLoop,
-          cpp: ABS_VALUE_ADD_STAGE1_LINES.cpp.whileLoop,
-          python: ABS_VALUE_ADD_STAGE1_LINES.python.whileLoop,
-          javascript: ABS_VALUE_ADD_STAGE1_LINES.javascript.whileLoop,
-        },
+        codeLine: getGreedy090Anchor('abs-value-add', 1, 'whileLoop'),
       });
 
       for (let i = 0; i < beforeSize; i++) {
@@ -138,12 +125,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
               decision: `发现新差值 |${a} - ${b}| = ${diff}`,
               message: `计算两数差的绝对值 |${a} - ${b}| = ${diff}，集合中尚不存在，加入集合！集合大小变为 ${list.length}`,
               log: `[Add New] |${a} - ${b}| = ${diff} 入库`,
-              codeLine: {
-                java: ABS_VALUE_ADD_STAGE1_LINES.java.add,
-                cpp: ABS_VALUE_ADD_STAGE1_LINES.cpp.add,
-                python: ABS_VALUE_ADD_STAGE1_LINES.python.add,
-                javascript: ABS_VALUE_ADD_STAGE1_LINES.javascript.add,
-              },
+              codeLine: getGreedy090Anchor('abs-value-add', 1, 'add'),
             });
           }
         }
@@ -161,12 +143,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
           decision: '数组大小达到固定，终止循环',
           message: `第 ${round} 轮遍历中未产生任何新差值，集合已完全封闭！最终元素总数 = ${list.length}`,
           log: `[Fix Done] 集合大小稳定在 ${list.length}`,
-          codeLine: {
-            java: ABS_VALUE_ADD_STAGE1_LINES.java.ret,
-            cpp: ABS_VALUE_ADD_STAGE1_LINES.cpp.ret,
-            python: ABS_VALUE_ADD_STAGE1_LINES.python.ret,
-            javascript: ABS_VALUE_ADD_STAGE1_LINES.javascript.ret,
-          },
+          codeLine: getGreedy090Anchor('abs-value-add', 1, 'ret'),
         });
         break;
       }
@@ -188,12 +165,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
       decision: '扫描最大值与最大公约数',
       message: `数论扫描：全体元素最大值 Max = ${max}，非零最大公约数 GCD(g) = ${g}`,
       log: `[GCD Scan] Max=${max}, GCD=${g}`,
-      codeLine: {
-        java: ABS_VALUE_ADD_STAGE2_LINES.java.updateGCD,
-        cpp: ABS_VALUE_ADD_STAGE2_LINES.cpp.updateGCD,
-        python: ABS_VALUE_ADD_STAGE2_LINES.python.updateGCD,
-        javascript: ABS_VALUE_ADD_STAGE2_LINES.javascript.updateGCD,
-      },
+      codeLine: getGreedy090Anchor('abs-value-add', 2, 'updateGCD'),
     });
 
     // 展现理想倍数集
@@ -218,12 +190,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
       decision: '数论闭包生成',
       message: `由辗转相除法可知：所有生成的数必为 ${g} 的倍数（从 ${g} 到 ${max} 共 ${max / g} 个）${hasZero ? '，加上 0 额外计 1 个' : ''}`,
       log: `[Theory Calc] 最终闭包集合包含 ${fullClosure.length} 个数`,
-      codeLine: {
-        java: ABS_VALUE_ADD_STAGE2_LINES.java.calcCount,
-        cpp: ABS_VALUE_ADD_STAGE2_LINES.cpp.calcCount,
-        python: ABS_VALUE_ADD_STAGE2_LINES.python.calcCount,
-        javascript: ABS_VALUE_ADD_STAGE2_LINES.javascript.calcCount,
-      },
+      codeLine: getGreedy090Anchor('abs-value-add', 2, 'calcCount'),
     });
 
     steps.push({
@@ -237,12 +204,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
       decision: '数论贪心 O(N log M) 极速结算',
       message: `计算公式：ans = (${max} / ${g}) + (${hasZero ? '1 (有0)' : '0 (无0)'}) = ${theoretical}`,
       log: `[Done] 最终长度=${theoretical}`,
-      codeLine: {
-        java: ABS_VALUE_ADD_STAGE2_LINES.java.ret,
-        cpp: ABS_VALUE_ADD_STAGE2_LINES.cpp.ret,
-        python: ABS_VALUE_ADD_STAGE2_LINES.python.ret,
-        javascript: ABS_VALUE_ADD_STAGE2_LINES.javascript.ret,
-      },
+      codeLine: getGreedy090Anchor('abs-value-add', 2, 'ret'),
     });
 
     return steps;
@@ -262,12 +224,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
     decision: '更相减损术数学等价性',
     message: '数学本质：古中国《九章算术》中的“更相减损术”证明，不断相减操作必然能求出任意两数的最大公约数 g',
     log: '[Proof Start] 更相减损术与欧几里得算法等价。',
-    codeLine: {
-      java: ABS_VALUE_ADD_STAGE3_LINES.java.gcd,
-      cpp: ABS_VALUE_ADD_STAGE3_LINES.cpp.gcd,
-      python: ABS_VALUE_ADD_STAGE3_LINES.python.gcd,
-      javascript: ABS_VALUE_ADD_STAGE3_LINES.javascript.gcd,
-    },
+    codeLine: getGreedy090Anchor('abs-value-add', 3, 'gcd'),
   });
 
   steps.push({
@@ -281,12 +238,7 @@ export function buildAbsValueAddSteps(rawInput: string, stage: number): AbsValue
     decision: '裴蜀定理格点全覆盖证明',
     message: '一旦最小非零公约数 g 生成，通过 |k*g - g| = (k-1)*g，整个整数格点 {1g, 2g, ..., max} 将被彻底覆盖且无法产生其他任何多余数，闭包定理成立！',
     log: '[Proof Verified] 闭包定理严格成立。',
-    codeLine: {
-      java: ABS_VALUE_ADD_STAGE3_LINES.java.conclusion,
-      cpp: ABS_VALUE_ADD_STAGE3_LINES.cpp.conclusion,
-      python: ABS_VALUE_ADD_STAGE3_LINES.python.conclusion,
-      javascript: ABS_VALUE_ADD_STAGE3_LINES.javascript.conclusion,
-    },
+    codeLine: getGreedy090Anchor('abs-value-add', 3, 'conclusion'),
   });
 
   return steps;

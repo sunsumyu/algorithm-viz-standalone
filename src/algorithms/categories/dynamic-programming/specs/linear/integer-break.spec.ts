@@ -159,6 +159,15 @@ export const IntegerBreakSpec: AlgorithmSpec = {
   },
   generateSteps: (input: { n?: number } | number): DpTraceStep[] => {
     const n = typeof input === 'number' ? input : (input?.n || 10);
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 5, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 6, python: 5, javascript: 4 },
+      line1: { java: 7, cpp: 8, python: 7, javascript: 6 },
+      returnAns: { java: 10, cpp: 11, python: 8, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
     const numDp: number[] = Array(n + 1).fill(0);
@@ -199,7 +208,7 @@ export const IntegerBreakSpec: AlgorithmSpec = {
       formula: `integerBreak(${n})`,
       metrics: { i: '-', j: '-', 'j*(i-j)': '-', 'j*dp[i-j]': '-', 'dp[i]': '-' },
       vars: makeVars({ changed: ['n'] }),
-      codeLine: { java: 2, cpp: 3, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: dp[2] = 1
@@ -213,7 +222,7 @@ export const IntegerBreakSpec: AlgorithmSpec = {
       formula: 'dp[2] = 1',
       metrics: { i: 2, j: '-', 'j*(i-j)': '-', 'j*dp[i-j]': '-', 'dp[i]': 1 },
       vars: makeVars({ currentDp: 1, changed: ['dp', 'dpi'] }),
-      codeLine: { java: 4, cpp: 5, python: 4, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     for (let i = 3; i <= n; i++) {
@@ -226,7 +235,7 @@ export const IntegerBreakSpec: AlgorithmSpec = {
         formula: `for (int i = 3; i <= ${n}; i++) [i = ${i}]`,
         metrics: { i, j: '-', 'j*(i-j)': '-', 'j*dp[i-j]': '-', 'dp[i]': numDp[i] || '-' },
         vars: makeVars({ i, changed: ['i'] }),
-        codeLine: { java: 5, cpp: 6, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       const maxJ = Math.floor(i / 2);
@@ -246,7 +255,7 @@ export const IntegerBreakSpec: AlgorithmSpec = {
           formula: `dp[${i}] = max(dp[${i}], max(${j}×(${i}-${j}), ${j}×dp[${i - j}])) = ${dp[i]}`,
           metrics: { i, j, 'j*(i-j)': opt1, 'j*dp[i-j]': opt2, 'dp[i]': numDp[i] },
           vars: makeVars({ i, j, opt1, opt2, currentDp: numDp[i], changed: ['j', 'opt1', 'opt2', 'dp', 'dpi'] }),
-          codeLine: { java: 7, cpp: 8, python: 7, javascript: 6 },
+          codeLine: LINES.line1,
         });
       }
     }
@@ -260,7 +269,7 @@ export const IntegerBreakSpec: AlgorithmSpec = {
       formula: `return dp[${n}] = ${dp[n]}`,
       metrics: { i: n, j: '-', 'j*(i-j)': '-', 'j*dp[i-j]': '-', 'dp[i]': numDp[n] },
       vars: makeVars({ i: n, currentDp: numDp[n], changed: ['dpi'] }),
-      codeLine: { java: 10, cpp: 11, python: 8, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

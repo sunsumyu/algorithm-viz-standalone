@@ -152,6 +152,24 @@ export const LcisSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(n).fill(1);
     let maxLen = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: [7, 8], context: [6] },
+      cpp: { primary: [7, 8], context: [6] },
+      python: { primary: [6, 7], context: [5] },
+      javascript: { primary: [5, 6], context: [4] },
+    },
+      transfer2: {
+      java: { primary: 8, context: [6] },
+      cpp: { primary: 8, context: [6] },
+      python: { primary: 7, context: [5] },
+      javascript: { primary: 6, context: [4] },
+    },
+      returnAns: { java: 11, cpp: 11, python: 8, javascript: 9 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -187,7 +205,7 @@ export const LcisSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最长连续递增序列 (LCIS)。数组 [${nums.join(', ')}]。`,
       log: `entry: nums=[${nums.join(',')}]`,
       vars: makeVars({ changed: ['nums'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i < n; i++) {
@@ -205,12 +223,7 @@ export const LcisSpec: AlgorithmSpec = {
           message: `✨ 相邻递增延续：nums[${i}](${nums[i]}) > nums[${i - 1}](${nums[i - 1]})，连续长度累加 dp[${i}] = ${next}。`,
           log: `dp[${i}] = ${next}`,
           vars: makeVars({ i, curNum: nums[i], prevNum: nums[i - 1], curDp: next, mx: maxLen, changed: ['i', 'ni', 'np', 'dpi', 'mx'] }),
-          codeLine: {
-            java: { primary: [7, 8], context: [6] },
-            cpp: { primary: [7, 8], context: [6] },
-            python: { primary: [6, 7], context: [5] },
-            javascript: { primary: [5, 6], context: [4] },
-          },
+          codeLine: LINES.transfer,
         });
       } else {
         push({
@@ -221,12 +234,7 @@ export const LcisSpec: AlgorithmSpec = {
           message: `🛑 连续递增中断：nums[${i}](${nums[i]}) <= nums[${i - 1}](${nums[i - 1]})，重新重置长度 dp[${i}] = 1。`,
           log: `reset: dp[${i}] = 1`,
           vars: makeVars({ i, curNum: nums[i], prevNum: nums[i - 1], curDp: 1, mx: maxLen, changed: ['i', 'ni', 'np', 'dpi'] }),
-          codeLine: {
-            java: { primary: 8, context: [6] },
-            cpp: { primary: 8, context: [6] },
-            python: { primary: 7, context: [5] },
-            javascript: { primary: 6, context: [4] },
-          },
+          codeLine: LINES.transfer2,
         });
       }
     }
@@ -237,7 +245,7 @@ export const LcisSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最长连续递增子序列长度为 ${maxLen}。`,
       log: `return: maxLen=${maxLen}`,
       vars: makeVars({ mx: maxLen, changed: ['mx'] }),
-      codeLine: { java: 11, cpp: 11, python: 8, javascript: 9 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

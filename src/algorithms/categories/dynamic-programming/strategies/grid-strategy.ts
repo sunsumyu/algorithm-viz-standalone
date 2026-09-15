@@ -4,6 +4,7 @@
  */
 
 import { DpDemoStep, DpTreeNode } from '../dp-demo-visualizer';
+import { cloneStateDepTree } from '../../../../core/strategies/tree-clone';
 import { IEvolutionStrategy, EvolutionCodeContext, EvolutionStepContext, StageCodeConfig, AlgoCategory } from './types';
 import { codeStepIndexer } from '../../../../core/code-step-indexer';
 
@@ -24,6 +25,77 @@ function getAnchorHighlight(algoId: string, stage: string, anchor: string, fallb
   }
   return fallback;
 }
+
+// 演示步骤行号集中表：naive/memo 递归阶段多语言模板的语义锚点（值与原硬编码逐位一致）
+// naive = 朴素递归模板行号；memo = 备忘录模板行号
+const GRID_DEMO_LINES = {
+  entry: {
+    naive: { java: 4, python: 8, cpp: 4, javascript: 7 },
+    memo: { java: 5, python: 10, cpp: 5, javascript: 9 },
+  },
+  entryBackwardFinish: {
+    naive: { java: 4, python: 9, cpp: 4, javascript: 7 },
+    memo: { java: 5, python: 11, cpp: 5, javascript: 9 },
+  },
+  entryForward: {
+    naive: { java: 4, python: 8, cpp: 4, javascript: 7 },
+    memo: { java: 5, python: 10, cpp: 6, javascript: 9 },
+  },
+  enterDfsBackward: {
+    naive: { java: 6, python: 4, cpp: 6, javascript: 2 },
+    memo: { java: 7, python: 4, cpp: 7, javascript: 2 },
+  },
+  enterDfsForward: {
+    naive: { java: 6, python: 4, cpp: 6, javascript: 2 },
+    memo: { java: 7, python: 4, cpp: 8, javascript: 3 },
+  },
+  obstacleBackward: {
+    naive: { java: 7, python: 5, cpp: 7, javascript: 3 },
+    memo: { java: 8, python: 6, cpp: 8, javascript: 3 },
+  },
+  obstacleForward: {
+    naive: { java: 7, python: 5, cpp: 7, javascript: 3 },
+    memo: { java: 8, python: 5, cpp: 8, javascript: 3 },
+  },
+  baseCaseBackward: {
+    naive: { java: 8, python: 5, cpp: 7, javascript: 3 },
+    memo: { java: 9, python: 5, cpp: 8, javascript: 3 },
+  },
+  baseCaseForward: {
+    naive: { java: 7, python: 5, cpp: 7, javascript: 3 },
+    memo: { java: 8, python: 5, cpp: 9, javascript: 4 },
+  },
+  outOfBoundsForward: {
+    naive: { java: 8, python: 6, cpp: 8, javascript: 4 },
+    memo: { java: 9, python: 6, cpp: 10, javascript: 5 },
+  },
+  memoHitBackward: { java: 13, python: 7, cpp: 9, javascript: 4 }, // 仅 memo 阶段执行
+  memoHitForward: { java: 10, python: 7, cpp: 10, javascript: 5 }, // 仅 memo 阶段执行
+  branchLeftBackward: {
+    naive: { java: 12, python: 7, cpp: 8, javascript: 4 },
+    memo: { java: 17, python: 8, cpp: 10, javascript: 5 },
+  },
+  branchUpBackward: {
+    naive: { java: 13, python: 8, cpp: 9, javascript: 5 },
+    memo: { java: 18, python: 9, cpp: 11, javascript: 6 },
+  },
+  branchDownForward: {
+    naive: { java: 10, python: 6, cpp: 8, javascript: 4 },
+    memo: { java: 11, python: 8, cpp: 11, javascript: 6 },
+  },
+  branchRightForward: {
+    naive: { java: 11, python: 6, cpp: 8, javascript: 4 },
+    memo: { java: 12, python: 8, cpp: 11, javascript: 6 },
+  },
+  mergeBackward: {
+    naive: { java: 14, python: 9, cpp: 10, javascript: 6 },
+    memo: { java: 19, python: 10, cpp: 12, javascript: 7 },
+  },
+  mergeForward: {
+    naive: { java: 12, python: 7, cpp: 9, javascript: 5 },
+    memo: { java: 13, python: 9, cpp: 12, javascript: 7 },
+  },
+};
 
 export class GridEvolutionStrategy implements IEvolutionStrategy {
   canHandle(category: AlgoCategory): boolean {
@@ -691,15 +763,9 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
         };
       }
 
+      // 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
       function cloneTree(node: DpTreeNode | null): DpTreeNode | null {
-        if (!node) return null;
-        return {
-          id: node.id,
-          val: node.val,
-          status: node.status,
-          tag: node.tag,
-          children: node.children ? node.children.map(cloneTree).filter((child): child is DpTreeNode => child !== null) : [],
-        };
+        return cloneStateDepTree(node);
       }
 
       if (isBackward) {
@@ -730,9 +796,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `🚀 【主函数入口】调用 uniquePaths(${m}, ${n})，初始化 memo[${m}][${n}]，从终点 (${m - 1}, ${n - 1}) 🏆 发起倒序递归逆推！`,
           log: `entry: uniquePaths(m=${m}, n=${n}), start dfs(${m - 1}, ${n - 1})`,
-          codeLine: isMemo
-            ? { java: 5, python: 10, cpp: 5, javascript: 9 }
-            : { java: 4, python: 8, cpp: 4, javascript: 7 },
+          codeLine: isMemo ? GRID_DEMO_LINES.entry.memo : GRID_DEMO_LINES.entry.naive,
           metrics: { '当前阶段': '🚀 主函数入口', '倒序起点': `(${m - 1}, ${n - 1})`, '逆推目标': '(0, 0)', '总递归调用': 0 },
           vars: [
             { name: 'i (当前行)', value: String(m - 1), type: 'number' },
@@ -782,9 +846,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `📥 【进入 dfs 函数】执行 dfs(i = ${r}, j = ${c})，倒序探索从起点到达 (${r}, ${c}) 的所有可行路径。`,
             log: `dfs(${r}, ${c}) [调用 #${calls}]`,
-            codeLine: isMemo
-              ? { java: 7, python: 4, cpp: 7, javascript: 2 }
-              : { java: 6, python: 4, cpp: 6, javascript: 2 },
+            codeLine: isMemo ? GRID_DEMO_LINES.enterDfsBackward.memo : GRID_DEMO_LINES.enterDfsBackward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '递归深度': depth, '总递归调用': calls },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number', changed: true },
@@ -805,9 +867,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `🚧 【遇到障碍物】坐标 (${r}, ${c}) 为障碍物 🚧，机器人无法站立通行，直接返回 0！`,
               log: `obstacle: (${r}, ${c}) ➔ return 0`,
-              codeLine: isMemo
-                ? { java: 8, python: 6, cpp: 8, javascript: 3 }
-                : { java: 7, python: 5, cpp: 7, javascript: 3 },
+              codeLine: isMemo ? GRID_DEMO_LINES.obstacleBackward.memo : GRID_DEMO_LINES.obstacleBackward.naive,
               metrics: { '当前格子': `(${r}, ${c})`, '返回值': 0, '状态': '🚧 遇到障碍物' },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -831,9 +891,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `🎬 【Base Case 命中】i (${r}) == 0 或 j (${c}) == 0！到达第 0 行或第 0 列（最上行或最左列），从起点 (0,0) 单向直达仅有 1 种路径，return 1！`,
               log: `base: reach border (${r}, ${c}) ➔ 1`,
-              codeLine: isMemo
-                ? { java: 9, python: 5, cpp: 8, javascript: 3 }
-                : { java: 8, python: 5, cpp: 7, javascript: 3 },
+              codeLine: isMemo ? GRID_DEMO_LINES.baseCaseBackward.memo : GRID_DEMO_LINES.baseCaseBackward.naive,
               metrics: { '当前格子': `(${r}, ${c})`, '返回值': 1, '总递归调用': calls },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -858,7 +916,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `⚡ 【备忘录命中剪枝】memo[${r}][${c}] 命中历史缓存 ${cached}！直接 O(1) 查表返回，彻底跳过重复递归子树！`,
               log: `memo hit: memo[${r}][${c}] = ${cached}`,
-              codeLine: { java: 13, python: 7, cpp: 9, javascript: 4 },
+              codeLine: GRID_DEMO_LINES.memoHitBackward,
               metrics: { '当前格子': `(${r}, ${c})`, '备忘录命中': cached, '剪枝效率': 'O(1)' },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -878,9 +936,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `⬅️ 【发起向左逆推】在 (${r}, ${c}) 执行 int left = dfs(i, j - 1) ➔ 向左递归到达前驱坐标 (${r}, ${c - 1})。`,
             log: `call left: dfs(${r}, ${c - 1})`,
-            codeLine: isMemo
-              ? { java: 17, python: 8, cpp: 10, javascript: 5 }
-              : { java: 12, python: 7, cpp: 8, javascript: 4 },
+            codeLine: isMemo ? GRID_DEMO_LINES.branchLeftBackward.memo : GRID_DEMO_LINES.branchLeftBackward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '执行动作': '⬅️ 向左逆推' },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -901,8 +957,8 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             message: `⬆️ 【发起向上逆推】在 (${r}, ${c}) 执行 int up = dfs(i - 1, j) ➔ 向上递归到达前驱坐标 (${r - 1}, ${c})。`,
             log: `call up: dfs(${r - 1}, ${c})`,
             codeLine: isMemo
-              ? { java: 18, python: 9, cpp: 11, javascript: 6 }
-              : { java: 13, python: 8, cpp: 9, javascript: 5 },
+              ? GRID_DEMO_LINES.branchUpBackward.memo
+              : GRID_DEMO_LINES.branchUpBackward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '执行动作': '⬆️ 向上逆推' },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -931,9 +987,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               ? `💾 【回溯归并与写缓存】回溯至 (${r}, ${c})：左方解 left (${leftVal}) + 上方解 up (${upVal}) ➔ 写入 memo[${r}][${c}] = ${total}，return ${total}。`
               : `🔄 【回溯归并】回溯至 (${r}, ${c})：左方解 left (${leftVal}) + 上方解 up (${upVal}) ➔ 归并 return ${total} 条路径。`,
             log: `return: dfs(${r}, ${c}) = ${total}`,
-            codeLine: isMemo
-              ? { java: 19, python: 10, cpp: 12, javascript: 7 }
-              : { java: 14, python: 9, cpp: 10, javascript: 6 },
+            codeLine: isMemo ? GRID_DEMO_LINES.mergeBackward.memo : GRID_DEMO_LINES.mergeBackward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '计算结果': total, '总递归调用': calls },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -968,9 +1022,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `🏁 【递归全景搜索完毕】最终计算出从起点 (0, 0) 到终点 (${m - 1}, ${n - 1}) 的不同路径总数为 ${ans} 条。总递归调用次数：${calls} 次！`,
           log: `finish: total paths = ${ans}, total calls = ${calls}`,
-          codeLine: isMemo
-            ? { java: 5, python: 11, cpp: 5, javascript: 9 }
-            : { java: 4, python: 9, cpp: 4, javascript: 7 },
+          codeLine: isMemo ? GRID_DEMO_LINES.entryBackwardFinish.memo : GRID_DEMO_LINES.entryBackwardFinish.naive,
           metrics: { '最终路径数': ans, '总递归调用': calls, '时空复杂度': isMemo ? `O(${m}×${n})` : 'O(2^(m+n))' },
           vars: [
             { name: '最终路径总数', value: String(ans), type: 'number', changed: true },
@@ -1009,9 +1061,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `🚀 【主函数入口】调用 uniquePaths(${m}, ${n})，探险家从左上角起点 (0, 0) 🚩 出发自顶向下递归探索。`,
           log: `entry: uniquePaths(m=${m}, n=${n})`,
-          codeLine: isMemo
-            ? { java: 5, python: 10, cpp: 6, javascript: 9 }
-            : { java: 4, python: 8, cpp: 4, javascript: 7 },
+          codeLine: isMemo ? GRID_DEMO_LINES.entryForward.memo : GRID_DEMO_LINES.entryForward.naive,
           metrics: { '当前阶段': '🚀 主函数入口', '当前起点': '(0, 0)', '终点目标': `(${m - 1}, ${n - 1})`, '总递归调用': 0 },
           vars: [
             { name: 'i (当前行)', value: '0', type: 'number' },
@@ -1061,9 +1111,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `📥 【进入 dfs 函数】执行 dfs(i = ${r}, j = ${c}, m = ${m}, n = ${n})，探索从 (${r}, ${c}) 通往终点的路径。`,
             log: `dfs(${r}, ${c}, ${m}, ${n}) [调用 #${calls}]`,
-            codeLine: isMemo
-              ? { java: 7, python: 4, cpp: 8, javascript: 3 }
-              : { java: 6, python: 4, cpp: 6, javascript: 2 },
+            codeLine: isMemo ? GRID_DEMO_LINES.enterDfsForward.memo : GRID_DEMO_LINES.enterDfsForward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '递归深度': depth, '总递归调用': calls },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number', changed: true },
@@ -1084,9 +1132,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `🚧 【遇到障碍物】坐标 (${r}, ${c}) 为障碍物 🚧，机器人无法站立通行，返回 0！`,
               log: `obstacle: (${r}, ${c}) ➔ return 0`,
-              codeLine: isMemo
-                ? { java: 8, python: 5, cpp: 8, javascript: 3 }
-                : { java: 7, python: 5, cpp: 7, javascript: 3 },
+              codeLine: isMemo ? GRID_DEMO_LINES.obstacleForward.memo : GRID_DEMO_LINES.obstacleForward.naive,
               metrics: { '当前格子': `(${r}, ${c})`, '返回值': 0, '状态': '🚧 遇到障碍物' },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1110,9 +1156,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `🏆 【Base Case 命中】i (${r}) == m - 1 (${m - 1}) 且 j (${c}) == n - 1 (${n - 1})！成功抵达终点 (${r}, ${c})！返回 1。`,
               log: `base: reach goal (${r}, ${c}) ➔ 1`,
-              codeLine: isMemo
-                ? { java: 8, python: 5, cpp: 9, javascript: 4 }
-                : { java: 7, python: 5, cpp: 7, javascript: 3 },
+              codeLine: isMemo ? GRID_DEMO_LINES.baseCaseForward.memo : GRID_DEMO_LINES.baseCaseForward.naive,
               metrics: { '当前格子': `(${r}, ${c})`, '返回值': 1, '总递归调用': calls },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1136,9 +1180,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `🚧 【越界判断】坐标 (${r}, ${c}) 超出网格范围 (m = ${m}, n = ${n})，不可通行，执行 return 0。`,
               log: `out of bounds: (${r}, ${c}) ➔ 0`,
-              codeLine: isMemo
-                ? { java: 9, python: 6, cpp: 10, javascript: 5 }
-                : { java: 8, python: 6, cpp: 8, javascript: 4 },
+              codeLine: isMemo ? GRID_DEMO_LINES.outOfBoundsForward.memo : GRID_DEMO_LINES.outOfBoundsForward.naive,
               metrics: { '当前格子': `(${r}, ${c})`, '返回值': 0, '总递归调用': calls },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1162,7 +1204,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               tree: cloneTree(rootTree),
               message: `⚡ 【备忘录命中剪枝】memo[${r}][${c}] 命中历史缓存 ${cached}！直接 O(1) 查表返回，彻底跳过重复递归子树！`,
               log: `memo hit: memo[${r}][${c}] = ${cached}`,
-              codeLine: { java: 10, python: 7, cpp: 10, javascript: 5 },
+              codeLine: GRID_DEMO_LINES.memoHitForward,
               metrics: { '当前格子': `(${r}, ${c})`, '备忘录命中': cached, '剪枝效率': 'O(1)' },
               vars: [
                 { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1181,9 +1223,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `⬇️ 【向下探索】探险家从 (${r}, ${c}) 向下迈进一步 ➔ dfs(${r + 1}, ${c})。`,
             log: `call down: dfs(${r + 1}, ${c})`,
-            codeLine: isMemo
-              ? { java: 11, python: 8, cpp: 11, javascript: 6 }
-              : { java: 10, python: 6, cpp: 8, javascript: 4 },
+            codeLine: isMemo ? GRID_DEMO_LINES.branchDownForward.memo : GRID_DEMO_LINES.branchDownForward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '执行动作': '⬇️ 向下探索' },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1203,9 +1243,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
             tree: cloneTree(rootTree),
             message: `➡️ 【向右探索】探险家从 (${r}, ${c}) 向右迈进一步 ➔ dfs(${r}, ${c + 1})。`,
             log: `call right: dfs(${r}, ${c + 1})`,
-            codeLine: isMemo
-              ? { java: 12, python: 8, cpp: 11, javascript: 6 }
-              : { java: 11, python: 6, cpp: 8, javascript: 4 },
+            codeLine: isMemo ? GRID_DEMO_LINES.branchRightForward.memo : GRID_DEMO_LINES.branchRightForward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '执行动作': '➡️ 向右探索' },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1234,9 +1272,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
               ? `💾 【回溯与写缓存】回溯至 (${r}, ${c})：下路 (${downVal}) + 右路 (${rightVal}) ➔ 写入 memo[${r}][${c}] = ${total}，return ${total}。`
               : `🔄 【回溯归并】回溯至 (${r}, ${c})：下路 (${downVal}) + 右路 (${rightVal}) ➔ 归并 return ${total}。`,
             log: `return: (${r}, ${c}) = ${total}`,
-            codeLine: isMemo
-              ? { java: 13, python: 9, cpp: 12, javascript: 7 }
-              : { java: 12, python: 7, cpp: 9, javascript: 5 },
+            codeLine: isMemo ? GRID_DEMO_LINES.mergeForward.memo : GRID_DEMO_LINES.mergeForward.naive,
             metrics: { '当前格子': `(${r}, ${c})`, '向下路径': downVal, '向右路径': rightVal, '合计路径': total },
             vars: [
               { name: 'i (当前行)', value: String(r), type: 'number' },
@@ -1273,9 +1309,7 @@ export class GridEvolutionStrategy implements IEvolutionStrategy {
           tree: cloneTree(rootTree),
           message: `🏁 【正向递归推演完毕】探险家完成所有路径探索！终点可达路径总数为 ${totalAns} 条，总递归调用：${calls} 次。`,
           log: `completed: totalPaths=${totalAns}, calls=${calls}`,
-          codeLine: isMemo
-            ? { java: 5, python: 10, cpp: 6, javascript: 9 }
-            : { java: 4, python: 8, cpp: 4, javascript: 7 },
+          codeLine: isMemo ? GRID_DEMO_LINES.entryForward.memo : GRID_DEMO_LINES.entryForward.naive,
           metrics: { '最终路径总数': totalAns, '总递归调用': calls, '计算状态': '✅ 演化演示完毕' },
           vars: [
             { name: '最终路径总数', value: String(totalAns), type: 'number', changed: true },

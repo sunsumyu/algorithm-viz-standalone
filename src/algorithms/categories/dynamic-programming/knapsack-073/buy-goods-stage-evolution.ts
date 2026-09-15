@@ -10,9 +10,13 @@ import { HighlightTarget } from '../../../../core/code-panel';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { BUY_GOODS_STAGE1_CODE_LANGUAGES, BUY_GOODS_STAGE2_CODE_LANGUAGES, BUY_GOODS_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
+import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 type BuyGoodsCallFrame = { i: number; rem: number; label: string };
 
+/** Recursion stage 1: skeleton managed by RecursionTraceTracker */
 interface BuyGoodsRecursionStep extends RecursionStepBase<BuyGoodsCallFrame> {
   i: number;
   remCap: number;
@@ -59,24 +63,19 @@ export function parseBuyGoodsNormalGames(initialBudget: number, a: number[], b: 
 
 export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800): BuyGoodsRecursionStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: BuyGoodsRecursionStep[] = [];
   const n = normalGames.length;
-  const callStack: Array<{ i: number; rem: number; label: string }> = [];
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(1, 'buy-goods', anchor);
+  const tracker = new RecursionTraceTracker<BuyGoodsRecursionStep, BuyGoodsCallFrame>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(1, 'buy-goods', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, rem: number, decision: string, message: string, retVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       n,
       normalGames: [...normalGames],
-      callStack: [...callStack],
       decision,
       message,
       log: `[DFS] i=${i} remBudget=${rem} | ${action}: ${message}`,
@@ -84,7 +83,7 @@ export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], 
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界触底',
         'metric-cur-game': i < n ? `游戏 #${normalGames[i].id} (花:${normalGames[i].cost}, 乐:${normalGames[i].val})` : '—',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
@@ -92,14 +91,14 @@ export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], 
   pushStep('callRoot', 'callRoot', 0, curBudget, '贪心收割完毕，启动01递归', `🚀 贪心白嫖收割 ${greedyHappy} 快乐值，结余预算 ${curBudget}。共 ${n} 款普通游戏进入递归。`);
 
   function dfs(i: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     const label = `dfs(i=${i}, rem=${rem})`;
-    callStack.push({ i, rem, label });
+    tracker.enterFrame({ i, rem, label });
     pushStep('fnEnter', 'fnEnter', i, rem, '进入栈帧', `📥 进入栈帧 ${label}。`);
 
     if (i === n || rem <= 0) {
       pushStep('baseCheck', 'baseCheck', i, rem, '触底终止', `🛑 边界触底 (i>=${n} 或 rem<=0)，返回 0。`);
-      callStack.pop();
+      tracker.exitFrame();
       return 0;
     }
 
@@ -117,39 +116,30 @@ export function buildBuyGoodsRecursionSteps(initialBudget: number, a: number[], 
 
     const res = Math.max(p1, p2);
     pushStep('returnMax', 'returnMax', i, rem, `返回最优解 max(${p1}, ${p2}) = ${res}`, `📤 栈帧 ${label} 汇聚：返回两分支最优值 ${res}。`, res);
-    callStack.pop();
+    tracker.exitFrame();
     return res;
   }
 
   dfs(0, curBudget);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: number[], w: number[], maxSteps = 800): BuyGoodsMemoStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: BuyGoodsMemoStep[] = [];
   const n = normalGames.length;
   const memo: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(curBudget + 1).fill(null));
-  let hitCount = 0;
-  let missCount = 0;
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'buy-goods', anchor);
+  const tracker = new MemoTraceTracker<BuyGoodsMemoStep>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(2, 'buy-goods', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, rem: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
-      hitCount,
-      missCount,
+      memoGrid: snapshotGrid2D(memo),
       decision,
       message,
       log: `[MEMO] i=${i} remBudget=${rem} | ${action}: ${message}`,
@@ -157,8 +147,8 @@ export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: nu
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界触底',
         'metric-cache-status': memoHit ? '🎯 Cache HIT' : '⚪ Cache MISS',
-        'metric-hit-count': `${hitCount}`,
-        'metric-miss-count': `${missCount}`,
+        'metric-hit-count': `${tracker.hitCount}`,
+        'metric-miss-count': `${tracker.missCount}`,
       },
     });
   };
@@ -166,7 +156,7 @@ export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: nu
   pushStep('callRoot', 'callRoot', 0, curBudget, false, '启动记忆化搜索', `🚀 启动夏季特惠记忆化搜索：初始化备忘录 memo[${n + 1}][${curBudget + 1}]。`);
 
   function dfsMemo(i: number, rem: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     pushStep('fnEnter', 'fnEnter', i, rem, false, '进入栈帧', `📥 进入栈帧 dfs(i=${i}, rem=${rem})。`);
 
     if (i === n || rem <= 0) {
@@ -175,13 +165,13 @@ export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: nu
     }
 
     if (memo[i][rem] !== null) {
-      hitCount++;
+      tracker.registerHit();
       const val = memo[i][rem]!;
       pushStep('memoCheck', 'memoCheck', i, rem, true, `命中缓存 memo[${i}][${rem}] = ${val}`, `🎯 缓存命中！直接复用结果 ${val}，剪除冗余分支！`, val);
       return val;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', i, rem, false, `未命中缓存 memo[${i}][${rem}]`, `⚪ 缓存未命中：首次计算，展开分支。`);
 
     const g = normalGames[i];
@@ -201,28 +191,22 @@ export function buildBuyGoodsMemoSteps(initialBudget: number, a: number[], b: nu
   }
 
   dfsMemo(0, curBudget);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildBuyGoods2DSteps(initialBudget: number, a: number[], b: number[], w: number[]): BuyGoods2DStep[] {
   const { greedyHappy, curBudget, normalGames } = parseBuyGoodsNormalGames(initialBudget, a, b, w);
-  const steps: BuyGoods2DStep[] = [];
   const n = normalGames.length;
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(curBudget + 1).fill(0));
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'buy-goods', anchor);
+  const tracker = new Dp2DTraceTracker<BuyGoods2DStep>({ resolveLine });
 
   const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -263,7 +247,5 @@ export function buildBuyGoods2DSteps(initialBudget: number, a: number[], b: numb
   const finalTotal = greedyHappy + dpMax;
   pushStep('returnAns', 'returnAns', n, curBudget, [{ label: `dp[${n}][${curBudget}]`, val: dpMax, r: n, c: curBudget }], `最终快乐值: ${greedyHappy} + ${dpMax} = ${finalTotal}`, `🎉 二维 DP 填表完毕！贪心白嫖 ${greedyHappy} + 背包获得 ${dpMax} = 总快乐值 ${finalTotal}！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }

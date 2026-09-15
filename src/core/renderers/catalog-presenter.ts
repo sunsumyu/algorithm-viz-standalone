@@ -378,7 +378,7 @@ export class CatalogPresenter {
       btn.className = `sidebar-course-btn ${item.id === currentCourse ? 'active' : ''}`;
       btn.dataset.course = item.id;
       btn.title = `${item.label} (${item.count} 关)`;
-      btn.innerHTML = `<span>${item.label}</span><span class="sidebar-course-count">${item.count}</span>`;
+      btn.innerHTML = `<span class="sidebar-course-label">${item.label}</span><span class="sidebar-course-count">${item.count}</span>`;
       btn.addEventListener('click', () => {
         onSelectCourse(item.id);
       });

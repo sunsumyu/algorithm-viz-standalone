@@ -169,6 +169,20 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(target + 1).fill(0);
     dp[0] = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 4, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [4, 5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      line0: { java: 11, cpp: 11, python: 8, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -202,7 +216,7 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
       message: `🎯 函数入口：组合总和 Ⅳ。nums = [${nums.join(', ')}]，求组成目标和 ${target} 的有序排列数。`,
       log: `entry: nums=[${nums.join(',')}], target=${target}`,
       vars: makeVars({ changed: ['nums', 'target'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init
@@ -213,7 +227,7 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
       message: `🎬 初始化：dp[0] = 1（空排列方案数为 1）。`,
       log: `init: dp[0] = 1`,
       vars: makeVars({ i: 0, curDp: 1, changed: ['dpi'] }),
-      codeLine: { java: 4, cpp: 4, python: 3, javascript: 3 },
+      codeLine: LINES.init,
     });
 
     // Loops (完全背包排列数: 外层容量 i 从 1 到 target, 内层 nums)
@@ -225,7 +239,7 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
         message: `🔄 外层循环：当前背包容量 i = ${i}（先容量后物品，推导有序排列）。`,
         log: `outer loop: cap=${i}`,
         vars: makeVars({ i, curDp: dp[i], changed: ['i'] }),
-        codeLine: { java: 5, cpp: 5, python: 4, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 0; j < nums.length; j++) {
@@ -244,12 +258,7 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
             message: `⚡ 排列累加：以数字 ${num} 作为序列结尾，dp[${i}] 由 ${oldVal} 累加 ${prev} 变为 ${dp[i]} 种排列。`,
             log: `update: dp[${i}] += dp[${i - num}] = ${dp[i]}`,
             vars: makeVars({ i, j, curNum: num, curDp: dp[i], changed: ['dpi', 'num'] }),
-            codeLine: {
-              java: { primary: 7, context: [5, 6] },
-              cpp: { primary: 7, context: [5, 6] },
-              python: { primary: 6, context: [4, 5] },
-              javascript: { primary: 6, context: [4, 5] },
-            },
+            codeLine: LINES.transfer,
           });
         }
       }
@@ -263,7 +272,7 @@ export const CombinationSumIvSpec: AlgorithmSpec = {
       message: `🏁 算法结束：凑成目标和 ${target} 共有 dp[${target}] = ${ans} 种不同排列。`,
       log: `return: dp[${target}] = ${ans}`,
       vars: makeVars({ i: target, curDp: ans, changed: ['dpi'] }),
-      codeLine: { java: 11, cpp: 11, python: 8, javascript: 10 },
+      codeLine: LINES.line0,
     });
 
     return steps;

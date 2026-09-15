@@ -12,6 +12,7 @@ import {
   FLOYD_CODE_LANGUAGES,
 } from './floyd-problem-content';
 import { HighlightTarget } from '../../../core/code-panel';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export interface FloydStep extends StepBase {
   matrix: number[][];
@@ -67,7 +68,7 @@ export function buildFloydSteps(): FloydStep[] {
     j: number | null = null
   ): void {
     steps.push({
-      matrix: dist.map((row) => [...row]),
+      matrix: snapshotGrid2D(dist),
       k,
       i,
       j,

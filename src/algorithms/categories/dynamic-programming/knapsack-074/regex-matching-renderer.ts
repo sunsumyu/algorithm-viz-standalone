@@ -25,6 +25,7 @@ import {
   renderStringDp2DCard1,
   renderStringDp2DCard2,
 } from '../../../../core/renderers/string-dp-stage-evolution';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 export interface RegexMatchingStep {
   i: number;
@@ -85,7 +86,7 @@ export function buildRegexMatchingSteps(
       j: -1,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: false,
       decision: '初始化 DP 表格',
       status: 'init',
@@ -103,7 +104,7 @@ export function buildRegexMatchingSteps(
       j: m,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: true,
       decision: '空串基底 dp[n][m]=true',
       status: 'base',
@@ -125,7 +126,7 @@ export function buildRegexMatchingSteps(
         j,
         s,
         p,
-        dp: dp.map((row) => [...row]),
+        dp: snapshotGrid2D(dp),
         matched: dp[n][j],
         decision: canCancel ? `* 消解空串: '${p[j]}*' 取 0 次` : `'${p[j]}' 无法消解空串`,
         status: 'base',
@@ -167,7 +168,7 @@ export function buildRegexMatchingSteps(
           j,
           s,
           p,
-          dp: dp.map((row) => [...row]),
+          dp: snapshotGrid2D(dp),
           matched: dp[i][j],
           decision: dec,
           status: 'cell',
@@ -186,7 +187,7 @@ export function buildRegexMatchingSteps(
       j: 0,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: finalMatch,
       decision: finalMatch ? '完全匹配成功' : '匹配失败',
       status: 'done',

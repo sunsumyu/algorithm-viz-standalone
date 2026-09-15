@@ -193,6 +193,21 @@ export const TargetSumSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(cap + 1).fill(0);
     dp[0] = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      init: { java: 8, cpp: 8, python: 6, javascript: 6 },
+      loopOuter: { java: 9, cpp: 9, python: 7, javascript: 7 },
+      transfer: {
+      java: { primary: 10, context: [9] },
+      cpp: { primary: 10, context: [9] },
+      python: { primary: 9, context: [8] },
+      javascript: { primary: 9, context: [8] },
+    },
+      line0: { java: 13, cpp: 13, python: 11, javascript: 12 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -228,7 +243,7 @@ export const TargetSumSpec: AlgorithmSpec = {
       message: `🎯 函数入口：目标和。nums = [${nums.join(', ')}]，target = ${target}。推导正数子集容量 bag = (${sum} + ${target}) / 2 = ${bag}。`,
       log: `entry: sum=${sum}, target=${target}, bag=${bag}`,
       vars: makeVars({ changed: ['nums', 'target', 'sum', 'bag'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (!isValid || bag < 0) {
@@ -238,7 +253,7 @@ export const TargetSumSpec: AlgorithmSpec = {
         message: `❌ 快速剪枝：|target| > sum 或 (sum + target) 为奇数，无法整除为有效整数容量，直接返回 0。`,
         log: `invalid target: return 0`,
         vars: makeVars({}),
-        codeLine: { java: 5, cpp: 5, python: 4, javascript: 3 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -251,7 +266,7 @@ export const TargetSumSpec: AlgorithmSpec = {
       message: `🎬 初始化：dp[0] = 1（凑出容量 0 有 1 种方案：什么都不选）。`,
       log: `init: dp[0] = 1`,
       vars: makeVars({ j: 0, curDp: 1, changed: ['dpj'] }),
-      codeLine: { java: 8, cpp: 8, python: 6, javascript: 6 },
+      codeLine: LINES.init,
     });
 
     // Loops
@@ -265,7 +280,7 @@ export const TargetSumSpec: AlgorithmSpec = {
         message: `🔄 外层循环：考察元素 nums[${i}] = ${num}。`,
         log: `outer loop: num=${num}`,
         vars: makeVars({ i, curNum: num, changed: ['i', 'num'] }),
-        codeLine: { java: 9, cpp: 9, python: 7, javascript: 7 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = bag; j >= num; j--) {
@@ -282,12 +297,7 @@ export const TargetSumSpec: AlgorithmSpec = {
           message: `⚡ 状态累加：使用元素 ${num}，装满容量 ${j} 的方案数由 ${oldVal} 累加 ${prev} 变为 ${dp[j]}。`,
           log: `update: dp[${j}] += dp[${j - num}] = ${dp[j]}`,
           vars: makeVars({ i, j, curNum: num, curDp: dp[j], changed: ['dpj'] }),
-          codeLine: {
-            java: { primary: 10, context: [9] },
-            cpp: { primary: 10, context: [9] },
-            python: { primary: 9, context: [8] },
-            javascript: { primary: 9, context: [8] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -300,7 +310,7 @@ export const TargetSumSpec: AlgorithmSpec = {
       message: `🏁 算法结束：装满正数集容量 ${bag} 共有 dp[${bag}] = ${ans} 种方法 $\rightarrow$ 运算结果等于 ${target} 的不同表达式总数为 ${ans}。`,
       log: `return: dp[${bag}] = ${ans}`,
       vars: makeVars({ j: bag, curDp: ans, changed: ['dpj'] }),
-      codeLine: { java: 13, cpp: 13, python: 11, javascript: 12 },
+      codeLine: LINES.line0,
     });
 
     return steps;

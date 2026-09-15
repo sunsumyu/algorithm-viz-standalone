@@ -6,6 +6,13 @@
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepBase } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  enter: 1,
+  checkEdge: 6,
+  unionEdge: 7,
+  mstDone: 12,
+};
 
 export interface EdgeDef {
   u: number;
@@ -144,7 +151,7 @@ export function buildMst027Steps(
     decision: `主函数入口：图共有 ${n} 个顶点，${edges.length} 条无向带权边。准备启动 Kruskal 算法贪心加边构造最小生成树`,
     message: 'Kruskal 原理：按边权由小到大排序，利用并查集逐条判定，不形成环则加入生成树',
     log: `enter kruskal(n=${n})`,
-    codeLine: 1,
+    codeLine: lines.enter,
     statusBadge: { text: '初始化', type: 'info' },
   });
 
@@ -172,7 +179,7 @@ export function buildMst027Steps(
       decision: `探测候选边 (${edge.u} ↔ ${edge.v}, 权值 ${edge.w})：顶点 ${edge.u} 属于集合 [${ru}]，顶点 ${edge.v} 属于集合 [${rv}]`,
       message: canSelect ? `两端点属于不同连通分量，选入该边不会成环！` : `两端点已在同一连通分量中，若加入该边将产生环路，必须果断舍弃！`,
       log: `check edge (${edge.u}, ${edge.v}, w=${edge.w}) -> ${canSelect ? 'ACCEPT' : 'REJECT'}`,
-      codeLine: 6,
+      codeLine: lines.checkEdge,
       statusBadge: canSelect ? { text: `采纳边 w=${edge.w}`, type: 'success' } : { text: '跳过成环边', type: 'danger' },
     });
 
@@ -191,7 +198,7 @@ export function buildMst027Steps(
         decision: `边 (${edge.u} ↔ ${edge.v}) 固化加入生成树！当前生成树总边权累加为: ${totalW}`,
         message: `已选中 ${selected.length} / ${n - 1} 条边`,
         log: `union(${edge.u}, ${edge.v}), total=${totalW}`,
-        codeLine: 7,
+        codeLine: lines.unionEdge,
         statusBadge: { text: `已选边 ${selected.length}/${n - 1}`, type: 'warning' },
       });
 
@@ -210,7 +217,7 @@ export function buildMst027Steps(
     decision: `🎉 最小生成树构建完成！恰好选出 ${selected.length} 条边，联通全部 ${n} 个顶点，最小生成树总权值之和为: ${totalW}`,
     message: '全部顶点已连通',
     log: `MST completed, totalWeight=${totalW}`,
-    codeLine: 12,
+    codeLine: lines.mstDone,
     statusBadge: { text: `MST 总权值 = ${totalW}`, type: 'success' },
   });
 

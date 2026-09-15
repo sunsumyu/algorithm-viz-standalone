@@ -180,6 +180,32 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
       Array.from({ length: n + 1 }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      transfer2: {
+      java: { primary: 8, context: [5, 6] },
+      cpp: { primary: 8, context: [5, 6] },
+      python: { primary: 7, context: [5] },
+      javascript: { primary: 7, context: [4, 5] },
+    },
+      transfer3: {
+      java: { primary: 10, context: [5, 6] },
+      cpp: { primary: 10, context: [5, 6] },
+      python: { primary: 9, context: [5] },
+      javascript: { primary: 9, context: [4, 5] },
+    },
+      returnAns: { java: 14, cpp: 14, python: 12, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -219,7 +245,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
       message: `🎯 函数入口：判断 s = "${s1}" 是否为 t = "${s2}" 的子序列。`,
       log: `entry: s="${s1}", t="${s2}"`,
       vars: makeVars({ changed: ['s', 't', 'm', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Boundaries
@@ -233,7 +259,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
       message: '🎬 边界初始化：空前缀匹配长度均为 0 (dp[i][0]=0, dp[0][j]=0)。',
       log: 'init: dp[i][0]=0, dp[0][j]=0',
       vars: makeVars({ changed: ['dpij'] }),
-      codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     // Loops
@@ -248,7 +274,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
         message: `🔄 外层循环：i = ${i}，考察 s[${i - 1}] = '${char1}'。`,
         log: `outer loop: i=${i}, char1='${char1}'`,
         vars: makeVars({ i, c1: char1, changed: ['i', 'c1'] }),
-        codeLine: { java: 5, cpp: 5, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 1; j <= n; j++) {
@@ -266,12 +292,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
             : `🔍 比对字符：s[${i - 1}] ('${char1}') !== t[${j - 1}] ('${char2}') 【不匹配，跳过 t 字符 ✗】。`,
           log: `compare: s[${i-1}]='${char1}', t[${j-1}]='${char2}'`,
           vars: makeVars({ i, j, c1: char1, c2: char2, changed: ['j', 'c2'] }),
-          codeLine: {
-            java: { primary: 7, context: [5, 6] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
 
         let resultVal: number;
@@ -290,12 +311,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (匹配)：由左上方 dp[${i - 1}][${j - 1}] (${prev}) + 1 = ${resultVal}。`,
             log: `match update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, c1: char1, c2: char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 8, context: [5, 6] },
-              cpp: { primary: 8, context: [5, 6] },
-              python: { primary: 7, context: [5] },
-              javascript: { primary: 7, context: [4, 5] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const left = (dp[i][j - 1] as number) || 0;
@@ -312,12 +328,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (跳过 t)：继承左方状态 dp[${i}][${j - 1}] = ${left}。`,
             log: `nomatch update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, c1: char1, c2: char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 10, context: [5, 6] },
-              cpp: { primary: 10, context: [5, 6] },
-              python: { primary: 9, context: [5] },
-              javascript: { primary: 9, context: [4, 5] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -333,7 +344,7 @@ export const IsSubsequenceSpec: AlgorithmSpec = {
       message: `🏁 算法结束：匹配长度 dp[${m}][${n}] = ${matchedLen}（s 长度为 ${m}）$\rightarrow$ 【${isSub ? '是子序列 (true) 🎉' : '不是子序列 (false) ❌'}】。`,
       log: `return: dp[${m}][${n}]==${m} => ${isSub}`,
       vars: makeVars({ curDp: matchedLen, changed: ['dpij'] }),
-      codeLine: { java: 14, cpp: 14, python: 12, javascript: 13 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

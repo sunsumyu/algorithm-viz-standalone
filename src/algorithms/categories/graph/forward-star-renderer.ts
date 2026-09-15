@@ -12,6 +12,18 @@ import {
   FORWARD_STAR_PROBLEM_HTML,
   FORWARD_STAR_ANALYSIS_HTML,
 } from './forward-star-problem-content';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number> = {
+  init: 18,
+  buildAddstart: 24,
+  buildLinknext: 26,
+  buildUpdatehead: 27,
+  buildBuilddone: 28,
+  traverseTraversestart: 32,
+  traverseVisitedge: 34,
+  traverseJumpnext: 32,
+  traverseTraversedone: 36,
+};
 
 export interface RawEdge {
   u: number;
@@ -135,7 +147,7 @@ export function buildForwardStarSteps(
     startNode,
     message: `初始化：创建 head 数组（默认全为 -1，表示无出边）与空 edge[] 静态链表池`,
     log: `初始化: head[1..${maxNode}] = -1, cnt = 0`,
-    codeLine: 18,
+    codeLine: lines.init,
   });
 
   // 执行建图 (addEdge)
@@ -163,7 +175,7 @@ export function buildForwardStarSteps(
         startNode,
         message: `准备加边 #${edgeIdx}：从节点 ${u} 指向节点 ${v}，权值为 ${w}`,
         log: `addEdge(${u}, ${v}, ${w}) - 分配槽位 edge[${edgeIdx}]`,
-        codeLine: 24,
+        codeLine: lines.buildAddstart,
       });
 
       // 步骤 2: 绑定 next 指针 (头插法核心)
@@ -185,7 +197,7 @@ export function buildForwardStarSteps(
         startNode,
         message: `【头插法】edge[${edgeIdx}].next = head[${u}] (${oldHead === -1 ? 'NULL' : `#${oldHead}`})，新边链接到原出边表头`,
         log: `edge[${edgeIdx}].next = ${oldHead}`,
-        codeLine: 26,
+        codeLine: lines.buildLinknext,
       });
 
       // 步骤 3: 更新 head[u] = edgeIdx
@@ -207,7 +219,7 @@ export function buildForwardStarSteps(
         startNode,
         message: `【更新表头】head[${u}] = ${edgeIdx}，顶点 ${u} 的最新首条出边更新为边 #${edgeIdx}`,
         log: `head[${u}] = ${edgeIdx} (原 ${oldHead})`,
-        codeLine: 27,
+        codeLine: lines.buildUpdatehead,
       });
     } else {
       // 遍历模式下静默建图
@@ -234,7 +246,7 @@ export function buildForwardStarSteps(
       startNode,
       message: `🎉 建图完成！共存入 ${edges.length} 条有向边。每个节点的 head[u] 均已指向其首条出边链。`,
       log: `建图成功: 总边数 ${edges.length}, 节点数 ${allNodes.length}`,
-      codeLine: 28,
+      codeLine: lines.buildBuilddone,
     });
   } else {
     // 遍历模式 (Traverse)
@@ -257,7 +269,7 @@ export function buildForwardStarSteps(
       startNode,
       message: `开始遍历顶点 ${startNode} 的出边链：取 e = head[${startNode}] = ${head[startNode] !== -1 ? `#${head[startNode]}` : 'NULL (无出边)'}`,
       log: `开始遍历: 节点 ${startNode}, 表头指针 head[${startNode}] = ${head[startNode]}`,
-      codeLine: 32,
+      codeLine: lines.traverseTraversestart,
     });
 
     let e = head[startNode];
@@ -282,7 +294,7 @@ export function buildForwardStarSteps(
         startNode,
         message: `访问出边 #${e}：由节点 ${startNode} 指向节点 ${edge.to} (权值: ${edge.weight})`,
         log: `访问出边: edge[${e}] -> 终点 ${edge.to}, 权值 ${edge.weight}`,
-        codeLine: 34,
+        codeLine: lines.traverseVisitedge,
       });
 
       const nextEdge = edge.next;
@@ -303,7 +315,7 @@ export function buildForwardStarSteps(
         startNode,
         message: `沿静态链表跳链：e = edge[${e}].next = ${nextEdge !== -1 ? `#${nextEdge}` : 'NULL (链尾结束)'}`,
         log: `跳链: e = edge[${e}].next (${nextEdge})`,
-        codeLine: 32,
+        codeLine: lines.traverseJumpnext,
       });
 
       e = nextEdge;
@@ -326,7 +338,7 @@ export function buildForwardStarSteps(
       startNode,
       message: `🎉 顶点 ${startNode} 出边遍历完成！共访问到 ${traversedEdges.length} 条出边（顺序由于头插法呈现逆序）。`,
       log: `遍历结束: 顶点 ${startNode} 共 ${traversedEdges.length} 条出边 [${traversedEdges.map((idx) => `#${idx}`).join(' -> ')}]`,
-      codeLine: 36,
+      codeLine: lines.traverseTraversedone,
     });
   }
 

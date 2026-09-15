@@ -8,6 +8,7 @@ export interface VisualizerInteractionActions {
   onSpeedChange?: (speed: number) => void;
   onFontScale?: (delta: number) => void;
   onStage3SubView?: (view: 'matrix' | 'tree') => void;
+  onCard2SubView?: (view: 'tree' | 'alignment' | 'stack') => void;
   onToggle3D?: () => void;
   onReset3DCam?: () => void;
   onApplyPreset?: (m: number, n: number) => void;
@@ -59,6 +60,21 @@ export class VisualizerInteractionBinder {
     const btnSubTree = document.getElementById('btn-subview-tree');
     if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => actions.onStage3SubView?.('matrix'));
     if (btnSubTree) btnSubTree.addEventListener('click', () => actions.onStage3SubView?.('tree'));
+
+    // 3.1 Card 2 阶段 1/2 复合子视图切换 (横向药丸 + 下拉选择器)
+    const btnCard2Tree = document.getElementById('btn-card2-tree');
+    const btnCard2Align = document.getElementById('btn-card2-alignment');
+    const btnCard2Stack = document.getElementById('btn-card2-stack');
+    const selectCard2 = document.getElementById('card2-subview-select') as HTMLSelectElement | null;
+    if (btnCard2Tree) btnCard2Tree.addEventListener('click', () => actions.onCard2SubView?.('tree'));
+    if (btnCard2Align) btnCard2Align.addEventListener('click', () => actions.onCard2SubView?.('alignment'));
+    if (btnCard2Stack) btnCard2Stack.addEventListener('click', () => actions.onCard2SubView?.('stack'));
+    if (selectCard2) {
+      selectCard2.addEventListener('change', () => {
+        const val = selectCard2.value as 'tree' | 'alignment' | 'stack';
+        actions.onCard2SubView?.(val);
+      });
+    }
 
     // 4. 3D 透视切换与相机复位
     const btnToggle3D = document.getElementById('btn-toggle-3d');

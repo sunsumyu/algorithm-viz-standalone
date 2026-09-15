@@ -192,6 +192,24 @@ export const DeleteDistanceSpec: AlgorithmSpec = {
     for (let i = 0; i <= m; i++) dp[i][0] = i;
     for (let j = 0; j <= n; j++) dp[0][j] = j;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 11, context: [9, 10] },
+      cpp: { primary: 11, context: [9, 10] },
+      python: { primary: 9, context: [7, 8] },
+      javascript: { primary: 8, context: [6, 7] },
+    },
+      transfer2: {
+      java: { primary: 13, context: [9, 10] },
+      cpp: { primary: 13, context: [9, 10] },
+      python: { primary: 11, context: [7, 8] },
+      javascript: { primary: 10, context: [6, 7] },
+    },
+      line0: { java: 17, cpp: 17, python: 12, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -228,7 +246,7 @@ export const DeleteDistanceSpec: AlgorithmSpec = {
       message: `🎯 函数入口：两个字符串的删除操作。word1: "${word1}"，word2: "${word2}"。`,
       log: `entry: m=${m}, n=${n}`,
       vars: makeVars({ changed: ['w1', 'w2'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i <= m; i++) {
@@ -248,12 +266,7 @@ export const DeleteDistanceSpec: AlgorithmSpec = {
             message: `✨ 字符匹配：word1[${i - 1}] 与 word2[${j - 1}] 均为 '${c1}'，无需任何删除操作，直接继承 ${next}。`,
             log: `match: dp[${i}][${j}] = ${next}`,
             vars: makeVars({ i, j, c1, c2, curDp: next, changed: ['i', 'j', 'c1', 'c2', 'dp'] }),
-            codeLine: {
-              java: { primary: 11, context: [9, 10] },
-              cpp: { primary: 11, context: [9, 10] },
-              python: { primary: 9, context: [7, 8] },
-              javascript: { primary: 8, context: [6, 7] },
-            },
+            codeLine: LINES.transfer,
           });
         } else {
           const del1 = dp[i - 1][j] as number;
@@ -270,12 +283,7 @@ export const DeleteDistanceSpec: AlgorithmSpec = {
             message: `🗑️ 字符不同 ('${c1}' != '${c2}')：取【删 word1[${i - 1}] (${del1})】与【删 word2[${j - 1}] (${del2})】的最小值加 1 $\rightarrow$ dp[${i}][${j}] = ${best}。`,
             log: `delete: dp[${i}][${j}] = ${best}`,
             vars: makeVars({ i, j, c1, c2, curDp: best, changed: ['i', 'j', 'c1', 'c2', 'dp'] }),
-            codeLine: {
-              java: { primary: 13, context: [9, 10] },
-              cpp: { primary: 13, context: [9, 10] },
-              python: { primary: 11, context: [7, 8] },
-              javascript: { primary: 10, context: [6, 7] },
-            },
+            codeLine: LINES.transfer2,
           });
         }
       }
@@ -288,7 +296,7 @@ export const DeleteDistanceSpec: AlgorithmSpec = {
       message: `🏁 算法结束：使两个字符串相同的最少删除次数为 dp[${m}][${n}] = ${finalAns}。`,
       log: `return: dp[${m}][${n}] = ${finalAns}`,
       vars: makeVars({ curDp: finalAns, changed: ['dp'] }),
-      codeLine: { java: 17, cpp: 17, python: 12, javascript: 14 },
+      codeLine: LINES.line0,
     });
 
     return steps;

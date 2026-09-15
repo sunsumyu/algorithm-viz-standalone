@@ -25,6 +25,7 @@ import {
   renderStringDp2DCard1,
   renderStringDp2DCard2,
 } from '../../../../core/renderers/string-dp-stage-evolution';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 export interface WildcardMatchingStep {
   i: number;
@@ -85,7 +86,7 @@ export function buildWildcardMatchingSteps(
       j: -1,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: false,
       decision: '初始化通配符 DP 表',
       status: 'init',
@@ -103,7 +104,7 @@ export function buildWildcardMatchingSteps(
       j: m,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: true,
       decision: '空串基底 dp[n][m]=true',
       status: 'base',
@@ -122,7 +123,7 @@ export function buildWildcardMatchingSteps(
         j,
         s,
         p,
-        dp: dp.map((row) => [...row]),
+        dp: snapshotGrid2D(dp),
         matched: true,
         decision: `尾部连续 '*' 匹配空串`,
         status: 'base',
@@ -161,7 +162,7 @@ export function buildWildcardMatchingSteps(
           j,
           s,
           p,
-          dp: dp.map((row) => [...row]),
+          dp: snapshotGrid2D(dp),
           matched: dp[i][j],
           decision: dec,
           status: 'cell',
@@ -180,7 +181,7 @@ export function buildWildcardMatchingSteps(
       j: 0,
       s,
       p,
-      dp: dp.map((row) => [...row]),
+      dp: snapshotGrid2D(dp),
       matched: finalMatch,
       decision: finalMatch ? '完全匹配成功' : '匹配失败',
       status: 'done',

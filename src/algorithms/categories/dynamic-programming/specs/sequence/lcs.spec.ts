@@ -185,6 +185,32 @@ export const LcsSpec: AlgorithmSpec = {
       Array.from({ length: n + 1 }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      transfer2: {
+      java: { primary: 8, context: [5, 6] },
+      cpp: { primary: 8, context: [5, 6] },
+      python: { primary: 7, context: [5] },
+      javascript: { primary: 7, context: [4, 5] },
+    },
+      transfer3: {
+      java: { primary: 10, context: [5, 6] },
+      cpp: { primary: 10, context: [5, 6] },
+      python: { primary: 9, context: [5] },
+      javascript: { primary: 9, context: [4, 5] },
+    },
+      returnAns: { java: 14, cpp: 14, python: 12, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -224,7 +250,7 @@ export const LcsSpec: AlgorithmSpec = {
       message: `🎯 函数入口：计算 text1 = "${s1}" 与 text2 = "${s2}" 的最长公共子序列 (LCS)。`,
       log: `entry: text1="${s1}", text2="${s2}"`,
       vars: makeVars({ changed: ['text1', 'text2', 'm', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Initialize boundaries
@@ -238,7 +264,7 @@ export const LcsSpec: AlgorithmSpec = {
       message: '🎬 边界初始化：空前缀与任何字符串的公共子序列长度均为 0 (dp[i][0] = 0, dp[0][j] = 0)。',
       log: 'init: dp[i][0]=0, dp[0][j]=0',
       vars: makeVars({ changed: ['dpij'] }),
-      codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     // Loops
@@ -254,7 +280,7 @@ export const LcsSpec: AlgorithmSpec = {
         message: `🔄 外层循环：i = ${i}，当前考察 text1[${i - 1}] = '${char1}' (前缀 "${s1.slice(0, i)}")。`,
         log: `outer loop: i=${i}, char1='${char1}'`,
         vars: makeVars({ i, char1, changed: ['i', 'c1'] }),
-        codeLine: { java: 5, cpp: 5, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 1; j <= n; j++) {
@@ -275,12 +301,7 @@ export const LcsSpec: AlgorithmSpec = {
             : `🔍 比对字符：text1[${i - 1}] ('${char1}') !== text2[${j - 1}] ('${char2}') 【不匹配 ✗】。`,
           log: `compare: text1[${i-1}]='${char1}', text2[${j-1}]='${char2}' => match=${isMatch}`,
           vars: makeVars({ i, j, char1, char2, changed: ['j', 'c2'] }),
-          codeLine: {
-            java: { primary: 7, context: [5, 6] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
 
         // State Transfer
@@ -300,12 +321,7 @@ export const LcsSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (匹配)：由左上角 dp[${i - 1}][${j - 1}] (${prev}) + 1 = ${resultVal} 写入 dp[${i}][${j}]。`,
             log: `match update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, char1, char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 8, context: [5, 6] },
-              cpp: { primary: 8, context: [5, 6] },
-              python: { primary: 7, context: [5] },
-              javascript: { primary: 7, context: [4, 5] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const up = (dp[i - 1][j] as number) || 0;
@@ -323,12 +339,7 @@ export const LcsSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (不匹配)：取上方 dp[${i - 1}][${j}] (${up}) 与左方 dp[${i}][${j - 1}] (${left}) 较大者 = ${resultVal}。`,
             log: `nomatch update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, char1, char2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 10, context: [5, 6] },
-              cpp: { primary: 10, context: [5, 6] },
-              python: { primary: 9, context: [5] },
-              javascript: { primary: 9, context: [4, 5] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -344,7 +355,7 @@ export const LcsSpec: AlgorithmSpec = {
       message: `🏁 算法结束：返回全局最优解 dp[${m}][${n}] = ${ans}（"${s1}" 与 "${s2}" 的最长公共子序列长度为 ${ans}）。`,
       log: `return: dp[${m}][${n}]=${ans}`,
       vars: makeVars({ curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 14, cpp: 14, python: 12, javascript: 13 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

@@ -175,6 +175,19 @@ export const StockIiiSpec: AlgorithmSpec = {
     const n = prices.length;
     const dp: DpCell[][] = Array.from({ length: n }, () => ['-', '-', '-', '-', '-']);
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: [5, 8], cpp: [6, 9], python: 5, javascript: [4, 7] },
+      transfer: {
+      java: { primary: [10, 13], context: [9] },
+      cpp: { primary: [11, 14], context: [10] },
+      python: { primary: [7, 10], context: [6] },
+      javascript: { primary: [9, 12], context: [8] },
+    },
+      returnAns: { java: 15, cpp: 15, python: 11, javascript: 14 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -213,7 +226,7 @@ export const StockIiiSpec: AlgorithmSpec = {
       message: `🎯 函数入口：买卖股票的最佳时机 III（最多 2 笔交易）。采用 5 状态机模型。`,
       log: `entry: prices=[${prices.join(',')}]`,
       vars: makeVars({ changed: ['prices'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (n <= 1) return steps;
@@ -232,7 +245,7 @@ export const StockIiiSpec: AlgorithmSpec = {
       message: `🎬 初始化第 0 天：买1持有 dp[0][1] = -$${prices[0]}；买2持有 dp[0][3] = -$${prices[0]}。其余状态为 0。`,
       log: `init: b1=-${prices[0]}, s1=0, b2=-${prices[0]}, s2=0`,
       vars: makeVars({ i: 0, curP: prices[0], b1: -prices[0], s1: 0, b2: -prices[0], s2: 0, changed: ['b1', 'b2'] }),
-      codeLine: { java: [5, 8], cpp: [6, 9], python: 5, javascript: [4, 7] },
+      codeLine: LINES.init,
     });
 
     // Loops
@@ -265,12 +278,7 @@ export const StockIiiSpec: AlgorithmSpec = {
         message: `⚡ 第 ${i} 天 (股价 $${p})：\n• 第一次买入：dp[${i}][1] = $${dp[i][1]}\n• 第一次卖出：dp[${i}][2] = $${dp[i][2]}\n• 第二次买入：dp[${i}][3] = $${dp[i][3]}\n• 第二次卖出：dp[${i}][4] = $${dp[i][4]}。`,
         log: `day ${i}: b1=${dp[i][1]}, s1=${dp[i][2]}, b2=${dp[i][3]}, s2=${dp[i][4]}`,
         vars: makeVars({ i, curP: p, b1: dp[i][1], s1: dp[i][2], b2: dp[i][3], s2: dp[i][4], changed: ['i', 'p', 'b1', 's1', 'b2', 's2'] }),
-        codeLine: {
-          java: { primary: [10, 13], context: [9] },
-          cpp: { primary: [11, 14], context: [10] },
-          python: { primary: [7, 10], context: [6] },
-          javascript: { primary: [9, 12], context: [8] },
-        },
+        codeLine: LINES.transfer,
       });
     }
 
@@ -282,7 +290,7 @@ export const StockIiiSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最多完成 2 笔交易的最大利润为 dp[${n - 1}][4] = $${ans}。`,
       log: `return: ans=${ans}`,
       vars: makeVars({ i: n - 1, s2: ans, changed: ['s2'] }),
-      codeLine: { java: 15, cpp: 15, python: 11, javascript: 14 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

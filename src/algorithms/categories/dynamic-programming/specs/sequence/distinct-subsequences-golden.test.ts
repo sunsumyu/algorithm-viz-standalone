@@ -76,4 +76,19 @@ describe('🏆 Distinct Subsequences Golden Baseline Regression Guard', () => {
     const lastS4 = s4Steps[s4Steps.length - 1];
     expect(lastS4.memoj).toBe(5);
   });
+
+  it('should compile distinct forward and reverse codes without inversion', () => {
+    AlgorithmModelRepository.clearCache();
+    const fStage1 = AlgorithmModelRepository.getCompiledStage('distinct-subsequences', 'stage-1', 'forward');
+    const rStage1 = AlgorithmModelRepository.getCompiledStage('distinct-subsequences', 'stage-1', 'reverse');
+
+    expect(fStage1.codeHtml).toContain('dfs(s, t, 0, 0)');
+    expect(rStage1.codeHtml).toContain('dfs(s, t, s.length(), t.length())');
+
+    const fStage3 = AlgorithmModelRepository.getCompiledStage('distinct-subsequences', 'stage-3', 'forward');
+    const rStage3 = AlgorithmModelRepository.getCompiledStage('distinct-subsequences', 'stage-3', 'reverse');
+
+    expect(fStage3.codeHtml).toContain('return dp[m][n]');
+    expect(rStage3.codeHtml).toContain('return dp[0][0]');
+  });
 });

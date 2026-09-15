@@ -188,6 +188,32 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
       Array.from({ length: n + 1 }, () => '-')
     );
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      line0: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      loopOuter: { java: 5, cpp: 5, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 7, context: [5, 6] },
+      cpp: { primary: 7, context: [5, 6] },
+      python: { primary: 6, context: [5] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      transfer2: {
+      java: { primary: 8, context: [5, 6] },
+      cpp: { primary: 8, context: [5, 6] },
+      python: { primary: 7, context: [5] },
+      javascript: { primary: 7, context: [4, 5] },
+    },
+      transfer3: {
+      java: { primary: 10, context: [5, 6] },
+      cpp: { primary: 10, context: [5, 6] },
+      python: { primary: 9, context: [5] },
+      javascript: { primary: 9, context: [4, 5] },
+    },
+      returnAns: { java: 14, cpp: 14, python: 12, javascript: 13 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -227,7 +253,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
       message: `🎯 函数入口：计算 nums1 = [${arr1.join(',')}] 与 nums2 = [${arr2.join(',')}] 的最大不相交连线条数（等价于 LCS）。`,
       log: `entry: nums1=[${arr1.join(',')}], nums2=[${arr2.join(',')}]`,
       vars: makeVars({ changed: ['n1', 'n2', 'm', 'n'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Boundaries
@@ -241,7 +267,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
       message: '🎬 边界初始化：空前缀连线条数为 0 (dp[i][0]=0, dp[0][j]=0)。',
       log: 'init: dp[i][0]=0, dp[0][j]=0',
       vars: makeVars({ changed: ['dpij'] }),
-      codeLine: { java: 4, cpp: 4, python: 4, javascript: 3 },
+      codeLine: LINES.line0,
     });
 
     // Loops
@@ -256,7 +282,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
         message: `🔄 外层循环：i = ${i}，考察 nums1[${i - 1}] = ${val1}。`,
         log: `outer loop: i=${i}, val1=${val1}`,
         vars: makeVars({ i, v1: val1, changed: ['i', 'v1'] }),
-        codeLine: { java: 5, cpp: 5, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = 1; j <= n; j++) {
@@ -276,12 +302,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
             : `🔍 比对数字：nums1[${i - 1}] (${val1}) !== nums2[${j - 1}] (${val2}) 【数值不同 ✗】。`,
           log: `compare: nums1[${i-1}]=${val1}, nums2[${j-1}]=${val2}`,
           vars: makeVars({ i, j, v1: val1, v2: val2, changed: ['j', 'v2'] }),
-          codeLine: {
-            java: { primary: 7, context: [5, 6] },
-            cpp: { primary: 7, context: [5, 6] },
-            python: { primary: 6, context: [5] },
-            javascript: { primary: 6, context: [4, 5] },
-          },
+          codeLine: LINES.transfer,
         });
 
         let resultVal: number;
@@ -300,12 +321,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (连线)：由左上方 dp[${i - 1}][${j - 1}] (${prev}) + 1 = ${resultVal} 条线。`,
             log: `match update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, v1: val1, v2: val2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 8, context: [5, 6] },
-              cpp: { primary: 8, context: [5, 6] },
-              python: { primary: 7, context: [5] },
-              javascript: { primary: 7, context: [4, 5] },
-            },
+            codeLine: LINES.transfer2,
           });
         } else {
           const up = (dp[i - 1][j] as number) || 0;
@@ -323,12 +339,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
             message: `⚡ 状态转移 (不连线)：取上方 (${up}) 与左方 (${left}) 较大者 = ${resultVal}。`,
             log: `nomatch update: dp[${i}][${j}] = ${resultVal}`,
             vars: makeVars({ i, j, v1: val1, v2: val2, curDp: resultVal, changed: ['dpij'] }),
-            codeLine: {
-              java: { primary: 10, context: [5, 6] },
-              cpp: { primary: 10, context: [5, 6] },
-              python: { primary: 9, context: [5] },
-              javascript: { primary: 9, context: [4, 5] },
-            },
+            codeLine: LINES.transfer3,
           });
         }
       }
@@ -343,7 +354,7 @@ export const UncrossedLinesSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最多可以绘制 ${ans} 条不相交连线。`,
       log: `return: dp[${m}][${n}]=${ans}`,
       vars: makeVars({ curDp: ans, changed: ['dpij'] }),
-      codeLine: { java: 14, cpp: 14, python: 12, javascript: 13 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

@@ -108,7 +108,7 @@ export function renderLectureHUD(
   }
 
   // 同步更新右侧代码面板中的变量监视器
-  if (varsToDisplay.length > 0) {
-    codePanel?.updateVars(varsToDisplay);
+  if (codePanel) {
+    codePanel.updateVars(varsToDisplay, step);
   }
 }

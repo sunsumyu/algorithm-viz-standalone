@@ -177,6 +177,21 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
     const target = isOdd ? Math.floor(sum / 2) : sum / 2;
 
     const dp: DpCell[] = Array(target + 1).fill(0);
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      guard: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      line0: { java: 7, cpp: 7, python: 6, javascript: 5 },
+      loopOuter: { java: 8, cpp: 8, python: 7, javascript: 6 },
+      transfer: {
+      java: { primary: 10, context: [8, 9] },
+      cpp: { primary: 10, context: [8, 9] },
+      python: { primary: 9, context: [7, 8] },
+      javascript: { primary: 8, context: [6, 7] },
+    },
+      returnAns: { java: 13, cpp: 13, python: 11, javascript: 11 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -220,7 +235,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
           action: 'idle',
         },
       },
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     if (isOdd) {
@@ -230,7 +245,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
         message: `❌ 快速剪枝：总和 ${sum} 为奇数，无法等分，直接返回 false。`,
         log: `odd sum: return false`,
         vars: makeVars({}),
-        codeLine: { java: 5, cpp: 5, python: 4, javascript: 3 },
+        codeLine: LINES.guard,
       });
       return steps;
     }
@@ -243,7 +258,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
       message: `🎬 初始化：dp 数组全部置 0，目标凑成容量为 ${target} 的背包。`,
       log: `init: dp[0..${target}] = 0`,
       vars: makeVars({ curDp: 0, changed: ['dpj'] }),
-      codeLine: { java: 7, cpp: 7, python: 6, javascript: 5 },
+      codeLine: LINES.line0,
     });
 
     // Loops (0-1 背包: 外层 nums, 内层 j 从 target 到 num 倒序)
@@ -265,7 +280,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
             action: 'evaluate',
           },
         },
-        codeLine: { java: 8, cpp: 8, python: 7, javascript: 6 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = target; j >= num; j--) {
@@ -295,12 +310,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
               action: isTakeWinner ? 'include' : 'exclude',
             },
           },
-          codeLine: {
-            java: { primary: 10, context: [8, 9] },
-            cpp: { primary: 10, context: [8, 9] },
-            python: { primary: 9, context: [7, 8] },
-            javascript: { primary: 8, context: [6, 7] },
-          },
+          codeLine: LINES.transfer,
         });
       }
     }
@@ -323,7 +333,7 @@ export const PartitionSubsetSpec: AlgorithmSpec = {
           action: canPartition ? 'include' : 'idle',
         },
       },
-      codeLine: { java: 13, cpp: 13, python: 11, javascript: 11 },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

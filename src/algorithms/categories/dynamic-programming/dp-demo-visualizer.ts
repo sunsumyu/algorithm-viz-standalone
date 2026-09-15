@@ -22,6 +22,7 @@ import { setupHandbookModal } from './views/handbook-modal';
 import { renderDpTreeSVG } from './engine/visual-adapter';
 
 import type { DpTreeNode, DpCell } from '../../../core/dp-engine/types';
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
 export type { DpTreeNode, DpCell };
 
@@ -846,7 +847,7 @@ export function strInput(root: HTMLElement, id: string, fallback: string): strin
 }
 
 export function clone1d<T>(arr: T[]): T[] { return [...arr]; }
-export function clone2d<T>(arr: T[][]): T[][] { return arr.map((row) => [...row]); }
+export function clone2d<T>(arr: T[][]): T[][] { return snapshotGrid2D(arr); }
 
 export { renderDpTreeSVG } from './engine/visual-adapter';
 
@@ -873,24 +874,6 @@ export function buildDpTree(vals: number[]): DpTreeNode | null {
     }
   }
   return root;
-}
-
-export function cloneDpTree(
-  root: DpTreeNode | null,
-  tags: Map<number | string, string>,
-  statuses: Map<number | string, 'current' | 'dependency' | 'visited' | 'normal'>
-): DpTreeNode | null {
-  if (!root) return null;
-  const children = root.children?.map((c) => cloneDpTree(c, tags, statuses)).filter(Boolean) as DpTreeNode[] | undefined;
-  return {
-    id: root.id,
-    val: root.val,
-    tag: tags.get(root.id) || root.tag,
-    status: statuses.get(root.id) || root.status || 'normal',
-    left: cloneDpTree(root.left || null, tags, statuses),
-    right: cloneDpTree(root.right || null, tags, statuses),
-    ...(children && children.length > 0 ? { children } : {}),
-  };
 }
 
 export { renderStaircaseSVG } from './views/staircase-stage';

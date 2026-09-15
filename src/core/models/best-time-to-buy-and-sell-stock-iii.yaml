@@ -1,0 +1,205 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「买卖股票的最佳时机 III (Best Time to Buy and Sell Stock III, LeetCode 123)」四阶段全演化标准实现。
+# 包含：最多 2 次交易的 5 状态机决策模型、自底向上二维填表与 4 状态滚动变量空间压缩。
+# ==============================================================================
+
+id: best-time-to-buy-and-sell-stock-iii
+name: "买卖股票的最佳时机 III"
+nameEn: "Best Time to Buy and Sell Stock III"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "💹"
+difficulty: 3
+levelOrder: 15
+learningGoal: "掌握高阶状态机模型：交易次数作为独立维度、5 种互斥状态链式拓扑转移与最优值继承"
+description: "买卖股票的最佳时机 III（LeetCode 123）：最多可以完成 两笔 交易。你不能同时参与多笔交易（必须在再次购买前出售掉之前的股票）。"
+defaultParams:
+  prices: [3, 3, 5, 0, 0, 3, 1, 4]
+
+problem:
+  leetcodeId: 123
+  title: "买卖股票的最佳时机 III"
+  difficulty: "困难"
+  tags: ["数组", "动态规划"]
+  description: "给定一个数组，它的第 <code>i</code> 个元素是一支给定的股票在第 <code>i</code> 天的价格。<br/><br/>设计一个算法来计算你所能获取的最大利润。你最多可以完成 <strong>两笔</strong> 交易。<br/><br/><strong>注意：</strong>你不能同时参与多笔交易（你必须在再次购买前出售掉之前的股票）。"
+  examples:
+    - input: "prices = [3,3,5,0,0,3,1,4]"
+      output: "6"
+      explanation: "在第 4 天（股票价格 = 0）的时候买入，在第 6 天（股票价格 = 3）的时候卖出，这笔交易所能获得利润 = 3-0 = 3 。随后，在第 7 天（股票价格 = 1）的时候买入，在第 8 天 （股票价格 = 4）的时候卖出，这笔交易所能获得利润 = 4-1 = 3 。"
+    - input: "prices = [1,2,3,4,5]"
+      output: "4"
+      explanation: "在第 1 天（股票价格 = 1）的时候买入，在第 5 天 （股票价格 = 5）的时候卖出, 这笔交易所能获得利润 = 5-1 = 4 。"
+    - input: "prices = [7,6,4,3,1]"
+      output: "0"
+      explanation: "在这个情况下, 没有交易完成, 所以最大利润为 0。"
+  constraints:
+    - "1 <= prices.length <= 10⁵"
+    - "0 <= prices[i] <= 10⁵"
+  leetcodeUrl: "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/"
+
+directions:
+  forward:
+    label: "五状态机转移 (无操作->买1->卖1->买2->卖2)"
+    branches:
+      - name: "buy1"
+        delta: [1, 1]
+        label: "第一次买入"
+        codeVar: "buy1"
+        arrow: "➡️"
+      - name: "sell1"
+        delta: [1, 2]
+        label: "第一次卖出"
+        codeVar: "sell1"
+        arrow: "↘️"
+      - name: "buy2"
+        delta: [1, 3]
+        label: "第二次买入"
+        codeVar: "buy2"
+        arrow: "⬇️"
+      - name: "sell2"
+        delta: [1, 4]
+        label: "第二次卖出"
+        codeVar: "sell2"
+        arrow: "↙️"
+    combineFormula: "max(sell1, sell2)"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 交易轮次决策树"
+    desc:
+      forward: "递归参数跟踪当前天数、当前交易次数（最多2次）与持股状态。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "Stock3_Recursive.java"
+        code:
+          forward:
+            title: "Stock3_Recursive.java"
+            source: |
+              class Solution {
+                  public int maxProfit(int[] prices) { // @step:entry
+                      return dfs(prices, 0, 0, 0); // @step:init // @step:return
+                  }
+                  // count: 已经完成的交易数(0..2), hold: 0未持有, 1持有
+                  private int dfs(int[] p, int day, int count, int hold) { // @step:recursion
+                      if (day == p.length || count == 2) return 0; // @step:boundary
+                      int keep = dfs(p, day + 1, count, hold); // @step:branch_keep
+                      if (hold == 0) {
+                          int buy = -p[day] + dfs(p, day + 1, count, 1); // @step:branch_buy
+                          return Math.max(keep, buy); // @step:combine
+                      } else {
+                          int sell = p[day] + dfs(p, day + 1, count + 1, 0); // @step:branch_sell
+                          return Math.max(keep, sell); // @step:combine
+                      }
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 三维记忆化搜索"
+    desc:
+      forward: "memo[day][count][hold] 缓存三维状态，状态总数不超过 6n，大幅剪枝。"
+    variants:
+      array_memo:
+        variantLabel: "数组备忘录版"
+        title:
+          forward: "Stock3_Memo.java"
+        code:
+          forward:
+            title: "Stock3_Memo.java"
+            source: |
+              class Solution {
+                  public int maxProfit(int[] prices) { // @step:entry
+                      int[][][] memo = new int[prices.length][3][2]; // @step:init
+                      for (int[][] m2 : memo) for (int[] m1 : m2) Arrays.fill(m1, -1);
+                      return dfs(prices, 0, 0, 0, memo); // @step:return
+                  }
+                  private int dfs(int[] p, int d, int c, int h, int[][][] memo) { // @step:recursion
+                      if (d == p.length || c == 2) return 0; // @step:boundary
+                      if (memo[d][c][h] != -1) return memo[d][c][h]; // @step:memo // @step:cache_hit
+                      int keep = dfs(p, d + 1, c, h, memo);
+                      if (h == 0) {
+                          memo[d][c][h] = Math.max(keep, -p[d] + dfs(p, d + 1, c, 1, memo)); // @step:transfer
+                      } else {
+                          memo[d][c][h] = Math.max(keep, p[d] + dfs(p, d + 1, c + 1, 0, memo)); // @step:transfer
+                      }
+                      return memo[d][c][h]; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 五状态机二维填表"
+    desc:
+      forward: "dp[i][0..4] 分别表示：未操作、买1、卖1、买2、卖2 状态。链式依赖清晰。"
+    variants:
+      standard:
+        variantLabel: "标准填表版"
+        title:
+          forward: "Stock3_Table2D.java"
+        code:
+          forward:
+            title: "Stock3_Table2D.java"
+            source: |
+              class Solution {
+                  public int maxProfit(int[] prices) { // @step:entry
+                      int n = prices.length;
+                      int[][] dp = new int[n][5]; // @step:init
+                      dp[0][1] = -prices[0]; // 第一次买入 // @step:init_hold
+                      dp[0][3] = -prices[0]; // 第二次买入 // @step:init_hold
+                      for (int i = 1; i < n; i++) { // @step:loop
+                          dp[i][1] = Math.max(dp[i - 1][1], -prices[i]); // @step:transfer
+                          dp[i][2] = Math.max(dp[i - 1][2], dp[i - 1][1] + prices[i]); // @step:transfer
+                          dp[i][3] = Math.max(dp[i - 1][3], dp[i - 1][2] - prices[i]); // @step:transfer
+                          dp[i][4] = Math.max(dp[i - 1][4], dp[i - 1][3] + prices[i]); // @step:transfer
+                      }
+                      return Math.max(dp[n - 1][2], dp[n - 1][4]); // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "space-optimization"
+    timeBadge: "O(1) 空间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 四状态滚动变量压缩"
+    desc:
+      forward: "仅需 buy1, sell1, buy2, sell2 四个整型变量，按顺序滚动推导，空间达到 O(1)。"
+    variants:
+      standard:
+        variantLabel: "滚动变量版"
+        title:
+          forward: "Stock3_Optimized.java"
+        code:
+          forward:
+            title: "Stock3_Optimized.java"
+            source: |
+              class Solution {
+                  public int maxProfit(int[] prices) { // @step:entry
+                      int buy1 = -prices[0], sell1 = 0; // @step:init
+                      int buy2 = -prices[0], sell2 = 0;
+                      for (int i = 1; i < prices.length; i++) { // @step:loop
+                          buy1 = Math.max(buy1, -prices[i]); // @step:transfer
+                          sell1 = Math.max(sell1, buy1 + prices[i]);
+                          buy2 = Math.max(buy2, sell1 - prices[i]);
+                          sell2 = Math.max(sell2, buy2 + prices[i]);
+                      }
+                      return sell2; // @step:return
+                  }
+              }

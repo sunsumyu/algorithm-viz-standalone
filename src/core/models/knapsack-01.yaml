@@ -145,10 +145,10 @@ stages:
                       for (int j = weights[0]; j <= bagWeight; j++) dp[0][j] = values[0]; // @step:init_val // 初始化首行
                       for (int i = 1; i < n; i++) { // @step:loop_i // 遍历物品
                           for (int j = 0; j <= bagWeight; j++) { // @step:loop_j // 遍历容量
-                              if (j < weights[i]) {
-                                  dp[i][j] = dp[i - 1][j]; // @step:init_val // 容量不足，继承上一行
+                              if (j < weights[i]) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip // 容量不足，继承上一行
                               } else {
-                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - weights[i]] + values[i]); // @step:transfer // 状态转移
+                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - weights[i]] + values[i]); // @step:transfer_max // 状态转移
                               }
                           }
                       }

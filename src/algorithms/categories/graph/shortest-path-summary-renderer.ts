@@ -6,6 +6,11 @@
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import template from './shortest-path-summary.html?raw';
+/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
+const lines: Record<string, number | number[]> = {
+  overview: 0,
+  summaryDone: 6,
+};
 
 interface SPSStep {
   activeAlgo: string;
@@ -123,7 +128,7 @@ function buildSPSSteps(): SPSStep[] {
     detail: null,
     message: '最短路问题总结：5 种算法各有适用场景。点击查看每种算法的详细说明。',
     log: '总览: 最短路算法对比',
-    codeLine: 0,
+    codeLine: lines.overview,
   });
 
   for (const algo of SPS_ALGOS) {
@@ -143,7 +148,7 @@ function buildSPSSteps(): SPSStep[] {
     detail: null,
     message: '总结完成！选择算法时：非负权单源→Dijkstra，负权→Bellman-Ford/SPFA，全源→Floyd，有启发→A*。',
     log: '总结完成',
-    codeLine: 6,
+    codeLine: lines.summaryDone,
   });
 
   return steps;

@@ -162,6 +162,46 @@ export const ClimbStairsSpec: AlgorithmSpec = {
   },
   generateSteps: (input: { n?: number } | number): DpTraceStep[] => {
     const n = typeof input === 'number' ? input : (input?.n || 6);
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: {
+      java: 2,
+      cpp: 3,
+      python: 2,
+      javascript: 1,
+    },
+      line0: {
+      java: 5,
+      cpp: 6,
+      python: 6,
+      javascript: 4,
+    },
+      line1: {
+      java: 6,
+      cpp: 7,
+      python: 6,
+      javascript: 5,
+    },
+      loopOuter: {
+      java: 7,
+      cpp: 8,
+      python: 7,
+      javascript: 6,
+    },
+      line2: {
+      java: 8,
+      cpp: 9,
+      python: 8,
+      javascript: 7,
+    },
+      returnAns: {
+      java: 10,
+      cpp: 11,
+      python: 9,
+      javascript: 9,
+    },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
     const numDp: number[] = Array(n + 1).fill(0);
@@ -203,12 +243,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
       formula: `climbStairs(${n})`,
       metrics: { i: '-', prev1: '-', prev2: '-', answer: '-' },
       vars: makeVars({ changed: ['n'] }),
-      codeLine: {
-        java: 2,
-        cpp: 3,
-        python: 2,
-        javascript: 1,
-      },
+      codeLine: LINES.entry,
     });
 
     // Step 1: dp[1] = 1;
@@ -228,12 +263,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
       formula: 'dp[1] = 1',
       metrics: { i: 1, prev1: '-', prev2: '-', answer: 1 },
       vars: makeVars({ currentDp: 1, changed: ['dp', 'dpi'] }),
-      codeLine: {
-        java: 5,
-        cpp: 6,
-        python: 6,
-        javascript: 4,
-      },
+      codeLine: LINES.line0,
     });
 
     // Step 2: dp[2] = 2;
@@ -255,12 +285,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
       formula: 'dp[2] = 2',
       metrics: { i: Math.min(2, n), prev1: '-', prev2: '-', answer: numDp[Math.min(2, n)] },
       vars: makeVars({ currentDp: 2, changed: ['dp', 'dpi'] }),
-      codeLine: {
-        java: 6,
-        cpp: 7,
-        python: 6,
-        javascript: 5,
-      },
+      codeLine: LINES.line1,
     });
 
     for (let i = 3; i <= n; i++) {
@@ -281,12 +306,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
         formula: `for (int i = 3; i <= ${n}; i++) [i = ${i}]`,
         metrics: { i, prev1: numDp[i - 1], prev2: numDp[i - 2], answer: '待计算' },
         vars: makeVars({ i, prev1: numDp[i - 1], prev2: numDp[i - 2], changed: ['i', 'prev1', 'prev2'] }),
-        codeLine: {
-          java: 7,
-          cpp: 8,
-          python: 7,
-          javascript: 6,
-        },
+        codeLine: LINES.loopOuter,
       });
 
       // Step: state transfer
@@ -321,12 +341,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
         formula: `dp[${i}] = dp[${i - 1}] + dp[${i - 2}] = ${dp[i - 1]} + ${dp[i - 2]} = ${dp[i]}`,
         metrics: { i, prev1: numDp[i - 1], prev2: numDp[i - 2], answer: numDp[i] },
         vars: makeVars({ i, prev1: numDp[i - 1], prev2: numDp[i - 2], currentDp: numDp[i], changed: ['dp', 'dpi'] }),
-        codeLine: {
-          java: 8,
-          cpp: 9,
-          python: 8,
-          javascript: 7,
-        },
+        codeLine: LINES.line2,
       });
     }
 
@@ -346,12 +361,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
       formula: `i = ${n + 1} <= ${n} ➔ false (循环终止)`,
       metrics: { i: n + 1, prev1: '-', prev2: '-', answer: numDp[n] },
       vars: makeVars({ i: n + 1, currentDp: numDp[n], changed: ['i'] }),
-      codeLine: {
-        java: 7,
-        cpp: 8,
-        python: 7,
-        javascript: 6,
-      },
+      codeLine: LINES.loopOuter,
     });
 
     // Step: return
@@ -372,12 +382,7 @@ export const ClimbStairsSpec: AlgorithmSpec = {
       formula: `return dp[${n}] = ${dp[n]}`,
       metrics: { i: n, prev1: numDp[Math.max(1, n - 1)], prev2: numDp[Math.max(1, n - 2)], answer: numDp[n] },
       vars: makeVars({ i: n, currentDp: numDp[n], changed: ['dpi'] }),
-      codeLine: {
-        java: 10,
-        cpp: 11,
-        python: 9,
-        javascript: 9,
-      },
+      codeLine: LINES.returnAns,
     });
 
     return steps;

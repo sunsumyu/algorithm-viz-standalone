@@ -9,6 +9,7 @@ import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 import {
   TREE_INVERT_PROBLEM_HTML,
   TREE_INVERT_ANALYSIS_HTML,
@@ -28,13 +29,9 @@ export interface InvertStep {
   codeLine: number | number[];
 }
 
+// 树快照统一委托 core/strategies/tree-clone.ts（cloneTree 局部别名保持调用点不变）
 function cloneTree(node: TreeNode | null): TreeNode | null {
-  if (!node) return null;
-  return {
-    val: node.val,
-    left: cloneTree(node.left),
-    right: cloneTree(node.right),
-  };
+  return cloneStateDepTree(node);
 }
 
 export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {

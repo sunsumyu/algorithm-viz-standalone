@@ -170,6 +170,18 @@ export const LisSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(n).fill(1);
     let maxLen = 1;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 8, context: [6, 7] },
+      python: { primary: 7, context: [5, 6] },
+      javascript: { primary: 6, context: [4, 5] },
+    },
+      line0: { java: 12, cpp: 12, python: 9, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -208,7 +220,7 @@ export const LisSpec: AlgorithmSpec = {
       message: `🎯 函数入口：最长递增子序列 (LIS)。数组 [${nums.join(', ')}]，dp 全部初始化为 1。`,
       log: `entry: nums=[${nums.join(',')}]`,
       vars: makeVars({ changed: ['nums'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     for (let i = 1; i < n; i++) {
@@ -228,12 +240,7 @@ export const LisSpec: AlgorithmSpec = {
             message: `✨ 接续递增：nums[${i}](${nums[i]}) > nums[${j}](${nums[j]})，接在 [${j}] 之后使得以 [${i}] 结尾的最长长度提升至 ${next}。`,
             log: `dp[${i}] = ${next}`,
             vars: makeVars({ i, j, curNum: nums[i], prevNum: nums[j], curDp: next, mx: maxLen, changed: ['i', 'j', 'ni', 'nj', 'dpi', 'mx'] }),
-            codeLine: {
-              java: { primary: 8, context: [6, 7] },
-              cpp: { primary: 8, context: [6, 7] },
-              python: { primary: 7, context: [5, 6] },
-              javascript: { primary: 6, context: [4, 5] },
-            },
+            codeLine: LINES.transfer,
           });
         }
       }
@@ -245,7 +252,7 @@ export const LisSpec: AlgorithmSpec = {
       message: `🏁 算法结束：最长严格递增子序列的长度为 ${maxLen}。`,
       log: `return: maxLen=${maxLen}`,
       vars: makeVars({ mx: maxLen, changed: ['mx'] }),
-      codeLine: { java: 12, cpp: 12, python: 9, javascript: 10 },
+      codeLine: LINES.line0,
     });
 
     return steps;

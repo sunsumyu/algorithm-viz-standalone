@@ -49,6 +49,7 @@ export class VisualizerAppController {
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
   public stage3SubView: 'matrix' | 'tree' = 'matrix';
+  public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
   public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
   public is3DMode: boolean = false;
 
@@ -56,6 +57,10 @@ export class VisualizerAppController {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     this.stage3SubView = (typeof localStorage !== 'undefined' && localStorage.getItem('algo-stage3-subview') === 'tree') ? 'tree' : 'matrix';
+    const savedCard2 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-card2-subview') as any) : null;
+    if (savedCard2 === 'tree' || savedCard2 === 'alignment' || savedCard2 === 'stack') {
+      this.card2SubView = savedCard2;
+    }
     this.activeRightTab = (typeof localStorage !== 'undefined' && (localStorage.getItem('algo-right-tab') as any)) || 'code';
     if (this.activeRightTab !== 'code' && this.activeRightTab !== 'problem' && this.activeRightTab !== 'analysis') {
       this.activeRightTab = 'code';
@@ -353,6 +358,7 @@ export class VisualizerAppController {
     StateSpacePresenter.renderLiteVisuals({
       currentStage: this.currentStage,
       stage3SubView: this.stage3SubView,
+      card2SubView: this.card2SubView,
       step,
       m: this.m,
       n: this.n,
@@ -385,6 +391,7 @@ export class VisualizerAppController {
     );
 
     this.updateStage3SubViewTabs();
+    this.updateCard2SubViewTabs();
   }
 
   /**
@@ -412,6 +419,37 @@ export class VisualizerAppController {
     const effectiveM = (this.steps && this.steps[0]?.grid && this.steps[0].grid.length > 1) ? this.steps[0].grid.length : this.m;
     const isStage32D = effectiveM > 1;
     StageNavigationCoordinator.updateStage3SubViewTabs(this.currentStage, this.stage3SubView, isStage32D);
+  }
+
+  /**
+   * 设置阶段 1/2 卡片 2 复合子视图模式 (递归树 vs 串比对 vs 调用栈)
+   */
+  public setCard2SubView(view: 'tree' | 'alignment' | 'stack'): void {
+    this.card2SubView = view;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-card2-subview', view);
+    }
+    this.updateCard2SubViewTabs();
+    const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+    if (this.steps[curStep]) {
+      const isReverse = this.currentDirection === 'reverse';
+      if (this.mode === 'lite') {
+        this.renderLiteVisuals(this.steps[curStep], curStep, isReverse);
+      }
+    }
+  }
+
+  /**
+   * 同步阶段 1/2 卡片 2 复合子视图切换按钮高亮状态
+   */
+  public updateCard2SubViewTabs(): void {
+    const firstStep = this.steps && this.steps[0];
+    const isStringProblem = !!(
+      (firstStep as any)?.s1 ||
+      (firstStep as any)?.s ||
+      ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string'].includes(this.modelId)
+    );
+    StageNavigationCoordinator.updateCard2SubViewTabs(this.currentStage, this.card2SubView, isStringProblem);
   }
 
   /**
@@ -573,6 +611,7 @@ export class VisualizerAppController {
         VisualizerParamSynchronizer.setPreference(`algo-stage-${this.modelId}`, stageKey);
         VisualizerParamSynchronizer.setPreference('algo-preferred-stage', stageKey);
         this.renderStageTabs();
+        this.renderDirectionTabs();
         this.loadAndReset();
         this.syncStateToHash(0);
       }
@@ -584,6 +623,7 @@ export class VisualizerAppController {
     StageNavigationCoordinator.renderDirectionTabs(container, {
       model: this.model,
       currentDirection: this.currentDirection,
+      currentStage: this.currentStage,
       onSelectDirection: (dirKey) => {
         this.currentDirection = dirKey;
         VisualizerParamSynchronizer.setPreference(`algo-dir-${this.modelId}`, dirKey);
@@ -627,6 +667,7 @@ export class VisualizerAppController {
       onSpeedChange: (speed) => this.timeline?.setSpeed(speed),
       onFontScale: (delta) => this.setCodeFontSize(this.codeFontSize + delta),
       onStage3SubView: (view) => this.setStage3SubView(view),
+      onCard2SubView: (view) => this.setCard2SubView(view),
       onToggle3D: () => this.toggle3DPerspective(),
       onReset3DCam: () => StateSpacePresenter.reset3DCamera(),
       onApplyPreset: (m, n) => {

@@ -1,6 +1,13 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
-import { cloneTree, build2DDPDependencyTree, findNodeIdByCoord } from './strategy-helpers';
+import { cloneTree } from './strategy-helpers';
+import {
+  AbstractIntervalTableCompiler,
+  type IntervalTableContext,
+  type IntervalConditionEvalResult,
+  type IntervalTransferResult,
+  type IntervalReturnInfo
+} from './abstract-interval-table-compiler';
 
 
 export function compilePalindromicSubstringsStage1or2(
@@ -211,132 +218,105 @@ export function compilePalindromicSubstringsStage1or2(
     return generated;
   }
 
-export function compilePalindromicSubstringsStage3(
-    model: IYamlAlgorithmModel,
-    anchorMap?: Record<string, number>
-  ): UniversalStep[] {
-    const s = ((model.defaultParams as any)?.s || 'aaa') as string;
-    const n = s.length;
+class PalindromicSubstringsTableCompiler extends AbstractIntervalTableCompiler {
+  private count: number = 0;
 
-    const steps: UniversalStep[] = [];
-    const dp: (number | null)[][] = Array.from({ length: n }, () => new Array(n).fill(null));
-    let count = 0;
-
-    const lineInit = anchorMap?.init || 4;
-    const lineCond = anchorMap?.cond || 12;
-    const lineTransferShort = anchorMap?.transfer_short || 14;
-    const lineTransferSub = anchorMap?.transfer_sub || 18;
-    const lineReturn = anchorMap?.return || 25;
-
-    steps.push({
-      type: 'init',
-      line: lineInit,
-      i: 0,
-      j: 0,
-      grid: JSON.parse(JSON.stringify(dp)),
-      tag: '创建 n×n 上三角状态表',
-      log: `| 📦 创建 ${n}×${n} 的二维 DP 状态表格 (仅填上三角 i <= j)`,
-      msg: `创建 <code>${n}×${n}</code> 的二维 DP 表格，<code>dp[i][j]</code> 表示子串 <code>s[i..j]</code> 是否为回文。`
-    });
-
-    for (let i = n - 1; i >= 0; i--) {
-      for (let j = i; j < n; j++) {
-        const isMatch = s[i] === s[j];
-
-        if (isMatch) {
-          if (j - i <= 1) {
-            dp[i][j] = 1;
-            count++;
-
-            steps.push({
-              type: 'transfer',
-              line: lineTransferShort,
-              i,
-              j,
-              topI: -1,
-              topJ: -1,
-              leftI: -1,
-              leftJ: -1,
-              grid: JSON.parse(JSON.stringify(dp)),
-              tag: `长度 <= 2 回文: "${s.slice(i, j + 1)}"`,
-              log: `| 🎬 s[${i}] == s[${j}] ('${s[i]}') 且长度 <= 2: dp[${i}][${j}] = true, count = ${count}`,
-              msg: `端点相同 <code>s[${i}] == s[${j}] == '${s[i]}'</code> 且长度 <code>${j - i + 1} <= 2</code>：<code>dp[${i}][${j}] = true</code>，回文总数累加至 <strong>${count}</strong>。`
-            });
-          } else if (dp[i + 1][j - 1] === 1) {
-            dp[i][j] = 1;
-            count++;
-
-            steps.push({
-              type: 'transfer',
-              line: lineTransferSub,
-              i,
-              j,
-              topI: i + 1,
-              topJ: j - 1,
-              leftI: -1,
-              leftJ: -1,
-              grid: JSON.parse(JSON.stringify(dp)),
-              tag: `内层回文: dp[${i}][${j}] = true`,
-              log: `| 🔄 s[${i}] == s[${j}] 且内层 dp[${i + 1}][${j - 1}] == true: dp[${i}][${j}] = true, count = ${count}`,
-              msg: `端点相同且内层 <code>dp[${i + 1}][${j - 1}] == true</code>：<code>dp[${i}][${j}] = true</code>，回文子串 <code>"${s.slice(i, j + 1)}"</code> 成立，总数 = <strong>${count}</strong>。`
-            });
-          } else {
-            dp[i][j] = 0;
-
-            steps.push({
-              type: 'transfer',
-              line: lineTransferSub,
-              i,
-              j,
-              topI: i + 1,
-              topJ: j - 1,
-              leftI: -1,
-              leftJ: -1,
-              grid: JSON.parse(JSON.stringify(dp)),
-              tag: `内层非回文: dp[${i}][${j}] = false`,
-              log: `| ❌ s[${i}] == s[${j}] 但内层 dp[${i + 1}][${j - 1}] == false: dp[${i}][${j}] = false`,
-              msg: `端点虽相同但内层 <code>dp[${i + 1}][${j - 1}] == false</code>：<code>dp[${i}][${j}] = false</code>。`
-            });
-          }
-        } else {
-          dp[i][j] = 0;
-
-          steps.push({
-            type: 'transfer',
-            line: lineCond,
-            i,
-            j,
-            topI: -1,
-            topJ: -1,
-            leftI: -1,
-            leftJ: -1,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: `端点不同: dp[${i}][${j}] = false`,
-            log: `| ❌ s[${i}]('${s[i]}') != s[${j}]('${s[j]}'): dp[${i}][${j}] = false`,
-            msg: `端点字符不匹配 <code>s[${i}] ('${s[i]}') != s[${j}] ('${s[j]}')</code>：<code>dp[${i}][${j}] = false</code>。`
-          });
-        }
+  protected extractString(model: IYamlAlgorithmModel): string {
+    return ((model.defaultParams as any)?.s || 'aaa') as string;
+  }
+  protected getInitMessage(ctx: IntervalTableContext): string {
+    this.count = 0;
+    return `创建 <code>${ctx.n}×${ctx.n}</code> 的二维 DP 表格，<code>dp[i][j]</code> 表示子串 <code>s[i..j]</code> 是否为回文。`;
+  }
+  protected getInnerLoopStartOffset(): number {
+    return 0; // j 从 i 开始，覆盖单字符及以上区间
+  }
+  protected evaluateCondition(i: number, j: number, ctx: IntervalTableContext): IntervalConditionEvalResult {
+    const c1 = ctx.s[i];
+    const c2 = ctx.s[j];
+    const isMatch = c1 === c2;
+    const tag = isMatch ? `端点字符相同 '${c1}'` : `端点字符不同 '${c1}' != '${c2}'`;
+    const log = isMatch
+      ? `| 🔍 比对端点 s[${i}]('${c1}') 与 s[${j}]('${c2}')：匹配成功！`
+      : `| 🔍 比对端点 s[${i}]('${c1}') 与 s[${j}]('${c2}')：不同，非回文！`;
+    const msg = isMatch
+      ? `端点字符相同：<code>s[${i}] == s[${j}] == '${c1}'</code>，继续判定区间长度与内层子串。`
+      : `端点字符不同：<code>s[${i}] != s[${j}]</code>，子串 <code>"${ctx.s.substring(i, j + 1)}"</code> 绝非回文。`;
+    return { isMatch, charI: c1, charJ: c2, tag, log, msg };
+  }
+  protected computeTransfer(i: number, j: number, cond: IntervalConditionEvalResult, ctx: IntervalTableContext): IntervalTransferResult {
+    if (cond.isMatch) {
+      if (j - i <= 1) {
+        this.count++;
+        return {
+          val: 1,
+          lineKey: 'transfer_short',
+          topI: -1,
+          topJ: -1,
+          leftI: -1,
+          leftJ: -1,
+          tag: `短回文 [${i}..${j}]: 长度 <= 2 直接成立`,
+          log: `| ✨ 子串 "${ctx.s.substring(i, j + 1)}" 长度 <= 2 且端点相等，判定为回文！累计 ${this.count}`,
+          msg: `✨ 短回文判定：区间长度 <code>${j - i + 1} <= 2</code>，直接成立，<code>dp[${i}][${j}] = true</code>，回文数累加至 <strong>${this.count}</strong>。`
+        };
+      } else if (ctx.dp[i + 1][j - 1] === 1) {
+        this.count++;
+        return {
+          val: 1,
+          lineKey: 'transfer_sub',
+          topI: i + 1,
+          topJ: j - 1,
+          leftI: -1,
+          leftJ: -1,
+          tag: `内层回文 [${i}..${j}]: dp[${i+1}][${j-1}] == true`,
+          log: `| ✨ 子串 "${ctx.s.substring(i, j + 1)}" 依赖内层 dp[${i+1}][${j-1}] 为回文，判定为回文！累计 ${this.count}`,
+          msg: `✨ 内层依赖判定：内层子串 <code>dp[${i + 1}][${j - 1}]</code> 为回文，故 <code>dp[${i}][${j}] = true</code>，回文数累加至 <strong>${this.count}</strong>。`
+        };
+      } else {
+        return {
+          val: 0,
+          lineKey: 'transfer_sub',
+          topI: i + 1,
+          topJ: j - 1,
+          leftI: -1,
+          leftJ: -1,
+          tag: `内层非回文 [${i}..${j}]: dp[${i+1}][${j-1}] == false`,
+          log: `| ❌ 子串 "${ctx.s.substring(i, j + 1)}" 端点相同但内层非回文: dp[${i}][${j}] = false`,
+          msg: `端点虽相同但内层 <code>dp[${i + 1}][${j - 1}] == false</code>：<code>dp[${i}][${j}] = false</code>。`
+        };
       }
     }
-
-    steps.push({
-      type: 'return',
-      line: lineReturn,
-      i: 0,
-      j: n - 1,
-      grid: JSON.parse(JSON.stringify(dp)),
-      tag: '返回最终结果',
-      log: `| 🏆 上三角填表完成！回文子串总数 count = ${count}`,
-      msg: `🏆 二维上三角填表全部完成！字符串 <code>"${s}"</code> 中共有 <strong>${count}</strong> 个回文子串。`
-    });
-
-    for (const step of steps) {
-      step.treeRoot = build2DDPDependencyTree(n, n, 'forward', undefined, step.grid, step.i, step.j);
-      step.activeNodeId = findNodeIdByCoord(step.treeRoot, step.i, step.j);
-    }
-
-    return steps;
+    return {
+      val: 0,
+      lineKey: 'cond',
+      topI: -1,
+      topJ: -1,
+      leftI: -1,
+      leftJ: -1,
+      tag: `非回文 [${i}..${j}]`,
+      log: `| ❌ 子串 "${ctx.s.substring(i, j + 1)}" 端点不同，判定非回文`,
+      msg: `端点字符不同：<code>dp[${i}][${j}] = false</code>。`
+    };
   }
+  protected getReturnInfo(ctx: IntervalTableContext): IntervalReturnInfo {
+    return {
+      i: 0,
+      j: ctx.n - 1,
+      val: this.count,
+      tag: `最终回文子串总数: ${this.count}`,
+      log: `| 🏆 上三角填表完成！回文子串总数 count = ${this.count}`,
+      msg: `🏆 二维上三角填表全部完成！字符串 <code>"${ctx.s}"</code> 中的回文子串总数为: <strong>${this.count}</strong>。`
+    };
+  }
+}
+
+export function compilePalindromicSubstringsStage3(
+  model: IYamlAlgorithmModel,
+  anchorMap?: Record<string, number>
+): UniversalStep[] {
+  const compiler = new PalindromicSubstringsTableCompiler();
+  return compiler.compile(model, anchorMap || {});
+}
 
 export function compilePalindromicSubstringsStage4(
     model: IYamlAlgorithmModel,

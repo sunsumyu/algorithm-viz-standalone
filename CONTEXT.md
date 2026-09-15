@@ -39,6 +39,11 @@
 - **定义**：代码模板与单步执行之间的语义锚点编译器深模块。
 - **职责**：自动提取多语言代码模板中的 `@step:anchor` 标签，编译 1-based 物理行号索引表并输出纯净源码，支持运行时 4 语种瞬时对齐。
 
+### StageCodeRegistry (阶段源码锚点注册表工厂)
+- **定义**：消除多算法族 stage-codes 注册层样板代码的泛型工厂（`src/core/stage-code-registry.ts`），`StageCodeCompiler` 的装配接缝。
+- **职责**：算法族只提供 `Record<kind, Record<stage, langs>>` 形式的 flat 复合键模板映射（key 为 `prefix:kind:sN`），工厂返回 `{ register(), getAnchor(stage, kind, anchor) }` 深模块实例——模板加 `@step:` 锚点后行号由 `CodeStepIndexer` 编译得出，锚点 miss 兜底全 1。
+- **适用范围**：不限 dynamic-programming；任何多阶段算法族（如 greedy-090 的 4 行展开、graph 的内联行号字典）接入后即可删除手写 STAGE_LINES 表。renderer 使用点统一为 `codeLine: registry.getAnchor(stage, kind, anchor)` 单调用，严禁在同一 codeLine 处按 java/cpp/python/javascript 四键各写一行访问。
+
 ### EvolutionStrategyDispatcher (多态算法演化策略调度器)
 - **定义**：负责将算法演化请求分发到具体题型策略深模块的派发器。
 - **职责**：对外暴露极简统一接口，内部委托给 `GridEvolutionStrategy`、`LinearEvolutionStrategy`、`KnapsackEvolutionStrategy` 等独立自治策略，消解超大单体 `if-else`。
@@ -62,6 +67,11 @@
 ### StepMatrixCompilerPrimitives (矩阵与单步编译领域原语深模块)
 - **定义**：提供网格深克隆、标准 2D 状态转移步、一维滚动槽位压缩步与收尾返回步骤构造的纯函数原语深模块。
 - **职责**：将零散在策略层各处的样板代码统一规范化，保证单步契约严格一致。
+
+### StateDependencyTreeCompiler (状态依赖树编译深模块)
+- **定义**：全库唯一实现 DAG→树展开策略的纯函数深模块（`src/core/strategies/dependency-tree-compiler.ts`），对外暴露 `compileStateDependencyTree(rootState, rule, options)`。
+- **职责**：独占三条顶层强制约束——最优依赖链（胜者链）无条件追溯到边界基底、落选分支按 `maxExpandDepth` 预算截断、全局节点上限保险丝。各算法仅注入纯数据领域规则（`StateDependencyRule`：key / coord / label / isBase / dependencies），禁止在渲染器内自写展开策略（由 `dependency-tree-compiler.gate.test.ts` 门禁红灯拦截）。
+- **约束**：历史教训——LCS 依赖树被 `maxExpandDepth=2` 截断胜者链、strategy-helpers 三胞胎的 `MAX_TREE_DEPTH=4` 在 m+n>6 时断链；同类策略散落即同一 bug 复发，故收拢为顶层唯一实现。
 
 ### AnalysisKnowledgePresenter (解法题解与五步法知识流呈现深模块)
 - **定义**：负责将算法模型的题目描述、示例约束、标准 5 步递推推导与 FAQ 答疑卡片结构化呈现的深模块。
@@ -113,6 +123,21 @@
 - **包含**：`highlightLines`（语义锚点行号）、`dependencies`（前驱索引）、`vars`（运行变量快照）、`formula`（计算公式文本）。
 - **职责**：作为所有算法 step 接口的值对象基类，确保 CodeSync、指标卡、日志流对全类目免适配；各算法通过 `extends` 声明领域特化字段，而非各自发明 13 字段的 ad-hoc 接口。
 - **约束**：当前仅 DP 家族（`RecursionStepBase`、`MemoStepBase`、`Dp2DStepBase`）在用；其余类目步进接口仍为垂直切片中的独立定义。
+
+### RecursionTraceTracker (递归阶段步进轨迹追踪深模块)
+- **定义**：递归阶段（阶段 1）步骤生成器五项骨架不变量的唯一权威实现（`src/core/strategies/recursion-trace-tracker.ts`）。
+- **包含**：maxSteps 保险丝（`exhausted` 短路 + pushStep 静默丢弃）、callStack 逐步骤独立快照拷贝、stepIndex 严格 1..N 自增、`finalize()` 统一回填 totalSteps、树模式下每步 `cloneStateDepTree` 深克隆快照与 activeNodeId 焦点跟随。
+- **职责**：算法侧 pushStep 只注入领域字段（`Omit<TStep, 托管字段>` 类型物理排除了骨架字段的注入可能）；树模式经 `spawnNode`/`focus` 管理节点拓扑。target-sum / buy-goods / dependent-knapsack / last-stone / bounded-knapsack(naive) 已接入（由 `dependency-tree-compiler.gate.test.ts` 门禁 5 拦截新散落：同文件出现 maxSteps 保险丝 + callStack 快照却未 import tracker 即红灯）。
+- **约束**：历史教训——五项骨架散落在各 stage-evolution 手写，一处漏写（如无解分支漏回填 totalSteps）即 N 种姿态复发。
+
+### GridSnapshotPrimitives (网格快照领域原语深模块)
+- **定义**：二维网格 / 一维数组 / 字典的统一深拷贝快照纯函数集合（`src/core/strategies/grid-snapshot.ts`）。
+- **职责**：`snapshotGrid2D` / `snapshotArray1D` / `snapshotDpGrid` / `snapshotDict` 取代 201 处手写 `.map((row) => [...row])` 与 `JSON.parse(JSON.stringify(...))` 深拷贝散落（由门禁 4 拦截——手写网格深拷贝模式在 DP/grid/graph 文件中直接红灯）。
+- **约束**：历史教训——漏写一行行级拷贝即引发步骤间共享状态串扰（与 LCS 依赖树截断同族病害）。
+
+### TreeClonePrimitives (树克隆领域原语深模块)
+- **定义**：树结构泛型深克隆的唯一实现（`src/core/strategies/tree-clone.ts` 的 `cloneStateDepTree<T>`）。
+- **职责**：结构递归覆盖 n-ary（children）与二叉（left/right）两种节点形状及任意附加字段；9 处本地克隆实现已统一为委托别名（由门禁 3 拦截——本地 `clone*Tree` 递归字段列举体直接红灯，委托形式合规）。
 
 ### ModelSynthesisEngine (算法模型合成与语义编译引擎)
 - **定义**：负责根据声明式 `IAlgorithmSpec` 规范合成统一 `IYamlAlgorithmModel` 结构的 DDD 领域引擎。

@@ -172,6 +172,20 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
     const dp: DpCell[] = Array(n + 1).fill('∞');
     dp[0] = 0;
 
+        // 行号集中表：本 spec 多语言模板的语义锚点（值与原硬编码逐位一致）
+    const LINES = {
+      entry: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      init: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      loopOuter: { java: 6, cpp: 6, python: 5, javascript: 4 },
+      transfer: {
+      java: { primary: 8, context: [6, 7] },
+      cpp: { primary: 8, context: [6, 7] },
+      python: { primary: 7, context: [5, 6] },
+      javascript: { primary: 7, context: [5, 6] },
+    },
+      line0: { java: 11, cpp: 11, python: 9, javascript: 10 },
+    };
+
     const steps: DpTraceStep[] = [];
     const push = (step: DpTraceStep) => steps.push(makeTraceStep(step));
 
@@ -205,7 +219,7 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
       message: `🎯 函数入口：完全平方数。目标 n = ${n}，可选候选平方数 [${squares.join(', ')}]。`,
       log: `entry: n=${n}, squares=[${squares.join(',')}]`,
       vars: makeVars({ changed: ['n', 'sqs'] }),
-      codeLine: { java: 2, cpp: 2, python: 2, javascript: 1 },
+      codeLine: LINES.entry,
     });
 
     // Step 1: Init
@@ -216,7 +230,7 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
       message: `🎬 初始化：dp[0] = 0（凑成 0 需要 0 个平方数），其余位置初始化为 ∞。`,
       log: `init: dp[0]=0, others=inf`,
       vars: makeVars({ curJ: 0, curDp: 0, changed: ['dpj'] }),
-      codeLine: { java: 5, cpp: 5, python: 4, javascript: 3 },
+      codeLine: LINES.init,
     });
 
     // Loops (完全背包: 外层平方数, 内层 j 从 sq 到 n)
@@ -230,7 +244,7 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
         message: `🔄 外层循环：考察平方数 ${sq} (${i}²)。`,
         log: `outer loop: sq=${sq}`,
         vars: makeVars({ sqIdx: i, curSq: sq, changed: ['i', 'sq'] }),
-        codeLine: { java: 6, cpp: 6, python: 5, javascript: 4 },
+        codeLine: LINES.loopOuter,
       });
 
       for (let j = sq; j <= n; j++) {
@@ -255,12 +269,7 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
               : `⏩ 状态保持：保持原方案 ${currentVal} 个平方数。`,
             log: `update: dp[${j}] = ${nextVal}`,
             vars: makeVars({ sqIdx: i, curSq: sq, curJ: j, curDp: nextVal, changed: isUpdated ? ['dpj'] : [] }),
-            codeLine: {
-              java: { primary: 8, context: [6, 7] },
-              cpp: { primary: 8, context: [6, 7] },
-              python: { primary: 7, context: [5, 6] },
-              javascript: { primary: 7, context: [5, 6] },
-            },
+            codeLine: LINES.transfer,
           });
         }
       }
@@ -274,7 +283,7 @@ export const PerfectSquaresSpec: AlgorithmSpec = {
       message: `🏁 算法结束：和为 ${n} 的最少完全平方数数量为 dp[${n}] = ${ans} 个。`,
       log: `return: dp[${n}] = ${ans}`,
       vars: makeVars({ curJ: n, curDp: ans, changed: ['dpj'] }),
-      codeLine: { java: 11, cpp: 11, python: 9, javascript: 10 },
+      codeLine: LINES.line0,
     });
 
     return steps;

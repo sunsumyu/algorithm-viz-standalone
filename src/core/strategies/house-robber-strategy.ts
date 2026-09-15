@@ -171,6 +171,22 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
     });
 
     for (let i = 2; i < n; i++) {
+      steps.push({
+        type: 'loop',
+        line: anchorMap?.loop || 5,
+        i: 0,
+        j: i,
+        grid: [[...dp]],
+        memo: [...dp],
+        dp1d: [...dp],
+        activeSlot: i,
+        currentI: i,
+        highlightSlots: [i],
+        tag: `考察房屋 #${i}`,
+        log: `| 🔄 循环步进: 准备决策房屋 #${i} (金额 ${nums[i]})`,
+        msg: `循环迭代：考察房屋 <code>#${i}</code> (金额: ${nums[i]})。`,
+      });
+
       const notRob = dp[i - 1];
       const rob = dp[i - 2] + nums[i];
       dp[i] = Math.max(notRob, rob);
@@ -250,20 +266,139 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
     const rangeA = nums.slice(0, n - 1);
     const rangeB = nums.slice(1);
 
-    function solveRange(arr: number[]): number {
-      let prev = 0, curr = 0;
-      for (const x of arr) {
-        const next = Math.max(curr, prev + x);
-        prev = curr;
-        curr = next;
+    if (stage === 1 || stage === 2) {
+      let nodeIdCounter = 0;
+      const rootNode: UniversalTreeNode = {
+        id: `node-${++nodeIdCounter}`,
+        r: 0,
+        c: 0,
+        val: `robCircle(0..${n - 1})`,
+        status: 'current',
+        children: []
+      };
+
+      steps.push({
+        type: 'init',
+        line: anchorMap?.entry || 1,
+        i: 0,
+        j: 0,
+        grid: [[...nums]],
+        memo: [...nums],
+        dp1d: [...nums],
+        activeSlot: 0,
+        highlightSlots: [0, n - 1],
+        tag: '破环成链',
+        log: `| 📋 环形拆解: 首尾相连冲突，拆分为 [0..${n - 2}] 与 [1..${n - 1}] 两段独立递归`,
+        msg: `环形结构破环成链：将环拆解为子问题 A <code>[0..${n - 2}]</code> 与子问题 B <code>[1..${n - 1}]</code>。`,
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode),
+      });
+
+      const memoA: Record<number, number> = {};
+      const memoB: Record<number, number> = {};
+
+      const nodeA: UniversalTreeNode = { id: `node-${++nodeIdCounter}`, r: 0, c: 0, val: `rob[0..${n - 2}]`, edgeLabel: '不选尾', status: 'current', children: [] };
+      const nodeB: UniversalTreeNode = { id: `node-${++nodeIdCounter}`, r: 0, c: 0, val: `rob[1..${n - 1}]`, edgeLabel: '不选首', status: 'current', children: [] };
+      rootNode.children.push(nodeA, nodeB);
+
+      function robSub(subNums: number[], idx: number, node: UniversalTreeNode, memo: Record<number, number>, label: string, offset: number): number {
+        const globalIdx = idx + offset;
+        steps.push({
+          type: 'dfs-call',
+          line: anchorMap?.recursion || 4,
+          i: 0,
+          j: globalIdx < n ? globalIdx : n - 1,
+          activeSlot: globalIdx < n ? globalIdx : n - 1,
+          highlightSlots: [globalIdx < n ? globalIdx : n - 1],
+          tag: `${label} 考察 #${globalIdx}`,
+          log: `| ➡️ ${label}: 递归房屋 ${globalIdx} (金额 ${idx < subNums.length ? subNums[idx] : 0})`,
+          msg: `${label} 递归：考察房屋 <code>#${globalIdx}</code>。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(rootNode),
+          dp1d: nums.map((_, k) => (k >= offset && k < offset + subNums.length ? (memo[k - offset] ?? 0) : 0))
+        });
+
+        if (idx >= subNums.length) {
+          node.status = 'base';
+          node.tag = '= 0';
+          return 0;
+        }
+
+        if (isMemo && memo[idx] !== undefined) {
+          node.status = 'visited';
+          node.tag = `⚡=${memo[idx]}`;
+          steps.push({
+            type: 'memo-hit',
+            line: anchorMap?.memo || 3,
+            i: 0,
+            j: globalIdx,
+            activeSlot: globalIdx,
+            highlightSlots: [globalIdx],
+            tag: `${label} 缓存命中 memo[${idx}]=${memo[idx]}`,
+            log: `| ⚡ ${label}: 命中缓存 memo[${idx}] = ${memo[idx]}，剪枝返回`,
+            msg: `${label} 命中缓存 <code>memo[${idx}] = ${memo[idx]}</code>。`,
+            activeNodeId: node.id,
+            treeRoot: cloneTree(rootNode),
+            dp1d: nums.map((_, k) => (k >= offset && k < offset + subNums.length ? (memo[k - offset] ?? 0) : 0))
+          });
+          return memo[idx];
+        }
+
+        const childNotRob: UniversalTreeNode = { id: `node-${++nodeIdCounter}`, r: idx + 1, c: 0, val: `rob(${idx + 1})`, edgeLabel: '不偷', status: 'current', children: [] };
+        node.children.push(childNotRob);
+        const notRobVal = robSub(subNums, idx + 1, childNotRob, memo, label, offset);
+
+        const childRob: UniversalTreeNode = { id: `node-${++nodeIdCounter}`, r: idx + 2, c: 0, val: `rob(${idx + 2})`, edgeLabel: '偷', status: 'current', children: [] };
+        node.children.push(childRob);
+        const robVal = subNums[idx] + robSub(subNums, idx + 2, childRob, memo, label, offset);
+
+        const res = Math.max(notRobVal, robVal);
+        if (isMemo) memo[idx] = res;
+        node.status = 'visited';
+        node.val = `rob(${idx})=${res}`;
+
+        steps.push({
+          type: 'dfs-return',
+          line: anchorMap?.combine || 7,
+          i: 0,
+          j: globalIdx,
+          activeSlot: globalIdx,
+          highlightSlots: [globalIdx],
+          tag: `${label} 决策最优: ${res}`,
+          log: `| ↩️ ${label}: 房屋 ${globalIdx} 决策完成: max(不偷:${notRobVal}, 偷:${robVal}) = ${res}`,
+          msg: `${label} 决策完成：<code>max(${notRobVal}, ${robVal}) = <strong>${res}</strong></code>。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(rootNode),
+          dp1d: nums.map((_, k) => (k >= offset && k < offset + subNums.length ? (memo[k - offset] ?? 0) : 0))
+        });
+        return res;
       }
-      return curr;
+
+      const ansA = robSub(rangeA, 0, nodeA, memoA, '子问题A', 0);
+      const ansB = robSub(rangeB, 0, nodeB, memoB, '子问题B', 1);
+      const finalAns = Math.max(ansA, ansB);
+
+      steps.push({
+        type: 'return',
+        line: anchorMap?.return || 10,
+        i: 0,
+        j: n - 1,
+        grid: [[...nums]],
+        memo: [...nums],
+        dp1d: [...nums],
+        activeSlot: n - 1,
+        highlightSlots: [n - 1],
+        tag: `环形全局最优: ${finalAns}`,
+        log: `| 🏆 环形决策归纳完成！max(子问题A:${ansA}, 子问题B:${ansB}) = ${finalAns}`,
+        msg: `🏆 全局推导完成！取两子问题最大值：<code>max(${ansA}, ${ansB}) = <strong>${finalAns}</strong></code>。`,
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode),
+      });
+
+      return steps;
     }
 
-    const ansA = solveRange(rangeA);
-    const ansB = solveRange(rangeB);
-    const finalAns = Math.max(ansA, ansB);
-
+    // Stage 3 & 4: 数组填表与空间压缩
     steps.push({
       type: 'init',
       line: anchorMap?.init || 2,
@@ -273,41 +408,95 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       memo: [...nums],
       dp1d: [...nums],
       activeSlot: 0,
-      highlightSlots: [0],
+      highlightSlots: [0, n - 1],
       tag: '环形数组拆解为两个单链',
       log: `| 📋 环形首尾相连：拆分为 [0..${n - 2}] 和 [1..${n - 1}] 两个独立子问题`,
-      msg: `首尾成环：成环冲突通过分解为 <code>[0..${n - 2}]</code>（不偷末尾）与 <code>[1..${n - 1}]</code>（不偷首位）两段线性 DP。`
+      msg: `首尾成环：分解为 <code>[0..${n - 2}]</code>（不偷末尾）与 <code>[1..${n - 1}]</code>（不偷首位）两段线性 DP。`
     });
 
-    steps.push({
-      type: 'update',
-      line: anchorMap?.transfer || 6,
-      i: 0,
-      j: n - 2,
-      grid: [[...nums]],
-      memo: [...nums],
-      dp1d: [...nums],
-      activeSlot: n - 2,
-      highlightSlots: [0, n - 2],
-      tag: `区间 A [0..${n - 2}] 最大值 = ${ansA}`,
-      log: `| ⚡ 子问题 A 计算: 忽略尾房，区间 [${rangeA.join(', ')}] 最大收益 = ${ansA}`,
-      msg: `子问题 1 计算：区间 <code>[0..${n - 2}]</code> 最大收益为 <strong>${ansA}</strong>。`
-    });
+    function solveRangeSteps(arr: number[], label: string, offset: number): number {
+      const len = arr.length;
+      const dpSub = new Array(len).fill(0);
+      dpSub[0] = arr[0];
 
-    steps.push({
-      type: 'update',
-      line: anchorMap?.transfer || 7,
-      i: 0,
-      j: n - 1,
-      grid: [[...nums]],
-      memo: [...nums],
-      dp1d: [...nums],
-      activeSlot: n - 1,
-      highlightSlots: [1, n - 1],
-      tag: `区间 B [1..${n - 1}] 最大值 = ${ansB}`,
-      log: `| ⚡ 子问题 B 计算: 忽略首房，区间 [${rangeB.join(', ')}] 最大收益 = ${ansB}`,
-      msg: `子问题 2 计算：区间 <code>[1..${n - 1}]</code> 最大收益为 <strong>${ansB}</strong>。`
-    });
+      steps.push({
+        type: 'init',
+        line: anchorMap?.init || 2,
+        i: 0,
+        j: offset,
+        grid: [[...nums]],
+        memo: [...nums],
+        dp1d: [...nums],
+        activeSlot: offset,
+        highlightSlots: [offset],
+        tag: `${label} 初始化基底 dp[0]=${dpSub[0]}`,
+        log: `| 📋 ${label} 边界初始化: dp[0] = arr[0] = ${dpSub[0]}`,
+        msg: `${label} 边界初始化：<code>dp[0] = ${dpSub[0]}</code>。`
+      });
+
+      if (len > 1) {
+        dpSub[1] = Math.max(arr[0], arr[1]);
+        steps.push({
+          type: 'init',
+          line: anchorMap?.init || 2,
+          i: 0,
+          j: offset + 1,
+          grid: [[...nums]],
+          memo: [...nums],
+          dp1d: [...nums],
+          activeSlot: offset + 1,
+          highlightSlots: [offset, offset + 1],
+          tag: `${label} 决策前两间 dp[1]=${dpSub[1]}`,
+          log: `| 📋 ${label} 前两间选优: dp[1] = max(${arr[0]}, ${arr[1]}) = ${dpSub[1]}`,
+          msg: `${label} 前两间选优：<code>dp[1] = max(${arr[0]}, ${arr[1]}) = <strong>${dpSub[1]}</strong></code>。`
+        });
+      }
+
+      for (let i = 2; i < len; i++) {
+        const globalIdx = i + offset;
+        steps.push({
+          type: 'loop',
+          line: anchorMap?.loop || 5,
+          i: 0,
+          j: globalIdx,
+          grid: [[...nums]],
+          memo: [...nums],
+          dp1d: [...nums],
+          activeSlot: globalIdx,
+          currentI: globalIdx,
+          highlightSlots: [globalIdx],
+          tag: `${label} 考察 #${globalIdx}`,
+          log: `| 🔄 ${label} 迭代: 考察房屋 #${globalIdx} (金额 ${arr[i]})`,
+          msg: `${label} 循环迭代：考察房屋 <code>#${globalIdx}</code>。`
+        });
+
+        const notRob = dpSub[i - 1];
+        const rob = dpSub[i - 2] + arr[i];
+        dpSub[i] = Math.max(notRob, rob);
+
+        steps.push({
+          type: stage === 4 ? 'update-1d' : 'update',
+          line: anchorMap?.transfer || 6,
+          i: 0,
+          j: globalIdx,
+          grid: [[...nums]],
+          memo: [...nums],
+          dp1d: [...nums],
+          activeSlot: globalIdx,
+          currentI: globalIdx,
+          highlightSlots: [globalIdx],
+          tag: `${label} dp[${i}] = max(${notRob}, ${rob}) = ${dpSub[i]}`,
+          log: `| ⚡ ${label} 状态转移: 房屋 #${globalIdx}，收益更新为 ${dpSub[i]}`,
+          msg: `${label} 转移：<code>dp[${i}] = max(${notRob}, ${rob}) = <strong>${dpSub[i]}</strong></code>。`
+        });
+      }
+
+      return dpSub[len - 1];
+    }
+
+    const ansA = solveRangeSteps(rangeA, '子问题A [0..n-2]', 0);
+    const ansB = solveRangeSteps(rangeB, '子问题B [1..n-1]', 1);
+    const finalAns = Math.max(ansA, ansB);
 
     steps.push({
       type: 'return',
@@ -319,10 +508,15 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       dp1d: [...nums],
       activeSlot: n - 1,
       highlightSlots: [n - 1],
-      tag: `环形最大收益: ${finalAns}`,
-      log: `| 🏆 计算完成！max(方案A:${ansA}, 方案B:${ansB}) = ${finalAns}`,
-      msg: `🏆 计算完成！取两个子问题最优解 <code>max(${ansA}, ${ansB}) = <strong>${finalAns}</strong></code>。`
+      tag: `环形全局最优: ${finalAns}`,
+      log: `| 🏆 环形全阶段计算完成！max(子问题A:${ansA}, 子问题B:${ansB}) = ${finalAns}`,
+      msg: `🏆 环形 DP 求解完成！取两个子问题最优解 <code>max(${ansA}, ${ansB}) = <strong>${finalAns}</strong></code>。`
     });
+
+    for (const step of steps) {
+      step.treeRoot = build1DDPDependencyTree(n, 'house-robber-ii', step.dp1d, step.activeSlot ?? step.j);
+      step.activeNodeId = findNodeIdByCoord(step.treeRoot, 0, step.activeSlot ?? step.j);
+    }
 
     return steps;
   }
@@ -332,9 +526,9 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
   // =========================================================================
   private compileHouseRobberIII(
     _model: IYamlAlgorithmModel,
-    _stage: number,
-    _isMemo: boolean,
-    _anchorMap?: Record<string, number>
+    stage: number,
+    isMemo: boolean,
+    anchorMap?: Record<string, number>
   ): UniversalStep[] {
     const steps: UniversalStep[] = [];
 
@@ -386,6 +580,195 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       traverse(treeState);
     }
 
+    interface SimRobNode {
+      id: string;
+      u: number;
+      val: number;
+      left?: SimRobNode;
+      right?: SimRobNode;
+    }
+
+    const rn4: SimRobNode = { id: 'rob-4', u: 4, val: 3 };
+    const rn5: SimRobNode = { id: 'rob-5', u: 5, val: 1 };
+    const rn2: SimRobNode = { id: 'rob-2', u: 2, val: 2, right: rn4 };
+    const rn3: SimRobNode = { id: 'rob-3', u: 3, val: 3, right: rn5 };
+    const rn1: SimRobNode = { id: 'rob-1', u: 1, val: 3, left: rn2, right: rn3 };
+
+    if (stage === 1 || stage === 2) {
+      const lineEntry = anchorMap?.entry ?? 2;
+      const lineBoundary = anchorMap?.boundary ?? 3;
+      const lineMemo = anchorMap?.memo ?? anchorMap?.cache_hit ?? 4;
+      const lineBranchLeft = anchorMap?.branch_left ?? 5;
+      const lineBranchRight = anchorMap?.branch_right ?? 6;
+      const lineCombine = anchorMap?.combine ?? 8;
+      const lineReturn = anchorMap?.return ?? 8;
+
+      const memoMap: Record<number, number> = {};
+
+      steps.push({
+        type: 'entry',
+        line: lineEntry,
+        i: 0,
+        j: 0,
+        dp1d: [0, 0],
+        memo: [0, 0],
+        activeSlot: 0,
+        tag: 'rob(root) 入口',
+        log: '🚀 public int rob(TreeNode root) 递归求解树形盗窃收益',
+        msg: '启动 <code>rob(root)</code>：准备后序树递归遍历。',
+        activeNodeId: 'rob-1',
+        treeRoot: cloneTree(treeState),
+      });
+
+      function robTreeNaive(node?: SimRobNode): number {
+        if (!node) {
+          steps.push({
+            type: 'boundary',
+            line: lineBoundary,
+            i: 0,
+            j: 0,
+            dp1d: [0, 0],
+            memo: [0, 0],
+            activeSlot: 0,
+            tag: 'node == null',
+            log: '| 空节点返回 0',
+            msg: '遇到空节点，收益为 <code>0</code>。',
+            treeRoot: cloneTree(treeState),
+          });
+          return 0;
+        }
+
+        const u = node.u;
+        setNodeStatus(node.id, 'current', '计算中');
+
+        steps.push({
+          type: 'entry',
+          line: lineEntry,
+          i: u,
+          j: 0,
+          dp1d: [node.val, 0],
+          memo: [0, 0],
+          activeSlot: u - 1,
+          tag: `考察房#${u}`,
+          log: `| ➡️ 递归房#${u} (金额 ${node.val})`,
+          msg: `进入递归：考察房屋 <strong>房#${u}</strong>（金额 <code>${node.val}</code>）。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+
+        if (isMemo && memoMap[u] !== undefined) {
+          setNodeStatus(node.id, 'visited', `缓存=${memoMap[u]}`);
+          steps.push({
+            type: 'memo-hit',
+            line: lineMemo,
+            i: u,
+            j: 0,
+            dp1d: [memoMap[u], 0],
+            memo: [memoMap[u], 0],
+            activeSlot: u - 1,
+            tag: `memo命中 房#${u}=${memoMap[u]}`,
+            log: `| ⚡ memo[${u}] = ${memoMap[u]} 缓存命中，剪枝返回`,
+            msg: `缓存命中：房屋 <strong>房#${u}</strong> 已计算过，收益为 <code>${memoMap[u]}</code>。`,
+            activeNodeId: node.id,
+            treeRoot: cloneTree(treeState),
+          });
+          return memoMap[u];
+        }
+
+        // 分支 1：偷当前节点
+        steps.push({
+          type: 'branch',
+          line: lineBranchLeft,
+          i: u,
+          j: 0,
+          dp1d: [node.val, 0],
+          memo: [0, 0],
+          activeSlot: u - 1,
+          tag: `偷房#${u}: 探测孙子节点`,
+          log: `| 偷房#${u}，只能跳过子代偷孙子代`,
+          msg: `决策 1（偷房#${u}）：子房屋不能偷，向下探测孙子房屋。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+
+        let doRob = node.val;
+        if (node.left) {
+          doRob += robTreeNaive(node.left.left) + robTreeNaive(node.left.right);
+        }
+        if (node.right) {
+          doRob += robTreeNaive(node.right.left) + robTreeNaive(node.right.right);
+        }
+
+        // 分支 2：不偷当前节点
+        steps.push({
+          type: 'branch',
+          line: lineBranchRight,
+          i: u,
+          j: 0,
+          dp1d: [doRob, 0],
+          memo: [0, 0],
+          activeSlot: u - 1,
+          tag: `不偷房#${u}: 探测直接子节点`,
+          log: `| 不偷房#${u}，可自由偷直接子代`,
+          msg: `决策 2（不偷房#${u}）：直接探查左右子节点。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+
+        const notRob = robTreeNaive(node.left) + robTreeNaive(node.right);
+        const best = Math.max(doRob, notRob);
+        if (isMemo) memoMap[u] = best;
+        setNodeStatus(node.id, 'visited', `最优=${best}`);
+
+        steps.push({
+          type: 'combine',
+          line: lineCombine,
+          i: u,
+          j: 0,
+          dp1d: [best, 0],
+          memo: [best, 0],
+          activeSlot: u - 1,
+          tag: `房#${u}最优: max(${doRob}, ${notRob})=${best}`,
+          log: `| ↩️ 房#${u} 归纳完成: max(偷:${doRob}, 不偷:${notRob}) = ${best}`,
+          msg: `房屋 <strong>房#${u}</strong> 决策完成：<code>max(${doRob}, ${notRob}) = <strong>${best}</strong></code>。`,
+          activeNodeId: node.id,
+          treeRoot: cloneTree(treeState),
+        });
+
+        return best;
+      }
+
+      const finalAns = robTreeNaive(rn1);
+
+      steps.push({
+        type: 'return',
+        line: lineReturn,
+        i: 0,
+        j: 0,
+        dp1d: [finalAns, 0],
+        memo: [finalAns, 0],
+        activeSlot: 0,
+        tag: `全局最优: ${finalAns}`,
+        log: `🏆 树形递归全部完成，最大盗取金额 = ${finalAns}`,
+        msg: `🏆 树形递归计算完成！整棵树最大收益为 <strong>${finalAns}</strong>。`,
+        activeNodeId: 'rob-1',
+        treeRoot: cloneTree(treeState),
+      });
+
+      return steps;
+    }
+
+    // Stage >= 3: 树形 DP (后序遍历二元状态汇报)
+    const lineEntry = anchorMap?.entry ?? 2;
+    const lineInit = anchorMap?.init ?? 3;
+    const lineReturn = anchorMap?.return ?? 4;
+    const lineRecursion = anchorMap?.recursion ?? 7;
+    const lineBoundary = anchorMap?.boundary ?? 8;
+    const lineBranchLeft = anchorMap?.branch_left ?? 9;
+    const lineBranchRight = anchorMap?.branch_right ?? 10;
+    const lineTransfer = anchorMap?.transfer ?? 11;
+    const lineCombine = anchorMap?.combine ?? 13;
+
     function getRobStateArrays(activeArrName?: string, activeSlotIdx?: number): StateArrayItem[] {
       return [
         {
@@ -431,10 +814,9 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       });
     }
 
-    // Line 2: public int rob(TreeNode root) {
     addRobStep({
       type: 'entry',
-      line: 2,
+      line: lineEntry,
       i: 0,
       j: 0,
       dp1d: [0, 0],
@@ -447,43 +829,26 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       treeRoot: cloneTree(treeState),
     });
 
-    // Line 3: int[] res = robTree(root);
     addRobStep({
       type: 'call',
-      line: 3,
+      line: lineInit,
       i: 0,
       j: 0,
       dp1d: [0, 0],
       memo: [0, 0],
       activeSlot: 0,
-      tag: '调用 robTree(root)',
-      log: '🌲 int[] res = robTree(root); 递归开始',
-      msg: '调用 <code>robTree(root)</code>，深入自底向上汇报二元组 <code>[不偷, 偷]</code>。',
+      tag: '调用 dfs(root)',
+      log: '🌲 int[] res = dfs(root); 递归开始',
+      msg: '调用 <code>dfs(root)</code>，深入自底向上汇报二元组 <code>[不偷, 偷]</code>。',
       activeNodeId: 'rob-1',
       treeRoot: cloneTree(treeState),
     });
 
-    interface SimRobNode {
-      id: string;
-      u: number;
-      val: number;
-      left?: SimRobNode;
-      right?: SimRobNode;
-    }
-
-    const rn4: SimRobNode = { id: 'rob-4', u: 4, val: 3 };
-    const rn5: SimRobNode = { id: 'rob-5', u: 5, val: 1 };
-    const rn2: SimRobNode = { id: 'rob-2', u: 2, val: 2, right: rn4 };
-    const rn3: SimRobNode = { id: 'rob-3', u: 3, val: 3, right: rn5 };
-    const rn1: SimRobNode = { id: 'rob-1', u: 1, val: 3, left: rn2, right: rn3 };
-
     function simulateRobTree(node: SimRobNode | undefined): [number, number] {
-      // Line 6: private int[] robTree(TreeNode cur)
       if (!node) {
-        // Line 7: if (cur == null) return new int[]{0, 0};
         addRobStep({
           type: 'boundary',
-          line: 7,
+          line: lineBoundary,
           i: 0,
           j: 0,
           dp1d: [0, 0],
@@ -502,60 +867,57 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
 
       addRobStep({
         type: 'entry',
-        line: 6,
+        line: lineRecursion,
         i: u,
         j: 0,
         dp1d: [val0[u], val1[u]],
         memo: [val0[u], val1[u]],
         activeSlot: u - 1,
-        tag: `robTree(房#${u})`,
-        log: `进入 robTree(cur = 房#${u}, 金额=${node.val})`,
-        msg: `进入递归：考察房屋 <strong>房#${u}</strong>（金额 <code>${node.val}</code>）。`,
+        tag: `dfs(房#${u})`,
+        log: `进入 dfs(cur = 房#${u}, 金额=${node.val})`,
+        msg: `进入后序遍历：考察房屋 <strong>房#${u}</strong>（金额 <code>${node.val}</code>）。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
       });
 
-      // Line 8: int[] left = robTree(cur.left);
       addRobStep({
         type: 'call',
-        line: 8,
+        line: lineBranchLeft,
         i: u,
         j: 0,
         dp1d: [val0[u], val1[u]],
         memo: [val0[u], val1[u]],
         activeSlot: u - 1,
-        tag: `递归左子树 robTree(cur.left)`,
-        log: `| 递归左子树: robTree(cur.left = ${node.left ? '#' + node.left.u : 'null'})`,
+        tag: `递归左子树 dfs(cur.left)`,
+        log: `| 递归左子树: dfs(cur.left = ${node.left ? '#' + node.left.u : 'null'})`,
         msg: `递归左子树：准备求解 <strong>房#${u}</strong> 的左子房屋最优策略。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
       });
       const left = simulateRobTree(node.left);
 
-      // Line 9: int[] right = robTree(cur.right);
       addRobStep({
         type: 'call',
-        line: 9,
+        line: lineBranchRight,
         i: u,
         j: 0,
         dp1d: [val0[u], val1[u]],
         memo: [val0[u], val1[u]],
         activeSlot: u - 1,
-        tag: `递归右子树 robTree(cur.right)`,
-        log: `| 递归右子树: robTree(cur.right = ${node.right ? '#' + node.right.u : 'null'})`,
+        tag: `递归右子树 dfs(cur.right)`,
+        log: `| 递归右子树: dfs(cur.right = ${node.right ? '#' + node.right.u : 'null'})`,
         msg: `递归右子树：准备求解 <strong>房#${u}</strong> 的右子房屋最优策略。`,
         activeNodeId: node.id,
         treeRoot: cloneTree(treeState),
       });
       const right = simulateRobTree(node.right);
 
-      // Line 10: int curVal1 = cur.val + left[0] + right[0];
       const curVal1 = node.val + left[0] + right[0];
       val1[u] = curVal1;
 
       addRobStep({
         type: 'update',
-        line: 10,
+        line: lineTransfer,
         i: u,
         j: 1,
         dp1d: [val0[u], val1[u]],
@@ -570,14 +932,13 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
         activeArrSlot: u - 1,
       });
 
-      // Line 11: int curVal0 = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
       const curVal0 = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);
       val0[u] = curVal0;
       setNodeStatus(node.id, 'visited', `不偷:${curVal0}|偷:${curVal1}`);
 
       addRobStep({
         type: 'update',
-        line: 11,
+        line: lineTransfer,
         i: u,
         j: 0,
         dp1d: [val0[u], val1[u]],
@@ -592,10 +953,9 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
         activeArrSlot: u - 1,
       });
 
-      // Line 12: return new int[]{val0, val1};
       addRobStep({
         type: 'return',
-        line: 12,
+        line: lineCombine,
         i: u,
         j: 0,
         dp1d: [curVal0, curVal1],
@@ -616,10 +976,9 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
     const res = simulateRobTree(rn1);
     const finalAns = Math.max(res[0], res[1]);
 
-    // Line 4: return Math.max(res[0], res[1]);
     addRobStep({
       type: 'return',
-      line: 4,
+      line: lineReturn,
       i: 0,
       j: 0,
       dp1d: [finalAns],

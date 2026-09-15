@@ -10,6 +10,9 @@ import { HighlightTarget } from '../../../../core/code-panel';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { LAST_STONE_STAGE1_CODE_LANGUAGES, LAST_STONE_STAGE2_CODE_LANGUAGES, LAST_STONE_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
+import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
+import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/table-step-engine';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 type LastStoneCallFrame = { i: number; rem: number; label: string };
 
@@ -40,26 +43,20 @@ interface LastStone2DStep extends Dp2DStepBase {
 // ==========================================
 
 export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800): LastStoneRecursionStep[] {
-  const steps: LastStoneRecursionStep[] = [];
   const sum = stones.reduce((a, b) => a + b, 0);
   const t = Math.floor(sum / 2);
   const n = stones.length;
-  const callStack: Array<{ i: number; rem: number; label: string }> = [];
 
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(1, 'last-stone', anchor);
+  const tracker = new RecursionTraceTracker<LastStoneRecursionStep, LastStoneCallFrame>({
+    resolveLine: (anchor) => getKnapsack073Anchor(1, 'last-stone', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, rem: number, decision: string, message: string, retVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap: rem,
       n,
       stones: [...stones],
-      callStack: [...callStack],
       decision,
       message,
       log: `[DFS] i=${i} remCap=${rem} | ${action}: ${message}`,
@@ -67,7 +64,7 @@ export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800): 
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, remCap=${rem})` : '边界触底',
         'metric-cur-stone': i < n ? `stones[${i}]=${stones[i]}` : '—',
-        'metric-stack-depth': `${callStack.length}`,
+        'metric-stack-depth': `${tracker.callStack.length}`,
       },
     });
   };
@@ -75,14 +72,13 @@ export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800): 
   pushStep('callRoot', 'callRoot', 0, t, '启动暴力递归', `🚀 启动最后一块石头暴力分治：总重量 sum=${sum}，目标上限 t=floor(sum/2)=${t}。`);
 
   function dfs(i: number, remCap: number): number {
-    if (steps.length >= maxSteps) return 0;
     const label = `dfs(i=${i}, remCap=${remCap})`;
-    callStack.push({ i, rem: remCap, label });
+    tracker.enterFrame({ i, rem: remCap, label });
     pushStep('fnEnter', 'fnEnter', i, remCap, '进入栈帧', `📥 进入栈帧 ${label}。`);
 
     if (i === n || remCap <= 0) {
       pushStep('baseCheck', 'baseCheck', i, remCap, '触底终止', `🛑 边界触底 (i>=${n} 或 remCap<=0)，返回 0。`);
-      callStack.pop();
+      tracker.exitFrame();
       return 0;
     }
 
@@ -99,14 +95,12 @@ export function buildLastStoneRecursionSteps(stones: number[], maxSteps = 800): 
 
     const res = Math.max(p1, p2);
     pushStep('returnMax', 'returnMax', i, remCap, `返回最优解 max(${p1}, ${p2}) = ${res}`, `📤 栈帧 ${label} 汇聚：返回两分支最优值 ${res}。`, res);
-    callStack.pop();
+    tracker.exitFrame();
     return res;
   }
 
   dfs(0, t);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastStoneMemoStep[] {
@@ -115,24 +109,18 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastS
   const t = Math.floor(sum / 2);
   const n = stones.length;
   const memo: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(null));
-  let hitCount = 0;
-  let missCount = 0;
-
-  const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'last-stone', anchor);
+  // 骨架（stepIndex/totalSteps/hitCount/missCount/codeLine）由 MemoTraceTracker 引擎托管
+  const tracker = new MemoTraceTracker<LastStoneMemoStep>({
+    maxSteps,
+    resolveLine: (anchor) => getKnapsack073Anchor(2, 'last-stone', anchor),
+  });
 
   const pushStep = (action: string, codeKey: string, i: number, remCap: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
-    if (steps.length >= maxSteps) return;
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       i,
       remCap,
       memoHit,
-      memoGrid: memo.map((row) => [...row]),
-      hitCount,
-      missCount,
+      memoGrid: snapshotGrid2D(memo),
       decision,
       message,
       log: `[MEMO] i=${i} remCap=${remCap} | ${action}: ${message}`,
@@ -140,8 +128,8 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastS
       metrics: {
         'metric-cur-state': i < n ? `dfs(i=${i}, remCap=${remCap})` : '边界触底',
         'metric-cache-status': memoHit ? '🎯 Cache HIT' : '⚪ Cache MISS',
-        'metric-hit-count': `${hitCount}`,
-        'metric-miss-count': `${missCount}`,
+        'metric-hit-count': `${tracker.hitCount}`,
+        'metric-miss-count': `${tracker.missCount}`,
       },
     });
   };
@@ -149,7 +137,7 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastS
   pushStep('callRoot', 'callRoot', 0, t, false, '启动记忆化搜索', `🚀 启动最后一块石头记忆化搜索：初始化备忘录 memo[${n + 1}][${t + 1}]。`);
 
   function dfsMemo(i: number, remCap: number): number {
-    if (steps.length >= maxSteps) return 0;
+    if (tracker.exhausted) return 0;
     pushStep('fnEnter', 'fnEnter', i, remCap, false, '进入栈帧', `📥 进入栈帧 dfs(i=${i}, remCap=${remCap})。`);
 
     if (i === n || remCap <= 0) {
@@ -158,13 +146,13 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastS
     }
 
     if (memo[i][remCap] !== null) {
-      hitCount++;
+      tracker.registerHit();
       const val = memo[i][remCap]!;
       pushStep('memoCheck', 'memoCheck', i, remCap, true, `命中缓存 memo[${i}][${remCap}] = ${val}`, `🎯 缓存命中！直接复用最接近重量 ${val}，避免重复递归！`, val);
       return val;
     }
 
-    missCount++;
+    tracker.registerMiss();
     pushStep('memoCheck', 'memoCheck', i, remCap, false, `未命中缓存 memo[${i}][${remCap}]`, `⚪ 缓存未命中：首次访问，开始分支。`);
 
     const p1 = dfsMemo(i + 1, remCap);
@@ -183,9 +171,7 @@ export function buildLastStoneMemoSteps(stones: number[], maxSteps = 800): LastS
   }
 
   dfsMemo(0, t);
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }
 
 export function buildLastStone2DSteps(stones: number[]): LastStone2DStep[] {
@@ -196,16 +182,13 @@ export function buildLastStone2DSteps(stones: number[]): LastStone2DStep[] {
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(0));
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'last-stone', anchor);
+  const tracker = new Dp2DTraceTracker<LastStone2DStep>({ resolveLine });
 
   const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
-    steps.push({
-      stepIndex: steps.length + 1,
-      totalSteps: 0,
-      action,
-      codeLine: resolveLine(codeKey),
+    tracker.pushStep(action, codeKey, {
       curI,
       curJ,
-      dpTable: dp.map((row) => [...row]),
+      dpTable: snapshotGrid2D(dp),
       depCells,
       decision,
       message,
@@ -246,7 +229,5 @@ export function buildLastStone2DSteps(stones: number[]): LastStone2DStep[] {
   const ans = sum - 2 * finalNear;
   pushStep('returnAns', 'returnAns', n, t, [{ label: `dp[${n}][${t}]`, val: finalNear, r: n, c: t }], `最终碰撞剩余: ${sum} - 2*${finalNear} = ${ans}`, `🎉 二维 DP 填表完毕！最接近半和的最大子集重为 ${finalNear}，粉碎后最小剩余重量为 ${ans}！`);
 
-  const total = steps.length;
-  steps.forEach((s) => (s.totalSteps = total));
-  return steps;
+  return tracker.finalize();
 }

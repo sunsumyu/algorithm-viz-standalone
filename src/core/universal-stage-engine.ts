@@ -8,7 +8,7 @@
 import type { IYamlAlgorithmModel } from './interfaces';
 import {
   AlgorithmStrategyRegistry,
-  cloneTree as helperCloneTree,
+  cloneStateDepTree as helperCloneTree,
   build2DDPDependencyTree as helperBuild2DDPDependencyTree,
   findNodeIdByCoord as helperFindNodeIdByCoord,
   getDynamicObstacleGrid as helperGetDynamicObstacleGrid,
@@ -32,6 +32,8 @@ export interface UniversalStep {
   j?: number;
   grid?: (number | null)[][];
   activeStack?: string[];
+  activeTrail?: string[];
+  callStack?: Array<{ l?: number; r?: number; i?: number; j?: number; [key: string]: any } | string>;
   visited?: string[];
   line?: number;
   tag?: string;

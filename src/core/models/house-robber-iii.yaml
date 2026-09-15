@@ -1,0 +1,149 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「打家劫舍 III (House Robber III, LeetCode 337)」四阶段全演化标准实现。
+# 包含：二叉树递归遍历、记忆化节点缓存、后序遍历树形 DP [rob, not_rob] 二元状态汇聚。
+# ==============================================================================
+
+id: house-robber-iii
+name: "打家劫舍 III"
+nameEn: "House Robber III"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🌳"
+difficulty: 2
+levelOrder: 13
+learningGoal: "掌握树形动态规划经典模型：后序遍历自底向上收集子树决策元组 [rob, notRob]"
+description: "打家劫舍 III（LeetCode 337）：房屋组织形式为二叉树。父子节点不能同时偷窃，后序遍历自底向上计算偷与不偷的最大收益。"
+defaultParams:
+  tree: [3, 2, 3, null, 3, null, 1]
+
+problem:
+  leetcodeId: 337
+  title: "打家劫舍 III"
+  difficulty: "中等"
+  tags: ["树", "深度优先搜索", "动态规划", "二叉树"]
+  description: "小偷又发现了一个新的可行窃的地点。这个地区只有一个入口，我们称之为 <code>root</code> 。<br/><br/>除了 <code>root</code> 之外，每栋房子有且只有一个“父“房子与之相连。一番侦察之后，聪明的小偷意识到“这个地方的所有房屋的排列类似于一棵二叉树”。 如果 <strong>两个直接相连的房子在同一天晚上被打劫</strong> ，房屋将自动报警。<br/><br/>给定二叉树的根节点 <code>root</code> 。返回 <strong>在不触动警报的情况下</strong> ，小偷能够盗取的最高金额 。"
+  examples:
+    - input: "root = [3,2,3,null,3,null,1]"
+      output: "7"
+      explanation: "小偷一晚能够盗取的最高金额 3 + 3 + 1 = 7"
+    - input: "root = [3,4,5,1,3,null,1]"
+      output: "9"
+      explanation: "小偷一晚能够盗取的最高金额 4 + 5 = 9"
+  constraints:
+    - "树的节点数在 [1, 10^4] 范围内"
+    - "0 <= Node.val <= 10^4"
+  leetcodeUrl: "https://leetcode.cn/problems/house-robber-iii/"
+
+directions:
+  forward:
+    label: "后序遍历 (自底向上归纳)"
+    branches:
+      - name: "left_subtree"
+        delta: [0, 0]
+        label: "收集左子树 [rob, notRob]"
+        codeVar: "left"
+        arrow: "↙️"
+      - name: "right_subtree"
+        delta: [0, 0]
+        label: "收集右子树 [rob, notRob]"
+        codeVar: "right"
+        arrow: "↘️"
+    combineFormula: "max(rob, notRob)"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素树递归"
+    desc:
+      forward: "对于每个节点，若偷当前节点，则只能偷其孙子节点；若不偷当前节点，则可偷其两个子节点。反复递归导致跨层重复计算。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "HouseRobber3_Recursive.java"
+        code:
+          forward:
+            title: "HouseRobber3_Recursive.java"
+            source: |
+              class Solution {
+                  public int rob(TreeNode root) { // @step:entry
+                      if (root == null) return 0; // @step:boundary
+                      int doRob = root.val;
+                      if (root.left != null) doRob += rob(root.left.left) + rob(root.left.right); // @step:branch_left
+                      if (root.right != null) doRob += rob(root.right.left) + rob(root.right.right); // @step:branch_right
+                      int notRob = rob(root.left) + rob(root.right);
+                      return Math.max(doRob, notRob); // @step:combine // @step:return
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化哈希缓存"
+    desc:
+      forward: "引入 Map<TreeNode, Integer> 备忘录缓存各子树计算结果，剪掉重复向下探查孙子节点的庞大子树。"
+    variants:
+      hash_memo:
+        variantLabel: "哈希备忘录版"
+        title:
+          forward: "HouseRobber3_Memo.java"
+        code:
+          forward:
+            title: "HouseRobber3_Memo.java"
+            source: |
+              class Solution {
+                  Map<TreeNode, Integer> memo = new HashMap<>();
+                  public int rob(TreeNode root) { // @step:entry
+                      if (root == null) return 0; // @step:boundary
+                      if (memo.containsKey(root)) return memo.get(root); // @step:memo // @step:cache_hit
+                      int doRob = root.val;
+                      if (root.left != null) doRob += rob(root.left.left) + rob(root.left.right); // @step:branch_left
+                      if (root.right != null) doRob += rob(root.right.left) + rob(root.right.right); // @step:branch_right
+                      int notRob = rob(root.left) + rob(root.right);
+                      int res = Math.max(doRob, notRob); // @step:combine
+                      memo.put(root, res);
+                      return res; // @step:return
+                  }
+              }
+
+  stage-3:
+    shortName: "树形DP"
+    type: "tree-dp"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 后序遍历树形 DP (二元状态汇聚)"
+    desc:
+      forward: "后序遍历自底向上：每个节点只返回一个长度为 2 的数组 [不偷当前节点最大收益, 偷当前节点最大收益]，一次后序遍历即得全局最优。"
+    variants:
+      standard:
+        variantLabel: "后序遍历版"
+        title:
+          forward: "HouseRobber3_TreeDP.java"
+        code:
+          forward:
+            title: "HouseRobber3_TreeDP.java"
+            source: |
+              class Solution {
+                  public int rob(TreeNode root) { // @step:entry
+                      int[] res = dfs(root); // @step:init
+                      return Math.max(res[0], res[1]); // @step:return
+                  }
+                  // 返回 [notRob, rob]
+                  private int[] dfs(TreeNode node) { // @step:recursion
+                      if (node == null) return new int[]{0, 0}; // @step:boundary
+                      int[] left = dfs(node.left);   // @step:branch_left
+                      int[] right = dfs(node.right); // @step:branch_right
+                      int notRob = Math.max(left[0], left[1]) + Math.max(right[0], right[1]); // @step:transfer
+                      int doRob = node.val + left[0] + right[0];
+                      return new int[]{notRob, doRob}; // @step:combine
+                  }
+              }

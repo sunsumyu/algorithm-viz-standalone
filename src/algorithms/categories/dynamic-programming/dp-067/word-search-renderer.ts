@@ -8,16 +8,19 @@
  * 阶段 4: 首尾词频统计反转剪枝优化 (Heuristic Direction Pruning)
  */
 
-import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
-import { registerAlgorithm } from '../../../../core/registry';
+import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { captureScope } from '../../../../core/strategies/scope-capture';
 import { DP_067_PROBLEMS } from './dp-067-problem-content';
 import {
   WORD_SEARCH_STAGE1_CODE_LANGUAGES,
   WORD_SEARCH_STAGE2_CODE_LANGUAGES,
   WORD_SEARCH_STAGE3_CODE_LANGUAGES,
   WORD_SEARCH_STAGE4_CODE_LANGUAGES,
+  getDp067Anchor,
 } from './dp-067-stage-codes';
+import type { HighlightTarget } from '../../../../core/code-panel';
 import { renderRecursionCard1 } from './dp-067-shared';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 import { renderUniversalDpGrid } from '../dp-shared';
 
 export interface WordSearchStep {
@@ -33,10 +36,40 @@ export interface WordSearchStep {
   decision: string;
   message: string;
   log: string;
-  codeLine: Record<string, number>;
+  codeLine: HighlightTarget;
   callStack?: Array<{ label: string }>;
   metrics?: Record<string, any>;
   wordReversed?: boolean;
+  scope?: Record<string, any>;
+}
+
+function createWordSearchStepsArray(): [WordSearchStep[], WordSearchStep[]] {
+  const rawSteps: WordSearchStep[] = [];
+  const steps: WordSearchStep[] = new Proxy(rawSteps, {
+    get(target, prop, receiver) {
+      if (prop === 'push') {
+        return (...items: WordSearchStep[]) => {
+          for (const item of items) {
+            if (!item.scope) {
+              item.scope = captureScope({
+                i: item.i,
+                j: item.j,
+                k: item.k,
+                matchedLen: item.matchedLen,
+                status: item.status,
+                word: item.word,
+                pathLen: item.path?.length,
+                char: item.board?.[item.i]?.[item.j],
+              });
+            }
+          }
+          return target.push(...items);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
+  return [steps, rawSteps];
 }
 
 export function parseWordSearchInputs(inputs: Record<string, any>) {
@@ -69,31 +102,31 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
   const { board: origBoard, word } = parseWordSearchInputs(inputs);
   const m = origBoard.length;
   const n = origBoard[0].length;
-  const steps: WordSearchStep[] = [];
-  const curBoard = origBoard.map((r) => [...r]);
+  const [steps, rawSteps] = createWordSearchStepsArray();
+  const curBoard = snapshotGrid2D(origBoard);
   const visited: boolean[][] = Array.from({ length: m }, () => new Array(n).fill(false));
   const path: Array<[number, number]> = [];
   const stack: Array<{ label: string }> = [];
 
   const lines = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    dimensions: { java: 3, cpp: 3, python: 3, javascript: 3 },
-    allocVisited: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    outerI: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    outerJ: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    callDfs: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    returnFalse: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    dfsEntry: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    checkTargetFound: { java: 13, cpp: 13, python: 13, javascript: 13 },
-    checkBounds: { java: 14, cpp: 14, python: 14, javascript: 14 },
-    checkVisitedOrMismatch: { java: 15, cpp: 15, python: 15, javascript: 15 },
-    markVisited: { java: 16, cpp: 16, python: 16, javascript: 16 },
-    branchDown: { java: 17, cpp: 17, python: 17, javascript: 17 },
-    branchUp: { java: 18, cpp: 18, python: 18, javascript: 18 },
-    branchRight: { java: 19, cpp: 19, python: 19, javascript: 19 },
-    branchLeft: { java: 20, cpp: 20, python: 20, javascript: 20 },
-    backtrackRestore: { java: 21, cpp: 21, python: 21, javascript: 21 },
-    returnResult: { java: 22, cpp: 22, python: 22, javascript: 22 },
+    entry: getDp067Anchor(1, 'word-search', 'entry'),
+    dimensions: getDp067Anchor(1, 'word-search', 'dimensions'),
+    allocVisited: getDp067Anchor(1, 'word-search', 'allocVisited'),
+    outerI: getDp067Anchor(1, 'word-search', 'outerI'),
+    outerJ: getDp067Anchor(1, 'word-search', 'outerJ'),
+    callDfs: getDp067Anchor(1, 'word-search', 'callDfs'),
+    returnFalse: getDp067Anchor(1, 'word-search', 'returnFalse'),
+    dfsEntry: getDp067Anchor(1, 'word-search', 'dfsEntry'),
+    checkTargetFound: getDp067Anchor(1, 'word-search', 'checkTargetFound'),
+    checkBounds: getDp067Anchor(1, 'word-search', 'checkBounds'),
+    checkVisitedOrMismatch: getDp067Anchor(1, 'word-search', 'checkVisitedOrMismatch'),
+    markVisited: getDp067Anchor(1, 'word-search', 'markVisited'),
+    branchDown: getDp067Anchor(1, 'word-search', 'branchDown'),
+    branchUp: getDp067Anchor(1, 'word-search', 'branchUp'),
+    branchRight: getDp067Anchor(1, 'word-search', 'branchRight'),
+    branchLeft: getDp067Anchor(1, 'word-search', 'branchLeft'),
+    backtrackRestore: getDp067Anchor(1, 'word-search', 'backtrackRestore'),
+    returnResult: getDp067Anchor(1, 'word-search', 'returnResult'),
   };
 
   // Step 0: 函数入口
@@ -101,7 +134,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -118,7 +151,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -143,7 +176,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -163,7 +196,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k,
         path: [...path],
@@ -184,7 +217,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k,
         path: [...path],
@@ -207,7 +240,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k,
         path: [...path],
@@ -235,7 +268,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k + 1,
       path: [...path],
@@ -264,7 +297,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k + 1,
         path: [...path],
@@ -292,7 +325,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -310,7 +343,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -332,7 +365,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: 0,
       path: [],
@@ -349,7 +382,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: 0,
         path: [],
@@ -365,7 +398,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: 0,
         path: [],
@@ -382,7 +415,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
           i,
           j,
           k: word.length,
-          board: curBoard.map((r) => [...r]),
+          board: snapshotGrid2D(curBoard),
           word,
           matchedLen: word.length,
           path: [...path],
@@ -403,7 +436,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
       i: -1,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: 0,
       path: [],
@@ -416,7 +449,7 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
     });
   }
 
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -425,32 +458,32 @@ export function buildWordSearchStage1Steps(inputs: Record<string, any>): WordSea
 
 export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSearchStep[] {
   const { board: origBoard, word } = parseWordSearchInputs(inputs);
-  const steps: WordSearchStep[] = [];
-  const curBoard = origBoard.map((r) => [...r]);
+  const [steps, rawSteps] = createWordSearchStepsArray();
+  const curBoard = snapshotGrid2D(origBoard);
 
   const lines2 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocMemo: { java: 3, cpp: 3, python: 3, javascript: 3 },
-    outerI: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    outerJ: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    callDfs: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    returnFalse: { java: 9, cpp: 9, python: 9, javascript: 9 },
-    dfsEntry: { java: 11, cpp: 11, python: 11, javascript: 11 },
-    checkTarget: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    checkBounds: { java: 13, cpp: 13, python: 13, javascript: 13 },
-    checkMemo: { java: 14, cpp: 14, python: 14, javascript: 14 },
-    markZero: { java: 15, cpp: 15, python: 15, javascript: 15 },
-    branchDown: { java: 16, cpp: 16, python: 16, javascript: 16 },
-    branchRight: { java: 17, cpp: 17, python: 17, javascript: 17 },
-    restore: { java: 18, cpp: 18, python: 18, javascript: 18 },
-    writeMemo: { java: 19, cpp: 19, python: 19, javascript: 19 },
+    entry: getDp067Anchor(2, 'word-search', 'entry'),
+    allocMemo: getDp067Anchor(2, 'word-search', 'allocMemo'),
+    outerI: getDp067Anchor(2, 'word-search', 'outerI'),
+    outerJ: getDp067Anchor(2, 'word-search', 'outerJ'),
+    callDfs: getDp067Anchor(2, 'word-search', 'callDfs'),
+    returnFalse: getDp067Anchor(2, 'word-search', 'returnFalse'),
+    dfsEntry: getDp067Anchor(2, 'word-search', 'dfsEntry'),
+    checkTarget: getDp067Anchor(2, 'word-search', 'checkTarget'),
+    checkBounds: getDp067Anchor(2, 'word-search', 'checkBounds'),
+    checkMemo: getDp067Anchor(2, 'word-search', 'checkMemo'),
+    markZero: getDp067Anchor(2, 'word-search', 'markZero'),
+    branchDown: getDp067Anchor(2, 'word-search', 'branchDown'),
+    branchRight: getDp067Anchor(2, 'word-search', 'branchRight'),
+    restore: getDp067Anchor(2, 'word-search', 'restore'),
+    writeMemo: getDp067Anchor(2, 'word-search', 'writeMemo'),
   };
 
   steps.push({
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -466,7 +499,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -482,7 +515,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 0,
     j: 0,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[0, 0]],
@@ -498,7 +531,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[0, 0], [1, 1]],
@@ -514,7 +547,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[0, 0], [1, 1]],
@@ -530,7 +563,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[0, 0], [1, 1]],
@@ -546,7 +579,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[0, 0]],
@@ -562,7 +595,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [],
@@ -578,7 +611,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 0,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 1,
     path: [[1, 0]],
@@ -594,7 +627,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: 1,
     j: 1,
     k: 1,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 2,
     path: [[1, 0], [1, 1]],
@@ -610,7 +643,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -622,7 +655,7 @@ export function buildWordSearchStage2Steps(inputs: Record<string, any>): WordSea
     metrics: { 'metric-status': '确立算法边界' },
   });
 
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -633,36 +666,36 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
   const { board: origBoard, word } = parseWordSearchInputs(inputs);
   const m = origBoard.length;
   const n = origBoard[0].length;
-  const steps: WordSearchStep[] = [];
-  const curBoard = origBoard.map((r) => [...r]);
+  const [steps, rawSteps] = createWordSearchStepsArray();
+  const curBoard = snapshotGrid2D(origBoard);
   const path: Array<[number, number]> = [];
   const stack: Array<{ label: string }> = [];
 
   const lines3 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    toCharArray: { java: 3, cpp: 3, python: 3, javascript: 3 },
-    outerI: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    outerJ: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    callDfs: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    returnFalse: { java: 9, cpp: 9, python: 9, javascript: 9 },
-    dfsEntry: { java: 11, cpp: 11, python: 11, javascript: 11 },
-    checkTargetFound: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    checkBoundsAndMismatch: { java: 13, cpp: 13, python: 13, javascript: 13 },
-    saveTmpChar: { java: 14, cpp: 14, python: 14, javascript: 14 },
-    markZero: { java: 15, cpp: 15, python: 15, javascript: 15 },
-    branchDown: { java: 16, cpp: 16, python: 16, javascript: 16 },
-    branchUp: { java: 17, cpp: 17, python: 17, javascript: 17 },
-    branchRight: { java: 18, cpp: 18, python: 18, javascript: 18 },
-    branchLeft: { java: 19, cpp: 19, python: 19, javascript: 19 },
-    restoreTmpChar: { java: 20, cpp: 20, python: 20, javascript: 20 },
-    returnResult: { java: 21, cpp: 21, python: 21, javascript: 21 },
+    entry: getDp067Anchor(3, 'word-search', 'entry'),
+    toCharArray: getDp067Anchor(3, 'word-search', 'toCharArray'),
+    outerI: getDp067Anchor(3, 'word-search', 'outerI'),
+    outerJ: getDp067Anchor(3, 'word-search', 'outerJ'),
+    callDfs: getDp067Anchor(3, 'word-search', 'callDfs'),
+    returnFalse: getDp067Anchor(3, 'word-search', 'returnFalse'),
+    dfsEntry: getDp067Anchor(3, 'word-search', 'dfsEntry'),
+    checkTargetFound: getDp067Anchor(3, 'word-search', 'checkTargetFound'),
+    checkBoundsAndMismatch: getDp067Anchor(3, 'word-search', 'checkBoundsAndMismatch'),
+    saveTmpChar: getDp067Anchor(3, 'word-search', 'saveTmpChar'),
+    markZero: getDp067Anchor(3, 'word-search', 'markZero'),
+    branchDown: getDp067Anchor(3, 'word-search', 'branchDown'),
+    branchUp: getDp067Anchor(3, 'word-search', 'branchUp'),
+    branchRight: getDp067Anchor(3, 'word-search', 'branchRight'),
+    branchLeft: getDp067Anchor(3, 'word-search', 'branchLeft'),
+    restoreTmpChar: getDp067Anchor(3, 'word-search', 'restoreTmpChar'),
+    returnResult: getDp067Anchor(3, 'word-search', 'returnResult'),
   };
 
   steps.push({
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -678,7 +711,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -703,7 +736,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -723,7 +756,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k,
         path: [...path],
@@ -746,7 +779,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k,
         path: [...path],
@@ -769,7 +802,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k + 1,
       path: [...path],
@@ -791,7 +824,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k + 1,
       path: [...path],
@@ -820,7 +853,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: k + 1,
         path: [...path],
@@ -847,7 +880,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -865,7 +898,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: k,
       path: [...path],
@@ -886,7 +919,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: 0,
       path: [],
@@ -903,7 +936,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: 0,
         path: [],
@@ -919,7 +952,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word,
         matchedLen: 0,
         path: [],
@@ -936,7 +969,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
           i,
           j,
           k: word.length,
-          board: curBoard.map((r) => [...r]),
+          board: snapshotGrid2D(curBoard),
           word,
           matchedLen: word.length,
           path: [...path],
@@ -957,7 +990,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
       i: -1,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word,
       matchedLen: 0,
       path: [],
@@ -970,7 +1003,7 @@ export function buildWordSearchStage3Steps(inputs: Record<string, any>): WordSea
     });
   }
 
-  return steps;
+  return rawSteps;
 }
 
 // ==========================================
@@ -981,34 +1014,34 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
   const { board: origBoard, word } = parseWordSearchInputs(inputs);
   const m = origBoard.length;
   const n = origBoard[0].length;
-  const steps: WordSearchStep[] = [];
-  const curBoard = origBoard.map((r) => [...r]);
+  const [steps, rawSteps] = createWordSearchStepsArray();
+  const curBoard = snapshotGrid2D(origBoard);
   const path: Array<[number, number]> = [];
   const stack: Array<{ label: string }> = [];
 
   const lines4 = {
-    entry: { java: 2, cpp: 2, python: 2, javascript: 2 },
-    allocCount: { java: 3, cpp: 3, python: 3, javascript: 3 },
-    countBoard: { java: 4, cpp: 4, python: 4, javascript: 4 },
-    toChars: { java: 5, cpp: 5, python: 5, javascript: 5 },
-    checkFreq: { java: 6, cpp: 6, python: 6, javascript: 6 },
-    compareEnds: { java: 7, cpp: 7, python: 7, javascript: 7 },
-    reverseWord: { java: 8, cpp: 8, python: 8, javascript: 8 },
-    outerI: { java: 10, cpp: 10, python: 10, javascript: 10 },
-    outerJ: { java: 11, cpp: 11, python: 11, javascript: 11 },
-    callDfs: { java: 12, cpp: 12, python: 12, javascript: 12 },
-    returnFalse: { java: 15, cpp: 15, python: 15, javascript: 15 },
-    dfsEntry: { java: 17, cpp: 17, python: 17, javascript: 17 },
-    baseSuccess: { java: 18, cpp: 18, python: 18, javascript: 18 },
-    boundsCheck: { java: 19, cpp: 19, python: 19, javascript: 19 },
-    saveChar: { java: 20, cpp: 20, python: 20, javascript: 20 },
-    markZero: { java: 21, cpp: 21, python: 21, javascript: 21 },
-    branchDown: { java: 22, cpp: 22, python: 22, javascript: 22 },
-    branchUp: { java: 23, cpp: 23, python: 23, javascript: 23 },
-    branchRight: { java: 24, cpp: 24, python: 24, javascript: 24 },
-    branchLeft: { java: 25, cpp: 25, python: 25, javascript: 25 },
-    restore: { java: 26, cpp: 26, python: 26, javascript: 26 },
-    returnFound: { java: 27, cpp: 27, python: 27, javascript: 27 },
+    entry: getDp067Anchor(4, 'word-search', 'entry'),
+    allocCount: getDp067Anchor(4, 'word-search', 'allocCount'),
+    countBoard: getDp067Anchor(4, 'word-search', 'countBoard'),
+    toChars: getDp067Anchor(4, 'word-search', 'toChars'),
+    checkFreq: getDp067Anchor(4, 'word-search', 'checkFreq'),
+    compareEnds: getDp067Anchor(4, 'word-search', 'compareEnds'),
+    reverseWord: getDp067Anchor(4, 'word-search', 'reverseWord'),
+    outerI: getDp067Anchor(4, 'word-search', 'outerI'),
+    outerJ: getDp067Anchor(4, 'word-search', 'outerJ'),
+    callDfs: getDp067Anchor(4, 'word-search', 'callDfs'),
+    returnFalse: getDp067Anchor(4, 'word-search', 'returnFalse'),
+    dfsEntry: getDp067Anchor(4, 'word-search', 'dfsEntry'),
+    baseSuccess: getDp067Anchor(4, 'word-search', 'baseSuccess'),
+    boundsCheck: getDp067Anchor(4, 'word-search', 'boundsCheck'),
+    saveChar: getDp067Anchor(4, 'word-search', 'saveChar'),
+    markZero: getDp067Anchor(4, 'word-search', 'markZero'),
+    branchDown: getDp067Anchor(4, 'word-search', 'branchDown'),
+    branchUp: getDp067Anchor(4, 'word-search', 'branchUp'),
+    branchRight: getDp067Anchor(4, 'word-search', 'branchRight'),
+    branchLeft: getDp067Anchor(4, 'word-search', 'branchLeft'),
+    restore: getDp067Anchor(4, 'word-search', 'restore'),
+    returnFound: getDp067Anchor(4, 'word-search', 'returnFound'),
   };
 
   // Line 2: entry
@@ -1016,7 +1049,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -1034,7 +1067,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -1061,7 +1094,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word,
     matchedLen: 0,
     path: [],
@@ -1079,7 +1112,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word: effectiveWord,
     matchedLen: 0,
     path: [],
@@ -1107,7 +1140,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word: effectiveWord,
     matchedLen: 0,
     path: [],
@@ -1137,7 +1170,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     i: -1,
     j: -1,
     k: 0,
-    board: curBoard.map((r) => [...r]),
+    board: snapshotGrid2D(curBoard),
     word: effectiveWord,
     matchedLen: 0,
     path: [],
@@ -1160,7 +1193,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i: -1,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: 0,
       path: [],
@@ -1187,7 +1220,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: k,
       path: [...path],
@@ -1207,7 +1240,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word: effectiveWord,
         matchedLen: k,
         path: [...path],
@@ -1230,7 +1263,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word: effectiveWord,
         matchedLen: k,
         path: [...path],
@@ -1253,7 +1286,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: k + 1,
       path: [...path],
@@ -1275,7 +1308,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: k + 1,
       path: [...path],
@@ -1304,7 +1337,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word: effectiveWord,
         matchedLen: k + 1,
         path: [...path],
@@ -1331,7 +1364,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: k,
       path: [...path],
@@ -1349,7 +1382,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j,
       k,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: k,
       path: [...path],
@@ -1370,7 +1403,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: 0,
       path: [],
@@ -1387,7 +1420,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word: effectiveWord,
         matchedLen: 0,
         path: [],
@@ -1403,7 +1436,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
         i,
         j,
         k: 0,
-        board: curBoard.map((r) => [...r]),
+        board: snapshotGrid2D(curBoard),
         word: effectiveWord,
         matchedLen: 0,
         path: [],
@@ -1420,7 +1453,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
           i,
           j,
           k: effectiveWord.length,
-          board: curBoard.map((r) => [...r]),
+          board: snapshotGrid2D(curBoard),
           word: effectiveWord,
           matchedLen: effectiveWord.length,
           path: [...path],
@@ -1441,7 +1474,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
       i: -1,
       j: -1,
       k: 0,
-      board: curBoard.map((r) => [...r]),
+      board: snapshotGrid2D(curBoard),
       word: effectiveWord,
       matchedLen: 0,
       path: [],
@@ -1454,7 +1487,7 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
     });
   }
 
-  return steps.map((s) => ({
+  return rawSteps.map((s) => ({
     ...s,
     originalWord: s.originalWord ?? word,
     wordReversed: s.wordReversed ?? shouldReverse,
@@ -1465,17 +1498,32 @@ export function buildWordSearchStage4Steps(inputs: Record<string, any>): WordSea
 // 5. 声明式 Visualizer
 // ==========================================
 
-const { template, Visualizer } = createDeclarativeVisualizer<any>({
+const WordSearchDeclarativeResult = registerDeclarativeAlgorithm<WordSearchStep>({
   id: 'word-search',
   name: '单词搜索 (LeetCode 79)',
   category: 'dynamic-programming',
+  description: '左程云算法讲解067 Code02：LeetCode 79 单词搜索，无后效性反例深度辨析与启发式剪枝',
+  icon: '🔍',
+  difficulty: 2,
+  levelOrder: 102,
+  learningGoal: '理解无后效性是动态规划的核心前提，掌握带回溯的现场恢复与首尾字符频次剪枝优化',
   badge: {
     mode: '回溯反例辨析 · 启发式剪枝',
     complexity: 'O(M×N×3^L) · O(L) 栈深',
   },
-  card1Title: '🔤 字符网格地图与实时足迹',
-  card2Title: '🔬 无后效性反例与剪枝监视器',
-  card2Desc: '阐释动态规划的前提假设，辨析为什么本题无法转为记忆化/DP',
+  primaryVisual: {
+    title: '🔤 字符网格地图与实时足迹',
+    render: (container, step) => {
+      renderBoardGrid(container, step.board, step.i, step.j, step.path);
+    },
+  },
+  auxiliaryVisual: {
+    title: '🔬 无后效性反例与剪枝监视器',
+    desc: '阐释动态规划的前提假设，辨析为什么本题无法转为记忆化/DP',
+    render: (container, step) => {
+      renderPruneDashboard(container, step);
+    },
+  },
   legend: [
     { label: '匹配成功', color: '#10b981' },
     { label: '当前访问', color: '#38bdf8' },
@@ -1535,9 +1583,25 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '回溯搜索 · 深度优先',
         complexity: 'O(M×N×4^L) · O(L)',
       },
-      card1Title: '🔤 字符网格与搜索路径地图',
-      card2Title: '📚 DFS 递归调用栈与状态',
-      card2Desc: '基于 DFS 回溯搜索，按上下左右探查匹配单词字符',
+      primaryVisual: {
+        title: '🔤 字符网格与搜索路径地图',
+        render: (container, step) => {
+          renderBoardGrid(container, step.board, step.i, step.j, step.path);
+        },
+      },
+      auxiliaryVisual: {
+        title: '📚 DFS 递归调用栈与状态',
+        desc: '基于 DFS 回溯搜索，按上下左右探查匹配单词字符',
+        render: (container, step) => {
+          renderRecursionCard1(
+            container,
+            `dfs(${step.i}, ${step.j}, k=${step.k})`,
+            step.callStack || [],
+            `<div style="font-size:12px; font-weight:700; color:#0f172a;">${step.decision}</div>
+             <div style="font-size:11px; color:#64748b; margin-top:3px;">${step.message}</div>`
+          );
+        },
+      },
       legend: [
         { label: '当前探查', color: '#3b82f6' },
         { label: '已匹配路径', color: '#10b981' },
@@ -1545,18 +1609,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       ],
       codeLanguages: WORD_SEARCH_STAGE1_CODE_LANGUAGES,
       buildSteps: buildWordSearchStage1Steps,
-      renderCanvas: (container, step) => {
-        renderBoardGrid(container, step.board, step.i, step.j, step.path);
-      },
-      renderCustomMetrics: (container, step) => {
-        renderRecursionCard1(
-          container,
-          `dfs(${step.i}, ${step.j}, k=${step.k})`,
-          step.callStack || [],
-          `<div style="font-size:12px; font-weight:700; color:#0f172a;">${step.decision}</div>
-           <div style="font-size:11px; color:#64748b; margin-top:3px;">${step.message}</div>`
-        );
-      },
     },
     {
       id: 'stage-2',
@@ -1569,33 +1621,37 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: 'DP 反例教学 · 无后效性',
         complexity: '无法转 DP',
       },
+      primaryVisual: {
+        title: '🔤 字符网格与状态冲突点',
+        render: (container, step) => {
+          renderBoardGrid(container, step.board, step.i, step.j, step.path);
+        },
+      },
+      auxiliaryVisual: {
+        title: '⚠️ 无后效性破坏反例剖析',
+        desc: '阐释动态规划的前提假设，辨析为什么本题无法转为记忆化/DP',
+        render: (container, step) => {
+          container.innerHTML = `
+            <div style="padding:4px; display:flex; flex-direction:column; gap:8px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height:100%; box-sizing:border-box; overflow-y:auto;">
+              <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px;">
+                <div style="font-size:12.5px; font-weight:800; color:#b91c1c;">${step.decision}</div>
+                <div style="font-size:11px; color:#991b1b; margin-top:4px; line-height:1.5;">${step.message}</div>
+              </div>
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; font-size:11px; color:#1e3a8a; line-height:1.6; flex:1;">
+                <b style="color:#1d4ed8; font-size:11.5px;">💡 左程云核心语录：</b><br/>
+                “动态规划能成立的前提是【无后效性】。如果以后的过程还要受到【之前具体怎么走过来的】影响，这就叫有后效性。单词搜索中哪些格子被用过了，就是最典型的后效性！”
+              </div>
+            </div>
+          `;
+        },
+      },
       legend: [
         { label: '状态冲突', color: '#ef4444' },
         { label: '当前探查', color: '#3b82f6' },
         { label: '未走字符', color: '#94a3b8' },
       ],
-      card1Title: '🔤 字符网格与状态冲突点',
-      card2Title: '⚠️ 无后效性破坏反例剖析',
-      card2Desc: '阐释动态规划的前提假设，辨析为什么本题无法转为记忆化/DP',
       codeLanguages: WORD_SEARCH_STAGE3_CODE_LANGUAGES,
       buildSteps: buildWordSearchStage2Steps,
-      renderCanvas: (container, step) => {
-        renderBoardGrid(container, step.board, step.i, step.j, step.path);
-      },
-      renderCustomMetrics: (container, step) => {
-        container.innerHTML = `
-          <div style="padding:4px; display:flex; flex-direction:column; gap:8px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; height:100%; box-sizing:border-box; overflow-y:auto;">
-            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px 14px;">
-              <div style="font-size:12.5px; font-weight:800; color:#b91c1c;">${step.decision}</div>
-              <div style="font-size:11px; color:#991b1b; margin-top:4px; line-height:1.5;">${step.message}</div>
-            </div>
-            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:10px 14px; font-size:11px; color:#1e3a8a; line-height:1.6; flex:1;">
-              <b style="color:#1d4ed8; font-size:11.5px;">💡 左程云核心语录：</b><br/>
-              “动态规划能成立的前提是【无后效性】。如果以后的过程还要受到【之前具体怎么走过来的】影响，这就叫有后效性。单词搜索中哪些格子被用过了，就是最典型的后效性！”
-            </div>
-          </div>
-        `;
-      },
     },
     {
       id: 'stage-3',
@@ -1608,28 +1664,32 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '原地回溯 · 0 额外空间标记',
         complexity: 'O(M×N×3^L) · O(L) 栈深',
       },
+      primaryVisual: {
+        title: '🔤 字符网格与回溯状态',
+        render: (container, step) => {
+          renderBoardGrid(container, step.board, step.i, step.j, step.path);
+        },
+      },
+      auxiliaryVisual: {
+        title: '🔄 原地标记与回溯现场还原',
+        desc: '将访问过的格子临时改为 # 占位，递归退出时恢复原字符',
+        render: (container, step) => {
+          renderRecursionCard1(
+            container,
+            `dfs(${step.i}, ${step.j}, k=${step.k})`,
+            step.callStack || [],
+            `<div style="font-size:12px; font-weight:700; color:#0f172a;">${step.decision}</div>
+             <div style="font-size:11px; color:#64748b; margin-top:3px;">${step.message}</div>`
+          );
+        },
+      },
       legend: [
         { label: '当前探查', color: '#3b82f6' },
         { label: '标记走过', color: '#f59e0b' },
         { label: '现场恢复', color: '#10b981' },
       ],
-      card1Title: '🔤 字符网格与回溯状态',
-      card2Title: '🔄 原地标记与回溯现场还原',
-      card2Desc: '将访问过的格子临时改为 # 占位，递归退出时恢复原字符',
       codeLanguages: WORD_SEARCH_STAGE2_CODE_LANGUAGES,
       buildSteps: buildWordSearchStage3Steps,
-      renderCanvas: (container, step) => {
-        renderBoardGrid(container, step.board, step.i, step.j, step.path);
-      },
-      renderCustomMetrics: (container, step) => {
-        renderRecursionCard1(
-          container,
-          `dfs(${step.i}, ${step.j}, k=${step.k})`,
-          step.callStack || [],
-          `<div style="font-size:12px; font-weight:700; color:#0f172a;">${step.decision}</div>
-           <div style="font-size:11px; color:#64748b; margin-top:3px;">${step.message}</div>`
-        );
-      },
     },
     {
       id: 'stage-4',
@@ -1642,30 +1702,28 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         mode: '启发式频次统计 · 首尾翻转',
         complexity: '大幅剪除无效搜索分支',
       },
+      primaryVisual: {
+        title: '🔤 字符网格与路径跟踪',
+        render: (container, step) => {
+          renderBoardGrid(container, step.board, step.i, step.j, step.path);
+        },
+      },
+      auxiliaryVisual: {
+        title: '📈 首尾词频启发式剪枝监控',
+        desc: '统计目标单词首尾字符在网格中的出现频次，反转搜索起点降低分支数',
+        render: (container, step) => {
+          renderPruneDashboard(container, step);
+        },
+      },
       legend: [
         { label: '当前探查', color: '#3b82f6' },
         { label: '已匹配路径', color: '#10b981' },
         { label: '首尾剪枝', color: '#f59e0b' },
       ],
-      card1Title: '🔤 字符网格与路径跟踪',
-      card2Title: '📈 首尾词频启发式剪枝监控',
-      card2Desc: '统计目标单词首尾字符在网格中的出现频次，反转搜索起点降低分支数',
       codeLanguages: WORD_SEARCH_STAGE4_CODE_LANGUAGES,
       buildSteps: buildWordSearchStage4Steps,
-      renderCanvas: (container, step) => {
-        renderBoardGrid(container, step.board, step.i, step.j, step.path);
-      },
-      renderCustomMetrics: (container, step) => {
-        renderPruneDashboard(container, step);
-      },
     },
   ],
-  renderCanvas: (container, step) => {
-    renderBoardGrid(container, step.board, step.i, step.j, step.path);
-  },
-  renderCustomMetrics: (container, step) => {
-    renderPruneDashboard(container, step);
-  },
 });
 
 function renderBoardGrid(
@@ -1762,18 +1820,4 @@ function renderPruneDashboard(container: HTMLElement, step: WordSearchStep): voi
   `;
 }
 
-export const WordSearchVisualizer = Visualizer;
-
-registerAlgorithm({
-  id: 'word-search',
-  name: '单词搜索 (LeetCode 79)',
-  viewId: 'algo-word-search-view',
-  category: 'dynamic-programming',
-  description: '左程云算法讲解067 Code02：LeetCode 79 单词搜索，无后效性反例深度辨析与启发式剪枝',
-  icon: '🔍',
-  template,
-  Visualizer,
-  difficulty: 2,
-  levelOrder: 102,
-  learningGoal: '理解无后效性是动态规划的核心前提，掌握带回溯的现场恢复与首尾字符频次剪枝优化',
-});
+export const WordSearchVisualizer = WordSearchDeclarativeResult.Visualizer;
