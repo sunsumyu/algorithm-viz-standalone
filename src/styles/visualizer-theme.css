@@ -48,7 +48,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  display: none;
+  display: none !important;
   overflow: hidden;
   position: relative;
 }
@@ -56,6 +56,10 @@
 .view-container.active {
   display: flex !important;
   flex-direction: column !important;
+}
+
+.view-container:not(.active) {
+  display: none !important;
 }
 
 /* ===== 滚动条主题 ===== */
@@ -274,6 +278,26 @@
   transform: translateX(-50%) !important;
   pointer-events: none !important;
   z-index: 50 !important;
+}
+
+/* 🌟 2D 探险家小人跨单元格抛物线跳跃补间 (Task 2.2 Dual-Mode Tweening) */
+@keyframes adventurer-cell-hop {
+  0% {
+    transform: translate(calc(-50% + var(--jump-offset-x, 0%)), -24px) scale(0.92, 1.15);
+  }
+  45% {
+    transform: translate(calc(-50% + var(--jump-offset-x, 0%) * 0.5), -54px) scale(1.08, 0.94);
+  }
+  80% {
+    transform: translate(-50%, -21px) scale(1.18, 0.82);
+  }
+  100% {
+    transform: translate(-50%, -24px) scale(1, 1);
+  }
+}
+
+.adventurer-char-holder.is-hopping {
+  animation: adventurer-cell-hop 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
 /* ===== 数字输入框样式 ===== */
@@ -1264,6 +1288,98 @@ button[class*="-chip"]:hover {
 .dsp-left-section > .panel:last-child.algo-panel-collapsed,
 .dsp-right-section > .panel:last-child.algo-panel-collapsed {
   margin-top: auto !important;
+}
+
+/* ===== 通用遗留算法模板亮色归一化引擎 (Universal Legacy Template Normalizer) ===== */
+/* 彻底消灭遗留模板（Catppuccin、深黑紫渐变、低对比度）与顶层亮色规范的冲突 */
+
+/* 1. 隐藏活动视口内所有冗余手写的内部返回按钮（全局顶栏已统一提供） */
+#main-layout .view-container #btn-back,
+#main-layout .view-container .btn-back,
+#main-layout .view-container button[id*="back"],
+#main-layout .view-container [data-action="back"] {
+  display: none !important;
+}
+
+/* 2. 消除遗留全屏暗黑伪元素背景 (如 bfs-theory, graph-theory 等) */
+[id^="algo-"][id$="-view"]::before,
+[id^="algo-"][id$="-view"]::after {
+  display: none !important;
+}
+
+[id^="algo-"][id$="-view"] {
+  background: var(--viz-app-bg, #f8fafc) !important;
+  color: var(--viz-text-main, #0f172a) !important;
+}
+
+/* 3. 遗留暗黑面板全面漂白与亮色提振 */
+[id^="algo-"][id$="-view"] [class*="-root"],
+[id^="algo-"][id$="-view"] [class$="-root"] {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+[id^="algo-"][id$="-view"] [class*="-panel"],
+[id^="algo-"][id$="-view"] [class$="-panel"],
+[id^="algo-"][id$="-view"] .bfs-panel,
+[id^="algo-"][id$="-view"] .gt-panel,
+[id^="algo-"][id$="-view"] .gs-panel,
+[id^="algo-"][id$="-view"] .uft-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  color: #1e293b !important;
+}
+
+/* 4. 遗留卡片标题栏 */
+[id^="algo-"][id$="-view"] [class*="-ph"],
+[id^="algo-"][id$="-view"] [class$="-ph"],
+[id^="algo-"][id$="-view"] [class*="-panel-header"],
+[id^="algo-"][id$="-view"] [class*="-card-header"] {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+
+/* 5. 遗留顶栏 Hero */
+[id^="algo-"][id$="-view"] [class*="-hero"],
+[id^="algo-"][id$="-view"] [class$="-hero"],
+[id^="algo-"][id$="-view"] [class*="-h"]:not([class*="-ph"]) {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* 6. 遗留状态统计数值高亮与文字可读性 */
+[id^="algo-"][id$="-view"] [class*="-sv"],
+[id^="algo-"][id$="-view"] [class$="-sv"] {
+  color: #0284c7 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 800 !important;
+}
+
+[id^="algo-"][id$="-view"] [class*="-sl"],
+[id^="algo-"][id$="-view"] [class$="-sl"] {
+  color: #64748b !important;
+  font-weight: 700 !important;
+}
+
+/* 7. 遗留暗色文字全面提振为深色 */
+[id^="algo-"][id$="-view"] [style*="color:#cdd6f4"],
+[id^="algo-"][id$="-view"] [style*="color: #cdd6f4"],
+[id^="algo-"][id$="-view"] [style*="color:#a6adc8"],
+[id^="algo-"][id$="-view"] [style*="color: #a6adc8"] {
+  color: #0f172a !important;
+}
+
+[id^="algo-"][id$="-view"] [style*="color:#6c7086"],
+[id^="algo-"][id$="-view"] [style*="color: #6c7086"],
+[id^="algo-"][id$="-view"] [style*="color:#9399b2"],
+[id^="algo-"][id$="-view"] [style*="color: #9399b2"] {
+  color: #64748b !important;
 }
 
 
