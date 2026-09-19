@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   BST_SEARCH_PROBLEM_HTML,
@@ -26,8 +27,18 @@ export interface BSTSStep {
   action: 'enter' | 'left' | 'right' | 'found' | 'not-found' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const BST_SEARCH_CODE_LINES = {
+  init: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  empty: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  found: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  left: { java: [4, 5], cpp: 5, python: [5, 6], javascript: 3 },
+  right: { java: [6, 7], cpp: 6, python: 7, javascript: 4 },
+  notFound: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  done: { java: 3, cpp: 4, python: 4, javascript: 2 },
+};
 
 export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): BSTSStep[] {
   const steps: BSTSStep[] = [];
@@ -46,7 +57,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
     action: 'enter',
     message: root ? `初始化 BST 搜索：目标值 val = ${targetVal}，从根节点 ${root.val} 开始定位。` : '空树，返回 null。',
     log: root ? `开始搜索 val = ${targetVal}` : '空树 -> null',
-    codeLine: 2,
+    codeLine: BST_SEARCH_CODE_LINES.init,
   });
 
   if (!root) {
@@ -61,7 +72,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
       action: 'not-found',
       message: '❌ 空树中无法找到目标值，返回 null。',
       log: '✓ 未找到目标 (null)',
-      codeLine: 3,
+      codeLine: BST_SEARCH_CODE_LINES.empty,
     });
     return steps;
   }
@@ -86,7 +97,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
         action: 'found',
         message: `🎯 命中目标！节点 ${curr.val} == ${targetVal}，返回以此节点为根的子树。`,
         log: `✓ 命中目标: ${curr.val} == ${targetVal}`,
-        codeLine: 3,
+        codeLine: BST_SEARCH_CODE_LINES.found,
       });
       break;
     } else if (targetVal < curr.val) {
@@ -101,7 +112,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
         action: 'left',
         message: `目标值 ${targetVal} < 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在左子树。`,
         log: `${targetVal} < ${curr.val} -> 搜左子树`,
-        codeLine: 4,
+        codeLine: BST_SEARCH_CODE_LINES.left,
       });
       curr = curr.left;
     } else {
@@ -116,7 +127,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
         action: 'right',
         message: `目标值 ${targetVal} > 当前节点 ${curr.val}，根据 BST 有序性，目标只可能在右子树。`,
         log: `${targetVal} > ${curr.val} -> 搜右子树`,
-        codeLine: 5,
+        codeLine: BST_SEARCH_CODE_LINES.right,
       });
       curr = curr.right;
     }
@@ -134,7 +145,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
       action: 'not-found',
       message: `❌ 遍历到达空指针 (null)，BST 中不存在值为 ${targetVal} 的节点，返回 null。`,
       log: `✓ 未找到目标 ${targetVal} (null)`,
-      codeLine: 3,
+      codeLine: BST_SEARCH_CODE_LINES.notFound,
     });
   }
 
@@ -151,7 +162,7 @@ export function buildBSTSearchSteps(root: TreeNode | null, targetVal: number): B
       ? `🎉 搜索完成！在路径 [${path.join(' -> ')}] 上成功定位到目标节点 ${targetVal}。`
       : `❌ 搜索完成！未在树中检索到节点 ${targetVal}。`,
     log: found ? `✓ 搜索完成: 命中 ${targetVal}` : `✓ 搜索完成: 未找到 ${targetVal}`,
-    codeLine: 6,
+    codeLine: BST_SEARCH_CODE_LINES.done,
   });
 
   return steps;

@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
 
 export interface LinearBasis132Step extends StepBase {
@@ -16,6 +16,7 @@ export interface LinearBasis132Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -109,6 +110,15 @@ public:
 }`
 };
 
+export const LINEAR_BASIS_132_CODE_LINES = {
+  init: { java: 4, cpp: 4, python: 4, typescript: 4 },
+  insert: { java: 6, cpp: 6, python: 6, typescript: 5 },
+  solid: { java: 9, cpp: 8, python: 9, typescript: 7 },
+  eliminate: { java: 12, cpp: 11, python: 11, typescript: 10 },
+  dependent: { java: 14, cpp: 13, python: 12, typescript: 12 },
+  getMax: { java: 20, cpp: 18, python: 16, typescript: 17 },
+};
+
 export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): LinearBasis132Step[] {
   const steps: LinearBasis132Step[] = [];
   const d: number[] = new Array(maxBit + 1).fill(0);
@@ -124,7 +134,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
     decision: `主函数入口：准备将 [${nums.join(', ')}] 依次插入线性基，以构造极小生成基底并求解最大异或和`,
     message: '线性基性质：原集合的所有异或值与线性基子集异或值构成的张成空间等价',
     log: `init LinearBasis`,
-    codeLine: 1,
+    codeLine: LINEAR_BASIS_132_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' },
   });
 
@@ -142,7 +152,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
       decision: `开始插入数字 x = ${x} (二进制 0b${x.toString(2).padStart(maxBit + 1, '0')})`,
       message: '从高位至低位逐位扫描第一个为 1 的二进制位',
       log: `insert(${x})`,
-      codeLine: 5,
+      codeLine: LINEAR_BASIS_132_CODE_LINES.insert,
       statusBadge: { text: `插入 ${x}`, type: 'warning' },
     });
 
@@ -162,7 +172,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
           decision: `🎉 发现基底位置 d[${i}] 为空！将当前值 ${x} 成功固化为第 ${i} 位的基向量 d[${i}] = ${x}`,
           message: `基底向量规模扩充为 ${count} 个独立元`,
           log: `d[${i}] = ${x}`,
-          codeLine: 9,
+          codeLine: LINEAR_BASIS_132_CODE_LINES.solid,
           statusBadge: { text: `成功驻留 d[${i}]`, type: 'success' },
         });
         break;
@@ -178,7 +188,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
           decision: `基底位置 d[${i}] 已存在向量 ${d[i]}。高位消元：x = ${oldX} ^ ${d[i]} = ${x}`,
           message: `通过异或消除第 ${i} 位的 1，继续向低位探查`,
           log: `x ^= d[${i}] (${oldX} -> ${x})`,
-          codeLine: 12,
+          codeLine: LINEAR_BASIS_132_CODE_LINES.eliminate,
           statusBadge: { text: `消元至 ${x}`, type: 'info' },
         });
       }
@@ -194,7 +204,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
         decision: `元素 ${rawX} 被完全消元为 0，说明该元素属于现有基底张成空间的线性组合，无需新增基向量`,
         message: '集合线性相关，基底不发生改变',
         log: `linear dependent: ${rawX}`,
-        codeLine: 14,
+        codeLine: LINEAR_BASIS_132_CODE_LINES.dependent,
         statusBadge: { text: `线性相关已消零`, type: 'danger' },
       });
     }
@@ -217,7 +227,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
       decision: `贪心考量第 ${i} 位基底 d[${i}] = ${d[i]}：异或后候选值 = ${ans} ^ ${d[i]} = ${candidate}`,
       message: willUpdate ? `🎉 异或后数值更大，采纳该基向量，ans 更新为 ${ans}` : `保持不变，当前最优异或和为 ${ans}`,
       log: `getMax bit=${i} -> ${ans}`,
-      codeLine: 20,
+      codeLine: LINEAR_BASIS_132_CODE_LINES.getMax,
       statusBadge: willUpdate ? { text: `更新最大值 ${ans}`, type: 'success' } : { text: `跳过 d[${i}]`, type: 'info' },
     });
   }

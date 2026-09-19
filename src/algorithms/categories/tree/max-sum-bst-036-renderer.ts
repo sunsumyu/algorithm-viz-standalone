@@ -8,7 +8,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface BstTreeNode {
@@ -37,7 +37,7 @@ export interface MaxSumBstStep extends StepBase {
   isCurrentBst: boolean;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export const MAX_SUM_BST_CODES = {
@@ -108,6 +108,16 @@ public:
         return max(0, self.max_sum)`,
 };
 
+export const MAX_SUM_BST_CODE_LINES = {
+  entry: { java: 11, cpp: 9, python: 14 },
+  dfsLeft: { java: 18, cpp: 14, python: 7 },
+  dfsRight: { java: 19, cpp: 15, python: 8 },
+  checkBst: { java: 20, cpp: 16, python: 9 },
+  validBst: { java: 21, cpp: 17, python: 10 },
+  invalidBst: { java: 25, cpp: 21, python: 13 },
+  finish: { java: 12, cpp: 10, python: 15 },
+};
+
 export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'broken_bst' = 'classic_lc1373'): MaxSumBstStep[] {
   const steps: MaxSumBstStep[] = [];
 
@@ -171,7 +181,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
     isCurrentBst: false,
     message: `算法启动：准备后序遍历二叉树，自底向上搜集子树 Info(isBST, min, max, sum)，动态搜寻最大键值和。`,
     log: `初始化后序搜寻：Root Node ID = ${rootId}, Val = ${nodeMap.get(rootId)?.val}`,
-    codeLine: 11,
+    codeLine: MAX_SUM_BST_CODE_LINES.entry,
   });
 
   function postOrder(u: number | undefined): BstSubtreeInfo {
@@ -193,7 +203,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
       isCurrentBst: false,
       message: `访问节点 [ID:${u}, 键值:${node.val}]：递归探查左子树...`,
       log: `Postorder 深入: 节点 ${node.val} (ID:${u}) 递归探查左子树`,
-      codeLine: 18,
+      codeLine: MAX_SUM_BST_CODE_LINES.dfsLeft,
     });
 
     const left = postOrder(node.left);
@@ -211,7 +221,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
       isCurrentBst: false,
       message: `节点 [ID:${u}, 键值:${node.val}]：左子树汇报完毕 (isBST=${left.isBST}, min=${left.min === Infinity ? 'INF' : left.min}, max=${left.max === -Infinity ? '-INF' : left.max}, sum=${left.sum})。准备探查右子树...`,
       log: `节点 ${node.val} 获得左子树信息: sum=${left.sum}`,
-      codeLine: 19,
+      codeLine: MAX_SUM_BST_CODE_LINES.dfsRight,
     });
 
     const right = postOrder(node.right);
@@ -229,7 +239,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
       isCurrentBst: false,
       message: `节点 [ID:${u}, 键值:${node.val}]：右子树汇报完毕 (isBST=${right.isBST}, min=${right.min === Infinity ? 'INF' : right.min}, max=${right.max === -Infinity ? '-INF' : right.max}, sum=${right.sum})。开始判定 BST 成立性...`,
       log: `节点 ${node.val} 获得右子树信息: sum=${right.sum}`,
-      codeLine: 20,
+      codeLine: MAX_SUM_BST_CODE_LINES.checkBst,
     });
 
     // Check BST condition: left.isBST && right.isBST && left.max < val && val < right.min
@@ -259,7 +269,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
         isCurrentBst: true,
         message: `✅ 校验成功！以节点 [ID:${u}, 键值:${node.val}] 为根的子树是合法二叉搜索树！当前 BST 键值和 = ${left.sum} + ${right.sum} + ${node.val} = ${curSum}。全局最高键值和刷新为 ${globalMaxSum}！`,
         log: `节点 ${node.val} 判定为 BST, 键值和=${curSum}, 全局最大=${globalMaxSum}`,
-        codeLine: 21,
+        codeLine: MAX_SUM_BST_CODE_LINES.validBst,
       });
     } else {
       curInfo = { isBST: false, min: 0, max: 0, sum: 0 };
@@ -275,7 +285,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
         isCurrentBst: false,
         message: `❌ 校验未通过：以节点 [ID:${u}, 键值:${node.val}] 为根的子树破坏了 BST 单调性或子树非 BST。标记 isBST=false 并向上返回。`,
         log: `节点 ${node.val} 破坏 BST 属性 (左max=${left.max}, 当前=${node.val}, 右min=${right.min})`,
-        codeLine: 25,
+        codeLine: MAX_SUM_BST_CODE_LINES.invalidBst,
       });
     }
 
@@ -297,7 +307,7 @@ export function buildMaxSumBstSteps(preset: 'classic_lc1373' | 'full_bst' | 'bro
     isCurrentBst: true,
     message: `🎉 全树后序搜寻完毕！二叉搜索子树的最大键值和为 ${Math.max(0, globalMaxSum)} (最优 BST 根节点 ID: ${bestRoot ?? '空'})。`,
     log: `算法终结: 最大 BST 键值和 = ${Math.max(0, globalMaxSum)}`,
-    codeLine: 12,
+    codeLine: MAX_SUM_BST_CODE_LINES.finish,
   });
 
   return steps;

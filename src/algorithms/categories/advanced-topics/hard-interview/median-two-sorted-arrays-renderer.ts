@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface MedianStep extends StepBase {
   stepIndex?: number;
@@ -25,8 +24,10 @@ export interface MedianStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const MEDIAN_CODES = {
@@ -141,6 +142,19 @@ public:
 }`
 };
 
+export const MEDIAN_TWO_SORTED_CODE_LINES = {
+  entry: { java: 3, cpp: 3, python: 2, typescript: 1 },
+  checkLen: { java: 5, cpp: 4, python: 3, typescript: 2 },
+  whileLoop: { java: 11, cpp: 8, python: 7, typescript: 6 },
+  calcCuts: { java: 12, cpp: 9, python: 8, typescript: 7 },
+  extractBounds: { java: 15, cpp: 12, python: 11, typescript: 10 },
+  checkPerfect: { java: 20, cpp: 17, python: 16, typescript: 15 },
+  calcOddMedian: { java: 23, cpp: 18, python: 18, typescript: 16 },
+  calcEvenMedian: { java: 25, cpp: 19, python: 19, typescript: 17 },
+  adjustHigh: { java: 28, cpp: 21, python: 21, typescript: 19 },
+  adjustLow: { java: 30, cpp: 23, python: 23, typescript: 21 },
+};
+
 export function generateMedianSteps(inputNums1: number[], inputNums2: number[]): MedianStep[] {
   const steps: MedianStep[] = [];
   let a = [...inputNums1];
@@ -155,18 +169,7 @@ export function generateMedianSteps(inputNums1: number[], inputNums2: number[]):
   let low = 0;
   let high = m;
 
-  const lines = {
-    entry: 3,
-    checkLen: 5,
-    whileLoop: 11,
-    calcCuts: 12,
-    extractBounds: 15,
-    checkPerfect: 20,
-    calcOddMedian: 23,
-    calcEvenMedian: 25,
-    adjustHigh: 28,
-    adjustLow: 30,
-  };
+  const lines = MEDIAN_TWO_SORTED_CODE_LINES;
 
   // Step 0: 入口
   steps.push({
@@ -187,6 +190,13 @@ export function generateMedianSteps(inputNums1: number[], inputNums2: number[]):
     log: `Init binary search cuts for m=${m}, n=${n}`,
     codeLine: lines.entry,
     statusBadge: { text: '二分就绪', type: 'info' },
+    metrics: {
+      median: '探查中',
+      cuts: `i=0, j=0`,
+      searchRange: `[0, ${m}]`,
+      crossCheck: '准备比对',
+    },
+    ans: '-',
   });
 
   while (low <= high) {
@@ -226,6 +236,13 @@ export function generateMedianSteps(inputNums1: number[], inputNums2: number[]):
         log: `Perfect cut found at i=${i}, j=${j}. Median=${median}`,
         codeLine: (m + n) % 2 === 1 ? lines.calcOddMedian : lines.calcEvenMedian,
         statusBadge: { text: `中位数: ${median}`, type: 'success' },
+        metrics: {
+          median: median,
+          cuts: `nums1[${i}] · nums2[${j}]`,
+          searchRange: `[${low}, ${high}]`,
+          crossCheck: '✓ 达成平衡',
+        },
+        ans: String(median),
       });
       break;
     } else if (l1 > r2) {
@@ -243,6 +260,13 @@ export function generateMedianSteps(inputNums1: number[], inputNums2: number[]):
         log: `Cut too far right: l1=${l1} > r2=${r2}. Set high=${i - 1}`,
         codeLine: lines.adjustHigh,
         statusBadge: { text: '向左调整', type: 'warning' },
+        metrics: {
+          median: '探查中',
+          cuts: `nums1[${i}] · nums2[${j}]`,
+          searchRange: `[${low}, ${high}]`,
+          crossCheck: 'L1 > R2 (向左收缩)',
+        },
+        ans: '-',
       });
       high = i - 1;
     } else {
@@ -260,6 +284,13 @@ export function generateMedianSteps(inputNums1: number[], inputNums2: number[]):
         log: `Cut too far left: l2=${l2} > r1=${r1}. Set low=${i + 1}`,
         codeLine: lines.adjustLow,
         statusBadge: { text: '向右调整', type: 'warning' },
+        metrics: {
+          median: '探查中',
+          cuts: `nums1[${i}] · nums2[${j}]`,
+          searchRange: `[${low}, ${high}]`,
+          crossCheck: 'L2 > R1 (向右推进)',
+        },
+        ans: '-',
       });
       low = i + 1;
     }
@@ -275,119 +306,105 @@ export function renderMedianCanvas(container: HTMLElement, step: MedianStep): vo
   const r2Str = step.r2 === Infinity ? '+∞' : String(step.r2);
 
   container.innerHTML = `
-    <div style="padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <!-- 核心指标看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">中位数求解结果 (Median)</div>
-          <div style="font-size: 24px; font-weight: bold; color: #34d399; margin-top: 4px;">
-            ${step.medianResult !== null ? step.medianResult : '二分探查中...'}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">切分位置 (Cut1 & Cut2)</div>
-          <div style="font-size: 18px; font-weight: bold; color: #38bdf8; margin-top: 4px;">
-            nums1[${step.cut1}] · nums2[${step.cut2}]
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">二分搜索区间 [low, high]</div>
-          <div style="font-size: 16px; font-family: monospace; color: #fbbf24; margin-top: 6px;">
-            [ ${step.low} , ${step.high} ]
-          </div>
-        </div>
-      </div>
-
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
       <!-- 双数组切分标尺沙盘 -->
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 14px;">
-          双数组虚拟切分标尺 (红虚线为当前切分位置)
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 20px 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--text-color, #f1f5f9);">
+            ⚖️ 双数组虚拟切分标尺 (红竖线为切分位，左侧为 L，右侧为 R)
+          </span>
+          <span style="font-size: 11px; color: var(--text-muted, #94a3b8);">
+            总长度: ${step.nums1.length + step.nums2.length} (${(step.nums1.length + step.nums2.length) % 2 === 1 ? '奇数' : '偶数'})
+          </span>
         </div>
 
         <!-- nums1 标尺 -->
-        <div style="margin-bottom: 16px;">
-          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">较短数组 nums1 (长度 ${step.nums1.length})</div>
-          <div style="display: flex; gap: 6px; align-items: center; position: relative;">
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 11px; color: var(--text-muted, #94a3b8); margin-bottom: 8px; font-weight: 600;">较短数组 nums1 (规模 m=${step.nums1.length})</div>
+          <div style="display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 4px;">
             ${step.nums1.map((val, idx) => `
               <div style="display: flex; align-items: center;">
-                ${idx === step.cut1 ? '<div style="width: 3px; height: 38px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 6px #ef4444;"></div>' : ''}
+                ${idx === step.cut1 ? '<div style="width: 4px; height: 42px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 10px #ef4444;"></div>' : ''}
                 <div style="
-                  width: 38px;
-                  height: 38px;
-                  background: ${idx < step.cut1 ? 'rgba(56, 189, 248, 0.2)' : '#1e293b'};
-                  border: ${idx === step.cut1 - 1 ? '2px solid #38bdf8' : idx === step.cut1 ? '2px solid #fbbf24' : '1px solid #475569'};
-                  color: #fff;
+                  width: 42px;
+                  height: 42px;
+                  background: ${idx < step.cut1 ? 'rgba(56, 189, 248, 0.2)' : 'rgba(251, 191, 36, 0.2)'};
+                  border: 1px solid ${idx < step.cut1 ? '#38bdf8' : '#fbbf24'};
+                  color: ${idx < step.cut1 ? '#38bdf8' : '#fbbf24'};
                   border-radius: 6px;
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  font-size: 13px;
-                  font-weight: bold;
+                  font-size: 14px;
+                  font-weight: 800;
+                  font-family: monospace;
                 ">${val}</div>
               </div>
             `).join('')}
-            ${step.cut1 === step.nums1.length ? '<div style="width: 3px; height: 38px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 6px #ef4444;"></div>' : ''}
+            ${step.cut1 === step.nums1.length ? '<div style="width: 4px; height: 42px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 10px #ef4444;"></div>' : ''}
           </div>
         </div>
 
         <!-- nums2 标尺 -->
         <div>
-          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">较长数组 nums2 (长度 ${step.nums2.length})</div>
-          <div style="display: flex; gap: 6px; align-items: center; position: relative;">
+          <div style="font-size: 11px; color: var(--text-muted, #94a3b8); margin-bottom: 8px; font-weight: 600;">基准数组 nums2 (规模 n=${step.nums2.length})</div>
+          <div style="display: flex; gap: 8px; align-items: center; overflow-x: auto; padding-bottom: 4px;">
             ${step.nums2.map((val, idx) => `
               <div style="display: flex; align-items: center;">
-                ${idx === step.cut2 ? '<div style="width: 3px; height: 38px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 6px #ef4444;"></div>' : ''}
+                ${idx === step.cut2 ? '<div style="width: 4px; height: 42px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 10px #ef4444;"></div>' : ''}
                 <div style="
-                  width: 38px;
-                  height: 38px;
-                  background: ${idx < step.cut2 ? 'rgba(52, 211, 153, 0.2)' : '#1e293b'};
-                  border: ${idx === step.cut2 - 1 ? '2px solid #34d399' : idx === step.cut2 ? '2px solid #a855f7' : '1px solid #475569'};
-                  color: #fff;
+                  width: 42px;
+                  height: 42px;
+                  background: ${idx < step.cut2 ? 'rgba(52, 211, 153, 0.2)' : 'rgba(168, 85, 247, 0.2)'};
+                  border: 1px solid ${idx < step.cut2 ? '#34d399' : '#a855f7'};
+                  color: ${idx < step.cut2 ? '#34d399' : '#a855f7'};
                   border-radius: 6px;
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  font-size: 13px;
-                  font-weight: bold;
+                  font-size: 14px;
+                  font-weight: 800;
+                  font-family: monospace;
                 ">${val}</div>
               </div>
             `).join('')}
-            ${step.cut2 === step.nums2.length ? '<div style="width: 3px; height: 38px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 6px #ef4444;"></div>' : ''}
+            ${step.cut2 === step.nums2.length ? '<div style="width: 4px; height: 42px; background: #ef4444; border-radius: 2px; margin: 0 4px; box-shadow: 0 0 10px #ef4444;"></div>' : ''}
           </div>
         </div>
       </div>
 
       <!-- 交叉不等式校验卡片 -->
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-        <div style="font-size: 12px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">交叉不等式比对看板</div>
+      <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 14px;">
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-color, #f1f5f9); margin-bottom: 10px;">
+          ⚖️ 交叉不等式双向检验 (左大右小守恒性)
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div style="padding: 10px; background: rgba(30, 41, 59, 0.5); border-radius: 6px; border: 1px solid ${step.l1 <= step.r2 ? 'rgba(52,211,153,0.3)' : '#ef4444'};">
-            <span style="color: #94a3b8;">条件 1: L1 ≤ R2 ➔</span>
-            <span style="color: #38bdf8; font-weight: bold;"> ${l1Str}</span> ≤ <span style="color: #a855f7; font-weight: bold;">${r2Str}</span>
-            <span style="float: right; color: ${step.l1 <= step.r2 ? '#34d399' : '#ef4444'}; font-weight: bold;">
+          <div style="padding: 10px 14px; background: rgba(30, 41, 59, 0.5); border-radius: 6px; border: 1px solid ${step.l1 <= step.r2 ? 'rgba(52,211,153,0.4)' : '#ef4444'};">
+            <span style="color: var(--text-muted, #94a3b8); font-size: 12px;">条件 1: L1 ≤ R2 ➔</span>
+            <span style="color: #38bdf8; font-weight: 800; font-family: monospace;"> ${l1Str}</span> ≤ <span style="color: #a855f7; font-weight: 800; font-family: monospace;">${r2Str}</span>
+            <span style="float: right; color: ${step.l1 <= step.r2 ? '#34d399' : '#ef4444'}; font-weight: 800; font-size: 12px;">
               ${step.l1 <= step.r2 ? '✓ 满足' : '✗ 违背'}
             </span>
           </div>
 
-          <div style="padding: 10px; background: rgba(30, 41, 59, 0.5); border-radius: 6px; border: 1px solid ${step.l2 <= step.r1 ? 'rgba(52,211,153,0.3)' : '#ef4444'};">
-            <span style="color: #94a3b8;">条件 2: L2 ≤ R1 ➔</span>
-            <span style="color: #34d399; font-weight: bold;"> ${l2Str}</span> ≤ <span style="color: #fbbf24; font-weight: bold;">${r1Str}</span>
-            <span style="float: right; color: ${step.l2 <= step.r1 ? '#34d399' : '#ef4444'}; font-weight: bold;">
+          <div style="padding: 10px 14px; background: rgba(30, 41, 59, 0.5); border-radius: 6px; border: 1px solid ${step.l2 <= step.r1 ? 'rgba(52,211,153,0.4)' : '#ef4444'};">
+            <span style="color: var(--text-muted, #94a3b8); font-size: 12px;">条件 2: L2 ≤ R1 ➔</span>
+            <span style="color: #34d399; font-weight: 800; font-family: monospace;"> ${l2Str}</span> ≤ <span style="color: #fbbf24; font-weight: 800; font-family: monospace;">${r1Str}</span>
+            <span style="float: right; color: ${step.l2 <= step.r1 ? '#34d399' : '#ef4444'}; font-weight: 800; font-size: 12px;">
               ${step.l2 <= step.r1 ? '✓ 满足' : '✗ 违背'}
             </span>
           </div>
         </div>
       </div>
-
-      <!-- 原理卡片 -->
-      ${renderFormulaCard(
-        '双有序数组虚拟切分定理',
-        '令较短数组切分点为 i，长数组切分点 j = (m+n+1)/2 - i。当满足 L1 <= R2 且 L2 <= R1 时，所有左半部分均小于等于所有右半部分！总时间复杂度仅需 O(log(min(M, N)))，无需任何空间拷贝即可秒算中位数！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -412,6 +429,12 @@ export const medianTwoSortedArraysVisualizer = registerDeclarativeAlgorithm<Medi
     </div>
   `,
   codeLanguages: MEDIAN_CODES,
+  metrics: [
+    { id: 'median', label: '中位数计算结果', color: '#10b981' },
+    { id: 'cuts', label: '切分位置 (Cut1 & Cut2)', color: '#38bdf8' },
+    { id: 'searchRange', label: '二分区间 [low, high]', color: '#fbbf24' },
+    { id: 'crossCheck', label: '交叉不等式状态', color: '#ec4899' },
+  ],
   inputs: [
     {
       id: 'scenario',

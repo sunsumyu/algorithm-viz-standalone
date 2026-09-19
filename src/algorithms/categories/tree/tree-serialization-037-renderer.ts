@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface SerializeStep extends StepBase {
@@ -18,7 +18,7 @@ export interface SerializeStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -118,23 +118,25 @@ public:
 }`
 };
 
+export const SERIALIZE_037_CODE_LINES = {
+  serEntry: { java: 3, cpp: 3, python: 2, typescript: 2 },
+  serBase: { java: 9, cpp: 4, python: 4, typescript: 3 },
+  serAppend: { java: 13, cpp: 5, python: 6, typescript: 4 },
+  deserEntry: { java: 18, cpp: 8, python: 10, typescript: 6 },
+  deserPoll: { java: 23, cpp: 18, python: 13, typescript: 9 },
+  deserBase: { java: 24, cpp: 19, python: 14, typescript: 10 },
+  deserNode: { java: 25, cpp: 20, python: 16, typescript: 11 },
+  deserLeft: { java: 26, cpp: 21, python: 17, typescript: 12 },
+  deserRight: { java: 27, cpp: 22, python: 18, typescript: 13 },
+};
+
 export function generateSerializationSteps(mode: 'serialize' | 'deserialize' = 'deserialize'): SerializeStep[] {
   const steps: SerializeStep[] = [];
   // 树: 1(L: 2, R: 3(L: 4, R: 5))
   // 对应序列化流: ["1", "2", "#", "#", "3", "4", "#", "#", "5", "#", "#"]
   const tokens = ['1', '2', '#', '#', '3', '4', '#', '#', '5', '#', '#'];
 
-  const lines = {
-    serEntry: 3,
-    serBase: 9,
-    serAppend: 13,
-    deserEntry: 18,
-    deserPoll: 23,
-    deserBase: 24,
-    deserNode: 25,
-    deserLeft: 26,
-    deserRight: 27,
-  };
+  const lines = SERIALIZE_037_CODE_LINES;
 
   if (mode === 'serialize') {
     const stream: string[] = [];

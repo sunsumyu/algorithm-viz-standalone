@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface RegexStep extends StepBase {
   s: string;
@@ -19,8 +18,10 @@ export interface RegexStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const REGEX_MATCHING_CODES = {
@@ -114,6 +115,13 @@ public:
 }`
 };
 
+export const REGEX_MATCHING_CODE_LINES = {
+  init: { java: 4, cpp: 6, python: 4, typescript: 4 },
+  normalMatch: { java: 15, cpp: 13, python: 13, typescript: 12 },
+  starMatch: { java: 20, cpp: 18, python: 16, typescript: 16 },
+  finish: { java: 24, cpp: 22, python: 18, typescript: 19 },
+};
+
 export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): RegexStep[] {
   const steps: RegexStep[] = [];
   const m = s.length, n = p.length;
@@ -123,6 +131,13 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
   for (let j = 2; j <= n; j += 2) {
     if (p[j - 1] === '*') dp[0][j] = dp[0][j - 2];
   }
+
+  const makeMetrics = (i: number, j: number, cellVal: boolean, branch: string) => ({
+    textChar: i === 0 ? 'ε (空串)' : `s[${i - 1}]='${s[i - 1]}'`,
+    patternChar: j === 0 ? 'ε (空串)' : `p[${j - 1}]='${p[j - 1]}'`,
+    cellValue: cellVal ? 'true (匹配)' : 'false (未配)',
+    branchType: branch,
+  });
 
   steps.push({
     s,
@@ -134,8 +149,10 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
     decision: `初始化 DP 矩阵 dp[${m + 1}][${n + 1}]，空串基底 dp[0][0] = true`,
     message: `匹配目标文本 s = "${s}"，模式串 p = "${p}"。处理首行 '*' 抵消模式。`,
     log: 'Init regex DP matrix',
-    codeLine: 4,
-    statusBadge: { text: '初始化', type: 'info' }
+    codeLine: REGEX_MATCHING_CODE_LINES.init,
+    statusBadge: { text: '初始化', type: 'info' },
+    metrics: makeMetrics(0, 0, true, '空串基底初始化'),
+    ans: '-',
   });
 
   for (let i = 1; i <= m; i++) {
@@ -158,14 +175,18 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
           decision: `普通字符比对: s[${i - 1}]('${sc}') 与 p[${j - 1}]('${pc}') ${charMatch ? '匹配' : '不匹配'}`,
           message: `dp[${i}][${j}] = dp[${i - 1}][${j - 1}] && charMatch -> ${dp[i][j]}`,
           log: `dp[${i}][${j}] = ${dp[i][j]}`,
-          codeLine: 13,
-          statusBadge: dp[i][j] ? { text: '匹配成功', type: 'success' } : { text: '匹配失败', type: 'danger' }
+          codeLine: REGEX_MATCHING_CODE_LINES.normalMatch,
+          statusBadge: dp[i][j] ? { text: '匹配成功', type: 'success' } : { text: '匹配失败', type: 'danger' },
+          metrics: makeMetrics(i, j, dp[i][j], `单字符对齐 [${sc} vs ${pc}]`),
+          ans: '-',
         });
       } else {
         const prevP = p[j - 2];
         const matchZero = dp[i][j - 2];
         const matchMulti = dp[i - 1][j] && (sc === prevP || prevP === '.');
         dp[i][j] = matchZero || matchMulti;
+
+        const branchDesc = matchZero ? '星号 0 次消解 (matchZero)' : matchMulti ? '星号多重展开 (matchMulti)' : '星号失配';
 
         steps.push({
           s,
@@ -178,8 +199,10 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
           decision: `通配符 '*' 分支决策：前导符 '${prevP}*' 匹配 0 次(${matchZero}) 或 匹配多次(${matchMulti})`,
           message: `综合判定 dp[${i}][${j}] = ${matchZero} || ${matchMulti} -> ${dp[i][j]}`,
           log: `dp[${i}][${j}] '*' branch -> ${dp[i][j]}`,
-          codeLine: 17,
-          statusBadge: dp[i][j] ? { text: '通配成功', type: 'success' } : { text: '通配失败', type: 'danger' }
+          codeLine: REGEX_MATCHING_CODE_LINES.starMatch,
+          statusBadge: dp[i][j] ? { text: '通配成功', type: 'success' } : { text: '通配失败', type: 'danger' },
+          metrics: makeMetrics(i, j, dp[i][j], branchDesc),
+          ans: '-',
         });
       }
     }
@@ -196,8 +219,10 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
     decision: `全串正则匹配判定完成！结果 = ${finalMatch ? '完全匹配 (TRUE)' : '不匹配 (FALSE)'}`,
     message: `整个字符串 "${s}" 与模式串 "${p}" 的最终匹配结论为: ${finalMatch}。`,
     log: `Finished isMatch = ${finalMatch}`,
-    codeLine: 23,
-    statusBadge: finalMatch ? { text: '完美匹配', type: 'success' } : { text: '不匹配', type: 'danger' }
+    codeLine: REGEX_MATCHING_CODE_LINES.finish,
+    statusBadge: finalMatch ? { text: '完美匹配', type: 'success' } : { text: '不匹配', type: 'danger' },
+    metrics: makeMetrics(m, n, finalMatch, finalMatch ? '完全匹配达成' : '模式失配'),
+    ans: finalMatch ? 'true (完全匹配)' : 'false (不匹配)',
   });
 
   return steps;
@@ -205,13 +230,13 @@ export function generateRegexSteps(s: string = 'aab', p: string = 'c*a*b'): Rege
 
 export function renderRegexSandbox(step: RegexStep): string {
   const dpTableHtml = `
-    <table style="border-collapse:collapse; width:100%; font-family:monospace; font-size:11px; text-align:center;">
+    <table style="border-collapse:collapse; width:100%; font-family:monospace; font-size:12px; text-align:center;">
       <thead>
         <tr>
-          <th style="padding:4px; border:1px solid #cbd5e1; background:#f1f5f9;">s \\ p</th>
-          <th style="padding:4px; border:1px solid #cbd5e1; background:#f1f5f9;">ε</th>
+          <th style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); background:rgba(30,41,59,0.5); color:#94a3b8;">s \\ p</th>
+          <th style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); background:rgba(30,41,59,0.5); color:#cbd5e1; font-weight:700;">ε</th>
           ${step.p.split('').map((c, j) => `
-            <th style="padding:4px; border:1px solid #cbd5e1; background:${j + 1 === step.j ? '#fef3c7' : '#f1f5f9'}; color:${j + 1 === step.j ? '#b45309' : '#334155'}; font-weight:700;">
+            <th style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); background:${j + 1 === step.j ? 'rgba(245,158,11,0.25)' : 'rgba(30,41,59,0.5)'}; color:${j + 1 === step.j ? '#fbbf24' : '#cbd5e1'}; font-weight:700;">
               ${c}
             </th>
           `).join('')}
@@ -220,23 +245,23 @@ export function renderRegexSandbox(step: RegexStep): string {
       <tbody>
         ${step.dp.map((row, i) => `
           <tr>
-            <td style="padding:4px; border:1px solid #cbd5e1; background:${i === step.i ? '#e0e7ff' : '#f8fafc'}; color:${i === step.i ? '#3730a3' : '#334155'}; font-weight:700;">
+            <td style="padding:6px 10px; border:1px solid rgba(255,255,255,0.08); background:${i === step.i ? 'rgba(56,189,248,0.25)' : 'rgba(30,41,59,0.4)'}; color:${i === step.i ? '#38bdf8' : '#cbd5e1'}; font-weight:700;">
               ${i === 0 ? 'ε' : step.s[i - 1]}
             </td>
             ${row.map((val, j) => {
               const isCur = i === step.i && j === step.j;
-              let bg = val ? '#dcfce7' : '#ffffff';
-              let color = val ? '#15803d' : '#94a3b8';
-              let border = '1px solid #cbd5e1';
+              let bg = val ? 'rgba(16,185,129,0.18)' : 'rgba(15,23,42,0.3)';
+              let color = val ? '#34d399' : '#64748b';
+              let border = '1px solid rgba(255,255,255,0.08)';
 
               if (isCur) {
-                border = '2px solid #2563eb';
-                bg = val ? '#bbf7d0' : '#fee2e2';
-                color = val ? '#14532d' : '#b91c1c';
+                border = '2px solid #38bdf8';
+                bg = val ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.3)';
+                color = val ? '#ecfdf5' : '#fecdd3';
               }
 
               return `
-                <td style="padding:4px; border:${border}; background:${bg}; color:${color}; font-weight:${val || isCur ? 700 : 400};">
+                <td style="padding:6px 10px; border:${border}; background:${bg}; color:${color}; font-weight:${val || isCur ? 700 : 500}; box-shadow:${isCur ? '0 0 8px rgba(56,189,248,0.4)' : 'none'};">
                   ${val ? 'T' : 'F'}
                 </td>
               `;
@@ -248,39 +273,44 @@ export function renderRegexSandbox(step: RegexStep): string {
   `;
 
   return `
-    <div style="display:flex; flex-direction:column; gap:12px; font-family:inherit;">
-      <!-- 双串字符比对看板 -->
+    <div style="display:flex; flex-direction:column; gap:14px; width:100%; height:100%; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- 双串字符比对状态条 -->
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-          <div style="font-size:11px; color:#64748b; margin-bottom:4px;">待匹配文本串 (Text s)</div>
-          <div style="font-size:18px; font-weight:800; color:#0f172a; font-family:monospace;">
-            ${step.s} <span style="font-size:12px; color:#2563eb;">(i=${step.i})</span>
+        <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:11px; color:#94a3b8;">待匹配文本串 (Text s)</div>
+            <div style="font-size:16px; font-weight:700; color:#38bdf8; font-family:monospace; margin-top:2px;">
+              "${step.s}"
+            </div>
+          </div>
+          <div style="font-size:12px; color:#94a3b8; font-family:monospace;">
+            i = <span style="color:#38bdf8; font-weight:bold;">${step.i}</span> / ${step.s.length}
           </div>
         </div>
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-          <div style="font-size:11px; color:#64748b; margin-bottom:4px;">正则表达式模式串 (Pattern p)</div>
-          <div style="font-size:18px; font-weight:800; color:#d97706; font-family:monospace;">
-            ${step.p} <span style="font-size:12px; color:#d97706;">(j=${step.j})</span>
+
+        <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:11px; color:#94a3b8;">正则表达式模式串 (Pattern p)</div>
+            <div style="font-size:16px; font-weight:700; color:#fbbf24; font-family:monospace; margin-top:2px;">
+              "${step.p}"
+            </div>
+          </div>
+          <div style="font-size:12px; color:#94a3b8; font-family:monospace;">
+            j = <span style="color:#fbbf24; font-weight:bold;">${step.j}</span> / ${step.p.length}
           </div>
         </div>
       </div>
 
       <!-- 二维 DP 状态热力网格 -->
-      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-        <div style="font-weight:700; font-size:13px; color:#0f172a; margin-bottom:8px;">
-          📊 正则匹配二维 DP 表 (dp[i][j])
+      <div style="background:rgba(15,23,42,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:14px; flex:1; display:flex; flex-direction:column; overflow:auto;">
+        <div style="font-weight:600; font-size:13px; color:var(--text-color, #cbd5e1); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+          <span>📊 正则匹配二维状态矩阵 (dp[i][j])</span>
+          <span style="font-size:11px; color:#94a3b8;">T = 匹配(True), F = 不匹配(False)</span>
         </div>
         <div style="overflow-x:auto;">
           ${dpTableHtml}
         </div>
       </div>
-
-      ${renderFormulaCard(
-        '正则表达式核心转移公理',
-        '遇到非 * 号：dp[i][j] = dp[i-1][j-1] && match；遇到 * 号：dp[i][j] = dp[i][j-2] (消解0次) || (dp[i-1][j] && match (多重展开))',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -293,6 +323,12 @@ export const regexMatchingVisualizer = registerDeclarativeAlgorithm<RegexStep>({
   difficulty: 3,
   levelOrder: 10,
   learningGoal: '彻底掌握带 . 和 * 字符的二维动态规划状态转移与通配符展开机制',
+  metrics: [
+    { id: 'textChar', label: '文本字符 (Text Char)', color: 'blue' },
+    { id: 'patternChar', label: '模式字符 (Pattern Char)', color: 'amber' },
+    { id: 'cellValue', label: 'DP 单元格 (dp[i][j])', color: 'emerald' },
+    { id: 'branchType', label: '匹配分支 (Branch)', color: 'purple' },
+  ],
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>题目描述 (LeetCode 10)</h3>
@@ -325,10 +361,6 @@ export const regexMatchingVisualizer = registerDeclarativeAlgorithm<RegexStep>({
     return generateRegexSteps(s, p);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        ${renderRegexSandbox(step)}
-      </div>
-    `;
+    container.innerHTML = renderRegexSandbox(step);
   },
 });

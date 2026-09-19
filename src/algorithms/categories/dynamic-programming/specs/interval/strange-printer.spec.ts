@@ -38,7 +38,7 @@ export const StrangePrinterSpec: AlgorithmSpec = {
     innerLoopCheck: { java: 8, cpp: 9, python: 8, javascript: 7 },
     stateTransfer: { java: [10, 11, 12, 13], cpp: [11, 12, 13, 14], python: [10, 11, 12, 13], javascript: [9, 10, 11, 12] },
     loopExit: { java: 7, cpp: 8, python: 7, javascript: 6 },
-    returnResult: { java: 17, cpp: 18, python: 15, javascript: 16 },
+    returnResult: { java: 21, cpp: 22, python: 16, javascript: 20 },
   },
   code: {
     languages: {
@@ -147,7 +147,7 @@ export const StrangePrinterSpec: AlgorithmSpec = {
         9: '子串终止下标 $j = i + len - 1$。',
         10: '💡 <strong>巧妙贪心合并</strong>：若首字符 $s[i] == s[j]$，在第一次打印 $s[i]$ 时可以直接一路涂刷到 $j$ 位置，后续在中间局部覆盖，末尾无需多花一次！所以 $dp[i][j] = dp[i][j-1]$。',
         13: '若首尾不同，则枚举分割点 $k \\in [i, j-1]$，将区间拆分为 $dp[i][k] + dp[k+1][j]$ 寻找极小值。',
-        17: '返回 $dp[0][n-1]$。',
+        21: '返回 $dp[0][n-1]$。',
       },
       javascript: {
         1: '🎯 <strong>函数主入口</strong>。',
@@ -155,16 +155,17 @@ export const StrangePrinterSpec: AlgorithmSpec = {
         6: '外层循环区间长度。',
         9: '首尾字符相同优化。',
         13: '分割点最优极值转移。',
-        19: '返回全局最优打印次数。',
+        20: '返回全局最优打印次数。',
       },
       cpp: {
         1: '类定义 Solution。',
+        2: '公共成员函数声明。',
         3: '🎯 <strong>函数主入口</strong>。',
         7: '对角线初始化为 1。',
         8: '区间递推。',
         11: '首尾匹配直接复用 $dp[i][j-1]$。',
         14: '枚举分割点 $k$。',
-        19: '返回结果。',
+        22: '返回结果。',
       },
       python: {
         1: '类定义 Solution。',
@@ -173,7 +174,7 @@ export const StrangePrinterSpec: AlgorithmSpec = {
         9: '遍历长度。',
         12: '首尾字符相同分支。',
         14: '首尾字符不同生成式取最小值。',
-        15: '返回 dp[0][n-1]。',
+        16: '返回 dp[0][n-1]。',
       },
     },
     keyPoints: {

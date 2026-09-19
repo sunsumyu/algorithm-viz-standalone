@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface WordBreakStep extends StepBase {
@@ -19,7 +19,7 @@ export interface WordBreakStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 

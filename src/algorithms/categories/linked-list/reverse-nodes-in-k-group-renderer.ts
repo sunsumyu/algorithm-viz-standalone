@@ -17,8 +17,11 @@ export interface KGroupStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
+  isAccepted?: boolean;
 }
 
 export const REVERSE_K_GROUP_CODES = {
@@ -134,15 +137,15 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
   const nodes = [...inputList];
   const n = nodes.length;
 
-  const lines = {
-    entry: 3,
-    initDummy: 5,
-    whileLoop: 9,
-    probeK: 11,
-    breakIncomplete: 12,
-    reverseLocal: 19,
-    stitchNext: 22,
-    returnAns: 26,
+  const lines: Record<string, Record<string, number>> = {
+    entry: { java: 2, cpp: 11, python: 2, typescript: 1, javascript: 1 },
+    initDummy: { java: 4, cpp: 12, python: 3, typescript: 2, javascript: 2 },
+    whileLoop: { java: 8, cpp: 15, python: 6, typescript: 3, javascript: 3 },
+    probeK: { java: 10, cpp: 16, python: 7, typescript: 3, javascript: 3 },
+    breakIncomplete: { java: 11, cpp: 17, python: 9, typescript: 3, javascript: 3 },
+    reverseLocal: { java: 18, cpp: 21, python: 19, typescript: 6, javascript: 6 },
+    stitchNext: { java: 21, cpp: 22, python: 20, typescript: 7, javascript: 7 },
+    returnAns: { java: 25, cpp: 25, python: 23, typescript: 10, javascript: 10 },
   };
 
   // Step 0: 入口
@@ -156,6 +159,12 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
     log: `Init reverseKGroup with list=[${nodes.join(', ')}], k=${k}`,
     codeLine: lines.entry,
     statusBadge: { text: '算法就绪', type: 'info' },
+    metrics: {
+      k: `k = ${k}`,
+      groupRange: '准备就绪',
+      nodeCount: `${n} 个节点`,
+      status: '就绪',
+    },
   });
 
   let groupIdx = 0;
@@ -175,6 +184,12 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
         log: `Group ${groupIdx} incomplete (< ${k}), skip reversal`,
         codeLine: lines.breakIncomplete,
         statusBadge: { text: '不足跳过', type: 'warning' },
+        metrics: {
+          k: `k = ${k}`,
+          groupRange: `[ ${start} ... ${n - 1} ]`,
+          nodeCount: `${n} 个节点`,
+          status: '不足跳过',
+        },
       });
       break;
     }
@@ -189,6 +204,12 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
       log: `Group ${groupIdx} locked: [${nodes.slice(start, end + 1).join(', ')}]`,
       codeLine: lines.probeK,
       statusBadge: { text: `锁定组 ${groupIdx}`, type: 'info' },
+      metrics: {
+        k: `k = ${k}`,
+        groupRange: `[ ${start} ... ${end} ]`,
+        nodeCount: `${n} 个节点`,
+        status: `锁定第 ${groupIdx} 组`,
+      },
     });
 
     // 局部翻转
@@ -212,6 +233,12 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
       log: `Group ${groupIdx} reversed: [${nodes.slice(start, end + 1).join(', ')}]`,
       codeLine: lines.reverseLocal,
       statusBadge: { text: `反转组 ${groupIdx}`, type: 'success' },
+      metrics: {
+        k: `k = ${k}`,
+        groupRange: `[ ${start} ... ${end} ]`,
+        nodeCount: `${n} 个节点`,
+        status: `反转组 ${groupIdx} 成功`,
+      },
     });
   }
 
@@ -226,82 +253,89 @@ export function generateReverseKGroupSteps(inputList: number[] = [1, 2, 3, 4, 5]
     log: `Done reverseKGroup. Result=[${nodes.join(', ')}]`,
     codeLine: lines.returnAns,
     statusBadge: { text: '翻转成功', type: 'success' },
+    metrics: {
+      k: `k = ${k}`,
+      groupRange: '全部完成',
+      nodeCount: `${n} 个节点`,
+      status: '完成',
+      ans: `[${nodes.join(' ➔ ')}]`,
+    },
+    ans: `[${nodes.join(' ➔ ')}]`,
+    isAccepted: true,
   });
 
   return steps;
 }
 
 export function renderReverseKGroupCanvas(container: HTMLElement, step: KGroupStep): void {
+  const currentRange = step.groupRange;
   container.innerHTML = `
-    <div style="padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <!-- 核心指标看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">每组翻转规模 (k)</div>
-          <div style="font-size: 24px; font-weight: bold; color: #38bdf8; margin-top: 4px;">
-            k = ${step.k}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">当前活跃操作区间</div>
-          <div style="font-size: 18px; font-weight: bold; color: #fbbf24; margin-top: 4px;">
-            ${step.groupRange ? `下标 [ ${step.groupRange[0]} ... ${step.groupRange[1]} ]` : '待定或完毕'}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">当前链表拓扑长度</div>
-          <div style="font-size: 20px; font-weight: bold; color: #34d399; margin-top: 4px;">
-            ${step.nodes.length} 个节点
-          </div>
-        </div>
+    <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div style="font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+        <span>单链表动态拓扑结构</span>
+        <span style="font-size: 10px; font-weight: 600; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px;">彩色边框指示当前活跃组</span>
       </div>
 
-      <!-- 链表指针轨道沙盘 -->
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px; overflow-x: auto;">
-        <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 14px;">
-          单链表当前指针连接状态 (彩色框为当前翻转组)
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding: 16px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); box-sizing: border-box;">
+        <!-- dummy head -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;">
+          <div style="padding: 5px 8px; background: #f1f5f9; border: 1px dashed #94a3b8; color: #475569; border-radius: 8px; font-size: 11px; font-weight: 700;">
+            dummy(0)
+          </div>
+          <span style="font-size: 8.5px; color: #94a3b8; font-family: monospace;">哨兵头</span>
         </div>
+        <span style="color: #94a3b8; font-size: 14px; font-weight: bold; flex-shrink: 0;">➔</span>
 
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <div style="padding: 4px 8px; background: #334155; color: #94a3b8; border-radius: 4px; font-size: 11px;">dummy</div>
-          <span style="color: #64748b;">➔</span>
+        ${step.nodes.map((val, idx) => {
+          const inRange = currentRange && idx >= currentRange[0] && idx <= currentRange[1];
+          const isReversedGroup = inRange && step.isReversed;
 
-          ${step.nodes.map((val, idx) => {
-            const inRange = step.groupRange && idx >= step.groupRange[0] && idx <= step.groupRange[1];
-            return `
-              <div style="display: flex; align-items: center; gap: 6px;">
+          let bg = '#ffffff';
+          let border = '1px solid #cbd5e1';
+          let textCol = '#0f172a';
+          let shadow = '0 1px 3px rgba(0,0,0,0.03)';
+
+          if (isReversedGroup) {
+            bg = '#ecfdf5';
+            border = '2px solid #10b981';
+            textCol = '#065f46';
+            shadow = '0 2px 8px rgba(16, 185, 129, 0.25)';
+          } else if (inRange) {
+            bg = '#f0f9ff';
+            border = '2px solid #0284c7';
+            textCol = '#0369a1';
+            shadow = '0 2px 8px rgba(2, 132, 199, 0.25)';
+          }
+
+          return `
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
                 <div style="
-                  width: 40px;
-                  height: 40px;
-                  background: ${inRange ? (step.isReversed ? '#065f46' : '#0369a1') : '#1e293b'};
-                  border: ${inRange ? (step.isReversed ? '2px solid #34d399' : '2px solid #38bdf8') : '1px solid #475569'};
-                  border-radius: 6px;
-                  color: #fff;
+                  width: 42px;
+                  height: 42px;
+                  background: ${bg};
+                  border: ${border};
+                  border-radius: 9px;
+                  color: ${textCol};
                   display: flex;
                   flex-direction: column;
                   align-items: center;
                   justify-content: center;
-                  box-shadow: ${inRange ? '0 0 8px rgba(56,189,248,0.5)' : 'none'};
+                  box-shadow: ${shadow};
+                  transition: all 0.2s ease;
                 ">
-                  <span style="font-size: 14px; font-weight: bold;">${val}</span>
-                  <span style="font-size: 8px; color: #94a3b8;">#${idx}</span>
+                  <span style="font-size: 14px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">${val}</span>
+                  <span style="font-size: 8.5px; color: #64748b; font-weight: 600;">#${idx}</span>
                 </div>
-                ${idx < step.nodes.length - 1 ? '<span style="color: #38bdf8; font-size: 14px;">➔</span>' : '<span style="color: #94a3b8; font-size: 11px;">➔ null</span>'}
+                ${inRange ? `<span style="font-size: 9px; font-weight: 700; color: ${isReversedGroup ? '#059669' : '#0284c7'};">组${Math.floor(idx / step.k) + 1}</span>` : '<span style="font-size: 9px; color: transparent;">-</span>'}
               </div>
-            `;
-          }).join('')}
-        </div>
+              ${idx < step.nodes.length - 1 
+                ? '<span style="color: #3b82f6; font-size: 14px; font-weight: bold;">➔</span>' 
+                : '<span style="color: #64748b; font-size: 10px; font-weight: 700; background: #f1f5f9; padding: 2px 5px; border-radius: 4px;">➔ null</span>'}
+            </div>
+          `;
+        }).join('')}
       </div>
-
-      <!-- 原理卡片 -->
-      ${renderFormulaCard(
-        '链表 K 个一组就地翻转公理',
-        '每组翻转由 pre 指针定位头部、探查 end 指针前移 k 步：若前移不足 k 步证明末尾短缺直接 break；若探查成功则断开 end.next 进行局部反转，随后将原 start 节点（现尾节点）接回后续链表，实现 O(N) 一趟线性扫描且空间维持绝对 O(1)！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -314,6 +348,31 @@ export const reverseNodesInKGroupVisualizer = registerDeclarativeAlgorithm<KGrou
   difficulty: 3,
   levelOrder: 25,
   learningGoal: '掌握经典链表局部指针翻转与边界缝合技巧，理解常数额外空间 O(1) 处理组内重构的精妙逻辑',
+  metrics: [
+    { id: 'k', label: '每组翻转规模 (k)', color: '#0ea5e9' },
+    { id: 'groupRange', label: '当前活跃区间', color: '#f59e0b' },
+    { id: 'nodeCount', label: '链表拓扑长度', color: '#10b981' },
+    { id: 'status', label: '翻转推进状态', color: '#6366f1' },
+  ],
+  auxiliaryVisual: {
+    title: '链表 K 个一组就地翻转公理',
+    render: (container, step) => {
+      container.innerHTML = `
+        <div style="padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 700; color: #1e293b;">💡 局部翻转与边界缝合精髓</span>
+            ${step.statusBadge ? `<span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">${step.statusBadge.text}</span>` : ''}
+          </div>
+          <div style="font-size: 11px; color: #475569; line-height: 1.6;">
+            每组由 <code>pre</code> 定位前驱、<code>end</code> 探查向前推进 <code>k</code> 步；若节点不足直接 break 终止；若充足断开 <code>end.next</code> 局部反转，将新尾节点与后续组缝合，实现 $O(N)$ 一趟线性扫描且空间严格 $O(1)$！
+          </div>
+          <div style="margin-top: 8px; font-size: 11.5px; font-weight: 600; color: #2563eb; background: #eff6ff; padding: 6px 10px; border-radius: 6px; border: 1px solid #bfdbfe;">
+            ${step.decision}
+          </div>
+        </div>
+      `;
+    },
+  },
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>题目描述 (LeetCode 25 - Hard)</h3>

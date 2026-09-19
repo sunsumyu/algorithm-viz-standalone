@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   JUMP_GAME_PROBLEM_HTML,
@@ -23,9 +24,17 @@ export interface JumpStep {
   action: 'init' | 'scan' | 'jump' | 'done';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const JUMP_GAME_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 3, cpp: 5, python: 5, javascript: 3 },
+  scan: { java: 7, cpp: 9, python: 9, javascript: 7 },
+  jump: { java: 10, cpp: 12, python: 12, javascript: 10 },
+  done: { java: 13, cpp: 15, python: 13, javascript: 13 },
+};
 
 export function buildJumpGameSteps(arr: number[]): JumpStep[] {
   const steps: JumpStep[] = [];
@@ -44,7 +53,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
       action: 'done',
       message: '数组长度 <= 1，已经在终点，无需跳跃，步数为 0',
       log: 'no jumps needed',
-      codeLine: 2,
+      codeLine: JUMP_GAME_CODE_LINES.guard,
     });
     return steps;
   }
@@ -65,7 +74,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
     action: 'init',
     message: `初始化：nums = [${arr.join(', ')}]，jumps=0, curBoundary=0, nextBoundary=0`,
     log: `init: jumps=0, boundary=0, farthest=0`,
-    codeLine: 3,
+    codeLine: JUMP_GAME_CODE_LINES.init,
   });
 
   for (let i = 0; i < n - 1; i++) {
@@ -84,7 +93,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
       action: 'scan',
       message: `🔍 扫描下标 [${i}]=${arr[i]}，从该点可达下标 ${reach}，更新下一步最远 nextBoundary=${nextDistance}`,
       log: `scan i=${i}: reach=${reach}, nextBoundary=${nextDistance}`,
-      codeLine: 7,
+      codeLine: JUMP_GAME_CODE_LINES.scan,
     });
 
     if (i === curDistance) {
@@ -104,7 +113,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
         action: 'jump',
         message: `🦘 到达当前跳跃边界 [${i}]！必须跳跃一次，jumps=${jumps}，新边界推进至 [${curDistance}]`,
         log: `jump #${jumps}: ${prevBoundary} → ${curDistance}`,
-        codeLine: 10,
+        codeLine: JUMP_GAME_CODE_LINES.jump,
       });
 
       if (curDistance >= n - 1) {
@@ -125,7 +134,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
     action: 'done',
     message: `🎉 成功到达终点！最少跳跃次数为 ${jumps} 次`,
     log: `done: jumps=${jumps}`,
-    codeLine: 14,
+    codeLine: JUMP_GAME_CODE_LINES.done,
   });
 
   return steps;

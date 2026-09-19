@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface PathSumStep extends StepBase {
@@ -20,7 +20,7 @@ export interface PathSumStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -92,6 +92,17 @@ public:
 }`
 };
 
+export const MAX_PATH_SUM_CODE_LINES = {
+  entry: { java: 4, cpp: 11, python: 13, typescript: 10 },
+  dfsEntry: { java: 10, cpp: 4, python: 5, typescript: 3 },
+  baseNull: { java: 11, cpp: 5, python: 6, typescript: 4 },
+  calcLeft: { java: 14, cpp: 6, python: 8, typescript: 5 },
+  calcRight: { java: 15, cpp: 7, python: 9, typescript: 6 },
+  calcArch: { java: 18, cpp: 8, python: 10, typescript: 7 },
+  updateMax: { java: 19, cpp: 8, python: 10, typescript: 7 },
+  returnSingle: { java: 22, cpp: 9, python: 11, typescript: 8 },
+};
+
 interface SimpleTreeNode {
   val: number;
   left?: SimpleTreeNode;
@@ -112,16 +123,7 @@ export function generateMaxPathSumSteps(): PathSumStep[] {
     },
   };
 
-  const lines = {
-    entry: 4,
-    dfsEntry: 10,
-    baseNull: 11,
-    calcLeft: 14,
-    calcRight: 15,
-    calcArch: 18,
-    updateMax: 19,
-    returnSingle: 22,
-  };
+  const lines = MAX_PATH_SUM_CODE_LINES;
 
   let globalMax = -Infinity;
   let bestPath: number[] = [];

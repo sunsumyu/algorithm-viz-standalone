@@ -6,6 +6,7 @@
 import { parseNumberList } from '../../../core/input-primitives';
 import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog, BstStep } from './tree-template';
 import maxTreeTemplate from './max-tree.html';
 import mergeTreesTemplate from './merge-trees.html';
@@ -233,40 +234,65 @@ class MergeTreesVisualizer extends StepVisualizer<MergeTreesStep> {
     const root1 = buildTreeFromArr(this.treeData);
     const root2 = buildTreeFromArr(this.treeData2);
 
+    function cloneTree(node: TreeNode | null): TreeNode | null {
+      return cloneStateDepTree(node);
+    }
+
+    // 初始状态：展示输入二叉树概要，初始树展示树1结构，杜绝白板空树
     steps.push({
-      tree: null, current: null, depth: 0, sum: null,
-      val1: null, val2: null,
-      message: '开始合并两棵树',
-      log: '开始合并两棵树',
+      tree: root1,
+      current: root1 ? root1.val : null,
+      depth: 0,
+      sum: null,
+      val1: root1 ? root1.val : null,
+      val2: root2 ? root2.val : null,
+      message: `准备合并两棵二叉树：树1 [${this.treeData.filter(x => x !== null).join(',')}] 与 树2 [${this.treeData2.filter(x => x !== null).join(',')}]`,
+      log: '开始合并两棵二叉树',
       codeLine: 1,
     });
 
-    const merge = (n1: TreeNode | null, n2: TreeNode | null, depth: number): TreeNode | null => {
+    let liveRoot: TreeNode | null = null;
+
+    const merge = (n1: TreeNode | null, n2: TreeNode | null, depth: number, parent?: TreeNode, isLeft?: boolean): TreeNode | null => {
       if (!n1 && !n2) return null;
 
       const v1 = n1 ? n1.val : null;
       const v2 = n2 ? n2.val : null;
       const sum = (n1?.val ?? 0) + (n2?.val ?? 0);
 
+      const newNode: TreeNode = { val: sum, left: null, right: null };
+      if (!liveRoot) {
+        liveRoot = newNode;
+      } else if (parent) {
+        if (isLeft) parent.left = newNode;
+        else parent.right = newNode;
+      }
+
       steps.push({
-        tree: null, current: sum, depth, sum,
-        val1: v1, val2: v2,
-        message: `节点值合并: (${v1 ?? 0}) + (${v2 ?? 0}) = ${sum}`,
-        log: `合并 (${v1 ?? 0} + ${v2 ?? 0} = ${sum})`,
-        codeLine: 2,
+        tree: cloneTree(liveRoot),
+        current: sum,
+        depth,
+        sum,
+        val1: v1,
+        val2: v2,
+        message: `节点值求和: 树1(${v1 ?? '空'}) + 树2(${v2 ?? '空'}) = ${sum}，创建合并新节点 ${sum}`,
+        log: `节点求和 (${v1 ?? 0} + ${v2 ?? 0} = ${sum})`,
+        codeLine: 3,
       });
 
-      const left = merge(n1?.left ?? null, n2?.left ?? null, depth + 1);
-      const right = merge(n1?.right ?? null, n2?.right ?? null, depth + 1);
-
-      const newNode: TreeNode = { val: sum, left, right };
+      newNode.left = merge(n1?.left ?? null, n2?.left ?? null, depth + 1, newNode, true);
+      newNode.right = merge(n1?.right ?? null, n2?.right ?? null, depth + 1, newNode, false);
 
       steps.push({
-        tree: newNode, current: sum, depth, sum,
-        val1: v1, val2: v2,
-        message: `节点 ${sum} 完成 (左子树: ${left ? '有' : '无'}, 右子树: ${right ? '有' : '无'})`,
+        tree: cloneTree(liveRoot),
+        current: sum,
+        depth,
+        sum,
+        val1: v1,
+        val2: v2,
+        message: `节点 ${sum} 左右子树递归合并完毕`,
         log: `节点 ${sum} 完成`,
-        codeLine: 3,
+        codeLine: 6,
       });
 
       return newNode;
@@ -274,9 +300,13 @@ class MergeTreesVisualizer extends StepVisualizer<MergeTreesStep> {
 
     const result = merge(root1, root2, 0);
     steps.push({
-      tree: result, current: null, depth: 0, sum: null,
-      val1: null, val2: null,
-      message: '合并完成',
+      tree: result,
+      current: result ? result.val : null,
+      depth: 0,
+      sum: result ? result.val : null,
+      val1: null,
+      val2: null,
+      message: '两棵二叉树合并完成！',
       log: '合并完成',
       codeLine: 7,
     });

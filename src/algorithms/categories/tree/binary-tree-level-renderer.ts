@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   BINARY_TREE_LEVEL_PROBLEM_HTML,
@@ -26,8 +27,17 @@ export interface BTLStep {
   action: 'init' | 'start-level' | 'poll-node' | 'end-level' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const BINARY_TREE_LEVEL_CODE_LINES = {
+  init: { java: [4, 5, 6], cpp: [5, 6, 7], python: [4, 5], javascript: [3, 4] },
+  empty: { java: 4, cpp: 5, python: 4, javascript: 3 },
+  startLevel: { java: [7, 8, 9], cpp: [8, 9, 10], python: [6, 7, 8], javascript: [5, 6, 7] },
+  pollNode: { java: [11, 12, 13, 14], cpp: [12, 13, 14, 15], python: [10, 11, 12, 13], javascript: [9, 10, 11, 12] },
+  endLevel: { java: 16, cpp: 17, python: 14, javascript: 14 },
+  done: { java: 18, cpp: 19, python: 15, javascript: 16 },
+};
 
 export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
   const steps: BTLStep[] = [];
@@ -44,7 +54,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
     action: 'init',
     message: root ? `初始化层序遍历：根节点 ${root.val} 入队。` : '空树，返回空层序 []。',
     log: root ? `根节点 ${root.val} 入队` : '空树',
-    codeLine: [4, 5, 6],
+    codeLine: BINARY_TREE_LEVEL_CODE_LINES.init,
   });
 
   if (!root) {
@@ -59,7 +69,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
       action: 'done',
       message: '✅ 遍历完成，返回 []。',
       log: '✓ 完成: []',
-      codeLine: 4,
+      codeLine: BINARY_TREE_LEVEL_CODE_LINES.empty,
     });
     return steps;
   }
@@ -83,7 +93,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
       action: 'start-level',
       message: `开始遍历第 ${levelIdx} 层：当前队列大小 size = ${size}，节点为 [${qSnapshot.join(', ')}]。`,
       log: `第 ${levelIdx} 层开始 (size=${size})`,
-      codeLine: [7, 8, 9],
+      codeLine: BINARY_TREE_LEVEL_CODE_LINES.startLevel,
     });
 
     for (let i = 0; i < size; i++) {
@@ -105,7 +115,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
         action: 'poll-node',
         message: `出队节点 ${node.val} 并加入当前层；将其左右孩子压入队列。当前队列: [${remainingQ.join(', ')}]。`,
         log: `访问 ${node.val} -> 层列表 [${currentLevel.join(', ')}]`,
-        codeLine: [10, 11, 12, 13, 14],
+        codeLine: BINARY_TREE_LEVEL_CODE_LINES.pollNode,
       });
     }
 
@@ -122,7 +132,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
       action: 'end-level',
       message: `第 ${levelIdx} 层收集完成：[${currentLevel.join(', ')}]。加入最终结果列表。`,
       log: `✓ 第 ${levelIdx} 层完成: [${currentLevel.join(', ')}]`,
-      codeLine: 15,
+      codeLine: BINARY_TREE_LEVEL_CODE_LINES.endLevel,
     });
 
     levelIdx++;
@@ -139,7 +149,7 @@ export function buildBTLSteps(root: TreeNode | null): BTLStep[] {
     action: 'done',
     message: `🎉 层序遍历全部完成！共 ${result.length} 层，最终二维结果: ${JSON.stringify(result)}。`,
     log: `✓ 全部完成: ${JSON.stringify(result)}`,
-    codeLine: 16,
+    codeLine: BINARY_TREE_LEVEL_CODE_LINES.done,
   });
 
   return steps;

@@ -225,6 +225,20 @@ export const PathsDivisibleByKSpec: AlgorithmSpec = {
         })
       );
 
+    // Step 0: 纯净初始状态
+    steps.push(
+      makeTraceStep({
+        dp2d: toDp2d(),
+        message: `🏁 网格大小 ${n} × ${m}，模数 k = ${k}。寻找路径和被 ${k} 整除的全部方案数。准备初始化终点。`,
+        log: `初始化：网格 ${n}x${m}, k=${k}`,
+        vars: [
+          { name: '网格规格', value: `${n} × ${m}` },
+          { name: '除数 k', value: String(k) },
+        ],
+        metrics: { totalPathsModK: 0 },
+      })
+    );
+
     const endRem = grid[n - 1][m - 1] % k;
     dp[n - 1][m - 1][endRem] = 1;
 

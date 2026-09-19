@@ -8,6 +8,9 @@ import { describe, it, expect } from 'vitest';
 import {
   buildRecursiveSteps,
   buildDpSteps,
+  buildMemoSteps,
+  buildSpaceOptimizedSteps,
+  buildEvolutionSteps,
   REC_JAVA_CODE,
   DP_JAVA_CODE,
 } from './decode-ways-steps';
@@ -168,3 +171,50 @@ describe('buildDpSteps', () => {
     }
   });
 });
+
+describe('buildMemoSteps (阶段 2: 记忆化搜索)', () => {
+  it.each(CASES)('"%s" 的最终答案为 %i', (input, expected) => {
+    const { answer } = buildMemoSteps(input);
+    expect(answer).toBe(expected);
+  });
+
+  it('含有重叠子问题时触发 cache-hit 剪枝', () => {
+    const { steps } = buildMemoSteps('111111');
+    const hits = steps.filter((st) => st.type === 'cache-hit');
+    expect(hits.length).toBeGreaterThan(0);
+  });
+
+  it('记忆化搜索总调用次数显著少于朴素递归', () => {
+    const recResult = buildRecursiveSteps('111111');
+    const memoResult = buildMemoSteps('111111');
+    const recCalls = recResult.steps[recResult.steps.length - 1].stats.calls;
+    const memoCalls = memoResult.steps[memoResult.steps.length - 1].stats.calls;
+    expect(memoCalls).toBeLessThan(recCalls);
+  });
+});
+
+describe('buildSpaceOptimizedSteps (阶段 4: 空间压缩)', () => {
+  it.each(CASES)('"%s" 的最终答案为 %i', (input, expected) => {
+    const { answer } = buildSpaceOptimizedSteps(input);
+    expect(answer).toBe(expected);
+  });
+
+  it('首步 init、末步 done 且携带 rollingVars 与答案', () => {
+    const { steps } = buildSpaceOptimizedSteps('226');
+    expect(steps[0].type).toBe('init');
+    const last = steps[steps.length - 1];
+    expect(last.type).toBe('done');
+    expect(last.answer).toBe(3);
+    expect(last.rollingVars).toBeDefined();
+  });
+});
+
+describe('buildEvolutionSteps (统一调度)', () => {
+  it('正确路由 4 个阶段', () => {
+    expect(buildEvolutionSteps('226', 'naive-recursive').answer).toBe(3);
+    expect(buildEvolutionSteps('226', 'memo-topdown').answer).toBe(3);
+    expect(buildEvolutionSteps('226', 'tabulation-bottomup').answer).toBe(3);
+    expect(buildEvolutionSteps('226', 'space-optimized').answer).toBe(3);
+  });
+});
+

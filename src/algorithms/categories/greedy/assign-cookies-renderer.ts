@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   ASSIGN_COOKIES_PROBLEM_HTML,
   ASSIGN_COOKIES_ANALYSIS_HTML,
@@ -23,9 +24,17 @@ export interface AssignCookiesStep {
   matchedCookies: number[];
   skippedCookies: number[];
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const ASSIGN_COOKIES_CODE_LINES: Record<string, HighlightTarget> = {
+  sort: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  check: { java: 8, cpp: 9, python: 7, javascript: 7 },
+  matched: { java: 9, cpp: 10, python: 8, javascript: 8 },
+  skip: { java: 11, cpp: 12, python: 9, javascript: 10 },
+  done: { java: 13, cpp: 14, python: 10, javascript: 12 },
+};
 
 export function assignCookiesSteps(children: number[], cookies: number[]): AssignCookiesStep[] {
   const steps: AssignCookiesStep[] = [];
@@ -44,7 +53,7 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
     matchedCookies: [],
     skippedCookies: [],
     message: `升序排序完成：孩子胃口 g=[${sortedChildren.join(', ')}]，饼干尺寸 s=[${sortedCookies.join(', ')}]`,
-    codeLine: 2,
+    codeLine: ASSIGN_COOKIES_CODE_LINES.sort,
   });
 
   let childIdx = 0;
@@ -69,7 +78,7 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
       matchedCookies: [...matchedCookies],
       skippedCookies: [...skippedCookies],
       message: `贪心比较：孩子 g[${childIdx}]=${curG} 与 饼干 s[${cookieIdx}]=${curS}`,
-      codeLine: 7,
+      codeLine: ASSIGN_COOKIES_CODE_LINES.check,
     });
 
     if (curS >= curG) {
@@ -90,7 +99,7 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
         matchedCookies: [...matchedCookies],
         skippedCookies: [...skippedCookies],
         message: `✓ 匹配成功！饼干 ${curS} 满足孩子胃口 ${curG}，累计满足 ${satisfied} 人`,
-        codeLine: 8,
+        codeLine: ASSIGN_COOKIES_CODE_LINES.matched,
       });
     } else {
       skippedCookies.push(cookieIdx);
@@ -107,7 +116,7 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
         matchedCookies: [...matchedCookies],
         skippedCookies: [...skippedCookies],
         message: `⏭️ 饼干太小：s[${cookieIdx - 1}]=${curS} < g[${childIdx}]=${curG}，无法满足，跳过该饼干`,
-        codeLine: 10,
+        codeLine: ASSIGN_COOKIES_CODE_LINES.skip,
       });
     }
   }
@@ -123,7 +132,7 @@ export function assignCookiesSteps(children: number[], cookies: number[]): Assig
     matchedCookies: [...matchedCookies],
     skippedCookies: [...skippedCookies],
     message: `🎉 贪心扫描结束！最多可以满足 ${satisfied} 个孩子`,
-    codeLine: 12,
+    codeLine: ASSIGN_COOKIES_CODE_LINES.done,
   });
 
   return steps;

@@ -209,20 +209,26 @@ export const KnightProbabilitySpec: AlgorithmSpec = {
 
     let dp: number[][] = Array.from({ length: n }, () => Array(n).fill(1.0));
 
-    const toDp2d = (grid: number[][], activeR?: number, activeC?: number) =>
+    const toDp2d = (grid: number[][], activeR?: number, activeC?: number, isInit = false) =>
       grid.map((rArr, r) =>
         rArr.map((val, c) => ({
           value: Number(val.toFixed(4)),
-          state: (r === activeR && c === activeC) ? ('active' as const) : val > 0 ? ('computed' as const) : ('default' as const),
+          state: (r === activeR && c === activeC)
+            ? ('active' as const)
+            : isInit
+            ? ('default' as const)
+            : val > 0
+            ? ('computed' as const)
+            : ('default' as const),
         }))
       );
 
     steps.push(
       makeTraceStep({
-        dp2d: toDp2d(dp, row, col),
+        dp2d: toDp2d(dp, row, col, true),
         current: { row, col },
-        message: `♟️ 棋盘大小 ${n}×${n}，目标计算骑士从 (${row}, ${col}) 出发走 ${k} 步仍留在棋盘的概率。初始化 step=0 时各位置存活概率为 1.0。`,
-        log: `初始化 0 步状态表：所有单元格存活概率为 1.0`,
+        message: `♟️ 棋盘大小 ${n}×${n}，目标计算骑士从 (${row}, ${col}) 出发走 ${k} 步仍留在棋盘的概率。`,
+        log: `初始化：骑士处于 (${row}, ${col})，目标行走 ${k} 步`,
         vars: [
           { name: '步数 k', value: String(k) },
           { name: '起点 (row, col)', value: `(${row}, ${col})` },

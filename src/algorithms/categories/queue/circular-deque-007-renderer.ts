@@ -20,7 +20,7 @@ export interface CircularDequeStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -221,6 +221,18 @@ public:
 }`
 };
 
+export const CIRCULAR_DEQUE_007_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 5, cpp: 6, python: 2, typescript: 9 },
+  insertFrontFail: { java: 12, cpp: 9, python: 10, typescript: 14 },
+  insertFrontOk: { java: 18, cpp: 14, python: 16, typescript: 20 },
+  insertLastFail: { java: 25, cpp: 19, python: 22, typescript: 27 },
+  insertLastOk: { java: 31, cpp: 24, python: 28, typescript: 33 },
+  deleteFrontFail: { java: 38, cpp: 29, python: 33, typescript: 40 },
+  deleteFrontOk: { java: 40, cpp: 31, python: 35, typescript: 43 },
+  deleteLastFail: { java: 45, cpp: 35, python: 39, typescript: 48 },
+  deleteLastOk: { java: 47, cpp: 37, python: 41, typescript: 51 },
+};
+
 export function generateCircularDequeSteps(
   capacity: number,
   operations: Array<{ op: 'insertFront' | 'insertLast' | 'deleteFront' | 'deleteLast'; val?: number }>
@@ -244,7 +256,7 @@ export function generateCircularDequeSteps(
     decision: `创建容量为 ${capacity} 的循环双端队列，初始 head=0, tail=0, size=0`,
     message: `容量 ${capacity} 初始化完毕`,
     log: `Init CircularDeque(capacity=${capacity})`,
-    codeLine: 5,
+    codeLine: CIRCULAR_DEQUE_007_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' }
   });
 
@@ -264,7 +276,7 @@ export function generateCircularDequeSteps(
           decision: `队列已满 (size=${size} == capacity)，无法执行头部插入，返回 false`,
           message: '队列已满',
           log: `insertFront(${val}) -> 队列满，失败`,
-          codeLine: 11,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.insertFrontFail,
           statusBadge: { text: '插入失败(满)', type: 'danger' }
         });
       } else {
@@ -288,7 +300,7 @@ export function generateCircularDequeSteps(
           decision: `头部插入值 ${val}：head 左移至下标 ${head} 并存入元素，当前 size=${size}`,
           message: `头部插入成功: ${val}`,
           log: `insertFront(${val}) -> head=${head}, size=${size}`,
-          codeLine: 16,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.insertFrontOk,
           statusBadge: { text: `成功插入 ${val}`, type: 'success' }
         });
       }
@@ -307,7 +319,7 @@ export function generateCircularDequeSteps(
           decision: `队列已满 (size=${size} == capacity)，无法执行尾部插入，返回 false`,
           message: '队列已满',
           log: `insertLast(${val}) -> 队列满，失败`,
-          codeLine: 24,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.insertLastFail,
           statusBadge: { text: '插入失败(满)', type: 'danger' }
         });
       } else {
@@ -331,7 +343,7 @@ export function generateCircularDequeSteps(
           decision: `尾部插入值 ${val}：tail 右移至下标 ${tail} 并存入元素，当前 size=${size}`,
           message: `尾部插入成功: ${val}`,
           log: `insertLast(${val}) -> tail=${tail}, size=${size}`,
-          codeLine: 29,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.insertLastOk,
           statusBadge: { text: `成功插入 ${val}`, type: 'success' }
         });
       }
@@ -349,7 +361,7 @@ export function generateCircularDequeSteps(
           decision: '队列为空，无法执行头部弹出，返回 false',
           message: '队列为空',
           log: 'deleteFront() -> 空队列',
-          codeLine: 35,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.deleteFrontFail,
           statusBadge: { text: '删除失败(空)', type: 'danger' }
         });
       } else {
@@ -369,7 +381,7 @@ export function generateCircularDequeSteps(
           decision: `头部弹出元素 ${removedVal}：head 右移至下标 ${head}，当前 size=${size}`,
           message: `头部弹出: ${removedVal}`,
           log: `deleteFront() -> 弹出 ${removedVal}, size=${size}`,
-          codeLine: 37,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.deleteFrontOk,
           statusBadge: { text: `弹出 ${removedVal}`, type: 'warning' }
         });
       }
@@ -387,7 +399,7 @@ export function generateCircularDequeSteps(
           decision: '队列为空，无法执行尾部弹出，返回 false',
           message: '队列为空',
           log: 'deleteLast() -> 空队列',
-          codeLine: 42,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.deleteLastFail,
           statusBadge: { text: '删除失败(空)', type: 'danger' }
         });
       } else {
@@ -407,7 +419,7 @@ export function generateCircularDequeSteps(
           decision: `尾部弹出元素 ${removedVal}：tail 左移至下标 ${tail}，当前 size=${size}`,
           message: `尾部弹出: ${removedVal}`,
           log: `deleteLast() -> 弹出 ${removedVal}, size=${size}`,
-          codeLine: 44,
+          codeLine: CIRCULAR_DEQUE_007_CODE_LINES.deleteLastOk,
           statusBadge: { text: `弹出 ${removedVal}`, type: 'warning' }
         });
       }

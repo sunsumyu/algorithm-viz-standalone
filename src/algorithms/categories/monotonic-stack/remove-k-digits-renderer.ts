@@ -25,7 +25,7 @@ export interface RemoveKDigitsStep extends StepBase {
   finalResult: string;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const REMOVE_K_DIGITS_CODES = {
@@ -91,6 +91,15 @@ public:
         return ans if ans else "0"`,
 };
 
+export const REMOVE_K_DIGITS_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 4, python: 3 },
+  popGreater: { java: 7, cpp: 7, python: 6 },
+  push: { java: 10, cpp: 10, python: 8 },
+  truncateRemaining: { java: 14, cpp: 13, python: 10 },
+  stripZero: { java: 21, cpp: 17, python: 11 },
+  finish: { java: 25, cpp: 19, python: 12 },
+};
+
 export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3): RemoveKDigitsStep[] {
   const steps: RemoveKDigitsStep[] = [];
   const stack: string[] = [];
@@ -108,7 +117,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
     finalResult: '',
     message: `算法启动：原数字 "${num}"，需移除 k = ${k} 位数字以得到最小数值。创建单调递增栈。`,
     log: `初始化单调栈: num="${num}", k=${k}`,
-    codeLine: 4,
+    codeLine: REMOVE_K_DIGITS_CODE_LINES.init,
   });
 
   for (let i = 0; i < num.length; i++) {
@@ -129,7 +138,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
         finalResult: '',
         message: `贪心弹栈：当前字符 '${c}' 比栈顶 '${top}' 更小！弹出栈顶以使高位数值降低。剩余需移除位数 k = ${remK}。`,
         log: `弹出较大高位 '${top}', 剩余 k=${remK}`,
-        codeLine: 7,
+        codeLine: REMOVE_K_DIGITS_CODE_LINES.popGreater,
       });
     }
 
@@ -145,7 +154,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
       finalResult: '',
       message: `压入当前位：'${c}' 入栈。当前栈内数字为 [${stack.join('')}]。`,
       log: `压入 '${c}' -> 栈: ${stack.join('')}`,
-      codeLine: 10,
+      codeLine: REMOVE_K_DIGITS_CODE_LINES.push,
     });
   }
 
@@ -164,7 +173,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
       finalResult: '',
       message: `处理剩余 k：由于已单调递增，直接从末尾弹出多余高位 '${popped}'。剩余 k = ${remK}。`,
       log: `从末尾截断 '${popped}'`,
-      codeLine: 14,
+      codeLine: REMOVE_K_DIGITS_CODE_LINES.truncateRemaining,
     });
   }
 
@@ -183,7 +192,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
     finalResult: resStr,
     message: `清理前导零：栈内拼接为 "${stack.join('')}"，去除前导零后得到最小数字 "${resStr}"。`,
     log: `剥离前导零 -> 最终结果 "${resStr}"`,
-    codeLine: 23,
+    codeLine: REMOVE_K_DIGITS_CODE_LINES.stripZero,
   });
 
   // Finish
@@ -198,7 +207,7 @@ export function buildRemoveKDigitsSteps(num: string = '1432219', k: number = 3):
     finalResult: resStr,
     message: `算法完成！移除 ${k} 位后剩下的最小可能数值为 "${resStr}"。`,
     log: `收敛完成，返回 "${resStr}"`,
-    codeLine: 24,
+    codeLine: REMOVE_K_DIGITS_CODE_LINES.finish,
   });
 
   return steps;

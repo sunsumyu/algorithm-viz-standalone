@@ -23,7 +23,7 @@ export interface DivideStep extends StepBase {
   phase: 'init' | 'find-shift' | 'subtract' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const DIVIDE_TWO_INTEGERS_CODES = {
@@ -85,6 +85,13 @@ public:
         return -ans if negative else ans`,
 };
 
+const DIVIDE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 5, python: 5 },
+  findShift: { java: 11, cpp: 11, python: 10 },
+  subtract: { java: 16, cpp: 16, python: 14 },
+  finish: { java: 19, cpp: 19, python: 15 },
+};
+
 export function buildDivideSteps(dividend: number = 29, divisor: number = 3): DivideStep[] {
   const steps: DivideStep[] = [];
 
@@ -104,7 +111,7 @@ export function buildDivideSteps(dividend: number = 29, divisor: number = 3): Di
     phase: 'init',
     message: `算法启动：被除数 ${dividend}，除数 ${divisor}。符号判定：${negative ? '异号(负)' : '同号(正)'}。转绝对值运算 |a|=${a}, |b|=${b}。`,
     log: `初始化两数相除: a=${a}, b=${b}, negative=${negative}`,
-    codeLine: 5,
+    codeLine: DIVIDE_LINES.init,
   });
 
   while (a >= b) {
@@ -129,7 +136,7 @@ export function buildDivideSteps(dividend: number = 29, divisor: number = 3): Di
       phase: 'find-shift',
       message: `倍增逼近：除数 ${b} 左移 ${shift} 位得到 ${temp} (相当于 ${b} × ${multiple})，是 <= 剩余量 ${a} 的最大倍数。`,
       log: `找到最大二进制步长: temp=${temp} (${b}*${multiple}), shift=${shift}`,
-      codeLine: 13,
+      codeLine: DIVIDE_LINES.findShift,
     });
 
     a -= temp;
@@ -145,7 +152,7 @@ export function buildDivideSteps(dividend: number = 29, divisor: number = 3): Di
       phase: 'subtract',
       message: `扣减累加：被除数扣除 ${temp}，余量剩余 ${a}。商累加 ${multiple} 达到 ${ans}。`,
       log: `扣减完成: 余量=${a}, 累计商=${ans}`,
-      codeLine: 18,
+      codeLine: DIVIDE_LINES.subtract,
     });
   }
 
@@ -162,7 +169,7 @@ export function buildDivideSteps(dividend: number = 29, divisor: number = 3): Di
     phase: 'finish',
     message: `除法收敛：余量 ${a} < 除数 ${b}，运算终止。结合符号位，最终商为 ${finalAns}，余数为 ${a}。`,
     log: `计算完成，最终商=${finalAns}, 余数=${a}`,
-    codeLine: 21,
+    codeLine: DIVIDE_LINES.finish,
   });
 
   return steps;

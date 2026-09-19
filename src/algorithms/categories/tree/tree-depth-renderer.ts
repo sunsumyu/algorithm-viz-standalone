@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   TREE_DEPTH_PROBLEM_HTML,
@@ -25,8 +26,17 @@ export interface TDStep {
   action: 'enter' | 'left-done' | 'right-done' | 'return-depth';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const TREE_DEPTH_CODE_LINES = {
+  init: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  empty: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  enter: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  leftDone: { java: 5, cpp: 6, python: 6, javascript: 4 },
+  returnDepth: { java: 6, cpp: 7, python: 7, javascript: 5 },
+  done: { java: 6, cpp: 7, python: 7, javascript: 5 },
+};
 
 export function buildTDSteps(root: TreeNode | null): TDStep[] {
   const steps: TDStep[] = [];
@@ -42,7 +52,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
     action: 'enter',
     message: root ? `初始化最大深度计算：根节点为 ${root.val}，采用后序自底向上归约。` : '空树，最大深度为 0。',
     log: root ? '初始化最大深度计算' : '空树 -> 深度 0',
-    codeLine: 2,
+    codeLine: TREE_DEPTH_CODE_LINES.init,
   });
 
   if (!root) {
@@ -56,7 +66,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       action: 'return-depth',
       message: '✅ 空树最大深度为 0。',
       log: '✓ 最大深度 = 0',
-      codeLine: 3,
+      codeLine: TREE_DEPTH_CODE_LINES.empty,
     });
     return steps;
   }
@@ -74,7 +84,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       action: 'enter',
       message: `进入节点 ${node.val}：开始递归求其左子树最大深度。`,
       log: `进入 ${node.val} -> 求左深度`,
-      codeLine: [4, 5],
+      codeLine: TREE_DEPTH_CODE_LINES.enter,
     });
 
     const l = getDepth(node.left);
@@ -89,7 +99,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       action: 'left-done',
       message: `节点 ${node.val} 左子树深度计算完毕：leftDepth = ${l}。开始求右子树深度。`,
       log: `节点 ${node.val}: leftDepth = ${l}`,
-      codeLine: [5, 6],
+      codeLine: TREE_DEPTH_CODE_LINES.leftDone,
     });
 
     const r = getDepth(node.right);
@@ -107,7 +117,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       action: 'return-depth',
       message: `节点 ${node.val} 左右子树处理完毕：1 + max(${l}, ${r}) = ${curHeight}。向父节点返回该高度。`,
       log: `节点 ${node.val} -> 高度 = ${curHeight}`,
-      codeLine: [6, 7],
+      codeLine: TREE_DEPTH_CODE_LINES.returnDepth,
     });
 
     return curHeight;
@@ -125,7 +135,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
     action: 'return-depth',
     message: `🎉 计算完成！二叉树最大深度为 ${finalMax}。`,
     log: `✓ 最大深度 = ${finalMax}`,
-    codeLine: 7,
+    codeLine: TREE_DEPTH_CODE_LINES.done,
   });
 
   return steps;

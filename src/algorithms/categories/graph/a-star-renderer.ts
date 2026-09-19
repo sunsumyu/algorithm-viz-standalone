@@ -11,13 +11,18 @@ import {
   A_STAR_ANALYSIS_HTML,
   A_STAR_CODE_LANGUAGES,
 } from './a-star-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number | number[]> = {
-  init: [3, 4, 5],
-  reachgoal: 7,
-  poll: [6, 8],
-  done: 18,
+export const ASTAR_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: [3, 4, 5], cpp: [2, 3, 4], python: [2, 3], javascript: [2, 3] },
+  reachgoal: { java: 8, cpp: 7, python: 6, javascript: 7 },
+  poll: { java: [6, 7], cpp: [5, 6], python: [4, 5], javascript: [4, 5, 6] },
+  expand: { java: [11, 12, 13, 14, 15], cpp: [11, 12, 13], python: [10, 11, 12], javascript: [10, 11, 12] },
+  done: { java: 19, cpp: 16, python: 13, javascript: 17 },
 };
+
+const lines = ASTAR_CODE_LINES;
 
 export interface AStarNode {
   r: number;
@@ -42,7 +47,7 @@ export interface AStarStep extends StepBase {
   action: 'init' | 'poll' | 'expand' | 'reach-goal' | 'done';
   statusText: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string | number>;
 }
 

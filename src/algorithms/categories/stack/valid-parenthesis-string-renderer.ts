@@ -29,7 +29,7 @@ export interface ValidStringStep extends StepBase {
   phase: 'init' | 'scan' | 'invalid' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const VALID_PARENTHESIS_STRING_CODES = {
@@ -90,6 +90,16 @@ public:
         return min_open == 0`,
 };
 
+const CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 4, python: 3 },
+  scanOpen: { java: 6, cpp: 7, python: 6 },
+  scanClose: { java: 9, cpp: 9, python: 9 },
+  scanStar: { java: 12, cpp: 11, python: 12 },
+  invalid: { java: 15, cpp: 13, python: 15 },
+  scanUpdate: { java: 16, cpp: 14, python: 16 },
+  finish: { java: 18, cpp: 16, python: 17 },
+};
+
 export function buildValidParenthesisStringSteps(s: string = '(*))'): ValidStringStep[] {
   const steps: ValidStringStep[] = [];
   let minOpen = 0;
@@ -106,7 +116,7 @@ export function buildValidParenthesisStringSteps(s: string = '(*))'): ValidStrin
     phase: 'init',
     message: `算法启动：输入字符串 "${s}"。初始化未匹配左括号数量范围 [minOpen: 0 .. maxOpen: 0]。`,
     log: `初始化双端区间 [0, 0]`,
-    codeLine: 4,
+    codeLine: CODE_LINES.init,
   });
 
   for (let i = 0; i < s.length; i++) {
@@ -135,12 +145,14 @@ export function buildValidParenthesisStringSteps(s: string = '(*))'): ValidStrin
         phase: 'invalid',
         message: `扫描到 s[${i}] = '${c}'：maxOpen 跌至 ${maxOpen} < 0！说明即使将前面所有 '*' 都当作 '('，右括号数量依然溢出，必定非法！`,
         log: `非法拦截: maxOpen < 0`,
-        codeLine: 18,
+        codeLine: CODE_LINES.invalid,
       });
       return steps;
     }
 
     minOpen = Math.max(minOpen, 0);
+
+    const lineTarget = c === '(' ? CODE_LINES.scanOpen : c === ')' ? CODE_LINES.scanClose : CODE_LINES.scanStar;
 
     steps.push({
       s,
@@ -152,7 +164,7 @@ export function buildValidParenthesisStringSteps(s: string = '(*))'): ValidStrin
       phase: 'scan',
       message: `处理 s[${i}] = '${c}'：更新未匹配左括号的可能数量范围为 [min: ${minOpen} .. max: ${maxOpen}]。`,
       log: `处理 '${c}': 范围=[${minOpen} .. ${maxOpen}]`,
-      codeLine: 19,
+      codeLine: lineTarget,
     });
   }
 
@@ -171,7 +183,7 @@ export function buildValidParenthesisStringSteps(s: string = '(*))'): ValidStrin
       ? `全字符串扫描完毕：最终可能存在未匹配左括号下限 minOpen === 0！字符串 "${s}" 可以被完全平衡，返回 true。`
       : `全字符串扫描完毕：最终未匹配左括号下限 minOpen = ${minOpen} > 0，无法全部消除，返回 false。`,
     log: `算法收敛: 结果=${ans}`,
-    codeLine: 21,
+    codeLine: CODE_LINES.finish,
   });
 
   return steps;

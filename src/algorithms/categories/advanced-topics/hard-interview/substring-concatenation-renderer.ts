@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface SubstringStep extends StepBase {
   stepIndex?: number;
@@ -25,8 +24,10 @@ export interface SubstringStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const SUBSTRING_CONCATENATION_CODES = {
@@ -195,10 +196,17 @@ export function generateSubstringSteps(s: string, words: string[]): SubstringSte
     matchCount: 0,
     matchedIndices: [],
     decision: `初始化分组滑动窗口：单词长度 = ${wordLen}，单词总数 = ${numWords}，目标字典: ${JSON.stringify(targetMap)}`,
-    message: '算法初始化',
+    message: '算法初始化完成，准备从偏移量 0 开始滑动窗口推导',
     log: '初始化 SubstringConcatenation',
     codeLine: 5,
-    statusBadge: { text: '初始化', type: 'info' }
+    statusBadge: { text: '初始化', type: 'info' },
+    metrics: {
+      currentWord: '未开始',
+      matchCount: `0 / ${numWords}`,
+      windowRange: '[0, 0]',
+      matchedIndices: '[]',
+    },
+    ans: '[]',
   });
 
   for (let offset = 0; offset < wordLen; offset++) {
@@ -241,11 +249,18 @@ export function generateSubstringSteps(s: string, words: string[]): SubstringSte
           targetMap,
           matchCount: count,
           matchedIndices: [...matchedIndices],
-          decision: `截取单词 "${sub}" (区间 [${right - wordLen}..${right}])：命中目标单词！当前窗口内有效单词数 count = ${count} / ${numWords}。${isFullMatch ? `【完全匹配！】成功捕获串联起始下标 ${left}！` : ''}`,
-          message: `单词 "${sub}" 命中`,
+          decision: `截取单词 "${sub}" (区间 [${right - wordLen}..${right}])：命中目标词表！窗口内有效单词数 count = ${count}/${numWords}。${isFullMatch ? `【全匹配成功！】捕获串联起始下标 ${left}！` : ''}`,
+          message: `截取 "${sub}" 命中，当前有效词数 ${count}/${numWords}`,
           log: `Offset ${offset}: 词 "${sub}" -> count=${count}`,
           codeLine: 18,
-          statusBadge: isFullMatch ? { text: `命中下标 ${left}`, type: 'success' } : { text: `单词 "${sub}"`, type: 'info' }
+          statusBadge: isFullMatch ? { text: `命中下标 ${left}`, type: 'success' } : { text: `单词 "${sub}"`, type: 'info' },
+          metrics: {
+            currentWord: `"${sub}"`,
+            matchCount: `${count} / ${numWords}`,
+            windowRange: `[${left}, ${right}]`,
+            matchedIndices: `[${matchedIndices.join(', ')}]`,
+          },
+          ans: `[${matchedIndices.join(', ')}]`,
         });
       } else {
         for (const k in windowMap) delete windowMap[k];
@@ -267,10 +282,17 @@ export function generateSubstringSteps(s: string, words: string[]): SubstringSte
           matchCount: 0,
           matchedIndices: [...matchedIndices],
           decision: `截取单词 "${sub}"：不在目标词表中，重置当前窗口，左界直接跃迁至 ${right}`,
-          message: `未命中词 "${sub}"`,
+          message: `截取 "${sub}" 非目标词，窗口快速重置并跳跃`,
           log: `Offset ${offset}: 词 "${sub}" 无效，窗口重置`,
           codeLine: 24,
-          statusBadge: { text: '重置窗口', type: 'warning' }
+          statusBadge: { text: '重置窗口', type: 'warning' },
+          metrics: {
+            currentWord: `"${sub}" (无效)`,
+            matchCount: `0 / ${numWords}`,
+            windowRange: `[${left}, ${right}]`,
+            matchedIndices: `[${matchedIndices.join(', ')}]`,
+          },
+          ans: `[${matchedIndices.join(', ')}]`,
         });
       }
     }
@@ -291,100 +313,170 @@ export function generateSubstringSteps(s: string, words: string[]): SubstringSte
     matchCount: 0,
     matchedIndices: [...matchedIndices],
     decision: `全量步长窗口扫描完毕！所有完全串联的子串起始下标为：[${matchedIndices.join(', ')}]`,
-    message: `匹配完成，共 ${matchedIndices.length} 处`,
+    message: `扫描结束，累计找到 ${matchedIndices.length} 处完全串联子串`,
     log: `检索完毕: ${JSON.stringify(matchedIndices)}`,
     codeLine: 30,
-    statusBadge: { text: `完成: ${matchedIndices.length} 处`, type: 'success' }
+    statusBadge: { text: `完成: ${matchedIndices.length} 处`, type: 'success' },
+    metrics: {
+      currentWord: '扫描完毕',
+      matchCount: `${numWords} / ${numWords}`,
+      windowRange: `[${s.length}, ${s.length}]`,
+      matchedIndices: `[${matchedIndices.join(', ')}]`,
+    },
+    ans: `[${matchedIndices.join(', ')}]`,
   });
 
   return steps;
 }
 
 export function renderSubstringCanvas(container: HTMLElement, step: SubstringStep) {
-  const { s, wordLen, left, right, currentWord, windowMap, targetMap, matchCount, wordsCount, matchedIndices } = step;
+  const { s, wordLen, left, right, currentWord, windowMap, targetMap, matchedIndices, offset } = step;
+
+  // 1. 目标词汇状态芯片条 (Target Words Ledger)
+  const wordsStatusHtml = Object.entries(targetMap).map(([word, targetFreq]) => {
+    const curFreq = windowMap[word] || 0;
+    const isSatisfied = curFreq === targetFreq;
+    const isOverflow = curFreq > targetFreq;
+
+    let chipBg = 'background: #f8fafc; border-color: #e2e8f0; color: #64748b;';
+    let badge = `<span style="background: #e2e8f0; color: #475569; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">${curFreq}/${targetFreq}</span>`;
+
+    if (isSatisfied) {
+      chipBg = 'background: #f0fdf4; border-color: #86efac; color: #166534;';
+      badge = `<span style="background: #22c55e; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 800;">✓ ${curFreq}/${targetFreq}</span>`;
+    } else if (isOverflow) {
+      chipBg = 'background: #fef2f2; border-color: #fca5a5; color: #991b1b;';
+      badge = `<span style="background: #ef4444; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 800;">超额 ${curFreq}/${targetFreq}</span>`;
+    } else if (curFreq > 0) {
+      chipBg = 'background: #eff6ff; border-color: #93c5fd; color: #1e40af;';
+      badge = `<span style="background: #3b82f6; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">${curFreq}/${targetFreq}</span>`;
+    }
+
+    return `
+      <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 8px; border: 1px solid transparent; font-size: 12px; font-family: 'JetBrains Mono', monospace; font-weight: 600; ${chipBg}">
+        <span>"${word}"</span>
+        ${badge}
+      </div>
+    `;
+  }).join('');
+
+  // 2. 主串字符轨道 (Canvas Dominance 主角)
+  const chars = s.split('');
+  const charsHtml = chars.map((char, idx) => {
+    const inWindow = idx >= left && idx < right;
+    const isCurrentWordChunk = idx >= right - wordLen && idx < right;
+    const isMatchStart = matchedIndices.includes(idx);
+    const isLeftBoundary = idx === left;
+    const isRightBoundary = idx === right - 1;
+
+    let cellBg = '#f8fafc';
+    let cellBorder = '1px solid #e2e8f0';
+    let cellColor = '#475569';
+    let shadow = 'none';
+
+    if (isMatchStart) {
+      cellBg = '#ecfdf5';
+      cellBorder = '2px solid #10b981';
+      cellColor = '#065f46';
+      shadow = '0 2px 8px rgba(16, 185, 129, 0.15)';
+    } else if (isCurrentWordChunk) {
+      cellBg = '#eff6ff';
+      cellBorder = '2px solid #3b82f6';
+      cellColor = '#1d4ed8';
+      shadow = '0 2px 8px rgba(59, 130, 246, 0.15)';
+    } else if (inWindow) {
+      cellBg = '#f0f9ff';
+      cellBorder = '1px solid #7dd3fc';
+      cellColor = '#0369a1';
+    }
+
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0;">
+        <!-- 下标索引 -->
+        <span style="font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; font-weight: 600;">${idx}</span>
+
+        <!-- 字符卡片 -->
+        <div style="
+          width: 38px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          background: ${cellBg};
+          border: ${cellBorder};
+          box-shadow: ${shadow};
+          font-size: 18px;
+          font-weight: 800;
+          font-family: 'JetBrains Mono', monospace;
+          color: ${cellColor};
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        ">
+          ${char}
+        </div>
+
+        <!-- 边界与指示标记 -->
+        <div style="height: 16px; display: flex; align-items: center; justify-content: center;">
+          ${isLeftBoundary ? '<span style="font-size: 9px; background: #3b82f6; color: #ffffff; padding: 1px 4px; border-radius: 3px; font-weight: 800;">L</span>' : ''}
+          ${isRightBoundary && !isLeftBoundary ? '<span style="font-size: 9px; background: #6366f1; color: #ffffff; padding: 1px 4px; border-radius: 3px; font-weight: 800;">R</span>' : ''}
+          ${isMatchStart ? '<span style="font-size: 9px; background: #10b981; color: #ffffff; padding: 1px 4px; border-radius: 3px; font-weight: 800;">★</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前截取单词</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            ${currentWord ? `"${currentWord}"` : '未开始'}
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%; justify-content: center; padding: 12px 6px; box-sizing: border-box;">
+      <!-- 顶部控制上下文与词汇账本 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 0 4px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: #0f172a;">🎯 目标单词频次账本:</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            ${wordsStatusHtml}
           </div>
         </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">窗口有效单词数</div>
-          <div style="font-size: 14px; font-weight: bold; color: ${matchCount === wordsCount ? '#10b981' : '#f59e0b'};">
-            ${matchCount} / ${wordsCount}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前窗口区间</div>
-          <div style="font-size: 14px; font-weight: bold; color: #ec4899;">
-            [${left}, ${right}]
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">已命中起始下标</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            [${matchedIndices.join(', ')}]
-          </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 6px;">
+          <span>当前偏移组: <strong style="color: #2563eb;">#${offset}</strong></span>
+          <span>·</span>
+          <span>单词步长: <strong style="color: #0f172a;">${wordLen}</strong></span>
         </div>
       </div>
 
-      <!-- 字符串与当前窗口条带 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-align: center;">主串字符窗口覆盖：</div>
-        <div style="display: flex; gap: 4px; justify-content: center; align-items: flex-end; min-width: 450px;">
-          ${s.split('').map((char, idx) => {
-            const inWindow = idx >= left && idx < right;
-            const isMatchStart = matchedIndices.includes(idx);
-
-            let bg = 'rgba(51, 65, 85, 0.3)';
-            let border = '1px solid rgba(255, 255, 255, 0.1)';
-
-            if (isMatchStart) {
-              bg = 'rgba(16, 185, 129, 0.4)';
-              border = '2px solid #10b981';
-            } else if (inWindow) {
-              bg = 'rgba(56, 189, 248, 0.25)';
-              border = '1px solid #38bdf8';
-            }
-
-            return `
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                <div style="
-                  width: 26px;
-                  height: 36px;
-                  background: ${bg};
-                  border: ${border};
-                  border-radius: 4px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 14px;
-                  font-weight: bold;
-                  color: #f8fafc;
-                ">
-                  ${char}
-                </div>
-                <div style="font-size: 9px; color: #64748b;">
-                  ${idx}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
+      <!-- 字符轨道滚动视口 (纯粹主画布，占据主导地位) -->
+      <div style="
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        overflow-x: auto;
+        padding: 18px 12px;
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      ">
+        ${charsHtml}
       </div>
 
-      <!-- 核心原理卡片 -->
-      ${renderFormulaCard(
-        '步长定长分组滑动窗口降维精髓',
-        '所有单词长度相等时，仅需按 0..wordLen-1 的偏移量划分出独立的跳跃滑动窗口，每个窗口内以 wordLen 为步长跳进，将复杂度严格约束在 O(N) 线性水平',
-        step.decision,
-        step.statusBadge
-      )}
+      <!-- 底部滑动窗口跨度图示 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 8px; font-size: 11px; color: #64748b;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #ecfdf5; border: 1.5px solid #10b981;"></span>
+            已命中完全串联
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #eff6ff; border: 1.5px solid #3b82f6;"></span>
+            当前截取单词
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #f0f9ff; border: 1px solid #7dd3fc;"></span>
+            当前滑动窗口
+          </span>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #94a3b8;">
+          当前截取: ${currentWord ? `"${currentWord}"` : '—'}
+        </span>
+      </div>
     </div>
   `;
 }
@@ -408,6 +500,12 @@ export const substringConcatenationVisualizer = registerDeclarativeAlgorithm<Sub
       </ul>
     </div>
   `,
+  metrics: [
+    { id: 'currentWord', label: '当前截取单词', color: '#0284c7' },
+    { id: 'matchCount', label: '有效单词数', color: '#16a34a' },
+    { id: 'windowRange', label: '当前窗口区间', color: '#d97706' },
+    { id: 'matchedIndices', label: '已命中起始下标', color: '#9333ea' },
+  ],
   codeLanguages: SUBSTRING_CONCATENATION_CODES,
   inputs: [
     {
@@ -433,3 +531,4 @@ export const substringConcatenationVisualizer = registerDeclarativeAlgorithm<Sub
     renderSubstringCanvas(container, step);
   },
 });
+

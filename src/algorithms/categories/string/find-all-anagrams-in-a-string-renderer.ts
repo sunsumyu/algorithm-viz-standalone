@@ -12,7 +12,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 
 export interface AnagramsStep extends StepBase {
   s: string;
@@ -24,7 +24,7 @@ export interface AnagramsStep extends StepBase {
   phase: 'init' | 'slide' | 'match-collected' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
 }
 
 export const FIND_ALL_ANAGRAMS_CODES = {
@@ -83,6 +83,14 @@ public:
         return ans`,
 };
 
+export const FIND_ALL_ANAGRAMS_CODE_LINES = {
+  shortLength: { java: 4, cpp: 5, python: 3 },
+  init: { java: 7, cpp: 7, python: 4 },
+  slide: { java: 12, cpp: 10, python: 9 },
+  matchCollected: { java: 16, cpp: 12, python: 15 },
+  finish: { java: 19, cpp: 14, python: 16 },
+};
+
 export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 'abc'): AnagramsStep[] {
   const steps: AnagramsStep[] = [];
   const ans: number[] = [];
@@ -98,7 +106,7 @@ export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 
       phase: 'finish',
       message: `s 长度 (${s.length}) 小于 p 长度 (${p.length})，不可能存在异位词，直接返回空列表。`,
       log: `长度不足直接返回空`,
-      codeLine: 4,
+      codeLine: FIND_ALL_ANAGRAMS_CODE_LINES.shortLength,
     });
     return steps;
   }
@@ -120,7 +128,7 @@ export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 
     phase: 'init',
     message: `算法启动：在主串 "${s}" 中寻找模式串 "${p}" 的所有异位词。设定定长滑动窗口大小为 ${p.length}。`,
     log: `初始化定长滑动窗口，目标="${p}"`,
-    codeLine: 7,
+    codeLine: FIND_ALL_ANAGRAMS_CODE_LINES.init,
   });
 
   const equalsCount = () => {
@@ -152,7 +160,7 @@ export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 
           phase: 'match-collected',
           message: `🎯 命中异位词！窗口 [${left} .. ${right}] ("${s.slice(left, right + 1)}") 字符频次与 "${p}" 完全匹配！收集起始索引 ${left}。`,
           log: `命中异位词起始点 index=${left}`,
-          codeLine: 16,
+          codeLine: FIND_ALL_ANAGRAMS_CODE_LINES.matchCollected,
         });
       } else {
         steps.push({
@@ -165,7 +173,7 @@ export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 
           phase: 'slide',
           message: `滑窗比对：当前窗口 [${left} .. ${right}] ("${s.slice(left, right + 1)}") 字符频次与 "${p}" 不一致。`,
           log: `滑窗 [${left}..${right}] 不匹配`,
-          codeLine: 14,
+          codeLine: FIND_ALL_ANAGRAMS_CODE_LINES.slide,
         });
       }
     }
@@ -182,7 +190,7 @@ export function buildFindAllAnagramsSteps(s: string = 'cbaebabacd', p: string = 
     phase: 'finish',
     message: `全字符串扫描完毕！"${s}" 中所有 "${p}" 的异位词起始索引为：[${ans.join(', ')}]。`,
     log: `算法收敛，收集完成: [${ans.join(', ')}]`,
-    codeLine: 18,
+    codeLine: FIND_ALL_ANAGRAMS_CODE_LINES.finish,
   });
 
   return steps;

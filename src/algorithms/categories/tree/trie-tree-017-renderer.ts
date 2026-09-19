@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface TrieNodeSnapshot {
@@ -25,6 +25,7 @@ export interface Trie017Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -162,13 +163,29 @@ export class TrieTree {
     }
     prefixNumber(pre: string): number {
         let cur = this.root;
-        for (const c of word) {
+        for (const c of pre) {
             if (!cur.nexts[c]) return 0;
             cur = cur.nexts[c];
         }
         return cur.pass;
     }
-}`
+}
+`
+};
+
+export const TRIE_017_CODE_LINES: Record<string, HighlightTarget> = {
+  init: { java: 1, cpp: 1, python: 7, typescript: 6 },
+  insertStart: { java: 10, cpp: 9, python: 11, typescript: 8 },
+  insertAdvance: { java: 15, cpp: 14, python: 17, typescript: 14 },
+  insertDone: { java: 17, cpp: 16, python: 18, typescript: 16 },
+  searchStart: { java: 21, cpp: 18, python: 20, typescript: 18 },
+  searchMiss: { java: 24, cpp: 22, python: 23, typescript: 21 },
+  searchAdvance: { java: 25, cpp: 23, python: 24, typescript: 22 },
+  searchDone: { java: 27, cpp: 25, python: 25, typescript: 24 },
+  prefixStart: { java: 30, cpp: 27, python: 27, typescript: 26 },
+  prefixMiss: { java: 34, cpp: 31, python: 30, typescript: 29 },
+  prefixAdvance: { java: 35, cpp: 32, python: 31, typescript: 30 },
+  prefixDone: { java: 37, cpp: 34, python: 32, typescript: 32 },
 };
 
 interface InternalNode {
@@ -215,7 +232,7 @@ export function buildTrie017Steps(
     decision: `主函数入口：初始化前缀树 Trie，准备插入词库 [${words.join(', ')}]`,
     message: '核心原理：公用公共前缀节点，节点 pass 记录经过该节点的单词数，end 记录以此字符结尾的单词数',
     log: 'init TrieTree',
-    codeLine: 1,
+    codeLine: TRIE_017_CODE_LINES.init,
     statusBadge: { text: '前缀树初始化', type: 'info' },
   });
 
@@ -232,7 +249,7 @@ export function buildTrie017Steps(
       decision: `开始插入单词 "${word}"：根节点 pass 自增为 ${cur.pass}`,
       message: '准备沿字符边逐位下潜推进',
       log: `insert("${word}") pass=${cur.pass}`,
-      codeLine: 9,
+      codeLine: TRIE_017_CODE_LINES.insertStart,
       statusBadge: { text: `插入 "${word}"`, type: 'warning' },
     });
 
@@ -256,7 +273,7 @@ export function buildTrie017Steps(
         decision: `字符 '${ch}' 匹配推进至节点 #${cur.id}：当前节点 pass=${cur.pass}`,
         message: i === word.length - 1 ? '已抵达单词末尾字符' : '下潜下一字符分支',
         log: `node #${cur.id} ('${ch}'): pass=${cur.pass}`,
-        codeLine: 14,
+        codeLine: TRIE_017_CODE_LINES.insertAdvance,
         statusBadge: { text: `字符 '${ch}' pass++`, type: 'info' },
       });
     }
@@ -271,7 +288,7 @@ export function buildTrie017Steps(
       decision: `🎉 单词 "${word}" 插入完毕！末尾节点 #${cur.id} 的 end 计数递增为 ${cur.end}`,
       message: `该单词共计出现 ${cur.end} 次`,
       log: `word "${word}" end=${cur.end}`,
-      codeLine: 16,
+      codeLine: TRIE_017_CODE_LINES.insertDone,
       statusBadge: { text: `单词插入完成`, type: 'success' },
     });
   }
@@ -289,7 +306,7 @@ export function buildTrie017Steps(
     decision: `开始执行查询：${isPrefixQuery ? '统计以 "' + queryWord + '" 为前缀的词数' : '查找完整单词 "' + queryWord + '" 的频次'}`,
     message: '从根节点开始顺次校验字符路径',
     log: `query("${queryWord}", type=${opType})`,
-    codeLine: isPrefixQuery ? 27 : 19,
+    codeLine: isPrefixQuery ? TRIE_017_CODE_LINES.prefixStart : TRIE_017_CODE_LINES.searchStart,
     statusBadge: { text: `开始查询`, type: 'info' },
   });
 
@@ -309,7 +326,7 @@ export function buildTrie017Steps(
         decision: `❌ 字符分支 '${ch}' 缺失！节点 #${cur.id} 下无此分支，查询目标不存在`,
         message: '路径断裂，提前返回 0',
         log: `path missing at char '${ch}'`,
-        codeLine: isPrefixQuery ? 30 : 22,
+        codeLine: isPrefixQuery ? TRIE_017_CODE_LINES.prefixMiss : TRIE_017_CODE_LINES.searchMiss,
         statusBadge: { text: '路径断裂 (0)', type: 'danger' },
       });
       break;
@@ -324,7 +341,7 @@ export function buildTrie017Steps(
       decision: `成功匹配字符 '${ch}' 走向节点 #${cur.id} (经过数 pass=${cur.pass}, 结尾数 end=${cur.end})`,
       message: '继续向深层节点扫描',
       log: `matched '${ch}' node #${cur.id}`,
-      codeLine: isPrefixQuery ? 31 : 23,
+      codeLine: isPrefixQuery ? TRIE_017_CODE_LINES.prefixAdvance : TRIE_017_CODE_LINES.searchAdvance,
       statusBadge: { text: `匹配 '${ch}'`, type: 'info' },
     });
   }
@@ -341,7 +358,7 @@ export function buildTrie017Steps(
       decision: `🎉 查询成功！${isPrefixQuery ? '前缀 "' + queryWord + '" 匹配词数 pass = ' + ans : '完整单词 "' + queryWord + '" 出现次数 end = ' + ans}`,
       message: `查询结果为: ${ans}`,
       log: `return ans=${ans}`,
-      codeLine: isPrefixQuery ? 33 : 25,
+      codeLine: isPrefixQuery ? TRIE_017_CODE_LINES.prefixDone : TRIE_017_CODE_LINES.searchDone,
       statusBadge: { text: `结果: ${ans}`, type: 'success' },
     });
   }

@@ -199,7 +199,6 @@ export const ProfitableSchemesSpec: AlgorithmSpec = {
     const MOD = 1000000007;
 
     const dp: number[][] = Array.from({ length: n + 1 }, () => Array(minProfit + 1).fill(0));
-    for (let j = 0; j <= n; j++) dp[j][0] = 1;
 
     const toDp2d = (grid: number[][], activeJ?: number, activeK?: number) =>
       grid.map((rArr, j) =>
@@ -212,12 +211,27 @@ export const ProfitableSchemesSpec: AlgorithmSpec = {
     steps.push(
       makeTraceStep({
         dp2d: toDp2d(dp),
-        message: `💼 盈利计划初始化：员工总数 n=${n}，目标最低利润 minProfit=${minProfit}，工作列表项数=${group.length}。任何人数达到 0 利润的基准方案数均为 1。`,
+        message: `💼 盈利计划初始化：员工总数 n=${n}，目标最低利润 minProfit=${minProfit}，工作列表项数=${group.length}。分配状态表 dp[0..${n}][0..${minProfit}]。`,
         log: `初始化 01 三维压缩背包：n=${n}, minProfit=${minProfit}, tasks=${group.length}`,
         vars: [
           { name: '员工总数 n', value: String(n) },
           { name: '目标利润', value: String(minProfit) },
           { name: '工作项数', value: String(group.length) },
+        ],
+        metrics: { totalSchemes: 0 },
+      })
+    );
+
+    // 基础条件：任何人数达到 0 利润的方案数均为 1
+    for (let j = 0; j <= n; j++) dp[j][0] = 1;
+
+    steps.push(
+      makeTraceStep({
+        dp2d: toDp2d(dp),
+        message: `📋 基底写入：任何人数达到 0 利润的方案数均为 1，置 dp[0..${n}][0] = 1。`,
+        log: `基底写入：dp[0..${n}][0] = 1`,
+        vars: [
+          { name: '基准条件', value: 'dp[..][0] = 1' },
         ],
         metrics: { totalSchemes: 1 },
       })

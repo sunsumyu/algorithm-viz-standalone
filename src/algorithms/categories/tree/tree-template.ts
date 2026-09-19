@@ -21,44 +21,50 @@ export function buildTreeTemplate(opts: TreeTemplateOptions): string {
   const p = opts.prefix;
   const stats = opts.extraStats ?? [];
   return `<style>
-  .${p}v { padding:1.5rem; color:#cdd6f4; max-width:1400px; margin:0 auto; font-family:system-ui,sans-serif }
-  .${p}root { background:radial-gradient(ellipse at 8% 6%,rgba(${opts.accentA},.3),transparent 55%),radial-gradient(ellipse at 92% 94%,rgba(${opts.accentB},.3),transparent 55%),linear-gradient(135deg,rgb(20,18,38),rgb(25,23,50),rgb(35,32,60)); min-height:100%; padding:1.5rem; border-radius:20px }
-  .${p}h { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border-radius:16px; padding:1.25rem 1.5rem; margin-bottom:1rem; box-shadow:0 8px 32px rgba(0,0,0,.2); display:flex; justify-content:space-between; align-items:center }
-  .${p}title { font-size:22px; font-weight:800; margin:0; background:linear-gradient(135deg,${opts.accentA},${opts.accentB}); -webkit-background-clip:text; -webkit-text-fill-color:transparent }
-  .${p}sub { font-size:.78rem; color:#6c7086 }
-  .${p}tip { background:rgba(${opts.accentA},.1); border:1px solid rgba(${opts.accentA},.25); border-radius:10px; padding:.6rem .9rem; font-size:.78rem; color:${opts.accentA}; max-width:280px }
-  .${p}main { display:grid; grid-template-columns:1fr 320px; gap:1rem }
-  .${p}panel { background:rgba(20,18,38,.55); backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.08); border-radius:16px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.35) }
-  .${p}ph { background:rgba(25,24,42,.6); padding:.6rem .9rem; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:${opts.accentA}; border-bottom:1px solid rgba(255,255,255,.05) }
-  .${p}tree { padding:1rem; min-height:260px; display:flex; align-items:center; justify-content:center }
-  .${p}stats { display:grid; grid-template-columns:repeat(4,1fr); gap:.5rem; padding:.8rem }
-  .${p}stats div { text-align:center } .${p}sv { font-size:1.2rem; font-weight:800; color:${opts.accentA} } .${p}sl { font-size:.65rem; color:#6c7086; text-transform:uppercase; letter-spacing:.05em }
-  .${p}ctrls { display:flex; gap:.3rem; padding:.8rem; flex-wrap:wrap }
-  .${p}btn { background:rgba(49,50,68,.6); border:1px solid rgba(255,255,255,.1); color:#cdd6f4; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:8px; flex-shrink:0 }
-  .${p}btn:hover:not(:disabled) { background:rgba(49,50,68,.8) } .${p}btn:disabled { opacity:.4; cursor:not-allowed }
-  .${p}play { flex:1; background:linear-gradient(135deg,${opts.accentA},${opts.accentB}); color:#111; font-weight:600; min-width:70px }
-  .${p}msg { text-align:center; padding:.65rem; font-size:.88rem; color:#9399b2; border-top:1px solid rgba(255,255,255,.05) }
-  .${p}msg.success { color:${opts.accentB}; font-weight:600 } .${p}msg.error { color:#f38ba8; font-weight:600 }
-  .${p}log { padding:.6rem .8rem; max-height:150px; overflow-y:auto; font-family:ui-monospace,monospace; font-size:.75rem; line-height:1.6 }
-  .${p}log div { color:#6c7086 } .${p}log div.active { color:${opts.accentA}; font-weight:600 }
-  .${p}ex { display:flex; gap:.4rem; padding:.8rem; flex-wrap:wrap }
-  .${p}ex-btn { background:rgba(49,50,68,.5); border:1px solid rgba(255,255,255,.1); border-radius:999px; padding:.3rem .7rem; font-size:.72rem; color:#cdd6f4; cursor:pointer; transition:all .2s }
-  .${p}ex-btn:hover { background:rgba(49,50,68,.8); border-color:${opts.accentA} }
-  .${p}inp { background:rgba(49,50,68,.6); border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:.4rem .6rem; color:#cdd6f4; font-family:ui-monospace,monospace; font-size:.85rem; width:80px; outline:none }
-  .${p}inp:focus { border-color:${opts.accentA} }
+  .${p}v { padding: 1rem; color: #334155; max-width: 1400px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .${p}root { background: #f8fafc; min-height: 100%; padding: 1rem; border-radius: 12px; border: 1px solid #e2e8f0; }
+  .${p}h { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 18px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center; }
+  .${p}title { font-size: 20px; font-weight: 800; margin: 0; color: #0f172a; }
+  .${p}sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .${p}tip { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #1e40af; font-weight: 500; }
+  .${p}main { display: grid; grid-template-columns: 1fr 340px; gap: 1rem; }
+  .${p}panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+  .${p}ph { background: #f8fafc; padding: 8px 14px; font-size: 12px; font-weight: 700; color: #334155; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px; }
+  .${p}tree { padding: 1rem; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #ffffff; }
+  .${p}stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; padding: 10px 14px; background: #ffffff; }
+  .${p}stats > div { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; text-align: center; }
+  .${p}sv { font-size: 18px; font-weight: 800; color: #0284c7; font-family: 'JetBrains Mono', monospace; }
+  .${p}sl { font-size: 11px; font-weight: 700; color: #64748b; margin-top: 2px; }
+  .${p}ctrls { display: flex; gap: 6px; padding: 10px 14px; flex-wrap: wrap; background: #ffffff; align-items: center; }
+  .${p}btn { background: #ffffff; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .${p}btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+  .${p}btn:disabled { opacity: .4; cursor: not-allowed; }
+  .${p}play { flex: 1; background: #0284c7; color: #ffffff; font-weight: 700; border: 1px solid #0284c7; min-width: 70px; }
+  .${p}play:hover { background: #0369a1; }
+  .${p}msg { text-align: center; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #475569; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  .${p}msg.success { color: #059669; font-weight: 700; }
+  .${p}msg.error { color: #dc2626; font-weight: 700; }
+  .${p}log { padding: 8px 12px; max-height: 140px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.6; background: #ffffff; color: #475569; }
+  .${p}log div { color: #64748b; }
+  .${p}log div.active { color: #0284c7; font-weight: 700; background: #eff6ff; border-radius: 4px; padding: 1px 4px; }
+  .${p}ex { display: flex; gap: 6px; padding: 10px 14px; flex-wrap: wrap; background: #ffffff; }
+  .${p}ex-btn { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600; color: #334155; cursor: pointer; transition: all .15s; }
+  .${p}ex-btn:hover { background: #e2e8f0; border-color: #94a3b8; color: #0f172a; }
+  .${p}inp { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; color: #0f172a; font-family: 'JetBrains Mono', monospace; font-size: 12px; width: 100px; outline: none; }
+  .${p}inp:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15); }
   @media (max-width:1100px){.${p}main{grid-template-columns:1fr}}
 </style>
 <div style="position:relative;min-height:calc(100vh - 3rem)"><div class="${p}root">
-<div class="${p}h"><div style="display:flex;align-items:center;gap:1rem"><button id="btn-back" style="background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;width:36px;height:36px;color:#cdd6f4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><div><h1 class="${p}title">${opts.icon} ${opts.title}</h1><div class="${p}sub">${opts.subtitle}</div></div></div><div class="${p}tip">${opts.tip}</div></div>
+<div class="${p}h"><div><h1 class="${p}title">${opts.icon} ${opts.title}</h1><div class="${p}sub">${opts.subtitle}</div></div><div class="${p}tip">${opts.tip}</div></div>
 <div class="${p}main"><div style="display:flex;flex-direction:column;gap:.75rem">
-<div class="${p}panel"><div class="${p}ph">🌳 二叉树</div><div id="${p}tree" class="${p}tree"></div><div id="${p}msg" class="${p}msg">点击演示查看过程</div></div>
-<div class="${p}panel"><div class="${p}ph">📊 状态</div><div class="${p}stats"><div><div class="${p}sv" id="${p}cur">-</div><div class="${p}sl">当前</div></div><div><div class="${p}sv" id="${p}depth">0</div><div class="${p}sl">深度</div></div>${stats.map(s => `<div><div class="${p}sv" id="${p}${s.id}">-</div><div class="${p}sl">${s.label}</div></div>`).join('')}<div><div class="${p}sv" id="${p}result">?</div><div class="${p}sl">结果</div></div></div></div>
-<div class="${p}panel"><div class="${p}ph">📋 日志</div><div id="${p}log" class="${p}log"></div></div>
+<div class="${p}panel"><div class="${p}ph">🌳 二叉树结构沙盘</div><div id="${p}tree" class="${p}tree"></div><div id="${p}msg" class="${p}msg">点击播放或单步步进开始观察树结构变化</div></div>
+<div class="${p}panel"><div class="${p}ph">📊 状态指标监视器</div><div class="${p}stats"><div><div class="${p}sv" id="${p}cur">-</div><div class="${p}sl">当前节点</div></div><div><div class="${p}sv" id="${p}depth">0</div><div class="${p}sl">递归深度</div></div>${stats.map(s => `<div><div class="${p}sv" id="${p}${s.id}">-</div><div class="${p}sl">${s.label}</div></div>`).join('')}<div><div class="${p}sv" id="${p}result">?</div><div class="${p}sl">计算结果</div></div></div></div>
+<div class="${p}panel"><div class="${p}ph">📋 执行日志</div><div id="${p}log" class="${p}log"></div></div>
 </div><div style="display:flex;flex-direction:column">
-<div class="${p}panel" style="flex:1"><div class="${p}ph">代码</div><div data-code-panel style="flex:1;min-height:260px;overflow:hidden"></div></div>
-<div class="${p}panel" style="margin-top:.75rem"><div class="${p}ph">⚙️ 控制</div><div class="${p}ctrls"><button id="step-reset" class="${p}btn" title="重置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button id="step-prev" class="${p}btn" title="上一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button><button id="step-play" class="${p}btn ${p}play">播放</button><button id="step-next" class="${p}btn" title="下一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button></div>
-<div style="padding:0 .8rem .6rem"><span style="font-size:.78rem;color:#6c7086" id="step-counter">步骤: 0 / 0</span><input type="range" id="step-speed" min="200" max="2000" value="900" step="100" style="width:100%;margin-top:.4rem;accent-color:${opts.accentA}"><div style="text-align:center;font-size:.72rem;color:#585b70">速度: <span id="step-speed-label">0.9s</span></div></div></div>
-<div class="${p}panel" style="margin-top:.75rem"><div class="${p}ph">📌 示例</div><div class="${p}ex">${opts.exampleButtons ?? ''}</div></div>
+<div class="${p}panel" style="flex:1"><div class="${p}ph">💻 代码调试</div><div data-code-panel style="flex:1;min-height:260px;overflow:hidden"></div></div>
+<div class="${p}panel" style="margin-top:.75rem"><div class="${p}ph">⚙️ 步进控制</div><div class="${p}ctrls"><button id="step-reset" class="${p}btn" title="重置"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button><button id="step-prev" class="${p}btn" title="上一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button><button id="step-play" class="${p}btn ${p}play">播放</button><button id="step-next" class="${p}btn" title="下一步"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button></div>
+<div style="padding:0 .8rem .6rem"><span style="font-size:.78rem;color:#64748b" id="step-counter">步骤: 0 / 0</span><input type="range" id="step-speed" min="200" max="2000" value="900" step="100" style="width:100%;margin-top:.4rem;accent-color:#0284c7"><div style="text-align:center;font-size:.72rem;color:#64748b">速度: <span id="step-speed-label">0.9s</span></div></div></div>
+<div class="${p}panel" style="margin-top:.75rem"><div class="${p}ph">📌 典型用例</div><div class="${p}ex">${opts.exampleButtons ?? ''}</div></div>
 ${opts.extraPanels ?? ''}
 </div></div></div></div>`;
 }

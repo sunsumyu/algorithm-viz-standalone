@@ -42,6 +42,20 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       expect(last.curAns).toBe(9);
       verify1BasedCodeLines(steps, COUNTING_DP_084_CODES);
     });
+
+    it('支持动态规模：N=1 为 0，N=2 为 1，N=5 为 44', () => {
+      const steps1 = buildCounting084Steps({ n: 1 });
+      expect(steps1[steps1.length - 1].curAns).toBe(0);
+      verify1BasedCodeLines(steps1, COUNTING_DP_084_CODES);
+
+      const steps2 = buildCounting084Steps({ n: 2 });
+      expect(steps2[steps2.length - 1].curAns).toBe(1);
+      verify1BasedCodeLines(steps2, COUNTING_DP_084_CODES);
+
+      const steps5 = buildCounting084Steps({ n: 5 });
+      expect(steps5[steps5.length - 1].curAns).toBe(44);
+      verify1BasedCodeLines(steps5, COUNTING_DP_084_CODES);
+    });
   });
 
   // 2. Class 085: 博弈概率 DP
@@ -50,6 +64,13 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       const steps = buildGameDp085Steps();
       const last = steps[steps.length - 1];
       expect(last.bestDiff).toBe(-2);
+      verify1BasedCodeLines(steps, GAME_PROBABILITY_085_CODES);
+    });
+
+    it('支持动态牌堆推导：[1, 5, 233, 7] 先手必胜 (净胜分 222)', () => {
+      const steps = buildGameDp085Steps([1, 5, 233, 7]);
+      const last = steps[steps.length - 1];
+      expect(last.bestDiff).toBe(222);
       verify1BasedCodeLines(steps, GAME_PROBABILITY_085_CODES);
     });
   });
@@ -62,6 +83,14 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       expect(last.dp).toEqual([1, 3, 5, 15]);
       verify1BasedCodeLines(steps, SOS_DP_086_CODES);
     });
+
+    it('支持动态 N=3 超立方体逐维前缀和 (全集 111 汇聚 8 个子集和)', () => {
+      const a3 = [1, 1, 1, 1, 1, 1, 1, 1];
+      const steps = buildSosDp086Steps({ a: a3, n: 3 });
+      const last = steps[steps.length - 1];
+      expect(last.dp[7]).toBe(8);
+      verify1BasedCodeLines(steps, SOS_DP_086_CODES);
+    });
   });
 
   // 4. Class 087: 环形区间 DP 与破环成链
@@ -70,6 +99,13 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       const steps = buildCircularInterval087Steps();
       const last = steps[steps.length - 1];
       expect(last.maxEnergy).toBe(710);
+      verify1BasedCodeLines(steps, CIRCULAR_INTERVAL_087_CODES);
+    });
+
+    it('支持动态项链珠子：[2, 3, 5, 2] 释放最大能量', () => {
+      const steps = buildCircularInterval087Steps([2, 3, 5, 2]);
+      const last = steps[steps.length - 1];
+      expect(last.maxEnergy).toBeGreaterThan(0);
       verify1BasedCodeLines(steps, CIRCULAR_INTERVAL_087_CODES);
     });
   });
@@ -81,6 +117,34 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       const last = steps[steps.length - 1];
       expect(Math.max(...last.dpRow)).toBe(5);
       verify1BasedCodeLines(steps, TREE_KNAPSACK_088_CODES);
+    });
+
+    it('支持动态课程树与分支背包合并：分选 1 门和选 2 门', () => {
+      const customTree = {
+        nodes: [
+          { id: 0, score: 0 },
+          { id: 1, score: 2 },
+          { id: 2, score: 5 },
+          { id: 3, score: 4 },
+        ],
+        edges: [
+          [0, 1],
+          [1, 2],
+          [0, 3],
+        ] as [number, number][],
+        m: 2,
+      };
+      // 选 2 门：选 1+2 收益 2+5=7，大于选 1+3 (6)
+      const steps2 = buildTreeKnapsack088Steps(customTree);
+      const last2 = steps2[steps2.length - 1];
+      expect(Math.max(...last2.dpRow)).toBe(7);
+      verify1BasedCodeLines(steps2, TREE_KNAPSACK_088_CODES);
+
+      // 选 1 门：选 3 收益 4，大于选 1 (2)
+      const steps1 = buildTreeKnapsack088Steps({ ...customTree, m: 1 });
+      const last1 = steps1[steps1.length - 1];
+      expect(Math.max(...last1.dpRow)).toBe(4);
+      verify1BasedCodeLines(steps1, TREE_KNAPSACK_088_CODES);
     });
   });
 });

@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
 import { SegTreeNode } from './segment-tree-renderer';
 import { renderSegmentTreeVisual } from './tree-108-116-shared';
@@ -18,6 +18,7 @@ export interface ValueSegTreeStep extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -97,6 +98,13 @@ public:
 }`
 };
 
+export const VALUE_SEG_TREE_CODE_LINES: Record<string, HighlightTarget> = {
+  init: { java: 1, cpp: 1, python: 1, typescript: 1 },
+  insert: { java: 6, cpp: 5, python: 6, typescript: 4 },
+  queryBranch: { java: 17, cpp: 15, python: 15, typescript: 13 },
+  queryHit: { java: 14, cpp: 12, python: 14, typescript: 11 },
+};
+
 export function buildValueSegTreeSteps(
   nums: number[],
   queryK: number,
@@ -128,7 +136,7 @@ export function buildValueSegTreeSteps(
     decision: `主函数入口：初始化权值线段树，值域范围 [1, ${maxDomain}]。准备依次插入元素 [${nums.join(', ')}]`,
     message: '权值线段树叶子节点表示数字的出现频次，内部节点记录权值区间的元素总计数',
     log: 'init ValueSegmentTree',
-    codeLine: 1,
+    codeLine: VALUE_SEG_TREE_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' },
   });
 
@@ -146,7 +154,7 @@ export function buildValueSegTreeSteps(
         decision: `插入数字 ${num}：节点 u=${u} 管理区间 [${l}, ${r}]，当前区间频次累加为 ${tree[u]}`,
         message: l === r ? `已到达叶子节点 [${l}, ${l}]，频次更新完毕` : `区间尚未收敛，继续向子树分流下潜`,
         log: `insert(${u}, [${l},${r}], ${num})`,
-        codeLine: 7,
+        codeLine: VALUE_SEG_TREE_CODE_LINES.insert,
         statusBadge: { text: `插入 ${num}`, type: 'warning' },
       });
       if (l === r) break;
@@ -177,7 +185,7 @@ export function buildValueSegTreeSteps(
         ? `目标 k=${k} <= 左子树频次 ${leftCnt}，答案必定落在左半区间 [${l}, ${mid}]！`
         : `目标 k=${k} > 左子树频次 ${leftCnt}，答案必定在右半区间，折抵左子树后查询右子树的第 ${k - leftCnt} 小！`,
       log: `queryKth(u=${u}, [${l},${r}], k=${k})`,
-      codeLine: 18,
+      codeLine: VALUE_SEG_TREE_CODE_LINES.queryBranch,
       statusBadge: { text: `下潜寻找第 ${k} 小`, type: 'info' },
     });
 
@@ -201,7 +209,7 @@ export function buildValueSegTreeSteps(
     decision: `🎉 成功收敛至叶子节点 [${l}, ${l}]！全局第 ${queryK} 小的元素为: ${l}`,
     message: `权值二分搜索命中目标，时间复杂度严格 O(log(ValueRange))`,
     log: `return ${l}`,
-    codeLine: 24,
+    codeLine: VALUE_SEG_TREE_CODE_LINES.queryHit,
     statusBadge: { text: `第 ${queryK} 小 = ${l}`, type: 'success' },
   });
 

@@ -2,10 +2,11 @@
  * Hard 22: 缺失的第一个正数 (First Missing Positive)
  * LeetCode 41 (Hard) / 大厂压轴原地哈希 (In-place Hash) 奠基母题
  * 核心原语：鸽巢原理 + 原地置换，将数字 x 归位至下标 x - 1，O(N) 时间严格 O(1) 空间
+ * 遵循顶层 4-Card 黄金规约，纯净物理沙盘与声明式指标驱动
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { HighlightTarget, StepBase } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface MissingPositiveStep extends StepBase {
@@ -18,8 +19,10 @@ export interface MissingPositiveStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics: Record<string, string | number>;
+  ans?: string;
 }
 
 export const MISSING_POSITIVE_CODES = {
@@ -90,19 +93,21 @@ public:
 }`
 };
 
+export const FIRST_MISSING_POSITIVE_CODE_LINES: Record<string, Record<string, number>> = {
+  entry: { java: 3, cpp: 4, python: 3, typescript: 2 },
+  loop1: { java: 5, cpp: 5, python: 4, typescript: 3 },
+  whileSwap: { java: 6, cpp: 6, python: 5, typescript: 4 },
+  loop2: { java: 12, cpp: 10, python: 9, typescript: 11 },
+  foundMismatch: { java: 14, cpp: 11, python: 11, typescript: 12 },
+  returnAllFit: { java: 17, cpp: 13, python: 12, typescript: 14 },
+};
+
 export function generateMissingPositiveSteps(inputNums: number[] = [3, 4, -1, 1]): MissingPositiveStep[] {
   const steps: MissingPositiveStep[] = [];
   const nums = [...inputNums];
   const n = nums.length;
 
-  const lines = {
-    entry: 3,
-    loop1: 5,
-    whileSwap: 6,
-    loop2: 12,
-    foundMismatch: 14,
-    returnAllFit: 17,
-  };
+  const lines = FIRST_MISSING_POSITIVE_CODE_LINES;
 
   const getStatus = () => nums.map((v, i) => v === i + 1);
 
@@ -116,27 +121,58 @@ export function generateMissingPositiveSteps(inputNums: number[] = [3, 4, -1, 1]
     message: '鸽巢原理：若 1~N 均出现，则缺失 N+1；否则必在 [1, N] 内存在空缺槽位',
     log: `Init firstMissingPositive with nums=[${nums.join(', ')}]`,
     codeLine: lines.entry,
-    statusBadge: { text: '算法启动', type: 'info' },
+    metrics: {
+      'min-missing': '置换扫描中...',
+      'cur-index': `下标 [ 0 ] (预期 1)`,
+      'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+      'array-scale': `N = ${n}`,
+    },
   });
 
-  // 第一轮：原地置换归位
+  // 第一阶段：原地置换归位
   for (let i = 0; i < n; i++) {
     steps.push({
       nums: [...nums],
       currentIndex: i,
       inPlaceStatus: getStatus(),
       missingResult: null,
-      decision: `扫描槽位 [${i}] ➔ 当前数值 nums[${i}] = ${nums[i]}`,
-      message: `判断是否属于合法正数范围 [1, ${n}] 且尚未归位`,
-      log: `Scan i=${i}, val=${nums[i]}`,
+      decision: `考查槽位 i = ${i}，当前数值为 ${nums[i]} (目标归位槽位下标应为 ${nums[i] - 1})`,
+      message: `进入外层循环：检查 nums[${i}] 是否满足 1 <= x <= ${n} 且尚未归位`,
+      log: `Outer loop check i=${i}, val=${nums[i]}`,
       codeLine: lines.loop1,
-      statusBadge: { text: `扫描 #${i}`, type: 'info' },
+      metrics: {
+        'min-missing': '置换扫描中...',
+        'cur-index': `下标 [ ${i} ] (值 ${nums[i]})`,
+        'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+        'array-scale': `N = ${n}`,
+      },
     });
 
     while (nums[i] > 0 && nums[i] <= n && nums[nums[i] - 1] !== nums[i]) {
       const targetIdx = nums[i] - 1;
-      const val = nums[i];
+      const valI = nums[i];
+      const valTarget = nums[targetIdx];
 
+      steps.push({
+        nums: [...nums],
+        currentIndex: i,
+        swappedPair: [i, targetIdx],
+        inPlaceStatus: getStatus(),
+        missingResult: null,
+        decision: `⚡ 满足置换条件：将 nums[${i}]=${valI} 交换至正确槽位下标 ${targetIdx} (当前槽值 ${valTarget})`,
+        message: `置换中：把 ${valI} 放置到 nums[${targetIdx}]，将原占据该位置的 ${valTarget} 换回当前槽位重新裁决`,
+        log: `Swap nums[${i}]=${valI} <-> nums[${targetIdx}]=${valTarget}`,
+        codeLine: lines.whileSwap,
+        statusBadge: { text: `交换 ${valI} ↔ ${valTarget}`, type: 'warning' },
+        metrics: {
+          'min-missing': '置换扫描中...',
+          'cur-index': `置换 ${i} ↔ ${targetIdx}`,
+          'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+          'array-scale': `N = ${n}`,
+        },
+      });
+
+      // 实际交换
       const temp = nums[i];
       nums[i] = nums[targetIdx];
       nums[targetIdx] = temp;
@@ -147,121 +183,183 @@ export function generateMissingPositiveSteps(inputNums: number[] = [3, 4, -1, 1]
         swappedPair: [i, targetIdx],
         inPlaceStatus: getStatus(),
         missingResult: null,
-        decision: `原地置换：将数值 ${val} 与槽位 [${targetIdx}] 的元素进行交换`,
-        message: `使数值 ${val} 成功归位至其理想槽位下标 ${targetIdx} (即 nums[${targetIdx}] = ${val})`,
-        log: `Swap nums[${i}] and nums[${targetIdx}] -> [${nums.join(', ')}]`,
+        decision: `交换完成：数字 ${temp} 已成功归位至下标 ${targetIdx}！当前槽位换入新数值 ${nums[i]}，继续循环判定`,
+        message: `持续原地置换：直到当前槽位的数字无法归位（超出 [1, N] 或已重复）`,
+        log: `After swap: nums[${targetIdx}]=${temp}, current nums[${i}]=${nums[i]}`,
         codeLine: lines.whileSwap,
-        statusBadge: { text: `归位数值 ${val}`, type: 'warning' },
+        metrics: {
+          'min-missing': '置换扫描中...',
+          'cur-index': `已置换 ${temp}➔#${targetIdx}`,
+          'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+          'array-scale': `N = ${n}`,
+        },
       });
     }
   }
 
-  // 第二轮：查找首个失配位置
-  let ans = n + 1;
+  // 第二阶段：线性扫描寻找首个失配槽位
+  let found = false;
   for (let i = 0; i < n; i++) {
-    if (nums[i] !== i + 1) {
-      ans = i + 1;
+    const expected = i + 1;
+    const actual = nums[i];
+    const isMismatch = actual !== expected;
+
+    steps.push({
+      nums: [...nums],
+      currentIndex: i,
+      inPlaceStatus: getStatus(),
+      missingResult: isMismatch ? expected : null,
+      decision: isMismatch
+        ? `🚨 发现首个失配槽位！下标 i = ${i} 处数值为 ${actual}，缺失预期正数 ${expected}`
+        : `槽位 i = ${i} 匹配成功：数值为 ${actual}，符合预期`,
+      message: `核对槽位下标 i = ${i} 与数值 ${actual}`,
+      log: `Scan slot i=${i}: actual=${actual}, expected=${expected} (${isMismatch ? 'MISMATCH' : 'MATCH'})`,
+      codeLine: isMismatch ? lines.foundMismatch : lines.loop2,
+      statusBadge: isMismatch
+        ? { text: `首个缺失正数: ${expected}`, type: 'danger' }
+        : { text: `槽位 ${i} 正常`, type: 'info' },
+      metrics: {
+        'min-missing': isMismatch ? expected : '扫描核对中...',
+        'cur-index': `检查槽位 #${i}`,
+        'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+        'array-scale': `N = ${n}`,
+      },
+    });
+
+    if (isMismatch) {
+      found = true;
+      const ans = expected;
       steps.push({
         nums: [...nums],
         currentIndex: i,
         inPlaceStatus: getStatus(),
         missingResult: ans,
-        decision: `🎉 发现首个失配槽位 [${i}]！该位置预期值为 ${i + 1}，实际为 ${nums[i]}`,
-        message: `最小缺失正数已锁定：答案 = ${ans}`,
-        log: `First mismatch at i=${i} -> answer=${ans}`,
+        decision: `🎉 算法求解完成！首个缺失的正整数即为 ${ans}`,
+        message: `根据鸽巢原理，最小正整数为 ${ans}`,
+        log: `Return first missing positive: ${ans}`,
         codeLine: lines.foundMismatch,
-        statusBadge: { text: `答案: ${ans}`, type: 'success' },
+        statusBadge: { text: `最终结果: ${ans}`, type: 'success' },
+        ans: String(ans),
+        metrics: {
+          'min-missing': ans,
+          'cur-index': `首个失配 #${i}`,
+          'in-place-count': `${getStatus().filter(Boolean).length} / ${n} 槽`,
+          'array-scale': `N = ${n}`,
+          'metric-ans': ans,
+        },
       });
-      return steps;
+      break;
     }
   }
 
-  steps.push({
-    nums: [...nums],
-    currentIndex: n - 1,
-    inPlaceStatus: getStatus(),
-    missingResult: ans,
-    decision: `🎉 1~${n} 全部完美归位！最小缺失正数为 N + 1 = ${ans}`,
-    message: '全序列密集连续无断层',
-    log: `All 1..${n} fit -> answer=${ans}`,
-    codeLine: lines.returnAllFit,
-    statusBadge: { text: `答案: ${ans}`, type: 'success' },
-  });
+  if (!found) {
+    const ans = n + 1;
+    steps.push({
+      nums: [...nums],
+      currentIndex: n - 1,
+      inPlaceStatus: getStatus(),
+      missingResult: ans,
+      decision: `🎉 1~${n} 全部完美归位！最小缺失正数为 N + 1 = ${ans}`,
+      message: '全序列密集连续无断层',
+      log: `All 1..${n} fit -> answer=${ans}`,
+      codeLine: lines.returnAllFit,
+      statusBadge: { text: `答案: ${ans}`, type: 'success' },
+      ans: String(ans),
+      metrics: {
+        'min-missing': ans,
+        'cur-index': '全序列连续',
+        'in-place-count': `${n} / ${n} 槽`,
+        'array-scale': `N = ${n}`,
+        'metric-ans': ans,
+      },
+    });
+  }
 
   return steps;
 }
 
 export function renderMissingPositiveCanvas(container: HTMLElement, step: MissingPositiveStep): void {
   container.innerHTML = `
-    <div style="padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <!-- 核心指标看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">最小缺失正数结果 (Answer)</div>
-          <div style="font-size: 24px; font-weight: bold; color: ${step.missingResult !== null ? '#34d399' : '#38bdf8'}; margin-top: 4px;">
-            ${step.missingResult !== null ? step.missingResult : '置换扫描中...'}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">当前检查槽位 (Index)</div>
-          <div style="font-size: 20px; font-weight: bold; color: #fbbf24; margin-top: 4px;">
-            下标 [ ${step.currentIndex} ] (预期值 ${step.currentIndex + 1})
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">已正确归位槽位数</div>
-          <div style="font-size: 20px; font-weight: bold; color: #a855f7; margin-top: 4px;">
-            ${step.inPlaceStatus.filter(Boolean).length} / ${step.nums.length} 个
-          </div>
-        </div>
-      </div>
-
+    <div style="padding: 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; gap: 14px;">
       <!-- 原地置换桶沙盘 -->
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-        <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 14px;">
-          数组物理槽位归位状态 (绿色=nums[i] === i+1 完美归位)
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div style="font-size: 13px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+            <span>📦 数组物理槽位归位状态 (原地隐式哈希桶)</span>
+          </div>
+          <span style="font-size: 11px; color: #64748b; background: #f1f5f9; padding: 2px 8px; border-radius: 999px;">
+            有效区间 [1, ${step.nums.length}]
+          </span>
         </div>
 
-        <div style="display: flex; gap: 8px; overflow-x: auto; padding: 6px 0;">
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding: 10px 4px;">
           ${step.nums.map((val, idx) => {
             const isFit = step.inPlaceStatus[idx];
             const isCurrent = idx === step.currentIndex;
             const isSwapped = step.swappedPair && step.swappedPair.includes(idx);
 
+            let bg = '#f8fafc';
+            let border = '#cbd5e1';
+            let textColor = '#0f172a';
+            let badgeBg = '#e2e8f0';
+            let badgeText = '#475569';
+            let shadow = 'none';
+
+            if (isSwapped) {
+              bg = '#fffbeb';
+              border = '#f59e0b';
+              textColor = '#b45309';
+              badgeBg = '#fef3c7';
+              badgeText = '#92400e';
+              shadow = '0 0 10px rgba(245, 158, 11, 0.4)';
+            } else if (isFit) {
+              bg = '#f0fdf4';
+              border = '#22c55e';
+              textColor = '#15803d';
+              badgeBg = '#dcfce7';
+              badgeText = '#166534';
+              shadow = '0 0 8px rgba(34, 197, 94, 0.25)';
+            } else if (isCurrent) {
+              bg = '#eff6ff';
+              border = '#3b82f6';
+              textColor = '#1d4ed8';
+              badgeBg = '#dbeafe';
+              badgeText = '#1e40af';
+              shadow = '0 0 8px rgba(59, 130, 246, 0.25)';
+            }
+
             return `
               <div style="
-                min-width: 52px;
-                height: 56px;
-                background: ${isFit ? '#065f46' : isCurrent ? '#0369a1' : '#1e293b'};
-                border: ${isSwapped ? '2px solid #fbbf24' : isFit ? '2px solid #34d399' : isCurrent ? '2px solid #38bdf8' : '1px solid #475569'};
-                border-radius: 6px;
+                flex: 1;
+                min-width: 68px;
+                max-width: 110px;
+                height: 76px;
+                background: ${bg};
+                border: 2px solid ${border};
+                border-radius: 10px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                box-shadow: ${isFit ? '0 0 10px rgba(52,211,153,0.4)' : isSwapped ? '0 0 10px rgba(251,191,36,0.6)' : 'none'};
+                box-shadow: ${shadow};
+                transition: all 0.2s ease;
+                position: relative;
               ">
-                <div style="font-size: 16px; font-weight: bold; color: #fff;">${val}</div>
-                <div style="font-size: 9px; color: #94a3b8;">槽位 #${idx} (应为${idx + 1})</div>
+                <div style="font-size: 18px; font-weight: 800; color: ${textColor}; font-family: monospace;">${val}</div>
+                <div style="font-size: 10px; color: ${badgeText}; background: ${badgeBg}; padding: 1px 6px; border-radius: 4px; margin-top: 4px; font-weight: 600;">
+                  槽 #${idx} (应 ${idx + 1})
+                </div>
+                ${isFit ? '<span style="position: absolute; top: 4px; right: 6px; font-size: 10px; color: #16a34a; font-weight: bold;">✓</span>' : ''}
               </div>
             `;
           }).join('')}
         </div>
 
-        <div style="font-size: 11px; color: #94a3b8; margin-top: 10px;">
-          置换法则：只要 nums[i] 在 [1, N] 范围内且尚未归位，就将其与目标槽位 nums[nums[i]-1] 交换，直至当前槽位无法再置换。
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px; font-size: 11px; color: #64748b; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+          <span>📌 <strong>置换法则</strong>：只要 nums[i] ∈ [1, N] 且 nums[nums[i]-1] ≠ nums[i]，立即交换至目标槽位。</span>
+          <span>当前已归位: <strong style="color: #16a34a;">${step.inPlaceStatus.filter(Boolean).length} / ${step.nums.length}</strong></span>
         </div>
       </div>
-
-      <!-- 原理卡片 -->
-      ${renderFormulaCard(
-        '原地哈希 (In-place Hash) 空间压缩公理',
-        '长度为 N 的数组中，最小缺失正数必在 [1, N+1] 之间。无需开辟额外哈希表，直接利用数组自身的下标作为隐式哈希桶！每个合法数字最多被置换一次即可到达其正确位置，总交换次数不超过 N 次，达成时间严格 O(N) 且空间严格 O(1) 的极限性能！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -271,6 +369,19 @@ export const firstMissingPositiveVisualizer = registerDeclarativeAlgorithm<Missi
   name: 'Hard 22: 缺失的第一个正数 (First Missing Positive)',
   category: 'array',
   icon: '🎯',
+  badge: {
+    mode: '原地置换哈希',
+    complexity: 'O(n) · O(1)',
+  },
+  card1Title: '📊 原地哈希置换沙盘 (In-Place Hash)',
+  card2Title: '🧭 鸽巢原理与状态空间监视器',
+  card2Desc: '物理槽位归位情况、当前置换决策与数学公理验证',
+  legend: [
+    { label: '已完美归位 nums[i]=i+1', color: '#22c55e' },
+    { label: '当前检查槽位 i', color: '#3b82f6' },
+    { label: '正在置换对 (Swap)', color: '#f59e0b' },
+    { label: '未归位槽位', color: '#64748b' },
+  ],
   difficulty: 3,
   levelOrder: 41,
   learningGoal: '掌握原地哈希桶排序置换技巧，深刻理解鸽巢原理在常数级额外空间 O(1) 检索中的精妙应用',
@@ -298,6 +409,33 @@ export const firstMissingPositiveVisualizer = registerDeclarativeAlgorithm<Missi
       ],
     },
   ],
+  metrics: [
+    { id: 'min-missing', label: '最小缺失正数', color: '#0d9488' },
+    { id: 'cur-index', label: '当前检查槽位', color: '#2563eb' },
+    { id: 'in-place-count', label: '已正确归位槽数', color: '#8b5cf6' },
+    { id: 'array-scale', label: '数组物理规模', color: '#d97706' },
+  ],
+  auxiliaryVisual: {
+    title: '🧭 鸽巢原理与状态空间监视器',
+    desc: '当前置换决策与原地哈希公理验证',
+    render: (container, step) => {
+      const isDone = step.missingResult !== null;
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <span style="font-size: 11.5px; font-weight: 600; color: #475569;">当前置换决策:</span>
+            <strong style="font-size: 12px; color: ${isDone ? '#16a34a' : '#2563eb'};">${step.decision}</strong>
+          </div>
+          ${renderFormulaCard(
+            '原地哈希空间压缩公理',
+            '对于长度为 N 的数组，最小缺失正数必在 [1, N+1] 之间。利用下标 x-1 作为数值 x 的唯一隐式归位槽！',
+            '无需额外开辟哈希表，每个数字最多被置换一次进入正确位置，总时间严格 O(N)，额外空间严格 O(1)。',
+            step.statusBadge
+          )}
+        </div>
+      `;
+    },
+  },
   generateSteps: (input) => {
     const sc = input.scenario || 'standard';
     let arr = [3, 4, -1, 1];

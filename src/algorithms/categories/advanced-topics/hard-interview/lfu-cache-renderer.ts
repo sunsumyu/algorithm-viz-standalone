@@ -6,7 +6,7 @@
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
 import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { HighlightTarget } from '../../../../core/renderers/dark-code-terminal-presenter';
 
 export interface LFUNode {
   key: number;
@@ -32,8 +32,10 @@ export interface LFUStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const LFU_CACHE_CODES = {
@@ -223,6 +225,15 @@ export interface Command {
   v?: number;
 }
 
+export const LFU_CACHE_CODE_LINES = {
+  init: { java: 2, cpp: 2, python: 4, typescript: 8 },
+  getMiss: { java: 24, cpp: 16, python: 9, typescript: 12 },
+  getHit: { java: 26, cpp: 18, python: 11, typescript: 13 },
+  putIgnore: { java: 31, cpp: 21, python: 16, typescript: 16 },
+  putUpdate: { java: 35, cpp: 24, python: 19, typescript: 18 },
+  putInsert: { java: 41, cpp: 31, python: 25, typescript: 24 },
+};
+
 export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep[] {
   const steps: LFUStep[] = [];
   const keyMap = new Map<number, { val: number; freq: number }>();
@@ -266,7 +277,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
     decision: 'LFU 缓存系统初始化',
     message: `初始化 LFU 缓存，容量上限 = ${capacity}。双哈希表 + 双向频次桶准备就绪。`,
     log: `Init LFUCache(capacity=${capacity})`,
-    codeLine: 1,
+    codeLine: LFU_CACHE_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' }
   });
 
@@ -285,7 +296,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
           decision: `缓存未命中: key=${k} 不存在`,
           message: `执行 get(${k})：在 keyMap 中未找到该键，返回 -1。`,
           log: `get(${k}) -> -1 (Miss)`,
-          codeLine: 24,
+          codeLine: LFU_CACHE_CODE_LINES.getMiss,
           statusBadge: { text: '未命中 (-1)', type: 'warning' }
         });
       } else {
@@ -315,7 +326,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
           decision: `缓存命中！频次跃迁 ${oldFreq} -> ${newFreq}`,
           message: `执行 get(${k})：命中值 = ${node.val}。节点使用频次自增至 ${newFreq}，移动至对应频次链表尾部。`,
           log: `get(${k}) -> ${node.val} (Hit, freq: ${oldFreq}->${newFreq})`,
-          codeLine: 26,
+          codeLine: LFU_CACHE_CODE_LINES.getHit,
           statusBadge: { text: `命中 (${node.val})`, type: 'success' }
         });
       }
@@ -335,7 +346,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
           decision: '容量为 0，忽略写操作',
           message: `缓存容量为 0，无法存放任何数据。`,
           log: `put(${k}, ${v}) ignored (cap=0)`,
-          codeLine: 31,
+          codeLine: LFU_CACHE_CODE_LINES.putIgnore,
           statusBadge: { text: '容量不足', type: 'danger' }
         });
         continue;
@@ -369,7 +380,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
           decision: `更新已有键 key=${k} 的值，频次 ${oldFreq} -> ${newFreq}`,
           message: `更新 key=${k} 的值为 ${v}，该键被再次访问，频次跃迁为 ${newFreq}。`,
           log: `put(${k}, ${v}) updated (freq: ${oldFreq}->${newFreq})`,
-          codeLine: 35,
+          codeLine: LFU_CACHE_CODE_LINES.putUpdate,
           statusBadge: { text: '更新节点', type: 'info' }
         });
       } else {
@@ -405,7 +416,7 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
           log: evictedNode
             ? `put(${k}, ${v}) evicted key=${evictedNode.key} (minFreq=${evictedNode.freq})`
             : `put(${k}, ${v}) inserted (freq=1)`,
-          codeLine: 41,
+          codeLine: LFU_CACHE_CODE_LINES.putInsert,
           statusBadge: evictedNode
             ? { text: `驱逐淘汰 (${evictedNode.key})`, type: 'danger' }
             : { text: '新增插入', type: 'success' }
@@ -414,21 +425,30 @@ export function generateLFUSteps(capacity: number, commands: Command[]): LFUStep
     }
   }
 
-  return steps;
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      operation: s.operation,
+      capacityUsage: `${s.keyMap.length} / ${s.capacity}`,
+      minFreq: `${s.minFreq}`,
+      evicted: s.evictedNode ? `Key:${s.evictedNode.key}` : '无',
+    },
+    ans: `${s.keyMap.length} / ${s.capacity}`,
+  }));
 }
 
 export function renderLFUSandbox(step: LFUStep): string {
   const bucketsHtml = step.freqBuckets.length === 0
-    ? '<div style="color: #64748b; font-style: italic; padding: 12px;">频次桶当前为空</div>'
+    ? '<div style="color: #94a3b8; font-style: italic; padding: 10px;">频次桶当前为空</div>'
     : step.freqBuckets.map(b => {
         const isMin = b.freq === step.minFreq;
         const nodePills = b.nodes.map((n, i) => {
           const isHead = i === 0;
           return `
-            <div style="display: inline-flex; align-items: center; background: #ffffff; border: 1px solid ${isMin && isHead ? '#ef4444' : '#38bdf8'}; border-radius: 6px; padding: 4px 8px; margin: 2px 4px;">
-              <span style="font-weight: 700; color: #0284c7; margin-right: 4px;">K:${n.key}</span>
+            <div style="display: inline-flex; align-items: center; background: #ffffff; border: 1.5px solid ${isMin && isHead ? '#ef4444' : '#38bdf8'}; border-radius: 6px; padding: 4px 8px; margin: 2px 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <span style="font-weight: 800; color: #0284c7; margin-right: 4px;">K:${n.key}</span>
               <span style="color: #64748b; margin-right: 4px;">V:${n.val}</span>
-              ${isHead && isMin ? '<span style="font-size: 10px; background: #ef4444; color: #fff; padding: 1px 4px; border-radius: 3px;">淘汰候选</span>' : ''}
+              ${isHead && isMin ? '<span style="font-size: 10px; background: #ef4444; color: #fff; padding: 1px 4px; border-radius: 3px; font-weight: 700;">淘汰候选</span>' : ''}
             </div>
           `;
         }).join('<span style="color: #94a3b8; font-size: 12px; margin: 0 2px;">⇄</span>');
@@ -439,80 +459,55 @@ export function renderLFUSandbox(step: LFUStep): string {
               <span style="font-weight: 700; color: ${isMin ? '#dc2626' : '#334155'}; font-size: 12px;">
                 频次桶 Freq = ${b.freq} ${isMin ? '🔥 (minFreq 保护/淘汰区)' : ''}
               </span>
-              <span style="font-size: 12px; color: #64748b;">共 ${b.nodes.length} 个节点</span>
+              <span style="font-size: 11px; color: #64748b;">共 ${b.nodes.length} 个节点</span>
             </div>
             <div style="display: flex; align-items: center; flex-wrap: wrap;">
-              <span style="font-size: 11px; color: #94a3b8; margin-right: 6px;">[最旧]</span>
+              <span style="font-size: 10px; color: #94a3b8; margin-right: 6px;">[最旧]</span>
               ${nodePills}
-              <span style="font-size: 11px; color: #94a3b8; margin-left: 6px;">[最新]</span>
+              <span style="font-size: 10px; color: #94a3b8; margin-left: 6px;">[最新]</span>
             </div>
           </div>
         `;
       }).join('');
 
   const keyMapHtml = step.keyMap.length === 0
-    ? '<div style="color: #64748b; font-style: italic; padding: 10px;">哈希表为空</div>'
-    : `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;">
+    ? '<div style="color: #94a3b8; font-style: italic; padding: 10px;">哈希表为空</div>'
+    : `<div style="display: flex; flex-wrap: wrap; gap: 8px;">
         ${step.keyMap.map(n => `
-          <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 8px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">Key: <b style="color: #0284c7;">${n.key}</b></div>
-            <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${n.val}</div>
-            <div style="font-size: 10px; color: #7c3aed;">频次: ${n.freq}</div>
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+            <span style="font-size: 11px; color: #64748b;">Key: <strong style="color: #0284c7;">${n.key}</strong></span>
+            <span style="font-size: 13px; font-weight: 800; color: #0f172a;">${n.val}</span>
+            <span style="font-size: 10px; background: #f3e8ff; color: #7c3aed; padding: 1px 5px; border-radius: 4px; font-weight: 700;">f:${n.freq}</span>
           </div>
         `).join('')}
       </div>`;
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 12px; font-family: inherit;">
-      <!-- Card 1: 状态概览看板 -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">当前指令</div>
-          <div style="font-size: 15px; font-weight: 800; color: #0284c7;">${step.operation}</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">容量使用</div>
-          <div style="font-size: 15px; font-weight: 800; color: ${step.keyMap.length >= step.capacity ? '#ef4444' : '#10b981'};">
-            ${step.keyMap.length} / ${step.capacity}
-          </div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">全局 minFreq</div>
-          <div style="font-size: 15px; font-weight: 800; color: #d97706;">${step.minFreq}</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">驱逐记录</div>
-          <div style="font-size: 13px; font-weight: 700; color: #ef4444;">
-            ${step.evictedNode ? `淘汰 Key:${step.evictedNode.key}` : '无'}
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2: 频次桶与双向链表拓扑 -->
-      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <span style="font-weight: 700; font-size: 13px; color: #0f172a;">
-            📊 频次桶双向链表拓扑 (Freq -> DoublyLinkedList)
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; justify-content: center; padding: 12px 6px; box-sizing: border-box;">
+      <!-- 频次桶与双向链表拓扑 (主画布优先) -->
+      <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; font-size: 12px; color: #0f172a;">
+            📊 频次双向链表拓扑 (Freq -> DoublyLinkedList)
           </span>
-          <span style="font-size: 11px; color: #64748b;">相同频次内按 LRU 从左到右淘汰</span>
+          <span style="font-size: 11px; color: #64748b;">同频按 LRU 从左至右淘汰</span>
         </div>
         ${bucketsHtml}
       </div>
 
-      <!-- Card 3: Key-Value 哈希快速检索表 -->
-      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
-        <div style="font-weight: 700; font-size: 13px; color: #0f172a; margin-bottom: 8px;">
+      <!-- Key-Value 哈希快速检索表 -->
+      <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 12px 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+        <div style="font-weight: 700; font-size: 12px; color: #0f172a; margin-bottom: 8px;">
           🗂️ keyMap 哈希表快照 (Key -> Node Reference)
         </div>
         ${keyMapHtml}
       </div>
 
-      ${renderFormulaCard(
-        'LFU O(1) 核心原理',
-        'keyMap O(1) 定位 | freqMap 双向链表 O(1) 移位与频次晋升 | minFreq O(1) 定位淘汰首节点',
-        step.decision,
-        step.statusBadge
-      )}
+      <!-- 底部说明 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px; font-size: 11px; color: #64748b;">
+        <span>O(1) 定位: 哈希表查节点，双向链表快速摘取并插入高频桶</span>
+        <span>当前 minFreq: <strong style="color: #d97706;">${step.minFreq}</strong></span>
+      </div>
     </div>
   `;
 }
@@ -532,6 +527,12 @@ export const lfuCacheVisualizer = registerDeclarativeAlgorithm<LFUStep>({
       <p>当缓存容量达到上限时，淘汰使用频次最低的键；若存在平局，淘汰最久未使用的键。</p>
     </div>
   `,
+  metrics: [
+    { id: 'operation', label: '当前指令', color: '#0284c7' },
+    { id: 'capacityUsage', label: '容量使用', color: '#16a34a' },
+    { id: 'minFreq', label: '全局 minFreq', color: '#d97706' },
+    { id: 'evicted', label: '驱逐记录', color: '#ef4444' },
+  ],
   codeLanguages: LFU_CACHE_CODES,
   inputs: [
     {
@@ -558,10 +559,6 @@ export const lfuCacheVisualizer = registerDeclarativeAlgorithm<LFUStep>({
     return generateLFUSteps(cap, commands);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        ${renderLFUSandbox(step)}
-      </div>
-    `;
+    container.innerHTML = renderLFUSandbox(step);
   },
 });

@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   LCA_PROBLEM_HTML,
@@ -26,8 +27,20 @@ export interface LCAStep {
   action: 'enter' | 'hit-target' | 'left-done' | 'right-done' | 'merge' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const LCA_CODE_LINES = {
+  init: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  empty: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  enter: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  hitTarget: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  leftDone: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  rightDone: { java: 5, cpp: 6, python: 6, javascript: 4 },
+  splitLCA: { java: 6, cpp: 7, python: [7, 8], javascript: 5 },
+  singlePass: { java: 7, cpp: 8, python: 9, javascript: 6 },
+  done: { java: 7, cpp: 8, python: 9, javascript: 6 },
+};
 
 export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number): LCAStep[] {
   const steps: LCAStep[] = [];
@@ -46,7 +59,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       ? `初始化 LCA 查找：目标节点 p = ${pVal}, q = ${qVal}，从根节点 ${root.val} 开始后序递归。`
       : '空树，返回 null。',
     log: root ? `开始寻找 LCA(p=${pVal}, q=${qVal})` : '空树 -> null',
-    codeLine: 2,
+    codeLine: LCA_CODE_LINES.init,
   });
 
   if (!root) {
@@ -61,7 +74,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'done',
       message: '❌ 空树不存在公共祖先。',
       log: '✓ 未找到 LCA',
-      codeLine: 3,
+      codeLine: LCA_CODE_LINES.empty,
     });
     return steps;
   }
@@ -80,7 +93,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'enter',
       message: `进入节点 ${node.val}。检查是否为 p 或 q。`,
       log: `访问 ${node.val}`,
-      codeLine: 3,
+      codeLine: LCA_CODE_LINES.enter,
     });
 
     if (node.val === pVal || node.val === qVal) {
@@ -95,7 +108,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         action: 'hit-target',
         message: `🎯 命中目标节点 ${node.val}（== ${node.val === pVal ? 'p' : 'q'}），直接向上返回 ${node.val}。`,
         log: `命中目标 ${node.val}`,
-        codeLine: 3,
+        codeLine: LCA_CODE_LINES.hitTarget,
       });
       return node.val;
     }
@@ -113,7 +126,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'left-done',
       message: `节点 ${node.val} 左子树遍历完毕：left 返回 ${left ?? 'null'}。开始求右子树。`,
       log: `节点 ${node.val}: left=${left ?? 'null'}`,
-      codeLine: 4,
+      codeLine: LCA_CODE_LINES.leftDone,
     });
 
     const right = findLCA(node.right);
@@ -129,7 +142,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'right-done',
       message: `节点 ${node.val} 右子树遍历完毕：right 返回 ${right ?? 'null'}。开始合并判定。`,
       log: `节点 ${node.val}: right=${right ?? 'null'}`,
-      codeLine: 5,
+      codeLine: LCA_CODE_LINES.rightDone,
     });
 
     // 合并逻辑
@@ -146,7 +159,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         action: 'merge',
         message: `🌟 节点 ${node.val} 左右子树均非空 (left=${left}, right=${right})！p 与 q 分别散落在左右两侧，故节点 ${node.val} 即为最近公共祖先 (LCA)！`,
         log: `🌟 发现 LCA = ${node.val}`,
-        codeLine: 6,
+        codeLine: LCA_CODE_LINES.splitLCA,
       });
       return node.val;
     }
@@ -163,7 +176,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'merge',
       message: `节点 ${node.val} 单侧或空返回：向父节点透传 ${ret ?? 'null'}。`,
       log: `节点 ${node.val} -> 返回 ${ret ?? 'null'}`,
-      codeLine: 7,
+      codeLine: LCA_CODE_LINES.singlePass,
     });
 
     return ret;
@@ -184,7 +197,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       ? `🎉 搜索完成！节点 ${pVal} 与节点 ${qVal} 的最近公共祖先为: ${finalLCA}。`
       : `❌ 搜索完成！未找到公共祖先。`,
     log: finalLCA !== null ? `✓ 最近公共祖先 LCA = ${finalLCA}` : '✗ 未找到 LCA',
-    codeLine: 8,
+    codeLine: LCA_CODE_LINES.done,
   });
 
   return steps;

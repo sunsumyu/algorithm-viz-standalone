@@ -9,6 +9,16 @@ import {
   REVERSE_WORDS_ANALYSIS_HTML,
   REVERSE_WORDS_CODE_LANGUAGES,
 } from './reverse-words-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const REVERSE_WORDS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  cleanSpaces: { java: [3, 11], cpp: [4, 14], python: 4, javascript: 3 },
+  reverseAll: { java: [5, 13], cpp: 16, python: 4, javascript: 5 },
+  reverseWords: { java: [7, 18], cpp: [18, 23], python: 4, javascript: 7 },
+  done: { java: 8, cpp: 24, python: 4, javascript: 9 },
+};
+
+const lines = REVERSE_WORDS_CODE_LINES;
 
 export interface ReverseWordsStep {
   chars: string[];
@@ -22,7 +32,7 @@ export interface ReverseWordsStep {
   status: 'clean-spaces' | 'reverse-all' | 'reverse-words' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -44,7 +54,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
     status: 'clean-spaces',
     message: `第 1 步：清除多余空格。原字符串 "${inputStr}" 清理前导、尾随及单词间连续空格。`,
     log: `清理空格: "${inputStr}" -> "${cleanedStr}"`,
-    codeLine: 3,
+    codeLine: lines.cleanSpaces,
   });
 
   steps.push({
@@ -57,7 +67,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
     status: 'clean-spaces',
     message: `第 1 步完成：得到紧凑字符数组 "${cleanedStr}" (有效长度 ${chars.length})。`,
     log: `紧凑数组就绪 (长度 ${chars.length})`,
-    codeLine: 3,
+    codeLine: lines.cleanSpaces,
   });
 
   // Step 2: 反转整个字符串
@@ -74,7 +84,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
     status: 'reverse-all',
     message: `第 2 步：反转整个字符串。从 left = 0 到 right = ${right} 对撞反转。`,
     log: `开始整体反转 [0, ${right}]`,
-    codeLine: 5,
+    codeLine: lines.reverseAll,
   });
 
   while (left < right) {
@@ -92,7 +102,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
       status: 'reverse-all',
       message: `整体反转中：交换 chars[${left}] <-> chars[${right}] ('${temp}' <-> '${chars[left]}')。`,
       log: `交换 [${left}] <-> [${right}]`,
-      codeLine: 5,
+      codeLine: lines.reverseAll,
     });
 
     left++;
@@ -109,7 +119,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
     status: 'reverse-all',
     message: `第 2 步完成：整体反转后为 "${chars.join('')}" (单词顺序已倒序，但单词内部字母也是倒的)。`,
     log: `整体反转完成: "${chars.join('')}"`,
-    codeLine: 5,
+    codeLine: lines.reverseAll,
   });
 
   // Step 3: 逐个单词反转
@@ -134,7 +144,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
         status: 'reverse-words',
         message: `第 3 步：锁定倒序单词 "${currentWordBefore}" 区间 [${wLeft}, ${wRight}]，准备局部反转恢复正常语序。`,
         log: `锁定单词区间 [${wLeft}, ${wRight}] ("${currentWordBefore}")`,
-        codeLine: 7,
+        codeLine: lines.reverseWords,
       });
 
       while (wLeft < wRight) {
@@ -154,7 +164,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
           status: 'reverse-words',
           message: `单词内部交换：chars[${wLeft}] <-> chars[${wRight}] ('${temp}' <-> '${chars[wLeft]}')。`,
           log: `单词内交换 [${wLeft}] <-> [${wRight}]`,
-          codeLine: 7,
+          codeLine: lines.reverseWords,
         });
 
         wLeft++;
@@ -175,7 +185,7 @@ export function buildReverseWordsSteps(inputStr: string): ReverseWordsStep[] {
     status: 'done',
     message: `🎉 三步反转全部完成！最终翻转单词字符串为 "${chars.join('')}"。`,
     log: `✓ 求解完成: "${chars.join('')}"`,
-    codeLine: 8,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -11,6 +11,9 @@ import uniquePathsLiteHtml from '../../../../unique-paths-lite.html?raw';
 import uniquePathsFullHtml from '../../../../unique-paths.html?raw';
 
 import { VisualizerStateRouter, type VisualizerState } from '../../../core/state-router';
+import { shortcutController } from '../../../core/controllers/keyboard-shortcut-controller';
+import { algorithmRegistry } from '../../../core/algorithm-registry';
+import { AlgorithmModelRepository } from '../../../core/model-repository';
 
 export class UniquePathsVisualizer implements IVisualizer {
   private iframe: HTMLIFrameElement | null = null;
@@ -37,14 +40,65 @@ export class UniquePathsVisualizer implements IVisualizer {
     iframe.style.border = 'none';
     iframe.style.display = 'block';
     iframe.style.overflow = 'auto';
+    iframe.style.opacity = '0';
+    iframe.style.transition = 'opacity 0.12s ease-out';
     
-    // 默认展示用户指定的精简版，并注入当前算法模型 ID
+    // 1. 获取当前算法的真实名称和题号，首屏 Pre-hydration 注入，彻底杜绝出现其他算法模板残影
+    const meta = algorithmRegistry.getMetadata(this.modelId);
+    let titleText = meta?.name || '算法演示';
+    let lcId: string | number | undefined;
+    if (AlgorithmModelRepository.hasModel(this.modelId)) {
+      const model = AlgorithmModelRepository.getModel(this.modelId);
+      if (model.name) titleText = model.name;
+      lcId = model.problem?.leetcodeId;
+    }
+    if (!lcId) {
+      if (this.modelId === 'unique-paths') lcId = 62;
+      else if (this.modelId === 'unique-paths-ii') lcId = 63;
+      else if (this.modelId === 'coin-change-ii') lcId = 518;
+    }
+    const fullTitle = lcId ? `${lcId}. ${titleText}` : titleText;
+
+    // 默认展示用户指定的精简版，并注入当前算法模型 ID 与真实标题
     let baseHtml = this.currentMode === 'lite' ? uniquePathsLiteHtml : uniquePathsFullHtml;
     baseHtml = baseHtml.replace('</head>', `<script>window.__DEFAULT_MODEL_ID = ${JSON.stringify(this.modelId)};</script>\n</head>`);
+    
+    // 预注入真实标题，杜绝首屏闪烁
+    baseHtml = baseHtml.replace(
+      /(<h1 id="header-algo-main-title"[^>]*>)[^<]*(<\/h1>)/,
+      `$1${fullTitle}$2`
+    );
+    baseHtml = baseHtml.replace(
+      /(<h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">)[^<]*(<\/h1>)/,
+      `$1${lcId ? `LeetCode ${fullTitle}` : fullTitle}$2`
+    );
+
     iframe.srcdoc = baseHtml;
 
     container.appendChild(iframe);
     this.iframe = iframe;
+
+    // 绑定 iframe 内部按键事件穿透中继，杜绝焦点被 iframe 截获导致快捷键失效
+    const bindIframeShortcuts = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (win) {
+          win.removeEventListener('keydown', this.handleIframeKeyDown);
+          win.addEventListener('keydown', this.handleIframeKeyDown);
+        }
+      } catch (err) {
+        // 忽略跨域或未就绪异常
+      }
+    };
+
+    const onIframeReady = () => {
+      iframe.style.opacity = '1';
+      bindIframeShortcuts();
+    };
+
+    iframe.addEventListener('load', onIframeReady);
+    setTimeout(onIframeReady, 40);
+    setTimeout(bindIframeShortcuts, 250);
 
     // 挂载全局切换钩子，方便 iframe 内部一键切换并无损携带状态
     (window as any).__toggleUniquePathsVersion = (targetMode: 'lite' | 'full', state?: VisualizerState) => {
@@ -57,13 +111,32 @@ export class UniquePathsVisualizer implements IVisualizer {
           scriptTags += `<script>window.location.hash = ${JSON.stringify(hash)};</script>\n`;
         }
         nextHtml = nextHtml.replace('</head>', `${scriptTags}</head>`);
+        nextHtml = nextHtml.replace(
+          /(<h1 id="header-algo-main-title"[^>]*>)[^<]*(<\/h1>)/,
+          `$1${fullTitle}$2`
+        );
+        nextHtml = nextHtml.replace(
+          /(<h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">)[^<]*(<\/h1>)/,
+          `$1${lcId ? `LeetCode ${fullTitle}` : fullTitle}$2`
+        );
         this.iframe.srcdoc = nextHtml;
+        setTimeout(bindIframeShortcuts, 50);
+        setTimeout(bindIframeShortcuts, 300);
       }
     };
   }
 
+  private handleIframeKeyDown = (e: KeyboardEvent): void => {
+    shortcutController.handleKeyEvent(e);
+  };
+
   public destroy(): void {
     if (this.iframe) {
+      try {
+        this.iframe.contentWindow?.removeEventListener('keydown', this.handleIframeKeyDown);
+      } catch {
+        // 忽略
+      }
       this.iframe.srcdoc = '';
       this.iframe.remove();
       this.iframe = null;

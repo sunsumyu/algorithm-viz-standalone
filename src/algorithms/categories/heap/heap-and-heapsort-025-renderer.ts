@@ -18,7 +18,7 @@ export interface HeapSortStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -136,6 +136,15 @@ public:
 }`
 };
 
+export const HEAP_AND_HEAPSORT_025_CODE_LINES: Record<string, Record<string, number>> = {
+  buildHeapStart: { java: 5, cpp: 6, python: 6, typescript: 6 },
+  buildHeapSink: { java: 23, cpp: 23, python: 23, typescript: 22 },
+  buildHeapDone: { java: 9, cpp: 8, python: 8, typescript: 9 },
+  swapMax: { java: 11, cpp: 10, python: 10, typescript: 10 },
+  sortSink: { java: 23, cpp: 23, python: 23, typescript: 22 },
+  sorted: { java: 15, cpp: 14, python: 14, typescript: 14 },
+};
+
 export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
   const arr = [...inputNums];
   const steps: HeapSortStep[] = [];
@@ -151,7 +160,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
     decision: '算法启动：首先将整个数组自底向上构建为大根堆 (Heapify 建堆法，复杂度 O(N))',
     message: '准备建堆',
     log: '开始堆排序',
-    codeLine: 5,
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapStart,
     statusBadge: { text: '建堆就绪', type: 'info' }
   });
 
@@ -178,7 +187,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
         decision: `建堆下沉：节点 arr[${idx}] 与较大子节点 arr[${largest}] 交换，恢复大根堆性质`,
         message: `arr[${idx}] 与 arr[${largest}] 交换`,
         log: `建堆交换 (${idx}, ${largest})`,
-        codeLine: 19,
+        codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapSink,
         statusBadge: { text: '堆化调整', type: 'warning' }
       });
 
@@ -196,7 +205,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
     decision: `大根堆构建完成！堆顶元素 ${arr[0]} 为当前堆内最大值`,
     message: '大根堆已就绪',
     log: '大根堆构建成功',
-    codeLine: 8,
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapDone,
     statusBadge: { text: '大根堆就绪', type: 'success' }
   });
 
@@ -219,7 +228,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
       decision: `将堆顶最大值 ${maxVal} 交换至当前有效堆末尾 arr[${heapSize}]，锁定最终位置，有效堆大小缩小至 ${heapSize}`,
       message: `锁定最大值 ${maxVal}`,
       log: `最大值 ${maxVal} 归位`,
-      codeLine: 11,
+      codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.swapMax,
       statusBadge: { text: '元素锁定', type: 'danger' }
     });
 
@@ -245,7 +254,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
         decision: `堆顶下沉恢复大根堆：节点 arr[${idx}] 与较大子节点 arr[${largest}] 交换`,
         message: `堆顶下沉至 ${largest}`,
         log: `下沉 (${idx} <-> ${largest})`,
-        codeLine: 20,
+        codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.sortSink,
         statusBadge: { text: '堆顶下沉', type: 'warning' }
       });
 
@@ -263,7 +272,7 @@ export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
     decision: '堆排序全流程完成，数组已达到完全升序！',
     message: '排序完全结束',
     log: '堆排序成功',
-    codeLine: 14,
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.sorted,
     statusBadge: { text: '完全升序', type: 'success' }
   });
 

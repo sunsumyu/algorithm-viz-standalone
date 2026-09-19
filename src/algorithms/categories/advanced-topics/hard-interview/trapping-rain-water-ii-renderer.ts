@@ -4,8 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface RainCell {
   r: number;
@@ -27,7 +26,10 @@ export interface RainWater3DStep extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const RAIN_WATER_3D_CODES = {
@@ -146,6 +148,12 @@ def trap_rain_water(height_map):
 }`
 };
 
+export const RAIN_WATER_3D_CODE_LINES = {
+  init: { java: 12, cpp: 10, python: 6, typescript: 7 },
+  spread: { java: 27, cpp: 23, python: 18, typescript: 22 },
+  finish: { java: 32, cpp: 28, python: 21, typescript: 28 },
+};
+
 export function buildRainWater3DSteps(grid: number[][]): RainWater3DStep[] {
   const steps: RainWater3DStep[] = [];
   const m = grid.length, n = grid[0].length;
@@ -175,8 +183,15 @@ export function buildRainWater3DSteps(grid: number[][]): RainWater3DStep[] {
     decision: `主函数入口：网格大小 ${m} × ${n}，将最外围 ${pq.length} 个边界木桶单元格压入小根堆`,
     message: '核心原理：木桶短板理论。水只能从最外围最矮的缺口向内漫灌，故优先弹出堆顶最矮边界',
     log: `init 3D rain water, boundaryCount=${pq.length}`,
-    codeLine: 1,
+    codeLine: RAIN_WATER_3D_CODE_LINES.init,
     statusBadge: { text: '外围木桶就绪', type: 'info' },
+    metrics: {
+      curH: '—',
+      heapSize: `${pq.length} 格`,
+      focusCoord: '准备就绪',
+      totalWater: '0',
+    },
+    ans: '0',
   });
 
   let totalWater = 0;
@@ -207,8 +222,15 @@ export function buildRainWater3DSteps(grid: number[][]): RainWater3DStep[] {
           decision: `从小根堆弹出最矮边界 (${cur.r}, ${cur.c}) 高度 ${cur.h}，向内扩散探测邻居 (${nr}, ${nc}) 自身高度 ${grid[nr][nc]}`,
           message: diff > 0 ? `🎉 邻居高度低于短板高度，成功蓄水 ${diff} 单位！新边界提升为 ${nextH}` : `邻居自身更高，未产生蓄水，直接作为新木桶短板 ${nextH} 入堆`,
           log: `cell (${nr}, ${nc}) water += ${diff}, nextH=${nextH}`,
-          codeLine: 26,
+          codeLine: RAIN_WATER_3D_CODE_LINES.spread,
           statusBadge: diff > 0 ? { text: `蓄水 +${diff}`, type: 'success' } : { text: '推高木桶边界', type: 'warning' },
+          metrics: {
+            curH: `${cur.h}`,
+            heapSize: `${pq.length} 格`,
+            focusCoord: `(${nr}, ${nc})`,
+            totalWater: `${totalWater}`,
+          },
+          ans: `${totalWater}`,
         });
       }
     }
@@ -225,11 +247,129 @@ export function buildRainWater3DSteps(grid: number[][]): RainWater3DStep[] {
     decision: `🎉 3D 接雨水模拟完毕！内部所有盆地注水收敛，全局接雨水总量为: ${totalWater} 单位`,
     message: '小根堆已空，全部单元格已灌满',
     log: `done totalWater=${totalWater}`,
-    codeLine: 31,
+    codeLine: RAIN_WATER_3D_CODE_LINES.finish,
     statusBadge: { text: `总蓄水量 = ${totalWater}`, type: 'success' },
+    metrics: {
+      curH: '收敛',
+      heapSize: '0 格',
+      focusCoord: '全部完成',
+      totalWater: `${totalWater}`,
+    },
+    ans: `${totalWater}`,
   });
 
   return steps;
+}
+
+export function renderRainWaterCanvas(container: HTMLElement, step: RainWater3DStep) {
+  const { grid, waterGrid, curR, curC, curH, totalWater } = step;
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; justify-content: center; padding: 12px 6px; box-sizing: border-box;">
+      <!-- 顶部辅助状态栏 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 0 4px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: #0f172a;">🌊 3D 积水等高地形网格:</span>
+          <span style="font-size: 11px; color: #64748b;">(外围短板注水算法)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 6px;">
+          <span style="color: #166534; font-weight: 700;">累计注水量: <strong style="color: #15803d; font-size: 13px;">${totalWater}</strong> 单位</span>
+        </div>
+      </div>
+
+      <!-- 地形与积水网格主体 (Canvas Dominance 主体) -->
+      <div style="
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        padding: 24px 16px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow-x: auto;
+      ">
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          ${grid.map((row, r) => `
+            <div style="display: flex; gap: 10px;">
+              ${row.map((val, c) => {
+                const water = waterGrid[r][c];
+                const isActive = r === curR && c === curC;
+                const isBoundary = r === 0 || r === grid.length - 1 || c === 0 || c === row.length - 1;
+
+                let bg = '#f8fafc';
+                let border = '1.5px solid #e2e8f0';
+                let waterColor = '#94a3b8';
+                let shadow = 'none';
+
+                if (water > 0) {
+                  bg = '#e0f2fe';
+                  border = '2px solid #38bdf8';
+                  waterColor = '#0284c7';
+                  shadow = '0 2px 8px rgba(56, 189, 248, 0.2)';
+                } else if (isBoundary) {
+                  bg = '#f1f5f9';
+                  border = '1.5px dashed #cbd5e1';
+                }
+
+                if (isActive) {
+                  border = '2px solid #f59e0b';
+                  shadow = '0 0 12px rgba(245, 158, 11, 0.35)';
+                }
+
+                return `
+                  <div style="
+                    width: 68px;
+                    height: 56px;
+                    background: ${bg};
+                    border: ${border};
+                    border-radius: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: ${shadow};
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    font-family: 'JetBrains Mono', monospace;
+                  ">
+                    <div style="font-size: 13px; font-weight: 800; color: #1e293b;">
+                      H: ${val}
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; color: ${waterColor}; margin-top: 1px;">
+                      ${water > 0 ? `水:+${water}` : '—'}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- 底部图例说明 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 11px; color: #64748b;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #e0f2fe; border: 1.5px solid #38bdf8;"></span>
+            成功蓄水区域
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #ffffff; border: 2px solid #f59e0b;"></span>
+            当前扩散探测点
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #f1f5f9; border: 1.5px dashed #cbd5e1;"></span>
+            外围边界木桶
+          </span>
+        </div>
+        <span style="font-size: 11px; color: #94a3b8;">
+          短板基准: <strong style="color: #0284c7; font-family: monospace;">${curH > 0 ? curH : '—'}</strong>
+        </span>
+      </div>
+    </div>
+  `;
 }
 
 export const trappingRainWaterIIVisualizer = registerDeclarativeAlgorithm<RainWater3DStep>({
@@ -253,6 +393,12 @@ export const trappingRainWaterIIVisualizer = registerDeclarativeAlgorithm<RainWa
       </div>
     </div>
   `,
+  metrics: [
+    { id: 'curH', label: '短板高度', color: '#0284c7' },
+    { id: 'heapSize', label: '边界堆规模', color: '#8b5cf6' },
+    { id: 'focusCoord', label: '聚焦单元格', color: '#059669' },
+    { id: 'totalWater', label: '累计接雨水', color: '#15803d' },
+  ],
   inputs: [],
   codeLanguages: RAIN_WATER_3D_CODES,
   generateSteps: () => {
@@ -264,67 +410,6 @@ export const trappingRainWaterIIVisualizer = registerDeclarativeAlgorithm<RainWa
     return buildRainWater3DSteps(defaultGrid);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        <!-- 顶部指标卡 -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">当前外围短板高度</div>
-            <div style="font-size: 18px; font-weight: 700; color: #0284c7; margin-top: 4px;">${step.curH > 0 ? step.curH : '-'}</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">小根堆活跃边界数</div>
-            <div style="font-size: 18px; font-weight: 700; color: #8b5cf6; margin-top: 4px;">${step.heapSize} 格</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">聚焦单元格坐标</div>
-            <div style="font-size: 18px; font-weight: 700; color: #059669; margin-top: 4px;">${step.curR >= 0 ? `(${step.curR}, ${step.curC})` : '完成'}</div>
-          </div>
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #166534;">累计接雨水总量</div>
-            <div style="font-size: 22px; font-weight: 800; color: #15803d; margin-top: 4px;">${step.totalWater}</div>
-          </div>
-        </div>
-
-        <!-- 3D 俯视热力图与注水展板 -->
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-          <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 12px;">🌊 地形高度与积水等高网格</div>
-          <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
-            ${step.grid.map((row, r) => `
-              <div style="display: flex; gap: 8px;">
-                ${row.map((val, c) => {
-                  const water = step.waterGrid[r][c];
-                  const isActive = r === step.curR && c === step.curC;
-                  let bg = '#ffffff';
-                  let border = '#cbd5e1';
-                  if (water > 0) {
-                    bg = '#bfdbfe';
-                    border = '#3b82f6';
-                  }
-                  if (isActive) {
-                    border = '#f59e0b';
-                  }
-
-                  return `
-                    <div style="width: 58px; height: 50px; background: ${bg}; border: 2px solid ${border}; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                      <span style="font-size: 12px; font-weight: 700; color: #1e293b;">地:${val}</span>
-                      <span style="font-size: 11px; font-weight: 700; color: ${water > 0 ? '#0284c7' : '#94a3b8'};">水:+${water}</span>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <!-- 决策卡片 -->
-        ${renderFormulaCard(
-          '木桶注水核心公式',
-          `water += max(0, boundaryH - terrainH) | nextH = max(boundaryH, terrainH)`,
-          step.decision,
-          step.statusBadge
-        )}
-      </div>
-    `;
+    renderRainWaterCanvas(container, step);
   },
 });

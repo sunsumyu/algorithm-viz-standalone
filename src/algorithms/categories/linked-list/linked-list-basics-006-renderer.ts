@@ -29,7 +29,7 @@ export interface LinkedList006Step extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -157,6 +157,22 @@ export function removeValue(head: ListNode | null, num: number): ListNode | null
 }`
 };
 
+const REVERSE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 3, python: 8, typescript: 9, javascript: 9 },
+  cacheNext: { java: 8, cpp: 5, python: 10, typescript: 11, javascript: 11 },
+  reverseLink: { java: 9, cpp: 6, python: 11, typescript: 12, javascript: 12 },
+  advance: { java: 11, cpp: 8, python: 13, typescript: 14, javascript: 14 },
+  done: { java: 13, cpp: 10, python: 14, typescript: 16, javascript: 16 },
+};
+
+const DELETE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 16, cpp: 12, python: 16, typescript: 19, javascript: 19 },
+  skipHead: { java: 18, cpp: 13, python: 18, typescript: 21, javascript: 21 },
+  skipNode: { java: 23, cpp: 16, python: 22, typescript: 26, javascript: 26 },
+  advance: { java: 25, cpp: 17, python: 24, typescript: 28, javascript: 28 },
+  done: { java: 28, cpp: 19, python: 24, typescript: 31, javascript: 31 },
+};
+
 export function buildLinkedList006Steps(
   values: number[] = [1, 2, 3, 2, 4],
   mode: 'reverse' | 'deleteVal' = 'reverse',
@@ -183,7 +199,7 @@ export function buildLinkedList006Steps(
       decision: '初始化单链表，准备反转',
       message: `单链表初始序列为 [${values.join(' -> ')}]。pre 指针指向 null，cur 指向首节点 #1。`,
       log: 'Init reverseList: pre=null, cur=head',
-      codeLine: 4,
+      codeLine: REVERSE_LINES.init,
       statusBadge: { text: '就绪', type: 'info' }
     });
 
@@ -208,7 +224,7 @@ export function buildLinkedList006Steps(
         decision: `暂存 next 指针 #${nxt >= 0 ? nxt : 'null'}，斩断原连接`,
         message: `在更改 cur.next 前，必须先缓存 next = cur.next (#${nxt >= 0 ? nxt : 'null'}) 防止后序链表丢失。`,
         log: `next = cur.next (#${nxt})`,
-        codeLine: 8,
+        codeLine: REVERSE_LINES.cacheNext,
         statusBadge: { text: '保存 next', type: 'info' }
       });
 
@@ -228,7 +244,7 @@ export function buildLinkedList006Steps(
         decision: `指向反转：节点 #${cur}(${node.val}) 的 next 指向 pre(#${pre >= 0 ? pre : 'null'})`,
         message: `将 cur.next 指向 pre，实现局部逆向连接。`,
         log: `cur.next = pre (#${pre})`,
-        codeLine: 9,
+        codeLine: REVERSE_LINES.reverseLink,
         statusBadge: { text: '指针调头', type: 'warning' }
       });
 
@@ -248,7 +264,7 @@ export function buildLinkedList006Steps(
         decision: `双指针整体右移：pre 移至 #${pre}，cur 移至 #${cur >= 0 ? cur : 'null'}`,
         message: `准备进行下一个节点的翻转。`,
         log: `pre=cur, cur=next`,
-        codeLine: 11,
+        codeLine: REVERSE_LINES.advance,
         statusBadge: { text: '指针推进', type: 'info' }
       });
     }
@@ -262,7 +278,7 @@ export function buildLinkedList006Steps(
       decision: `单链表反转彻底完成！全新头节点为 #${pre}`,
       message: `遍历完毕，当前 pre 即为全新头指针，反转成功！`,
       log: `Finished reverseList. newHead = #${pre}`,
-      codeLine: 13,
+      codeLine: REVERSE_LINES.done,
       statusBadge: { text: '反转完成', type: 'success' }
     });
   } else {
@@ -284,7 +300,7 @@ export function buildLinkedList006Steps(
       decision: `准备删除链表中所有值为 ${targetVal} 的节点`,
       message: `初始链表 [${values.join(' -> ')}]，目标消除所有 val == ${targetVal}。`,
       log: `removeValue(target=${targetVal})`,
-      codeLine: 16,
+      codeLine: DELETE_LINES.init,
       statusBadge: { text: '开始删除', type: 'info' }
     });
 
@@ -303,7 +319,7 @@ export function buildLinkedList006Steps(
           decision: `头节点 #${hNode.id}(${hNode.val}) 命中目标值，头指针后移至 #${head}`,
           message: `若头部节点即为待删值，直接移动 head 指针实现 O(1) 剥离。`,
           log: `head = head.next (#${head})`,
-          codeLine: 18,
+          codeLine: DELETE_LINES.skipHead,
           statusBadge: { text: '跳过头节点', type: 'danger' }
         });
       } else {
@@ -330,7 +346,7 @@ export function buildLinkedList006Steps(
           decision: `发现下个节点 #${nxtNode.id}(${nxtNode.val}) 匹配目标，跨过该节点`,
           message: `修改 cur.next = cur.next.next，将节点 #${nxtNode.id} 移出链路。`,
           log: `cur.next = cur.next.next (skip #${nxtNode.id})`,
-          codeLine: 23,
+          codeLine: DELETE_LINES.skipNode,
           statusBadge: { text: '删除中间节点', type: 'danger' }
         });
       } else {
@@ -344,7 +360,7 @@ export function buildLinkedList006Steps(
           decision: `节点 #${curNode.id} 值不匹配，cur 指针前进至 #${cur}`,
           message: `保留当前节点，向后继续扫描。`,
           log: `cur = cur.next (#${cur})`,
-          codeLine: 25,
+          codeLine: DELETE_LINES.advance,
           statusBadge: { text: '扫描前进', type: 'info' }
         });
       }
@@ -359,7 +375,7 @@ export function buildLinkedList006Steps(
       decision: `删除完毕！保留下来的节点构成新链表`,
       message: `全链表扫描完毕，所有 val == ${targetVal} 的节点均已成功剥离。`,
       log: 'Finished removeValue',
-      codeLine: 28,
+      codeLine: DELETE_LINES.done,
       statusBadge: { text: '删除完成', type: 'success' }
     });
   }

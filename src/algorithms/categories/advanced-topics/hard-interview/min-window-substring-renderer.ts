@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface MinWindowStep extends StepBase {
   s: string;
@@ -21,8 +20,10 @@ export interface MinWindowStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const MIN_WINDOW_CODES = {
@@ -144,6 +145,13 @@ public:
 }`
 };
 
+export const MIN_WINDOW_CODE_LINES = {
+  init: { java: 6, cpp: 7, python: 6, typescript: 6 },
+  expand: { java: 11, cpp: 11, python: 13, typescript: 11 },
+  shrink: { java: 21, cpp: 18, python: 20, typescript: 17 },
+  finish: { java: 31, cpp: 27, python: 25, typescript: 28 },
+};
+
 export function generateMinWindowSteps(s: string = 'ADOBECODEBANC', t: string = 'ABC'): MinWindowStep[] {
   const steps: MinWindowStep[] = [];
   const map = new Map<string, number>();
@@ -172,8 +180,15 @@ export function generateMinWindowSteps(s: string = 'ADOBECODEBANC', t: string = 
     decision: '初始化欠账表模型',
     message: `目标串 t = "${t}"，构建初始欠款总账: ${allDebt} 个字符。`,
     log: `Init minWindow: allDebt=${allDebt}`,
-    codeLine: 4,
-    statusBadge: { text: '欠账初始化', type: 'info' }
+    codeLine: MIN_WINDOW_CODE_LINES.init,
+    statusBadge: { text: '欠账初始化', type: 'info' },
+    metrics: {
+      windowLen: '0',
+      allDebt: `${allDebt}`,
+      bestLen: '—',
+      bestSubstr: '无',
+    },
+    ans: '""',
   });
 
   while (r < s.length) {
@@ -197,8 +212,15 @@ export function generateMinWindowSteps(s: string = 'ADOBECODEBANC', t: string = 
       decision: `右指针移至 #${r} ('${rc}')：${curDebt > 0 ? '有效还款！总欠款减 1' : '借入富余字符'}`,
       message: `字符 '${rc}' 存量更新为 ${curDebt - 1}，当前全网剩余欠款: ${allDebt}。`,
       log: `r=${r} char='${rc}' allDebt=${allDebt}`,
-      codeLine: 12,
-      statusBadge: curDebt > 0 ? { text: `有效还款 '${rc}'`, type: 'success' } : { text: '滑窗吸收', type: 'info' }
+      codeLine: MIN_WINDOW_CODE_LINES.expand,
+      statusBadge: curDebt > 0 ? { text: `有效还款 '${rc}'`, type: 'success' } : { text: '滑窗吸收', type: 'info' },
+      metrics: {
+        windowLen: `${r - l + 1}`,
+        allDebt: `${allDebt}`,
+        bestLen: minLen === Infinity ? '—' : `${minLen}`,
+        bestSubstr: minLen === Infinity ? '无' : `"${s.substring(start, start + minLen)}"`,
+      },
+      ans: minLen === Infinity ? '""' : `"${s.substring(start, start + minLen)}"`,
     });
 
     if (allDebt === 0) {
@@ -229,8 +251,15 @@ export function generateMinWindowSteps(s: string = 'ADOBECODEBANC', t: string = 
         decision: `欠款全部还清！左边界压缩至极限 #${l}，当前有效窗口 [${l}..${r}] 长度 = ${curWinLen}`,
         message: `截获覆盖子串 "${s.substring(l, r + 1)}"! ${isBest ? '🎉 刷新全局最短子串纪录！' : ''}`,
         log: `Cover window [${l}..${r}] len=${curWinLen}`,
-        codeLine: 18,
-        statusBadge: isBest ? { text: `刷新最短: ${curWinLen}`, type: 'success' } : { text: `有效覆盖: ${curWinLen}`, type: 'warning' }
+        codeLine: MIN_WINDOW_CODE_LINES.shrink,
+        statusBadge: isBest ? { text: `刷新最短: ${curWinLen}`, type: 'success' } : { text: `有效覆盖: ${curWinLen}`, type: 'warning' },
+        metrics: {
+          windowLen: `${curWinLen}`,
+          allDebt: `${allDebt}`,
+          bestLen: `${minLen}`,
+          bestSubstr: `"${s.substring(start, start + minLen)}"`,
+        },
+        ans: `"${s.substring(start, start + minLen)}"`,
       });
 
       // 弹出必需字符
@@ -257,8 +286,15 @@ export function generateMinWindowSteps(s: string = 'ADOBECODEBANC', t: string = 
     decision: `滑窗全流程结束！最终最小覆盖子串 = "${finalAns}"`,
     message: `遍历完毕，在 O(N) 线性时间内找到最短覆盖子串: "${finalAns}" (长度: ${finalAns.length})。`,
     log: `Finished. ans="${finalAns}"`,
-    codeLine: 28,
-    statusBadge: { text: `答案: "${finalAns}"`, type: 'success' }
+    codeLine: MIN_WINDOW_CODE_LINES.finish,
+    statusBadge: { text: `答案: "${finalAns}"`, type: 'success' },
+    metrics: {
+      windowLen: finalAns ? `${finalAns.length}` : '0',
+      allDebt: `${allDebt}`,
+      bestLen: finalAns ? `${finalAns.length}` : '—',
+      bestSubstr: finalAns ? `"${finalAns}"` : '无',
+    },
+    ans: `"${finalAns}"`,
   });
 
   return steps;
@@ -270,95 +306,111 @@ export function renderMinWindowSandbox(step: MinWindowStep): string {
     const isL = idx === step.l;
     const isR = idx === step.r;
 
-    let bg = '#ffffff';
-    let border = '#cbd5e1';
-    let color = '#475569';
+    let cellBg = '#f8fafc';
+    let cellBorder = '1px solid #e2e8f0';
+    let cellColor = '#475569';
+    let shadow = 'none';
 
     if (inWindow) {
-      bg = '#e0f2fe';
-      border = '#38bdf8';
-      color = '#0369a1';
+      cellBg = '#f0f9ff';
+      cellBorder = '1.5px solid #38bdf8';
+      cellColor = '#0369a1';
+      shadow = '0 1px 3px rgba(56, 189, 248, 0.15)';
     }
     if (isL) {
-      border = '2px solid #f59e0b';
+      cellBorder = '2px solid #f59e0b';
     } else if (isR) {
-      border = '2px solid #22c55e';
+      cellBorder = '2px solid #22c55e';
     }
 
     return `
-      <div style="display:inline-flex; flex-direction:column; align-items:center; margin:2px 3px;">
-        <div style="width:34px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:6px; background:${bg}; border:${border}; font-weight:800; font-size:14px; color:${color};">
+      <div style="display:inline-flex; flex-direction:column; align-items:center; margin:3px 4px; flex-shrink: 0;">
+        <span style="font-size:10px; font-family:'JetBrains Mono', monospace; color:#94a3b8; margin-bottom:2px;">#${idx}</span>
+        <div style="width:36px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:8px; background:${cellBg}; border:${cellBorder}; box-shadow:${shadow}; font-weight:800; font-size:16px; font-family:'JetBrains Mono', monospace; color:${cellColor}; transition: all 0.2s ease;">
           ${c}
         </div>
-        <span style="font-size:10px; color:#64748b; margin-top:2px;">#${idx}</span>
-        <span style="font-size:9px; height:12px; margin-top:1px;">
-          ${isL && isR ? '<b style="color:#d97706;">L,R</b>' : isL ? '<b style="color:#d97706;">L</b>' : isR ? '<b style="color:#16a34a;">R</b>' : ''}
+        <span style="font-size:9px; height:14px; margin-top:2px;">
+          ${isL && isR ? '<b style="color:#d97706; background:#fef3c7; padding:1px 3px; border-radius:3px;">L,R</b>' : isL ? '<b style="color:#d97706; background:#fef3c7; padding:1px 3px; border-radius:3px;">L</b>' : isR ? '<b style="color:#16a34a; background:#dcfce7; padding:1px 3px; border-radius:3px;">R</b>' : ''}
         </span>
       </div>
     `;
   }).join('');
 
-  const debtTableHtml = step.debtMap.map(d => `
-    <div style="display:inline-flex; align-items:center; gap:6px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:4px 8px; margin:3px;">
-      <span style="font-weight:700; color:#0f172a;">'${d.char}':</span>
-      <span style="font-weight:800; color:${d.count > 0 ? '#ef4444' : d.count === 0 ? '#10b981' : '#6366f1'};">
-        ${d.count > 0 ? `欠 ${d.count}` : d.count === 0 ? '平账' : `富余 ${Math.abs(d.count)}`}
-      </span>
-    </div>
-  `).join('');
+  const debtTableHtml = step.debtMap.map(d => {
+    let chipBg = '#f8fafc';
+    let chipBorder = '#e2e8f0';
+    let valColor = '#64748b';
+    let valText = `${d.count}`;
+
+    if (d.count > 0) {
+      chipBg = '#fef2f2';
+      chipBorder = '#fecaca';
+      valColor = '#ef4444';
+      valText = `欠 ${d.count}`;
+    } else if (d.count === 0) {
+      chipBg = '#f0fdf4';
+      chipBorder = '#bbf7d0';
+      valColor = '#16a34a';
+      valText = '平账 ✓';
+    } else {
+      chipBg = '#eff6ff';
+      chipBorder = '#bfdbfe';
+      valColor = '#2563eb';
+      valText = `富余 ${Math.abs(d.count)}`;
+    }
+
+    return `
+      <div style="display:inline-flex; align-items:center; gap:6px; background:${chipBg}; border:1px solid ${chipBorder}; border-radius:8px; padding:4px 10px; margin:3px; font-family:'JetBrains Mono', monospace; font-size:12px;">
+        <span style="font-weight:700; color:#0f172a;">'${d.char}':</span>
+        <span style="font-weight:800; color:${valColor};">${valText}</span>
+      </div>
+    `;
+  }).join('');
 
   return `
-    <div style="display:flex; flex-direction:column; gap:12px; font-family:inherit;">
-      <!-- 字符串滑窗物理全景条 -->
-      <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-weight:700; font-size:13px; color:#0f172a;">
-            🪟 字符串滑动窗口物理全景 (目标串 t = "${step.t}")
-          </span>
-          <span style="font-size:11px; color:#64748b;">
-            当前滑窗区间 [${step.l} .. ${step.r}]
-          </span>
+    <div style="display:flex; flex-direction:column; gap:14px; width:100%; height:100%; justify-content:center; padding:12px 6px; box-sizing:border-box;">
+      <!-- 欠账借贷与滑窗状态概览 -->
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:0 4px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:12px; font-weight:700; color:#0f172a;">💳 欠账表实时账本 (目标串 t = "${step.t}"):</span>
+          <div style="display:flex; flex-wrap:wrap;">
+            ${debtTableHtml}
+          </div>
         </div>
-        <div style="display:flex; flex-wrap:wrap; align-items:center; padding:4px 0;">
-          ${charsHtml}
+        <div style="display:flex; align-items:center; gap:6px; font-size:11px; padding:4px 10px; border-radius:6px; background:#f1f5f9; color:#475569;">
+          <span>当前区间: <strong style="color:#2563eb; font-family:monospace;">[${step.l} .. ${step.r}]</strong></span>
+          <span>·</span>
+          <span style="font-weight:700; color:${step.allDebt === 0 ? '#16a34a' : '#dc2626'};">
+            ${step.allDebt === 0 ? '✓ 全网欠账已清' : `尚欠: ${step.allDebt} 字符`}
+          </span>
         </div>
       </div>
 
-      <!-- 欠账表借贷看板 -->
-      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12px; font-weight:700; color:#0f172a;">💳 欠账表状态明细</span>
-          <span style="font-size:12px; font-weight:800; color:${step.allDebt === 0 ? '#15803d' : '#b91c1c'};">
-            ${step.allDebt === 0 ? '🎉 所有欠账已还清！' : `全网累计尚欠: ${step.allDebt} 个字符`}
+      <!-- 字符轨道滚动视口 (纯粹主画布，占据主导地位) -->
+      <div style="display:flex; align-items:center; overflow-x:auto; padding:18px 12px; background:#ffffff; border:1px solid #f1f5f9; border-radius:12px; box-shadow:inset 0 2px 4px rgba(0,0,0,0.02);">
+        ${charsHtml}
+      </div>
+
+      <!-- 底部图例说明 -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:0 8px; font-size:11px; color:#64748b;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="display:inline-flex; align-items:center; gap:4px;">
+            <span style="width:10px; height:10px; border-radius:2px; background:#fef3c7; border:1.5px solid #f59e0b;"></span>
+            L 左收缩指针
+          </span>
+          <span style="display:inline-flex; align-items:center; gap:4px;">
+            <span style="width:10px; height:10px; border-radius:2px; background:#dcfce7; border:1.5px solid #22c55e;"></span>
+            R 右扩张指针
+          </span>
+          <span style="display:inline-flex; align-items:center; gap:4px;">
+            <span style="width:10px; height:10px; border-radius:2px; background:#f0f9ff; border:1.5px solid #38bdf8;"></span>
+            滑动窗口覆盖区间
           </span>
         </div>
-        <div style="display:flex; flex-wrap:wrap;">
-          ${debtTableHtml}
-        </div>
+        <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#94a3b8;">
+          最优解: ${step.bestSubstr ? `"${step.bestSubstr}"` : '—'}
+        </span>
       </div>
-
-      <!-- 成果指标 -->
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">当前窗口长度</div>
-          <div style="font-size:16px; font-weight:800; color:#2563eb;">${step.r >= step.l ? step.r - step.l + 1 : 0}</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">历史最短长度</div>
-          <div style="font-size:16px; font-weight:800; color:#15803d;">${step.bestLen > 0 ? step.bestLen : '-'}</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">当前最优覆盖子串</div>
-          <div style="font-size:16px; font-weight:800; color:#d97706; font-family:monospace;">${step.bestSubstr ? `"${step.bestSubstr}"` : '无'}</div>
-        </div>
-      </div>
-
-      ${renderFormulaCard(
-        '滑动窗口欠账表法则',
-        '右指针不断扩展吸纳字符向欠账表还款；当总欠账 allDebt == 0 时，左指针向前挤压富余字符直到极限，捕获最优子串！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -378,6 +430,12 @@ export const minWindowSubstringVisualizer = registerDeclarativeAlgorithm<MinWind
       <p><strong>左神欠账表精髓：</strong>将 $t$ 的字符频次视为债务，右指针吸收字符还款，当全网欠账还清时，左指针向前催收挤压富余字符，达到常数空间 $O(N)$ 极速解法！</p>
     </div>
   `,
+  metrics: [
+    { id: 'windowLen', label: '窗口长度', color: '#0284c7' },
+    { id: 'allDebt', label: '剩余欠账', color: '#ef4444' },
+    { id: 'bestLen', label: '最短长度', color: '#16a34a' },
+    { id: 'bestSubstr', label: '最优子串', color: '#d97706' },
+  ],
   codeLanguages: MIN_WINDOW_CODES,
   inputs: [
     {
@@ -399,10 +457,6 @@ export const minWindowSubstringVisualizer = registerDeclarativeAlgorithm<MinWind
     return generateMinWindowSteps(s, t);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        ${renderMinWindowSandbox(step)}
-      </div>
-    `;
+    container.innerHTML = renderMinWindowSandbox(step);
   },
 });

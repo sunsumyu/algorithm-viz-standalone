@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface Trie107Step extends StepBase {
@@ -20,6 +20,7 @@ export interface Trie107Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -150,7 +151,15 @@ public:
     let max = 0;
     for (const x of nums) max = Math.max(max, query(x));
     return max;
-}`
+}
+`
+};
+
+export const TRIE_XOR_CODE_LINES: Record<string, HighlightTarget> = {
+  init: { java: 1, cpp: 1, python: 1, typescript: 1 },
+  insert: { java: 4, cpp: 5, python: 4, typescript: 4 },
+  queryBit: { java: 18, cpp: 17, python: 15, typescript: 16 },
+  maxUpdate: { java: 32, cpp: 30, python: 24, typescript: 28 },
 };
 
 export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie107Step[] {
@@ -172,7 +181,7 @@ export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie10
     decision: `算法入口：输入数组 [${nums.join(', ')}]，准备建立 01-Trie 前缀树并贪心求解两数最大异或和`,
     message: '核心原理：高位具有更高的权重 (2^i)，贪心优先保证最高位异或结果为 1',
     log: `init nums=[${nums.join(',')}]`,
-    codeLine: 1,
+    codeLine: TRIE_XOR_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' },
   });
 
@@ -203,7 +212,7 @@ export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie10
       decision: `将数字 ${num} (二进制 0b${num.toString(2).padStart(maxBit + 1, '0')}) 插入 01-Trie`,
       message: `树当前共有 ${nodeCount} 个节点`,
       log: `insert(${num}) done`,
-      codeLine: 5,
+      codeLine: TRIE_XOR_CODE_LINES.insert,
       statusBadge: { text: `插入 ${num}`, type: 'warning' },
     });
   }
@@ -240,7 +249,7 @@ export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie10
         decision: `探查 ${num} 第 ${i} 位 (值为 ${status})：期望寻找对偶位 ${want}，实际匹配走向 ${actual} 分支`,
         message: actual === want ? `🎉 成功匹配对偶位，当前位异或贡献 2^${i} = ${1 << i}！` : `⚠️ 对偶位不存在，只能走向同值位，当前位贡献 0`,
         log: `query(${num}, bit=${i}) -> curXor=${ans}`,
-        codeLine: 18,
+        codeLine: TRIE_XOR_CODE_LINES.queryBit,
         statusBadge: actual === want ? { text: `成功贪心匹配 +${1 << i}`, type: 'success' } : { text: '贪心失败', type: 'danger' },
       });
     }
@@ -261,7 +270,7 @@ export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie10
       decision: `数字 ${num} 探查完毕，其最佳对偶伙伴产生的异或值为 ${ans}`,
       message: `当前全局最大异或和更新为: ${globalMax}`,
       log: `maxSoFar = ${globalMax}`,
-      codeLine: 29,
+      codeLine: TRIE_XOR_CODE_LINES.maxUpdate,
       statusBadge: { text: `最大异或: ${globalMax}`, type: 'success' },
     });
   }

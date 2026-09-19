@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface NQueensStep extends StepBase {
   stepIndex?: number;
@@ -22,8 +21,10 @@ export interface NQueensStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const N_QUEENS_BITWISE_CODES = {
@@ -106,20 +107,30 @@ public:
 }`
 };
 
+export const N_QUEENS_BITWISE_CODE_LINES = {
+  entry: { java: 3, cpp: 3, python: 3, typescript: 2 },
+  baseSuccess: { java: 10, cpp: 10, python: 6, typescript: 4 },
+  calcCandidates: { java: 13, cpp: 13, python: 7, typescript: 5 },
+  whileLoop: { java: 16, cpp: 16, python: 9, typescript: 7 },
+  pickOne: { java: 18, cpp: 18, python: 10, typescript: 8 },
+  recurse: { java: 21, cpp: 21, python: 12, typescript: 10 },
+};
+
 export function generateNQueensSteps(n: number = 4): NQueensStep[] {
   const steps: NQueensStep[] = [];
   const limit = (1 << n) - 1;
   const board = new Array(n).fill(-1);
   let totalSolutions = 0;
 
-  const lines = {
-    entry: 3,
-    baseSuccess: 10,
-    calcCandidates: 13,
-    whileLoop: 16,
-    pickOne: 18,
-    recurse: 21,
-  };
+  const lines = N_QUEENS_BITWISE_CODE_LINES;
+
+  const makeMetrics = (r: number, colMask: number, candMask: number, sols: number) => ({
+    currentRow: r >= n ? '推演完成' : `第 ${r} 行`,
+    totalSolutions: `${sols} 组`,
+    candidates: candMask.toString(2).padStart(n, '0'),
+    colConflict: colMask.toString(2).padStart(n, '0'),
+  });
+  const currentAns = (sols: number) => `${sols} 组互不冲突解`;
 
   // Step 0: 入口
   steps.push({
@@ -137,6 +148,8 @@ export function generateNQueensSteps(n: number = 4): NQueensStep[] {
     log: `Init N-Queens for N=${n}, limit=${limit.toString(2)}`,
     codeLine: lines.entry,
     statusBadge: { text: '位运算就绪', type: 'info' },
+    metrics: makeMetrics(0, 0, limit, 0),
+    ans: currentAns(0),
   });
 
   function bitToCol(pick: number): number {
@@ -164,6 +177,8 @@ export function generateNQueensSteps(n: number = 4): NQueensStep[] {
         log: `Solution found #${totalSolutions}`,
         codeLine: lines.baseSuccess,
         statusBadge: { text: `解法 #${totalSolutions}`, type: 'success' },
+        metrics: makeMetrics(row, col, 0, totalSolutions),
+        ans: currentAns(totalSolutions),
       });
       return;
     }
@@ -185,6 +200,8 @@ export function generateNQueensSteps(n: number = 4): NQueensStep[] {
       log: `Row ${row}: candidates=${candidates.toString(2)}`,
       codeLine: lines.calcCandidates,
       statusBadge: { text: `第 ${row} 行候选`, type: 'info' },
+      metrics: makeMetrics(row, col, candidates, totalSolutions),
+      ans: currentAns(totalSolutions),
     });
 
     while (candidates !== 0) {
@@ -208,6 +225,8 @@ export function generateNQueensSteps(n: number = 4): NQueensStep[] {
         log: `Row ${row} placed at col ${colIdx}`,
         codeLine: lines.pickOne,
         statusBadge: { text: `放置 (${row}, ${colIdx})`, type: 'success' },
+        metrics: makeMetrics(row, col, candidates, totalSolutions),
+        ans: currentAns(totalSolutions),
       });
 
       dfs(
@@ -239,109 +258,93 @@ export function generateNQueensSteps(n: number = 4): NQueensStep[] {
     log: `Completed. Total solutions: ${totalSolutions}`,
     codeLine: lines.baseSuccess,
     statusBadge: { text: '搜索完毕', type: 'success' },
+    metrics: makeMetrics(n, limit, 0, totalSolutions),
+    ans: currentAns(totalSolutions),
   });
 
   return steps;
 }
 
 export function renderNQueensCanvas(container: HTMLElement, step: NQueensStep): void {
-  const cellSize = 36;
-  const boardPx = step.n * cellSize;
+  const cellSize = 38;
 
   container.innerHTML = `
-    <div style="padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <!-- 核心指标看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">累计发现解法总数</div>
-          <div style="font-size: 24px; font-weight: bold; color: #34d399; margin-top: 4px;">
-            ${step.totalSolutions} 组
-          </div>
+    <div style="display: flex; gap: 20px; width: 100%; height: 100%; padding: 4px; box-sizing: border-box; align-items: flex-start; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: auto;">
+      <!-- N×N 棋盘 -->
+      <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color, #cbd5e1); display: flex; justify-content: space-between; width: 100%;">
+          <span>${step.n}×${step.n} 棋盘实时状态</span>
+          <span style="font-size: 11px; color: #38bdf8;">${step.row >= step.n ? '放置完成' : `当前试探第 ${step.row} 行`}</span>
         </div>
+        <div style="display: grid; grid-template-columns: repeat(${step.n}, ${cellSize}px); border: 2px solid #475569; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+          ${Array.from({ length: step.n * step.n }, (_, idx) => {
+            const r = Math.floor(idx / step.n);
+            const c = idx % step.n;
+            const isDark = (r + c) % 2 === 1;
+            const hasQueen = step.board[r] === c;
+            const isCurrentRow = r === step.row;
 
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">当前推演行 (Row)</div>
-          <div style="font-size: 20px; font-weight: bold; color: #38bdf8; margin-top: 4px;">
-            第 ${step.row} 行 ${step.currentPickCol !== null ? `(试探列 ${step.currentPickCol})` : ''}
-          </div>
+            return `
+              <div style="
+                width: ${cellSize}px;
+                height: ${cellSize}px;
+                background: ${hasQueen ? 'rgba(16, 185, 129, 0.4)' : isCurrentRow ? 'rgba(56, 189, 248, 0.18)' : isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(51, 65, 85, 0.5)'};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+                border: ${hasQueen ? '2px solid #34d399' : '1px solid rgba(255,255,255,0.04)'};
+                transition: background 0.15s ease;
+              ">
+                ${hasQueen ? '👑' : ''}
+              </div>
+            `;
+          }).join('')}
         </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">候选位掩码 (Candidates)</div>
-          <div style="font-size: 16px; font-family: monospace; color: #fbbf24; margin-top: 6px;">
-            ${step.candidatesMask.toString(2).padStart(step.n, '0')}
-          </div>
+        <div style="display: flex; gap: 12px; font-size: 11px; color: #94a3b8;">
+          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: rgba(56, 189, 248, 0.4); border-radius: 2px;"></span> 当前行</span>
+          <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: rgba(16, 185, 129, 0.6); border-radius: 2px;"></span> 已放置皇后</span>
         </div>
       </div>
 
-      <!-- 棋盘与位掩码并排沙盘 -->
-      <div style="display: grid; grid-template-columns: auto 1fr; gap: 20px; margin-bottom: 16px; align-items: center;">
-        <!-- N×N 棋盘 -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; display: inline-block;">
-          <div style="display: grid; grid-template-columns: repeat(${step.n}, ${cellSize}px); border: 2px solid #64748b; border-radius: 4px; overflow: hidden;">
-            ${Array.from({ length: step.n * step.n }, (_, idx) => {
-              const r = Math.floor(idx / step.n);
-              const c = idx % step.n;
-              const isDark = (r + c) % 2 === 1;
-              const hasQueen = step.board[r] === c;
-              const isCurrentRow = r === step.row;
+      <!-- 位运算掩码控制台 -->
+      <div style="background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; flex: 1; max-width: 440px;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color, #cbd5e1);">三向位掩码状态 (Bitwise Constraints)</div>
 
-              return `
-                <div style="
-                  width: ${cellSize}px;
-                  height: ${cellSize}px;
-                  background: ${hasQueen ? '#065f46' : isCurrentRow ? 'rgba(56, 189, 248, 0.15)' : isDark ? '#1e293b' : '#334155'};
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 18px;
-                  border: ${hasQueen ? '2px solid #34d399' : '1px solid rgba(255,255,255,0.03)'};
-                ">
-                  ${hasQueen ? '👑' : ''}
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-        <!-- 位运算掩码控制台 -->
-        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-size: 13px; font-weight: 600; color: #cbd5e1;">三大位掩码状态 (二进制位)</div>
-
-          <div style="display: flex; justify-content: space-between; font-size: 12px; font-family: monospace;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: monospace; background: rgba(30, 41, 59, 0.4); padding: 8px 12px; border-radius: 6px;">
             <span style="color: #94a3b8;">colMask (列冲突):</span>
-            <span style="color: #f43f5e; background: rgba(244,63,94,0.1); padding: 2px 8px; border-radius: 4px;">
+            <span style="color: #f43f5e; background: rgba(244,63,94,0.15); padding: 2px 8px; border-radius: 4px; font-weight: bold;">
               ${step.colMask.toString(2).padStart(step.n, '0')}
             </span>
           </div>
 
-          <div style="display: flex; justify-content: space-between; font-size: 12px; font-family: monospace;">
-            <span style="color: #94a3b8;">leftDiag (左下对角线):</span>
-            <span style="color: #fbbf24; background: rgba(251,191,36,0.1); padding: 2px 8px; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: monospace; background: rgba(30, 41, 59, 0.4); padding: 8px 12px; border-radius: 6px;">
+            <span style="color: #94a3b8;">leftDiag (左下对角线 &lt;&lt; 1):</span>
+            <span style="color: #fbbf24; background: rgba(251,191,36,0.15); padding: 2px 8px; border-radius: 4px; font-weight: bold;">
               ${step.leftDiagMask.toString(2).padStart(step.n, '0')}
             </span>
           </div>
 
-          <div style="display: flex; justify-content: space-between; font-size: 12px; font-family: monospace;">
-            <span style="color: #94a3b8;">rightDiag (右下对角线):</span>
-            <span style="color: #a855f7; background: rgba(168,85,247,0.1); padding: 2px 8px; border-radius: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: monospace; background: rgba(30, 41, 59, 0.4); padding: 8px 12px; border-radius: 6px;">
+            <span style="color: #94a3b8;">rightDiag (右下对角线 &gt;&gt; 1):</span>
+            <span style="color: #a855f7; background: rgba(168,85,247,0.15); padding: 2px 8px; border-radius: 4px; font-weight: bold;">
               ${step.rightDiagMask.toString(2).padStart(step.n, '0')}
             </span>
           </div>
 
-          <div style="margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: #34d399;">
-            公式：~(col | left | right) 取反求交，为 1 的位表示三向均无任何皇后射程威胁！
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: monospace; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 8px 12px; border-radius: 6px;">
+            <span style="color: #34d399; font-weight: 600;">candidates (可用候选位):</span>
+            <span style="color: #34d399; background: rgba(16,185,129,0.2); padding: 2px 8px; border-radius: 4px; font-weight: bold;">
+              ${step.candidatesMask.toString(2).padStart(step.n, '0')}
+            </span>
           </div>
         </div>
-      </div>
 
-      <!-- 原理卡片 -->
-      ${renderFormulaCard(
-        'N 皇后位运算加速核心原理',
-        '左对角线在下一行相当于左移 1 位 (<< 1)，右对角线在下一行相当于右移 1 位 (>> 1)。使用 candidates & (-candidates) 提取最低位 1，彻底抛弃传统遍历检验！空间仅需 3 个整数位掩码，运算速度逼近 CPU 硬件极限！',
-        step.decision,
-        step.statusBadge
-      )}
+        <div style="font-size: 11px; color: #94a3b8; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+          公式：<code style="color: #38bdf8;">limit &amp; ~(col | left | right)</code> 取反求交，值为 1 的位表示纵向及双斜向均无皇后射程攻击威胁。
+        </div>
+      </div>
     </div>
   `;
 }
@@ -354,6 +357,12 @@ export const nQueensBitwiseSpeedVisualizer = registerDeclarativeAlgorithm<NQueen
   difficulty: 3,
   levelOrder: 19,
   learningGoal: '掌握经典 N 皇后问题的列与双向对角线位掩码表达技巧，理解最右 1 提取与位移推导模型',
+  metrics: [
+    { id: 'currentRow', label: '当前推演行 (Row)', color: 'blue' },
+    { id: 'totalSolutions', label: '累计发现解 (Solutions)', color: 'emerald' },
+    { id: 'candidates', label: '候选列掩码 (Candidates)', color: 'amber' },
+    { id: 'colConflict', label: '列冲突掩码 (ColMask)', color: 'purple' },
+  ],
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>题目描述 (LeetCode 51/52 - Hard)</h3>

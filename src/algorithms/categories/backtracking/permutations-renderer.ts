@@ -83,6 +83,16 @@ export function buildPermutationsTree(nums: number[]): BacktrackTreeNode {
   return root;
 }
 
+export const PERMUTATIONS_CODE_LINES = {
+  start: { java: 3, cpp: 6, python: 4 },
+  collect: { java: 10, cpp: 13, python: 8 },
+  prune: { java: 14, cpp: 17, python: 12 },
+  makeChoice: { java: 16, cpp: 19, python: 14 },
+  recurse: { java: 17, cpp: 20, python: 15 },
+  backtrack: { java: 18, cpp: 21, python: 16 },
+  end: { java: 5, cpp: 8, python: 20 },
+};
+
 /* ── Generate steps by traversing the tree ────────────────── */
 export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
   const root = buildPermutationsTree(nums);
@@ -106,7 +116,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
     prunedNodeIds: [],
     path: [],
     message: `开始搜索：nums = [${nums.join(', ')}]，used 状态数组追踪`,
-    codeLine: 3,
+    codeLine: PERMUTATIONS_CODE_LINES.start,
     stats: { remaining: n, depth: 0, count: 0 },
     vars: [
       { name: 'nums', value: `[${nums.join(', ')}]`, type: 'array' },
@@ -129,7 +139,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
         prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `🎉 收集排列方案：[${node.path.join(', ')}]，收集并返回`,
-        codeLine: 9,
+        codeLine: PERMUTATIONS_CODE_LINES.collect,
         stats: { remaining: 0, depth: node.depth, count: solutions.length },
         vars: [
           { name: 'res.add()', value: `[${node.path.join(', ')}]`, type: 'array' },
@@ -156,7 +166,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
           prunedNodeIds: [...dynamicPrunedIds],
           path: [...node.path],
           message: `✂️ 树枝剪枝：used[${i}] (元素 ${candidate}) 为 true，已在当前排列分支中，跳过`,
-          codeLine: 13,
+          codeLine: PERMUTATIONS_CODE_LINES.prune,
           stats: { remaining: n - node.path.length, depth: node.depth, count: solutions.length },
           vars: [
             { name: `used[${i}]`, value: 'true', type: 'boolean' },
@@ -178,7 +188,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
         prunedNodeIds: [...dynamicPrunedIds],
         path: [...childNode.path],
         message: `做选择：used[${i}]=true, path.add(${candidate})，当前排列: [${childNode.path.join(', ')}]`,
-        codeLine: 15,
+        codeLine: PERMUTATIONS_CODE_LINES.makeChoice,
         stats: { remaining: n - childNode.path.length, depth: childNode.depth, count: solutions.length },
         vars: [
           { name: `used[${i}]`, value: 'true', type: 'boolean' },
@@ -194,7 +204,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
         prunedNodeIds: [...dynamicPrunedIds],
         path: [...childNode.path],
         message: `向下递归：backtrack(nums, used, path, res)`,
-        codeLine: 16,
+        codeLine: PERMUTATIONS_CODE_LINES.recurse,
         stats: { remaining: n - childNode.path.length, depth: childNode.depth, count: solutions.length },
         vars: [
           { name: 'used', value: `[${used.map((u) => (u ? 'T' : 'F')).join(', ')}]`, type: 'array' },
@@ -212,7 +222,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
         prunedNodeIds: [...dynamicPrunedIds],
         path: [...node.path],
         message: `🔙 回溯撤销：path.remove(${candidate}), used[${i}]=false，恢复排列: [${node.path.join(', ') || '空'}]`,
-        codeLine: 18,
+        codeLine: PERMUTATIONS_CODE_LINES.backtrack,
         stats: { remaining: n - node.path.length, depth: node.depth, count: solutions.length },
         vars: [
           { name: `used[${i}]`, value: 'false', type: 'boolean' },
@@ -233,7 +243,7 @@ export function buildPermutationsSteps(nums: number[]): BacktrackTreeStep[] {
     prunedNodeIds: [...dynamicPrunedIds],
     path: [],
     message: `🎉 搜索完成！共找到 ${n}! = ${solutions.length} 个全排列`,
-    codeLine: 5,
+    codeLine: PERMUTATIONS_CODE_LINES.end,
     stats: { remaining: 0, depth: 0, count: solutions.length },
     vars: [
       { name: 'nums', value: `[${nums.join(', ')}]`, type: 'array' },

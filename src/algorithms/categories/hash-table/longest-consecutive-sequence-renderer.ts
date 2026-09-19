@@ -24,7 +24,7 @@ export interface LongestConsecutiveStep extends StepBase {
   phase: 'init' | 'check-start' | 'expand' | 'update-max' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const LONGEST_CONSECUTIVE_CODES = {
@@ -83,6 +83,14 @@ public:
         return longest`,
 };
 
+export const LONGEST_CONSECUTIVE_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 4, python: 3 },
+  checkStart: { java: 9, cpp: 7, python: 6 },
+  expand: { java: 12, cpp: 10, python: 9 },
+  updateMax: { java: 16, cpp: 14, python: 12 },
+  finish: { java: 19, cpp: 17, python: 13 },
+};
+
 export function buildLongestConsecutiveSteps(
   nums: number[] = [100, 4, 200, 1, 3, 2]
 ): LongestConsecutiveStep[] {
@@ -105,7 +113,7 @@ export function buildLongestConsecutiveSteps(
     phase: 'init',
     message: `算法启动：原数组有 ${nums.length} 个数，去重后哈希集合有 ${uniqueNums.length} 个元素。`,
     log: `初始化 HashSet: {${uniqueNums.join(', ')}}`,
-    codeLine: 4,
+    codeLine: LONGEST_CONSECUTIVE_CODE_LINES.init,
   });
 
   for (const num of uniqueNums) {
@@ -122,7 +130,7 @@ export function buildLongestConsecutiveSteps(
       phase: 'check-start',
       message: `考察数字 ${num}：检查 ${num - 1} 是否存在于哈希表。${isStart ? `不存在！确认 ${num} 是连续序列的“起点”！` : `存在 ${num - 1}，说明 ${num} 只是中途点，直接跳过以保 O(N)！`}`,
       log: `判断起点 num=${num}: ${num - 1} 在集合? ${!isStart}`,
-      codeLine: 9,
+      codeLine: LONGEST_CONSECUTIVE_CODE_LINES.checkStart,
     });
 
     if (isStart) {
@@ -143,7 +151,7 @@ export function buildLongestConsecutiveSteps(
           phase: 'expand',
           message: `连续递增命中：集合中存在 ${cur}！当前连续链条扩展为 [${curStreak.join(' -> ')}] (长度 ${curStreak.length})。`,
           log: `链条延伸: 找到 ${cur}, 当前长度=${curStreak.length}`,
-          codeLine: 13,
+          codeLine: LONGEST_CONSECUTIVE_CODE_LINES.expand,
         });
       }
 
@@ -161,7 +169,7 @@ export function buildLongestConsecutiveSteps(
           phase: 'update-max',
           message: `刷新最长连续序列！序列 [${bestStreak.join(', ')}]，最大长度更新为 ${maxLen}。`,
           log: `更新最长连续序列: len=${maxLen}`,
-          codeLine: 17,
+          codeLine: LONGEST_CONSECUTIVE_CODE_LINES.updateMax,
         });
       }
     }
@@ -179,7 +187,7 @@ export function buildLongestConsecutiveSteps(
     phase: 'finish',
     message: `算法完成：全集合扫描完毕。最长数字连续序列为 [${bestStreak.join(' ➔ ')}]，长度为 ${maxLen}。`,
     log: `算法收敛完成，最大长度=${maxLen}`,
-    codeLine: 20,
+    codeLine: LONGEST_CONSECUTIVE_CODE_LINES.finish,
   });
 
   return steps;

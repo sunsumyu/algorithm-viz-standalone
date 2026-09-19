@@ -10,6 +10,18 @@ import {
   REPEATED_SUBSTRING_CODE_LANGUAGES,
 } from './repeated-substring-problem-content';
 import { computeNextArray } from './implement-str-str-renderer';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const REPEATED_SUBSTRING_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  short: { java: 2, cpp: 4, python: 5, javascript: 2 },
+  init: { java: [3, 4], cpp: [5, 6], python: [4, 6], javascript: [2, 3] },
+  computeNext: { java: 7, cpp: 8, python: 14, javascript: 9 },
+  checkPeriod: { java: 9, cpp: 9, python: 15, javascript: 10 },
+  found: { java: 10, cpp: 10, python: 16, javascript: 11 },
+  notFound: { java: 10, cpp: 10, python: 16, javascript: 11 },
+};
+
+const lines = REPEATED_SUBSTRING_CODE_LINES;
 
 export interface RPSStep {
   s: string;
@@ -24,7 +36,7 @@ export interface RPSStep {
   status: 'init' | 'compute-next' | 'check-period' | 'found' | 'not-found';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -46,7 +58,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
       status: 'not-found',
       message: `字符串长度为 ${n} &le; 1，无法由子串重复构成，直接返回 false。`,
       log: `长度不足 2 -> false`,
-      codeLine: 2,
+      codeLine: lines.short,
     });
     return steps;
   }
@@ -70,7 +82,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
     status: 'init',
     message: `初始化分析：字符串 "${s}" (长度 n = ${n})。构建 KMP 前缀表 next。`,
     log: `初始化字符串 "${s}" (n=${n})`,
-    codeLine: [3, 4],
+    codeLine: lines.init,
   });
 
   steps.push({
@@ -86,7 +98,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
     status: 'compute-next',
     message: `计算得到前缀表 next = [${next.join(', ')}]。末尾项 next[${n - 1}] = ${maxLPS}，表示最长相等前后缀长度为 ${maxLPS}。`,
     log: `next[${n - 1}] = ${maxLPS} (最长相等前后缀)`,
-    codeLine: 6,
+    codeLine: lines.computeNext,
   });
 
   steps.push({
@@ -102,7 +114,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
     status: 'check-period',
     message: `计算潜在最小重复子串周期：patternLen = n - next[n - 1] = ${n} - ${maxLPS} = ${patternLen}。候选子串为 "${patternStr}"。`,
     log: `计算周期: patternLen = ${n} - ${maxLPS} = ${patternLen} ("${patternStr}")`,
-    codeLine: 8,
+    codeLine: lines.checkPeriod,
   });
 
   // 构造周期平铺
@@ -126,7 +138,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
       status: 'found',
       message: `🎉 判定成功！maxLPS(${maxLPS}) > 0 且 ${n} % ${patternLen} == 0 (整除)。字符串可由子串 "${patternStr}" 重复 ${repeatCount} 次构成，返回 true。`,
       log: `✓ 成功: "${patternStr}" 重复 ${repeatCount} 次 -> true`,
-      codeLine: 9,
+      codeLine: lines.found,
     });
   } else {
     steps.push({
@@ -142,7 +154,7 @@ export function buildRPSSteps(s: string): RPSStep[] {
       status: 'not-found',
       message: `⚠️ 判定失败！maxLPS = ${maxLPS}，${n} % ${patternLen} = ${n % patternLen} != 0 (不能整除)。无法由重复子串构成，返回 false。`,
       log: `✗ 不能整除 (${n} % ${patternLen} != 0) -> false`,
-      codeLine: 9,
+      codeLine: lines.notFound,
     });
   }
 

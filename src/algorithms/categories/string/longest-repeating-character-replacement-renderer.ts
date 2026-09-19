@@ -13,7 +13,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 
 export interface CharacterReplacementStep extends StepBase {
   s: string;
@@ -28,7 +28,7 @@ export interface CharacterReplacementStep extends StepBase {
   bestLen: number;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
 }
 
 export const CHARACTER_REPLACEMENT_CODES = {
@@ -85,6 +85,13 @@ public:
         return max_len`,
 };
 
+export const CHARACTER_REPLACEMENT_CODE_LINES = {
+  init: { java: 4, cpp: 5, python: 4 },
+  expand: { java: 9, cpp: 8, python: 9 },
+  shrink: { java: 13, cpp: 10, python: 11 },
+  finish: { java: 18, cpp: 15, python: 14 },
+};
+
 export function buildCharacterReplacementSteps(s: string = 'AABABBA', k: number = 1): CharacterReplacementStep[] {
   const steps: CharacterReplacementStep[] = [];
   const count: Record<string, number> = {};
@@ -106,7 +113,7 @@ export function buildCharacterReplacementSteps(s: string = 'AABABBA', k: number 
     bestLen: 0,
     message: `算法启动：原字符串 "${s}"，允许最多替换 k = ${k} 个字符。初始化滑动窗口 [0 .. 0]。`,
     log: `初始化双指针滑动窗口: s="${s}", k=${k}`,
-    codeLine: 4,
+    codeLine: CHARACTER_REPLACEMENT_CODE_LINES.init,
   });
 
   for (let right = 0; right < s.length; right++) {
@@ -130,7 +137,7 @@ export function buildCharacterReplacementSteps(s: string = 'AABABBA', k: number 
       bestLen: maxLen,
       message: `扩大窗口：引入右边界字符 s[${right}] = '${c}'。当前窗口 [${left}..${right}] 长度 ${windowLen}，主导字符最高频次 maxCount = ${maxCount}。需替换 ${needReplace} 个字符。`,
       log: `窗口扩展 [${left}..${right}]: 长度=${windowLen}, maxCount=${maxCount}, 需替换=${needReplace}`,
-      codeLine: 8,
+      codeLine: CHARACTER_REPLACEMENT_CODE_LINES.expand,
     });
 
     if (needReplace > k) {
@@ -149,7 +156,7 @@ export function buildCharacterReplacementSteps(s: string = 'AABABBA', k: number 
         bestLen: maxLen,
         message: `需替换字符数 ${needReplace} > k (${k})，超出上限！左边界 left 右移收缩窗口：移除 s[${left}] ('${leftChar}')，left 从 ${left} 移至 ${left + 1}。`,
         log: `收缩左边界: 移除 '${leftChar}', left=${left + 1}`,
-        codeLine: 12,
+        codeLine: CHARACTER_REPLACEMENT_CODE_LINES.shrink,
       });
       left++;
     }
@@ -171,7 +178,7 @@ export function buildCharacterReplacementSteps(s: string = 'AABABBA', k: number 
     bestLen: maxLen,
     message: `滑动窗口探索完毕！至多替换 ${k} 次后能获得的最长重复字符子串长度为 ${maxLen}。`,
     log: `算法收敛完成，最大长度 maxLen=${maxLen}`,
-    codeLine: 16,
+    codeLine: CHARACTER_REPLACEMENT_CODE_LINES.finish,
   });
 
   return steps;

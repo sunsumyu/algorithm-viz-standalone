@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
 
 export interface LucasCallFrame {
@@ -27,6 +27,7 @@ export interface Lucas144Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -121,6 +122,14 @@ export function lucas(n: number, m: number, p: number): number {
 }`
 };
 
+export const LUCAS_144_CODE_LINES = {
+  entry: { java: 24, cpp: 18, python: 11, typescript: 22 },
+  base: { java: 25, cpp: 19, python: 12, typescript: 23 },
+  decompose: { java: 26, cpp: 20, python: 13, typescript: 24 },
+  merge: { java: 26, cpp: 20, python: 13, typescript: 24 },
+  finish: { java: 27, cpp: 21, python: 14, typescript: 25 },
+};
+
 function powerHelper(base: number, exp: number, p: number): number {
   let res = 1;
   base %= p;
@@ -156,7 +165,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
     decision: `主函数入口：准备计算组合数 C(${n}, ${m}) mod ${p}，启动卢卡斯定理递归分解`,
     message: '卢卡斯定理：C(n, m) ≡ C(n/p, m/p) × C(n%p, m%p) (mod p)，将超大参数降阶为 p 进制下各数位的组合数乘积',
     log: `lucas(n=${n}, m=${m}, p=${p})`,
-    codeLine: 1,
+    codeLine: LUCAS_144_CODE_LINES.entry,
     statusBadge: { text: '递归入口', type: 'info' },
   });
 
@@ -171,7 +180,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
         decision: `到达基准情形：m = 0，组合数 C(${curN}, 0) 恒等于 1，开始递归回溯`,
         message: '空集的选取方案唯一，直接返回 1',
         log: `comb(${curN}, 0) = 1`,
-        codeLine: 24,
+        codeLine: LUCAS_144_CODE_LINES.base,
         statusBadge: { text: '命中边界 m=0', type: 'success' },
       });
       return 1;
@@ -203,7 +212,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
       decision: `递归分解：C(${curN}, ${curM}) = C(${nDivP}, ${mDivP}) × C(${nModP}, ${mModP}) (mod ${p})`,
       message: `单项小模数组合数 C(${nModP}, ${mModP}) % ${p} = ${cSmall}。继续向下递归求解 C(${nDivP}, ${mDivP})`,
       log: `C(${curN},${curM}) -> div=(${nDivP},${mDivP}), mod=(${nModP},${mModP})[${cSmall}]`,
-      codeLine: 25,
+      codeLine: LUCAS_144_CODE_LINES.decompose,
       statusBadge: { text: `递归下潜`, type: 'warning' },
     });
 
@@ -220,7 +229,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
       decision: `回溯合并：C(${curN}, ${curM}) = ${higherComb} × ${cSmall} % ${p} = ${result}`,
       message: `高阶项与本位小组合数乘积完成`,
       log: `return C(${curN},${curM}) = ${result}`,
-      codeLine: 26,
+      codeLine: LUCAS_144_CODE_LINES.merge,
       statusBadge: { text: `回溯得到 ${result}`, type: 'success' },
     });
 
@@ -239,7 +248,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
     decision: `🎉 卢卡斯定理计算完毕！C(${n}, ${m}) mod ${p} = ${finalAns}`,
     message: `成功通过小质数 p 进制拆分完成大组合数求模计算`,
     log: `final answer: ${finalAns}`,
-    codeLine: 27,
+    codeLine: LUCAS_144_CODE_LINES.finish,
     statusBadge: { text: `最终结果 ${finalAns}`, type: 'success' },
   });
 

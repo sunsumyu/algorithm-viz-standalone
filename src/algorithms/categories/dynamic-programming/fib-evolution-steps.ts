@@ -387,6 +387,17 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
   let nodeIdCounter = 0;
   let calls = 0;
 
+  // ─── 各语言 1-based 相对行号字典 (naive-recursive) ───
+  // java(7行):  行2=entry, 行3=guard, 行5=compute
+  // python(6行):行2=entry, 行3=guard, 行6=compute
+  // cpp(8行):   行3=entry, 行4=guard, 行6=compute
+  // js(5行):    行1=entry, 行2=guard, 行4=compute
+  const lines = {
+    entry:   { java: 2, cpp: 3, python: 2, javascript: 1 },
+    guard:   { java: 3, cpp: 4, python: 3, javascript: 2 },
+    compute: { java: 5, cpp: 6, python: 6, javascript: 4 },
+  };
+
   function createTreeNode(k: number): DpTreeNode {
     return {
       id: 'node_' + (nodeIdCounter++),
@@ -401,6 +412,19 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
     return cloneStateDepTree(node);
   }
 
+  const rootTree = createTreeNode(n);
+
+  // Step 0：函数入口帧（生命周期闭环必须项）
+  steps.push({
+    evolutionMode: 'naive-recursive',
+    tree: cloneTree(rootTree),
+    message: '📥 函数入口：fib(n=' + n + ')，准备自顶向下递归分治展开。',
+    log: 'enter fib(n=' + n + ')',
+    formula: 'fib(' + n + ') = ?',
+    codeLine: lines.entry,
+    metrics: { i: n, answer: '?', calls: 0, status: '函数入口' },
+  });
+
   function recurse(k: number, currentSubtree: DpTreeNode): number {
     calls++;
     currentSubtree.status = 'current';
@@ -414,7 +438,7 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
         message: '🍃 触底 Base Case: fib(' + k + ') = ' + k + '，直接返回。',
         log: 'fib(' + k + ') = ' + k + ' (Base Case)',
         formula: 'fib(' + k + ') = ' + k,
-        codeLine: [2, 3],
+        codeLine: lines.guard,
         metrics: { i: k, answer: k, calls, status: 'Base Case' },
       });
       return k;
@@ -426,7 +450,7 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
       message: '🔍 展开子问题: 求解 fib(' + k + ')，需要先递归求解 fib(' + (k - 1) + ') 和 fib(' + (k - 2) + ')。',
       log: '展开 fib(' + k + ') -> fib(' + (k - 1) + ') + fib(' + (k - 2) + ')',
       formula: 'fib(' + k + ') = fib(' + (k - 1) + ') + fib(' + (k - 2) + ')',
-      codeLine: [4, 5],
+      codeLine: lines.compute,
       metrics: { i: k, answer: '计算中', calls, status: '向下递归' },
     });
 
@@ -449,14 +473,13 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
       message: '✨ 子问题合并: fib(' + k + ') = fib(' + (k - 1) + ')(' + leftVal + ') + fib(' + (k - 2) + ')(' + rightVal + ') = ' + total + '。',
       log: 'fib(' + k + ') = ' + leftVal + ' + ' + rightVal + ' = ' + total,
       formula: 'fib(' + k + ') = ' + leftVal + ' + ' + rightVal + ' = ' + total,
-      codeLine: [5],
+      codeLine: lines.compute,
       metrics: { i: k, answer: total, calls, status: '合并返回' },
     });
 
     return total;
   }
 
-  const rootTree = createTreeNode(n);
   const finalAns = recurse(n, rootTree);
 
   steps.push({
@@ -465,7 +488,7 @@ function buildNaiveRecursiveSteps(n: number): FibEvolutionStep[] {
     message: '🎉 朴素递归完成！fib(' + n + ') = ' + finalAns + '，总计发生 ' + calls + ' 次函数调用（存在大量重复计算）。',
     log: '计算完成: fib(' + n + ') = ' + finalAns + ', 总调用次数 = ' + calls,
     formula: 'fib(' + n + ') = ' + finalAns,
-    codeLine: 5,
+    codeLine: lines.compute,
     metrics: { i: n, answer: finalAns, calls, status: '计算完毕' },
   });
 
@@ -479,6 +502,23 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
   let nodeIdCounter = 0;
   let calls = 0;
   let hits = 0;
+
+  // ─── 各语言 1-based 相对行号字典 (memo-topdown) ───
+  // java(13行): 行2=entry(fib), 行3=initMemo, 行4=fill, 行5=callHelper
+  //             行7=helperEntry, 行8=baseCase, 行9=hitCache, 行10=compute, 行11=returnAns
+  // python(9行):行2=entry, 行3=initMemo, 行4=helperDef(=helperEntry), 行5=baseCase, 行6=hitCache, 行7=compute, 行8=returnAns, 行9=callHelper
+  // cpp(13行):  行3=entry, 行4=initMemo, 行5=callHelper
+  //             行7=helperEntry, 行8=baseCase, 行9=hitCache, 行10=compute, 行11=returnAns
+  // js(11行):   行1=entry, 行2=initMemo, 行3=helperDef(=helperEntry), 行4=baseCase, 行5=hitCache, 行6=compute, 行7=returnAns, 行9=callHelper
+  const lines = {
+    entry:       { java: 2,  cpp: 3,  python: 2, javascript: 1  },
+    initMemo:    { java: 3,  cpp: 4,  python: 3, javascript: 2  },
+    helperEntry: { java: 7,  cpp: 7,  python: 4, javascript: 3  },
+    baseCase:    { java: 8,  cpp: 8,  python: 5, javascript: 4  },
+    hitCache:    { java: 9,  cpp: 9,  python: 6, javascript: 5  },
+    compute:     { java: 10, cpp: 10, python: 7, javascript: 6  },
+    returnAns:   { java: 11, cpp: 11, python: 8, javascript: 7  },
+  };
 
   function createTreeNode(k: number): DpTreeNode {
     return {
@@ -494,9 +534,50 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
     return cloneStateDepTree(node);
   }
 
+  const rootTree = createTreeNode(n);
+
+  // Step 0：函数入口帧（生命周期闭环必须项）
+  steps.push({
+    evolutionMode: 'memo-topdown',
+    tree: cloneTree(rootTree),
+    memoTable: new Map(memo),
+    dp1d: buildMemoArray(n, memo),
+    message: '📥 函数入口：fib(n=' + n + ')，准备初始化备忘录并启动记忆化递归。',
+    log: 'enter fib(n=' + n + ')',
+    formula: 'fib(' + n + ') = ?',
+    codeLine: lines.entry,
+    metrics: { i: n, answer: '?', calls: 0, hits: 0, status: '函数入口' },
+  });
+
+  // 初始化备忘录帧
+  steps.push({
+    evolutionMode: 'memo-topdown',
+    tree: cloneTree(rootTree),
+    memoTable: new Map(memo),
+    dp1d: buildMemoArray(n, memo),
+    message: '🗺️ 初始化备忘录 memo，长度 ' + (n + 1) + '，全部填充 -1（未计算标志）。',
+    log: 'memo = Array(' + (n + 1) + ').fill(-1)',
+    formula: 'memo = [-1, -1, ..., -1]',
+    codeLine: lines.initMemo,
+    metrics: { i: n, answer: '?', calls: 0, hits: 0, status: '初始化备忘录' },
+  });
+
   function recurse(k: number, currentSubtree: DpTreeNode): number {
     calls++;
     currentSubtree.status = 'current';
+
+    // helper 函数入口帧
+    steps.push({
+      evolutionMode: 'memo-topdown',
+      tree: cloneTree(rootTree),
+      memoTable: new Map(memo),
+      dp1d: buildMemoArray(n, memo),
+      message: '📥 进入 helper(k=' + k + ')，检查备忘录与边界。',
+      log: 'enter helper(k=' + k + ')',
+      formula: 'helper(' + k + ')',
+      codeLine: lines.helperEntry,
+      metrics: { i: k, answer: '?', calls, hits, status: 'helper 入口' },
+    });
 
     if (k <= 1) {
       memo.set(k, k);
@@ -510,7 +591,7 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
         message: '🍃 触底 Base Case: fib(' + k + ') = ' + k + '，存入备忘录 memo[' + k + '] = ' + k + '。',
         log: 'Base Case: fib(' + k + ') = ' + k + ', memo[' + k + ']=' + k,
         formula: 'memo[' + k + '] = ' + k,
-        codeLine: [7, 8],
+        codeLine: lines.baseCase,
         metrics: { i: k, answer: k, calls, hits, status: 'Base Case 存表' },
       });
       return k;
@@ -529,7 +610,7 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
         message: '⚡ 备忘录命中 (Memo Hit)! fib(' + k + ') 之前已计算过，直接查表返回 ' + val + '，剪枝跳过全部子分支！',
         log: 'Memo Hit: fib(' + k + ') = ' + val + ' (剪枝)',
         formula: 'return memo[' + k + '] = ' + val + ' (O(1) 查表)',
-        codeLine: [8],
+        codeLine: lines.hitCache,
         metrics: { i: k, answer: val, calls, hits, status: '🎯 查表剪枝' },
       });
       return val;
@@ -543,7 +624,7 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
       message: '🔍 首次计算 fib(' + k + ')：未在备忘录中找到，继续向下递归求解 fib(' + (k - 1) + ') 与 fib(' + (k - 2) + ')。',
       log: '首次计算 fib(' + k + ')',
       formula: 'fib(' + k + ') = fib(' + (k - 1) + ') + fib(' + (k - 2) + ')',
-      codeLine: [9, 10],
+      codeLine: lines.compute,
       metrics: { i: k, answer: '计算中', calls, hits, status: '未命中，展开' },
     });
 
@@ -569,14 +650,13 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
       message: '💾 存入备忘录: fib(' + k + ') = ' + leftVal + ' + ' + rightVal + ' = ' + total + '，存入 memo[' + k + '] 供后续复用。',
       log: '存表: memo[' + k + '] = ' + total,
       formula: 'memo[' + k + '] = memo[' + (k - 1) + '] + memo[' + (k - 2) + '] = ' + total,
-      codeLine: [10, 11],
+      codeLine: lines.returnAns,
       metrics: { i: k, answer: total, calls, hits, status: '计算并存表' },
     });
 
     return total;
   }
 
-  const rootTree = createTreeNode(n);
   const finalAns = recurse(n, rootTree);
 
   steps.push({
@@ -587,7 +667,7 @@ function buildMemoTopDownSteps(n: number): FibEvolutionStep[] {
     message: '🎉 记忆化搜索完成！fib(' + n + ') = ' + finalAns + '，调用次数大幅减少至 ' + calls + ' 次（命中 ' + hits + ' 次缓存）。',
     log: '计算完成: fib(' + n + ') = ' + finalAns + ', 命中 ' + hits + ' 次',
     formula: 'return memo[' + n + '] = ' + finalAns,
-    codeLine: 11,
+    codeLine: lines.returnAns,
     metrics: { i: n, answer: finalAns, calls, hits, status: '计算完毕' },
   });
 
@@ -605,36 +685,104 @@ function buildMemoArray(n: number, memo: Map<number, number>): number[] {
 /** 递推表格法步进 */
 function buildTabulationSteps(n: number): FibEvolutionStep[] {
   const steps: FibEvolutionStep[] = [];
+
+  // ─── 各语言 1-based 相对行号字典 (tabulation-bottomup) ───
+  // java(13行):  行2=entry, 行3=guard, 行4=allocDp, 行5=initBase0, 行6=initBase1, 行8=loopHead, 行9=compute, 行11=returnAns
+  // python(8行): 行2=entry, 行3=guard, 行4=allocDp, 行5=initBase, 行6=loopHead, 行7=compute, 行8=returnAns
+  // cpp(13行):   行3=entry, 行4=guard, 行5=allocDp, 行6=initBase, 行7=loopHead, 行8=compute, 行10=returnAns
+  // js(10行):    行1=entry, 行2=guard, 行3=allocDp, 行4=initBase0, 行5=initBase1, 行6=loopHead, 行7=compute, 行9=returnAns
+  const lines = {
+    entry:      { java: 2,  cpp: 3,  python: 2, javascript: 1 },
+    guard:      { java: 3,  cpp: 4,  python: 3, javascript: 2 },
+    allocDp:    { java: 4,  cpp: 5,  python: 4, javascript: 3 },
+    initBase:   { java: 5,  cpp: 6,  python: 5, javascript: 4 },
+    initBase1:  { java: 6,  cpp: 6,  python: 5, javascript: 5 },
+    loopHead:   { java: 8,  cpp: 7,  python: 6, javascript: 6 },
+    compute:    { java: 9,  cpp: 8,  python: 7, javascript: 7 },
+    returnAns:  { java: 11, cpp: 10, python: 8, javascript: 9 },
+  };
+
   const dp: number[] = Array(n + 1).fill(0);
   dp[0] = 0;
   if (n >= 1) dp[1] = 1;
 
+  // Step 0：函数入口帧（生命周期闭环必须项）
+  steps.push({
+    evolutionMode: 'tabulation-bottomup',
+    dp1d: Array(n + 1).fill('-' as unknown as number),
+    current: { index: -1 },
+    message: '📥 函数入口：fib(n=' + n + ')，准备自底向上递推填表。',
+    log: 'enter fib(n=' + n + ')',
+    formula: 'fib(' + n + ') = ?',
+    codeLine: lines.entry,
+    metrics: { i: n, prev1: '?', prev2: '?', answer: '?', status: '函数入口' },
+  });
+
+  // 边界特判帧
+  steps.push({
+    evolutionMode: 'tabulation-bottomup',
+    dp1d: Array(n + 1).fill('-' as unknown as number),
+    current: { index: -1 },
+    message: '🔎 边界特判：若 n <= 1 直接返回 n（本例 n=' + n + '，继续递推）。',
+    log: 'guard: n=' + n + ' > 1，继续',
+    formula: 'if (n <= 1) return n',
+    codeLine: lines.guard,
+    metrics: { i: n, prev1: '?', prev2: '?', answer: '?', status: '边界特判' },
+  });
+
+  // 分配状态数组帧
+  steps.push({
+    evolutionMode: 'tabulation-bottomup',
+    dp1d: Array(n + 1).fill('-' as unknown as number),
+    current: { index: -1 },
+    message: '🗂️ 分配状态数组 dp[0..' + n + ']，初始全为 0。',
+    log: 'alloc dp[0..' + n + ']',
+    formula: 'int[] dp = new int[' + (n + 1) + ']',
+    codeLine: lines.allocDp,
+    metrics: { i: n, prev1: '?', prev2: '?', answer: '?', status: '分配状态数组' },
+  });
+
+  // 边界初始化帧
   steps.push({
     evolutionMode: 'tabulation-bottomup',
     dp1d: clone1d(dp),
     current: { index: 0 },
-    message: '🎬 边界初始化: dp[0] = 0, dp[1] = 1。',
+    message: '🎬 边界初始化: dp[0] = 0, dp[1] = 1（递推基底）。',
     log: '初始化 dp[0]=0, dp[1]=1',
     formula: 'dp[0] = 0, dp[1] = 1',
-    codeLine: [4, 5],
+    codeLine: lines.initBase,
     metrics: { i: 1, prev1: 1, prev2: 0, answer: 1, status: 'Base Case 初始化' },
   });
 
   for (let i = 2; i <= n; i++) {
+    // 循环头判断帧（铁律：无论条件是否成立必须高亮循环头）
+    steps.push({
+      evolutionMode: 'tabulation-bottomup',
+      dp1d: clone1d(dp),
+      current: { index: i - 1 },
+      message: '🔄 循环头：i = ' + i + '，满足 i <= ' + n + ' = true，进入循环体。',
+      log: 'for i=' + i + ' (i <= ' + n + ') -> true',
+      formula: 'for (int i = ' + i + '; i <= ' + n + '; i++)',
+      codeLine: lines.loopHead,
+      metrics: { i, prev1: dp[i - 1], prev2: dp[i - 2], answer: '计算中', status: '循环判断' },
+    });
+
     dp[i] = dp[i - 1] + dp[i - 2];
+    // 状态转移帧
     steps.push({
       evolutionMode: 'tabulation-bottomup',
       dp1d: clone1d(dp),
       current: { index: i },
       dependencies: [{ index: i - 1 }, { index: i - 2 }],
-      message: '⚡ 循环填表: dp[' + i + '] = dp[' + (i - 1) + '] + dp[' + (i - 2) + '] = ' + dp[i] + '。',
+      message: '⚡ 状态转移: dp[' + i + '] = dp[' + (i - 1) + '](' + dp[i - 1] + ') + dp[' + (i - 2) + '](' + dp[i - 2] + ') = ' + dp[i] + '。',
       log: 'dp[' + i + '] = ' + dp[i],
       formula: 'dp[' + i + '] = dp[' + (i - 1) + '] + dp[' + (i - 2) + '] = ' + dp[i],
-      codeLine: [7, 8],
+      codeLine: lines.compute,
       metrics: { i, prev1: dp[i - 1], prev2: dp[i - 2], answer: dp[i], status: '状态转移递推' },
     });
   }
 
+  // 返回最终答案帧
   steps.push({
     evolutionMode: 'tabulation-bottomup',
     dp1d: clone1d(dp),
@@ -642,7 +790,7 @@ function buildTabulationSteps(n: number): FibEvolutionStep[] {
     message: '🎉 递推填表完成！fib(' + n + ') = dp[' + n + '] = ' + dp[n] + '。',
     log: '计算完成: dp[' + n + '] = ' + dp[n],
     formula: 'return dp[' + n + '] = ' + dp[n],
-    codeLine: 10,
+    codeLine: lines.returnAns,
     metrics: { i: n, prev1: dp[Math.max(0, n - 1)], prev2: dp[Math.max(0, n - 2)], answer: dp[n], status: '计算完毕' },
   });
 
@@ -652,6 +800,35 @@ function buildTabulationSteps(n: number): FibEvolutionStep[] {
 /** 空间压缩滚动变量步进 */
 function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
   const steps: FibEvolutionStep[] = [];
+
+  // ─── 各语言 1-based 相对行号字典 (space-optimized) ───
+  // java(14行):  行2=entry, 行3=guard, 行4=initPrev2, 行5=initPrev1, 行6=initCurr
+  //              行7=loopHead, 行8=computeCurr, 行9=slidePrev2, 行10=slidePrev1, 行12=returnAns
+  // python(8行): 行2=entry, 行3=guard, 行4=initVars, 行5=loopHead, 行6=computeCurr, 行7=slideVars, 行8=returnAns
+  // cpp(13行):   行3=entry, 行4=guard, 行5=initVars, 行6=loopHead, 行7=computeCurr, 行8=slidePrev2, 行9=slidePrev1, 行11=returnAns
+  // js(11行):    行1=entry, 行2=guard, 行3=initVars, 行4=loopHead, 行5=computeCurr, 行6=slidePrev2, 行7=slidePrev1, 行9=returnAns
+  const lines = {
+    entry:       { java: 2,  cpp: 3,  python: 2, javascript: 1  },
+    guard:       { java: 3,  cpp: 4,  python: 3, javascript: 2  },
+    initVars:    { java: 4,  cpp: 5,  python: 4, javascript: 3  },
+    loopHead:    { java: 7,  cpp: 6,  python: 5, javascript: 4  },
+    computeCurr: { java: 8,  cpp: 7,  python: 6, javascript: 5  },
+    slideVars:   { java: 9,  cpp: 8,  python: 7, javascript: 6  },
+    returnAns:   { java: 12, cpp: 11, python: 8, javascript: 9  },
+  };
+
+  // Step 0：函数入口帧（生命周期闭环必须项）
+  steps.push({
+    evolutionMode: 'space-optimized',
+    rollingVars: { prev2: 0, prev1: 1, curr: 0 },
+    current: { index: -1 },
+    message: '📥 函数入口：fib(n=' + n + ')，准备用 O(1) 滚动变量计算。',
+    log: 'enter fib(n=' + n + ')',
+    formula: 'fib(' + n + ') = ?',
+    codeLine: lines.entry,
+    metrics: { i: n, prev1: '?', prev2: '?', answer: '?', status: '函数入口' },
+  });
+
   if (n <= 1) {
     steps.push({
       evolutionMode: 'space-optimized',
@@ -661,7 +838,7 @@ function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
       message: '🎬 边界特判: n <= 1，直接返回 ' + n + '。',
       log: 'fib(' + n + ') = ' + n,
       formula: 'return ' + n,
-      codeLine: 2,
+      codeLine: lines.guard,
       metrics: { i: n, prev1: n, prev2: 0, answer: n, status: '边界返回' },
     });
     return steps;
@@ -669,19 +846,33 @@ function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
 
   let prev2 = 0, prev1 = 1, curr = 1;
 
+  // 初始化滚动变量帧
   steps.push({
     evolutionMode: 'space-optimized',
     rollingVars: { prev2, prev1, curr: prev1 },
     current: { index: 1 },
-    message: '🎬 空间压缩初始化: prev2 = 0, prev1 = 1。',
+    message: '🎬 空间压缩初始化: prev2 = 0 (dp[0])，prev1 = 1 (dp[1])。',
     log: '初始化 prev2=0, prev1=1',
     formula: 'prev2 = 0, prev1 = 1',
-    codeLine: [3, 4, 5],
+    codeLine: lines.initVars,
     metrics: { i: 1, prev1, prev2, answer: prev1, status: '滚动变量初始化' },
   });
 
   for (let i = 2; i <= n; i++) {
+    // 循环头判断帧
+    steps.push({
+      evolutionMode: 'space-optimized',
+      rollingVars: { prev2, prev1, curr },
+      current: { index: i - 1 },
+      message: '🔄 循环头：i = ' + i + '，满足 i <= ' + n + ' = true，进入循环体。',
+      log: 'for i=' + i + ' -> true',
+      formula: 'for (int i = ' + i + '; i <= ' + n + '; i++)',
+      codeLine: lines.loopHead,
+      metrics: { i, prev1, prev2, answer: '计算中', status: '循环判断' },
+    });
+
     curr = prev1 + prev2;
+    // 状态转移：计算当前值
     steps.push({
       evolutionMode: 'space-optimized',
       rollingVars: { prev2, prev1, curr },
@@ -689,13 +880,14 @@ function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
       message: '⚡ 滚动求和: curr = prev1 (' + prev1 + ') + prev2 (' + prev2 + ') = ' + curr + '。',
       log: 'i=' + i + ': curr = ' + prev1 + ' + ' + prev2 + ' = ' + curr,
       formula: 'curr = prev1 + prev2 = ' + curr,
-      codeLine: [6, 7],
+      codeLine: lines.computeCurr,
       metrics: { i, prev1, prev2, answer: curr, status: '滚动累加' },
     });
 
     prev2 = prev1;
     prev1 = curr;
 
+    // 窗口滑动帧
     steps.push({
       evolutionMode: 'space-optimized',
       rollingVars: { prev2, prev1, curr },
@@ -703,11 +895,12 @@ function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
       message: '🔄 窗口滑动: prev2 移至 ' + prev2 + ', prev1 移至 ' + prev1 + '。',
       log: '窗口滑动: prev2=' + prev2 + ', prev1=' + prev1,
       formula: 'prev2 = prev1; prev1 = curr;',
-      codeLine: [8, 9],
+      codeLine: lines.slideVars,
       metrics: { i, prev1, prev2, answer: curr, status: '窗口向前滑动' },
     });
   }
 
+  // 返回最终答案帧
   steps.push({
     evolutionMode: 'space-optimized',
     rollingVars: { prev2, prev1, curr },
@@ -715,7 +908,7 @@ function buildSpaceOptimizedSteps(n: number): FibEvolutionStep[] {
     message: '🎉 空间优化完成！fib(' + n + ') = ' + curr + '，仅用 O(1) 常数空间！',
     log: '计算完成: fib(' + n + ') = ' + curr + ', 空间复杂度 O(1)',
     formula: 'return curr = ' + curr,
-    codeLine: 11,
+    codeLine: lines.returnAns,
     metrics: { i: n, prev1, prev2, answer: curr, status: '计算完毕' },
   });
 

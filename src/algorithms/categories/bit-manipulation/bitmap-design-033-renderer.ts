@@ -19,7 +19,7 @@ export interface BitMapStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -106,11 +106,11 @@ export function generateBitMapSteps(maxVal: number = 63, ops: BitMapOp[]): BitMa
   const bucketCount = (maxVal + 32) >> 5;
   const buckets = new Array(bucketCount).fill(0);
 
-  const lines = {
-    init: 6,
-    add: 11,
-    remove: 16,
-    contains: 21,
+  const lines: Record<string, Record<string, number>> = {
+    init: { java: 6, cpp: 6, python: 3, typescript: 4, javascript: 4 },
+    add: { java: 11, cpp: 10, python: 6, typescript: 7, javascript: 7 },
+    remove: { java: 16, cpp: 14, python: 9, typescript: 10, javascript: 10 },
+    contains: { java: 21, cpp: 18, python: 12, typescript: 13, javascript: 13 },
   };
 
   // Step 0: 初始化

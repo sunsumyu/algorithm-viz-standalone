@@ -156,7 +156,7 @@ export function renderFormulaCard(
   const badge = statusBadge ? badgeColors[statusBadge.type] : badgeColors.info;
 
   return `
-    <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-top: 14px;">
+    <div class="dsp-formula-card" data-formula-card="true" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-top: 14px;">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
         <span style="font-size: 13px; font-weight: 700; color: #1e293b;">💡 ${title}</span>
         ${statusBadge ? `

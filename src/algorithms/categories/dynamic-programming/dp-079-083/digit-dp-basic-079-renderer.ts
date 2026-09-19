@@ -18,12 +18,22 @@ export interface DigitDp079Step extends Dp079Step {
   memoSummary: string;
 }
 
-export function buildDigitDp079Steps(): DigitDp079Step[] {
+export function buildDigitDp079Steps(input?: { n?: number } | number): DigitDp079Step[] {
   const steps: DigitDp079Step[] = [];
   const lines = DIGIT_DP_079_LINES;
 
-  const digits = [1, 3]; // N = 13
-  // 1 ~ 13: 包含数字 1 的有 1, 10, 11(2个), 12, 13 -> 1 共出现 6 次
+  let n = 13;
+  if (typeof input === 'number') {
+    n = input;
+  } else if (input && typeof input.n === 'number') {
+    n = input.n;
+  }
+  const s = String(Math.max(1, n));
+  const digits = s.split('').map(Number);
+  const len = digits.length;
+
+  // memo[idx][cnt]
+  const memo: number[][] = Array.from({ length: len }, () => new Array(len + 1).fill(-1));
 
   // Step 0: 入口帧
   steps.push({
@@ -33,76 +43,141 @@ export function buildDigitDp079Steps(): DigitDp079Step[] {
     isLimit: true,
     cnt1: 0,
     memoSummary: '初始化 memo 记忆化数组为 -1',
-    decision: '主函数入口：开始统计 1 到 13 中数字 1 出现的总次数。',
-    message: '将 N=13 拆分为数位 [1, 3]，从最高位 idx=0 开始记忆化深度优先搜索。',
-    log: 'enter countDigitOne: N=13, digits=[1, 3]',
+    decision: `主函数入口：开始统计 1 到 ${n} 中数字 1 出现的总次数。`,
+    message: `将 N=${n} 拆分为 ${len} 个数位 [${digits.join(', ')}]，从最高位 idx=0 开始记忆化深度优先搜索。`,
+    log: `enter countDigitOne: N=${n}, digits=[${digits.join(', ')}]`,
     codeLine: lines.entry,
-    metrics: { '上界 N': 13, '数位长度': 2 },
+    metrics: { '上界 N': n, '数位长度': len },
   });
 
-  // Step 1: 考察最高位 (idx=0)
+  // Step 1: 初始化 memo
   steps.push({
     digits,
-    curIdx: 0,
-    curDigit: 0,
+    curIdx: -1,
+    curDigit: -1,
     isLimit: true,
     cnt1: 0,
-    memoSummary: '当前贴着上界 (isLimit=true)，当前位可选 [0, 1]',
-    decision: '决策第 0 位（最高位）：由于 isLimit=true，只能填 0 或 1。',
-    message: '分支 1：最高位填 0，下一位不受上界限制；分支 2：最高位填 1，下一位仍受上界限制。',
-    log: 'idx=0, up=1: explore d=0 and d=1',
-    codeLine: lines.calcUpBound,
-    statusBadge: { text: '决策最高位', type: 'info' },
-    metrics: { '当前位': 0, '可选范围': '0..1' },
+    memoSummary: `初始化 memo[${len}][${len + 1}] 缓存表`,
+    decision: `为数位深度 ${len} 准备记忆化数组，避免重复遍历重叠子状态。`,
+    message: '只有在解除上界限制 (isLimit=false) 时，子问题的解才具有普适性，可安全缓存。',
+    log: 'memo array initialized with -1',
+    codeLine: lines.initMemo,
+    metrics: { '上界 N': n, '缓存维度': `${len}x${len + 1}` },
   });
 
-  // Step 2: 递归分支 d=0 -> 考察第 1 位 (自由态)
-  steps.push({
-    digits,
-    curIdx: 1,
-    curDigit: 1,
-    isLimit: false,
-    cnt1: 1,
-    memoSummary: '探索最高位为 0 时：第 1 位自由填 0..9，命中 d=1 时贡献 1 次',
-    decision: '最高位为 0，次位填 1（产生数字 1）：贡献 1 次！',
-    message: '数字 1 的出现次数 cnt1 累加为 1。',
-    log: 'idx=1, isLimit=false: number 1 generated',
-    codeLine: lines.recurseLoop,
-    statusBadge: { text: '命中数字 1', type: 'success' },
-    metrics: { '当前位': 1, '产生数字': 1, '累计 1': 1 },
-  });
+  function f(idx: number, cnt: number, isLimit: boolean): number {
+    if (idx === len) {
+      steps.push({
+        digits,
+        curIdx: idx - 1,
+        curDigit: -1,
+        isLimit,
+        cnt1: cnt,
+        memoSummary: `递归触底：当前有效前缀产生 ${cnt} 个数字 1`,
+        decision: `数位构造完成：到达末尾 idx=${idx}，当前路径累计包含 ${cnt} 个数字 1。`,
+        message: '触底返回，将该路径的计数值回溯累加至父调用栈。',
+        log: `base case reached: idx=${idx}, cnt=${cnt}`,
+        codeLine: lines.baseCase,
+        statusBadge: { text: `触底返回 cnt=${cnt}`, type: 'info' },
+        metrics: { '当前位置': idx, '累计贡献': cnt },
+      });
+      return cnt;
+    }
 
-  // Step 3: 递归分支 d=1 -> 考察第 1 位 (贴紧上界 3)
-  // 10, 11(两个1), 12, 13
-  steps.push({
-    digits,
-    curIdx: 1,
-    curDigit: 1,
-    isLimit: true,
-    cnt1: 5,
-    memoSummary: '最高位填 1（贡献 1 次基础权重），次位可选 0..3：共贡献 5 次！',
-    decision: '最高位填 1：产生 10(1次), 11(2次), 12(1次), 13(1次)，此分支累计贡献 5 次数字 1！',
-    message: '各分支独立计数，状态空间由指数级急剧收敛为 O(Len * States)。',
-    log: 'idx=1, isLimit=true, d in 0..3: branch sum=5',
-    codeLine: lines.recurseLoop,
-    statusBadge: { text: '分支累计 5', type: 'info' },
-    metrics: { '当前分支贡献': 5, '累计': 6 },
-  });
+    if (!isLimit && memo[idx]![cnt] !== -1) {
+      const cached = memo[idx]![cnt]!;
+      steps.push({
+        digits,
+        curIdx: idx,
+        curDigit: -1,
+        isLimit,
+        cnt1: cnt,
+        memoSummary: `记忆化命中：memo[${idx}][${cnt}] = ${cached}`,
+        decision: `状态复用：当前自由态 (idx=${idx}, cnt=${cnt}) 已在 memo 中缓存，结果为 ${cached}。`,
+        message: '剪枝成功：跳过后续所有重复子分支，实现对数级时间复杂度！',
+        log: `memo hit: memo[${idx}][${cnt}]=${cached}`,
+        codeLine: lines.memoHit,
+        statusBadge: { text: `缓存命中: ${cached}`, type: 'success' },
+        metrics: { '当前位置': idx, '缓存命中值': cached },
+      });
+      return cached;
+    }
 
-  // Step 4: 记忆化与全局汇总
+    const up = isLimit ? digits[idx]! : 9;
+    steps.push({
+      digits,
+      curIdx: idx,
+      curDigit: -1,
+      isLimit,
+      cnt1: cnt,
+      memoSummary: `决策第 ${idx} 位：${isLimit ? `受限上界 0..${up}` : '自由填充 0..9'}`,
+      decision: `考察第 ${idx} 位：当前 isLimit=${isLimit}，可选数位范围为 [0 .. ${up}]。`,
+      message: isLimit ? `贴紧输入上界数位 ${up}，若填入 ${up} 则下一位继续受限。` : '已脱离上界，当前位可任意填入 0 到 9。',
+      log: `idx=${idx}, isLimit=${isLimit}, up=${up}`,
+      codeLine: lines.calcUpBound,
+      statusBadge: { text: `第 ${idx} 位可选 0..${up}`, type: 'info' },
+      metrics: { '当前位': idx, '可选上界': up },
+    });
+
+    let ans = 0;
+    for (let d = 0; d <= up; d++) {
+      const nextLimit = isLimit && d === up;
+      const nextCnt = cnt + (d === 1 ? 1 : 0);
+      steps.push({
+        digits,
+        curIdx: idx,
+        curDigit: d,
+        isLimit: nextLimit,
+        cnt1: nextCnt,
+        memoSummary: `第 ${idx} 位填入 ${d}，深入下一位`,
+        decision: `在第 ${idx} 位尝试填入数字 ${d}：${d === 1 ? '🎉 命中数字 1，计数 +1' : '未命中数字 1'}。`,
+        message: `下一位限制状态转移为 isLimit = ${nextLimit}，递归深入 idx=${idx + 1}。`,
+        log: `idx=${idx}, choose d=${d}, nextLimit=${nextLimit}`,
+        codeLine: lines.recurseLoop,
+        statusBadge: { text: `填入 ${d}`, type: d === 1 ? 'success' : 'info' },
+        metrics: { '当前位': idx, '选择数位': d, '是否受限': nextLimit ? '是' : '否' },
+      });
+
+      ans += f(idx + 1, nextCnt, nextLimit);
+    }
+
+    if (!isLimit) {
+      memo[idx]![cnt] = ans;
+      steps.push({
+        digits,
+        curIdx: idx,
+        curDigit: -1,
+        isLimit,
+        cnt1: cnt,
+        memoSummary: `写入缓存 memo[${idx}][${cnt}] = ${ans}`,
+        decision: `将自由子状态 (idx=${idx}, cnt=${cnt}) 的汇总答案 ${ans} 写入 memo 缓存。`,
+        message: '该状态下的子树方案数已完全求出，后续遇到同状态将直接 O(1) 返回。',
+        log: `memo save: memo[${idx}][${cnt}]=${ans}`,
+        codeLine: lines.memoSave,
+        statusBadge: { text: `缓存写入: ${ans}`, type: 'info' },
+        metrics: { '写入位置': `[${idx}][${cnt}]`, '缓存值': ans },
+      });
+    }
+
+    return ans;
+  }
+
+  const totalAns = f(0, 0, true);
+
+  // 终结汇总帧
   steps.push({
     digits,
-    curIdx: 1,
+    curIdx: len - 1,
     curDigit: -1,
     isLimit: false,
-    cnt1: 6,
-    memoSummary: '记忆化写入完成，全局答案 6 次',
-    decision: '全量数位搜索终结：1 到 13 中数字 1 总共出现了 6 次！',
-    message: '数位 DP 借助对数级的数位深度，将枚举复杂度由 O(N) 压缩至 O(log10 N)。',
-    log: 'countDigitOne complete -> return 6',
+    cnt1: totalAns,
+    memoSummary: `搜索完成，全范围 1 到 ${n} 中数字 1 总出现次数: ${totalAns}`,
+    decision: `全量数位搜索终结：在 1 到 ${n} 的所有整数中，数字 1 总共出现了 ${totalAns} 次！`,
+    message: '数位 DP 借助对数级数位深度与状态记忆化，将指数级枚举完全转化为多项式级高效递推。',
+    log: `countDigitOne complete -> return ${totalAns}`,
     codeLine: lines.baseCase,
-    statusBadge: { text: '计算完成: 6', type: 'success' },
-    metrics: { '最终答案': 6, '复杂度': 'O(log N)' },
+    statusBadge: { text: `最终答案: ${totalAns}`, type: 'success' },
+    metrics: { '最终答案': totalAns, '时间复杂度': 'O(log10 N)' },
   });
 
   return steps;

@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface MaximalRectStep extends StepBase {
   matrix: string[][];
@@ -20,8 +19,10 @@ export interface MaximalRectStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const MAXIMAL_RECTANGLE_CODES = {
@@ -130,6 +131,14 @@ public:
 }`
 };
 
+export const MAXIMAL_RECTANGLE_CODE_LINES = {
+  init: { java: 4, cpp: 4, python: 3, typescript: 3 },
+  rowUpdate: { java: 9, cpp: 9, python: 8, typescript: 8 },
+  popCalc: { java: 20, cpp: 20, python: 15, typescript: 16 },
+  push: { java: 24, cpp: 24, python: 18, typescript: 19 },
+  finish: { java: 28, cpp: 28, python: 19, typescript: 22 },
+};
+
 export function generateMaximalRectangleSteps(
   matrix: string[][] = [
     ['1', '0', '1', '0', '0'],
@@ -153,8 +162,15 @@ export function generateMaximalRectangleSteps(
     decision: '初始化最大矩形求解器',
     message: `输入 ${m}x${n} 的 01 矩阵。算法将逐行压缩累加柱状图高度并调用单调栈求解。`,
     log: `Init maximal rectangle (${m}x${n})`,
-    codeLine: 4,
-    statusBadge: { text: '就绪', type: 'info' }
+    codeLine: MAXIMAL_RECTANGLE_CODE_LINES.init,
+    statusBadge: { text: '就绪', type: 'info' },
+    metrics: {
+      stackDepth: '0 个',
+      rectHeight: '-',
+      rectArea: '-',
+      maxArea: 0,
+    },
+    ans: '0',
   });
 
   for (let i = 0; i < m; i++) {
@@ -172,8 +188,15 @@ export function generateMaximalRectangleSteps(
       decision: `处理第 #${i} 行：直方图高度更新为 [${heights.join(', ')}]`,
       message: `当 matrix[${i}][j] == '1' 时高度累加，遇到 '0' 则柱状图在该列归零打断。`,
       log: `Row ${i} heights: [${heights.join(', ')}]`,
-      codeLine: 8,
-      statusBadge: { text: `考察第 ${i} 行`, type: 'info' }
+      codeLine: MAXIMAL_RECTANGLE_CODE_LINES.rowUpdate,
+      statusBadge: { text: `考察第 ${i} 行`, type: 'info' },
+      metrics: {
+        stackDepth: '0 个',
+        rectHeight: `考察行 ${i}`,
+        rectArea: '-',
+        maxArea,
+      },
+      ans: String(maxArea),
     });
 
     // 单调递增栈
@@ -204,8 +227,15 @@ export function generateMaximalRectangleSteps(
           decision: `单调栈弹栈结算柱子 #${popIdx}(高度=${h})：向左延展至 #${left + 1}，向右延展至 #${right - 1}，宽度=${w}，面积 = ${area}`,
           message: `当前柱子以高度 ${h} 向两边扩展的最大矩形面积为 ${area}。${isBest ? '🎉 刷新全局最大全 1 矩形面积！' : ''}`,
           log: `Pop #${popIdx} h=${h} w=${w} -> area=${area}`,
-          codeLine: 19,
-          statusBadge: isBest ? { text: `新纪录: ${area}`, type: 'success' } : { text: `面积: ${area}`, type: 'warning' }
+          codeLine: MAXIMAL_RECTANGLE_CODE_LINES.popCalc,
+          statusBadge: isBest ? { text: `新纪录: ${area}`, type: 'success' } : { text: `面积: ${area}`, type: 'warning' },
+          metrics: {
+            stackDepth: `${stack.length} 个`,
+            rectHeight: `${h} (宽=${w})`,
+            rectArea: area,
+            maxArea,
+          },
+          ans: String(maxArea),
         });
       }
 
@@ -220,8 +250,15 @@ export function generateMaximalRectangleSteps(
         decision: j < n ? `列 #${j}(高度=${curH}) 入单调栈` : '末尾虚拟 0 高度柱子触发清栈',
         message: `保持栈内对应柱子高度严格单调递增。`,
         log: `Push #${j} to stack`,
-        codeLine: 23,
-        statusBadge: { text: `入栈 #${j}`, type: 'info' }
+        codeLine: MAXIMAL_RECTANGLE_CODE_LINES.push,
+        statusBadge: { text: `入栈 #${j}`, type: 'info' },
+        metrics: {
+          stackDepth: `${stack.length} 个`,
+          rectHeight: curH,
+          rectArea: '入栈比对',
+          maxArea,
+        },
+        ans: String(maxArea),
       });
     }
   }
@@ -236,8 +273,15 @@ export function generateMaximalRectangleSteps(
     decision: `全矩阵扫描完毕！全局最大矩形面积 = ${maxArea}`,
     message: `通过单调栈将二维搜索压缩为 O(M*N) 线性时间，最优解为 ${maxArea}。`,
     log: `Finished. maxArea = ${maxArea}`,
-    codeLine: 25,
-    statusBadge: { text: `最终面积: ${maxArea}`, type: 'success' }
+    codeLine: MAXIMAL_RECTANGLE_CODE_LINES.finish,
+    statusBadge: { text: `最终面积: ${maxArea}`, type: 'success' },
+    metrics: {
+      stackDepth: '结算完成',
+      rectHeight: '完成',
+      rectArea: maxArea,
+      maxArea,
+    },
+    ans: String(maxArea),
   });
 
   return steps;
@@ -250,18 +294,18 @@ export function renderMaximalRectangleSandbox(step: MaximalRectStep): string {
     const inStack = step.stack.includes(j);
     const inRect = step.calculatedRect && j >= step.calculatedRect.left && j <= step.calculatedRect.right;
 
-    let bg = '#ffffff';
-    let border = '#cbd5e1';
-    let textColor = '#475569';
+    let bg = 'rgba(255, 255, 255, 0.04)';
+    let border = 'rgba(255, 255, 255, 0.1)';
+    let textColor = 'var(--text-muted, #94a3b8)';
 
     if (inRect) {
-      bg = '#dcfce7';
+      bg = 'rgba(34, 197, 94, 0.25)';
       border = '#22c55e';
-      textColor = '#15803d';
+      textColor = '#4ade80';
     } else if (inStack) {
-      bg = '#e0e7ff';
+      bg = 'rgba(99, 102, 241, 0.25)';
       border = '#6366f1';
-      textColor = '#3730a3';
+      textColor = '#a5b4fc';
     }
 
     if (isCur) {
@@ -271,79 +315,66 @@ export function renderMaximalRectangleSandbox(step: MaximalRectStep): string {
     const heightPct = Math.max(10, (h / maxH) * 100);
 
     return `
-      <div style="display:inline-flex; flex-direction:column; align-items:center; width:36px; margin:0 3px;">
-        <div style="width:100%; height:110px; display:flex; align-items:flex-end; justify-content:center;">
-          <div style="width:28px; height:${heightPct}%; background:${bg}; border:2px solid ${border}; border-radius:6px 6px 0 0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; color:${textColor};">
+      <div style="display:inline-flex; flex-direction:column; align-items:center; width:38px; margin:0 4px;">
+        <div style="width:100%; height:130px; display:flex; align-items:flex-end; justify-content:center;">
+          <div style="
+            width:30px; height:${heightPct}%; background:${bg}; border:2px solid ${border};
+            border-radius:6px 6px 0 0; display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:14px; color:${textColor}; transition:all 0.2s ease;
+          ">
             ${h}
           </div>
         </div>
-        <div style="font-size:10px; color:#64748b; margin-top:3px;">列#${j}</div>
-        <div style="font-size:9px; height:12px; margin-top:1px;">
-          ${inStack ? '<span style="color:#6366f1;">栈中</span>' : ''}
+        <div style="font-size:11px; color:var(--text-muted, #94a3b8); margin-top:4px; font-weight:600;">列#${j}</div>
+        <div style="font-size:10px; height:14px; margin-top:1px;">
+          ${inStack ? '<span style="color:#818cf8; font-weight:700;">栈中</span>' : ''}
         </div>
       </div>
     `;
   }).join('');
 
   return `
-    <div style="display:flex; flex-direction:column; gap:12px; font-family:inherit;">
-      <!-- 二维矩阵与压缩直方图看板 -->
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div style="display:flex; flex-direction:column; gap:16px; width:100%; height:100%;">
+      <!-- 二维矩阵与压缩直方图双并排容器 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1;">
         <!-- 矩阵图 -->
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-          <div style="font-weight:700; color:#0f172a; font-size:12px; margin-bottom:8px;">
-            🔲 二维 01 矩阵 (当前考察第 #${step.rowIdx >= 0 ? step.rowIdx : 0} 行)
+        <div style="background:rgba(15, 23, 42, 0.4); border:1px solid rgba(255, 255, 255, 0.08); border-radius:8px; padding:16px; display:flex; flex-direction:column;">
+          <div style="font-weight:700; color:var(--text-color, #f1f5f9); font-size:13px; margin-bottom:12px;">
+            🔲 二维 01 矩阵 (当前考察行: #${step.rowIdx >= 0 ? step.rowIdx : 0})
           </div>
-          <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center; flex:1;">
             ${step.matrix.map((row, r) => `
-              <div style="display:flex; gap:4px;">
-                ${row.map((val) => `
-                  <div style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-weight:700; font-size:12px; font-family:monospace; background:${r === step.rowIdx ? (val === '1' ? '#dbeafe' : '#f1f5f9') : (val === '1' ? '#ffffff' : '#f8fafc')}; border:1px solid ${r === step.rowIdx ? '#3b82f6' : '#cbd5e1'}; color:${val === '1' ? '#1d4ed8' : '#94a3b8'};">
-                    ${val}
-                  </div>
-                `).join('')}
+              <div style="display:flex; gap:6px;">
+                ${row.map((val) => {
+                  const isCurRow = r === step.rowIdx;
+                  return `
+                    <div style="
+                      width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+                      border-radius:6px; font-weight:800; font-size:14px; font-family:monospace;
+                      background:${isCurRow ? (val === '1' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255, 255, 255, 0.03)') : (val === '1' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)')};
+                      border:1px solid ${isCurRow ? '#38bdf8' : 'rgba(255, 255, 255, 0.08)'};
+                      color:${val === '1' ? '#38bdf8' : 'var(--text-muted, #64748b)'};
+                      box-shadow:${isCurRow && val === '1' ? '0 0 8px rgba(56, 189, 248, 0.3)' : 'none'};
+                    ">
+                      ${val}
+                    </div>
+                  `;
+                }).join('')}
               </div>
             `).join('')}
           </div>
         </div>
 
         <!-- 当前直方图柱状图 -->
-        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-          <div style="font-weight:700; color:#0f172a; font-size:12px; margin-bottom:8px;">
-            📊 逐行累加压缩直方图高度 (Heights)
+        <div style="background:rgba(15, 23, 42, 0.4); border:1px solid rgba(255, 255, 255, 0.08); border-radius:8px; padding:16px; display:flex; flex-direction:column;">
+          <div style="font-weight:700; color:var(--text-color, #f1f5f9); font-size:13px; margin-bottom:12px;">
+            📊 逐行压缩直方图高度 (Heights)
           </div>
-          <div style="display:flex; justify-content:center; align-items:flex-end;">
+          <div style="display:flex; justify-content:center; align-items:flex-end; flex:1; padding-bottom:8px;">
             ${barsHtml}
           </div>
         </div>
       </div>
-
-      <!-- 运算看板 -->
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px;">
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">单调栈深</div>
-          <div style="font-size:16px; font-weight:800; color:#4338ca;">${step.stack.length} 个</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">结算柱高度 (h)</div>
-          <div style="font-size:16px; font-weight:800; color:#d97706;">${step.calculatedRect ? step.calculatedRect.h : '-'}</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">本次扩展面积</div>
-          <div style="font-size:16px; font-weight:800; color:#0284c7;">${step.calculatedRect ? step.calculatedRect.area : '-'}</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:11px; color:#64748b;">全局最大全 1 面积</div>
-          <div style="font-size:18px; font-weight:800; color:#15803d;">${step.maxArea}</div>
-        </div>
-      </div>
-
-      ${renderFormulaCard(
-        '单调栈求直方图最大矩形法则',
-        '向右遇到更矮柱子触发弹栈，当前弹出柱的高度 h 以其左边栈顶索引和当前触发索引为左右边界，宽度 w = right - left - 1，面积 = h * w！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -364,15 +395,17 @@ export const maximalRectangleVisualizer = registerDeclarativeAlgorithm<MaximalRe
     </div>
   `,
   codeLanguages: MAXIMAL_RECTANGLE_CODES,
+  metrics: [
+    { id: 'stackDepth', label: '单调栈深', color: '#6366f1' },
+    { id: 'rectHeight', label: '结算柱高度', color: '#f59e0b' },
+    { id: 'rectArea', label: '当前扩展面积', color: '#38bdf8' },
+    { id: 'maxArea', label: '最大全 1 面积', color: '#10b981' },
+  ],
   inputs: [],
   generateSteps: () => {
     return generateMaximalRectangleSteps();
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        ${renderMaximalRectangleSandbox(step)}
-      </div>
-    `;
+    container.innerHTML = renderMaximalRectangleSandbox(step);
   },
 });

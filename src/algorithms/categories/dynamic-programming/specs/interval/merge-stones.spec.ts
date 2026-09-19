@@ -38,7 +38,7 @@ export const MergeStonesSpec: AlgorithmSpec = {
     innerLoopCheck: { java: 10, cpp: 11, python: 10, javascript: 9 },
     stateTransfer: { java: [12, 13], cpp: [13, 14], python: [12, 13], javascript: [11, 12] },
     loopExit: { java: 9, cpp: 10, python: 9, javascript: 8 },
-    returnResult: { java: 17, cpp: 18, python: 15, javascript: 16 },
+    returnResult: { java: 18, cpp: 19, python: 14, javascript: 18 },
   },
   code: {
     languages: {
@@ -141,7 +141,7 @@ export const MergeStonesSpec: AlgorithmSpec = {
         12: '遍历切分点 $k \\in [i, j-1]$，寻找最优分割位置。',
         13: '状态转移比较：$minCost = \\min(minCost, dp[i][k] + dp[k+1][j])$。',
         14: '最终加上本次大合并消耗的总石子重量 $(sum[j+1] - sum[i])$。',
-        17: '返回 $dp[0][n-1]$，即整条石子序列合并的最优解。',
+        18: '返回 $dp[0][n-1]$，即整条石子序列合并的最优解。',
       },
       javascript: {
         1: '🎯 <strong>函数主入口</strong>：计算合并全部石子的最低成本。',
@@ -154,7 +154,7 @@ export const MergeStonesSpec: AlgorithmSpec = {
         9: '枚举区间起点 $i$ 与终点 $j$。',
         11: '枚举分割点 $k$，寻找左半部 $dp[i][k]$ 与右半部 $dp[k+1][j]$ 的最小合并代价。',
         15: '累加区间 $[i, j]$ 权值和，写入 $dp[i][j]$。',
-        17: '返回将整个区间 $[0, n-1]$ 合并为一堆的最小代价。',
+        18: '返回将整个区间 $[0, n-1]$ 合并为一堆的最小代价。',
       },
       cpp: {
         1: '类定义 Solution。',
@@ -165,7 +165,7 @@ export const MergeStonesSpec: AlgorithmSpec = {
         9: '按照区间长度 $len$ 升序推进。',
         13: '分割点最优极值转移。',
         15: '更新 $dp[i][j]$。',
-        18: '返回 $dp[0][n-1]$。',
+        19: '返回 $dp[0][n-1]$。',
       },
       python: {
         1: '类定义 Solution。',

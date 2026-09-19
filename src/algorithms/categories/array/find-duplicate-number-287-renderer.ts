@@ -20,7 +20,7 @@ export interface DuplicateNumberStep extends StepBase {
   duplicate: number | null;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const FIND_DUPLICATE_CODES = {
@@ -74,6 +74,15 @@ public:
         return p1`,
 };
 
+export const FIND_DUPLICATE_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 3, python: 2 },
+  chase: { java: 6, cpp: 6, python: 5 },
+  met: { java: 8, cpp: 7, python: 6 },
+  phase2Init: { java: 11, cpp: 10, python: 8 },
+  phase2Step: { java: 14, cpp: 13, python: 11 },
+  finish: { java: 18, cpp: 16, python: 13 },
+};
+
 export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): DuplicateNumberStep[] {
   const steps: DuplicateNumberStep[] = [];
 
@@ -89,7 +98,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
     duplicate: null,
     message: `算法启动：将 nums 看作图结构 i ➔ nums[i]。初始 slow = nums[0] = ${slow}, fast = nums[nums[0]] = ${fast}。准备进行阶段一快慢指针相遇判定。`,
     log: `初始化双指针: slow = ${slow}, fast = ${fast}`,
-    codeLine: 4,
+    codeLine: FIND_DUPLICATE_CODE_LINES.init,
   });
 
   // Phase 1
@@ -108,7 +117,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
         duplicate: null,
         message: `⚡ 快慢指针在节点值 [${slow}] 处相遇！证明下标拓扑图中必定存在环结构。准备进入阶段二。`,
         log: `阶段一相遇: slow = fast = ${slow}`,
-        codeLine: 8,
+        codeLine: FIND_DUPLICATE_CODE_LINES.met,
       });
       break;
     } else {
@@ -120,7 +129,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
         duplicate: null,
         message: `阶段一追赶：slow 走一步至 [${slow}]，fast 走两步至 [${fast}]。`,
         log: `追赶中: slow=${slow}, fast=${fast}`,
-        codeLine: 6,
+        codeLine: FIND_DUPLICATE_CODE_LINES.chase,
       });
     }
   }
@@ -137,7 +146,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
     duplicate: null,
     message: `阶段二重置：令 p1 = 0（起点），p2 = ${p2}（相遇点）。两者每次均单步推进 (p = nums[p])，直至相撞。`,
     log: `阶段二初始化: p1 = 0, p2 = ${p2}`,
-    codeLine: 12,
+    codeLine: FIND_DUPLICATE_CODE_LINES.phase2Init,
   });
 
   while (p1 !== p2) {
@@ -153,7 +162,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
         duplicate: p1,
         message: `🎯 指针 p1 与 p2 在节点 [${p1}] 再次相碰！该节点为环的入口，即整个数组中唯一重复的数字为 【${p1}】！`,
         log: `成功定位重复数字: ${p1}`,
-        codeLine: 18,
+        codeLine: FIND_DUPLICATE_CODE_LINES.finish,
       });
       break;
     } else {
@@ -165,7 +174,7 @@ export function buildFindDuplicateSteps(nums: number[] = [1, 3, 4, 2, 2]): Dupli
         duplicate: null,
         message: `阶段二推进：p1 走至 [${p1}]，p2 走至 [${p2}]。`,
         log: `推进: p1=${p1}, p2=${p2}`,
-        codeLine: 15,
+        codeLine: FIND_DUPLICATE_CODE_LINES.phase2Step,
       });
     }
   }

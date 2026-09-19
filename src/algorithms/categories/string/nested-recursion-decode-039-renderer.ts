@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface DecodeStep extends StepBase {
@@ -20,7 +20,7 @@ export interface DecodeStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -122,18 +122,20 @@ public:
 }`
 };
 
+export const DECODE_039_CODE_LINES = {
+  entry: { java: 10, cpp: 21, python: 19, typescript: 19 },
+  processEntry: { java: 14, cpp: 3, python: 4, typescript: 3 },
+  whileLoop: { java: 17, cpp: 5, python: 6, typescript: 5 },
+  isDigit: { java: 19, cpp: 7, python: 8, typescript: 7 },
+  openBracket: { java: 23, cpp: 9, python: 11, typescript: 9 },
+  appendSub: { java: 24, cpp: 10, python: 12, typescript: 10 },
+  isChar: { java: 28, cpp: 14, python: 16, typescript: 14 },
+  returnInfo: { java: 31, cpp: 17, python: 18, typescript: 17 },
+};
+
 export function generateDecodeSteps(s: string = '3[a2[c]]'): DecodeStep[] {
   const steps: DecodeStep[] = [];
-  const lines = {
-    entry: 10,
-    processEntry: 14,
-    whileLoop: 18,
-    isDigit: 19,
-    openBracket: 23,
-    appendSub: 25,
-    isChar: 29,
-    returnInfo: 32,
-  };
+  const lines = DECODE_039_CODE_LINES;
 
   steps.push({
     inputStr: s,

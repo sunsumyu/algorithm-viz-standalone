@@ -20,7 +20,7 @@ export interface PeakElementStep extends StepBase {
   peakIdx: number | null;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const PEAK_ELEMENT_CODES = {
@@ -67,6 +67,14 @@ public:
         return left`,
 };
 
+export const PEAK_ELEMENT_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 4, python: 3 },
+  checkSlope: { java: 6, cpp: 7, python: 6 },
+  shrinkLeft: { java: 8, cpp: 8, python: 7 },
+  shrinkRight: { java: 11, cpp: 10, python: 9 },
+  finish: { java: 14, cpp: 13, python: 10 },
+};
+
 export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): PeakElementStep[] {
   const steps: PeakElementStep[] = [];
 
@@ -83,7 +91,7 @@ export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): P
     peakIdx: null,
     message: `算法启动：在无序数组中寻找局部峰值。初始区间 [left:${left} .. right:${right}]。`,
     log: `初始化峰值二分: left=0, right=${right}`,
-    codeLine: 4,
+    codeLine: PEAK_ELEMENT_CODE_LINES.init,
   });
 
   while (left < right) {
@@ -98,7 +106,7 @@ export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): P
       peakIdx: null,
       message: `检测中点斜率：mid = ${mid} (值 ${nums[mid]}) 与 mid+1 = ${mid + 1} (值 ${nums[mid + 1]})。`,
       log: `比较 nums[${mid}]=${nums[mid]} 与 nums[${mid + 1}]=${nums[mid + 1]}`,
-      codeLine: 5,
+      codeLine: PEAK_ELEMENT_CODE_LINES.checkSlope,
     });
 
     if (nums[mid] < nums[mid + 1]) {
@@ -111,7 +119,7 @@ export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): P
         peakIdx: null,
         message: `上坡趋势：nums[${mid}] < nums[${mid + 1}]，向高处走右侧必有峰值！收缩 left = mid + 1 = ${mid + 1}。`,
         log: `上坡: left = ${mid + 1}`,
-        codeLine: 7,
+        codeLine: PEAK_ELEMENT_CODE_LINES.shrinkLeft,
       });
       left = mid + 1;
     } else {
@@ -124,7 +132,7 @@ export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): P
         peakIdx: null,
         message: `下坡趋势：nums[${mid}] > nums[${mid + 1}]，峰值在当前 mid 或其左侧！收缩 right = mid = ${mid}。`,
         log: `下坡: right = ${mid}`,
-        codeLine: 10,
+        codeLine: PEAK_ELEMENT_CODE_LINES.shrinkRight,
       });
       right = mid;
     }
@@ -140,7 +148,7 @@ export function buildPeakElementSteps(nums: number[] = [1, 2, 1, 3, 5, 6, 4]): P
     peakIdx: left,
     message: `二分收敛：left === right === ${left}。找到峰值元素 nums[${left}] = ${nums[left]}！`,
     log: `收敛命中峰值 index=${left}, value=${nums[left]}`,
-    codeLine: 13,
+    codeLine: PEAK_ELEMENT_CODE_LINES.finish,
   });
 
   return steps;

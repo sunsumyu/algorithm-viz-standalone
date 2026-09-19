@@ -34,12 +34,12 @@ export const BurstBalloonsSpec: AlgorithmSpec = {
   semanticLines: {
     entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
     guard: { java: 3, cpp: 4, python: 3, javascript: 2 },
-    init: { java: [5, 6, 7], cpp: [6, 7, 8], python: [5, 6, 7], javascript: [4, 5, 6] },
-    loopCheck: { java: 9, cpp: 10, python: 9, javascript: 8 },
-    innerLoopCheck: { java: 10, cpp: 11, python: 10, javascript: 9 },
-    stateTransfer: { java: [12, 13], cpp: [13, 14], python: [12, 13], javascript: [11, 12] },
-    loopExit: { java: 9, cpp: 10, python: 9, javascript: 8 },
-    returnResult: { java: 17, cpp: 18, python: 15, javascript: 16 },
+    init: { java: [5, 6, 7], cpp: [6, 7, 8], python: [3, 4, 5], javascript: [3, 4] },
+    loopCheck: { java: 8, cpp: 9, python: 6, javascript: 6 },
+    innerLoopCheck: { java: 9, cpp: 10, python: 7, javascript: 7 },
+    stateTransfer: { java: [11, 12], cpp: [12, 13], python: [9, 10], javascript: [9, 10] },
+    loopExit: { java: 8, cpp: 9, python: 6, javascript: 6 },
+    returnResult: { java: 17, cpp: 17, python: 13, javascript: 14 },
   },
   code: {
     languages: {

@@ -5,6 +5,7 @@
 
 import { parseTreeArray } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   TREE_CAMERAS_PROBLEM_HTML,
   TREE_CAMERAS_ANALYSIS_HTML,
@@ -31,10 +32,20 @@ export interface CameraStep {
   rightState: number | null;
   action: 'enter' | 'place_camera' | 'covered_by_child' | 'wait_parent' | 'root_camera' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const TREE_CAMERAS_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 3, cpp: 16, python: 3, javascript: 2 },
+  enter: { java: 12, cpp: 5, python: 8, javascript: 5 },
+  placeCamera: { java: 16, cpp: 8, python: 11, javascript: 8 },
+  covered: { java: 21, cpp: 11, python: 14, javascript: 11 },
+  waitParent: { java: 24, cpp: 12, python: 15, javascript: 12 },
+  rootCamera: { java: 6, cpp: 16, python: 17, javascript: 14 },
+  done: { java: 8, cpp: 17, python: 18, javascript: 15 },
+};
 
 export function parseTreeFromArray(arr: (number | null)[]): TreeNode | null {
   if (arr.length === 0 || arr[0] === null) return null;
@@ -74,7 +85,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
       rightState: null,
       action: 'done',
       message: '树为空，最小摄像头数量为 0',
-      codeLine: 2,
+      codeLine: TREE_CAMERAS_CODE_LINES.guard,
     });
     return steps;
   }
@@ -91,7 +102,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
       rightState: null,
       action: 'enter',
       message: `🔽 访问节点 [${node.id}] (val=${node.val})，准备递归后序遍历左右子树`,
-      codeLine: 13,
+      codeLine: TREE_CAMERAS_CODE_LINES.enter,
     });
 
     const left = dfs(node.left);
@@ -111,7 +122,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
         rightState: right,
         action: 'place_camera',
         message: `📷 【情况1】节点 [${node.id}] 的子节点存在无覆盖 (左=${left}, 右=${right})！贪心在此安装第 ${cameraCount} 台摄像头，返回 1 (有摄像头)`,
-        codeLine: 17,
+        codeLine: TREE_CAMERAS_CODE_LINES.placeCamera,
       });
       return 1;
     }
@@ -129,7 +140,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
         rightState: right,
         action: 'covered_by_child',
         message: `🛡️ 【情况2】节点 [${node.id}] 的子节点已有摄像头 (左=${left}, 右=${right})，当前节点处于覆盖范围，返回 2 (已覆盖)`,
-        codeLine: 21,
+        codeLine: TREE_CAMERAS_CODE_LINES.covered,
       });
       return 2;
     }
@@ -145,7 +156,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
       rightState: right,
       action: 'wait_parent',
       message: `⚪ 【情况3】节点 [${node.id}] 的子节点均为已覆盖 (左=${left}, 右=${right})，当前节点暂无覆盖，留待上层父节点安装摄像头覆盖，返回 0 (无覆盖)`,
-      codeLine: 24,
+      codeLine: TREE_CAMERAS_CODE_LINES.waitParent,
     });
     return 0;
   }
@@ -166,7 +177,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
       rightState: null,
       action: 'root_camera',
       message: `📷 【根节点特判】遍历结束，根节点 [${root.id}] 依然处于无覆盖状态 (无上层父节点)！必须在此补装第 ${cameraCount} 台摄像头`,
-      codeLine: 5,
+      codeLine: TREE_CAMERAS_CODE_LINES.rootCamera,
     });
   }
 
@@ -179,7 +190,7 @@ export function buildTreeCameraSteps(root: TreeNode | null): CameraStep[] {
     rightState: null,
     action: 'done',
     message: `🎉 监控配置完成！监控全树所需最小摄像头数量为 ${cameraCount} 台`,
-    codeLine: 7,
+    codeLine: TREE_CAMERAS_CODE_LINES.done,
   });
 
   return steps;

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   CANDY_PROBLEM_HTML,
@@ -18,10 +19,20 @@ export interface CandyStep {
   direction: 'left-to-right' | 'right-to-left' | 'init' | 'done';
   action: 'init' | 'inc_right' | 'keep_right' | 'inc_left' | 'keep_left' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const CANDY_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  keepRight: { java: 6, cpp: 6, python: 6, javascript: 4 },
+  incRight: { java: 7, cpp: 7, python: 7, javascript: 5 },
+  keepLeft: { java: 12, cpp: 11, python: 10, javascript: 9 },
+  incLeft: { java: 13, cpp: 12, python: 11, javascript: 10 },
+  done: { java: 17, cpp: 17, python: 12, javascript: 13 },
+};
 
 export function buildCandySteps(rawRatings: number[]): CandyStep[] {
   const steps: CandyStep[] = [];
@@ -35,7 +46,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
       direction: 'done',
       action: 'done',
       message: '输入为空，最少糖果数为 0',
-      codeLine: 2,
+      codeLine: CANDY_CODE_LINES.guard,
     });
     return steps;
   }
@@ -49,7 +60,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
     direction: 'init',
     action: 'init',
     message: `第 1 步：初始化全部 ${n} 个孩子糖果数为 1 (每人至少 1 颗)`,
-    codeLine: 3,
+    codeLine: CANDY_CODE_LINES.init,
   });
 
   // 1. 从左向右遍历（右孩子评分 > 左孩子评分）
@@ -66,7 +77,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
         direction: 'left-to-right',
         action: 'inc_right',
         message: `📈 [左 &rarr; 右] 孩子 [${i}] 评分 ${cur} > 左边 [${i - 1}] 评分 ${prev}，糖果递增为 ${candies[i]} (= ${candies[i - 1]} + 1)`,
-        codeLine: 7,
+        codeLine: CANDY_CODE_LINES.incRight,
       });
     } else {
       steps.push({
@@ -76,7 +87,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
         direction: 'left-to-right',
         action: 'keep_right',
         message: `⏩ [左 &rarr; 右] 孩子 [${i}] 评分 ${cur} &le; 左边 ${prev}，保持糖果数 ${candies[i]}`,
-        codeLine: 6,
+        codeLine: CANDY_CODE_LINES.keepRight,
       });
     }
   }
@@ -97,7 +108,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
         direction: 'right-to-left',
         action: candies[i] > oldVal ? 'inc_left' : 'keep_left',
         message: `📉 [右 &rarr; 左] 孩子 [${i}] 评分 ${cur} > 右边 [${i + 1}] 评分 ${next}，糖果取 max(${oldVal}, ${candies[i + 1] + 1}) = ${candies[i]}`,
-        codeLine: 13,
+        codeLine: CANDY_CODE_LINES.incLeft,
       });
     } else {
       steps.push({
@@ -107,7 +118,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
         direction: 'right-to-left',
         action: 'keep_left',
         message: `⏩ [右 &rarr; 左] 孩子 [${i}] 评分 ${cur} &le; 右边 ${next}，保持糖果数 ${candies[i]}`,
-        codeLine: 12,
+        codeLine: CANDY_CODE_LINES.keepLeft,
       });
     }
   }
@@ -121,7 +132,7 @@ export function buildCandySteps(rawRatings: number[]): CandyStep[] {
     direction: 'done',
     action: 'done',
     message: `🎉 分发完成！双向贪心满足所有相邻约束，所需最少糖果总数为 ${total} 颗：[${candies.join(', ')}]`,
-    codeLine: 17,
+    codeLine: CANDY_CODE_LINES.done,
   });
 
   return steps;

@@ -9,6 +9,18 @@ import {
   LONGEST_COMMON_PREFIX_ANALYSIS_HTML,
   LONGEST_COMMON_PREFIX_CODE_LANGUAGES,
 } from './longest-common-prefix-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const LONGEST_COMMON_PREFIX_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  empty: { java: 2, cpp: 4, python: 2, javascript: 2 },
+  init: { java: 2, cpp: 4, python: 2, javascript: 2 },
+  scanCol: { java: [3, 4], cpp: [5, 6], python: 3, javascript: [3, 4] },
+  compareCell: { java: [5, 6], cpp: [7, 8], python: 3, javascript: [5, 6] },
+  mismatch: { java: [6, 7], cpp: [8, 9], python: [4, 5], javascript: [6, 7] },
+  done: { java: 11, cpp: 13, python: 6, javascript: 11 },
+};
+
+const lines = LONGEST_COMMON_PREFIX_CODE_LINES;
 
 export interface LCPStep {
   strs: string[];
@@ -22,7 +34,7 @@ export interface LCPStep {
   status: 'init' | 'scan-col' | 'compare-cell' | 'mismatch' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -50,7 +62,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
       status: 'done',
       message: '字符串数组为空，返回空字符串 ""。',
       log: '空数组 -> ""',
-      codeLine: 2,
+      codeLine: lines.empty,
     });
     return steps;
   }
@@ -69,7 +81,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
     status: 'init',
     message: `初始化纵向扫描：以基准字符串 strs[0] = "${baseStr}" 为基准，逐列比对 ${strs.length} 个字符串。`,
     log: `初始化矩阵扫描 (基准: "${baseStr}")`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let col = 0; col < baseStr.length; col++) {
@@ -87,7 +99,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
       status: 'scan-col',
       message: `开始第 ${col} 列扫描：基准字符 strs[0][${col}] = '${c}'。`,
       log: `第 ${col} 列: 基准字符 '${c}'`,
-      codeLine: [3, 4],
+      codeLine: lines.scanCol,
     });
 
     for (let row = 1; row < strs.length; row++) {
@@ -111,7 +123,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
           status: 'mismatch',
           message: `⚠️ 在 strs[${row}] 第 ${col} 列发现失配：${mismatchReason}。最长公共前缀在此终止。`,
           log: `✗ 失配终止于 [${row}][${col}]: 前缀 "${baseStr.substring(0, col)}"`,
-          codeLine: [5, 6],
+          codeLine: lines.mismatch,
         });
 
         const finalPrefix = baseStr.substring(0, col);
@@ -127,7 +139,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
           status: 'done',
           message: `🎉 扫描结束！最长公共前缀为 "${finalPrefix}"。`,
           log: `✓ 最长公共前缀: "${finalPrefix}"`,
-          codeLine: 6,
+          codeLine: lines.done,
         });
         return steps;
       }
@@ -144,7 +156,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
         status: 'compare-cell',
         message: `比对 strs[${row}][${col}] = '${curStr[col]}' == '${c}'：字符一致。`,
         log: `匹配: strs[${row}][${col}] == '${c}'`,
-        codeLine: [4, 5],
+        codeLine: lines.compareCell,
       });
     }
   }
@@ -162,7 +174,7 @@ export function buildLCPSteps(strs: string[]): LCPStep[] {
     status: 'done',
     message: `🎉 所有列均全部匹配成功！基准字符串 "${baseStr}" 本身即为最长公共前缀。`,
     log: `✓ 全匹配: "${baseStr}"`,
-    codeLine: 11,
+    codeLine: lines.done,
   });
 
   return steps;

@@ -22,7 +22,7 @@ export interface XorStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -113,15 +113,15 @@ export function generateXorSteps(mode: 'single' | 'double' = 'double'): XorStep[
     ? [4, 1, 2, 1, 2] // 4 出现 1 次，其余出现 2 次
     : [3, 5, 2, 3, 2, 7]; // 5 与 7 出现 1 次，其余出现 2 次
 
-  const lines = {
-    singleEntry: 3,
-    singleLoop: 5,
-    singleReturn: 8,
-    doubleEntry: 12,
-    doubleLoop1: 14,
-    doubleRightOne: 16,
-    doubleLoop2: 19,
-    doubleReturn: 23,
+  const lines: Record<string, Record<string, number>> = {
+    singleEntry: { java: 3, cpp: 4, python: 3, typescript: 1, javascript: 1 },
+    singleLoop: { java: 5, cpp: 6, python: 5, typescript: 3, javascript: 3 },
+    singleReturn: { java: 8, cpp: 7, python: 6, typescript: 4, javascript: 4 },
+    doubleEntry: { java: 12, cpp: 11, python: 9, typescript: 8, javascript: 8 },
+    doubleLoop1: { java: 14, cpp: 12, python: 11, typescript: 9, javascript: 9 },
+    doubleRightOne: { java: 16, cpp: 13, python: 12, typescript: 10, javascript: 10 },
+    doubleLoop2: { java: 19, cpp: 16, python: 15, typescript: 13, javascript: 13 },
+    doubleReturn: { java: 23, cpp: 18, python: 17, typescript: 15, javascript: 15 },
   };
 
   if (mode === 'single') {

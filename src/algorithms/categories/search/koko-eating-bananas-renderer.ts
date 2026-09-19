@@ -23,7 +23,7 @@ export interface KokoStep extends StepBase {
   bestSpeed: number | null;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const KOKO_BANANAS_CODES = {
@@ -85,6 +85,14 @@ public:
         return ans`,
 };
 
+export const KOKO_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 3, python: 3 },
+  testSpeed: { java: 8, cpp: 8, python: 8 },
+  shrinkSpeed: { java: 9, cpp: 9, python: 9 },
+  boostSpeed: { java: 12, cpp: 12, python: 12 },
+  finish: { java: 15, cpp: 15, python: 13 },
+};
+
 export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): KokoStep[] {
   const steps: KokoStep[] = [];
 
@@ -104,7 +112,7 @@ export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): 
     bestSpeed: null,
     message: `算法启动：香蕉堆 [${piles.join(', ')}]，警察到达时限 h = ${h} 小时。速度二分区间设定为 [1 .. ${right}]。`,
     log: `初始化二分答案区间: [1 .. ${right}], 目标时限 h=${h}`,
-    codeLine: 4,
+    codeLine: KOKO_CODE_LINES.init,
   });
 
   while (left <= right) {
@@ -125,7 +133,7 @@ export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): 
       bestSpeed: ans,
       message: `检验速度 k = ${mid} 根/小时：吃完全部堆累计耗时 ${hours} 小时（时限 ${h} 小时）。`,
       log: `测试速度 k=${mid}: 耗时 ${hours}h / 限时 ${h}h`,
-      codeLine: 9,
+      codeLine: KOKO_CODE_LINES.testSpeed,
     });
 
     if (hours <= h) {
@@ -141,7 +149,7 @@ export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): 
         bestSpeed: ans,
         message: `耗时 ${hours} <= ${h} 达标！记录可行解 ans = ${mid}，并尝试收缩上限求更慢速度：right = ${mid - 1}。`,
         log: `可行解 ans=${mid}, 收缩右边界 right=${mid - 1}`,
-        codeLine: 11,
+        codeLine: KOKO_CODE_LINES.shrinkSpeed,
       });
       right = mid - 1;
     } else {
@@ -156,7 +164,7 @@ export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): 
         bestSpeed: ans,
         message: `耗时 ${hours} > ${h} 超时！说明速度太慢，必须向右提速：left = ${mid + 1}。`,
         log: `超时！提高最低速度 left=${mid + 1}`,
-        codeLine: 14,
+        codeLine: KOKO_CODE_LINES.boostSpeed,
       });
       left = mid + 1;
     }
@@ -174,7 +182,7 @@ export function buildKokoSteps(piles: number[] = [3, 6, 7, 11], h: number = 8): 
     bestSpeed: ans,
     message: `二分判定收敛：珂珂能在 ${h} 小时内吃完所有香蕉的最小吃速为 k = ${ans} 根/小时！`,
     log: `二分收敛：最优最小吃速 k=${ans}`,
-    codeLine: 17,
+    codeLine: KOKO_CODE_LINES.finish,
   });
 
   return steps;

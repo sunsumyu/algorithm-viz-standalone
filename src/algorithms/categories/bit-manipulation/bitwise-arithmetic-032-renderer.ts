@@ -20,7 +20,7 @@ export interface BitwiseArithmeticStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -131,6 +131,16 @@ public:
 }`
 };
 
+const ARITHMETIC_LINES: Record<string, Record<string, number>> = {
+  addInit: { java: 4, cpp: 4, python: 5, typescript: 3, javascript: 3 },
+  addStep: { java: 7, cpp: 6, python: 6, typescript: 5, javascript: 5 },
+  addDone: { java: 10, cpp: 10, python: 7, typescript: 9, javascript: 9 },
+  minusDone: { java: 15, cpp: 13, python: 11, typescript: 13, javascript: 13 },
+  mulInit: { java: 20, cpp: 17, python: 15, typescript: 17, javascript: 17 },
+  mulStep: { java: 23, cpp: 20, python: 18, typescript: 20, javascript: 20 },
+  mulDone: { java: 28, cpp: 24, python: 21, typescript: 25, javascript: 25 },
+};
+
 export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' | 'multiply' = 'add'): BitwiseArithmeticStep[] {
   const steps: BitwiseArithmeticStep[] = [];
   let stepIdx = 0;
@@ -150,7 +160,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
       decision: `准备执行位运算加法：计算 ${a} + ${b}`,
       message: `初始 a=${curA}, b=${curB}`,
       log: '初始化加法',
-      codeLine: 4,
+      codeLine: ARITHMETIC_LINES.addInit,
       statusBadge: { text: '开始加法', type: 'info' }
     });
 
@@ -171,7 +181,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
         decision: `第 ${iter} 轮：无进位相加 (a ^ b) = ${xorSum}；进位信息 ((a & b) << 1) = ${carry}`,
         message: `sum=${xorSum}, carry=${carry}`,
         log: `第 ${iter} 轮计算完成`,
-        codeLine: 7,
+        codeLine: ARITHMETIC_LINES.addStep,
         statusBadge: carry !== 0 ? { text: `进位中 (${carry})`, type: 'warning' } : { text: '进位清零', type: 'success' }
       });
 
@@ -189,7 +199,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
       decision: `进位为 0，计算终止！最终结果为 ${curA}`,
       message: `最终和 sum = ${curA}`,
       log: `加法计算完成: ${curA}`,
-      codeLine: 10,
+      codeLine: ARITHMETIC_LINES.addDone,
       statusBadge: { text: `结果: ${curA}`, type: 'success' }
     });
   } else if (op === 'minus') {
@@ -204,7 +214,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
       decision: `减法转化为负数加法：${a} - ${b} = ${a} + (~${b} + 1) = ${a} + (${negB}) = ${a + negB}`,
       message: `求得相反数 ~b + 1 = ${negB}`,
       log: '减法直接转化为补码加法',
-      codeLine: 15,
+      codeLine: ARITHMETIC_LINES.minusDone,
       statusBadge: { text: `结果: ${a - b}`, type: 'success' }
     });
   } else {
@@ -224,7 +234,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
       decision: `开始二进制竖式乘法：${a} * ${b}`,
       message: `初始 ans=0`,
       log: '初始化乘法',
-      codeLine: 20,
+      codeLine: ARITHMETIC_LINES.mulInit,
       statusBadge: { text: '乘法启动', type: 'info' }
     });
 
@@ -245,7 +255,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
         decision: `第 ${iter} 轮：b 末位为 ${hasOne ? '1 (累加 a 至结果)' : '0 (无需累加)'}，当前累加和 ans=${ans}；随后 a 左移一位，b 逻辑右移一位`,
         message: `ans = ${ans}`,
         log: `乘法第 ${iter} 位处理`,
-        codeLine: 23,
+        codeLine: ARITHMETIC_LINES.mulStep,
         statusBadge: hasOne ? { text: `累加 ${curA}`, type: 'warning' } : { text: '跳过累加', type: 'info' }
       });
 
@@ -263,7 +273,7 @@ export function generateBitwiseSteps(a: number, b: number, op: 'add' | 'minus' |
       decision: `乘法完成！所有有效二进制位均已乘算合并，最终积为 ${ans}`,
       message: `最终积 = ${ans}`,
       log: `乘法完毕: ${ans}`,
-      codeLine: 28,
+      codeLine: ARITHMETIC_LINES.mulDone,
       statusBadge: { text: `积: ${ans}`, type: 'success' }
     });
   }

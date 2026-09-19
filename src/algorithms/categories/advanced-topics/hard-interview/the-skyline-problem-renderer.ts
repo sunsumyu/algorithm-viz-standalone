@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface SkylineStep extends StepBase {
   stepIndex?: number;
@@ -21,8 +20,10 @@ export interface SkylineStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const SKYLINE_PROBLEM_CODES = {
@@ -140,6 +141,12 @@ public:
 }`
 };
 
+export const SKYLINE_CODE_LINES = {
+  init: { java: 5, cpp: 5, python: 5, typescript: 5 },
+  sweep: { java: 20, cpp: 17, python: 16, typescript: 17 },
+  finish: { java: 33, cpp: 26, python: 19, typescript: 28 },
+};
+
 export function generateSkylineSteps(buildings: [number, number, number][]): SkylineStep[] {
   const steps: SkylineStep[] = [];
   const events: Array<{ x: number; h: number }> = [];
@@ -169,8 +176,15 @@ export function generateSkylineSteps(buildings: [number, number, number][]): Sky
     decision: `建筑拆解完成，生成 ${events.length} 个扫描线边缘事件并按横坐标升序排序`,
     message: '扫描线初始化',
     log: `初始化扫描线，共 ${events.length} 个事件`,
-    codeLine: 5,
-    statusBadge: { text: '初始化就绪', type: 'info' }
+    codeLine: SKYLINE_CODE_LINES.init,
+    statusBadge: { text: '初始化就绪', type: 'info' },
+    metrics: {
+      currentX: 'X = 0',
+      curMax: 'H = 0',
+      pointCount: '0 个',
+      heapTop: '0',
+    },
+    ans: '[]',
   });
 
   for (let i = 0; i < events.length; i++) {
@@ -208,8 +222,15 @@ export function generateSkylineSteps(buildings: [number, number, number][]): Sky
         : `扫描线到达 X = ${x} (建筑离开，高度 ${realH})。堆顶最高高度 = ${curMax}。${heightChanged ? `轮廓高度发生突变 (${prevMax} ➔ ${curMax})，捕获关键拐点 [${x}, ${curMax}]！` : '未影响当前最高轮廓'}`,
       message: `X=${x}, 高度=${curMax}`,
       log: `Event X=${x}: ${isEnter ? '进入' : '离开'} H=${realH} -> curMax=${curMax}`,
-      codeLine: 20,
-      statusBadge: heightChanged ? { text: `拐点 [${x}, ${curMax}]`, type: 'success' } : { text: `扫描 X=${x}`, type: 'warning' }
+      codeLine: SKYLINE_CODE_LINES.sweep,
+      statusBadge: heightChanged ? { text: `拐点 [${x}, ${curMax}]`, type: 'success' } : { text: `扫描 X=${x}`, type: 'warning' },
+      metrics: {
+        currentX: `X = ${x}`,
+        curMax: `H = ${curMax}`,
+        pointCount: `${result.length} 个`,
+        heapTop: `${heights[0] || 0}`,
+      },
+      ans: `[${result.map(p => `[${p[0]},${p[1]}]`).join(', ')}]`,
     });
 
     if (heightChanged) {
@@ -230,89 +251,148 @@ export function generateSkylineSteps(buildings: [number, number, number][]): Sky
     decision: `天际线轮廓扫描完成！共捕获 ${result.length} 个关键折点：${JSON.stringify(result)}`,
     message: `扫描完成，共 ${result.length} 个拐点`,
     log: `天际线计算完成: ${JSON.stringify(result)}`,
-    codeLine: 28,
-    statusBadge: { text: `完成: ${result.length} 拐点`, type: 'success' }
+    codeLine: SKYLINE_CODE_LINES.finish,
+    statusBadge: { text: `完成: ${result.length} 拐点`, type: 'success' },
+    metrics: {
+      currentX: `完成`,
+      curMax: `H = 0`,
+      pointCount: `${result.length} 个`,
+      heapTop: `0`,
+    },
+    ans: `[${result.map(p => `[${p[0]},${p[1]}]`).join(', ')}]`,
   });
 
   return steps;
 }
 
 export function renderSkylineCanvas(container: HTMLElement, step: SkylineStep) {
-  const { buildings, currentX, maxHeap, curMax, skylinePoints } = step;
+  const { buildings, currentX, curMax, skylinePoints, maxHeap } = step;
+
+  // 关键拐点标签芯片
+  const pointsChipsHtml = skylinePoints.length === 0
+    ? '<span style="font-size: 11px; color: #94a3b8;">暂未产生拐点</span>'
+    : skylinePoints.map(([x, h]) => `
+      <div style="display: inline-flex; align-items: center; gap: 4px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #065f46;">
+        <span>[${x}, ${h}]</span>
+      </div>
+    `).join('');
+
+  // 堆内元素芯片
+  const heapChipsHtml = maxHeap.slice(0, 6).map((h, i) => `
+    <span style="display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; ${i === 0 ? 'background: #fef3c7; color: #b45309; font-weight: 800; border: 1px solid #fde68a;' : 'background: #f1f5f9; color: #64748b;'}">
+      ${h}
+    </span>
+  `).join('');
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">扫描线坐标 X</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            X = ${currentX}
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; justify-content: center; padding: 12px 6px; box-sizing: border-box;">
+      <!-- 顶部辅助状态概览 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 0 4px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: #0f172a;">📍 已捕获天际线拐点:</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            ${pointsChipsHtml}
           </div>
         </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前堆顶最高高度</div>
-          <div style="font-size: 14px; font-weight: bold; color: #f59e0b;">
-            H = ${curMax}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">已生成天际线拐点</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            ${skylinePoints.length} 个
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 8px; border-radius: 6px;">
+          <span style="color: #64748b;">最大堆高度池:</span>
+          <div style="display: flex; gap: 4px;">
+            ${heapChipsHtml}
           </div>
         </div>
       </div>
 
-      <!-- 建筑剖面沙盘视图 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); min-height: 180px; position: relative; overflow-x: auto;">
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-align: center;">城市天际线建筑轮廓 (Buildings Overlay)：</div>
-        <div style="display: flex; gap: 8px; justify-content: center; align-items: flex-end; min-width: 450px; height: 130px; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 2px;">
+      <!-- 城市天际线几何沙盘 (Canvas Dominance 主体) -->
+      <div style="
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        padding: 24px 16px 12px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        position: relative;
+        overflow-x: auto;
+      ">
+        <div style="
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          align-items: flex-end;
+          min-width: 500px;
+          height: 150px;
+          border-bottom: 2px solid #cbd5e1;
+          padding-bottom: 2px;
+          position: relative;
+        ">
           ${buildings.map(([l, r, h], idx) => {
             const inScan = currentX >= l && currentX <= r;
+            const widthPx = Math.max(36, (r - l) * 16);
+            const heightPx = Math.min(130, h * 7);
+
+            let bg = '#f1f5f9';
+            let border = '1.5px solid #cbd5e1';
+            let textColor = '#64748b';
+            let shadow = 'none';
+
+            if (inScan) {
+              bg = '#e0f2fe';
+              border = '2px solid #38bdf8';
+              textColor = '#0369a1';
+              shadow = '0 4px 12px rgba(56, 189, 248, 0.2)';
+            }
+
             return `
               <div style="
-                width: ${(r - l) * 20}px;
-                height: ${h * 6}px;
-                background: ${inScan ? 'rgba(56, 189, 248, 0.4)' : 'rgba(51, 65, 85, 0.4)'};
-                border: 2px solid ${inScan ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'};
+                width: ${widthPx}px;
+                height: ${heightPx}px;
+                background: ${bg};
+                border: ${border};
                 border-bottom: none;
-                border-radius: 4px 4px 0 0;
+                border-radius: 6px 6px 0 0;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                font-size: 10px;
-                color: #f8fafc;
-                transition: all 0.2s ease;
+                font-size: 11px;
+                font-family: 'JetBrains Mono', monospace;
+                color: ${textColor};
+                box-shadow: ${shadow};
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                flex-shrink: 0;
               ">
-                <div>B${idx + 1}</div>
-                <div style="color: #f59e0b;">h:${h}</div>
+                <div style="font-weight: 800;">B${idx + 1}</div>
+                <div style="font-size: 10px; color: ${inScan ? '#0284c7' : '#94a3b8'};">H:${h}</div>
+                <div style="font-size: 9px; color: #94a3b8; margin-top: 2px;">[${l}..${r}]</div>
               </div>
             `;
           }).join('')}
         </div>
-      </div>
 
-      <!-- 关键拐点记录视图 -->
-      <div style="background: rgba(30, 41, 59, 0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px;">
-        <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">天际线关键转折点 (Skyline Keypoints):</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          ${skylinePoints.map(([x, h]) => `
-            <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; padding: 4px 8px; font-size: 12px; color: #f8fafc;">
-              [${x}, ${h}]
-            </div>
-          `).join('')}
+        <div style="display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; font-family: monospace; color: #94a3b8;">
+          <span>地平线基准 (Height = 0)</span>
+          <span>当前扫描线坐标: <strong style="color: #2563eb;">X = ${currentX}</strong></span>
         </div>
       </div>
 
-      <!-- 核心原理卡片 -->
-      ${renderFormulaCard(
-        '扫描线与最大堆天际线核心定理',
-        '进入事件将高度压入最大堆，离开事件将高度移出。任何时刻，只要堆中最高高度发生跳变，必产生新的天际线转折拐点 [x, curMax]',
-        step.decision,
-        step.statusBadge
-      )}
+      <!-- 底部图例说明 -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 6px; font-size: 11px; color: #64748b;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #e0f2fe; border: 1.5px solid #38bdf8;"></span>
+            处于扫描线跨度内的建筑
+          </span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">
+            <span style="width: 10px; height: 10px; border-radius: 2px; background: #ecfdf5; border: 1.5px solid #10b981;"></span>
+            天际线关键转折点 (拐点)
+          </span>
+        </div>
+        <span style="font-size: 11px; color: #94a3b8;">
+          当前最高高度: <strong style="color: #f59e0b; font-family: monospace;">${curMax}</strong>
+        </span>
+      </div>
     </div>
   `;
 }
@@ -336,6 +416,12 @@ export const skylineProblemVisualizer = registerDeclarativeAlgorithm<SkylineStep
       </ul>
     </div>
   `,
+  metrics: [
+    { id: 'currentX', label: '扫描线 X', color: '#0284c7' },
+    { id: 'curMax', label: '当前最高高度', color: '#f59e0b' },
+    { id: 'pointCount', label: '关键拐点数', color: '#16a34a' },
+    { id: 'heapTop', label: '堆顶高度', color: '#9333ea' },
+  ],
   codeLanguages: SKYLINE_PROBLEM_CODES,
   inputs: [
     {

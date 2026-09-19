@@ -9,6 +9,17 @@ import {
   RIGHT_ROTATE_STRING_ANALYSIS_HTML,
   RIGHT_ROTATE_STRING_CODE_LANGUAGES,
 } from './right-rotate-string-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const RIGHT_ROTATE_STRING_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: [2, 3], cpp: [5, 6, 7], python: [2, 3], javascript: [2, 3, 4] },
+  stage1: { java: 6, cpp: 9, python: 4, javascript: 12 },
+  stage2: { java: 8, cpp: 11, python: 4, javascript: 13 },
+  stage3: { java: 10, cpp: 13, python: 4, javascript: 14 },
+  done: { java: 11, cpp: 14, python: 4, javascript: 15 },
+};
+
+const lines = RIGHT_ROTATE_STRING_CODE_LINES;
 
 export interface RightRotateStep {
   chars: string[];
@@ -23,7 +34,7 @@ export interface RightRotateStep {
   status: 'init' | 'stage1' | 'stage2' | 'stage3' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -46,7 +57,7 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
     status: 'init',
     message: `初始化右旋转：字符串 "${inputStr}" (长度 n=${n})，向右旋转 k=${k} 位。采用三次反转法。`,
     log: `开始右旋转 (n=${n}, k=${k})`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   const runReverse = (
@@ -55,7 +66,7 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
     stageNum: 1 | 2 | 3,
     phaseKey: 'stage1' | 'stage2' | 'stage3',
     stageName: string,
-    codeLine: number | number[]
+    codeLineTarget: HighlightTarget
   ) => {
     let l = wStart;
     let r = wEnd;
@@ -73,7 +84,7 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
       status: phaseKey,
       message: `Stage ${stageNum}：${stageName}，区间 [${wStart}, ${wEnd}]。`,
       log: `Stage ${stageNum}: 准备反转 [${wStart}, ${wEnd}]`,
-      codeLine,
+      codeLine: codeLineTarget,
     });
 
     while (l < r) {
@@ -94,7 +105,7 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
         status: phaseKey,
         message: `${stageName}：交换 chars[${l}] <-> chars[${r}] ('${temp}' <-> '${chars[l]}')。`,
         log: `交换 [${l}] <-> [${r}]`,
-        codeLine,
+        codeLine: codeLineTarget,
       });
 
       l++;
@@ -103,16 +114,16 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
   };
 
   // 1. 反转全部
-  runReverse(0, n - 1, 1, 'stage1', '反转整个字符串 [0, n-1]', 5);
+  runReverse(0, n - 1, 1, 'stage1', '反转整个字符串 [0, n-1]', lines.stage1);
 
   // 2. 反转前 k 个
   if (k > 1) {
-    runReverse(0, k - 1, 2, 'stage2', `反转前 k 个字符 [0, ${k - 1}]`, 7);
+    runReverse(0, k - 1, 2, 'stage2', `反转前 k 个字符 [0, ${k - 1}]`, lines.stage2);
   }
 
   // 3. 反转剩余 n - k 个
   if (n - k > 1) {
-    runReverse(k, n - 1, 3, 'stage3', `反转后 n - k 个字符 [${k}, ${n - 1}]`, 9);
+    runReverse(k, n - 1, 3, 'stage3', `反转后 n - k 个字符 [${k}, ${n - 1}]`, lines.stage3);
   }
 
   steps.push({
@@ -128,7 +139,7 @@ export function buildRightRotateSteps(inputStr: string, kInput: number): RightRo
     status: 'done',
     message: `🎉 三次反转全部完成！右旋转 ${k} 位后的最终字符串为 "${chars.join('')}"。`,
     log: `✓ 求解完成: "${chars.join('')}"`,
-    codeLine: 10,
+    codeLine: lines.done,
   });
 
   return steps;

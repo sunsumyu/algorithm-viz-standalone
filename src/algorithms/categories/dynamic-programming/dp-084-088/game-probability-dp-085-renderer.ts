@@ -18,82 +18,120 @@ export interface GameDp085Step extends Dp084Step {
   bestDiff: number;
 }
 
-export function buildGameDp085Steps(): GameDp085Step[] {
+export function buildGameDp085Steps(input?: { nums?: number[] } | number[]): GameDp085Step[] {
   const steps: GameDp085Step[] = [];
   const lines = GAME_PROBABILITY_085_LINES;
 
-  const nums = [1, 5, 2];
-  // 长度为 1: dp[0][0]=1, dp[1][1]=5, dp[2][2]=2
-  // 长度为 2:
-  // [0, 1]: max(1 - 5, 5 - 1) = max(-4, 4) = 4
-  // [1, 2]: max(5 - 2, 2 - 5) = max(3, -3) = 3
-  // 长度为 3:
-  // [0, 2]:
-  // 左拿 nums[0]=1: 1 - dp[1][2] = 1 - 3 = -2
-  // 右拿 nums[2]=2: 2 - dp[0][1] = 2 - 4 = -2
-  // max(-2, -2) = -2 < 0 -> 先手必败！
+  let rawNums = [1, 5, 2];
+  if (Array.isArray(input)) {
+    rawNums = input;
+  } else if (input && Array.isArray(input.nums)) {
+    rawNums = input.nums;
+  }
+  const nums = rawNums.length > 0 ? rawNums.slice(0, 6) : [1, 5, 2];
+  const n = nums.length;
 
-  // Step 0: 入口与初始化
+  // dp[i][j]: 当前行动方在区间 [i, j] 上的最大相对净胜分
+  const dp: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+
+  // Step 0: 入口帧
   steps.push({
     nums,
     i: 0,
-    j: 2,
+    j: n - 1,
     pickLeftScore: 0,
     pickRightScore: 0,
     bestDiff: 0,
-    decision: '主函数入口：考察石子数组 [1, 5, 2]，判定先手是否有必胜策略。',
+    decision: `主函数入口：考察石子数组 [${nums.join(', ')}]，判定先手是否有必胜策略。`,
     message: '双方均追求自身净胜分最大化，定义 dp[i][j] 为当前行动方在区间 [i, j] 上的最大相对净胜分。',
-    log: 'enter predictTheWinner: nums=[1, 5, 2]',
+    log: `enter predictTheWinner: nums=[${nums.join(', ')}]`,
     codeLine: lines.entry,
-    metrics: { '石子堆数': 3, '初始状态': '准备博弈' },
+    metrics: { '石子堆数': n, '初始状态': '准备博弈' },
   });
 
-  // Step 1: 长度为 2 的区间 [0, 1]
+  // Step 1: 长度为 1 的基础区间初始化
+  for (let i = 0; i < n; i++) {
+    dp[i]![i] = nums[i]!;
+    steps.push({
+      nums,
+      i,
+      j: i,
+      pickLeftScore: nums[i]!,
+      pickRightScore: nums[i]!,
+      bestDiff: nums[i]!,
+      decision: `初始化单张纸牌区间 [${i}, ${i}]：只有一张牌 nums[${i}]=${nums[i]}，先手直接拿走获得 +${nums[i]} 净胜分。`,
+      message: `单元素边界就绪：dp[${i}][${i}] = ${nums[i]}。`,
+      log: `init base: dp[${i}][${i}] = ${nums[i]}`,
+      codeLine: lines.initBase,
+      statusBadge: { text: `dp[${i}][${i}] = ${nums[i]}`, type: 'info' },
+      metrics: { '区间': `[${i}, ${i}]`, '净胜分': nums[i]! },
+    });
+  }
+
+  // 长度 len 从 2 递增至 n
+  for (let len = 2; len <= n; len++) {
+    steps.push({
+      nums,
+      i: 0,
+      j: len - 1,
+      pickLeftScore: 0,
+      pickRightScore: 0,
+      bestDiff: dp[0]![len - 1] ?? 0,
+      decision: `推进至区间长度 len=${len}：从小区间向大区间递推求解。`,
+      message: `区间 DP 核心不变量：必须先求解所有较短区间的博弈劣势与优势，大区间查表时子状态才保证已就绪。`,
+      log: `start length loop: len = ${len}`,
+      codeLine: lines.lenLoop,
+      metrics: { '当前区间长度': len },
+    });
+
+    for (let i = 0; i <= n - len; i++) {
+      const j = i + len - 1;
+      const pickLeft = nums[i]! - dp[i + 1]![j]!;
+      const pickRight = nums[j]! - dp[i]![j - 1]!;
+      const best = Math.max(pickLeft, pickRight);
+      dp[i]![j] = best;
+
+      const chooseDesc =
+        pickLeft >= pickRight
+          ? `拿左端 nums[${i}]=${nums[i]} 更优 (净得 ${pickLeft} >= ${pickRight})`
+          : `拿右端 nums[${j}]=${nums[j]} 更优 (净得 ${pickRight} > ${pickLeft})`;
+
+      steps.push({
+        nums,
+        i,
+        j,
+        pickLeftScore: pickLeft,
+        pickRightScore: pickRight,
+        bestDiff: best,
+        decision: `决策区间 [${i}, ${j}] (石子 [${nums.slice(i, j + 1).join(', ')}])：${chooseDesc}。`,
+        message: `左选: ${nums[i]} - dp[${i + 1}][${j}](${dp[i + 1]![j]}) = ${pickLeft}；右选: ${nums[j]} - dp[${i}][${j - 1}](${dp[i]![j - 1]}) = ${pickRight}。最大相对净胜分 dp[${i}][${j}] = ${best}。`,
+        log: `len=${len} [${i}, ${j}]: left=${pickLeft}, right=${pickRight} -> dp[${i}][${j}]=${best}`,
+        codeLine: lines.minimaxTrans,
+        statusBadge: { text: `区间 [${i}, ${j}] 净胜分: ${best}`, type: best >= 0 ? 'success' : 'danger' },
+        metrics: { '区间': `[${i}, ${j}]`, '最优净分': best },
+      });
+    }
+  }
+
+  const finalDiff = dp[0]![n - 1]!;
+  const isWinner = finalDiff >= 0;
+
+  // 终结返回帧
   steps.push({
     nums,
     i: 0,
-    j: 1,
-    pickLeftScore: -4,
-    pickRightScore: 4,
-    bestDiff: 4,
-    decision: '决策区间 [0, 1] (石子 1 和 5)：拿 1 净得分 1-5=-4，拿 5 净得分 5-1=4，选 5 必胜获得 +4 分。',
-    message: '区间长度由短到长推进，dp[0][1] = 4。',
-    log: 'len=2 [0, 1]: dp[0][1] = max(1-5, 5-1) = 4',
-    codeLine: lines.minimaxTrans,
-    statusBadge: { text: '区间 [0, 1] 净胜分: 4', type: 'info' },
-    metrics: { '区间': '[0, 1]', '最优净分': 4 },
-  });
-
-  // Step 2: 长度为 2 的区间 [1, 2]
-  steps.push({
-    nums,
-    i: 1,
-    j: 2,
-    pickLeftScore: 3,
-    pickRightScore: -3,
-    bestDiff: 3,
-    decision: '决策区间 [1, 2] (石子 5 和 2)：拿 5 净得分 5-2=3，拿 2 净得分 2-5=-3，选 5 必胜获得 +3 分。',
-    message: 'dp[1][2] = 3。',
-    log: 'len=2 [1, 2]: dp[1][2] = max(5-2, 2-5) = 3',
-    codeLine: lines.minimaxTrans,
-    statusBadge: { text: '区间 [1, 2] 净胜分: 3', type: 'info' },
-    metrics: { '区间': '[1, 2]', '最优净分': 3 },
-  });
-
-  // Step 3: 全局区间 [0, 2] 极大极小博弈
-  steps.push({
-    nums,
-    i: 0,
-    j: 2,
-    pickLeftScore: -2,
-    pickRightScore: -2,
-    bestDiff: -2,
-    decision: '决策全局区间 [0, 2]：先手无论拿左端 1 (1 - dp[1][2] = -2) 还是右端 2 (2 - dp[0][1] = -2)，都会把中间大分 5 拱手让给后手！',
-    message: '先手最大净得分为 -2 < 0，后手必胜（先手必败）！',
-    log: 'len=3 [0, 2]: dp[0][2] = max(1-3, 2-4) = -2 < 0',
+    j: n - 1,
+    pickLeftScore: finalDiff,
+    pickRightScore: finalDiff,
+    bestDiff: finalDiff,
+    decision: `全局博弈裁决：整组纸牌 [${nums.join(', ')}] 先手最大相对净得分为 ${finalDiff}。`,
+    message: isWinner
+      ? `🎉 先手净胜分 ${finalDiff} >= 0，先手采取最优策略必胜（或打平）！`
+      : `🛑 先手净胜分 ${finalDiff} < 0，后手必胜（先手必败）！`,
+    log: `predictTheWinner complete: diff=${finalDiff} -> return ${isWinner}`,
     codeLine: lines.returnJudge,
-    statusBadge: { text: '先手净得分为负 (必败)', type: 'danger' },
-    metrics: { '最终净得分': -2, '胜负判定': '后手胜' },
+    statusBadge: { text: isWinner ? '先手必胜 (true)' : '后手必胜 (false)', type: isWinner ? 'success' : 'danger' },
+    metrics: { '最终净得分': finalDiff, '胜负判定': isWinner ? '先手胜' : '后手胜' },
   });
 
   return steps;

@@ -97,4 +97,22 @@ describe('Three Dimension DP Specs Suite', () => {
       expect(lastFalse.metrics?.isScramble).toBe(0);
     });
   });
+
+  describe('Three-Dimension DP Step 0 Purity Invariant', () => {
+    it('all 3D DP specs must have 0 computed cells on step 0', () => {
+      for (const spec of specs) {
+        const steps = spec.generateSteps({});
+        expect(steps.length).toBeGreaterThan(0);
+        const step0 = steps[0];
+        if (step0.dp2d) {
+          const computedCells = step0.dp2d.flat().filter((c) => c.state === 'computed');
+          expect(
+            computedCells.length,
+            `【三维DP首帧纯净度拦截】模型 ${spec.id} 在 step 0 出现了 ${computedCells.length} 个提前计算的绿色格子！`
+          ).toBe(0);
+        }
+      }
+    });
+  });
 });
+

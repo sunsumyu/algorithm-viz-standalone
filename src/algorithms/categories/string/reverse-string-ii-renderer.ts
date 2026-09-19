@@ -9,6 +9,16 @@ import {
   REVERSE_STRING_II_ANALYSIS_HTML,
   REVERSE_STRING_II_CODE_LANGUAGES,
 } from './reverse-string-ii-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const REVERSE_STRING_II_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  select: { java: [3, 4, 5], cpp: 5, python: 4, javascript: [3, 4, 5] },
+  swap: { java: [7, 8, 9], cpp: [8, 9], python: 5, javascript: [7, 8, 9] },
+  done: { java: 14, cpp: 13, python: 6, javascript: 14 },
+};
+
+const lines = REVERSE_STRING_II_CODE_LINES;
 
 export interface ReverseStringIIStep {
   s: string[];
@@ -24,7 +34,7 @@ export interface ReverseStringIIStep {
   status: 'init' | 'select-chunk' | 'swap' | 'advance' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -48,7 +58,7 @@ export function buildReverseStringIISteps(inputStr: string, k: number): ReverseS
     status: 'init',
     message: `初始化分段反转：字符串长度 n = ${n}，参数 k = ${safeK}，步长 2k = ${2 * safeK}。`,
     log: `开始 2k 分段反转 (n=${n}, k=${safeK})`,
-    codeLine: 2,
+    codeLine: lines.init,
   });
 
   for (let i = 0; i < n; i += 2 * safeK) {
@@ -72,7 +82,7 @@ export function buildReverseStringIISteps(inputStr: string, k: number): ReverseS
       status: 'select-chunk',
       message: `处理第 [${i}, ${chunkEnd}] 分段：待反转区间为 [${left}, ${right}] (right = min(${n - 1}, ${i + safeK - 1}))。`,
       log: `分段 i=${i}: 锁定待反转区间 [${left}, ${right}]`,
-      codeLine: [3, 4, 5],
+      codeLine: lines.select,
     });
 
     while (left < right) {
@@ -94,7 +104,7 @@ export function buildReverseStringIISteps(inputStr: string, k: number): ReverseS
         status: 'swap',
         message: `交换字符：s[${left}] <-> s[${right}] ('${temp}' <-> '${s[left]}')。`,
         log: `交换 s[${left}] <-> s[${right}]`,
-        codeLine: [7, 8, 9],
+        codeLine: lines.swap,
       });
 
       left++;
@@ -116,7 +126,7 @@ export function buildReverseStringIISteps(inputStr: string, k: number): ReverseS
     status: 'done',
     message: `🎉 分段反转全部完成！最终字符串为 "${s.join('')}"。`,
     log: `✓ 处理完成: "${s.join('')}"`,
-    codeLine: 14,
+    codeLine: lines.done,
   });
 
   return steps;

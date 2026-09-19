@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   PATH_SUM_PROBLEM_HTML,
@@ -26,8 +27,17 @@ export interface PSStep {
   action: 'enter' | 'check-leaf' | 'match' | 'leave' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const PATH_SUM_CODE_LINES = {
+  init: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  empty: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  enter: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  leafCheck: { java: [5, 6], cpp: [5, 6], python: [5, 6], javascript: [3, 4] },
+  leave: { java: 9, cpp: 8, python: 7, javascript: 6 },
+  done: { java: 9, cpp: 8, python: 7, javascript: 6 },
+};
 
 export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[] {
   const steps: PSStep[] = [];
@@ -45,7 +55,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
     action: 'enter',
     message: root ? `初始化路径总和搜索：targetSum = ${targetSum}，从根节点 ${root.val} 开始递归。` : '空树，返回 false。',
     log: root ? `开始搜索 targetSum = ${targetSum}` : '空树 -> false',
-    codeLine: 2,
+    codeLine: PATH_SUM_CODE_LINES.init,
   });
 
   if (!root) {
@@ -60,7 +70,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
       action: 'done',
       message: '❌ 空树不存在根到叶路径，返回 false。',
       log: '✓ 未找到目标路径 (false)',
-      codeLine: 3,
+      codeLine: PATH_SUM_CODE_LINES.empty,
     });
     return steps;
   }
@@ -83,7 +93,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
       action: 'enter',
       message: `进入节点 ${node.val}：当前路径 [${currentPath.join(' -> ')}]，当前累加和 = ${newSum} (目标 ${targetSum})。`,
       log: `进入 ${node.val} (和=${newSum})`,
-      codeLine: 4,
+      codeLine: PATH_SUM_CODE_LINES.enter,
     });
 
     if (isLeaf) {
@@ -101,7 +111,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
           ? `🎯 成功到达叶子节点 ${node.val}！路径总和恰好等于 ${targetSum}！`
           : `到达叶子节点 ${node.val}，累加和 ${newSum} != ${targetSum}，回溯。`,
         log: match ? `✓ 找到目标路径: 和=${targetSum}` : `叶子 ${node.val} 和=${newSum} != ${targetSum}`,
-        codeLine: [5, 6],
+        codeLine: PATH_SUM_CODE_LINES.leafCheck,
       });
 
       if (match) {
@@ -126,7 +136,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
       action: 'leave',
       message: `回溯：离开节点 ${node.val}，移出路径。当前路径 [${currentPath.join(' -> ')}]。`,
       log: `回溯离开 ${node.val}`,
-      codeLine: 8,
+      codeLine: PATH_SUM_CODE_LINES.leave,
     });
 
     return false;
@@ -147,7 +157,7 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
       ? `🎉 搜索完成！存在根到叶路径总和为 ${targetSum} 的有效路径 (True)。`
       : `❌ 搜索完成！未找到根到叶路径总和为 ${targetSum} 的路径 (False)。`,
     log: finalFound ? '✓ 存在目标路径 (True)' : '✗ 不存在目标路径 (False)',
-    codeLine: 9,
+    codeLine: PATH_SUM_CODE_LINES.done,
   });
 
   return steps;

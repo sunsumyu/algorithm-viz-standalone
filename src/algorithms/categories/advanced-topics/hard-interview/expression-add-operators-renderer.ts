@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface ExpressionStep extends StepBase {
   stepIndex?: number;
@@ -20,8 +19,10 @@ export interface ExpressionStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const EXPRESSION_ADD_CODES = {
@@ -157,6 +158,14 @@ public:
 }`
 };
 
+export const EXPRESSION_ADD_CODE_LINES = {
+  init: { java: 6, cpp: 8, python: 5, typescript: 6 },
+  match: { java: 12, cpp: 14, python: 9, typescript: 8 },
+  firstItem: { java: 20, cpp: 23, python: 18, typescript: 16 },
+  multiply: { java: 30, cpp: 35, python: 22, typescript: 20 },
+  finish: { java: 6, cpp: 8, python: 25, typescript: 26 },
+};
+
 export function generateExpressionSteps(numStr: string, target: number): ExpressionStep[] {
   const steps: ExpressionStep[] = [];
   const solutions: string[] = [];
@@ -174,8 +183,15 @@ export function generateExpressionSteps(numStr: string, target: number): Express
     decision: `开始回溯搜索：在数字串 "${numStr}" 中插入运算符，以达成目标值 ${target}`,
     message: '算法初始化',
     log: `初始化 num="${numStr}", target=${target}`,
-    codeLine: 4,
-    statusBadge: { text: '初始化', type: 'info' }
+    codeLine: EXPRESSION_ADD_CODE_LINES.init,
+    statusBadge: { text: '初始化', type: 'info' },
+    metrics: {
+      inputTarget: `"${numStr}" ➔ ${target}`,
+      currentVal: 0,
+      prevNum: 0,
+      solCount: '0 个',
+    },
+    ans: '-',
   });
 
   const dfs = (index: number, evalVal: number, multed: number, path: string) => {
@@ -194,8 +210,15 @@ export function generateExpressionSteps(numStr: string, target: number): Express
           decision: `成功达成目标值！表达式 "${path} = ${evalVal}" 成立！捕获第 ${solutions.length} 个解`,
           message: `命中目标: ${path}`,
           log: `Match: ${path} = ${target}`,
-          codeLine: 12,
-          statusBadge: { text: `命中: ${path}`, type: 'success' }
+          codeLine: EXPRESSION_ADD_CODE_LINES.match,
+          statusBadge: { text: `命中: ${path}`, type: 'success' },
+          metrics: {
+            inputTarget: `"${numStr}" ➔ ${target}`,
+            currentVal: evalVal,
+            prevNum: multed,
+            solCount: `${solutions.length} 个`,
+          },
+          ans: `[${solutions.join(', ')}]`,
         });
       }
       return;
@@ -219,8 +242,15 @@ export function generateExpressionSteps(numStr: string, target: number): Express
           decision: `首个操作数选取 "${part}"，当前累计值 = ${cur}`,
           message: `首项: ${part}`,
           log: `First item: ${part}`,
-          codeLine: 18,
-          statusBadge: { text: `首项 ${part}`, type: 'info' }
+          codeLine: EXPRESSION_ADD_CODE_LINES.firstItem,
+          statusBadge: { text: `首项 ${part}`, type: 'info' },
+          metrics: {
+            inputTarget: `"${numStr}" ➔ ${target}`,
+            currentVal: cur,
+            prevNum: cur,
+            solCount: `${solutions.length} 个`,
+          },
+          ans: solutions.length > 0 ? `[${solutions.join(', ')}]` : '-',
         });
         dfs(i + 1, cur, cur, part);
       } else {
@@ -242,8 +272,15 @@ export function generateExpressionSteps(numStr: string, target: number): Express
           decision: `尝试乘法运算: "${path} * ${part}"。乘法结合律优先级处理：先撤销先前项 ${multed}，计算累加值 = ${evalVal} - ${multed} + (${multed} * ${cur}) = ${nextEval}`,
           message: `乘法结合律: ${path} * ${part}`,
           log: `Multiply: ${nextEval}`,
-          codeLine: 28,
-          statusBadge: { text: `乘法结合`, type: 'warning' }
+          codeLine: EXPRESSION_ADD_CODE_LINES.multiply,
+          statusBadge: { text: `乘法结合`, type: 'warning' },
+          metrics: {
+            inputTarget: `"${numStr}" ➔ ${target}`,
+            currentVal: nextEval,
+            prevNum: multed * cur,
+            solCount: `${solutions.length} 个`,
+          },
+          ans: solutions.length > 0 ? `[${solutions.join(', ')}]` : '-',
         });
         dfs(i + 1, nextEval, multed * cur, path + '*' + part);
       }
@@ -264,76 +301,92 @@ export function generateExpressionSteps(numStr: string, target: number): Express
     decision: `回溯搜索完毕！共找到 ${solutions.length} 个完全契合目标值 ${target} 的合法运算表达式：${solutions.join(', ')}`,
     message: `搜索完成，找到 ${solutions.length} 个解`,
     log: `完成，解数 ${solutions.length}`,
-    codeLine: 35,
-    statusBadge: { text: `完成: ${solutions.length} 个解`, type: 'success' }
+    codeLine: EXPRESSION_ADD_CODE_LINES.finish,
+    statusBadge: { text: `完成: ${solutions.length} 个解`, type: 'success' },
+    metrics: {
+      inputTarget: `"${numStr}" ➔ ${target}`,
+      currentVal: target,
+      prevNum: 0,
+      solCount: `${solutions.length} 个`,
+    },
+    ans: solutions.length > 0 ? `[${solutions.join(', ')}]` : '无解',
   });
 
   return steps;
 }
 
 export function renderExpressionCanvas(container: HTMLElement, step: ExpressionStep) {
-  const { numStr, target, expr, currentVal, solutions } = step;
+  const { numStr, target, expr, solutions } = step;
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">输入数字串 / 目标</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            "${numStr}" ➔ ${target}
-          </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
+      <!-- 当前表达式分支探针 -->
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        padding: 24px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      ">
+        <div style="font-size: 12px; color: var(--text-muted, #94a3b8); font-weight: 600;">
+          当前回溯探测表达式分支 (目标: ${target})：
         </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前路径计算值</div>
-          <div style="font-size: 14px; font-weight: bold; color: ${currentVal === target ? '#10b981' : '#f59e0b'};">
-            ${currentVal}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">已寻得解个数</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            ${solutions.length} 个
-          </div>
-        </div>
-      </div>
-
-      <!-- 当前表达式分支视图 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; gap: 8px;">
-        <div style="font-size: 12px; color: #94a3b8;">当前探测表达式分支：</div>
         <div style="
-          padding: 12px 24px;
+          padding: 14px 28px;
           background: rgba(30, 41, 59, 0.7);
           border: 2px solid #38bdf8;
           border-radius: 8px;
-          font-size: 20px;
-          font-weight: bold;
-          color: #f8fafc;
-          box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+          font-size: 22px;
+          font-weight: 800;
+          font-family: monospace;
+          color: var(--text-color, #f8fafc);
+          box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+          letter-spacing: 1px;
         ">
-          ${expr ? expr : '初始化中...'}
+          ${expr ? expr : '就绪待命...'}
         </div>
       </div>
 
-      <!-- 成功命中解列表 -->
-      <div style="background: rgba(30, 41, 59, 0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px;">
-        <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">成功解集 (Target Match):</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <!-- 成功命中解列表卡片 -->
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: #4ade80; font-weight: 700;">
+            ✓ 成功解集 (Target = ${target}):
+          </span>
+          <span style="font-size: 11px; color: var(--text-muted, #94a3b8);">
+            共命中 ${solutions.length} 个解
+          </span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; overflow-y: auto; max-height: 180px;">
           ${solutions.length > 0 ? solutions.map(sol => `
-            <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px; font-size: 13px; font-weight: bold; color: #f8fafc;">
+            <div style="
+              background: rgba(16, 185, 129, 0.2);
+              border: 1px solid #10b981;
+              border-radius: 6px;
+              padding: 6px 12px;
+              font-size: 13px;
+              font-weight: 700;
+              font-family: monospace;
+              color: #ecfdf5;
+            ">
               ${sol} = ${target}
             </div>
-          `).join('') : '<div style="font-size: 12px; color: #64748b;">暂未发现解</div>'}
+          `).join('') : '<div style="font-size: 12px; color: var(--text-muted, #64748b); font-style: italic; padding: 12px 0;">暂未发现解</div>'}
         </div>
       </div>
-
-      <!-- 核心原理卡片 -->
-      ${renderFormulaCard(
-        '乘法结合律优先级与前导零控制定理',
-        '遇到乘法时当前累积值为 eval - multed + multed * cur，维护上一个乘法项 multed；同时必须判定 i != index && num[index] == 0 剔除前导零',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -358,6 +411,12 @@ export const expressionAddOperatorsVisualizer = registerDeclarativeAlgorithm<Exp
     </div>
   `,
   codeLanguages: EXPRESSION_ADD_CODES,
+  metrics: [
+    { id: 'inputTarget', label: '目标约束', color: '#38bdf8' },
+    { id: 'currentVal', label: '当前路径计算值', color: '#f59e0b' },
+    { id: 'prevNum', label: '结合律撤销项 (multed)', color: '#a855f7' },
+    { id: 'solCount', label: '已寻得解数', color: '#10b981' },
+  ],
   inputs: [
     {
       id: 'numStr',

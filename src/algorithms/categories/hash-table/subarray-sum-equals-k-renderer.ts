@@ -26,7 +26,7 @@ export interface SubarraySumStep extends StepBase {
   phase: 'init' | 'compute-sum' | 'match-found' | 'update-map' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const SUBARRAY_SUM_CODES = {
@@ -76,6 +76,14 @@ public:
         return count`,
 };
 
+export const SUBARRAY_SUM_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 4, python: 3 },
+  computeSum: { java: 8, cpp: 7, python: 6 },
+  matchFound: { java: 11, cpp: 9, python: 8 },
+  updateMap: { java: 13, cpp: 11, python: 9 },
+  finish: { java: 15, cpp: 13, python: 10 },
+};
+
 export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: number = 3): SubarraySumStep[] {
   const steps: SubarraySumStep[] = [];
   const map: Record<number, number> = { 0: 1 };
@@ -95,7 +103,7 @@ export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: n
     phase: 'init',
     message: `算法启动：寻找和为 k = ${k} 的子数组。初始化前缀和哈希表 map.put(0, 1) 代表空前缀。`,
     log: `初始化前缀和 map: { 0: 1 }, 目标 k=${k}`,
-    codeLine: 4,
+    codeLine: SUBARRAY_SUM_CODE_LINES.init,
   });
 
   for (let i = 0; i < nums.length; i++) {
@@ -116,7 +124,7 @@ export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: n
       phase: 'compute-sum',
       message: `处理 nums[${i}] = ${x}：累计当前前缀和 pre = ${pre}。需寻找的历史前缀为 target = pre - k = ${pre} - ${k} = ${target}。`,
       log: `前缀和 pre=${pre}, 检索 target=${target}`,
-      codeLine: 9,
+      codeLine: SUBARRAY_SUM_CODE_LINES.computeSum,
     });
 
     if (match > 0) {
@@ -133,7 +141,7 @@ export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: n
         phase: 'match-found',
         message: `🎯 命中子数组！哈希表中存在 ${match} 个前缀和为 ${target} 的切分点！累加计数 count += ${match} -> ${count}。`,
         log: `命中前缀和 ${target} (${match}次), 累加后 count=${count}`,
-        codeLine: 12,
+        codeLine: SUBARRAY_SUM_CODE_LINES.matchFound,
       });
     }
 
@@ -150,7 +158,7 @@ export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: n
       phase: 'update-map',
       message: `记录前缀和：将当前 pre = ${pre} 写入哈希表，该前缀和出现频次更新为 ${map[pre]}。`,
       log: `更新 map[${pre}] = ${map[pre]}`,
-      codeLine: 14,
+      codeLine: SUBARRAY_SUM_CODE_LINES.updateMap,
     });
   }
 
@@ -167,7 +175,7 @@ export function buildSubarraySumSteps(nums: number[] = [1, 2, 3, -2, 1, 4], k: n
     phase: 'finish',
     message: `全数组扫描完毕！数组中累计和为 k = ${k} 的连续子数组总数为 ${count} 个。`,
     log: `算法执行完毕，返回 count=${count}`,
-    codeLine: 16,
+    codeLine: SUBARRAY_SUM_CODE_LINES.finish,
   });
 
   return steps;

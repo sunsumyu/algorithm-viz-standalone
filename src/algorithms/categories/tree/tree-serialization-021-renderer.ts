@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface TreeNodeDef {
@@ -24,7 +24,7 @@ export interface Tree021Step extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -127,6 +127,13 @@ public:
 }`
 };
 
+export const TREE_SERIALIZATION_021_CODE_LINES = {
+  entry: { java: 3, cpp: 3, python: 2, typescript: 2 },
+  serializeToken: { java: 10, cpp: 5, python: 6, typescript: 7 },
+  startDeserialize: { java: 16, cpp: 11, python: 11, typescript: 14 },
+  reconstructedDone: { java: 24, cpp: 19, python: 18, typescript: 25 },
+};
+
 export function buildSerialization021Steps(
   mode: 'preorder' | 'levelorder' = 'preorder'
 ): Tree021Step[] {
@@ -157,7 +164,7 @@ export function buildSerialization021Steps(
     decision: '准备进行二叉树序列化与反序列化全流程',
     message: '二叉树结构必须记录空节点标记 "#"，否则单纯先序序列无法唯一确定一棵树。',
     log: 'Init Tree Serialization',
-    codeLine: 1,
+    codeLine: TREE_SERIALIZATION_021_CODE_LINES.entry,
     statusBadge: { text: '就绪', type: 'info' }
   });
 
@@ -192,7 +199,7 @@ export function buildSerialization021Steps(
       decision: decisions[i],
       message: `序列化字符流增加: "${t}"。当前序列: [${stream.join(', ')}]`,
       log: `serialize token "${t}"`,
-      codeLine: 8,
+      codeLine: TREE_SERIALIZATION_021_CODE_LINES.serializeToken,
       statusBadge: { text: `Token: ${t}`, type: t === '#' ? 'warning' : 'info' }
     });
   }
@@ -206,7 +213,7 @@ export function buildSerialization021Steps(
     decision: `序列化产物完成: "${stream.join(',')}"，启动反序列化解析`,
     message: '通过先序消费队列，遇到数字创建节点并递归构建左/右子树，遇到 "#" 返回 null。',
     log: 'Start deserialize queue',
-    codeLine: 16,
+    codeLine: TREE_SERIALIZATION_021_CODE_LINES.startDeserialize,
     statusBadge: { text: '开始反序列化', type: 'info' }
   });
 
@@ -225,7 +232,7 @@ export function buildSerialization021Steps(
     decision: '反序列化递归消费完毕，全新二叉树成功复原！',
     message: '二叉树结构、拓扑分支与节点值与原树完全一致，序列化与反序列化形成完美闭环。',
     log: 'Finished Tree Deserialization',
-    codeLine: 24,
+    codeLine: TREE_SERIALIZATION_021_CODE_LINES.reconstructedDone,
     statusBadge: { text: '复原成功', type: 'success' }
   });
 

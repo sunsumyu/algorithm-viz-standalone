@@ -9,6 +9,19 @@ import {
   STR_STR_ANALYSIS_HTML,
   STR_STR_CODE_LANGUAGES,
 } from './implement-str-str-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const STR_STR_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  empty: { java: 2, cpp: 4, python: 2, javascript: 2 },
+  init: { java: [3, 4, 5], cpp: [5, 6, 7], python: [4, 5], javascript: [3, 4] },
+  fallback: { java: [7, 8], cpp: [9, 10, 11], python: [14, 15], javascript: 12 },
+  match: { java: 10, cpp: 12, python: [16, 17], javascript: 13 },
+  found: { java: [11, 12], cpp: 13, python: [18, 19], javascript: 14 },
+  mismatch: { java: 10, cpp: 12, python: [16, 17], javascript: 13 },
+  notFound: { java: 15, cpp: 15, python: 20, javascript: 16 },
+};
+
+const lines = STR_STR_CODE_LINES;
 
 export interface SSStep {
   haystack: string;
@@ -21,7 +34,7 @@ export interface SSStep {
   matchedIndex: number;
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -57,7 +70,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
       matchedIndex: 0,
       message: 'needle 为空字符串，根据定义直接返回 0。',
       log: 'needle 为空 -> 返回 0',
-      codeLine: 2,
+      codeLine: lines.empty,
     });
     return steps;
   }
@@ -75,7 +88,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
     matchedIndex: -1,
     message: `计算模式串 needle 的 next 前缀表: [${next.join(', ')}]。准备开始在主串中匹配。`,
     log: `构建 next 表: [${next.join(', ')}]`,
-    codeLine: [3, 4, 5],
+    codeLine: lines.init,
   });
 
   let j = 0;
@@ -96,7 +109,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
         matchedIndex: -1,
         message: `⚠️ 字符失配：haystack[${i}] ('${haystack[i]}') != needle[${prevJ}] ('${needle[prevJ]}')。模式串指针通过 next 表回退到 j = next[${prevJ - 1}] = ${j}。`,
         log: `失配回退: j 从 ${prevJ} -> ${j}`,
-        codeLine: [7, 8],
+        codeLine: lines.fallback,
       });
     }
 
@@ -114,7 +127,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
         matchedIndex: -1,
         message: `字符匹配：haystack[${i}] ('${haystack[i]}') == needle[${j - 1}] ('${needle[j - 1]}')。模式串匹配长度增至 ${j}。`,
         log: `匹配: haystack[${i}] == needle[${j - 1}] (j=${j})`,
-        codeLine: 10,
+        codeLine: lines.match,
       });
 
       if (j === needle.length) {
@@ -130,7 +143,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
           matchedIndex: foundIdx,
           message: `🎉 模式串完全匹配！在主串下标 ${foundIdx} 处成功找到匹配项，返回 ${foundIdx}。`,
           log: `✓ 成功匹配: 起始下标 ${foundIdx}`,
-          codeLine: [11, 12],
+          codeLine: lines.found,
         });
         return steps;
       }
@@ -146,7 +159,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
         matchedIndex: -1,
         message: `字符不匹配：haystack[${i}] ('${haystack[i]}') != needle[0] ('${needle[0]}')，模式串仍从 0 开始。`,
         log: `首字符失配: i=${i}`,
-        codeLine: 10,
+        codeLine: lines.mismatch,
       });
     }
   }
@@ -162,7 +175,7 @@ export function buildSSSteps(haystack: string, needle: string): SSStep[] {
     matchedIndex: -1,
     message: `主串遍历结束，未找到模式串 "${needle}" 的匹配项，返回 -1。`,
     log: `✗ 未找到匹配项: 返回 -1`,
-    codeLine: 15,
+    codeLine: lines.notFound,
   });
 
   return steps;

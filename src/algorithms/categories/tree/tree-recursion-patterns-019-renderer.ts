@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface TreeNodeData {
@@ -31,7 +31,7 @@ export interface TreeRecursionStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -101,7 +101,16 @@ function process(node: TreeNode | null): TreeInfo {
   const isBalanced = left.isBalanced && right.isBalanced 
     && Math.abs(left.height - right.height) <= 1;
   return { isBalanced, height };
-}`
+}
+`
+};
+
+export const TREE_RECURSION_019_CODE_LINES: Record<string, HighlightTarget> = {
+  baseCase: { java: 10, cpp: 7, python: 7, typescript: 7 },
+  enterLeft: { java: 13, cpp: 8, python: 9, typescript: 8 },
+  leftDone: { java: 14, cpp: 9, python: 10, typescript: 9 },
+  rightDone: { java: 16, cpp: 11, python: 12, typescript: 10 },
+  returnInfo: { java: 20, cpp: 14, python: 15, typescript: 13 },
 };
 
 export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecursionStep[] {
@@ -120,7 +129,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
       decision: '空树天然为平衡二叉树，高度为 0',
       message: '树为空',
       log: '空树处理完毕',
-      codeLine: 10,
+      codeLine: TREE_RECURSION_019_CODE_LINES.baseCase,
       statusBadge: { text: '空树', type: 'info' }
     });
     return steps;
@@ -139,7 +148,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
         decision: '到达空节点 (Null)，返回 Base Case: {isBalanced: true, height: 0}',
         message: '空节点返回',
         log: 'Null -> 返回高度 0',
-        codeLine: 10,
+        codeLine: TREE_RECURSION_019_CODE_LINES.baseCase,
         statusBadge: { text: '空节点', type: 'info' }
       });
       return { height: 0, isBalanced: true };
@@ -156,7 +165,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
       decision: `进入节点 [${node.val}]，准备向左子树递归收集信息`,
       message: `访问节点 ${node.val}`,
       log: `进入节点 ${node.val}`,
-      codeLine: 12,
+      codeLine: TREE_RECURSION_019_CODE_LINES.enterLeft,
       statusBadge: { text: `进入 Node ${node.val}`, type: 'info' }
     });
 
@@ -171,7 +180,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
       decision: `节点 [${node.val}] 左子树收集完毕：高度=${left.height}，是否平衡=${left.isBalanced}。准备向右子树收集信息`,
       message: `左子树信息就绪`,
       log: `节点 ${node.val} 左树高度 ${left.height}`,
-      codeLine: 13,
+      codeLine: TREE_RECURSION_019_CODE_LINES.leftDone,
       statusBadge: { text: `左树完成`, type: 'warning' }
     });
 
@@ -186,7 +195,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
       decision: `节点 [${node.val}] 右子树收集完毕：高度=${right.height}，是否平衡=${right.isBalanced}。整合左右信息计算自身`,
       message: `左右子树信息均就绪`,
       log: `节点 ${node.val} 右树高度 ${right.height}`,
-      codeLine: 15,
+      codeLine: TREE_RECURSION_019_CODE_LINES.rightDone,
       statusBadge: { text: `信息聚合`, type: 'warning' }
     });
 
@@ -202,7 +211,7 @@ export function generateTreeRecursionSteps(treeNodes: TreeNodeData[]): TreeRecur
       decision: `节点 [${node.val}] 整合结果：高度=${myHeight}，高度差=|${left.height} - ${right.height}|=${Math.abs(left.height - right.height)} <= 1，平衡状态=${isBalanced}`,
       message: `向上层返回结果`,
       log: `Node ${node.val} -> {h: ${myHeight}, balanced: ${isBalanced}}`,
-      codeLine: 18,
+      codeLine: TREE_RECURSION_019_CODE_LINES.returnInfo,
       statusBadge: isBalanced ? { text: `平衡 (${myHeight})`, type: 'success' } : { text: `不平衡`, type: 'danger' }
     });
 

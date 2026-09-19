@@ -20,7 +20,7 @@ export interface BinarySearchStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -151,6 +151,20 @@ public:
 }`
 };
 
+export const BINARY_SEARCH_004_CODE_LINES: Record<string, Record<string, number>> = {
+  leftmostInit: { java: 4, cpp: 5, python: 4, typescript: 3 },
+  leftmostCandidate: { java: 8, cpp: 9, python: 8, typescript: 7 },
+  leftmostRight: { java: 10, cpp: 11, python: 10, typescript: 9 },
+  leftmostDone: { java: 13, cpp: 14, python: 11, typescript: 12 },
+
+  localMinInit: { java: 18, cpp: 18, python: 15, typescript: 16 },
+  localMinHead: { java: 19, cpp: 19, python: 16, typescript: 17 },
+  localMinTail: { java: 20, cpp: 20, python: 17, typescript: 18 },
+  localMinShrinkLeft: { java: 24, cpp: 24, python: 22, typescript: 22 },
+  localMinShrinkRight: { java: 26, cpp: 25, python: 24, typescript: 23 },
+  localMinFound: { java: 28, cpp: 26, python: 26, typescript: 24 },
+};
+
 export function generateBinarySearchSteps(
   nums: number[],
   target: number,
@@ -172,7 +186,7 @@ export function generateBinarySearchSteps(
       decision: '数组为空，直接返回 -1',
       message: '数组长度为 0',
       log: '空数组查找结束',
-      codeLine: 4,
+      codeLine: BINARY_SEARCH_004_CODE_LINES.leftmostInit,
       statusBadge: { text: '空输入', type: 'danger' }
     });
     return steps;
@@ -192,7 +206,7 @@ export function generateBinarySearchSteps(
       decision: '开始无序数组局部最小值二分查找',
       message: `数组首尾检查：arr[0]=${nums[0]}, arr[n-1]=${nums[n - 1]}`,
       log: '算法初始化',
-      codeLine: 18,
+      codeLine: BINARY_SEARCH_004_CODE_LINES.localMinInit,
       statusBadge: { text: '启动搜索', type: 'info' }
     });
 
@@ -209,7 +223,7 @@ export function generateBinarySearchSteps(
         decision: `arr[0]=${nums[0]} 小于右侧元素，0号位即为局部最小值！`,
         message: '首项命中局部最小值',
         log: '命中边界局部极小值',
-        codeLine: 19,
+        codeLine: BINARY_SEARCH_004_CODE_LINES.localMinHead,
         statusBadge: { text: '命中目标', type: 'success' }
       });
       return steps;
@@ -228,7 +242,7 @@ export function generateBinarySearchSteps(
         decision: `arr[${n - 1}]=${nums[n - 1]} 小于左侧元素，末项即为局部最小值！`,
         message: '末项命中局部最小值',
         log: '命中边界局部极小值',
-        codeLine: 20,
+        codeLine: BINARY_SEARCH_004_CODE_LINES.localMinTail,
         statusBadge: { text: '命中目标', type: 'success' }
       });
       return steps;
@@ -256,7 +270,7 @@ export function generateBinarySearchSteps(
           decision: `mid=${mid}(值=${nums[mid]}) > 左邻(${nums[mid - 1]})，左侧必定存在谷底，收缩右界到 ${mid - 1}`,
           message: `arr[${mid}] > arr[${mid - 1}] 向左收拢`,
           log: `[${l}, ${r}] -> 转向左半区`,
-          codeLine: 24,
+          codeLine: BINARY_SEARCH_004_CODE_LINES.localMinShrinkLeft,
           statusBadge: { text: '向左收缩', type: 'warning' }
         });
         r = mid - 1;
@@ -273,7 +287,7 @@ export function generateBinarySearchSteps(
           decision: `mid=${mid}(值=${nums[mid]}) > 右邻(${nums[mid + 1]})，右侧必定存在谷底，提升左界到 ${mid + 1}`,
           message: `arr[${mid}] > arr[${mid + 1}] 向右收拢`,
           log: `[${l}, ${r}] -> 转向右半区`,
-          codeLine: 26,
+          codeLine: BINARY_SEARCH_004_CODE_LINES.localMinShrinkRight,
           statusBadge: { text: '向右收缩', type: 'warning' }
         });
         l = mid + 1;
@@ -290,7 +304,7 @@ export function generateBinarySearchSteps(
           decision: `mid=${mid}(值=${nums[mid]}) 同时小于左邻与右邻，成功捕获局部最小值！`,
           message: `局部最小值位于下标 ${mid}`,
           log: `成功找到局部最小值下标 ${mid}`,
-          codeLine: 28,
+          codeLine: BINARY_SEARCH_004_CODE_LINES.localMinFound,
           statusBadge: { text: '成功找到', type: 'success' }
         });
         return steps;
@@ -315,7 +329,7 @@ export function generateBinarySearchSteps(
       decision: `初始化二分查找，在已排序数组中搜索 >= ${target} 的最左位置`,
       message: `区间 [${l}, ${r}]`,
       log: '初始化二分搜索',
-      codeLine: 4,
+      codeLine: BINARY_SEARCH_004_CODE_LINES.leftmostInit,
       statusBadge: { text: '搜索就绪', type: 'info' }
     });
 
@@ -337,7 +351,7 @@ export function generateBinarySearchSteps(
           decision: `arr[${mid}]=${val} >= ${target}，记录候选下标 ${mid}，继续向左尝试 [${l}, ${mid - 1}]`,
           message: `更新候选 ans = ${ans}`,
           log: `命中达标点 mid=${mid}，向左压缩`,
-          codeLine: 8,
+          codeLine: BINARY_SEARCH_004_CODE_LINES.leftmostCandidate,
           statusBadge: { text: '记录候选', type: 'warning' }
         });
         r = mid - 1;
@@ -354,7 +368,7 @@ export function generateBinarySearchSteps(
           decision: `arr[${mid}]=${val} < ${target}，目标在右半区，左界提升至 ${mid + 1}`,
           message: `左界前移至 ${mid + 1}`,
           log: `排除左半区 [${l}, ${mid}]`,
-          codeLine: 10,
+          codeLine: BINARY_SEARCH_004_CODE_LINES.leftmostRight,
           statusBadge: { text: '向右收缩', type: 'info' }
         });
         l = mid + 1;
@@ -375,7 +389,7 @@ export function generateBinarySearchSteps(
         : `二分收敛结束，未找到任何 >= ${target} 的元素`,
       message: `最终结果：ans = ${ans}`,
       log: `二分查找完成，返回 ${ans}`,
-      codeLine: 13,
+      codeLine: BINARY_SEARCH_004_CODE_LINES.leftmostDone,
       statusBadge: ans !== -1 ? { text: '搜索成功', type: 'success' } : { text: '未找到', type: 'danger' }
     });
   }

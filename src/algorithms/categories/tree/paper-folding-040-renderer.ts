@@ -8,7 +8,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 
 export interface PaperFoldStep extends StepBase {
   currentLevel: number;
@@ -18,7 +18,7 @@ export interface PaperFoldStep extends StepBase {
   creaseList: Array<{ id: number; type: 'down' | 'up'; text: string; level: number }>;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
 }
 
 export const PAPER_FOLDING_CODES = {
@@ -66,6 +66,14 @@ private:
         return res`,
 };
 
+export const PAPER_FOLDING_CODE_LINES = {
+  entry: { java: 4, cpp: 4, python: 11 },
+  dfsLeft: { java: 11, cpp: 9, python: 8 },
+  print: { java: 13, cpp: 10, python: 9 },
+  rightDone: { java: 15, cpp: 11, python: 10 },
+  finish: { java: 4, cpp: 4, python: 12 },
+};
+
 export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
   const steps: PaperFoldStep[] = [];
   const creaseList: Array<{ id: number; type: 'down' | 'up'; text: string; level: number }> = [];
@@ -80,7 +88,7 @@ export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
     creaseList: [],
     message: `算法启动：模拟纸条对折 ${n} 次。整个折痕体系等价于一棵深度为 ${n} 的满二叉树，根为凹，左凹右凸。准备启动中序遍历输出。`,
     log: `折纸算法启动: 折叠次数 N = ${n}, 总折痕数 = 2^${n} - 1 = ${Math.pow(2, n) - 1}`,
-    codeLine: 3,
+    codeLine: PAPER_FOLDING_CODE_LINES.entry,
   });
 
   function process(i: number, down: boolean) {
@@ -95,7 +103,7 @@ export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
       creaseList: [...creaseList],
       message: `进入第 ${i} 层递归节点：折痕方向 [${down ? '凹 (Down)' : '凸 (Up)'}]。优先递归深入左子树（左子必为凹）...`,
       log: `深入第 ${i} 层节点 (${down ? '凹' : '凸'}), 探查左子树`,
-      codeLine: 10,
+      codeLine: PAPER_FOLDING_CODE_LINES.dfsLeft,
     });
 
     process(i + 1, true);
@@ -118,7 +126,7 @@ export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
       creaseList: [...creaseList],
       message: `【中序打印】折痕 #${foldCounter}: 第 ${i} 层产生【${down ? '凹折痕' : '凸折痕'}】。当前从上到下序列新增折痕 [${down ? '凹' : '凸'}]。`,
       log: `输出折痕 #${foldCounter}: 层数=${i}, 方向=${down ? '凹' : '凸'}`,
-      codeLine: 12,
+      codeLine: PAPER_FOLDING_CODE_LINES.print,
     });
 
     process(i + 1, false);
@@ -131,7 +139,7 @@ export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
       creaseList: [...creaseList],
       message: `第 ${i} 层节点 [${down ? '凹' : '凸'}] 的左右子树中序遍历均已完成，回溯至上一层递归。`,
       log: `第 ${i} 层节点回溯完成`,
-      codeLine: 14,
+      codeLine: PAPER_FOLDING_CODE_LINES.rightDone,
     });
   }
 
@@ -146,7 +154,7 @@ export function buildPaperFoldingSteps(n: number = 3): PaperFoldStep[] {
     creaseList: [...creaseList],
     message: `🎉 对折 ${n} 次展开完成！纸条自上而下共 ${creaseList.length} 条折痕：[ ${creaseList.map((c) => c.text).join(' , ')} ]。中序遍历完美映射折痕几何！`,
     log: `折纸遍历终结: 总输出折痕 = ${creaseList.map((c) => c.text).join('')}`,
-    codeLine: 4,
+    codeLine: PAPER_FOLDING_CODE_LINES.finish,
   });
 
   return steps;

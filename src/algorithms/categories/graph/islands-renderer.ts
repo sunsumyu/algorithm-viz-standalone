@@ -11,16 +11,20 @@ import {
   ISLANDS_CODE_LANGUAGES,
 } from './islands-problem-content';
 import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+import { HighlightTarget } from '../../../core/code-panel';
+
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number | number[]> = {
-  init: 2,
-  mark: [12, 13],
-  enter: [14, 15, 16, 17],
-  backtrack: 18,
-  found: [5, 6, 7],
-  scan: [4, 5],
-  done: 10,
+export const ISLANDS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  scan: { java: [4, 5], cpp: [5, 6], python: [11, 12], javascript: [10, 11] },
+  found: { java: [6, 7], cpp: [7, 8], python: [13, 14], javascript: [12, 13] },
+  enter: { java: 15, cpp: 16, python: 6, javascript: 5 },
+  mark: { java: 16, cpp: 17, python: 8, javascript: 6 },
+  backtrack: { java: [17, 18, 19, 20], cpp: [18, 19], python: [9, 10], javascript: [7, 8] },
+  done: { java: 12, cpp: 13, python: 16, javascript: 18 },
 };
+
+const lines = ISLANDS_CODE_LINES;
 
 export type CellState = 'water' | 'land' | 'visited';
 
@@ -35,7 +39,7 @@ export interface IslandsStep {
   action: 'init' | 'scan' | 'found' | 'enter' | 'mark' | 'backtrack' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -61,7 +65,7 @@ export function buildIslandsSteps(grid: number[][]): IslandsStep[] {
       action: extra.action ?? 'scan',
       message: extra.message ?? '',
       log: extra.log ?? '',
-      codeLine: extra.codeLine ?? 1,
+      codeLine: extra.codeLine ?? lines.init,
     });
   };
 

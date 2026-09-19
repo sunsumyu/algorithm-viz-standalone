@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   TREE_TRAVERSAL_PROBLEM_HTML,
@@ -27,8 +28,32 @@ export interface TTStep {
   action: 'enter' | 'visit' | 'leave';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const TREE_TRAVERSAL_CODE_LINES = {
+  pre: {
+    init: { java: 3, cpp: 3, python: 2, javascript: 1 },
+    empty: { java: 4, cpp: 4, python: 3, javascript: 2 },
+    enter: { java: 4, cpp: 4, python: 3, javascript: 2 },
+    visit: { java: 5, cpp: 5, python: 4, javascript: 3 },
+    leave: { java: 7, cpp: 7, python: 6, javascript: 6 },
+  },
+  in: {
+    init: { java: 10, cpp: 9, python: 8, javascript: 8 },
+    empty: { java: 11, cpp: 10, python: 9, javascript: 9 },
+    enter: { java: 11, cpp: 10, python: 9, javascript: 9 },
+    visit: { java: 13, cpp: 12, python: 11, javascript: 11 },
+    leave: { java: 14, cpp: 13, python: 12, javascript: 13 },
+  },
+  post: {
+    init: { java: 17, cpp: 15, python: 14, javascript: 15 },
+    empty: { java: 18, cpp: 16, python: 15, javascript: 16 },
+    enter: { java: 18, cpp: 16, python: 15, javascript: 16 },
+    visit: { java: 21, cpp: 19, python: 18, javascript: 19 },
+    leave: { java: 20, cpp: 18, python: 17, javascript: 20 },
+  },
+};
 
 export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
   const steps: TTStep[] = [];
@@ -36,6 +61,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
   let visited = 0;
 
   const modeName = mode === 'pre' ? '前序（根左右）' : mode === 'in' ? '中序（左根右）' : '后序（左右根）';
+  const modeConfig = TREE_TRAVERSAL_CODE_LINES[mode] || TREE_TRAVERSAL_CODE_LINES.pre;
   steps.push({
     tree: root,
     mode,
@@ -46,7 +72,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
     action: 'enter',
     message: root ? `开始${modeName}遍历：根节点为 ${root.val}。` : '空树，无需遍历。',
     log: root ? `开始${modeName}遍历` : '空树',
-    codeLine: 1,
+    codeLine: modeConfig.init,
   });
 
   if (!root) {
@@ -60,7 +86,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
       action: 'leave',
       message: '✅ 遍历完成，返回空序列 []。',
       log: '遍历完成: []',
-      codeLine: 4,
+      codeLine: modeConfig.empty,
     });
     return steps;
   }
@@ -78,7 +104,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
       action: 'visit',
       message: `${modeName} 访问节点 ${node.val}（深度 ${depth}），加入结果序列。`,
       log: `访问节点 ${node.val} -> [${result.join(', ')}]`,
-      codeLine: mode === 'pre' ? 5 : mode === 'in' ? 12 : 19,
+      codeLine: modeConfig.visit,
     });
   };
 
@@ -94,7 +120,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
       action: 'enter',
       message: `进入节点 ${node.val}（当前栈深度 ${depth}）。`,
       log: `进入 ${node.val} (depth ${depth})`,
-      codeLine: mode === 'pre' ? 4 : mode === 'in' ? 10 : 16,
+      codeLine: modeConfig.enter,
     });
 
     if (mode === 'pre') visit(node, depth);
@@ -113,7 +139,7 @@ export function buildTTSteps(root: TreeNode | null, mode: Mode): TTStep[] {
       action: 'leave',
       message: `离开节点 ${node.val}（该子树所有分支处理完毕，弹出栈帧）。`,
       log: `离开 ${node.val}`,
-      codeLine: mode === 'pre' ? 7 : mode === 'in' ? 14 : 21,
+      codeLine: modeConfig.leave,
     });
   };
 

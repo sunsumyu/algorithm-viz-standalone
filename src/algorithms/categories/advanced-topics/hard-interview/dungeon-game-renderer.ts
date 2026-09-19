@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface DungeonStep extends StepBase {
   stepIndex?: number;
@@ -17,8 +16,10 @@ export interface DungeonStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const DUNGEON_GAME_CODES = {
@@ -121,6 +122,14 @@ public:
 }`
 };
 
+export const DUNGEON_GAME_CODE_LINES = {
+  initDest: { java: 9, cpp: 9, python: 7, typescript: 7 },
+  bottomRow: { java: 13, cpp: 12, python: 10, typescript: 10 },
+  rightCol: { java: 17, cpp: 15, python: 12, typescript: 13 },
+  innerCell: { java: 23, cpp: 21, python: 17, typescript: 19 },
+  finish: { java: 26, cpp: 24, python: 18, typescript: 22 },
+};
+
 export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
   const steps: DungeonStep[] = [];
   const m = dungeonInput.length;
@@ -142,8 +151,15 @@ export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
     decision: `终点公主房 (${m - 1}, ${n - 1})，扣/加血量为 ${bossRoom}。进入该房间后至少要有 1 点血生存，故进入该格所需血量 dp[${m - 1}][${n - 1}] = max(1, 1 - (${bossRoom})) = ${dp[m - 1][n - 1]}`,
     message: `公主房最低生命值: ${dp[m - 1][n - 1]}`,
     log: `初始化终点 (${m - 1}, ${n - 1}) = ${dp[m - 1][n - 1]}`,
-    codeLine: 9,
-    statusBadge: { text: `终点 HP: ${dp[m - 1][n - 1]}`, type: 'info' }
+    codeLine: DUNGEON_GAME_CODE_LINES.initDest,
+    statusBadge: { text: `终点 HP: ${dp[m - 1][n - 1]}`, type: 'info' },
+    metrics: {
+      focusCoord: `(${m - 1}, ${n - 1})`,
+      roomCost: bossRoom >= 0 ? `+${bossRoom}` : String(bossRoom),
+      hpNeed: dp[m - 1][n - 1],
+      startHp: '推导中',
+    },
+    ans: String(dp[m - 1][n - 1]),
   });
 
   // 2. 底边
@@ -159,8 +175,15 @@ export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
       decision: `底边界房间 (${m - 1}, ${j})，只能向右走出到 (${m - 1}, ${j + 1})。下一格需要 ${dp[m - 1][j + 1]}，本格变化 ${cost}，推得 dp[${m - 1}][${j}] = max(1, ${dp[m - 1][j + 1]} - (${cost})) = ${dp[m - 1][j]}`,
       message: `底边逆推 (${m - 1}, ${j})`,
       log: `底边 dp[${m - 1}][${j}] = ${dp[m - 1][j]}`,
-      codeLine: 13,
-      statusBadge: { text: `推导 (${m - 1}, ${j})`, type: 'warning' }
+      codeLine: DUNGEON_GAME_CODE_LINES.bottomRow,
+      statusBadge: { text: `推导 (${m - 1}, ${j})`, type: 'warning' },
+      metrics: {
+        focusCoord: `(${m - 1}, ${j})`,
+        roomCost: cost >= 0 ? `+${cost}` : String(cost),
+        hpNeed: dp[m - 1][j],
+        startHp: '推导中',
+      },
+      ans: String(dp[m - 1][j]),
     });
   }
 
@@ -177,8 +200,15 @@ export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
       decision: `右边界房间 (${i}, ${n - 1})，只能向下走出到 (${i + 1}, ${n - 1})。下一格需要 ${dp[i + 1][n - 1]}，本格变化 ${cost}，推得 dp[${i}][${n - 1}] = max(1, ${dp[i + 1][n - 1]} - (${cost})) = ${dp[i][n - 1]}`,
       message: `右边界逆推 (${i}, ${n - 1})`,
       log: `右边界 dp[${i}][${n - 1}] = ${dp[i][n - 1]}`,
-      codeLine: 18,
-      statusBadge: { text: `推导 (${i}, ${n - 1})`, type: 'warning' }
+      codeLine: DUNGEON_GAME_CODE_LINES.rightCol,
+      statusBadge: { text: `推导 (${i}, ${n - 1})`, type: 'warning' },
+      metrics: {
+        focusCoord: `(${i}, ${n - 1})`,
+        roomCost: cost >= 0 ? `+${cost}` : String(cost),
+        hpNeed: dp[i][n - 1],
+        startHp: '推导中',
+      },
+      ans: String(dp[i][n - 1]),
     });
   }
 
@@ -200,8 +230,15 @@ export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
         decision: `房间 (${i}, ${j})：下一步可向右需 ${rightNeed} 点，向下需 ${downNeed} 点。贪心选较小值 minNext=${minNext}。本房间代价为 ${cost}，推得 dp[${i}][${j}] = max(1, ${minNext} - (${cost})) = ${dp[i][j]}`,
         message: `推导 (${i}, ${j})`,
         log: `网格 dp[${i}][${j}] = ${dp[i][j]}`,
-        codeLine: 24,
-        statusBadge: { text: `推导 (${i}, ${j})`, type: 'warning' }
+        codeLine: DUNGEON_GAME_CODE_LINES.innerCell,
+        statusBadge: { text: `推导 (${i}, ${j})`, type: 'warning' },
+        metrics: {
+          focusCoord: `(${i}, ${j})`,
+          roomCost: cost >= 0 ? `+${cost}` : String(cost),
+          hpNeed: dp[i][j],
+          startHp: dp[0][0] > 0 ? dp[0][0] : '推导中',
+        },
+        ans: dp[0][0] > 0 ? String(dp[0][0]) : String(dp[i][j]),
       });
     }
   }
@@ -215,8 +252,15 @@ export function generateDungeonSteps(dungeonInput: number[][]): DungeonStep[] {
     decision: `逆推完成！骑士从起点 (0, 0) 出发至少需要 ${dp[0][0]} 点初始健康生命值，方可在全程不降到 0 点并成功拯救公主！`,
     message: `最终初始最低生命值: ${dp[0][0]}`,
     log: `计算完成，返回 ${dp[0][0]}`,
-    codeLine: 27,
-    statusBadge: { text: `最低生命值: ${dp[0][0]}`, type: 'success' }
+    codeLine: DUNGEON_GAME_CODE_LINES.finish,
+    statusBadge: { text: `最低生命值: ${dp[0][0]}`, type: 'success' },
+    metrics: {
+      focusCoord: '(0, 0)',
+      roomCost: dungeonInput[0][0] >= 0 ? `+${dungeonInput[0][0]}` : String(dungeonInput[0][0]),
+      hpNeed: dp[0][0],
+      startHp: dp[0][0],
+    },
+    ans: String(dp[0][0]),
   });
 
   return steps;
@@ -228,57 +272,53 @@ export function renderDungeonCanvas(container: HTMLElement, step: DungeonStep) {
   const n = dungeon[0].length;
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前逆推房间坐标</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            (${currentRow}, ${currentCol})
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前房间加/扣血</div>
-          <div style="font-size: 14px; font-weight: bold; color: ${dungeon[currentRow][currentCol] >= 0 ? '#10b981' : '#ef4444'};">
-            ${dungeon[currentRow][currentCol] >= 0 ? `+${dungeon[currentRow][currentCol]}` : dungeon[currentRow][currentCol]}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">所需最低生命值 dp[i][j]</div>
-          <div style="font-size: 14px; font-weight: bold; color: #f59e0b;">
-            ${dp[currentRow][currentCol]}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">起点初始生命值 dp[0][0]</div>
-          <div style="font-size: 14px; font-weight: bold; color: #ec4899;">
-            ${dp[0][0] > 0 ? dp[0][0] : '推导中...'}
-          </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
+      <!-- 提示与状态导览 -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px;">
+        <span style="font-weight: 700; font-size: 13px; color: var(--text-color, #f1f5f9);">
+          🏰 地下城房间网格 (自右下角向左上角逆推生命值)
+        </span>
+        <div style="display: flex; gap: 14px; font-size: 11px;">
+          <span style="color: #38bdf8; font-weight: 600;">🛡️ (0,0) 骑士起点</span>
+          <span style="color: #f43f5e; font-weight: 600;">👑 (${m-1},${n-1}) 终点公主房</span>
         </div>
       </div>
 
-      <!-- 地下城房间网格展示 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; gap: 12px; overflow-x: auto;">
-        <div style="display: grid; grid-template-columns: repeat(${n}, 90px); gap: 10px;">
+      <!-- 地下城房间网格沙盘 -->
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        padding: 24px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        overflow-x: auto;
+      ">
+        <div style="display: grid; grid-template-columns: repeat(${n}, minmax(110px, 1fr)); gap: 14px; max-width: 600px; width: 100%;">
           ${Array.from({ length: m }).map((_, r) => {
             return Array.from({ length: n }).map((_, c) => {
               const isCur = r === currentRow && c === currentCol;
               const hpNeed = dp[r][c];
               const cost = dungeon[r][c];
+              const isStart = r === 0 && c === 0;
+              const isBoss = r === m - 1 && c === n - 1;
 
-              let border = '1px solid rgba(255,255,255,0.1)';
-              let bg = 'rgba(30, 41, 59, 0.5)';
+              let border = '1px solid rgba(255, 255, 255, 0.08)';
+              let bg = 'rgba(30, 41, 59, 0.4)';
 
               if (isCur) {
                 border = '2px solid #38bdf8';
-                bg = 'rgba(56, 189, 248, 0.25)';
+                bg = 'rgba(56, 189, 248, 0.22)';
               } else if (hpNeed > 0) {
-                bg = 'rgba(51, 65, 85, 0.4)';
+                bg = 'rgba(51, 65, 85, 0.35)';
               }
 
               return `
                 <div style="
-                  height: 80px;
+                  min-height: 95px;
                   background: ${bg};
                   border: ${border};
                   border-radius: 8px;
@@ -286,16 +326,29 @@ export function renderDungeonCanvas(container: HTMLElement, step: DungeonStep) {
                   flex-direction: column;
                   align-items: center;
                   justify-content: center;
-                  gap: 4px;
-                  box-shadow: ${isCur ? '0 0 16px rgba(56, 189, 248, 0.4)' : 'none'};
+                  gap: 5px;
+                  padding: 8px;
+                  box-shadow: ${isCur ? '0 0 16px rgba(56, 189, 248, 0.45)' : 'none'};
                   transition: all 0.2s ease;
+                  position: relative;
                 ">
-                  <div style="font-size: 10px; color: #94a3b8;">(${r}, ${c})</div>
-                  <div style="font-size: 13px; font-weight: bold; color: ${cost >= 0 ? '#10b981' : '#ef4444'};">
+                  <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; color: var(--text-muted, #94a3b8); padding: 0 4px;">
+                    <span>(${r}, ${c})</span>
+                    <span>${isStart ? '🛡️' : isBoss ? '👑' : ''}</span>
+                  </div>
+                  <div style="font-size: 15px; font-weight: 800; color: ${cost >= 0 ? '#10b981' : '#ef4444'};">
                     ${cost >= 0 ? `+${cost}` : cost}
                   </div>
-                  <div style="font-size: 11px; font-weight: bold; color: ${hpNeed > 0 ? '#f59e0b' : '#64748b'};">
-                    ${hpNeed > 0 ? `需 ≥ ${hpNeed}` : '未算'}
+                  <div style="
+                    font-size: 11px;
+                    font-weight: 700;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    background: ${hpNeed > 0 ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.04)'};
+                    color: ${hpNeed > 0 ? '#fbbf24' : 'var(--text-muted, #64748b)'};
+                    border: 1px solid ${hpNeed > 0 ? 'rgba(245, 158, 11, 0.4)' : 'transparent'};
+                  ">
+                    ${hpNeed > 0 ? `最低需 ≥ ${hpNeed}` : '未算'}
                   </div>
                 </div>
               `;
@@ -303,14 +356,6 @@ export function renderDungeonCanvas(container: HTMLElement, step: DungeonStep) {
           }).join('')}
         </div>
       </div>
-
-      <!-- 核心数学与无后效性原理卡片 -->
-      ${renderFormulaCard(
-        '反向动态规划逆推原理 (Reverse DP)',
-        '正向计算时“当前剩余血量”与“所需初始最低血量”互相牵制存在后效性；反向定义 dp[i][j] 为进入该格的最低生存点数，dp[i][j] = max(1, min(dp[i+1][j], dp[i][j+1]) - dungeon[i][j])',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -336,6 +381,12 @@ export const dungeonGameVisualizer = registerDeclarativeAlgorithm<DungeonStep>({
     </div>
   `,
   codeLanguages: DUNGEON_GAME_CODES,
+  metrics: [
+    { id: 'focusCoord', label: '逆推房间坐标', color: '#38bdf8' },
+    { id: 'roomCost', label: '当前房间增减', color: '#10b981' },
+    { id: 'hpNeed', label: '所需最低 HP', color: '#f59e0b' },
+    { id: 'startHp', label: '起点初始最低 HP', color: '#ec4899' },
+  ],
   inputs: [
     {
       id: 'dungeon',

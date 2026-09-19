@@ -10,7 +10,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 
 export interface Point {
   x: number;
@@ -28,7 +28,7 @@ export interface MaxPointsStep extends StepBase {
   phase: 'init' | 'select-base' | 'calc-slope' | 'update-max' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: HighlightTarget;
 }
 
 export const MAX_POINTS_CODES = {
@@ -101,6 +101,15 @@ public:
         return max_ans`,
 };
 
+export const MAX_POINTS_CODE_LINES = {
+  shortInput: { java: 4, cpp: 4, python: 3 },
+  init: { java: 6, cpp: 5, python: 4 },
+  selectBase: { java: 8, cpp: 7, python: 6 },
+  calcSlope: { java: 17, cpp: 14, python: 13 },
+  updateMax: { java: 21, cpp: 16, python: 15 },
+  finish: { java: 23, cpp: 18, python: 16 },
+};
+
 function gcd(a: number, b: number): number {
   return b === 0 ? a : gcd(b, a % b);
 }
@@ -128,7 +137,7 @@ export function buildMaxPointsSteps(points: Point[] = [
       phase: 'finish',
       message: `点数少于等于 2，所有点必然共线！共线点数 = ${n}。`,
       log: `点数 <= 2, 直接返回 ${n}`,
-      codeLine: 4,
+      codeLine: MAX_POINTS_CODE_LINES.shortInput,
     });
     return steps;
   }
@@ -147,7 +156,7 @@ export function buildMaxPointsSteps(points: Point[] = [
     phase: 'init',
     message: `算法启动：平面包含 ${n} 个点。采用 GCD 斜率哈希法，枚举基准点并统计共线点。`,
     log: `初始化平面 ${n} 个点，初始共线数 >= 2`,
-    codeLine: 6,
+    codeLine: MAX_POINTS_CODE_LINES.init,
   });
 
   for (let i = 0; i < n; i++) {
@@ -165,7 +174,7 @@ export function buildMaxPointsSteps(points: Point[] = [
       phase: 'select-base',
       message: `选择基准点 P${i} (${points[i].x}, ${points[i].y})，开启新一轮斜率哈希表。`,
       log: `设定基准点 P${i}(${points[i].x},${points[i].y})`,
-      codeLine: 7,
+      codeLine: MAX_POINTS_CODE_LINES.selectBase,
     });
 
     for (let j = i + 1; j < n; j++) {
@@ -195,7 +204,7 @@ export function buildMaxPointsSteps(points: Point[] = [
         phase: 'calc-slope',
         message: `计算 P${i}(${points[i].x},${points[i].y}) 与 P${j}(${points[j].x},${points[j].y})：化简斜率 dy/dx = ${slopeStr}。该斜率共线点数累计 = ${slopeMap[slopeStr] + 1}。`,
         log: `P${i}->P${j} 斜率=${slopeStr}, 该直线点数=${slopeMap[slopeStr] + 1}`,
-        codeLine: 18,
+        codeLine: MAX_POINTS_CODE_LINES.calcSlope,
       });
     }
 
@@ -212,7 +221,7 @@ export function buildMaxPointsSteps(points: Point[] = [
         phase: 'update-max',
         message: `基准点 P${i} 检索完毕：以 P${i} 为基准的最大共线点数达 ${curMax + 1}！刷新全局最大共线点数 = ${globalMax}。`,
         log: `刷新全局最优 maxPoints = ${globalMax}`,
-        codeLine: 21,
+        codeLine: MAX_POINTS_CODE_LINES.updateMax,
       });
     }
   }
@@ -229,7 +238,7 @@ export function buildMaxPointsSteps(points: Point[] = [
     phase: 'finish',
     message: `全量点枚举完毕！平面上穿过同一直线的最多点数为 ${globalMax} 个。`,
     log: `算法收敛：最多共线点数 = ${globalMax}`,
-    codeLine: 23,
+    codeLine: MAX_POINTS_CODE_LINES.finish,
   });
 
   return steps;

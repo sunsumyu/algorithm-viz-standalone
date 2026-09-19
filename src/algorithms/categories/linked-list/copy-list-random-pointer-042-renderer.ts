@@ -25,7 +25,7 @@ export interface CopyListStep extends StepBase {
   currentNodeId: string | null;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const COPY_LIST_CODES = {
@@ -115,6 +115,14 @@ public:
         return res`,
 };
 
+const COPY_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 4, python: 4 },
+  cloneNodes: { java: 7, cpp: 6, python: 5 },
+  setRandom: { java: 16, cpp: 13, python: 11 },
+  splitLists: { java: 24, cpp: 20, python: 17 },
+  finish: { java: 32, cpp: 27, python: 23 },
+};
+
 export function buildCopyListSteps(): CopyListStep[] {
   const steps: CopyListStep[] = [];
 
@@ -135,7 +143,7 @@ export function buildCopyListSteps(): CopyListStep[] {
     currentNodeId: '1',
     message: `算法启动：原链表共 5 个节点，每个节点包含 val、next 以及随机指针 random。准备执行三步原地复制法。`,
     log: `初始化复杂链表: 长度=5`,
-    codeLine: 4,
+    codeLine: COPY_LINES.init,
   });
 
   // Phase 1: Clone and insert
@@ -158,7 +166,7 @@ export function buildCopyListSteps(): CopyListStep[] {
     currentNodeId: "1'",
     message: `阶段一完成：克隆节点紧随其后就地插入！结构变为 1 ➔ 1' ➔ 2 ➔ 2' ➔ 3 ➔ 3' ... 原节点与新节点形成严格交织。`,
     log: `完成克隆节点原地串接`,
-    codeLine: 7,
+    codeLine: COPY_LINES.cloneNodes,
   });
 
   // Phase 2: Set random
@@ -174,7 +182,7 @@ export function buildCopyListSteps(): CopyListStep[] {
     currentNodeId: "2'",
     message: `阶段二完成：利用交织性质配置 random！对于任意原节点 cur，其克隆节点必为 cur.next；因此 cur.next.random 恰好等于 cur.random.next！全程零哈希表开销。`,
     log: `克隆节点 random 指针全部精准对齐绑定`,
-    codeLine: 16,
+    codeLine: COPY_LINES.setRandom,
   });
 
   // Phase 3: Split
@@ -192,7 +200,7 @@ export function buildCopyListSteps(): CopyListStep[] {
     currentNodeId: "1'",
     message: `阶段三完成：解开交织结构！原链表各节点重新连回自己的原后继，克隆新链表独立解耦抽出，各指针完全深拷贝完毕。`,
     log: `拆分还原原链表，抽出克隆链表`,
-    codeLine: 24,
+    codeLine: COPY_LINES.splitLists,
   });
 
   // Finish
@@ -202,7 +210,7 @@ export function buildCopyListSteps(): CopyListStep[] {
     currentNodeId: null,
     message: `🎉 深拷贝完成！新链表具备完全独立的内存与精确对应的 next 与 random 拓扑，返回克隆头节点。`,
     log: `复杂链表深拷贝完毕，空间复杂度 O(1)`,
-    codeLine: 32,
+    codeLine: COPY_LINES.finish,
   });
 
   return steps;

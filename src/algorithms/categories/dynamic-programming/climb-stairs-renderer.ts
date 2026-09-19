@@ -3,17 +3,73 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 
-interface StairsStep {
+export interface StairsStep extends StepBase {
   n: number;
   currentIndex: number;
   dp: number[];
   status: 'init' | 'compute' | 'done';
   message: string;
   log: string;
-  codeLine: number | { from: number; to: number };
+  codeLine: number | HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const CLIMB_STAIRS_CODES = {
+  java: `public class Solution {
+    public int climbStairs(int n) {
+        if (n <= 2) return n;
+        int[] dp = new int[n + 1];
+        dp[1] = 1;
+        dp[2] = 2;
+        for (int i = 3; i <= n; i++) {
+            dp[i] = dp[i - 1] + dp[i - 2];
+        }
+        return dp[n];
+    }
+}`,
+  cpp: `class Solution {
+public:
+    int climbStairs(int n) {
+        if (n <= 2) return n;
+        vector<int> dp(n + 1, 0);
+        dp[1] = 1;
+        dp[2] = 2;
+        for (int i = 3; i <= n; i++) {
+            dp[i] = dp[i - 1] + dp[i - 2];
+        }
+        return dp[n];
+    }
+};`,
+  python: `class Solution:
+    def climbStairs(self, n: int) -> int:
+        if n <= 2:
+            return n
+        dp = [0] * (n + 1)
+        dp[1], dp[2] = 1, 2
+        for i in range(3, n + 1):
+            dp[i] = dp[i - 1] + dp[i - 2]
+        return dp[n]`,
+  typescript: `export function climbStairs(n: number): number {
+    if (n <= 2) return n;
+    const dp: number[] = new Array(n + 1).fill(0);
+    dp[1] = 1;
+    dp[2] = 2;
+    for (let i = 3; i <= n; i++) {
+        dp[i] = dp[i - 1] + dp[i - 2];
+    }
+    return dp[n];
+}`
+};
+
+export const CLIMB_STAIRS_CODE_LINES = {
+  entry: { java: 3, cpp: 4, python: 3, typescript: 2 },
+  init: { java: 5, cpp: 6, python: 5, typescript: 4 },
+  loop: { java: 7, cpp: 8, python: 6, typescript: 6 },
+  update: { java: 8, cpp: 9, python: 7, typescript: 7 },
+  finish: { java: 10, cpp: 11, python: 8, typescript: 9 },
+};
 
 export function buildStairsSteps(n: number): StairsStep[] {
   const steps: StairsStep[] = [];
@@ -26,7 +82,7 @@ export function buildStairsSteps(n: number): StairsStep[] {
       status: 'done',
       message: `n=${n} 是基础情况，答案为 ${n}。`,
       log: `基础情况：climbStairs(${n}) = ${n}。`,
-      codeLine: 2,
+      codeLine: CLIMB_STAIRS_CODE_LINES.entry,
     });
     return steps;
   }
@@ -42,7 +98,7 @@ export function buildStairsSteps(n: number): StairsStep[] {
     status: 'init',
     message: '初始化：dp[1] = 1，dp[2] = 2。',
     log: '初始化 DP 数组。',
-    codeLine: { from: 3, to: 5 },
+    codeLine: CLIMB_STAIRS_CODE_LINES.init,
   });
 
   for (let i = 3; i <= n; i++) {
@@ -53,7 +109,7 @@ export function buildStairsSteps(n: number): StairsStep[] {
       status: 'compute',
       message: `准备计算 dp[${i}]，它来自 dp[${i - 1}] 和 dp[${i - 2}]。`,
       log: `进入循环 i=${i}。`,
-      codeLine: 7,
+      codeLine: CLIMB_STAIRS_CODE_LINES.loop,
     });
 
     dp[i] = dp[i - 1] + dp[i - 2];
@@ -64,7 +120,7 @@ export function buildStairsSteps(n: number): StairsStep[] {
       status: 'compute',
       message: `dp[${i}] = dp[${i - 1}] + dp[${i - 2}] = ${dp[i - 1]} + ${dp[i - 2]} = ${dp[i]}。`,
       log: `计算 dp[${i}] = ${dp[i]}。`,
-      codeLine: 8,
+      codeLine: CLIMB_STAIRS_CODE_LINES.update,
     });
   }
 
@@ -75,23 +131,11 @@ export function buildStairsSteps(n: number): StairsStep[] {
     status: 'done',
     message: `计算完成，爬到第 ${n} 阶共有 ${dp[n]} 种方法。`,
     log: `返回 dp[${n}] = ${dp[n]}。`,
-    codeLine: 10,
+    codeLine: CLIMB_STAIRS_CODE_LINES.finish,
   });
 
   return steps;
 }
-
-const CLIMB_STAIRS_JAVA_CODE = `public int climbStairs(int n) {
-    if (n <= 2) return n;
-    int[] dp = new int[n + 1];
-    dp[1] = 1;
-    dp[2] = 2;
-
-    for (int i = 3; i <= n; i++) {
-        dp[i] = dp[i - 1] + dp[i - 2];
-    }
-    return dp[n];
-}`;
 
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: StairsStep[]): StairsStep[] {
@@ -264,7 +308,7 @@ registerDeclarativeAlgorithm({
     { label: '转移来源', color: '#22c55e' },
     { label: '已就绪', color: '#3b82f6' },
   ],
-  codeLanguages: { java: CLIMB_STAIRS_JAVA_CODE },
+  codeLanguages: CLIMB_STAIRS_CODES,
   generateSteps: (inputs) => {
     let n = parseInt(String(inputs.n ?? '8'), 10);
     if (!Number.isFinite(n)) n = 8;

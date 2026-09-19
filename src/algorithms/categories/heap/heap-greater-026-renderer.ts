@@ -17,7 +17,7 @@ export interface HeapGreaterStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | Record<string, number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -177,6 +177,16 @@ public:
 }`
 };
 
+export const HEAP_GREATER_026_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 3, cpp: 4, python: 3, typescript: 2 },
+  pushAppend: { java: 8, cpp: 7, python: 8, typescript: 6 },
+  pushHeapInsert: { java: 10, cpp: 9, python: 10, typescript: 9 },
+  resignFind: { java: 15, cpp: 13, python: 14, typescript: 13 },
+  resignDone: { java: 18, cpp: 16, python: 17, typescript: 16 },
+  removePop: { java: 24, cpp: 23, python: 21, typescript: 22 },
+  removeDone: { java: 30, cpp: 28, python: 25, typescript: 28 },
+};
+
 export function generateHeapGreaterSteps(
   actions: Array<{ type: 'push' | 'resign' | 'remove'; id: string; val?: number }>
 ): HeapGreaterStep[] {
@@ -228,7 +238,7 @@ export function generateHeapGreaterSteps(
     decision: '加强堆初始化完毕，创建底层堆数组 heap 与动态反向索引表 indexMap',
     message: '堆就绪',
     log: 'HeapGreater 初始化',
-    codeLine: 4,
+    codeLine: HEAP_GREATER_026_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' }
   });
 
@@ -248,7 +258,7 @@ export function generateHeapGreaterSteps(
         decision: `元素 [${item.id}: ${item.val}] 追加至堆末下标 ${idx}，并建立反向索引 indexMap['${item.id}'] = ${idx}`,
         message: `插入元素 ${item.id}`,
         log: `push -> ${item.id}, 下标 ${idx}`,
-        codeLine: 9,
+        codeLine: HEAP_GREATER_026_CODE_LINES.pushAppend,
         statusBadge: { text: `插入 ${item.id}`, type: 'info' }
       });
 
@@ -263,7 +273,7 @@ export function generateHeapGreaterSteps(
         decision: `元素 [${item.id}] 上浮完毕，当前位于下标 ${indexMap[item.id]}，大根堆性质成立`,
         message: '上浮调整完成',
         log: `heapInsert 完毕，新下标 ${indexMap[item.id]}`,
-        codeLine: 11,
+        codeLine: HEAP_GREATER_026_CODE_LINES.pushHeapInsert,
         statusBadge: { text: '上浮调整', type: 'success' }
       });
     } else if (act.type === 'resign') {
@@ -279,7 +289,7 @@ export function generateHeapGreaterSteps(
           decision: `元素 [${act.id}] 的属性改变为 ${act.val}！凭借反向索引 O(1) 定位至堆下标 ${idx}，准备在 O(log N) 内重构堆序`,
           message: `属性变更: ${act.id}`,
           log: `resign 命中下标 ${idx}`,
-          codeLine: 16,
+          codeLine: HEAP_GREATER_026_CODE_LINES.resignFind,
           statusBadge: { text: `值变动 ${act.val}`, type: 'warning' }
         });
 
@@ -295,7 +305,7 @@ export function generateHeapGreaterSteps(
           decision: `通过 heapInsert 与 heapify 双向调整，[${act.id}] 在 O(log N) 内重塑大根堆性质，当前位置下标 ${indexMap[act.id]}`,
           message: '重构堆序完成',
           log: `resign 完成，当前下标 ${indexMap[act.id]}`,
-          codeLine: 19,
+          codeLine: HEAP_GREATER_026_CODE_LINES.resignDone,
           statusBadge: { text: 'resign 成功', type: 'success' }
         });
       }
@@ -315,7 +325,7 @@ export function generateHeapGreaterSteps(
           decision: `删除指定对象 [${act.id}]：从反向索引抹除该对象，取出堆末尾元素 [${replaceItem.id}] 填补至下标 ${idx}`,
           message: `删除目标 ${act.id}`,
           log: `remove 移除 ${act.id}`,
-          codeLine: 25,
+          codeLine: HEAP_GREATER_026_CODE_LINES.removePop,
           statusBadge: { text: `删除 ${act.id}`, type: 'danger' }
         });
 
@@ -334,7 +344,7 @@ export function generateHeapGreaterSteps(
             decision: `替补元素重构堆序完毕，当前位于下标 ${indexMap[replaceItem.id]}，整个删除操作在 O(log N) 内完成！`,
             message: '替换调整完毕',
             log: `替补完毕: ${replaceItem.id}`,
-            codeLine: 31,
+            codeLine: HEAP_GREATER_026_CODE_LINES.removeDone,
             statusBadge: { text: '删除调整完成', type: 'success' }
           });
         }

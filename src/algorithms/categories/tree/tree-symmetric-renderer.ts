@@ -8,6 +8,7 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
   TREE_SYMMETRIC_PROBLEM_HTML,
@@ -26,8 +27,18 @@ export interface TSStep {
   status: 'init' | 'check-pair' | 'symmetric' | 'asymmetric';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine?: HighlightTarget;
 }
+
+export const TREE_SYMMETRIC_CODE_LINES = {
+  init: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  empty: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  bothNull: { java: 7, cpp: 8, python: 5, javascript: 4 },
+  oneNull: { java: 8, cpp: 9, python: 6, javascript: 5 },
+  valMismatch: { java: 9, cpp: 10, python: 7, javascript: 6 },
+  recurseMatch: { java: 11, cpp: 11, python: 8, javascript: 7 },
+  done: { java: 4, cpp: 5, python: 9, javascript: 9 },
+};
 
 export function buildTSSteps(root: TreeNode | null): TSStep[] {
   const steps: TSStep[] = [];
@@ -45,7 +56,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
     status: 'init',
     message: root ? `初始化对称性检查：根节点为 ${root.val}，开始对比左子树与右子树。` : '空树，默认对称。',
     log: root ? '初始化对称检查' : '空树 -> 对称',
-    codeLine: 2,
+    codeLine: TREE_SYMMETRIC_CODE_LINES.init,
   });
 
   if (!root) {
@@ -60,7 +71,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
       status: 'symmetric',
       message: '✅ 空树是对称的。',
       log: '✓ 对称二叉树',
-      codeLine: 3,
+      codeLine: TREE_SYMMETRIC_CODE_LINES.empty,
     });
     return steps;
   }
@@ -80,7 +91,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
         status: 'check-pair',
         message: '左右镜像节点均为空 (null == null)，该分支对称。',
         log: 'null == null -> 对称',
-        codeLine: 7,
+        codeLine: TREE_SYMMETRIC_CODE_LINES.bothNull,
       });
       return true;
     }
@@ -98,7 +109,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
         status: 'asymmetric',
         message: `❌ 结构不对称！一个节点为 ${failed}，而对应镜像节点为 null。`,
         log: `结构失配: ${left ? left.val : 'null'} vs ${right ? right.val : 'null'}`,
-        codeLine: 8,
+        codeLine: TREE_SYMMETRIC_CODE_LINES.oneNull,
       });
       isSymmetric = false;
       mismatchNode = failed;
@@ -117,7 +128,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
         status: 'asymmetric',
         message: `❌ 数值不对称！左侧节点值为 ${left.val}，而右侧镜像节点值为 ${right.val}。`,
         log: `数值失配: ${left.val} != ${right.val}`,
-        codeLine: 9,
+        codeLine: TREE_SYMMETRIC_CODE_LINES.valMismatch,
       });
       isSymmetric = false;
       mismatchNode = left.val;
@@ -135,7 +146,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
       status: 'check-pair',
       message: `✓ 镜像节点比对一致：左侧 ${left.val} == 右侧 ${right.val}。继续递归外侧与内侧。`,
       log: `比对一致: ${left.val} == ${right.val}`,
-      codeLine: 10,
+      codeLine: TREE_SYMMETRIC_CODE_LINES.recurseMatch,
     });
 
     const outside = check(left.left, right.right);
@@ -157,7 +168,7 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
     status: finalResult ? 'symmetric' : 'asymmetric',
     message: finalResult ? '🎉 检查完成！该二叉树是对称的 (True)。' : '❌ 检查完成！该二叉树不是镜像对称的 (False)。',
     log: finalResult ? '✓ 对称二叉树 (True)' : '✗ 不对称二叉树 (False)',
-    codeLine: 4,
+    codeLine: TREE_SYMMETRIC_CODE_LINES.done,
   });
 
   return steps;

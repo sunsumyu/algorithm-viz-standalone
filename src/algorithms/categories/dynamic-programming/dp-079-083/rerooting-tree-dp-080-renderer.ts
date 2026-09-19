@@ -15,111 +15,136 @@ export interface Rerooting080Step extends Dp079Step {
   phase: 'DFS1' | 'DFS2' | 'COMPLETE';
 }
 
-export function buildRerooting080Steps(): Rerooting080Step[] {
+export interface Rerooting080Input {
+  n?: number;
+  edges?: [number, number][];
+}
+
+export function buildRerooting080Steps(input?: Rerooting080Input): Rerooting080Step[] {
   const steps: Rerooting080Step[] = [];
   const lines = REROOTING_TREE_DP_080_LINES;
 
-  // 节点 0 连接 1 和 2，节点 1 连接 3
-  // N = 4
-  // 拓扑:
-  //      0
-  //     / \
-  //    1   2
-  //   /
-  //  3
-  // size[3]=1, size[2]=1, size[1]=2, size[0]=4
-  // ans[0] = dist(0,1)+dist(0,2)+dist(0,3) = 1 + 1 + 2 = 4
-  // 换根到 1: ans[1] = ans[0] + 4 - 2*size[1] = 4 + 4 - 4 = 4 (dist(1,0)=1, dist(1,2)=2, dist(1,3)=1 -> sum=4)
-  // 换根到 2: ans[2] = ans[0] + 4 - 2*size[2] = 4 + 4 - 2 = 6
-  // 换根到 3: ans[3] = ans[1] + 4 - 2*size[3] = 4 + 4 - 2 = 6
+  const n = input?.n !== undefined ? input.n : 4;
+  const edges = input?.edges || [
+    [0, 1],
+    [0, 2],
+    [1, 3],
+  ];
+
+  const adj: number[][] = Array.from({ length: n }, () => []);
+  for (const [u, v] of edges) {
+    if (u < n && v < n) {
+      adj[u]!.push(v);
+      adj[v]!.push(u);
+    }
+  }
+
+  const size: number[] = new Array(n).fill(0);
+  const ans: number[] = new Array(n).fill(0);
+
+  function snapshotNodes(): { id: number; size: number; ans: number }[] {
+    return Array.from({ length: n }, (_, i) => ({
+      id: i,
+      size: size[i]!,
+      ans: ans[i]!,
+    }));
+  }
 
   // Step 0: 入口
   steps.push({
-    nodes: [
-      { id: 0, size: 0, ans: 0 },
-      { id: 1, size: 0, ans: 0 },
-      { id: 2, size: 0, ans: 0 },
-      { id: 3, size: 0, ans: 0 },
-    ],
+    nodes: snapshotNodes(),
     curRoot: 0,
     phase: 'DFS1',
-    decision: '主函数入口：准备在 4 节点树中求解每个节点到其他所有节点的距离和。',
+    decision: `主函数入口：准备在 ${n} 节点树中求解每个节点到其他所有节点的距离和。`,
     message: '直接从每个点做 BFS 需 O(N^2)；采用换根 DP 两遍 DFS，可在 O(N) 线性时间完成全树求解！',
-    log: 'enter sumOfDistancesInTree: N=4',
+    log: `enter sumOfDistancesInTree: N=${n}`,
     codeLine: lines.entry,
-    metrics: { '树规模 N': 4, '当前阶段': 'DFS 1 启动' },
+    metrics: { '树规模 N': n, '当前阶段': 'DFS 1 启动' },
   });
 
-  // Step 1: DFS 1 完成（以 0 为初始临时根）
+  // Step 1: 启动 DFS 1
   steps.push({
-    nodes: [
-      { id: 0, size: 4, ans: 4 },
-      { id: 1, size: 2, ans: 0 },
-      { id: 2, size: 1, ans: 0 },
-      { id: 3, size: 1, ans: 0 },
-    ],
+    nodes: snapshotNodes(),
     curRoot: 0,
     phase: 'DFS1',
-    decision: 'DFS 1 执行完毕：统计出所有子树大小与根节点 0 的距离和 ans[0] = 4。',
-    message: '各子树大小：size[3]=1, size[2]=1, size[1]=2, size[0]=4。',
-    log: 'dfs1 complete: ans[0]=4, size=[4, 2, 1, 1]',
-    codeLine: lines.dfs1Compute,
-    statusBadge: { text: '根 0 距离和 = 4', type: 'info' },
-    metrics: { 'ans[0]': 4, '阶段': 'DFS 1 完成' },
+    decision: '以节点 0 为临时基准根，启动 DFS 1 自底向上递归统计。',
+    message: '第一遍遍历计算各子树规模 size[u] 以及根节点 0 到其子树内所有节点的距离和。',
+    log: 'start dfs1(0, -1)',
+    codeLine: lines.startDfs1,
+    metrics: { '临时根': 0, '阶段': 'DFS 1 自底向上' },
   });
 
-  // Step 2: 换根到节点 1
+  function dfs1(u: number, p: number) {
+    size[u] = 1;
+    for (const v of adj[u]!) {
+      if (v !== p) {
+        dfs1(v, u);
+        size[u]! += size[v]!;
+        ans[u]! += ans[v]! + size[v]!;
+        steps.push({
+          nodes: snapshotNodes(),
+          curRoot: 0,
+          phase: 'DFS1',
+          decision: `DFS 1 自底向上聚合：子节点 ${v} 回溯至父节点 ${u}，更新 size[${u}]=${size[u]}，子树距离和贡献累加至 ans[${u}]=${ans[u]}。`,
+          message: `节点 ${u} 的子树规模累加子节点规模 size[${v}]=${size[v]}；距离增加 ans[${v}] + size[${v}]。`,
+          log: `dfs1 back: node ${u} merged child ${v}, size[${u}]=${size[u]}, ans[${u}]=${ans[u]}`,
+          codeLine: lines.dfs1Compute,
+          statusBadge: { text: `聚合节点 ${u}`, type: 'info' },
+          metrics: { '当前节点': u, '子节点': v, '更新后 size': size[u]! },
+        });
+      }
+    }
+  }
+
+  dfs1(0, -1);
+
+  // Step: 启动 DFS 2
   steps.push({
-    nodes: [
-      { id: 0, size: 4, ans: 4 },
-      { id: 1, size: 2, ans: 4 },
-      { id: 2, size: 1, ans: 0 },
-      { id: 3, size: 1, ans: 0 },
-    ],
-    curRoot: 1,
+    nodes: snapshotNodes(),
+    curRoot: 0,
     phase: 'DFS2',
-    decision: 'DFS 2 自顶向下换根：根从 0 转移至其子节点 1！',
-    message: '换根转移方程：ans[1] = ans[0] + N - 2*size[1] = 4 + 4 - 2*2 = 4！瞬时 O(1) 得出。',
-    log: 'reroot 0 -> 1: ans[1] = 4 + 4 - 4 = 4',
-    codeLine: lines.rerootTrans,
-    statusBadge: { text: '换根节点 1', type: 'success' },
-    metrics: { '当前根': 1, 'ans[1]': 4 },
+    decision: `DFS 1 统计完成：根节点 0 的全树距离和为 ans[0] = ${ans[0]}。现在启动 DFS 2 自顶向下换根辐射！`,
+    message: '第二遍遍历利用换根公式 ans[v] = ans[u] + N - 2*size[v]，O(1) 瞬时推出所有子节点作为新根的全局距离和。',
+    log: 'start dfs2(0, -1)',
+    codeLine: lines.startDfs2,
+    statusBadge: { text: `根 0 距离和 = ${ans[0]}`, type: 'info' },
+    metrics: { 'ans[0]': ans[0]!, '阶段': 'DFS 2 换根辐射' },
   });
 
-  // Step 3: 换根到节点 2 和节点 3
-  steps.push({
-    nodes: [
-      { id: 0, size: 4, ans: 4 },
-      { id: 1, size: 2, ans: 4 },
-      { id: 2, size: 1, ans: 6 },
-      { id: 3, size: 1, ans: 6 },
-    ],
-    curRoot: 2,
-    phase: 'DFS2',
-    decision: '继续辐射换根：节点 2 距离和 = 4 + 4 - 2 = 6；节点 3 距离和 = 4 + 4 - 2 = 6。',
-    message: '所有节点的距离和均在常数次算术运算中完成求解。',
-    log: 'reroot complete for node 2 and 3',
-    codeLine: lines.rerootTrans,
-    statusBadge: { text: '全树换根完成', type: 'success' },
-    metrics: { 'ans[2]': 6, 'ans[3]': 6 },
-  });
+  function dfs2(u: number, p: number) {
+    for (const v of adj[u]!) {
+      if (v !== p) {
+        // 核心换根公式：ans[v] = ans[u] + N - 2 * size[v]
+        ans[v] = ans[u]! + n - 2 * size[v]!;
+        steps.push({
+          nodes: snapshotNodes(),
+          curRoot: v,
+          phase: 'DFS2',
+          decision: `DFS 2 自顶向下换根：根从 ${u} 转移至子节点 ${v}！`,
+          message: `换根转移方程：ans[${v}] = ans[${u}] + N - 2*size[${v}] = ${ans[u]} + ${n} - 2*${size[v]} = ${ans[v]}！常数时间 O(1) 瞬时得出。`,
+          log: `reroot ${u} -> ${v}: ans[${v}] = ${ans[v]}`,
+          codeLine: lines.rerootTrans,
+          statusBadge: { text: `换根节点 ${v}`, type: 'success' },
+          metrics: { '当前根': v, [`ans[${v}]`]: ans[v]! },
+        });
+        dfs2(v, u);
+      }
+    }
+  }
 
-  // Step 4: 结果输出
+  dfs2(0, -1);
+
+  // Step: 结果输出
   steps.push({
-    nodes: [
-      { id: 0, size: 4, ans: 4 },
-      { id: 1, size: 2, ans: 4 },
-      { id: 2, size: 1, ans: 6 },
-      { id: 3, size: 1, ans: 6 },
-    ],
+    nodes: snapshotNodes(),
     curRoot: 0,
     phase: 'COMPLETE',
-    decision: '换根 DP 圆满终结：返回各节点距离和数组 [4, 4, 6, 6]。',
+    decision: `换根 DP 圆满终结：返回各节点距离和数组 [${ans.join(', ')}]。`,
     message: '两遍 DFS 严格保证了全树 O(N) 线性时间复杂度。',
-    log: 'sumOfDistancesInTree complete -> return [4, 4, 6, 6]',
+    log: `sumOfDistancesInTree complete -> return [${ans.join(', ')}]`,
     codeLine: lines.returnAns,
     statusBadge: { text: '算法结束', type: 'success' },
-    metrics: { '总节点数': 4, '时间复杂度': 'O(N)' },
+    metrics: { '总节点数': n, '时间复杂度': 'O(N)' },
   });
 
   return steps;

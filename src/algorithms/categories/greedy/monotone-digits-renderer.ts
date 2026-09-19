@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   MONOTONE_DIGITS_PROBLEM_HTML,
   MONOTONE_DIGITS_ANALYSIS_HTML,
@@ -17,10 +18,19 @@ export interface MonotoneStep {
   flag: number;
   action: 'init' | 'check_ok' | 'borrow' | 'fill_9' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const MONOTONE_DIGITS_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  init: { java: 4, cpp: 5, python: 4, javascript: 3 },
+  checkOk: { java: 7, cpp: 7, python: 6, javascript: 5 },
+  borrow: { java: 8, cpp: 8, python: 7, javascript: 6 },
+  fill9: { java: 14, cpp: 13, python: 10, javascript: 11 },
+  done: { java: 16, cpp: 15, python: 11, javascript: 13 },
+};
 
 export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
   const steps: MonotoneStep[] = [];
@@ -37,7 +47,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
       flag: n,
       action: 'done',
       message: `数字 ${num} 仅有 1 位，天然满足单调递增，直接返回 ${num}`,
-      codeLine: 1,
+      codeLine: MONOTONE_DIGITS_CODE_LINES.guard,
     });
     return steps;
   }
@@ -51,7 +61,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
     flag,
     action: 'init',
     message: `初始化：将数字 ${num} 拆解为 ${n} 位数数组 [${digits.join(', ')}]，初始变9标记 flag = ${flag}`,
-    codeLine: 4,
+    codeLine: MONOTONE_DIGITS_CODE_LINES.init,
   });
 
   // 1. 从右往左逆序扫描
@@ -67,7 +77,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
         flag,
         action: 'borrow',
         message: `⚠️ 逆序比较 [${i - 1}] 位 (${digits[i - 1] + 1}) > [${i}] 位 (${digits[i]}) 违反单调递增！高位借位减 1 变为 ${digits[i - 1]}，更新变9起点 flag = ${flag}`,
-        codeLine: 8,
+        codeLine: MONOTONE_DIGITS_CODE_LINES.borrow,
       });
     } else {
       steps.push({
@@ -77,7 +87,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
         flag,
         action: 'check_ok',
         message: `✓ 逆序比较 [${i - 1}] 位 (${digits[i - 1]}) &le; [${i}] 位 (${digits[i]})，满足单调递增，继续向左扫描`,
-        codeLine: 6,
+        codeLine: MONOTONE_DIGITS_CODE_LINES.checkOk,
       });
     }
   }
@@ -95,7 +105,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
       flag,
       action: 'fill_9',
       message: `9️⃣ 统一将 flag=[${flag}] 及后续所有低位全部置为 9，使数值在满足单调递增前提下最大化！`,
-      codeLine: 14,
+      codeLine: MONOTONE_DIGITS_CODE_LINES.fill9,
     });
   }
 
@@ -108,7 +118,7 @@ export function buildMonotoneDigitsSteps(num: number): MonotoneStep[] {
     flag,
     action: 'done',
     message: `🎉 计算完成！小于或等于 ${num} 的最大单调递增整数为 ${resultNum}`,
-    codeLine: 16,
+    codeLine: MONOTONE_DIGITS_CODE_LINES.done,
   });
 
   return steps;

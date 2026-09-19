@@ -9,6 +9,17 @@ import {
   REPLACE_DIGITS_ANALYSIS_HTML,
   REPLACE_DIGITS_CODE_LANGUAGES,
 } from './replace-digits-problem-content';
+import { HighlightTarget } from '../../../core/code-panel';
+
+export const REPLACE_DIGITS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  count: { java: [3, 4], cpp: [4, 5, 6], python: [3, 4], javascript: [3, 4] },
+  resize: { java: 2, cpp: 7, python: 2, javascript: 2 },
+  replaceLetter: { java: [5, 8], cpp: [10, 11], python: [6, 7], javascript: [7, 8] },
+  replaceNumber: { java: [5, 6], cpp: [12, 13, 14], python: [4, 5], javascript: [5, 6] },
+  done: { java: 11, cpp: 17, python: 8, javascript: 11 },
+};
+
+const lines = REPLACE_DIGITS_CODE_LINES;
 
 export interface ReplaceDigitsStep {
   chars: string[];
@@ -20,7 +31,7 @@ export interface ReplaceDigitsStep {
   status: 'count' | 'resize' | 'replace-letter' | 'replace-number' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -50,7 +61,7 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
     status: 'count',
     message: `扫描统计数字字符：共找到 ${count} 个数字。旧长度 oldSize = ${oldSize}。`,
     log: `统计数字: ${count} 个数字字符`,
-    codeLine: [4, 5, 6, 7],
+    codeLine: lines.count,
   });
 
   steps.push({
@@ -63,7 +74,7 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
     status: 'resize',
     message: `执行数组预扩容：newSize = ${oldSize} + ${count} * 5 = ${newSize}。双指针 oldIndex=${oldSize - 1}, newIndex=${newSize - 1} 从后向前填充。`,
     log: `数组预扩容: ${oldSize} -> ${newSize}`,
-    codeLine: [8, 9, 10],
+    codeLine: lines.resize,
   });
 
   let i = oldSize - 1;
@@ -87,7 +98,7 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
         status: 'replace-letter',
         message: `非数字字符 '${char}'：直接从 oldIndex(${i}) 搬移至 newIndex(${j})。`,
         log: `复制字母 '${char}': [${i}] -> [${j}]`,
-        codeLine: [11, 12],
+        codeLine: lines.replaceLetter,
       });
 
       i--;
@@ -110,7 +121,7 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
         status: 'replace-number',
         message: `数字字符 '${char}'：替换为 "number"，从 newIndex 向前连续填入 6 个字符。`,
         log: `替换数字 '${char}' -> "number"`,
-        codeLine: [13, 14, 15],
+        codeLine: lines.replaceNumber,
       });
 
       i--;
@@ -127,7 +138,7 @@ export function buildReplaceDigitsSteps(inputStr: string): ReplaceDigitsStep[] {
     status: 'done',
     message: `🎉 替换全部完成！最终字符串为 "${newChars.join('')}"。`,
     log: `✓ 完成: "${newChars.join('')}"`,
-    codeLine: 18,
+    codeLine: lines.done,
   });
 
   return steps;

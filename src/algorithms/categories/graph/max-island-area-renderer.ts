@@ -12,15 +12,19 @@ import {
 import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
 import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+import { HighlightTarget } from '../../../core/code-panel';
+
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number | number[]> = {
-  init: 2,
-  mark: [12, 13],
-  found: [5, 6],
-  updatemax: 6,
-  scan: [4, 5],
-  done: 9,
+export const MAX_ISLAND_AREA_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: 3, cpp: 4, python: 8, javascript: 2 },
+  scan: { java: [4, 5], cpp: [5, 6], python: [9, 10], javascript: [9, 10] },
+  found: { java: [6, 7], cpp: [7, 8], python: [11, 12], javascript: [11, 12] },
+  mark: { java: [14, 15], cpp: [15, 16], python: [4, 6], javascript: [5, 6] },
+  updatemax: { java: 7, cpp: 8, python: 12, javascript: 12 },
+  done: { java: 11, cpp: 12, python: 13, javascript: 16 },
 };
+
+const lines = MAX_ISLAND_AREA_CODE_LINES;
 
 export interface MIAStep {
   grid: number[][];
@@ -32,7 +36,7 @@ export interface MIAStep {
   action: 'init' | 'scan' | 'found' | 'mark' | 'accumulate' | 'update-max' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -56,7 +60,7 @@ export function buildMIASteps(grid: number[][]): MIAStep[] {
       action: extra.action ?? 'scan',
       message: extra.message ?? '',
       log: extra.log ?? '',
-      codeLine: extra.codeLine ?? 1,
+      codeLine: extra.codeLine ?? lines.init,
     });
   };
 

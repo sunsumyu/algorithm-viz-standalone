@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   RECONSTRUCT_QUEUE_PROBLEM_HTML,
   RECONSTRUCT_QUEUE_ANALYSIS_HTML,
@@ -18,10 +19,17 @@ export interface RQStep {
   insertIndex: number;
   action: 'init' | 'sort' | 'insert' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const RECONSTRUCT_QUEUE_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  sort: { java: 3, cpp: 4, python: 4, javascript: 2 },
+  insert: { java: 10, cpp: 11, python: 7, javascript: 8 },
+  done: { java: 12, cpp: 13, python: 8, javascript: 10 },
+};
 
 export function buildReconstructQueueSteps(rawPeople: Array<[number, number]>): RQStep[] {
   const steps: RQStep[] = [];
@@ -36,7 +44,7 @@ export function buildReconstructQueueSteps(rawPeople: Array<[number, number]>): 
       insertIndex: -1,
       action: 'done',
       message: '输入为空，返回空数组',
-      codeLine: 1,
+      codeLine: RECONSTRUCT_QUEUE_CODE_LINES.guard,
     });
     return steps;
   }
@@ -57,7 +65,7 @@ export function buildReconstructQueueSteps(rawPeople: Array<[number, number]>): 
     insertIndex: -1,
     action: 'sort',
     message: `第 1 步：按 [身高降序, k 升序] 排序完成：${sorted.map((p) => `[${p[0]},${p[1]}]`).join(', ')}`,
-    codeLine: 4,
+    codeLine: RECONSTRUCT_QUEUE_CODE_LINES.sort,
   });
 
   for (let i = 0; i < n; i++) {
@@ -74,7 +82,7 @@ export function buildReconstructQueueSteps(rawPeople: Array<[number, number]>): 
       insertIndex: targetK,
       action: 'insert',
       message: `📥 处理人员 [${p[0]}, ${p[1]}] (身高 ${p[0]}, 前方需 ${p[1]} 个更高者) &rarr; 贪心插入到队列 index = ${targetK} 处！`,
-      codeLine: 8,
+      codeLine: RECONSTRUCT_QUEUE_CODE_LINES.insert,
     });
   }
 
@@ -86,7 +94,7 @@ export function buildReconstructQueueSteps(rawPeople: Array<[number, number]>): 
     insertIndex: -1,
     action: 'done',
     message: `🎉 队列重建完成！最终满足所有人身前身高要求：${queue.map((p) => `[${p[0]},${p[1]}]`).join(', ')}`,
-    codeLine: 10,
+    codeLine: RECONSTRUCT_QUEUE_CODE_LINES.done,
   });
 
   return steps;

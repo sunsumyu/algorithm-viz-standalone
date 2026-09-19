@@ -129,6 +129,9 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     const coinsInput = root?.querySelector('#dp-input-coins') as HTMLInputElement | null;
     const sInput = root?.querySelector('#dp-input-s') as HTMLInputElement | null;
     const tInput = root?.querySelector('#dp-input-t') as HTMLInputElement | null;
+    const s1Input = root?.querySelector('#dp-input-s1') as HTMLInputElement | null;
+    const s2Input = root?.querySelector('#dp-input-s2') as HTMLInputElement | null;
+    const s3Input = root?.querySelector('#dp-input-s3') as HTMLInputElement | null;
     const mInput = root?.querySelector('#dp-input-m') as HTMLInputElement | null;
     const nInput = root?.querySelector('#dp-input-n') as HTMLInputElement | null;
     const targetInput = root?.querySelector('#dp-input-target') as HTMLInputElement | null;
@@ -146,6 +149,9 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     if (coinsInput) inputObj.coins = parseNums(coinsInput.value, [1, 2, 5]);
     if (sInput) inputObj.s = sInput.value.trim();
     if (tInput) inputObj.t = tInput.value.trim();
+    if (s1Input) inputObj.s1 = s1Input.value.trim();
+    if (s2Input) inputObj.s2 = s2Input.value.trim();
+    if (s3Input) inputObj.s3 = s3Input.value.trim();
     if (mInput) inputObj.m = parseInt(mInput.value, 10) || 3;
     if (nInput) inputObj.n = parseInt(nInput.value, 10) || (specId === 'unique-bst' ? 4 : 6);
     if (targetInput) inputObj.target = parseInt(targetInput.value, 10) || 4;
@@ -465,6 +471,20 @@ const demos: DemoDef[] = [
     build: makeEngineBuilder('word-break'),
   },
   bagDef('multiple-knapsack', '多重背包理论基础', '每种物品有有限数量上限，可展开为 0-1 背包或二进制拆分。', '📦', '01-knapsack'),
+  {
+    id: 'profitable-schemes',
+    name: '盈利计划',
+    description: '三维计数 DP：在 n 名员工和最小利润限制下的工作分配方案数。',
+    icon: '🏢',
+    inputs: [
+      { id: 'n', label: '员工数 n', value: '5', width: 90 },
+      { id: 'minProfit', label: '最小利润', value: '3', width: 90 },
+      { id: 'group', label: '各工作所需人数', value: '2,2', width: 140 },
+      { id: 'profit', label: '各工作利润', value: '2,3', width: 140 },
+    ],
+    examples: [{ label: '示例', values: { n: '5', minProfit: '3', group: '2,2', profit: '2,3' } }],
+    build: makeEngineBuilder('profitable-schemes'),
+  },
   numsDef('house-robber', '打家劫舍', '不相邻房屋最大金额：dp[i] = max(dp[i-1], dp[i-2] + nums[i])。', '🏠', 'house-robber', '1,2,3,1'),
   numsDef('house-robber-ii', '打家劫舍 II', '环形房屋破圈为双区间：[0..n-2] 与 [1..n-1] 取最大值。', '🏘️', 'house-robber-ii', '2,3,2'),
   numsDef('house-robber-iii', '打家劫舍 III', '二叉树树形 DP：后序遍历返回 [不偷当前节点, 偷当前节点] 状态二元组。', '🌳', 'house-robber-iii', '3,2,3,3,1'),
@@ -494,6 +514,39 @@ const demos: DemoDef[] = [
     ]
   ),
   strDef('edit-distance', '编辑距离', '将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。', '✏️', 'edit-distance', 'horse', 'ros'),
+  {
+    id: 'interleaving-string',
+    name: '交错字符串',
+    description: '验证 s3 是否由 s1 和 s2 交错组成（LeetCode 97，双串交错状态转移）。',
+    icon: '🔀',
+    difficulty: 2,
+    inputs: [
+      { id: 's1', label: '字符串 s1', value: 'aabcc', width: 140 },
+      { id: 's2', label: '字符串 s2', value: 'dbbca', width: 140 },
+      { id: 's3', label: '交错串 s3', value: 'aadbbcbcac', width: 180 },
+    ],
+    examples: [
+      { label: '示例 1 (可交错 -> true)', values: { s1: 'aabcc', s2: 'dbbca', s3: 'aadbbcbcac' } },
+      { label: '示例 2 (不可交错 -> false)', values: { s1: 'aabcc', s2: 'dbbca', s3: 'aadbbbaccc' } },
+    ],
+    build: makeEngineBuilder('interleaving-string'),
+  },
+  {
+    id: 'min-delete-to-be-substring',
+    name: '最少删除使成为子串',
+    description: '求 s1 最少删除多少个字符可以成为 s2 的连续子串（左程云 Class068 题目 4）。',
+    icon: '✂️',
+    difficulty: 2,
+    inputs: [
+      { id: 's1', label: '母串 s1', value: 'abdf', width: 140 },
+      { id: 's2', label: '目标串 s2', value: 'dfxxabYYabfzz', width: 180 },
+    ],
+    examples: [
+      { label: '经典例题 (删d得abf Ans=1)', values: { s1: 'abdf', s2: 'dfxxabYYabfzz' } },
+      { label: '无重叠 (全删 Ans=3)', values: { s1: 'abc', s2: 'def' } },
+    ],
+    build: makeEngineBuilder('min-delete-to-be-substring'),
+  },
   {
     id: 'palindromic-substrings',
     name: '回文子串',
@@ -752,6 +805,7 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'article', id: 'dp-week-summary-5' },
   { type: 'article', id: 'multiple-knapsack-theory' },
   { type: 'demo', id: 'multiple-knapsack' },
+  { type: 'demo', id: 'profitable-schemes' },
   { type: 'article', id: 'knapsack-summary' },
   { type: 'demo', id: 'house-robber' },
   { type: 'demo', id: 'house-robber-ii' },
@@ -775,6 +829,8 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'delete-operation-for-two-strings' },
   { type: 'demo', id: 'edit-distance' },
   { type: 'article', id: 'edit-distance-summary' },
+  { type: 'demo', id: 'interleaving-string' },
+  { type: 'demo', id: 'min-delete-to-be-substring' },
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },

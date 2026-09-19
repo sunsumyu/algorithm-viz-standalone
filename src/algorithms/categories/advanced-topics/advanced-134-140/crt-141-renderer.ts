@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
 
 export interface CrtItem {
@@ -24,6 +24,7 @@ export interface Crt141Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -108,6 +109,12 @@ export function crt(m: number[], a: number[]): number {
 }`
 };
 
+export const CRT_141_CODE_LINES = {
+  init: { java: 15, cpp: 9, python: 7, typescript: 8 },
+  loop: { java: 21, cpp: 13, python: 13, typescript: 13 },
+  finish: { java: 25, cpp: 17, python: 15, typescript: 17 },
+};
+
 function exgcdHelper(a: number, b: number): [number, number, number] {
   if (b === 0) return [1, 0, a];
   const [x1, y1, g] = exgcdHelper(b, a % b);
@@ -139,7 +146,7 @@ export function buildCrt141Steps(mList: number[], aList: number[]): Crt141Step[]
     decision: `主函数入口：输入 ${n} 组同余方程，总模数乘积 M = ${mList.slice(0, n).join(' × ')} = ${M}`,
     message: '中国剩余定理前提：各模数 m_i 两两互质，必存在模 M 的唯一最小非负整数特解',
     log: `enter CRT(n=${n}, M=${M})`,
-    codeLine: 1,
+    codeLine: CRT_141_CODE_LINES.init,
     statusBadge: { text: '初始化', type: 'info' },
   });
 
@@ -166,7 +173,7 @@ export function buildCrt141Steps(mList: number[], aList: number[]): Crt141Step[]
       decision: `处理第 ${i + 1} 个方程 x ≡ ${ai} (mod ${mi})：Mi = M / ${mi} = ${Mi}，扩展欧几里得求逆元 ti = ${ti}`,
       message: `单项构造加权值 term = a_i * M_i * t_i = ${ai} × ${Mi} × ${ti} = ${term} (mod ${M})，累计和更新为 ${acc}`,
       log: `equation ${i}: Mi=${Mi}, ti=${ti}, term=${term}`,
-      codeLine: 18,
+      codeLine: CRT_141_CODE_LINES.loop,
       statusBadge: { text: `求解第 ${i + 1} 项`, type: 'warning' },
     });
   }
@@ -181,7 +188,7 @@ export function buildCrt141Steps(mList: number[], aList: number[]): Crt141Step[]
     decision: `🎉 求解完成！同余方程组最小非负整数解 x = (${acc} % ${M}) = ${finalAns}`,
     message: `验证：对于所有方程均有 x % m_i == a_i，满足同余关系`,
     log: `CRT solved: x = ${finalAns}`,
-    codeLine: 24,
+    codeLine: CRT_141_CODE_LINES.finish,
     statusBadge: { text: `最终解 x = ${finalAns}`, type: 'success' },
   });
 

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   MAXIMIZE_SUM_K_PROBLEM_HTML,
@@ -19,10 +20,19 @@ export interface MaxSumKStep {
   flippedIndices: number[];
   action: 'init' | 'sort' | 'flip_negative' | 'skip_positive' | 'flip_smallest' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const MAXIMIZE_SUM_K_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  sort: { java: 3, cpp: 5, python: 4, javascript: 2 },
+  skip: { java: 9, cpp: 9, python: 6, javascript: 4 },
+  flipNeg: { java: 10, cpp: 10, python: 7, javascript: 5 },
+  flipSmall: { java: 15, cpp: 14, python: 10, javascript: 9 },
+  done: { java: 17, cpp: 17, python: 11, javascript: 10 },
+};
 
 export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKStep[] {
   const steps: MaxSumKStep[] = [];
@@ -37,7 +47,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
       flippedIndices: [],
       action: 'done',
       message: '数组为空，返回 0',
-      codeLine: 2,
+      codeLine: MAXIMIZE_SUM_K_CODE_LINES.guard,
     });
     return steps;
   }
@@ -56,7 +66,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
     flippedIndices: [],
     action: 'sort',
     message: `第 1 步：按绝对值降序排序完成：nums = [${arr.join(', ')}]，初始总和 = ${currentSum}，剩余 K = ${k}`,
-    codeLine: 3,
+    codeLine: MAXIMIZE_SUM_K_CODE_LINES.sort,
   });
 
   // 2. 第一步贪心：遍历数组，遇到负数翻转为正数
@@ -76,7 +86,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
         flippedIndices: [...flippedIndices],
         action: 'flip_negative',
         message: `🔄 优先翻转绝对值大的负数：[${i}] 从 ${oldVal} &rarr; ${arr[i]}，和增加 ${2 * arr[i]}，剩余 K = ${k}`,
-        codeLine: 8,
+        codeLine: MAXIMIZE_SUM_K_CODE_LINES.flipNeg,
       });
     } else {
       steps.push({
@@ -87,7 +97,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
         flippedIndices: [...flippedIndices],
         action: 'skip_positive',
         message: `⏩ 下标 [${i}]=${arr[i]} 为非负数或 K 已耗尽，暂不翻转`,
-        codeLine: 7,
+        codeLine: MAXIMIZE_SUM_K_CODE_LINES.skip,
       });
     }
   }
@@ -108,7 +118,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
       flippedIndices: [...flippedIndices],
       action: 'flip_smallest',
       message: `⚖️ 剩余 K=${k} 为奇数！翻转绝对值最小的尾部元素：[${lastIdx}] 从 ${oldVal} &rarr; ${arr[lastIdx]}，损失降至最低！`,
-      codeLine: 13,
+      codeLine: MAXIMIZE_SUM_K_CODE_LINES.flipSmall,
     });
   } else if (k > 0) {
     steps.push({
@@ -119,7 +129,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
       flippedIndices: [...flippedIndices],
       action: 'skip_positive',
       message: `⚖️ 剩余 K=${k} 为偶数！在同一元素上反复翻转两次即抵消，对总和无损害`,
-      codeLine: 13,
+      codeLine: MAXIMIZE_SUM_K_CODE_LINES.skip,
     });
   }
 
@@ -131,7 +141,7 @@ export function buildMaxSumKSteps(rawArr: number[], initialK: number): MaxSumKSt
     flippedIndices: [...flippedIndices],
     action: 'done',
     message: `🎉 贪心取反完成！修改后数组可能的最大和为 ${currentSum}`,
-    codeLine: 15,
+    codeLine: MAXIMIZE_SUM_K_CODE_LINES.done,
   });
 
   return steps;

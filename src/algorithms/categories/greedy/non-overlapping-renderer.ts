@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   NON_OVERLAPPING_PROBLEM_HTML,
   NON_OVERLAPPING_ANALYSIS_HTML,
@@ -19,9 +20,17 @@ export interface NonOverlappingStep {
   currentEnd: number;
   action: 'init' | 'sort' | 'keep' | 'remove' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const NON_OVERLAPPING_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  sort: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  keep: { java: 7, cpp: 10, python: 8, javascript: 6 },
+  remove: { java: 8, cpp: 11, python: 9, javascript: 7 },
+  done: { java: 13, cpp: 15, python: 11, javascript: 11 },
+};
 
 export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>): NonOverlappingStep[] {
   const steps: NonOverlappingStep[] = [];
@@ -37,7 +46,7 @@ export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>):
       currentEnd: 0,
       action: 'done',
       message: '输入为空，需移除区间数为 0',
-      codeLine: 2,
+      codeLine: NON_OVERLAPPING_CODE_LINES.guard,
     });
     return steps;
   }
@@ -57,7 +66,7 @@ export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>):
     currentEnd: intervals[0][1],
     action: 'sort',
     message: `第 1 步：按左边界升序排序：${intervals.map((i) => `[${i[0]},${i[1]}]`).join(', ')}，默认保留首个区间`,
-    codeLine: 4,
+    codeLine: NON_OVERLAPPING_CODE_LINES.sort,
   });
 
   for (let i = 1; i < n; i++) {
@@ -78,7 +87,7 @@ export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>):
         currentEnd: intervals[i][1],
         action: 'remove',
         message: `🗑️ 发生重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} < 前界 ${prevEnd}，贪心移除右界较大者，累计移除 ${count} 个`,
-        codeLine: 8,
+        codeLine: NON_OVERLAPPING_CODE_LINES.remove,
       });
     } else {
       keptIndices.push(i);
@@ -92,7 +101,7 @@ export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>):
         currentEnd: cur[1],
         action: 'keep',
         message: `✓ 互不重叠！区间 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} &ge; ${prevEnd}，安全保留`,
-        codeLine: 7,
+        codeLine: NON_OVERLAPPING_CODE_LINES.keep,
       });
     }
   }
@@ -106,7 +115,7 @@ export function buildNonOverlappingSteps(rawIntervals: Array<[number, number]>):
     currentEnd: intervals[n - 1][1],
     action: 'done',
     message: `🎉 扫描完成！最少需要移除 ${count} 个区间，剩余 ${n - count} 个区间互不重叠`,
-    codeLine: 12,
+    codeLine: NON_OVERLAPPING_CODE_LINES.done,
   });
 
   return steps;

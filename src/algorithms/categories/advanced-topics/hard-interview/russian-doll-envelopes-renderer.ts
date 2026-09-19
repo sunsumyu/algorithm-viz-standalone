@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface EnvelopeStep extends StepBase {
   stepIndex?: number;
@@ -17,8 +16,10 @@ export interface EnvelopeStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const RUSSIAN_DOLL_CODES = {
@@ -116,10 +117,26 @@ public:
 }`
 };
 
+export const RUSSIAN_DOLL_CODE_LINES = {
+  empty: { java: 4, cpp: 4, python: 2, typescript: 3 },
+  sort: { java: 5, cpp: 5, python: 3, typescript: 4 },
+  append: { java: 20, cpp: 17, python: 8, typescript: 19 },
+  replace: { java: 22, cpp: 19, python: 10, typescript: 21 },
+  finish: { java: 25, cpp: 21, python: 11, typescript: 24 },
+};
+
 export function generateRussianDollSteps(rawEnvelopes: [number, number][]): EnvelopeStep[] {
   const steps: EnvelopeStep[] = [];
   const envs = [...rawEnvelopes].map(e => [e[0], e[1]] as [number, number]);
   const n = envs.length;
+
+  const makeMetrics = (curEnv: [number, number] | null, maxEnv: number, endsLen: number, action: string) => ({
+    curEnvelope: curEnv ? `[${curEnv[0]}, ${curEnv[1]}]` : '排序就绪',
+    maxEnvelopes: `${maxEnv} 层`,
+    lisTailsLen: `${endsLen}`,
+    replacedIndex: action,
+  });
+  const currentAns = (maxEnv: number) => `${maxEnv} 层嵌套套娃`;
 
   if (n === 0) {
     steps.push({
@@ -131,8 +148,10 @@ export function generateRussianDollSteps(rawEnvelopes: [number, number][]): Enve
       decision: '信封集合为空，最大套娃数量为 0',
       message: '无信封',
       log: '空集合',
-      codeLine: 4,
-      statusBadge: { text: '空输入', type: 'danger' }
+      codeLine: RUSSIAN_DOLL_CODE_LINES.empty,
+      statusBadge: { text: '空输入', type: 'danger' },
+      metrics: makeMetrics(null, 0, 0, '无信封输入'),
+      ans: currentAns(0),
     });
     return steps;
   }
@@ -150,8 +169,10 @@ export function generateRussianDollSteps(rawEnvelopes: [number, number][]): Enve
     decision: '核心第一步：按 [宽升序, 高降序] 排序完成！同宽度的信封高度逆序，保证在后续 LIS 中绝不可能选出宽度相同的两个信封',
     message: '信封精妙排序完毕',
     log: '排序完成 (宽升序，高降序)',
-    codeLine: 5,
-    statusBadge: { text: '排序就绪', type: 'info' }
+    codeLine: RUSSIAN_DOLL_CODE_LINES.sort,
+    statusBadge: { text: '排序就绪', type: 'info' },
+    metrics: makeMetrics(null, 0, 0, '宽升序,同宽高降序'),
+    ans: currentAns(0),
   });
 
   const ends: number[] = [];
@@ -183,8 +204,10 @@ export function generateRussianDollSteps(rawEnvelopes: [number, number][]): Enve
         decision: `处理信封 [${w}, ${h}]：高度 ${h} 大于 ends 中所有元素，直接追加！有效套娃层数拓展至 ${ends.length}`,
         message: `套娃层数拓展至 ${ends.length}`,
         log: `Env [${w},${h}] -> 拓展 LIS (${ends.length})`,
-        codeLine: 20,
-        statusBadge: { text: `套娃+1 (层数:${ends.length})`, type: 'success' }
+        codeLine: RUSSIAN_DOLL_CODE_LINES.append,
+        statusBadge: { text: `套娃+1 (层数:${ends.length})`, type: 'success' },
+        metrics: makeMetrics([w, h], ends.length, ends.length, `末尾追加 (长度拓展至 ${ends.length})`),
+        ans: currentAns(ends.length),
       });
     } else {
       const oldVal = ends[find];
@@ -198,8 +221,10 @@ export function generateRussianDollSteps(rawEnvelopes: [number, number][]): Enve
         decision: `处理信封 [${w}, ${h}]：二分找到 ends 中首个 >= ${h} 的位置 ${find} (原值 ${oldVal})，更新 ends[${find}] = ${h}，获得更具潜力的贪心较小尾数`,
         message: `贪心更新 ends[${find}] = ${h}`,
         log: `Env [${w},${h}] -> 优化 ends[${find}]`,
-        codeLine: 22,
-        statusBadge: { text: `贪心更新 [${find}]`, type: 'warning' }
+        codeLine: RUSSIAN_DOLL_CODE_LINES.replace,
+        statusBadge: { text: `贪心更新 [${find}]`, type: 'warning' },
+        metrics: makeMetrics([w, h], ends.length, ends.length, `二分更新 ends[${find}]: ${oldVal}➔${h}`),
+        ans: currentAns(ends.length),
       });
     }
   }
@@ -213,57 +238,38 @@ export function generateRussianDollSteps(rawEnvelopes: [number, number][]): Enve
     decision: `全量信封处理完毕！最大可嵌套套娃信封数量 = ends.length = ${ends.length}`,
     message: `最终结果: ${ends.length} 层套娃`,
     log: `LIS 结束，最大嵌套层数 ${ends.length}`,
-    codeLine: 25,
-    statusBadge: { text: `最大套娃数: ${ends.length}`, type: 'success' }
+    codeLine: RUSSIAN_DOLL_CODE_LINES.finish,
+    statusBadge: { text: `最大套娃数: ${ends.length}`, type: 'success' },
+    metrics: makeMetrics(envs[n - 1], ends.length, ends.length, '处理完成'),
+    ans: currentAns(ends.length),
   });
 
   return steps;
 }
 
 export function renderRussianDollCanvas(container: HTMLElement, step: EnvelopeStep) {
-  const { envelopes, currentEnvIndex, ends, maxEnvelopes } = step;
+  const { envelopes, currentEnvIndex, ends } = step;
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前处理信封</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            ${currentEnvIndex >= 0 ? `[${envelopes[currentEnvIndex][0]}, ${envelopes[currentEnvIndex][1]}]` : '排序完成'}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前最大套娃层数</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            ${maxEnvelopes}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">二分贪心 ends 长度</div>
-          <div style="font-size: 14px; font-weight: bold; color: #ec4899;">
-            ${ends.length}
-          </div>
-        </div>
-      </div>
-
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; padding: 4px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
       <!-- 信封卡片排布视图 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px; text-align: center;">
-          已排序信封列表（宽升序 ⇗ ，同宽时高降序 ⇘）：
+      <div style="background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color, #cbd5e1); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span>已排序信封序列 (宽升序 ⇗，同宽时高严格降序 ⇘)</span>
+          <span style="font-size: 11px; color: #94a3b8;">共 ${envelopes.length} 个信封</span>
         </div>
-        <div style="display: flex; gap: 8px; justify-content: center; align-items: flex-end; min-width: 450px;">
+        <div style="display: flex; gap: 10px; justify-content: center; align-items: flex-end; flex: 1; min-height: 120px; overflow-x: auto; padding: 10px 4px;">
           ${envelopes.map(([w, h], idx) => {
             const isCur = idx === currentEnvIndex;
             return `
               <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                <div style="font-size: 10px; height: 14px; color: ${isCur ? '#38bdf8' : '#64748b'}; font-weight: bold;">
+                <div style="font-size: 10px; height: 14px; color: ${isCur ? '#38bdf8' : 'transparent'}; font-weight: bold;">
                   ${isCur ? 'CUR' : ''}
                 </div>
                 <div style="
-                  width: ${36 + w * 4}px;
-                  height: ${36 + h * 4}px;
-                  background: ${isCur ? 'rgba(56, 189, 248, 0.35)' : 'rgba(51, 65, 85, 0.4)'};
+                  width: ${40 + Math.min(w * 4, 60)}px;
+                  height: ${40 + Math.min(h * 5, 80)}px;
+                  background: ${isCur ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.5)'};
                   border: 2px solid ${isCur ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'};
                   border-radius: 6px;
                   display: flex;
@@ -273,13 +279,13 @@ export function renderRussianDollCanvas(container: HTMLElement, step: EnvelopeSt
                   font-size: 11px;
                   font-weight: bold;
                   color: #f8fafc;
-                  box-shadow: ${isCur ? '0 0 12px rgba(56, 189, 248, 0.4)' : 'none'};
+                  box-shadow: ${isCur ? '0 0 12px rgba(56, 189, 248, 0.35)' : 'none'};
                   transition: all 0.2s ease;
                 ">
-                  <div>w:${w}</div>
-                  <div>h:${h}</div>
+                  <div style="color: #94a3b8; font-size: 10px;">w:${w}</div>
+                  <div style="color: #38bdf8; font-size: 12px;">h:${h}</div>
                 </div>
-                <div style="font-size: 10px; color: #64748b;">
+                <div style="font-size: 10px; color: #64748b; font-family: monospace;">
                   [${idx}]
                 </div>
               </div>
@@ -289,24 +295,20 @@ export function renderRussianDollCanvas(container: HTMLElement, step: EnvelopeSt
       </div>
 
       <!-- ends 数组展示 -->
-      <div style="background: rgba(30, 41, 59, 0.4); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
-        <div style="font-size: 12px; color: #94a3b8; font-weight: bold;">LIS 贪心 ends 数组 (各长度递增子序列最小末尾高度):</div>
-        <div style="display: flex; gap: 8px;">
+      <div style="background: rgba(15, 23, 42, 0.4); padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; color: #34d399; font-weight: 600;">LIS 贪心 ends 尾数数组 (各长度递增子序列最小末尾高度):</span>
+          <span style="font-size: 11px; color: #94a3b8;">二分定位 O(log N)</span>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          ${ends.length === 0 ? '<span style="color: #64748b; font-size: 11px;">(待推入首个信封)</span>' : ''}
           ${ends.map((hVal, i) => `
-            <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; padding: 4px 8px; font-size: 12px; color: #f8fafc;">
-              长度 ${i + 1}: 高度 ${hVal}
+            <div style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; padding: 4px 10px; font-size: 12px; color: #f8fafc; display: flex; align-items: center; gap: 4px;">
+              <span style="color: #94a3b8; font-size: 10px;">长度 ${i + 1}:</span> <strong style="color: #34d399;">h=${hVal}</strong>
             </div>
           `).join('')}
         </div>
       </div>
-
-      <!-- 核心数学思维原理卡片 -->
-      ${renderFormulaCard(
-        '二维降维至一维 LIS 破局精髓',
-        '宽度升序排，宽度相同时高度严格降序。这保证了在相同宽度下，高度递减必然不可能形成递增序列，消解同宽冲突后直接套用 O(N log N) 二分 LIS',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -319,6 +321,12 @@ export const russianDollVisualizer = registerDeclarativeAlgorithm<EnvelopeStep>(
   difficulty: 3,
   levelOrder: 354,
   learningGoal: '掌握二维偏序问题通过[宽升序+高降序]巧妙消解冲突并降维至一维 O(N log N) LIS 贪心二分的顶级算法思维',
+  metrics: [
+    { id: 'curEnvelope', label: '当前信封 (Envelope)', color: 'blue' },
+    { id: 'maxEnvelopes', label: '最大套娃数 (Max LIS)', color: 'emerald' },
+    { id: 'lisTailsLen', label: 'ends 数组长度 (Tails)', color: 'amber' },
+    { id: 'replacedIndex', label: '二分贪心动作 (Action)', color: 'purple' },
+  ],
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>题目描述 (LeetCode 354)</h3>

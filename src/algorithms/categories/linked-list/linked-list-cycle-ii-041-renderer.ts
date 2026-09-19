@@ -28,7 +28,7 @@ export interface LinkedListCycleStep extends StepBase {
   entryNodeId: number | null;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const CYCLE_II_CODES = {
@@ -90,6 +90,16 @@ public:
         return None`,
 };
 
+const CYCLE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 5, python: 5 },
+  moving: { java: 7, cpp: 8, python: 8 },
+  met: { java: 9, cpp: 9, python: 9 },
+  resetFast: { java: 11, cpp: 10, python: 10 },
+  chase: { java: 14, cpp: 13, python: 13 },
+  foundEntry: { java: 16, cpp: 15, python: 14 },
+  noCycle: { java: 19, cpp: 19, python: 15 },
+};
+
 export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListCycleStep[] {
   const steps: LinkedListCycleStep[] = [];
 
@@ -121,7 +131,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
     entryNodeId: null,
     message: `算法启动：初始状态 slow 与 fast 均指向链表头节点 [ID:1, Val:3]。准备进行第一阶段判圈。`,
     log: `初始化双指针: slow = fast = Node 1`,
-    codeLine: 4,
+    codeLine: CYCLE_LINES.init,
   });
 
   let slow: number | null = 1;
@@ -149,7 +159,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
         entryNodeId: null,
         message: `⚡ 快慢指针在节点 [ID:${slow}, Val:${nodeMap.get(slow!)?.val}] 首次相遇！证明链表必定存在环！准备启动阶段二定位入环点。`,
         log: `第 ${stepCount} 步: slow 与 fast 在 Node ${slow} 相遇`,
-        codeLine: 9,
+        codeLine: CYCLE_LINES.met,
       });
       break;
     } else {
@@ -162,7 +172,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
         entryNodeId: null,
         message: `双指针步进：slow 推进 1 步到 [ID:${slow}]，fast 推进 2 步到 [ID:${fast ?? 'NULL'}]。`,
         log: `第 ${stepCount} 步: slow -> ${slow}, fast -> ${fast}`,
-        codeLine: 7,
+        codeLine: CYCLE_LINES.moving,
       });
     }
 
@@ -181,7 +191,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
       entryNodeId: null,
       message: `快指针抵达链表尾部 null，链表无环，返回 null。`,
       log: `判定完毕: 链表无环`,
-      codeLine: 18,
+      codeLine: CYCLE_LINES.noCycle,
     });
     return steps;
   }
@@ -197,7 +207,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
     entryNodeId: null,
     message: `阶段二重置：将 fast 指针重新指向链表头 [ID:1]，步长降为 1。slow 保持在相遇点 [ID:${slow}]。准备同速推进。`,
     log: `重置 fast = head (Node 1), slow 保持在 Node ${slow}`,
-    codeLine: 11,
+    codeLine: CYCLE_LINES.resetFast,
   });
 
   // Phase 2: Step both by 1
@@ -217,7 +227,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
         entryNodeId: slow,
         message: `🎯 再次相遇！slow 与 fast 在节点 [ID:${slow}, Val:${nodeMap.get(slow!)?.val}] 碰头！根据数学距离公式证明，该节点必定为【第一个入环节点】！`,
         log: `阶段二相遇于 Node ${slow} (入环点)`,
-        codeLine: 16,
+        codeLine: CYCLE_LINES.foundEntry,
       });
       break;
     } else {
@@ -230,7 +240,7 @@ export function buildLinkedListCycleSteps(hasCycle: boolean = true): LinkedListC
         entryNodeId: null,
         message: `阶段二同步推进：fast 移动到 [ID:${fast}]，slow 移动到 [ID:${slow}]。`,
         log: `阶段二第 ${phase2Count} 步: fast -> ${fast}, slow -> ${slow}`,
-        codeLine: 14,
+        codeLine: CYCLE_LINES.chase,
       });
     }
   }

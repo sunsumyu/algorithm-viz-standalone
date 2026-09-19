@@ -26,7 +26,7 @@ export interface ProductLessThanKStep extends StepBase {
   phase: 'init' | 'expand' | 'shrink' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine?: number | Record<string, number>;
 }
 
 export const PRODUCT_LESS_THAN_K_CODES = {
@@ -75,6 +75,15 @@ public:
         return ans`,
 };
 
+export const PRODUCT_LESS_THAN_K_CODE_LINES: Record<string, Record<string, number>> = {
+  kLeOne: { java: 3, cpp: 3, python: 3 },
+  init: { java: 4, cpp: 4, python: 4 },
+  expand: { java: 7, cpp: 6, python: 6 },
+  shrink: { java: 9, cpp: 8, python: 8 },
+  count: { java: 12, cpp: 11, python: 10 },
+  finish: { java: 14, cpp: 13, python: 11 },
+};
+
 export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: number = 100): ProductLessThanKStep[] {
   const steps: ProductLessThanKStep[] = [];
 
@@ -90,7 +99,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
       phase: 'finish',
       message: `k = ${k} <= 1：正整数数组子数组乘积至少为 1，不可能严格小于 k，直接返回 0。`,
       log: `k<=1 特判直接返回 0`,
-      codeLine: 3,
+      codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.kLeOne,
     });
     return steps;
   }
@@ -111,7 +120,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
     phase: 'init',
     message: `算法启动：原数组 [${nums.join(', ')}]，目标乘积阈值 k = ${k}。初始化双指针窗口 [0..0]。`,
     log: `初始化双指针: k=${k}`,
-    codeLine: 4,
+    codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.init,
   });
 
   for (let right = 0; right < nums.length; right++) {
@@ -128,7 +137,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
       phase: 'expand',
       message: `窗口向右扩展：引入 nums[${right}] = ${nums[right]}，当前窗口乘积 prod 更新为 ${prod}。`,
       log: `引入 nums[${right}]=${nums[right]} -> prod=${prod}`,
-      codeLine: 7,
+      codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.expand,
     });
 
     while (prod >= k && left <= right) {
@@ -145,7 +154,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
         phase: 'shrink',
         message: `乘积超标：prod = ${oldProd} >= k (${k})！左指针收缩：除以 nums[${left}] (${nums[left]})，left 从 ${left} 移至 ${left + 1}。`,
         log: `收缩 left=${left + 1}, 新 prod=${prod}`,
-        codeLine: 9,
+        codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.shrink,
       });
       left++;
     }
@@ -164,7 +173,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
       phase: 'expand',
       message: `窗口合法 [${left} .. ${right}] (prod = ${prod} < ${k})：以 nums[${right}] 结尾的新增子数组有 ${added} 个。累计总数达 ${ans}。`,
       log: `新增 +${added} 个子数组 -> 累计 ans=${ans}`,
-      codeLine: 12,
+      codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.count,
     });
   }
 
@@ -180,7 +189,7 @@ export function buildProductLessThanKSteps(nums: number[] = [10, 5, 2, 6], k: nu
     phase: 'finish',
     message: `全数组扫描完毕！乘积严格小于 ${k} 的连续子数组总数为 ${ans} 个。`,
     log: `算法收敛完成，返回 ans=${ans}`,
-    codeLine: 14,
+    codeLine: PRODUCT_LESS_THAN_K_CODE_LINES.finish,
   });
 
   return steps;

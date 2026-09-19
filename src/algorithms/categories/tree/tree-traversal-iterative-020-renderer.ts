@@ -4,7 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface Traversal020Step extends StepBase {
@@ -17,6 +17,7 @@ export interface Traversal020Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -163,6 +164,25 @@ export function postorder(root: any): number[] {
 }`
 };
 
+export const TREE_TRAVERSAL_020_CODE_LINES = {
+  preorder: {
+    entry: { java: 3, cpp: 1, python: 1, typescript: 1 },
+    popVisit: { java: 9, cpp: 5, python: 5, typescript: 6 },
+    pushRight: { java: 11, cpp: 6, python: 7, typescript: 8 },
+    pushLeft: { java: 12, cpp: 7, python: 8, typescript: 9 },
+  },
+  inorder: {
+    entry: { java: 17, cpp: 11, python: 11, typescript: 13 },
+    pushLeft: { java: 23, cpp: 14, python: 15, typescript: 17 },
+    popVisitRight: { java: 26, cpp: 15, python: 18, typescript: 18 },
+  },
+  postorder: {
+    entry: { java: 34, cpp: 19, python: 23, typescript: 22 },
+    s1PopS2Push: { java: 40, cpp: 23, python: 27, typescript: 26 },
+    s2PopAns: { java: 45, cpp: 27, python: 31, typescript: 31 },
+  },
+};
+
 interface SimNode {
   val: number;
   left?: SimNode;
@@ -196,6 +216,8 @@ export function buildTraversal020Steps(
     { val: 6 },
   ];
 
+  const codeMap = TREE_TRAVERSAL_020_CODE_LINES[type];
+
   steps.push({
     treeStructure: treeSnapshot,
     traversalType: type,
@@ -206,7 +228,7 @@ export function buildTraversal020Steps(
     decision: `主函数入口：开始进行二叉树显式栈非递归【${type === 'preorder' ? '先序遍历' : type === 'inorder' ? '中序遍历' : '双栈后序遍历'}】`,
     message: '非递归遍历彻底剥离系统递归调用栈，使用显式堆栈控制访问时序',
     log: `enter ${type}Traversal`,
-    codeLine: 1,
+    codeLine: codeMap.entry,
     statusBadge: { text: '准备遍历', type: 'info' },
   });
 
@@ -227,7 +249,7 @@ export function buildTraversal020Steps(
         decision: `弹出栈顶节点 [${cur.val}] 并打印记录！当前访问序列更新为: [${visited.join(', ')}]`,
         message: '先序遍历准则：弹出一个打印一个，随后若有右子树先压右，再若有左子树后压左',
         log: `pop & visit ${cur.val}`,
-        codeLine: 8,
+        codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.popVisit,
         statusBadge: { text: `访问节点 ${cur.val}`, type: 'success' },
       });
 
@@ -242,7 +264,7 @@ export function buildTraversal020Steps(
           decision: `右孩子 [${cur.right.val}] 压入工作栈`,
           message: '栈是后进先出，后压右孩子确保其在左孩子处理完之后弹出',
           log: `push right ${cur.right.val}`,
-          codeLine: 10,
+          codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.pushRight,
           statusBadge: { text: `压右 ${cur.right.val}`, type: 'info' },
         });
       }
@@ -258,7 +280,7 @@ export function buildTraversal020Steps(
           decision: `左孩子 [${cur.left.val}] 压入工作栈（栈顶就绪）`,
           message: '下一轮循环将优先弹出左孩子并打印',
           log: `push left ${cur.left.val}`,
-          codeLine: 11,
+          codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.pushLeft,
           statusBadge: { text: `压左 ${cur.left.val}`, type: 'warning' },
         });
       }
@@ -280,7 +302,7 @@ export function buildTraversal020Steps(
           decision: `整条左边界进栈：节点 [${cur.val}] 压入栈中，指针继续向左子树下潜`,
           message: '中序必须先穷尽左子树全部节点',
           log: `push left boundary ${cur.val}`,
-          codeLine: 21,
+          codeLine: TREE_TRAVERSAL_020_CODE_LINES.inorder.pushLeft,
           statusBadge: { text: `压入 ${cur.val}`, type: 'info' },
         });
         cur = cur.left;
@@ -296,7 +318,7 @@ export function buildTraversal020Steps(
           decision: `左子树见底！弹出栈顶节点 [${cur.val}] 打印记录，随后指针转向其右子树`,
           message: `当前访问序列为: [${visited.join(', ')}]`,
           log: `pop & visit ${cur.val}`,
-          codeLine: 24,
+          codeLine: TREE_TRAVERSAL_020_CODE_LINES.inorder.popVisitRight,
           statusBadge: { text: `访问 ${cur.val}`, type: 'success' },
         });
         cur = cur.right;
@@ -322,7 +344,7 @@ export function buildTraversal020Steps(
         decision: `s1 弹出节点 [${cur.val}] 并压入收集栈 s2！s1 依次压入左孩子与右孩子`,
         message: '双栈法利用 s1 产生 中-右-左 的顺序压入 s2，s2 逆序弹出即为 左-右-中！',
         log: `s1 pop ${cur.val} -> s2 push`,
-        codeLine: 36,
+        codeLine: TREE_TRAVERSAL_020_CODE_LINES.postorder.s1PopS2Push,
         statusBadge: { text: `s2 收集 ${cur.val}`, type: 'warning' },
       });
 
@@ -343,7 +365,7 @@ export function buildTraversal020Steps(
         decision: `收集栈 s2 倒序弹出 [${v}] 并写入最终后序结果！`,
         message: `当前序列: [${visited.join(', ')}]`,
         log: `s2 pop ${v}`,
-        codeLine: 41,
+        codeLine: TREE_TRAVERSAL_020_CODE_LINES.postorder.s2PopAns,
         statusBadge: { text: `后序输出 ${v}`, type: 'success' },
       });
     }

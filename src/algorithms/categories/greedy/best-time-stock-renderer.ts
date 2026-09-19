@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   BEST_TIME_STOCK_PROBLEM_HTML,
@@ -25,9 +26,18 @@ export interface StockStep {
   phase: StockPhase;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const BEST_TIME_STOCK_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  compare: { java: 3, cpp: 5, python: 4, javascript: 3 },
+  trade: { java: 5, cpp: 6, python: 5, javascript: 4 },
+  skip: { java: 5, cpp: 6, python: 5, javascript: 4 },
+  done: { java: 7, cpp: 8, python: 6, javascript: 6 },
+};
 
 export function buildStockSteps(prices: number[]): StockStep[] {
   const steps: StockStep[] = [];
@@ -45,7 +55,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
       phase: 'done',
       message: '价格序列天数少于 2，无法交易，利润为 0',
       log: 'init: too short',
-      codeLine: 2,
+      codeLine: BEST_TIME_STOCK_CODE_LINES.guard,
     });
     return steps;
   }
@@ -66,7 +76,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
     phase: 'init',
     message: `初始化：prices = [${prices.join(', ')}]，扫描 ${n} 天价格，贪心收集所有正收益`,
     log: `init: ${n} days, prices=[${prices.join(',')}]`,
-    codeLine: 3,
+    codeLine: BEST_TIME_STOCK_CODE_LINES.init,
   });
 
   for (let i = 0; i < n - 1; i++) {
@@ -84,7 +94,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
       phase: 'compare',
       message: `🔍 比较相邻两日：第 ${i} 天 (${prices[i]}) &rarr; 第 ${i + 1} 天 (${prices[i + 1]})，差值 diff = ${diff >= 0 ? `+${diff}` : diff}`,
       log: `compare day ${i} (${prices[i]}) → day ${i + 1} (${prices[i + 1]})`,
-      codeLine: 4,
+      codeLine: BEST_TIME_STOCK_CODE_LINES.compare,
     });
 
     if (diff > 0) {
@@ -104,7 +114,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
         phase: 'trade',
         message: `📈 股价上涨：diff=+${diff} > 0，第 ${i} 天买入第 ${i + 1} 天卖出，锁定利润 +${diff}，累计总利润 = ${profit}`,
         log: `trade day ${i}→${i + 1}: profit +${diff}, total=${profit}`,
-        codeLine: 5,
+        codeLine: BEST_TIME_STOCK_CODE_LINES.trade,
       });
     } else {
       steps.push({
@@ -119,7 +129,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
         phase: 'skip',
         message: `📉 股价下跌/持平：diff=${diff} &le; 0，跳过不产生交易`,
         log: `skip day ${i}→${i + 1}: diff=${diff}`,
-        codeLine: 5,
+        codeLine: BEST_TIME_STOCK_CODE_LINES.skip,
       });
     }
   }
@@ -136,7 +146,7 @@ export function buildStockSteps(prices: number[]): StockStep[] {
     phase: 'done',
     message: `🎉 贪心扫描完成！最大总利润 = ${profit}，共完成 ${txCount} 笔正收益交易`,
     log: `done: profit=${profit}, tx=${txCount}`,
-    codeLine: 7,
+    codeLine: BEST_TIME_STOCK_CODE_LINES.done,
   });
 
   return steps;

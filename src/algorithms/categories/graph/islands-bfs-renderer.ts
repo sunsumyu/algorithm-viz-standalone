@@ -12,15 +12,19 @@ import {
 import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
 import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+import { HighlightTarget } from '../../../core/code-panel';
+
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number | number[]> = {
-  init: 2,
-  found: [6, 7, 8, 9],
-  poll: 11,
-  enqueue: [14, 15, 16],
-  scan: 5,
-  done: 20,
+export const ISLANDS_BFS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
+  init: { java: 3, cpp: 5, python: 3, javascript: 2 },
+  scan: { java: [6, 7], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
+  found: { java: [8, 9, 10], cpp: [9, 10, 11], python: [8, 9, 10], javascript: [7, 8, 9] },
+  poll: { java: 14, cpp: 15, python: 13, javascript: 12 },
+  enqueue: { java: [18, 19], cpp: [19, 20], python: [17, 18], javascript: [16, 17] },
+  done: { java: 26, cpp: 27, python: 19, javascript: 24 },
 };
+
+const lines = ISLANDS_BFS_CODE_LINES;
 
 export interface IslandsBFSStep {
   grid: number[][];
@@ -33,7 +37,7 @@ export interface IslandsBFSStep {
   action: 'init' | 'scan' | 'found' | 'enqueue' | 'poll' | 'done';
   message: string;
   log: string;
-  codeLine: number | number[];
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -59,7 +63,7 @@ export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
       action: extra.action ?? 'scan',
       message: extra.message ?? '',
       log: extra.log ?? '',
-      codeLine: extra.codeLine ?? 1,
+      codeLine: extra.codeLine ?? lines.init,
     });
   };
 

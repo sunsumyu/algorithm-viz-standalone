@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   MIN_ARROWS_PROBLEM_HTML,
   MIN_ARROWS_ANALYSIS_HTML,
@@ -18,10 +19,18 @@ export interface MAStep {
   overlapEnd: number;
   action: 'init' | 'sort' | 'new_arrow' | 'overlap' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
+
+export const MIN_ARROWS_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  sort: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  newArrow: { java: 8, cpp: 11, python: 9, javascript: 7 },
+  overlap: { java: 11, cpp: 13, python: 11, javascript: 9 },
+  done: { java: 14, cpp: 16, python: 12, javascript: 12 },
+};
 
 export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MAStep[] {
   const steps: MAStep[] = [];
@@ -36,7 +45,7 @@ export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MASte
       overlapEnd: 0,
       action: 'done',
       message: '输入为空，所需弓箭数为 0',
-      codeLine: 2,
+      codeLine: MIN_ARROWS_CODE_LINES.guard,
     });
     return steps;
   }
@@ -54,7 +63,7 @@ export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MASte
     overlapEnd: points[0][1],
     action: 'sort',
     message: `第 1 步：按左边界升序排序：${points.map((p) => `[${p[0]},${p[1]}]`).join(', ')}，第 1 支箭预定在 x=${points[0][1]}`,
-    codeLine: 4,
+    codeLine: MIN_ARROWS_CODE_LINES.sort,
   });
 
   for (let i = 1; i < n; i++) {
@@ -73,7 +82,7 @@ export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MASte
         overlapEnd: cur[1],
         action: 'new_arrow',
         message: `🏹 气球 [${i}]=[${cur[0]}, ${cur[1]}] 左端点 ${cur[0]} > 前组右端点 ${prevEnd}，无重叠，增加第 ${count} 支箭 (x=${cur[1]})`,
-        codeLine: 8,
+        codeLine: MIN_ARROWS_CODE_LINES.newArrow,
       });
     } else {
       points[i][1] = Math.min(prevEnd, cur[1]);
@@ -87,7 +96,7 @@ export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MASte
         overlapEnd: points[i][1],
         action: 'overlap',
         message: `🎯 气球 [${i}] 与前组重叠 (左界 ${cur[0]} &le; ${prevEnd})！同用一支箭，收紧重叠右界至 x=${points[i][1]}`,
-        codeLine: 11,
+        codeLine: MIN_ARROWS_CODE_LINES.overlap,
       });
     }
   }
@@ -100,7 +109,7 @@ export function buildMinArrowsSteps(rawBalloons: Array<[number, number]>): MASte
     overlapEnd: points[n - 1][1],
     action: 'done',
     message: `🎉 扫描完成！引爆全部 ${n} 个气球最少需要 ${count} 支箭 (射箭坐标: ${arrowPositions.join(', ')})`,
-    codeLine: 14,
+    codeLine: MIN_ARROWS_CODE_LINES.done,
   });
 
   return steps;

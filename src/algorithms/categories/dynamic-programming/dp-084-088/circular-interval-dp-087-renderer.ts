@@ -16,70 +16,118 @@ export interface CircularInterval087Step extends Dp084Step {
   maxEnergy: number;
 }
 
-export function buildCircularInterval087Steps(): CircularInterval087Step[] {
+export function buildCircularInterval087Steps(input?: { head?: number[] } | number[]): CircularInterval087Step[] {
   const steps: CircularInterval087Step[] = [];
   const lines = CIRCULAR_INTERVAL_087_LINES;
 
-  const head = [2, 3, 5, 10];
-  const n = 4;
-  // 破环成链倍长: a = [2, 3, 5, 10, 2, 3, 5, 10]
-  // 最佳合并聚合能量为 710
-
+  let rawHead = [2, 3, 5, 10];
+  if (Array.isArray(input)) {
+    rawHead = input;
+  } else if (input && Array.isArray(input.head)) {
+    rawHead = input.head;
+  }
+  const head = rawHead.length > 0 ? rawHead.slice(0, 6) : [2, 3, 5, 10];
+  const n = head.length;
   const a = [...head, ...head];
+  const totalLen = 2 * n;
 
-  // Step 0: 入口与倍长
+  // dp[2n][2n]: dp[i][j] 表示合并珠子序列 [i..j] 释放的最大能量
+  const dp: number[][] = Array.from({ length: totalLen }, () => new Array(totalLen).fill(0));
+
+  // Step 0: 入口帧
   steps.push({
-    a,
+    a: [...a],
     n,
     bestStart: 0,
     maxEnergy: 0,
-    decision: '主函数入口：开始为环形能量项链 [2, 3, 5, 10] 求解最大释放总能量。',
-    message: '核心技巧：破环成链倍长，将长度为 N=4 的环扩展为长度为 2N=8 的线性序列。',
-    log: 'enter energyNecklace: doubled array [2, 3, 5, 10, 2, 3, 5, 10]',
-    codeLine: lines.doubleArray,
-    metrics: { '原始珠子数': 4, '倍长长度': 8 },
+    decision: `主函数入口：开始为环形能量项链 [${head.join(', ')}] (共 ${n} 颗珠子) 求解最大释放能量。`,
+    message: '核心破环成链技巧：将环形序列复制倍长为 2N 线性序列，任何旋转断开的环都对应一段长度为 N 的连续子区间。',
+    log: `enter energyNecklace: head=[${head.join(', ')}], n=${n}`,
+    codeLine: lines.entry,
+    metrics: { '原始珠子数': n, '倍长长度': totalLen },
   });
 
-  // Step 1: 小区间合并 (长度 len=2)
+  // Step 1: 破环成链倍长
   steps.push({
-    a,
+    a: [...a],
     n,
     bestStart: 0,
-    maxEnergy: 30,
-    decision: '计算长度为 2 的基本合并：如区间 [0, 1] 释放能量 a[0]*a[1]*a[2] = 2*3*5 = 30。',
-    message: '底层子问题全部就绪，为大区间跨越聚合打下基础。',
-    log: 'len=2 complete: base energy generated',
-    codeLine: lines.lenLoop,
-    statusBadge: { text: '小区间聚合', type: 'info' },
-    metrics: { '合并长度': 2, '初始能量': 30 },
+    maxEnergy: 0,
+    decision: `破环成链倍长：生成长度为 ${totalLen} 的数组 [${a.join(', ')}]。`,
+    message: `珠子首尾衔接：第 i 颗珠子的头标记为 a[i]，尾标记为 a[i+1]。倍长后可直接在 2N 数组上套用常规区间 DP。`,
+    log: `doubled array: [${a.join(', ')}]`,
+    codeLine: lines.doubleArray,
+    metrics: { '倍长序列': a.join(', ') },
   });
 
-  // Step 2: 递推至长度 len=4（覆盖整条项链）
-  steps.push({
-    a,
-    n,
-    bestStart: 2,
-    maxEnergy: 710,
-    decision: '区间递推至长度 4：分别考察以 0, 1, 2, 3 为起点的连续 4 颗珠子的合并方案。',
-    message: '以起点 idx=2（珠子 5）出发合并得到全局最大聚合能量 710！',
-    log: 'len=4 complete: best start=2 -> energy 710',
-    codeLine: lines.mergeSplit,
-    statusBadge: { text: '命中最大能量 710', type: 'success' },
-    metrics: { '最优断点起点': 2, '最大能量': 710 },
-  });
+  // 递推区间长度 len 从 2 到 n
+  for (let len = 2; len <= n; len++) {
+    steps.push({
+      a: [...a],
+      n,
+      bestStart: 0,
+      maxEnergy: dp[0]![len - 1] ?? 0,
+      decision: `推进至区间合并跨度 len = ${len}：枚举所有长度为 ${len} 的连续珠子子段。`,
+      message: `区间 DP 自底向上递推：长度为 ${len} 的区间合并依赖于严格更短的切分子区间。`,
+      log: `len loop: len = ${len}`,
+      codeLine: lines.lenLoop,
+      statusBadge: { text: `跨度 len=${len}`, type: 'info' },
+      metrics: { '当前合并跨度': len },
+    });
 
-  // Step 3: 全局终结
+    for (let i = 0; i <= totalLen - len; i++) {
+      const j = i + len - 1;
+      let maxVal = 0;
+      let bestK = i;
+
+      for (let k = i; k < j; k++) {
+        const energyGain = a[i]! * a[k + 1]! * a[j + 1]!;
+        const total = dp[i]![k]! + dp[k + 1]![j]! + energyGain;
+        if (total > maxVal) {
+          maxVal = total;
+          bestK = k;
+        }
+      }
+      dp[i]![j] = maxVal;
+
+      steps.push({
+        a: [...a],
+        n,
+        bestStart: i,
+        maxEnergy: maxVal,
+        decision: `区间 [${i}, ${j}] (长度 ${len})：最佳切分点 k=${bestK}，释放聚合能量 a[${i}]*a[${bestK + 1}]*a[${j + 1}] = ${a[i]! * a[bestK + 1]! * a[j + 1]!}，累计 dp[${i}][${j}] = ${maxVal}。`,
+        message: `子区间 [${i}, ${bestK}] 能量 (${dp[i]![bestK]}) + [${bestK + 1}, ${j}] 能量 (${dp[bestK + 1]![j]}) + 本次合并释放 (${a[i]! * a[bestK + 1]! * a[j + 1]!}) = ${maxVal}。`,
+        log: `mergeSplit [${i}, ${j}]: bestK=${bestK}, energy=${maxVal}`,
+        codeLine: lines.mergeSplit,
+        statusBadge: { text: `[${i}, ${j}] 能量: ${maxVal}`, type: 'info' },
+        metrics: { '当前区间': `[${i}, ${j}]`, '聚合能量': maxVal },
+      });
+    }
+  }
+
+  // 遍历所有可能的环切断点
+  let globalMax = 0;
+  let bestStartIdx = 0;
+  for (let i = 0; i < n; i++) {
+    const ringEnergy = dp[i]![i + n - 1]!;
+    if (ringEnergy > globalMax) {
+      globalMax = ringEnergy;
+      bestStartIdx = i;
+    }
+  }
+
+  // Step 4: 终结返回
   steps.push({
-    a,
+    a: [...a],
     n,
-    bestStart: 2,
-    maxEnergy: 710,
-    decision: '环形区间 DP 结算完成：遍历所有环切断点，全局最大释放能量为 710。',
-    message: '破环成链技巧完美消除环形边界判定，使线性区间 DP 优雅解决环问题。',
-    log: 'energyNecklace complete -> return 710',
+    bestStart: bestStartIdx,
+    maxEnergy: globalMax,
+    decision: `遍历所有 ${n} 处切断点结算完成：以起点 idx=${bestStartIdx} (珠子 ${head[bestStartIdx]}) 切开项链时释放最大能量 ${globalMax}！`,
+    message: `破环成链定理兑现：在 0 <= i < ${n} 中寻找 dp[i][i + ${n - 1}] 的全局极大值，最终最大释放总能量为 <strong>${globalMax}</strong>。`,
+    log: `energyNecklace complete: bestStart=${bestStartIdx} -> maxEnergy=${globalMax}`,
     codeLine: lines.findMaxRing,
-    statusBadge: { text: '求解成功', type: 'success' },
-    metrics: { '最终结果': 710, '时间复杂度': 'O(N^3)' },
+    statusBadge: { text: `最大能量 ${globalMax}`, type: 'success' },
+    metrics: { '最优切断起点': bestStartIdx, '全局最大能量': globalMax },
   });
 
   return steps;

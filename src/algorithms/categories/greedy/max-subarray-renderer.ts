@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   MAX_SUBARRAY_PROBLEM_HTML,
@@ -24,9 +25,18 @@ export interface MSSStep {
   phase: MSPhase;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const MAX_SUBARRAY_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  extend: { java: 6, cpp: 7, python: 6, javascript: 5 },
+  newMax: { java: 8, cpp: 9, python: 8, javascript: 7 },
+  reset: { java: 11, cpp: 12, python: 10, javascript: 10 },
+  done: { java: 14, cpp: 15, python: 11, javascript: 13 },
+};
 
 export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
   const steps: MSSStep[] = [];
@@ -43,7 +53,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
       phase: 'done',
       message: '输入为空，返回 0',
       log: 'init: empty',
-      codeLine: 2,
+      codeLine: MAX_SUBARRAY_CODE_LINES.guard,
     });
     return steps;
   }
@@ -65,7 +75,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
     phase: 'init',
     message: `初始化：nums = [${arr.join(', ')}]，初始最大和 maxSum = ${maxSum}`,
     log: `init: max=${maxSum}, cur=0`,
-    codeLine: 3,
+    codeLine: MAX_SUBARRAY_CODE_LINES.init,
   });
 
   for (let i = 0; i < n; i++) {
@@ -86,7 +96,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
         phase: 'new-max',
         message: `★ 刷新全局最大和！nums[${i}]=${arr[i]}，当前累加和=${currentSum}，刷新最高值 maxSum=${maxSum} [${maxStart}..${maxEnd}]`,
         log: `new-max @ ${i}: max=${maxSum}, range=[${maxStart}..${maxEnd}]`,
-        codeLine: 8,
+        codeLine: MAX_SUBARRAY_CODE_LINES.newMax,
       });
     } else {
       steps.push({
@@ -100,7 +110,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
         phase: 'extend',
         message: `➕ 加入 nums[${i}]=${arr[i]}，当前区间和 currentSum=${currentSum} (未超过历史最大和 ${maxSum})`,
         log: `extend @ ${i}: +${arr[i]}, cur=${currentSum}`,
-        codeLine: 7,
+        codeLine: MAX_SUBARRAY_CODE_LINES.extend,
       });
     }
 
@@ -118,7 +128,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
         phase: 'reset',
         message: `⚠️ 负和拉低：当前累加和 < 0，只会拖累后续求和，贪心清零 count=0，重置下一区间起点为 ${i + 1}`,
         log: `reset @ ${i}: curSum -> 0, next_start=${i + 1}`,
-        codeLine: 11,
+        codeLine: MAX_SUBARRAY_CODE_LINES.reset,
       });
     }
   }
@@ -134,7 +144,7 @@ export function buildMaxSubarraySteps(arr: number[]): MSSStep[] {
     phase: 'done',
     message: `🎉 扫描完成！最大连续子数组和为 ${maxSum}，对应区间为 nums[${maxStart}..${maxEnd}]`,
     log: `done: max=${maxSum}, range=[${maxStart}..${maxEnd}]`,
-    codeLine: 14,
+    codeLine: MAX_SUBARRAY_CODE_LINES.done,
   });
 
   return steps;

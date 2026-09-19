@@ -5,7 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../core/step-visualizer';
+import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
 import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
 
 export interface RandomGenStep extends StepBase {
@@ -20,7 +20,7 @@ export interface RandomGenStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }
 
@@ -97,19 +97,20 @@ function rand1To7(): number {
 }`
 };
 
+export const RANDOM_GEN_035_CODE_LINES = {
+  f: { java: 3, cpp: 1, python: 1, typescript: 1 },
+  rand01: { java: 8, cpp: 1, python: 1, typescript: 1 },
+  whileSame: { java: 13, cpp: 6, python: 2, typescript: 6 },
+  return01: { java: 14, cpp: 7, python: 5, typescript: 7 },
+  rand1To7: { java: 18, cpp: 11, python: 7, typescript: 10 },
+  assembleBits: { java: 22, cpp: 14, python: 9, typescript: 13 },
+  returnAns: { java: 24, cpp: 16, python: 11, typescript: 15 },
+};
+
 export function generateRandomGenSteps(targetSamples: number = 3): RandomGenStep[] {
   const freq: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
   const allSteps: RandomGenStep[] = [];
-
-  const lines = {
-    f: 5,
-    rand01: 9,
-    whileSame: 13,
-    return01: 14,
-    rand1To7: 18,
-    assembleBits: 21,
-    returnAns: 23,
-  };
+  const lines = RANDOM_GEN_035_CODE_LINES;
 
   // Step 0: 入口介绍
   allSteps.push({

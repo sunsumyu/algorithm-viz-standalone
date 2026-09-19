@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface MedianStep extends StepBase {
   nums: number[];
@@ -25,8 +24,10 @@ export interface MedianStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const SLIDING_WINDOW_MEDIAN_CODES = {
@@ -375,7 +376,16 @@ export function generateMedianSteps(nums: number[], k: number): MedianStep[] {
     });
   }
 
-  return steps;
+  return steps.map((s) => ({
+    ...s,
+    metrics: {
+      median: `${s.currentMedian}`,
+      windowRange: `[${s.windowLeft} .. ${s.windowRight}]`,
+      inOut: `${s.inNum != null ? `+${s.inNum}` : ''}${s.outNum != null ? ` -${s.outNum}` : (s.inNum == null ? '—' : '')}`,
+      balance: `大根 ${s.smallHeap.length} ⚖️ 小根 ${s.largeHeap.length}`,
+    },
+    ans: `[${s.mediansResult.join(', ')}]`,
+  }));
 }
 
 export function renderMedianSandbox(step: MedianStep): string {
@@ -387,11 +397,13 @@ export function renderMedianSandbox(step: MedianStep): string {
     let border = '1px solid #e2e8f0';
     let bg = '#ffffff';
     let color = '#64748b';
+    let shadow = 'none';
 
     if (inWindow) {
       bg = '#e0f2fe';
-      border = '1px solid #38bdf8';
+      border = '1.5px solid #38bdf8';
       color = '#0369a1';
+      shadow = '0 1px 3px rgba(56, 189, 248, 0.15)';
     }
     if (isEnter) {
       border = '2px solid #10b981';
@@ -400,100 +412,82 @@ export function renderMedianSandbox(step: MedianStep): string {
     }
 
     return `
-      <div style="display: inline-flex; flex-direction: column; align-items: center; margin: 3px;">
-        <div style="width: 38px; height: 38px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; background: ${bg}; border: ${border}; color: ${color};">
+      <div style="display: inline-flex; flex-direction: column; align-items: center; margin: 3px 4px; flex-shrink: 0;">
+        <span style="font-size: 10px; font-family: monospace; color: #94a3b8; margin-bottom: 2px;">#${idx}</span>
+        <div style="width: 38px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; font-family: 'JetBrains Mono', monospace; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${shadow}; transition: all 0.2s ease;">
           ${val}
         </div>
-        <span style="font-size: 10px; color: #94a3b8; margin-top: 2px;">[${idx}]</span>
+        <span style="font-size: 9px; height: 14px; margin-top: 2px;">
+          ${isLeftEdge ? '<b style="color: #d97706; background: #fef3c7; padding: 1px 3px; border-radius: 3px;">L</b>' : ''}
+          ${isEnter ? '<b style="color: #16a34a; background: #dcfce7; padding: 1px 3px; border-radius: 3px;">R</b>' : ''}
+        </span>
       </div>
     `;
   }).join('');
 
-  const mediansHistoryHtml = step.mediansResult.map((m, idx) => {
-    const isLatest = idx === step.mediansResult.length - 1;
-    return `
-      <span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-weight: 700; font-size: 12px; background: ${isLatest ? '#dcfce7' : '#f1f5f9'}; color: ${isLatest ? '#15803d' : '#64748b'};">
-        ${m}
-      </span>
-    `;
-  }).join(' ');
+  const mediansHistoryHtml = step.mediansResult.length === 0
+    ? '<span style="font-size: 11px; color: #94a3b8;">暂未输出</span>'
+    : step.mediansResult.map((m, idx) => {
+        const isLatest = idx === step.mediansResult.length - 1;
+        return `
+          <span style="display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 6px; font-weight: 700; font-size: 12px; font-family: 'JetBrains Mono', monospace; background: ${isLatest ? '#ecfdf5' : '#f1f5f9'}; border: 1px solid ${isLatest ? '#a7f3d0' : '#e2e8f0'}; color: ${isLatest ? '#065f46' : '#64748b'};">
+            ${m}
+          </span>
+        `;
+      }).join(' ');
 
   return `
-    <div style="display: flex; flex-direction: column; gap: 12px; font-family: inherit;">
-      <!-- Card 1: 状态概览看板 -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">当前滑窗 [L, R]</div>
-          <div style="font-size: 16px; font-weight: 800; color: #0284c7;">[${step.windowLeft}, ${step.windowRight}]</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">移出 / 移入</div>
-          <div style="font-size: 14px; font-weight: 700;">
-            <span style="color: #ef4444;">-${step.outNum ?? '无'}</span> / <span style="color: #10b981;">+${step.inNum ?? '无'}</span>
-          </div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">当前窗口中位数</div>
-          <div style="font-size: 17px; font-weight: 800; color: #15803d;">${step.currentMedian}</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: #64748b;">天平状态</div>
-          <div style="font-size: 13px; font-weight: 700; color: #d97706;">
-            大根${step.smallHeap.length} ⚖️ 小根${step.largeHeap.length}
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2: 数组滑窗物理全景 -->
-      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px;">
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; justify-content: center; padding: 12px 6px; box-sizing: border-box;">
+      <!-- 顶部滑动窗口物理全景 -->
+      <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-weight: 700; font-size: 13px; color: #0f172a;">
-            🪟 数组滑窗物理全景 (Window Size K = ${step.k})
+          <span style="font-weight: 700; font-size: 12px; color: #0f172a;">
+            🪟 数组滑窗物理全景 (窗口大小 K = ${step.k})
           </span>
-          <span style="font-size: 11px; color: #64748b;">高亮区域为当前有效窗口</span>
+          <span style="font-size: 11px; color: #64748b;">当前滑窗区间: <strong style="color: #2563eb; font-family: monospace;">[${step.windowLeft} .. ${step.windowRight}]</strong></span>
         </div>
-        <div style="display: flex; flex-wrap: wrap; align-items: center;">
+        <div style="display: flex; align-items: center; overflow-x: auto; padding: 6px 0;">
           ${arrayElementsHtml}
         </div>
       </div>
 
-      <!-- Card 3: 对顶堆天平视效 -->
-      <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;">
-        <div style="background: #ffffff; border: 1px solid #38bdf8; border-radius: 10px; padding: 12px;">
+      <!-- 对顶堆天平平衡视效 (主画布视觉核心) -->
+      <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+        <div style="background: #ffffff; border: 1.5px solid #7dd3fc; border-radius: 10px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="font-weight: 700; font-size: 12px; color: #0284c7;">🔻 Small Heap (大根堆: ≤中位数)</span>
-            <span style="font-size: 11px; color: #64748b;">Top: <b style="color: #0284c7;">${step.smallTop ?? '-'}</b></span>
+            <span style="font-weight: 700; font-size: 12px; color: #0284c7;">🔻 Small Heap (大根堆: 存放 ≤ 中位数)</span>
+            <span style="font-size: 11px; color: #64748b;">堆顶: <b style="color: #0284c7; font-family: monospace;">${step.smallTop ?? '-'}</b></span>
           </div>
-          <div style="font-size: 12px; color: #334155; word-break: break-all;">
-            元素: [${step.smallHeap.join(', ')}]
+          <div style="font-size: 12px; color: #334155; font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+            堆元素: [${step.smallHeap.join(', ')}]
           </div>
         </div>
 
-        <div style="font-size: 24px; text-align: center; color: #f59e0b;">⚖️</div>
+        <div style="font-size: 24px; text-align: center; color: #f59e0b; padding: 0 4px;">⚖️</div>
 
-        <div style="background: #ffffff; border: 1px solid #22c55e; border-radius: 10px; padding: 12px;">
+        <div style="background: #ffffff; border: 1.5px solid #86efac; border-radius: 10px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-            <span style="font-weight: 700; font-size: 12px; color: #15803d;">🔺 Large Heap (小根堆: ≥中位数)</span>
-            <span style="font-size: 11px; color: #64748b;">Top: <b style="color: #15803d;">${step.largeTop ?? '-'}</b></span>
+            <span style="font-weight: 700; font-size: 12px; color: #15803d;">🔺 Large Heap (小根堆: 存放 ≥ 中位数)</span>
+            <span style="font-size: 11px; color: #64748b;">堆顶: <b style="color: #15803d; font-family: monospace;">${step.largeTop ?? '-'}</b></span>
           </div>
-          <div style="font-size: 12px; color: #334155; word-break: break-all;">
-            元素: [${step.largeHeap.join(', ')}]
+          <div style="font-size: 12px; color: #334155; font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+            堆元素: [${step.largeHeap.join(', ')}]
           </div>
         </div>
       </div>
 
-      <!-- Card 4: 结果历史 -->
-      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px;">
-        <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">🎯 累计中位数输出列表:</div>
-        <div style="margin-bottom: 8px;">${mediansHistoryHtml}</div>
+      <!-- 结果历史记录列表 -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: #475569;">🎯 累计中位数输出:</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            ${mediansHistoryHtml}
+          </div>
+        </div>
+        <span style="font-size: 11px; color: #64748b;">
+          当前中位数: <strong style="color: #16a34a; font-size: 13px; font-family: monospace;">${step.currentMedian}</strong>
+        </span>
       </div>
-
-      ${renderFormulaCard(
-        '对顶堆动态平衡法则',
-        'small 存较小一半，large 存较大一半；维护天平 small.size >= large.size；结合延迟删除哈希表 O(log K) 动态滑窗',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -512,6 +506,12 @@ export const slidingWindowMedianVisualizer = registerDeclarativeAlgorithm<Median
       <p>中位数是有序序列最中间的那个数。给你一个整数数组 <code>nums</code> 和一个大小为 <code>k</code> 的滑动窗口，请给出每次窗口向右滑动时包含的 <code>k</code> 个数的中位数数组。</p>
     </div>
   `,
+  metrics: [
+    { id: 'median', label: '当前中位数', color: '#16a34a' },
+    { id: 'windowRange', label: '滑窗区间', color: '#0284c7' },
+    { id: 'inOut', label: '进 / 出元素', color: '#ef4444' },
+    { id: 'balance', label: '天平状态', color: '#d97706' },
+  ],
   codeLanguages: SLIDING_WINDOW_MEDIAN_CODES,
   inputs: [
     {
@@ -527,10 +527,6 @@ export const slidingWindowMedianVisualizer = registerDeclarativeAlgorithm<Median
     return generateMedianSteps(nums, k);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        ${renderMedianSandbox(step)}
-      </div>
-    `;
+    container.innerHTML = renderMedianSandbox(step);
   },
 });

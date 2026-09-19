@@ -1,7 +1,7 @@
 /**
- * 有序数组的平方可视化器 — 声明式配置化架构 (Declarative Visualizer)
+ * 有序数组的平方可视化器 — 顶层声明式黄金规约架构 (Declarative Visualizer)
  * LeetCode 977：首尾对撞双指针
- * 遵循 Zero-Subbox 规范，扁平双轨沙盘
+ * 遵循 Zero-Subbox 规范，扁平双轨沙盘与纯数据驱动 4-Card 结构
  */
 
 import { registerAlgorithm } from '../../../core/registry';
@@ -24,6 +24,8 @@ export interface SSQStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  metrics: Record<string, string | number>;
+  ans?: string;
 }
 
 export function parseSortedArray(input: string): number[] {
@@ -49,6 +51,9 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
     done: { java: 16, cpp: 18, python: 15, javascript: 16 },
   };
 
+  const getInitLsq = () => (left < n ? arr[left] ** 2 : '—');
+  const getInitRsq = () => (right >= 0 ? arr[right] ** 2 : '—');
+
   steps.push({
     arr: [...arr],
     result: [...result],
@@ -59,6 +64,12 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
     message: `初始化 left=0, right=${n - 1}，结果数组从末尾 writeIdx=${n - 1} 开始向前填充。`,
     log: `初始化双指针：left=0, right=${n - 1}, writeIdx=${n - 1}`,
     codeLine: lines.init,
+    metrics: {
+      'left-sq': getInitLsq(),
+      'right-sq': getInitRsq(),
+      pointers: `[${left}, ${right}]`,
+      'write-idx': `result[${n - 1}]`,
+    },
   });
 
   for (let i = n - 1; i >= 0; i--) {
@@ -75,6 +86,12 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
       message: `比较 nums[left=${left}]² = ${lsq} 与 nums[right=${right}]² = ${rsq}，将较大者填入 result[${i}]。`,
       log: `比较: left²=${lsq} vs right²=${rsq}`,
       codeLine: lines.compare,
+      metrics: {
+        'left-sq': lsq,
+        'right-sq': rsq,
+        pointers: `[${left}, ${right}]`,
+        'write-idx': `result[${i}]`,
+      },
     });
 
     if (lsq > rsq) {
@@ -89,6 +106,12 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
         message: `${lsq} > ${rsq}，左侧平方更大：写入 result[${i}] = ${lsq}，left++ → ${left + 1}。`,
         log: `填入左侧平方: result[${i}] = ${lsq}，left -> ${left + 1}`,
         codeLine: lines.writeLeft,
+        metrics: {
+          'left-sq': lsq,
+          'right-sq': rsq,
+          pointers: `[${left}→${left + 1}, ${right}]`,
+          'write-idx': `result[${i}]=${lsq}`,
+        },
       });
       left++;
     } else {
@@ -103,11 +126,18 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
         message: `${lsq} ≤ ${rsq}，右侧平方更大或相等：写入 result[${i}] = ${rsq}，right-- → ${right - 1}。`,
         log: `填入右侧平方: result[${i}] = ${rsq}，right -> ${right - 1}`,
         codeLine: lines.writeRight,
+        metrics: {
+          'left-sq': lsq,
+          'right-sq': rsq,
+          pointers: `[${left}, ${right}→${right - 1}]`,
+          'write-idx': `result[${i}]=${rsq}`,
+        },
       });
       right--;
     }
   }
 
+  const finalFormatted = `[${result.join(', ')}]`;
   steps.push({
     arr: [...arr],
     result: [...result],
@@ -115,9 +145,17 @@ export function buildSortedSquaresSteps(arr: number[]): SSQStep[] {
     right,
     writeIdx: -1,
     status: 'done',
-    message: `🎉 计算完成！最终有序平方数组为 [${result.join(', ')}]。`,
-    log: `✓ 完成：[${result.join(', ')}]`,
+    message: `🎉 计算完成！最终有序平方数组为 ${finalFormatted}。`,
+    log: `✓ 完成：${finalFormatted}`,
     codeLine: lines.done,
+    ans: finalFormatted,
+    metrics: {
+      'left-sq': '—',
+      'right-sq': '—',
+      pointers: '对撞相遇完成',
+      'write-idx': '全部填充完毕',
+      'metric-ans': finalFormatted,
+    },
   });
 
   return steps;
@@ -158,8 +196,38 @@ const { template, Visualizer } = createDeclarativeVisualizer<SSQStep>({
   metrics: [
     { id: 'left-sq', label: '左侧 nums[left]²', color: '#2563eb' },
     { id: 'right-sq', label: '右侧 nums[right]²', color: '#0d9488' },
-    { id: 'write-idx', label: '当前写入索引', color: '#f59e0b' },
+    { id: 'pointers', label: '双指针位置 [L, R]', color: '#8b5cf6' },
+    { id: 'write-idx', label: '当前写入目标', color: '#f59e0b' },
   ],
+  auxiliaryVisual: {
+    title: '🧭 对撞指针与平方比较监视器',
+    desc: '左右指针位置、当前平方值对比与写入索引',
+    render: (container, step) => {
+      const isDone = step.status === 'done';
+      const lsq = step.left < step.arr.length ? step.arr[step.left] ** 2 : '—';
+      const rsq = step.right >= 0 ? step.arr[step.right] ** 2 : '—';
+      const decisionText = isDone
+        ? '✓ 全部元素平方已倒序写入完成'
+        : typeof lsq === 'number' && typeof rsq === 'number'
+          ? lsq > rsq
+            ? `左侧 ${lsq} > 右侧 ${rsq} (选取左侧平方，左指针右移)`
+            : `右侧 ${rsq} ≥ 左侧 ${lsq} (选取右侧平方，右指针左移)`
+          : '—';
+
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; color: #334155; padding: 4px 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600; color: #64748b;">双指针状态:</span>
+            <strong style="color: #2563eb; font-family: monospace;">left=${step.left}, right=${step.right}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600; color: #64748b;">比较决策:</span>
+            <strong style="color: #16a34a; font-weight: 700;">${decisionText}</strong>
+          </div>
+        </div>
+      `;
+    },
+  },
   codeLanguages: SQUARES_OF_SORTED_ARRAY_CODE_LANGUAGES,
   problemHtml: SQUARES_OF_SORTED_ARRAY_PROBLEM_HTML,
   analysisHtml: SQUARES_OF_SORTED_ARRAY_ANALYSIS_HTML,
@@ -196,37 +264,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<SSQStep>({
       secondaryArray: safeDisplayResult,
       secondaryTitle: '📦 平方结果数组 (倒序填充):',
     });
-
-    const root = container.closest('#algo-sorted-squares-view') || container.closest('#algo-squares-of-sorted-array-view');
-    if (root) {
-      const lSqEl = root.querySelector('#metric-left-sq');
-      const rSqEl = root.querySelector('#metric-right-sq');
-      const wIdxEl = root.querySelector('#metric-write-idx');
-
-      const lsq = step.left < step.arr.length ? step.arr[step.left] ** 2 : '—';
-      const rsq = step.right >= 0 ? step.arr[step.right] ** 2 : '—';
-
-      if (lSqEl) lSqEl.textContent = `${lsq}`;
-      if (rSqEl) rSqEl.textContent = `${rsq}`;
-      if (wIdxEl) wIdxEl.textContent = step.writeIdx >= 0 ? `result[${step.writeIdx}]` : '完成';
-
-      // 在 Card 2 中展示当前比较关系
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
-      if (customMetricsContainer) {
-        customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #475569; padding: 4px 0;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>对撞指针状态:</span>
-              <strong style="color: #2563eb;">left = ${step.left}, right = ${step.right}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>比较结论:</span>
-              <strong style="color: #16a34a;">${typeof lsq === 'number' && typeof rsq === 'number' ? (lsq > rsq ? `左侧 ${lsq} > 右侧 ${rsq} (取左)` : `右侧 ${rsq} ≥ 左侧 ${lsq} (取右)`) : '完成'}</strong>
-            </div>
-          </div>
-        `;
-      }
-    }
   },
 });
 
@@ -242,18 +279,6 @@ registerAlgorithm({
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法',
+  aliases: ['squares-of-sorted-array'],
 });
 
-registerAlgorithm({
-  id: 'squares-of-sorted-array',
-  name: '有序数组的平方',
-  viewId: 'algo-squares-of-sorted-array-view',
-  category: 'array',
-  description: '首尾双指针向中间对撞：两端平方最大，每次选取较大者倒序写入新数组末尾',
-  icon: '📐',
-  template,
-  Visualizer,
-  difficulty: 1,
-  levelOrder: 3,
-  learningGoal: '掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法',
-});

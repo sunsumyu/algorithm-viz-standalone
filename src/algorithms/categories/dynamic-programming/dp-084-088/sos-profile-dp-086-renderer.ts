@@ -16,79 +16,117 @@ export interface SosDp086Step extends Dp084Step {
   focusMask: number;
 }
 
-export function buildSosDp086Steps(): SosDp086Step[] {
+export function buildSosDp086Steps(input?: { a?: number[]; n?: number } | number[]): SosDp086Step[] {
   const steps: SosDp086Step[] = [];
   const lines = SOS_DP_086_LINES;
 
-  const n = 2; // 2 维超立方体，4 个状态：00(0), 01(1), 10(2), 11(3)
-  const a = [1, 2, 4, 8];
+  let rawA = [1, 2, 4, 8];
+  let n = 2;
+  if (Array.isArray(input)) {
+    rawA = input;
+    n = Math.round(Math.log2(rawA.length)) || 2;
+  } else if (input) {
+    if (Array.isArray(input.a)) rawA = input.a;
+    if (typeof input.n === 'number') n = input.n;
+  }
+  n = Math.max(1, Math.min(4, n));
+  const total = 1 << n;
+  const a = rawA.slice(0, total);
+  while (a.length < total) a.push(0);
+
+  const dp = [...a];
 
   // Step 0: 入口与初始化
   steps.push({
     dim: n,
     curBit: 0,
-    dp: [...a],
+    dp: [...dp],
     focusMask: 0,
-    decision: '主函数入口：开始为长度为 4 的数组 [1, 2, 4, 8] 计算全部子集和。',
+    decision: `主函数入口：开始为长度为 ${total} 的数组 [${a.join(', ')}] 计算全量子集和。`,
     message: '直接枚举子集需 O(3^N)；SOS DP 将二进制看作 N 维超立方体，通过逐维高维前缀和降至 O(N * 2^N)！',
-    log: 'enter sumOverSubsets: n=2, a=[1, 2, 4, 8]',
+    log: `enter sumOverSubsets: n=${n}, a=[${a.join(', ')}]`,
     codeLine: lines.entry,
-    metrics: { '维度 N': 2, '状态数': 4 },
+    metrics: { '维度 N': n, '状态总数': total },
   });
 
-  // Step 1: 处理第 0 维 (bit 0)
-  // mask=1 (01): 包含 bit 0，累加 dp[0] = dp[1] + dp[0] = 2 + 1 = 3
-  // mask=3 (11): 包含 bit 0，累加 dp[2] = dp[3] + dp[2] = 8 + 4 = 12
-  // dp 变为: [1, 3, 4, 12]
-  const dpBit0 = [1, 3, 4, 12];
+  // Step 1: 拷贝初始数组
   steps.push({
     dim: n,
     curBit: 0,
-    dp: dpBit0,
-    focusMask: 3,
-    decision: '完成第 0 维前缀和累加：所有第 0 位为 1 的掩码（01 和 11）累加其第 0 位为 0 的对应状态！',
-    message: 'dp[1] 变成 1+2=3；dp[3] 变成 8+4=12。',
-    log: 'dim 0 complete: dp=[1, 3, 4, 12]',
-    codeLine: lines.addSubset,
-    statusBadge: { text: '第 0 维完成', type: 'info' },
-    metrics: { '处理维度': 'bit 0', '状态 11 子集和': 12 },
+    dp: [...dp],
+    focusMask: 0,
+    decision: `初始化 DP 数组：复制输入数组 a 到 dp，初始状态 dp[mask] = a[mask]。`,
+    message: `dp[mask] 初始为仅包含自身元素的子集值。后续每经过一个维度的前缀和，dp[mask] 将汇入该维度翻转的所有子集。`,
+    log: `init dp: dp=[${dp.join(', ')}]`,
+    codeLine: lines.initDp,
+    metrics: { '当前状态': '初始复制就绪' },
   });
 
-  // Step 2: 处理第 1 维 (bit 1)
-  // mask=2 (10): 包含 bit 1，累加 dp[0] = 4 + 1 = 5
-  // mask=3 (11): 包含 bit 1，累加 dp[1] = 12 + 3 = 15
-  // 最终 dp: [1, 3, 5, 15]
-  // 验证：
-  // 00 的子集: 00 -> 1
-  // 01 的子集: 00, 01 -> 1 + 2 = 3
-  // 10 的子集: 00, 10 -> 1 + 4 = 5
-  // 11 的子集: 00, 01, 10, 11 -> 1 + 2 + 4 + 8 = 15! 完全精准！
-  const dpBit1 = [1, 3, 5, 15];
-  steps.push({
-    dim: n,
-    curBit: 1,
-    dp: dpBit1,
-    focusMask: 3,
-    decision: '完成第 1 维前缀和累加：掩码 11（全集）成功汇聚全部 4 个子集之和 1 + 2 + 4 + 8 = 15！',
-    message: '所有 2^N 个状态的子集和全部严格计算完毕。',
-    log: 'dim 1 complete: final dp=[1, 3, 5, 15]',
-    codeLine: lines.addSubset,
-    statusBadge: { text: '全维前缀和就绪', type: 'success' },
-    metrics: { '处理维度': 'bit 1', '全集 11 和': 15 },
-  });
+  // 逐维高维前缀和
+  for (let i = 0; i < n; i++) {
+    steps.push({
+      dim: n,
+      curBit: i,
+      dp: [...dp],
+      focusMask: 1 << i,
+      decision: `开始处理第 ${i} 维 (bit ${i})：枚举所有包含第 ${i} 位的状态，汇入第 ${i} 位为 0 的对应子集。`,
+      message: `高维前缀和核心：固定前 i-1 维已求和的超平面，在第 i 维方向上执行一次标准一维前缀和。`,
+      log: `start dimension loop: dim i = ${i}`,
+      codeLine: lines.dimLoop,
+      statusBadge: { text: `枚举第 ${i} 维`, type: 'info' },
+      metrics: { '当前处理维度': `bit ${i}` },
+    });
 
-  // Step 3: 返回结果
+    for (let mask = 0; mask < total; mask++) {
+      if ((mask & (1 << i)) !== 0) {
+        const prevMask = mask ^ (1 << i);
+        const addedVal = dp[prevMask]!;
+        const beforeVal = dp[mask]!;
+
+        // 位检查步骤
+        steps.push({
+          dim: n,
+          curBit: i,
+          dp: [...dp],
+          focusMask: mask,
+          decision: `检查状态 mask = ${mask.toString(2).padStart(n, '0')} (${mask})：包含第 ${i} 位 (值为 1)。`,
+          message: `由于 mask 包含 bit ${i}，其子集中必然包含第 ${i} 位替换为 0 的对应掩码 ${prevMask.toString(2).padStart(n, '0')} (${prevMask})。`,
+          log: `bitCheck: mask ${mask.toString(2).padStart(n, '0')} has bit ${i} -> prevMask ${prevMask.toString(2).padStart(n, '0')}`,
+          codeLine: lines.bitCheck,
+          metrics: { '当前掩码': mask, '前驱掩码': prevMask },
+        });
+
+        // 累加子集和
+        dp[mask] += addedVal;
+
+        steps.push({
+          dim: n,
+          curBit: i,
+          dp: [...dp],
+          focusMask: mask,
+          decision: `高维前缀累加：dp[${mask}] (${beforeVal}) += dp[${prevMask}] (${addedVal}) -> 最新子集和为 ${dp[mask]}！`,
+          message: `超立方体前缀和：将子集状态 ${prevMask} 的累积和注入状态 ${mask}，完成第 ${i} 维的投影合并。`,
+          log: `addSubset: dp[${mask}] += dp[${prevMask}] (${addedVal}) = ${dp[mask]}`,
+          codeLine: lines.addSubset,
+          statusBadge: { text: `dp[${mask}] = ${dp[mask]}`, type: 'success' },
+          metrics: { '掩码': mask, '累加后子集和': dp[mask] },
+        });
+      }
+    }
+  }
+
+  // 终结返回
   steps.push({
     dim: n,
-    curBit: 1,
-    dp: dpBit1,
-    focusMask: 3,
-    decision: 'SOS DP 计算圆满完成：返回全部子集和数组 [1, 3, 5, 15]。',
-    message: '高维前缀和以 O(N * 2^N) 达成最优性能。',
-    log: 'sumOverSubsets complete -> return [1, 3, 5, 15]',
+    curBit: n - 1,
+    dp: [...dp],
+    focusMask: total - 1,
+    decision: `SOS DP 逐维前缀和全部完成：所有 2^N = ${total} 个掩码的全部子集和计算就绪！`,
+    message: `高维前缀和以 O(N * 2^N) 时间复杂度取代传统的 O(3^N) 子集枚举，全集 mask=${(total - 1).toString(2).padStart(n, '0')} 最终和为 ${dp[total - 1]}。`,
+    log: `sumOverSubsets complete -> return [${dp.join(', ')}]`,
     codeLine: lines.returnDp,
-    statusBadge: { text: '计算完成', type: 'success' },
-    metrics: { '最终结果': '[1, 3, 5, 15]', '复杂度': 'O(N * 2^N)' },
+    statusBadge: { text: '全维前缀和完成', type: 'success' },
+    metrics: { '全集子集和': dp[total - 1], '复杂度': `O(${n} * 2^${n})` },
   });
 
   return steps;

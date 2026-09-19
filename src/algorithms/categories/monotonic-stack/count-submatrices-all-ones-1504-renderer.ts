@@ -24,7 +24,7 @@ export interface SubmatrixStep extends StepBase {
   phase: 'init' | 'update_heights' | 'stack_calc' | 'row_done' | 'finish';
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: number | Record<string, number>;
 }
 
 export const COUNT_SUBMATRICES_CODES = {
@@ -142,6 +142,13 @@ private:
         return total`,
 };
 
+export const COUNT_SUBMATRICES_CODE_LINES: Record<string, Record<string, number>> = {
+  init: { java: 4, cpp: 4, python: 3 },
+  updateHeights: { java: 11, cpp: 7, python: 8 },
+  stackCalc: { java: 14, cpp: 8, python: 9 },
+  finish: { java: 16, cpp: 10, python: 10 },
+};
+
 export function buildCountSubmatricesSteps(): SubmatrixStep[] {
   const steps: SubmatrixStep[] = [];
   const mat = [
@@ -164,7 +171,7 @@ export function buildCountSubmatricesSteps(): SubmatrixStep[] {
     phase: 'init',
     message: `算法启动：矩阵尺寸 3x3。准备逐行压缩为一维柱状图高度序列，利用单调递增栈计算全 1 子矩形数量。`,
     log: `初始化矩阵单调栈计算`,
-    codeLine: 4,
+    codeLine: COUNT_SUBMATRICES_CODE_LINES.init,
   });
 
   for (let i = 0; i < m; i++) {
@@ -182,7 +189,7 @@ export function buildCountSubmatricesSteps(): SubmatrixStep[] {
       phase: 'update_heights',
       message: `处理第 ${i + 1} 行：更新柱状图高度为 [ ${heights.join(', ')} ]。`,
       log: `行 ${i + 1} 高度更新: [${heights.join(', ')}]`,
-      codeLine: 11,
+      codeLine: COUNT_SUBMATRICES_CODE_LINES.updateHeights,
     });
 
     // 2. Monotonic stack count
@@ -202,7 +209,7 @@ export function buildCountSubmatricesSteps(): SubmatrixStep[] {
       phase: 'stack_calc',
       message: `第 ${i + 1} 行单调栈结算：本行贡献全 1 子矩形 ${rowSum} 个。累计矩形总数增至 ${totalCount}。`,
       log: `行 ${i + 1} 单调栈结算增量: +${rowSum}, 累计总数=${totalCount}`,
-      codeLine: 15,
+      codeLine: COUNT_SUBMATRICES_CODE_LINES.stackCalc,
     });
   }
 
@@ -216,7 +223,7 @@ export function buildCountSubmatricesSteps(): SubmatrixStep[] {
     phase: 'finish',
     message: `🎉 全矩阵扫描结算完成！共计统计出 【${totalCount}】 个全 1 子矩形。严格 O(M * N) 时间复杂度！`,
     log: `算法终结: 全 1 子矩形总数 = ${totalCount}`,
-    codeLine: 17,
+    codeLine: COUNT_SUBMATRICES_CODE_LINES.finish,
   });
 
   return steps;

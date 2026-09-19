@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   PARTITION_LABELS_PROBLEM_HTML,
   PARTITION_LABELS_ANALYSIS_HTML,
@@ -21,9 +22,17 @@ export interface PartitionStep {
   cutIndices: number[];
   action: 'init' | 'scan' | 'cut' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
+
+export const PARTITION_LABELS_CODE_LINES: Record<string, HighlightTarget> = {
+  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 7, cpp: 6, python: 3, javascript: 4 },
+  scan: { java: 12, cpp: 11, python: 8, javascript: 9 },
+  cut: { java: 14, cpp: 13, python: 10, javascript: 11 },
+  done: { java: 18, cpp: 17, python: 12, javascript: 15 },
+};
 
 export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
   const steps: PartitionStep[] = [];
@@ -41,7 +50,7 @@ export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
       cutIndices: [],
       action: 'done',
       message: '字符串为空，划分片段数为 0',
-      codeLine: 2,
+      codeLine: PARTITION_LABELS_CODE_LINES.guard,
     });
     return steps;
   }
@@ -63,7 +72,7 @@ export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
     cutIndices: [],
     action: 'init',
     message: `第 1 步：统计所有 ${Object.keys(lastOccurrence).length} 种不同字符的最后出现下标`,
-    codeLine: 7,
+    codeLine: PARTITION_LABELS_CODE_LINES.init,
   });
 
   let start = 0;
@@ -88,7 +97,7 @@ export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
       cutIndices: [...cutIndices],
       action: 'scan',
       message: `🔍 扫描 s[${i}]='${char}' (最后出现在 [${lastPos}])，当前片段边界更新为 max(${oldEnd}, ${lastPos}) = ${end}`,
-      codeLine: 12,
+      codeLine: PARTITION_LABELS_CODE_LINES.scan,
     });
 
     if (i === end) {
@@ -107,7 +116,7 @@ export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
         cutIndices: [...cutIndices],
         action: 'cut',
         message: `✂️ 触碰最远边界 [${i}]！片段 "${s.substring(start, end + 1)}" 内字符后续不再出现，切分出长度为 ${len} 的片段！`,
-        codeLine: 14,
+        codeLine: PARTITION_LABELS_CODE_LINES.cut,
       });
 
       start = i + 1;
@@ -125,7 +134,7 @@ export function buildPartitionLabelsSteps(s: string): PartitionStep[] {
     cutIndices: [...cutIndices],
     action: 'done',
     message: `🎉 字符串划分完成！共划分为 ${partitions.length} 个片段：[${partitions.join(', ')}]`,
-    codeLine: 18,
+    codeLine: PARTITION_LABELS_CODE_LINES.done,
   });
 
   return steps;

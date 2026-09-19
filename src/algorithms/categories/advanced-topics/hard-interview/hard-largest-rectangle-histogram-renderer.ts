@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface HistogramStep extends StepBase {
   stepIndex?: number;
@@ -19,8 +18,10 @@ export interface HistogramStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const HISTOGRAM_CODES = {
@@ -98,21 +99,23 @@ public:
 }`
 };
 
+export const HISTOGRAM_CODE_LINES = {
+  entry: { java: 3, cpp: 4, python: 2, typescript: 1 },
+  initSentinels: { java: 5, cpp: 6, python: 3, typescript: 2 },
+  loop: { java: 11, cpp: 11, python: 7, typescript: 6 },
+  whilePop: { java: 12, cpp: 12, python: 8, typescript: 7 },
+  calcArea: { java: 14, cpp: 14, python: 11, typescript: 10 },
+  push: { java: 17, cpp: 17, python: 12, typescript: 12 },
+  returnAns: { java: 19, cpp: 19, python: 14, typescript: 14 },
+};
+
 export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] {
   const steps: HistogramStep[] = [];
   const h = [0, ...inputHeights, 0];
   const stack: number[] = [0];
   let maxArea = 0;
 
-  const lines = {
-    entry: 3,
-    initSentinels: 5,
-    loop: 11,
-    whilePop: 12,
-    calcArea: 14,
-    push: 17,
-    returnAns: 19,
-  };
+  const lines = HISTOGRAM_CODE_LINES;
 
   // Step 0: 入口
   steps.push({
@@ -126,6 +129,13 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
     log: `Init histogram with sentinels: [${h.join(', ')}]`,
     codeLine: lines.initSentinels,
     statusBadge: { text: '哨兵就绪', type: 'info' },
+    metrics: {
+      scanIdx: '#0 (h=0 哨兵)',
+      popped: '无出栈',
+      curRect: '等待结算',
+      maxArea: 0,
+    },
+    ans: '0',
   });
 
   for (let i = 1; i < h.length; i++) {
@@ -140,6 +150,13 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
       log: `Examining i=${i}, h=${h[i]}, top=${stack[stack.length - 1]}`,
       codeLine: lines.loop,
       statusBadge: { text: '单调性比对', type: 'info' },
+      metrics: {
+        scanIdx: `#${i} (h=${h[i]})`,
+        popped: '无出栈',
+        curRect: '等待结算',
+        maxArea: maxArea,
+      },
+      ans: String(maxArea),
     });
 
     while (stack.length > 1 && h[i] < h[stack[stack.length - 1]]) {
@@ -162,6 +179,13 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
         log: `Popped ${popped}: h=${height}, w=${width}, area=${area}, maxArea=${maxArea}`,
         codeLine: lines.calcArea,
         statusBadge: { text: `面积: ${area}`, type: 'success' },
+        metrics: {
+          scanIdx: `#${i} (h=${h[i]})`,
+          popped: `#${popped} (h=${height})`,
+          curRect: `${height}×${width}=${area}`,
+          maxArea: maxArea,
+        },
+        ans: String(maxArea),
       });
     }
 
@@ -177,6 +201,13 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
       log: `Push stack: index ${i}`,
       codeLine: lines.push,
       statusBadge: { text: '压入单调栈', type: 'info' },
+      metrics: {
+        scanIdx: `#${i} (h=${h[i]})`,
+        popped: '无出栈',
+        curRect: '等待结算',
+        maxArea: maxArea,
+      },
+      ans: String(maxArea),
     });
   }
 
@@ -192,6 +223,13 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
     log: `Done. Final max area = ${maxArea}`,
     codeLine: lines.returnAns,
     statusBadge: { text: '求解成功', type: 'success' },
+    metrics: {
+      scanIdx: '扫描完成',
+      popped: '出栈完成',
+      curRect: `最终最大面积: ${maxArea}`,
+      maxArea: maxArea,
+    },
+    ans: String(maxArea),
   });
 
   return steps;
@@ -199,46 +237,40 @@ export function generateHistogramSteps(inputHeights: number[]): HistogramStep[] 
 
 export function renderHistogramCanvas(container: HTMLElement, step: HistogramStep): void {
   const maxH = Math.max(...step.heights, 7);
-  const barWidth = 36;
-  const gap = 8;
+  const barWidth = 40;
+  const gap = 10;
   const svgWidth = step.heights.length * (barWidth + gap) + 40;
-  const svgHeight = 180;
+  const svgHeight = 220;
 
   container.innerHTML = `
-    <div style="padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <!-- 核心指标看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">全局最大矩形面积 (Max Area)</div>
-          <div style="font-size: 24px; font-weight: bold; color: #34d399; margin-top: 4px;">
-            ${step.maxArea}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">当前结算矩形 (Rect Calc)</div>
-          <div style="font-size: 18px; font-weight: bold; color: #38bdf8; margin-top: 4px;">
-            ${step.rectHighlight ? `高 ${step.rectHighlight.height} × 宽 ${step.rectHighlight.right - step.rectHighlight.left + 1} = ${step.rectHighlight.area}` : '等待触发'}
-          </div>
-        </div>
-
-        <div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 11px; color: #94a3b8;">单调递增栈 (Monotonic Stack)</div>
-          <div style="font-size: 14px; font-family: monospace; color: #fbbf24; margin-top: 6px;">
-            [ ${step.stack.map(idx => `${idx}(h=${step.heights[idx]})`).join(', ')} ]
-          </div>
-        </div>
-      </div>
-
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
       <!-- 柱状图主画布 -->
-      <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 16px; margin-bottom: 16px; overflow-x: auto;">
-        <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 12px;">
-          直方图沙盘与当前最大延伸矩形投影
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 20px 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow-x: auto;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--text-color, #f1f5f9);">
+            📊 直方图沙盘与单调栈矩形最大扩展投影
+          </span>
+          <div style="display: flex; gap: 12px; font-size: 11px;">
+            <span style="color: #fbbf24; font-weight: 600;">■ 栈内递增柱</span>
+            <span style="color: #38bdf8; font-weight: 600;">■ 当前扫描柱</span>
+            <span style="color: #ef4444; font-weight: 600;">■ 出栈结算柱</span>
+            <span style="color: #34d399; font-weight: 600;">▢ 结算最大矩形</span>
+          </div>
         </div>
 
-        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="min-width: 100%; height: 160px;">
+        <svg viewBox="0 0 ${svgWidth} ${svgHeight}" style="min-width: 100%; height: 210px;">
           <!-- 底部基线 -->
-          <line x1="20" y1="140" x2="${svgWidth - 20}" y2="140" stroke="#475569" stroke-width="2" />
+          <line x1="20" y1="170" x2="${svgWidth - 20}" y2="170" stroke="rgba(255, 255, 255, 0.15)" stroke-width="2" />
 
           <!-- 高亮结算矩形半透明遮罩 -->
           ${
@@ -246,14 +278,14 @@ export function renderHistogramCanvas(container: HTMLElement, step: HistogramSte
               ? `
               <rect
                 x="${20 + step.rectHighlight.left * (barWidth + gap)}"
-                y="${140 - (step.rectHighlight.height / maxH) * 110}"
+                y="${170 - (step.rectHighlight.height / maxH) * 140}"
                 width="${(step.rectHighlight.right - step.rectHighlight.left + 1) * (barWidth + gap) - gap}"
-                height="${(step.rectHighlight.height / maxH) * 110}"
-                fill="rgba(52, 211, 153, 0.25)"
+                height="${(step.rectHighlight.height / maxH) * 140}"
+                fill="rgba(52, 211, 153, 0.22)"
                 stroke="#34d399"
-                stroke-width="2"
-                stroke-dasharray="4 2"
-                rx="4"
+                stroke-width="2.5"
+                stroke-dasharray="6 3"
+                rx="6"
               />
             `
               : ''
@@ -262,11 +294,25 @@ export function renderHistogramCanvas(container: HTMLElement, step: HistogramSte
           <!-- 各柱子绘制 -->
           ${step.heights.map((h, idx) => {
             const x = 20 + idx * (barWidth + gap);
-            const barH = (h / maxH) * 110;
-            const y = 140 - barH;
+            const barH = (h / maxH) * 140;
+            const y = 170 - barH;
             const inStack = step.stack.includes(idx);
             const isCurrent = idx === step.currentIndex;
             const isPopped = idx === step.poppedIndex;
+
+            let fillColor = 'rgba(51, 65, 85, 0.5)';
+            let strokeColor = 'rgba(255, 255, 255, 0.1)';
+
+            if (isPopped) {
+              fillColor = 'rgba(239, 68, 68, 0.6)';
+              strokeColor = '#ef4444';
+            } else if (isCurrent) {
+              fillColor = 'rgba(2, 132, 199, 0.6)';
+              strokeColor = '#38bdf8';
+            } else if (inStack) {
+              fillColor = 'rgba(217, 119, 6, 0.6)';
+              strokeColor = '#f59e0b';
+            }
 
             return `
               <g>
@@ -275,30 +321,35 @@ export function renderHistogramCanvas(container: HTMLElement, step: HistogramSte
                   y="${y}"
                   width="${barWidth}"
                   height="${barH}"
-                  fill="${isPopped ? '#ef4444' : isCurrent ? '#0284c7' : inStack ? '#d97706' : '#334155'}"
-                  stroke="${isCurrent ? '#38bdf8' : '#64748b'}"
-                  stroke-width="${isCurrent ? '2' : '1'}"
-                  rx="3"
+                  fill="${fillColor}"
+                  stroke="${strokeColor}"
+                  stroke-width="${isCurrent || isPopped ? '2' : '1'}"
+                  rx="4"
                 />
-                <text x="${x + barWidth / 2}" y="${y - 6}" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="bold">${h}</text>
-                <text x="${x + barWidth / 2}" y="154" text-anchor="middle" fill="${isCurrent ? '#38bdf8' : '#94a3b8'}" font-size="10">#${idx}</text>
+                <text x="${x + barWidth / 2}" y="${y - 6}" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">${h}</text>
+                <text x="${x + barWidth / 2}" y="190" text-anchor="middle" fill="${isCurrent ? '#38bdf8' : 'var(--text-muted, #94a3b8)'}" font-size="11" font-weight="600">#${idx}</text>
               </g>
             `;
           }).join('')}
         </svg>
 
-        <div style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
-          图例：黄色=在单调栈内 · 蓝色=当前扫描柱 · 红色=正在出栈结算 · 绿色虚线框=当前结算最大矩形
+        <!-- 单调递增栈内索引序列带 -->
+        <div style="
+          margin-top: 12px;
+          padding: 8px 14px;
+          background: rgba(15, 23, 42, 0.6);
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        ">
+          <span style="font-size: 11px; color: var(--text-muted, #94a3b8); font-weight: 600;">单调递增栈索引:</span>
+          <span style="font-family: monospace; font-size: 13px; color: #fbbf24; font-weight: 700;">
+            [ ${step.stack.map(idx => `${idx}(h=${step.heights[idx]})`).join(', ')} ]
+          </span>
         </div>
       </div>
-
-      <!-- 原理卡片 -->
-      ${renderFormulaCard(
-        '单调栈左右边界确定定理',
-        '当一根柱子被更矮的柱子强行弹出时：使其出栈的当前元素即为其右侧第一个严格小于它的柱子；而出栈后新暴露的栈顶，即为其左侧第一个严格小于它的柱子！左右第一个更小元素同时锁定，完美定义该高度下能横向扩张的最大矩形！',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -323,6 +374,12 @@ export const hardLargestRectangleHistogramVisualizer = registerDeclarativeAlgori
     </div>
   `,
   codeLanguages: HISTOGRAM_CODES,
+  metrics: [
+    { id: 'scanIdx', label: '当前扫描柱', color: '#38bdf8' },
+    { id: 'popped', label: '出栈结算柱', color: '#ef4444' },
+    { id: 'curRect', label: '结算矩形 (高×宽)', color: '#f59e0b' },
+    { id: 'maxArea', label: '最大矩形面积', color: '#10b981' },
+  ],
   inputs: [
     {
       id: 'heights',

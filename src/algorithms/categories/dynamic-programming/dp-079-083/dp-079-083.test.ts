@@ -42,6 +42,16 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       expect(last.cnt1).toBe(6);
       verify1BasedCodeLines(steps, DIGIT_DP_079_CODES);
     });
+
+    it('支持动态上限 N：N=1 为 1，N=20 为 12', () => {
+      const steps1 = buildDigitDp079Steps(1);
+      expect(steps1[steps1.length - 1].cnt1).toBe(1);
+      verify1BasedCodeLines(steps1, DIGIT_DP_079_CODES);
+
+      const steps20 = buildDigitDp079Steps({ n: 20 });
+      expect(steps20[steps20.length - 1].cnt1).toBe(12);
+      verify1BasedCodeLines(steps20, DIGIT_DP_079_CODES);
+    });
   });
 
   // 2. Class 080: 换根 DP 专题
@@ -50,6 +60,22 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       const steps = buildRerooting080Steps();
       const last = steps[steps.length - 1];
       expect(last.nodes.map((n) => n.ans)).toEqual([4, 4, 6, 6]);
+      verify1BasedCodeLines(steps, REROOTING_TREE_DP_080_CODES);
+    });
+
+    it('支持动态星形树拓扑 (中心 0 连接 1, 2, 3)', () => {
+      const starTree = {
+        n: 4,
+        edges: [
+          [0, 1],
+          [0, 2],
+          [0, 3],
+        ] as [number, number][],
+      };
+      const steps = buildRerooting080Steps(starTree);
+      const last = steps[steps.length - 1];
+      // 0 到 1,2,3 距离和 = 3；叶子到 0 距离 1，到其他叶子距离 2，总和 = 1 + 2 + 2 = 5
+      expect(last.nodes.map((n) => n.ans)).toEqual([3, 5, 5, 5]);
       verify1BasedCodeLines(steps, REROOTING_TREE_DP_080_CODES);
     });
   });
@@ -62,6 +88,13 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       expect(last.totalProb).toBe(0.0625);
       verify1BasedCodeLines(steps, EXPECTED_VALUE_DP_081_CODES);
     });
+
+    it('支持动态步数 K=1 留在 3x3 棋盘的概率为 0.25', () => {
+      const stepsK1 = buildExpectedValue081Steps({ n: 3, k: 1, row: 0, column: 0 });
+      const lastK1 = stepsK1[stepsK1.length - 1];
+      expect(lastK1.totalProb).toBe(0.25);
+      verify1BasedCodeLines(stepsK1, EXPECTED_VALUE_DP_081_CODES);
+    });
   });
 
   // 4. Class 082: 斜率优化 DP
@@ -72,6 +105,17 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       expect(last.curDp).toBe(89);
       verify1BasedCodeLines(steps, SLOPE_OPTIMIZATION_DP_082_CODES);
     });
+
+    it('支持动态任务参数输入并维持单调队列合法性', () => {
+      const steps = buildSlopeOpt082Steps({
+        t: [0, 2, 2],
+        f: [0, 1, 3],
+        s: 1,
+      });
+      const last = steps[steps.length - 1];
+      expect(last.curDp).toBeGreaterThan(0);
+      verify1BasedCodeLines(steps, SLOPE_OPTIMIZATION_DP_082_CODES);
+    });
   });
 
   // 5. Class 083: 四边形不等式优化
@@ -80,6 +124,13 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       const steps = buildKnuth083Steps();
       const last = steps[steps.length - 1];
       expect(last.minCost).toBe(20);
+      verify1BasedCodeLines(steps, KNUTH_QUADRANGLE_083_CODES);
+    });
+
+    it('支持动态石子堆：[1, 2, 3] 合并最优代价为 9', () => {
+      const steps = buildKnuth083Steps([1, 2, 3]);
+      const last = steps[steps.length - 1];
+      expect(last.minCost).toBe(9);
       verify1BasedCodeLines(steps, KNUTH_QUADRANGLE_083_CODES);
     });
   });

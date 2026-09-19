@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface FreedomTrailStep extends StepBase {
   stepIndex?: number;
@@ -20,8 +19,10 @@ export interface FreedomTrailStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const FREEDOM_TRAIL_CODES = {
@@ -121,6 +122,12 @@ public:
 }`
 };
 
+export const FREEDOM_TRAIL_CODE_LINES = {
+  init: { java: 4, cpp: 4, python: 4, typescript: 3 },
+  step: { java: 17, cpp: 16, python: 15, typescript: 17 },
+  finish: { java: 22, cpp: 21, python: 20, typescript: 25 },
+};
+
 export function generateFreedomTrailSteps(ring: string, key: string): FreedomTrailStep[] {
   const steps: FreedomTrailStep[] = [];
   const n = ring.length;
@@ -139,8 +146,15 @@ export function generateFreedomTrailSteps(ring: string, key: string): FreedomTra
     decision: `初始化自由之路转盘：ring="${ring}", key="${key}"。转盘初始对准下标 0 ('${ring[0]}')`,
     message: '转盘初始化',
     log: '初始化 FreedomTrail',
-    codeLine: 4,
-    statusBadge: { text: '初始化', type: 'info' }
+    codeLine: FREEDOM_TRAIL_CODE_LINES.init,
+    statusBadge: { text: '初始化', type: 'info' },
+    metrics: {
+      targetChar: key[0] ? `'${key[0]}' (1/${m})` : '就绪',
+      ringPos: `0 ('${ring[0]}')`,
+      rotateCost: '0 步',
+      accumulatedSteps: '0 步',
+    },
+    ans: '0 步',
   });
 
   for (let k = 0; k < m; k++) {
@@ -179,8 +193,15 @@ export function generateFreedomTrailSteps(ring: string, key: string): FreedomTra
       decision: `拼写 key[${k}]='${targetChar}'：从当前转盘下标 ${currentRingPos} ('${ring[currentRingPos]}') 旋转至下标 ${bestNext} ('${ring[bestNext]}')。最小旋转距离 = min(|${currentRingPos}-${bestNext}|, ${n}-|${currentRingPos}-${bestNext}|) = ${bestDist} 步，加上按下中心按钮 1 步，共耗费 ${pressStep} 步。当前累计总步数 = ${accumulatedSteps}`,
       message: `拼写 '${targetChar}': 耗费 ${pressStep} 步`,
       log: `Key[${k}]='${targetChar}' -> 旋转至 ${bestNext}, 消耗 ${pressStep}`,
-      codeLine: 18,
-      statusBadge: { text: `拼写 '${targetChar}' (+${pressStep})`, type: 'success' }
+      codeLine: FREEDOM_TRAIL_CODE_LINES.step,
+      statusBadge: { text: `拼写 '${targetChar}' (+${pressStep})`, type: 'success' },
+      metrics: {
+        targetChar: `'${targetChar}' (${k + 1}/${m})`,
+        ringPos: `${currentRingPos} ➔ ${bestNext}`,
+        rotateCost: `${bestDist} 步 (转) + 1 (按)`,
+        accumulatedSteps: `${accumulatedSteps} 步`,
+      },
+      ans: `${accumulatedSteps} 步`,
     });
 
     currentRingPos = bestNext;
@@ -196,103 +217,129 @@ export function generateFreedomTrailSteps(ring: string, key: string): FreedomTra
     decision: `目标关键词 "${key}" 全部字符拼写完毕！解锁自由之路最少总旋转与按下步数 = ${accumulatedSteps}`,
     message: `全部拼写完成，总步数: ${accumulatedSteps}`,
     log: `拼写完成，总步数 ${accumulatedSteps}`,
-    codeLine: 24,
-    statusBadge: { text: `最少步数: ${accumulatedSteps}`, type: 'success' }
+    codeLine: FREEDOM_TRAIL_CODE_LINES.finish,
+    statusBadge: { text: `最少步数: ${accumulatedSteps}`, type: 'success' },
+    metrics: {
+      targetChar: '全部完成',
+      ringPos: `${currentRingPos} ('${ring[currentRingPos]}')`,
+      rotateCost: '结算完成',
+      accumulatedSteps: `${accumulatedSteps} 步`,
+    },
+    ans: `${accumulatedSteps} 步`,
   });
 
   return steps;
 }
 
 export function renderFreedomTrailCanvas(container: HTMLElement, step: FreedomTrailStep) {
-  const { ring, key, keyIdx, ringPos, chosenTargetPos, rotateCost, accumulatedSteps } = step;
+  const { ring, key, keyIdx, ringPos, chosenTargetPos } = step;
+
+  // 渲染 Key 拼写进度带
+  const keyTokensHtml = key.split('').map((ch, idx) => {
+    const isCompleted = idx < keyIdx;
+    const isCurrent = idx === keyIdx;
+    return `
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: ${isCurrent ? 'rgba(56, 189, 248, 0.25)' : isCompleted ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.04)'};
+        border: 1px solid ${isCurrent ? '#38bdf8' : isCompleted ? '#22c55e' : 'rgba(255, 255, 255, 0.08)'};
+        box-shadow: ${isCurrent ? '0 0 12px rgba(56, 189, 248, 0.35)' : 'none'};
+      ">
+        <span style="font-size: 11px; color: var(--text-muted, #94a3b8);">#${idx + 1}</span>
+        <span style="font-size: 16px; font-weight: 800; font-family: monospace; color: ${isCurrent ? '#38bdf8' : isCompleted ? '#4ade80' : 'var(--text-color, #e2e8f0)'};">${ch}</span>
+        <span style="font-size: 9px; color: ${isCompleted ? '#4ade80' : isCurrent ? '#38bdf8' : 'var(--text-muted, #64748b)'};">
+          ${isCompleted ? '✓ 完成' : isCurrent ? '● 正在拼' : '待拼'}
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  // 渲染 Ring 环形缓冲区转盘
+  const ringSlotsHtml = ring.split('').map((char, idx) => {
+    const isCur = idx === ringPos;
+    const isChosen = idx === chosenTargetPos;
+
+    let bgColor = 'rgba(255, 255, 255, 0.04)';
+    let borderColor = 'rgba(255, 255, 255, 0.1)';
+
+    if (isCur) {
+      bgColor = 'rgba(245, 158, 11, 0.3)';
+      borderColor = '#f59e0b';
+    } else if (isChosen) {
+      bgColor = 'rgba(16, 185, 129, 0.3)';
+      borderColor = '#10b981';
+    }
+
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        <div style="font-size: 10px; height: 16px; color: ${isCur ? '#f59e0b' : isChosen ? '#4ade80' : 'transparent'}; font-weight: 800;">
+          ${isCur ? '▲ 12点指针' : isChosen ? '★ 目标槽位' : ''}
+        </div>
+        <div style="
+          width: 52px;
+          height: 54px;
+          background: ${bgColor};
+          border: 2px solid ${borderColor};
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 800;
+          font-family: monospace;
+          color: var(--text-color, #f8fafc);
+          box-shadow: ${isCur ? '0 0 16px rgba(245, 158, 11, 0.45)' : isChosen ? '0 0 16px rgba(16, 185, 129, 0.45)' : 'none'};
+          transition: all 0.2s ease;
+        ">
+          ${char}
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted, #94a3b8); font-weight: 600;">
+          [${idx}]
+        </div>
+      </div>
+    `;
+  }).join('');
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前拼写字符 (Key)</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            ${keyIdx < key.length ? `'${key[keyIdx]}' (进度 ${keyIdx + 1}/${key.length})` : '全部完成'}
-          </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; width: 100%; height: 100%;">
+      <!-- Key 目标词拼写状态跟踪带 -->
+      <div style="background: rgba(15, 23, 42, 0.4); padding: 14px 16px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--text-color, #f1f5f9);">
+            🎯 目标词拼写进度 (Key: "${key}")
+          </span>
+          <span style="font-size: 11px; color: var(--text-muted, #94a3b8);">
+            进度: ${Math.min(keyIdx, key.length)} / ${key.length}
+          </span>
         </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">转盘当前指针位置</div>
-          <div style="font-size: 14px; font-weight: bold; color: #f59e0b;">
-            下标 ${ringPos} ('${ring[ringPos]}')
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前旋转代价</div>
-          <div style="font-size: 14px; font-weight: bold; color: #ec4899;">
-            ${rotateCost !== undefined ? `${rotateCost} 步` : '就绪'}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">累计总步数</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            ${accumulatedSteps} 步
-          </div>
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px;">
+          ${keyTokensHtml}
         </div>
       </div>
 
-      <!-- 环形转盘序列展示 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
-        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-align: center;">环形密码转盘 (Ring Buffer)：</div>
-        <div style="display: flex; gap: 8px; justify-content: center; align-items: flex-end; min-width: 450px;">
-          ${ring.split('').map((char, idx) => {
-            const isCur = idx === ringPos;
-            const isChosen = idx === chosenTargetPos;
-
-            let bgColor = 'rgba(51, 65, 85, 0.4)';
-            let borderColor = 'rgba(255, 255, 255, 0.1)';
-
-            if (isCur) {
-              bgColor = 'rgba(245, 158, 11, 0.35)';
-              borderColor = '#f59e0b';
-            } else if (isChosen) {
-              bgColor = 'rgba(16, 185, 129, 0.35)';
-              borderColor = '#10b981';
-            }
-
-            return `
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                <div style="font-size: 10px; height: 14px; color: ${isCur ? '#f59e0b' : isChosen ? '#10b981' : '#64748b'}; font-weight: bold;">
-                  ${isCur ? 'PTR' : isChosen ? 'DEST' : ''}
-                </div>
-                <div style="
-                  width: 46px;
-                  height: 48px;
-                  background: ${bgColor};
-                  border: 2px solid ${borderColor};
-                  border-radius: 6px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 18px;
-                  font-weight: bold;
-                  color: #f8fafc;
-                  box-shadow: ${isCur || isChosen ? '0 0 12px rgba(245, 158, 11, 0.4)' : 'none'};
-                  transition: all 0.2s ease;
-                ">
-                  ${char}
-                </div>
-                <div style="font-size: 10px; color: #64748b;">
-                  [${idx}]
-                </div>
-              </div>
-            `;
-          }).join('')}
+      <!-- 环形转盘序列展示沙盘 -->
+      <div style="
+        background: rgba(15, 23, 42, 0.4);
+        padding: 24px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        overflow-x: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      ">
+        <div style="font-size: 12px; color: var(--text-muted, #94a3b8); margin-bottom: 12px; text-align: center; font-weight: 600;">
+          🎡 环形密码转盘 (Ring Buffer - 首尾环形相通，双向最短距离 min(|i - j|, n - |i - j|))
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; align-items: flex-end; min-width: 480px; padding: 10px 0;">
+          ${ringSlotsHtml}
         </div>
       </div>
-
-      <!-- 核心原理卡片 -->
-      ${renderFormulaCard(
-        '环形转盘最短旋转距离定理',
-        '环长为 n 时，位置 i 到位置 j 的最短旋转步数 = min(|i - j|, n - |i - j|)。顺时针与逆时针双向贪心比较，DP 状态消除后效性',
-        step.decision,
-        step.statusBadge
-      )}
     </div>
   `;
 }
@@ -318,6 +365,12 @@ export const freedomTrailVisualizer = registerDeclarativeAlgorithm<FreedomTrailS
     </div>
   `,
   codeLanguages: FREEDOM_TRAIL_CODES,
+  metrics: [
+    { id: 'targetChar', label: '目标字符 (Key)', color: '#38bdf8' },
+    { id: 'ringPos', label: '转盘指针转移', color: '#f59e0b' },
+    { id: 'rotateCost', label: '当前旋转代价', color: '#ec4899' },
+    { id: 'accumulatedSteps', label: '累计总步数', color: '#10b981' },
+  ],
   inputs: [
     {
       id: 'ring',

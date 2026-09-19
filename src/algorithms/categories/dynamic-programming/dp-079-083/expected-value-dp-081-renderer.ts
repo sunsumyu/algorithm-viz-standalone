@@ -8,6 +8,7 @@ import { DP_079_083_PROBLEMS } from './dp-079-083-problem-content';
 import { EXPECTED_VALUE_DP_081_CODES, EXPECTED_VALUE_DP_081_LINES } from './dp-079-083-stage-codes';
 import { Dp079Step, renderExpectedValueDpBoard } from './dp-079-083-shared';
 import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 
 export interface ExpectedValue081Step extends Dp079Step {
   grid: number[][];
@@ -15,68 +16,123 @@ export interface ExpectedValue081Step extends Dp079Step {
   totalProb: number;
 }
 
-export function buildExpectedValue081Steps(): ExpectedValue081Step[] {
+export interface ExpectedValue081Input {
+  n?: number;
+  k?: number;
+  row?: number;
+  column?: number;
+}
+
+export function buildExpectedValue081Steps(input?: ExpectedValue081Input): ExpectedValue081Step[] {
   const steps: ExpectedValue081Step[] = [];
   const lines = EXPECTED_VALUE_DP_081_LINES;
 
-  const n = 3;
+  const n = input?.n !== undefined ? input.n : 3;
+  const k = input?.k !== undefined ? input.k : 2;
+  const startRow = input?.row !== undefined ? input.row : 0;
+  const startCol = input?.column !== undefined ? input.column : 0;
 
-  // Step 0: 初始状态 (0 步)
-  const g0 = [
-    [1.0, 0.0, 0.0],
-    [0.0, 0.0, 0.0],
-    [0.0, 0.0, 0.0],
+  const dirs = [
+    [-2, -1], [-2, 1],
+    [-1, -2], [-1, 2],
+    [1, -2],  [1, 2],
+    [2, -1],  [2, 1],
   ];
+
+  let dp: number[][] = Array.from({ length: n }, () => new Array(n).fill(0.0));
+  if (startRow >= 0 && startRow < n && startCol >= 0 && startCol < n) {
+    dp[startRow]![startCol] = 1.0;
+  }
+
+  function sumGrid(g: number[][]): number {
+    return g.reduce((total, row) => total + row.reduce((s, val) => s + val, 0), 0);
+  }
+
+  // Step 0: 入口
   steps.push({
-    grid: g0,
+    grid: snapshotGrid2D(dp),
     step: 0,
     totalProb: 1.0,
-    decision: '主函数入口：骑士位于 3x3 棋盘左上角 (0, 0)，要求走 K=2 步后留在棋盘上的概率。',
-    message: '第 0 步：起点初始概率为 1.0，其余格子概率为 0。',
-    log: 'enter knightProbability: n=3, k=2, start=(0,0)',
+    decision: `主函数入口：骑士位于 ${n}x${n} 棋盘的 (${startRow}, ${startCol})，要求走 K=${k} 步后留在棋盘上的概率。`,
+    message: '马尔可夫决策过程无后效性：当前状态仅由上一时刻的全概率分布决定。',
+    log: `enter knightProbability: n=${n}, k=${k}, start=(${startRow},${startCol})`,
+    codeLine: lines.entry,
+    metrics: { '棋盘规模': `${n}x${n}`, '总步数': k, '初始存活率': '100%' },
+  });
+
+  // Step 1: 起点初始化
+  steps.push({
+    grid: snapshotGrid2D(dp),
+    step: 0,
+    totalProb: 1.0,
+    decision: `第 0 步初始态：起点 (${startRow}, ${startCol}) 概率设为 1.0，其余所有格子概率为 0。`,
+    message: '初始化 DP 网格状态，准备启动逐层马尔可夫扩散。',
+    log: `dp[0][${startRow}][${startCol}] = 1.0`,
     codeLine: lines.initStart,
-    metrics: { '棋盘规模': '3x3', '步数限制': 2, '当前存活率': '100%' },
+    statusBadge: { text: '起点就绪', type: 'info' },
+    metrics: { '起点位置': `(${startRow}, ${startCol})`, '初始概率': 1.0 },
   });
 
-  // Step 1: 走第 1 步
-  // 从 (0, 0) 走日，8 个方向中合法落点只有 (1, 2) 和 (2, 1)，各占 1/8 = 0.125
-  // 其余 6 个方向出界，留在棋盘总概率 = 2/8 = 0.25
-  const g1 = [
-    [0.0, 0.0, 0.0],
-    [0.0, 0.0, 0.125],
-    [0.0, 0.125, 0.0],
-  ];
-  steps.push({
-    grid: g1,
-    step: 1,
-    totalProb: 0.25,
-    decision: '走第 1 步：骑士向 8 个日字方向转移，仅 (1, 2) 和 (2, 1) 合法在盘内，各获得 0.125 概率！',
-    message: '其余 6 个方向出界，留在棋盘上的概率为 0.125 + 0.125 = 0.25。',
-    log: 'step 1 complete: valid pos=(1,2) and (2,1), total=0.25',
-    codeLine: lines.probDist,
-    statusBadge: { text: '第 1 步存活: 25%', type: 'info' },
-    metrics: { '步数': 1, '盘内概率': '25.00%' },
-  });
+  for (let s = 1; s <= k; s++) {
+    const nextDp: number[][] = Array.from({ length: n }, () => new Array(n).fill(0.0));
 
-  // Step 2: 走第 2 步
-  // 从 (1, 2) 和 (2, 1) 各自继续走日
-  // (1, 2) 合法跳点：(0, 0)[出界率极高，合法跳点也是少数]
-  // 计算最终总概率为 0.0625
-  const g2 = [
-    [0.03125, 0.0, 0.0],
-    [0.0, 0.0, 0.0],
-    [0.0, 0.0, 0.03125],
-  ];
+    steps.push({
+      grid: snapshotGrid2D(dp),
+      step: s - 1,
+      totalProb: sumGrid(dp),
+      decision: `推进至第 ${s} 步全概率转移：考察盘内所有非零概率落点，向 8 个日字方向等权扩散。`,
+      message: '每个有效格子按 1/8 概率均分给 8 个方向；若跳出棋盘，则该分支概率被边界吸收。',
+      log: `step loop: step = ${s}`,
+      codeLine: lines.stepLoop,
+      statusBadge: { text: `第 ${s} 步扩散`, type: 'info' },
+      metrics: { '当前步数': s, '上一轮存活率': `${(sumGrid(dp) * 100).toFixed(2)}%` },
+    });
+
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (dp[r]![c]! > 0) {
+          const probShare = dp[r]![c]! / 8.0;
+
+          for (const d of dirs) {
+            const nr = r + d[0]!;
+            const nc = c + d[1]!;
+            if (nr >= 0 && nr < n && nc >= 0 && nc < n) {
+              nextDp[nr]![nc]! += probShare;
+            }
+          }
+        }
+      }
+    }
+
+    dp = nextDp;
+    const currentProb = sumGrid(dp);
+
+    steps.push({
+      grid: snapshotGrid2D(dp),
+      step: s,
+      totalProb: currentProb,
+      decision: `第 ${s} 步扩散计算完毕：全棋盘盘内剩余存活总概率为 ${(currentProb * 100).toFixed(4)}% (${currentProb})！`,
+      message: `经 8 方向扩散与边界吸收后，盘内概率流转守恒，当前阶段累计存活率为 ${(currentProb * 100).toFixed(2)}%。`,
+      log: `step ${s} completed -> alive prob = ${currentProb}`,
+      codeLine: lines.probDist,
+      statusBadge: { text: `第 ${s} 步: ${(currentProb * 100).toFixed(2)}%`, type: s === k ? 'success' : 'info' },
+      metrics: { '当前步数': s, '存活概率': `${(currentProb * 100).toFixed(4)}%` },
+    });
+  }
+
+  const finalProb = sumGrid(dp);
+
+  // 终结汇总帧
   steps.push({
-    grid: g2,
-    step: 2,
-    totalProb: 0.0625,
-    decision: '走第 2 步：马尔可夫决策继续等权扩散，盘内剩余有效落点为 (0,0) 与 (2,2)。',
-    message: '汇总全棋盘存活概率：0.03125 + 0.03125 = 0.0625 (即 1/16)。',
-    log: 'step 2 complete: total prob=0.0625',
+    grid: snapshotGrid2D(dp),
+    step: k,
+    totalProb: finalProb,
+    decision: `全量马尔可夫决策终结：走完 ${k} 步后骑士留在 ${n}x${n} 棋盘上的最终概率为 ${(finalProb * 100).toFixed(4)}% (${finalProb})！`,
+    message: '期望 DP 将指数级增长的分支路径合并至 O(K * N^2) 的紧致网格状态，精准规避重复计算。',
+    log: `knightProbability complete -> return ${finalProb}`,
     codeLine: lines.sumResult,
-    statusBadge: { text: '第 2 步存活: 6.25%', type: 'success' },
-    metrics: { '步数': 2, '最终存活率': '6.25%' },
+    statusBadge: { text: `最终概率: ${(finalProb * 100).toFixed(2)}%`, type: 'success' },
+    metrics: { '最终存活率': `${(finalProb * 100).toFixed(4)}%`, '时间复杂度': 'O(K * N^2)' },
   });
 
   return steps;

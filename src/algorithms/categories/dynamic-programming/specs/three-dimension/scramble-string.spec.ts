@@ -236,6 +236,24 @@ export const ScrambleStringSpec: AlgorithmSpec = {
         })
       );
 
+    // Step 0: 纯净初始状态
+    steps.push(
+      makeTraceStep({
+        dp2d: Array.from({ length: n }, () =>
+          Array.from({ length: n }, () => ({ value: 0, state: 'default' as const }))
+        ),
+        current: { row: 0, col: 0 },
+        message: `🏁 扰乱字符串比对：s1="${s1}" 与 s2="${s2}"，长度 n=${n}。准备从长度 len=1 开始比对。`,
+        log: `初始化：进入 scrambleString`,
+        vars: [
+          { name: '字符串 s1', value: s1 },
+          { name: '字符串 s2', value: s2 },
+          { name: '长度 n', value: String(n) },
+        ],
+        metrics: { isScramble: 0 },
+      })
+    );
+
     // len = 1 初始化
     for (let l1 = 0; l1 < n; l1++) {
       for (let l2 = 0; l2 < n; l2++) {

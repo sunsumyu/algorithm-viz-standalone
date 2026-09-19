@@ -272,4 +272,21 @@ import { SlidingWindowDpSpec } from './optimization/sliding-window-dp.spec';
 
 DpStepEngine.register(SuperEggDropSpec);
 DpStepEngine.register(SlidingWindowDpSpec);
+// Interval DP specs (区间 DP 专题 — 第083讲至第085讲)
+export * from './interval/predict-the-winner.spec';
+export * from './interval/burst-balloons.spec';
+export * from './interval/min-score-triangulation.spec';
+export * from './interval/merge-stones.spec';
+export * from './interval/strange-printer.spec';
 
+import { PredictTheWinnerSpec } from './interval/predict-the-winner.spec';
+import { BurstBalloonsSpec } from './interval/burst-balloons.spec';
+import { MinScoreTriangulationSpec } from './interval/min-score-triangulation.spec';
+import { MergeStonesSpec } from './interval/merge-stones.spec';
+import { StrangePrinterSpec } from './interval/strange-printer.spec';
+
+DpStepEngine.register(PredictTheWinnerSpec);
+DpStepEngine.register(BurstBalloonsSpec);
+DpStepEngine.register(MinScoreTriangulationSpec);
+DpStepEngine.register(MergeStonesSpec);
+DpStepEngine.register(StrangePrinterSpec);

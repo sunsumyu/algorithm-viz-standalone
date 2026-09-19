@@ -5,8 +5,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { StepBase } from '../../../../core/step-visualizer';
-import { renderFormulaCard } from '../../string/string-100-105/string-100-105-shared';
+import { StepBase, HighlightTarget } from '../../../../core/step-visualizer';
 
 export interface StockStateStep extends StepBase {
   stepIndex?: number;
@@ -20,8 +19,10 @@ export interface StockStateStep extends StepBase {
   decision: string;
   message: string;
   log: string;
-  codeLine?: number;
+  codeLine?: number | HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  metrics?: Record<string, string | number>;
+  ans?: string;
 }
 
 export const STOCK_TRADING_CODES = {
@@ -104,9 +105,24 @@ public:
 }`
 };
 
+export const STOCK_TRADING_CODE_LINES = {
+  empty: { java: 4, cpp: 4, python: 3, typescript: 3 },
+  init: { java: 5, cpp: 5, python: 4, typescript: 4 },
+  trans: { java: 12, cpp: 11, python: 9, typescript: 10 },
+  finish: { java: 18, cpp: 17, python: 14, typescript: 16 },
+};
+
 export function generateStockSteps(prices: number[]): StockStateStep[] {
   const steps: StockStateStep[] = [];
   const n = prices.length;
+
+  const makeMetrics = (dayIdx: number, p: number, h: number, r: number, s: number) => ({
+    dayPrice: dayIdx >= 0 ? `Day ${dayIdx} (¥${p})` : '无数据',
+    holdVal: `¥${h}`,
+    restVal: `¥${r}`,
+    soldVal: `¥${s}`,
+  });
+  const currentAns = (profit: number) => `¥${profit} (最高净利润)`;
 
   if (n === 0) {
     steps.push({
@@ -121,8 +137,10 @@ export function generateStockSteps(prices: number[]): StockStateStep[] {
       decision: '股票价格序列为空，收益为 0',
       message: '空序列',
       log: '价格为空',
-      codeLine: 4,
-      statusBadge: { text: '无数据', type: 'danger' }
+      codeLine: STOCK_TRADING_CODE_LINES.empty,
+      statusBadge: { text: '无数据', type: 'danger' },
+      metrics: makeMetrics(-1, 0, 0, 0, 0),
+      ans: currentAns(0),
     });
     return steps;
   }
@@ -144,8 +162,10 @@ export function generateStockSteps(prices: number[]): StockStateStep[] {
     decision: `第 1 天 (Day 0, 价格 ${prices[0]})：初始化三状态。hold = -${prices[0]} (买入), rest = 0 (观望), sold = 0`,
     message: `初始买入需支付 ${prices[0]}`,
     log: 'Day 0 初始化状态机',
-    codeLine: 5,
-    statusBadge: { text: '初始买入', type: 'info' }
+    codeLine: STOCK_TRADING_CODE_LINES.init,
+    statusBadge: { text: '初始买入', type: 'info' },
+    metrics: makeMetrics(0, prices[0], hold, rest, sold),
+    ans: currentAns(0),
   });
 
   for (let i = 1; i < n; i++) {
@@ -177,8 +197,10 @@ export function generateStockSteps(prices: number[]): StockStateStep[] {
       decision: `第 ${i + 1} 天 (价格 ${p})：${action}。hold: ${hold}, rest: ${rest}, sold: ${sold}。当前最高变现收益: ${currentMax}`,
       message: `Day ${i} 状态流转完毕`,
       log: `Day ${i}: p=${p}, max=${currentMax}`,
-      codeLine: 12,
-      statusBadge: { text: `Day ${i}: 收益 ${currentMax}`, type: 'warning' }
+      codeLine: STOCK_TRADING_CODE_LINES.trans,
+      statusBadge: { text: `Day ${i}: 收益 ${currentMax}`, type: 'warning' },
+      metrics: makeMetrics(i, p, hold, rest, sold),
+      ans: currentAns(currentMax),
     });
   }
 
@@ -195,66 +217,38 @@ export function generateStockSteps(prices: number[]): StockStateStep[] {
     decision: `全部交易日扫描结束！最大可获取净利润为 max(rest, sold) = ${finalProfit}`,
     message: `最终最高收益 ${finalProfit}`,
     log: `状态机计算完毕，最大收益 ${finalProfit}`,
-    codeLine: 18,
-    statusBadge: { text: `最终净利润: ${finalProfit}`, type: 'success' }
+    codeLine: STOCK_TRADING_CODE_LINES.finish,
+    statusBadge: { text: `最终净利润: ${finalProfit}`, type: 'success' },
+    metrics: makeMetrics(n - 1, prices[n - 1], hold, rest, sold),
+    ans: currentAns(finalProfit),
   });
 
   return steps;
 }
 
 export function renderStockCanvas(container: HTMLElement, step: StockStateStep) {
-  const { prices, dayIndex, price, hold, rest, sold, bestProfit } = step;
+  const { prices, dayIndex, price, hold, rest, sold } = step;
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%;">
-      <!-- 状态看板 -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px;">
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前天数 / 价格</div>
-          <div style="font-size: 14px; font-weight: bold; color: #38bdf8;">
-            Day ${dayIndex >= 0 ? dayIndex : 0} (¥${price})
-          </div>
+    <div style="display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%; padding: 4px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <!-- 价格序列时间轴柱状图 -->
+      <div style="background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-color, #cbd5e1); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>每日价格走势与决策推进 (Stock Price Sequence)</span>
+          <span style="font-size: 11px; color: #38bdf8;">当前: Day ${dayIndex >= 0 ? dayIndex : 0} (¥${price})</span>
         </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">持有股票 (Hold)</div>
-          <div style="font-size: 14px; font-weight: bold; color: #f59e0b;">
-            ${hold}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">空仓观望 (Rest)</div>
-          <div style="font-size: 14px; font-weight: bold; color: #10b981;">
-            ${rest}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">刚卖出/冷冻 (Sold)</div>
-          <div style="font-size: 14px; font-weight: bold; color: #ec4899;">
-            ${sold}
-          </div>
-        </div>
-        <div style="background: rgba(30, 41, 59, 0.6); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <div style="font-size: 11px; color: #94a3b8;">当前最佳利润</div>
-          <div style="font-size: 14px; font-weight: bold; color: #a855f7;">
-            ${bestProfit}
-          </div>
-        </div>
-      </div>
-
-      <!-- 价格序列时间轴 -->
-      <div style="background: rgba(15, 23, 42, 0.5); padding: 20px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow-x: auto;">
-        <div style="display: flex; gap: 8px; justify-content: center; align-items: flex-end; min-width: 450px;">
+        <div style="display: flex; gap: 12px; justify-content: center; align-items: flex-end; flex: 1; min-height: 120px; overflow-x: auto; padding: 10px 4px;">
           ${prices.map((p, idx) => {
             const isCurrent = idx === dayIndex;
             return `
               <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
-                <div style="font-size: 10px; height: 14px; color: ${isCurrent ? '#38bdf8' : '#64748b'}; font-weight: bold;">
+                <div style="font-size: 10px; height: 14px; color: ${isCurrent ? '#38bdf8' : 'transparent'}; font-weight: bold;">
                   ${isCurrent ? 'TODAY' : ''}
                 </div>
                 <div style="
-                  width: 48px;
-                  height: ${30 + p * 8}px;
-                  background: ${isCurrent ? 'rgba(56, 189, 248, 0.4)' : 'rgba(51, 65, 85, 0.4)'};
+                  width: 44px;
+                  height: ${36 + Math.min(p * 14, 100)}px;
+                  background: ${isCurrent ? 'rgba(56, 189, 248, 0.35)' : 'rgba(30, 41, 59, 0.5)'};
                   border: 2px solid ${isCurrent ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)'};
                   border-radius: 6px;
                   display: flex;
@@ -263,12 +257,12 @@ export function renderStockCanvas(container: HTMLElement, step: StockStateStep) 
                   font-size: 14px;
                   font-weight: bold;
                   color: #f8fafc;
-                  box-shadow: ${isCurrent ? '0 0 12px rgba(56, 189, 248, 0.5)' : 'none'};
+                  box-shadow: ${isCurrent ? '0 0 12px rgba(56, 189, 248, 0.4)' : 'none'};
                   transition: all 0.2s ease;
                 ">
                   ¥${p}
                 </div>
-                <div style="font-size: 10px; color: #64748b;">
+                <div style="font-size: 10px; color: #64748b; font-family: monospace;">
                   Day ${idx}
                 </div>
               </div>
@@ -277,13 +271,41 @@ export function renderStockCanvas(container: HTMLElement, step: StockStateStep) 
         </div>
       </div>
 
-      <!-- 状态机转移原理核心卡片 -->
-      ${renderFormulaCard(
-        '三状态机核心转移方程 (State Machine Transitions)',
-        'nextHold = max(hold, rest - price)；nextRest = max(rest, sold)；nextSold = hold + price (卖出后次日不可立即买入)',
-        step.decision,
-        step.statusBadge
-      )}
+      <!-- 三状态机图解 -->
+      <div style="background: rgba(15, 23, 42, 0.4); padding: 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <!-- Hold 状态 -->
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: bold; color: #fbbf24;">📦 Hold (持仓)</span>
+            <span style="font-size: 14px; font-weight: 800; color: #fbbf24;">¥${hold}</span>
+          </div>
+          <div style="font-size: 10px; color: #94a3b8;">
+            max(hold, rest - price)
+          </div>
+        </div>
+
+        <!-- Rest 状态 -->
+        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: bold; color: #34d399;">☕ Rest (观望)</span>
+            <span style="font-size: 14px; font-weight: 800; color: #34d399;">¥${rest}</span>
+          </div>
+          <div style="font-size: 10px; color: #94a3b8;">
+            max(rest, sold)
+          </div>
+        </div>
+
+        <!-- Sold 状态 -->
+        <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: bold; color: #c084fc;">❄️ Sold (冷冻/刚卖)</span>
+            <span style="font-size: 14px; font-weight: 800; color: #c084fc;">¥${sold}</span>
+          </div>
+          <div style="font-size: 10px; color: #94a3b8;">
+            hold + price
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -296,6 +318,12 @@ export const stockTradingVisualizer = registerDeclarativeAlgorithm<StockStateSte
   difficulty: 3,
   levelOrder: 188,
   learningGoal: '统一解构 LeetCode 股票买卖全部变种题，建立 Hold、Rest、Sold 规范三状态机转移模型',
+  metrics: [
+    { id: 'dayPrice', label: '当日标的 (Day / Price)', color: 'blue' },
+    { id: 'holdVal', label: '持有股票 (Hold 收益)', color: 'amber' },
+    { id: 'restVal', label: '空仓观望 (Rest 收益)', color: 'emerald' },
+    { id: 'soldVal', label: '冷冻/卖出 (Sold 收益)', color: 'purple' },
+  ],
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>题目描述 (LeetCode 309 / 188 综合)</h3>

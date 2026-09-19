@@ -19,22 +19,28 @@ export interface Knuth083Step extends Dp079Step {
   minCost: number;
 }
 
-export function buildKnuth083Steps(): Knuth083Step[] {
+export function buildKnuth083Steps(input?: number[] | { stones?: number[] }): Knuth083Step[] {
   const steps: Knuth083Step[] = [];
   const lines = KNUTH_QUADRANGLE_083_LINES;
 
-  const stones = [3, 2, 4, 1];
-  // 长度为 1: opt[i][i] = i, dp[i][i] = 0
-  // 长度为 2:
-  // [0, 1]: k=0, cost = 0 + 0 + 5 = 5, opt[0][1]=0
-  // [1, 2]: k=1, cost = 0 + 0 + 6 = 6, opt[1][2]=1
-  // [2, 3]: k=2, cost = 0 + 0 + 5 = 5, opt[2][3]=2
-  // 长度为 3:
-  // [0, 2]: opt[0][1] <= k <= opt[1][2] -> 0 <= k <= 1. k=0: dp[0][0]+dp[1][2]+9=0+6+9=15; k=1: dp[0][1]+dp[2][2]+9=5+0+9=14 -> best k=1, cost=14, opt[0][2]=1
-  // [1, 3]: opt[1][2] <= k <= opt[2][3] -> 1 <= k <= 2. k=1: dp[1][1]+dp[2][3]+7=0+5+7=12; k=2: dp[1][2]+dp[3][3]+7=6+0+7=13 -> best k=1, cost=12, opt[1][3]=1
-  // 长度为 4:
-  // [0, 3]: opt[0][2] <= k <= opt[1][3] -> 1 <= k <= 1! 决策点唯一确定为 k=1!
-  // k=1: dp[0][1]+dp[2][3]+10 = 5 + 5 + 10 = 20 -> best k=1, cost=20
+  let stones = [3, 2, 4, 1];
+  if (Array.isArray(input)) {
+    stones = input;
+  } else if (input && Array.isArray(input.stones)) {
+    stones = input.stones;
+  }
+  const n = stones.length;
+
+  const sum: number[] = new Array(n + 1).fill(0);
+  for (let i = 0; i < n; i++) {
+    sum[i + 1] = sum[i]! + stones[i]!;
+  }
+
+  const dp: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  const opt: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let i = 0; i < n; i++) {
+    opt[i]![i] = i;
+  }
 
   // Step 0: 入口
   steps.push({
@@ -45,62 +51,113 @@ export function buildKnuth083Steps(): Knuth083Step[] {
     optR: 0,
     bestK: 0,
     minCost: 0,
-    decision: '主函数入口：开始为石子数组 [3, 2, 4, 1] 求解最小合并代价，初始化单石子决策点 opt[i][i] = i。',
-    message: '四边形不等式证明了决策单调性：opt[i][j-1] <= opt[i][j] <= opt[i+1][j]。',
-    log: 'enter mergeStones: stones=[3, 2, 4, 1]',
+    decision: `主函数入口：开始为石子数组 [${stones.join(', ')}] (共 ${n} 堆) 求解最小合并代价。`,
+    message: '四边形不等式证明了决策单调性：opt[i][j-1] <= opt[i][j] <= opt[i+1][j]，可大幅剪除无效切分枚举。',
+    log: `enter mergeStones: stones=[${stones.join(', ')}]`,
     codeLine: lines.entry,
-    metrics: { '石子堆数': 4, '状态': '初始化' },
+    metrics: { '石子堆数': n, '总石子数': sum[n]! },
   });
 
-  // Step 1: 求解长度为 2 的小区间 [0, 1]
+  // Step 1: 长度为 1 决策基准初始化
   steps.push({
     stones,
     i: 0,
-    j: 1,
+    j: 0,
     optL: 0,
     optR: 0,
     bestK: 0,
-    minCost: 5,
-    decision: '计算长度为 2 的区间 [0, 1] (石子 3 和 2)：合并代价为 3 + 2 = 5，决策点 opt[0][1] = 0。',
-    message: '区间 DP 由小区间向大区间递推。',
-    log: 'len=2: [0, 1] cost=5, opt=0',
-    codeLine: lines.updateOpt,
-    statusBadge: { text: '区间 [0, 1] 完成', type: 'info' },
-    metrics: { '长度': 2, '区间': '[0, 1]', '最优代价': 5 },
+    minCost: 0,
+    decision: '初始化单石子区间决策点：对于所有 i，opt[i][i] = i，单堆石子合并代价为 0。',
+    message: '长度为 1 的基准状态已确立，为长度为 2 的决策区间提供左右夹逼边界。',
+    log: 'init base opt[i][i] = i',
+    codeLine: lines.initOptBase,
+    statusBadge: { text: '基准决策点就绪', type: 'info' },
+    metrics: { '基准点数': n, '单堆代价': 0 },
   });
 
-  // Step 2: 求解长度为 3 的区间 [0, 2]
+  for (let len = 2; len <= n; len++) {
+    steps.push({
+      stones,
+      i: 0,
+      j: len - 1,
+      optL: 0,
+      optR: len - 1,
+      bestK: 0,
+      minCost: dp[0]![len - 1]!,
+      decision: `推进至合并跨度 len = ${len}：自底向上枚举所有长度为 ${len} 的连续子区间。`,
+      message: `区间 DP 遵循无后效性，长度为 ${len} 的最优划分完全由严格更短的子区间最优解导出。`,
+      log: `len loop: len = ${len}`,
+      codeLine: lines.lenLoop,
+      statusBadge: { text: `跨度 len = ${len}`, type: 'info' },
+      metrics: { '当前合并跨度': len, '待处理区间数': n - len + 1 },
+    });
+
+    for (let i = 0; i <= n - len; i++) {
+      const j = i + len - 1;
+      dp[i]![j] = Infinity;
+
+      const optL = opt[i]![j - 1]!;
+      const optR = Math.min(j - 1, opt[i + 1] ? opt[i + 1]![j]! : j - 1);
+
+      steps.push({
+        stones,
+        i,
+        j,
+        optL,
+        optR,
+        bestK: optL,
+        minCost: 0,
+        decision: `计算区间 [${i}, ${j}]：Knuth 剪枝将决策切分点范围极速收窄至 [${optL}, ${optR}]！`,
+        message: `原本需要枚举 [${i} .. ${j - 1}] 共 ${j - i} 个切点，现在只需在 [${optL} .. ${optR}] 内验证 ${optR - optL + 1} 个切点。`,
+        log: `range [${i}, ${j}]: opt in [${optL}, ${optR}]`,
+        codeLine: lines.knuthRange,
+        statusBadge: { text: `剪枝范围 [${optL}, ${optR}]`, type: 'info' },
+        metrics: { '区间': `[${i}, ${j}]`, '剪枝左界': optL, '剪枝右界': optR },
+      });
+
+      for (let k = optL; k <= optR; k++) {
+        const cost = dp[i]![k]! + dp[k + 1]![j]! + sum[j + 1]! - sum[i]!;
+        if (cost < dp[i]![j]!) {
+          dp[i]![j] = cost;
+          opt[i]![j] = k;
+        }
+      }
+
+      steps.push({
+        stones,
+        i,
+        j,
+        optL,
+        optR,
+        bestK: opt[i]![j]!,
+        minCost: dp[i]![j]!,
+        decision: `区间 [${i}, ${j}] 求解完毕：在 k=${opt[i]![j]} 处切分最优，最小合并代价为 ${dp[i]![j]}，记录 opt[${i}][${j}] = ${opt[i]![j]}。`,
+        message: `合并划分子段 [${i}..${opt[i]![j]}] 与 [${opt[i]![j] + 1}..${j}]，加上区间和 ${sum[j + 1]! - sum[i]!}，总代价为 ${dp[i]![j]}。`,
+        log: `update opt: [${i}, ${j}] best k=${opt[i]![j]}, minCost=${dp[i]![j]}`,
+        codeLine: lines.updateOpt,
+        statusBadge: { text: `[${i}, ${j}] = ${dp[i]![j]}`, type: 'success' },
+        metrics: { '最优切点': opt[i]![j]!, '区间最小代价': dp[i]![j]! },
+      });
+    }
+  }
+
+  const finalCost = dp[0]![n - 1]!;
+
+  // 终结汇总帧
   steps.push({
     stones,
     i: 0,
-    j: 2,
-    optL: 0,
-    optR: 1,
-    bestK: 1,
-    minCost: 14,
-    decision: '计算长度为 3 的区间 [0, 2]：Knuth 决策范围锁定在 [opt[0][1], opt[1][2]] = [0, 1]！',
-    message: '枚举 k=0 (cost=15) 与 k=1 (cost=14)，选定最优决策点 k=1，最小代价 14。',
-    log: 'len=3: [0, 2] k in [0, 1] -> best k=1, cost=14',
-    codeLine: lines.knuthRange,
-    statusBadge: { text: '剪枝范围 [0, 1]', type: 'info' },
-    metrics: { '长度': 3, '区间': '[0, 2]', '最优代价': 14 },
-  });
-
-  // Step 3: 求解全局区间 [0, 3] 决策点奇迹收敛！
-  steps.push({
-    stones,
-    i: 0,
-    j: 3,
-    optL: 1,
-    optR: 1,
-    bestK: 1,
-    minCost: 20,
-    decision: '计算跨越全数组的最终区间 [0, 3]：Knuth 剪枝范围被夹逼在 [opt[0][2], opt[1][3]] = [1, 1]！',
-    message: '搜索范围收敛为一个单点 k=1！仅需评估 1 次，dp[0][3] = dp[0][1] + dp[2][3] + 10 = 5 + 5 + 10 = 20！',
-    log: 'len=4: [0, 3] k in [1, 1] (Single point!) -> cost=20',
+    j: n - 1,
+    optL: opt[0]![n - 2] ?? 0,
+    optR: opt[1]![n - 1] ?? (n - 2),
+    bestK: opt[0]![n - 1]!,
+    minCost: finalCost,
+    decision: `四边形不等式优化终结：合并整条序列 [${stones.join(', ')}] 的全局最小代价为 dp[0][${n - 1}] = ${finalCost}！`,
+    message: '决策单调性保证了区间端点移动时决策点非严格递增，总枚举次数构成了伸缩求和，将 O(N^3) 严格优化至 O(N^2)。',
+    log: `mergeStones complete -> return ${finalCost}`,
     codeLine: lines.returnAns,
-    statusBadge: { text: '全局最优代价: 20', type: 'success' },
-    metrics: { '最终代价': 20, '复杂度': 'O(N^2)' },
+    statusBadge: { text: `全局最优代价: ${finalCost}`, type: 'success' },
+    metrics: { '全局最小代价': finalCost, '时间复杂度': 'O(N^2)' },
   });
 
   return steps;
