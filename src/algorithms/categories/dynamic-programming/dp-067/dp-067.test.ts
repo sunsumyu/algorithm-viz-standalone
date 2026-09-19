@@ -2,25 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { getManifest } from '../../../../core/registry';
 import './index';
 import {
-  buildMinPathSumStage1Steps,
-  buildMinPathSumStage2Steps,
-  buildMinPathSumStage3Steps,
-  buildMinPathSumStage4Steps,
-} from './min-path-sum-renderer';
-import {
   buildWordSearchStage1Steps,
   buildWordSearchStage2Steps,
   buildWordSearchStage3Steps,
   buildWordSearchStage4Steps,
 } from './word-search-renderer';
-import {
-  buildLcsStage1Steps,
-  buildLcsStage2Steps,
-  buildLcsStage3Steps,
-  buildLcsStage4Steps,
-  buildLcsStage4ReverseSteps,
-  buildLcsStateDepTree,
-} from './longest-common-subsequence-renderer';
 import {
   renderMemoGridCard,
   renderDp2DCard2,
@@ -35,12 +21,6 @@ import {
   THREE_VIEW_POSITION_PRESETS,
 } from '../../../../core/renderers/three-view-controls-adapter';
 import {
-  buildLpsStage1Steps,
-  buildLpsStage2Steps,
-  buildLpsStage3Steps,
-  buildLpsStage4Steps,
-} from './longest-palindromic-subsequence-renderer';
-import {
   buildTreeCountStage1Steps,
   buildTreeCountStage2Steps,
   buildTreeCountStage3Steps,
@@ -53,25 +33,10 @@ import {
   buildLipStage4Steps,
 } from './longest-increasing-path-renderer';
 import {
-  MIN_PATH_SUM_STAGE1_CODE_LANGUAGES,
-  MIN_PATH_SUM_STAGE2_CODE_LANGUAGES,
-  MIN_PATH_SUM_STAGE3_CODE_LANGUAGES,
-  MIN_PATH_SUM_STAGE4_CODE_LANGUAGES,
   WORD_SEARCH_STAGE1_CODE_LANGUAGES,
   WORD_SEARCH_STAGE2_CODE_LANGUAGES,
   WORD_SEARCH_STAGE3_CODE_LANGUAGES,
   WORD_SEARCH_STAGE4_CODE_LANGUAGES,
-  LCS_STAGE1_CODE_LANGUAGES,
-  LCS_STAGE2_CODE_LANGUAGES,
-  LCS_STAGE3_CODE_LANGUAGES,
-  LCS_STAGE4_CODE_LANGUAGES,
-  LCS_STAGE1_FORWARD_CODE_LANGUAGES,
-  LCS_STAGE2_FORWARD_CODE_LANGUAGES,
-  LCS_STAGE3_FORWARD_CODE_LANGUAGES,
-  LPS_STAGE1_CODE_LANGUAGES,
-  LPS_STAGE2_CODE_LANGUAGES,
-  LPS_STAGE3_CODE_LANGUAGES,
-  LPS_STAGE4_CODE_LANGUAGES,
   TREE_COUNT_STAGE1_CODE_LANGUAGES,
   TREE_COUNT_STAGE2_CODE_LANGUAGES,
   TREE_COUNT_STAGE3_CODE_LANGUAGES,
@@ -82,51 +47,7 @@ import {
   LIP_STAGE4_CODE_LANGUAGES,
 } from './dp-067-stage-codes';
 
-describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全量测试套件', () => {
-  // ==========================================
-  // 1. Code01 最小路径和 (LeetCode 64)
-  // ==========================================
-  describe('Code01: 最小路径和 (LeetCode 64)', () => {
-    const grid = [
-      [1, 3, 1],
-      [1, 5, 1],
-      [4, 2, 1],
-    ];
-    const inputs = { 'input-grid': JSON.stringify(grid) };
-
-    it('阶段 1 暴力递归应能正确生成递归调用步骤并求出终点', () => {
-      const steps = buildMinPathSumStage1Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      expect(steps[0].currentCall).toBe('f(2, 2)');
-      const finalStep = steps[steps.length - 1];
-      expect(finalStep.metrics?.['metric-ans']).toBe('7');
-    });
-
-    it('阶段 2 记忆化搜索应记录缓存命中并大幅减少重复子问题', () => {
-      const steps = buildMinPathSumStage2Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const hitSteps = steps.filter((s) => s.memoHit);
-      expect(hitSteps.length).toBeGreaterThan(0);
-      const finalStep = steps[steps.length - 1];
-      expect(finalStep.cachedVal).toBe(7);
-    });
-
-    it('阶段 3 严格二维表应自上而下、自左向右递推且结果为 7', () => {
-      const steps = buildMinPathSumStage3Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.currentVal).toBe(7);
-      expect(lastStep.dpTable[2][2]).toBe(7);
-    });
-
-    it('阶段 4 空间压缩应维护一维数组且最终答案正确', () => {
-      const steps = buildMinPathSumStage4Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.dp[grid[0].length - 1]).toBe(7);
-    });
-  });
-
+describe('🧪 Class 067 从递归入手二维动态规划 全量测试套件（Code02/05/06 + 共享适配器）', () => {
   // ==========================================
   // 2. Code02 单词搜索 (LeetCode 79)
   // ==========================================
@@ -171,264 +92,6 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       const steps = buildWordSearchStage4Steps(inputs);
       expect(steps[0].status).toBe('prune');
       expect(steps[0].decision).toContain('词频');
-    });
-  });
-
-  // ==========================================
-  // 3. Code03 最长公共子序列 LCS (LeetCode 1143)
-  // ==========================================
-  describe('Code03: 最长公共子序列 LCS (LeetCode 1143)', () => {
-    const inputs = { 'input-s1': 'abcde', 'input-s2': 'ace' };
-
-    it('阶段 1 暴力递归应正确计算 LCS 长度为 3 并产出自适应递归展开树', () => {
-      const steps = buildLcsStage1Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.metrics?.['metric-ans']).toBe('3');
-      // 验证自适应递归展开树存在且有根节点
-      expect(lastStep.treeRoot).toBeDefined();
-      expect(lastStep.treeRoot?.val).toContain('f(');
-      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
-      // 验证任意单步均携带有效的 activeNodeId
-      expect(lastStep.activeNodeId).toBeDefined();
-    });
-
-    it('Step 0 / Step 1 初始帧绝对不泄漏递归子函数局部变量，且比对组件呈现等待就绪态', async () => {
-      const { SequenceAlignmentPresenter } = await import('../../../../core/renderers/sequence-alignment-adapter');
-      const steps = buildLcsStage1Steps({ 'input-s1': 'ddde', 'input-s2': 'ace' });
-      expect(steps.length).toBeGreaterThan(0);
-
-      const step0 = steps[0];
-      // 1. Step 0 在主函数签名行时，vars 中绝不泄漏 i, j 形参
-      const varNames = (step0.vars || []).map((v) => v.name);
-      expect(varNames).toContain('s1');
-      expect(varNames).toContain('s2');
-      expect(varNames).not.toContain('i');
-      expect(varNames).not.toContain('j');
-
-      // 2. 模拟渲染双字符串比对面板，断言绝不出局提示匹配成功或误拉绿勾
-      const mockBox = { innerHTML: '' } as unknown as HTMLElement;
-      SequenceAlignmentPresenter.render(mockBox, {
-        s1: step0.s1,
-        s2: step0.s2,
-        curI: step0.i,
-        curJ: step0.j,
-        isComparing: step0.isComparing,
-        statusDescription: step0.compareStatusText,
-      });
-
-      expect(mockBox.innerHTML).not.toContain('✨ 字符匹配成功');
-      expect(mockBox.innerHTML).not.toContain('纳入公共子序列 (+1)');
-      expect(mockBox.innerHTML).not.toContain('>✓</span>');
-      expect(mockBox.innerHTML).toContain('准备就绪');
-    });
-
-    it('阶段 2 记忆化搜索应记录缓存命中并产出剪枝标记树', () => {
-      const steps = buildLcsStage2Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const finalStep = steps[steps.length - 1];
-      expect(finalStep.cachedVal).toBe(3);
-      // 验证命中缓存单步存在
-      const hitSteps = steps.filter((s) => s.memoHit);
-      expect(hitSteps.length).toBeGreaterThan(0);
-      expect(finalStep.treeRoot).toBeDefined();
-      expect(finalStep.treeRoot?.children.length).toBeGreaterThan(0);
-    });
-
-    it('阶段 3 严格二维表应展示对角线与上下左右转移并搭载状态依赖拓扑展开树', () => {
-      const steps = buildLcsStage3Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.currentVal).toBe(3);
-      expect(lastStep.dpTable[5][3]).toBe(3);
-
-      // 验证每个单步均附带拓扑状态依赖树
-      expect(lastStep.treeRoot).toBeDefined();
-      expect(lastStep.treeRoot?.id).toBe('dp-5-3');
-      expect(lastStep.treeRoot?.status).toBe('current');
-      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
-
-      // 深度检验 buildLcsStateDepTree 的前驱回溯与边界
-      const dpSample = [
-        [0, 0, 0, 0],
-        [0, 1, 1, 1],
-        [0, 1, 1, 1],
-        [0, 1, 2, 2],
-        [0, 1, 2, 2],
-        [0, 1, 2, 3],
-      ];
-      // 1. 边界单元格 (i=0) 应返回 status: base
-      const baseTree = buildLcsStateDepTree(0, 2, dpSample, 'abcde', 'ace');
-      expect(baseTree.status).toBe('base');
-      expect(baseTree.children.length).toBe(0);
-
-      // 2. 匹配单元格 (i=5, j=3 对应 'e' == 'e') 应生成对角线子节点与次级拓扑展开
-      const matchTree = buildLcsStateDepTree(5, 3, dpSample, 'abcde', 'ace', true, true);
-      expect(matchTree.children.length).toBe(1);
-      expect(matchTree.children[0].edgeLabel).toContain('↖️');
-      expect(matchTree.children[0].children.length).toBeGreaterThan(0); // 次级依赖展开
-
-      // 3. 不匹配单元格 (i=4, j=3 对应 'd' != 'e') 应分叉为上方与左方依赖
-      const mismatchTree = buildLcsStateDepTree(4, 3, dpSample, 'abcde', 'ace', false, true);
-      expect(mismatchTree.children.length).toBe(2);
-      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬆️'))).toBe(true);
-      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬅️'))).toBe(true);
-
-      // 4. 最优依赖链 (胜者链) 应不受展开深度限制，一路追溯到边界基底，完整呈现答案 3 的三次 +1 匹配推导
-      const chain: ReturnType<typeof buildLcsStateDepTree>[] = [matchTree];
-      let cursor = matchTree;
-      while (cursor.children.length > 0) {
-        cursor = cursor.children.find((c) => c.status !== 'normal')!;
-        chain.push(cursor);
-      }
-      expect(chain.map((n) => `${n.r},${n.c}`)).toEqual(['5,3', '4,2', '3,2', '2,1', '1,1', '0,0']);
-      expect(chain[chain.length - 1].status).toBe('base');
-      expect(chain[chain.length - 1].val).toBe('dp[0][0] = 0');
-      // 链上两次匹配转移 ('c' 与 'a') 的边标签
-      expect(chain[2].children[0].edgeLabel).toContain("'c'");
-      expect(chain[4].children[0].edgeLabel).toContain("'a'");
-
-      // 5. 落选分支: dp[4][1] 保持浅层截断叶子；dp[2][1] 的落选侧 dp[2][0] 直接落在边界基底
-      const rejectedBranch = chain[1].children.find((c) => c.status === 'normal')!;
-      expect(rejectedBranch.val).toBe('dp[4][1] = 1');
-      expect(rejectedBranch.children.length).toBe(0);
-      const otherSide = chain[3].children.find((c) => c.val === 'dp[2][0] = 0')!;
-      expect(otherSide.status).toBe('base');
-
-      // 6. 顺推方向 (forward) 的胜者链同样应追溯到边界基底 (后缀表: dp[i][j] = LCS(s1[i..], s2[j..]))
-      const dpSuffix = [
-        [3, 2, 1, 0],
-        [2, 2, 1, 0],
-        [2, 2, 1, 0],
-        [1, 1, 1, 0],
-        [1, 1, 1, 0],
-        [0, 0, 0, 0],
-      ];
-      const forwardTree = buildLcsStateDepTree(0, 0, dpSuffix, 'abcde', 'ace', true, true, 2, 'forward');
-      const forwardCells: string[] = ['0,0'];
-      let forwardCursor = forwardTree;
-      while (forwardCursor.children.length > 0) {
-        forwardCursor = forwardCursor.children.find((c) => c.status !== 'normal')!;
-        forwardCells.push(`${forwardCursor.r},${forwardCursor.c}`);
-      }
-      expect(forwardCells).toEqual(['0,0', '1,1', '2,1', '3,2', '4,2', '5,3']);
-      expect(forwardCursor.status).toBe('base');
-    });
-
-    it('阶段 4 空间压缩应正确记录 leftUp 寄存器变化且最终结果为 3', () => {
-      const steps = buildLcsStage4Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.dp[3]).toBe(3);
-    });
-
-    it('逆推模式：阶段 4 逆推空间压缩应正确倒序记录 rightDown 寄存器变化且最终结果为 dp[0]=3', () => {
-      const steps = buildLcsStage4ReverseSteps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.dp[0]).toBe(3);
-    });
-
-    // ----------------------------------------------------
-    // LCS 顺推探索模式 (Forward Mode: 从首字符 f(0,0) 开始)
-    // ----------------------------------------------------
-    it('顺推模式：阶段 1 顺推递归应从 f(0,0) 开始展开树并返回 3', () => {
-      const steps = buildLcsStage1Steps(inputs, 'forward');
-      expect(steps.length).toBeGreaterThan(0);
-      expect(steps.some((s) => s.currentCall === 'f(0, 0)')).toBe(true);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.metrics?.['metric-ans']).toBe('3');
-      expect(lastStep.treeRoot).toBeDefined();
-      expect(lastStep.treeRoot?.val).toContain('f(0,0)');
-      expect(lastStep.treeRoot?.children.length).toBeGreaterThan(0);
-    });
-
-    it('顺推模式：阶段 2 顺推记忆化搜索应记录缓存命中并返回 3', () => {
-      const steps = buildLcsStage2Steps(inputs, 'forward');
-      expect(steps.length).toBeGreaterThan(0);
-      const hitSteps = steps.filter((s) => s.memoHit);
-      expect(hitSteps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.cachedVal).toBe(3);
-      expect(lastStep.treeRoot).toBeDefined();
-    });
-
-    it('顺推模式：阶段 3 顺推严格二维表应从 (n,m) 倒推至 (0,0) 且状态依赖树为右/下方向', () => {
-      const steps = buildLcsStage3Steps(inputs, 'forward');
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.currentVal).toBe(3);
-      expect(lastStep.dpTable[0][0]).toBe(3);
-      expect(lastStep.treeRoot).toBeDefined();
-      expect(lastStep.treeRoot?.id).toBe('dp-0-0');
-
-      // 验证顺推拓扑状态依赖树
-      const dpSampleForward = [
-        [3, 2, 1, 0],
-        [2, 2, 1, 0],
-        [2, 2, 1, 0],
-        [2, 2, 1, 0],
-        [1, 1, 1, 0],
-        [0, 0, 0, 0],
-      ];
-      // 1. 边界单元格 (i=5 或 j=3) 应返回 base 状态 (targetI=5, targetJ=1, s1='abcde' len=5, s2='ace' len=3)
-      const baseTree = buildLcsStateDepTree(5, 1, dpSampleForward, 'abcde', 'ace', false, false, 2, 'forward');
-      expect(baseTree.status).toBe('base');
-      expect(baseTree.children.length).toBe(0);
-
-      // 2. 匹配单元格 (i=0, j=0 对应 'a' == 'a') 应指向右下角 (i+1, j+1) ↘️
-      const matchTree = buildLcsStateDepTree(0, 0, dpSampleForward, 'abcde', 'ace', true, true, 2, 'forward');
-      expect(matchTree.children.length).toBe(1);
-      expect(matchTree.children[0].edgeLabel).toContain('↘️');
-
-      // 3. 不匹配单元格应分叉为下方 (i+1, j) ⬇️ 与右方 (i, j+1) ➡️ 依赖
-      const mismatchTree = buildLcsStateDepTree(1, 0, dpSampleForward, 'abcde', 'ace', false, true, 2, 'forward');
-      expect(mismatchTree.children.length).toBe(2);
-      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('⬇️'))).toBe(true);
-      expect(mismatchTree.children.some((c) => c.edgeLabel?.includes('➡️'))).toBe(true);
-    });
-
-    it('顺推模式：多语言代码模板与行号锚点应完整有效', () => {
-      for (const lang of ['java', 'cpp', 'python', 'javascript'] as const) {
-        expect(LCS_STAGE1_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
-        expect(LCS_STAGE2_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
-        expect(LCS_STAGE3_FORWARD_CODE_LANGUAGES[lang].length).toBeGreaterThan(0);
-      }
-    });
-  });
-
-  // ==========================================
-  // 4. Code04 最长回文子序列 LPS (LeetCode 516)
-  // ==========================================
-  describe('Code04: 最长回文子序列 LPS (LeetCode 516)', () => {
-    const inputs = { 'input-s': 'bbbab' };
-
-    it('阶段 1 区间递归应得出答案为 4 ("bbbb")', () => {
-      const steps = buildLpsStage1Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.metrics?.['metric-ans']).toBe('4');
-    });
-
-    it('阶段 2 区间记忆化搜索应记录 memo 缓存', () => {
-      const steps = buildLpsStage2Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const finalStep = steps[steps.length - 1];
-      expect(finalStep.cachedVal).toBe(4);
-    });
-
-    it('阶段 3 严格区间半三角表应自底向上递推且结果为 4', () => {
-      const steps = buildLpsStage3Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.dpTable[0][4]).toBe(4);
-    });
-
-    it('阶段 4 空间压缩应利用 leftDown 寄存器且结果为 4', () => {
-      const steps = buildLpsStage4Steps(inputs);
-      expect(steps.length).toBeGreaterThan(0);
-      const lastStep = steps[steps.length - 1];
-      expect(lastStep.dp[4]).toBe(4);
     });
   });
 
@@ -519,11 +182,10 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
   // 7. 算法注册与元数据核验
   // ==========================================
   describe('算法中心全局注册核验', () => {
+    // Code01/03/04 已由 dp-generated-renderers 统一黄金舞台挂载，
+    // 注册核验由 src/core/full-catalog-audit.test.ts 全量承接。
     const expectedIds = [
-      'min-path-sum',
       'word-search',
-      'longest-common-subsequence',
-      'longest-palindromic-subsequence',
       'tree-count-height-m',
       'longest-increasing-path',
     ];
@@ -542,40 +204,19 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
   // 8. 绝对一行一步代码联动与行号边界机械审查 (Strict One-Line-One-Step Invariants)
   // ==========================================
   describe('🎯 绝对一行一步代码联动与行号边界机械审查 (Strict One-Line-One-Step Invariants)', () => {
-    const minPathInputs = { 'input-grid': JSON.stringify([[1, 3, 1], [1, 5, 1], [4, 2, 1]]) };
     const wordSearchInputs = {
       'input-board': JSON.stringify([['A', 'B', 'C', 'E'], ['S', 'F', 'C', 'S'], ['A', 'D', 'E', 'E']]),
       'input-word': 'ABCCED',
     };
-    const lcsInputs = { 'input-s1': 'abcde', 'input-s2': 'ace' };
-    const lpsInputs = { 'input-s': 'bbbab' };
     const treeInputs = { 'input-n': '5', 'input-m': '3' };
     const lipInputs = { 'input-matrix': JSON.stringify([[9, 9, 4], [6, 6, 8], [2, 1, 1]]) };
 
     const algoSuites = [
       {
-        id: 'min-path-sum',
-        builders: [buildMinPathSumStage1Steps, buildMinPathSumStage2Steps, buildMinPathSumStage3Steps, buildMinPathSumStage4Steps],
-        inputs: minPathInputs,
-        stageCodes: [MIN_PATH_SUM_STAGE1_CODE_LANGUAGES, MIN_PATH_SUM_STAGE2_CODE_LANGUAGES, MIN_PATH_SUM_STAGE3_CODE_LANGUAGES, MIN_PATH_SUM_STAGE4_CODE_LANGUAGES],
-      },
-      {
         id: 'word-search',
         builders: [buildWordSearchStage1Steps, buildWordSearchStage2Steps, buildWordSearchStage3Steps, buildWordSearchStage4Steps],
         inputs: wordSearchInputs,
         stageCodes: [WORD_SEARCH_STAGE1_CODE_LANGUAGES, WORD_SEARCH_STAGE2_CODE_LANGUAGES, WORD_SEARCH_STAGE3_CODE_LANGUAGES, WORD_SEARCH_STAGE4_CODE_LANGUAGES],
-      },
-      {
-        id: 'longest-common-subsequence',
-        builders: [buildLcsStage1Steps, buildLcsStage2Steps, buildLcsStage3Steps, buildLcsStage4Steps],
-        inputs: lcsInputs,
-        stageCodes: [LCS_STAGE1_CODE_LANGUAGES, LCS_STAGE2_CODE_LANGUAGES, LCS_STAGE3_CODE_LANGUAGES, LCS_STAGE4_CODE_LANGUAGES],
-      },
-      {
-        id: 'longest-palindromic-subsequence',
-        builders: [buildLpsStage1Steps, buildLpsStage2Steps, buildLpsStage3Steps, buildLpsStage4Steps],
-        inputs: lpsInputs,
-        stageCodes: [LPS_STAGE1_CODE_LANGUAGES, LPS_STAGE2_CODE_LANGUAGES, LPS_STAGE3_CODE_LANGUAGES, LPS_STAGE4_CODE_LANGUAGES],
       },
       {
         id: 'tree-count-height-m',
@@ -799,112 +440,6 @@ describe('🧪 Class 067 从递归入手二维动态规划 6大经典算法全�
       expect(activeSubView).toBe('tree');
     });
 
-    it('双序列比对在全量步骤推演中绝对不含 undefined，且越界基底具备 EOF 哨兵', async () => {
-      const { SequenceAlignmentPresenter } = await import('../../../../core/renderers/sequence-alignment-adapter');
-      const forwardSteps = buildLcsStage1Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' }, 'forward');
-      expect(forwardSteps.length).toBeGreaterThan(0);
-
-      const mockBox = { innerHTML: '' } as unknown as HTMLElement;
-
-      for (let idx = 0; idx < forwardSteps.length; idx++) {
-        const step = forwardSteps[idx];
-        SequenceAlignmentPresenter.render(mockBox, {
-          s1: step.s1,
-          s2: step.s2,
-          curI: step.i,
-          curJ: step.j,
-          matchedIndices1: step.matchedIndices1,
-          matchedIndices2: step.matchedIndices2,
-        });
-
-        // 1. 零 undefined 铁律
-        expect(
-          mockBox.innerHTML,
-          `第 ${idx} 步 (i=${step.i}, j=${step.j}) 渲染内容包含了 undefined 脏字符！`
-        ).not.toContain('undefined');
-
-        // 2. 越界时 EOF 哨兵激活
-        if (step.i >= step.s1.length || step.j >= step.s2.length) {
-          expect(mockBox.innerHTML).toContain('末尾空串基底 (EOF / Ø)');
-          expect(mockBox.innerHTML).toContain('#fee2e2');
-        }
-      }
-
-      // 验证至少有若干步骤成功记录了匹配路径字符 (matchedIndices)
-      const matchedSteps = forwardSteps.filter((s) => (s.matchedIndices1?.length || 0) > 0);
-      expect(matchedSteps.length, '递归深入时必须正确累积并传递路径匹配字符集').toBeGreaterThan(0);
-    });
-
-    it('Stage 2 记忆化搜索必须在步进中正确记录 activeStack 调用栈并在沙盘中呈现 👣 足迹', () => {
-      const steps = buildLcsStage2Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' });
-      expect(steps.length).toBeGreaterThan(0);
-
-      // 验证步进序列中存在深层递归调用（activeStack 包含多级前驱）
-      const deepSteps = steps.filter((s) => (s.activeStack?.length || 0) >= 2);
-      expect(deepSteps.length, 'Stage 2 递归调用时必须保持 activeStack 深度记录').toBeGreaterThan(0);
-
-      const targetStep = deepSteps[0];
-      const mockBoardWrapper = {
-        innerHTML: '',
-        classList: { remove: () => {}, add: () => {}, contains: () => false },
-      };
-      const mockContainer = {
-        innerHTML: '',
-        querySelector: (sel: string) => {
-          if (sel === '#lcs-2d-board-wrapper') return mockBoardWrapper;
-          return null;
-        },
-      } as unknown as HTMLElement;
-
-      renderMemoGridCard(
-        mockContainer,
-        'LCS 备忘录',
-        targetStep.memoGrid,
-        targetStep.i,
-        targetStep.j,
-        ['Ø', ...targetStep.s1.split('')],
-        ['Ø', ...targetStep.s2.split('')],
-        false,
-        targetStep
-      );
-
-      // 验证底层的 GridVisualAdapter 正确在 2D 板卡中渲染了脉冲足迹 👣
-      expect(mockBoardWrapper.innerHTML).toContain('👣');
-    });
-
-    it('Stage 1 递归探索完成步时，探险家位于末尾单元格 (5, 3) 必须显示真实计算结果 3 而非硬编码 1', () => {
-      const mockBoardWrapper = {
-        innerHTML: '',
-        classList: { remove: () => {}, add: () => {}, contains: () => false },
-      };
-
-      const mockContainer = {
-        innerHTML: '',
-        querySelector: (sel: string) => {
-          if (sel === '#lcs-2d-board-wrapper') return mockBoardWrapper;
-          return null;
-        },
-      } as unknown as HTMLElement;
-
-      const steps = buildLcsStage1Steps({ 'input-s1': 'abcde', 'input-s2': 'ace' });
-      const lastStep = steps[steps.length - 1];
-
-      renderStage1GridCard(
-        mockContainer,
-        'LCS 递归探索网格 (i, j)',
-        6,
-        4,
-        5,
-        3,
-        ['Ø', 'a', 'b', 'c', 'd', 'e'],
-        ['Ø', 'a', 'c', 'e'],
-        false,
-        lastStep
-      );
-
-      // 验证右下角活动单元格 (5, 3) 必须展示最终匹配总长 3，而不是错误硬编码的 1
-      expect(mockBoardWrapper.innerHTML).toContain('>3<');
-    });
   });
 });
 

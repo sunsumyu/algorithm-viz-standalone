@@ -78,10 +78,8 @@ import {
   generateCalculatorSteps,
   BASIC_CALCULATOR_CODES,
 } from '../../algorithms/categories/advanced-topics/hard-interview/basic-calculator-full-renderer';
-import {
-  generateBurstBalloonsSteps,
-  BURST_BALLOONS_CODES,
-} from '../../algorithms/categories/advanced-topics/hard-interview/burst-balloons-renderer';
+// 注：burst-balloons 已接入 dp-generated 统一黄金舞台（区间 DP spec），
+// 历史手写 renderer 已按死门禁第 2 条删除，其步骤门禁由 src/core/strategies/interval-burstballoons.ts 承接。
 import {
   generateDungeonSteps,
   DUNGEON_GAME_CODES,
@@ -298,16 +296,7 @@ describe('Advanced Topics & Hard Interview Stage Invariants Gate', () => {
       verifyCodeLines(steps, '基本计算器完整版', BASIC_CALCULATOR_CODES);
     });
 
-    it('11. 戳气球区间 DP (LeetCode 312 · Burst Balloons)', () => {
-      const steps = generateBurstBalloonsSteps([3, 1, 5, 8]);
-      expect(steps.length).toBeGreaterThan(0);
-
-      const last = steps[steps.length - 1];
-      expect(last.maxScore).toBe(167);
-      verifyCodeLines(steps, '戳气球', BURST_BALLOONS_CODES);
-    });
-
-    it('12. 地下城游戏逆向 DP (LeetCode 174 · Dungeon Game)', () => {
+    it('11. 地下城游戏逆向 DP (LeetCode 174 · Dungeon Game)', () => {
       const grid = [
         [-2, -3, 3],
         [-5, -10, 1],

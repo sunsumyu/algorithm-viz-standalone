@@ -118,59 +118,10 @@ describe('最长回文子序列 (LPS) 代码联动与生命周期规范核验', 
     }
   });
 
-  it('LPS 渲染器必须遵循 universal-dp-refactoring 规范：支持顺推与逆推双向模式及半三角契约', async () => {
-    const {
-      buildLpsStage1Steps,
-      buildLpsStage2Steps,
-      buildLpsStage3Steps,
-      buildLpsStage4Steps,
-    } = await import('../../algorithms/categories/dynamic-programming/dp-067/longest-palindromic-subsequence-renderer');
-
-    const { getManifest } = await import('../../core/registry');
-    const algo = getManifest('longest-palindromic-subsequence');
-    expect(algo).toBeDefined();
-
-    // 1. 验证声明式 modes
-    const specAny = (algo?.Visualizer as any)?.spec;
-    expect(specAny).toBeDefined();
-    expect(specAny.modes).toBeDefined();
-    expect(specAny.modes).toHaveLength(2);
-    expect(specAny.modes[0]).toEqual({ id: 'forward', label: '顺推' });
-    expect(specAny.modes[1]).toEqual({ id: 'reverse', label: '逆推' });
-    expect(specAny.defaultMode).toBe('forward');
-
-    // 2. 验证 4 个 Stage 的 modeCodeLanguages
-    expect(specAny.stages).toHaveLength(4);
-    for (const stage of specAny.stages) {
-      expect(stage.modeCodeLanguages, `Stage ${stage.id} 必须包含 modeCodeLanguages`).toBeDefined();
-      expect(stage.modeCodeLanguages.forward, `Stage ${stage.id} 必须提供 forward 代码`).toBeDefined();
-      expect(stage.modeCodeLanguages.reverse, `Stage ${stage.id} 必须提供 reverse 代码`).toBeDefined();
-    }
-
-    const inputs = { 'input-s': 'bbbab' };
-
-    const st1Fwd = buildLpsStage1Steps(inputs, 'forward');
-    const st1Rev = buildLpsStage1Steps(inputs, 'reverse');
-    expect(st1Fwd.length).toBeGreaterThan(0);
-    expect(st1Rev.length).toBeGreaterThan(0);
-
-    const st2Fwd = buildLpsStage2Steps(inputs, 'forward');
-    const st2Rev = buildLpsStage2Steps(inputs, 'reverse');
-    expect(st2Fwd.length).toBeGreaterThan(0);
-    expect(st2Rev.length).toBeGreaterThan(0);
-
-    const st3 = buildLpsStage3Steps(inputs, 'forward');
-    expect(st3.length).toBeGreaterThan(0);
-    // 对角线必须为 1，最终答案必须为 4
-    const finalStep3 = st3[st3.length - 1];
-    expect(finalStep3.currentVal).toBe(4);
-    expect(finalStep3.dpTable[0][4]).toBe(4);
-    expect(finalStep3.dpTable[0][0]).toBe(1);
-
-    const st4 = buildLpsStage4Steps(inputs, 'forward');
-    expect(st4.length).toBeGreaterThan(0);
-    const finalStep4 = st4[st4.length - 1];
-    expect(finalStep4.dp[4]).toBe(4);
-  }, 15000);
+  // 注：原「LPS 渲染器必须遵循 universal-dp-refactoring 规范」测试针对历史手写
+  // dp-067/longest-palindromic-subsequence-renderer.ts 的声明式 spec——该 renderer 已按
+  // 死门禁第 2 条删除，LPS 现由 dp-generated-renderers 统一挂载 UniversalStageVisualizer，
+  // 顺逆推与四阶段契约由 universal-model-fidelity 与 dp-stage-invariants 门禁承接。
 });
+
 

@@ -11,109 +11,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildLcsStage1Steps, buildLcsStage1ForwardSteps } from '../../algorithms/categories/dynamic-programming/dp-067/longest-common-subsequence-renderer';
-import { buildLpsStage1Steps, buildLpsStage2Steps } from '../../algorithms/categories/dynamic-programming/dp-067/longest-palindromic-subsequence-renderer';
-import type { IStrictRecursionStep } from './strict-stage-contracts';
+// 注：LCS / LPS 历史手写 renderer（dp-067/*-renderer.ts）已按死门禁第 2 条删除，
+// 其阶段 1/2 足迹契约断言随之退役；零跳步与 branch-return 不变量改由下方
+// 「序列 DP 阶段 1 / 阶段 2 递归零跳步门禁」基于 SequenceStepMatrixCompiler 顶层编译器继续强制。
 import '../../algorithms/categories/dynamic-programming/specs';
 
 describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage Invariant Gatekeeper)', () => {
-  describe('LPS (最长回文子序列) 阶段 1 顶级契约门禁核验', () => {
-    const steps = buildLpsStage1Steps({ 'input-s': 'bbbab' });
-
-    it('所有步骤必须 100% 具备合法 2D 物理坐标 (i, j)', () => {
-      expect(steps.length).toBeGreaterThan(5);
-      steps.forEach((st, idx) => {
-        expect(typeof st.i, `Step #${idx} 缺少合法 i 坐标`).toBe('number');
-        expect(typeof st.j, `Step #${idx} 缺少合法 j 坐标`).toBe('number');
-        expect(st.i).toBeGreaterThanOrEqual(0);
-        expect(st.j).toBeGreaterThanOrEqual(0);
-      });
-    });
-
-    it('必须构建合法的动态递归调用树 (treeRoot & activeNodeId)', () => {
-      steps.forEach((st, idx) => {
-        expect(st.treeRoot, `Step #${idx} 缺少 treeRoot`).toBeDefined();
-        expect(st.treeRoot.id, `Step #${idx} treeRoot 缺少 id`).toBeTruthy();
-        expect(Array.isArray(st.treeRoot.children), `Step #${idx} treeRoot 缺少 children 数组`).toBe(true);
-        expect(typeof st.activeNodeId, `Step #${idx} 缺少 activeNodeId`).toBe('string');
-      });
-
-      // 深入递归步骤中，调用树必须真实展开分支节点
-      const deepStep = steps.find((st) => st.treeRoot.children.length > 0);
-      expect(deepStep, '递归展开过程中 treeRoot 必须真实生长子分支').toBeDefined();
-    });
-
-    it('探索深入时必须保留足迹 activeTrail 与调用栈 callStack', () => {
-      // 检查处于递归深层时的步骤
-      const inFlightSteps = steps.filter((st) => st.currentCall.startsWith('f(') && !st.decision.includes('主函数入口'));
-      expect(inFlightSteps.length).toBeGreaterThan(0);
-
-      const hasTrail = inFlightSteps.some((st) => st.activeTrail && st.activeTrail.length >= 1);
-      expect(hasTrail, '递归探索深入时必须记录真实足迹 activeTrail 坐标').toBe(true);
-
-      const hasStack = inFlightSteps.some((st) => st.callStack && st.callStack.length >= 1);
-      expect(hasStack, '递归深入时必须记录当前 callStack 调用栈').toBe(true);
-    });
-
-    it('执行日志必须具备层级缩进线规范 (| | | 📥 ...)', () => {
-      const indentedLogs = steps.filter((st) => st.log && st.log.includes('📥 进入 f('));
-      expect(indentedLogs.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('LCS (最长公共子序列) 阶段 1 顶级契约门禁核验', () => {
-    const steps = buildLcsStage1ForwardSteps({ 'input-s1': 'abcde', 'input-s2': 'ace' });
-
-    it('所有步骤必须 100% 具备合法 2D 物理坐标 (i, j)', () => {
-      expect(steps.length).toBeGreaterThan(5);
-      steps.forEach((st, idx) => {
-        expect(typeof st.i, `LCS Step #${idx} 缺少合法 i 坐标`).toBe('number');
-        expect(typeof st.j, `LCS Step #${idx} 缺少合法 j 坐标`).toBe('number');
-      });
-    });
-
-    it('必须构建合法的动态递归调用树 (treeRoot & activeNodeId)', () => {
-      steps.forEach((st, idx) => {
-        expect(st.treeRoot, `LCS Step #${idx} 缺少 treeRoot`).toBeDefined();
-        expect(st.activeNodeId, `LCS Step #${idx} 缺少 activeNodeId`).toBeTruthy();
-      });
-    });
-
-    it('必须记录 activeTrail 并在深入时非空', () => {
-      const deepSteps = steps.filter((st) => st.activeTrail && st.activeTrail.length >= 2);
-      expect(deepSteps.length, 'LCS 必须包含深度 >= 2 的足迹步骤').toBeGreaterThan(0);
-    });
-  });
-
-  describe('LPS (最长回文子序列) 阶段 2 记忆化剪枝树门禁核验', () => {
-    const steps = buildLpsStage2Steps({ 'input-s': 'bbbab' });
-
-    it('Stage 2 记忆化搜索必须 100% 具备合法 treeRoot 剪枝决策树', () => {
-      expect(steps.length).toBeGreaterThan(5);
-      steps.forEach((st, idx) => {
-        expect(st.treeRoot, `Stage 2 Step #${idx} 缺少 treeRoot 剪枝树`).toBeDefined();
-        expect(st.activeNodeId, `Stage 2 Step #${idx} 缺少 activeNodeId`).toBeTruthy();
-      });
-    });
-
-    it('遇到重复子问题时，必须产生带有 pruned 剪枝标记的树节点', () => {
-      // 使用包含重叠子区间的测试用例 cbbabb
-      const overlapSteps = buildLpsStage2Steps({ 'input-s': 'cbbabb' });
-      const hitSteps = overlapSteps.filter((st) => st.memoHit);
-      expect(hitSteps.length, 'LPS 在 cbbabb 中必须触发记忆化剪枝命中').toBeGreaterThan(0);
-      
-      // 检查是否有节点被标记为 pruned
-      const hasPrunedNode = overlapSteps.some((st) => {
-        const findPruned = (n: any): boolean => {
-          if (n.status === 'pruned') return true;
-          return (n.children || []).some(findPruned);
-        };
-        return findPruned(st.treeRoot);
-      });
-      expect(hasPrunedNode, '记忆化搜索在缓存命中时必须将对应树节点标记为 pruned 剪枝状态').toBe(true);
-    });
-  });
-
   describe('序列 DP 阶段 1 / 阶段 2 递归零跳步门禁 (Zero-Skip Invariant Gatekeeper)', () => {
     it('Distinct Subsequences 阶段 1 在字符匹配时必须先发射 branch-call 进入 if 块体，严禁直接跳到 dfs-call', async () => {
       const { AlgorithmModelRepository } = await import('../model-repository');

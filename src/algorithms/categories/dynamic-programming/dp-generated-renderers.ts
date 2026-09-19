@@ -173,6 +173,15 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
       );
     }
 
+    // 最小路径和默认网格（与 minimum-path-sum.yaml defaultParams 逐位一致）
+    if (specId === 'min-path-sum' && !inputObj.grid) {
+      inputObj.grid = [
+        [1, 3, 1],
+        [1, 5, 1],
+        [4, 2, 1],
+      ];
+    }
+
     // 树型DP root 输入解析（层序数组字符串 → number|null 数组）
     const rootInput = root?.querySelector('#dp-input-root') as HTMLInputElement | null;
     if (rootInput) {
@@ -868,4 +877,63 @@ ordered.forEach((item) => {
       registerDemo(def);
     }
   }
+});
+
+// ---------------------------------------------------------------------------
+// dp-067 二维 DP 专题与大厂真题系列独立注册（保留原课程关卡序号，统一黄金舞台宿主）
+// 这些算法的历史手写 *-renderer.ts 已按死门禁第 2 条清除遮蔽，由本宿主统一挂载。
+// ---------------------------------------------------------------------------
+
+registerDemo({
+  id: 'min-path-sum',
+  name: '最小路径和 (LeetCode 64)',
+  description: '左程云算法讲解067 Code01：LeetCode 64 最小路径和，从递归到二维DP与空间压缩完整演化',
+  icon: '📉',
+  inputs: [
+    { id: 'm', label: '行 m', value: '3', width: 80 },
+    { id: 'n', label: '列 n', value: '3', width: 80 },
+  ],
+  build: makeEngineBuilder('min-path-sum'),
+  difficulty: 2,
+  levelOrder: 101,
+  learningGoal: '掌握二维网格DP的递归抽象、状态转移方程推导及一维滚动数组空间压缩技巧',
+});
+
+registerDemo({
+  id: 'longest-common-subsequence',
+  name: '最长公共子序列 (LCS)',
+  description: '左程云算法讲解067 Code03：LeetCode 1143 最长公共子序列，经典双串对角线依赖与 leftUp 寄存器暂存优化',
+  icon: '🔀',
+  inputs: [
+    { id: 's', label: 'text1', value: 'abcde', width: 120 },
+    { id: 't', label: 'text2', value: 'ace', width: 120 },
+  ],
+  build: makeEngineBuilder('longest-common-subsequence'),
+  difficulty: 2,
+  levelOrder: 103,
+  learningGoal: '掌握双串样本对应模型的分类讨论，理解对角线依赖在空间压缩中需要 leftUp 暂存器的本质原因',
+});
+
+registerDemo({
+  id: 'longest-palindromic-subsequence',
+  name: '最长回文子序列 (LPS)',
+  description: '左程云算法讲解067 Code04：LeetCode 516 最长回文子序列，区间DP经典半三角矩阵与 leftDown 空间压缩',
+  icon: '🪞',
+  inputs: [{ id: 's', label: '字符串 s', value: 'bbbab', width: 130 }],
+  build: makeEngineBuilder('longest-palindromic-subsequence'),
+  difficulty: 2,
+  levelOrder: 104,
+  learningGoal: '理解区间DP的定义、自底向上填表顺序的必然性以及 leftDown 暂存器在对角线压缩中的关键作用',
+});
+
+registerDemo({
+  id: 'burst-balloons',
+  name: '大厂高频真题: 戳气球 (Burst Balloons)',
+  description: '大厂高频真题: 戳气球 (Burst Balloons)',
+  icon: '🎈',
+  inputs: [{ id: 'nums', label: 'nums', value: '3,1,5,8', width: 150 }],
+  build: makeEngineBuilder('burst-balloons'),
+  difficulty: 3,
+  levelOrder: 312,
+  learningGoal: '深刻理解区间 DP 逆向思维，通过枚举最后戳破的气球消解子问题边界依赖',
 });

@@ -30,13 +30,11 @@ import './categories/dynamic-programming/knapsack-075/bounded-knapsack-monotonic
 import './categories/dynamic-programming/knapsack-075/coins-change-kinds-renderer';
 
 // 左程云算法讲解067【必备】从递归入手二维动态规划 6大经典算法渲染器
-import './categories/dynamic-programming/dp-067/min-path-sum-renderer';
+// 注：min-path-sum / longest-common-subsequence / longest-palindromic-subsequence 已接入
+// dp-generated-renderers 统一黄金舞台（YAML 模型 + UniversalStageVisualizer），此处仅保留未迁移项。
 import './categories/dynamic-programming/dp-067/word-search-renderer';
-import './categories/dynamic-programming/dp-067/longest-common-subsequence-renderer';
-import './categories/dynamic-programming/dp-067/longest-palindromic-subsequence-renderer';
 import './categories/dynamic-programming/dp-067/tree-count-height-m-renderer';
 import './categories/dynamic-programming/dp-067/longest-increasing-path-renderer';
-import './categories/advanced-topics/hard-interview/burst-balloons-renderer';
 import './categories/advanced-topics/hard-interview/stock-trading-state-machine-renderer';
 import './categories/advanced-topics/hard-interview/dungeon-game-renderer';
 import './categories/advanced-topics/hard-interview/freedom-trail-renderer';

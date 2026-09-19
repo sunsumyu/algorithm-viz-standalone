@@ -17,7 +17,7 @@ import { buildSerialization021Steps } from './tree/tree-serialization-021-render
 import { buildNetherlands024Steps } from './sort/netherlands-flag-024-renderer';
 import { buildPermutation030Steps } from './backtracking/permutations-subsequences-030-renderer';
 
-import { generateBurstBalloonsSteps } from './advanced-topics/hard-interview/burst-balloons-renderer';
+// 注：burst-balloons 已接入 dp-generated 统一黄金舞台（区间 DP spec），历史手写 renderer 已删除。
 import { generateRegexSteps } from './advanced-topics/hard-interview/regex-matching-renderer';
 import { generateMaximalRectangleSteps } from './advanced-topics/hard-interview/maximal-rectangle-renderer';
 import { generateMinWindowSteps } from './advanced-topics/hard-interview/min-window-substring-renderer';
@@ -85,14 +85,7 @@ describe('左神《入门篇》与《大厂压轴真题》第二弹综合测试�
     });
   });
 
-  // 5. Hard 05: 戳气球 (LeetCode 312)
-  describe('大厂真题 05: 戳气球 (Burst Balloons)', () => {
-    it('经典 [3, 1, 5, 8] 气球序列最优金币应为 167', () => {
-      const steps = generateBurstBalloonsSteps([3, 1, 5, 8]);
-      const finalStep = steps[steps.length - 1];
-      expect(finalStep.maxScore).toBe(167);
-    });
-  });
+  // 5. Hard 05: 戳气球 (LeetCode 312) —— 已接入统一黄金舞台，步骤门禁由 interval-burstballoons.ts 承接
 
   // 6. Hard 06: 正则表达式匹配 (LeetCode 10)
   describe('大厂真题 06: 正则表达式匹配 (Regex Matching)', () => {

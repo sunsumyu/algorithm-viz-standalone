@@ -110,9 +110,11 @@ describe('StateDependencyTreeCompiler — 渲染器防退化门禁', () => {
     // childDepth === 1 / rootAdjacent 分支是表达“根邻接层 vs 更深层标签差异”的隐式 if/else —
     // 必须被声明式 2-row 表查替，不能在依赖生成中裸写 if(childDepth===1) 或三目分支。
     // 允许在注释/参数传递/表查阅 (p = TABLE[idx]) 中出现。
+    // 注：LCS 依赖树生成权已移交顶层编译器 sequence-lcs-compiler.ts（历史手写 renderer 已删除），
+    // 门禁扫描对象随之重定向到 core/strategies 策略层源码集合。
     const lcsSources = Object.fromEntries(
-      Object.entries(algorithmSources).filter(([f]) =>
-        f.includes('longest-common-subsequence-renderer')
+      Object.entries(coreStrategySources).filter(([f]) =>
+        f.includes('sequence-lcs-compiler')
       )
     );
     expect(Object.keys(lcsSources).length).toBe(1);

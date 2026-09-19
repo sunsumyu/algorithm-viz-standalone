@@ -73,7 +73,6 @@ export const ADVANCED_TOPICS_CATEGORY_MAP: Record<string, string> = {
   '../algorithms/categories/advanced-topics/advanced-196-200/pseudotree-dp-renderer.ts': 'tree',
   '../algorithms/categories/advanced-topics/advanced-196-200/segment-tree-graph-renderer.ts': 'graph',
   '../algorithms/categories/advanced-topics/hard-interview/basic-calculator-full-renderer.ts': 'stack',
-  '../algorithms/categories/advanced-topics/hard-interview/burst-balloons-renderer.ts': 'dynamic-programming',
   '../algorithms/categories/advanced-topics/hard-interview/dungeon-game-renderer.ts': 'dynamic-programming',
   '../algorithms/categories/advanced-topics/hard-interview/expression-add-operators-renderer.ts': 'backtracking',
   '../algorithms/categories/advanced-topics/hard-interview/freedom-trail-renderer.ts': 'dynamic-programming',
