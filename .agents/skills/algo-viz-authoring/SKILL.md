@@ -120,6 +120,13 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
     - *故障现象*：步骤快照里直接写 `grid: grid.map((row) => [...row])`、`states: JSON.parse(JSON.stringify(states))`（graph 类目曾 10 文件 15 处，一处遗漏嵌套行拷贝即步进间状态串扰）。
     - *根本原因*：以为 `[...grid]` 或随手一行 `map` 展开就是深拷贝，忽略了二维数组外层共享内层引用；快照原语没有成为肌肉记忆。
     - *严格规范*：网格/数组/字典快照必须调用 `GridSnapshotPrimitives`（`src/core/strategies/grid-snapshot.ts`）：二维网格 `snapshotGrid2D(grid)`、一维数组 `snapshotArray1D(arr)`、含 null 的 DP 表 `snapshotDpGrid(grid)`、字典 `snapshotDict(dict)`。dynamic-programming / grid / graph 类目文件中的手写深拷贝模式由门禁 4 直接红灯（见 CONTEXT.md「GridSnapshotPrimitives」）。
+23. **为了修错而修错、抹杀架构契约的表面修补（Surface-Level Error Suppression & Architectural Bypass）**：
+    - *故障现象*：系统抛出 `[VisualizerAppController] 算法模型 "xxx" 未在仓储中找到！禁止错误回退至其他算法` 或其他防御性门禁异常时，开发者/AI 的第一反应是“赶紧消灭报错”——通过删除注册、绕开检查、静默 try-catch 或写死回退到其它算法。
+    - *根本原因*：缺乏对高层抽象约束的敬畏，把架构的“防御性守门断言”当成了阻碍，为了解决报错而解决报错。
+    - *严格规范*：
+      1. **有错误是好事，高层抽象约束就是为了把错报出来**：严厉的报错机制是强制倒逼领域完整性的核心杠杆。
+      2. **绝对不要为了修错而修错**：严禁任何弱化报错、静默降级、绕过契约的掩耳盗铃行为。
+      3. **追溯深层原因并正面实现契约**：报错提示“模型未在仓储中找到”，唯一合法的修复方式是按照规范补齐该算法的 YAML 领域模型（`src/core/models/<id>.yaml`）、注册到 `AlgorithmModelRepository` 并完善顶层策略引擎。
 
 ---
 

@@ -19,6 +19,18 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
 2. 从 `batch-N-index.ts` 删 import
 3. `npm run meta:sync` → 生成物自动反映
 
+## 动态规划（DP）顶层黄金规约（死门禁！）
+所有动态规划算法重构或新增，**必须严格执行 `universal-dp-refactoring` Skill**，并无条件通过六项交付核验：
+1. **严禁外围框架**：绝对禁止调用 `registerDeclarativeAlgorithm`（这是非 DP 算法用的）。
+2. **清理先验遮蔽**：若 `src/algorithms/categories/dynamic-programming/` 下存在历史手写 `*-renderer.ts`，必须清除其注册或移除文件，严防遮蔽顶层注册。
+3. **顶层黄金链路**：
+   - 领域事实源：`src/core/models/<id>.yaml`（包含 4 阶段代码与顺逆推）
+   - 仓储静态注册：`AlgorithmModelRepository.registerModel`
+   - 策略编译器：`IAlgorithmStrategy` 生成全量 `UniversalStep`
+   - 统一挂载宿主：`dp-generated-renderers.ts` 统一注册为 `Visualizer: UniversalStageVisualizer`
+4. **视觉必须对齐 115 标杆**：必须具备顶栏 Stage 胶囊（`[1 递归]` `[2 记忆化]` `[3 递推DP]` `[4 空间压缩]`）、右侧 `[➜ 顺推]` / `[← 逆推]` 双向切换、Card 1 状态网格与移动实体、Card 2 业务专属看板。
+
+
 ## 构建与测试
 ```bash
 npm install

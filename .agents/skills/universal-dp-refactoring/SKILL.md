@@ -11,7 +11,27 @@ description: "使用基于「不同路径 II」黄金基准与 YAML 驱动模型
 > 1. **拒绝在具体 Renderer 中堆砌数百行 ad-hoc 状态推演逻辑**；
 > 2. **拒绝手写散落的多语言代码与行号映射**；
 > 3. **统一 Single Source of Truth（YAML 驱动模型）**；
-> 4. **顶层策略引擎（Strategy Pattern）承担核心推演，具体 Renderer 只做极简薄切片**。
+> 4. **顶层策略引擎（Strategy Pattern）承担核心推演，具体 Renderer 只做极简薄切片**；
+> 5. **绝对严禁为了修错而修错：高层抽象约束与报错是架构守门人，有错误是好事！**
+
+---
+
+## 0. 错误不是阻碍，而是架构守门人：绝对严禁为了修错而修错 (Errors as Architectural Enforcement Gates)
+
+> **铁律**：
+> **“需要治本，但是目的不是阻断报错，有错并抛出是很好的，就怕不报错。有错要真正解决报错的深层原因，而不是为了解决报错而解决。没有 YAML 就补 YAML，千万不要去简单地修错。进行高层抽象约束就是为了要把错报出来，强制去实现必须实现的内容！”**
+
+### 0.1 核心思想：抽象约束的防御性倒逼机制
+1. **报错是架构契约守门人在履职**：
+   例如 `[VisualizerAppController] 算法模型 "${requestedId}" 未在仓储中找到！禁止错误回退至其他算法。`，这类强约束断言绝不是“开发阻碍”或“待消灭的异常”，而是系统最高层的**防腐门禁**。它的存在就是为了死死守住单一事实源，拦截一切试图逃避模型实现、通过随意 hack 混进系统的行为。
+2. **严禁“掩耳盗铃”式的表面修补**：
+   - ❌ **绝对禁止**：为了不弹窗，去把错误吞掉（try-catch 忽略或静默降级）；
+   - ❌ **绝对禁止**：为了让页面打开，私自给它 fallback 回退到 `unique-paths` 等其他无关算法；
+   - ❌ **绝对禁止**：为了消除 `hasModel` 失败，私自把算法从列表、目录或流水线中摘除隐藏；
+   - ❌ **绝对禁止**：不建规范 YAML 模型，而在外围写临时的 ad-hoc 渲染器或 iframe 补丁绕过去。
+3. **唯一的正途：正面履约，实现必须实现的内容**：
+   - 报错提示“算法模型未在仓储中找到”，其深层原因必然是：**该算法进入了动规体系，但其必须履行的领域契约（YAML 事实源、四阶段演化策略、仓储静态注册）处于欠缺或半拉子状态**。
+   - 正确解法**唯有且必须是正面攻坚**：按照黄金基准创建完整的 `src/core/models/<algorithm-id>.yaml`，在 `AlgorithmModelRepository` 完成注册，在顶层策略引擎中补齐 Stage 1~4 的编译逻辑，并通过全量测试断言。
 
 ---
 
@@ -108,13 +128,41 @@ description: "使用基于「不同路径 II」黄金基准与 YAML 驱动模型
 
 ---
 
-### 第四步：瘦身 Renderer 并建立极简垂直切片
+### 第四步：顶层统一舞台挂载与旧文件清理 (宿主对齐铁律)
 
-Renderer（`*-renderer.ts`）只负责：
-1. 调用 `createDeclarativeVisualizer` 声明式注册；
-2. 绑定 `modes: [{ id: 'forward', label: '顺推' }, { id: 'reverse', label: '逆推' }]`；
-3. 将 `buildSteps` 指向顶层编译策略；
-4. 挂载 2D/3D Canvas 渲染器（如 `renderDp2DCard2`, `renderMemoGridCard`, `renderLcsTreeCanvas` 等）。
+> [!CAUTION]
+> **黄金舞台唯一性死门禁（绝对禁止使用 registerDeclarativeAlgorithm）**：
+> 1. **严禁在动态规划算法中调用 `registerDeclarativeAlgorithm`**！该方法是外围普通声明式算法框架（基础数组、树、排序），根本不是 DP 黄金基准；
+> 2. **杜绝先验注册遮蔽（Shadowing）**：若目标算法在 `src/algorithms/categories/dynamic-programming/` 下存在历史手写的 `*-renderer.ts`，**必须彻底删除或清理其注册**，否则 Vite 的 glob 加载会优先占领该算法 ID，导致真正的顶层通用舞台被拦截屏蔽；
+> 3. **统一挂载宿主**：所有 DP 算法必须且只能统一通过 `src/algorithms/categories/dynamic-programming/dp-generated-renderers.ts` 注册为 **`UniversalStageVisualizer`**：
+>    ```typescript
+>    registerAlgorithm({
+>      id: def.id,
+>      name: def.name,
+>      viewId: def.id,
+>      category: 'dynamic-programming',
+>      description: def.description,
+>      icon: def.icon,
+>      difficulty: def.difficulty ?? 1,
+>      levelOrder: def.levelOrder ?? 1,
+>      learningGoal: def.learningGoal,
+>      template: `<div id="${def.id}" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+>      Visualizer: UniversalStageVisualizer, // 👈 必须使用该统一顶层宿主！
+>    });
+>    ```
+
+---
+
+## 2.1 交付前“六项视觉与架构刚性核验清单”（Checklist Gate）
+
+在向用户汇报任何一个 DP 算法重构完成前，**必须逐项核对并输出以下 6 项状态**，任何一项不符合严禁交付：
+
+- [ ] **1. 排除外围框架**：确认代码中未调用 `registerDeclarativeAlgorithm`，且无任何残留 `*-renderer.ts` 抢占 ID；
+- [ ] **2. 顶栏 Stage 胶囊控制**：界面顶部正中央是否为规范的 Stage 胶囊按钮（`[1 递归]` `[2 记忆化]` `[3 递推DP / 二维DP]` `[4 空间压缩]`），绝无下拉菜单；
+- [ ] **3. 双向推演控制**：顶栏右侧是否具备 **`[➜ 顺推]` 与 `[← 逆推]`** 独立切换按钮；
+- [ ] **4. Card 1 状态空间沙盘**：是否由 `StateSpacePresenter` / `GridVisualAdapter` 渲染 2D 状态网格，并具备动画卡通实体（小人）实时站位移动；
+- [ ] **5. Card 2 业务专属看板**：是否为领域专属辅助看板（如双串比对看板、一维状态流动条或状态依赖树），绝无平铺的孤立数字卡；
+- [ ] **6. 宿主一致性**：点击打开后，界面外观、交互手感与 LeetCode 115 不同的子序列（黄金基准）完全一致！
 
 ---
 
