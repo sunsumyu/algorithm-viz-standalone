@@ -1,0 +1,228 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「完全背包问题 (Complete Knapsack Problem)」四阶段全演化标准实现。
+# 包含：无限件物品分支决策、二维备忘录剪枝、二维DP正序填表与一维正序滚动压缩。
+# ==============================================================================
+
+id: complete-knapsack
+name: "完全背包问题"
+nameEn: "Complete Knapsack Problem"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🧺"
+difficulty: 2
+levelOrder: 15
+learningGoal: "完全背包与0-1背包的本质分界：掌握同件物品无限累加、二维同行转移与一维正序滚动压缩"
+description: "完全背包问题：n 种物品与容量为 w 的背包。每种物品有无限件可用，求不超过背包容量时的最大总价值。"
+defaultParams:
+  bagWeight: 4
+  weights: [1, 3, 4]
+  values: [15, 20, 30]
+
+problem:
+  leetcodeId: "完全背包"
+  title: "完全背包问题"
+  difficulty: "中等"
+  tags: ["动态规划", "背包问题", "正序滚动"]
+  description: "有 <code>N</code> 种物品和一个容量为 <code>V</code> 的背包。每种物品都有 <strong>无限件</strong> 可用。第 <code>i</code> 种物品的重量是 <code>weight[i]</code>，得到的价值是 <code>value[i]</code> 。<br/><br/>求解将哪些物品装入背包可使这些物品的费用总和不超过背包容量，且 <strong>价值总和最大</strong>。"
+  examples:
+    - input: "bagWeight = 4, weights = [1, 3, 4], values = [15, 20, 30]"
+      output: "60"
+      explanation: "选择 4 件物品 0 (每件重 1, 价值 15)，总重量 1 × 4 = 4 <= 4，获得最大价值 15 × 4 = 60。"
+  constraints:
+    - "1 <= N <= 1000"
+    - "1 <= V <= 1000"
+    - "1 <= weight[i], value[i] <= 1000"
+  leetcodeUrl: "https://programmercarl.com/背包问题理论基础完全背包.html"
+
+directions:
+  forward:
+    label: "物品正序决策"
+    branches:
+      - name: "not_take"
+        label: "不放入 (跳过当前物品)"
+        codeVar: "not_take"
+        arrow: "🚫"
+      - name: "take_repeat"
+        label: "放入一件 (容量扣减, 可重复选同种物品)"
+        codeVar: "take"
+        arrow: "🔁"
+    combineFormula: "Math.max(not_take, take)"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (选0件或选1件并继续尝试当前物品)"
+    desc:
+      forward: "对每种物品决策：不放入背包（转向下一物品 i+1），或放入一件背包（扣减重量并累加价值，物品索引仍保持 i 允许继续放入），展开为递归决策树。"
+    variants:
+      standard:
+        variantLabel: "完全背包递归版"
+        title:
+          forward: "CompleteKnapsack_Recursive.java"
+        code:
+          forward:
+            title: "CompleteKnapsack_Recursive.java"
+            source: |
+              class Solution {
+                  public int completeKnapsack(int[] weights, int[] values, int w) {
+                      return dfs(weights, values, 0, w); // @step:return
+                  }
+                  private int dfs(int[] weights, int[] values, int i, int w) { // @step:entry
+                      if (i >= weights.length || w <= 0) return 0; // @step:boundary // 物品遍历完毕或背包容量耗尽
+                      int notTake = dfs(weights, values, i + 1, w); // @step:branch_down @step:branch_not_take // 决策 1: 不选当前物品，考察下一物品
+                      int take = 0;
+                      if (w >= weights[i]) { // @step:cond_take
+                          take = values[i] + dfs(weights, values, i, w - weights[i]); // @step:branch_right @step:branch_take // 决策 2: 选当前物品，仍可继续选物品 i
+                      }
+                      return Math.max(notTake, take); // @step:combine // 汇聚两分支最优解
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n×w)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (二维备忘录剪枝)"
+    desc:
+      forward: "状态由 (物品索引 i, 剩余容量 w) 唯一确定。使用 memo[n][w+1] 二维数组缓存子问题计算结果，消灭重叠子树。"
+    variants:
+      array_memo:
+        variantLabel: "二维备忘录版"
+        title:
+          forward: "CompleteKnapsack_Memo.java"
+        code:
+          forward:
+            title: "CompleteKnapsack_Memo.java"
+            source: |
+              class Solution {
+                  public int completeKnapsack(int[] weights, int[] values, int w) {
+                      int n = weights.length;
+                      int[][] memo = new int[n][w + 1];
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(weights, values, 0, w, memo); // @step:return
+                  }
+                  private int dfs(int[] weights, int[] values, int i, int w, int[][] memo) { // @step:entry
+                      if (i >= weights.length || w <= 0) return 0; // @step:boundary
+                      if (memo[i][w] != -1) return memo[i][w]; // @step:cache_hit // 剪枝命中直接返回
+                      int notTake = dfs(weights, values, i + 1, w, memo); // @step:branch_down @step:branch_not_take
+                      int take = 0;
+                      if (w >= weights[i]) { // @step:cond_take
+                          take = values[i] + dfs(weights, values, i, w - weights[i], memo); // @step:branch_right @step:branch_take
+                      }
+                      return memo[i][w] = Math.max(notTake, take); // @step:combine // 写入备忘录
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n×w)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 二维 DP 状态表 (dp[i][j] 物品×容量 同行转移)"
+    desc:
+      forward: "dp[i][j] 表示前 i 种物品装入容量 j 背包的最大价值。由于物品可重复选取，放入决策来自本行已更新的状态：dp[i][j] = max(dp[i-1][j], dp[i][j - w[i]] + v[i])。"
+    variants:
+      standard:
+        variantLabel: "二维网格填表版"
+        title:
+          forward: "CompleteKnapsack_2D.java"
+        code:
+          forward:
+            title: "CompleteKnapsack_2D.java"
+            source: |
+              class Solution {
+                  public int completeKnapsack(int[] weights, int[] values, int bagWeight) {
+                      int n = weights.length;
+                      int[][] dp = new int[n][bagWeight + 1]; // @step:init
+                      for (int j = weights[0]; j <= bagWeight; j++) { // @step:init_val // 初始化首行
+                          dp[0][j] = dp[0][j - weights[0]] + values[0];
+                      }
+                      for (int i = 1; i < n; i++) { // @step:loop_i // 遍历物品
+                          for (int j = 0; j <= bagWeight; j++) { // @step:loop_j // 遍历容量
+                              if (j < weights[i]) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip // 容量不足，继承上方一行
+                              } else {
+                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - weights[i]] + values[i]); // @step:transfer_max // 核心：dp[i]同行左侧转移
+                              }
+                          }
+                      }
+                      return dp[n - 1][bagWeight]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "一维优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(w) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 一维空间压缩 (正序遍历 dp[j])"
+    desc:
+      forward: "将二维矩阵压缩为一维数组 dp[j]。完全背包与0-1背包的本质区别：容量必须【从小到大正序遍历】，利用同一物品已被放入的累加效果达成多次选取！"
+    variants:
+      forward_1d:
+        variantLabel: "正序滚动一维版"
+        title:
+          forward: "CompleteKnapsack_1D_Forward.java"
+        code:
+          forward:
+            title: "CompleteKnapsack_1D_Forward.java"
+            source: |
+              class Solution {
+                  public int completeKnapsack(int[] weights, int[] values, int bagWeight) {
+                      int[] dp = new int[bagWeight + 1]; // @step:init
+                      for (int i = 0; i < weights.length; i++) { // @step:loop_i // 遍历物品
+                          for (int j = weights[i]; j <= bagWeight; j++) { // @step:loop_j // 核心：正序遍历容量允许累加
+                              dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]); // @step:accumulate // 原地正序滚动覆盖
+                          }
+                      }
+                      return dp[bagWeight]; // @step:return
+                  }
+              }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 完全背包 5 步法系统精讲"
+  summary: "背包问题的核心变体。0-1 背包每种物品只能选 1 次（一维逆序遍历容量）；完全背包每种物品有无限件可用（一维正序遍历容量，允许同层状态累加）。"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i][j]</code>：从前 <code>i</code> 种物品中任意挑选，放入容量为 <code>j</code> 的背包中的最大价值。"
+      icon: "🎯"
+      badge: "物品×容量状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i][j] = max(dp[i-1][j], dp[i][j - weights[i]] + values[i])</code>。注意第二项是 <code>dp[i]</code>（同行左侧状态），非 <code>dp[i-1]</code>。"
+      icon: "🔄"
+      badge: "同层重复选取"
+    - label: "三、边界与初始化"
+      desc: "容量 <code>j=0</code> 时全为 0。首行物品 0 可多次放入：<code>dp[0][j] = dp[0][j - weights[0]] + values[0]</code>。"
+      icon: "🎬"
+      badge: "首行累加初始化"
+    - label: "四、一维正序遍历本质"
+      desc: "一维压缩时容量必须从小到大正序遍历，因为计算 <code>dp[j]</code> 所依赖的 <code>dp[j - w]</code> 需要是本轮已经放入过该物品的更新后数值。"
+      icon: "🧭"
+      badge: "正序累加机制"
+    - label: "五、举例推导"
+      desc: "物品重量=[1,3,4]，价值=[15,20,30]，容量=4。dp 数组滚动推导：选4件物品0获得最大价值 15 × 4 = 60。"
+      icon: "📊"
+      badge: "全局最优"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么 0-1 背包必须逆序遍历容量，而完全背包必须正序遍历容量？"
+    answer: "0-1 背包为了保证每件物品只放入一次，计算 dp[j] 时必须使用尚未被当前物品污染的上一层状态 dp[j-w]，因此从大到小逆序；而完全背包每种物品可无限放入，计算 dp[j] 时正需要利用刚刚放入过该物品的新状态 dp[j-w]，因此从小到大正序！"
+    tag: "遍历顺序分水岭"
+  - question: "完全背包的物品循环与容量循环是否可以颠倒？"
+    answer: "在单纯求最大价值的完全背包中，两层 for 循环先后顺序可以颠倒，结果完全相同；但在背包计数问题（如零钱兑换 II 求组合数 vs 组合总和 IV 求排列数）中，先物品后容量是组合数，先容量后物品是排列数！"
+    tag: "组合与排列分界"

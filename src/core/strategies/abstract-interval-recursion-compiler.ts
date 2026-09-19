@@ -309,10 +309,26 @@ export abstract class AbstractIntervalRecursionCompiler {
     const cond = this.evalCondition(i, j, ctx);
     const lineMatch = cond.lineKey ? (ctx.anchorMap[cond.lineKey] || 10) : (ctx.anchorMap.match || 10);
 
+    // 提前解析所有候选分支，并在网格中以专属多色标示进行分支预告
+    const branches = cond.isMatch
+      ? this.getMatchBranches(i, j, ctx, cond)
+      : this.getMismatchBranches(i, j, ctx, cond);
+
+    const candidateDeps = branches.map((b, bIdx) => {
+      const bType = b.branchType || (cond.isMatch ? 'diag' : bIdx === 0 ? 'bottom' : 'left');
+      return {
+        r: b.nextI,
+        c: b.nextJ,
+        type: bType,
+        label: b.tag
+      };
+    });
+
     emitStep({
       type: 'match-eval',
       i,
       j,
+      deps: candidateDeps,
       grid: JSON.parse(JSON.stringify(ctx.gridState)),
       activeStack: [...ctx.activeStack],
       visited: [...ctx.visitedCells],
@@ -326,10 +342,6 @@ export abstract class AbstractIntervalRecursionCompiler {
     });
 
     // 5. 分支调用与执行
-    const branches = cond.isMatch
-      ? this.getMatchBranches(i, j, ctx, cond)
-      : this.getMismatchBranches(i, j, ctx, cond);
-
     const branchResults: number[] = [];
 
     for (let bIdx = 0; bIdx < branches.length; bIdx++) {

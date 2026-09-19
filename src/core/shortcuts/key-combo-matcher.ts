@@ -47,18 +47,24 @@ export function normalizeSingleKey(key: string): string {
       return 'PageDown';
     case 'bracketleft':
     case '[':
+    case '【':
       return '[';
     case 'bracketright':
     case ']':
+    case '】':
       return ']';
     case 'equal':
     case '=':
+    case '＝':
       return '=';
     case 'minus':
     case '-':
+    case '－':
       return '-';
     case 'plus':
     case '+':
+    case '＋':
+      return '+';
       return '+';
     case 'slash':
     case '/':
@@ -162,19 +168,29 @@ export function eventToKeyCombo(e: {
   }
 
   let keyStr = rawKey;
-  if (rawKey === ' ') {
+  if (!keyStr || keyStr === 'Process' || keyStr === 'Unidentified') {
+    if (e.code) {
+      keyStr = e.code;
+    }
+  }
+
+  if (keyStr === ' ' || e.code === 'Space') {
     keyStr = 'Space';
-  } else if (rawKey === '?') {
+  } else if (keyStr === '?' || (e.code === 'Slash' && e.shiftKey)) {
     keyStr = '?';
     // 当 key 本身就是 ? 时，移除多余的 Shift 以免生成 "Shift+?"
     const shiftIdx = modifiers.indexOf('Shift');
     if (shiftIdx !== -1) {
       modifiers.splice(shiftIdx, 1);
     }
-  } else if (rawKey === '+') {
+  } else if (keyStr === '+' || keyStr === '＋' || (e.code === 'Equal' && e.shiftKey)) {
     keyStr = '+';
-  } else if (rawKey === '_') {
+  } else if (keyStr === '_' || keyStr === '-' || keyStr === '－' || e.code === 'Minus') {
     keyStr = '-';
+  } else if (keyStr === '【' || e.code === 'BracketLeft') {
+    keyStr = '[';
+  } else if (keyStr === '】' || e.code === 'BracketRight') {
+    keyStr = ']';
   }
 
   const normKey = normalizeSingleKey(keyStr);

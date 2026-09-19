@@ -172,6 +172,7 @@ export abstract class AbstractSequenceRecursionCompiler {
 
     emitStep({
       type: 'return',
+      flowPhase: 'terminal',
       i: rootI,
       j: rootJ,
       grid: JSON.parse(JSON.stringify(ctx.gridState)),
@@ -224,6 +225,7 @@ export abstract class AbstractSequenceRecursionCompiler {
     // 1. 发射入口帧
     emitStep({
       type: 'dfs-call',
+      flowPhase: 'forward',
       i,
       j,
       grid: JSON.parse(JSON.stringify(ctx.gridState)),
@@ -253,6 +255,7 @@ export abstract class AbstractSequenceRecursionCompiler {
 
       emitStep({
         type: 'boundary',
+        flowPhase: 'backtrack',
         i,
         j,
         grid: JSON.parse(JSON.stringify(ctx.gridState)),
@@ -281,6 +284,7 @@ export abstract class AbstractSequenceRecursionCompiler {
 
       emitStep({
         type: 'cache-hit',
+        flowPhase: 'backtrack',
         i,
         j,
         grid: JSON.parse(JSON.stringify(ctx.gridState)),
@@ -322,6 +326,7 @@ export abstract class AbstractSequenceRecursionCompiler {
 
     emitStep({
       type: 'match-eval',
+      flowPhase: 'forward',
       i,
       j,
       deps: candidateDeps,
@@ -351,6 +356,7 @@ export abstract class AbstractSequenceRecursionCompiler {
       // 🌟【强制拦截点】：在进入子递归前，必须先发射高亮本分支调用行（如 int useMatch = dfs(...)）的步进帧！
       emitStep({
         type: 'branch-call',
+        flowPhase: 'forward',
         i,
         j,
         targetI: branch.nextI,
@@ -414,6 +420,7 @@ export abstract class AbstractSequenceRecursionCompiler {
       if (branch.varName || branches.length > 1) {
         emitStep({
           type: 'branch-return',
+          flowPhase: 'backtrack',
           i,
           j,
           grid: JSON.parse(JSON.stringify(ctx.gridState)),
@@ -446,6 +453,7 @@ export abstract class AbstractSequenceRecursionCompiler {
 
     emitStep({
       type: 'combine',
+      flowPhase: 'backtrack',
       i,
       j,
       grid: JSON.parse(JSON.stringify(ctx.gridState)),

@@ -23,9 +23,9 @@ export class SequenceDistinctSubsequencesStrategy implements IAlgorithmStrategy 
       case 2:
         return this.generateStage1or2(model, Boolean(isMemo), anchorMap, dir);
       case 3:
-        return this.generateStage3(model, anchorMap, dir);
+        return this.generateStage3(model, anchorMap, dir, params.stageVariant);
       case 4:
-        return this.generateStage4(model, anchorMap, dir);
+        return this.generateStage4(model, anchorMap, dir, params.stageVariant);
       default:
         return [];
     }
@@ -43,16 +43,18 @@ export class SequenceDistinctSubsequencesStrategy implements IAlgorithmStrategy 
   public generateStage3(
     model: IYamlAlgorithmModel,
     anchorMap?: Record<string, number>,
-    direction: 'forward' | 'reverse' = 'forward'
+    direction: 'forward' | 'reverse' = 'forward',
+    variant: string = 'for'
   ): UniversalStep[] {
-    return SequenceStepMatrixCompiler.compileDistinctSubsequencesStage3(model, anchorMap, direction);
+    return SequenceStepMatrixCompiler.compileDistinctSubsequencesStage3(model, anchorMap, direction, variant);
   }
 
   public generateStage4(
     model: IYamlAlgorithmModel,
     anchorMap?: Record<string, number>,
-    direction: 'forward' | 'reverse' = 'forward'
+    direction: 'forward' | 'reverse' = 'forward',
+    variant: string = 'reverse_1d'
   ): UniversalStep[] {
-    return SequenceStepMatrixCompiler.compileDistinctSubsequencesStage4(model, anchorMap, direction);
+    return SequenceStepMatrixCompiler.compileDistinctSubsequencesStage4(model, anchorMap, direction, variant);
   }
 }

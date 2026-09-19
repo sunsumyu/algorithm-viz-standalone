@@ -42,12 +42,22 @@ export class SequenceStepMatrixCompiler {
     return compileDistinctSubsequencesStage1or2(model, isMemo, anchorMap, direction);
   }
 
-  public static compileDistinctSubsequencesStage3(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction: 'forward' | 'reverse' = 'forward'): UniversalStep[] {
-    return compileDistinctSubsequencesStage3(model, anchorMap, direction);
+  public static compileDistinctSubsequencesStage3(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward',
+    variant: string = 'for'
+  ): UniversalStep[] {
+    return compileDistinctSubsequencesStage3(model, anchorMap, direction, variant);
   }
 
-  public static compileDistinctSubsequencesStage4(model: IYamlAlgorithmModel, anchorMap?: Record<string, number>, direction: 'forward' | 'reverse' = 'forward'): UniversalStep[] {
-    return compileDistinctSubsequencesStage4(model, anchorMap, direction);
+  public static compileDistinctSubsequencesStage4(
+    model: IYamlAlgorithmModel,
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward',
+    variant: string = 'reverse_1d'
+  ): UniversalStep[] {
+    return compileDistinctSubsequencesStage4(model, anchorMap, direction, variant);
   }
 
   public static compileLongestPalindromicStage1or2(model: IYamlAlgorithmModel, isMemo: boolean = false, anchorMap?: Record<string, number>, direction?: 'forward' | 'reverse'): UniversalStep[] {

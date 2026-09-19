@@ -127,7 +127,8 @@ class AlgoNavigationManager {
    * 获取当前算法的前后算法及导航状态 (委托给 algoSearchCatalog 领域模型)
    */
   public getPrevAndNext(): { prev: AlgorithmMetadata | null; next: AlgorithmMetadata | null; currentIndex: number; total: number } {
-    return algoSearchCatalog.getPrevAndNext(this.currentAlgorithmId);
+    const activeId = this.currentAlgorithmId || viewMountEngine.getCurrentAlgorithmId();
+    return algoSearchCatalog.getPrevAndNext(activeId);
   }
 
   /**
@@ -136,6 +137,7 @@ class AlgoNavigationManager {
   public navigateToPrevious(): void {
     const { prev } = this.getPrevAndNext();
     if (prev) {
+      this.currentAlgorithmId = prev.id;
       viewMountEngine.showAlgorithm(prev.id);
     }
   }
@@ -146,6 +148,7 @@ class AlgoNavigationManager {
   public navigateToNext(): void {
     const { next } = this.getPrevAndNext();
     if (next) {
+      this.currentAlgorithmId = next.id;
       viewMountEngine.showAlgorithm(next.id);
     }
   }

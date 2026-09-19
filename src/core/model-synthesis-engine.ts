@@ -8,6 +8,7 @@
 import type { IYamlAlgorithmModel } from './interfaces';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import { StageCodeCompiler } from './compilers/stage-code-compiler';
+import '../algorithms/categories/dynamic-programming/specs';
 
 export class ModelSynthesisEngine {
   /**
@@ -15,8 +16,15 @@ export class ModelSynthesisEngine {
    */
   private static readonly DEFAULT_PARAMS_MAP: Record<string, Record<string, unknown>> = {
     'target-sum': { nums: [1, 1, 1, 1, 1], target: 3, n: 6 },
+    'last-stone-weight-ii': { stones: [2, 7, 4, 1, 8, 1], n: 6 },
+    'complete-knapsack': { weights: [1, 3, 4], values: [15, 20, 30], bagWeight: 4, n: 4 },
+    'coin-change-ii': { coins: [1, 2, 5], amount: 5, n: 5 },
+    'coin-change': { coins: [1, 2, 5], amount: 5, n: 5 },
+    'perfect-squares': { n: 12 },
     'combination-sum-iv': { nums: [1, 2, 3], target: 4, n: 4 },
     'multiple-knapsack': { weights: [1, 3, 4], values: [15, 20, 30], nums: [2, 3, 2], bagWeight: 4, n: 4 },
+    'ones-and-zeroes': { strs: ['10', '0001', '111001', '1', '0'], m: 5, n: 3 },
+    'word-break': { s: 'leetcode', wordDict: ['leet', 'code'] },
     'max-distance-in-tree': { root: '1,2,3,4,5', n: 5 },
     'tree-diameter': { root: '1,2,3,4,5', n: 5 },
     'largest-bst-subtree': { root: '10,5,15,1,8,null,7', n: 7 },
@@ -32,6 +40,8 @@ export class ModelSynthesisEngine {
     'matchsticks-to-square': { nums: [1, 1, 2, 2, 2], n: 5 },
     'partition-k-equal-subsets': { nums: [4, 3, 2, 3, 5, 2, 1], k: 4, n: 7 },
     'tsp-bitmask-dp': { n: 4 },
+    'count-digit-one': { n: 13 },
+    'non-negative-consecutive-ones': { n: 5 },
   };
 
   /**

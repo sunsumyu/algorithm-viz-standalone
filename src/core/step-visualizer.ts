@@ -17,6 +17,7 @@ import {
   saveViewportMode,
 } from './interfaces';
 import { CodePanel, HighlightTarget } from './code-panel';
+export type { HighlightTarget } from './code-panel';
 import {
   DarkCodeTerminalPresenter,
   DarkCodeTerminalInstance,

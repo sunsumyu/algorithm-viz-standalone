@@ -1,0 +1,185 @@
+id: profitable-schemes
+name: 盈利计划
+category: dynamic-programming
+difficulty: hard
+defaultStage: stage-3
+defaultDirection: forward
+
+defaultParams:
+  n: 5
+  minProfit: 3
+  group: [2, 2]
+  profit: [2, 3]
+
+problem:
+  title: "盈利计划 (Profitable Schemes, LeetCode 879)"
+  difficulty: "Hard"
+  description: |
+    集团有 n 名员工，提供 len 项工作。第 i 项工作需要 group[i] 名成员参与，并产生 profit[i] 利润。
+    一个员工最多参与一项工作。求满足「总人数不超过 n 且总利润至少为 minProfit」的不同工作方案数（对 10^9+7 取模）。
+  examples:
+    - input: "n=5, minProfit=3, group=[2,2], profit=[2,3]"
+      output: "2"
+      explanation: "选第 2 项工作（2人利润3）或选两项工作（4人利润5），共 2 种方案。"
+    - input: "n=10, minProfit=5, group=[2,3,5], profit=[6,7,8]"
+      output: "7"
+      explanation: "至少产生 5 利润且人数 ≤ 10 的计划共有 7 种。"
+  constraints:
+    - "1 <= n <= 100"
+    - "0 <= minProfit <= 100"
+    - "1 <= group.length <= 100"
+    - "1 <= group[i] <= 100"
+    - "0 <= profit[i] <= 100"
+
+directions:
+  forward:
+    label: "顺推 (正序任务、倒序维度)"
+    name: 任务正序、人数利润双倒序递推
+    description: |
+      外层枚举任务，内层双倒序更新：人数 j 从 n 降到 group[i]，利润 k 从 minProfit 降到 0。
+      核心利润截断：prevProfit = max(0, k - profit[i])，保证「至少 k 利润」语义收敛。
+    branches:
+      - name: 不选当前任务
+        description: dp[j][k] 保持不变（0-1 背包的不选分支）
+      - name: 选入当前任务
+        description: dp[j][k] += dp[j - group[i]][max(0, k - profit[i])]，对 MOD 取模
+
+stages:
+  stage-1:
+    shortName: "递归"
+    name: "阶段 1: 三维多选择递归 (任务 × 人数 × 利润)"
+    desc: |
+      对每项工作做「选」或「不选」的二叉决策。递归状态 dfs(i, remN, remP) 表示
+      从第 i 项工作起、剩余员工 remN、还需利润 remP 时的合法方案数。
+      达到利润需求（remP ≤ 0）后返回 1，耗尽任务后若仍有需求返回 0。
+    timeComplexity: "O(2^len)"
+    spaceComplexity: "O(len)"
+    variants:
+      standard:
+        name: 二叉递归枚举
+        desc: 对每项任务做选/不选决策
+        code: |
+          public int profitableSchemes(int n, int minProfit, int[] group, int[] profit) { // @step:entry
+              return dfs(group, profit, 0, n, minProfit); // @step:return
+          }
+
+          private int dfs(int[] group, int[] profit, int i, int remN, int remP) { // @step:dfs_entry
+              if (i >= group.length) return remP <= 0 ? 1 : 0; // @step:boundary
+              int notTake = dfs(group, profit, i + 1, remN, remP); // @step:not_take
+              int take = 0;
+              if (remN >= group[i]) { // @step:cond_take
+                  take = dfs(group, profit, i + 1, remN - group[i], // @step:take
+                             Math.max(0, remP - profit[i]));
+              }
+              return (notTake + take) % 1000000007; // @step:combine
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索 (三维 Memo)"
+    desc: |
+      引入三维 memo[i][remN][remP] 缓存递归状态，消除重叠子问题。
+      利润维度截断 clamp(remP, 0, minProfit) 使状态空间有界。
+    timeComplexity: "O(len × n × minProfit)"
+    spaceComplexity: "O(len × n × minProfit)"
+    variants:
+      standard:
+        name: 三维备忘录
+        desc: clamp 利润到 [0, minProfit] 使状态有界
+        code: |
+          public int profitableSchemes(int n, int minProfit, int[] group, int[] profit) { // @step:entry
+              int[][][] memo = new int[group.length][n + 1][minProfit + 1]; // @step:memo_init
+              for (int[][] a : memo) for (int[] b : a) Arrays.fill(b, -1); // @step:memo_fill
+              return dfs(group, profit, 0, n, minProfit, memo); // @step:return
+          }
+
+          private int dfs(int[] group, int[] profit, int i, int remN, int remP, int[][][] memo) { // @step:dfs_entry
+              if (i >= group.length) return remP <= 0 ? 1 : 0; // @step:boundary
+              if (memo[i][remN][remP] != -1) return memo[i][remN][remP]; // @step:cache_hit
+              int notTake = dfs(group, profit, i + 1, remN, remP, memo); // @step:not_take
+              int take = 0;
+              if (remN >= group[i]) { // @step:cond_take
+                  take = dfs(group, profit, i + 1, remN - group[i], // @step:take
+                             Math.max(0, remP - profit[i]), memo);
+              }
+              return memo[i][remN][remP] = (notTake + take) % 1000000007; // @step:combine
+          }
+
+  stage-3:
+    shortName: "三维DP"
+    name: "阶段 3: 三维状态表递推（任务 × 人数 × 利润）"
+    desc: |
+      构建 (len+1) × (n+1) × (minProfit+1) 三维计数表，dp[i][j][k] 表示前 i 项工作在最多 j 人且利润至少 k 的合法方案数。
+      外层枚举任务（正序），内层枚举人数和利润（正序，因独立于上一层状态）。利润截断 prevProfit = max(0, k-profit[i-1]) 确保「至少」语义。
+    timeComplexity: "O(len × n × minProfit)"
+    spaceComplexity: "O(len × n × minProfit)"
+    variants:
+      standard:
+        name: 三维全量递推
+        desc: 完整的三维状态空间，清晰展示阶段变迁
+        code: |
+          public int profitableSchemes(int n, int minProfit, int[] group, int[] profit) { // @step:entry
+              int MOD = 1000000007;
+              int len = group.length;
+              int[][][] dp = new int[len + 1][n + 1][minProfit + 1]; // @step:init
+              for (int j = 0; j <= n; j++) dp[0][j][0] = 1; // @step:base
+              for (int i = 1; i <= len; i++) { // @step:loop_i
+                  int g = group[i - 1], p = profit[i - 1]; // @step:count
+                  for (int j = 0; j <= n; j++) {
+                      for (int k = 0; k <= minProfit; k++) {
+                          dp[i][j][k] = dp[i - 1][j][k]; // 不选当前任务
+                          if (j >= g) {
+                              int prevProfit = Math.max(0, k - p); // @step:transfer
+                              dp[i][j][k] = (dp[i][j][k] + dp[i - 1][j - g][prevProfit]) % MOD;
+                          }
+                      }
+                  }
+              }
+              return dp[len][n][minProfit]; // @step:return
+          }
+
+  stage-4:
+    shortName: "滚动压缩"
+    name: "阶段 4: 同址二维滚动（无额外任务维）"
+    desc: |
+      与阶段 3 结构完全相同，但将利用双倒序说明「压缩的合理性」：
+      倒序枚举 j、k 保证读取的 dp[j-g][prevProfit] 仍是上一轮的旧值，
+      空间复杂度维持 O(n × minProfit)，与阶段 3 本质等价（已是最优压缩）。
+    timeComplexity: "O(len × n × minProfit)"
+    spaceComplexity: "O(n × minProfit)"
+    variants:
+      rolling_2d:
+        name: 双倒序同址更新（最优实现）
+        desc: 与 Stage 3 相同但配合双倒序语义说明
+        code: |
+          public int profitableSchemes(int n, int minProfit, int[] group, int[] profit) { // @step:entry
+              int MOD = 1000000007;
+              int[][] dp = new int[n + 1][minProfit + 1]; // @step:init
+              for (int j = 0; j <= n; j++) dp[j][0] = 1; // @step:base
+              for (int i = 0; i < group.length; i++) { // @step:loop_i
+                  int g = group[i], p = profit[i];
+                  for (int j = n; j >= g; j--) {
+                      for (int k = minProfit; k >= 0; k--) {
+                          dp[j][k] = (dp[j][k] + dp[j - g][Math.max(0, k - p)]) % MOD; // @step:transfer
+                      }
+                  }
+              }
+              return dp[n][minProfit]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    本题是「二维费用 0-1 背包的计数版」：
+    - 人数维（j）：总费用 ≤ n，0-1 背包（倒序）
+    - 利润维（k）：至少达到 minProfit，与普通背包不同的截断语义
+    - 利润截断 prevProfit = max(0, k - profit[i]) 将「至少 k 利润」压缩为有界有限状态
+
+    转移方程：
+    dp[j][k] += dp[j - group[i]][max(0, k - profit[i])]
+
+    基底：dp[j][0] = 1 for all j（空计划零利润达标方案数为 1）
+  faqs:
+    - q: "为什么利润使用 max(0, k - profit[i]) 而不是直接 k - profit[i]？"
+      a: "题目要求「至少 minProfit」，超过部分不需区分。若 k - profit[i] < 0，说明选入该任务已超额完成，将负值收敛为 0 使所有超额方案等价计入 dp[j][0]。"
+    - q: "为什么人数维和利润维都要倒序？"
+      a: "这是 0-1 背包（每项任务最多选一次）的核心约束。正序会导致同一任务被重复选取。双维度都需倒序才能保证读取到上一轮（未被当前任务更新过）的旧值。"

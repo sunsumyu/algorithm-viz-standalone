@@ -11,10 +11,17 @@ export class DpTableVisualAdapter {
   public static renderStage3DPTable(
     container: HTMLElement,
     step: any,
-    options: { m: number; n: number; isReverse?: boolean }
+    options: {
+      m: number;
+      n: number;
+      isReverse?: boolean;
+      rowLabels?: string[];
+      colLabels?: string[];
+      cornerLabel?: string;
+    }
   ): void {
     if (!container || !step) return;
-    const { m, n, isReverse = false } = options;
+    const { m, n, isReverse = false, rowLabels, colLabels, cornerLabel } = options;
     const gridRows = (step.grid && step.grid.length > 0) ? step.grid.length : m;
     const gridCols = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
 
@@ -66,17 +73,18 @@ export class DpTableVisualAdapter {
           <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
             <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}(插入):</span> <span class="font-extrabold">${leftTxt}</span>
           </div>
-          <span class="text-slate-500 font-bold text-xs">) + 1 =</span>
-          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+          <span class="text-slate-500 font-bold text-xs">)</span>
+          <span class="text-slate-400 font-bold text-xs">+ 1 ➔</span>
+          <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
             <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
           </div>
         </div>
       `;
-    } else if (hasDiag && !hasTop && !hasLeft) {
-      // 🌟 单独对角继承（如编辑距离/LCS 字符匹配无损继承）
+    } else if (hasDiag) {
+      // 🌟 对角线单向转移（如字符匹配继承）
       equationWrapper.innerHTML = `
         <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
-          <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-cyan-50 text-cyan-700 font-bold border border-cyan-300 shadow-2xs">
+          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-50 text-cyan-700 font-bold border border-cyan-300 shadow-2xs">
             <span class="animal-cat text-sm">🐱</span> <span>${diagLabel}(对角匹配):</span> <span class="font-extrabold">${diagTxt}</span>
           </div>
           <span class="text-slate-400 font-bold text-xs">➔</span>
@@ -86,21 +94,45 @@ export class DpTableVisualAdapter {
         </div>
       `;
     } else if (step.type === 'transfer' || (hasTop || hasLeft)) {
-      equationWrapper.innerHTML = `
-        <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
-          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
-            <span class="animal-cat text-sm">🐱</span> <span>${topLabel}:</span> <span class="font-extrabold">${topTxt}</span>
+      const isMax = step.msg?.includes('max(') || step.tag?.includes('max') || step.log?.includes('max');
+      const isMin = step.msg?.includes('min(') || step.tag?.includes('min') || step.log?.includes('min');
+
+      if (isMax || isMin) {
+        const opName = isMax ? 'max' : 'min';
+        equationWrapper.innerHTML = `
+          <div class="flex items-center justify-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
+            <span class="text-slate-500 font-bold text-xs">${opName}(</span>
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
+              <span class="animal-cat text-sm">🐱</span> <span>${topLabel}:</span> <span class="font-extrabold">${topTxt}</span>
+            </div>
+            <span class="text-slate-400 font-bold text-xs">,</span>
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
+              <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}:</span> <span class="font-extrabold">${leftTxt}</span>
+            </div>
+            <span class="text-slate-500 font-bold text-xs">)</span>
+            <span class="text-slate-400 font-bold text-xs">➔</span>
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+              <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            </div>
           </div>
-          <span class="text-slate-400 font-bold text-xs">+</span>
-          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
-            <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}:</span> <span class="font-extrabold">${leftTxt}</span>
+        `;
+      } else {
+        equationWrapper.innerHTML = `
+          <div class="flex items-center justify-center gap-2 p-1 bg-white rounded-xl border border-slate-200 shadow-xs text-xs font-mono-code flex-wrap">
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200 shadow-2xs">
+              <span class="animal-cat text-sm">🐱</span> <span>${topLabel}:</span> <span class="font-extrabold">${topTxt}</span>
+            </div>
+            <span class="text-slate-400 font-bold text-xs">+</span>
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-2xs">
+              <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}:</span> <span class="font-extrabold">${leftTxt}</span>
+            </div>
+            <span class="text-slate-400 font-bold text-xs">=</span>
+            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+              <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            </div>
           </div>
-          <span class="text-slate-400 font-bold text-xs">=</span>
-          <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
-            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
-          </div>
-        </div>
-      `;
+        `;
+      }
     } else {
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
@@ -117,16 +149,19 @@ export class DpTableVisualAdapter {
     const tableWrapper = document.createElement('div');
     tableWrapper.className = 'inline-block bg-white rounded-xl p-2 border border-slate-200/90 shadow-sm relative';
 
+    const corner = cornerLabel || 'i\\j';
     let tableHtml = '<table class="border-collapse font-mono-code text-xs">';
     // 表头：列索引
-    tableHtml += '<thead><tr><th class="p-0.5 text-[10px] text-slate-400 font-normal">i\\j</th>';
+    tableHtml += `<thead><tr><th class="p-0.5 text-[10px] text-slate-400 font-normal">${corner}</th>`;
     for (let c = 0; c < gridCols; c++) {
-      tableHtml += `<th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-center">j=${c}</th>`;
+      const colTxt = colLabels?.[c] ?? `j=${c}`;
+      tableHtml += `<th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-center">${colTxt}</th>`;
     }
     tableHtml += '</tr></thead><tbody>';
 
     for (let r = 0; r < gridRows; r++) {
-      tableHtml += `<tr><th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-right">i=${r}</th>`;
+      const rowTxt = rowLabels?.[r] ?? `i=${r}`;
+      tableHtml += `<tr><th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-right">${rowTxt}</th>`;
       for (let c = 0; c < gridCols; c++) {
         const isCur = step.i === r && step.j === c;
         const isTop = step.topI === r && step.topJ === c;

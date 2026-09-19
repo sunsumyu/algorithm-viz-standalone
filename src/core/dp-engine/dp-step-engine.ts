@@ -61,6 +61,10 @@ export class DpStepEngine {
     'is-subsequence': 'is-subseq',
   };
 
+  public static getCanonicalId(id: string): string | undefined {
+    return this.ALIAS_MAP[id];
+  }
+
   public static register(spec: AlgorithmSpec): void {
     this.registry.set(spec.id, spec);
   }

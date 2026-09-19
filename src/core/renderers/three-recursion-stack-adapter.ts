@@ -47,6 +47,9 @@ export class ThreeRecursionStackAdapter implements IVisualRenderer {
   private controls: OrbitControls | null = null;
   private animFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private resizeRafId: number | null = null;
+  private lastWidth = 0;
+  private lastHeight = 0;
 
   // 场景节点
   private rootGroup: THREE.Group | null = null;
@@ -176,9 +179,17 @@ export class ThreeRecursionStackAdapter implements IVisualRenderer {
         alpha: true,
         powerPreference: 'high-performance',
       });
-      this.renderer.setSize(width, height);
+      this.renderer.setSize(width, height, false);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+      this.renderer.domElement.style.outline = 'none';
+      this.renderer.domElement.style.width = '100%';
+      this.renderer.domElement.style.height = '100%';
+      this.renderer.domElement.className = 'w-full h-full block cursor-grab active:cursor-grabbing';
+
+      this.lastWidth = width;
+      this.lastHeight = height;
+
       this.container.appendChild(this.renderer.domElement);
 
       this.scene = new THREE.Scene();
@@ -217,14 +228,26 @@ export class ThreeRecursionStackAdapter implements IVisualRenderer {
       // 挂载悬浮工具栏
       this.mountFloatingControls(this.container);
 
-      // 视口动态监听
+      // 视口动态监听 (防抖 + 脏检查 + 阻止内联像素污染)
       this.resizeObserver = new ResizeObserver(() => {
         if (!this.container || !this.renderer || !this.camera) return;
-        const w = this.container.clientWidth || 400;
-        const h = this.container.clientHeight || 280;
-        this.camera.aspect = w / h;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(w, h);
+        if (this.resizeRafId !== null) {
+          cancelAnimationFrame(this.resizeRafId);
+        }
+        this.resizeRafId = requestAnimationFrame(() => {
+          this.resizeRafId = null;
+          if (!this.container || !this.renderer || !this.camera) return;
+          const w = Math.floor(this.container.clientWidth) || 400;
+          const h = Math.floor(this.container.clientHeight) || 280;
+          if (Math.abs(w - this.lastWidth) < 2 && Math.abs(h - this.lastHeight) < 2) {
+            return;
+          }
+          this.lastWidth = w;
+          this.lastHeight = h;
+          this.camera.aspect = w / h;
+          this.camera.updateProjectionMatrix();
+          this.renderer.setSize(w, h, false);
+        });
       });
       this.resizeObserver.observe(this.container);
 
@@ -678,8 +701,16 @@ export class ThreeRecursionStackAdapter implements IVisualRenderer {
    */
   public dispose(): void {
     if (this.animFrameId !== null) {
-      cancelAnimationFrame(this.animFrameId);
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.animFrameId);
+      }
       this.animFrameId = null;
+    }
+    if (this.resizeRafId !== null) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.resizeRafId);
+      }
+      this.resizeRafId = null;
     }
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();

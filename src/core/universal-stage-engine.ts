@@ -6,6 +6,7 @@
  */
 
 import type { IYamlAlgorithmModel } from './interfaces';
+import { ProblemDimensionResolver } from './resolvers/problem-dimension-resolver';
 import {
   AlgorithmStrategyRegistry,
   cloneStateDepTree as helperCloneTree,
@@ -26,8 +27,17 @@ export interface UniversalTreeNode {
   children: UniversalTreeNode[];
 }
 
+export interface ActorPhysicsState {
+  currentSlot: number;
+  jumpFrom?: number;
+  action?: 'idle' | 'walk' | 'jump' | 'compare';
+}
+
 export interface UniversalStep {
   type?: string;
+  flowPhase?: 'forward' | 'backtrack' | 'terminal';
+  actorState?: ActorPhysicsState;
+  fromSlot?: number;
   i?: number;
   j?: number;
   grid?: (number | null)[][];
@@ -49,7 +59,7 @@ export interface UniversalStep {
   activeNodeId?: string;
   treeRoot?: UniversalTreeNode | null;
   // 阶段 3 & 4 空间压缩与转移计算专用元数据
-  memo?: number[] | Record<string | number, any>;
+  memo?: (number | null)[] | Record<string | number, any>;
   memoUpdatedIndex?: number;
   memoRefLeftIndex?: number;
   topVal?: number;
@@ -59,8 +69,8 @@ export interface UniversalStep {
   weightsGrid?: number[][];
   activeSlot?: number;
   slotMode?: 'down' | 'right' | 'updated' | 'final';
-  memoSnapshot?: number[];
-  dp1d?: number[];
+  memoSnapshot?: (number | null)[];
+  dp1d?: (number | null)[];
   highlightSlots?: number[];
   srcSlots?: number[];
   currentI?: number;
@@ -158,9 +168,64 @@ export class UniversalStageEngine {
       stageVariant: params.stageVariant ?? 'terminal',
       anchorMap: params.anchorMap
     });
-    if (steps) return steps;
+    if (steps) {
+      return this.normalizeStepInvariants(steps, model, params);
+    }
 
     throw new Error(`[UniversalStageEngine] 算法 "${model?.id || 'unknown'}" (阶段 ${params.stage}) 暂无匹配的推导计算策略！禁止静默回退至其他算法。`);
+  }
+
+  /**
+   * 顶层步骤不变式物理归一化管道 (Step Invariants Normalization Pipeline)
+   * 确保全库所有算法生成的步骤，满足顶层物理视口与小人运动学的不变式契约
+   */
+  public static normalizeStepInvariants(
+    steps: UniversalStep[],
+    model: IYamlAlgorithmModel,
+    params: { stage: number; m?: number; n?: number; direction?: 'forward' | 'reverse' }
+  ): UniversalStep[] {
+    if (!steps || steps.length === 0) return steps;
+
+    const is1D = ProblemDimensionResolver.isPure1DProblem(model?.id || '', { m: params.m, n: params.n });
+
+    let prevSlot: number | undefined = undefined;
+    for (let idx = 0; idx < steps.length; idx++) {
+      const step = steps[idx];
+
+      // 🌟 1. 一维线性状态空间权威位置锁 (1D Authoritative Slot Invariant)
+      // 杜绝任何底层 strategy 错误写出 j: 0 将小人定死在原点！
+      if (is1D) {
+        const slot = step.activeSlot !== undefined
+          ? step.activeSlot
+          : (step.currentJ !== undefined
+              ? step.currentJ
+              : (step.j !== undefined && step.j !== 0
+                  ? step.j
+                  : (step.currentI !== undefined
+                      ? step.currentI
+                      : (step.i !== undefined ? step.i : 0))));
+
+        step.activeSlot = slot;
+        step.j = slot; // 顶层物理纠偏：一维槽位列坐标必须等于 slot，小人才能跳动
+        step.i = 0;    // 一维行坐标固定为 0
+
+        // 🌟 2. 物理实体规范化协议 (ActorPhysicsState Invariant)
+        const jumpOrigin = step.fromSlot !== undefined
+          ? step.fromSlot
+          : (step.actorState?.jumpFrom !== undefined
+              ? step.actorState.jumpFrom
+              : (prevSlot !== undefined && prevSlot !== slot ? prevSlot : undefined));
+
+        step.actorState = {
+          currentSlot: slot,
+          jumpFrom: jumpOrigin,
+          action: step.actorState?.action || (jumpOrigin !== undefined && jumpOrigin !== slot ? 'jump' : 'walk')
+        };
+        prevSlot = slot;
+      }
+    }
+
+    return steps;
   }
 
   /**
@@ -194,7 +259,8 @@ export class UniversalStageEngine {
     mVal: number = 3,
     nVal: number = 3,
     direction: 'forward' | 'reverse' = 'forward',
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    variant: string = 'for'
   ): UniversalStep[] {
     return this.generateSteps(model, {
       stage: 3,
@@ -202,6 +268,7 @@ export class UniversalStageEngine {
       n: nVal,
       direction,
       isMemo: false,
+      stageVariant: variant,
       anchorMap
     });
   }
@@ -214,7 +281,7 @@ export class UniversalStageEngine {
     mVal: number = 3,
     nVal: number = 3,
     direction: 'forward' | 'reverse' = 'forward',
-    variant: 'if' | 'for' = 'if',
+    variant: string = 'if',
     anchorMap?: Record<string, number>
   ): UniversalStep[] {
     return this.generateSteps(model, {

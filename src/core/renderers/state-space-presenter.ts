@@ -17,8 +17,9 @@ import { AlgorithmModelRepository } from '../model-repository';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
-  stage3SubView?: 'matrix' | 'tree';
-  card2SubView?: 'tree' | 'alignment' | 'stack';
+  stage3SubView?: 'matrix' | 'tree' | 'alignment';
+  stage4SubView?: 'memo' | 'alignment';
+  card2SubView?: 'tree' | 'alignment' | 'stack' | 'matrix' | 'memo';
   step: UniversalStep;
   m: number;
   n: number;
@@ -188,12 +189,37 @@ export class StateSpacePresenter {
     }
 
     if (sStr && tStr && effectiveM === sStr.length + 1 && effectiveN === tStr.length + 1) {
-      rowLabels = ['Ø', ...sStr.split('')];
-      colLabels = ['Ø', ...tStr.split('')];
-      isMatch = (r, c) => r > 0 && c > 0 && sStr![r - 1] === tStr![c - 1];
+      // 判定序列语义坐标轴模式：
+      // 1. Stage 1/2 顺推递归：从 dfs(0, 0) 开始向后探索后缀，0..m-1 对应字符，终点 m/n 对应空串 Ø（后缀模式）
+      // 2. Stage 3 逆推填表：从右下角向左上角逆向填表，末尾对应空串 Ø（后缀模式）
+      // 3. Stage 3 顺推填表 或 Stage 1/2 逆推递归：以空前缀 Ø 为基底，0 对应 Ø，1..m 对应字符（前缀模式）
+      const isSuffixMode = ((currentStage === 'stage-1' || currentStage === 'stage-2') && !isReverse) ||
+                           ((currentStage === 'stage-3' || currentStage === 'stage-4') && isReverse);
+
+      if (isSuffixMode) {
+        rowLabels = [...sStr.split(''), 'Ø'];
+        colLabels = [...tStr.split(''), 'Ø'];
+        isMatch = (r, c) => r < sStr!.length && c < tStr!.length && sStr![r] === tStr![c];
+      } else {
+        rowLabels = ['Ø', ...sStr.split('')];
+        colLabels = ['Ø', ...tStr.split('')];
+        isMatch = (r, c) => r > 0 && c > 0 && sStr![r - 1] === tStr![c - 1];
+      }
       const lbl1 = (step as any).label1 || 's';
       const lbl2 = (step as any).label2 || 't';
       cornerLabel = `${lbl1}(i) \\ ${lbl2}(j)`;
+    } else if (!rowLabels && AlgorithmModelRepository.hasModel(modelId)) {
+      const model = AlgorithmModelRepository.getModel(modelId);
+      const params = model.defaultParams as any;
+      if (params && params.weights && (params.bagWeight !== undefined || params.target !== undefined)) {
+        const weights = Array.isArray(params.weights) ? params.weights : [];
+        const values = Array.isArray(params.values) ? params.values : [];
+        if (weights.length > 0 && effectiveM === weights.length) {
+          rowLabels = weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
+          colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+          cornerLabel = '物品(i) \\ 容量(j)';
+        }
+      }
     }
 
     // 2. 2D 平面网格/槽位沙盘渲染
@@ -236,19 +262,44 @@ export class StateSpacePresenter {
     }
 
     if (currentStage === 'stage-4' || currentStage === 'stage-5') {
-      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位
-      GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
-    } else if (currentStage === 'stage-3') {
-      // 阶段 3: 状态转移表 vs 状态依赖树
-      const is2DGrid = (effectiveM > 1 || (step.grid && step.grid.length > 1));
-      if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
-        RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
-      } else if (is2DGrid && step.grid && step.grid.length > 1) {
-        GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse });
-      } else if (step.dp1d && step.dp1d.length > 0) {
-        GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
+      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位 vs 串比对
+      if (options.stage4SubView === 'alignment' || options.card2SubView === 'alignment') {
+        this.renderSequenceAlignmentCard2(container, step, options);
       } else {
-        GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse });
+        GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
+      }
+    } else if (currentStage === 'stage-3') {
+      // 阶段 3: 状态转移表 vs 状态依赖树 vs 串比对
+      if (stage3SubView === 'alignment' || options.card2SubView === 'alignment') {
+        this.renderSequenceAlignmentCard2(container, step, options);
+      } else {
+        const is2DGrid = (effectiveM > 1 || (step.grid && step.grid.length > 1));
+        let rowLabels: string[] | undefined;
+        let colLabels: string[] | undefined;
+        let cornerLabel: string | undefined;
+        if (AlgorithmModelRepository.hasModel(options.modelId)) {
+          const model = AlgorithmModelRepository.getModel(options.modelId);
+          const params = model.defaultParams as any;
+          if (params && params.weights && (params.bagWeight !== undefined || params.target !== undefined)) {
+            const weights = Array.isArray(params.weights) ? params.weights : [];
+            const values = Array.isArray(params.values) ? params.values : [];
+            if (weights.length > 0 && effectiveM === weights.length) {
+              rowLabels = weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
+              colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+              cornerLabel = '物品(i) \\ 容量(j)';
+            }
+          }
+        }
+
+        if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
+          RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
+        } else if (is2DGrid && step.grid && step.grid.length > 1) {
+          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel });
+        } else if (step.dp1d && step.dp1d.length > 0) {
+          GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
+        } else {
+          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel });
+        }
       }
     } else if (currentStage === 'stage-1' || currentStage === 'stage-2') {
       // 阶段 1 / 阶段 2: 复合子视图调度 (递归树 / 双串比对 / 调用栈与变量)
@@ -606,22 +657,40 @@ export class StateSpacePresenter {
   ): void {
     if (!container) return;
 
-    const s1 = (step as any).s1 || (step as any).s || '';
-    const s2 = (step as any).s2 || (step as any).t || '';
+    let s1 = (step as any).s1 || (step as any).s || (step as any).word1 || (step as any).text1 || '';
+    let s2 = (step as any).s2 || (step as any).t || (step as any).word2 || (step as any).text2 || '';
+
+    if ((!s1 || !s2) && options?.modelId && AlgorithmModelRepository.hasModel(options.modelId)) {
+      const model = AlgorithmModelRepository.getModel(options.modelId);
+      const params = model.defaultParams as any;
+      if (params) {
+        if (!s1) {
+          s1 = typeof params.s === 'string' ? params.s : (params.s1 || params.word1 || params.text1 || '');
+        }
+        if (!s2) {
+          s2 = typeof params.t === 'string' ? params.t : (params.s2 || params.word2 || params.text2 || '');
+        }
+      }
+    }
 
     if (!s1 || !s2) {
       container.innerHTML = `
         <div class="w-full h-full flex flex-col items-center justify-center p-4 text-center text-slate-400 select-none">
           <i class="fa-solid fa-code-compare text-3xl mb-2 text-slate-300 dark:text-slate-600"></i>
           <div class="text-xs font-bold text-slate-600 dark:text-slate-300">非双字符串比对问题</div>
-          <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">当前题目不具备双序列指针，请切换为【🌲 递归树】或【📋 调用栈】视图。</div>
+          <div class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">当前题目不具备双序列指针，请切换为【状态转移】或【滚动数组】视图。</div>
         </div>
       `;
       return;
     }
 
-    const curI = (step as any).curI !== undefined ? (step as any).curI : (step.i !== undefined ? step.i : 0);
-    const curJ = (step as any).curJ !== undefined ? (step as any).curJ : (step.j !== undefined ? step.j : 0);
+    const isStage3or4 = options.currentStage === 'stage-3' || options.currentStage === 'stage-4' || options.currentStage === 'stage-5';
+    const curI = (step as any).curI !== undefined
+      ? (step as any).curI
+      : (isStage3or4 && step.i !== undefined && step.i > 0 ? step.i - 1 : (step.i !== undefined ? step.i : 0));
+    const curJ = (step as any).curJ !== undefined
+      ? (step as any).curJ
+      : (isStage3or4 && step.j !== undefined && step.j > 0 ? step.j - 1 : (step.j !== undefined ? step.j : 0));
 
     SequenceAlignmentPresenter.render(container, {
       s1,

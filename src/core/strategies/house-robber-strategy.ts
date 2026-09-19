@@ -151,9 +151,7 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
 
     // Stage 3 & 4: DP
     const steps: UniversalStep[] = [];
-    const dp = new Array(n).fill(0);
-    dp[0] = nums[0];
-    if (n > 1) dp[1] = Math.max(nums[0], nums[1]);
+    const dp = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -164,11 +162,45 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       memo: [...dp],
       dp1d: [...dp],
       activeSlot: 0,
-      highlightSlots: [0, Math.min(1, n - 1)],
-      tag: `初始化 dp[0]=${dp[0]}, dp[1]=${dp[1] ?? dp[0]}`,
-      log: `| 📋 初始化 dp[0] = nums[0] = ${dp[0]}, dp[1] = max(nums[0], nums[1]) = ${dp[1] ?? dp[0]}`,
-      msg: `初始化基础边界：<code>dp[0] = ${dp[0]}</code>，<code>dp[1] = ${dp[1] ?? dp[0]}</code>。`
+      highlightSlots: [0],
+      tag: '初始化 DP 状态数组',
+      log: `| 📋 分配长度为 ${n} 的一维 DP 数组 dp[0..${n - 1}]`,
+      msg: `初始化：分配长度为 <code>${n}</code> 的状态表 <code>dp[0..${n - 1}]</code>。`
     });
+
+    dp[0] = nums[0];
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 2,
+      i: 0,
+      j: 0,
+      grid: [[...dp]],
+      memo: [...dp],
+      dp1d: [...dp],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: `基底 dp[0] = ${dp[0]}`,
+      log: `| 🎬 设定基底: dp[0] = nums[0] = ${dp[0]}`,
+      msg: `设定基础边界：只有 1 间房屋时 <code>dp[0] = ${dp[0]}</code>。`
+    });
+
+    if (n > 1) {
+      dp[1] = Math.max(nums[0], nums[1]);
+      steps.push({
+        type: 'init-val',
+        line: anchorMap?.init_val || anchorMap?.init || 2,
+        i: 0,
+        j: 1,
+        grid: [[...dp]],
+        memo: [...dp],
+        dp1d: [...dp],
+        activeSlot: 1,
+        highlightSlots: [1],
+        tag: `基底 dp[1] = ${dp[1]}`,
+        log: `| 🎬 设定基底: dp[1] = max(nums[0], nums[1]) = ${dp[1]}`,
+        msg: `设定基础边界：前 2 间房屋选较大者 <code>dp[1] = ${dp[1]}</code>。`
+      });
+    }
 
     for (let i = 2; i < n; i++) {
       steps.push({
@@ -404,9 +436,9 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
       line: anchorMap?.init || 2,
       i: 0,
       j: 0,
-      grid: [[...nums]],
-      memo: [...nums],
-      dp1d: [...nums],
+      grid: [new Array(n).fill(null)],
+      memo: new Array(n).fill(null),
+      dp1d: new Array(n).fill(null),
       activeSlot: 0,
       highlightSlots: [0, n - 1],
       tag: '环形数组拆解为两个单链',

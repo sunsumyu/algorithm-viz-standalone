@@ -7,7 +7,8 @@ export interface VisualizerInteractionActions {
   onSeek?: (step: number) => void;
   onSpeedChange?: (speed: number) => void;
   onFontScale?: (delta: number) => void;
-  onStage3SubView?: (view: 'matrix' | 'tree') => void;
+  onStage3SubView?: (view: 'matrix' | 'tree' | 'alignment') => void;
+  onStage4SubView?: (view: 'memo' | 'alignment') => void;
   onCard2SubView?: (view: 'tree' | 'alignment' | 'stack') => void;
   onToggle3D?: () => void;
   onReset3DCam?: () => void;
@@ -58,8 +59,16 @@ export class VisualizerInteractionBinder {
     // 3. Stage 3 子视图切换
     const btnSubMatrix = document.getElementById('btn-subview-matrix');
     const btnSubTree = document.getElementById('btn-subview-tree');
+    const btnSubAlign = document.getElementById('btn-subview-alignment');
     if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => actions.onStage3SubView?.('matrix'));
     if (btnSubTree) btnSubTree.addEventListener('click', () => actions.onStage3SubView?.('tree'));
+    if (btnSubAlign) btnSubAlign.addEventListener('click', () => actions.onStage3SubView?.('alignment'));
+
+    // 3.0 Stage 4 子视图切换 (滚动数组 vs 串比对)
+    const btnStage4Memo = document.getElementById('btn-stage4-memo');
+    const btnStage4Align = document.getElementById('btn-stage4-alignment');
+    if (btnStage4Memo) btnStage4Memo.addEventListener('click', () => actions.onStage4SubView?.('memo'));
+    if (btnStage4Align) btnStage4Align.addEventListener('click', () => actions.onStage4SubView?.('alignment'));
 
     // 3.1 Card 2 阶段 1/2 复合子视图切换 (横向药丸 + 下拉选择器)
     const btnCard2Tree = document.getElementById('btn-card2-tree');

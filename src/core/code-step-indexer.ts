@@ -37,9 +37,9 @@ export class CodeStepIndexer {
   /**
    * 编译并注册多语言代码模板
    * @param key 唯一标识（如 'unique-paths:space-optimized' 或 'climb-stairs:naive-recursive'）
-   * @param rawLanguages 多语言原始代码行数组
+   * @param rawLanguages 多语言原始代码行数组或多行字符串
    */
-  public register(key: string, rawLanguages: Record<string, string[]>): CompiledCodeModel {
+  public register(key: string, rawLanguages: Record<string, string[] | string>): CompiledCodeModel {
     const cleanCode: Record<string, string[]> = {};
     const anchorIndex: Record<string, Record<string, CodeAnchorTarget>> = {};
 
@@ -57,21 +57,27 @@ export class CodeStepIndexer {
   /**
    * 剥离单语言源码中的 @step: 锚点标签，输出干净代码行
    */
-  public stripAnchors(rawLines: string[]): string[] {
+  public stripAnchors(rawLines: string[] | string): string[] {
     return this.parseLanguageLines(rawLines).cleanLines;
   }
 
   /**
-   * 解析单语言代码行数组，提取锚点并清洗源码
+   * 解析单语言代码行数组或多行字符串，提取锚点并清洗源码
    */
-  private parseLanguageLines(rawLines: string[]): { cleanLines: string[]; anchors: Record<string, CodeAnchorTarget> } {
+  private parseLanguageLines(rawLines: string[] | string): { cleanLines: string[]; anchors: Record<string, CodeAnchorTarget> } {
     const cleanLines: string[] = [];
     const anchors: Record<string, CodeAnchorTarget> = {};
+
+    const lines = Array.isArray(rawLines)
+      ? rawLines
+      : typeof rawLines === 'string'
+      ? rawLines.split(/\r?\n/)
+      : [];
 
     // 锚点正则匹配：支持任意位置出现的 @step:name 或 @step:name(ctx:...)
     const anchorRegex = /@step:([a-zA-Z0-9_-]+)(?:\(([^)]+)\))?/g;
 
-    rawLines.forEach((rawLine, index) => {
+    lines.forEach((rawLine, index) => {
       const lineNum = index + 1; // 1-based 行号
       let lineClean = rawLine;
       let match: RegExpExecArray | null;

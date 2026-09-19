@@ -39,7 +39,9 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       log: string;
       msg: string;
     }) => {
-      gridState[params.i][params.j] = params.memoj !== undefined ? (typeof params.memoj === 'number' ? params.memoj : 0) : memo[params.j];
+      if (params.type !== 'init' && params.type !== 'fetch-down' && params.type !== 'fetch-right') {
+        gridState[params.i][params.j] = params.memoj !== undefined ? (typeof params.memoj === 'number' ? params.memoj : 0) : memo[params.j];
+      }
       steps.push({
         ...params,
         obstacleGrid,
@@ -56,8 +58,7 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       i: isForward ? 0 : mVal - 1,
       j: isForward ? 0 : nVal - 1,
       activeSlot: 0,
-      slotMode: 'updated',
-      memoj: 0,
+      slotMode: 'down',
       tag: '初始化一维状态数组',
       log: `| 📦 创建长度为 ${nVal} 的一维滚动状态数组 memo[0..${nVal - 1}]`,
       msg: `创建长度为 <code>${nVal}</code> 的一维滚动状态数组 <code>memo</code>，初始值全为 0。`

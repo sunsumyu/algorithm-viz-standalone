@@ -42,37 +42,42 @@ export class ViewMountEngine {
    * 显示算法页面（折叠主选择器并挂载算法舞台）
    */
   public async showAlgorithm(algorithmId: string): Promise<IVisualizer | null> {
-    const entry = await algorithmRegistry.resolve(algorithmId);
-    if (!entry) {
-      console.error(`[ViewMountEngine] Algorithm not found in registry: ${algorithmId}`);
+    try {
+      const entry = await algorithmRegistry.resolve(algorithmId);
+      if (!entry) {
+        console.error(`[ViewMountEngine] Algorithm not found in registry: ${algorithmId}`);
+        return null;
+      }
+
+      // 1. 折叠主选择器（侧边栏 + 卡片网格）
+      this.hideMainLayout();
+
+      // 2. 记录到最近访问历史并派发更新事件（使用标准规范化 ID）
+      addRecentAlgorithm(entry.id);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('algo:recent-updated', { detail: { algorithmId: entry.id } }));
+      }
+
+      // 3. 挂载算法视口
+      const visualizer = await this.mount({
+        algorithmId: entry.id,
+        viewId: entry.viewId,
+        templateContent: entry.template,
+        VisualizerClass: entry.Visualizer,
+        navigateBack: () => this.showSelector(),
+        containerParent: typeof document !== 'undefined' ? document.getElementById('main-layout') : null,
+      });
+
+      // 4. 广播算法挂载事件（统一使用规范化 entry.id，确保全局导航链绝对对齐）
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('algo:mounted', { detail: { algorithmId: entry.id, entry } }));
+      }
+
+      return visualizer;
+    } catch (err) {
+      console.error(`[ViewMountEngine] Error showing algorithm ${algorithmId}:`, err);
       return null;
     }
-
-    // 1. 折叠主选择器（侧边栏 + 卡片网格）
-    this.hideMainLayout();
-
-    // 2. 记录到最近访问历史并派发更新事件
-    addRecentAlgorithm(algorithmId);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('algo:recent-updated', { detail: { algorithmId } }));
-    }
-
-    // 3. 挂载算法视口
-    const visualizer = await this.mount({
-      algorithmId: entry.id,
-      viewId: entry.viewId,
-      templateContent: entry.template,
-      VisualizerClass: entry.Visualizer,
-      navigateBack: () => this.showSelector(),
-      containerParent: typeof document !== 'undefined' ? document.getElementById('main-layout') : null,
-    });
-
-    // 4. 广播算法挂载事件，解耦全局导航等观察者
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('algo:mounted', { detail: { algorithmId, entry } }));
-    }
-
-    return visualizer;
   }
 
   /**
@@ -141,6 +146,9 @@ export class ViewMountEngine {
       panelCollapseCoordinator.unbind(this.activeContainer);
       this.activeContainer.innerHTML = '';
       this.activeContainer.classList.remove('active');
+      if (this.activeContainer.style) {
+        this.activeContainer.style.display = 'none';
+      }
       this.activeContainer = null;
     }
 
@@ -187,9 +195,24 @@ export class ViewMountEngine {
       container.innerHTML = '';
     }
 
+    // 顶层防御：确保父级下除当前活动视口外的所有同级容器强制处于非激活并隐藏状态，杜绝 Flex 瓜分屏幕与空白死区
+    if (parent && typeof parent.querySelectorAll === 'function') {
+      parent.querySelectorAll<HTMLElement>('.view-container').forEach((vc) => {
+        if (vc !== container) {
+          vc.classList.remove('active');
+          if (vc.style) {
+            vc.style.display = 'none';
+          }
+        }
+      });
+    }
+
     this.activeContainer = container;
     if (container) {
       container.classList.add('active');
+      if (container.style) {
+        container.style.display = 'flex';
+      }
     }
 
     // 3. 注入模板内容

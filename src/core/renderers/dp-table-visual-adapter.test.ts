@@ -78,4 +78,43 @@ describe('DpTableVisualAdapter (Deep Module) Unit Tests', () => {
     expect(container.innerHTML).toContain('障碍格阻断');
     expect(container.innerHTML).toContain('dp[1][1] = 0');
   });
+
+  it('3. 成功渲染 max() 决策等式与背包行列表头', () => {
+    const mockStep = {
+      type: 'transfer',
+      msg: 'max(不放, 放入)',
+      tag: 'max-select',
+      i: 1,
+      j: 3,
+      topI: 0,
+      topJ: 3,
+      leftI: 1,
+      leftJ: 1,
+      topVal: 15,
+      leftVal: 35,
+      sumVal: 35,
+      grid: [
+        [0, 15, 15, 15],
+        [0, 20, 20, 35]
+      ]
+    };
+
+    DpTableVisualAdapter.renderStage3DPTable(container as any, mockStep, {
+      m: 2,
+      n: 4,
+      isReverse: false,
+      rowLabels: ['物0(w:1,v:15)', '物1(w:2,v:20)'],
+      colLabels: ['容0', '容1', '容2', '容3'],
+      cornerLabel: '物品(i) \\ 容量(j)'
+    });
+
+    expect(container.innerHTML).toContain('max(');
+    expect(container.innerHTML).toContain('上方:');
+    expect(container.innerHTML).toContain('左方:');
+    expect(container.innerHTML).toContain('dp[1][3]:');
+    expect(container.innerHTML).toContain('物0(w:1,v:15)');
+    expect(container.innerHTML).toContain('物1(w:2,v:20)');
+    expect(container.innerHTML).toContain('容3');
+    expect(container.innerHTML).toContain('物品(i) \\ 容量(j)');
+  });
 });

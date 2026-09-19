@@ -49,8 +49,8 @@ export interface VariableSnapshot {
 }
 
 export interface CodePresentationModelOptions {
-  lines?: string[];
-  languages?: Record<string, string[]>;
+  lines?: string[] | string;
+  languages?: Record<string, string[] | string>;
   language?: string;
   algoKey?: string;
   lineExplanations?: Record<number, string> | Record<string, Record<number, string>>;

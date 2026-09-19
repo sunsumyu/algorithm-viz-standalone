@@ -228,16 +228,6 @@ class LcsTableCompiler extends AbstractSequenceTableCompiler {
       ? `初始化 <code>${ctx.m + 1} × ${ctx.n + 1}</code> 二维状态表格，首行与首列空串基底置为 <strong>0</strong>。`
       : `初始化 <code>${ctx.m + 1} × ${ctx.n + 1}</code> 二维状态表格，末行与末列空串基底置为 <strong>0</strong>。`;
   }
-  protected override preInitGrid(dp: (number | null)[][], ctx: SequenceTableContext): void {
-    const isForward = ctx.direction !== 'reverse';
-    if (isForward) {
-      for (let j = 0; j <= ctx.n; j++) dp[0][j] = 0;
-      for (let i = 0; i <= ctx.m; i++) dp[i][0] = 0;
-    } else {
-      for (let j = 0; j <= ctx.n; j++) dp[ctx.m][j] = 0;
-      for (let i = 0; i <= ctx.m; i++) dp[i][ctx.n] = 0;
-    }
-  }
   protected getBorderInitConfig(ctx: SequenceTableContext): BorderInitConfig {
     const isForward = ctx.direction !== 'reverse';
     const cells: BorderInitCell[] = [];
@@ -440,7 +430,7 @@ export function compileLcsStage4(
       type: 'init',
       i: m,
       j: n,
-      grid: [Array.from(dp1d)],
+      grid: [new Array(n + 1).fill(null)],
       line: lineInit,
       tag: `创建逆推一维滚动数组 dp[0..${n}]`,
       log: `| ⚡ 逆推空间压缩：仅维护一维数组 dp[${n + 1}] 全部置为 0，目标汇聚在 dp[0]`,
@@ -520,7 +510,7 @@ export function compileLcsStage4(
     type: 'init',
     i: 0,
     j: 0,
-    grid: [Array.from(dp1d)],
+    grid: [new Array(n + 1).fill(null)],
     line: lineInit,
     tag: `创建一维滚动数组 dp[0..${n}]`,
     log: `| ⚡ 空间压缩：仅维护一维数组 dp[${n + 1}] 全部置为 0`,

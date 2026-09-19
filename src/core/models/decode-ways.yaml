@@ -1,0 +1,252 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「解码方法 (Decode Ways)」四阶段全演化标准实现。
+# 包含：自左向右递归树展开、记忆化单链剪枝、自底向上递推填表与 O(1) 双变量滚动。
+# ==============================================================================
+
+id: decode-ways
+name: "解码方法"
+nameEn: "Decode Ways"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🔢"
+difficulty: 2
+levelOrder: 6
+learningGoal: "掌握 s[i]=='0' 的阻断分支与两位数 <= 26 的合法性校验，理解从二叉递归到一维 DP 与双变量滚动的全演化"
+description: "一条包含字母 A-Z 的消息通过以下映射进行了编码：'A' -> '1', 'B' -> '2', ..., 'Z' -> '26'。解码方法数（LeetCode 91）。"
+defaultParams:
+  n: 3
+  s: "226"
+
+problem:
+  leetcodeId: 91
+  title: "解码方法"
+  difficulty: "中等"
+  tags: ["字符串", "动态规划"]
+  description: "一条包含字母 A-Z 的消息通过以下映射进行了编码：<br/>'A' -> \"1\"<br/>'B' -> \"2\"<br/>...<br/>'Z' -> \"26\"<br/>要解码已编码的消息，所有数字必须基于上述映射的方法，反向映射回原字母。输入仅由数字组成的字符串 s ，请计算并返回解码方法的总数。"
+  examples:
+    - input: "s = \"226\""
+      output: "3"
+      explanation: "\"226\" 可以解码为 \"BZ\" (2 26), \"VF\" (22 6), 或者 \"BBF\" (2 2 6)。"
+    - input: "s = \"06\""
+      output: "0"
+      explanation: "\"06\" 无法映射到 \"F\" ，因为存在前导零（\"6\" 和 \"06\" 并不等价）。"
+    - input: "s = \"10\""
+      output: "1"
+      explanation: "\"10\" 仅能解码为 \"J\" (10)。"
+  constraints:
+    - "1 <= s.length <= 100"
+    - "s 只包含数字，并且可能包含前导零。"
+  leetcodeUrl: "https://leetcode.cn/problems/decode-ways/"
+
+directions:
+  forward:
+    label: "自左向右 (目标分解)"
+    branches:
+      - name: "take1"
+        delta: [-1, 0]
+        label: "解码 1 位"
+        codeVar: "one_digit"
+        arrow: "↙️"
+      - name: "take2"
+        delta: [-2, 0]
+        label: "解码 2 位"
+        codeVar: "two_digits"
+        arrow: "↘️"
+    combineFormula: "one_digit + two_digits"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (前缀字符决策树展开)"
+    desc:
+      forward: "从字符串开头向后尝试解码 1 位字符（'1'~'9'）或 2 位字符（10~26），每个节点分化两个递归分支，遇到 '0' 则无法解码直接阻断。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "DecodeWays_Recursive.java"
+        code:
+          forward:
+            title: "DecodeWays_Recursive.java"
+            source: |
+              class Solution {
+                  public int numDecodings(String s) {
+                      return dfs(s, 0);
+                  }
+                  private int dfs(String s, int i) { // @step:entry
+                      if (i == s.length()) return 1; // @step:boundary // 全部解码完毕
+                      if (s.charAt(i) == '0') return 0; // @step:boundary // 遇到 0 无法解码阻断
+                      int ans = dfs(s, i + 1); // @step:branch_left // 取 1 位数字解码
+                      if (i + 1 < s.length()) { // @step:branch_right_check
+                          int two = (s.charAt(i) - '0') * 10 + (s.charAt(i + 1) - '0');
+                          if (two <= 26) {
+                              ans += dfs(s, i + 2); // @step:branch_right // 取 2 位数字解码
+                          }
+                      }
+                      return ans; // @step:combine // 汇总两种解码方案
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+    desc:
+      forward: "使用一维备忘录 memo[i] 缓存后缀子串 s[i..] 的解码方案总数，避免后续不同分支路径到达同一字符位置时重复递归。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "DecodeWays_Memo.java"
+        code:
+          forward:
+            title: "DecodeWays_Memo.java"
+            source: |
+              class Solution {
+                  public int numDecodings(String s) {
+                      int[] memo = new int[s.length() + 1];
+                      Arrays.fill(memo, -1);
+                      return dfs(s, 0, memo);
+                  }
+                  private int dfs(String s, int i, int[] memo) { // @step:entry
+                      if (i == s.length()) return 1; // @step:boundary
+                      if (s.charAt(i) == '0') return 0; // @step:boundary
+                      if (memo[i] != -1) return memo[i]; // @step:cache_hit // 备忘录命中直接剪枝
+                      int ans = dfs(s, i + 1, memo); // @step:branch_left
+                      if (i + 1 < s.length()) {
+                          int two = (s.charAt(i) - '0') * 10 + (s.charAt(i + 1) - '0');
+                          if (two <= 26) {
+                              ans += dfs(s, i + 2, memo); // @step:branch_right
+                          }
+                      }
+                      return memo[i] = ans; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 自底向上递推填表 (DP 数组)"
+    desc:
+      forward: "定义 dp[i] 表示字符串前 i 个字符 s[0..i-1] 的解码方案总数。根据最后 1 个字符与最后 2 个字符的合法性分别累加前驱状态。"
+    variants:
+      standard:
+        variantLabel: "数组填表版"
+        title:
+          forward: "DecodeWays_DP.java"
+        code:
+          forward:
+            title: "DecodeWays_DP.java"
+            source: |
+              class Solution {
+                  public int numDecodings(String s) {
+                      int n = s.length();
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[0] = 1; // @step:init_val // 空前缀基础方案 1
+                      for (int i = 1; i <= n; i++) { // @step:loop_i
+                          if (s.charAt(i - 1) != '0') {
+                              dp[i] += dp[i - 1]; // @step:transfer // 取 1 位字符转移
+                          }
+                          if (i >= 2) {
+                              int two = (s.charAt(i - 2) - '0') * 10 + (s.charAt(i - 1) - '0');
+                              if (two >= 10 && two <= 26) {
+                                  dp[i] += dp[i - 2]; // @step:transfer_two // 取 2 位字符转移
+                              }
+                          }
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(1) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 空间压缩双变量滚动 (O(1) 状态机)"
+    desc:
+      forward: "计算 dp[i] 时仅依赖 dp[i-1] 与 dp[i-2]，维护 p, q 两个滚动变量滑动更新，将空间复杂度彻底压缩至 O(1)。"
+    variants:
+      two_vars:
+        variantLabel: "双变量滚动版"
+        title:
+          forward: "DecodeWays_SpaceOptimized.java"
+        code:
+          forward:
+            title: "DecodeWays_SpaceOptimized.java"
+            source: |
+              class Solution {
+                  public int numDecodings(String s) {
+                      int n = s.length();
+                      int p = 0, q = 1; // @step:init // p 对应 dp[i-2], q 对应 dp[i-1]
+                      for (int i = 1; i <= n; i++) {
+                          int r = 0; // @step:accumulate
+                          if (s.charAt(i - 1) != '0') {
+                              r += q;
+                          }
+                          if (i >= 2) {
+                              int two = (s.charAt(i - 2) - '0') * 10 + (s.charAt(i - 1) - '0');
+                              if (two >= 10 && two <= 26) {
+                                  r += p;
+                              }
+                          }
+                          p = q; // @step:fetch_down // 滑动更新前两项
+                          q = r; // @step:fetch_right // 滑动更新前一项
+                      }
+                      return q; // @step:return
+                  }
+              }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 解码方法 5 步法系统精讲"
+  summary: "LeetCode 91。本题本质上是带有合法性校验的爬楼梯模型。每次可以跨 1 个字符或 2 个字符，但必须严格校验字符不能为 '0' 以及两位数组合必须在 [10, 26] 区间内！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i]</code>：字符串 <code>s</code> 的前 <code>i</code> 个字符所能解码的总方案数。"
+      icon: "🎯"
+      badge: "方案数状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i] = (s[i-1]!='0' ? dp[i-1] : 0) + (10<=two<=26 ? dp[i-2] : 0)</code>。"
+      icon: "🔄"
+      badge: "分支校验转移"
+    - label: "三、边界与初始化"
+      desc: "<code>dp[0] = 1</code>（空前缀基础方案 1 种，用于支撑两位数解码基底）。"
+      icon: "🎬"
+      badge: "Base Case"
+    - label: "四、遍历顺序"
+      desc: "从左向右 <code>i = 1</code> 顺推遍历到 <code>n</code>。"
+      icon: "🧭"
+      badge: "前缀推导"
+    - label: "五、举例推导"
+      desc: "以 s=\"226\" 为例：dp[0]=1; dp[1]=1 ('2'); dp[2]=2 ('2'->+1, '22'->+1); dp[3]=3 ('6'->+2, '26'->+1)。最终答案 3。"
+      icon: "📊"
+      badge: "示例演算"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么以 '0' 开头的字符不能被解码？"
+    answer: "题目映射规则中 'A'->'1' 直至 'Z'->'26'，没有单个 '0' 的对应字母；且不允许前导零（'06' 不能等价于 '6'），因此单独的 '0' 转移贡献为 0。"
+    tag: "前导零陷阱"
+  - question: "为什么 dp[0] 初始化为 1？"
+    answer: "当字符串前两位构成合法数字（如 '26' -> 'Z'）时，其解码为一个整体，此时需要加上 dp[0]。dp[0]=1 确保前两位作为一个双字符字母时计入 1 种有效方案。"
+    tag: "边界初始化"
+  - question: "空间复杂度为何可以优化到 O(1)？"
+    answer: "计算 dp[i] 时仅依赖 dp[i-1] 和 dp[i-2] 两项历史记录，更早期的解码方案数不再被访问，因此只需维护滚动变量 p, q 即可。"
+    tag: "状态压缩"

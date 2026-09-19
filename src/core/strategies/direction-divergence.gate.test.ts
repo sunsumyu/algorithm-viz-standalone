@@ -436,6 +436,50 @@ describe('算法推导方向真实性与差异性物理门禁 (Direction Diverge
     }
   });
 
+  it('min-cost-climbing-stairs 作为真双向模型，顺推与逆推在代码、转移格与拓扑顺序上必须具备严格物理差异', () => {
+    const model = AlgorithmModelRepository.getModel('min-cost-climbing-stairs');
+    expect(StageNavigationCoordinator.areDirectionsIsomorphic(model)).toBe(false);
+
+    const strategy = AlgorithmStrategyRegistry.get('min-cost-climbing-stairs')!;
+    expect(strategy).toBeDefined();
+
+    const fSteps = strategy.generateSteps(model, { stage: 3, direction: 'forward' });
+    const rSteps = strategy.generateSteps(model, { stage: 3, direction: 'reverse' });
+
+    // 1. 步数充足度断言：杜绝 5 步粗制滥造跳步
+    expect(fSteps.length, '顺推步数过短，存在跳步').toBeGreaterThanOrEqual(8);
+    expect(rSteps.length, '逆推步数过短，存在跳步').toBeGreaterThanOrEqual(8);
+
+    // 2. 步骤拓扑差异断言：顺推自低向高转移 (升序)，逆推自高向低倒序转移 (降序)
+    const fTransfers = fSteps.filter(s => s.type === 'transfer');
+    const rTransfers = rSteps.filter(s => s.type === 'transfer');
+
+    expect(fTransfers.length).toBeGreaterThan(0);
+    expect(rTransfers.length).toBeGreaterThan(0);
+
+    const fSlots = fTransfers.map(s => s.activeSlot!);
+    const rSlots = rTransfers.map(s => s.activeSlot!);
+    expect(fSlots[fSlots.length - 1], '顺推必须沿阶梯向上递增').toBeGreaterThan(fSlots[0]);
+    expect(rSlots[rSlots.length - 1], '逆推必须沿阶梯向下递减').toBeLessThan(rSlots[0]);
+
+    // 3. 决策天平完整度断言：转移步骤必须具备 decisions 决策分支
+    for (const s of fTransfers) {
+      expect(Array.isArray(s.decisions) && s.decisions.length >= 2, '顺推转移步骤缺少两路决策天平数据').toBe(true);
+    }
+    for (const s of rTransfers) {
+      expect(Array.isArray(s.decisions) && s.decisions.length >= 2, '逆推转移步骤缺少两路决策天平数据').toBe(true);
+    }
+
+    // 4. 零跳步生命周期断言
+    expect(fSteps.some(s => s.type === 'init'), '顺推缺少 init 帧').toBe(true);
+    expect(fSteps.some(s => s.type === 'loop-check'), '顺推缺少 loop-check 循环头帧').toBe(true);
+    expect(fSteps.some(s => s.type === 'return'), '顺推缺少 return 结束帧').toBe(true);
+
+    expect(rSteps.some(s => s.type === 'init'), '逆推缺少 init 帧').toBe(true);
+    expect(rSteps.some(s => s.type === 'loop-check'), '逆推缺少 loop-check 循环头帧').toBe(true);
+    expect(rSteps.some(s => s.type === 'return'), '逆推缺少 return 结束帧').toBe(true);
+  });
+
   it('真正单向的模型 (如 climb-stairs) 不应暴露伪逆推分支', () => {
     const climbModel = AlgorithmModelRepository.getModel('climb-stairs');
     const climbDirKeys = Object.keys(climbModel.directions || {});

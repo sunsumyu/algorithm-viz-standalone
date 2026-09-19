@@ -3,6 +3,17 @@ import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'path';
 import * as jsYaml from 'js-yaml';
 
+// 🌟 全局环境防护：防止 Windows 下系统默认 TEMP 指向快写满的分区 (如 D:\tmp)
+if (process.platform === 'win32') {
+  const localAppTemp = process.env.LOCALAPPDATA 
+    ? resolve(process.env.LOCALAPPDATA, 'Temp')
+    : 'C:\\Users\\Aren\\AppData\\Local\\Temp';
+  if (!process.env.TEMP || process.env.TEMP.startsWith('D:') || process.env.TMP?.startsWith('D:')) {
+    process.env.TEMP = localAppTemp;
+    process.env.TMP = localAppTemp;
+  }
+}
+
 function yamlPlugin(): Plugin {
   return {
     name: 'vite:yaml',
@@ -44,5 +55,12 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        maxThreads: 4,
+        minThreads: 1
+      }
+    }
   },
 });

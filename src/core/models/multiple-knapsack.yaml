@@ -1,0 +1,191 @@
+id: multiple-knapsack
+name: 多重背包
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-3
+defaultDirection: forward
+
+defaultParams:
+  weights: [1, 3, 4]
+  values: [15, 20, 30]
+  nums: [2, 3, 2]
+  bagWeight: 10
+
+problem:
+  title: "多重背包问题 (Multiple Knapsack)"
+  difficulty: "Medium"
+  description: |
+    给定 N 种物品和一个背包。第 i 种物品的重量为 weight[i]，价值为 value[i]，且最多可以选 nums[i] 件。
+    背包的总容量为 W，求在不超过容量限制的前提下可以获得的最大价值总和。
+  examples:
+    - input: "weights=[1,3,4], values=[15,20,30], nums=[2,3,2], W=10"
+      output: "95"
+      explanation: "物品 0 选 2 件（2×15=30）+ 物品 1 选 3 件（3×20=60）+ 物品 2 选 0 件 = 90，或其他最优分配。"
+  constraints:
+    - "1 <= N <= 100"
+    - "1 <= weight[i], value[i] <= 100"
+    - "1 <= nums[i] <= 100"
+    - "1 <= W <= 1000"
+
+directions:
+  forward:
+    label: "顺推 (正序容量)"
+    name: 物品正序、容量正序双重递推
+    description: 外层枚举物品种类，内层枚举背包容量，对每个状态枚举当前物品选取件数 k (0..nums[i]) 寻找最优
+    branches:
+      - name: 不选当前物品
+        description: dp[i][j] = dp[i-1][j]（继承不选决策）
+      - name: 选 k 件当前物品（k=1..nums[i]，k*weight[i] <= j）
+        description: dp[i][j] = max(dp[i][j], dp[i-1][j-k*weight[i]] + k*value[i])
+
+stages:
+  stage-1:
+    shortName: "递归"
+    name: "阶段 1: 多叉决策递归 (选 0..k 件)"
+    desc: 对每种物品做「选取 0 到 nums[i] 件」的多分支决策，递归函数状态为 (物品下标 i, 剩余容量 j)，枚举 k 件，返回最大价值。
+    timeComplexity: "O(N × W × max_count)"
+    spaceComplexity: "O(N + W)"
+    variants:
+      standard:
+        name: 枚举件数多叉递归
+        desc: 对每种物品枚举 0..nums[i] 件的所有选取决策
+        code: |
+          public int maxValue(int[] w, int[] v, int[] nums, int W) { // @step:entry
+              return dfs(w, v, nums, 0, W); // @step:return
+          }
+
+          private int dfs(int[] w, int[] v, int[] nums, int i, int j) { // @step:dfs_entry
+              if (i >= w.length) return 0; // @step:boundary
+              int best = 0;
+              for (int k = 0; k <= nums[i] && k * w[i] <= j; k++) { // @step:loop_k
+                  best = Math.max(best,
+                      dfs(w, v, nums, i + 1, j - k * w[i]) + k * v[i]); // @step:branch_take
+              }
+              return best; // @step:return_best
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索 (二维 Memo)"
+    desc: 引入 int[][] memo 缓存 (物品下标 i, 剩余容量 j) 的最优价值，消除重叠子问题。
+    timeComplexity: "O(N × W × max_count)"
+    spaceComplexity: "O(N × W)"
+    variants:
+      standard:
+        name: 二维备忘录优化
+        desc: 缓存 (i, j) 状态的最大价值
+        code: |
+          public int maxValue(int[] w, int[] v, int[] nums, int W) { // @step:entry
+              int[][] memo = new int[w.length][W + 1]; // @step:memo_init
+              for (int[] row : memo) Arrays.fill(row, -1); // @step:memo_fill
+              return dfs(w, v, nums, 0, W, memo); // @step:return
+          }
+
+          private int dfs(int[] w, int[] v, int[] nums, int i, int j, int[][] memo) { // @step:dfs_entry
+              if (i >= w.length) return 0; // @step:boundary
+              if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+              int best = 0;
+              for (int k = 0; k <= nums[i] && k * w[i] <= j; k++) { // @step:loop_k
+                  best = Math.max(best,
+                      dfs(w, v, nums, i + 1, j - k * w[i], memo) + k * v[i]); // @step:branch_take
+              }
+              return memo[i][j] = best; // @step:store
+          }
+
+  stage-3:
+    shortName: "有界DP"
+    name: "阶段 3: 二维有界背包递推填表"
+    desc: 构建 N × (W+1) 二维状态表，dp[i][j] 表示前 i 种物品在容量 j 下的最大价值，内层枚举选取件数 k (0..nums[i])。
+    timeComplexity: "O(N × W × max_count)"
+    spaceComplexity: "O(N × W)"
+    variants:
+      standard:
+        name: 枚举件数二维 DP
+        desc: 正序容量、枚举件数
+        code: |
+          public int maxValue(int[] w, int[] v, int[] nums, int W) { // @step:entry
+              int n = w.length;
+              int[][] dp = new int[n][W + 1]; // @step:init
+
+              // 初始化第 0 种物品
+              for (int j = 0; j <= W; j++) { // @step:init_row
+                  int k = Math.min(nums[0], j / w[0]);
+                  dp[0][j] = k * v[0];
+              }
+
+              for (int i = 1; i < n; i++) { // @step:loop_i
+                  for (int j = 0; j <= W; j++) { // @step:loop_j
+                      int best = dp[i - 1][j]; // @step:cond
+                      for (int k = 1; k <= nums[i] && k * w[i] <= j; k++) { // @step:loop_k
+                          best = Math.max(best, dp[i - 1][j - k * w[i]] + k * v[i]); // @step:transfer
+                      }
+                      dp[i][j] = best; // @step:assign
+                  }
+              }
+              return dp[n - 1][W]; // @step:return
+          }
+
+  stage-4:
+    shortName: "一维滚动"
+    name: "阶段 4: 一维滚动数组空间压缩（倒序）"
+    desc: 利用滚动数组将二维 dp 压缩为一维，内层容量倒序遍历确保每种物品不超过件数限制，空间复杂度降至 O(W)。
+    timeComplexity: "O(N × W × max_count)"
+    spaceComplexity: "O(W)"
+    variants:
+      rolling_1d:
+        name: 一维倒序滚动压缩
+        desc: 物品正序、容量倒序、枚举件数
+        code: |
+          public int maxValue(int[] w, int[] v, int[] nums, int W) { // @step:entry
+              int[] dp = new int[W + 1]; // @step:init
+
+              for (int i = 0; i < w.length; i++) { // @step:loop_i
+                  for (int j = W; j >= w[i]; j--) { // @step:loop_j
+                      for (int k = 1; k <= nums[i] && k * w[i] <= j; k++) { // @step:loop_k
+                          dp[j] = Math.max(dp[j], dp[j - k * w[i]] + k * v[i]); // @step:transfer
+                      }
+                  }
+              }
+              return dp[W]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    多重背包是 0-1 背包的自然推广：
+    1. 0-1 背包：每件物品选 0 或 1 次
+    2. 完全背包：每件物品选 0 到无限次
+    3. 多重背包：每件物品选 0 到 nums[i] 次（有上限）
+
+    转移方程：
+    dp[i][j] = max(dp[i-1][j-k*w[i]] + k*v[i])  for k = 0, 1, ..., nums[i]
+
+    高级优化：
+    - 二进制拆分：将 nums[i] 件拆成 1, 2, 4, ..., 2^m, r 件，转化为 0-1 背包，O(N×log(max_count)×W)
+    - 单调队列优化：利用滑动窗口最大值将内层从 O(max_count) 降至 O(1)，达到 O(N×W)
+  dimensionComparison:
+    - dimension: "朴素多叉递归"
+      timeComplexity: "O(max_count^N)"
+      spaceComplexity: "O(N)"
+      pros: "决策树直观展示每种物品的选取件数分支"
+      cons: "指数级状态爆炸"
+    - dimension: "记忆化搜索"
+      timeComplexity: "O(N × W × max_count)"
+      spaceComplexity: "O(N × W)"
+      pros: "自顶向下剪枝重叠子问题"
+      cons: "额外递归栈开销"
+    - dimension: "二维 DP 填表（枚举件数）"
+      timeComplexity: "O(N × W × max_count)"
+      spaceComplexity: "O(N × W)"
+      pros: "状态清晰，件数依赖可视化"
+      cons: "内层三重循环"
+    - dimension: "一维滚动压缩"
+      timeComplexity: "O(N × W × max_count)"
+      spaceComplexity: "O(W)"
+      pros: "空间降至 O(W)"
+      cons: "倒序遍历原因不直观"
+
+faqs:
+  - q: "多重背包为什么不能直接用完全背包的正序压缩？"
+    a: "完全背包正序是因为物品可以无限选取，dp[i][j] 可依赖 dp[i][j-w] (同物品已更新值)。多重背包有件数上限，正序会重复计入同一物品超过 nums[i] 次，必须倒序（0-1 背包方式）保证每种物品最多选 nums[i] 次。"
+  - q: "单调队列优化的核心思想是什么？"
+    a: "对同余 mod w[i] 的容量分组，利用滑动窗口（单调队列维护区间最大值）将原来 O(count) 的内层枚举降至 O(1) 均摊，整体时间复杂度降至 O(N×W)。"

@@ -49,7 +49,6 @@ export class ProblemDimensionResolver {
     'combination-sum-iv',
     'target-sum',
     'last-stone-weight-ii',
-    'complete-knapsack',
     'partition-equal-subset-sum',
     'multiple-knapsack'
   ]);
@@ -77,9 +76,18 @@ export class ProblemDimensionResolver {
   }
 
   /**
+   * 判断目标模型或参数是否为纯一维线性动规问题
+   */
+  public static isPure1DProblem(modelId: string, params?: Record<string, any>): boolean {
+    if (this.PURE_1D_PROBLEM_IDS.has(modelId)) return true;
+    if (params && params.m === 1) return true;
+    return false;
+  }
+
+  /**
    * 归一化解析算法默认参数与维度
    */
-  public static resolve(modelId: string, params?: Record<string, any>): ResolvedDimensions {
+  public static resolve(modelId: string, params?: Record<string, any>, currentStage?: string): ResolvedDimensions {
     if (this.isTreeProblem(modelId, params)) {
       return { m: 1, n: 6, is1D: true, category: 'tree' };
     }
@@ -131,6 +139,13 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: false, category };
     }
 
+    if (params.s1 !== undefined && params.s2 !== undefined) {
+      m = String(params.s1).length + 1;
+      n = String(params.s2).length + 1;
+      category = '2d-sequence';
+      return { m, n, is1D: false, category };
+    }
+
     // 3. 股票买卖系列 (prices 数组)
     if (params.prices !== undefined) {
       const prices = this.toArray(params.prices);
@@ -143,10 +158,13 @@ export class ProblemDimensionResolver {
     // 4. 背包类问题 (weights/values/bagWeight/target)
     if (params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined) {
       const bag = Number(params.bagWeight ?? params.target ?? 0);
-      m = 1;
+      const wArr = params.weights ? this.toArray(params.weights) : [];
+      const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
+      m = (!isStage4 && wArr.length > 0) ? wArr.length : 1;
       n = bag > 0 ? bag + 1 : 6;
       category = 'knapsack';
-      return { m, n, is1D: true, category };
+      const is1D = isStage4 || m <= 1 || this.PURE_1D_PROBLEM_IDS.has(modelId);
+      return { m, n, is1D, category };
     }
 
     // 5. 纯一维数组类型 (nums)

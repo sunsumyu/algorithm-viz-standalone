@@ -1,0 +1,211 @@
+id: ones-and-zeroes
+name: 一和零
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-1
+defaultDirection: forward
+
+defaultParams:
+  strs: ["10", "0001", "111001", "1", "0"]
+  m: 5
+  n: 3
+
+problem:
+  title: "LeetCode 474. 一和零"
+  difficulty: "Medium"
+  description: |
+    给你一个二进制字符串数组 <code>strs</code> 和两个整数 <code>m</code> 和 <code>n</code> 。
+
+    请你找出并返回 <code>strs</code> 的最大子集的长度，该子集中 <strong>最多</strong> 有 <code>m</code> 个 <code>0</code> 和 <code>n</code> 个 <code>1</code> 。
+
+    如果 <code>x</code> 的所有元素也是 <code>y</code> 的元素，集合 <code>x</code> 是集合 <code>y</code> 的 <strong>子集</strong> 。
+  examples:
+    - input: "strs = [\"10\",\"0001\",\"111001\",\"1\",\"0\"], m = 5, n = 3"
+      output: "4"
+      explanation: "最多有 5 个 0 和 3 个 1 的最大子集是 {\"10\",\"0001\",\"1\",\"0\"}，共 4 个元素。"
+    - input: "strs = [\"10\",\"0\",\"1\"], m = 1, n = 1"
+      output: "2"
+      explanation: "最大子集 {\"10\",\"0\"} 或 {\"10\",\"1\"}，包含 2 个元素。"
+  constraints:
+    - "1 <= strs.length <= 600"
+    - "1 <= strs[i].length <= 100"
+    - "strs[i] 仅由 '0' 和 '1' 组成"
+    - "1 <= m, n <= 100"
+
+directions:
+  forward:
+    label: "顺推 (字符串正序决策)"
+    name: 字符串正序 0/1 双容量递推
+    description: 依次遍历每个字符串，决策不选入或选入（消耗其 0 和 1 的数量），状态为 dp[z][o] 表示在 0 不超过 z 且 1 不超过 o 条件下的最大子集大小
+    branches:
+      - name: 不选当前字符串 strs[i]
+        delta: [0, 0]
+        arrow: ↑
+        description: dp[z][o] = dp[z][o]（继承上层状态）
+      - name: 选入当前字符串 strs[i]（消耗 c0 个 0 和 c1 个 1）
+        delta: [1, 1]
+        arrow: ↖
+        description: dp[z][o] = max(dp[z][o], dp[z-c0][o-c1] + 1)
+  reverse:
+    label: "逆推 (倒序容量)"
+    name: 双维度逆推
+    description: 从目标最大子集大小倒推各字符串的选取
+
+stages:
+  stage-1:
+    shortName: "递归"
+    name: "阶段 1: 选/不选二叉决策递归"
+    desc: 对每个字符串做「不选」或「选入」决策，递归函数状态为 (字符串下标 i, 剩余 0 容量 zeros, 剩余 1 容量 ones)，返回最大子集大小。
+    timeComplexity: "O(2^n)"
+    spaceComplexity: "O(n)"
+    variants:
+      standard:
+        name: 标准选与不选递归
+        desc: 枚举每个字符串的选取决策
+        code: |
+          public int findMaxForm(String[] strs, int m, int n) { // @step:entry
+              return dfs(strs, 0, m, n); // @step:dfs_start @step:return
+          }
+
+          private int dfs(String[] strs, int i, int zeros, int ones) { // @step:dfs_entry
+              if (i >= strs.length) return 0; // @step:base_overflow
+
+              int notTake = dfs(strs, i + 1, zeros, ones); // @step:branch_not_take
+              int[] cost = count(strs[i]); // @step:count
+              int take = 0;
+              if (zeros >= cost[0] && ones >= cost[1]) { // @step:cond_take
+                  take = dfs(strs, i + 1, zeros - cost[0], ones - cost[1]) + 1; // @step:branch_take
+              }
+              return Math.max(notTake, take); // @step:combine
+          }
+
+          private int[] count(String s) { // @step:count_fn
+              int c0 = 0, c1 = 0;
+              for (char ch : s.toCharArray()) {
+                  if (ch == '0') c0++; else c1++;
+              }
+              return new int[]{c0, c1};
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    name: "阶段 2: 三维记忆化搜索"
+    desc: 引入 Integer[][][] memo 缓存 (字符串下标 i, 剩余 0 容量 zeros, 剩余 1 容量 ones) 的最大子集大小，消除指数级重叠子问题。
+    timeComplexity: "O(n × m × n)"
+    spaceComplexity: "O(n × m × n)"
+    variants:
+      standard:
+        name: 三维备忘录优化
+        desc: 缓存 (i, zeros, ones) 状态结果
+        code: |
+          public int findMaxForm(String[] strs, int m, int n) { // @step:entry
+              Integer[][][] memo = new Integer[strs.length][m + 1][n + 1]; // @step:memo_init
+              return dfs(strs, 0, m, n, memo); // @step:dfs_start @step:return
+          }
+
+          private int dfs(String[] strs, int i, int zeros, int ones, Integer[][][] memo) { // @step:dfs_entry
+              if (i >= strs.length) return 0; // @step:base_overflow
+              if (memo[i][zeros][ones] != null) return memo[i][zeros][ones]; // @step:cache_hit
+
+              int notTake = dfs(strs, i + 1, zeros, ones, memo); // @step:branch_not_take
+              int[] cost = count(strs[i]); // @step:count
+              int take = 0;
+              if (zeros >= cost[0] && ones >= cost[1]) { // @step:cond_take
+                  take = dfs(strs, i + 1, zeros - cost[0], ones - cost[1], memo) + 1; // @step:branch_take
+              }
+              return memo[i][zeros][ones] = Math.max(notTake, take); // @step:combine
+          }
+
+  stage-3:
+    shortName: "三维DP"
+    name: "阶段 3: 三维 0-1 背包递推填表"
+    desc: 构建 len × (m+1) × (n+1) 三维状态表，dp[i][z][o] 表示考察前 i 个字符串时在 0 不超过 z 且 1 不超过 o 下的最大子集大小，内层展示为 dp[i] 的二维切片。
+    timeComplexity: "O(len × m × n)"
+    spaceComplexity: "O(len × m × n)"
+    variants:
+      standard:
+        name: 三维 0-1 背包填表
+        desc: 字符串正序、双容量正序遍历填表
+        code: |
+          public int findMaxForm(String[] strs, int m, int n) { // @step:entry
+              int len = strs.length;
+              int[][][] dp = new int[len + 1][m + 1][n + 1]; // @step:init
+
+              for (int i = 1; i <= len; i++) { // @step:loop_i
+                  int[] cost = count(strs[i - 1]); // @step:count
+                  int c0 = cost[0], c1 = cost[1];
+                  for (int z = 0; z <= m; z++) { // @step:loop_j
+                      for (int o = 0; o <= n; o++) { // @step:loop_k
+                          dp[i][z][o] = dp[i - 1][z][o]; // @step:transfer_skip
+                          if (z >= c0 && o >= c1) { // @step:cond
+                              dp[i][z][o] = Math.max(dp[i][z][o],
+                                  dp[i - 1][z - c0][o - c1] + 1); // @step:transfer
+                          }
+                      }
+                  }
+              }
+              return dp[len][m][n]; // @step:return
+          }
+
+  stage-4:
+    shortName: "二维压缩"
+    name: "阶段 4: 二维滚动数组空间压缩"
+    desc: 使用二维滚动数组 dp[m+1][n+1]，内层容量从 (m, n) 双倒序遍历，将空间复杂度从 O(len × m × n) 降至 O(m × n)。
+    timeComplexity: "O(len × m × n)"
+    spaceComplexity: "O(m × n)"
+    variants:
+      rolling_2d:
+        name: 二维双倒序滚动 0-1 背包
+        desc: 双倒序遍历容量保证每个字符串仅被使用一次
+        code: |
+          public int findMaxForm(String[] strs, int m, int n) { // @step:entry
+              int[][] dp = new int[m + 1][n + 1]; // @step:init
+
+              for (String s : strs) { // @step:loop_i
+                  int[] cost = count(s); // @step:count
+                  int c0 = cost[0], c1 = cost[1];
+                  for (int z = m; z >= c0; z--) { // @step:loop_j
+                      for (int o = n; o >= c1; o--) { // @step:loop_k
+                          dp[z][o] = Math.max(dp[z][o], dp[z - c0][o - c1] + 1); // @step:transfer
+                      }
+                  }
+              }
+              return dp[m][n]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    一和零是经典的二维费用 0-1 背包问题：
+    1. 传统 0-1 背包只有一维费用（重量）；本题有两维费用（0 的数量和 1 的数量）。
+    2. 状态设计：dp[z][o] = 在最多 z 个 0 和 o 个 1 的限制下，能选取的最大字符串数量。
+    3. 转移方程：
+       - 不选当前串：dp[z][o] = dp[z][o]（保持）
+       - 选入当前串（消耗 c0 个 0、c1 个 1）：dp[z][o] = max(dp[z][o], dp[z-c0][o-c1] + 1)
+    4. 空间压缩：与 0-1 背包一样，内层双维度必须倒序遍历，保证每个字符串只被选一次。
+  dimensionComparison:
+    - dimension: "阶段 1 二叉决策递归"
+      timeComplexity: "O(2^n)"
+      spaceComplexity: "O(n)"
+      pros: "决策树直观，双维度约束清晰可见"
+      cons: "状态爆炸"
+    - dimension: "阶段 2 三维记忆化搜索"
+      timeComplexity: "O(len × m × n)"
+      spaceComplexity: "O(len × m × n)"
+      pros: "自顶向下，快速剪除重叠子问题"
+      cons: "三维 memo 空间占用"
+    - dimension: "阶段 3 三维 DP 填表"
+      timeComplexity: "O(len × m × n)"
+      spaceComplexity: "O(len × m × n)"
+      pros: "状态表完备，每层切片可视化清晰"
+      cons: "空间 O(len × m × n)"
+    - dimension: "阶段 4 二维双倒序压缩"
+      timeComplexity: "O(len × m × n)"
+      spaceComplexity: "O(m × n)"
+      pros: "空间降至 O(m × n)"
+      cons: "双内层必须倒序遍历"
+
+faqs:
+  - q: "为什么空间压缩时两层内循环都必须倒序？"
+    a: "因为 0-1 背包要求每个物品只选一次。选入字符串 s 时，dp[z][o] 依赖的是 dp[z-c0][o-c1]（上一轮状态）。若正序遍历，较小的 z/o 会先被更新，导致同一字符串被重复选入，变成完全背包。双倒序保证在计算 dp[z][o] 时，dp[z-c0][o-c1] 仍是上轮的旧值。"
+  - q: "三维 DP 和二维压缩的区别是什么？"
+    a: "三维 DP 保留每一轮（每个字符串）的完整状态表，便于回溯和可视化；二维压缩将三维 len×(m+1)×(n+1) 压缩到 (m+1)×(n+1)，利用倒序遍历隐含「上一轮」的历史信息，以时间换空间。"

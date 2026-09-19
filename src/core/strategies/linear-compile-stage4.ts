@@ -9,7 +9,8 @@ import type { UniversalStep } from '../universal-stage-engine';
 export function compileLinearStage4(
   model: IYamlAlgorithmModel,
   nVal: number,
-  anchorMap?: Record<string, number>
+  anchorMap?: Record<string, number>,
+  direction: 'forward' | 'reverse' = 'forward'
 ): UniversalStep[] {
   const modelId = model.id;
   const n = Math.min(Math.max(nVal || (modelId === 'fibonacci' ? 6 : 5), 1), 10);
@@ -40,16 +41,39 @@ export function compileLinearStage4(
 
   for (let i = 2; i <= n; i++) {
     let r = p + q;
+    const cost = [10, 15, 20, 25, 30];
     if (modelId === 'min-cost' || modelId === 'min-cost-climbing-stairs') {
-      const cost = [10, 15, 20, 25, 30];
       r = Math.min(q + (cost[i - 1] || 10), p + (cost[i - 2] || 15));
+    } else if (modelId === 'decode-ways') {
+      const baseStr = String(model.defaultParams?.s || '226');
+      let s = baseStr;
+      while (s.length < n) s += '2';
+      s = s.slice(0, n);
+      const c1 = s[i - 1];
+      const two = parseInt(s.slice(i - 2, i), 10);
+      r = (c1 !== '0' ? q : 0) + (two >= 10 && two <= 26 ? p : 0);
     }
+
+    const minCostDecisions = (modelId === 'min-cost' || modelId === 'min-cost-climbing-stairs') ? [
+      {
+        label: `从前一阶滚动累加 (q + cost[${i - 1}])`,
+        formula: `${q} + ${cost[i - 1] || 10}`,
+        value: q + (cost[i - 1] || 10),
+        isSelected: r === (q + (cost[i - 1] || 10))
+      },
+      {
+        label: `从前两阶滚动累加 (p + cost[${i - 2}])`,
+        formula: `${p} + ${cost[i - 2] || 15}`,
+        value: p + (cost[i - 2] || 15),
+        isSelected: r === (p + (cost[i - 2] || 15))
+      }
+    ] : undefined;
 
     steps.push({
       type: 'accumulate',
       line: lineAccumulate,
       i,
-      j: 0,
+      j: i,
       activeSlot: i,
       slotMode: 'updated',
       down: p,
@@ -57,7 +81,8 @@ export function compileLinearStage4(
       memoj: r,
       tag: `计算当前值 i=${i}`,
       log: `| ✨ 计算当前项: r = ${r}`,
-      msg: `计算当前项：<code>r = <strong>${r}</strong></code>。`
+      msg: `计算当前项：<code>r = <strong>${r}</strong></code>。`,
+      decisions: minCostDecisions
     });
 
     p = q;
@@ -65,7 +90,7 @@ export function compileLinearStage4(
       type: 'fetch-down',
       line: lineFetchDown,
       i,
-      j: 0,
+      j: i,
       activeSlot: i,
       slotMode: 'down',
       down: p,
@@ -81,7 +106,7 @@ export function compileLinearStage4(
       type: 'fetch-right',
       line: lineFetchRight,
       i,
-      j: 0,
+      j: i,
       activeSlot: i,
       slotMode: 'right',
       down: p,
@@ -97,7 +122,7 @@ export function compileLinearStage4(
     type: 'return',
     line: lineReturn,
     i: n,
-    j: 0,
+    j: n,
     activeSlot: n,
     slotMode: 'final',
     down: p,

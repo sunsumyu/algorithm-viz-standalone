@@ -6,12 +6,15 @@ import { KnapsackTargetSumStrategy } from './knapsack-target-sum-strategy';
 import { KnapsackCombinationSum4Strategy } from './knapsack-combination-sum4-strategy';
 import { KnapsackStepMatrixCompiler } from './knapsack-step-matrix-compiler';
 import { SequenceDistinctSubsequencesStrategy } from './sequence-distinct-subsequences-strategy';
+import { SequenceInterleavingStringStrategy } from './sequence-interleaving-string-strategy';
+import { SequenceMinDeleteToBeSubstringStrategy } from './sequence-min-delete-to-be-substring-strategy';
 import { SequenceEditDistanceStrategy } from './sequence-edit-distance-strategy';
 import { SequenceDeleteDistanceStrategy } from './sequence-delete-distance-strategy';
 import { SequenceLongestPalindromicSubsequenceStrategy } from './sequence-longest-palindromic-subsequence-strategy';
 import { SequencePalindromicSubstringsStrategy } from './sequence-palindromic-substrings-strategy';
 import { Linear1DStrategy } from './linear-1d-strategy';
 import { LinearStepMatrixCompiler } from './linear-step-matrix-compiler';
+import { PartitionDPStrategy, PartitionIntegerBreakStrategy } from './partition-integer-break-strategy';
 
 import { KnapsackFamilyStrategy } from './knapsack-family-strategy';
 import { HouseRobberStrategy } from './house-robber-strategy';
@@ -20,11 +23,24 @@ import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
+import { IntervalDpStrategy } from './interval-dp-strategy';
+import { DigitDpStrategy } from './digit-dp-strategy';
 import { UniversalStringDpStrategy } from './universal-string-dp-strategy';
 
-export { UniversalStringDpStrategy };
+export { UniversalStringDpStrategy, IntervalDpStrategy, DigitDpStrategy };
 
 export function registerBuiltinStrategies(): void {
+  // Digit DP (数位 DP 专题 — 第084讲、第085讲)
+  AlgorithmStrategyRegistry.register(new DigitDpStrategy('count-digit-one'));
+  AlgorithmStrategyRegistry.register(new DigitDpStrategy('non-negative-consecutive-ones'));
+
+  // Interval DP (区间 DP 专题 — 第083讲至第085讲)
+  AlgorithmStrategyRegistry.register(new IntervalDpStrategy('predict-the-winner'));
+  AlgorithmStrategyRegistry.register(new IntervalDpStrategy('burst-balloons'));
+  AlgorithmStrategyRegistry.register(new IntervalDpStrategy('min-score-triangulation'));
+  AlgorithmStrategyRegistry.register(new IntervalDpStrategy('merge-stones'));
+  AlgorithmStrategyRegistry.register(new IntervalDpStrategy('strange-printer'));
+
   // Tree DP (树型 DP 专题 — 第078讲、第079讲)
   AlgorithmStrategyRegistry.register(new TreeDpStrategy('max-distance-in-tree'));
   AlgorithmStrategyRegistry.register(new TreeDpStrategy('largest-bst-subtree'));
@@ -60,12 +76,14 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new KnapsackCombinationSum4Strategy());
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('last-stone-weight-ii'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('complete-knapsack'));
-  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('coin-change-ii'));
-  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('coin-change'));
-  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('perfect-squares'));
+  AlgorithmStrategyRegistry.register(new PartitionDPStrategy('coin-change-ii'));
+  AlgorithmStrategyRegistry.register(new PartitionDPStrategy('coin-change'));
+  AlgorithmStrategyRegistry.register(new PartitionDPStrategy('perfect-squares'));
+  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('last-stone-weight-ii'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('ones-and-zeroes'));
-  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('word-break'));
+  AlgorithmStrategyRegistry.register(new PartitionDPStrategy('word-break'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('multiple-knapsack'));
+  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('profitable-schemes'));
 
   // House Robber Family
   AlgorithmStrategyRegistry.register(new HouseRobberStrategy('house-robber'));
@@ -82,6 +100,8 @@ export function registerBuiltinStrategies(): void {
 
   // Sequence & Interval DP
   AlgorithmStrategyRegistry.register(new SequenceDistinctSubsequencesStrategy());
+  AlgorithmStrategyRegistry.register(new SequenceInterleavingStringStrategy());
+  AlgorithmStrategyRegistry.register(new SequenceMinDeleteToBeSubstringStrategy());
   AlgorithmStrategyRegistry.register(new SequenceEditDistanceStrategy());
   AlgorithmStrategyRegistry.register(new SequenceDeleteDistanceStrategy());
   AlgorithmStrategyRegistry.register(new SequenceLongestPalindromicSubsequenceStrategy());
@@ -99,7 +119,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('climb-stairs'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('min-cost'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('min-cost-climbing-stairs'));
-  AlgorithmStrategyRegistry.register(new Linear1DStrategy('integer-break'));
+  AlgorithmStrategyRegistry.register(new PartitionDPStrategy('integer-break'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('unique-bst'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('decode-ways'));
 }
@@ -120,13 +140,18 @@ export {
   SequenceAdvancedStrategy,
   KnapsackStepMatrixCompiler,
   SequenceDistinctSubsequencesStrategy,
+  SequenceInterleavingStringStrategy,
+  SequenceMinDeleteToBeSubstringStrategy,
   SequenceEditDistanceStrategy,
   SequenceDeleteDistanceStrategy,
   SequenceLongestPalindromicSubsequenceStrategy,
   SequencePalindromicSubstringsStrategy,
   Linear1DStrategy,
-  LinearStepMatrixCompiler
+  LinearStepMatrixCompiler,
+  PartitionDPStrategy,
+  PartitionIntegerBreakStrategy
 };
 
 export * from './strategy-helpers';
+export * from './spatial-compression-primitives';
 export type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';

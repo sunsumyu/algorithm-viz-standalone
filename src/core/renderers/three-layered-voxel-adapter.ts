@@ -43,6 +43,9 @@ export class ThreeLayeredVoxelAdapter implements IVisualRenderer {
   private controls: OrbitControls | null = null;
   private animFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private resizeRafId: number | null = null;
+  private lastWidth = 0;
+  private lastHeight = 0;
 
   // 场景节点结构
   private rootGroup: THREE.Group | null = null;
@@ -104,10 +107,21 @@ export class ThreeLayeredVoxelAdapter implements IVisualRenderer {
         alpha: true,
         powerPreference: 'high-performance'
       });
-      this.renderer.setSize(width, height);
+      this.renderer.setSize(width, height, false);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      this.renderer.domElement.style.outline = 'none';
+      this.renderer.domElement.style.width = '100%';
+      this.renderer.domElement.style.height = '100%';
+      this.renderer.domElement.className = 'w-full h-full block cursor-grab active:cursor-grabbing';
+
+      this.lastWidth = width;
+      this.lastHeight = height;
+
+      if (this.container.appendChild) {
+        this.container.appendChild(this.renderer.domElement);
+      }
 
       this.scene = new THREE.Scene();
 
@@ -164,9 +178,23 @@ export class ThreeLayeredVoxelAdapter implements IVisualRenderer {
 
   private onResize(width: number, height: number): void {
     if (!this.renderer || !this.camera) return;
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    if (this.resizeRafId !== null) {
+      cancelAnimationFrame(this.resizeRafId);
+    }
+    this.resizeRafId = requestAnimationFrame(() => {
+      this.resizeRafId = null;
+      if (!this.renderer || !this.camera) return;
+      const w = Math.floor(width) || 400;
+      const h = Math.floor(height) || 300;
+      if (Math.abs(w - this.lastWidth) < 2 && Math.abs(h - this.lastHeight) < 2) {
+        return;
+      }
+      this.lastWidth = w;
+      this.lastHeight = h;
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(w, h, false);
+    });
   }
 
   private startAnimationLoop(): void {
@@ -590,10 +618,18 @@ export class ThreeLayeredVoxelAdapter implements IVisualRenderer {
    */
   public dispose(): void {
     if (this.animFrameId !== null) {
-      cancelAnimationFrame(this.animFrameId);
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.animFrameId);
+      }
       this.animFrameId = null;
     }
 
+    if (this.resizeRafId !== null) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.resizeRafId);
+      }
+      this.resizeRafId = null;
+    }
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;

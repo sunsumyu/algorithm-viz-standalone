@@ -24,6 +24,10 @@ export function renderStageStyles(viewId: string): string {
     color: #0f172a;
     overflow: hidden;
   }
+  #${viewId}.view-container:not(.active),
+  .view-container:not(.active)#${viewId} {
+    display: none !important;
+  }
   #${viewId} .dsp-header {
     display: flex;
     align-items: center;
@@ -438,6 +442,121 @@ export function renderStageStyles(viewId: string): string {
     display: flex;
     flex-direction: column;
   }
+
+  /* ===== 顶层标准 UI 统合引擎：净化 Card 1 历史深色异质外壳与低对比度文本 ===== */
+  #${viewId} #dsp-sandbox-container > div[style*="rgba(15, 23, 42"],
+  #${viewId} #dsp-sandbox-container > div[style*="#0f172a"],
+  #${viewId} #dsp-sandbox-container > div[style*="rgba(30, 41, 59"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 6px 2px !important;
+  }
+
+  /* 1. Card 1 所有暗色背景容器统一漂白为现代亮色卡片 */
+  #${viewId} #dsp-sandbox-container [style*="background: rgba(2, 6, 23"],
+  #${viewId} #dsp-sandbox-container [style*="background:rgba(2, 6, 23"],
+  #${viewId} #dsp-sandbox-container [style*="background: rgba(15, 23, 42"],
+  #${viewId} #dsp-sandbox-container [style*="background:rgba(15, 23, 42"],
+  #${viewId} #dsp-sandbox-container [style*="background: rgba(15,23,42"],
+  #${viewId} #dsp-sandbox-container [style*="background:rgba(15,23,42"],
+  #${viewId} #dsp-sandbox-container [style*="background: rgba(30, 41, 59"],
+  #${viewId} #dsp-sandbox-container [style*="background:rgba(30, 41, 59"],
+  #${viewId} #dsp-sandbox-container [style*="background: rgba(30,41,59"],
+  #${viewId} #dsp-sandbox-container [style*="background:rgba(30,41,59"],
+  #${viewId} #dsp-sandbox-container [style*="background: #0f172a"],
+  #${viewId} #dsp-sandbox-container [style*="background:#0f172a"],
+  #${viewId} #dsp-sandbox-container [style*="background: #1e293b"],
+  #${viewId} #dsp-sandbox-container [style*="background:#1e293b"],
+  #${viewId} #dsp-sandbox-container [style*="background: #334155"],
+  #${viewId} #dsp-sandbox-container [style*="background:#334155"] {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* 2. Card 1 表格 (Table/TH/TD) 深度亮色化 (彻底解决正则匹配等 DP 矩阵发黑) */
+  #${viewId} #dsp-sandbox-container table {
+    background: #ffffff !important;
+    border-collapse: collapse !important;
+    border-color: #e2e8f0 !important;
+  }
+  #${viewId} #dsp-sandbox-container th {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+    font-weight: 700 !important;
+  }
+  #${viewId} #dsp-sandbox-container td {
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+  }
+  #${viewId} #dsp-sandbox-container td[style*="rgba(15,23,42"],
+  #${viewId} #dsp-sandbox-container td[style*="rgba(15, 23, 42"],
+  #${viewId} #dsp-sandbox-container td[style*="rgba(30,41,59"],
+  #${viewId} #dsp-sandbox-container td[style*="rgba(30, 41, 59"] {
+    background: #f8fafc !important;
+    color: #64748b !important;
+  }
+
+  /* 3. 文本与边框强制提亮为现代亮色高对比度 */
+  #${viewId} #dsp-sandbox-container [style*="color: #f1f5f9"],
+  #${viewId} #dsp-sandbox-container [style*="color:#f1f5f9"],
+  #${viewId} #dsp-sandbox-container [style*="color: #f8fafc"],
+  #${viewId} #dsp-sandbox-container [style*="color:#f8fafc"] {
+    color: #0f172a !important;
+  }
+  #${viewId} #dsp-sandbox-container [style*="color: #94a3b8"],
+  #${viewId} #dsp-sandbox-container [style*="color:#94a3b8"],
+  #${viewId} #dsp-sandbox-container [style*="color: #cbd5e1"],
+  #${viewId} #dsp-sandbox-container [style*="color:#cbd5e1"] {
+    color: #64748b !important;
+  }
+  #${viewId} #dsp-sandbox-container [style*="border: 1px solid rgba(255, 255, 255"],
+  #${viewId} #dsp-sandbox-container [style*="border:1px solid rgba(255, 255, 255"],
+  #${viewId} #dsp-sandbox-container [style*="border: 1px solid rgba(255,255,255"],
+  #${viewId} #dsp-sandbox-container [style*="border:1px solid rgba(255,255,255"] {
+    border-color: #e2e8f0 !important;
+  }
+  #${viewId} #dsp-sandbox-container div[style*="border-bottom: 1px solid rgba(255, 255, 255"] {
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+  #${viewId} #dsp-sandbox-container span[style*="background: #1e293b"] {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+  #${viewId} #dsp-sandbox-container span[style*="color: #fbbf24"] {
+    color: #b45309 !important;
+    font-weight: 700 !important;
+  }
+  #${viewId} #dsp-sandbox-container span[style*="color: #34d399"] {
+    color: #059669 !important;
+  }
+
+  /* 4. 节点按钮与元素方块 (如字符卡片、数组元素、链表节点未激活时) 纯净化 */
+  #${viewId} #dsp-sandbox-container div[style*="rgba(255, 255, 255, 0.05)"],
+  #${viewId} #dsp-sandbox-container div[style*="rgba(255, 255, 255, 0.04)"] {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  /* Card 2 辅助容器内卡片明亮优雅化 */
+  #${viewId} #dsp-custom-metrics-container div[style*="rgba(14, 165, 233"],
+  #${viewId} #dsp-custom-metrics-container div[style*="rgba(251, 191, 36"],
+  #${viewId} #dsp-custom-metrics-container div[style*="rgba(16, 185, 129"],
+  #${viewId} #dsp-custom-metrics-container div[style*="rgba(15, 23, 42"] {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  }
+  #${viewId} #dsp-custom-metrics-container [style*="color: #94a3b8"] {
+    color: #475569 !important;
+  }
+
   #${viewId} #dsp-custom-metrics-container {
     display: flex;
     flex-direction: column;
@@ -522,6 +641,16 @@ export function renderStageStyles(viewId: string): string {
     justify-content: center;
     padding: 8px 12px;
     box-sizing: border-box;
+  }
+
+  /* Card 1 (主沙盘画板) 顶层暗色背景强制透明化与浅色归一化 */
+  #${viewId} #dsp-sandbox-container > div[style*="rgba(15, 23, 42"],
+  #${viewId} #dsp-sandbox-container > div[style*="rgba(30, 41, 59"],
+  #${viewId} #dsp-sandbox-container > div[style*="background: #0f172a"],
+  #${viewId} #dsp-sandbox-container > div[style*="background:#0f172a"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
 
@@ -627,6 +756,37 @@ export function renderStageStyles(viewId: string): string {
     line-height: 1.4;
     margin-top: 4px;
     flex-shrink: 0;
+  }
+
+  /* Card 2 宿主与自定义指标卡片强约束 (顶层设计规范强制归一化，终结暗黑卡片突兀外露) */
+  #${viewId} #dsp-custom-metrics-container div[style*="grid-template-columns"] > div,
+  #${viewId} #dsp-custom-metrics-container [style*="rgba(30, 41, 59"],
+  #${viewId} #dsp-custom-metrics-container [style*="rgba(15, 23, 42"],
+  #${viewId} #dsp-custom-metrics-container [style*="background: #1e293b"],
+  #${viewId} #dsp-custom-metrics-container [style*="background:#1e293b"] {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  }
+  #${viewId} #dsp-custom-metrics-container [style*="color: #94a3b8"],
+  #${viewId} #dsp-custom-metrics-container [style*="color:#94a3b8"],
+  #${viewId} #dsp-custom-metrics-container [style*="color: #cbd5e1"],
+  #${viewId} #dsp-custom-metrics-container [style*="color:#cbd5e1"] {
+    color: #64748b !important;
+    font-weight: 700 !important;
+  }
+  #${viewId} #dsp-custom-metrics-container [style*="color: #38bdf8"],
+  #${viewId} #dsp-custom-metrics-container [style*="color:#38bdf8"] {
+    color: #0284c7 !important;
+  }
+  #${viewId} #dsp-custom-metrics-container [style*="color: #fbbf24"],
+  #${viewId} #dsp-custom-metrics-container [style*="color:#fbbf24"] {
+    color: #b45309 !important;
+  }
+  #${viewId} #dsp-custom-metrics-container [style*="color: #34d399"],
+  #${viewId} #dsp-custom-metrics-container [style*="color:#34d399"] {
+    color: #059669 !important;
   }
 
   /* 右侧暗色代码终端挂载点 (自适应填充上半区，与左侧沙盘+控制条对齐) */

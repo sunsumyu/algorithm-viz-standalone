@@ -74,7 +74,10 @@ export class AlgoSearchCatalog {
       return { prev: null, next: null, currentIndex: -1, total };
     }
 
-    const index = list.findIndex((a) => a.id === currentAlgorithmId);
+    let index = list.findIndex((a) => a.id === currentAlgorithmId);
+    if (index === -1) {
+      index = list.findIndex((a) => a.aliases && a.aliases.includes(currentAlgorithmId));
+    }
     if (index === -1) {
       return { prev: null, next: null, currentIndex: -1, total };
     }

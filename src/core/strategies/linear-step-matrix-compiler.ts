@@ -10,6 +10,7 @@ export interface LinearCompileOptions {
   stage: number;
   n: number;
   isMemo?: boolean;
+  direction?: 'forward' | 'reverse';
   anchorMap?: Record<string, number>;
   customData?: any;
 }
@@ -30,16 +31,16 @@ export class LinearStepMatrixCompiler {
    * 统一编译入口
    */
   public static compile(model: IYamlAlgorithmModel, options: LinearCompileOptions): UniversalStep[] {
-    const { stage, n, isMemo, anchorMap } = options;
+    const { stage, n, isMemo, direction = 'forward', anchorMap } = options;
 
     switch (stage) {
       case 1:
       case 2:
         return this.compileStage1or2(model, n, Boolean(isMemo), anchorMap);
       case 3:
-        return this.compileStage3(model, n, anchorMap);
+        return this.compileStage3(model, n, anchorMap, direction);
       case 4:
-        return this.compileStage4(model, n, anchorMap);
+        return this.compileStage4(model, n, anchorMap, direction);
       case 5:
         return this.compileStage5(model, n, anchorMap);
       default:
@@ -65,9 +66,10 @@ export class LinearStepMatrixCompiler {
   public static compileStage3(
     model: IYamlAlgorithmModel,
     nVal: number,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
-    return compileLinearStage3(model, nVal, anchorMap);
+    return compileLinearStage3(model, nVal, anchorMap, direction);
   }
 
   /**
@@ -76,9 +78,10 @@ export class LinearStepMatrixCompiler {
   public static compileStage4(
     model: IYamlAlgorithmModel,
     nVal: number,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
-    return compileLinearStage4(model, nVal, anchorMap);
+    return compileLinearStage4(model, nVal, anchorMap, direction);
   }
 
   /**

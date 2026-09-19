@@ -1,0 +1,212 @@
+id: last-stone-weight-ii
+name: 最后一块石头的重量 II
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-1
+defaultDirection: forward
+
+defaultParams:
+  stones: [2, 7, 4, 1, 8, 1]
+
+problem:
+  title: "LeetCode 1049. 最后一块石头的重量 II"
+  difficulty: "Medium"
+  description: |
+    有一堆石头，用整数数组 <code>stones</code> 表示。其中 <code>stones[i]</code> 表示第 <code>i</code> 块石头的重量。
+
+    每一回合，从中选出 <strong>任意两块石头</strong>，然后将它们一起粉碎。假设石头的重量分别为 <code>x</code> 和 <code>y</code>，且 <code>x <= y</code>。那么粉碎的可能结果如下：
+    - 如果 <code>x == y</code>，那么两块石头都会被完全粉碎；
+    - 如果 <code>x != y</code>，那么重量为 <code>x</code> 的石头将会完全粉碎，而重量为 <code>y</code> 的石头新重量为 <code>y - x</code>。
+
+    最后，<strong>最多只会剩下一块</strong> 石头。返回此石头 <strong>最小的可能重量</strong>。如果没有石头剩下，就返回 <code>0</code>。
+
+    <strong>等价转化</strong>：将石头分成两堆 $S_1$ 和 $S_2$，两堆总重量之差 $|sum(S_1) - sum(S_2)|$ 最小。转化为容量为 <code>target = sum / 2</code> 的 0-1 背包问题，求能够装满的最大重量。
+  examples:
+    - input: "stones = [2, 7, 4, 1, 8, 1]"
+      output: "1"
+      explanation: "组合 [2, 4, 1, 1] 和为 8，组合 [7, 8] 和为 15，差值为 7。更好的分法是 [2, 7, 1, 1] 和为 11，[4, 8] 和为 12，差值为 1。"
+    - input: "stones = [31, 26, 33, 21, 40]"
+      output: "5"
+  constraints:
+    - "1 <= stones.length <= 30"
+    - "1 <= stones[i] <= 100"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: 石头正序决策与容量递推
+    description: 依次遍历石头 stones[i]，决策是否选入子集 S1，求容量 <= sum/2 的最大装载量
+    branches:
+      - name: 不选当前石头 stones[i] (容量保持)
+        delta: [1, 0]
+        arrow: ↓
+        description: 保持容量与价值不变，dp[i][j] = dp[i-1][j]
+      - name: 选入当前石头 stones[i] (扣减容量+累加重量)
+        delta: [1, -1]
+        arrow: ↙
+        description: 当 j >= stones[i] 时，dp[i][j] = max(dp[i-1][j], dp[i-1][j-stones[i]] + stones[i])
+  reverse:
+    label: "逆推 (倒序)"
+    name: 逆向差值拆解
+    description: 从子集容量 target 出发倒推各石头的选取
+
+stages:
+  stage-1:
+    shortName: "递归"
+    name: "阶段 1: 选/不选二叉决策递归"
+    desc: 对每块石头做「分入子集 A」或「分入子集 B」的决策，展开为二叉决策树，搜索容量不超过 sum / 2 的最大装载和。
+    timeComplexity: "O(2^n)"
+    spaceComplexity: "O(n)"
+    variants:
+      standard:
+        name: 标准选与不选递归
+        desc: 递归探索两路子集分支
+        code: |
+          public int lastStoneWeightII(int[] stones) { // @step:entry
+              int sum = 0;
+              for (int s : stones) sum += s;
+              int target = sum / 2;
+              int maxSub = dfs(stones, 0, target); // @step:dfs_start
+              return sum - 2 * maxSub; // @step:return
+          }
+
+          private int dfs(int[] stones, int i, int curTarget) { // @step:dfs_entry
+              if (curTarget == 0 || i >= stones.length) return 0; // @step:base_match @step:base_overflow
+
+              int notTake = dfs(stones, i + 1, curTarget); // @step:branch_not_take
+              int take = 0;
+              if (curTarget >= stones[i]) { // @step:cond_take
+                  take = dfs(stones, i + 1, curTarget - stones[i]) + stones[i]; // @step:branch_take
+              }
+              return Math.max(notTake, take); // @step:combine
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索"
+    desc: 引入 Integer[][] memo 缓存 (石头索引 i, 剩余容量 curTarget) 的最大装载重量，避免重复展开相同子树。
+    timeComplexity: "O(n × sum / 2)"
+    spaceComplexity: "O(n × sum / 2)"
+    variants:
+      standard:
+        name: 二维备忘录优化
+        desc: 缓存 (i, curTarget) 状态结果
+        code: |
+          public int lastStoneWeightII(int[] stones) { // @step:entry
+              int sum = 0;
+              for (int s : stones) sum += s;
+              int target = sum / 2;
+              Integer[][] memo = new Integer[stones.length][target + 1]; // @step:memo_init
+              int maxSub = dfs(stones, 0, target, memo); // @step:dfs_start
+              return sum - 2 * maxSub; // @step:return
+          }
+
+          private int dfs(int[] stones, int i, int curTarget, Integer[][] memo) { // @step:dfs_entry
+              if (curTarget == 0 || i >= stones.length) return 0; // @step:base_match @step:base_overflow
+              if (memo[i][curTarget] != null) return memo[i][curTarget]; // @step:cache_hit
+
+              int notTake = dfs(stones, i + 1, curTarget, memo); // @step:branch_not_take
+              int take = 0;
+              if (curTarget >= stones[i]) { // @step:cond_take
+                  take = dfs(stones, i + 1, curTarget - stones[i], memo) + stones[i]; // @step:branch_take
+              }
+              return memo[i][curTarget] = Math.max(notTake, take); // @step:combine
+          }
+
+  stage-3:
+    shortName: "二维DP"
+    name: "阶段 3: 二维 0-1 背包填表"
+    desc: 构建 n × (target + 1) 二维状态表格，dp[i][j] 表示使用前 i 个石头在容量 j 时的最大装载重量，最终答案为 sum - 2 * dp[n-1][target]。
+    timeComplexity: "O(n × sum / 2)"
+    spaceComplexity: "O(n × sum / 2)"
+    variants:
+      standard:
+        name: 二维 0-1 背包填表
+        desc: 严格按石头正序与背包容量推导
+        code: |
+          public int lastStoneWeightII(int[] stones) { // @step:entry
+              int sum = 0;
+              for (int x : stones) sum += x;
+              int target = sum / 2;
+              int n = stones.length;
+              int[][] dp = new int[n][target + 1]; // @step:init
+
+              for (int j = stones[0]; j <= target; j++) { // @step:init_row
+                  dp[0][j] = stones[0];
+              }
+
+              for (int i = 1; i < n; i++) { // @step:loop_i
+                  for (int j = 0; j <= target; j++) { // @step:loop_j
+                      if (j < stones[i]) { // @step:cond
+                          dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                      } else {
+                          dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - stones[i]] + stones[i]); // @step:transfer_max
+                      }
+                  }
+              }
+              return sum - 2 * dp[n - 1][target]; // @step:return
+          }
+
+  stage-4:
+    shortName: "空间压缩"
+    name: "阶段 4: 一维滚动数组优化"
+    desc: 使用一维滚动数组 dp[0..target]，内层容量从 target 倒序遍历至 stones[i]，将空间复杂度从 O(n × target) 降至 O(target)。
+    timeComplexity: "O(n × sum / 2)"
+    spaceComplexity: "O(sum / 2)"
+    variants:
+      rolling_1d:
+        name: 一维倒序滚动 0-1 背包
+        desc: 倒序遍历容量保证每块石头仅被使用一次
+        code: |
+          public int lastStoneWeightII(int[] stones) { // @step:entry
+              int sum = 0;
+              for (int x : stones) sum += x;
+              int target = sum / 2;
+              int[] dp = new int[target + 1]; // @step:init
+
+              for (int i = 0; i < stones.length; i++) { // @step:loop_i
+                  for (int j = target; j >= stones[i]; j--) { // @step:loop_j
+                      dp[j] = Math.max(dp[j], dp[j - stones[i]] + stones[i]); // @step:transfer
+                  }
+              }
+              return sum - 2 * dp[target]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    最后一块石头的重量 II 本质是经典的 0-1 背包问题：
+    1. 两块石头碰撞粉碎，重量大的减去重量小的（y - x）。
+    2. 可以将这一系列粉碎操作，等价地看作对所有石头赋予 <code>+</code> 或 <code>-</code> 符号，求两部分差值的绝对值最小。
+    3. 设所有石头总重量为 <code>sum</code>，我们将石头划分为两个集合 $S_1$ 和 $S_2$。
+       为了让 $|S_1 - S_2|$ 最小，两堆重量应当尽量接近 <code>sum / 2</code>。
+    4. 我们设定背包容量为 <code>target = floor(sum / 2)</code>，物品重量为 <code>stones[i]</code>，价值也为 <code>stones[i]</code>。
+       求背包能够装下的最大重量 <code>dp[target]</code>。
+    5. 此时，一堆的重量为 <code>dp[target]</code>，另一堆的重量为 <code>sum - dp[target]</code>。
+       两堆之差即为 <code>(sum - dp[target]) - dp[target] = sum - 2 * dp[target]</code>。
+  dimensionComparison:
+    - dimension: "阶段 1 二叉决策递归"
+      timeComplexity: "O(2^n)"
+      spaceComplexity: "O(n)"
+      pros: "子集划分思想直观清晰"
+      cons: "状态爆炸，无法通过大用例"
+    - dimension: "阶段 2 记忆化搜索"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(n × target)"
+      pros: "自顶向下展开，剪除重叠子问题"
+      cons: "递归栈开销"
+    - dimension: "阶段 3 二维 DP 填表"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(n × target)"
+      pros: "状态表格完整，双向依赖路径清晰"
+      cons: "空间占用 O(n × target)"
+    - dimension: "阶段 4 一维倒序压缩"
+      timeComplexity: "O(n × target)"
+      spaceComplexity: "O(target)"
+      pros: "空间复杂度降低至 O(target)"
+      cons: "内层必须倒序遍历"
+
+faqs:
+  - q: "为什么两块石头碰撞粉碎可以转化为两堆子集划分问题？"
+    a: "因为不论粉碎顺序如何，最终剩下的重量总是相当于将一部分石头赋予正号、另一部分赋予负号求和的结果。两堆重量差最小化，等价于其中一堆重量尽量逼近 sum / 2。"
+  - q: "为什么一维数组容量 j 必须倒序遍历？"
+    a: "在 0-1 背包中，每块石头只能使用一次。倒序遍历保证在计算 dp[j] 时，所依赖的 dp[j - stones[i]] 仍然是上一轮迭代的值，不会重复选入同一块石头。"

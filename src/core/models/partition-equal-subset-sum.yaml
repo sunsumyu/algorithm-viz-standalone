@@ -62,7 +62,7 @@ stages:
               for (int num : nums) sum += num;
               if (sum % 2 != 0) return false; // @step:odd_check
               int target = sum / 2;
-              return dfs(nums, 0, target); // @step:dfs_start
+              return dfs(nums, 0, target); // @step:dfs_start @step:return
           }
 
           private boolean dfs(int[] nums, int i, int curTarget) { // @step:dfs_entry
@@ -70,10 +70,11 @@ stages:
               if (i >= nums.length || curTarget < 0) return false; // @step:base_overflow
 
               boolean notTake = dfs(nums, i + 1, curTarget); // @step:branch_not_take
-              if (notTake) return true;
-
-              boolean take = dfs(nums, i + 1, curTarget - nums[i]); // @step:branch_take
-              return take; // @step:combine
+              boolean take = false;
+              if (curTarget >= nums[i]) { // @step:cond_take
+                  take = dfs(nums, i + 1, curTarget - nums[i]); // @step:branch_take
+              }
+              return notTake || take; // @step:combine
           }
 
   stage-2:
@@ -93,7 +94,7 @@ stages:
               if (sum % 2 != 0) return false; // @step:odd_check
               int target = sum / 2;
               Boolean[][] memo = new Boolean[nums.length][target + 1]; // @step:memo_init
-              return dfs(nums, 0, target, memo); // @step:dfs_start
+              return dfs(nums, 0, target, memo); // @step:dfs_start @step:return
           }
 
           private boolean dfs(int[] nums, int i, int curTarget, Boolean[][] memo) { // @step:dfs_entry
@@ -102,10 +103,11 @@ stages:
               if (memo[i][curTarget] != null) return memo[i][curTarget]; // @step:cache_hit
 
               boolean notTake = dfs(nums, i + 1, curTarget, memo); // @step:branch_not_take
-              if (notTake) return memo[i][curTarget] = true;
-
-              boolean take = dfs(nums, i + 1, curTarget - nums[i], memo); // @step:branch_take
-              return memo[i][curTarget] = take; // @step:combine
+              boolean take = false;
+              if (curTarget >= nums[i]) { // @step:cond_take
+                  take = dfs(nums, i + 1, curTarget - nums[i], memo); // @step:branch_take
+              }
+              return memo[i][curTarget] = (notTake || take); // @step:combine
           }
 
   stage-3:

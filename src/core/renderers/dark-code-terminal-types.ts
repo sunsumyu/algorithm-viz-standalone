@@ -21,10 +21,10 @@ export type HighlightTarget =
   | { anchor: string };
 
 export interface DarkCodeTerminalConfig {
-  /** 4 语种源码映射表，如 { java: string[], cpp: string[], python: string[], javascript: string[] } */
-  codeLanguages?: Record<string, string[]>;
-  /** 单一语言源码行数组（未提供 codeLanguages 时的简写） */
-  codeLines?: string[];
+  /** 4 语种源码映射表，支持 string[] 或按行换行的多行 string */
+  codeLanguages?: Record<string, string[] | string>;
+  /** 单一语言源码（行数组或多行字符串） */
+  codeLines?: string[] | string;
   /** 面板标题（可选） */
   title?: string;
   /** 题目完整描述 HTML 内容（支持示例、约束） */

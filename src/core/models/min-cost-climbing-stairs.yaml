@@ -1,0 +1,303 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「使用最小花费爬楼梯 (Min Cost Climbing Stairs)」四阶段全演化标准实现。
+# 包含：二叉递归树展开、记忆化单链剪枝、自底向上递推填表与 O(1) 双变量滚动。
+# ==============================================================================
+
+id: min-cost-climbing-stairs
+name: "使用最小花费爬楼梯"
+nameEn: "Min Cost Climbing Stairs"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🪜"
+difficulty: 1
+levelOrder: 4
+learningGoal: "理解带权代价累积的最值型动态规划，掌握从双分支决策树到常数空间滚动压缩的全演化"
+description: "使用最小花费爬楼梯（LeetCode 746）：每当你爬上一个台阶都要支付相应花费，一旦支付即可选择爬 1 或 2 阶。计算到达楼梯顶部的最低花费。"
+defaultParams:
+  n: 3
+  cost: [10, 15, 20]
+
+problem:
+  leetcodeId: 746
+  title: "使用最小花费爬楼梯"
+  difficulty: "简单"
+  tags: ["数组", "动态规划"]
+  description: "给你一个整数数组 <code>cost</code> ，其中 <code>cost[i]</code> 是从楼梯第 <code>i</code> 个台阶向上爬需要支付的费用。一旦你支付此费用，即可选择向上爬一个或者两个台阶。<br/><br/>你可以选择从下标为 <code>0</code> 或下标为 <code>1</code> 的台阶开始爬楼梯。<br/><br/>请你计算并返回达到楼梯顶部的最低花费。"
+  examples:
+    - input: "cost = [10, 15, 20]"
+      output: "15"
+      explanation: "你将从下标为 1 的台阶开始。<br/>- 支付 15 ，向上爬两个台阶，到达楼梯顶部。<br/>总花费为 15 。"
+    - input: "cost = [1, 100, 1, 1, 1, 100, 1, 1, 100, 1]"
+      output: "6"
+      explanation: "你将从下标为 0 的台阶开始。<br/>- 支付 1 ，向上爬两个台阶，到达下标为 2 的台阶。<br/>- 支付 1 ，向上爬两个台阶，到达下标为 4 的台阶。<br/>- 支付 1 ，向上爬两个台阶，到达下标为 6 的台阶。<br/>- 支付 1 ，向上爬一个台阶，到达下标为 7 的台阶。<br/>- 支付 1 ，向上爬两个台阶，到达下标为 9 的台阶。<br/>- 支付 1 ，向上爬一个台阶，到达楼梯顶部。<br/>总花费为 6 。"
+  constraints:
+    - "2 <= cost.length <= 1000"
+    - "0 <= cost[i] <= 999"
+  leetcodeUrl: "https://leetcode.cn/problems/min-cost-climbing-stairs/"
+
+directions:
+  forward:
+    label: "顺推 (到达各阶)"
+    branches:
+      - name: "step1"
+        delta: [-1, 0]
+        label: "前一阶登顶"
+        codeVar: "c1"
+        arrow: "↙️"
+      - name: "step2"
+        delta: [-2, 0]
+        label: "前两阶登顶"
+        codeVar: "c2"
+        arrow: "↘️"
+    combineFormula: "min(c1, c2)"
+  reverse:
+    label: "逆推 (倒推登顶)"
+    branches:
+      - name: "step1"
+        delta: [1, 0]
+        label: "跨1阶到顶"
+        codeVar: "c1"
+        arrow: "↗️"
+      - name: "step2"
+        delta: [2, 0]
+        label: "跨2阶到顶"
+        codeVar: "c2"
+        arrow: "↖️"
+    combineFormula: "cost[i] + min(c1, c2)"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (自底向上目标分解)"
+      reverse: "阶段 1: 逆向递归 (自顶向下倒推探索)"
+    desc:
+      forward: "到达第 i 阶楼顶的花费等于从第 i-1 阶支付 cost[i-1] 跨入，或从第 i-2 阶支付 cost[i-2] 跨入的最小值，展开产生大量重叠子分支。"
+      reverse: "定义 dfs(i) 为从第 i 阶到达楼顶的最低代价，选择跨 1 步或 2 步取较优者并累加当前台阶的花费 cost[i]。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "MinCostClimbingStairs_Recursive_Forward.java"
+          reverse: "MinCostClimbingStairs_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "MinCostClimbingStairs_Recursive_Forward.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      return dfs(cost.length, cost);
+                  }
+                  private int dfs(int i, int[] cost) { // @step:entry
+                      if (i <= 1) return 0; // @step:boundary // 0阶或1阶自由起跳花费为0
+                      int c1 = dfs(i - 1, cost) + cost[i - 1]; // @step:branch_left // 从i-1阶跨1步上来
+                      int c2 = dfs(i - 2, cost) + cost[i - 2]; // @step:branch_right // 从i-2阶跨2步上来
+                      return Math.min(c1, c2); // @step:combine // 选取两者较小代价
+                  }
+              }
+          reverse:
+            title: "MinCostClimbingStairs_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      return Math.min(dfs(0, cost), dfs(1, cost));
+                  }
+                  private int dfs(int i, int[] cost) { // @step:entry
+                      if (i >= cost.length) return 0; // @step:boundary // 已经成功登顶
+                      int next1 = dfs(i + 1, cost); // @step:branch_left // 尝试向前跨1步
+                      int next2 = dfs(i + 2, cost); // @step:branch_right // 尝试向前跨2步
+                      return cost[i] + Math.min(next1, next2); // @step:combine // 支付当前阶并取后续最小
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠开销)"
+      reverse: "阶段 2: 逆向记忆化 (带权后向备忘)"
+    desc:
+      forward: "使用备忘录数组 memo 缓存各台阶的最少花费，命中缓存时直接 O(1) 返回，避免对同一台阶重复计算。"
+      reverse: "使用 memo[i] 缓存从第 i 阶登顶的最低花费，消除分支重叠爆炸。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "MinCostClimbingStairs_Memo_Forward.java"
+          reverse: "MinCostClimbingStairs_Memo_Reverse.java"
+        code:
+          forward:
+            title: "MinCostClimbingStairs_Memo_Forward.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int n = cost.length;
+                      int[] memo = new int[n + 1];
+                      Arrays.fill(memo, -1);
+                      return dfs(n, cost, memo);
+                  }
+                  private int dfs(int i, int[] cost, int[] memo) { // @step:entry
+                      if (i <= 1) return 0; // @step:boundary
+                      if (memo[i] != -1) return memo[i]; // @step:cache_hit // 剪枝直接命中
+                      int c1 = dfs(i - 1, cost, memo) + cost[i - 1]; // @step:branch_left
+                      int c2 = dfs(i - 2, cost, memo) + cost[i - 2]; // @step:branch_right
+                      return memo[i] = Math.min(c1, c2); // @step:combine
+                  }
+              }
+          reverse:
+            title: "MinCostClimbingStairs_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int n = cost.length;
+                      int[] memo = new int[n];
+                      Arrays.fill(memo, -1);
+                      return Math.min(dfs(0, cost, memo), dfs(1, cost, memo));
+                  }
+                  private int dfs(int i, int[] cost, int[] memo) { // @step:entry
+                      if (i >= cost.length) return 0; // @step:boundary
+                      if (memo[i] != -1) return memo[i]; // @step:cache_hit
+                      int next1 = dfs(i + 1, cost, memo); // @step:branch_left
+                      int next2 = dfs(i + 2, cost, memo); // @step:branch_right
+                      return memo[i] = cost[i] + Math.min(next1, next2); // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-2d"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 自底向上递推填表 (DP 数组)"
+      reverse: "阶段 3: 逆向倒序递推 (自顶向底回溯)"
+    desc:
+      forward: "dp[i] 表示到达第 i 阶楼梯顶部的最低花费，dp[i] = min(dp[i-1] + cost[i-1], dp[i-2] + cost[i-2])。"
+      reverse: "dp[i] 表示从第 i 阶到达楼顶的最低花费，dp[i] = cost[i] + min(dp[i+1], dp[i+2])，从后向前倒序填表。"
+    variants:
+      standard:
+        variantLabel: "数组填表版"
+        title:
+          forward: "MinCostClimbingStairs_DP_Forward.java"
+          reverse: "MinCostClimbingStairs_DP_Reverse.java"
+        code:
+          forward:
+            title: "MinCostClimbingStairs_DP_Forward.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int n = cost.length;
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[0] = 0; // @step:init_val // 0阶自由起步
+                      dp[1] = 0; // @step:init_val // 1阶自由起步
+                      for (int i = 2; i <= n; i++) { // @step:loop_i
+                          dp[i] = Math.min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2]); // @step:transfer
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinCostClimbingStairs_DP_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int n = cost.length;
+                      int[] dp = new int[n + 2]; // @step:init // 拓展哨兵边界
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i // 从后向前倒序填表
+                          dp[i] = cost[i] + Math.min(dp[i + 1], dp[i + 2]); // @step:transfer
+                      }
+                      return Math.min(dp[0], dp[1]); // @step:return // 比较0阶起步与1阶起步
+                  }
+              }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(1) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 空间压缩双变量滚动 (O(1) 状态机)"
+      reverse: "阶段 4: 逆向双变量滚动压缩 (常数空间)"
+    desc:
+      forward: "到达第 i 阶只依赖前两阶的最优花费 dp[i-1] 与 dp[i-2]，维护 p 与 q 两个变量滚动推进，空间复杂度降至 O(1)。"
+      reverse: "从后往前倒序递推同样仅需维护后两阶状态 next1 与 next2，空间复杂度 O(1)。"
+    variants:
+      two_vars:
+        variantLabel: "双变量滚动版"
+        title:
+          forward: "MinCostClimbingStairs_SpaceOptimized_Forward.java"
+          reverse: "MinCostClimbingStairs_SpaceOptimized_Reverse.java"
+        code:
+          forward:
+            title: "MinCostClimbingStairs_SpaceOptimized_Forward.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int p = 0, q = 0; // @step:init
+                      for (int i = 2; i <= cost.length; i++) { // @step:loop_i
+                          int r = Math.min(q + cost[i - 1], p + cost[i - 2]); // @step:accumulate
+                          p = q; // @step:fetch_down
+                          q = r; // @step:fetch_right
+                      }
+                      return q; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinCostClimbingStairs_SpaceOptimized_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCostClimbingStairs(int[] cost) {
+                      int next1 = 0, next2 = 0; // @step:init
+                      for (int i = cost.length - 1; i >= 0; i--) { // @step:loop_i
+                          int cur = cost[i] + Math.min(next1, next2); // @step:accumulate
+                          next2 = next1; // @step:fetch_down
+                          next1 = cur; // @step:fetch_right
+                      }
+                      return Math.min(next1, next2); // @step:return
+                  }
+              }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 最小花费爬楼梯 5 步法系统精讲"
+  summary: "LeetCode 746。经典最值代价型动态规划。核心在于：到达第 i 阶必须支付前一步台阶的 cost，选择由第 i-1 阶跨上来还是由第 i-2 阶跨上来的较小代价！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i]</code>：到达第 <code>i</code> 个台阶（或楼顶）所需要的最低花费。"
+      icon: "🎯"
+      badge: "最值代价状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i] = min(dp[i - 1] + cost[i - 1], dp[i - 2] + cost[i - 2])</code>。"
+      icon: "🔄"
+      badge: "最优子结构"
+    - label: "三、边界与初始化"
+      desc: "由于可以选择从下标 0 或 1 开始，所以到达 0 阶与 1 阶的花费均为 <code>0</code>：<code>dp[0] = 0, dp[1] = 0</code>。"
+      icon: "🎬"
+      badge: "自由起跳"
+    - label: "四、遍历顺序"
+      desc: "从底层 <code>i = 2</code> 逐阶递推到 <code>n</code>（楼梯顶部）。"
+      icon: "🧭"
+      badge: "自底向上"
+    - label: "五、空间优化"
+      desc: "只依赖前两项状态，维护双指针/双变量滚动，空间复杂度压缩到 <code>O(1)</code>。"
+      icon: "📦"
+      badge: "常数空间"
+
+# ==============================================================================
+# 常见面试高频问题 (FAQ List)
+# ==============================================================================
+faqList:
+  - question: "为什么 dp[0] 和 dp[1] 是 0 而不是 cost[0] 和 cost[1]？"
+    answer: "题目明确说明：'你可以选择从下标为 0 或下标为 1 的台阶开始爬楼梯'。站在 0 阶或 1 阶起点本身是不需要支付费用的，只有当你从该台阶继续往上跨步时才需要支付对应台阶的 cost。"
+    tag: "题意理解"
+  - question: "最终答案为什么是 dp[n] 而不是 dp[n-1]？"
+    answer: "楼梯顶部（顶层平台）是在数组最后一个台阶 cost[n-1] 之后的位置，即第 n 阶。我们要到达的是楼顶，因此目标是求 dp[n]。"
+    tag: "边界思考"

@@ -232,7 +232,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     const dp: number[][] = Array.from({ length: n }, () => [0, 0]);
     dp[0][0] = -prices[0];
     dp[0][1] = 0;
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -247,6 +247,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: `初始化: Day 0 价格 ${prices[0]}`,
       log: `| 📋 初始化第 0 天：买入 dp[0][0]=-${prices[0]}，不持股 dp[0][1]=0`,
       msg: `初始化：第 0 天买入股票 <code>dp[0][0] = -${prices[0]}</code>，不持股利润 <code>dp[0][1] = 0</code>。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 3,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: `Day 0 基础收益: 0`,
+      log: `| 📋 记录第 0 天已实现利润为 0`,
+      msg: `第 0 天未持股基础收益为 <code>0</code>。`
     });
 
     for (let i = 1; i < n; i++) {
@@ -479,7 +495,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     const dp: number[][] = Array.from({ length: n }, () => [0, 0]);
     dp[0][0] = -prices[0];
     dp[0][1] = 0;
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -494,6 +510,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: `多次交易初始化 Day 0`,
       log: `| 📋 多次交易初始化：dp[0][0] = -${prices[0]}，dp[0][1] = 0`,
       msg: `初始化：第 0 天持股 <code>${dp[0][0]}</code>，未持股利润 <code>0</code>。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 3,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: `Day 0 初始收益: 0`,
+      log: `| 📋 记录第 0 天已实现利润为 0`,
+      msg: `第 0 天未持股初始收益为 <code>0</code>。`
     });
 
     for (let i = 1; i < n; i++) {
@@ -722,7 +754,7 @@ export class StockStrategy implements IAlgorithmStrategy {
 
     // Stage 3 & 4: 5 状态机填表
     const dp = [-prices[0], 0, -prices[0], 0];
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -737,6 +769,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: '初始化 4 种买卖状态',
       log: '| 📋 股票 III (最多2次): 状态包含 [买1, 卖1, 买2, 卖2]',
       msg: `初始化 4 种状态：<code>[买1: -${prices[0]}, 卖1: 0, 买2: -${prices[0]}, 卖2: 0]</code>。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 3,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: 'Day 0 收益: 0',
+      log: '| 📋 第 0 天卖出收益初始化为 0',
+      msg: '第 0 天卖出收益为 <code>0</code>。'
     });
 
     for (let i = 1; i < n; i++) {
@@ -815,7 +863,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     for (let i = 0; i < 2 * k; i += 2) {
       dp[i] = -prices[0];
     }
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -830,6 +878,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: `初始化 K=${k} 次交易状态`,
       log: `| 📋 股票 IV (最多 ${k} 次交易): 状态数组长度 ${2 * k}`,
       msg: `初始化 <code>${2 * k}</code> 种状态（奇数买入，偶数卖出）。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 2,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: 'Day 0 初始收益: 0',
+      log: '| 📋 第 0 天卖出收益初始化为 0',
+      msg: '第 0 天卖出收益为 <code>0</code>。'
     });
 
     for (let i = 1; i < n; i++) {
@@ -901,7 +965,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     const n = prices.length;
     const steps: UniversalStep[] = [];
     let s0 = -prices[0], s1 = 0, s2 = 0;
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -916,6 +980,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: '初始化冷冻期 3 态状态机',
       log: '| 📋 含冷冻期: [0:持股, 1:保持卖出, 2:刚卖出冷冻]',
       msg: `初始化 3 状态：<code>[持股: -${prices[0]}, 保持卖出: 0, 刚卖出冷冻: 0]</code>。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 2,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: 'Day 0 收益: 0',
+      log: '| 📋 第 0 天卖出收益初始化为 0',
+      msg: '第 0 天初始收益为 <code>0</code>。'
     });
 
     for (let i = 1; i < n; i++) {
@@ -987,7 +1067,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     const steps: UniversalStep[] = [];
     let hold = -prices[0];
     let sold = 0;
-    const dailyProfit = new Array(n).fill(0);
+    const dailyProfit: (number | null)[] = new Array(n).fill(null);
 
     steps.push({
       type: 'init',
@@ -1002,6 +1082,22 @@ export class StockStrategy implements IAlgorithmStrategy {
       tag: `初始化 (手续费 fee=${fee})`,
       log: `| 📋 含手续费买卖: hold = -${prices[0]}, sold = 0, fee = ${fee}`,
       msg: `初始化：每次卖出时扣除手续费 <code>fee = ${fee}</code>。`
+    });
+
+    dailyProfit[0] = 0;
+    steps.push({
+      type: 'init-val',
+      line: anchorMap?.init_val || anchorMap?.init || 2,
+      i: 0,
+      j: 0,
+      grid: [[...dailyProfit]],
+      memo: [...dailyProfit],
+      dp1d: [...dailyProfit],
+      activeSlot: 0,
+      highlightSlots: [0],
+      tag: 'Day 0 收益: 0',
+      log: '| 📋 第 0 天净利润初始化为 0',
+      msg: '第 0 天净收益为 <code>0</code>。'
     });
 
     for (let i = 1; i < n; i++) {

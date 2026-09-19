@@ -1,6 +1,11 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine';
 import { cloneTree, buildKnapsackDPDependencyTree, findNodeIdByCoord } from './strategy-helpers';
+import {
+  AbstractKnapsackRecursionCompiler,
+  type KnapsackRecursionContext,
+  type KnapsackBoundaryResult
+} from './abstract-knapsack-recursion-compiler';
 
 /**
  * 背包问题领域实体与值对象 (Knapsack Domain Models & Value Objects)
@@ -10,14 +15,18 @@ export interface KnapsackItem {
   weight: number;
   value: number;
   label?: string;
+  count?: number;
 }
 
 export type KnapsackKind =
   | 'partition-subset'   // 分割等和子集（布尔可达性 / 价值=重量）
   | '01-standard'        // 标准 0-1 背包（最大价值）
   | 'complete-standard'  // 完全背包（无限次选取，正序压缩）
+  | 'coin-change-count'  // 零钱兑换 II (完全背包组合数累加)
+  | 'coin-change-min'    // 零钱兑换 I (完全背包最少硬币数求 min)
   | 'last-stone-weight'  // 最后一块石头的重量 II (最大装载 capacity = sum/2)
-  | 'target-sum';        // 目标和 (方案数累加)
+  | 'target-sum'         // 目标和 (方案数累加)
+  | 'multiple-knapsack'; // 多重背包 (有限件数多分支)
 
 export interface KnapsackDomainConfig {
   modelId: string;
@@ -34,6 +43,81 @@ export interface KnapsackDomainConfig {
   valueUnit?: string;
   weightUnit?: string;
 }
+
+class GenericKnapsackRecursionCompiler extends AbstractKnapsackRecursionCompiler {
+  protected checkBoundary(i: number, curTarget: number, ctx: KnapsackRecursionContext): KnapsackBoundaryResult {
+    const kind = ctx.config.kind;
+    const n = ctx.n;
+    const INF = 1000000;
+
+    // Base Case 1: 完美装满 / 达到目标
+    if (curTarget === 0) {
+      const val = kind === 'partition-subset' ? true
+        : (kind === 'target-sum' || kind === 'coin-change-count') ? 1
+        : 0;
+      return {
+        isBase: true,
+        val,
+        lineKey: 'base_match',
+        tag: kind === 'partition-subset' ? '🎯 目标达成: true' : `🎯 目标达成: ${val}`,
+        log: `| 🎯 边界命中: curTarget = 0，方案成立，return ${val}`,
+        msg: `🎯 边界命中：剩余金额/目标已精确扣减为 <code>0</code>，方案成立，返回 <strong>${val}</strong>。`
+      };
+    }
+
+    // Base Case 2: 物品耗尽 或 容量超扣
+    if (i >= n || curTarget < 0) {
+      const val = kind === 'partition-subset' ? false
+        : (kind === 'coin-change-min') ? INF
+        : 0;
+      return {
+        isBase: true,
+        val,
+        lineKey: 'base_overflow',
+        tag: curTarget < 0 ? `🚫 超重拦截: ${val === INF ? '∞' : val}` : `🚫 物品耗尽: ${val === INF ? '∞' : val}`,
+        log: `| 🚫 边界拦截: ${curTarget < 0 ? `剩余容量 ${curTarget} < 0 超扣` : `物品已全部考察 (i=${i})`}, return ${val === INF ? '∞' : val}`,
+        msg: `🚫 边界拦截：${curTarget < 0 ? `容量超扣为 <code>${curTarget} < 0</code>` : `物品已考察完毕 <code>i = ${i} >= ${n}</code>`}，当前分支不可行，返回 <strong>${val === INF ? '∞' : val}</strong>。`
+      };
+    }
+
+    return { isBase: false };
+  }
+
+  protected computeTakeResult(subResult: any, item: KnapsackItem, ctx: KnapsackRecursionContext): any {
+    const kind = ctx.config.kind;
+    if (kind === 'partition-subset') return Boolean(subResult);
+    if (kind === 'target-sum' || kind === 'coin-change-count') return Number(subResult) || 0;
+    if (kind === 'coin-change-min') {
+      const num = Number(subResult);
+      return num >= 1000000 ? 1000000 : num + 1;
+    }
+    return (Number(subResult) || 0) + item.value;
+  }
+
+  protected combineBranches(
+    notTakeRes: any,
+    takeRes: any,
+    canTake: boolean,
+    item: KnapsackItem,
+    ctx: KnapsackRecursionContext
+  ): any {
+    const kind = ctx.config.kind;
+    if (kind === 'partition-subset') {
+      return Boolean(notTakeRes || (canTake && takeRes));
+    }
+    if (kind === 'target-sum' || kind === 'coin-change-count') {
+      return (Number(notTakeRes) || 0) + (canTake ? (Number(takeRes) || 0) : 0);
+    }
+    if (kind === 'coin-change-min') {
+      const valTake = canTake ? this.computeTakeResult(takeRes, item, ctx) : 1000000;
+      return Math.min(Number(notTakeRes) || 0, valTake);
+    }
+    const valTake = canTake ? this.computeTakeResult(takeRes, item, ctx) : 0;
+    return Math.max(Number(notTakeRes) || 0, valTake);
+  }
+}
+
+const knapsackRecursionCompiler = new GenericKnapsackRecursionCompiler();
 
 /**
  * 背包 DP 统一步骤矩阵编译器 (KnapsackStepMatrixCompiler) - 编译流水线深模块 (Deep Module)
@@ -65,295 +149,7 @@ export class KnapsackStepMatrixCompiler {
    * 阶段 1 & 2: 递归分支树编译
    */
   public static compileStage1or2(config: KnapsackDomainConfig, isMemo: boolean = false): UniversalStep[] {
-    const { items, capacity, kind, anchorMap, oddCheck } = config;
-    const n = items.length;
-    const generated: UniversalStep[] = [];
-
-    const lineOddCheck = anchorMap?.odd_check || 4;
-    const lineDfsStart = anchorMap?.dfs_start || 6;
-    const lineBaseMatch = anchorMap?.base_match || (isMemo ? 15 : 12);
-    const lineBaseOverflow = anchorMap?.base_overflow || (isMemo ? 17 : 14);
-    const lineCacheHit = anchorMap?.cache_hit || 19;
-    const lineBranchNotTake = anchorMap?.branch_not_take || (isMemo ? 22 : 17);
-    const lineBranchTake = anchorMap?.branch_take || (isMemo ? 26 : 21);
-    const lineCombine = anchorMap?.combine || (isMemo ? 28 : 23);
-
-    // 奇数/不可行前置拦截
-    if (oddCheck?.hasOddFail) {
-      generated.push({
-        type: 'boundary',
-        i: 0,
-        j: 0,
-        grid: [[0]],
-        activeStack: [],
-        visited: [],
-        line: lineOddCheck,
-        tag: `奇数总和 ${oddCheck.sum} 无法平分`,
-        log: `| ❌ 数组总和 sum = ${oddCheck.sum} 为奇数，无法等分为两个整数子集，直接 return false`,
-        msg: `数组总和 <code>sum = ${oddCheck.sum}</code> 为奇数，无法平分成两个相等的整数子集，直接返回 <strong>false</strong>。`
-      });
-      return generated;
-    }
-
-    const target = capacity;
-    const memoCache: Record<string, any> = {};
-    const gridState: (number | null)[][] = Array.from({ length: n }, () => new Array(target + 1).fill(null));
-    const activeStack: string[] = [];
-    const visitedCells: Set<string> = new Set();
-    let nodeIdCounter = 0;
-    let callCount = 0;
-    const MAX_RECORDED_CALLS = 100;
-
-    const rootNode: UniversalTreeNode = {
-      id: `node-${++nodeIdCounter}`,
-      r: 0,
-      c: target,
-      val: `dfs(0,${target})`,
-      status: 'current',
-      children: []
-    };
-
-    function dfs(i: number, curTarget: number, currentTreeNode?: UniversalTreeNode): any {
-      callCount++;
-      const shouldRecord = isMemo || callCount <= MAX_RECORDED_CALLS;
-      const key = `${i},${curTarget}`;
-      activeStack.push(key);
-      visitedCells.add(key);
-      if (currentTreeNode) currentTreeNode.status = 'current';
-
-      if (shouldRecord && currentTreeNode) {
-        generated.push({
-          type: 'entry',
-          i: Math.min(i, n - 1),
-          j: Math.max(0, Math.min(curTarget, target)),
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineDfsStart,
-          tag: `dfs(${i}, ${curTarget})`,
-          log: `| ➡️ 进入搜索: dfs(物品索引=${i}, 剩余容量/目标=${curTarget})`,
-          msg: `进入递归搜索：当前考虑第 <code>${i}</code> 件物品，剩余容量/目标为 <code>${curTarget}</code>。`,
-          gridHighlight: { i: Math.min(i, n - 1), j: Math.max(0, Math.min(curTarget, target)) },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: cloneTree(rootNode)
-        });
-      }
-
-      // Base Case 1: 完美装满 / 达到目标
-      if (curTarget === 0) {
-        if (currentTreeNode) {
-          currentTreeNode.status = 'base';
-          currentTreeNode.tag = kind === 'partition-subset' ? '🎯=true' : (kind === 'target-sum' ? '🎯=1' : '🎯=0');
-        }
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'boundary',
-            i: Math.min(i, n - 1),
-            j: 0,
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBaseMatch,
-            tag: '🎯 目标达成: true',
-            log: `| 🎯 边界命中: curTarget = 0，已找到恰好装满的子集方案，return true`,
-            msg: `🎯 边界命中：剩余目标已精确扣减为 <code>0</code>，方案成立，返回 <strong>true</strong>。`,
-            gridHighlight: { i: Math.min(i, n - 1), j: 0 },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        activeStack.pop();
-        return kind === 'partition-subset' ? true : (kind === 'target-sum' ? 1 : 0);
-      }
-
-      // Base Case 2: 物品耗尽 或 容量超扣
-      if (i >= n || curTarget < 0) {
-        if (currentTreeNode) {
-          currentTreeNode.status = 'pruned';
-          currentTreeNode.tag = kind === 'partition-subset' ? '🚫=false' : '🚫=0';
-        }
-        if (shouldRecord && currentTreeNode) {
-          generated.push({
-            type: 'boundary',
-            i: Math.min(i, n - 1),
-            j: Math.max(0, Math.min(curTarget, target)),
-            grid: JSON.parse(JSON.stringify(gridState)),
-            activeStack: [...activeStack],
-            visited: [...visitedCells],
-            line: lineBaseOverflow,
-            tag: curTarget < 0 ? '🚫 超重拦截: false' : '🚫 物品耗尽: false',
-            log: `| 🚫 边界拦截: ${curTarget < 0 ? `剩余容量 ${curTarget} < 0 超扣` : `物品已全部考察 (i=${i})`}, return false`,
-            msg: `🚫 边界拦截：${curTarget < 0 ? `容量超扣为 <code>${curTarget} < 0</code>` : `物品已考察完毕 <code>i = ${i} >= ${n}</code>`}，当前分支不可行，返回 <strong>false</strong>。`,
-            gridHighlight: { i: Math.min(i, n - 1), j: Math.max(0, Math.min(curTarget, target)) },
-            activeNodeId: currentTreeNode.id,
-            treeRoot: cloneTree(rootNode)
-          });
-        }
-        activeStack.pop();
-        return kind === 'partition-subset' ? false : 0;
-      }
-
-      // 记忆化命中判定
-      if (isMemo && memoCache[key] !== undefined) {
-        const cachedVal = memoCache[key];
-        if (currentTreeNode) {
-          currentTreeNode.status = 'visited';
-          currentTreeNode.tag = `⚡=${cachedVal}`;
-        }
-        generated.push({
-          type: 'memo-hit',
-          i,
-          j: curTarget,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineCacheHit,
-          tag: `⚡ 备忘录命中: ${cachedVal}`,
-          log: `| ⚡ 备忘录命中: memo[${i}][${curTarget}] = ${cachedVal}，直接剪枝返回！`,
-          msg: `⚡ 备忘录命中：状态 <code>(${i}, ${curTarget})</code> 先前已计算过结果为 <strong>${cachedVal}</strong>，直接剪枝返回！`,
-          gridHighlight: { i, j: curTarget },
-          activeNodeId: currentTreeNode ? currentTreeNode.id : undefined,
-          treeRoot: cloneTree(rootNode)
-        });
-        activeStack.pop();
-        return cachedVal;
-      }
-
-      const itemW = items[i].weight;
-
-      // 决策 1: 不选当前物品
-      if (shouldRecord && currentTreeNode) {
-        generated.push({
-          type: 'match-branch',
-          i,
-          j: curTarget,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineBranchNotTake,
-          tag: `不选 item[${i}]=${itemW}`,
-          log: `| 🚫 决策 1: 不选 item[${i}] (w=${itemW})，剩余目标仍为 ${curTarget}，进入 dfs(${i + 1}, ${curTarget})`,
-          msg: `🚫 决策 1：<strong>不选</strong> 当前物品 <code>item[${i}] (重量 ${itemW})</code>，剩余目标保持 <code>${curTarget}</code>。`,
-          gridHighlight: { i, j: curTarget },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: cloneTree(rootNode)
-        });
-      }
-
-      let childNotTake: UniversalTreeNode | undefined;
-      if (shouldRecord && currentTreeNode) {
-        childNotTake = {
-          id: `node-${++nodeIdCounter}`,
-          r: i + 1,
-          c: curTarget,
-          val: `dfs(${i + 1},${curTarget})`,
-          edgeLabel: '不选',
-          status: 'normal',
-          children: []
-        };
-        currentTreeNode.children.push(childNotTake);
-      }
-      const notTakeRes = dfs(i + 1, curTarget, childNotTake);
-
-      if (kind === 'partition-subset' && notTakeRes) {
-        if (isMemo) memoCache[key] = true;
-        gridState[i][curTarget] = 1;
-        if (currentTreeNode) {
-          currentTreeNode.status = 'visited';
-          currentTreeNode.tag = '= true';
-        }
-        activeStack.pop();
-        return true;
-      }
-
-      // 决策 2: 选入当前物品
-      if (shouldRecord && currentTreeNode) {
-        generated.push({
-          type: 'match-branch',
-          i,
-          j: curTarget,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineBranchTake,
-          tag: `选入 item[${i}]=${itemW}`,
-          log: `| 📦 决策 2: 选入 item[${i}] (w=${itemW})，剩余目标扣减为 ${curTarget - itemW}，进入 dfs(${i + 1}, ${curTarget - itemW})`,
-          msg: `📦 决策 2：<strong>选入</strong> 当前物品 <code>item[${i}] (重量 ${itemW})</code>，剩余目标变为 <code>${curTarget - itemW}</code>。`,
-          gridHighlight: { i, j: curTarget },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: cloneTree(rootNode)
-        });
-      }
-
-      let childTake: UniversalTreeNode | undefined;
-      if (shouldRecord && currentTreeNode) {
-        childTake = {
-          id: `node-${++nodeIdCounter}`,
-          r: i + 1,
-          c: Math.max(0, curTarget - itemW),
-          val: `dfs(${i + 1},${curTarget - itemW})`,
-          edgeLabel: '选入',
-          status: 'normal',
-          children: []
-        };
-        currentTreeNode.children.push(childTake);
-      }
-      const takeRes = dfs(i + 1, curTarget - itemW, childTake);
-
-      const finalRes = kind === 'partition-subset'
-        ? (notTakeRes || takeRes)
-        : kind === 'target-sum'
-        ? ((notTakeRes || 0) + (takeRes || 0))
-        : Math.max(notTakeRes, (takeRes || 0) + items[i].value);
-      if (isMemo) memoCache[key] = finalRes;
-      gridState[i][curTarget] = typeof finalRes === 'boolean' ? (finalRes ? 1 : 0) : finalRes;
-
-      if (currentTreeNode) {
-        currentTreeNode.status = finalRes ? 'visited' : 'pruned';
-        currentTreeNode.tag = `= ${finalRes}`;
-      }
-
-      if (shouldRecord && currentTreeNode) {
-        generated.push({
-          type: 'update',
-          i,
-          j: curTarget,
-          grid: JSON.parse(JSON.stringify(gridState)),
-          activeStack: [...activeStack],
-          visited: [...visitedCells],
-          line: lineCombine,
-          tag: `状态汇总: ${finalRes}`,
-          log: `| ✨ 合并分支: dfs(${i}, ${curTarget}) = ${finalRes}${isMemo ? ' [存入备忘录]' : ''}`,
-          msg: `✨ 汇总分支决策结果：<code>dfs(${i}, ${curTarget}) = <strong>${finalRes}</strong></code>。`,
-          gridHighlight: { i, j: curTarget },
-          activeNodeId: currentTreeNode.id,
-          treeRoot: cloneTree(rootNode)
-        });
-      }
-
-      activeStack.pop();
-      return finalRes;
-    }
-
-    const total = dfs(0, target, rootNode);
-
-    generated.push({
-      type: 'return',
-      i: 0,
-      j: target,
-      grid: JSON.parse(JSON.stringify(gridState)),
-      activeStack: [],
-      visited: [...visitedCells],
-      line: lineCombine,
-      tag: '最终判定答案',
-      log: `| 🏆 背包状态演化计算完成！结果 = ${total}`,
-      msg: `🏆 演化计算完成！背包在容量 <code>${target}</code> 下的最优推导结果为 <strong>${total}</strong>。`,
-      gridHighlight: { i: 0, j: target },
-      activeNodeId: rootNode.id,
-      treeRoot: cloneTree(rootNode)
-    });
-
-    return generated;
+    return knapsackRecursionCompiler.compile(config, isMemo);
   }
 
   /**
@@ -404,14 +200,34 @@ export class KnapsackStepMatrixCompiler {
     // 1. 初始化第 0 件物品行
     const w0 = items[0].weight;
     const v0 = items[0].value;
-    const isCountKind = kind === 'target-sum';
+    const isCountKind = kind === 'target-sum' || kind === 'coin-change-count';
+    const isMinKind = kind === 'coin-change-min';
+    const isComplete = kind === 'complete-standard' || kind === 'coin-change-count' || kind === 'coin-change-min';
     if (isCountKind) {
-      // 计数型背包：dp[0][0] = 1（不选有 1 种方案），dp[0][w0] += 1（选了也有 1 种方案）
-      for (let j = 0; j <= capacity; j++) {
-        dp[0][j] = 0;
+      for (let j = 0; j <= capacity; j++) dp[0][j] = 0;
+      if (kind === 'coin-change-count') {
+        for (let j = 0; j <= capacity; j++) {
+          if (j % w0 === 0) dp[0][j] = 1;
+        }
+      } else {
+        dp[0][0] = 1;
+        if (w0 <= capacity) dp[0][w0] = (dp[0][w0] ?? 0) + 1;
       }
-      dp[0][0] = 1;
-      if (w0 <= capacity) dp[0][w0] = (dp[0][w0] ?? 0) + 1;
+    } else if (isMinKind) {
+      for (let j = 0; j <= capacity; j++) {
+        dp[0][j] = (j % w0 === 0) ? Math.floor(j / w0) : 1000000;
+      }
+    } else if (kind === 'multiple-knapsack') {
+      const c0 = items[0].count ?? 1;
+      for (let j = 0; j <= capacity; j++) {
+        const k = Math.min(c0, Math.floor(j / w0));
+        dp[0][j] = k * v0;
+      }
+    } else if (isComplete) {
+      // 完全背包：物品 0 可复选装入多件
+      for (let j = 0; j <= capacity; j++) {
+        dp[0][j] = Math.floor(j / w0) * v0;
+      }
     } else {
       for (let j = 0; j <= capacity; j++) {
         dp[0][j] = j >= w0 ? v0 : 0;
@@ -426,8 +242,12 @@ export class KnapsackStepMatrixCompiler {
       grid: JSON.parse(JSON.stringify(dp)),
       gridHighlight: { i: 0, j: Math.min(w0, capacity) },
       tag: `初始化第 0 行: item[0]=${w0}`,
-      log: `| 🎯 初始化首行: 当容量 j >= ${w0} 时，第 0 件物品可装入，dp[0][j] = ${v0}`,
-      msg: `初始化第 0 件物品行：当背包容量 <code>j >= ${w0}</code> 时，可装入物品 0，<code>dp[0][j] = ${v0}</code>。`
+      log: isComplete
+        ? `| 🎯 完全背包初始化首行: 硬币/物品 ${w0} 可复选装入`
+        : `| 🎯 初始化首行: 当容量 j >= ${w0} 时，第 0 件物品可装入，dp[0][j] = ${v0}`,
+      msg: isComplete
+        ? `初始化首行：面值/重量 <code>${w0}</code> 可重复选取。`
+        : `初始化第 0 件物品行：当背包容量 <code>j >= ${w0}</code> 时，可装入物品 0，<code>dp[0][j] = ${v0}</code>。`
     });
 
     // 2. 双重循环填表 (强制发射 loop-outer -> loop-inner -> cond -> transfer 零跳步流水线)
@@ -478,7 +298,7 @@ export class KnapsackStepMatrixCompiler {
         });
 
         if (!isEnough) {
-          dp[i][j] = dp[i - 1][j] ?? 0;
+          dp[i][j] = dp[i - 1][j] ?? (isMinKind ? 1000000 : 0);
           steps.push({
             type: 'transfer',
             line: lineTransferSkip,
@@ -489,14 +309,55 @@ export class KnapsackStepMatrixCompiler {
             topJ: j,
             grid: JSON.parse(JSON.stringify(dp)),
             gridHighlight: { i, j },
-            tag: `容量不足继承: dp[${i}][${j}] = ${dp[i][j]}`,
-            log: `| ⚠️ 容量不足 (j=${j} < w=${wi}): dp[${i}][${j}] 继承上方 dp[${i - 1}][${j}] = ${dp[i][j]}`,
-            msg: `容量不足：直接继承上方旧值 <code>dp[${i - 1}][${j}] = <strong>${dp[i][j]}</strong></code>。`
+            tag: `容量不足继承: dp[${i}][${j}] = ${dp[i][j] === 1000000 ? '∞' : dp[i][j]}`,
+            log: `| ⚠️ 容量不足 (j=${j} < w=${wi}): dp[${i}][${j}] 继承上方 dp[${i - 1}][${j}] = ${dp[i][j] === 1000000 ? '∞' : dp[i][j]}`,
+            msg: `容量不足：直接继承上方旧值 <code>dp[${i - 1}][${j}] = <strong>${dp[i][j] === 1000000 ? '∞' : dp[i][j]}</strong></code>。`
           });
         } else {
-          const valNotTake = dp[i - 1][j] ?? 0;
-          const valTake = (dp[i - 1][j - wi] ?? 0) + (isCountKind ? 0 : vi);
-          dp[i][j] = isCountKind ? (valNotTake + (dp[i - 1][j - wi] ?? 0)) : Math.max(valNotTake, valTake);
+          const valNotTake = dp[i - 1][j] ?? (isMinKind ? 1000000 : 0);
+          if (kind === 'multiple-knapsack') {
+            const count = items[i].count ?? 1;
+            let best = valNotTake;
+            let bestK = 0;
+            for (let k = 1; k <= count && k * wi <= j; k++) {
+              const cand = (dp[i - 1][j - k * wi] ?? 0) + k * vi;
+              if (cand > best) {
+                best = cand;
+                bestK = k;
+              }
+            }
+            dp[i][j] = best;
+            steps.push({
+              type: 'transfer',
+              line: lineTransferMax,
+              i,
+              j,
+              val: dp[i][j],
+              topI: i - 1,
+              topJ: j,
+              leftI: i - 1,
+              leftJ: j - bestK * wi,
+              grid: JSON.parse(JSON.stringify(dp)),
+              gridHighlight: { i, j },
+              tag: `多重背包决策: 选${bestK}件, dp[${i}][${j}] = ${best}`,
+              log: `| 📦 多重背包决策: 物品 ${i} 最佳选入 ${bestK} 件，dp[${i}][${j}] = ${best}`,
+              msg: `多重背包转移：第 <code>${i}</code> 件物品最佳选入 <code>${bestK}</code> 件，<code>dp[${i}][${j}] = <strong>${best}</strong></code>。`
+            });
+          } else {
+          // 完全背包依赖当前行 dp[i][j - wi]，0-1 背包依赖上一行 dp[i - 1][j - wi]
+          const takePrevI = isComplete ? i : (i - 1);
+          const rawSub = dp[takePrevI][j - wi] ?? (isMinKind ? 1000000 : 0);
+          let combinedVal: number;
+          if (isCountKind) {
+            combinedVal = valNotTake + rawSub;
+          } else if (isMinKind) {
+            const valTake = rawSub >= 1000000 ? 1000000 : rawSub + 1;
+            combinedVal = Math.min(valNotTake, valTake);
+          } else {
+            const valTake = rawSub + vi;
+            combinedVal = Math.max(valNotTake, valTake);
+          }
+          dp[i][j] = combinedVal;
 
           steps.push({
             type: 'transfer',
@@ -506,56 +367,61 @@ export class KnapsackStepMatrixCompiler {
             val: dp[i][j],
             topI: i - 1,
             topJ: j,
-            leftI: i - 1,
+            leftI: takePrevI,
             leftJ: j - wi,
             grid: JSON.parse(JSON.stringify(dp)),
             gridHighlight: { i, j },
-            tag: `决策取优: dp[${i}][${j}] = ${dp[i][j]}`,
-            log: `| 📦 状态转移: dp[${i}][${j}] = max(不放:${valNotTake}, 放:${valTake}) = ${dp[i][j]}`,
-            msg: `状态转移：<code>dp[${i}][${j}] = max(dp[${i - 1}][${j}] (${valNotTake}), dp[${i - 1}][${j - wi}] + ${vi} (${valTake})) = <strong>${dp[i][j]}</strong></code>。`
+            tag: `决策转移: dp[${i}][${j}] = ${dp[i][j] === 1000000 ? '∞' : dp[i][j]}`,
+            log: isComplete
+              ? `| 📦 完全背包状态转移: dp[${i}][${j}] = ${dp[i][j] === 1000000 ? '∞' : dp[i][j]}`
+              : `| 📦 状态转移: dp[${i}][${j}] = ${dp[i][j] === 1000000 ? '∞' : dp[i][j]}`,
+            msg: isComplete
+              ? `完全背包转移：<code>dp[${i}][${j}] = <strong>${dp[i][j] === 1000000 ? '∞' : dp[i][j]}</strong></code>。`
+              : `状态转移：<code>dp[${i}][${j}] = <strong>${dp[i][j] === 1000000 ? '∞' : dp[i][j]}</strong></code>。`
           });
+          }
         }
       }
     }
 
     const finalAnswer = dp[n - 1][capacity];
     const isTargetMatched = kind === 'partition-subset' ? finalAnswer === capacity : true;
+    const finalDiff = kind === 'last-stone-weight' && config.oddCheck?.sum !== undefined
+      ? config.oddCheck.sum - 2 * (finalAnswer ?? 0)
+      : undefined;
+
+    const tagDisplay = finalDiff !== undefined
+      ? `两堆最小差值: ${finalDiff}`
+      : `最终答案: ${kind === 'partition-subset' ? isTargetMatched : finalAnswer}`;
+    const logDisplay = finalDiff !== undefined
+      ? `| 🏆 最终判定: dp[${n - 1}][${capacity}] = ${finalAnswer}，两堆粉碎最小差值 = ${config.oddCheck?.sum} - 2*${finalAnswer} = ${finalDiff}`
+      : `| 🏆 最终判定: dp[${n - 1}][${capacity}] = ${finalAnswer} ${kind === 'partition-subset' ? (isTargetMatched ? '== target 成立，判定为 true' : '!= target 不成立，判定为 false') : ''}`;
+    const msgDisplay = finalDiff !== undefined
+      ? `🏆 计算完成！最大子集装载重量为 <code>dp[${n - 1}][${capacity}] = ${finalAnswer}</code>，两堆石头碰撞粉碎后的最小剩余重量为 <code>${config.oddCheck?.sum} - 2 × ${finalAnswer} = <strong>${finalDiff}</strong></code>。`
+      : `🏆 计算完成！最终结果 <code>dp[${n - 1}][${capacity}] = <strong>${finalAnswer}</strong></code>${kind === 'partition-subset' ? (isTargetMatched ? '（恰好等于目标容量，返回 <strong>true</strong>）' : '（无法达到目标容量，返回 <strong>false</strong>）') : ''}。`;
 
     steps.push({
       type: 'return',
       line: lineReturn,
       i: n - 1,
       j: capacity,
-      grid: JSON.parse(JSON.stringify(dp)),
-      gridHighlight: { i: n - 1, j: capacity },
-      tag: `最终答案: ${isTargetMatched}`,
-      log: `| 🏆 最终判定: dp[${n - 1}][${capacity}] = ${finalAnswer} ${kind === 'partition-subset' ? (isTargetMatched ? '== target 成立，判定为 true' : '!= target 不成立，判定为 false') : ''}`,
-      msg: `🏆 计算完成！最终结果 <code>dp[${n - 1}][${capacity}] = <strong>${finalAnswer}</strong></code>${kind === 'partition-subset' ? (isTargetMatched ? '（与目标容量相等，判定为 <strong>true</strong>）' : '（无法达到目标容量，判定为 <strong>false</strong>）') : ''}。`
-    });
-
-    steps.forEach(step => {
-      step.treeRoot = buildKnapsackDPDependencyTree(items, capacity, step.grid, step.i, step.j);
-      step.activeNodeId = findNodeIdByCoord(step.treeRoot, step.i, step.j);
+      grid: dp.map(row => [...row]),
+      currentI: n - 1,
+      currentJ: capacity,
+      tag: tagDisplay,
+      log: logDisplay,
+      msg: msgDisplay
     });
 
     return steps;
   }
 
-  /**
-   * 阶段 4: 一维空间压缩与滚动数组推导
-   */
   public static compileStage4(config: KnapsackDomainConfig): UniversalStep[] {
-    const { items, capacity, kind, anchorMap, oddCheck } = config;
+    const { items, capacity, kind = 'standard', anchorMap, oddCheck } = config;
     const n = items.length;
     const steps: UniversalStep[] = [];
 
-    const lineOddCheck = anchorMap?.odd_check || 4;
-    const lineInit = anchorMap?.init || 3;
-    const lineOuter = anchorMap?.outer_loop || anchorMap?.loop_i || 4;
-    const lineInner = anchorMap?.inner_loop || anchorMap?.loop_j || 5;
-    const lineTransfer = anchorMap?.transfer || anchorMap?.accumulate || 6;
-    const lineReturn = anchorMap?.return || 9;
-
+    const lineOddCheck = anchorMap?.odd_check || 2;
     if (oddCheck?.hasOddFail) {
       steps.push({
         type: 'init',
@@ -563,7 +429,6 @@ export class KnapsackStepMatrixCompiler {
         i: 0,
         j: 0,
         dp1d: [0],
-        memoj: 0,
         tag: `奇数总和 ${oddCheck.sum} 无法平分`,
         log: `| ❌ 数组总和 sum = ${oddCheck.sum} 为奇数，无法等分为两个整数子集，直接 return false`,
         msg: `数组总和 <code>sum = ${oddCheck.sum}</code> 为奇数，无法平分成两个相等的整数子集，直接返回 <strong>false</strong>。`
@@ -571,21 +436,32 @@ export class KnapsackStepMatrixCompiler {
       return steps;
     }
 
-    const isCountKind = kind === 'target-sum';
-    const dp: number[] = new Array(capacity + 1).fill(0);
+    const lineInit = anchorMap?.init || 2;
+    const lineOuter = anchorMap?.outer_loop || anchorMap?.loop_i || 4;
+    const lineTransfer = anchorMap?.transfer || anchorMap?.transfer_max || 6;
+    const lineReturn = anchorMap?.return || 10;
+
+    const isCountKind = kind === 'target-sum' || kind === 'coin-change-count';
+    const isMinKind = kind === 'coin-change-min';
+    const dp: number[] = new Array(capacity + 1).fill(isMinKind ? 1000000 : 0);
     if (isCountKind) dp[0] = 1;
+    if (isMinKind) dp[0] = 0;
 
     steps.push({
       type: 'init',
       line: lineInit,
       i: 0,
       j: 0,
-      dp1d: [...dp],
+      dp1d: isMinKind ? dp.map(v => (v === 1000000 ? -1 : v)) : [...dp],
       memoj: 0,
       highlightSlots: [0],
-      tag: `一维数组初始化 dp[0..${capacity}]`,
-      log: `| 📋 初始化一维滚动数组 dp[${capacity + 1}]，全部填充 0`,
-      msg: `初始化长度为 <code>${capacity + 1}</code> 的一维滚动数组，全部置 0。`
+      tag: isMinKind ? 'dp[0]=0, 其余置 ∞' : `一维数组初始化 dp[0..${capacity}]`,
+      log: isMinKind
+        ? '| 📋 初始化一维数组 dp[0]=0，其余置为 ∞（求最小值）'
+        : `| 📋 初始化一维滚动数组 dp[${capacity + 1}]，全部填充 0`,
+      msg: isMinKind
+        ? '初始化一维数组：<code>dp[0] = 0</code>，其余置为 $\\infty$。'
+        : `初始化长度为 <code>${capacity + 1}</code> 的一维滚动数组，全部置 0。`
     });
 
     for (let i = 0; i < n; i++) {
@@ -597,8 +473,8 @@ export class KnapsackStepMatrixCompiler {
         line: lineOuter,
         i,
         j: 0,
-        dp1d: [...dp],
-        memoj: dp[capacity],
+        dp1d: isMinKind ? dp.map(v => (v === 1000000 ? -1 : v)) : [...dp],
+        memoj: dp[capacity] === 1000000 ? -1 : dp[capacity],
         currentI: i,
         tag: `考察第 ${i} 件物品: w=${wi}`,
         log: `| 🔄 外层循环: 考察第 ${i} 件物品 (重量 ${wi}, 价值 ${vi})`,
@@ -606,9 +482,39 @@ export class KnapsackStepMatrixCompiler {
       });
 
       // 0-1 背包从后向前逆序遍历，完全背包从前向后正序遍历
-      const isReverse = kind !== 'complete-standard';
+      const isReverse = kind !== 'complete-standard' && kind !== 'coin-change-count' && kind !== 'coin-change-min';
 
-      if (isReverse) {
+      if (kind === 'multiple-knapsack') {
+        const count = items[i].count ?? 1;
+        for (let j = capacity; j >= wi; j--) {
+          const oldVal = dp[j];
+          let best = oldVal;
+          let bestK = 0;
+          for (let k = 1; k <= count && k * wi <= j; k++) {
+            const cand = dp[j - k * wi] + k * vi;
+            if (cand > best) {
+              best = cand;
+              bestK = k;
+            }
+          }
+          dp[j] = best;
+          steps.push({
+            type: 'update-1d',
+            line: lineTransfer,
+            i,
+            j,
+            dp1d: [...dp],
+            memoj: dp[j],
+            highlightSlots: [j],
+            srcSlots: bestK > 0 ? [j - bestK * wi] : [j],
+            currentI: i,
+            currentJ: j,
+            tag: `多重背包 dp[${j}] = ${dp[j]} (选${bestK}件)`,
+            log: `| ⚡ 多重背包逆序更新 dp[${j}] = ${dp[j]} (选入 ${bestK} 件物品 ${i})`,
+            msg: `逆序更新槽位 <code>dp[${j}] = <strong>${dp[j]}</strong></code>（选入 <code>${bestK}</code> 件该物品）。`
+          });
+        }
+      } else if (isReverse) {
         for (let j = capacity; j >= wi; j--) {
           const oldVal = dp[j];
           const candidateVal = isCountKind ? dp[j - wi] : (dp[j - wi] + vi);
@@ -619,7 +525,7 @@ export class KnapsackStepMatrixCompiler {
             line: lineTransfer,
             i,
             j,
-            dp1d: [...dp],
+            dp1d: isMinKind ? dp.map(v => (v === 1000000 ? -1 : v)) : [...dp],
             memoj: dp[j],
             highlightSlots: [j],
             srcSlots: [j - wi],
@@ -633,44 +539,67 @@ export class KnapsackStepMatrixCompiler {
       } else {
         for (let j = wi; j <= capacity; j++) {
           const oldVal = dp[j];
-          const candidateVal = dp[j - wi] + vi;
-          dp[j] = Math.max(oldVal, candidateVal);
+          let candidateVal: number;
+          if (isCountKind) {
+            candidateVal = dp[j - wi];
+            dp[j] = oldVal + candidateVal;
+          } else if (isMinKind) {
+            candidateVal = dp[j - wi] >= 1000000 ? 1000000 : (dp[j - wi] + 1);
+            dp[j] = Math.min(oldVal, candidateVal);
+          } else {
+            candidateVal = dp[j - wi] + vi;
+            dp[j] = Math.max(oldVal, candidateVal);
+          }
 
           steps.push({
             type: 'update-1d',
             line: lineTransfer,
             i,
             j,
-            dp1d: [...dp],
-            memoj: dp[j],
+            dp1d: isMinKind ? dp.map(v => (v === 1000000 ? -1 : v)) : [...dp],
+            memoj: isMinKind ? (dp[j] >= 1000000 ? -1 : dp[j]) : dp[j],
             highlightSlots: [j],
             srcSlots: [j - wi],
             currentI: i,
             currentJ: j,
-            tag: `dp[${j}] = max(${oldVal}, dp[${j - wi}]+${vi}) = ${dp[j]}`,
-            log: `| ⚡ 正序更新 dp[${j}] = max(dp[${j}]:${oldVal}, dp[${j - wi}]+${vi}:${candidateVal}) = ${dp[j]}`,
-            msg: `正序更新槽位 <code>dp[${j}] = max(dp[${j}], dp[${j - wi}] + ${vi}) = <strong>${dp[j]}</strong></code>（允许同一物品多次装入）。`
+            tag: `dp[${j}] = ${dp[j] === 1000000 ? '∞' : dp[j]}`,
+            log: `| ⚡ 正序更新 dp[${j}] = ${dp[j] === 1000000 ? '∞' : dp[j]}`,
+            msg: `正序更新槽位 <code>dp[${j}] = <strong>${dp[j] === 1000000 ? '∞' : dp[j]}</strong></code>（允许该物品多次装入）。`
           });
         }
       }
     }
 
-    const finalAnswer = dp[capacity];
+    const finalAnswer = isMinKind && dp[capacity] >= 1000000 ? -1 : dp[capacity];
     const isTargetMatched = kind === 'partition-subset' ? finalAnswer === capacity : true;
+    const finalDiff = kind === 'last-stone-weight' && config.oddCheck?.sum !== undefined
+      ? config.oddCheck.sum - 2 * (finalAnswer ?? 0)
+      : undefined;
+
+    const tagDisplay = finalDiff !== undefined
+      ? `一维压缩最小差值: ${finalDiff}`
+      : `一维压缩最终结果: ${finalAnswer}`;
+    const logDisplay = finalDiff !== undefined
+      ? `| 🏆 一维空间压缩计算完成！dp[${capacity}] = ${finalAnswer}，两堆粉碎最小差值 = ${config.oddCheck?.sum} - 2*${finalAnswer} = ${finalDiff}`
+      : `| 🏆 一维空间压缩计算完成！dp[${capacity}] = ${finalAnswer} ${kind === 'partition-subset' ? (isTargetMatched ? '== target 成立，判定为 true' : '!= target 不成立，判定为 false') : ''}`;
+    const msgDisplay = finalDiff !== undefined
+      ? `🏆 空间压缩推导完成！一维滚动数组最大装载 <code>dp[${capacity}] = ${finalAnswer}</code>，两堆石头碰撞粉碎后的最小剩余重量为 <code>${config.oddCheck?.sum} - 2 × ${finalAnswer} = <strong>${finalDiff}</strong></code>。`
+      : `🏆 空间压缩推导完成！一维滚动数组最终结果 <code>dp[${capacity}] = <strong>${finalAnswer}</strong></code>${kind === 'partition-subset' ? (isTargetMatched ? '（恰好等于目标容量，返回 <strong>true</strong>）' : '（无法达到目标容量，返回 <strong>false</strong>）') : ''}。`;
 
     steps.push({
       type: 'return',
       line: lineReturn,
       i: n - 1,
       j: capacity,
-      dp1d: [...dp],
-      memoj: finalAnswer,
+      dp1d: isMinKind ? dp.map(v => (v === 1000000 ? -1 : v)) : [...dp],
+      memoj: finalDiff !== undefined ? finalDiff : finalAnswer,
       highlightSlots: [capacity],
-      tag: `一维压缩最终结果: ${finalAnswer}`,
-      log: `| 🏆 一维空间压缩计算完成！dp[${capacity}] = ${finalAnswer} ${kind === 'partition-subset' ? (isTargetMatched ? '== target 成立，判定为 true' : '!= target 不成立，判定为 false') : ''}`,
-      msg: `🏆 空间压缩推导完成！一维滚动数组最终结果 <code>dp[${capacity}] = <strong>${finalAnswer}</strong></code>${kind === 'partition-subset' ? (isTargetMatched ? '（恰好等于目标容量，返回 <strong>true</strong>）' : '（无法达到目标容量，返回 <strong>false</strong>）') : ''}。`
+      tag: tagDisplay,
+      log: logDisplay,
+      msg: msgDisplay
     });
 
     return steps;
   }
 }
+

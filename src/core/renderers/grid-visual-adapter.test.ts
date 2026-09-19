@@ -497,5 +497,94 @@ describe('RecursionTreeAdapter Deep Module', () => {
     expect(cell01.className).toContain('is-top');
     expect(cell10.className).toContain('is-left');
   });
+
+  it('在带标尺网格的顺推探索初始帧 (0, 0)，冒险家小人不得误判为终点 (不得佩戴终点金奖杯或 cheering)', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const initialStep = {
+      i: 0,
+      j: 0,
+      type: 'entry',
+      callStack: [{ label: 'dfs(0,0)', coord: '0,0', depth: 1 }],
+      grid: [
+        [null, null],
+        [null, null]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, initialStep, {
+      m: 2,
+      n: 2,
+      isReverse: false,
+      rowLabels: ['a', 'Ø'],
+      colLabels: ['x', 'Ø']
+    });
+
+    const html = (container as unknown as MockHTMLElement).innerHTML;
+    // 验证处于活跃行走态 walking，未佩戴奖杯，没有 cheering 终态标记
+    expect(html).toContain('is-cur');
+    expect(html).not.toContain('id="gold-trophy"');
+  });
+
+  it('逆推模式下前驱依赖应呈现正确方向徽章 (⬇️ 垂直/↘️ 对角/➡️ 水平) 与专属图例', () => {
+    const container = new MockHTMLElement() as unknown as HTMLElement;
+    const step = {
+      i: 1,
+      j: 1,
+      type: 'cond',
+      topI: 2,
+      topJ: 1,
+      diagI: 2,
+      diagJ: 2,
+      leftI: 1,
+      leftJ: 2,
+      grid: [
+        [null, null, null],
+        [null, 0, null],
+        [null, 1, 1]
+      ]
+    };
+
+    GridVisualAdapter.renderGrid(container, step, {
+      m: 3,
+      n: 3,
+      isReverse: true,
+      rowLabels: ['r', 'a', 'b'],
+      colLabels: ['r', 'a', 'b']
+    });
+
+    const mockContainer = container as unknown as MockHTMLElement;
+    // 逆推模式下徽章图标必须反映实际物理依赖方向（朝向下方与右侧）
+    expect(mockContainer.innerHTML).toContain('⬇️');
+    expect(mockContainer.innerHTML).toContain('↘️');
+    expect(mockContainer.innerHTML).toContain('➡️');
+
+    // 逆推底部图例
+    expect(mockContainer.innerHTML).toContain('↘️ 对角(匹配/替换)');
+    expect(mockContainer.innerHTML).toContain('⬇️ 垂直(删除/继承)');
+    expect(mockContainer.innerHTML).toContain('➡️ 水平(插入)');
+  });
+
+  it('当步骤缺少显式依赖坐标但在计算阶段时，resolveSpatialDependencies 必须自动推导空间前驱', () => {
+    const stepWithoutExplicitCoords = {
+      i: 1,
+      j: 2,
+      type: 'cond',
+      isMatch: true,
+      activeSlot: 2
+    };
+
+    const resolved = GridVisualAdapter.resolveSpatialDependencies(stepWithoutExplicitCoords, {
+      m: 4,
+      n: 4,
+      isReverse: true
+    });
+
+    // 逆推模式下 (i=1, j=2) 自动推导出 topI=2, topJ=2; 匹配时 diagI=2, diagJ=3
+    expect(resolved.effTopI).toBe(2);
+    expect(resolved.effTopJ).toBe(2);
+    expect(resolved.effDiagI).toBe(2);
+    expect(resolved.effDiagJ).toBe(3);
+  });
 });
+
 

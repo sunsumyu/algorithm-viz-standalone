@@ -335,12 +335,18 @@ export class VisualizerMediator {
       case 2:
         computedSteps = UniversalStageEngine.generateStage1or2Steps(model, m, n, dir, true, anchorMap, variant);
         break;
-      case 3:
-        computedSteps = UniversalStageEngine.generateStage3Steps(model, m, n, dir, anchorMap);
+      case 3: {
+        const defaultVar = stageConfig?.variants ? Object.keys(stageConfig.variants)[0] : (variant === 'if' ? 'if' : 'for');
+        const effectiveVar = (stageConfig?.variants && stageConfig.variants[variant]) ? variant : defaultVar;
+        computedSteps = UniversalStageEngine.generateStage3Steps(model, m, n, dir, anchorMap, effectiveVar);
         break;
-      case 4:
-        computedSteps = UniversalStageEngine.generateStage4Steps(model, m, n, dir, (variant === 'for' ? 'for' : 'if'), anchorMap);
+      }
+      case 4: {
+        const defaultVar = stageConfig?.variants ? Object.keys(stageConfig.variants)[0] : (variant === 'for' ? 'for' : 'if');
+        const effectiveVar = (stageConfig?.variants && stageConfig.variants[variant]) ? variant : defaultVar;
+        computedSteps = UniversalStageEngine.generateStage4Steps(model, m, n, dir, effectiveVar, anchorMap);
         break;
+      }
       default:
         computedSteps = [];
     }

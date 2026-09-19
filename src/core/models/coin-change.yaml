@@ -1,0 +1,206 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 零钱兑换 (Coin Change) - LeetCode 322 四阶段全演化模型
+# 包含：多叉切分递归树展开、记忆化缓存剪枝、自底向上递推填表与 BFS 最短路径优化
+# ==============================================================================
+
+id: coin-change
+name: "零钱兑换"
+nameEn: "Coin Change"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🪙"
+difficulty: 2
+levelOrder: 10
+learningGoal: "掌握完全背包/前缀切分动态规划：dp[i] = min_{c in coins} { dp[i - c] + 1 }"
+description: "给你一个整数数组 coins ，表示不同面额的硬币；以及一个整数 amount ，表示总金额。计算并返回可以凑成总金额所需的最少硬币个数。"
+defaultParams:
+  n: 11
+  coins: [1, 2, 5]
+
+problem:
+  leetcodeId: 322
+  title: "零钱兑换"
+  difficulty: "中等"
+  tags: ["广度优先搜索", "数组", "动态规划"]
+  description: "给你一个整数数组 <code>coins</code> ，表示不同面额的硬币；以及一个整数 <code>amount</code> ，表示总金额。<br/><br/>计算并返回可以凑成总金额所需的 <strong>最少硬币个数</strong> 。如果没有任何一种硬币组合能组成总金额，返回 <code>-1</code> 。<br/>你可以认为每种硬币的数量是无限的。"
+  examples:
+    - input: "coins = [1, 2, 5], amount = 11"
+      output: "3"
+      explanation: "11 = 5 + 5 + 1。"
+    - input: "coins = [2], amount = 3"
+      output: "-1"
+      explanation: "无法凑成。"
+    - input: "coins = [1], amount = 0"
+      output: "0"
+  constraints:
+    - "1 <= coins.length <= 12"
+    - "1 <= coins[i] <= 2³¹ - 1"
+    - "0 <= amount <= 10⁴"
+  leetcodeUrl: "https://leetcode.cn/problems/coin-change/"
+
+directions:
+  forward:
+    label: "自底向上 (正序面额递推)"
+    branches:
+      - name: "pick_coin"
+        label: "选用面额 c"
+        formula: "dp[i - c] + 1"
+    combineFormula: "min_{c in coins, c <= i} { dp[i - c] + 1 }"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(Sⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素切分递归 (多叉硬币决策树)"
+    desc:
+      forward: "对于目标金额 rem，遍历每种硬币面额 c，递归求解凑出 rem - c 的最少硬币数并加 1，在所有面额中取最小值。"
+    variants:
+      standard:
+        variantLabel: "标准切分递归"
+        title:
+          forward: "CoinChange_Recursive.java"
+        code:
+          forward:
+            title: "CoinChange_Recursive.java"
+            source: |
+              class Solution {
+                  public int coinChange(int[] coins, int amount) {
+                      return dfs(coins, amount); // @step:entry
+                  }
+                  private int dfs(int[] coins, int rem) {
+                      if (rem == 0) return 0;   // @step:boundary
+                      if (rem < 0) return -1;  // @step:boundary_prune
+                      int minCoins = Integer.MAX_VALUE; // @step:init
+                      for (int c : coins) {     // @step:loop
+                          int res = dfs(coins, rem - c); // @step:branch_call
+                          if (res >= 0 && res < minCoins) {
+                              minCoins = res + 1; // @step:compare
+                          }
+                      }
+                      return minCoins == Integer.MAX_VALUE ? -1 : minCoins; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(S × n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子金额计算)"
+    desc:
+      forward: "使用备忘录数组 memo 记录凑齐各金额 rem 所需的最少硬币数，遇到已访问金额直接复用结果，消除指数级递归分支。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "CoinChange_Memo.java"
+        code:
+          forward:
+            title: "CoinChange_Memo.java"
+            source: |
+              class Solution {
+                  private int[] memo;
+                  public int coinChange(int[] coins, int amount) {
+                      memo = new int[amount + 1]; // @step:init_memo
+                      return dfs(coins, amount);  // @step:entry
+                  }
+                  private int dfs(int[] coins, int rem) {
+                      if (rem == 0) return 0;
+                      if (rem < 0) return -1;
+                      if (memo[rem] != 0) return memo[rem]; // @step:cache_hit
+                      int minCoins = Integer.MAX_VALUE;    // @step:init
+                      for (int c : coins) {               // @step:loop
+                          int res = dfs(coins, rem - c);   // @step:branch_call
+                          if (res >= 0 && res < minCoins) {
+                              minCoins = res + 1;         // @step:compare
+                          }
+                      }
+                      memo[rem] = (minCoins == Integer.MAX_VALUE) ? -1 : minCoins; // @step:save_memo
+                      return memo[rem]; // @step:return
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-1d"
+    timeBadge: "O(S × n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 一维自底向上递推 (硬币决策天平填表)"
+    desc:
+      forward: "自底向上填表：dp[i] 表示凑成金额 i 所需的最少硬币数。遍历金额 1 到 amount，枚举可用硬币面额，取历史最优与新选硬币的最小值。"
+    variants:
+      for:
+        variantLabel: "双层循环标准版"
+        title:
+          forward: "CoinChange_DP.java"
+        code:
+          forward:
+            title: "CoinChange_DP.java"
+            source: |
+              class Solution {
+                  public int coinChange(int[] coins, int amount) {
+                      int[] dp = new int[amount + 1]; // @step:init
+                      Arrays.fill(dp, amount + 1);
+                      dp[0] = 0;                      // @step:base
+                      for (int i = 1; i <= amount; i++) { // @step:loop-outer
+                          for (int c : coins) {       // @step:loop-inner
+                              if (i - c >= 0) {
+                                  // 核心抉择：保留当前 dp[i] vs 选用硬币 c
+                                  dp[i] = Math.min(dp[i], dp[i - c] + 1); // @step:transfer
+                              }
+                          }
+                      }
+                      return dp[amount] > amount ? -1 : dp[amount]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "BFS最短路"
+    type: "space-optimized"
+    timeBadge: "O(S × n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: BFS 广度优先分层图最短路"
+    desc:
+      forward: "将零钱兑换建模为有向无权图中的最短路径问题。从金额 0 或 amount 出发逐层波浪式扩展，首次触达目标层数即为全局最少硬币数。"
+    variants:
+      bfs:
+        variantLabel: "BFS 最短路解法"
+        title:
+          forward: "CoinChange_BFS.java"
+        code:
+          forward:
+            title: "CoinChange_BFS.java"
+            source: |
+              class Solution {
+                  public int coinChange(int[] coins, int amount) {
+                      if (amount == 0) return 0; // @step:init
+                      Queue<Integer> queue = new LinkedList<>();
+                      boolean[] visited = new boolean[amount + 1];
+                      queue.offer(0);
+                      visited[0] = true;
+                      int step = 0; // @step:accumulate
+                      while (!queue.isEmpty()) {
+                          step++;
+                          int size = queue.size();
+                          for (int k = 0; k < size; k++) {
+                              int curr = queue.poll(); // @step:fetch-down
+                              for (int c : coins) {
+                                  int next = curr + c;
+                                  if (next == amount) return step; // @step:return
+                                  if (next < amount && !visited[next]) {
+                                      visited[next] = true;
+                                      queue.offer(next); // @step:compare
+                                  }
+                              }
+                          }
+                      }
+                      return -1; // @step:return
+                  }
+              }

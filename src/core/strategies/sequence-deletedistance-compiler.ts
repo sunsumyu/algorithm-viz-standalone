@@ -499,10 +499,7 @@ export function compileDeleteDistanceStage4(
   }
 
   if (isForward) {
-    for (let j = 0; j <= n; j++) {
-      memo[j] = j;
-      gridState[0][j] = j;
-    }
+    const lineInitVal = anchorMap?.init_val || (lineInit + 1);
 
     emitStep({
       type: 'init',
@@ -514,9 +511,29 @@ export function compileDeleteDistanceStage4(
       memoSnapshot: [...memo],
       grid: JSON.parse(JSON.stringify(gridState)),
       tag: '初始化一维滚动数组',
-      log: `| 📦 创建长度为 ${n + 1} 的一维滚动数组 memo[0..${n}], 初始化首行 memo[j] = j`,
-      msg: `创建长度为 <code>${n + 1}</code> 的一维滚动状态数组 <code>memo[0..${n}]</code>，初始化首行 <code>memo[j] = j</code>。`
+      log: `| 📦 创建长度为 ${n + 1} 的一维滚动数组 memo[0..${n}]`,
+      msg: `创建长度为 <code>${n + 1}</code> 的一维滚动状态数组 <code>memo[0..${n}]</code>。`
     });
+
+    for (let j = 0; j <= n; j++) {
+      memo[j] = j;
+      gridState[0][j] = j;
+      emitStep({
+        type: 'init_val',
+        line: lineInitVal,
+        i: 0,
+        j,
+        activeSlot: j,
+        slotMode: 'updated',
+        memoj: j,
+        memo: [...memo],
+        memoSnapshot: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        tag: `Base Case memo[${j}] = ${j}`,
+        log: `| 🎬 初始化首行基底: memo[${j}] = ${j} (word1 为空串，删除 word2 前 ${j} 个字符)`,
+        msg: `初始化首行基底：<code>memo[${j}] = ${j}</code>。`
+      });
+    }
 
     for (let i = 1; i <= m; i++) {
       let pre = memo[0];
@@ -604,10 +621,7 @@ export function compileDeleteDistanceStage4(
       msg: `🏆 一维滚动压缩完成！终点 <code>memo[${n}] = <strong>${memo[n]}</strong></code>。`
     });
   } else {
-    for (let j = 0; j <= n; j++) {
-      memo[j] = n - j;
-      gridState[m][j] = n - j;
-    }
+    const lineInitVal = anchorMap?.init_val || (lineInit + 1);
 
     emitStep({
       type: 'init',
@@ -619,9 +633,29 @@ export function compileDeleteDistanceStage4(
       memoSnapshot: [...memo],
       grid: JSON.parse(JSON.stringify(gridState)),
       tag: '初始化一维滚动数组 (倒序)',
-      log: `| 📦 创建长度为 ${n + 1} 的一维滚动数组 memo[0..${n}], 初始化末行 memo[j] = n - j`,
-      msg: `创建长度为 <code>${n + 1}</code> 的一维滚动状态数组 <code>memo[0..${n}]</code>，初始化末行 <code>memo[j] = n - j</code>。`
+      log: `| 📦 创建长度为 ${n + 1} 的一维滚动数组 memo[0..${n}]`,
+      msg: `创建长度为 <code>${n + 1}</code> 的一维滚动状态数组 <code>memo[0..${n}]</code>。`
     });
+
+    for (let j = 0; j <= n; j++) {
+      memo[j] = n - j;
+      gridState[m][j] = n - j;
+      emitStep({
+        type: 'init_val',
+        line: lineInitVal,
+        i: m,
+        j,
+        activeSlot: j,
+        slotMode: 'updated',
+        memoj: n - j,
+        memo: [...memo],
+        memoSnapshot: [...memo],
+        grid: JSON.parse(JSON.stringify(gridState)),
+        tag: `Base Case memo[${j}] = ${n - j}`,
+        log: `| 🎬 初始化末行基底: memo[${j}] = ${n - j}`,
+        msg: `初始化末行基底：<code>memo[${j}] = ${n - j}</code>。`
+      });
+    }
 
     for (let i = m - 1; i >= 0; i--) {
       let pre = memo[n];

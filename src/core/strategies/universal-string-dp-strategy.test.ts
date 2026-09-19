@@ -45,11 +45,14 @@ describe('UniversalStringDpStrategy', () => {
     expect(steps.length).toBeGreaterThan(0);
     const step0 = steps[0];
     expect(step0.type).toBe('init');
-    // 单元格 (1, 1) 在初始状态必须为 null（未计算状态防御）
+    // 首帧必须全为 null，绝不能提前打入基底值！
     expect(step0.grid![1][1]).toBeNull();
-    // 首行首列空串基底必须为 0
-    expect(step0.grid![0][0]).toBe(0);
-    expect(step0.grid![0][1]).toBe(0);
+    expect(step0.grid![0][0]).toBeNull();
+    expect(step0.grid![0][1]).toBeNull();
+
+    // 随后在 base / init-val 之后，首行首列基底置为 0
+    const afterInitStep = steps.find((s) => s.grid && s.grid[0][0] === 0);
+    expect(afterInitStep).toBeDefined();
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.type).toBe('return');
@@ -65,7 +68,11 @@ describe('UniversalStringDpStrategy', () => {
     const step0 = steps[0];
     expect(step0.type).toBe('init');
     expect(step0.grid![0][0]).toBeNull();
-    expect(step0.grid![5][3]).toBe(0);
+    expect(step0.grid![5][3]).toBeNull();
+
+    // 随后在 base / init-val 之后，末行末列基底置为 0
+    const afterInitStep = steps.find((s) => s.grid && s.grid[5][3] === 0);
+    expect(afterInitStep).toBeDefined();
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.type).toBe('return');

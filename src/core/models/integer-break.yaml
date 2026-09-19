@@ -1,0 +1,183 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 整数拆分 (Integer Break) - LeetCode 343 四阶段全演化模型
+# 包含：树型切分递归树展开、记忆化缓存剪枝、自底向上递推填表与数学贪心 O(1) 优化
+# ==============================================================================
+
+id: integer-break
+name: "整数拆分"
+nameEn: "Integer Break"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "✂️"
+difficulty: 2
+levelOrder: 8
+learningGoal: "掌握一维前缀内循环切分极值决策：dp[i] = max(j*(i-j), j*dp[i-j])"
+description: "给定一个正整数 n，将其拆分为 k 个正整数的和 (k >= 2)，并使这些整数的乘积最大化。"
+defaultParams:
+  n: 6
+
+problem:
+  leetcodeId: 343
+  title: "整数拆分"
+  difficulty: "中等"
+  tags: ["数学", "动态规划"]
+  description: "给定一个正整数 <code>n</code>，将其拆分为 <code>k</code> 个 <strong>正整数</strong> 的和（<code>k >= 2</code>），并使这些整数的乘积最大化。<br/><br/>返回 <em>你可以获得的最大乘积</em> 。"
+  examples:
+    - input: "n = 2"
+      output: "1"
+      explanation: "2 = 1 + 1, 1 × 1 = 1。"
+    - input: "n = 10"
+      output: "36"
+      explanation: "10 = 3 + 3 + 4, 3 × 3 × 4 = 36。"
+  constraints:
+    - "2 <= n <= 58"
+  leetcodeUrl: "https://leetcode.cn/problems/integer-break/"
+
+directions:
+  forward:
+    label: "自底向上 (正序切分递推)"
+    branches:
+      - name: "split_two"
+        label: "直接拆分为两数"
+        formula: "j * (i - j)"
+      - name: "split_multi"
+        label: "拆分成多段 (结合子问题最优解)"
+        formula: "j * dp[i - j]"
+    combineFormula: "max(j * (i - j), j * dp[i - j])"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素切分递归 (多叉决策树指数展开)"
+    desc:
+      forward: "对于正整数 i，枚举第一个切分段 j (1 <= j < i)，将剩余部分 (i-j) 分解为继续拆分与不再拆分两类决策，呈现大量重叠子问题。"
+    variants:
+      standard:
+        variantLabel: "标准切分递归"
+        title:
+          forward: "IntegerBreak_Recursive.java"
+        code:
+          forward:
+            title: "IntegerBreak_Recursive.java"
+            source: |
+              class Solution {
+                  public int integerBreak(int n) {
+                      return dfs(n); // @step:entry
+                  }
+                  private int dfs(int i) {
+                      if (i <= 2) return 1; // @step:boundary
+                      int maxProduct = 0;   // @step:init
+                      for (int j = 1; j < i; j++) { // @step:loop
+                          int directly = j * (i - j); // @step:split_two // 不继续拆
+                          int further = j * dfs(i - j); // @step:branch_call // 继续拆分
+                          int curMax = Math.max(directly, further); // @step:compare
+                          maxProduct = Math.max(maxProduct, curMax); // @step:accumulate
+                      }
+                      return maxProduct; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (哈希缓存剪枝)"
+    desc:
+      forward: "使用备忘录数组 memo 缓存每个数值 i 拆分出的最大乘积，命中缓存时直接 O(1) 返回，消除指数级重复切分计算。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "IntegerBreak_Memo.java"
+        code:
+          forward:
+            title: "IntegerBreak_Memo.java"
+            source: |
+              class Solution {
+                  private int[] memo;
+                  public int integerBreak(int n) {
+                      memo = new int[n + 1]; // @step:init_memo
+                      return dfs(n);         // @step:entry
+                  }
+                  private int dfs(int i) {
+                      if (i <= 2) return 1; // @step:boundary
+                      if (memo[i] > 0) return memo[i]; // @step:cache_hit // 命中缓存
+                      int maxProduct = 0;   // @step:init
+                      for (int j = 1; j < i; j++) { // @step:loop
+                          int cur = Math.max(j * (i - j), j * dfs(i - j)); // @step:branch_call
+                          maxProduct = Math.max(maxProduct, cur); // @step:compare
+                      }
+                      memo[i] = maxProduct; // @step:save_memo // 缓存最大结果
+                      return maxProduct;    // @step:return
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-1d"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 一维递推填表 (两路分支天平抉择)"
+    desc:
+      forward: "自底向上填表：dp[i] 表示正整数 i 的最大拆分乘积。对于每个 i，内层循环枚举切分点 j，在两数直乘与多段最优解之间决出胜者。"
+    variants:
+      for:
+        variantLabel: "双层循环标准版"
+        title:
+          forward: "IntegerBreak_DP.java"
+        code:
+          forward:
+            title: "IntegerBreak_DP.java"
+            source: |
+              class Solution {
+                  public int integerBreak(int n) {
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[2] = 1;                  // @step:base
+                      for (int i = 3; i <= n; i++) { // @step:loop-outer
+                          for (int j = 1; j < i; j++) { // @step:loop-inner
+                              // 核心决策天平：两数直乘 vs 借助子问题最优解
+                              int branchA = j * (i - j);     // @step:branch_a
+                              int branchB = j * dp[i - j];   // @step:branch_b
+                              dp[i] = Math.max(dp[i], Math.max(branchA, branchB)); // @step:transfer
+                          }
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "数学贪心"
+    type: "space-optimized"
+    timeBadge: "O(1)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 数学贪心优化 (尽可能拆分成 3)"
+    desc:
+      forward: "由算术-几何均值不等式与极值求导可知：拆分段长取 e ≈ 2.718 时乘积最大。由于段长必须为整数，优先拆成 3，余数按 2 和 4 特判。"
+    variants:
+      math_greedy:
+        variantLabel: "数学 O(1) 极值解"
+        title:
+          forward: "IntegerBreak_Math.java"
+        code:
+          forward:
+            title: "IntegerBreak_Math.java"
+            source: |
+              class Solution {
+                  public int integerBreak(int n) {
+                      if (n <= 3) return n - 1; // @step:init // 2->1, 3->2
+                      int quotient = n / 3;     // @step:accumulate // 能拆出多少个 3
+                      int remainder = n % 3;    // @step:fetch-down
+                      if (remainder == 0) return (int) Math.pow(3, quotient); // @step:return
+                      if (remainder == 1) return (int) Math.pow(3, quotient - 1) * 4; // @step:return
+                      return (int) Math.pow(3, quotient) * 2; // @step:return
+                  }
+              }

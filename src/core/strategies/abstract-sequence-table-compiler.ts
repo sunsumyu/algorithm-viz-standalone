@@ -54,6 +54,15 @@ export interface TransferResult {
   operator?: string;
 }
 
+export interface TableBoundaryResult {
+  lineKey: string;
+  val: number;
+  valLineKey?: string;
+  tag: string;
+  log: string;
+  msg: string;
+}
+
 export interface ReturnInfo {
   i: number;
   j: number;
@@ -70,11 +79,11 @@ export interface ReturnInfo {
  * 针对历史开发中频发的“偷懒跳步、漏发循环帧、漏发条件比较帧”等问题，
  * 由本顶层基类独占循环控制流，强制实现“一行一步零跳步”的完整生命周期：
  *   1. init: 表格创建与边界分配
- *   2. border: 逐格初始化基底
- *   3. for i: 强制发射 loop_i 外层循环头帧
- *   4. for j: 强制发射 loop_j 内层循环头帧
- *   5. cond: 强制发射 cond 字符比对帧（展示 true/false 判定过程）
- *   6. transfer: 强制发射 transfer 状态转移与赋值帧
+ *   2. border/if: 规约「外层 for 循环」与「内嵌 if 分支」两种经典变体
+ *   3. loop_i: 强制发射外层循环头帧
+ *   4. loop_j: 强制发射内层循环头帧
+ *   5. cond: 强制发射条件判断帧（展示判定过程）
+ *   6. transfer/init_val: 强制发射状态转移或边界赋值帧
  *   7. return: 强制发射 return 最终汇聚返回帧
  *
  * 子类算法仅需实现具体的业务 Hook，物理上不可能发生跳步。
@@ -83,7 +92,8 @@ export abstract class AbstractSequenceTableCompiler {
   public compile(
     model: IYamlAlgorithmModel,
     anchorMap: Record<string, number> = {},
-    direction: 'forward' | 'reverse' = 'forward'
+    direction: 'forward' | 'reverse' = 'forward',
+    variant: string = 'for'
   ): UniversalStep[] {
     const s1 = this.extractString1(model);
     const s2 = this.extractString2(model);
@@ -142,38 +152,42 @@ export abstract class AbstractSequenceTableCompiler {
       gridHighlight: { i: isForward ? 0 : m, j: isForward ? 0 : n }
     });
 
-    // 2. 边界初始化 (border init)
-    const borderConfig = this.getBorderInitConfig(ctx);
-    const lineInitLoop = anchorMap[borderConfig.loopAnchorKey || 'init_loop'] || anchorMap.init_loop || (lineInit + 1);
-    const lineInitVal = anchorMap[borderConfig.valAnchorKey || 'init_val'] || anchorMap.init_val || (lineInitLoop + 1);
+    const isIfVariant = variant === 'if';
 
-    for (const cell of borderConfig.cells) {
-      // 循环头步进帧：高亮 for 循环头，表明进入新一轮迭代
-      emitStep({
-        type: 'init-loop',
-        line: lineInitLoop,
-        i: cell.i,
-        j: cell.j,
-        grid: JSON.parse(JSON.stringify(dp)),
-        tag: `初始化循环: 考察索引 ${cell.i}`,
-        log: `| 🔁 初始化循环: 遍历至 i = ${cell.i}，准备赋值`,
-        msg: `初始化循环：<code>i = ${cell.i}</code>，进入循环体执行基底初始化。`,
-        gridHighlight: { i: cell.i, j: cell.j }
-      });
+    // 2. 边界初始化 (border init) - 仅在 for 变体下显式执行外部初始化循环
+    if (!isIfVariant) {
+      const borderConfig = this.getBorderInitConfig(ctx);
+      const lineInitLoop = anchorMap[borderConfig.loopAnchorKey || 'init_loop'] || anchorMap.init_loop || (lineInit + 1);
+      const lineInitVal = anchorMap[borderConfig.valAnchorKey || 'init_val'] || anchorMap.init_val || (lineInitLoop + 1);
 
-      // 循环体内赋值步进帧：高亮真正的赋值语句行，将数据填入网格
-      dp[cell.i][cell.j] = cell.val;
-      emitStep({
-        type: 'init-col',
-        line: lineInitVal,
-        i: cell.i,
-        j: cell.j,
-        grid: JSON.parse(JSON.stringify(dp)),
-        tag: cell.tag,
-        log: cell.log,
-        msg: cell.msg,
-        gridHighlight: { i: cell.i, j: cell.j }
-      });
+      for (const cell of borderConfig.cells) {
+        // 循环头步进帧：高亮 for 循环头，表明进入新一轮迭代
+        emitStep({
+          type: 'init-loop',
+          line: lineInitLoop,
+          i: cell.i,
+          j: cell.j,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: `初始化循环: 考察索引 ${cell.i}`,
+          log: `| 🔁 初始化循环: 遍历至 i = ${cell.i}，准备赋值`,
+          msg: `初始化循环：<code>i = ${cell.i}</code>，进入循环体执行基底初始化。`,
+          gridHighlight: { i: cell.i, j: cell.j }
+        });
+
+        // 循环体内赋值步进帧：高亮真正的赋值语句行，将数据填入网格
+        dp[cell.i][cell.j] = cell.val;
+        emitStep({
+          type: 'init-col',
+          line: lineInitVal,
+          i: cell.i,
+          j: cell.j,
+          grid: JSON.parse(JSON.stringify(dp)),
+          tag: cell.tag,
+          log: cell.log,
+          msg: cell.msg,
+          gridHighlight: { i: cell.i, j: cell.j }
+        });
+      }
     }
 
     // 3. 循环控制与状态转移（由基类强制约束）
@@ -183,136 +197,203 @@ export abstract class AbstractSequenceTableCompiler {
 
     if (isForward) {
       // ===== 顺推正序前缀 DP =====
-      for (let i = 1; i <= m; i++) {
+      const startI = isIfVariant ? 0 : 1;
+      const startJ = isIfVariant ? 0 : 1;
+
+      for (let i = startI; i <= m; i++) {
         emitStep({
           type: 'loop-outer',
           line: lineLoopI,
           i,
-          j: 0,
+          j: startJ,
           grid: JSON.parse(JSON.stringify(dp)),
-          tag: `外层循环 i = ${i} (考察 ${this.getLabel1()} '${s1[i - 1]}')`,
-          log: `| 🔁 [顺推] 外层循环 i = ${i}/${m}：考察 ${this.getLabel1()} 第 ${i} 个字符 '${s1[i - 1]}'`,
-          msg: `外层循环：遍历至 <code>i = ${i}</code>，对应字符 <code>${s1[i - 1]}</code>。`,
-          gridHighlight: { i, j: 0 }
+          tag: `外层循环 i = ${i} (考察 ${this.getLabel1()} '${i > 0 ? s1[i - 1] : "空串"}')`,
+          log: `| 🔁 [顺推] 外层循环 i = ${i}/${m}：考察 ${this.getLabel1()} 第 ${i} 行`,
+          msg: `外层循环：遍历至 <code>i = ${i}</code>${i > 0 ? `，对应字符 <code>${s1[i - 1]}</code>` : ' (空串行)'}。`,
+          gridHighlight: { i, j: startJ }
         });
 
-        for (let j = 1; j <= n; j++) {
+        for (let j = startJ; j <= n; j++) {
           emitStep({
             type: 'loop-inner',
             line: lineLoopJ,
             i,
             j,
             grid: JSON.parse(JSON.stringify(dp)),
-            tag: `内层循环 j = ${j} (考察 ${this.getLabel2()} '${s2[j - 1]}')`,
-            log: `| ➡️ [顺推] 内层循环 j = ${j}/${n}：考察 ${this.getLabel2()} 第 ${j} 个字符 '${s2[j - 1]}'`,
+            tag: `内层循环 j = ${j} (考察 ${this.getLabel2()} '${j > 0 ? s2[j - 1] : "空串"}')`,
+            log: `| ➡️ [顺推] 内层循环 j = ${j}/${n}：考察单元格 dp[${i}][${j}]`,
             msg: `内层循环：遍历至 <code>j = ${j}</code>，准备考察单元格 <code>dp[${i}][${j}]</code>。`,
             gridHighlight: { i, j }
           });
 
-          const condRes = this.evaluateCondition(i, j, ctx);
-          emitStep({
-            type: 'cond',
-            line: lineCond,
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: condRes.tag,
-            log: condRes.log,
-            msg: condRes.msg,
-            gridHighlight: { i, j }
-          });
+          // 如果是 if 变体，优先判定是否落在基底/边界分支
+          const boundaryRes = isIfVariant && this.checkTableBoundary ? this.checkTableBoundary(i, j, ctx) : null;
+          if (boundaryRes) {
+            const lineBoundaryCond = anchorMap[boundaryRes.lineKey] || anchorMap.cond || lineCond;
+            emitStep({
+              type: 'cond',
+              line: lineBoundaryCond,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: boundaryRes.tag,
+              log: boundaryRes.log,
+              msg: boundaryRes.msg,
+              gridHighlight: { i, j }
+            });
 
-          const transRes = this.computeTransfer(i, j, condRes, ctx);
-          dp[i][j] = transRes.val;
-          const lineTransfer = anchorMap[transRes.lineKey] || lineCond + 1;
-          emitStep({
-            type: 'transfer',
-            line: lineTransfer,
-            i,
-            j,
-            topI: transRes.topI,
-            topJ: transRes.topJ,
-            leftI: transRes.leftI,
-            leftJ: transRes.leftJ,
-            diagI: transRes.diagI,
-            diagJ: transRes.diagJ,
-            topVal: transRes.topVal,
-            leftVal: transRes.leftVal,
-            diagVal: transRes.diagVal,
-            operator: transRes.operator,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: transRes.tag,
-            log: transRes.log,
-            msg: transRes.msg,
-            gridHighlight: { i, j }
-          });
+            dp[i][j] = boundaryRes.val;
+            const lineBoundaryVal = anchorMap[boundaryRes.valLineKey || 'init_val'] || anchorMap.init_val || (lineBoundaryCond + 1);
+            emitStep({
+              type: 'init-col',
+              line: lineBoundaryVal,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: `边界赋值: dp[${i}][${j}] = ${boundaryRes.val}`,
+              log: `| 📝 边界赋值: dp[${i}][${j}] = ${boundaryRes.val}`,
+              msg: `执行赋值：<code>dp[${i}][${j}] = <strong>${boundaryRes.val}</strong></code>。`,
+              gridHighlight: { i, j }
+            });
+          } else {
+            const condRes = this.evaluateCondition(i, j, ctx);
+            emitStep({
+              type: 'cond',
+              line: lineCond,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: condRes.tag,
+              log: condRes.log,
+              msg: condRes.msg,
+              gridHighlight: { i, j }
+            });
+
+            const transRes = this.computeTransfer(i, j, condRes, ctx);
+            dp[i][j] = transRes.val;
+            const lineTransfer = anchorMap[transRes.lineKey] || lineCond + 1;
+            emitStep({
+              type: 'transfer',
+              line: lineTransfer,
+              i,
+              j,
+              topI: transRes.topI,
+              topJ: transRes.topJ,
+              leftI: transRes.leftI,
+              leftJ: transRes.leftJ,
+              diagI: transRes.diagI,
+              diagJ: transRes.diagJ,
+              topVal: transRes.topVal,
+              leftVal: transRes.leftVal,
+              diagVal: transRes.diagVal,
+              operator: transRes.operator,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: transRes.tag,
+              log: transRes.log,
+              msg: transRes.msg,
+              gridHighlight: { i, j }
+            });
+          }
         }
       }
     } else {
       // ===== 逆推倒序后缀 DP =====
-      for (let i = m - 1; i >= 0; i--) {
+      const startI = isIfVariant ? m : m - 1;
+      const startJ = isIfVariant ? n : n - 1;
+
+      for (let i = startI; i >= 0; i--) {
         emitStep({
           type: 'loop-outer',
           line: lineLoopI,
           i,
-          j: n,
+          j: startJ,
           grid: JSON.parse(JSON.stringify(dp)),
-          tag: `外层循环 i = ${i} (逆向考察 ${this.getLabel1()} '${s1[i]}')`,
-          log: `| 🔁 [逆推] 外层循环 i = ${i}：逆向考察 ${this.getLabel1()} 字符 '${s1[i]}'`,
-          msg: `外层循环：倒序遍历至 <code>i = ${i}</code>，对应字符 <code>${s1[i]}</code>。`,
-          gridHighlight: { i, j: n }
+          tag: `外层循环 i = ${i} (逆向考察 ${this.getLabel1()} '${i < m ? s1[i] : "空后缀"}')`,
+          log: `| 🔁 [逆推] 外层循环 i = ${i}：逆向考察第 ${i} 行`,
+          msg: `外层循环：倒序遍历至 <code>i = ${i}</code>${i < m ? `，对应字符 <code>${s1[i]}</code>` : ' (空后缀行)'}。`,
+          gridHighlight: { i, j: startJ }
         });
 
-        for (let j = n - 1; j >= 0; j--) {
+        for (let j = startJ; j >= 0; j--) {
           emitStep({
             type: 'loop-inner',
             line: lineLoopJ,
             i,
             j,
             grid: JSON.parse(JSON.stringify(dp)),
-            tag: `内层循环 j = ${j} (逆向考察 ${this.getLabel2()} '${s2[j]}')`,
-            log: `| ⬅️ [逆推] 内层循环 j = ${j}：逆向考察 ${this.getLabel2()} 字符 '${s2[j]}'`,
+            tag: `内层循环 j = ${j} (逆向考察 ${this.getLabel2()} '${j < n ? s2[j] : "空后缀"}')`,
+            log: `| ⬅️ [逆推] 内层循环 j = ${j}：逆向考察单元格 dp[${i}][${j}]`,
             msg: `内层循环：倒序遍历至 <code>j = ${j}</code>，准备考察单元格 <code>dp[${i}][${j}]</code>。`,
             gridHighlight: { i, j }
           });
 
-          const condRes = this.evaluateCondition(i, j, ctx);
-          emitStep({
-            type: 'cond',
-            line: lineCond,
-            i,
-            j,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: condRes.tag,
-            log: condRes.log,
-            msg: condRes.msg,
-            gridHighlight: { i, j }
-          });
+          const boundaryRes = isIfVariant && this.checkTableBoundary ? this.checkTableBoundary(i, j, ctx) : null;
+          if (boundaryRes) {
+            const lineBoundaryCond = anchorMap[boundaryRes.lineKey] || anchorMap.cond || lineCond;
+            emitStep({
+              type: 'cond',
+              line: lineBoundaryCond,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: boundaryRes.tag,
+              log: boundaryRes.log,
+              msg: boundaryRes.msg,
+              gridHighlight: { i, j }
+            });
 
-          const transRes = this.computeTransfer(i, j, condRes, ctx);
-          dp[i][j] = transRes.val;
-          const lineTransfer = anchorMap[transRes.lineKey] || lineCond + 1;
-          emitStep({
-            type: 'transfer',
-            line: lineTransfer,
-            i,
-            j,
-            topI: transRes.topI,
-            topJ: transRes.topJ,
-            leftI: transRes.leftI,
-            leftJ: transRes.leftJ,
-            diagI: transRes.diagI,
-            diagJ: transRes.diagJ,
-            topVal: transRes.topVal,
-            leftVal: transRes.leftVal,
-            diagVal: transRes.diagVal,
-            operator: transRes.operator,
-            grid: JSON.parse(JSON.stringify(dp)),
-            tag: transRes.tag,
-            log: transRes.log,
-            msg: transRes.msg,
-            gridHighlight: { i, j }
-          });
+            dp[i][j] = boundaryRes.val;
+            const lineBoundaryVal = anchorMap[boundaryRes.valLineKey || 'init_val'] || anchorMap.init_val || (lineBoundaryCond + 1);
+            emitStep({
+              type: 'init-col',
+              line: lineBoundaryVal,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: `边界赋值: dp[${i}][${j}] = ${boundaryRes.val}`,
+              log: `| 📝 边界赋值: dp[${i}][${j}] = ${boundaryRes.val}`,
+              msg: `执行赋值：<code>dp[${i}][${j}] = <strong>${boundaryRes.val}</strong></code>。`,
+              gridHighlight: { i, j }
+            });
+          } else {
+            const condRes = this.evaluateCondition(i, j, ctx);
+            emitStep({
+              type: 'cond',
+              line: lineCond,
+              i,
+              j,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: condRes.tag,
+              log: condRes.log,
+              msg: condRes.msg,
+              gridHighlight: { i, j }
+            });
+
+            const transRes = this.computeTransfer(i, j, condRes, ctx);
+            dp[i][j] = transRes.val;
+            const lineTransfer = anchorMap[transRes.lineKey] || lineCond + 1;
+            emitStep({
+              type: 'transfer',
+              line: lineTransfer,
+              i,
+              j,
+              topI: transRes.topI,
+              topJ: transRes.topJ,
+              leftI: transRes.leftI,
+              leftJ: transRes.leftJ,
+              diagI: transRes.diagI,
+              diagJ: transRes.diagJ,
+              topVal: transRes.topVal,
+              leftVal: transRes.leftVal,
+              diagVal: transRes.diagVal,
+              operator: transRes.operator,
+              grid: JSON.parse(JSON.stringify(dp)),
+              tag: transRes.tag,
+              log: transRes.log,
+              msg: transRes.msg,
+              gridHighlight: { i, j }
+            });
+          }
         }
       }
     }
@@ -348,6 +429,7 @@ export abstract class AbstractSequenceTableCompiler {
   protected abstract getLabel2(): string;
   protected abstract getInitMessage(ctx: SequenceTableContext): string;
   protected abstract getBorderInitConfig(ctx: SequenceTableContext): BorderInitConfig;
+  protected checkTableBoundary?(i: number, j: number, ctx: SequenceTableContext): TableBoundaryResult | null;
   protected abstract evaluateCondition(i: number, j: number, ctx: SequenceTableContext): ConditionEvalResult;
   protected abstract computeTransfer(i: number, j: number, cond: ConditionEvalResult, ctx: SequenceTableContext): TransferResult;
   protected abstract getReturnInfo(ctx: SequenceTableContext): ReturnInfo;

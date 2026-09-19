@@ -85,19 +85,21 @@ describe('DP Full Regression Suite (全量动态规划规格、多语言行号�
         const compiled = AlgorithmModelRepository.getCompiledStage(id, stageKey, 'forward');
         expect(compiled, `模型 [${id}] 阶段 [${stageKey}] 编译失败`).toBeDefined();
 
-        const lineCount = (compiled.codeHtml?.match(/class="code-line"/g) || []).length;
-        if (lineCount === 0) continue;
-
-        const mapsToCheck = [compiled.anchorMap];
+        const targetsToCheck: Array<{ codeHtml?: string; map?: Record<string, number> }> = [
+          { codeHtml: compiled.codeHtml, map: compiled.anchorMap }
+        ];
         if (compiled.variants) {
           for (const v of Object.values(compiled.variants)) {
-            mapsToCheck.push(v.anchorMap);
+            targetsToCheck.push({ codeHtml: v.codeHtml, map: v.anchorMap });
           }
         }
 
-        for (const map of mapsToCheck) {
-          if (!map) continue;
-          for (const [tag, line] of Object.entries(map)) {
+        for (const target of targetsToCheck) {
+          if (!target.map || !target.codeHtml) continue;
+          const lineCount = (target.codeHtml.match(/class="code-line"/g) || []).length;
+          if (lineCount === 0) continue;
+
+          for (const [tag, line] of Object.entries(target.map)) {
             if (typeof line === 'number') {
               expect(
                 line,

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { AlgorithmModelRepository, bridgeSemanticLinesToAnchorMap } from './model-repository';
-import '../algorithms/categories/dynamic-programming/specs';
 
 describe('AlgorithmModelRepository Deep Module', () => {
   it('应该成功预加载并获取 unique-paths 算法模型', () => {
@@ -52,6 +51,22 @@ describe('AlgorithmModelRepository Deep Module', () => {
     expect(stage4Name).toContain('一维空间压缩');
   });
 
+  it('应该成功预加载并获取 knapsack-01-1d 与 knapsack-01-2d 算法模型', () => {
+    const k1d = AlgorithmModelRepository.getModel('knapsack-01-1d');
+    expect(k1d).toBeDefined();
+    expect(k1d.id).toBe('knapsack-01-1d');
+    expect(k1d.name).toBe('0-1背包问题（一维）');
+    expect(k1d.defaultStage).toBe('stage-4');
+    expect(AlgorithmModelRepository.hasModel('knapsack-01-1d')).toBe(true);
+
+    const k2d = AlgorithmModelRepository.getModel('knapsack-01-2d');
+    expect(k2d).toBeDefined();
+    expect(k2d.id).toBe('knapsack-01-2d');
+    expect(k2d.name).toBe('0-1背包问题（二维）');
+    expect(k2d.defaultStage).toBe('stage-3');
+    expect(AlgorithmModelRepository.hasModel('knapsack-01-2d')).toBe(true);
+  });
+
   it('应该能获取所有注册的模型 ID 列表', () => {
     const ids = AlgorithmModelRepository.getAllIds();
     expect(ids).toContain('unique-paths');
@@ -61,6 +76,8 @@ describe('AlgorithmModelRepository Deep Module', () => {
     expect(ids).toContain('climb-stairs');
     expect(ids).toContain('01-knapsack');
     expect(ids).toContain('knapsack-01');
+    expect(ids).toContain('knapsack-01-1d');
+    expect(ids).toContain('knapsack-01-2d');
   });
 
   it('查询不存在的模型时抛出明确异常', () => {
@@ -178,20 +195,21 @@ describe('AlgorithmModelRepository Deep Module', () => {
 
       for (const stageKey of Object.keys(model.stages)) {
         const compiled = AlgorithmModelRepository.getCompiledStage(id, stageKey, 'forward');
-        const mapsToCheck: Array<Record<string, number> | undefined> = [compiled.anchorMap];
+        const targetsToCheck: Array<{ codeHtml?: string; map?: Record<string, number> }> = [
+          { codeHtml: compiled.codeHtml, map: compiled.anchorMap }
+        ];
         if (compiled.variants) {
           for (const variant of Object.values(compiled.variants)) {
-            mapsToCheck.push(variant.anchorMap);
+            targetsToCheck.push({ codeHtml: variant.codeHtml, map: variant.anchorMap });
           }
         }
 
-        // 计算总行数
-        const lineCount = (compiled.codeHtml?.match(/class="code-line"/g) || []).length;
-        if (lineCount === 0) continue;
+        for (const target of targetsToCheck) {
+          if (!target.map || !target.codeHtml) continue;
+          const lineCount = (target.codeHtml.match(/class="code-line"/g) || []).length;
+          if (lineCount === 0) continue;
 
-        for (const map of mapsToCheck) {
-          if (!map) continue;
-          for (const [key, line] of Object.entries(map)) {
+          for (const [key, line] of Object.entries(target.map)) {
             if (typeof line === 'number') {
               expect(
                 line,

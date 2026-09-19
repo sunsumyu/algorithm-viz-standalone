@@ -342,4 +342,74 @@ describe('StateSpacePresenter (Deep Facade & Scoped Container)', () => {
     expect(card2.innerHTML).toContain('母串 S');
     expect(card2.innerHTML).toContain('目标 T');
   });
+
+  it('序列 DP (如 distinct-subsequences) 在 Stage 1 顺推递归时空串 Ø 必须在尾部，而在 Stage 3 顺推填表时 Ø 必须在首部', () => {
+    const container = new MockElement('card1-container');
+    const step: UniversalStep = {
+      stepIndex: 0,
+      type: 'entry',
+      s: 'rabbbit',
+      t: 'rabbit',
+      i: 0,
+      j: 0
+    };
+
+    // 1. Stage 1 顺推递归 (Suffix Mode) -> Ø 放尾部
+    StateSpacePresenter.renderCard1(container as any, {
+      currentStage: 'stage-1',
+      step,
+      m: 8,
+      n: 7,
+      isReverse: false,
+      modelId: 'distinct-subsequences'
+    });
+
+    expect(GridVisualAdapter.renderGrid).toHaveBeenCalledWith(
+      container,
+      step,
+      expect.objectContaining({
+        rowLabels: ['r', 'a', 'b', 'b', 'b', 'i', 't', 'Ø'],
+        colLabels: ['r', 'a', 'b', 'b', 'i', 't', 'Ø']
+      })
+    );
+
+    // 2. Stage 3 顺推填表 (Prefix Mode) -> Ø 放首部
+    StateSpacePresenter.renderCard1(container as any, {
+      currentStage: 'stage-3',
+      step,
+      m: 8,
+      n: 7,
+      isReverse: false,
+      modelId: 'distinct-subsequences'
+    });
+
+    expect(GridVisualAdapter.renderGrid).toHaveBeenCalledWith(
+      container,
+      step,
+      expect.objectContaining({
+        rowLabels: ['Ø', 'r', 'a', 'b', 'b', 'b', 'i', 't'],
+        colLabels: ['Ø', 'r', 'a', 'b', 'b', 'i', 't']
+      })
+    );
+
+    // 3. Stage 1 逆推递归 (Prefix Mode: dfs(m, n) 向 (0, 0) 寻源) -> Ø 放首部
+    StateSpacePresenter.renderCard1(container as any, {
+      currentStage: 'stage-1',
+      step,
+      m: 8,
+      n: 7,
+      isReverse: true,
+      modelId: 'distinct-subsequences'
+    });
+
+    expect(GridVisualAdapter.renderGrid).toHaveBeenCalledWith(
+      container,
+      step,
+      expect.objectContaining({
+        rowLabels: ['Ø', 'r', 'a', 'b', 'b', 'b', 'i', 't'],
+        colLabels: ['Ø', 'r', 'a', 'b', 'b', 'i', 't']
+      })
+    );
+  });
 });
+

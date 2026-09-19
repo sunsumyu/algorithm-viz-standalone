@@ -1,0 +1,398 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「最少删除使成为子串 (MinDeleteToBeSubstring)」四阶段全演化标准实现。
+# 对应：左程云《算法通关课》第 068 讲题目 4。
+# 包含：子串结尾对齐状态设计、严格 (n+1)x(m+1) 二维 DP 矩阵与一维滚动数组空间压缩。
+# ==============================================================================
+
+id: min-delete-to-be-substring
+name: "最少删除使成为子串"
+nameEn: "Minimum Deletions to Make Substring"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "✂️"
+difficulty: 2
+levelOrder: 11
+learningGoal: "掌握子串结尾约束下的动态规划状态设计、二维矩阵自底向上填表与一维滚动空间优化"
+description: "给定两个字符串 s1 和 s2，求 s1 至少删除多少个字符，可以使其成为 s2 的某个连续子串。dp[i][j] 表示 s1 的前 i 个字符变成以 s2[j-1] 结尾的子串最少需要删除的字符数。"
+defaultParams:
+  s1: "abdf"
+  s2: "dfxxabYYabfzz"
+  word1: "abdf"
+  word2: "dfxxabYYabfzz"
+
+problem:
+  title: "使得 s1 成为 s2 子串的最少删除字符数"
+  difficulty: "中等"
+  tags: ["字符串", "动态规划", "左程云算法通关课Class068"]
+  description: "给定两个字符串 <code>s1</code> 和 <code>s2</code>，你可以删除 <code>s1</code> 中的任意字符（但不可以重排字符顺序）。请问最少删除多少个字符，可以使得剩下的字符序列成为 <code>s2</code> 的一个<strong>连续子串</strong>（substring）？<br/><br/><strong>注意</strong>：连续子串要求在 <code>s2</code> 中必须是连续的一段字符，不同于子序列。"
+  examples:
+    - input: 's1 = "abdf", s2 = "dfxxabYYabfzz"'
+      output: "1"
+      explanation: "删除 s1 中的字符 'd'，得到 \"abf\"。\"abf\" 是 s2 中的连续子串（出现在下标 8..10），删除字符数为 1。"
+    - input: 's1 = "abc", s2 = "def"'
+      output: "3"
+      explanation: "s1 与 s2 没有相同字符，要想成为 s2 的子串（空串也是合法子串），必须删除 s1 的全部 3 个字符。"
+    - input: 's1 = "a", s2 = "a"'
+      output: "0"
+      explanation: "s1 本身就是 s2 的子串，无需删除任何字符，最少删除 0 个。"
+  constraints:
+    - "1 <= s1.length <= 100"
+    - "1 <= s2.length <= 1000"
+    - "s1 和 s2 仅由英文字母或可打印 ASCII 字符组成"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: "前缀结尾递推视角 (正向构造)"
+    description: "定义 dp[i][j] 为 s1 前 i 个字符变成以 s2[j-1] 结尾的连续子串的最少删除数，顺推填表并在末行收集最小值"
+    start: [0, 0]
+    targetFormula: "[n, m]"
+    branches:
+      - name: "match"
+        delta: [1, 1]
+        label: "保留匹配字符"
+        codeVar: "useMatch"
+        arrow: "↘️"
+        description: "s1[i-1] == s2[j-1]，保留该字符，代价继承左上角 dp[i-1][j-1]"
+      - name: "delete"
+        delta: [1, 0]
+        label: "删除s1当前字符"
+        codeVar: "delChar"
+        arrow: "⬇️"
+        description: "s1[i-1] != s2[j-1]，必须删除 s1[i-1]，代价为上方旧值 dp[i-1][j] + 1"
+    combineFormula: "s1[i-1]==s2[j-1] ? dp[i-1][j-1] : dp[i-1][j]+1"
+  reverse:
+    label: "逆推 (倒序)"
+    name: "后缀开头递推视角 (倒序寻源)"
+    description: "定义 dp[i][j] 为 s1[i..n-1] 变成以 s2[j] 开头的连续子串的最少删除数，倒序递推并在首行收集最小值"
+    startFormula: "[n, m]"
+    target: [0, 0]
+    branches:
+      - name: "match"
+        delta: [-1, -1]
+        label: "逆向匹配字符"
+        codeVar: "useMatch"
+        arrow: "↖️"
+        description: "s1[i] == s2[j]，逆向匹配，继承右下角代价"
+      - name: "delete"
+        delta: [-1, 0]
+        label: "逆向删除s1字符"
+        codeVar: "delChar"
+        arrow: "⬆️"
+        description: "s1[i] != s2[j]，逆向删除 s1[i]，继承下方代价 + 1"
+    combineFormula: "s1[i]==s2[j] ? dp[i+1][j+1] : dp[i+1][j]+1"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ·m)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (正序前缀探索)"
+      reverse: "阶段 1: 朴素递归 (倒序后缀寻源)"
+    desc:
+      forward: "枚举以 s2 的每个位置 j 结尾，递归 dfs(i, j) 计算 s1[0..i-1] 匹配以 s2[j-1] 结尾子串的最少删除数。若字符匹配取对角线，若不匹配删除当前字符递归上方。"
+      reverse: "从后缀视角逆向寻源，递归 dfs(i, j) 计算 s1[i..n-1] 匹配以 s2[j] 开头子串的最少删除数。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "MinDelete_Recursive_Forward.java"
+          reverse: "MinDelete_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "MinDelete_Recursive_Forward.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int ans = n;
+                      for (int j = 1; j <= m; j++) { // @step:loop_j
+                          ans = Math.min(ans, dfs(s1, s2, n, j)); // @step:call_dfs
+                      }
+                      return ans; // @step:return
+                  }
+                  private int dfs(String s1, String s2, int i, int j) { // @step:entry
+                      if (i == 0) return 0; // @step:boundary_i
+                      if (j == 0) return i; // @step:boundary_j
+                      if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:cond_match
+                          return dfs(s1, s2, i - 1, j - 1); // @step:branch_match
+                      } else {
+                          return dfs(s1, s2, i - 1, j) + 1; // @step:branch_delete
+                      }
+                  }
+              }
+          reverse:
+            title: "MinDelete_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int ans = n;
+                      for (int j = 0; j < m; j++) { // @step:loop_j
+                          ans = Math.min(ans, dfs(s1, s2, 0, j)); // @step:call_dfs
+                      }
+                      return ans; // @step:return
+                  }
+                  private int dfs(String s1, String s2, int i, int j) { // @step:entry
+                      if (i == s1.length()) return 0; // @step:boundary_i
+                      if (j == s2.length()) return s1.length() - i; // @step:boundary_j
+                      if (s1.charAt(i) == s2.charAt(j)) { // @step:cond_match
+                          return dfs(s1, s2, i + 1, j + 1); // @step:branch_match
+                      } else {
+                          return dfs(s1, s2, i + 1, j) + 1; // @step:branch_delete
+                      }
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n×m)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (正序前缀缓存)"
+      reverse: "阶段 2: 记忆化搜索 (倒序后缀缓存)"
+    desc:
+      forward: "引入二维整型备忘录 memo[n+1][m+1]，缓存 dfs(i, j) 的最少删除数。避免重叠子问题的重复计算。"
+      reverse: "引入二维备忘录缓存倒序 dfs(i, j) 结果，剪枝重复探测分支。"
+    variants:
+      standard:
+        variantLabel: "备忘录搜索"
+        title:
+          forward: "MinDelete_Memo_Forward.java"
+          reverse: "MinDelete_Memo_Reverse.java"
+        code:
+          forward:
+            title: "MinDelete_Memo_Forward.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[][] memo = new int[n + 1][m + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      int ans = n;
+                      for (int j = 1; j <= m; j++) { // @step:loop_j
+                          ans = Math.min(ans, dfs(s1, s2, n, j, memo)); // @step:call_dfs
+                      }
+                      return ans; // @step:return
+                  }
+                  private int dfs(String s1, String s2, int i, int j, int[][] memo) { // @step:entry
+                      if (i == 0) return 0; // @step:boundary_i
+                      if (j == 0) return i; // @step:boundary_j
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      int res;
+                      if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:cond_match
+                          res = dfs(s1, s2, i - 1, j - 1, memo); // @step:branch_match
+                      } else {
+                          res = dfs(s1, s2, i - 1, j, memo) + 1; // @step:branch_delete
+                      }
+                      return memo[i][j] = res; // @step:cache_write
+                  }
+              }
+          reverse:
+            title: "MinDelete_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[][] memo = new int[n + 1][m + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      int ans = n;
+                      for (int j = 0; j < m; j++) { // @step:loop_j
+                          ans = Math.min(ans, dfs(s1, s2, 0, j, memo)); // @step:call_dfs
+                      }
+                      return ans; // @step:return
+                  }
+                  private int dfs(String s1, String s2, int i, int j, int[][] memo) { // @step:entry
+                      if (i == s1.length()) return 0; // @step:boundary_i
+                      if (j == s2.length()) return s1.length() - i; // @step:boundary_j
+                      if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                      int res;
+                      if (s1.charAt(i) == s2.charAt(j)) { // @step:cond_match
+                          res = dfs(s1, s2, i + 1, j + 1, memo); // @step:branch_match
+                      } else {
+                          res = dfs(s1, s2, i + 1, j, memo) + 1; // @step:branch_delete
+                      }
+                      return memo[i][j] = res; // @step:cache_write
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n×m)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 递推填表 (正向二维矩阵)"
+      reverse: "阶段 3: 递推填表 (倒序二维矩阵)"
+    desc:
+      forward: "构建 (n+1) × (m+1) 的二维状态矩阵。初始化首行全 0、首列递增 i。自顶向下填表：相等继承左上角，不相等上方+1。最终在最后一行取最小值。"
+      reverse: "构建 (n+1) × (m+1) 的二维状态矩阵。末行全 0、末列递减初始化。自底向上逆序填表，最终在第一行取最小值。"
+    variants:
+      standard:
+        variantLabel: "标准矩阵填表"
+        title:
+          forward: "MinDelete_2D_Forward.java"
+          reverse: "MinDelete_2D_Reverse.java"
+        code:
+          forward:
+            title: "MinDelete_2D_Forward.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init
+                      for (int i = 1; i <= n; i++) { // @step:init_col
+                          dp[i][0] = i;
+                      }
+                      for (int i = 1; i <= n; i++) { // @step:loop_i
+                          for (int j = 1; j <= m; j++) { // @step:loop_j
+                              if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:check
+                                  dp[i][j] = dp[i - 1][j - 1]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i - 1][j] + 1; // @step:transfer_delete
+                              }
+                          }
+                      }
+                      int ans = Integer.MAX_VALUE; // @step:find_min
+                      for (int j = 1; j <= m; j++) {
+                          ans = Math.min(ans, dp[n][j]);
+                      }
+                      return ans; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinDelete_2D_Reverse.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init
+                      for (int i = n - 1; i >= 0; i--) { // @step:init_col
+                          dp[i][m] = n - i;
+                      }
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              if (s1.charAt(i) == s2.charAt(j)) { // @step:check
+                                  dp[i][j] = dp[i + 1][j + 1]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i + 1][j] + 1; // @step:transfer_delete
+                              }
+                          }
+                      }
+                      int ans = Integer.MAX_VALUE; // @step:find_min
+                      for (int j = 0; j < m; j++) {
+                          ans = Math.min(ans, dp[0][j]);
+                      }
+                      return ans; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(m) 空间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 空间压缩 (一维滚动正向递推)"
+      reverse: "阶段 4: 空间压缩 (一维滚动倒序递推)"
+    desc:
+      forward: "将状态矩阵压缩至一维数组 dp[0..m]。利用临时变量 leftUp 暂存上一轮的对角线值 dp[i-1][j-1]，逐行递推实现严格 O(m) 空间优化。"
+      reverse: "压缩为一维数组，自底向上逆向滚动递推，利用临时变量暂存右下角对角线值。"
+    variants:
+      rolling_1d:
+        variantLabel: "一维滚动数组"
+        title:
+          forward: "MinDelete_1D_Forward.java"
+          reverse: "MinDelete_1D_Reverse.java"
+        code:
+          forward:
+            title: "MinDelete_1D_Forward.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[] dp = new int[m + 1]; // @step:init
+                      for (int i = 1; i <= n; i++) { // @step:loop_i
+                          int leftUp = dp[0]; // @step:save_leftup
+                          dp[0] = i;
+                          for (int j = 1; j <= m; j++) { // @step:loop_j
+                              int backup = dp[j];
+                              if (s1.charAt(i - 1) == s2.charAt(j - 1)) { // @step:check
+                                  dp[j] = leftUp; // @step:transfer_match
+                              } else {
+                                  dp[j] = dp[j] + 1; // @step:transfer_delete
+                              }
+                              leftUp = backup;
+                          }
+                      }
+                      int ans = Integer.MAX_VALUE; // @step:find_min
+                      for (int j = 1; j <= m; j++) {
+                          ans = Math.min(ans, dp[j]);
+                      }
+                      return ans; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinDelete_1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int minDelete(String s1, String s2) {
+                      if (s1 == null || s2 == null || s1.length() == 0) return 0; // @step:guard
+                      int n = s1.length(), m = s2.length();
+                      int[] dp = new int[m + 1]; // @step:init
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          int rightDown = dp[m]; // @step:save_leftup
+                          dp[m] = n - i;
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              int backup = dp[j];
+                              if (s1.charAt(i) == s2.charAt(j)) { // @step:check
+                                  dp[j] = rightDown; // @step:transfer_match
+                              } else {
+                                  dp[j] = dp[j] + 1; // @step:transfer_delete
+                              }
+                              rightDown = backup;
+                          }
+                      }
+                      int ans = Integer.MAX_VALUE; // @step:find_min
+                      for (int j = 0; j < m; j++) {
+                          ans = Math.min(ans, dp[j]);
+                      }
+                      return ans; // @step:return
+                  }
+              }
+
+analysis:
+  step1_definition:
+    title: 1. 确定 dp 数组及其下标含义
+    content: "dp[i][j] 表示：s1 的前 i 个字符（s1[0..i-1]），通过删除最少字符后，变成以 s2 的第 j 个字符（s2[j-1]）为【连续结尾】的子串，所需要删除的最少字符数量。"
+  step2_formula:
+    title: 2. 确定递推公式
+    content: "当考察 s1[i-1] 与 s2[j-1] 时：若两字符相等，则保留当前字符，直接继承 s1 前 i-1 个字符对齐 s2[j-2] 结尾的代价，即 dp[i][j] = dp[i-1][j-1]；若两字符不相等，由于目标子串必须以 s2[j-1] 结尾，因此 s1[i-1] 无法作为子串末位，必须将其删去，代价继承上方旧值 + 1，即 dp[i][j] = dp[i-1][j] + 1。"
+  step3_init:
+    title: 3. dp 数组初始化
+    content: "首行 dp[0][j] = 0 (0 <= j <= m)：当 s1 为空串时，空串本身即为以任意字符结尾的合法子串，删除字符数为 0。首列 dp[i][0] = i (1 <= i <= n)：当目标子串必须以空结尾时，只能将 s1 前 i 个字符全部删去，代价为 i。"
+  step4_order:
+    title: 4. 确定遍历顺序
+    content: "外层循环递增遍历 s1 的长度 i (1..n)，内层循环递增遍历 s2 的结尾下标 j (1..m)。一维空间压缩下，dp[j] 依赖左上角上一轮旧值 dp[i-1][j-1]，利用 leftUp 临时变量暂存上一列被覆盖前的旧值即可正序安全滚动。"
+  step5_derivation:
+    title: 5. 最终答案提取与举例推导
+    content: "因为要求 s1 成为 s2 的任意子串，而 s2 的任意非空子串必然以某个 j (1 <= j <= m) 结尾，所以最终答案为最后一行所有列的最小值：ans = min_{1 <= j <= m} dp[n][j]。以 s1=\"abdf\", s2=\"dfxxabYYabfzz\" 为例，dp[4][j] 在以 \"abf\" 结尾的列处取得最小值 1（删去 'd' 即可匹配成功）。"
+
+faqs:
+  - q: 为什么字符相等时不需要比较 Math.min(dp[i-1][j-1], dp[i-1][j] + 1)？
+    a: 因为保留匹配字符的代价 dp[i-1][j-1] 永远不会大于删掉它的代价 dp[i-1][j] + 1。在最优贪心决策下，既然字符能对齐上子串结尾，保留匹配必然是最优或等价选择。
+  - q: 为什么字符不相等时不能去看 dp[i][j-1]？
+    a: 因为状态定义严格绑定【以 s2[j-1] 结尾】的连续子串。dp[i][j-1] 是以 s2[j-2] 结尾的子串，若取它则无法保证新子串以当前 s2[j-1] 结尾。
+  - q: 空间压缩为什么需要 leftUp 变量？
+    a: 因为 dp[j] 在原二维矩阵中依赖左上角 dp[i-1][j-1]。当正序滚动计算到 j 时，当前数组中的 dp[j-1] 已经被本轮新值覆盖，必须用一个变量在更新前保存旧的 dp[j-1]（即对角线值）。

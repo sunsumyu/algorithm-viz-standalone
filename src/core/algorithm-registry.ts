@@ -72,10 +72,19 @@ export class AlgorithmRegistry {
   }
 
   /**
-   * 获取算法元数据（无需等待分包加载，首屏立即可用）
+   * 获取算法元数据（无需等待分包加载，首屏立即可用，支持别名解析）
    */
   public getMetadata(id: string): AlgorithmMetadata | undefined {
-    return this.metadataMap.get(id);
+    let meta = this.metadataMap.get(id);
+    if (!meta) {
+      for (const m of this.metadataMap.values()) {
+        if (m.aliases && m.aliases.includes(id)) {
+          meta = m;
+          break;
+        }
+      }
+    }
+    return meta;
   }
 
   /**
@@ -89,14 +98,23 @@ export class AlgorithmRegistry {
    * 判断算法清单是否已注册（即对应 chunk 已被加载）
    */
   public hasManifest(id: string): boolean {
-    return this.manifestsMap.has(id);
+    if (this.manifestsMap.has(id)) return true;
+    const meta = this.getMetadata(id);
+    return Boolean(meta && this.manifestsMap.has(meta.id));
   }
 
   /**
    * 获取已注册的算法清单
    */
   public getManifest(id: string): AlgorithmManifest | undefined {
-    return this.manifestsMap.get(id);
+    let manifest = this.manifestsMap.get(id);
+    if (!manifest) {
+      const meta = this.getMetadata(id);
+      if (meta) {
+        manifest = this.manifestsMap.get(meta.id);
+      }
+    }
+    return manifest;
   }
 
   /**
@@ -121,15 +139,15 @@ export class AlgorithmRegistry {
   }
 
   /**
-   * 解析并确保指定算法可用（按需动态拉取分包并返回完整条目）
+   * 解析并确保指定算法可用（按需动态拉取分包并返回完整条目，支持别名自动映射）
    */
   public async resolve(algorithmId: string): Promise<ResolvedAlgorithmEntry | undefined> {
-    const existing = this.manifestsMap.get(algorithmId);
+    const existing = this.getManifest(algorithmId);
     if (existing) {
       return this.wrapEntry(existing);
     }
 
-    const meta = this.metadataMap.get(algorithmId);
+    const meta = this.getMetadata(algorithmId);
     if (!meta) {
       return undefined;
     }
@@ -142,7 +160,7 @@ export class AlgorithmRegistry {
       return undefined;
     }
 
-    const loaded = this.manifestsMap.get(algorithmId);
+    const loaded = this.getManifest(algorithmId);
     if (!loaded) {
       return undefined;
     }

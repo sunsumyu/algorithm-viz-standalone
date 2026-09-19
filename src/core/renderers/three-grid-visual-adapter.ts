@@ -40,8 +40,10 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
   private cameraOrbitController: ThreeCameraOrbitController | null = null;
   private camera: THREE.PerspectiveCamera | null = null;
   private controls: OrbitControls | null = null;
-  private animFrameId: number | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private resizeRafId: number | null = null;
+  private lastWidth: number = 0;
+  private lastHeight: number = 0;
 
   // 场景节点
   private boardGroup: THREE.Group | null = null;
@@ -56,6 +58,7 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
   private transferTubes: THREE.Mesh[] = [];
   private energySparks: EnergySpark[] = [];
   private pointLight: THREE.PointLight | null = null;
+  private animFrameId: number | null = null;
 
   // 动画状态与物理插值
   private m: number = 3;
@@ -101,14 +104,19 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
       logarithmicDepthBuffer: true, // 彻底消除近距多重透明平面的 Z-Fighting 深度冲突闪烁
       powerPreference: 'high-performance'
     });
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(width, height, false);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.25;
     this.renderer.domElement.style.outline = 'none';
+    this.renderer.domElement.style.width = '100%';
+    this.renderer.domElement.style.height = '100%';
     this.renderer.domElement.className = 'w-full h-full block cursor-grab active:cursor-grabbing';
+
+    this.lastWidth = width;
+    this.lastHeight = height;
 
     container.innerHTML = '';
     container.appendChild(this.renderer.domElement);
@@ -435,8 +443,10 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
     const stepRise = isStairs ? 0.32 : 0;
 
-    const curI = step.i;
-    const curJ = step.j;
+    const curI = (m === 1 ? 0 : (step.i ?? 0));
+    const curJ = (m === 1
+      ? ((step as any).activeSlot !== undefined ? (step as any).activeSlot : (step.j ?? (step as any).currentJ ?? (step as any).highlightSlots?.[0] ?? (step as any).currentI ?? step.i ?? 0))
+      : (step.j ?? 0));
     const topI = step.topI;
     const topJ = step.topJ;
     const leftI = step.leftI;
@@ -449,7 +459,7 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
         const cell = this.voxelCells[r]?.[c];
         if (!cell) continue;
 
-        const val = gridData[r]?.[c] ?? null;
+        const val = gridData[r]?.[c] ?? (m === 1 && r === 0 ? ((step as any).dp1d?.[c] ?? (step as any).memo?.[c] ?? (step as any).memoSnapshot?.[c] ?? null) : null);
         const isCur = curI === r && curJ === c;
         const isTop = topI !== undefined && topI === r && topJ === c;
         const isLeft = leftI !== undefined && leftI === r && leftJ === c;
@@ -811,20 +821,43 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
    */
   private handleResize(): void {
     if (!this.container || !this.renderer) return;
-    const width = this.container.clientWidth || 400;
-    const height = this.container.clientHeight || 300;
-    if (this.cameraOrbitController) {
-      this.cameraOrbitController.handleResize(width, height);
+    if (this.resizeRafId !== null) {
+      cancelAnimationFrame(this.resizeRafId);
     }
-    this.renderer.setSize(width, height);
+    this.resizeRafId = requestAnimationFrame(() => {
+      this.resizeRafId = null;
+      if (!this.container || !this.renderer) return;
+      const width = Math.floor(this.container.clientWidth) || 400;
+      const height = Math.floor(this.container.clientHeight) || 300;
+
+      // 脏检查：尺寸变动小于 2px 时忽略，彻底消除滚动条微小抖动造成的 60fps 震荡死循环
+      if (Math.abs(width - this.lastWidth) < 2 && Math.abs(height - this.lastHeight) < 2) {
+        return;
+      }
+      this.lastWidth = width;
+      this.lastHeight = height;
+
+      if (this.cameraOrbitController) {
+        this.cameraOrbitController.handleResize(width, height);
+      }
+      this.renderer.setSize(width, height, false);
+    });
   }
 
   /**
    * 销毁场景与释放 WebGL 显存
    */
   public dispose(): void {
+    if (this.resizeRafId !== null) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.resizeRafId);
+      }
+      this.resizeRafId = null;
+    }
     if (this.animFrameId !== null) {
-      cancelAnimationFrame(this.animFrameId);
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(this.animFrameId);
+      }
       this.animFrameId = null;
     }
     if (this.resizeObserver) {

@@ -39,13 +39,13 @@
           <i class="fa-solid fa-table-cells-large"></i>
         </button>
         <div class="flex items-center gap-1 min-w-0">
-          <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0">62. 不同路径</h1>
+          <h1 id="header-algo-main-title" class="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight flex-shrink-0 min-w-[60px]"></h1>
           <button id="btn-open-problem-modal" title="点击查看力扣原题描述、示例与约束" class="px-1.5 py-0.5 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200/80 text-amber-800 text-[10px] font-bold transition flex items-center gap-1 flex-shrink-0 shadow-2xs">
             <i class="fa-regular fa-file-lines text-amber-600"></i>
             <span>题目</span>
           </button>
-          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]">阶段 1: 朴素递归</span>
-          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block">O(2ⁿ)</span>
+          <span id="header-algo-title" class="text-[11px] font-bold text-slate-700 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 truncate hidden 2xl:inline-block max-w-[140px]"></span>
+          <span id="header-complexity-badge" class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-bold font-mono flex-shrink-0 hidden xl:inline-block"></span>
         </div>
       </div>
 
@@ -88,7 +88,7 @@
           <div class="flex items-center justify-between flex-shrink-0 gap-2">
             <div class="flex items-center gap-2">
               <h2 id="card1-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 m×n)
+                <i class="fa-solid fa-table-cells text-slate-500"></i> 状态演算空间
               </h2>
               <button id="btn-toggle-3d" title="切换 3D 立体沙盘 / 2D 经典平面视角" class="px-2 py-0.5 rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs">
                 <i class="fa-solid fa-cube text-indigo-600"></i>
@@ -141,8 +141,8 @@
                 </defs>
               </svg>
 
-              <!-- 底部物理边界深水河流 (紧凑轻量，绝不推挤画布) -->
-              <div id="grid-river-barrier" class="w-full max-w-[280px] mt-1.5 relative overflow-hidden rounded-lg border border-sky-400/80 bg-gradient-to-r from-sky-700 via-sky-600 to-sky-800 py-0.5 px-2.5 flex items-center justify-center shadow-xs flex-shrink-0">
+              <!-- 底部物理边界深水河流 (紧凑轻量，绝不推挤画布，仅网格题目展示) -->
+              <div id="grid-river-barrier" class="w-full max-w-[280px] mt-1.5 relative overflow-hidden rounded-lg border border-sky-400/80 bg-gradient-to-r from-sky-700 via-sky-600 to-sky-800 py-0.5 px-2.5 flex items-center justify-center shadow-xs flex-shrink-0" style="display: none;">
                 <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-40" preserveAspectRatio="none">
                   <path class="dp-river-waves-1" d="M -60 6 Q -30 2, 0 6 T 60 6 T 120 6 T 180 6 T 240 6 T 300 6 T 360 6 T 420 6 T 480 6 T 540 6 T 600 6 T 660 6 T 720 6 T 780 6 T 840 6" fill="none" stroke="#ffffff" stroke-width="1.3" />
                   <path class="dp-river-waves-2" d="M -60 14 Q -30 10, 0 14 T 60 14 T 120 14 T 180 14 T 240 14 T 300 14 T 360 14 T 420 14 T 480 14 T 540 14 T 600 14 T 660 14 T 720 14 T 780 14" fill="none" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="6 4" />
@@ -181,9 +181,9 @@
           <div class="flex items-center justify-between flex-shrink-0">
             <div>
               <h2 id="card2-title" class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-bars-staggered text-slate-500"></i> 一维状态数组 (int[] memo)
+                <i class="fa-solid fa-bars-staggered text-slate-500"></i> 状态演化与空间优化
               </h2>
-              <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">空间优化: 只保存当前行的数据，不断滚动覆盖。</p>
+              <p id="card2-desc" class="text-[11px] text-slate-500 mt-0.5">动态跟踪状态转移与空间演化过程</p>
             </div>
             <div class="flex items-center gap-2">
               <!-- 阶段 1/2 卡片 2 复合子视图切换器 (横向排列药丸) -->
@@ -204,13 +204,25 @@
                 <option value="alignment">🔤 串比对</option>
                 <option value="stack">📋 调用栈</option>
               </select>
-              <!-- 阶段 3 专用：DP 矩阵与依赖树切换 Tab -->
+              <!-- 阶段 3 专用：DP 矩阵、依赖树与串比对切换 Tab -->
               <div id="stage3-subview-bar" class="hidden inline-flex flex-row items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold whitespace-nowrap flex-shrink-0">
                 <button id="btn-subview-matrix" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer">
                   <i class="fa-solid fa-table-cells text-[10px]"></i> <span>DP 状态表</span>
                 </button>
                 <button id="btn-subview-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer">
                   <i class="fa-solid fa-network-wired text-[10px]"></i> <span>状态依赖树</span>
+                </button>
+                <button id="btn-subview-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
+                  <i class="fa-solid fa-font text-[10px]"></i> <span>串比对</span>
+                </button>
+              </div>
+              <!-- 阶段 4 专用：一维滚动数组与串比对切换 Tab -->
+              <div id="stage4-subview-bar" class="hidden inline-flex flex-row items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold whitespace-nowrap flex-shrink-0">
+                <button id="btn-stage4-memo" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer">
+                  <i class="fa-solid fa-bars-staggered text-[10px]"></i> <span>滚动数组</span>
+                </button>
+                <button id="btn-stage4-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
+                  <i class="fa-solid fa-font text-[10px]"></i> <span>串比对</span>
                 </button>
               </div>
               <span id="badge-memo-len" class="text-xs font-mono-code font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 whitespace-nowrap flex-shrink-0">长度: n</span>

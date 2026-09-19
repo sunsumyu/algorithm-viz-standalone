@@ -1,0 +1,201 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 单词拆分 (Word Break) - LeetCode 139 四阶段全演化模型
+# 包含：前缀切分递归树展开、记忆化缓存剪枝、自底向上递推填表与 Trie 前缀树加速匹配
+# ==============================================================================
+
+id: word-break
+name: "单词拆分"
+nameEn: "Word Break"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🧩"
+difficulty: 2
+levelOrder: 11
+learningGoal: "掌握布尔切分动态规划：dp[i] = or_{0 <= j < i} { dp[j] and (s[j..i] in dict) }"
+description: "给你一个字符串 s 和一个字符串列表 wordDict 作为字典。如果可以利用字典中出现的一个或多个单词拼接出 s 则返回 true。"
+defaultParams:
+  s: "leetcode"
+  wordDict: ["leet", "code"]
+  n: 8
+
+problem:
+  leetcodeId: 139
+  title: "单词拆分"
+  difficulty: "中等"
+  tags: ["字典树", "记忆化搜索", "数组", "哈希表", "字符串", "动态规划"]
+  description: "给你一个字符串 <code>s</code> 和一个字符串列表 <code>wordDict</code> 作为字典。如果可以利用字典中出现的一个或多个单词拼接出 <code>s</code> 则返回 <code>true</code>。<br/><br/><strong>注意：</strong>不要求字典中出现的单词全部使用，并且字典中的单词可以重复使用。"
+  examples:
+    - input: "s = \"leetcode\", wordDict = [\"leet\", \"code\"]"
+      output: "true"
+      explanation: "返回 true 因为 \"leetcode\" 可以由 \"leet\" 和 \"code\" 拼接成。"
+    - input: "s = \"applepenapple\", wordDict = [\"apple\", \"pen\"]"
+      output: "true"
+      explanation: "返回 true 因为 \"applepenapple\" 可以拆分成 \"apple pen apple\"。"
+    - input: "s = \"catsandog\", wordDict = [\"cats\", \"dog\", \"sand\", \"and\", \"cat\"]"
+      output: "false"
+      explanation: "无法拆分。"
+  constraints:
+    - "1 <= s.length <= 300"
+    - "1 <= wordDict.length <= 1000"
+    - "1 <= wordDict[i].length <= 20"
+    - "s 和 wordDict[i] 仅由小写英文字母组成"
+    - "wordDict 中的所有字符串 互不相同"
+  leetcodeUrl: "https://leetcode.cn/problems/word-break/"
+
+directions:
+  forward:
+    label: "自底向上 (正序前缀切分递推)"
+    branches:
+      - name: "sub_match"
+        label: "前缀合法且当前子串在字典中"
+        formula: "dp[j] && wordSet.contains(s.substring(j, i))"
+    combineFormula: "or_{0 <= j < i} { dp[j] and inDict(s[j..i]) }"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素切分递归 (多叉前缀匹配决策树)"
+    desc:
+      forward: "从下标 startIndex 出发，尝试枚举每一个合法的切分终点 end，若截取子串存在于字典中，则递归判断剩余后缀是否可行。"
+    variants:
+      standard:
+        variantLabel: "标准切分递归"
+        title:
+          forward: "WordBreak_Recursive.java"
+        code:
+          forward:
+            title: "WordBreak_Recursive.java"
+            source: |
+              class Solution {
+                  public boolean wordBreak(String s, List<String> wordDict) {
+                      Set<String> wordSet = new HashSet<>(wordDict); // @step:init
+                      return dfs(s, 0, wordSet);                   // @step:entry
+                  }
+                  private boolean dfs(String s, int start, Set<String> wordSet) {
+                      if (start == s.length()) return true; // @step:boundary
+                      for (int end = start + 1; end <= s.length(); end++) { // @step:loop
+                          String sub = s.substring(start, end);
+                          if (wordSet.contains(sub)) { // @step:branch_call
+                              if (dfs(s, end, wordSet)) return true; // @step:compare
+                          }
+                      }
+                      return false; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子串重复判定)"
+    desc:
+      forward: "使用备忘录 memo[start] 记录从当前下标开始的后缀子串能否被成功拆分，一旦命中直接返回，消除指数级回溯爆炸。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "WordBreak_Memo.java"
+        code:
+          forward:
+            title: "WordBreak_Memo.java"
+            source: |
+              class Solution {
+                  private Boolean[] memo;
+                  public boolean wordBreak(String s, List<String> wordDict) {
+                      memo = new Boolean[s.length() + 1]; // @step:init_memo
+                      return dfs(s, 0, new HashSet<>(wordDict)); // @step:entry
+                  }
+                  private boolean dfs(String s, int start, Set<String> wordSet) {
+                      if (start == s.length()) return true;
+                      if (memo[start] != null) return memo[start]; // @step:cache_hit
+                      for (int end = start + 1; end <= s.length(); end++) { // @step:loop
+                          String sub = s.substring(start, end);
+                          if (wordSet.contains(sub) && dfs(s, end, wordSet)) {
+                              memo[start] = true; // @step:save_memo
+                              return true;
+                          }
+                      }
+                      memo[start] = false; // @step:save_memo
+                      return false;       // @step:return
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-1d"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 一维自底向上递推 (前缀状态转移天平)"
+    desc:
+      forward: "dp[i] 表示长度为 i 的前缀子串 s[0..i-1] 能否被有效拆分。遍历所有切分点 j，若 dp[j] 为真且 s[j..i-1] 在字典中，则 dp[i] 为真。"
+    variants:
+      for:
+        variantLabel: "双层循环标准版"
+        title:
+          forward: "WordBreak_DP.java"
+        code:
+          forward:
+            title: "WordBreak_DP.java"
+            source: |
+              class Solution {
+                  public boolean wordBreak(String s, List<String> wordDict) {
+                      Set<String> wordSet = new HashSet<>(wordDict);
+                      boolean[] dp = new boolean[s.length() + 1]; // @step:init
+                      dp[0] = true;                               // @step:base
+                      for (int i = 1; i <= s.length(); i++) {     // @step:loop-outer
+                          for (int j = 0; j < i; j++) {           // @step:loop-inner
+                              // 核心抉择：前缀合法 dp[j] && 当前子串在字典中
+                              if (dp[j] && wordSet.contains(s.substring(j, i))) {
+                                  dp[i] = true;                   // @step:transfer
+                                  break;
+                              }
+                          }
+                      }
+                      return dp[s.length()];                      // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "Trie优化"
+    type: "space-optimized"
+    timeBadge: "O(n × L)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: Trie 字典树前缀极速匹配优化"
+    desc:
+      forward: "将 wordDict 构建为 Trie 树，从下标 i 向左反向匹配字典树前缀。遇到不存在的分支立即短路剪枝，避免多次字符串 substring 哈希计算。"
+    variants:
+      trie:
+        variantLabel: "Trie 前缀树优化解"
+        title:
+          forward: "WordBreak_Trie.java"
+        code:
+          forward:
+            title: "WordBreak_Trie.java"
+            source: |
+              class Solution {
+                  public boolean wordBreak(String s, List<String> wordDict) {
+                      TrieNode root = buildTrie(wordDict); // @step:init
+                      boolean[] dp = new boolean[s.length() + 1];
+                      dp[0] = true;                        // @step:base
+                      for (int i = 0; i < s.length(); i++) { // @step:accumulate
+                          if (!dp[i]) continue;
+                          TrieNode curr = root;
+                          for (int j = i; j < s.length(); j++) { // @step:compare
+                              int idx = s.charAt(j) - 'a';
+                              if (curr.children[idx] == null) break;
+                              curr = curr.children[idx];
+                              if (curr.isEnd) dp[j + 1] = true; // @step:fetch-down
+                          }
+                      }
+                      return dp[s.length()]; // @step:return
+                  }
+              }

@@ -32,6 +32,7 @@ export interface TreeMeasureResult {
 import { MemoSlotVisualAdapter } from './memo-slot-visual-adapter';
 import { DpTableVisualAdapter } from './dp-table-visual-adapter';
 import { SpatialFlowVisualAdapter } from './spatial-flow-visual-adapter';
+import { SpatialCompressionPrimitives } from '../strategies/spatial-compression-primitives';
 
 export class GridVisualAdapter {
   /**
@@ -68,6 +69,83 @@ export class GridVisualAdapter {
       if (coords.length > 0) return coords;
     }
     return [];
+  }
+
+  /**
+   * 空间依赖坐标解析与自动推导引擎 (Spatial Dependency Resolver)
+   * 统一协调：
+   * 1. 显式发射的 topI, topJ, leftI, leftJ, diagI, diagJ
+   * 2. options.deps
+   * 3. 若处于计算/转移/比较步（cond, accumulate, transfer, update 等）但缺少依赖坐标时，自动通过 SpatialCompressionPrimitives 逆向推导二维前驱坐标
+   */
+  public static resolveSpatialDependencies(
+    step: any,
+    options: GridRenderOptions
+  ): {
+    effTopI?: number;
+    effTopJ?: number;
+    effLeftI?: number;
+    effLeftJ?: number;
+    effDiagI?: number;
+    effDiagJ?: number;
+    effDeps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }>;
+  } {
+    if (!step) {
+      return { effDeps: options.deps ? [...options.deps] : [] };
+    }
+
+    const { m, n, isReverse = false } = options;
+    const activeI = step.i ?? 0;
+    const activeJ = step.j ?? (step.activeSlot ?? 0);
+
+    let effTopI = step.topI;
+    let effTopJ = step.topJ;
+    let effLeftI = step.leftI;
+    let effLeftJ = step.leftJ;
+    let effDiagI = step.diagI;
+    let effDiagJ = step.diagJ;
+    const effDeps = options.deps ? [...options.deps] : [];
+
+    const isCalculating =
+      step.isComparing ||
+      ['cond', 'accumulate', 'transfer', 'update', 'update-cell', 'loop_j'].includes(step.type) ||
+      step.activeSlot !== undefined;
+
+    if (
+      isCalculating &&
+      effTopI === undefined &&
+      effLeftI === undefined &&
+      effDiagI === undefined &&
+      effDeps.length === 0 &&
+      m > 0 &&
+      n > 0
+    ) {
+      const isGrid =
+        options.isGridProblem ??
+        (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : false);
+
+      const isMatch =
+        Boolean(step.isMatch) ||
+        step.type === 'accumulate' ||
+        (typeof options.isMatch === 'function' ? options.isMatch(activeI, activeJ) : false);
+
+      const autoDeps = SpatialCompressionPrimitives.resolveDependencies(activeI, activeJ, {
+        modelType: isGrid ? 'grid' : 'sequence',
+        isReverse,
+        isMatch,
+        m,
+        n
+      });
+
+      effTopI = autoDeps.topI;
+      effTopJ = autoDeps.topJ;
+      effLeftI = autoDeps.leftI;
+      effLeftJ = autoDeps.leftJ;
+      effDiagI = autoDeps.diagI;
+      effDiagJ = autoDeps.diagJ;
+    }
+
+    return { effTopI, effTopJ, effLeftI, effLeftJ, effDiagI, effDiagJ, effDeps };
   }
 
   /**
@@ -164,7 +242,11 @@ export class GridVisualAdapter {
     container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
     container.innerHTML = '';
 
-    const cellSizeClass = (m >= 5 || n >= 6)
+    const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
+
+    const cellSizeClass = (m === 1 && isStairs)
+      ? 'w-14 h-14 sm:w-16 sm:h-16 text-sm'
+      : (m >= 5 || n >= 6)
       ? 'w-8 h-8 sm:w-9 sm:h-9 text-[11px]'
       : (m >= 4 || n >= 5)
       ? 'w-9 h-9 sm:w-10 sm:h-10 text-xs'
@@ -186,21 +268,33 @@ export class GridVisualAdapter {
       : (isStepOutOfBounds ? Math.min(m - 1, Math.max(0, step.i)) : (m === 1 ? 0 : (step.i ?? 0)));
     const activeStandingJ = isStepBlocked
       ? step.fromJ
-      : (isStepOutOfBounds ? Math.min(n - 1, Math.max(0, step.j)) : (m === 1 ? (step.j ?? step.currentJ ?? step.activeSlot ?? step.highlightSlots?.[0] ?? step.currentI ?? step.i ?? 0) : (step.j ?? 0)));
+      : (isStepOutOfBounds
+          ? Math.min(n - 1, Math.max(0, step.j))
+          : (m === 1
+              ? (step.activeSlot !== undefined ? step.activeSlot : (step.j ?? step.currentJ ?? step.highlightSlots?.[0] ?? step.currentI ?? step.i ?? 0))
+              : (step.j ?? 0)));
 
     const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
     const activeTrailSet = new Set<string>(activeStackList);
 
-    const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
+    const {
+      effTopI,
+      effTopJ,
+      effLeftI,
+      effLeftJ,
+      effDiagI,
+      effDiagJ,
+      effDeps
+    } = GridVisualAdapter.resolveSpatialDependencies(step, options);
 
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
         const key = `${r},${c}`;
         const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? null) : null);
         const isStandingCell = (r === activeStandingI && c === activeStandingJ);
-        const isTop = (step.topI === r && step.topJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'top') ?? false);
-        const isLeft = (step.leftI === r && step.leftJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'left') ?? false);
-        const isDiag = (step.diagI === r && step.diagJ === c) || (options.deps?.some(d => d.r === r && d.c === c && d.type === 'diag') ?? false);
+        const isTop = (effTopI === r && effTopJ === c) || (effDeps.some(d => d.r === r && d.c === c && d.type === 'top') ?? false);
+        const isLeft = (effLeftI === r && effLeftJ === c) || (effDeps.some(d => d.r === r && d.c === c && d.type === 'left') ?? false);
+        const isDiag = (effDiagI === r && effDiagJ === c) || (effDeps.some(d => d.r === r && d.c === c && d.type === 'diag') ?? false);
         const isFinish = isReverse ? (r === 0 && c === 0) : (r === m - 1 && c === n - 1);
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
 
@@ -216,7 +310,7 @@ export class GridVisualAdapter {
         const cellEl = document.createElement('div');
         cellEl.setAttribute('data-coord', `${r},${c}`);
         if (isStairs) {
-          cellEl.style.transform = `translateY(${(n - 1 - c) * 6}px)`;
+          cellEl.style.transform = `translateY(${(n - 1 - c) * 14}px)`;
         }
 
         const coordText = isStairs
@@ -338,10 +432,18 @@ export class GridVisualAdapter {
             </div>
           `;
         } else if (isCur) {
+          const jumpFrom = step.actorState?.jumpFrom ?? step.fromSlot;
+          const currentSlot = step.actorState?.currentSlot ?? step.activeSlot ?? c;
+          const hasJump = jumpFrom !== undefined && jumpFrom !== currentSlot;
+          const isHopping = hasJump && (step.actorState?.action === 'jump' || step.type === 'transfer');
+          const deltaCols = hasJump ? (jumpFrom - currentSlot) : 0;
+          const hopStyle = isHopping ? `style="--jump-offset-x: ${deltaCols * 100}%;"` : '';
+          const hopClass = isHopping ? 'is-hopping' : '';
+
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-blue-50/90 border-blue-500 shadow-sm`;
           cellEl.innerHTML = `
-            <div class="adventurer-char-holder absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30">
-              ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
+            <div class="adventurer-char-holder ${hopClass} absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30" ${hopStyle}>
+              ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : (isHopping ? 'jumping' : 'walking'), isFinish })}
             </div>
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
@@ -410,7 +512,10 @@ export class GridVisualAdapter {
       }
     }
 
-    GridVisualAdapter.drawGridArrows(container, step, options);
+    const stepWithDeps = (effTopI !== undefined || effLeftI !== undefined || effDiagI !== undefined)
+      ? { ...step, topI: effTopI, topJ: effTopJ, leftI: effLeftI, leftJ: effLeftJ, diagI: effDiagI, diagJ: effDiagJ }
+      : step;
+    GridVisualAdapter.drawGridArrows(container, stepWithDeps, options);
 
     const riverBarrier = (typeof document !== 'undefined' && typeof document.getElementById === 'function')
       ? document.getElementById('grid-river-barrier')
@@ -442,8 +547,20 @@ export class GridVisualAdapter {
     const { m, n, rowLabels, colLabels, isReverse = false } = options;
     const activeI = step.i ?? 0;
     const activeJ = step.j ?? 0;
-    const isFinish = (activeI === m - 1 && activeJ === n - 1) || (activeI === 0 && activeJ === 0);
+    const isTargetCoord = isReverse ? (activeI === 0 && activeJ === 0) : (activeI === m - 1 && activeJ === n - 1);
+    const isRecursionRunning = step.callStack && step.callStack.length > 0 && step.type !== 'return';
+    const isFinish = isTargetCoord && !isRecursionRunning;
     const cellPx = Math.min(48, Math.max(34, Math.floor(250 / Math.max(m, n))));
+
+    const {
+      effTopI,
+      effTopJ,
+      effLeftI,
+      effLeftJ,
+      effDiagI,
+      effDiagJ,
+      effDeps
+    } = GridVisualAdapter.resolveSpatialDependencies(step, options);
 
     const activeStackList: string[] = GridVisualAdapter.extractActiveTrail(step);
     const activeTrailSet = new Set<string>(activeStackList);
@@ -490,10 +607,12 @@ export class GridVisualAdapter {
         const cellVal = step.grid?.[r]?.[c] ?? null;
 
         // 依赖单元格判定 (top / left / diag 或通用 deps)
-        const isTop = !isActive && ((step.topI === r && step.topJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'top' || (d.r === activeI - 1 && d.c === activeJ))) ?? false));
-        const isLeft = !isActive && ((step.leftI === r && step.leftJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'left' || (d.r === activeI && d.c === activeJ - 1))) ?? false));
-        const isDiag = !isActive && ((step.diagI === r && step.diagJ === c) || (options.deps?.some((d) => d.r === r && d.c === c && (d.type === 'diag' || (d.r === activeI - 1 && d.c === activeJ - 1))) ?? false));
-        const isGeneralDep = !isActive && !isTop && !isLeft && !isDiag && (options.deps?.some((d) => d.r === r && d.c === c) ?? false);
+        const expectedTopR = isReverse ? activeI + 1 : activeI - 1;
+        const expectedLeftC = isReverse ? activeJ + 1 : activeJ - 1;
+        const isTop = !isActive && ((effTopI === r && effTopJ === c) || (effDeps.some((d) => d.r === r && d.c === c && (d.type === 'top' || (d.r === expectedTopR && d.c === activeJ))) ?? false));
+        const isLeft = !isActive && ((effLeftI === r && effLeftJ === c) || (effDeps.some((d) => d.r === r && d.c === c && (d.type === 'left' || (d.r === activeI && d.c === expectedLeftC))) ?? false));
+        const isDiag = !isActive && ((effDiagI === r && effDiagJ === c) || (effDeps.some((d) => d.r === r && d.c === c && (d.type === 'diag' || (d.r === expectedTopR && d.c === expectedLeftC))) ?? false));
+        const isGeneralDep = !isActive && !isTop && !isLeft && !isDiag && (effDeps.some((d) => d.r === r && d.c === c) ?? false);
         const isDep = isTop || isLeft || isDiag || isGeneralDep;
 
         const isUncalculated = cellVal === null || cellVal === -1;
@@ -528,6 +647,14 @@ export class GridVisualAdapter {
           `;
           cellContent = `<span style="font-size: 10px; font-weight: 700; color: #cbd5e1; user-select: none;">✕</span>`;
         } else if (isActive) {
+          const jumpFrom = step.actorState?.jumpFrom ?? step.fromSlot;
+          const currentSlot = step.actorState?.currentSlot ?? step.activeSlot ?? c;
+          const hasJump = jumpFrom !== undefined && jumpFrom !== currentSlot;
+          const isHopping = hasJump && (step.actorState?.action === 'jump' || step.type === 'transfer');
+          const deltaCols = hasJump ? (jumpFrom - currentSlot) : 0;
+          const hopVar = isHopping ? `--jump-offset-x: ${deltaCols * 100}%;` : '';
+          const hopClass = isHopping ? 'is-hopping' : '';
+
           style += `
             background: #eff6ff;
             border: 2px solid #3b82f6;
@@ -536,8 +663,8 @@ export class GridVisualAdapter {
             z-index: 20;
           `;
           cellContent = `
-            <div class="adventurer-char-holder" style="position: absolute; top: -26px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50;">
-              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : 'walking', isFinish })}
+            <div class="adventurer-char-holder ${hopClass}" style="position: absolute; top: -26px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 50; ${hopVar}">
+              ${GridVisualAdapter.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : (isHopping ? 'jumping' : 'walking'), isFinish })}
             </div>
             <span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; margin-top: 4px; z-index: 10;">${cellVal !== null && cellVal !== -1 ? cellVal : ''}</span>
           `;
@@ -549,46 +676,49 @@ export class GridVisualAdapter {
             box-shadow: 0 1px 2px rgba(56, 189, 248, 0.15);
             z-index: 10;
           `;
-          cellContent = `<span class="animate-pulse" style="font-size: 14px; user-select: none;">👣</span>`;
+          cellContent = `
+            <span class="animate-pulse" style="font-size: 13px; user-select: none;">👣</span>
+            ${cellVal !== null && cellVal !== -1 ? `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '11px' : '9px'}; font-weight: 800; color: #0284c7; margin-top: 1px; z-index: 10;">${cellVal}</span>` : ''}
+          `;
         } else if (isTop) {
           style += `
             background: #faf5ff;
-            border: 1.5px solid #c084fc;
+            border: 2px solid #a855f7;
             color: #7e22ce;
-            box-shadow: 0 1px 3px rgba(168, 85, 247, 0.15);
+            box-shadow: 0 0 0 1px #c084fc, 0 1px 3px rgba(168, 85, 247, 0.2);
             z-index: 10;
           `;
-          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">⬆️</span>`;
+          badgeHtml = `<span style="position: absolute; top: 1.5px; right: 2px; font-size: 8px; font-weight: 800; border-radius: 2px; background: #7e22ce; color: #ffffff; padding: 0.5px 2px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">${isReverse ? '⬇️' : '⬆️'}</span>`;
           cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #7e22ce; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
         } else if (isLeft) {
           style += `
             background: #fffbeb;
-            border: 1.5px solid #fcd34d;
+            border: 2px solid #f59e0b;
             color: #b45309;
-            box-shadow: 0 1px 3px rgba(245, 158, 11, 0.15);
+            box-shadow: 0 0 0 1px #fbbf24, 0 1px 3px rgba(245, 158, 11, 0.2);
             z-index: 10;
           `;
-          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">⬅️</span>`;
+          badgeHtml = `<span style="position: absolute; top: 1.5px; right: 2px; font-size: 8px; font-weight: 800; border-radius: 2px; background: #d97706; color: #ffffff; padding: 0.5px 2px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">${isReverse ? '➡️' : '⬅️'}</span>`;
           cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #b45309; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
         } else if (isDiag) {
           style += `
             background: #ecfeff;
-            border: 1.5px solid #67e8f9;
-            color: #0e7490;
-            box-shadow: 0 1px 3px rgba(6, 182, 212, 0.15);
+            border: 2px solid #06b6d4;
+            color: #0891b2;
+            box-shadow: 0 0 0 1px #22d3ee, 0 1px 3px rgba(6, 182, 212, 0.2);
             z-index: 10;
           `;
-          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">↖️</span>`;
-          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #0e7490; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
+          badgeHtml = `<span style="position: absolute; top: 1.5px; right: 2px; font-size: 8px; font-weight: 800; border-radius: 2px; background: #0891b2; color: #ffffff; padding: 0.5px 2px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">${isReverse ? '↘️' : '↖️'}</span>`;
+          cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #0891b2; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
         } else if (isGeneralDep) {
           style += `
             background: #eef2ff;
-            border: 1.5px solid #a5b4fc;
+            border: 2px solid #6366f1;
             color: #4338ca;
-            box-shadow: 0 1px 3px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 1px 3px rgba(99, 102, 241, 0.2);
             z-index: 10;
           `;
-          badgeHtml = `<span style="position: absolute; top: 1px; right: 2px; font-size: 8px;">🔗</span>`;
+          badgeHtml = `<span style="position: absolute; top: 1.5px; right: 2px; font-size: 8px; font-weight: 800; border-radius: 2px; background: #4f46e5; color: #ffffff; padding: 0.5px 2px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">🔗</span>`;
           cellContent = `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '14px' : '12px'}; font-weight: 800; color: #4338ca; margin-top: 4px;">${!isUncalculated ? cellVal : '-'}</span>`;
         } else if (isDone) {
           style += `
@@ -685,10 +815,10 @@ export class GridVisualAdapter {
     const cornerTitle = options.cornerLabel || (isHalfTriangle ? 'l \\ r' : 's1 \\ s2');
 
     const hasDeps = Boolean(
-      (step.topI !== undefined && step.topI >= 0) ||
-      (step.leftI !== undefined && step.leftI >= 0) ||
-      (step.diagI !== undefined && step.diagI >= 0) ||
-      (options.deps && options.deps.length > 0)
+      (effTopI !== undefined && effTopI >= 0) ||
+      (effLeftI !== undefined && effLeftI >= 0) ||
+      (effDiagI !== undefined && effDiagI >= 0) ||
+      (effDeps && effDeps.length > 0)
     );
 
     container.innerHTML = `
@@ -757,15 +887,15 @@ export class GridVisualAdapter {
           ${hasDeps ? `
           <span style="display: flex; align-items: center; gap: 4px;">
             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #ecfeff; border: 1px solid #67e8f9;"></span>
-            ↖️ 对角(匹配/替换)
+            ${isReverse ? '↘️ 对角(匹配/替换)' : '↖️ 对角(匹配/替换)'}
           </span>
           <span style="display: flex; align-items: center; gap: 4px;">
             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #faf5ff; border: 1px solid #c084fc;"></span>
-            ⬆️ 垂直(删除)
+            ${isReverse ? '⬇️ 垂直(删除/继承)' : '⬆️ 垂直(删除)'}
           </span>
           <span style="display: flex; align-items: center; gap: 4px;">
             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: #fffbeb; border: 1px solid #fcd34d;"></span>
-            ⬅️ 水平(插入)
+            ${isReverse ? '➡️ 水平(插入)' : '⬅️ 水平(插入)'}
           </span>
           ` : `
           <span style="display: flex; align-items: center; gap: 4px;">
@@ -790,8 +920,9 @@ export class GridVisualAdapter {
     if (svgEl && boardEl && typeof document.createElementNS === 'function') {
       const boardRect = boardEl.getBoundingClientRect();
 
-      // 1. 调用栈路径安全绳
-      if (activeStackList.length >= 2) {
+      // 1. 调用栈路径安全绳 (仅在递归/DFS 阶段有效，禁止在 DP 填表与空间压缩阶段绘制调用栈安全绳)
+      const isRecursiveStage = Boolean(step.callStack && step.callStack.length > 0) || Boolean(step.frames && step.frames.length > 0);
+      if (isRecursiveStage && activeStackList.length >= 2) {
         for (let k = 0; k < activeStackList.length - 1; k++) {
           const coord1 = activeStackList[k];
           const coord2 = activeStackList[k + 1];
@@ -831,17 +962,17 @@ export class GridVisualAdapter {
 
       // 2. 状态转移前驱依赖连线 (DP Table 依赖箭头)
       const depList: Array<{ coord: string; color: string; marker: string }> = [];
-      if (step.topI !== undefined && step.topJ !== undefined && step.topI >= 0 && step.topJ >= 0) {
-        depList.push({ coord: `${step.topI},${step.topJ}`, color: '#9333ea', marker: 'url(#dp-dep-arrow-top)' });
+      if (effTopI !== undefined && effTopJ !== undefined && effTopI >= 0 && effTopJ >= 0) {
+        depList.push({ coord: `${effTopI},${effTopJ}`, color: '#9333ea', marker: 'url(#dp-dep-arrow-top)' });
       }
-      if (step.leftI !== undefined && step.leftJ !== undefined && step.leftI >= 0 && step.leftJ >= 0) {
-        depList.push({ coord: `${step.leftI},${step.leftJ}`, color: '#d97706', marker: 'url(#dp-dep-arrow-left)' });
+      if (effLeftI !== undefined && effLeftJ !== undefined && effLeftI >= 0 && effLeftJ >= 0) {
+        depList.push({ coord: `${effLeftI},${effLeftJ}`, color: '#d97706', marker: 'url(#dp-dep-arrow-left)' });
       }
-      if (step.diagI !== undefined && step.diagJ !== undefined && step.diagI >= 0 && step.diagJ >= 0) {
-        depList.push({ coord: `${step.diagI},${step.diagJ}`, color: '#0891b2', marker: 'url(#dp-dep-arrow-diag)' });
+      if (effDiagI !== undefined && effDiagJ !== undefined && effDiagI >= 0 && effDiagJ >= 0) {
+        depList.push({ coord: `${effDiagI},${effDiagJ}`, color: '#0891b2', marker: 'url(#dp-dep-arrow-diag)' });
       }
-      if (options.deps && options.deps.length > 0) {
-        for (const d of options.deps) {
+      if (effDeps && effDeps.length > 0) {
+        for (const d of effDeps) {
           const c = `${d.r},${d.c}`;
           if (!depList.some((item) => item.coord === c)) {
             const color = d.type === 'top' ? '#9333ea' : d.type === 'left' ? '#d97706' : d.type === 'diag' ? '#0891b2' : '#6366f1';
@@ -932,7 +1063,14 @@ export class GridVisualAdapter {
   public static renderStage3DPTable(
     container: HTMLElement,
     step: any,
-    options: { m: number; n: number; isReverse?: boolean }
+    options: {
+      m: number;
+      n: number;
+      isReverse?: boolean;
+      rowLabels?: string[];
+      colLabels?: string[];
+      cornerLabel?: string;
+    }
   ): void {
     DpTableVisualAdapter.renderStage3DPTable(container, step, options);
   }

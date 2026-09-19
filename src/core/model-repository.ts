@@ -13,6 +13,8 @@ import fibonacciModel from './models/fibonacci.yaml';
 import climbStairsModel from './models/climb-stairs.yaml';
 import knapsack01Model from './models/knapsack-01.yaml';
 import distinctSubsequencesModel from './models/distinct-subsequences.yaml';
+import interleavingStringModel from './models/interleaving-string.yaml';
+import minDeleteToBeSubstringModel from './models/min-delete-to-be-substring.yaml';
 import deleteOperationForTwoStringsModel from './models/delete-operation-for-two-strings.yaml';
 import editDistanceModel from './models/edit-distance.yaml';
 import palindromicSubstringsModel from './models/palindromic-substrings.yaml';
@@ -25,6 +27,18 @@ import houseRobber3Model from './models/house-robber-iii.yaml';
 import stock1Model from './models/best-time-to-buy-and-sell-stock.yaml';
 import stock2Model from './models/best-time-to-buy-and-sell-stock-ii.yaml';
 import stock3Model from './models/best-time-to-buy-and-sell-stock-iii.yaml';
+import decodeWaysModel from './models/decode-ways.yaml';
+import minCostClimbingStairsModel from './models/min-cost-climbing-stairs.yaml';
+import completeKnapsackModel from './models/complete-knapsack.yaml';
+import integerBreakModel from './models/integer-break.yaml';
+import perfectSquaresModel from './models/perfect-squares.yaml';
+import coinChangeModel from './models/coin-change.yaml';
+import wordBreakModel from './models/word-break.yaml';
+import coinChange2Model from './models/coin-change-ii.yaml';
+import lastStoneWeightIIModel from './models/last-stone-weight-ii.yaml';
+import onesAndZeroesModel from './models/ones-and-zeroes.yaml';
+import multipleKnapsackModel from './models/multiple-knapsack.yaml';
+import profitableSchemesModel from './models/profitable-schemes.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -41,9 +55,28 @@ export class AlgorithmModelRepository {
     ['min-path-sum', minimumPathSumModel as IYamlAlgorithmModel],
     ['fibonacci', fibonacciModel as IYamlAlgorithmModel],
     ['climb-stairs', climbStairsModel as IYamlAlgorithmModel],
+    ['min-cost-climbing-stairs', minCostClimbingStairsModel as IYamlAlgorithmModel],
+    ['min-cost', minCostClimbingStairsModel as IYamlAlgorithmModel],
+    ['decode-ways', decodeWaysModel as IYamlAlgorithmModel],
     ['01-knapsack', knapsack01Model as IYamlAlgorithmModel],
     ['knapsack-01', knapsack01Model as IYamlAlgorithmModel],
+    ['knapsack-01-2d', {
+      ...(knapsack01Model as IYamlAlgorithmModel),
+      id: 'knapsack-01-2d',
+      name: '0-1背包问题（二维）',
+      defaultStage: 'stage-3'
+    }],
+    ['knapsack-01-1d', {
+      ...(knapsack01Model as IYamlAlgorithmModel),
+      id: 'knapsack-01-1d',
+      name: '0-1背包问题（一维）',
+      defaultStage: 'stage-4'
+    }],
+    ['complete-knapsack', completeKnapsackModel as IYamlAlgorithmModel],
+    ['unbounded-knapsack', completeKnapsackModel as IYamlAlgorithmModel],
     ['distinct-subsequences', distinctSubsequencesModel as IYamlAlgorithmModel],
+    ['interleaving-string', interleavingStringModel as IYamlAlgorithmModel],
+    ['min-delete-to-be-substring', minDeleteToBeSubstringModel as IYamlAlgorithmModel],
     ['delete-operation-for-two-strings', deleteOperationForTwoStringsModel as IYamlAlgorithmModel],
     ['delete-distance', deleteOperationForTwoStringsModel as IYamlAlgorithmModel],
     ['edit-distance', editDistanceModel as IYamlAlgorithmModel],
@@ -58,6 +91,17 @@ export class AlgorithmModelRepository {
     ['best-time-to-buy-and-sell-stock', stock1Model as IYamlAlgorithmModel],
     ['best-time-to-buy-and-sell-stock-ii', stock2Model as IYamlAlgorithmModel],
     ['best-time-to-buy-and-sell-stock-iii', stock3Model as IYamlAlgorithmModel],
+    ['integer-break', integerBreakModel as IYamlAlgorithmModel],
+    ['perfect-squares', perfectSquaresModel as IYamlAlgorithmModel],
+    ['coin-change', coinChangeModel as IYamlAlgorithmModel],
+    ['word-break', wordBreakModel as IYamlAlgorithmModel],
+    ['coin-change-ii', coinChange2Model as IYamlAlgorithmModel],
+    ['last-stone-weight-ii', lastStoneWeightIIModel as IYamlAlgorithmModel],
+    ['last-stone-weight-2', lastStoneWeightIIModel as IYamlAlgorithmModel],
+    ['ones-and-zeroes', onesAndZeroesModel as IYamlAlgorithmModel],
+    ['ones-and-zeros', onesAndZeroesModel as IYamlAlgorithmModel],
+    ['multiple-knapsack', multipleKnapsackModel as IYamlAlgorithmModel],
+    ['profitable-schemes', profitableSchemesModel as IYamlAlgorithmModel],
   ]);
 
   // 不可变阶段编译缓存表
@@ -92,6 +136,12 @@ export class AlgorithmModelRepository {
   public static getModel(id: string): IYamlAlgorithmModel {
     let model = this.registry.get(id);
     if (!model) {
+      const canonical = DpStepEngine.getCanonicalId(id);
+      if (canonical && this.registry.has(canonical)) {
+        model = this.registry.get(canonical)!;
+        this.registry.set(id, model);
+        return model;
+      }
       const synthesized = this.synthesizeFromSpec(id);
       if (synthesized) {
         this.register(id, synthesized);
@@ -107,6 +157,8 @@ export class AlgorithmModelRepository {
    */
   public static hasModel(id: string): boolean {
     if (this.registry.has(id)) return true;
+    const canonical = DpStepEngine.getCanonicalId(id);
+    if (canonical && this.registry.has(canonical)) return true;
     return DpStepEngine.get(id) !== undefined;
   }
 

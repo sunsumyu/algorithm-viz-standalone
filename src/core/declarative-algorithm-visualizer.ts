@@ -116,6 +116,8 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
     // 绑定标准播放控制
     this.bindPlaybackControls();
+    // 声明式算法接管 Card 2 解说与决策，解除 liveMessageEl 隐式争抢
+    this.liveMessageEl = null;
 
     // 同步模式按钮初始激活状态 (以实际记忆或 defaultMode 为准)
     this.root.querySelectorAll<HTMLButtonElement>('.dir-tab-btn, .dsp-mode-chip').forEach((btn) => {
@@ -526,7 +528,74 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (this.steps.length === 0) {
       this.renderEmptyStepsDiagnostic();
     }
+    this.ensureInferredMetrics();
     this.updateResultDisplay();
+  }
+
+  /**
+   * 智能指标网格防御 (Auto-Inferred Metrics Grid)
+   * 若 Spec / Stage 未显式声明 metrics，但算法 steps 中已结构化产出 step.metrics：
+   * 顶层抽象 100% 自动推导并动态装配 Card 2 顶部 .dsp-metrics-grid，杜绝 Card 2 留白。
+   */
+  protected ensureInferredMetrics(): void {
+    if (!this.root || this.steps.length === 0) return;
+    const stage = this.spec.stages?.find((s) => s.id === this.currentStageId);
+    const declaredMetrics = stage?.metrics || this.spec.metrics;
+    if (declaredMetrics && declaredMetrics.length > 0) return;
+
+    // 寻找包含合法指标的首个步骤帧
+    const firstStepWithMetrics = this.steps.find(
+      (s: any) => s && s.metrics && typeof s.metrics === 'object' && Object.keys(s.metrics).length > 0
+    ) as any;
+    if (!firstStepWithMetrics) return;
+
+    let targetGrid = this.root.querySelector('.dsp-left-section .dsp-card:last-child .dsp-metrics-grid') as HTMLElement | null;
+    if (!targetGrid) {
+      const monitorCard = this.root.querySelector('.dsp-left-section .dsp-card:last-child');
+      const customContainer = this.root.querySelector('#dsp-custom-metrics-container');
+      if (monitorCard && customContainer) {
+        targetGrid = document.createElement('div');
+        targetGrid.className = 'dsp-metrics-grid';
+        monitorCard.insertBefore(targetGrid, customContainer);
+      }
+    }
+
+    if (targetGrid && (!targetGrid.children || targetGrid.children.length === 0)) {
+      const keys = Object.keys(firstStepWithMetrics.metrics).filter(
+        (k) => k !== 'metric-ans' && k !== 'ans' && k !== 'result' && k !== '最终结果'
+      );
+      const colors = ['#2563eb', '#0d9488', '#8b5cf6', '#d97706'];
+      const inferredList = keys.slice(0, 4).map((k, i) => ({
+        id: k,
+        label: k,
+        color: colors[i % colors.length],
+      }));
+
+      targetGrid.innerHTML = renderMetricsHtml(inferredList);
+      this.metricElements.clear();
+      inferredList.forEach((m) => {
+        const metricId = m.id.startsWith('metric-') ? m.id : `metric-${m.id}`;
+        const el = this.root?.querySelector(`#${metricId}`) as HTMLElement | null;
+        if (el) {
+          el.textContent = '—';
+          this.metricElements.set(m.id, el);
+          this.metricElements.set(metricId, el);
+          const bareId = m.id.startsWith('metric-') ? m.id.slice(7) : m.id;
+          this.metricElements.set(bareId, el);
+        }
+      });
+
+      // 立即刷新当前步的值
+      if (this.steps[this.currentIndex]) {
+        const curStep = this.steps[this.currentIndex] as any;
+        if (curStep.metrics) {
+          Object.entries(curStep.metrics).forEach(([key, val]) => {
+            const el = this.metricElements.get(key) || (this.root?.querySelector(`#metric-${key}`) as HTMLElement | null);
+            if (el) el.textContent = String(val);
+          });
+        }
+      }
+    }
   }
 
   /**
@@ -630,8 +699,169 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       }
     }
 
-    // 2. 更新通用实时解说文本与指标卡片
     const anyStep = step as any;
+
+    // 1.8 顶层 Card 1 沙盘纯净化与 Card 2 自动转接机制 (Canvas Dominance & State Space Routing)
+    // 规则 1：沙盘主权不变性：Card 1 视觉核心绝不可被抽空！
+    // 规则 2：公式卡片（.dsp-formula-card）或纯指标卡片（仅包含 label+value 结构）自动转接并规范化至 Card 2
+    if (this.sandboxContainer && this.customMetricsContainer && !auxRender) {
+      const formulaEl = this.sandboxContainer.querySelector('.dsp-formula-card, [data-formula-card]');
+
+      // 智能检测沙盘中误植的指标网格、公式卡片或算法原理/精髓辅助说明卡片
+      const isCard2Candidate = (el: Element): boolean => {
+        if (el.classList.contains('dsp-formula-card') || el.hasAttribute('data-formula-card')) return true;
+
+        const style = el.getAttribute('style') || '';
+        const isGrid = style.includes('grid-template-columns');
+        const isFooter = style.includes('margin-top: auto') || style.includes('margin-top:auto');
+        if (!isGrid && !isFooter) return false;
+
+        // 核心排除：若包含数据结构实体（表格、SVG、数组项、节点、代码块），绝对不可移出 Card 1！
+        if (el.querySelector('table, svg, pre, code, .node, .cell, input, button') !== null) return false;
+
+        const text = el.textContent || '';
+        if (text.includes('➔') || text.includes('->') || text.includes('-->')) return false;
+
+        const children = Array.from(el.children);
+        // 指标卡网格一般有 2~6 个子项
+        if (children.length < 2 || children.length > 6) return false;
+
+        // 若子项内部还有复杂树状结构或大量宽度方块，说明是多列画板，不是指标
+        const isPureMetricGrid = children.every((child) => {
+          const childText = (child.textContent || '').trim();
+          const descCount = child.querySelectorAll('*').length;
+          return childText.length > 0 && childText.length < 80 && descCount <= 6;
+        });
+
+        const hasKeywords = /(当前|下标|阶段|状态|指针|步数|节点|计数|结果|规模|总数|长度|阈值|深度|处理|目标|拐点|交换|二分|主元|耗时|空间|精髓|原理|法则|步骤|公理|说明|倍数|展开)/.test(text);
+
+        return isPureMetricGrid && hasKeywords;
+      };
+
+      const candidateCards = Array.from(
+        this.sandboxContainer.querySelectorAll<HTMLElement>('div[style*="grid-template-columns"], div[style*="margin-top"]')
+      ).filter(isCard2Candidate);
+
+      // 铁律：候选卡片的提取绝不能将 Card 1 掏空！
+      const candidateSet = new Set(candidateCards);
+      const remainingTextLen = (this.sandboxContainer.textContent || '')
+        .replace(candidateCards.map((c) => c.textContent || '').join(''), '')
+        .trim().length;
+      const hasRemainingVisual =
+        this.sandboxContainer.querySelector('canvas, svg, table, img, [data-node], .node, .cell') !== null ||
+        remainingTextLen > 20;
+
+      // 若移走后 Card 1 将空无一物，放弃抽取，坚守 Card 1
+      const effectiveCandidates = hasRemainingVisual ? candidateCards : [];
+
+      // 分流：将候选中的纯指标卡片网格 vs 原理/其他辅助卡片分离
+      const metricGrids = effectiveCandidates.filter((c) => {
+        return c.getAttribute('style')?.includes('grid-template-columns') && c.children.length >= 2 && c.children.length <= 6;
+      });
+      const otherCandidates = effectiveCandidates.filter((c) => !metricGrids.includes(c));
+
+      // 1.8.1 顶层规约：将提取出的指标网格自动转换为标准顶层 .dsp-metrics-grid
+      let targetGrid = this.root ? (this.root.querySelector('.dsp-left-section .dsp-card:last-child .dsp-metrics-grid') as HTMLElement | null) : null;
+      if (!targetGrid && this.root) {
+        const monitorCard = this.root.querySelector('.dsp-left-section .dsp-card:last-child');
+        if (monitorCard && this.customMetricsContainer) {
+          targetGrid = document.createElement('div');
+          targetGrid.className = 'dsp-metrics-grid';
+          monitorCard.insertBefore(targetGrid, this.customMetricsContainer);
+        }
+      }
+
+      if (metricGrids.length > 0 && targetGrid && (!targetGrid.children || targetGrid.children.length === 0)) {
+        const gridEl = metricGrids[0];
+        const parsedItems: { label: string; val: string }[] = [];
+        Array.from(gridEl.children).forEach((ch) => {
+          const subDivs = Array.from(ch.children).filter((sub) => (sub.textContent || '').trim().length > 0);
+          if (subDivs.length >= 2) {
+            parsedItems.push({
+              label: (subDivs[0].textContent || '').trim(),
+              val: (subDivs[subDivs.length - 1].textContent || '').trim(),
+            });
+          }
+        });
+
+        if (parsedItems.length >= 2) {
+          const colors = ['#0284c7', '#d97706', '#059669', '#7c3aed', '#db2777', '#4f46e5'];
+          targetGrid.innerHTML = parsedItems.map((item, i) => {
+            const col = colors[i % colors.length];
+            return `
+              <div class="dsp-metric-card">
+                <span class="dsp-metric-label" style="color: #64748b;" title="${item.label}">${item.label}</span>
+                <span class="dsp-metric-val" style="color: ${col};" title="${item.val}">${item.val}</span>
+              </div>
+            `;
+          }).join('');
+        }
+        metricGrids.forEach((mg) => mg.remove());
+      } else if (metricGrids.length > 0) {
+        metricGrids.forEach((mg) => mg.remove());
+      }
+
+      // 1.8.2 将非网格辅助卡片（如公式卡片、原理说明卡片）放入 customMetricsContainer
+      if (otherCandidates.length > 0 || formulaEl) {
+        if (this.liveTextEl) this.liveTextEl.style.display = '';
+        this.customMetricsContainer.innerHTML = '';
+        otherCandidates.forEach((c) => {
+          c.querySelectorAll<HTMLElement>('*').forEach((child) => {
+            const s = child.getAttribute('style') || '';
+            if (s.includes('rgba(30, 41, 59') || s.includes('rgba(15, 23, 42') || s.includes('#1e293b') || s.includes('#0f172a')) {
+              child.style.setProperty('background', '#ffffff', 'important');
+              child.style.setProperty('border', '1px solid #e2e8f0', 'important');
+              child.style.setProperty('border-radius', '8px', 'important');
+              child.style.setProperty('padding', '4px 8px', 'important');
+              child.style.setProperty('box-shadow', '0 1px 3px rgba(0, 0, 0, 0.03)', 'important');
+            }
+            if (s.includes('#94a3b8') || s.includes('#cbd5e1')) {
+              child.style.setProperty('color', '#64748b', 'important');
+              child.style.setProperty('font-weight', '700', 'important');
+            }
+            if (s.includes('#38bdf8')) child.style.setProperty('color', '#0284c7', 'important');
+            if (s.includes('#fbbf24')) child.style.setProperty('color', '#b45309', 'important');
+            if (s.includes('#34d399')) child.style.setProperty('color', '#059669', 'important');
+          });
+          this.customMetricsContainer!.appendChild(c);
+        });
+        if (formulaEl && !otherCandidates.includes(formulaEl as HTMLElement)) {
+          this.customMetricsContainer.appendChild(formulaEl);
+        }
+      } else if (anyStep.decision || anyStep.statusBadge || anyStep.message) {
+        // 如果 Card 2 渲染标准决策卡片，隐藏冗余的底部孤立 liveText 标签，杜绝断裂白板与重复信息！
+        if (this.liveTextEl) {
+          this.liveTextEl.style.display = 'none';
+        }
+        const badge = anyStep.statusBadge;
+        const badgeHtml = badge
+          ? `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px;">${badge.text || badge}</span>`
+          : '';
+        const goal = this.spec.learningGoal;
+        const goalHtml = goal
+          ? `<div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; font-size: 11.5px; color: #475569; line-height: 1.5; margin-top: 4px;">
+              <span style="font-size: 14px; line-height: 1;">💡</span>
+              <div><span style="font-weight: 700; color: #1e293b;">核心要领：</span>${goal}</div>
+            </div>`
+          : '';
+        this.customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; margin: 4px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 12px; font-weight: 700; color: #475569;">🧭 当前状态决策</span>
+              ${badgeHtml}
+            </div>
+            <div style="font-size: 12.5px; font-weight: 600; color: #1e293b; line-height: 1.6;">
+              ${anyStep.decision || anyStep.message || '观察当前状态变迁'}
+            </div>
+          </div>
+          ${goalHtml}
+        `;
+      } else {
+        if (this.liveTextEl) this.liveTextEl.style.display = '';
+      }
+    }
+
+    // 2. 更新通用实时解说文本与指标卡片
     if (anyStep.metrics && typeof anyStep.metrics === 'object') {
       Object.entries(anyStep.metrics).forEach(([key, val]) => {
         const metricEl =
@@ -645,7 +875,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     }
 
     const msg = anyStep.message || anyStep.msg || anyStep.log || '';
-    if (this.liveTextEl && msg) {
+    if (this.liveTextEl && this.liveTextEl.style.display !== 'none' && msg) {
       this.liveTextEl.textContent = `💡 ${msg}`;
     }
 

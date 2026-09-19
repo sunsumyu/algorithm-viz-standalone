@@ -4,29 +4,32 @@ import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine
 import { cloneTree } from './strategy-helpers';
 
 /**
- * 组合总和 Ⅳ (Combination Sum IV, LeetCode 377) 独立算法策略模块
- * 题型本质：完全背包求排列数（不同顺序视为不同方案）
- * 4 阶段演进推导：
- * - 阶段 1: 纯递归决策树 dfs(remain)
- * - 阶段 2: 记忆化搜索与 memo[remain] 剪枝
- * - 阶段 3: 递推填表（先遍历容量 i 从 1 到 target，后遍历物品 nums[j]）
- * - 阶段 4: 一维状态空间压缩与滚动转移
+ * 组合总和 Ⅳ 专属推演策略 (KnapsackCombinationSum4Strategy)
+ * 对应 LeetCode 377，属于完全背包的「排列」变体：
+ *   - 递归展开时，每一层循环遍历所有的可选数字 nums；
+ *   - 动态规划递推填表时，外层遍历目标和容量 target (1..target)，内层遍历数字数组 nums；
+ *   - 阶段 1：暴力多路决策树展开（树深即排列长度）；
+ *   - 阶段 2：基于剩余目标和 remain 的记忆化搜索剪枝；
+ *   - 阶段 3：自底向上递推填表；
+ *   - 阶段 4：一维滚动数组空间压缩。
  */
 export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
   public readonly modelId = 'combination-sum-iv';
 
   public canHandle(modelId: string): boolean {
-    return modelId === 'combination-sum-iv' || modelId === 'combination4';
+    return (
+      modelId === this.modelId ||
+      modelId === 'combination-sum-4' ||
+      modelId === 'combination_sum_iv'
+    );
   }
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
-    const { stage, isMemo, anchorMap } = params;
-
     const rawNums = (model.defaultParams as any)?.nums || [1, 2, 3];
-    const nums: number[] = Array.isArray(rawNums)
-      ? rawNums.map(Number)
-      : String(rawNums).split(',').map((x: string) => Number(x.trim())).filter((x: number) => !isNaN(x));
+    const nums: number[] = Array.isArray(rawNums) ? rawNums.map(Number) : String(rawNums).split(',').map(Number);
     const target = Number((model.defaultParams as any)?.target ?? (model.defaultParams as any)?.n ?? 4);
+
+    const { stage, isMemo, anchorMap } = params;
 
     if (stage === 1 || stage === 2) {
       return this.compileStage1or2(nums, target, Boolean(isMemo), anchorMap);
@@ -35,7 +38,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
   }
 
   /**
-   * 阶段 1 & 2: 递归分支树编译
+   * 阶段 1 & 2: 多路排列树递归与记忆化搜索
    */
   private compileStage1or2(
     nums: number[],
@@ -51,6 +54,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
     const lineCacheHit = anchorMap?.cache_hit || (isMemo ? 10 : 9);
     const lineBranchTake = anchorMap?.branch_take || (isMemo ? 12 : 9);
     const lineCombine = anchorMap?.combine || (isMemo ? 14 : 11);
+    const lineReturn = anchorMap?.return || (isMemo ? 16 : 13);
 
     const memoCache: Record<number, number> = {};
     const dpState: (number | null)[] = new Array(target + 1).fill(null);
@@ -143,9 +147,9 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
             activeStack: [...activeStack],
             visited: [...visitedCells],
             line: lineBaseOverflow,
-            tag: '🚫 超扣越界: 0',
-            log: `| 🚫 边界拦截: remain = ${remain} < 0，当前排列无效，返回 0`,
-            msg: `🚫 边界拦截：剩余目标和超扣为 <code>${remain} < 0</code>，当前路径无效，返回 <strong>0</strong>。`,
+            tag: '🚫 目标超扣: 0 种方案',
+            log: `| 🚫 剪枝越界: remain < 0，无法继续选取，返回 0`,
+            msg: `🚫 边界拦截：剩余目标和已超扣为负数 <code>${remain}</code>，无法构成合法排列，返回 <strong>0</strong>。`,
             gridHighlight: { i: 0, j: 0 },
             highlightSlots: [0],
             activeNodeId: currentTreeNode.id,
@@ -185,15 +189,22 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
       }
 
       let totalWays = 0;
+      let branchIdx = 0;
 
       // 遍历所有可用数字展开分支
       for (const num of nums) {
+        branchIdx++;
         if (remain >= num) {
           if (shouldRecord && currentTreeNode) {
             generated.push({
-              type: 'match-branch',
+              type: 'branch-call',
               i: 0,
               j: remain,
+              targetI: 0,
+              targetJ: remain - num,
+              branchIndex: branchIdx,
+              branchType: 'diag',
+              varName: `+${num}`,
               grid: [dpState.map(v => (v !== null ? v : 0))],
               dp1d: dpState.map(v => (v !== null ? v : 0)),
               activeStack: [...activeStack],
@@ -225,6 +236,32 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
 
           const branchRes = dfs(remain - num, childNode);
           totalWays += branchRes;
+
+          // 🌟【Call-Return Parity 闭环】：子递归返回后发射回溯赋值帧
+          if (shouldRecord && currentTreeNode) {
+            generated.push({
+              type: 'branch-return',
+              i: 0,
+              j: remain,
+              targetI: 0,
+              targetJ: remain - num,
+              branchIndex: branchIdx,
+              varName: `+${num}`,
+              subResult: branchRes,
+              grid: [dpState.map(v => (v !== null ? v : 0))],
+              dp1d: dpState.map(v => (v !== null ? v : 0)),
+              activeStack: [...activeStack],
+              visited: [...visitedCells],
+              line: lineCombine,
+              tag: `+${num} 返回: ${branchRes}`,
+              log: `| ↩️ 分支返回: 选入数字 ${num} 得到 ${branchRes} 种子排列，当前累计 ${totalWays}`,
+              msg: `分支返回：以 <code>+${num}</code> 结尾的排列数为 <code>${branchRes}</code>，当前累计 <code>totalWays = <strong>${totalWays}</strong></code>。`,
+              gridHighlight: { i: 0, j: remain },
+              highlightSlots: [remain],
+              activeNodeId: currentTreeNode.id,
+              treeRoot: cloneTree(rootNode)
+            });
+          }
         }
       }
 
@@ -238,7 +275,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
 
       if (shouldRecord && currentTreeNode) {
         generated.push({
-          type: 'update',
+          type: 'combine',
           i: 0,
           j: remain,
           grid: [dpState.map(v => (v !== null ? v : 0))],
@@ -270,7 +307,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
       dp1d: dpState.map(v => (v !== null ? v : 0)),
       activeStack: [],
       visited: [...visitedCells],
-      line: lineCombine,
+      line: lineReturn,
       tag: `最终排列总数: ${total}`,
       log: `| 🏆 组合总和 Ⅳ 递归推导完成！总排列数 = ${total}`,
       msg: `🏆 演化推导完成！组成目标和 <code>${target}</code> 的全部排列总数为 <strong>${total}</strong> 种。`,
@@ -299,8 +336,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
     const lineTransfer = anchorMap?.transfer || anchorMap?.accumulate || 7;
     const lineReturn = anchorMap?.return || 11;
 
-    const dp = new Array(target + 1).fill(0);
-    dp[0] = 1;
+    const dp: (number | null)[] = new Array(target + 1).fill(null);
 
     steps.push({
       type: 'init',
@@ -309,11 +345,25 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
       j: 0,
       grid: [[...dp]],
       dp1d: [...dp],
+      highlightSlots: [0],
+      tag: '初始化排列 DP 数组',
+      log: `| 📋 初始化长度为 ${target + 1} 的状态数组`,
+      msg: `初始化：分配长度为 <code>${target + 1}</code> 的排列状态表 <code>dp[0..${target}]</code>。`
+    });
+
+    dp[0] = 1;
+    steps.push({
+      type: 'init-val',
+      line: lineInit,
+      i: 0,
+      j: 0,
+      grid: [[...dp]],
+      dp1d: [...dp],
       memoj: 1,
       highlightSlots: [0],
-      tag: '初始化 dp[0] = 1',
-      log: `| 📋 初始化 dp[0..${target}]，dp[0] = 1（空排列方案数为 1）`,
-      msg: `初始化状态数组：<code>dp[0] = 1</code>（凑成容量为 0 的排列数为 1，即空排列）。`
+      tag: '基础条件: dp[0] = 1',
+      log: '| 📋 初始空集方案数：凑齐和为 0 只有 1 种选法（空集）',
+      msg: '空集方案数初始化：<code>dp[0] = 1</code>。'
     });
 
     for (let i = 1; i <= target; i++) {
@@ -324,7 +374,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
         j: i,
         grid: [[...dp]],
         dp1d: [...dp],
-        memoj: dp[i],
+        memoj: dp[i] ?? 0,
         currentI: i,
         highlightSlots: [i],
         tag: `外层遍历容量 i = ${i}`,
@@ -336,8 +386,8 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
         const num = nums[j];
 
         if (i >= num) {
-          const oldVal = dp[i];
-          const prevVal = dp[i - num];
+          const oldVal = dp[i] ?? 0;
+          const prevVal = dp[i - num] ?? 0;
           dp[i] = oldVal + prevVal;
 
           steps.push({
@@ -347,7 +397,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
             j: i,
             grid: [[...dp]],
             dp1d: [...dp],
-            memoj: dp[i],
+            memoj: dp[i] ?? 0,
             currentI: i,
             currentJ: j,
             srcSlots: [i - num],
@@ -362,7 +412,7 @@ export class KnapsackCombinationSum4Strategy implements IAlgorithmStrategy {
       }
     }
 
-    const finalAnswer = dp[target];
+    const finalAnswer = dp[target] ?? 0;
 
     steps.push({
       type: 'return',

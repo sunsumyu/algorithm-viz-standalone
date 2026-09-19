@@ -31,6 +31,12 @@ export class MemoSlotVisualAdapter {
     if (!container || !step) return;
     container.innerHTML = '';
 
+    // 优先：如果步骤包含决策天平比对分支 (Decision Inspector)，直接挂载专属业务决策看板
+    if (Array.isArray(step.decisions) && step.decisions.length > 0) {
+      this.renderDecisionInspector(container, step);
+      return;
+    }
+
     // 如果该步骤携带了多维状态数组监视数据，直接进入高级多维状态面板渲染
     if (Array.isArray(step.stateArrays) && step.stateArrays.length > 0) {
       this.renderStateArrays(container, step.stateArrays, step);
@@ -156,6 +162,10 @@ export class MemoSlotVisualAdapter {
         slotClass += ' bg-blue-100 border-blue-500 text-blue-900 font-extrabold ring-2 ring-blue-400 scale-105 shadow-md';
         iconBadge = '<span class="absolute -top-3.5 -right-1 text-base"><span class="animal-cat">🐱</span></span>';
         bottomTag = '<span class="text-[9px] px-1 rounded bg-blue-600 text-white font-sans font-semibold">当前</span>';
+      } else if (step.refSlot === j) {
+        slotClass += ' bg-amber-50 border-amber-500 text-amber-900 font-extrabold ring-2 ring-amber-300 border-dashed scale-105 shadow-md';
+        iconBadge = '<span class="absolute -top-3.5 -right-1 text-base">🔗</span>';
+        bottomTag = '<span class="text-[9px] px-1 rounded bg-amber-600 text-white font-sans font-semibold">前驱</span>';
       } else if (val !== 0 && val !== null) {
         slotClass += ' bg-slate-50 border-slate-300 text-slate-800 font-bold';
         bottomTag = `<span class="text-[9px] text-slate-400 font-sans">就绪</span>`;
@@ -213,6 +223,12 @@ export class MemoSlotVisualAdapter {
         slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-amber-100 border-amber-500 scale-105 ring-2 ring-amber-400';
         if (badgeEl) {
           badgeEl.textContent = '➡️ 左侧新值';
+          badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-600 text-white font-semibold';
+        }
+      } else if (step.refSlot === j) {
+        slot.className = 'viz-memo-slot w-16 sm:w-20 h-16 rounded-xl border-2 shadow-md flex flex-col items-center justify-between p-1.5 transition-all duration-200 bg-amber-50 border-amber-500 border-dashed scale-105 ring-2 ring-amber-300';
+        if (badgeEl) {
+          badgeEl.textContent = '🔗 前驱槽位';
           badgeEl.className = 'text-[9px] font-sans px-1 rounded bg-amber-600 text-white font-semibold';
         }
       } else if (val > 0) {
@@ -324,5 +340,82 @@ export class MemoSlotVisualAdapter {
       row.appendChild(cellsContainer);
       container.appendChild(row);
     }
+  }
+
+  /**
+   * 渲染转移决策天平与候选分支对比看板 (Decision Balance Inspector)
+   */
+  public static renderDecisionInspector(container: HTMLElement, step: any): void {
+    if (!container || !step || !Array.isArray(step.decisions)) return;
+    container.className = 'w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 gap-3 relative overflow-auto bg-slate-50/50';
+
+    const decisions = step.decisions as Array<{
+      label: string;
+      formula: string;
+      value: number | string;
+      isSelected?: boolean;
+    }>;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'w-full max-w-xl flex flex-col items-center gap-3 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm';
+
+    // 1. 顶部标题栏
+    const header = document.createElement('div');
+    header.className = 'w-full flex items-center justify-between border-b border-slate-100 pb-2.5';
+    const targetLabel = step.tag || (step.activeSlot !== undefined ? `dp[${step.activeSlot}]` : '状态转移决策');
+    header.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-base">⚖️</span>
+        <span class="text-xs sm:text-sm font-bold text-slate-800">状态转移决策对比看板</span>
+        <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">${targetLabel}</span>
+      </div>
+      <div class="text-[11px] text-slate-400 font-mono">
+        ${step.msg ? '' : '比较候选代价择优转移'}
+      </div>
+    `;
+    wrapper.appendChild(header);
+
+    // 2. 候选决策天平分支卡片区
+    const cardsRow = document.createElement('div');
+    cardsRow.className = 'w-full grid grid-cols-1 sm:grid-cols-2 gap-3';
+
+    decisions.forEach((dec) => {
+      const isSelected = dec.isSelected ?? false;
+      const card = document.createElement('div');
+      card.className = `rounded-xl p-3 border transition-all flex flex-col justify-between ${
+        isSelected
+          ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-300/60 shadow-sm'
+          : 'bg-slate-50/70 border-slate-200 opacity-75'
+      }`;
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold ${isSelected ? 'text-emerald-900 font-extrabold' : 'text-slate-600'}">${dec.label}</span>
+          ${isSelected
+            ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">🏆 较优选择</span>'
+            : '<span class="text-[10px] text-slate-400">次选分支</span>'}
+        </div>
+        <div class="text-[11px] font-mono text-slate-500 mb-1 truncate" title="${dec.formula}">${dec.formula}</div>
+        <div class="flex items-baseline justify-between pt-1 border-t ${isSelected ? 'border-emerald-200/80' : 'border-slate-200/50'}">
+          <span class="text-[10px] text-slate-400">代价合计:</span>
+          <span class="text-base sm:text-lg font-mono font-extrabold ${isSelected ? 'text-emerald-700' : 'text-slate-500'}">${dec.value}</span>
+        </div>
+      `;
+      cardsRow.appendChild(card);
+    });
+    wrapper.appendChild(cardsRow);
+
+    // 3. 底部转移结论条
+    if (step.msg || step.log) {
+      const footer = document.createElement('div');
+      footer.className = 'w-full bg-slate-50 rounded-xl px-3 py-2 border border-slate-200/60 text-xs text-slate-600 flex items-center justify-between';
+      footer.innerHTML = `
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-calculator text-blue-500 text-[11px]"></i> <span>决策依据:</span></span>
+        <span class="font-mono font-bold text-slate-800">${step.msg || step.log}</span>
+      `;
+      wrapper.appendChild(footer);
+    }
+
+    container.appendChild(wrapper);
   }
 }

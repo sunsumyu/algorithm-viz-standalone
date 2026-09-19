@@ -1,0 +1,367 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 本规范为「交错字符串 (Interleaving String, LeetCode 97)」四阶段全演化标准实现。
+# 包含：双字符交错决策分支、空串 Base Case 初始化、严格二维 DP 矩阵与一维滚动空间压缩。
+# ==============================================================================
+
+id: interleaving-string
+name: "交错字符串"
+nameEn: "Interleaving String"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "🔀"
+difficulty: 2
+levelOrder: 10
+learningGoal: "掌握三字符串双指针交错匹配状态定义、双路径析取状态转移与一维空间滚动压缩"
+description: "给定三个字符串 s1、s2、s3，验证 s3 是否由 s1 和 s2 交错组成。动态规划状态定义 dp[i][j] 表示 s1 的前 i 个字符和 s2 的前 j 个字符能否交错组成 s3 的前 i+j 个字符。"
+defaultParams:
+  s1: "aabcc"
+  s2: "dbbca"
+  s3: "aadbbcbcac"
+  word1: "aabcc"
+  word2: "dbbca"
+
+problem:
+  leetcodeId: 97
+  title: "交错字符串"
+  difficulty: "中等"
+  tags: ["字符串", "动态规划", "双串DP"]
+  description: "给定三个字符串 <code>s1</code>、<code>s2</code>、<code>s3</code>，请你帮忙验证 <code>s3</code> 是否是由 <code>s1</code> 和 <code>s2</code> <strong>交错</strong> 组成的。<br/><br/>两个字符串 <code>s</code> 和 <code>t</code> <strong>交错</strong> 的定义与过程如下，其中每个字符串都会被分割成若干 <strong>非空</strong> 子字符串：<br/>• <code>s = s1 + s2 + ... + sn</code><br/>• <code>t = t1 + t2 + ... + tm</code><br/>• <code>|n - m| <= 1</code><br/>• 交错是 <code>s1 + t1 + s2 + t2 + ...</code> 或 <code>t1 + s1 + t2 + s2 + ...</code><br/><br/><strong>注意</strong>：<code>a + b</code> 意味着字符串 <code>a</code> 和 <code>b</code> 连接。"
+  examples:
+    - input: 's1 = "aabcc", s2 = "dbbca", s3 = "aadbbcbcac"'
+      output: "true"
+      explanation: "可以通过将 s1 分割为 \"aa\" + \"bc\" + \"c\"，s2 分割为 \"dbbc\" + \"a\"，交错得到 \"aadbbcbcac\"。"
+    - input: 's1 = "aabcc", s2 = "dbbca", s3 = "aadbbbaccc"'
+      output: "false"
+      explanation: "无法通过交错组合 s1 和 s2 得到 s3。"
+  constraints:
+    - "0 <= s1.length, s2.length <= 100"
+    - "0 <= s3.length <= 200"
+    - "s1, s2, 和 s3 都由小写英文字母组成"
+  leetcodeUrl: "https://leetcode.cn/problems/interleaving-string/"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: "前缀递推视角 (正向构造)"
+    description: "从空串 (0, 0) 出发，逐步从 s1[i] 或 s2[j] 选取字符与 s3[i+j] 比对，顺推至 dp[m][n]"
+    start: [0, 0]
+    targetFormula: "[m, n]"
+    branches:
+      - name: "pick_s1"
+        delta: [1, 0]
+        label: "取s1字符"
+        codeVar: "pickS1"
+        arrow: "⬇️"
+        description: "s1[i] == s3[i+j]，匹配 s1 当前字符，向下推进 i+1"
+      - name: "pick_s2"
+        delta: [0, 1]
+        label: "取s2字符"
+        codeVar: "pickS2"
+        arrow: "➡️"
+        description: "s2[j] == s3[i+j]，匹配 s2 当前字符，向右推进 j+1"
+    combineFormula: "pickS1 || pickS2"
+  reverse:
+    label: "逆推 (倒序)"
+    name: "后缀递推视角 (倒序寻源)"
+    description: "从终点 (m, n) 倒序逆推至空串基底 (0, 0)，最终返回起点解 dp[0][0]"
+    startFormula: "[m, n]"
+    target: [0, 0]
+    branches:
+      - name: "pick_s1"
+        delta: [-1, 0]
+        label: "逆向取s1"
+        codeVar: "pickS1"
+        arrow: "⬆️"
+        description: "s1[i-1] == s3[i+j-1]，逆向匹配 s1 前驱字符"
+      - name: "pick_s2"
+        delta: [0, -1]
+        label: "逆向取s2"
+        codeVar: "pickS2"
+        arrow: "⬅️"
+        description: "s2[j-1] == s3[i+j-1]，逆向匹配 s2 前驱字符"
+    combineFormula: "pickS1 || pickS2"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ᵐ⁺ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素递归 (正序前缀探索)"
+      reverse: "阶段 1: 朴素递归 (倒序后缀寻源)"
+    desc:
+      forward: "从 dfs(0, 0) 开始向下探索。当前字符 s1[i] 与 s3[i+j] 相同则尝试递归 dfs(i+1, j)；若未成功且 s2[j] 与 s3[i+j] 相同则递归 dfs(i, j+1)。"
+      reverse: "从 dfs(m, n) 开始向前寻源。前驱字符 s1[i-1] 与 s3[i+j-1] 相同则递归 dfs(i-1, j)；若未成功且 s2[j-1] 与 s3[i+j-1] 相同则递归 dfs(i, j-1)。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "InterleavingString_Recursive_Forward.java"
+          reverse: "InterleavingString_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "InterleavingString_Recursive_Forward.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      if (s1.length() + s2.length() != s3.length()) return false; // @step:guard
+                      return dfs(s1, s2, s3, 0, 0); // @step:return
+                  }
+                  private boolean dfs(String s1, String s2, String s3, int i, int j) { // @step:entry
+                      if (i == s1.length() && j == s2.length()) return true; // @step:boundary
+                      boolean ans = false;
+                      if (i < s1.length() && s1.charAt(i) == s3.charAt(i + j)) { // @step:cond_s1
+                          ans = dfs(s1, s2, s3, i + 1, j); // @step:branch_s1
+                      }
+                      if (!ans && j < s2.length() && s2.charAt(j) == s3.charAt(i + j)) { // @step:cond_s2
+                          ans = dfs(s1, s2, s3, i, j + 1); // @step:branch_s2
+                      }
+                      return ans; // @step:combine
+                  }
+              }
+          reverse:
+            title: "InterleavingString_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      if (s1.length() + s2.length() != s3.length()) return false; // @step:guard
+                      return dfs(s1, s2, s3, s1.length(), s2.length()); // @step:return
+                  }
+                  private boolean dfs(String s1, String s2, String s3, int i, int j) { // @step:entry
+                      if (i == 0 && j == 0) return true; // @step:boundary
+                      boolean ans = false;
+                      if (i > 0 && s1.charAt(i - 1) == s3.charAt(i + j - 1)) { // @step:cond_s1
+                          ans = dfs(s1, s2, s3, i - 1, j); // @step:branch_s1
+                      }
+                      if (!ans && j > 0 && s2.charAt(j - 1) == s3.charAt(i + j - 1)) { // @step:cond_s2
+                          ans = dfs(s1, s2, s3, i, j - 1); // @step:branch_s2
+                      }
+                      return ans; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (正序前缀缓存)"
+      reverse: "阶段 2: 记忆化搜索 (倒序后缀缓存)"
+    desc:
+      forward: "引入二维布尔备忘录 memo[i][j]，缓存 dfs(i, j) 的求解结果。避免重复探索不可行或已行通的分支。"
+      reverse: "引入二维布尔备忘录 memo[i][j]，倒序缓存 dfs(i, j) 结果，将指数级回溯剪枝至 O(m×n) 多项式级复杂度。"
+    variants:
+      standard:
+        variantLabel: "备忘录搜索"
+        title:
+          forward: "InterleavingString_Memo_Forward.java"
+          reverse: "InterleavingString_Memo_Reverse.java"
+        code:
+          forward:
+            title: "InterleavingString_Memo_Forward.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      Boolean[][] memo = new Boolean[m + 1][n + 1];
+                      return dfs(s1, s2, s3, 0, 0, memo); // @step:return
+                  }
+                  private boolean dfs(String s1, String s2, String s3, int i, int j, Boolean[][] memo) { // @step:entry
+                      if (i == s1.length() && j == s2.length()) return true; // @step:boundary
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                      boolean ans = false;
+                      if (i < s1.length() && s1.charAt(i) == s3.charAt(i + j)) { // @step:cond_s1
+                          ans = dfs(s1, s2, s3, i + 1, j, memo); // @step:branch_s1
+                      }
+                      if (!ans && j < s2.length() && s2.charAt(j) == s3.charAt(i + j)) { // @step:cond_s2
+                          ans = dfs(s1, s2, s3, i, j + 1, memo); // @step:branch_s2
+                      }
+                      return memo[i][j] = ans; // @step:cache_write
+                  }
+              }
+          reverse:
+            title: "InterleavingString_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      Boolean[][] memo = new Boolean[m + 1][n + 1];
+                      return dfs(s1, s2, s3, m, n, memo); // @step:return
+                  }
+                  private boolean dfs(String s1, String s2, String s3, int i, int j, Boolean[][] memo) { // @step:entry
+                      if (i == 0 && j == 0) return true; // @step:boundary
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                      boolean ans = false;
+                      if (i > 0 && s1.charAt(i - 1) == s3.charAt(i + j - 1)) { // @step:cond_s1
+                          ans = dfs(s1, s2, s3, i - 1, j, memo); // @step:branch_s1
+                      }
+                      if (!ans && j > 0 && s2.charAt(j - 1) == s3.charAt(i + j - 1)) { // @step:cond_s2
+                          ans = dfs(s1, s2, s3, i, j - 1, memo); // @step:branch_s2
+                      }
+                      return memo[i][j] = ans; // @step:cache_write
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 递推填表 (正向二维矩阵)"
+      reverse: "阶段 3: 递推填表 (倒序二维矩阵)"
+    desc:
+      forward: "自底向上构建 (m+1) × (n+1) 的二维布尔矩阵。初始化 dp[0][0] = true，首行与首列根据前缀连续匹配初始化，状态转移 dp[i][j] = (s1匹配 && 上方可达) || (s2匹配 && 左侧可达)。"
+      reverse: "构建 (m+1) × (n+1) 的二维布尔矩阵。初始化 dp[m][n] = true，末行与末列根据后缀匹配初始化，自右下至左上倒序填表，最终返回起点解 dp[0][0]。"
+    variants:
+      standard:
+        variantLabel: "标准矩阵填表"
+        title:
+          forward: "InterleavingString_2D_Forward.java"
+          reverse: "InterleavingString_2D_Reverse.java"
+        code:
+          forward:
+            title: "InterleavingString_2D_Forward.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      boolean[][] dp = new boolean[m + 1][n + 1]; // @step:init
+                      dp[0][0] = true; // @step:init_base
+                      for (int i = 1; i <= m; i++) { // @step:init_col
+                          dp[i][0] = dp[i - 1][0] && s1.charAt(i - 1) == s3.charAt(i - 1);
+                      }
+                      for (int j = 1; j <= n; j++) { // @step:init_row
+                          dp[0][j] = dp[0][j - 1] && s2.charAt(j - 1) == s3.charAt(j - 1);
+                      }
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          for (int j = 1; j <= n; j++) { // @step:loop_j
+                              boolean pickS1 = dp[i - 1][j] && s1.charAt(i - 1) == s3.charAt(i + j - 1); // @step:check_s1
+                              boolean pickS2 = dp[i][j - 1] && s2.charAt(j - 1) == s3.charAt(i + j - 1); // @step:check_s2
+                              dp[i][j] = pickS1 || pickS2; // @step:transfer
+                          }
+                      }
+                      return dp[m][n]; // @step:return
+                  }
+              }
+          reverse:
+            title: "InterleavingString_2D_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      boolean[][] dp = new boolean[m + 1][n + 1]; // @step:init
+                      dp[m][n] = true; // @step:init_base
+                      for (int i = m - 1; i >= 0; i--) { // @step:init_col
+                          dp[i][n] = dp[i + 1][n] && s1.charAt(i) == s3.charAt(i + n);
+                      }
+                      for (int j = n - 1; j >= 0; j--) { // @step:init_row
+                          dp[m][j] = dp[m][j + 1] && s2.charAt(j) == s3.charAt(m + j);
+                      }
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              boolean pickS1 = dp[i + 1][j] && s1.charAt(i) == s3.charAt(i + j); // @step:check_s1
+                              boolean pickS2 = dp[i][j + 1] && s2.charAt(j) == s3.charAt(i + j); // @step:check_s2
+                              dp[i][j] = pickS1 || pickS2; // @step:transfer
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(n) 空间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 空间压缩 (一维滚动正向递推)"
+      reverse: "阶段 4: 空间压缩 (一维滚动倒序递推)"
+    desc:
+      forward: "将状态矩阵压缩至一维布尔数组 dp[0..n]。逐行正向递推：当前位置 dp[j] 仅依赖上方旧值 dp[j] 与左侧新值 dp[j-1]，实现严格 O(n) 空间压缩。"
+      reverse: "将状态矩阵压缩至一维布尔数组 dp[0..n]。逐行倒序递推：当前位置 dp[j] 依赖下方旧值 dp[j] 与右侧新值 dp[j+1]，实现 O(n) 优化。"
+    variants:
+      rolling_1d:
+        variantLabel: "一维滚动数组"
+        title:
+          forward: "InterleavingString_1D_Forward.java"
+          reverse: "InterleavingString_1D_Reverse.java"
+        code:
+          forward:
+            title: "InterleavingString_1D_Forward.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      boolean[] dp = new boolean[n + 1]; // @step:init
+                      dp[0] = true; // @step:init_val
+                      for (int j = 1; j <= n; j++) { // @step:init_row
+                          dp[j] = dp[j - 1] && s2.charAt(j - 1) == s3.charAt(j - 1);
+                      }
+                      for (int i = 1; i <= m; i++) { // @step:loop_i
+                          dp[0] = dp[0] && s1.charAt(i - 1) == s3.charAt(i - 1);
+                          for (int j = 1; j <= n; j++) { // @step:loop_j
+                              boolean pickS1 = dp[j] && s1.charAt(i - 1) == s3.charAt(i + j - 1);
+                              boolean pickS2 = dp[j - 1] && s2.charAt(j - 1) == s3.charAt(i + j - 1);
+                              dp[j] = pickS1 || pickS2; // @step:transfer
+                          }
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+          reverse:
+            title: "InterleavingString_1D_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isInterleave(String s1, String s2, String s3) {
+                      int m = s1.length(), n = s2.length();
+                      if (m + n != s3.length()) return false; // @step:guard
+                      boolean[] dp = new boolean[n + 1]; // @step:init
+                      dp[n] = true; // @step:init_val
+                      for (int j = n - 1; j >= 0; j--) { // @step:init_row
+                          dp[j] = dp[j + 1] && s2.charAt(j) == s3.charAt(m + j);
+                      }
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                          dp[n] = dp[n] && s1.charAt(i) == s3.charAt(i + n);
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              boolean pickS1 = dp[j] && s1.charAt(i) == s3.charAt(i + j);
+                              boolean pickS2 = dp[j + 1] && s2.charAt(j) == s3.charAt(i + j);
+                              dp[j] = pickS1 || pickS2; // @step:transfer
+                          }
+                      }
+                      return dp[0]; // @step:return
+                  }
+              }
+
+analysis:
+  step1_definition:
+    title: 1. 确定 dp 数组及其下标含义
+    content: "dp[i][j] 表示 s1 的前 i 个字符 s1[0..i-1] 和 s2 的前 j 个字符 s2[0..j-1] 能否交错组成 s3 的前 i+j 个字符 s3[0..i+j-1]。"
+  step2_formula:
+    title: 2. 确定递推公式
+    content: "s3[i+j-1] 只能来自 s1 的末尾字符 s1[i-1] 或 s2 的末尾字符 s2[j-1]。因此：dp[i][j] = (s1[i-1] == s3[i+j-1] && dp[i-1][j]) || (s2[j-1] == s3[i+j-1] && dp[i][j-1])。只要其中任一种选择可行，当前状态即为 true。"
+  step3_init:
+    title: 3. dp 数组初始化
+    content: "dp[0][0] = true（两个空串交错必为空串）。首行 dp[0][j]：仅由 s2 构成 s3 前缀，要求 dp[0][j-1] && s2[j-1] == s3[j-1]；首列 dp[i][0]：仅由 s1 构成 s3 前缀，要求 dp[i-1][0] && s1[i-1] == s3[i-1]。"
+  step4_order:
+    title: 4. 确定遍历顺序
+    content: "外层循环递增遍历 s1 的长度 i (1..m)，内层循环递增遍历 s2 的长度 j (1..n)。一维空间压缩下，dp[j] 依赖本行左侧新值 dp[j-1] 与上一行同列旧值 dp[j]，直接正序滚动即可。"
+  step5_derivation:
+    title: 5. 举例推导状态矩阵
+    content: "以 s1=\"aabcc\", s2=\"dbbca\", s3=\"aadbbcbcac\" 为例，dp[0][0]=true，顺推填表最终到达 dp[5][5]=true，说明可以成功交错组成。"
+
+faqs:
+  - q: 长度不匹配时需要进行动态规划计算吗？
+    a: 不需要。如果 s1.length() + s2.length() != s3.length()，字符总数天然不守恒，在入口处直接 return false，避免无意义计算。
+  - q: 为什么一维空间压缩可以正序遍历，不需要像 01 背包那样倒序？
+    a: 因为 dp[i][j] 依赖的是同一行左侧的 dp[i][j-1]（最新写入的值）和上一行的 dp[i-1][j]（尚未被覆盖的旧值），正序遍历时 dp[j-1] 恰好是本轮新值，dp[j] 恰好是上一轮旧值，天然满足无冲突滚动。
+  - q: 如何在界面中清晰区分来自 s1 和 s2 的匹配来源？
+    a: 视觉适配器会在网格单元格中通过顶部向下箭头 ⬇️ 标识来自 s1 的匹配，左侧向右箭头 ➡️ 标识来自 s2 的匹配。

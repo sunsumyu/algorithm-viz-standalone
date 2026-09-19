@@ -22,7 +22,7 @@ export function renderTreeSVG(
   secondaryColor?: string,
   labels?: Map<number, string>,
 ): void {
-  if (!root) { container.innerHTML = '<span style="color:#6c7086">空树</span>'; return; }
+  if (!root) { container.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-weight: 500;">（空树）</span>'; return; }
   container.innerHTML = '';
   const lh = 44;
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -37,7 +37,7 @@ export function renderTreeSVG(
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
       line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + lh));
-      line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke', '#cbd5e1'); line.setAttribute('stroke-width', '2.5');
       svg.appendChild(line);
       draw(node.left, x - spread, y + lh, spread / 2);
     }
@@ -45,29 +45,36 @@ export function renderTreeSVG(
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
       line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + lh));
-      line.setAttribute('stroke', '#45475a'); line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke', '#cbd5e1'); line.setAttribute('stroke-width', '2.5');
       svg.appendChild(line);
       draw(node.right, x + spread, y + lh, spread / 2);
     }
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '18');
-    let fill = '#45475a', stroke = '#6c7086';
-    if (isH) { fill = highlightColor; stroke = highlightColor; }
+    c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '19');
+    let fill = '#ffffff', stroke = '#64748b';
+    if (isH) { fill = highlightColor || '#0284c7'; stroke = highlightColor || '#0284c7'; }
     else if (isS && secondaryColor) { fill = secondaryColor; stroke = secondaryColor; }
-    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '2');
+    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '2.5');
     svg.appendChild(c);
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', String(x)); t.setAttribute('y', String(y + 5));
-    t.setAttribute('text-anchor', 'middle'); t.setAttribute('fill', isH || isS ? '#1e1e2e' : '#cdd6f4');
-    t.setAttribute('font-size', '12'); t.setAttribute('font-weight', 'bold');
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', isH || isS ? '#ffffff' : '#0f172a');
+    t.setAttribute('font-family', "'JetBrains Mono', monospace");
+    t.setAttribute('font-size', '13');
+    t.setAttribute('font-weight', '700');
     t.textContent = String(node.val);
     svg.appendChild(t);
     const label = labels?.get(node.val);
     if (label) {
       const lb = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      lb.setAttribute('x', String(x)); lb.setAttribute('y', String(y - 22));
-      lb.setAttribute('text-anchor', 'middle'); lb.setAttribute('fill', highlightColor);
-      lb.setAttribute('font-size', '10'); lb.textContent = label;
+      lb.setAttribute('x', String(x)); lb.setAttribute('y', String(y - 23));
+      lb.setAttribute('text-anchor', 'middle');
+      lb.setAttribute('fill', isH ? (highlightColor || '#0284c7') : '#059669');
+      lb.setAttribute('font-family', "'JetBrains Mono', monospace");
+      lb.setAttribute('font-size', '11');
+      lb.setAttribute('font-weight', '700');
+      lb.textContent = label;
       svg.appendChild(lb);
     }
   };

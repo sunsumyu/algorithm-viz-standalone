@@ -144,14 +144,18 @@
       flex: 1;
       min-width: 0;
       min-height: 0;
-      display: none;
+      display: none !important;
       overflow: hidden;
       position: relative;
     }
 
     .view-container.active {
-      display: flex;
-      flex-direction: column;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    .view-container:not(.active) {
+      display: none !important;
     }
 
     /* ========== Sidebar ========== */

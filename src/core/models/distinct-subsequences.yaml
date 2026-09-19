@@ -215,8 +215,60 @@ stages:
       forward: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。首列初始化为 1，逐行按字符匹配情况由左上顺推至右下。"
       reverse: "自底向上构建 (m+1) × (n+1) 的二维 DP 矩阵。尾列初始化为 1，按字符匹配情况由右下逆推至左上。"
     variants:
-      standard:
-        variantLabel: "标准矩阵填表"
+      if:
+        variantLabel: "内嵌 if 分支"
+        title:
+          forward: "DistinctSubsequences_2D_If.java"
+          reverse: "DistinctSubsequences_2D_Suffix_If.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_2D_If.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 创建 (m+1)×(n+1) 矩阵
+                      for (int i = 0; i <= m; i++) {       // @step:loop_i // 双重循环遍历全矩阵
+                          for (int j = 0; j <= n; j++) {   // @step:loop_j
+                              if (j == 0) {                // @step:cond_base // 空目标串 Base Case
+                                  dp[i][j] = 1;            // @step:init_val // 任意母串前缀可匹配空目标串1次
+                              } else if (i == 0) {         // @step:cond_empty // 空母串 Base Case
+                                  dp[i][j] = 0;            // @step:init_zero // 空母串无法匹配非空目标串
+                              } else if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond // 字符匹配成功
+                                  dp[i][j] = dp[i - 1][j - 1] + dp[i - 1][j]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip // 字符不匹配跳过
+                              }
+                          }
+                      }
+                      return dp[m][n]; // @step:return // 最终方案数在右下角
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_2D_Suffix_If.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[][] dp = new int[m + 1][n + 1]; // @step:init // 创建 (m+1)×(n+1) 矩阵
+                      for (int i = m; i >= 0; i--) {       // @step:loop_i // 倒序双重循环
+                          for (int j = n; j >= 0; j--) {   // @step:loop_j
+                              if (j == n) {                // @step:cond_base // 空后缀 Base Case
+                                  dp[i][j] = 1;            // @step:init_val // 空后缀匹配方案数为1
+                              } else if (i == m) {         // @step:cond_empty // 空母串后缀 Base Case
+                                  dp[i][j] = 0;            // @step:init_zero // 方案数为0
+                              } else if (s.charAt(i) == t.charAt(j)) { // @step:cond // 字符匹配成功
+                                  dp[i][j] = dp[i + 1][j + 1] + dp[i + 1][j]; // @step:transfer_match
+                              } else {
+                                  dp[i][j] = dp[i + 1][j]; // @step:transfer_skip // 字符不匹配跳过
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return // 最终方案数在左上角
+                  }
+              }
+      for:
+        variantLabel: "外层 for 循环"
         title:
           forward: "DistinctSubsequences_2D.java"
           reverse: "DistinctSubsequences_2D_Suffix.java"
@@ -279,7 +331,7 @@ stages:
       reverse: "压缩至一维数组 dp[0..n]，内层循环使用变量 pre 暂存右下角旧值，从右向左原地滚动更新。"
     variants:
       reverse_1d:
-        variantLabel: "一维空间压缩"
+        variantLabel: "标准全量倒序"
         title:
           forward: "DistinctSubsequences_1D.java"
           reverse: "DistinctSubsequences_1D_Suffix.java"
@@ -313,6 +365,101 @@ stages:
                       for (int i = m - 1; i >= 0; i--) { // @step:loop_i // 倒序遍历源串
                           int pre = dp[n];       // @step:cache_pre // 暂存右下角旧值
                           for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              int temp = dp[j];
+                              if (s.charAt(i) == t.charAt(j)) { // @step:cond
+                                  dp[j] += pre;  // @step:accumulate_forward // 原地累加右下角旧值
+                              }
+                              pre = temp;
+                          }
+                      }
+                      return dp[0]; // @step:return // 最终答案在 dp[0]
+                  }
+              }
+      leftup_1d:
+        variantLabel: "leftUp暂存版 (左→右)"
+        title:
+          forward: "DistinctSubsequences_1D_LeftUp.java"
+          reverse: "DistinctSubsequences_1D_Suffix_LeftUp.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_1D_LeftUp.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      dp[0] = 1;                 // @step:init_val // 空串 Base Case
+                      for (int i = 1; i <= m; i++) { // @step:loop_i // 遍历源串
+                          int leftUp = dp[0];        // @step:cache_leftup // 暂存左上角旧值
+                          for (int j = 1; j <= n; j++) { // @step:loop_j // 🚀 从左向右正序遍历
+                              int temp = dp[j];      // @step:cache_temp // 记录当前列旧值
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[j] += leftUp;   // @step:accumulate_leftup // 累加暂存的左上角
+                              }
+                              leftUp = temp;         // @step:update_leftup // 滚动更新 leftUp
+                          }
+                      }
+                      return dp[n]; // @step:return // 最终答案在 dp[n]
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_1D_Suffix_LeftUp.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      dp[n] = 1;                 // @step:init_val // 空后缀 Base Case
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i // 倒序遍历源串
+                          int pre = dp[n];       // @step:cache_pre // 暂存右下角旧值
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j // 倒序遍历目标串
+                              int temp = dp[j];
+                              if (s.charAt(i) == t.charAt(j)) { // @step:cond
+                                  dp[j] += pre;  // @step:accumulate_forward // 累加右下角
+                              }
+                              pre = temp;
+                          }
+                      }
+                      return dp[0]; // @step:return // 最终答案在 dp[0]
+                  }
+              }
+      pruned_1d:
+        variantLabel: "对角线剪枝版"
+        title:
+          forward: "DistinctSubsequences_1D_Pruned.java"
+          reverse: "DistinctSubsequences_1D_Suffix_Pruned.java"
+        code:
+          forward:
+            title: "DistinctSubsequences_1D_Pruned.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      dp[0] = 1;                 // @step:init_val // 空串 Base Case
+                      for (int i = 1; i <= m; i++) { // @step:loop_i // 遍历源串
+                          int maxJ = Math.min(i, n); // @step:calc_bounds // 剪枝：源串长i最多匹配目标串前i个字符
+                          for (int j = maxJ; j >= 1; j--) { // @step:loop_j_reverse // 倒序遍历（剪去右上角无效全0）
+                              if (s.charAt(i - 1) == t.charAt(j - 1)) { // @step:cond
+                                  dp[j] += dp[j - 1]; // @step:accumulate_reverse // 原地倒序累加
+                              }
+                          }
+                      }
+                      return dp[n]; // @step:return // 最终答案在 dp[n]
+                  }
+              }
+          reverse:
+            title: "DistinctSubsequences_1D_Suffix_Pruned.java"
+            source: |
+              class Solution {
+                  public int numDistinct(String s, String t) {
+                      int m = s.length(), n = t.length();
+                      int[] dp = new int[n + 1]; // @step:init // 创建长度为 n+1 的滚动数组
+                      dp[n] = 1;                 // @step:init_val // 空后缀 Base Case
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i // 倒序遍历源串
+                          int pre = dp[n];       // @step:cache_pre // 暂存右下角旧值
+                          int minJ = Math.max(0, n - m + i); // @step:calc_bounds // 剪枝：剩余源串长度必须 >= 目标串后缀长度
+                          for (int j = n - 1; j >= minJ; j--) { // @step:loop_j // 倒序遍历（剪去左侧无效循环）
                               int temp = dp[j];
                               if (s.charAt(i) == t.charAt(j)) { // @step:cond
                                   dp[j] += pre;  // @step:accumulate_forward // 原地累加右下角旧值

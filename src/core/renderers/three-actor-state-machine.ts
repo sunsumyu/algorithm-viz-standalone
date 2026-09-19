@@ -37,8 +37,10 @@ export class ThreeActorStateMachine {
     const isStairs = (modelId === 'climb-stairs' || modelId === 'min-cost' || modelId === 'min-cost-climbing-stairs');
     const stepRise = isStairs ? 0.32 : 0;
 
-    const curI = step.i !== undefined ? step.i : 0;
-    const curJ = step.j !== undefined ? step.j : 0;
+    const curI = m === 1 ? 0 : (step.i !== undefined ? step.i : 0);
+    const curJ = m === 1
+      ? ((step as any).activeSlot !== undefined ? (step as any).activeSlot : (step.j !== undefined ? step.j : ((step as any).currentJ ?? (step as any).highlightSlots?.[0] ?? (step as any).currentI ?? step.i ?? 0)))
+      : (step.j !== undefined ? step.j : 0);
     const fromI = step.fromI !== undefined ? Math.max(0, Math.min(step.fromI, m - 1)) : Math.max(0, Math.min(curI, m - 1));
     const fromJ = step.fromJ !== undefined ? Math.max(0, Math.min(step.fromJ, n - 1)) : Math.max(0, Math.min(curJ, n - 1));
     const isCoordOutOfBounds = curI >= m || curJ >= n || curI < 0 || curJ < 0;

@@ -20,6 +20,7 @@ import { VisualizerParamSynchronizer } from './controllers/visualizer-param-sync
 import { StageNavigationCoordinator } from './controllers/stage-navigation-coordinator';
 import { RightPanelTabCoordinator } from './controllers/right-panel-tab-coordinator';
 import { VisualizerInteractionBinder } from './controllers/visualizer-interaction-binder';
+import { PhysicsDebugHUD } from './controllers/physics-debug-hud';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -46,9 +47,11 @@ export class VisualizerAppController {
   private steps: UniversalStep[] = [];
   private timeline: PlaybackTimelineController | null = null;
   private splitterEngine: SplitterEngine | null = null;
+  private leftVerticalSplitter: SplitterEngine | null = null;
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
-  public stage3SubView: 'matrix' | 'tree' = 'matrix';
+  public stage3SubView: 'matrix' | 'tree' | 'alignment' = 'matrix';
+  public stage4SubView: 'memo' | 'alignment' = 'memo';
   public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
   public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
   public is3DMode: boolean = false;
@@ -56,7 +59,10 @@ export class VisualizerAppController {
   constructor(options: VisualizerAppControllerOptions = {}) {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
-    this.stage3SubView = (typeof localStorage !== 'undefined' && localStorage.getItem('algo-stage3-subview') === 'tree') ? 'tree' : 'matrix';
+    const savedStage3 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage3-subview') as any) : null;
+    this.stage3SubView = (savedStage3 === 'tree' || savedStage3 === 'alignment') ? savedStage3 : 'matrix';
+    const savedStage4 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage4-subview') as any) : null;
+    this.stage4SubView = (savedStage4 === 'alignment') ? 'alignment' : 'memo';
     const savedCard2 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-card2-subview') as any) : null;
     if (savedCard2 === 'tree' || savedCard2 === 'alignment' || savedCard2 === 'stack') {
       this.card2SubView = savedCard2;
@@ -111,6 +117,21 @@ export class VisualizerAppController {
     // 若为树型算法，默认阶段 3 子视图切换为 'tree'
     if (resolved.category === 'tree') {
       this.stage3SubView = 'tree';
+    } else if (resolved.category === '2d-sequence' || ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string', 'min-delete-to-be-substring'].includes(this.modelId)) {
+      const globalSubView = typeof localStorage !== 'undefined' ? localStorage.getItem('algo-global-subview') : null;
+      if (globalSubView === 'alignment') {
+        this.card2SubView = 'alignment';
+        this.stage3SubView = 'alignment';
+        this.stage4SubView = 'alignment';
+      }
+    }
+
+    // 维度防呆：非字符串比对问题强行防御，绝不允许 Card 2 出现空态字符串对齐看板
+    const isStringProblem = this.checkIsStringProblem();
+    if (!isStringProblem) {
+      if (this.card2SubView === 'alignment') this.card2SubView = 'tree';
+      if (this.stage3SubView === 'alignment') this.stage3SubView = (resolved.category === 'tree' ? 'tree' : 'matrix');
+      if (this.stage4SubView === 'alignment') this.stage4SubView = 'memo';
     }
 
     // 智能恢复阶段与方向记忆 (URL Hash > LocalStorage 本题记忆 > LocalStorage 全局偏好 > 模型默认)
@@ -218,14 +239,12 @@ export class VisualizerAppController {
   public loadAndReset(): void {
     if (this.isDestroyed || typeof document === 'undefined') return;
 
-    const dims = VisualizerParamSynchronizer.readInputDimensions(this.m, this.n);
-    this.m = dims.m;
+    const resolved = ProblemDimensionResolver.resolve(this.modelId, this.model?.defaultParams, this.currentStage);
+    const dims = VisualizerParamSynchronizer.readInputDimensions(resolved.m, resolved.n);
+    this.m = resolved.is1D ? 1 : dims.m;
     this.n = dims.n;
 
-    const inputM = document.getElementById('input-m') as HTMLInputElement | null;
-    const inputN = document.getElementById('input-n') as HTMLInputElement | null;
-    if (inputM) inputM.value = String(this.m);
-    if (inputN) inputN.value = String(this.n);
+    VisualizerParamSynchronizer.syncControlsToDom({ m: this.m, n: this.n }, resolved.is1D);
 
     const stageConfig = AlgorithmModelRepository.getCompiledStage(this.model.id, this.currentStage, this.currentDirection);
     if (!stageConfig) return;
@@ -262,6 +281,18 @@ export class VisualizerAppController {
     } else {
       this.renderStep(0);
     }
+
+    // 绑定 HUD 快捷调试跳帧能力 (Dev Only)
+    PhysicsDebugHUD.getInstance().setOnNextTransfer(() => {
+      if (!this.timeline || !this.steps.length) return;
+      const cur = this.timeline.getCurrentStep();
+      for (let idx = cur + 1; idx < this.steps.length; idx++) {
+        if (this.steps[idx].type === 'transfer') {
+          this.timeline.seek(idx);
+          return;
+        }
+      }
+    });
   }
 
   /**
@@ -282,12 +313,15 @@ export class VisualizerAppController {
       this.renderFullVisuals(step, index);
     }
 
-    // 3. 代码逐行高亮与行内局部表达式聚焦
-    const isReturn = step.type === 'branch-return';
+    // 3. 代码逐行高亮与行内局部表达式聚焦（统一依据 flowPhase 或回溯语义判定）
+    const isReturn = step.flowPhase === 'backtrack' || step.type === 'branch-return' || step.type === 'combine';
     this.updateCodeHighlight(step.line, step.highlightText, isReturn, step);
 
     // 4. URL Hash 状态持久化
     this.syncStateToHash(index);
+
+    // 🌟 5. 开发者物理调试 HUD 实时同步 (Dev Only)
+    PhysicsDebugHUD.getInstance().updateStep(step, index, this.steps.length);
   }
 
 
@@ -304,34 +338,58 @@ export class VisualizerAppController {
       this.splitterEngine.destroy();
       this.splitterEngine = null;
     }
+    if (this.leftVerticalSplitter) {
+      this.leftVerticalSplitter.destroy();
+      this.leftVerticalSplitter = null;
+    }
   }
 
   /**
-   * 初始化左右拖拽分割条
+   * 初始化拖拽分割条 (左右面板宽度调节与左侧上下面板高度调节)
    */
   private setupSplitter(): void {
     if (typeof document === 'undefined') return;
     const leftPane = document.getElementById('left-visual-section');
     const mainContainer = document.getElementById('main-content-layout');
-    if (!leftPane || !mainContainer) return;
+    if (leftPane && mainContainer) {
+      this.splitterEngine?.destroy();
+      this.splitterEngine = new SplitterEngine({
+        id: 'grid-dp-split',
+        direction: 'horizontal',
+        targetElement: leftPane,
+        containerElement: mainContainer,
+        defaultRatio: 0.5,
+        defaultSize: 520,
+        minSize: 320,
+        minRatio: 0.28,
+        maxRatio: 0.72,
+        mode: 'flex',
+        attachPosition: 'after',
+        invert: false,
+        className: 'algo-layout-splitter',
+        title: '拖拽调节左右面板宽度（双击复原 50:50）'
+      });
+    }
 
-    this.splitterEngine?.destroy();
-    this.splitterEngine = new SplitterEngine({
-      id: 'grid-dp-split',
-      direction: 'horizontal',
-      targetElement: leftPane,
-      containerElement: mainContainer,
-      defaultRatio: 0.5,
-      defaultSize: 520,
-      minSize: 320,
-      minRatio: 0.28,
-      maxRatio: 0.72,
-      mode: 'flex',
-      attachPosition: 'after',
-      invert: false,
-      className: 'algo-layout-splitter',
-      title: '拖拽调节左右面板宽度（双击复原 50:50）'
-    });
+    const card2 = document.getElementById('card2-wrapper');
+    if (leftPane && card2) {
+      this.leftVerticalSplitter?.destroy();
+      this.leftVerticalSplitter = new SplitterEngine({
+        id: 'grid-dp-left-vertical-split',
+        direction: 'vertical',
+        targetElement: card2,
+        containerElement: leftPane,
+        defaultRatio: 0.5,
+        minSize: 180,
+        minRatio: 0.20,
+        maxRatio: 0.80,
+        mode: 'flex',
+        attachPosition: 'before',
+        invert: true,
+        className: 'algo-left-vertical-splitter',
+        title: '上下拖拽调节左侧上下面板高度（双击复原 50:50）'
+      });
+    }
   }
 
   /**
@@ -359,6 +417,7 @@ export class VisualizerAppController {
     StateSpacePresenter.renderLiteVisuals({
       currentStage: this.currentStage,
       stage3SubView: this.stage3SubView,
+      stage4SubView: this.stage4SubView,
       card2SubView: this.card2SubView,
       step,
       m: this.m,
@@ -392,18 +451,75 @@ export class VisualizerAppController {
     );
 
     this.updateStage3SubViewTabs();
+    this.updateStage4SubViewTabs();
     this.updateCard2SubViewTabs();
+    this.syncCard2HeaderMeta();
   }
 
   /**
-   * 设置阶段 3 的子视图模式 (DP 矩阵 vs 状态依赖树)
+   * 顶层抽象：获取当前阶段激活的 Card 2 逻辑子视图
    */
-  public setStage3SubView(view: 'matrix' | 'tree'): void {
+  public getActiveCard2SubView(): string {
+    if (this.currentStage === 'stage-3') {
+      return this.stage3SubView;
+    }
+    if (this.currentStage === 'stage-4' || this.currentStage === 'stage-5') {
+      return this.stage4SubView;
+    }
+    return this.card2SubView;
+  }
+
+  /**
+   * 顶层抽象：统一动态刷新 Card 2 头部多态元数据 (标题、描述、指标徽章)
+   */
+  public syncCard2HeaderMeta(): void {
+    const activeSubView = this.getActiveCard2SubView();
+    const effectiveM = (this.steps && this.steps[0]?.grid && this.steps[0].grid.length > 1) ? this.steps[0].grid.length : this.m;
+    const effectiveN = (this.steps && this.steps[0]?.grid && this.steps[0].grid[0]?.length > 0) ? this.steps[0].grid[0].length : this.n;
+    const firstStep = this.steps && this.steps[0];
+    const s1 = (firstStep as any)?.s1 || (firstStep as any)?.s || (firstStep as any)?.word1 || (firstStep as any)?.text1;
+    const s2 = (firstStep as any)?.s2 || (firstStep as any)?.t || (firstStep as any)?.word2 || (firstStep as any)?.text2;
+
+    StageNavigationCoordinator.updateCard2HeaderMeta({
+      model: this.model,
+      stageConfig: this.model?.stages?.[this.currentStage] || {},
+      currentStage: this.currentStage,
+      currentDirection: this.currentDirection,
+      activeSubView,
+      effectiveM,
+      effectiveN,
+      s1,
+      s2
+    });
+  }
+
+  /**
+   * 判断当前是否为字符串双序列比对问题
+   */
+  private checkIsStringProblem(): boolean {
+    const firstStep = this.steps && this.steps[0];
+    return !!(
+      (firstStep as any)?.s1 ||
+      (firstStep as any)?.s ||
+      ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string', 'min-delete-to-be-substring'].includes(this.modelId)
+    );
+  }
+
+  /**
+   * 设置阶段 3 的子视图模式 (DP 矩阵 vs 状态依赖树 vs 串比对)
+   */
+  public setStage3SubView(view: 'matrix' | 'tree' | 'alignment'): void {
     this.stage3SubView = view;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('algo-stage3-subview', view);
+      if (view === 'alignment') {
+        localStorage.setItem('algo-global-subview', 'alignment');
+      } else {
+        localStorage.removeItem('algo-global-subview');
+      }
     }
     this.updateStage3SubViewTabs();
+    this.syncCard2HeaderMeta();
     const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
     if (this.steps[curStep]) {
       const isReverse = this.currentDirection === 'reverse';
@@ -419,7 +535,40 @@ export class VisualizerAppController {
   public updateStage3SubViewTabs(): void {
     const effectiveM = (this.steps && this.steps[0]?.grid && this.steps[0].grid.length > 1) ? this.steps[0].grid.length : this.m;
     const isStage32D = effectiveM > 1;
-    StageNavigationCoordinator.updateStage3SubViewTabs(this.currentStage, this.stage3SubView, isStage32D);
+    const isStringProblem = this.checkIsStringProblem();
+    StageNavigationCoordinator.updateStage3SubViewTabs(this.currentStage, this.stage3SubView, isStage32D, isStringProblem);
+  }
+
+  /**
+   * 设置阶段 4 的子视图模式 (一维滚动数组 vs 串比对)
+   */
+  public setStage4SubView(view: 'memo' | 'alignment'): void {
+    this.stage4SubView = view;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-stage4-subview', view);
+      if (view === 'alignment') {
+        localStorage.setItem('algo-global-subview', 'alignment');
+      } else {
+        localStorage.removeItem('algo-global-subview');
+      }
+    }
+    this.updateStage4SubViewTabs();
+    this.syncCard2HeaderMeta();
+    const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+    if (this.steps[curStep]) {
+      const isReverse = this.currentDirection === 'reverse';
+      if (this.mode === 'lite') {
+        this.renderLiteVisuals(this.steps[curStep], curStep, isReverse);
+      }
+    }
+  }
+
+  /**
+   * 同步阶段 4 子视图切换按钮高亮状态
+   */
+  public updateStage4SubViewTabs(): void {
+    const isStringProblem = this.checkIsStringProblem();
+    StageNavigationCoordinator.updateStage4SubViewTabs(this.currentStage, this.stage4SubView, isStringProblem);
   }
 
   /**
@@ -429,8 +578,14 @@ export class VisualizerAppController {
     this.card2SubView = view;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('algo-card2-subview', view);
+      if (view === 'alignment') {
+        localStorage.setItem('algo-global-subview', 'alignment');
+      } else {
+        localStorage.removeItem('algo-global-subview');
+      }
     }
     this.updateCard2SubViewTabs();
+    this.syncCard2HeaderMeta();
     const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
     if (this.steps[curStep]) {
       const isReverse = this.currentDirection === 'reverse';
@@ -444,12 +599,7 @@ export class VisualizerAppController {
    * 同步阶段 1/2 卡片 2 复合子视图切换按钮高亮状态
    */
   public updateCard2SubViewTabs(): void {
-    const firstStep = this.steps && this.steps[0];
-    const isStringProblem = !!(
-      (firstStep as any)?.s1 ||
-      (firstStep as any)?.s ||
-      ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string'].includes(this.modelId)
-    );
+    const isStringProblem = this.checkIsStringProblem();
     StageNavigationCoordinator.updateCard2SubViewTabs(this.currentStage, this.card2SubView, isStringProblem);
   }
 
@@ -611,6 +761,11 @@ export class VisualizerAppController {
         this.currentStage = stageKey;
         VisualizerParamSynchronizer.setPreference(`algo-stage-${this.modelId}`, stageKey);
         VisualizerParamSynchronizer.setPreference('algo-preferred-stage', stageKey);
+        if (this.checkIsStringProblem() && typeof localStorage !== 'undefined' && localStorage.getItem('algo-global-subview') === 'alignment') {
+          this.stage3SubView = 'alignment';
+          this.stage4SubView = 'alignment';
+          this.card2SubView = 'alignment';
+        }
         this.renderStageTabs();
         this.renderDirectionTabs();
         this.loadAndReset();
@@ -668,6 +823,7 @@ export class VisualizerAppController {
       onSpeedChange: (speed) => this.timeline?.setSpeed(speed),
       onFontScale: (delta) => this.setCodeFontSize(this.codeFontSize + delta),
       onStage3SubView: (view) => this.setStage3SubView(view),
+      onStage4SubView: (view) => this.setStage4SubView(view),
       onCard2SubView: (view) => this.setCard2SubView(view),
       onToggle3D: () => this.toggle3DPerspective(),
       onReset3DCam: () => StateSpacePresenter.reset3DCamera(),

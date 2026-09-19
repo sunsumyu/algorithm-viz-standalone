@@ -51,6 +51,28 @@ describe('ProblemDimensionResolver (Deep Module Unit Tests)', () => {
     expect(res.n).toBe(12);
     expect(res.is1D).toBe(true);
     expect(res.category).toBe('knapsack');
+
+    // 5.1 完全背包二维阶段：根据物品重量数组解析为 2D 沙盘
+    const res2D = ProblemDimensionResolver.resolve('complete-knapsack', {
+      weights: [1, 3, 4],
+      values: [15, 20, 30],
+      bagWeight: 4
+    }, 'stage-3');
+    expect(res2D.m).toBe(3);
+    expect(res2D.n).toBe(5);
+    expect(res2D.is1D).toBe(false);
+    expect(res2D.category).toBe('knapsack');
+
+    // 5.2 完全背包一维优化阶段：压缩为 1D 滚动数组
+    const res1D = ProblemDimensionResolver.resolve('complete-knapsack', {
+      weights: [1, 3, 4],
+      values: [15, 20, 30],
+      bagWeight: 4
+    }, 'stage-4');
+    expect(res1D.m).toBe(1);
+    expect(res1D.n).toBe(5);
+    expect(res1D.is1D).toBe(true);
+    expect(res1D.category).toBe('knapsack');
   });
 
   it('6. 正确解析基础一维斐波那契与爬楼梯 (n: 6)', () => {

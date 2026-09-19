@@ -1,0 +1,187 @@
+# ==============================================================================
+# 🏆 [GOLDEN BASELINE MODEL] 黄金基准模型规范
+# 完全平方数 (Perfect Squares) - LeetCode 279 四阶段全演化模型
+# 包含：多叉切分递归树展开、记忆化缓存剪枝、自底向上递推填表与拉格朗日四平方和 O(√n) 优化
+# ==============================================================================
+
+id: perfect-squares
+name: "完全平方数"
+nameEn: "Perfect Squares"
+defaultStage: "stage-1"
+category: "dynamic-programming"
+icon: "⏹️"
+difficulty: 2
+levelOrder: 9
+learningGoal: "掌握前缀极小值切分动态规划：dp[i] = min_{j*j <= i} { dp[i - j*j] + 1 }"
+description: "给你一个整数 n ，返回和为 n 的完全平方数的最少数量。"
+defaultParams:
+  n: 12
+
+problem:
+  leetcodeId: 279
+  title: "完全平方数"
+  difficulty: "中等"
+  tags: ["广度优先搜索", "数学", "动态规划"]
+  description: "给你一个整数 <code>n</code> ，返回和为 <code>n</code> 的完全平方数的最少数量。<br/><br/><strong>完全平方数</strong> 是一个整数，其值等于另一个整数的平方；换句话说，其值等于一个整数自乘的积。例如，<code>1</code>、<code>4</code>、<code>9</code> 和 <code>16</code> 都是完全平方数，而 <code>3</code> 和 <code>11</code> 不是。"
+  examples:
+    - input: "n = 12"
+      output: "3"
+      explanation: "12 = 4 + 4 + 4。"
+    - input: "n = 13"
+      output: "2"
+      explanation: "13 = 4 + 9。"
+  constraints:
+    - "1 <= n <= 10⁴"
+  leetcodeUrl: "https://leetcode.cn/problems/perfect-squares/"
+
+directions:
+  forward:
+    label: "自底向上 (正序平方和递推)"
+    branches:
+      - name: "minus_square"
+        label: "选择完全平方数 j²"
+        formula: "dp[i - j * j] + 1"
+    combineFormula: "min_{j * j <= i} { dp[i - j * j] + 1 }"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(kⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 朴素切分递归 (多叉决策树指数展开)"
+    desc:
+      forward: "对于目标整数 i，枚举每一个不大于 i 的完全平方数 j²，递归求解剩余部分 i - j² 的最少数量并加 1。"
+    variants:
+      standard:
+        variantLabel: "标准切分递归"
+        title:
+          forward: "NumSquares_Recursive.java"
+        code:
+          forward:
+            title: "NumSquares_Recursive.java"
+            source: |
+              class Solution {
+                  public int numSquares(int n) {
+                      return dfs(n); // @step:entry
+                  }
+                  private int dfs(int i) {
+                      if (i == 0) return 0; // @step:boundary
+                      int minCount = Integer.MAX_VALUE; // @step:init
+                      for (int j = 1; j * j <= i; j++) { // @step:loop
+                          int count = dfs(i - j * j) + 1; // @step:branch_call
+                          minCount = Math.min(minCount, count); // @step:compare
+                      }
+                      return minCount; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n√n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+    desc:
+      forward: "使用备忘录数组 memo 缓存各数值 i 的最小平方数数量，命中缓存直接返回，剪去指数级冗余计算分支。"
+    variants:
+      array_memo:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "NumSquares_Memo.java"
+        code:
+          forward:
+            title: "NumSquares_Memo.java"
+            source: |
+              class Solution {
+                  private int[] memo;
+                  public int numSquares(int n) {
+                      memo = new int[n + 1]; // @step:init_memo
+                      return dfs(n);         // @step:entry
+                  }
+                  private int dfs(int i) {
+                      if (i == 0) return 0; // @step:boundary
+                      if (memo[i] > 0) return memo[i]; // @step:cache_hit
+                      int minCount = Integer.MAX_VALUE; // @step:init
+                      for (int j = 1; j * j <= i; j++) { // @step:loop
+                          int count = dfs(i - j * j) + 1; // @step:branch_call
+                          minCount = Math.min(minCount, count); // @step:compare
+                      }
+                      memo[i] = minCount; // @step:save_memo
+                      return minCount;    // @step:return
+                  }
+              }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation-1d"
+    timeBadge: "O(n√n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 一维递推填表 (候选平方数极小值抉择)"
+    desc:
+      forward: "自底向上填表：dp[i] 表示和为 i 的最少完全平方数个数。内层循环枚举 j*j <= i，在所有候选切分点中取最小值。"
+    variants:
+      for:
+        variantLabel: "双层循环标准版"
+        title:
+          forward: "NumSquares_DP.java"
+        code:
+          forward:
+            title: "NumSquares_DP.java"
+            source: |
+              class Solution {
+                  public int numSquares(int n) {
+                      int[] dp = new int[n + 1]; // @step:init
+                      dp[0] = 0;                  // @step:base
+                      for (int i = 1; i <= n; i++) { // @step:loop-outer
+                          int minVal = Integer.MAX_VALUE;
+                          for (int j = 1; j * j <= i; j++) { // @step:loop-inner
+                              // 核心决策：尝试从 i - j*j 转移
+                              int candidate = dp[i - j * j] + 1; // @step:branch_a
+                              minVal = Math.min(minVal, candidate); // @step:compare
+                          }
+                          dp[i] = minVal; // @step:transfer
+                      }
+                      return dp[n]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "数论极值"
+    type: "space-optimized"
+    timeBadge: "O(√n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 四平方和定理数学解 (Lagrange's Theorem)"
+    desc:
+      forward: "拉格朗日四平方和定理指出任何正整数可由至多 4 个平方数组成。当且仅当 n=4ᵏ(8m+7) 时答案为 4。特判 1、2、4 即可在 O(√n) 得出答案。"
+    variants:
+      math_theorem:
+        variantLabel: "四平方和数论解"
+        title:
+          forward: "NumSquares_Math.java"
+        code:
+          forward:
+            title: "NumSquares_Math.java"
+            source: |
+              class Solution {
+                  public int numSquares(int n) {
+                      // 1. 判断是否符合 4^k * (8m + 7) 格式，若是直接返回 4
+                      while (n % 4 == 0) n /= 4; // @step:init
+                      if (n % 8 == 7) return 4;  // @step:accumulate
+                      // 2. 判断是否本身就是完全平方数，若是返回 1
+                      if (isSquare(n)) return 1; // @step:fetch-down
+                      // 3. 判断是否为两数平方之和，若是返回 2
+                      for (int a = 1; a * a <= n; a++) {
+                          if (isSquare(n - a * a)) return 2; // @step:compare
+                      }
+                      return 3; // @step:return
+                  }
+                  private boolean isSquare(int n) {
+                      int s = (int) Math.sqrt(n);
+                      return s * s == n;
+                  }
+              }
