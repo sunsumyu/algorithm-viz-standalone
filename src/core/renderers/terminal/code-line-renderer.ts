@@ -83,7 +83,6 @@ export function renderCodeLines(
       const textEl = createEl('span');
       textEl.className = 'code-line-text algo-code-line-text';
       textEl.innerHTML = highlightTokens(line, state.currentLang);
-      textEl.textContent = line;
       lineEl.appendChild(textEl);
 
       if (typeof codeWrapper.appendChild === 'function') {
