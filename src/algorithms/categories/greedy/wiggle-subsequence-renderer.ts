@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -47,7 +48,7 @@ const LINES: Record<string, HighlightTarget> = {
   success: { java: 14, cpp: 15, python: 13, javascript: 13 },
 };
 
-export interface WiggleStep {
+export interface WiggleStep extends StepBase {
   array: number[];
   currentIndex: number;
   length: number;
@@ -56,9 +57,10 @@ export interface WiggleStep {
   prevDiff: number;
   wiggleIndices: number[];
   skippedIndices: number[];
+  decision?: string;
   message: string;
   action: 'init' | 'peak_or_valley' | 'flat_or_mono' | 'done';
-  codeLine: number | HighlightTarget;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }

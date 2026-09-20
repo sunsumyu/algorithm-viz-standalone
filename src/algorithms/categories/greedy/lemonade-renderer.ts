@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -60,7 +61,7 @@ const LINES: Record<string, HighlightTarget> = {
   success: { java: 20, cpp: 18, python: 20, javascript: 19 },
 };
 
-export interface LemonadeStep {
+export interface LemonadeStep extends StepBase {
   bills: number[];
   currentIndex: number;
   fiveCount: number;
@@ -69,8 +70,10 @@ export interface LemonadeStep {
   changeGiven: number[];
   success: boolean;
   action: 'init' | 'receive_5' | 'change_10' | 'change_20_10_5' | 'change_20_5_5_5' | 'fail' | 'done';
+  decision?: string;
   message: string;
-  codeLine: number | HighlightTarget;
+  log?: string;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -42,7 +43,7 @@ const LINES: Record<string, HighlightTarget> = {
   success: { java: 15, cpp: 16, python: 14, javascript: 14 },
 };
 
-export interface GasStationStep {
+export interface GasStationStep extends StepBase {
   gas: number[];
   cost: number[];
   currentIndex: number;
@@ -51,9 +52,19 @@ export interface GasStationStep {
   startStation: number;
   failedStations: number[];
   action: 'init' | 'scan' | 'reset' | 'success' | 'failed';
+  decision?: string;
   message: string;
-  codeLine: number | HighlightTarget;
+  log?: string;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
+}
+
+function normalizeGasStationSteps(steps: GasStationStep[]): GasStationStep[] {
+  return steps.map((step) => ({
+    ...step,
+    decision: step.decision ?? step.message,
+    log: step.log ?? step.message,
+  }));
 }
 
 export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasStationStep[] {
@@ -75,7 +86,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
       message: '输入数据为空，返回 -1',
       codeLine: LINES.guardEmpty,
     });
-    return steps;
+    return normalizeGasStationSteps(steps);
   }
 
   let totalTank = 0;
@@ -165,7 +176,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
     });
   }
 
-  return steps;
+  return normalizeGasStationSteps(steps);
 }
 
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
@@ -179,6 +190,7 @@ function withMetrics(steps: GasStationStep[]): GasStationStep[] {
 
     return {
       ...s,
+      decision: action,
       log: s.message,
       metrics: {
         'cur-tank': `${s.currentTank} L`,

@@ -4,6 +4,7 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -38,15 +39,17 @@ const LINES: Record<string, HighlightTarget> = {
   blocked: { java: 8, cpp: 10, python: 12, javascript: 8 },
 };
 
-export interface CanJumpStep {
+export interface CanJumpStep extends StepBase {
   array: number[];
   currentIndex: number;
   maxReach: number;
   prevMaxReach: number;
   canJump: boolean;
   action: 'init' | 'scan' | 'extend' | 'blocked' | 'success' | 'done';
+  decision?: string;
   message: string;
-  codeLine: number | HighlightTarget;
+  log?: string;
+  codeLine: HighlightTarget;
   metrics?: Record<string, string>;
 }
 
