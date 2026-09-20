@@ -567,7 +567,7 @@ export const GAS_STATION_TEMPLATE = `
 registerAlgorithm({
   id: 'gas-station-rally',
   name: '极速加油站·环岛拉力赛',
-  viewId: 'algo-gas-station-view',
+  viewId: 'algo-gas-station-rally-view',
   category: 'game',
   description: '经典贪心算法游戏：环形霓虹赛道、实时剩余油量表盘、局部透支跳跃剪枝与 360° 胜利巡游',
   icon: '🏎️',
