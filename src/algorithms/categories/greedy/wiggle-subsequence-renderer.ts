@@ -4,12 +4,48 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
   WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
   WIGGLE_SUBSEQUENCE_CODE_LANGUAGES,
 } from './wiggle-subsequence-problem-content';
+
+/**
+ * 四语言 1-based 相对行号字典（algo-viz-authoring §2.1 / 故障 21）：
+ * 唯一事实源集中在文件顶部，使用点只许引用，严禁裸写行号字面量。
+ * 语义锚点与 WIGGLE_SUBSEQUENCE_CODE_LANGUAGES 各语言数组逐位对齐；
+ * 每个迭代步的 context 携带循环头与差值计算行，杜绝高亮冻结（§2.3）。
+ */
+const LINES: Record<string, HighlightTarget> = {
+  entry: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  guard: {
+    java: 2,
+    cpp: 4,
+    python: { primary: 4, context: [3] },
+    javascript: 2,
+  },
+  init: {
+    java: { primary: 5, context: [3, 4] },
+    cpp: { primary: 7, context: [5, 6] },
+    python: { primary: 7, context: [5, 6] },
+    javascript: { primary: 5, context: [3, 4] },
+  },
+  peakOrValley: {
+    java: { primary: 10, context: [6, 7, 9, 11] },
+    cpp: { primary: 11, context: [8, 9, 10, 12] },
+    python: { primary: 11, context: [8, 9, 10, 12] },
+    javascript: { primary: 9, context: [6, 7, 8, 10] },
+  },
+  flatOrMono: {
+    java: { primary: 9, context: [6, 7] },
+    cpp: { primary: 10, context: [8, 9] },
+    python: { primary: 10, context: [8, 9] },
+    javascript: { primary: 8, context: [6, 7] },
+  },
+  success: { java: 14, cpp: 15, python: 13, javascript: 13 },
+};
 
 export interface WiggleStep {
   array: number[];
@@ -22,7 +58,7 @@ export interface WiggleStep {
   skippedIndices: number[];
   message: string;
   action: 'init' | 'peak_or_valley' | 'flat_or_mono' | 'done';
-  codeLine: number;
+  codeLine: number | HighlightTarget;
   metrics?: Record<string, string>;
   log?: string;
 }
@@ -43,7 +79,7 @@ export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
       skippedIndices: [],
       message: n === 0 ? '空数组，摆动长度为 0' : `单元素数组 [${nums[0]}]，摆动长度为 1`,
       action: 'done',
-      codeLine: 2,
+      codeLine: LINES.guard
     });
     return steps;
   }
@@ -64,7 +100,7 @@ export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
     skippedIndices: [...skippedIndices],
     message: `初始化：默认选中首元素 nums[0]=${nums[0]}，当前摆动序列长度 = 1`,
     action: 'init',
-    codeLine: 4,
+    codeLine: LINES.init
   });
 
   for (let i = 0; i < n - 1; i++) {
@@ -90,7 +126,7 @@ export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
         skippedIndices: [...skippedIndices],
         message: `检查差值：prevDiff=${prevDiff}，curDiff=${curDiff} (${trend}) → 出现摆动转折峰谷！保留节点 nums[${i + 1}]=${nums[i + 1]}，长度更新为 ${count}`,
         action: 'peak_or_valley',
-        codeLine: 7,
+        codeLine: LINES.peakOrValley
       });
 
       prevDiff = curDiff;
@@ -108,7 +144,7 @@ export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
         skippedIndices: [...skippedIndices],
         message: `检查差值：prevDiff=${prevDiff}，curDiff=${curDiff} (${trend}) → 单调斜坡/平坡连续延伸，贪心过滤中间节点 nums[${i + 1}]=${nums[i + 1]}`,
         action: 'flat_or_mono',
-        codeLine: 6,
+        codeLine: LINES.flatOrMono
       });
     }
   }
@@ -124,7 +160,7 @@ export function wiggleSubsequenceSteps(nums: number[]): WiggleStep[] {
     skippedIndices: [...skippedIndices],
     message: `遍历完成！最长摆动子序列长度为 ${count}，选中节点集合: [${wiggleIndices.map((idx) => nums[idx]).join(', ')}]`,
     action: 'done',
-    codeLine: 12,
+    codeLine: LINES.success
   });
 
   return steps;

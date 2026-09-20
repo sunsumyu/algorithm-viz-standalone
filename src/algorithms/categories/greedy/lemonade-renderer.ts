@@ -4,12 +4,61 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   LEMONADE_PROBLEM_HTML,
   LEMONADE_ANALYSIS_HTML,
   LEMONADE_CODE_LANGUAGES,
 } from './lemonade-problem-content';
+
+/**
+ * 四语言 1-based 相对行号字典（algo-viz-authoring §2.1 / 故障 21）：
+ * 唯一事实源集中在文件顶部，使用点只许引用，严禁裸写行号字面量。
+ * 语义锚点与 LEMONADE_CODE_LANGUAGES 各语言数组逐位对齐。
+ */
+const LINES: Record<string, HighlightTarget> = {
+  entry: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  guardEmpty: { java: 20, cpp: 18, python: 20, javascript: 19 },
+  init: { java: 2, cpp: 4, python: 3, javascript: 2 },
+  receive5: {
+    java: { primary: 5, context: [4] },
+    cpp: 6,
+    python: { primary: 6, context: [5] },
+    javascript: { primary: 5, context: [4] },
+  },
+  fail10: {
+    java: 7,
+    cpp: 8,
+    python: { primary: 9, context: [8] },
+    javascript: 7,
+  },
+  change10: {
+    java: 8,
+    cpp: 9,
+    python: { primary: 11, context: [10] },
+    javascript: 8,
+  },
+  change20TenFive: {
+    java: { primary: 12, context: [11] },
+    cpp: { primary: 12, context: [11] },
+    python: { primary: 14, context: [13, 15] },
+    javascript: { primary: 11, context: [10] },
+  },
+  change20Five3: {
+    java: { primary: 14, context: [13] },
+    cpp: { primary: 14, context: [13] },
+    python: { primary: 17, context: [16] },
+    javascript: { primary: 13, context: [12] },
+  },
+  fail20: {
+    java: { primary: 16, context: [15] },
+    cpp: 15,
+    python: { primary: 19, context: [18] },
+    javascript: { primary: 15, context: [14] },
+  },
+  success: { java: 20, cpp: 18, python: 20, javascript: 19 },
+};
 
 export interface LemonadeStep {
   bills: number[];
@@ -21,7 +70,7 @@ export interface LemonadeStep {
   success: boolean;
   action: 'init' | 'receive_5' | 'change_10' | 'change_20_10_5' | 'change_20_5_5_5' | 'fail' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: number | HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -40,7 +89,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
       success: true,
       action: 'done',
       message: '没有顾客，返回 true',
-      codeLine: 2,
+      codeLine: LINES.guardEmpty
     });
     return steps;
   }
@@ -58,7 +107,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
     success: true,
     action: 'init',
     message: `初始化：共 ${n} 位顾客排队，收银台初始零钱：$5 数量 = 0, $10 数量 = 0`,
-    codeLine: 2,
+    codeLine: LINES.init
   });
 
   for (let i = 0; i < n; i++) {
@@ -76,7 +125,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
         success: true,
         action: 'receive_5',
         message: `💵 顾客 [${i}] 支付 $5，无需找零，直接存入收银台 ($5 储备增加到 ${five} 张)`,
-        codeLine: 5,
+        codeLine: LINES.receive5
       });
     } else if (bill === 10) {
       if (five <= 0) {
@@ -90,7 +139,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
           success: false,
           action: 'fail',
           message: `❌ 顾客 [${i}] 支付 $10 需要找零 $5，但收银台没有 $5 纸币！找零失败，返回 false`,
-          codeLine: 7,
+          codeLine: LINES.fail10
         });
         return steps;
       }
@@ -106,7 +155,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
         success: true,
         action: 'change_10',
         message: `💶 顾客 [${i}] 支付 $10，找零 1 张 $5 (剩余 $5: ${five} 张, $10: ${ten} 张)`,
-        codeLine: 8,
+        codeLine: LINES.change10
       });
     } else if (bill === 20) {
       if (ten > 0 && five > 0) {
@@ -122,7 +171,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
           success: true,
           action: 'change_20_10_5',
           message: `💷 顾客 [${i}] 支付 $20！【贪心优先策略】找零 1 张 $10 + 1 张 $5，保留万能 $5 (剩余 $5: ${five} 张, $10: ${ten} 张)`,
-          codeLine: 12,
+          codeLine: LINES.change20TenFive
         });
       } else if (five >= 3) {
         five -= 3;
@@ -136,7 +185,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
           success: true,
           action: 'change_20_5_5_5',
           message: `💷 顾客 [${i}] 支付 $20！【备选策略】无 $10，找零 3 张 $5 (剩余 $5: ${five} 张, $10: ${ten} 张)`,
-          codeLine: 14,
+          codeLine: LINES.change20Five3
         });
       } else {
         steps.push({
@@ -149,7 +198,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
           success: false,
           action: 'fail',
           message: `❌ 顾客 [${i}] 支付 $20 需要找零 $15，但收银台既无 ($10+$5) 也无 (3张$5)！找零失败，返回 false`,
-          codeLine: 16,
+          codeLine: LINES.fail10
         });
         return steps;
       }
@@ -166,7 +215,7 @@ export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
     success: true,
     action: 'done',
     message: `🎉 全部 ${n} 位顾客找零成功！最终收银台结存：$5: ${five} 张, $10: ${ten} 张，返回 true`,
-    codeLine: 20,
+    codeLine: LINES.success
   });
 
   return steps;

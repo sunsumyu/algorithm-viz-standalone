@@ -144,7 +144,8 @@ import '../../algorithms/categories/greedy/greedy-week-summary-3-renderer';
 import '../../algorithms/categories/greedy/greedy-week-summary-4-renderer';
 import '../../algorithms/categories/greedy/greedy-final-summary-renderer';
 import '../../algorithms/categories/greedy/queue-vector-explained-renderer';
-import '../../algorithms/categories/greedy/interval-renderer';
+// 注：interval（无重叠区间 levelOrder 999 劣质重复件）已删除，
+// LC 435 由 non-overlapping-renderer（关卡序 9，规格完整）唯一承载 —— 消灭重复轮子（Skill §4.4）。
 
 function assertCodeLineWithinBounds(
   codeLine: any,
@@ -722,7 +723,6 @@ describe('Greedy Classic Stage Invariants Gatekeeper (经典贪心全量门禁�
       { id: 'greedy-week-summary-4', nameKeyword: '总结' },
       { id: 'greedy-final-summary', nameKeyword: '总结' },
       { id: 'queue-vector-explained', nameKeyword: '重建队列' },
-      { id: 'interval', nameKeyword: '无重叠区间' },
     ];
 
     for (const card of summaryCards) {

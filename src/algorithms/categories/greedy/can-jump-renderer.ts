@@ -4,12 +4,39 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   CAN_JUMP_PROBLEM_HTML,
   CAN_JUMP_ANALYSIS_HTML,
   CAN_JUMP_CODE_LANGUAGES,
 } from './can-jump-problem-content';
+
+/**
+ * 四语言 1-based 相对行号字典（algo-viz-authoring §2.1 / 故障 21）：
+ * 唯一事实源集中在文件顶部，使用点只许引用，严禁裸写行号字面量。
+ * 语义锚点与 CAN_JUMP_CODE_LANGUAGES 各语言数组逐位对齐；
+ * scan（循环头考察）与 extend（cover 更新）分离，杜绝高亮冻结（§2.3 Zero Line Freezing）。
+ */
+const LINES: Record<string, HighlightTarget> = {
+  entry: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  guardSingle: {
+    java: 2,
+    cpp: 5,
+    python: { primary: 5, context: [4] },
+    javascript: 2,
+  },
+  init: { java: 3, cpp: 4, python: 3, javascript: 3 },
+  scan: { java: 4, cpp: 6, python: 7, javascript: 4 },
+  extend: { java: 5, cpp: 7, python: 8, javascript: 5 },
+  success: {
+    java: 6,
+    cpp: 8,
+    python: { primary: 10, context: [9] },
+    javascript: 6,
+  },
+  blocked: { java: 8, cpp: 10, python: 12, javascript: 8 },
+};
 
 export interface CanJumpStep {
   array: number[];
@@ -19,7 +46,7 @@ export interface CanJumpStep {
   canJump: boolean;
   action: 'init' | 'scan' | 'extend' | 'blocked' | 'success' | 'done';
   message: string;
-  codeLine: number;
+  codeLine: number | HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -37,7 +64,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
       canJump: true,
       action: 'success',
       message: '数组长度为 1，起始即在终点，直接返回 true',
-      codeLine: 2,
+      codeLine: LINES.success
     });
     return steps;
   }
@@ -53,7 +80,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
     canJump: true,
     action: 'init',
     message: `初始化：nums = [${arr.join(', ')}]，初始最大覆盖范围 cover = 0`,
-    codeLine: 3,
+    codeLine: LINES.init
   });
 
   for (let i = 0; i <= cover; i++) {
@@ -68,7 +95,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
       canJump: true,
       action: 'scan',
       message: `🔍 位于下标 [${i}]=${arr[i]}，从该点最远可跳至下标 ${reach}`,
-      codeLine: 5,
+      codeLine: LINES.scan
     });
 
     if (reach > cover) {
@@ -81,7 +108,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
         canJump: true,
         action: 'extend',
         message: `🌐 扩展覆盖范围：cover 从 ${oldCover} 推进至 ${cover}！`,
-        codeLine: 5,
+        codeLine: LINES.extend
       });
     }
 
@@ -95,7 +122,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
         canJump: true,
         action: 'success',
         message: `🎉 成功覆盖终点！最大覆盖范围 cover=${cover} &ge; 终点下标 ${n - 1}，必定可达！`,
-        codeLine: 6,
+        codeLine: LINES.success
       });
       break;
     }
@@ -110,7 +137,7 @@ export function canJumpSteps(arr: number[]): CanJumpStep[] {
       canJump: false,
       action: 'blocked',
       message: `❌ 无法前进：最大覆盖范围停留在下标 ${cover}，无法到达终点 ${n - 1}`,
-      codeLine: 8,
+      codeLine: LINES.blocked
     });
   }
 

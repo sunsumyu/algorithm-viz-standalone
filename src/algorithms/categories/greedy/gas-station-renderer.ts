@@ -4,12 +4,43 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
   GAS_STATION_PROBLEM_HTML,
   GAS_STATION_ANALYSIS_HTML,
   GAS_STATION_CODE_LANGUAGES,
 } from './gas-station-problem-content';
+
+/**
+ * 四语言 1-based 相对行号字典（algo-viz-authoring §2.1 / 故障 21）：
+ * 唯一事实源集中在文件顶部，使用点只许引用，严禁裸写行号字面量。
+ * 语义锚点与 GAS_STATION_CODE_LANGUAGES 各语言数组逐位对齐。
+ */
+const LINES: Record<string, HighlightTarget> = {
+  entry: { java: 1, cpp: 3, python: 2, javascript: 1 },
+  init: {
+    java: { primary: 4, context: [2, 3] },
+    cpp: { primary: 6, context: [4, 5] },
+    python: { primary: 5, context: [3, 4] },
+    javascript: { primary: 4, context: [2, 3] },
+  },
+  scan: {
+    java: { primary: 8, context: [6, 7] },
+    cpp: { primary: 9, context: [8] },
+    python: { primary: 8, context: [7] },
+    javascript: { primary: 7, context: [6] },
+  },
+  reset: {
+    java: { primary: 10, context: [9, 11] },
+    cpp: { primary: 11, context: [10, 12] },
+    python: { primary: 10, context: [9, 11] },
+    javascript: { primary: 9, context: [8, 10] },
+  },
+  guardEmpty: { java: 14, cpp: 15, python: { primary: 13, context: [12] }, javascript: 13 },
+  failTotal: { java: 14, cpp: 15, python: { primary: 13, context: [12] }, javascript: 13 },
+  success: { java: 15, cpp: 16, python: 14, javascript: 14 },
+};
 
 export interface GasStationStep {
   gas: number[];
@@ -21,7 +52,7 @@ export interface GasStationStep {
   failedStations: number[];
   action: 'init' | 'scan' | 'reset' | 'success' | 'failed';
   message: string;
-  codeLine: number;
+  codeLine: number | HighlightTarget;
   metrics?: Record<string, string>;
 }
 
@@ -42,7 +73,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
       failedStations: [],
       action: 'failed',
       message: '输入数据为空，返回 -1',
-      codeLine: 1,
+      codeLine: LINES.guardEmpty,
     });
     return steps;
   }
@@ -62,7 +93,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
     failedStations: [],
     action: 'init',
     message: `初始化：共 ${n} 个站点，初始候选起点 start = 0，currentTank = 0，totalTank = 0`,
-    codeLine: 4,
+    codeLine: LINES.init,
   });
 
   for (let i = 0; i < n; i++) {
@@ -80,7 +111,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
       failedStations: [...failedStations],
       action: 'scan',
       message: `⛽ 考察站点 [${i}]：加油 ${gas[i]}L，消耗 ${cost[i]}L，净油量 ${net >= 0 ? '+' : ''}${net}L；当前油箱 = ${currentTank}L，全局净油量 = ${totalTank}L`,
-      codeLine: 8,
+      codeLine: LINES.scan,
     });
 
     if (currentTank < 0) {
@@ -101,7 +132,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
         failedStations: [...failedStations],
         action: 'reset',
         message: `⚠️ 油量亏空！在站点 [${i}] 断油 (油量 ${currentTank + net} < 0)！贪心排除区间 [0 .. ${i}]，候选起点重置为 [${startStation}]`,
-        codeLine: 10,
+        codeLine: LINES.reset,
       });
     }
   }
@@ -117,7 +148,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
       failedStations: [...failedStations],
       action: 'failed',
       message: `❌ 全局总净油量 totalTank = ${totalTank} < 0，总消耗大于总补给，环行一周必定无法完成，返回 -1`,
-      codeLine: 13,
+      codeLine: LINES.failTotal,
     });
   } else {
     steps.push({
@@ -130,7 +161,7 @@ export function buildGasStationSteps(rawGas: number[], rawCost: number[]): GasSt
       failedStations: [...failedStations],
       action: 'success',
       message: `🎉 全局总净油量 totalTank = ${totalTank} &ge; 0！唯一可行出发加油站起点为 [${startStation}]`,
-      codeLine: 14,
+      codeLine: LINES.success,
     });
   }
 
