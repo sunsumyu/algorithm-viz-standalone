@@ -147,21 +147,27 @@ export function renderMetricsHtml(metrics: MetricCardDef[] | undefined): string 
 
 /** 0. 阶段演化胶囊导航栏（基准极简规范：不塞时空复杂度挤爆顶栏） */
 export function renderStageTabsHtml(stages: DeclarativeStageSpec[] | undefined, activeStageId: string | undefined): string {
-  if (!stages || stages.length === 0) return '';
+  // 如果没有定义 stages，自动添加默认的"标准模式"阶段
+  const effectiveStages = stages && stages.length > 0
+    ? stages
+    : [{ id: 'standard', name: '标准模式', shortName: '标准' }];
+  const effectiveActiveId = activeStageId || 'standard';
+  
   const defaultShortNames: Record<string, string> = {
     'stage-1': '递归',
     'stage1': '递归',
     'stage-2': '记忆化',
     'stage2': '记忆化',
-    'stage-3': '二维DP',
-    'stage3': '二维DP',
+    'stage-3': '二维 DP',
+    'stage3': '二维 DP',
     'stage-4': '一维优化',
     'stage4': '一维优化',
+    'standard': '标准',
   };
-  const stageButtonsHtml = stages
+  const stageButtonsHtml = effectiveStages
     .map((stg, idx) => {
       const stageNum = stg.num || idx + 1;
-      const isActive = stg.id === activeStageId;
+      const isActive = stg.id === effectiveActiveId;
       const shortName = stg.shortName || defaultShortNames[stg.id] || stg.name || `阶段 ${stageNum}`;
       const isStage4 = stg.id === 'stage-4' || stg.id === 'stage4' || stageNum === 4;
       const isStage3 = stg.id === 'stage-3' || stg.id === 'stage3' || stageNum === 3;
