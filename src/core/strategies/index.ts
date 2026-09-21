@@ -20,6 +20,8 @@ import { KnapsackFamilyStrategy } from './knapsack-family-strategy';
 import { HouseRobberStrategy } from './house-robber-strategy';
 import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
+import { JumpGameIIStrategy } from './jump-game-ii-strategy';
+import { JumpGameIIStepCompiler } from './jump-game-ii-compiler';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -122,6 +124,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new PartitionDPStrategy('integer-break'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('unique-bst'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('decode-ways'));
+  AlgorithmStrategyRegistry.register(new JumpGameIIStrategy());
 }
 
 AlgorithmStrategyRegistry.setDefaultInitializer(registerBuiltinStrategies);
@@ -149,7 +152,9 @@ export {
   Linear1DStrategy,
   LinearStepMatrixCompiler,
   PartitionDPStrategy,
-  PartitionIntegerBreakStrategy
+  PartitionIntegerBreakStrategy,
+  JumpGameIIStrategy,
+  JumpGameIIStepCompiler
 };
 
 export * from './strategy-helpers';

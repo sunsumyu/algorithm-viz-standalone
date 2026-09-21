@@ -333,17 +333,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   stages: [
     {
       id: 'stage-1',
-      name: '阶段 1: 暴力递归',
+      name: '阶段 1: 暴力递归 (+/− 分治)',
       shortName: '递归',
       num: 1,
       timeBadge: 'O(2^N)',
       theme: 'bg-blue',
       badge: {
-        mode: '目标和 · 递归分治搜索',
+        mode: '目标和 · 暴力递归',
         complexity: 'O(2^N) · O(N) 栈深',
       },
       card1Title: '🌿 递归决策分支展开与运行时调用栈',
-      card2Title: '📊 递归调用深度与方案累加监控',
+      card2Title: '📊 递归调用深度与累加和监控',
       codeLanguages: TARGET_SUM_STAGE1_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { target, nums } = parseTargetSumInputs(inputs);
@@ -380,7 +380,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
               </div>
             </div>
             <div style="font-size:11px; color:#64748b; text-align:center; max-width:320px; margin-top:6px;">
-              每个元素分支为【不选当前数 / 选入当前数】，未缓存时产生 2^N 重叠子问题。
+              每个元素分支为【+nums[i] / −nums[i]】，未缓存时产生 2^N 重叠子问题。
             </div>
           </div>
         `;
@@ -388,17 +388,17 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
     },
     {
       id: 'stage-2',
-      name: '阶段 2: 记忆化搜索',
+      name: '阶段 2: 记忆化搜索 (HashMap)',
       shortName: '记忆化',
       num: 2,
-      timeBadge: 'O(N · T)',
+      timeBadge: 'O(N · sum)',
       theme: 'bg-blue',
       badge: {
-        mode: '目标和 · 备忘录缓存',
-        complexity: 'O(N · T) · O(N · T) 备忘录',
+        mode: '目标和 · HashMap 缓存',
+        complexity: 'O(N · sum) · O(N · sum)',
       },
-      card1Title: '💾 备忘录探查追踪 (Cache Hit/Miss)',
-      card2Title: '🎯 2D 备忘录方案数矩阵 memo[i][rem]',
+      card1Title: '💾 HashMap 缓存探查 (Cache Hit/Miss)',
+      card2Title: '🎯 方案数缓存表 memo[i][curSum]',
       codeLanguages: TARGET_SUM_STAGE2_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { target, nums } = parseTargetSumInputs(inputs);
@@ -406,7 +406,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       },
       renderCanvas: (container, step) =>
         renderSpecialMemoCard1(container, {
-          stateStr: `dfs(i=${step.i}, rem=${step.remCap})`,
+          stateStr: `f(i=${step.i}, curSum=${step.curSum})`,
           cacheHit: step.memoHit,
           hitCount: step.hitCount,
           missCount: step.missCount,
@@ -415,25 +415,25 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
         }),
       renderCustomMetrics: (container, step) =>
         renderSpecialMemoCard2(container, {
-          title: '方案数备忘录 memo[i][rem]',
+          title: '方案数缓存表 memo[i][curSum]',
           memo: step.memoGrid,
           curI: step.i,
-          curJ: step.remCap,
+          curJ: step.curSum,
         }),
     },
     {
       id: 'stage-3',
-      name: '阶段 3: 二维动态规划',
+      name: '阶段 3: offset 平移二维 DP',
       shortName: '二维DP',
       num: 3,
-      timeBadge: 'O(N · T)',
+      timeBadge: 'O(N · sum)',
       theme: 'bg-emerald',
       badge: {
-        mode: '目标和 · 严格二维表递推',
-        complexity: 'O(N · T) · O(N · T)',
+        mode: '目标和 · offset 平移 DP',
+        complexity: 'O(N · sum) · O(N · sum)',
       },
-      card1Title: '📐 方案数转移决策推导',
-      card2Title: '📊 严格二维位置依赖状态表 dp[i][j]',
+      card1Title: '📐 offset 平移方案数转移决策',
+      card2Title: ' offset 平移二维方案数表 dp[i][j]',
       codeLanguages: TARGET_SUM_STAGE3_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { target, nums } = parseTargetSumInputs(inputs);
@@ -444,7 +444,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
       },
       renderCustomMetrics: (container, step) =>
         renderSpecial2DCard2(container, {
-          title: '严格二维方案数表 dp[i][j]',
+          title: 'offset 平移二维方案数表 dp[i][j]',
           dp: step.dpTable,
           curI: step.curI,
           curJ: step.curJ,

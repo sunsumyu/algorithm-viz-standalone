@@ -831,6 +831,13 @@ input[type="number"]::-webkit-outer-spin-button {
 .algo-code-ident {
   color: #e2e8f0 !important;
   font-weight: 500;
+  cursor: help;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  display: inline !important;
 }
 
 .algo-code-token-func {
@@ -843,6 +850,31 @@ input[type="number"]::-webkit-outer-spin-button {
   border-radius: 4px;
   padding: 0 3px;
   box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+/* 明确隔离暗色代码终端与代码高亮元素，严禁任何亮色归一化规则侵入终端内部 */
+[id^="algo-"][id$="-view"] .dsp-terminal-card,
+[id^="algo-"][id$="-view"] .code-terminal-card,
+[id^="algo-"][id$="-view"] .dark-terminal-auto-frame,
+[id^="algo-"][id$="-view"] [data-code-panel],
+[id^="algo-"][id$="-view"] [data-code-terminal] {
+  background: #0d1117 !important;
+  color: #e2e8f0 !important;
+}
+
+[id^="algo-"][id$="-view"] .algo-code-line,
+[id^="algo-"][id$="-view"] .algo-code-line *,
+[id^="algo-"][id$="-view"] .code-line,
+[id^="algo-"][id$="-view"] .code-line * {
+  box-sizing: border-box;
+}
+
+[id^="algo-"][id$="-view"] .algo-code-line span:not(.inline-token-focus):not(.algo-code-inline-hint),
+[id^="algo-"][id$="-view"] .code-line span:not(.inline-token-focus):not(.algo-code-inline-hint) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 /* ===== 暗色代码终端 Universal Dark Code Terminal Header 统一样式 ===== */
@@ -1355,7 +1387,7 @@ button[class*="-chip"]:hover {
 /* 5. 遗留顶栏 Hero */
 [id^="algo-"][id$="-view"] [class*="-hero"],
 [id^="algo-"][id$="-view"] [class$="-hero"],
-[id^="algo-"][id$="-view"] [class*="-h"]:not([class*="-ph"]) {
+[id^="algo-"][id$="-view"] [class*="-header"]:not([class*="-card-header"]):not([class*="-panel-header"]):not(.terminal-auto-header):not(.dark-code-terminal-header):not(.dsp-header) {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 10px !important;

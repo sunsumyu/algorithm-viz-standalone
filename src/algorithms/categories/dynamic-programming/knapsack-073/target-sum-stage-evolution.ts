@@ -1,12 +1,13 @@
 /**
- * 目标和 (LeetCode 494) 四阶段演化推演引擎与四语言代码映射
- * 阶段 1: 暴力递归 (递归搜索与运行时调用栈)
- * 阶段 2: 记忆化搜索 (备忘录 Cache Hit/Miss 追踪)
- * 阶段 3: 严格二维动态规划 (二维方案数表格自底向上填表)
- * 阶段 4: 空间压缩 (一维滚动数组逆序更新)
+ * 目标和 (LeetCode 494) 四阶段演化推演引擎
+ *
+ * 阶段 1: 暴力递归 —— 直接对每个 nums[i] 做 +/− 分治（状态 i, curSum）
+ * 阶段 2: 记忆化搜索 —— 嵌套 HashMap 缓存（curSum 可负，无法用二维数组）
+ * 阶段 3: 二维 DP —— offset 平移将 [-totalSum, +totalSum] 映射到 [0, 2·totalSum]
+ * 阶段 4: 空间压缩 —— 转化为子集和 (target+sum)/2 的 01 背包一维滚动数组
+ *         （阶段 4 的 buildTargetSumSteps 位于 target-sum-renderer.ts）
  */
 
-import { HighlightTarget } from '../../../../core/code-panel';
 import { type RecursionStepBase, type MemoStepBase, type Dp2DStepBase } from '../../../../core/step-types';
 import { TARGET_SUM_STAGE1_CODE_LANGUAGES, TARGET_SUM_STAGE2_CODE_LANGUAGES, TARGET_SUM_STAGE3_CODE_LANGUAGES } from './knapsack-073-templates';
 import { getKnapsack073Anchor } from './knapsack-073-stage-codes';
@@ -14,149 +15,176 @@ import { MemoTraceTracker, Dp2DTraceTracker } from '../../../../core/strategies/
 import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 import { RecursionTraceTracker } from '../../../../core/strategies/recursion-trace-tracker';
 
-type CallFrame = { i: number; rem: number; label: string };
+type CallFrame = { i: number; curSum: number; label: string };
 
+/** 阶段 1 步骤：暴力递归 +/- 分治 */
 interface TargetSumRecursionStep extends RecursionStepBase<CallFrame> {
   i: number;
-  remCap: number;
+  curSum: number;
   n: number;
+  /** 向后兼容旧渲染字段；新流程下与 curSum 同值 */
+  remCap: number;
 }
 
+/** 阶段 2 步骤：HashMap 记忆化 */
 interface TargetSumMemoStep extends MemoStepBase {
-  remCap: number;
+  curSum: number;
   memoHit: boolean;
+  /** 可视化快照：行=已处理元素数 i，列=sum+totalSum 偏移；未访问格 = null */
   memoGrid: (number | null)[][];
   cachedVal?: number;
+  /** 向后兼容 */
+  remCap: number;
 }
 
+/** 阶段 3 步骤：offset 二维 DP */
 interface TargetSum2DStep extends Dp2DStepBase {
+  /** dp 表：行 [0..n]，列 [0..2·totalSum]，列 j 代表实际和 j - totalSum */
   dpTable: number[][];
   depCells: Array<{ label: string; val: number; r: number; c: number }>;
+  totalSum: number;
+  offset: number;
 }
 
-
-
-
 // ==========================================
-// 2. 步骤推演生成器
+// 阶段 1: 暴力递归 (+/− 直接分治)
 // ==========================================
 
 export function buildTargetSumRecursionSteps(nums: number[], target: number, maxSteps = 800): TargetSumRecursionStep[] {
-  const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
-  const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
-  const t = isValid ? Math.floor((sum + target) / 2) : -1;
   const n = nums.length;
 
-  // 骨架（保险丝/栈快照/stepIndex/totalSteps）由 RecursionTraceTracker 引擎托管
   const tracker = new RecursionTraceTracker<TargetSumRecursionStep, CallFrame>({
     maxSteps,
     resolveLine: (anchor) => getKnapsack073Anchor(1, 'target-sum', anchor),
   });
 
-  const pushStep = (action: string, codeKey: string, i: number, rem: number, decision: string, message: string, retVal?: number) => {
+  const pushStep = (action: string, codeKey: string, i: number, curSum: number, decision: string, message: string, retVal?: number) => {
     tracker.pushStep(action, codeKey, {
       i,
-      remCap: rem,
+      curSum,
+      remCap: curSum,
       n,
       decision,
       message,
-      log: `[DFS] i=${i} rem=${rem} | ${action}: ${message}`,
+      log: `[DFS] i=${i} curSum=${curSum} | ${action}: ${message}`,
       returnValue: retVal,
       metrics: {
-        'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界回溯',
+        'metric-cur-state': i < n ? `f(i=${i}, sum=${curSum})` : '边界触底',
         'metric-cur-num': i < n ? `nums[${i}]=${nums[i]}` : '—',
         'metric-stack-depth': `${tracker.depth}`,
       },
     });
   };
 
-  if (!isValid || t < 0) {
-    pushStep('check', 'check', 0, 0, '校验失败', `🛑 奇偶性校验失败或绝对值越界：sum=${sum}, target=${target}，无整数解，返回 0 种方案。`, 0);
-    return tracker.finalize();
-  }
+  pushStep('callRoot', 'callRoot', 0, 0, '启动暴力递归',
+    `🚀 启动目标和暴力递归：对每个 nums[i] 依次尝试 '+' / '−'，当前累加和 curSum=0，目标 target=${target}。`);
 
-  pushStep('callRoot', 'callRoot', 0, t, '启动暴力递归', `🚀 启动目标和暴力分治：转化正子集目标和 t=${t}，nums 长度=${n}。`);
-
-  function dfs(i: number, rem: number): number {
+  function dfs(i: number, curSum: number): number {
     if (tracker.exhausted) return 0;
-    const label = `dfs(i=${i}, rem=${rem})`;
-    tracker.enterFrame({ i, rem, label });
-    pushStep('fnEnter', 'fnEnter', i, rem, '进入栈帧', `📥 进入栈帧 ${label}。`);
+    const label = `f(i=${i}, sum=${curSum})`;
+    tracker.enterFrame({ i, curSum, label });
+    pushStep('fnEnter', 'fnEnter', i, curSum, '进入栈帧',
+      `📥 进入栈帧 ${label}，准备对 nums[${i}]=${nums[i]} 做 +/− 分支。`);
 
     if (i === n) {
-      const ans = rem === 0 ? 1 : 0;
-      pushStep('baseCheck', 'baseCheck', i, rem, `触底判定: rem=${rem}`, ans === 1 ? `✅ 恰好凑齐目标和！返回 1 种有效方案。` : `❌ 未能恰好凑齐 (剩余 rem=${rem})，返回 0。`, ans);
+      const ways = curSum === target ? 1 : 0;
+      pushStep('baseCheck', 'baseCheck', i, curSum,
+        `触底判定: curSum=${curSum} vs target=${target}`,
+        ways === 1
+          ? `✅ 累加和恰好等于 target=${target}！返回 1 种有效表达式。`
+          : `❌ 累加和 ${curSum} ≠ target=${target}，返回 0。`,
+        ways);
       tracker.exitFrame();
-      return ans;
+      return ways;
     }
 
-    pushStep('baseCheck', 'baseCheck', i, rem, '考察元素', `🔍 考察 nums[${i}]=${nums[i]}，剩余目标和 rem=${rem}。`);
+    // 分支 1: +nums[i]
+    const plusWays = dfs(i + 1, curSum + nums[i]);
+    pushStep('branch1', 'branch1', i, curSum,
+      `分支 1: +${nums[i]} → curSum=${curSum}+${nums[i]}=${curSum + nums[i]}`,
+      `🌿 '+' 分支：给 nums[${i}]=${nums[i]} 添加正号，后续方案数 = ${plusWays}。`);
 
-    const p1 = dfs(i + 1, rem);
-    pushStep('branch1', 'branch1', i, rem, '分支 1: 不选当前数字', `🌿 分支 1：不选 nums[${i}]=${nums[i]}，后续合法方案数 = ${p1}。`);
+    // 分支 2: −nums[i]
+    const minusWays = dfs(i + 1, curSum - nums[i]);
+    pushStep('branch2', 'branch2', i, curSum,
+      `分支 2: −${nums[i]} → curSum=${curSum}−${nums[i]}=${curSum - nums[i]}`,
+      `💥 '−' 分支：给 nums[${i}]=${nums[i]} 添加负号，后续方案数 = ${minusWays}。`);
 
-    let p2 = 0;
-    if (rem >= nums[i]) {
-      p2 = dfs(i + 1, rem - nums[i]);
-      pushStep('branch2', 'branch2', i, rem, '分支 2: 选入当前数字', `💎 分支 2：选入 nums[${i}]=${nums[i]}，后续合法方案数 = ${p2}。`);
-    }
-
-    const totalWays = p1 + p2;
-    pushStep('returnSum', 'returnSum', i, rem, `方案累加: p1+p2=${totalWays}`, `📤 栈帧 ${label} 汇聚：返回两分支方案和 ${p1} + ${p2} = ${totalWays} 种。`, totalWays);
+    const totalWays = plusWays + minusWays;
+    pushStep('returnSum', 'returnSum', i, curSum,
+      `方案累加: ${plusWays}+${minusWays}=${totalWays}`,
+      `📤 栈帧 ${label} 汇聚：+ 分支 ${plusWays} + − 分支 ${minusWays} = ${totalWays} 种。`,
+      totalWays);
     tracker.exitFrame();
     return totalWays;
   }
 
-  dfs(0, t);
+  dfs(0, 0);
   return tracker.finalize();
 }
 
+// ==========================================
+// 阶段 2: HashMap 记忆化搜索
+// ==========================================
+
+/**
+ * 将嵌套 HashMap 快照为二维可视化网格。
+ * 行 = 已处理元素数 i (0..n)，列 = sum+totalSum 偏移 (0..2·totalSum)。
+ * 未访问格 = null。
+ */
+function buildMemoSnapshotGrid(
+  memo: Map<number, Map<number, number>>,
+  n: number,
+  totalSum: number,
+): (number | null)[][] {
+  const cols = 2 * totalSum + 1;
+  const grid: (number | null)[][] = Array.from({ length: n + 1 }, () =>
+    new Array<number | null>(cols).fill(null),
+  );
+  for (const [i, inner] of memo.entries()) {
+    for (const [sum, val] of inner.entries()) {
+      const col = sum + totalSum;
+      if (col >= 0 && col < cols) {
+        grid[i][col] = val;
+      }
+    }
+  }
+  return grid;
+}
+
 export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps = 800): TargetSumMemoStep[] {
-  const steps: TargetSumMemoStep[] = [];
   const n = nums.length;
-  const t = Math.floor((nums.reduce((a, b) => a + Math.abs(b), 0) + target) / 2);
-  const isValid = nums.reduce((a, b) => a + Math.abs(b), 0) >= Math.abs(target) && (nums.reduce((a, b) => a + Math.abs(b), 0) + target) % 2 === 0;
+  const totalSum = nums.reduce((a, b) => a + Math.abs(b), 0);
+
+  // 嵌套 HashMap：memo.get(i).get(curSum) = 方案数
+  const memo = new Map<number, Map<number, number>>();
+  for (let k = 0; k <= n; k++) memo.set(k, new Map());
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(2, 'target-sum', anchor);
 
-  if (!isValid || t < 0) {
-    return [{
-      stepIndex: 1,
-      totalSteps: 1,
-      action: 'check',
-      codeLine: resolveLine('check'),
-      i: 0,
-      remCap: 0,
-      memoHit: false,
-      memoGrid: [[0]],
-      hitCount: 0,
-      missCount: 0,
-      decision: '无整数解',
-      message: `🛑 奇偶性或越界无解，直接返回 0。`,
-      log: 'check: invalid',
-      metrics: {},
-    }];
-  }
-
-  const memo: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(null));
-  // 骨架（stepIndex/totalSteps/hitCount/missCount/codeLine）由 MemoTraceTracker 引擎托管
   const tracker = new MemoTraceTracker<TargetSumMemoStep>({
     maxSteps,
     resolveLine,
   });
 
-  const pushStep = (action: string, codeKey: string, i: number, rem: number, memoHit: boolean, decision: string, message: string, cachedVal?: number) => {
+  const pushStep = (
+    action: string, codeKey: string,
+    i: number, curSum: number, memoHit: boolean,
+    decision: string, message: string,
+    cachedVal?: number,
+  ) => {
     tracker.pushStep(action, codeKey, {
       i,
-      remCap: rem,
+      curSum,
+      remCap: curSum,
       memoHit,
-      memoGrid: snapshotGrid2D(memo),
+      memoGrid: buildMemoSnapshotGrid(memo, n, totalSum),
       decision,
       message,
-      log: `[MEMO] i=${i} rem=${rem} | ${action}: ${message}`,
+      log: `[MEMO] i=${i} curSum=${curSum} | ${action}: ${message}`,
       cachedVal,
       metrics: {
-        'metric-cur-state': i < n ? `dfs(i=${i}, rem=${rem})` : '边界触底',
+        'metric-cur-state': i < n ? `f(i=${i}, sum=${curSum})` : '边界触底',
         'metric-cache-status': memoHit ? '🎯 Cache HIT' : '⚪ Cache MISS',
         'metric-hit-count': `${tracker.hitCount}`,
         'metric-miss-count': `${tracker.missCount}`,
@@ -164,105 +192,159 @@ export function buildTargetSumMemoSteps(nums: number[], target: number, maxSteps
     });
   };
 
-  pushStep('callRoot', 'callRoot', 0, t, false, '启动记忆化搜索', `🚀 启动记忆化搜索：创建备忘录表格 memo[${n + 1}][${t + 1}]。`);
+  pushStep('callRoot', 'callRoot', 0, 0, false, '启动 HashMap 记忆化',
+    `🚀 启动记忆化搜索：用嵌套 HashMap 缓存 (i, curSum) → 方案数。curSum 可为负数，因此不能使用二维数组，改用 HashMap。`);
 
-  function dfsMemo(i: number, rem: number): number {
+  function dfs(i: number, curSum: number): number {
     if (tracker.exhausted) return 0;
-    pushStep('fnEnter', 'fnEnter', i, rem, false, '进入栈帧', `📥 进入栈帧 dfs(i=${i}, rem=${rem})。`);
+
+    pushStep('fnEnter', 'fnEnter', i, curSum, false, '进入栈帧',
+      `📥 进入栈帧 f(i=${i}, curSum=${curSum})。`);
 
     if (i === n) {
-      const ans = rem === 0 ? 1 : 0;
-      pushStep('baseCheck', 'baseCheck', i, rem, false, '触底结算', ans === 1 ? `✅ 凑齐目标！返回 1。` : `❌ 未凑齐，返回 0。`, ans);
-      return ans;
+      const ways = curSum === target ? 1 : 0;
+      pushStep('baseCheck', 'baseCheck', i, curSum, false, '触底结算',
+        ways === 1 ? `✅ curSum=${curSum} == target=${target}，返回 1。` : `❌ curSum=${curSum} ≠ target=${target}，返回 0。`,
+        ways);
+      return ways;
     }
 
-    if (memo[i][rem] !== null) {
+    // 查 HashMap 缓存
+    const inner = memo.get(i)!;
+    if (inner.has(curSum)) {
       tracker.registerHit();
-      const val = memo[i][rem]!;
-      pushStep('memoCheck', 'memoCheck', i, rem, true, `命中缓存 memo[${i}][${rem}] = ${val}`, `🎯 缓存命中！复用已求方案数 ${val}，直接剪枝！`, val);
+      const val = inner.get(curSum)!;
+      pushStep('memoCheck', 'memoCheck', i, curSum, true,
+        `命中缓存 HashMap[${i}][${curSum}] = ${val}`,
+        `🎯 缓存命中！(i=${i}, curSum=${curSum}) 已计算过，复用方案数 ${val}，直接剪枝！`,
+        val);
       return val;
     }
 
     tracker.registerMiss();
-    pushStep('memoCheck', 'memoCheck', i, rem, false, `未命中缓存 memo[${i}][${rem}]`, `⚪ 缓存未命中：首次探访，计算分支。`);
+    pushStep('memoCheck', 'memoCheck', i, curSum, false,
+      `缓存未命中 HashMap[${i}][${curSum}]`,
+      `⚪ 缓存未命中：(i=${i}, curSum=${curSum}) 首次探访，开始递归。`);
 
-    const p1 = dfsMemo(i + 1, rem);
-    pushStep('branch1', 'branch1', i, rem, false, '分支 1: 不选', `🌿 分支 1：不选 nums[${i}]=${nums[i]}，后续方案数 ${p1}。`);
+    // 分支 1: +nums[i]
+    const plusWays = dfs(i + 1, curSum + nums[i]);
+    pushStep('branch1', 'branch1', i, curSum, false,
+      `分支 1: +${nums[i]} → 后续方案数 ${plusWays}`,
+      `🌿 '+' 分支：给 nums[${i}]=${nums[i]} 添加正号，后续方案数 = ${plusWays}。`);
 
-    let p2 = 0;
-    if (rem >= nums[i]) {
-      p2 = dfsMemo(i + 1, rem - nums[i]);
-      pushStep('branch2', 'branch2', i, rem, false, '分支 2: 选入', `💎 分支 2：选入 nums[${i}]=${nums[i]}，后续方案数 ${p2}。`);
-    }
+    // 分支 2: −nums[i]
+    const minusWays = dfs(i + 1, curSum - nums[i]);
+    pushStep('branch2', 'branch2', i, curSum, false,
+      `分支 2: −${nums[i]} → 后续方案数 ${minusWays}`,
+      `💥 '−' 分支：给 nums[${i}]=${nums[i]} 添加负号，后续方案数 = ${minusWays}。`);
 
-    const res = p1 + p2;
-    memo[i][rem] = res;
-    pushStep('memoStore', 'memoStore', i, rem, false, `写入缓存 memo[${i}][${rem}] = ${res}`, `💾 写入缓存：memo[${i}][${rem}] = ${res} 种方案，O(1) 向上返回。`, res);
+    const res = plusWays + minusWays;
+    inner.set(curSum, res);
+    pushStep('memoStore', 'memoStore', i, curSum, false,
+      `写入缓存 HashMap[${i}][${curSum}] = ${res}`,
+      `💾 写入缓存：HashMap[${i}][${curSum}] = ${res} 种方案，O(1) 返回。`,
+      res);
     return res;
   }
 
-  dfsMemo(0, t);
+  dfs(0, 0);
   return tracker.finalize();
 }
 
+// ==========================================
+// 阶段 3: offset 平移二维 DP
+// ==========================================
+
 export function buildTargetSum2DSteps(nums: number[], target: number): TargetSum2DStep[] {
-  const steps: TargetSum2DStep[] = [];
-  const sum = nums.reduce((a, b) => a + Math.abs(b), 0);
-  const isValid = sum >= Math.abs(target) && (sum + target) % 2 === 0;
-  const t = isValid ? Math.floor((sum + target) / 2) : 0;
   const n = nums.length;
-  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(t + 1).fill(0));
+  const totalSum = nums.reduce((a, b) => a + Math.abs(b), 0);
+  const offset = totalSum;
+  const cols = 2 * totalSum + 1;
+
+  // dp[i][j]: 用前 i 个数凑出实际和 (j − offset) 的方案数
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(cols).fill(0));
 
   const resolveLine = (anchor: string) => getKnapsack073Anchor(3, 'target-sum', anchor);
   const tracker = new Dp2DTraceTracker<TargetSum2DStep>({ resolveLine });
 
-  const pushStep = (action: string, codeKey: string, curI: number, curJ: number, depCells: Array<{ label: string; val: number; r: number; c: number }>, decision: string, message: string) => {
+  const pushStep = (
+    action: string, codeKey: string,
+    curI: number, curJ: number,
+    depCells: Array<{ label: string; val: number; r: number; c: number }>,
+    decision: string, message: string,
+  ) => {
     tracker.pushStep(action, codeKey, {
       curI,
       curJ,
       dpTable: snapshotGrid2D(dp),
       depCells,
+      totalSum,
+      offset,
       decision,
       message,
-      log: `[2D DP] i=${curI} j=${curJ} | ${action}: ${message}`,
+      log: `[2D DP] i=${curI} j=${curJ} (sum=${curJ - offset}) | ${action}: ${message}`,
       metrics: {
-        'metric-cur-cell': `dp[${curI}][${curJ}]`,
+        'metric-cur-cell': `dp[${curI}][${curJ}] (sum=${curJ - offset})`,
         'metric-cell-val': `${dp[curI][curJ]} 种`,
         'metric-dep-info': depCells.map((d) => `${d.label}=${d.val}`).join(', ') || '基底 1',
       },
     });
   };
 
-  if (!isValid) {
-    pushStep('initDp', 'initDp', 0, 0, [], '无解返回 0', `🛑 奇偶性或绝对值不满足，无法凑出 target，直接返回 0。`);
-    return tracker.finalize();
-  }
-
-  dp[0][0] = 1;
-  pushStep('initDp', 'initDp', 0, 0, [], '基底初始化 dp[0][0]=1', `🚀 初始化二维状态表 dp[${n + 1}][${t + 1}]，dp[0][0]=1 表示空集凑和为 0 有且仅有 1 种方案。`);
+  // 基底：dp[0][offset] = 1（0 个数凑出和 0 有 1 种方案）
+  dp[0][offset] = 1;
+  pushStep('initDp', 'initDp', 0, offset, [],
+    '基底初始化 dp[0][offset]=1',
+    `🚀 初始化二维状态表 dp[${n + 1}][${cols}]。offset=${offset}，列 j 代表实际和 j−${offset}。dp[0][${offset}] = 1：0 个数凑出和 0 有 1 种方案。`);
 
   for (let i = 1; i <= n; i++) {
     const num = nums[i - 1];
-    pushStep('outerLoopI', 'outerLoopI', i, 0, [], `外层循环：考察 nums[${i - 1}]=${num}`, `📦 外层考察第 ${i} 个数字 nums[${i - 1}]=${num}。`);
+    pushStep('outerLoopI', 'outerLoopI', i, 0, [],
+      `外层循环：考察 nums[${i - 1}]=${num}`,
+      `📦 外层考察第 ${i} 个数字 nums[${i - 1}]=${num}。`);
 
-    for (let j = 0; j <= t; j++) {
-      dp[i][j] = dp[i - 1][j];
-      const baseDep = { label: `dp[${i - 1}][${j}]`, val: dp[i - 1][j], r: i - 1, c: j };
+    for (let j = 0; j < cols; j++) {
+      const actualSum = j - offset;
+      const depCells: Array<{ label: string; val: number; r: number; c: number }> = [];
 
-      if (j < num) {
-        pushStep('inheritNoPick', 'inheritNoPick', i, j, [baseDep], `容量不足，继承上行: dp[${i}][${j}]=${dp[i][j]}`, `⏸️ 容量 j=${j} < ${num}，无法选入，方案数继承上一行同列 ${dp[i - 1][j]} 种。`);
-      } else {
-        const prevCap = j - num;
-        const addWays = dp[i - 1][prevCap];
-        dp[i][j] += addWays;
-        const pickDep = { label: `dp[${i - 1}][${prevCap}]`, val: addWays, r: i - 1, c: prevCap };
-
-        pushStep('updatePick', 'updatePick', i, j, [baseDep, pickDep], `累加方案: dp[${i}][${j}] = ${baseDep.val} + ${addWays} = ${dp[i][j]}`, `✨ 状态累加：选入 nums[${i - 1}]=${num} 增加 ${addWays} 种方案，dp[${i}][${j}] 增至 ${dp[i][j]} 种！`);
+      // '+' 分支来源：dp[i−1][j − num]，即 dp[i−1][(actualSum − num) + offset]
+      const plusCol = j - num;
+      const plusWays = plusCol >= 0 && plusCol < cols ? dp[i - 1][plusCol] : 0;
+      if (plusCol >= 0 && plusCol < cols) {
+        depCells.push({
+          label: `dp[${i - 1}][${plusCol}] (sum=${actualSum - num})`,
+          val: plusWays,
+          r: i - 1, c: plusCol,
+        });
       }
+
+      // '−' 分支来源：dp[i−1][j + num]，即 dp[i−1][(actualSum + num) + offset]
+      const minusCol = j + num;
+      const minusWays = minusCol >= 0 && minusCol < cols ? dp[i - 1][minusCol] : 0;
+      if (minusCol >= 0 && minusCol < cols) {
+        depCells.push({
+          label: `dp[${i - 1}][${minusCol}] (sum=${actualSum + num})`,
+          val: minusWays,
+          r: i - 1, c: minusCol,
+        });
+      }
+
+      dp[i][j] = plusWays + minusWays;
+
+      pushStep('updateCell', 'updateCell', i, j, depCells,
+        `dp[${i}][${j}] = ${dp[i][j]} (sum=${actualSum})`,
+        depCells.length === 0
+          ? `📍 dp[${i}][${j}]：sum=${actualSum}，无有效来源，方案数 = 0。`
+          : `✨ dp[${i}][${j}] = ${plusWays}(+${num}) + ${minusWays}(−${num}) = ${dp[i][j]} 种方案（实际和 = ${actualSum}）。`);
     }
   }
 
-  pushStep('returnAns', 'returnAns', n, t, [{ label: `dp[${n}][${t}]`, val: dp[n][t], r: n, c: t }], `最终方案数: dp[${n}][${t}]=${dp[n][t]}`, `🎉 二维动态规划填表完毕！恰好凑齐正子集和 ${t} 的方案数（即目标和 ${target} 的表达式总数）为 ${dp[n][t]} 种！`);
+  const targetCol = target + offset;
+  const ans = targetCol >= 0 && targetCol < cols ? dp[n][targetCol] : 0;
+  pushStep('returnAns', 'returnAns', n, targetCol,
+    [{ label: `dp[${n}][${targetCol}] (sum=${target})`, val: ans, r: n, c: targetCol }],
+    `最终方案数: dp[${n}][${targetCol}]=${ans}`,
+    `🎉 offset 二维 DP 填表完毕！dp[${n}][${target + offset}] = ${ans}，即通过 +/− 凑出 target=${target} 的表达式总数！`);
 
   return tracker.finalize();
 }

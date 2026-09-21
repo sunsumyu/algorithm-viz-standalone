@@ -1,0 +1,114 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 跳跃游戏 II 顶层领域模型
+# 对应：LeetCode 45 / 左神贪心算法专题
+# 包含：双边界推进机制、标准多语言代码与 @step 物理锚点映射
+# ==============================================================================
+
+id: jump-game-ii
+name: "跳跃游戏 II"
+nameEn: "Jump Game II"
+category: "greedy"
+icon: "🦘"
+difficulty: 2
+levelOrder: 931
+learningGoal: "掌握分段推进右边界与下一步最远覆盖的贪心跳跃策略"
+description: "给定一个长度为 n 的整数数组 nums，从下标 0 出发，每次最多可以跳跃 nums[i] 步，求到达末尾的最少跳跃次数。"
+defaultParams:
+  nums: "2, 3, 1, 1, 4"
+
+problem:
+  title: "跳跃游戏 II (Jump Game II)"
+  difficulty: "中等"
+  tags: ["贪心", "数组", "动态规划", "LeetCode 45"]
+  description: "给定一个长度为 <code>n</code> 的 0 索引整数数组 <code>nums</code>。初始位置为 <code>nums[0]</code>。<br/><br/>每个元素 <code>nums[i]</code> 表示从索引 <code>i</code> 向前跳转的最大长度。换句话说，如果你在 <code>nums[i]</code> 处，你可以跳转到任意 <code>nums[i + j]</code> 处：<br/>• <code>0 <= j <= nums[i]</code> 且 <code>i + j < n</code><br/><br/>返回到达 <code>nums[n - 1]</code> 的<strong>最小跳跃次数</strong>。测试用例保证可以到达终点。"
+  examples:
+    - input: "nums = [2, 3, 1, 1, 4]"
+      output: "2"
+      explanation: "跳到最后一个位置的最小跳跃数是 2。从下标为 0 跳到下标为 1 的位置，跳 1 步，然后跳 3 步到达数组的最后一个位置。"
+    - input: "nums = [2, 3, 0, 1, 4]"
+      output: "2"
+  constraints:
+    - "1 <= nums.length <= 10^4"
+    - "0 <= nums[i] <= 1000"
+    - "题目保证可以到达 nums[n - 1]"
+
+directions:
+  forward:
+    label: "正序推进"
+    start: [0, 0]
+    target: [0, 4]
+    branches:
+      - name: "explore"
+        delta: [0, 1]
+        label: "探测跳跃"
+      - name: "jump"
+        delta: [0, 1]
+        label: "触发跳跃"
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "跳跃游戏 II (边界接力)"
+    desc: "维护当前步覆盖边界 curEnd 与下一步最远覆盖 nextReach，触碰边界即触发跳跃"
+    code:
+      forward:
+        title: "JumpGameII.java"
+        source: |
+          public int jump(int[] nums) {
+              if (nums.length <= 1) return 0; // @step:entry
+              int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+              for (int i = 0; i < nums.length - 1; i++) { // @step:loop
+                  nextReach = Math.max(nextReach, i + nums[i]); // @step:explore
+                  if (i == curEnd) { // @step:check
+                      curEnd = nextReach; // @step:jump
+                      steps++;
+                  }
+              }
+              return steps; // @step:done
+          }
+    variants:
+      standard:
+        variantLabel: "标准贪心解法"
+        title: "JumpGameII.java"
+        code:
+          forward:
+            title: "JumpGameII.java"
+            source: |
+              public int jump(int[] nums) {
+                  if (nums.length <= 1) return 0; // @step:entry
+                  int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+                  for (int i = 0; i < nums.length - 1; i++) { // @step:loop
+                      nextReach = Math.max(nextReach, i + nums[i]); // @step:explore
+                      if (i == curEnd) { // @step:check
+                          curEnd = nextReach; // @step:jump
+                          steps++;
+                      }
+                  }
+                  return steps; // @step:done
+              }
+
+analysisHtml: |
+  <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+    <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
+      <span>💡</span> 贪心核心：以最小步数跨越当前覆盖边界
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 当前覆盖边界 vs 下一步最远边界</div>
+        <p style="margin: 0; color: #94a3b8;">• <code style="color: #7dd3fc; font-family: monospace;">curEnd</code>：当前跳跃步数所能覆盖的最远右边界。<br/>
+        • <code style="color: #fbbf24; font-family: monospace;">nextReach</code>：在当前步数覆盖范围内任意起跳，再走一步所能达到的全局最远边界。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 触碰边界即刻发生跳跃 (steps++)</div>
+        <p style="margin: 0; color: #94a3b8;">遍历探针 <code style="color: #7dd3fc; font-family: monospace;">i</code> 向右扫描并不断更新 <code style="color: #fbbf24; font-family: monospace;">nextReach = Math.max(nextReach, i + nums[i])</code>。<br/>
+        当 <code style="color: #7dd3fc; font-family: monospace;">i == curEnd</code> 时，说明必须使用新的一步了：<code style="color: #34d399; font-family: monospace;">steps++</code>，并将当前边界推至 <code style="color: #7dd3fc; font-family: monospace;">curEnd = nextReach</code>。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #f472b6; margin-bottom: 4px;">③ 循环只需遍历到 nums.length - 2</div>
+        <p style="margin: 0; color: #94a3b8;">如果当前边界已经覆盖终点，无需再在终点处多跳一次，因此循环只需遍历到倒数第二个元素。</p>
+      </div>
+    </div>
+  </div>

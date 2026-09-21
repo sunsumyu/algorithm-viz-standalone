@@ -39,6 +39,14 @@ export function buildJumpGameIISteps(nums: number[]): JumpGameIIStep[] {
     message: '核心机制：分段跳跃，维护当前跳跃右边界 curEnd 与下一步最远覆盖 nextReach',
     log: `enter jump(nums=[${nums.join(',')}])`,
     codeLine: lines.entry,
+    vars: [{ name: 'nums.length', value: String(n) }, { name: 'steps', value: '0' }],
+    metrics: {
+      'cur-pos': '[0]',
+      'cur-boundary': '[0]',
+      'next-boundary': '[0]',
+      jumps: '0 步',
+      action: '初始化',
+    },
   });
 
   if (n <= 1) {
@@ -52,6 +60,14 @@ export function buildJumpGameIISteps(nums: number[]): JumpGameIIStep[] {
       message: '特判直接返回',
       log: 'guard n<=1 -> 0',
       codeLine: lines.done,
+      vars: [{ name: 'steps', value: '0' }],
+      metrics: {
+        'cur-pos': '[0]',
+        'cur-boundary': '[0]',
+        'next-boundary': '[0]',
+        jumps: '0 步',
+        action: '🏁 已达终点',
+      },
     });
     return steps;
   }
@@ -75,6 +91,21 @@ export function buildJumpGameIISteps(nums: number[]): JumpGameIIStep[] {
       message: `当前步覆盖边界 curEnd=${curEnd}，下一步最远可达 nextReach=${nextReach}`,
       log: `scan i=${i}, reach=${reachableFromHere}, nextReach=${nextReach}`,
       codeLine: lines.explore,
+      vars: [
+        { name: 'i', value: String(i) },
+        { name: 'nums[i]', value: String(nums[i]) },
+        { name: 'reach', value: String(reachableFromHere) },
+        { name: 'nextReach', value: String(nextReach) },
+        { name: 'curEnd', value: String(curEnd) },
+        { name: 'steps', value: String(stepsCount) },
+      ],
+      metrics: {
+        'cur-pos': `[${i}]`,
+        'cur-boundary': `[${curEnd}]`,
+        'next-boundary': `[${nextReach}]`,
+        jumps: `${stepsCount} 步`,
+        action: '🔍 扫描边界内节点',
+      },
     });
 
     if (hitBoundary) {
@@ -92,6 +123,18 @@ export function buildJumpGameIISteps(nums: number[]): JumpGameIIStep[] {
         message: `第 ${stepsCount} 次跳跃最远可达索引 ${curEnd}`,
         log: `jump boundary hit at i=${i}, curEnd->${curEnd}, steps=${stepsCount}`,
         codeLine: lines.jumpStep,
+        vars: [
+          { name: 'i', value: String(i) },
+          { name: 'curEnd', value: String(curEnd) },
+          { name: 'steps', value: String(stepsCount) },
+        ],
+        metrics: {
+          'cur-pos': `[${i}]`,
+          'cur-boundary': `[${curEnd}]`,
+          'next-boundary': `[${nextReach}]`,
+          jumps: `${stepsCount} 步`,
+          action: '🦘 边界接力跳跃',
+        },
       });
     }
   }
@@ -107,6 +150,16 @@ export function buildJumpGameIISteps(nums: number[]): JumpGameIIStep[] {
     message: '右边界分段贪心跳跃达成全局最少跳跃',
     log: `done steps=${stepsCount}`,
     codeLine: lines.done,
+    vars: [
+      { name: 'return steps', value: String(stepsCount) },
+    ],
+    metrics: {
+      'cur-pos': `[${n - 1}]`,
+      'cur-boundary': `[${curEnd}]`,
+      'next-boundary': `[${nextReach}]`,
+      jumps: `${stepsCount} 步`,
+      action: '🏁 已达终点',
+    },
   });
 
   return steps;

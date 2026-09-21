@@ -25,15 +25,17 @@ export interface JumpStep {
   message: string;
   log: string;
   codeLine: HighlightTarget;
+  vars?: Array<{ name: string; value: string | number; type?: string }>;
   metrics?: Record<string, string>;
 }
 
 export const JUMP_GAME_CODE_LINES: Record<string, HighlightTarget> = {
-  guard: { java: 2, cpp: 4, python: 3, javascript: 2 },
-  init: { java: 3, cpp: 5, python: 5, javascript: 3 },
-  scan: { java: 7, cpp: 9, python: 9, javascript: 7 },
-  jump: { java: 10, cpp: 12, python: 12, javascript: 10 },
-  done: { java: 13, cpp: 15, python: 13, javascript: 13 },
+  guard: { java: 2, cpp: 2, python: 2, javascript: 2 },
+  init: { java: 3, cpp: 3, python: 3, javascript: 3 },
+  scan: { java: 5, cpp: 5, python: 5, javascript: 5 },
+  check: { java: 6, cpp: 6, python: 6, javascript: 6 },
+  jump: { java: 7, cpp: 7, python: 7, javascript: 7 },
+  done: { java: 11, cpp: 11, python: 9, javascript: 11 },
 };
 
 export function buildJumpGameSteps(arr: number[]): JumpStep[] {
@@ -54,6 +56,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
       message: '数组长度 <= 1，已经在终点，无需跳跃，步数为 0',
       log: 'no jumps needed',
       codeLine: JUMP_GAME_CODE_LINES.guard,
+      vars: [{ name: 'nums.length', value: n }, { name: 'steps', value: 0 }],
     });
     return steps;
   }
@@ -72,9 +75,14 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
     jumpFrom: -1,
     jumpTo: -1,
     action: 'init',
-    message: `初始化：nums = [${arr.join(', ')}]，jumps=0, curBoundary=0, nextBoundary=0`,
+    message: `初始化状态：nums = [${arr.join(', ')}]，curEnd=0, nextReach=0, steps=0`,
     log: `init: jumps=0, boundary=0, farthest=0`,
     codeLine: JUMP_GAME_CODE_LINES.init,
+    vars: [
+      { name: 'curEnd', value: 0 },
+      { name: 'nextReach', value: 0 },
+      { name: 'steps', value: 0 },
+    ],
   });
 
   for (let i = 0; i < n - 1; i++) {
@@ -91,9 +99,16 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
       jumpFrom: -1,
       jumpTo: -1,
       action: 'scan',
-      message: `🔍 扫描下标 [${i}]=${arr[i]}，从该点可达下标 ${reach}，更新下一步最远 nextBoundary=${nextDistance}`,
-      log: `scan i=${i}: reach=${reach}, nextBoundary=${nextDistance}`,
+      message: `🔍 扫描下标 [${i}]=${arr[i]}，从该点可达下标 ${reach}，更新下一步最远 nextReach=${nextDistance}`,
+      log: `scan i=${i}: reach=${reach}, nextReach=${nextDistance}`,
       codeLine: JUMP_GAME_CODE_LINES.scan,
+      vars: [
+        { name: 'i', value: i },
+        { name: 'reach', value: reach },
+        { name: 'nextReach', value: nextDistance },
+        { name: 'curEnd', value: curDistance },
+        { name: 'steps', value: jumps },
+      ],
     });
 
     if (i === curDistance) {
@@ -111,9 +126,14 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
         jumpFrom: prevBoundary,
         jumpTo: curDistance,
         action: 'jump',
-        message: `🦘 到达当前跳跃边界 [${i}]！必须跳跃一次，jumps=${jumps}，新边界推进至 [${curDistance}]`,
+        message: `🦘 到达当前跳跃边界 [${i}]！必须跳跃一次，steps=${jumps}，新边界推进至 [${curDistance}]`,
         log: `jump #${jumps}: ${prevBoundary} → ${curDistance}`,
         codeLine: JUMP_GAME_CODE_LINES.jump,
+        vars: [
+          { name: 'i', value: i },
+          { name: 'curEnd', value: curDistance },
+          { name: 'steps', value: jumps },
+        ],
       });
 
       if (curDistance >= n - 1) {
@@ -135,6 +155,9 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
     message: `🎉 成功到达终点！最少跳跃次数为 ${jumps} 次`,
     log: `done: jumps=${jumps}`,
     codeLine: JUMP_GAME_CODE_LINES.done,
+    vars: [
+      { name: 'return steps', value: jumps },
+    ],
   });
 
   return steps;
@@ -143,7 +166,7 @@ export function buildJumpGameSteps(arr: number[]): JumpStep[] {
 /** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
 function withMetrics(steps: JumpStep[]): JumpStep[] {
   return steps.map((s) => {
-    let action = s.isJump ? '🦘 触碰边界 (jumps++)' : '🔍 扫描边界内节点';
+    let action = s.isJump ? '🦘 触碰边界 (steps++)' : '🔍 扫描边界内节点';
     if (s.action === 'done') action = '🏁 已达终点';
     else if (s.action === 'init') action = '初始化';
 

@@ -142,14 +142,16 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       expect(hitSteps.length).toBeGreaterThan(0);
     });
 
-    it('3.5 阶段 3 严格二维动态规划正确自底向上填表', async () => {
+    it('3.5 阶段 3 offset 平移二维 DP 正确填表', async () => {
       const { buildTargetSum2DSteps } = await import('./target-sum-stage-evolution');
       const steps = buildTargetSum2DSteps([1, 1, 1], 1);
       expect(steps.length).toBeGreaterThan(0);
       const last = steps[steps.length - 1];
       expect(last.action).toBe('returnAns');
-      // nums=[1,1,1], sum=3, target=1 -> t=(1+3)/2 = 2, dp[3][2] = 3
-      expect(last.dpTable[3][2]).toBe(3);
+      // nums=[1,1,1], sum=3, offset=3, cols=7
+      // target=1, answer at dp[3][target+offset] = dp[3][4]
+      // 方案数: +1+1-1, +1-1+1, -1+1+1 → 3 种
+      expect(last.dpTable[3][4]).toBe(3);
     });
   });
 

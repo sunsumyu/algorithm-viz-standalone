@@ -174,7 +174,7 @@ export function highlightTokens(
         if (isFunc) {
           out += `<span class="algo-code-token-func text-sky-300">${escapeHtml(word)}</span>`;
         } else {
-          out += `<span class="algo-code-ident cursor-help" data-var="${escapeHtml(word)}">${escapeHtml(word)}</span>`;
+          out += `<span class="algo-code-ident" data-var="${escapeHtml(word)}">${escapeHtml(word)}</span>`;
         }
       }
       i = j;

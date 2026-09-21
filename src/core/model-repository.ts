@@ -39,6 +39,7 @@ import lastStoneWeightIIModel from './models/last-stone-weight-ii.yaml';
 import onesAndZeroesModel from './models/ones-and-zeroes.yaml';
 import multipleKnapsackModel from './models/multiple-knapsack.yaml';
 import profitableSchemesModel from './models/profitable-schemes.yaml';
+import jumpGameIIModel from './models/jump-game-ii.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -102,6 +103,8 @@ export class AlgorithmModelRepository {
     ['ones-and-zeros', onesAndZeroesModel as IYamlAlgorithmModel],
     ['multiple-knapsack', multipleKnapsackModel as IYamlAlgorithmModel],
     ['profitable-schemes', profitableSchemesModel as IYamlAlgorithmModel],
+    ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
+    ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
   ]);
 
   // 不可变阶段编译缓存表

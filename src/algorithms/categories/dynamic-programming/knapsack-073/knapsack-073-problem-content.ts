@@ -475,23 +475,29 @@ export const TARGET_SUM_PROBLEM_HTML = `
 
 export const TARGET_SUM_ANALYSIS_HTML = `
 <div class="problem-analysis">
-  <h3>目标和向01背包子集和计数的严谨归约</h3>
+  <h3>目标和四种解法演进（左程云第73课）</h3>
   <ol>
-    <li><strong>正负集合划分：</strong>
-      <p>设添加 <code>+</code> 号的元素集合为 <code>P</code>，添加 <code>-</code> 号的元素集合为 <code>N</code>。根据题意：</p>
+    <li><strong>方法 1 · 暴力递归：</strong>
+      <p>状态定义为 <code>f(i, curSum)</code>：从第 <code>i</code> 个数字开始，前面已凑出累加和 <code>curSum</code>，最终能凑出 <code>target</code> 的方案数。每个数字前放 <code>+</code> 或 <code>-</code>，两种分支。</p>
+      <p>边界：<code>i == n</code> 时，<code>curSum == target</code> 返回 1，否则返回 0。</p>
+      <p>复杂度：时间 <code>O(2^N)</code>，空间 <code>O(N)</code>（递归栈深度）。</p>
+    </li>
+    <li><strong>方法 2 · 记忆化搜索：</strong>
+      <p>在方法 1 基础上，用嵌套 <code>HashMap&lt;Integer, HashMap&lt;Integer, Integer&gt;&gt;</code> 缓存 <code>(i, curSum)</code> → 方案数。因为 <code>curSum</code> 可正可负，无法使用二维数组，必须用哈希表。</p>
+      <p>复杂度：时间 <code>O(N · sum)</code>，空间 <code>O(N · sum)</code>。</p>
+    </li>
+    <li><strong>方法 3 · offset 平移二维 DP：</strong>
+      <p>将累加和范围 <code>[-totalSum, +totalSum]</code> 平移到 <code>[0, 2·totalSum]</code>，构造二维 DP 表 <code>dp[i][j]</code> 表示用前 <code>i</code> 个数凑出实际和 <code>j - offset</code> 的方案数。</p>
+      <p>转移：<code>dp[i][j] = dp[i-1][j-num] + dp[i-1][j+num]</code>（+ 分支与 − 分支方案数之和）。</p>
+      <p>基底：<code>dp[0][offset] = 1</code>（0 个数凑出和 0 有 1 种方案）。</p>
+    </li>
+    <li><strong>方法 4 · 转化为 01 背包（空间压缩）：</strong>
+      <p>设添加 <code>+</code> 号的元素集合为 <code>P</code>，添加 <code>-</code> 号的元素集合为 <code>N</code>：</p>
       <p style="text-align:center;font-weight:700;color:#38bdf8;">sum(P) - sum(N) = target</p>
-      <p>又因为数组总和为 <code>sum = sum(P) + sum(N)</code>，两式相加：</p>
-      <p style="text-align:center;font-weight:700;color:#38bdf8;">2 &middot; sum(P) = target + sum &rArr; sum(P) = (target + sum) / 2</p>
-    </li>
-    <li><strong>无解边界判断：</strong>
-      <ul>
-        <li>如果 <code>sum &lt; abs(target)</code>，即便全取正号也达不到 target，方案数为 0。</li>
-        <li>如果 <code>(target + sum)</code> 为奇数，无法整除 2，方案数为 0（奇偶性守恒定律）。</li>
-      </ul>
-    </li>
-    <li><strong>01背包计数问题：</strong>
-      <p>问题完全等价于：在非负数组 <code>nums</code> 中挑选元素，使其累加和恰好等于容量 <code>t = (target + sum) / 2</code> 的子序列个数！</p>
-      <p>状态转移：<code>dp[j] = dp[j] + dp[j - num]</code>，初始化 <code>dp[0] = 1</code>（空集累加和为 0 算 1 种方案）。</p>
+      <p>又因为 <code>sum = sum(P) + sum(N)</code>，两式相加：</p>
+      <p style="text-align:center;font-weight:700;color:#38bdf8;">2 · sum(P) = target + sum &rArr; sum(P) = (target + sum) / 2</p>
+      <p>问题等价于：挑选元素使其累加和恰好等于 <code>t = (target + sum) / 2</code> 的 01 背包方案计数。</p>
+      <p>空间压缩：一维数组 <code>dp[j]</code> 逆序更新，<code>dp[j] += dp[j - num]</code>。</p>
     </li>
   </ol>
 </div>
@@ -504,12 +510,14 @@ export const TARGET_SUM_CODE_LANGUAGES: Record<string, string[]> = {
     '#include <cmath>',
     'using namespace std;',
     '',
-    '// 目标和 (LeetCode 494) - 转化为01背包恰好装满的方案数',
-    'int findTargetSumWays(vector<int>& nums, int target) {',
+    '// 阶段 4: 转化为 01 背包求方案数 (空间压缩)',
+    'int findTargetSumWays4(vector<int>& nums, int target) {',
     '    int sum = 0;',
     '    for (int num : nums) sum += num;',
     '    if (sum < abs(target) || ((target + sum) & 1)) return 0;',
-    '    int t = (target + sum) / 2;',
+    '    return subsets(nums, (target + sum) / 2);',
+    '}',
+    'int subsets(vector<int>& nums, int t) {',
     '    vector<int> dp(t + 1, 0);',
     '    dp[0] = 1;',
     '    for (int num : nums) {',
@@ -523,13 +531,18 @@ export const TARGET_SUM_CODE_LANGUAGES: Record<string, string[]> = {
   java: [
     'package class073;',
     '',
-    '// 目标和 - 01背包空间压缩版本 (左程云标准实现)',
+    '// 阶段 4: 转化为 01 背包求方案数 (空间压缩)',
+    '// 推导: sum(P) - sum(N) = target, sum(P) + sum(N) = sum',
+    '// 两式相加: 2 * sum(P) = target + sum => sum(P) = (target + sum) / 2',
     'public class Code03_TargetSum {',
-    '    public static int findTargetSumWays(int[] nums, int target) {',
+    '    public static int findTargetSumWays4(int[] nums, int target) {',
     '        int sum = 0;',
     '        for (int n : nums) sum += n;',
     '        if (sum < target || ((target & 1) ^ (sum & 1)) == 1) return 0;',
-    '        int t = (target + sum) >> 1;',
+    '        return subsets(nums, (target + sum) >> 1);',
+    '    }',
+    '    // 从 nums 中挑选若干个数，使得累加和恰好等于 t 的方案数',
+    '    private static int subsets(int[] nums, int t) {',
     '        if (t < 0) return 0;',
     '        int[] dp = new int[t + 1];',
     '        dp[0] = 1;',
@@ -543,12 +556,17 @@ export const TARGET_SUM_CODE_LANGUAGES: Record<string, string[]> = {
     '}',
   ],
   python: [
-    'def find_target_sum_ways(nums: list[int], target: int) -> int:',
-    '    """目标和 - 集合划分转01背包求方案数"""',
+    '# 阶段 4: 转化为 01 背包求方案数 (空间压缩)',
+    'def find_target_sum_ways4(nums: list[int], target: int) -> int:',
     '    s = sum(nums)',
     '    if s < abs(target) or (s + target) % 2 != 0:',
     '        return 0',
-    '    t = (s + target) // 2',
+    '    return _subsets(nums, (s + target) // 2)',
+    '',
+    'def _subsets(nums: list[int], t: int) -> int:',
+    '    """从 nums 中挑选若干个数，使得累加和恰好等于 t 的方案数"""',
+    '    if t < 0:',
+    '        return 0',
     '    dp = [0] * (t + 1)',
     '    dp[0] = 1',
     '    for num in nums:',
@@ -557,11 +575,16 @@ export const TARGET_SUM_CODE_LANGUAGES: Record<string, string[]> = {
     '    return dp[t]',
   ],
   javascript: [
-    '// 目标和 - 转化为01背包方案数',
-    'export function findTargetSumWays(nums, target) {',
+    '// 阶段 4: 转化为 01 背包求方案数 (空间压缩)',
+    '// 推导: sum(P) - sum(N) = target, sum(P) + sum(N) = sum',
+    '// 两式相加: 2 * sum(P) = target + sum => sum(P) = (target + sum) / 2',
+    'export function findTargetSumWays4(nums, target) {',
     '  const sum = nums.reduce((a, b) => a + b, 0);',
     '  if (sum < Math.abs(target) || (sum + target) % 2 !== 0) return 0;',
-    '  const t = Math.floor((sum + target) / 2);',
+    '  return subsets(nums, Math.floor((sum + target) / 2));',
+    '}',
+    'function subsets(nums, t) {',
+    '  if (t < 0) return 0;',
     '  const dp = new Array(t + 1).fill(0);',
     '  dp[0] = 1;',
     '  for (const num of nums) {',
