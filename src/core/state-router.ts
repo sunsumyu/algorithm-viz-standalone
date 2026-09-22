@@ -148,11 +148,39 @@ export class VisualizerStateRouter {
 
   /**
    * 更新当前页面的 URL Hash (无需重载页面)
+   * 强化沙箱安全与跨框架容错：
+   * 1. 优先尝试同步更新父级宿主窗口的 URL Hash (解决 iframe 内部持久化需求)
+   * 2. 避免在 about:srcdoc 等特殊安全上下文调用外部 replaceState 抛出 SecurityError
+   * 3. 全量包裹异常拦截，确保 URL 同步故障绝不阻断算法动画与单步推演
    */
   public static updateHash(state: Partial<VisualizerState>): void {
-    if (typeof window === 'undefined' || !window.history) return;
+    if (typeof window === 'undefined') return;
     const hash = this.serialize(state);
-    window.history.replaceState(null, '', hash || window.location.pathname + window.location.search);
+
+    // 1. 若运行于 iframe 中，优先同步更新宿主父窗口的 URL Hash
+    try {
+      if (window.parent && window.parent !== window && window.parent.history) {
+        const parentLoc = window.parent.location;
+        const parentPath = parentLoc.pathname + parentLoc.search;
+        window.parent.history.replaceState(null, '', hash || parentPath);
+        return;
+      }
+    } catch {
+      // 跨域或沙箱受限，平滑回退
+    }
+
+    // 2. 当前窗口安全更新
+    try {
+      const href = typeof window.location.href === 'string' ? window.location.href : '';
+      const isSrcDoc = href.startsWith('about:') || window.location.protocol === 'about:';
+
+      if (!isSrcDoc && window.history && typeof window.history.replaceState === 'function') {
+        const currentPath = window.location.pathname + window.location.search;
+        window.history.replaceState(null, '', hash || currentPath);
+      }
+    } catch {
+      // 静默降级，严禁因路由异常打断主播放与高亮
+    }
   }
 
   /**

@@ -112,4 +112,30 @@ describe('VisualizerStateRouter (Deep Module) Pure State Machine Guard', () => {
     expect(caretaker.getHistory().length).toBe(3);
     expect(caretaker.getHistory()[0].state.step).toBe(5);
   });
+
+  it('6. updateHash 在 iframe 或 about:srcdoc 特殊沙箱环境下安全运行且绝不抛出 SecurityError', () => {
+    const originalWindow = (globalThis as any).window;
+    try {
+      // 模拟带有 about:srcdoc 安全沙箱的 window 对象，replaceState 会抛出 SecurityError
+      (globalThis as any).window = {
+        location: { href: 'about:srcdoc', pathname: '', search: '', protocol: 'about:' },
+        history: {
+          replaceState: () => {
+            throw new Error("SecurityError: Failed to execute 'replaceState' on 'History'");
+          }
+        },
+        parent: null
+      };
+
+      expect(() => {
+        VisualizerStateRouter.updateHash({
+          algo: 'assign-cookies',
+          stage: 'stage-1',
+          step: 6
+        });
+      }).not.toThrow();
+    } finally {
+      (globalThis as any).window = originalWindow;
+    }
+  });
 });
