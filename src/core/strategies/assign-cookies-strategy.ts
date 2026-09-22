@@ -4,24 +4,24 @@
  * 对应 LeetCode 455
  */
 
-import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
+import { BaseAlgorithmStrategy } from './base-algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep } from '../universal-stage-engine';
 import { TwoSequenceGreedyStepCompiler } from './two-sequence-greedy-step-compiler';
 
-export class AssignCookiesStrategy implements IAlgorithmStrategy {
-  public readonly modelId: string = 'assign-cookies';
-
-  public canHandle(modelId: string): boolean {
-    return modelId === this.modelId;
+export class AssignCookiesStrategy extends BaseAlgorithmStrategy {
+  constructor() {
+    super('assign-cookies');
   }
 
-  public generateSteps(
+  protected compileStage(
     model: IYamlAlgorithmModel,
-    params: StageExecutionParams
+    stage: number,
+    direction: 'forward' | 'reverse',
+    options?: any
   ): UniversalStep[] {
-    const rawG = params.customInputs?.g ?? model.defaultParams?.g;
-    const rawS = params.customInputs?.s ?? model.defaultParams?.s;
+    const rawG = options?.customInputs?.g ?? model.defaultParams?.g;
+    const rawS = options?.customInputs?.s ?? model.defaultParams?.s;
     const g = this.parseSequence(rawG, [1, 2, 3]);
     const s = this.parseSequence(rawS, [1, 2, 4]);
 
@@ -30,7 +30,7 @@ export class AssignCookiesStrategy implements IAlgorithmStrategy {
       {
         seqA: g,
         seqB: s,
-        direction: params.direction === 'reverse' ? 'reverse' : 'forward',
+        direction,
         domainContext: {
           seqALabel: '孩子胃口 (g)',
           seqBLabel: '饼干尺寸 (s)',
@@ -39,7 +39,7 @@ export class AssignCookiesStrategy implements IAlgorithmStrategy {
           targetMetric: '满足孩子数',
         },
       },
-      params.stage ?? 1
+      stage
     );
   }
 
