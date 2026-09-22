@@ -28,6 +28,7 @@ import { MinTapsStrategy } from './min-taps-strategy';
 import { IntervalRelayStepCompiler } from './interval-relay-step-compiler';
 import { MinArrowsStrategy } from './min-arrows-strategy';
 import { NonOverlappingStrategy } from './non-overlapping-strategy';
+import { MergeIntervalsStrategy } from './merge-intervals-strategy';
 import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
@@ -137,6 +138,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MinTapsStrategy());
   AlgorithmStrategyRegistry.register(new MinArrowsStrategy());
   AlgorithmStrategyRegistry.register(new NonOverlappingStrategy());
+  AlgorithmStrategyRegistry.register(new MergeIntervalsStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -176,6 +178,7 @@ export {
   IntervalRelayStepCompiler,
   MinArrowsStrategy,
   NonOverlappingStrategy,
+  MergeIntervalsStrategy,
   IntervalSchedulingStepCompiler
 };
 

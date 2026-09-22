@@ -3,7 +3,8 @@
  * LeetCode 56：左端点升序排序 + 重叠时贪心扩展右边界 + 不重叠追加新区间
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   MERGE_INTERVALS_PROBLEM_HTML,
@@ -217,70 +218,20 @@ export function renderMergeIntervalsCanvas(container: HTMLElement, step: MergeSt
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'merge-intervals',
   name: '合并区间',
+  viewId: 'merge-intervals',
   category: 'greedy',
-  description: '按左端点升序排序，遍历合并所有重叠区间，动态扩展当前重叠最大右端点',
   icon: '🧩',
   difficulty: 2,
   levelOrder: 11,
   learningGoal: '掌握区间合并标准贪心流程，学会维护合并结果集末尾区间的动态扩界技巧',
-  inputs: [
-    {
-      id: 'intervals',
-      label: '区间集合',
-      type: 'text',
-      defaultValue: '[[1,3],[2,6],[8,10],[15,18]]',
-      placeholder: '[[1,3],[2,6],[8,10],[15,18]]',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (3 个)', values: { intervals: '[[1,3],[2,6],[8,10],[15,18]]' } },
-    { label: '邻接合并 (1 个)', values: { intervals: '[[1,4],[4,5]]' } },
-    { label: '完全包含 (1 个)', values: { intervals: '[[1,4],[2,3]]' } },
-  ],
-  metrics: [
-    { id: 'cur-interval', label: '当前考察区间', color: '#2563eb' },
-    { id: 'last-interval', label: '结果集末尾区间', color: '#059669' },
-    { id: 'merged-count', label: '合并后区间数', color: '#10b981' },
-    { id: 'merged-list', label: '合并结果集合', color: '#334155' },
-    { id: 'action', label: '操作决策', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 原始区间', color: '#3b82f6' },
-    { label: '✓ 合并后结果', color: '#10b981' },
-  ],
-  codeLanguages: MERGE_INTERVALS_CODE_LANGUAGES,
-  problemHtml: MERGE_INTERVALS_PROBLEM_HTML,
-  analysisHtml: MERGE_INTERVALS_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    let intervals: Array<[number, number]> = [];
-    try {
-      const parsed = JSON.parse(String(inputs.intervals ?? '[[1,3],[2,6],[8,10],[15,18]]'));
-      if (Array.isArray(parsed) && parsed.every((p) => Array.isArray(p) && p.length >= 2)) {
-        intervals = parsed.map((p) => [Number(p[0]), Number(p[1])]);
-      }
-    } catch {
-      intervals = [
-        [1, 3],
-        [2, 6],
-        [8, 10],
-        [15, 18],
-      ];
-    }
-    return withMetrics(
-      buildMergeIntervalsSteps(
-        intervals.length
-          ? intervals
-          : [
-              [1, 3],
-              [2, 6],
-              [8, 10],
-              [15, 18],
-            ]
-      )
-    );
-  },
-  renderCanvas: (container, step) => renderMergeIntervalsCanvas(container, step as MergeStep),
+  description: '按左端点升序排序，遍历合并所有重叠区间，动态扩展当前重叠最大右端点',
+  template: `<div id="merge-intervals" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerMergeIntervals(): void {
+  // 保持向前兼容导出
+}

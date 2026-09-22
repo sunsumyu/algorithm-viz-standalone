@@ -3563,7 +3563,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "merge-intervals",
     name: "合并区间",
-    viewId: "algo-merge-intervals-view",
+    viewId: "merge-intervals",
     category: "greedy",
     description: "按左端点升序排序，遍历合并所有重叠区间，动态扩展当前重叠最大右端点",
     icon: "🧩",

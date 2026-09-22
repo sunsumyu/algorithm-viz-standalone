@@ -109,6 +109,34 @@ export class IntervalSchedulingStepCompiler {
     );
   }
 
+  /**
+   * 便捷适配器：合并区间 (LeetCode 56)
+   */
+  public static compileMerge(
+    model: IYamlAlgorithmModel,
+    rawIntervals: Array<[number, number]>,
+    options?: Partial<IntervalSchedulingCompileOptions>,
+    stage: number = 1
+  ): UniversalStep[] {
+    return this.compile(
+      model,
+      {
+        intervals: rawIntervals,
+        mode: 'merge-intervals',
+        direction: options?.direction,
+        anchorMap: options?.anchorMap,
+        domainContext: {
+          itemLabel: '区间',
+          unitLabel: '个',
+          actionLabel: '合并',
+          targetMetric: '合并后区间数',
+          ...options?.domainContext,
+        },
+      },
+      stage
+    );
+  }
+
   private static extractAnchors(
     model: IYamlAlgorithmModel,
     stage: number,
@@ -161,18 +189,31 @@ export class IntervalSchedulingStepCompiler {
 
     // 1. 统一按左端点升序预处理
     const intervals: Array<[number, number]> = raw.map(([s, e]) => [s, e] as [number, number]).sort((a, b) => a[0] - b[0]);
+    const mergedList: Array<[number, number]> = [];
 
-    const buildStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => [
-      {
-        id: 'intervals',
-        name: `${itemLabel}列表`,
-        indices: intervals.map((_, idx) => idx),
-        values: intervals.map(([s, e]) => `[${s},${e}]`),
-        activeIdx,
-        highlightIndices,
-        color: 'emerald',
-      },
-    ];
+    const buildStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => {
+      const arrs: StateArrayItem[] = [
+        {
+          id: 'intervals',
+          name: `${itemLabel}列表`,
+          indices: intervals.map((_, idx) => idx),
+          values: intervals.map(([s, e]) => `[${s},${e}]`),
+          activeIdx,
+          highlightIndices,
+          color: 'emerald',
+        },
+      ];
+      if (mode === 'merge-intervals' && mergedList.length > 0) {
+        arrs.push({
+          id: 'merged',
+          name: '已合并集合 (merged)',
+          indices: mergedList.map((_, idx) => idx),
+          values: mergedList.map(([s, e]) => `[${s},${e}]`),
+          color: 'indigo',
+        });
+      }
+      return arrs;
+    };
 
     // Step 0: 入口
     steps.push({
@@ -210,6 +251,9 @@ export class IntervalSchedulingStepCompiler {
     const startIdx = !isReverse ? 0 : n - 1;
     let count = mode === 'arrows' ? 1 : 0;
     let curBound = !isReverse ? intervals[startIdx][1] : intervals[startIdx][0];
+    if (mode === 'merge-intervals') {
+      mergedList.push([intervals[startIdx][0], intervals[startIdx][1]]);
+    }
 
     steps.push({
       stepIndex: steps.length,
@@ -246,9 +290,9 @@ export class IntervalSchedulingStepCompiler {
       // 重叠与非重叠判定
       let isOverlap = false;
       if (!isReverse) {
-        isOverlap = mode === 'arrows' ? curStart <= curBound : curStart < curBound;
+        isOverlap = (mode === 'arrows' || mode === 'merge-intervals') ? curStart <= curBound : curStart < curBound;
       } else {
-        isOverlap = mode === 'arrows' ? curEnd >= curBound : curEnd > curBound;
+        isOverlap = (mode === 'arrows' || mode === 'merge-intervals') ? curEnd >= curBound : curEnd > curBound;
       }
 
       if (isOverlap) {
@@ -296,6 +340,36 @@ export class IntervalSchedulingStepCompiler {
               'count': `${count} 个`,
               'boundary': `x = ${curBound}`,
               'action': '🗑️ 贪心消除冲突',
+            },
+          });
+        } else if (mode === 'merge-intervals') {
+          const last = mergedList[mergedList.length - 1];
+          const oldEnd = !isReverse ? last[1] : last[0];
+          if (!isReverse) {
+            last[1] = Math.max(last[1], curEnd);
+            curBound = last[1];
+          } else {
+            last[0] = Math.min(last[0], curStart);
+            curBound = last[0];
+          }
+          steps.push({
+            stepIndex: steps.length,
+            stage,
+            codeLine: anchorMap['merge'] ?? anchorMap['overlap'] ?? 5,
+            decision: `🧩 发现重叠！${itemLabel} [${i}]=[${curStart}, ${curEnd}] ${!isReverse ? `左端点 ${curStart} ≤ 末尾右界 ${oldEnd}` : `右端点 ${curEnd} ≥ 首项左界 ${oldEnd}`}，贪心延展合并边界至 ${curBound}`,
+            message: `贪心性质：重叠区间合二为一，动态扩展边界取更优覆盖`,
+            variables: {
+              'i': i,
+              'cur': `[${curStart},${curEnd}]`,
+              'curBound': curBound,
+              'mergedCount': mergedList.length,
+            },
+            stateArrays: buildStateArrays(i),
+            activeIndices: [i],
+            metrics: {
+              'count': `${mergedList.length} 个`,
+              'boundary': `x = ${curBound}`,
+              'action': '🧩 贪心延展合并',
             },
           });
         }
@@ -346,6 +420,29 @@ export class IntervalSchedulingStepCompiler {
               'action': '✅ 保留无冲突',
             },
           });
+        } else if (mode === 'merge-intervals') {
+          mergedList.push([curStart, curEnd]);
+          curBound = !isReverse ? curEnd : curStart;
+          steps.push({
+            stepIndex: steps.length,
+            stage,
+            codeLine: anchorMap['append'] ?? anchorMap['new_arrow'] ?? anchorMap['choose'] ?? 4,
+            decision: `➕ 不重叠！${itemLabel} [${i}]=[${curStart}, ${curEnd}] 处于合并块之外，作为新独立区间追加至结果集`,
+            message: `独立互斥区间不可合并，直接产生新区间`,
+            variables: {
+              'i': i,
+              'cur': `[${curStart},${curEnd}]`,
+              'curBound': curBound,
+              'mergedCount': mergedList.length,
+            },
+            stateArrays: buildStateArrays(i),
+            activeIndices: [i],
+            metrics: {
+              'count': `${mergedList.length} 个`,
+              'boundary': `x = ${curBound}`,
+              'action': '➕ 追加新区间',
+            },
+          });
         }
       }
     }
@@ -357,15 +454,23 @@ export class IntervalSchedulingStepCompiler {
       codeLine: anchorMap['done'] ?? 8,
       decision: mode === 'arrows'
         ? `🎉 扫描推演完成！引爆全部 ${n} 个气球最少需要 ${count} 支箭`
-        : `🎉 扫描推演完成！消除所有重叠最少需要移除 ${count} 个区间 (最大相容区间数为 ${n - count})`,
+        : mode === 'non-overlapping'
+        ? `🎉 扫描推演完成！消除所有重叠最少需要移除 ${count} 个区间 (最大相容区间数为 ${n - count})`
+        : `🎉 扫描推演完成！原始 ${n} 个区间最终合并为 ${mergedList.length} 个不重叠区间：${mergedList.map(item => `[${item[0]},${item[1]}]`).join(', ')}`,
       message: `贪心策略达成全局最优解，时间复杂度 O(N log N)，空间复杂度 ${isStage4 ? 'O(1)' : 'O(N)'}`,
-      variables: {
-        'return': count,
-        'total': n,
-      },
+      variables: mode === 'merge-intervals'
+        ? {
+            'return': mergedList.length,
+            'total': n,
+            'merged': JSON.stringify(mergedList),
+          }
+        : {
+            'return': count,
+            'total': n,
+          },
       stateArrays: buildStateArrays(),
       metrics: {
-        'count': `${count} ${unitLabel}`,
+        'count': mode === 'merge-intervals' ? `${mergedList.length} ${unitLabel}` : `${count} ${unitLabel}`,
         'boundary': '推演完成',
         'status': '🏁 全局最优',
       },

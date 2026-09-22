@@ -400,7 +400,7 @@ export class StateSpacePresenter {
         ? 'px-2 py-1 rounded bg-blue-50 text-blue-900 font-bold border-l-2 border-blue-500 shadow-2xs flex items-center justify-between'
         : 'px-2 py-0.5 text-slate-500 text-[11px] flex items-center justify-between hover:bg-slate-50 rounded transition';
 
-      const logText = s.log || s.msg || `步骤 ${idx + 1}: ${s.type}`;
+      const logText = s.log || s.decision || s.message || s.msg || (s.type ? `步骤 ${idx + 1}: ${s.type}` : `步骤 ${idx + 1}`);
       line.innerHTML = `<span>${logText}</span><span class="text-[10px] text-slate-400 font-normal">#${idx + 1}</span>`;
       logList.appendChild(line);
     }

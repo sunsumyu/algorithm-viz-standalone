@@ -202,8 +202,9 @@
   2. **背包族** $\rightarrow$ `KnapsackStepMatrixCompiler` (0-1背包、完全背包、目标和、分割等和子集等)
   3. **双序列矩阵 DP 族** $\rightarrow$ `SequenceStepMatrixCompiler` (LCS、编辑距离、不同子序列、交错字符串等)
   4. **区间接力与覆盖族** $\rightarrow$ `IntervalRelayStepCompiler` (跳跃游戏I/II、灌溉水龙头、视频拼接等)
-  5. **网格探索 DP 族** $\rightarrow$ `GridUniquePathsCompiler` (不同路径I/II、最小路径和等)
-  6. **状态依赖树展开族** $\rightarrow$ `StateDependencyTreeCompiler` (通用记忆化拓扑展开)
+  5. **区间调度与互斥合并族** $\rightarrow$ `IntervalSchedulingStepCompiler` (最少箭引爆气球、无重叠区间、合并区间等)
+  6. **网格探索 DP 族** $\rightarrow$ `GridUniquePathsCompiler` (不同路径I/II、最小路径和等)
+  7. **状态依赖树展开族** $\rightarrow$ `StateDependencyTreeCompiler` (通用记忆化拓扑展开)
 - **规约铁律**：新增或重构算法必须首先进行数学规约。策略类（`*Strategy`）定位为极薄的**领域适配器（Domain Adapter，严格限 < 120 行）**，严禁未经 ADR 论证擅自新建私有 `*-compiler.ts`。
 
 ---

@@ -1,0 +1,175 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 合并区间 顶层领域模型
+# 对应：LeetCode 56 / 经典贪心算法专题
+# 包含：区间排序、动态扩界贪心合并、记忆化搜索、区间 DP 与单趟 O(1) 优化
+# ==============================================================================
+
+id: merge-intervals
+name: "合并区间"
+nameEn: "Merge Intervals"
+category: "greedy"
+icon: "🧩"
+difficulty: 2
+levelOrder: 11
+learningGoal: "掌握区间合并标准贪心流程，学会维护合并结果集末尾区间的动态扩界技巧"
+description: "以数组 intervals 表示若干个区间的集合。请你合并所有重叠的区间，并返回一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间。"
+defaultParams:
+  intervals: "[[1, 3], [2, 6], [8, 10], [15, 18]]"
+
+problem:
+  title: "合并区间 (Merge Intervals)"
+  difficulty: "中等"
+  tags: ["贪心", "数组", "排序", "LeetCode 56"]
+  description: "以数组 <code>intervals</code> 表示若干个区间的集合，其中单个区间为 <code>intervals[i] = [start_i, end_i]</code> 。<br/><br/>请你合并所有重叠的区间，并返回 <em>一个不重叠的区间数组，该数组需恰好覆盖输入中的所有区间</em> 。"
+  examples:
+    - input: "intervals = [[1,3],[2,6],[8,10],[15,18]]"
+      output: "[[1,6],[8,10],[15,18]]"
+      explanation: "区间 [1,3] 和 [2,6] 重叠, 将它们合并为 [1,6]."
+    - input: "intervals = [[1,4],[4,5]]"
+      output: "[[1,5]]"
+      explanation: "区间 [1,4] 和 [4,5] 可被视为重叠区间。"
+  constraints:
+    - "1 <= intervals.length <= 10^4"
+    - "intervals[i].length == 2"
+    - "0 <= start_i <= end_i <= 10^4"
+
+directions:
+  forward:
+    label: "左端点升序 (Forward Scan)"
+    start: [0, 0]
+    target: [0, 4]
+    branches:
+      - name: "overlap"
+        label: "重叠贪心扩界"
+      - name: "append"
+        label: "独立追加新区间"
+
+  reverse:
+    label: "逆向反推 (Reverse Scan)"
+    description: "从后往前逆向合并区间"
+    startFormula: "最右区间"
+    target: "最左区间"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n log n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "合并区间 (动态扩展右界)"
+    desc: "按左端点升序排序，遍历时若与上一区间重叠则更新右界 Math.max(lastEnd, curEnd)，无重叠则追加新区间"
+    card2Title: "贪心决策看板"
+    card2Desc: "实时监控待处理区间、合并结果集合末尾右界、合并区间数以及贪心相交判定。"
+    code:
+      forward:
+        title: "MergeIntervals.java"
+        source: |
+          public int[][] merge(int[][] intervals) {
+              if (intervals.length <= 1) return intervals; // @step:entry
+              Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0])); // @step:sort
+              List<int[]> res = new ArrayList<>(); // @step:init
+              res.add(intervals[0]);
+              for (int i = 1; i < intervals.length; i++) { // @step:loop
+                  int[] last = res.get(res.size() - 1);
+                  if (intervals[i][0] <= last[1]) { // @step:check
+                      last[1] = Math.max(last[1], intervals[i][1]); // @step:overlap
+                  } else {
+                      res.add(intervals[i]); // @step:append
+                  }
+              }
+              return res.toArray(new int[res.size()][]); // @step:done
+          }
+      reverse:
+        title: "MergeIntervals_Reverse.java"
+        source: |
+          public int[][] merge(int[][] intervals) {
+              if (intervals.length <= 1) return intervals; // @step:entry
+              Arrays.sort(intervals, (a, b) -> Integer.compare(b[0], a[0])); // @step:sort
+              List<int[]> res = new ArrayList<>(); // @step:init
+              res.add(intervals[0]);
+              for (int i = 1; i < intervals.length; i++) { // @step:loop
+                  int[] last = res.get(res.size() - 1);
+                  if (intervals[i][1] >= last[0]) { // @step:check
+                      last[0] = Math.min(last[0], intervals[i][0]); // @step:overlap
+                  } else {
+                      res.add(intervals[i]); // @step:append
+                  }
+              }
+              return res.toArray(new int[res.size()][]); // @step:done
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "记忆化搜索 (连通分量合并)"
+    desc: "将区间相交视为图的连通分支，通过自顶向下记忆化搜索合并最大重叠块"
+    card2Title: "记忆化搜索依赖树"
+    card2Desc: "展示区间递归搜索树中各分支的合并与连通判断，通过剪枝避免重复状态求解。"
+    code:
+      forward:
+        title: "MergeIntervals_Memo.java"
+        source: |
+          public int[][] mergeMemo(int[][] intervals) {
+              // 自顶向下搜索合并连通区间 // @step:entry
+              Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0])); // @step:sort
+              return dfsMerge(intervals, 0, new HashMap<>()); // @step:done
+          }
+
+  stage-3:
+    shortName: "动态规划"
+    type: "dp"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "区间相容 DP"
+    desc: "定义 dp[i] 为以区间 i 结尾的最长不相交序列，反推必须合并的重叠块"
+    card2Title: "区间 DP 状态转移矩阵"
+    card2Desc: "展示 dp 数组递推松弛更新轨迹，由最长相容子集推演互斥块的合并边界。"
+    code:
+      forward:
+        title: "MergeIntervals_DP.java"
+        source: |
+          public int[][] mergeDP(int[][] intervals) {
+              int n = intervals.length; // @step:entry
+              Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0])); // @step:sort
+              int[] dp = new int[n]; // @step:init
+              Arrays.fill(dp, 1);
+              for (int i = 1; i < n; i++) {
+                  for (int j = 0; j < i; j++) {
+                      if (intervals[j][1] < intervals[i][0]) {
+                          dp[i] = Math.max(dp[i], dp[j] + 1); // @step:transfer
+                      }
+                  }
+              }
+              return buildMergedResult(intervals, dp); // @step:done
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(1) 辅助"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "原地双指针合并 (O(1) 辅助空间)"
+    desc: "排序后利用快慢指针在原数组上直接覆写合并区间，实现极致空间开销"
+    card2Title: "原地覆写状态看板"
+    card2Desc: "展示慢指针维护的已确认合并边界，快指针前向探查并就地覆盖。"
+    code:
+      forward:
+        title: "MergeIntervals_InPlace.java"
+        source: |
+          public int[][] mergeInPlace(int[][] intervals) {
+              if (intervals.length <= 1) return intervals; // @step:entry
+              Arrays.sort(intervals, (a, b) -> Integer.compare(a[0], b[0])); // @step:sort
+              int idx = 0; // @step:init
+              for (int i = 1; i < intervals.length; i++) {
+                  if (intervals[i][0] <= intervals[idx][1]) {
+                      intervals[idx][1] = Math.max(intervals[idx][1], intervals[i][1]); // @step:overlap
+                  } else {
+                      idx++;
+                      intervals[idx] = intervals[i]; // @step:append
+                  }
+              }
+              return Arrays.copyOfRange(intervals, 0, idx + 1); // @step:done
+          }
