@@ -273,7 +273,7 @@ export class TwoPassNeighborStepCompiler {
   // ==========================================================================
   // Stage 2: 记忆化拓扑搜索 (DAG 最长路径)
   // ==========================================================================
-  private static compileCandyStage2(
+    private static compileCandyStage2(
     model: IYamlAlgorithmModel,
     ratings: number[],
     options?: TwoPassCompileOptions
@@ -282,8 +282,33 @@ export class TwoPassNeighborStepCompiler {
     const n = ratings.length;
     const anchorMap = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
 
+    const memo = new Array(n).fill(0);
+    const cloneMemoGrid = (): (number | null)[][] => [memo.map((v) => (v === 0 ? null : v))];
+
+    const buildStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => [
+      {
+        id: 'ratings',
+        name: '孩子评分 (ratings)',
+        indices: ratings.map((_, idx) => idx),
+        values: ratings.map((v) => String(v)),
+        activeIdx,
+        highlightIndices,
+        color: 'emerald',
+      },
+      {
+        id: 'memo',
+        name: '糖果备忘录 (memo)',
+        indices: memo.map((_, idx) => idx),
+        values: memo.map((v) => (v === 0 ? '?' : String(v))),
+        activeIdx,
+        highlightIndices,
+        color: 'indigo',
+      },
+    ];
+
+    let nodeUid = 0;
     const rootTree: UniversalTreeNode = {
-      id: 'root',
+      id: 'dfs_root',
       r: 0,
       c: 0,
       val: '求解全序列糖果 DAG',
@@ -291,79 +316,160 @@ export class TwoPassNeighborStepCompiler {
       children: [],
     };
 
+    // Step 0: 入口
     steps.push({
       stepIndex: 0,
       stage: 2,
       line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `记忆化搜索入口：将评分偏序关系视为有向无环图 (DAG)，自顶向下探索每个孩子到山谷的最长依赖链`,
-      message: `孩子 i 若评分高于邻居 j，则建立依赖边 i -> j，糖果数即为 DAG 中从 i 出发的最长路径长度 + 1`,
-      variables: { totalNodes: n },
+      decision: `记忆化搜索初始化：将相邻评分视为有向无环图 (DAG)，自顶向下探索每个孩子到波谷的最长依赖链`,
+      message: `孩子 i 若评分高于相邻孩子，则建立递推依赖，糖果数取决于邻居递归结果 + 1`,
+      variables: { n, 'memo.length': n },
+      grid: cloneMemoGrid(),
       treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'dfs-state': 'DFS 全局初始化' },
+      stateArrays: buildStateArrays(),
+      activeSlot: 0,
+      metrics: { 'dfs-state': 'DFS 全局初始化', 'total-candies': '0' },
     });
 
-    // 找到最高波峰进行分支展示
-    let maxIdx = 0;
-    for (let i = 1; i < n; i++) {
-      if (ratings[i] > ratings[maxIdx]) maxIdx = i;
+    let totalCandies = 0;
+
+    const runDfs = (i: number, parentNode: UniversalTreeNode, branchLabel: string): number => {
+      nodeUid++;
+      const currentTreeNode: UniversalTreeNode = {
+        id: `node_${i}_${nodeUid}`,
+        r: 0,
+        c: i,
+        val: branchLabel ? `${branchLabel} → dfs(${i})` : `dfs(${i}, 评分=${ratings[i]})`,
+        status: 'active',
+        children: [],
+      };
+      parentNode.children.push(currentTreeNode);
+
+      // 进入探查
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchorMap['dfs'] ?? 4,
+        codeLine: anchorMap['dfs'] ?? 4,
+        decision: `🔍 深入调用 dfs(i=${i})：考查孩子 [${i}] (评分=${ratings[i]})，探索其向较低评分邻居的降序链`,
+        message: `自顶向下探索，寻找局部单调降序终止点（山谷）`,
+        variables: { i, rating: ratings[i], totalCandies },
+        grid: cloneMemoGrid(),
+        treeRoot: cloneStateDepTree(rootTree),
+        stateArrays: buildStateArrays(i),
+        activeSlot: i,
+        metrics: { 'dfs-state': `dfs(${i})`, 'rating': String(ratings[i]) },
+      });
+
+      // 记忆化检查 (Cache Hit)
+      if (memo[i] > 0) {
+        currentTreeNode.status = 'pruned';
+        currentTreeNode.val = `dfs(${i}) = ${memo[i]} (⚡ 剪枝命中)`;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchorMap['dfs'] ?? 4,
+          codeLine: anchorMap['dfs'] ?? 4,
+          decision: `⚡ 记忆化命中！孩子 [${i}] 糖果数已缓存为 memo[${i}]=${memo[i]}，直接剪枝返回，避免重复递归！`,
+          message: `剪枝消除重叠子问题计算`,
+          variables: { i, cached: memo[i], totalCandies },
+          grid: cloneMemoGrid(),
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i),
+          activeSlot: i,
+          metrics: { 'action': '⚡ 记忆化剪枝', 'memo[i]': String(memo[i]) },
+        });
+        return memo[i];
+      }
+
+      let candies = 1;
+      const hasLeftLower = i > 0 && ratings[i] > ratings[i - 1];
+      const hasRightLower = i < n - 1 && ratings[i] > ratings[i + 1];
+
+      // 递归基判定：若两侧均不高于邻居，自身即为波谷
+      if (!hasLeftLower && !hasRightLower) {
+        memo[i] = 1;
+        currentTreeNode.status = 'visited';
+        currentTreeNode.val = `dfs(${i}) = 1 (波谷基底)`;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchorMap['dfs'] ?? 4,
+          codeLine: anchorMap['dfs'] ?? 4,
+          decision: `🛑 到达波谷基底：孩子 [${i}] 评分 ${ratings[i]} 不高于任何邻居，分配基础糖果 1 颗，触底返回`,
+          message: `波谷节点无更低邻居依赖，直接作为基底返回 1`,
+          variables: { i, candies: 1 },
+          grid: cloneMemoGrid(),
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i),
+          activeSlot: i,
+          metrics: { 'dfs-state': '波谷触底', 'candies': '1' },
+        });
+        return 1;
+      }
+
+      // 探查左邻居
+      if (hasLeftLower) {
+        const leftVal = runDfs(i - 1, currentTreeNode, `左邻低评 [${i - 1}]`);
+        candies = Math.max(candies, leftVal + 1);
+      }
+
+      // 探查右邻居
+      if (hasRightLower) {
+        const rightVal = runDfs(i + 1, currentTreeNode, `右邻低评 [${i + 1}]`);
+        candies = Math.max(candies, rightVal + 1);
+      }
+
+      memo[i] = candies;
+      currentTreeNode.status = 'visited';
+      currentTreeNode.val = `dfs(${i}) = ${candies}`;
+
+      // 回溯落盘
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchorMap['dfs'] ?? 4,
+        codeLine: anchorMap['dfs'] ?? 4,
+        decision: `↩️ 回溯落盘：综合两侧邻居，确定孩子 [${i}] 需分配 ${candies} 颗糖果，写入 memo[${i}]=${candies}`,
+        message: `子问题解整合完毕，状态落盘持久化`,
+        variables: { i, candies, 'memo[i]': candies },
+        grid: cloneMemoGrid(),
+        treeRoot: cloneStateDepTree(rootTree),
+        stateArrays: buildStateArrays(i),
+        activeSlot: i,
+        metrics: { 'action': '↩️ 回溯落盘', 'candies': String(candies) },
+      });
+
+      return candies;
+    };
+
+    // 主循环递归
+    for (let i = 0; i < n; i++) {
+      if (memo[i] === 0) {
+        const val = runDfs(i, rootTree, `主循环 孩子[${i}]`);
+        totalCandies += val;
+      } else {
+        totalCandies += memo[i];
+      }
     }
 
-    const peakBranch: UniversalTreeNode = {
-      id: `peak_${maxIdx}`,
-      r: 1,
-      c: 0,
-      val: `dfs(${maxIdx}, 评分=${ratings[maxIdx]})`,
-      status: 'visited',
-      children: [],
-    };
-    rootTree.children = [peakBranch];
-
-    steps.push({
-      stepIndex: 1,
-      stage: 2,
-      line: anchorMap['dfs'] ?? 4,
-      codeLine: anchorMap['dfs'] ?? 4,
-      decision: `探查山峰节点 [${maxIdx}] (评分=${ratings[maxIdx]})：向两侧较低评分孩子发起深度递归探查`,
-      message: `山峰节点汇聚两侧降序坡度，糖果数取决于两侧最长链的较大者`,
-      variables: { currentPeak: maxIdx, rating: ratings[maxIdx] },
-      treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'dfs-state': `dfs(${maxIdx}) 探查` },
-    });
-
-    // 模拟命中缓存
-    const subLeft: UniversalTreeNode = {
-      id: `sub_left`,
-      r: 2,
-      c: 0,
-      val: `dfs(${Math.max(0, maxIdx - 1)}) -> 命中缓存 [值=2]`,
-      status: 'active',
-      children: [],
-    };
-    peakBranch.children = [subLeft];
-
-    steps.push({
-      stepIndex: 2,
-      stage: 2,
-      line: anchorMap['dfs'] ?? 4,
-      codeLine: anchorMap['dfs'] ?? 4,
-      decision: `记忆化判定：检测左邻居已求得最优分配并在 memo 缓存命中，直接剪枝返回，避免重复展开`,
-      message: `记忆化技术将 DAG 搜索从指数级复杂度剪枝压缩到严格 O(N)`,
-      variables: { memoHit: true, cachedValue: 2 },
-      treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'dfs-state': '⚡ 记忆化缓存命中' },
-    });
-
+    // 终局步
     steps.push({
       stepIndex: steps.length,
       stage: 2,
       line: anchorMap['done'] ?? 6,
       codeLine: anchorMap['done'] ?? 6,
-      decision: `🎉 记忆化搜索树推演完成！所有节点最长链求解完毕，结果与贪心完全一致`,
-      message: `DAG 最长路径记忆化严格证明了贪心策略的最优子结构无后效性`,
-      variables: { return: 13, status: '完全收敛' },
+      decision: `🎉 记忆化搜索全部推演完成！最少需要分发 ${totalCandies} 颗糖果，状态树与备忘录全闭环收敛`,
+      message: `DAG 最长链搜索严格验证了贪心双向扫描的正确性`,
+      variables: { return: totalCandies, totalChildren: n },
+      grid: cloneMemoGrid(),
       treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'status': '🏁 搜索收敛' },
+      stateArrays: buildStateArrays(),
+      activeSlot: n - 1,
+      metrics: { 'status': '🏁 搜索收敛', 'total-candies': String(totalCandies) },
     });
 
     return steps;

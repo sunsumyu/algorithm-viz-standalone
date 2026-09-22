@@ -581,7 +581,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       'coin-change-stage-4',     // 历史 BFS 仅 5 步待重构
       'word-break-stage-4',      // 历史 Trie 优化仅 4 步待重构
       'coin-change-ii-stage-4',  // 历史空间压缩仅 4 步待重构
-      'candy-stage-2',           // 历史记忆化仅 4 步
       'decode-ways-stage-3',     // 历史递推DP仅 6 步 (默认入参短)
     ]);
 
