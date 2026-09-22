@@ -3,7 +3,8 @@
  * LeetCode 435：按左端点升序排序，重叠时贪心移除右端点更大的区间，求最少移除数
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   NON_OVERLAPPING_PROBLEM_HTML,
@@ -225,71 +226,20 @@ export function renderNonOverlappingCanvas(container: HTMLElement, step: NonOver
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'non-overlapping',
   name: '无重叠区间',
+  viewId: 'non-overlapping',
   category: 'greedy',
-  description: '求使剩余区间互不重叠所需移除的最小区间数量，重叠时贪心淘汰右端点更大者',
   icon: '✂️',
   difficulty: 2,
   levelOrder: 9,
   learningGoal: '掌握区间调度与重叠淘汰的贪心思想，建立与射气球问题的双向映射',
-  inputs: [
-    {
-      id: 'intervals',
-      label: '区间集合',
-      type: 'text',
-      defaultValue: '[[1,2],[2,3],[3,4],[1,3]]',
-      placeholder: '[[1,2],[2,3],[3,4],[1,3]]',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (移除 1)', values: { intervals: '[[1,2],[2,3],[3,4],[1,3]]' } },
-    { label: '全重叠 (移除 2)', values: { intervals: '[[1,2],[1,2],[1,2]]' } },
-    { label: '无重叠 (移除 0)', values: { intervals: '[[1,2],[2,3]]' } },
-  ],
-  metrics: [
-    { id: 'cur-interval', label: '当前考察区间', color: '#2563eb' },
-    { id: 'cur-end', label: '活跃保留右界', color: '#059669' },
-    { id: 'removed-count', label: '最少移除区间数', color: '#ef4444' },
-    { id: 'kept-count', label: '最终保留区间数', color: '#10b981' },
-    { id: 'action', label: '判定决策', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '✓ 保留区间', color: '#10b981' },
-    { label: '🗑️ 移除区间', color: '#ef4444' },
-    { label: '📍 当前考察区间', color: '#3b82f6' },
-  ],
-  codeLanguages: NON_OVERLAPPING_CODE_LANGUAGES,
-  problemHtml: NON_OVERLAPPING_PROBLEM_HTML,
-  analysisHtml: NON_OVERLAPPING_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    let intervals: Array<[number, number]> = [];
-    try {
-      const parsed = JSON.parse(String(inputs.intervals ?? '[[1,2],[2,3],[3,4],[1,3]]'));
-      if (Array.isArray(parsed) && parsed.every((p) => Array.isArray(p) && p.length >= 2)) {
-        intervals = parsed.map((p) => [Number(p[0]), Number(p[1])]);
-      }
-    } catch {
-      intervals = [
-        [1, 2],
-        [2, 3],
-        [3, 4],
-        [1, 3],
-      ];
-    }
-    return withMetrics(
-      buildNonOverlappingSteps(
-        intervals.length
-          ? intervals
-          : [
-              [1, 2],
-              [2, 3],
-              [3, 4],
-              [1, 3],
-            ]
-      )
-    );
-  },
-  renderCanvas: (container, step) => renderNonOverlappingCanvas(container, step as NonOverlappingStep),
+  description: '求使剩余区间互不重叠所需移除的最小区间数量，重叠时贪心淘汰右端点更大者',
+  template: `<div id="non-overlapping" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerNonOverlapping(): void {
+  // 保持向前兼容导出
+}

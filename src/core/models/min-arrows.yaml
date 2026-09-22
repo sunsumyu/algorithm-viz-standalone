@@ -1,0 +1,173 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 用最少数量的箭引爆气球 顶层领域模型
+# 对应：LeetCode 452 / 经典贪心算法专题
+# 包含：区间排序、重叠收缩贪心、记忆化搜索、区间 DP 与单趟 O(1) 优化
+# ==============================================================================
+
+id: min-arrows
+name: "用最少数量的箭引爆气球"
+nameEn: "Minimum Number of Arrows to Burst Balloons"
+category: "greedy"
+icon: "🏹"
+difficulty: 2
+levelOrder: 15
+learningGoal: "掌握区间贪心核心：按端点排序后，相交区间动态收紧重叠射箭右界"
+description: "有一些球形气球贴在 X 轴上。给你一个数组 points，其中 points[i] = [xstart, xend] 表示气球的直径区间。弓箭从 X 轴任意位置垂直向上射出，求引爆所有气球所需的最小弓箭数。"
+defaultParams:
+  points: "[[10, 16], [2, 8], [1, 6], [7, 12]]"
+
+problem:
+  title: "用最少数量的箭引爆气球 (Minimum Number of Arrows to Burst Balloons)"
+  difficulty: "中等"
+  tags: ["贪心", "数组", "排序", "LeetCode 452"]
+  description: "在二维空间中有许多球形的气球。对于每个气球，提供的输入是水平方向上，气球直径的开始和结束坐标。<br/><br/>弓箭可以沿着 x 轴从不同点垂直向上射出。在坐标 x 处射出一支箭，若气球的直径包含 x，则该气球会被引爆。求解引爆所有气球所必须射出的 <strong>最小弓箭数</strong> 。"
+  examples:
+    - input: "points = [[10,16],[2,8],[1,6],[7,12]]"
+      output: "2"
+      explanation: "气球可以被 2 支箭引爆：在 x = 6 射出一支箭引爆 [2,8] 和 [1,6]；在 x = 11 射出一支箭引爆 [10,16] 和 [7,12]。"
+    - input: "points = [[1,2],[3,4],[5,6],[7,8]]"
+      output: "4"
+      explanation: "每个气球都需要一支单独的箭。"
+  constraints:
+    - "1 <= points.length <= 10^5"
+    - "points[i].length == 2"
+    - "-2^31 <= xstart < xend <= 2^31 - 1"
+
+directions:
+  forward:
+    label: "左端点升序 (Forward Scan)"
+    start: [0, 0]
+    target: [0, 4]
+    branches:
+      - name: "overlap"
+        label: "重叠收紧箭界"
+      - name: "new_arrow"
+        label: "独立分配新箭"
+
+  reverse:
+    label: "左端点降序 (Reverse Scan)"
+    description: "逆向遍历扫描区间端点"
+    startFormula: "最右区间"
+    target: "最左区间"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n log n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "引爆气球 (贪心右界收缩)"
+    desc: "按左端点升序排序，遍历时若重叠则更新射箭右界 Math.min(prevEnd, curEnd)，无重叠则射新箭"
+    card2Title: "贪心决策看板"
+    card2Desc: "实时监控当前气球、重叠射箭右界、累计弓箭数以及贪心相交判定。"
+    code:
+      forward:
+        title: "FindMinArrowShots.java"
+        source: |
+          public int findMinArrowShots(int[][] points) {
+              if (points.length == 0) return 0; // @step:entry
+              Arrays.sort(points, (a, b) -> Integer.compare(a[0], b[0])); // @step:sort
+              int count = 1; // @step:init
+              for (int i = 1; i < points.length; i++) {
+                  if (points[i][0] > points[i - 1][1]) { // @step:check
+                      count++; // @step:new_arrow
+                  } else {
+                      points[i][1] = Math.min(points[i - 1][1], points[i][1]); // @step:overlap
+                  }
+              }
+              return count; // @step:done
+          }
+      reverse:
+        title: "FindMinArrowShots_Reverse.java"
+        source: |
+          public int findMinArrowShots(int[][] points) {
+              if (points.length == 0) return 0; // @step:entry
+              Arrays.sort(points, (a, b) -> Integer.compare(b[0], a[0])); // @step:sort
+              int count = 1; // @step:init
+              for (int i = 1; i < points.length; i++) {
+                  if (points[i][1] < points[i - 1][0]) {
+                      count++; // @step:new_arrow
+                  } else {
+                      points[i][0] = Math.max(points[i - 1][0], points[i][0]); // @step:overlap
+                  }
+              }
+              return count; // @step:done
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "引爆气球 (区间搜索依赖树)"
+    desc: "递归决策每个气球在相交集合中的包含与排除，记忆化消除重叠子问题"
+    card2Title: "搜索树展开看板"
+    card2Desc: "展示每个区间选与不选的搜索树分支及记忆化剪枝节点。"
+    code:
+      forward:
+        title: "FindMinArrowShots_Memo.java"
+        source: |
+          public int findMinArrowShots(int[][] points) {
+              Arrays.sort(points, (a, b) -> Integer.compare(a[0], b[0])); // @step:entry
+              return dfs(points, 0, Integer.MIN_VALUE, memo); // @step:branch_choose
+          }
+          private int dfs(int[][] points, int idx, int curEnd, Map<String, Integer> memo) {
+              if (idx >= points.length) return 0; // @step:boundary
+              if (memo.containsKey(key)) return memo.get(key); // @step:memo_hit
+              // 选与不选分支
+              return ans; // @step:done
+          }
+
+  stage-3:
+    shortName: "DP 填表"
+    type: "dp"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "引爆气球 (区间 LIS 动态规划)"
+    desc: "将最少弓箭数对偶转换为最大互斥不相交区间集的 LIS 动态规划模型"
+    card2Title: "区间 DP 填表格子"
+    card2Desc: "dp[i] 表示以第 i 个气球结尾的最大不相交子序列长度，最终答案与 N 形成对偶。"
+    code:
+      forward:
+        title: "FindMinArrowShots_DP.java"
+        source: |
+          public int findMinArrowShots(int[][] points) {
+              int n = points.length; // @step:entry
+              int[] dp = new int[n];
+              Arrays.fill(dp, 1);
+              for (int i = 1; i < n; i++) {
+                  for (int j = 0; j < i; j++) {
+                      if (points[j][1] < points[i][0]) {
+                          dp[i] = Math.max(dp[i], dp[j] + 1); // @step:transfer
+                      }
+                  }
+              }
+              return max; // @step:done
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(1)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "引爆气球 (原地单变量收敛)"
+    desc: "仅维护当前活跃的右边界变量 prevEnd，达成严格 O(1) 辅助空间"
+    card2Title: "极致优化看板"
+    card2Desc: "单指针实时滑动，零额外内存分配。"
+    code:
+      forward:
+        title: "FindMinArrowShots_Optimized.java"
+        source: |
+          public int findMinArrowShots(int[][] points) {
+              Arrays.sort(points, (a, b) -> Integer.compare(a[0], b[0])); // @step:entry
+              int count = 1, prevEnd = points[0][1]; // @step:init
+              for (int i = 1; i < points.length; i++) {
+                  if (points[i][0] > prevEnd) {
+                      count++; prevEnd = points[i][1]; // @step:new_arrow
+                  } else {
+                      prevEnd = Math.min(prevEnd, points[i][1]); // @step:overlap
+                  }
+              }
+              return count; // @step:done
+          }

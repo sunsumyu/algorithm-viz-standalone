@@ -26,6 +26,9 @@ import { CanJumpStrategy } from './can-jump-strategy';
 import { CanJumpStepCompiler } from './can-jump-compiler';
 import { MinTapsStrategy } from './min-taps-strategy';
 import { IntervalRelayStepCompiler } from './interval-relay-step-compiler';
+import { MinArrowsStrategy } from './min-arrows-strategy';
+import { NonOverlappingStrategy } from './non-overlapping-strategy';
+import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -132,6 +135,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new JumpGameIIStrategy());
   AlgorithmStrategyRegistry.register(new CanJumpStrategy());
   AlgorithmStrategyRegistry.register(new MinTapsStrategy());
+  AlgorithmStrategyRegistry.register(new MinArrowsStrategy());
+  AlgorithmStrategyRegistry.register(new NonOverlappingStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -168,7 +173,10 @@ export {
   CanJumpStrategy,
   CanJumpStepCompiler,
   MinTapsStrategy,
-  IntervalRelayStepCompiler
+  IntervalRelayStepCompiler,
+  MinArrowsStrategy,
+  NonOverlappingStrategy,
+  IntervalSchedulingStepCompiler
 };
 
 export * from './strategy-helpers';

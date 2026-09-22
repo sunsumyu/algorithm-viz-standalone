@@ -3530,10 +3530,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "min-arrows",
     name: "用最少数量的箭引爆气球",
-    viewId: "algo-min-arrows-view",
+    viewId: "min-arrows",
     category: "greedy",
     description: "按左端点升序排序，贪心收紧重叠区间最小右边界，计算最少所需弓箭数",
-    icon: "🎯",
+    icon: "🏹",
     difficulty: 2,
     levelOrder: 8,
     learningGoal: "掌握区间重叠问题的贪心收缩右边界模型，奠定区间调度类问题的求解范式",
@@ -3541,7 +3541,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "non-overlapping",
     name: "无重叠区间",
-    viewId: "algo-non-overlapping-view",
+    viewId: "non-overlapping",
     category: "greedy",
     description: "求使剩余区间互不重叠所需移除的最小区间数量，重叠时贪心淘汰右端点更大者",
     icon: "✂️",

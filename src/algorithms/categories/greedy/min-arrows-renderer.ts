@@ -3,7 +3,8 @@
  * LeetCode 452：左端点升序排序 + 重叠气球右边界收紧 + 不重叠时增加弓箭
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   MIN_ARROWS_PROBLEM_HTML,
@@ -224,45 +225,20 @@ function parseBalloons(raw: string): Array<[number, number]> {
   return [[10, 16], [2, 8], [1, 6], [7, 12]];
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'min-arrows',
   name: '用最少数量的箭引爆气球',
+  viewId: 'min-arrows',
   category: 'greedy',
-  description: '按左端点升序排序，贪心收紧重叠区间最小右边界，计算最少所需弓箭数',
-  icon: '🎯',
+  icon: '🏹',
   difficulty: 2,
   levelOrder: 8,
   learningGoal: '掌握区间重叠问题的贪心收缩右边界模型，奠定区间调度类问题的求解范式',
-  inputs: [
-    {
-      id: 'points',
-      label: '气球区间 [start, end]',
-      type: 'text',
-      defaultValue: '[[10,16],[2,8],[1,6],[7,12]]',
-      placeholder: '[[s,e],...]',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { points: '[[10,16],[2,8],[1,6],[7,12]]' } },
-    { label: '全不重叠', values: { points: '[[1,2],[3,4],[5,6],[7,8]]' } },
-    { label: '端点相接', values: { points: '[[1,2],[2,3],[3,4],[4,5]]' } },
-  ],
-  metrics: [
-    { id: 'cur-balloon', label: '当前气球区间', color: '#db2777' },
-    { id: 'overlap-end', label: '当前组右边界', color: '#059669' },
-    { id: 'arrows', label: '所需最少箭数', color: '#db2777' },
-    { id: 'arrow-pos', label: '射箭位置', color: '#059669' },
-    { id: 'action', label: '重叠判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前气球', color: '#db2777' },
-    { label: '🏹 射箭线', color: '#10b981' },
-    { label: '气球区间', color: '#ec4899' },
-  ],
-  codeLanguages: MIN_ARROWS_CODE_LANGUAGES,
-  problemHtml: MIN_ARROWS_PROBLEM_HTML,
-  analysisHtml: MIN_ARROWS_ANALYSIS_HTML,
-  generateSteps: (inputs) =>
-    withMetrics(buildMinArrowsSteps(parseBalloons(String(inputs.points ?? '[[10,16],[2,8],[1,6],[7,12]]')))),
-  renderCanvas: (container, step) => renderMinArrowsCanvas(container, step as MAStep),
+  description: '按左端点升序排序，贪心收紧重叠区间最小右边界，计算最少所需弓箭数',
+  template: `<div id="min-arrows" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerMinArrows(): void {
+  // 保持向前兼容导出
+}

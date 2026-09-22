@@ -19,6 +19,7 @@ const AUTHORIZED_CORE_COMPILERS = new Set([
   'abstract-sequence-table-compiler.ts',
   'dependency-tree-compiler.ts',
   'interval-relay-step-compiler.ts',
+  'interval-scheduling-step-compiler.ts',
   'jump-game-ii-compiler.ts',
   'can-jump-compiler.ts',
   'knapsack-step-matrix-compiler.ts',
