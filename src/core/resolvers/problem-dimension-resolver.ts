@@ -50,7 +50,8 @@ export class ProblemDimensionResolver {
     'target-sum',
     'last-stone-weight-ii',
     'partition-equal-subset-sum',
-    'multiple-knapsack'
+    'multiple-knapsack',
+    'candy'
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -167,7 +168,15 @@ export class ProblemDimensionResolver {
       return { m, n, is1D, category };
     }
 
-    // 5. 纯一维数组类型 (nums)
+    // 5. 纯一维数组类型 (nums / ratings)
+    if (params.ratings !== undefined) {
+      const ratings = this.toArray(params.ratings);
+      m = 1;
+      n = ratings.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
     if (params.nums !== undefined) {
       const nums = this.toArray(params.nums);
       m = 1;

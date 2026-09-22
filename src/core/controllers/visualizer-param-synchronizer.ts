@@ -163,6 +163,9 @@ export class VisualizerParamSynchronizer {
     if (savedModelStage && model.stages?.[savedModelStage]) {
       return savedModelStage;
     }
+    if (model.defaultStage && model.stages?.[model.defaultStage]) {
+      return model.defaultStage;
+    }
     const savedGlobalStage = this.getPreference('algo-preferred-stage', '');
     if (savedGlobalStage && model.stages?.[savedGlobalStage]) {
       return savedGlobalStage;

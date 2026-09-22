@@ -169,7 +169,9 @@ export class TwoPassNeighborStepCompiler {
           message: `贪心性质：评分严格更高者糖果数必须至少比左边多 1 颗`,
           variables: { i, ratings_cur: cur, ratings_prev: prev, 'L[i]': left[i] },
           stateArrays: buildStateArrays(i, [i - 1, i]),
+          actorState: { currentSlot: i, action: 'walk' },
           activeIndices: [i],
+          activeSlot: i,
           metrics: {
             'phase': '➡️ 从左向右扫描',
             'cur-child': `[${i}] (评分: ${cur})`,
@@ -186,7 +188,9 @@ export class TwoPassNeighborStepCompiler {
           message: `评分不高于左邻时，仅需满足「至少 1 颗糖果」的底线要求`,
           variables: { i, ratings_cur: cur, ratings_prev: prev, 'L[i]': left[i] },
           stateArrays: buildStateArrays(i, [i - 1, i]),
+          actorState: { currentSlot: i, action: 'idle' },
           activeIndices: [i],
+          activeSlot: i,
           metrics: {
             'phase': '➡️ 从左向右扫描',
             'cur-child': `[${i}] (评分: ${cur})`,
@@ -222,7 +226,9 @@ export class TwoPassNeighborStepCompiler {
           runningTotal: runningSum,
         },
         stateArrays: buildStateArrays(i, i < n - 1 ? [i, i + 1] : [i]),
+        actorState: { currentSlot: i, action: 'walk' },
         activeIndices: [i],
+        activeSlot: i,
         metrics: {
           'phase': '⬅️ 从右向左融合',
           'cur-child': `[${i}] (评分: ${ratings[i]})`,
@@ -366,16 +372,17 @@ export class TwoPassNeighborStepCompiler {
     const anchorMap = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
 
     const dp = new Array(n).fill(1);
-    // 按评分排序后的索引序列
+    // 按评分排序后的索引序列（低分山谷排在前面，高分山峰排在后面）
     const order = ratings.map((_, i) => i).sort((a, b) => ratings[a] - ratings[b]);
 
-    const buildDpStateArrays = (activeIdx?: number): StateArrayItem[] => [
+    const buildDpStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => [
       {
         id: 'ratings',
         name: '孩子评分 (ratings)',
         indices: ratings.map((_, i) => i),
         values: ratings.map(String),
         activeIdx,
+        highlightIndices,
         color: 'indigo',
       },
       {
@@ -384,64 +391,125 @@ export class TwoPassNeighborStepCompiler {
         indices: dp.map((_, i) => i),
         values: dp.map(String),
         activeIdx,
+        highlightIndices,
         color: 'purple',
       },
     ];
 
+    // Step 0: 初始化入口
     steps.push({
       stepIndex: 0,
       stage: 3,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `拓扑 DP 初始化：全员初始赋值 dp[i] = 1，将 ${n} 个孩子按评分从小到大建立拓扑排序`,
-      message: `拓扑序保证：当计算孩子 i 的糖果数时，评分低于它的所有相邻孩子必然已经完成求解`,
-      variables: { order: JSON.stringify(order) },
+      decision: `拓扑 DP 初始化：全员初始赋值 dp[i] = 1，将 ${n} 个孩子按评分从小到大建立拓扑排序序列: [${order.map(i => `[${i}]:${ratings[i]}`).join(', ')}]`,
+      message: `拓扑序保证：当计算孩子 i 的糖果数时，评分低于它的所有相邻孩子必然已经完成最优求解`,
+      variables: { totalChildren: n, order: JSON.stringify(order) },
       stateArrays: buildDpStateArrays(),
+      actorState: { currentSlot: order[0], action: 'idle' },
+      activeSlot: order[0],
       metrics: { 'phase': '拓扑排序完成', 'dp-status': '初始化' },
     });
 
-    for (let stepIdx = 0; stepIdx < Math.min(order.length, 6); stepIdx++) {
+    // 严谨遍历全部 order 节点，绝不偷懒截断！
+    for (let stepIdx = 0; stepIdx < order.length; stepIdx++) {
       const idx = order[stepIdx];
-      let updated = false;
-      if (idx > 0 && ratings[idx] > ratings[idx - 1]) {
-        dp[idx] = Math.max(dp[idx], dp[idx - 1] + 1);
-        updated = true;
-      }
-      if (idx < n - 1 && ratings[idx] > ratings[idx + 1]) {
-        dp[idx] = Math.max(dp[idx], dp[idx + 1] + 1);
-        updated = true;
-      }
+      const curRating = ratings[idx];
 
+      // 阶段 3.1: 探查并选中当前拓扑序号最小的节点
       steps.push({
         stepIndex: steps.length,
         stage: 3,
-        codeLine: anchorMap['transfer_left'] ?? 6,
-        decision: `拓扑松弛：处理第 ${stepIdx + 1} 位孩子 [${idx}] (评分=${ratings[idx]})，${updated ? `高于已结算邻居，松弛更新 dp[${idx}] = ${dp[idx]}` : `属于局部山谷或平坡，保持 dp[${idx}] = 1`}`,
-        message: `自底向上填表：由低分山谷向高分山峰逐级松弛传播最优状态`,
-        variables: { currentChild: idx, rating: ratings[idx], 'dp[idx]': dp[idx] },
-        stateArrays: buildDpStateArrays(idx),
+        codeLine: anchorMap['loop'] ?? 5,
+        decision: `📌 拓扑出队 (#${stepIdx + 1}/${order.length})：选取当前全局评分最低孩子 [${idx}] (评分=${curRating})，探险家前往槽位 [${idx}]`,
+        message: `自底向上推进：由局部波谷向相邻两侧波峰逐级松弛传播最优解`,
+        variables: { currentChild: idx, rating: curRating, 'current_dp': dp[idx], stepOrder: `${stepIdx + 1}/${order.length}` },
+        stateArrays: buildDpStateArrays(idx, [idx]),
+        actorState: { currentSlot: idx, action: 'walk' },
         activeIndices: [idx],
         activeSlot: idx,
-        metrics: { 'phase': `松弛 #${stepIdx + 1}`, 'dp-status': `更新 [${idx}]=${dp[idx]}` },
+        metrics: { 'phase': `处理节点 [${idx}]`, 'dp-status': `初始 dp[${idx}]=${dp[idx]}` },
       });
-    }
 
-    // 最终计算全量 dp
-    for (let stepIdx = 6; stepIdx < order.length; stepIdx++) {
-      const idx = order[stepIdx];
-      if (idx > 0 && ratings[idx] > ratings[idx - 1]) dp[idx] = Math.max(dp[idx], dp[idx - 1] + 1);
-      if (idx < n - 1 && ratings[idx] > ratings[idx + 1]) dp[idx] = Math.max(dp[idx], dp[idx + 1] + 1);
+      let updatedByLeft = false;
+      let updatedByRight = false;
+
+      // 阶段 3.2: 检查左邻居
+      if (idx > 0) {
+        const leftRating = ratings[idx - 1];
+        if (curRating > leftRating) {
+          const oldVal = dp[idx];
+          dp[idx] = Math.max(dp[idx], dp[idx - 1] + 1);
+          updatedByLeft = true;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 3,
+            codeLine: anchorMap['transfer_left'] ?? 6,
+            decision: `⬅️ 检查左邻：孩子 [${idx}] 评分 ${curRating} > 左邻 [${idx - 1}] 评分 ${leftRating}，松弛更新 dp[${idx}] = max(${oldVal}, dp[${idx - 1}]+1 = ${dp[idx - 1] + 1}) = ${dp[idx]}`,
+            message: `满足左侧约束：当前孩子评分更高，糖果数必须至少比左邻多 1`,
+            variables: { currentChild: idx, leftChild: idx - 1, 'dp[idx]': dp[idx], 'dp[left]': dp[idx - 1] },
+            stateArrays: buildDpStateArrays(idx, [idx - 1, idx]),
+            actorState: { currentSlot: idx, action: 'compare' },
+            activeIndices: [idx],
+            activeSlot: idx,
+            metrics: { 'phase': `松弛左邻 [${idx}]`, 'dp-status': `dp[${idx}] -> ${dp[idx]}` },
+          });
+        }
+      }
+
+      // 阶段 3.3: 检查右邻居
+      if (idx < n - 1) {
+        const rightRating = ratings[idx + 1];
+        if (curRating > rightRating) {
+          const oldVal = dp[idx];
+          dp[idx] = Math.max(dp[idx], dp[idx + 1] + 1);
+          updatedByRight = true;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 3,
+            codeLine: anchorMap['transfer_right'] ?? 7,
+            decision: `➡️ 检查右邻：孩子 [${idx}] 评分 ${curRating} > 右邻 [${idx + 1}] 评分 ${rightRating}，松弛更新 dp[${idx}] = max(${oldVal}, dp[${idx + 1}]+1 = ${dp[idx + 1] + 1}) = ${dp[idx]}`,
+            message: `满足右侧约束：当前孩子评分更高，糖果数必须至少比右邻多 1`,
+            variables: { currentChild: idx, rightChild: idx + 1, 'dp[idx]': dp[idx], 'dp[right]': dp[idx + 1] },
+            stateArrays: buildDpStateArrays(idx, [idx, idx + 1]),
+            actorState: { currentSlot: idx, action: 'compare' },
+            activeIndices: [idx],
+            activeSlot: idx,
+            metrics: { 'phase': `松弛右邻 [${idx}]`, 'dp-status': `dp[${idx}] -> ${dp[idx]}` },
+          });
+        }
+      }
+
+      // 阶段 3.4: 若未触发任何邻居松弛，说明该孩子是局部山谷，保持基准 1 颗
+      if (!updatedByLeft && !updatedByRight) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          codeLine: anchorMap['loop'] ?? 5,
+          decision: `⛰️ 局部山谷判定：孩子 [${idx}] 评分 ${curRating} 不高于任何未处理或已处理邻居，保持基准糖果数 dp[${idx}] = 1`,
+          message: `基准性质：局部波谷仅需分配底线 1 颗糖果即可满足题意`,
+          variables: { currentChild: idx, 'dp[idx]': dp[idx], valley: true },
+          stateArrays: buildDpStateArrays(idx, [idx]),
+          actorState: { currentSlot: idx, action: 'idle' },
+          activeIndices: [idx],
+          activeSlot: idx,
+          metrics: { 'phase': `确认山谷 [${idx}]`, 'dp-status': `dp[${idx}] = 1` },
+        });
+      }
     }
 
     const total = dp.reduce((a, b) => a + b, 0);
 
+    // 最终结算 Step
     steps.push({
       stepIndex: steps.length,
       stage: 3,
       codeLine: anchorMap['done'] ?? 9,
-      decision: `🎉 拓扑 DP 表推演完成！全员按拓扑序松弛结束，最少糖果数为 ${total} 颗`,
-      message: `动态规划状态转移矩阵严谨收敛于全局最优解`,
-      variables: { return: total, finalDp: JSON.stringify(dp) },
+      decision: `🎉 拓扑 DP 表推演完成！全部 ${n} 个孩子按拓扑序依次松弛结束，最少糖果数为 ${total} 颗，分配方案为 [${dp.join(', ')}]`,
+      message: `拓扑状态转移矩阵严谨收敛于全局最优解，时间复杂度 O(N log N)，空间复杂度 O(N)`,
+      variables: { return: total, finalDp: JSON.stringify(dp), totalCandies: total },
       stateArrays: buildDpStateArrays(),
+      actorState: { currentSlot: n - 1, action: 'idle' },
+      activeSlot: n - 1,
       metrics: { 'phase': '🏁 DP 结算', 'dp-status': '推演完成' },
     });
 
