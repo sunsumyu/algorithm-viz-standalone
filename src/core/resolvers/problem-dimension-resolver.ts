@@ -172,12 +172,22 @@ export class ProblemDimensionResolver {
     if (params.g !== undefined && params.s !== undefined) {
       const g = this.toArray(params.g);
       const s = this.toArray(params.s);
-      m = g.length + 1;
-      n = s.length + 1;
-      category = '2d-sequence';
-      const isStage3 = currentStage === 'stage-3';
-      const is1D = !isStage3;
-      return { m, n, is1D, category };
+      const isStage2or3 = currentStage === 'stage-2' || currentStage === 'stage-3';
+      const isExplicit1D = currentStage === 'stage-1' || currentStage === 'stage-4';
+
+      if (isExplicit1D) {
+        // Stage 1 (双指针贪心) 与 Stage 4 (空间压缩) 为纯粹的一维双指针推进
+        m = 1;
+        n = g.length;
+        category = '1d-linear';
+        return { m, n, is1D: true, category };
+      } else {
+        // Stage 2 (备忘录) 与 Stage 3 (DP填表) 及默认目录维度为完备 (m+1) x (n+1) 二维矩阵
+        m = g.length + 1;
+        n = s.length + 1;
+        category = '2d-sequence';
+        return { m, n, is1D: false, category };
+      }
     }
 
     // 3. 股票买卖系列 (prices 数组)
