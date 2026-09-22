@@ -40,6 +40,7 @@ const AUTHORIZED_CORE_COMPILERS = new Set([
   'partition-dp-compiler.ts',
   'table-step-engine.ts',
   'step-matrix-compiler-primitives.ts',
+  'two-pass-neighbor-step-compiler.ts',
 ]);
 
 // 利用 Vite 零 DOM、零 Node 依赖的 import.meta.glob 加载当前目录策略源码

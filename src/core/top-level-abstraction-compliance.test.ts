@@ -33,6 +33,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'non-overlapping',
   'merge-intervals',
   'partition-labels',
+  'candy',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -200,7 +201,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       const KNOWN_LEGACY_GREEDY_UNMIGRATED = new Set([
         'assign-cookies',
         'lemonade',
-        'candy',
         'gas-station',
         'max-subarray',
         'monotone-digits',

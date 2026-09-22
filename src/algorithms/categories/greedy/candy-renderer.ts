@@ -3,7 +3,8 @@
  * LeetCode 135：双向两次贪心（左向右 + 右向左取 max），求最少分发糖果数
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -237,47 +238,20 @@ export function renderCandyCanvas(container: HTMLElement, step: CandyStep): void
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'candy',
   name: '分发糖果',
+  viewId: 'candy',
   category: 'greedy',
-  description: '双向两次贪心遍历，左向右递增与右向左取 max 结合，求最少糖果数',
   icon: '🍬',
   difficulty: 3,
-  levelOrder: 13,
-  learningGoal: '掌握双向两次贪心解题范式，学会将双边相邻约束拆解为单向独立推导',
-  inputs: [
-    {
-      id: 'ratings',
-      label: '孩子评分数组',
-      type: 'text',
-      defaultValue: '1,2,87,87,87,2,1',
-      placeholder: '逗号分隔评分',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { ratings: '1,0,2' } },
-    { label: '示例 2', values: { ratings: '1,2,2' } },
-    { label: '波峰分配', values: { ratings: '1,3,4,5,2' } },
-    { label: '平台波谷', values: { ratings: '1,2,87,87,87,2,1' } },
-  ],
-  metrics: [
-    { id: 'phase', label: '遍历阶段', color: '#ef4444' },
-    { id: 'cur-child', label: '当前孩子', color: '#ef4444' },
-    { id: 'total', label: '最少糖果总数', color: '#ef4444' },
-    { id: 'candies', label: '分配方案', color: '#059669' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前考察孩子', color: '#ef4444' },
-    { label: '🍬 已分配糖果', color: '#f472b6' },
-  ],
-  codeLanguages: CANDY_CODE_LANGUAGES,
-  problemHtml: CANDY_PROBLEM_HTML,
-  analysisHtml: CANDY_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawRatings = parseNumberList(inputs.ratings, '1,2,87,87,87,2,1');
-    return withMetrics(buildCandySteps(rawRatings.length ? rawRatings : [1, 2, 87, 87, 87, 2, 1]));
-  },
-  renderCanvas: (container, step) => renderCandyCanvas(container, step as CandyStep),
+  levelOrder: 9,
+  learningGoal: '掌握双向两次贪心求解范式，学会将双边相邻约束拆解为单向独立推导并取 max 融合',
+  description: '相邻两个孩子评分更高者糖果更多，拆解为左右两次单向贪心遍历求解最少糖果总数',
+  template: `<div id="candy" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerCandy(): void {
+  // 保持向前兼容导出
+}

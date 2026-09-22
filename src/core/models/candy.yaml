@@ -1,0 +1,197 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 分发糖果 顶层领域模型
+# 对应：LeetCode 135 / 经典贪心与双向前后缀分解专题
+# 包含：双向邻域贪心、记忆化搜索(DAG)、拓扑DP、单趟峰谷 O(1) 常数空间优化
+# ==============================================================================
+
+id: candy
+name: "分发糖果"
+nameEn: "Candy"
+category: "greedy"
+icon: "🍬"
+difficulty: 3
+levelOrder: 9
+learningGoal: "掌握双向两次贪心求解范式，学会将双边相邻约束拆解为单向独立推导并取 max 融合"
+description: "n 个孩子站成一排。给你一个整数数组 ratings 表示每个孩子的评分。按照以下要求给每个孩子分发糖果：每个孩子至少分配到 1 个糖果；相邻两个孩子评分更高的获得更多糖果。返回所需的最少糖果数目。"
+defaultStage: stage-1
+defaultParams:
+  ratings: "[1, 2, 87, 87, 87, 2, 1]"
+
+problem:
+  title: "分发糖果 (Candy)"
+  difficulty: "困难"
+  tags: ["贪心", "数组", "双向扫描", "LeetCode 135"]
+  description: "n 个孩子站成一排。给你一个整数数组 <code>ratings</code> 表示每个孩子的评分。<br/><br/>你需要按照以下要求，给这些孩子分发糖果：<br/>1. 每个孩子至少分配到 1 个糖果。<br/>2. 相邻两个孩子中，评分更高的孩子会获得更多的糖果。<br/><br/>请你给每个孩子分发糖果，计算并返回需要准备的 <strong>最少糖果数目</strong> 。"
+  examples:
+    - input: "ratings = [1,0,2]"
+      output: "5"
+      explanation: "你可以分别给第一个、第二个、第三个孩子分发 2、1、2 颗糖果。"
+    - input: "ratings = [1,2,2]"
+      output: "4"
+      explanation: "你可以分别给第一个、第二个、第三个孩子分发 1、2、1 颗糖果。第三个孩子只得到 1 颗糖果，这满足上述两个条件。"
+    - input: "ratings = [1,2,87,87,87,2,1]"
+      output: "13"
+      explanation: "分配方案为 [1, 2, 3, 1, 3, 2, 1]，总和为 13。"
+  constraints:
+    - "n == ratings.length"
+    - "1 <= n <= 2 * 10^4"
+    - "0 <= ratings[i] <= 2 * 10^4"
+
+directions:
+  forward:
+    label: "左向右先行 (Forward Two-Pass)"
+    start: [0, 0]
+    target: [0, 6]
+    branches:
+      - name: "left_pass"
+        label: "从左向右扫描 (右高则递增)"
+      - name: "right_pass"
+        label: "从右向左扫描 (左高取 max)"
+
+  reverse:
+    label: "右向左先行 (Reverse Two-Pass)"
+    description: "优先满足右侧约束，反向扫描后再进行正向融合"
+    startFormula: "最右孩子"
+    target: "最左孩子"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "双向贪心"
+    type: "greedy"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "双向两次贪心 (左右约束拆解)"
+    desc: "先从左到右满足「右边评分高则糖果加一」，再从右到左满足「左边评分高则糖果取 max」，融合双边相邻约束"
+    card2Title: "双向贪心对比看板"
+    card2Desc: "实时并列监控左向右数组 L、右向左数组 R 以及最终取 max 融合的糖果分配数组。"
+    code:
+      forward:
+        title: "Candy.java"
+        source: |
+          public int candy(int[] ratings) {
+              int n = ratings.length; // @step:entry
+              int[] left = new int[n];
+              Arrays.fill(left, 1); // @step:init
+              for (int i = 1; i < n; i++) { // @step:left_loop
+                  if (ratings[i] > ratings[i - 1]) { // @step:left_check
+                      left[i] = left[i - 1] + 1; // @step:left_inc
+                  }
+              }
+              int[] right = new int[n];
+              Arrays.fill(right, 1);
+              int total = 0;
+              for (int i = n - 1; i >= 0; i--) { // @step:right_loop
+                  if (i < n - 1 && ratings[i] > ratings[i + 1]) { // @step:right_check
+                      right[i] = right[i + 1] + 1; // @step:right_inc
+                  }
+                  total += Math.max(left[i], right[i]); // @step:fuse
+              }
+              return total; // @step:done
+          }
+      reverse:
+        title: "Candy_Reverse.java"
+        source: |
+          public int candy(int[] ratings) {
+              int n = ratings.length; // @step:entry
+              int[] right = new int[n];
+              Arrays.fill(right, 1); // @step:init
+              for (int i = n - 2; i >= 0; i--) { // @step:left_loop
+                  if (ratings[i] > ratings[i + 1]) { // @step:left_check
+                      right[i] = right[i + 1] + 1; // @step:left_inc
+                  }
+              }
+              int[] left = new int[n];
+              Arrays.fill(left, 1);
+              int total = 0;
+              for (int i = 0; i < n; i++) { // @step:right_loop
+                  if (i > 0 && ratings[i] > ratings[i - 1]) { // @step:right_check
+                      left[i] = left[i - 1] + 1; // @step:right_inc
+                  }
+                  total += Math.max(left[i], right[i]); // @step:fuse
+              }
+              return total; // @step:done
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "记忆化搜索 (DAG 最长路)"
+    desc: "将相邻评分的大小关系建立有向无环图（DAG），从每个山峰节点自顶向下递归搜索最长降序链并缓存"
+    card2Title: "记忆化依赖搜索树"
+    card2Desc: "展示由评分较高孩子向相邻低评分孩子发起的递归探查树，验证每个山峰到山谷的最长链。"
+    code:
+      forward:
+        title: "Candy_Memo.java"
+        source: |
+          public int candyMemo(int[] ratings) {
+              int n = ratings.length; // @step:entry
+              int[] memo = new int[n]; // @step:init
+              int sum = 0;
+              for (int i = 0; i < n; i++) { // @step:loop
+                  sum += dfs(ratings, i, memo); // @step:dfs
+              }
+              return sum; // @step:done
+          }
+
+  stage-3:
+    shortName: "动态规划"
+    type: "dp"
+    timeBadge: "O(n log n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "拓扑排序状态转移 DP"
+    desc: "将所有孩子按评分升序排列（天然拓扑序），从山谷向山峰依次松弛相邻转移方程 dp[i] = max(dp[neighbor]) + 1"
+    card2Title: "拓扑状态转移矩阵"
+    card2Desc: "按评分升序展示状态表格如何从基底依次向两侧波峰逐级松弛传播。"
+    code:
+      forward:
+        title: "Candy_DP.java"
+        source: |
+          public int candyDP(int[] ratings) {
+              int n = ratings.length; // @step:entry
+              Integer[] order = new Integer[n]; // @step:init
+              for (int i = 0; i < n; i++) order[i] = i;
+              Arrays.sort(order, (a, b) -> Integer.compare(ratings[a], ratings[b])); // @step:sort
+              int[] dp = new int[n];
+              Arrays.fill(dp, 1);
+              for (int idx : order) { // @step:loop
+                  if (idx > 0 && ratings[idx] > ratings[idx - 1]) dp[idx] = Math.max(dp[idx], dp[idx - 1] + 1); // @step:transfer_left
+                  if (idx < n - 1 && ratings[idx] > ratings[idx + 1]) dp[idx] = Math.max(dp[idx], dp[idx + 1] + 1); // @step:transfer_right
+              }
+              return Arrays.stream(dp).sum(); // @step:done
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(1) 空间"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "单趟常数空间峰谷贪心 (O(1) 辅助空间)"
+    desc: "单趟线性遍历，维护连续上坡长度 inc、连续下坡长度 dec 与历史波峰 height，下坡超过波峰时补足差值，达成 O(1) 辅助空间"
+    card2Title: "单趟坡度状态看板"
+    card2Desc: "展示当前处于上坡还是下坡，动态跟踪上坡段与下坡段的累积糖果及峰值补偿。"
+    code:
+      forward:
+        title: "Candy_ConstantSpace.java"
+        source: |
+          public int candyO1(int[] ratings) {
+              int n = ratings.length; // @step:entry
+              if (n <= 1) return n;
+              int ret = 1, inc = 1, dec = 0, pre = 1; // @step:init
+              for (int i = 1; i < n; i++) { // @step:loop
+                  if (ratings[i] >= ratings[i - 1]) { // @step:up_check
+                      dec = 0;
+                      pre = ratings[i] == ratings[i - 1] ? 1 : pre + 1; // @step:up_calc
+                      ret += pre;
+                      inc = pre;
+                  } else { // @step:down_check
+                      dec++;
+                      if (dec == inc) dec++; // 触碰或超过波峰高度时补偿波峰
+                      ret += dec;
+                      pre = 1;
+                  }
+              }
+              return ret; // @step:done
+          }

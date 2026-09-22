@@ -28,6 +28,7 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
    - 双序列矩阵 DP 族 $\rightarrow$ `SequenceStepMatrixCompiler`
    - 区间接力与覆盖族 $\rightarrow$ `IntervalRelayStepCompiler`
    - 区间调度与互斥合并族 $\rightarrow$ `IntervalSchedulingStepCompiler`
+   - 双向前后缀与邻域扫描族 $\rightarrow$ `TwoPassNeighborStepCompiler`
    - 网格探索 DP 族 $\rightarrow$ `GridUniquePathsCompiler`
    - 树形展开与记忆化 $\rightarrow$ `StateDependencyTreeCompiler`
 3. **策略类身材红线（LOC < 120 行）**：单题 `*Strategy.ts` 的唯一职责是「提取入参、规约转换与委托调用」，体积严禁超过 120 行。

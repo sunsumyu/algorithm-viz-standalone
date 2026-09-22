@@ -31,6 +31,8 @@ import { NonOverlappingStrategy } from './non-overlapping-strategy';
 import { MergeIntervalsStrategy } from './merge-intervals-strategy';
 import { PartitionLabelsStrategy } from './partition-labels-strategy';
 import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
+import { CandyStrategy } from './candy-strategy';
+import { TwoPassNeighborStepCompiler } from './two-pass-neighbor-step-compiler';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -141,6 +143,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new NonOverlappingStrategy());
   AlgorithmStrategyRegistry.register(new MergeIntervalsStrategy());
   AlgorithmStrategyRegistry.register(new PartitionLabelsStrategy());
+  AlgorithmStrategyRegistry.register(new CandyStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -182,7 +185,9 @@ export {
   NonOverlappingStrategy,
   MergeIntervalsStrategy,
   PartitionLabelsStrategy,
-  IntervalSchedulingStepCompiler
+  IntervalSchedulingStepCompiler,
+  CandyStrategy,
+  TwoPassNeighborStepCompiler
 };
 
 export * from './strategy-helpers';
