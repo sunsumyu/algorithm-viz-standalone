@@ -1,4 +1,5 @@
-import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
+import { BaseAlgorithmStrategy } from './base-algorithm-strategy';
+import type { StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep } from '../universal-stage-engine';
 import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
@@ -8,14 +9,17 @@ import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compi
  * 极简薄适配器（< 50 行）：负责 s 字符串入参解析，
  * 全权委托至顶层通用的 IntervalSchedulingStepCompiler 编译引擎。
  */
-export class PartitionLabelsStrategy implements IAlgorithmStrategy {
-  public readonly modelId: string = 'partition-labels';
-
-  public canHandle(modelId: string): boolean {
-    return modelId === 'partition-labels';
+export class PartitionLabelsStrategy extends BaseAlgorithmStrategy {
+  constructor() {
+    super('partition-labels');
   }
 
-  public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
+  protected compileStage(
+    model: IYamlAlgorithmModel,
+    stage: number,
+    direction: 'forward' | 'reverse',
+    params: StageExecutionParams
+  ): UniversalStep[] {
     const rawStr = String(
       params.customInputs?.['input-s'] ??
       params.customInputs?.s ??
@@ -28,9 +32,9 @@ export class PartitionLabelsStrategy implements IAlgorithmStrategy {
       rawStr,
       {
         anchorMap: params.anchorMap,
-        direction: params.direction as 'forward' | 'reverse' | undefined,
+        direction,
       },
-      params.stage ?? 1
+      stage
     );
   }
 }

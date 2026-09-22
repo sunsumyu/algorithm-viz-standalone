@@ -113,5 +113,31 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         empty.generateSteps({ id: 'empty-algo' } as any, { stage: 1 });
       }).toThrow(/推导步骤为空！禁止交付空白演示/);
     });
+
+    it('所有已迁移的贪心策略类必须 100% 继承 BaseAlgorithmStrategy 模板基类', async () => {
+      const { AssignCookiesStrategy } = await import('./assign-cookies-strategy');
+      const { CandyStrategy } = await import('./candy-strategy');
+      const { MinArrowsStrategy } = await import('./min-arrows-strategy');
+      const { NonOverlappingStrategy } = await import('./non-overlapping-strategy');
+      const { MergeIntervalsStrategy } = await import('./merge-intervals-strategy');
+      const { PartitionLabelsStrategy } = await import('./partition-labels-strategy');
+
+      const strategyClasses = [
+        AssignCookiesStrategy,
+        CandyStrategy,
+        MinArrowsStrategy,
+        NonOverlappingStrategy,
+        MergeIntervalsStrategy,
+        PartitionLabelsStrategy,
+      ];
+
+      for (const StrategyCls of strategyClasses) {
+        const instance = new StrategyCls();
+        expect(
+          instance instanceof BaseAlgorithmStrategy,
+          `❌ [PATTERN_VIOLATION] ${StrategyCls.name} 未继承 BaseAlgorithmStrategy 模板方法基类！`
+        ).toBe(true);
+      }
+    });
   });
 });

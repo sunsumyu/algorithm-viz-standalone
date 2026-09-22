@@ -1,4 +1,5 @@
-import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
+import { BaseAlgorithmStrategy } from './base-algorithm-strategy';
+import type { StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep } from '../universal-stage-engine';
 import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
@@ -8,14 +9,17 @@ import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compi
  * 极简薄适配器（< 50 行）：负责 points 入参解析，
  * 全权委托至顶层通用的 IntervalSchedulingStepCompiler 编译引擎。
  */
-export class MinArrowsStrategy implements IAlgorithmStrategy {
-  public readonly modelId: string = 'min-arrows';
-
-  public canHandle(modelId: string): boolean {
-    return modelId === 'min-arrows' || modelId === 'minimum-number-of-arrows-to-burst-balloons';
+export class MinArrowsStrategy extends BaseAlgorithmStrategy {
+  constructor() {
+    super('min-arrows', ['minimum-number-of-arrows-to-burst-balloons']);
   }
 
-  public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
+  protected compileStage(
+    model: IYamlAlgorithmModel,
+    stage: number,
+    direction: 'forward' | 'reverse',
+    params: StageExecutionParams
+  ): UniversalStep[] {
     const rawPointsStr = String(
       params.customInputs?.['input-points'] ??
       params.customInputs?.points ??
@@ -41,9 +45,9 @@ export class MinArrowsStrategy implements IAlgorithmStrategy {
       points,
       {
         anchorMap: params.anchorMap,
-        direction: params.direction as 'forward' | 'reverse' | undefined,
+        direction,
       },
-      params.stage ?? 1
+      stage
     );
   }
 }

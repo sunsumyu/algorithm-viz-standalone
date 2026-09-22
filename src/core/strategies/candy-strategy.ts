@@ -1,4 +1,5 @@
-import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
+import { BaseAlgorithmStrategy } from './base-algorithm-strategy';
+import type { StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep } from '../universal-stage-engine';
 import { TwoPassNeighborStepCompiler } from './two-pass-neighbor-step-compiler';
@@ -8,14 +9,17 @@ import { TwoPassNeighborStepCompiler } from './two-pass-neighbor-step-compiler';
  * 极简薄适配器（< 50 行）：负责 ratings 评分数组入参解析与规约，
  * 全权委托至核心深模块 TwoPassNeighborStepCompiler 编译引擎。
  */
-export class CandyStrategy implements IAlgorithmStrategy {
-  public readonly modelId: string = 'candy';
-
-  public canHandle(modelId: string): boolean {
-    return modelId === 'candy';
+export class CandyStrategy extends BaseAlgorithmStrategy {
+  constructor() {
+    super('candy');
   }
 
-  public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
+  protected compileStage(
+    model: IYamlAlgorithmModel,
+    stage: number,
+    direction: 'forward' | 'reverse',
+    params: StageExecutionParams
+  ): UniversalStep[] {
     const rawInput =
       params.customInputs?.['input-ratings'] ??
       params.customInputs?.ratings ??
@@ -49,9 +53,9 @@ export class CandyStrategy implements IAlgorithmStrategy {
       ratings,
       {
         anchorMap: params.anchorMap,
-        direction: params.direction as 'forward' | 'reverse' | undefined,
+        direction,
       },
-      params.stage ?? 1
+      stage
     );
   }
 }
