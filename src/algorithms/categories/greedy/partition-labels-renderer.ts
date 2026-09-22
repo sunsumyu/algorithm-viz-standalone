@@ -3,7 +3,8 @@
  * LeetCode 763：记录每个字符最后出现下标，遍历维护最远边界，达到边界即贪心切割
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   PARTITION_LABELS_PROBLEM_HTML,
@@ -239,46 +240,20 @@ export function renderPartitionLabelsCanvas(container: HTMLElement, step: Partit
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'partition-labels',
   name: '划分字母区间',
+  viewId: 'partition-labels',
   category: 'greedy',
-  description: '统计各字符最后出现位置，贪心更新最远覆盖边界，到达边界即刻切割',
   icon: '✂️',
   difficulty: 2,
   levelOrder: 10,
   learningGoal: '掌握字符区间最远右边界贪心切分模型，熟练运用贪心寻找自然边界',
-  inputs: [
-    {
-      id: 's',
-      label: '输入字符串',
-      type: 'text',
-      defaultValue: 'ababcbacadefegdehijhklij',
-      placeholder: '小写字母字符串',
-    },
-  ],
-  presets: [
-    { label: '基础示例', values: { s: 'ababcbacadefegdehijhklij' } },
-    { label: '全部相同', values: { s: 'aaaa' } },
-    { label: '两段划分', values: { s: 'eccbbbbdec' } },
-    { label: '单字符流', values: { s: 'abcabcabc' } },
-  ],
-  metrics: [
-    { id: 'cur-char', label: '当前字符', color: '#4f46e5' },
-    { id: 'last-pos', label: '最后出现位置', color: '#b45309' },
-    { id: 'cur-partition', label: '当前片段边界', color: '#f59e0b' },
-    { id: 'partition-count', label: '片段数', color: '#10b981' },
-    { id: 'action', label: '贪心动作', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前扫描', color: '#4f46e5' },
-    { label: '🏁 当前片段右界', color: '#f59e0b' },
-    { label: '✂️ 切割点', color: '#10b981' },
-  ],
-  codeLanguages: PARTITION_LABELS_CODE_LANGUAGES,
-  problemHtml: PARTITION_LABELS_PROBLEM_HTML,
-  analysisHtml: PARTITION_LABELS_ANALYSIS_HTML,
-  generateSteps: (inputs) =>
-    withMetrics(buildPartitionLabelsSteps(String(inputs.s ?? 'ababcbacadefegdehijhklij'))),
-  renderCanvas: (container, step) => renderPartitionLabelsCanvas(container, step as PartitionStep),
+  description: '统计各字符最后出现位置，贪心更新最远覆盖边界，到达边界即刻切割',
+  template: `<div id="partition-labels" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerPartitionLabels(): void {
+  // 保持向前兼容导出
+}

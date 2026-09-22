@@ -1,0 +1,179 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 划分字母区间 顶层领域模型
+# 对应：LeetCode 763 / 经典贪心算法专题
+# 包含：字符最远边界统计、动态扩界切分、记忆化搜索、划分 DP 与 O(1) 空间优化
+# ==============================================================================
+
+id: partition-labels
+name: "划分字母区间"
+nameEn: "Partition Labels"
+category: "greedy"
+icon: "✂️"
+difficulty: 2
+levelOrder: 10
+learningGoal: "掌握字符区间最远右边界贪心切分模型，熟练运用贪心寻找自然边界"
+description: "给你一个字符串 s 。我们要把这个字符串划分为尽可能多的片段，同一字母最多出现在一个片段中。返回一个表示每个片段长度的列表。"
+defaultParams:
+  s: "ababcbacadefegdehijhklij"
+
+problem:
+  title: "划分字母区间 (Partition Labels)"
+  difficulty: "中等"
+  tags: ["贪心", "双指针", "字符串", "LeetCode 763"]
+  description: "给你一个字符串 <code>s</code> 。我们要把这个字符串划分为尽可能多的片段，同一字母最多出现在一个片段中。<br/><br/>注意，划分结果需要满足：将所有片段按顺序连接，可以得到原字符串。<br/><br/>返回一个表示每个字符串片段的长度的列表。"
+  examples:
+    - input: "s = \"ababcbacadefegdehijhklij\""
+      output: "[9, 7, 8]"
+      explanation: "划分结果为 \"ababcbaca\", \"defegde\", \"hijhklij\" 。每个字母最多出现在一个片段中。像 \"ababcbacadefegde\", \"hijhklij\" 的划分是错误的，因为划分的片段数较少。"
+    - input: "s = \"eccbbbbdec\""
+      output: "[10]"
+  constraints:
+    - "1 <= s.length <= 500"
+    - "s 仅由小写英文字母组成"
+
+directions:
+  forward:
+    label: "正向最远边界扫描 (Forward Scan)"
+    start: [0, 0]
+    target: [0, 8]
+    branches:
+      - name: "expand"
+        label: "字符最远边界扩展"
+      - name: "cut"
+        label: "触碰边界切割片段"
+
+  reverse:
+    label: "逆向反推扫描 (Reverse Scan)"
+    description: "从后往前逆向寻找各字符首次出现左边界并切分"
+    startFormula: "字符串末尾"
+    target: "字符串首部"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "贪心边界切分 (双指针单调扫描)"
+    desc: "先统计每个字符最后出现下标，遍历时维护当前片段最远右边界 end = max(end, last[char])，当 i == end 时即刻切割"
+    card2Title: "贪心决策看板"
+    card2Desc: "实时监控当前扫描字符、其最远出现位置、当前片段扩张区间与已切分出的片段长度列表。"
+    code:
+      forward:
+        title: "PartitionLabels.java"
+        source: |
+          public List<Integer> partitionLabels(String s) {
+              List<Integer> res = new ArrayList<>(); // @step:entry
+              int[] last = new int[26];
+              for (int i = 0; i < s.length(); i++) { // @step:record
+                  last[s.charAt(i) - 'a'] = i;
+              }
+              int start = 0, end = 0; // @step:init
+              for (int i = 0; i < s.length(); i++) { // @step:loop
+                  end = Math.max(end, last[s.charAt(i) - 'a']); // @step:expand
+                  if (i == end) { // @step:check
+                      res.add(end - start + 1); // @step:cut
+                      start = i + 1;
+                  }
+              }
+              return res; // @step:done
+          }
+      reverse:
+        title: "PartitionLabels_Reverse.java"
+        source: |
+          public List<Integer> partitionLabels(String s) {
+              LinkedList<Integer> res = new LinkedList<>(); // @step:entry
+              int[] first = new int[26];
+              Arrays.fill(first, -1);
+              for (int i = s.length() - 1; i >= 0; i--) { // @step:record
+                  first[s.charAt(i) - 'a'] = i;
+              }
+              int right = s.length() - 1, left = s.length() - 1; // @step:init
+              for (int i = s.length() - 1; i >= 0; i--) { // @step:loop
+                  left = Math.min(left, first[s.charAt(i) - 'a']); // @step:expand
+                  if (i == left) { // @step:check
+                      res.addFirst(right - left + 1); // @step:cut
+                      right = i - 1;
+                  }
+              }
+              return res; // @step:done
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "记忆化搜索 (前缀有效切分探查)"
+    desc: "将字符串切分转化为状态树搜索，递归探索首个合规闭合前缀，剪枝记录已探查后缀"
+    card2Title: "记忆化切分依赖树"
+    card2Desc: "展示自顶向下前缀切割决策树，分析各分支是否满足「内部字符不越界」约束并缓存切分结果。"
+    code:
+      forward:
+        title: "PartitionLabels_Memo.java"
+        source: |
+          public List<Integer> partitionMemo(String s) {
+              // 记忆化搜索前缀切分点 // @step:entry
+              int[] last = buildLastPositions(s); // @step:record
+              return dfsPartition(s, 0, last, new HashMap<>()); // @step:done
+          }
+
+  stage-3:
+    shortName: "动态规划"
+    type: "dp"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "划分型动态规划"
+    desc: "定义 dp[i] 为前缀 s[0..i] 的最大有效片段划分方案，由后向前判定子串是否字符封闭并完成转移"
+    card2Title: "划分 DP 状态转移矩阵"
+    card2Desc: "展示状态数组由前向后松弛递推过程，记录每个位置的最优切分前驱与最大切分块数。"
+    code:
+      forward:
+        title: "PartitionLabels_DP.java"
+        source: |
+          public List<Integer> partitionDP(String s) {
+              int n = s.length(); // @step:entry
+              int[] dp = new int[n + 1]; // @step:init
+              Arrays.fill(dp, -1);
+              dp[0] = 0;
+              for (int i = 1; i <= n; i++) { // @step:loop
+                  for (int j = 0; j < i; j++) {
+                      if (isValidClosedChunk(s, j, i - 1) && dp[j] != -1) {
+                          dp[i] = Math.max(dp[i], dp[j] + 1); // @step:transfer
+                      }
+                  }
+              }
+              return reconstructPartitions(s, dp); // @step:done
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(1) 空间"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "定长 26 槽位计数数组优化"
+    desc: "利用小写英文字母仅 26 个的字符集上界，用 int[26] 取代哈希表，实现 O(1) 辅助空间极致运行"
+    card2Title: "定长槽位状态看板"
+    card2Desc: "展示 26 个字母索引槽位的固定内存映射与单趟双指针前向追赶过程。"
+    code:
+      forward:
+        title: "PartitionLabels_Optimized.java"
+        source: |
+          public List<Integer> partitionOptimized(String s) {
+              int[] edge = new int[26]; // 26 槽位定长空间 O(1) // @step:entry
+              char[] chars = s.toCharArray();
+              for (int i = 0; i < chars.length; i++) { // @step:record
+                  edge[chars[i] - 'a'] = i;
+              }
+              List<Integer> res = new ArrayList<>();
+              int left = 0, right = 0; // @step:init
+              for (int i = 0; i < chars.length; i++) { // @step:loop
+                  right = Math.max(right, edge[chars[i] - 'a']); // @step:expand
+                  if (i == right) { // @step:check
+                      res.add(right - left + 1); // @step:cut
+                      left = i + 1;
+                  }
+              }
+              return res; // @step:done
+          }

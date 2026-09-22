@@ -3552,7 +3552,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "partition-labels",
     name: "划分字母区间",
-    viewId: "algo-partition-labels-view",
+    viewId: "partition-labels",
     category: "greedy",
     description: "统计各字符最后出现位置，贪心更新最远覆盖边界，到达边界即刻切割",
     icon: "✂️",

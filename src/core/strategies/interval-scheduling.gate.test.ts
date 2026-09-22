@@ -3,13 +3,15 @@ import { AlgorithmModelRepository } from '../model-repository';
 import { MinArrowsStrategy } from './min-arrows-strategy';
 import { NonOverlappingStrategy } from './non-overlapping-strategy';
 import { MergeIntervalsStrategy } from './merge-intervals-strategy';
+import { PartitionLabelsStrategy } from './partition-labels-strategy';
 import { IntervalSchedulingStepCompiler } from './interval-scheduling-step-compiler';
 
 describe('区间调度与互斥消除族顶层抽象门禁测试 (Interval Scheduling Gate Test)', () => {
-  it('模型仓库必须完备注册 min-arrows, non-overlapping 与 merge-intervals 顶层模型', () => {
+  it('模型仓库必须完备注册 min-arrows, non-overlapping, merge-intervals 与 partition-labels 顶层模型', () => {
     expect(AlgorithmModelRepository.hasModel('min-arrows')).toBe(true);
     expect(AlgorithmModelRepository.hasModel('non-overlapping')).toBe(true);
     expect(AlgorithmModelRepository.hasModel('merge-intervals')).toBe(true);
+    expect(AlgorithmModelRepository.hasModel('partition-labels')).toBe(true);
   });
 
   describe('LeetCode 452: 用最少数量的箭引爆气球 (min-arrows)', () => {
@@ -198,6 +200,71 @@ describe('区间调度与互斥消除族顶层抽象门禁测试 (Interval Sched
       expect(steps.length).toBeGreaterThan(0);
       const last = steps[steps.length - 1];
       expect(last.variables?.return).toBe(3);
+    });
+  });
+
+  describe('LeetCode 763: 划分字母区间 (partition-labels)', () => {
+    const strategy = new PartitionLabelsStrategy();
+    const model = AlgorithmModelRepository.getModel('partition-labels');
+
+    it('策略应能接管 partition-labels', () => {
+      expect(strategy.canHandle('partition-labels')).toBe(true);
+    });
+
+    it('Stage 1 正向贪心推演应正确切分片段 [9, 7, 8]', () => {
+      const steps = strategy.generateSteps(model, {
+        stage: 1,
+        direction: 'forward',
+      });
+      expect(steps.length).toBeGreaterThan(0);
+
+      const last = steps[steps.length - 1];
+      expect(last.decision).toContain('最终切分为 3 个封闭片段');
+      expect(last.variables?.return).toBe(3);
+      expect(last.variables?.partitions).toBe('[9,7,8]');
+    });
+
+    it('Stage 1 逆向贪心推演应能收敛并得到相同的切分片段 [9, 7, 8]', () => {
+      const steps = strategy.generateSteps(model, {
+        stage: 1,
+        direction: 'reverse',
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.variables?.return).toBe(3);
+      expect(last.variables?.partitions).toBe('[9,7,8]');
+    });
+
+    it('Stage 2 记忆化搜索树应生成有效树节点 (treeRoot)', () => {
+      const steps = strategy.generateSteps(model, {
+        stage: 2,
+        direction: 'forward',
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const withTree = steps.find((s) => s.treeRoot != null);
+      expect(withTree).toBeDefined();
+    });
+
+    it('Stage 3 划分 DP 应生成有效状态数组', () => {
+      const steps = strategy.generateSteps(model, {
+        stage: 3,
+        direction: 'forward',
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.stateArrays).toBeDefined();
+      expect(last.variables?.return).toBe(3);
+    });
+
+    it('Stage 4 定长槽位空间优化应正确收敛', () => {
+      const steps = strategy.generateSteps(model, {
+        stage: 4,
+        direction: 'forward',
+      });
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.variables?.return).toBe(3);
+      expect(last.variables?.partitions).toBe('[9,7,8]');
     });
   });
 });
