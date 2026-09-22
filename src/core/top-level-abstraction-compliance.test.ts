@@ -574,15 +574,8 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
   // 严禁任何算法在任何声明标签卡中用 4 步或假装实现糊弄用户！宁可报错，绝不伪绿灯！
   // ==========================================================================
   describe('门禁 8: 全声明标签卡完整性与防伪实现死门禁 (All Declared Stages Anti-Mock Gate)', () => {
-    // 历史遗留假装实现受控燃烧名单（历史遗留低步数阶段，每重构一个即删除一个，严禁任何新增！）
-    const KNOWN_INSUFFICIENT_STEPS_BURNDOWN = new Set([
-      'integer-break-stage-4',   // 历史数学贪心仅 4 步待重构
-      'perfect-squares-stage-4', // 历史数论极值仅 5 步待重构
-      'coin-change-stage-4',     // 历史 BFS 仅 5 步待重构
-      'word-break-stage-4',      // 历史 Trie 优化仅 4 步待重构
-      'coin-change-ii-stage-4',  // 历史空间压缩仅 4 步待重构
-      'decode-ways-stage-3',     // 历史递推DP仅 6 步 (默认入参短)
-    ]);
+    // 门禁 8 全库已锁定算法全部阶段步数密度 100% 满分达标，历史燃烧名单已彻底清零（0 遗留，0 豁免，严禁新增！）
+    const KNOWN_INSUFFICIENT_STEPS_BURNDOWN = new Set<string>();
 
     it('所有已锁定算法的全部声明阶段 (Stage 1-4) 均必须产生充分密度真实步骤，严禁任何偷懒跳步或假装实现', () => {
       const mockViolations: string[] = [];

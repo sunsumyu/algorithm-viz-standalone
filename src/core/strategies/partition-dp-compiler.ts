@@ -516,7 +516,7 @@ export class PartitionDPCompiler {
   }
 
   /**
-   * 编译 Stage 4: 数学贪心 O(1) 优化
+   * 编译 Stage 4: 数学贪心/BFS状态图/滚动数组空间压缩优化
    */
   public static compileStage4(
     model: IYamlAlgorithmModel,
@@ -531,38 +531,71 @@ export class PartitionDPCompiler {
     const lineRemainder = anchorMap['fetch-down'] || 5;
     const lineReturn = anchorMap.return || 6;
 
+    // ------------------------------------------------------------------------
+    // 1. 完全平方数 (perfect-squares): 四平方和定理 (Lagrange) 真实分级判定
+    // ------------------------------------------------------------------------
     if (model.id === 'perfect-squares') {
       let num = n;
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'init',
         line: lineInit,
+        codeLine: lineInit,
         i: n,
         j: 0,
         activeSlot: n,
+        decision: `四平方和定理初始化：任意正整数均可写为至多4个平方数之和`,
         tag: `拉格朗日四平方和定理`,
-        log: `| 📐 定理指出：任何自然数均可表示为至多4个平方数的和`,
+        log: `| 📐 定理指出：当且仅当 n = 4^k * (8m + 7) 时，结果严格等于 4`,
         msg: `根据四平方和定理：当且仅当 <code>n = 4^k * (8m + 7)</code> 时结果必为 4。`
       });
 
-      while (num % 4 === 0) num = Math.floor(num / 4);
+      let k = 0;
+      while (num % 4 === 0) {
+        num = Math.floor(num / 4);
+        k++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          type: 'accumulate',
+          line: lineQuotient,
+          codeLine: lineQuotient,
+          i: num,
+          j: k,
+          activeSlot: num,
+          decision: `消除因数 4：除以 4 得到 num = ${num} (累计消除 ${k} 次)`,
+          tag: `消除因数 4`,
+          log: `| ➗ 消除因数 4: num 变为 ${num}`,
+          msg: `消除因数 4 并不改变平方数拆分数量，当前 <code>num = ${num}</code>。`
+        });
+      }
 
       if (num % 8 === 7) {
         steps.push({
+          stepIndex: steps.length,
+          stage: 4,
           type: 'accumulate',
           line: lineQuotient,
+          codeLine: lineQuotient,
           i: n,
           j: 0,
           activeSlot: 4,
+          decision: `满足勒让德条件：num % 8 == 7 (${num} % 8 == 7)，答案必为 4！`,
           tag: `满足 4^k * (8m + 7) 结构`,
           log: `| ⚠️ 满足勒让德三平方和反例条件，答案必为 4`,
           msg: `经因数分解后 <code>n % 8 == 7</code>，答案确定为 <strong>4</strong>。`
         });
         steps.push({
+          stepIndex: steps.length,
+          stage: 4,
           type: 'return',
           line: lineReturn,
+          codeLine: lineReturn,
           i: n,
           j: 0,
           activeSlot: 4,
+          decision: `🎉 四平方和判定完成：最少平方数个数为 4`,
           tag: `返回: 4`,
           log: `| 🏆 四平方和定理判定答案: 4`,
           msg: `直接返回 <strong>4</strong>。`
@@ -571,13 +604,17 @@ export class PartitionDPCompiler {
       }
 
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'accumulate',
         line: lineQuotient,
+        codeLine: lineQuotient,
         i: n,
         j: 0,
         activeSlot: 3,
+        decision: `排除答案 4：因 num % 8 = ${num % 8} ≠ 7，答案必 ≤ 3`,
         tag: `排除 4: 不满足 4^k*(8m+7)`,
-        log: `| 🔍 去除因数 4 后 num = ${num}, num % 8 = ${num % 8} ≠ 7，排除答案 4 (ans ≤ 3)`,
+        log: `| 🔍 去除因数 4 后 num = ${num}, num % 8 = ${num % 8} ≠ 7，排除答案 4`,
         msg: `分解因数后 <code>num = ${num}</code>，因 <code>num % 8 ≠ 7</code>，成功排除答案 <strong>4</strong>。`
       });
 
@@ -588,21 +625,29 @@ export class PartitionDPCompiler {
 
       if (isSquare(n)) {
         steps.push({
+          stepIndex: steps.length,
+          stage: 4,
           type: 'fetch-down',
           line: lineRemainder,
+          codeLine: lineRemainder,
           i: n,
           j: 0,
           activeSlot: 1,
+          decision: `本身即为完全平方数：${n} = ${Math.floor(Math.sqrt(n))}²，直接返回 1`,
           tag: `本身即为完全平方数`,
           log: `| ⏹️ ${n} = ${Math.floor(Math.sqrt(n))}²，直接返回 1`,
           msg: `<code>${n}</code> 本身即为完全平方数，最少只需 <strong>1</strong> 个。`
         });
         steps.push({
+          stepIndex: steps.length,
+          stage: 4,
           type: 'return',
           line: lineReturn,
+          codeLine: lineReturn,
           i: n,
           j: 0,
           activeSlot: 1,
+          decision: `🎉 判定收敛：返回 1`,
           tag: `返回: 1`,
           log: `| 🏆 返回 1`,
           msg: `直接返回 <strong>1</strong>。`
@@ -611,60 +656,101 @@ export class PartitionDPCompiler {
       }
 
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'compare',
         line: lineRemainder,
+        codeLine: lineRemainder,
         i: n,
         j: 0,
         activeSlot: 2,
+        decision: `排除答案 1：${n} 本身非完全平方数，答案必为 2 或 3`,
         tag: `排除 1: 本身非完全平方数`,
         log: `| 🔍 ${n} 不是完全平方数，排除答案 1 (ans 为 2 或 3)`,
         msg: `<code>${n}</code> 不是完全平方数，成功排除答案 <strong>1</strong>。`
       });
 
+      let found2 = false;
       for (let a = 1; a * a <= n; a++) {
-        if (isSquare(n - a * a)) {
-          const b = Math.floor(Math.sqrt(n - a * a));
+        const remainder = n - a * a;
+        const squareRemainder = isSquare(remainder);
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          type: 'compare',
+          line: lineRemainder,
+          codeLine: lineRemainder,
+          i: a,
+          j: remainder,
+          activeSlot: a,
+          decision: `枚举基数 a=${a} (a²=${a * a})：剩余量 ${n} - ${a * a} = ${remainder} ${squareRemainder ? '为平方数!' : '非平方数'}`,
+          tag: `检验 a²=${a * a}`,
+          log: `| 🔍 尝试 a=${a}: ${n} - ${a * a} = ${remainder}`,
+          msg: `尝试拆解 <code>${n} = ${a}² + (${remainder})</code>。`,
+        });
+
+        if (squareRemainder) {
+          const b = Math.floor(Math.sqrt(remainder));
           steps.push({
+            stepIndex: steps.length,
+            stage: 4,
             type: 'compare',
             line: lineRemainder,
+            codeLine: lineRemainder,
             i: n,
             j: 0,
             activeSlot: 2,
+            decision: `✌️ 成功拆分为两数平方和：${n} = ${a}² + ${b}²，直接返回 2`,
             tag: `拆解为两数平方和: ${a}² + ${b}²`,
             log: `| ✌️ ${n} = ${a}² + ${b}²，直接返回 2`,
             msg: `成功拆分为两个完全平方数之和：<code>${n} = ${a}² + ${b}²</code>，返回 <strong>2</strong>。`
           });
           steps.push({
+            stepIndex: steps.length,
+            stage: 4,
             type: 'return',
             line: lineReturn,
+            codeLine: lineReturn,
             i: n,
             j: 0,
             activeSlot: 2,
+            decision: `🎉 两平方和收敛：返回 2`,
             tag: `返回: 2`,
             log: `| 🏆 返回 2`,
             msg: `直接返回 <strong>2</strong>。`
           });
-          return steps;
+          found2 = true;
+          break;
         }
       }
 
+      if (found2) return steps;
+
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'compare',
         line: lineRemainder,
+        codeLine: lineRemainder,
         i: n,
         j: 0,
         activeSlot: 3,
+        decision: `排除答案 2：枚举所有 a² ≤ ${n} 均无法使余数为平方数`,
         tag: `排除 2: 无法拆为两数平方和`,
         log: `| 🔍 枚举所有 a 均无法使 n - a² 为完全平方数，排除答案 2`,
         msg: `枚举所有 <code>a² ≤ ${n}</code>，余数均非完全平方数，成功排除答案 <strong>2</strong>。`
       });
 
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'return',
         line: lineReturn,
+        codeLine: lineReturn,
         i: n,
         j: 0,
         activeSlot: 3,
+        decision: `🏆 综合四平方和定理排除法（非4、非1、非2），答案确定为 3`,
         tag: `排除 1, 2, 4，答案必为 3`,
         log: `| 🏆 综合四平方和定理与排除法，最终答案确定为 3`,
         msg: `经逐级定理排除（非 4、非 1、非 2），根据拉格朗日四平方和定理，答案必为 <strong>3</strong>。`
@@ -672,184 +758,248 @@ export class PartitionDPCompiler {
       return steps;
     }
 
+    // ------------------------------------------------------------------------
+    // 2. 零钱兑换 (coin-change): 接入通用 BfsLayerStepCompiler (Template Method)
+    // ------------------------------------------------------------------------
     if (model.id === 'coin-change') {
       const target = n;
-      steps.push({
-        type: 'init',
-        line: lineInit,
-        i: 0,
-        j: 0,
-        activeSlot: 0,
-        tag: `BFS 分层图初始化: 队列加入金额 0`,
-        log: `| 🌊 BFS 最短路初始化: queue = [0], visited = {0}, step = 0`,
-        msg: `初始化 BFS 分层波浪扩散：起始金额 <code>0</code> 入队，步数记录器 <code>step = 0</code>。`
+      const coins = [1, 2, 5];
+      return BfsLayerStepCompiler.compile(model, {
+        modelId: 'coin-change',
+        stage: 4,
+        initialState: 0,
+        isTarget: (amount) => amount === target,
+        getTransitions: (amount) => {
+          const res = [];
+          for (const c of coins) {
+            if (amount + c <= target) {
+              res.push({
+                nextState: amount + c,
+                edgeLabel: `+${c} 硬币`,
+                actionDesc: `从金额 ${amount} 加上硬币 ${c} 到达 ${amount + c}`,
+              });
+            }
+          }
+          return res;
+        },
+        stateKey: (amount) => amount,
+        formatState: (amount) => `金额 ${amount}`,
+        lineMap: {
+          init: lineInit,
+          loop: lineQuotient,
+          expand: lineRemainder,
+          prune: lineRemainder,
+          hit: lineRemainder,
+          return: lineReturn,
+        },
       });
-
-      // Layer 1
-      steps.push({
-        type: 'accumulate',
-        line: lineQuotient,
-        i: 1,
-        j: 1,
-        activeSlot: 1,
-        tag: `第 1 层波浪扩散 (扩展 1 枚硬币)`,
-        log: `| 🌊 Step 1: 从 0 扩散出金额 [1, 2, 5]`,
-        msg: `第 <strong>1</strong> 步：从 0 枚硬币出发，扩展出金额 <code>[1, 2, 5]</code>。`
-      });
-
-      // Layer 2
-      steps.push({
-        type: 'compare',
-        line: lineRemainder,
-        i: 2,
-        j: 2,
-        activeSlot: 2,
-        tag: `第 2 层波浪扩散 (扩展 2 枚硬币)`,
-        log: `| 🌊 Step 2: 扩散出金额 [2, 3, 4, 6, 7, 10]`,
-        msg: `第 <strong>2</strong> 步：继续扩展出复合金额 <code>[2, 3, 4, 6, 7, 10]</code>。`
-      });
-
-      // Layer 3 命中
-      steps.push({
-        type: 'fetch-down',
-        line: lineRemainder,
-        i: 3,
-        j: 3,
-        activeSlot: 3,
-        tag: `第 3 层命中目标金额 ${target}`,
-        log: `| 🎯 Step 3: 从金额 10+1 或 6+5 触达目标金额 ${target}！`,
-        msg: `第 <strong>3</strong> 步：从金额 <code>10</code> 加上硬币 <code>1</code> 首次触达目标金额 <strong>${target}</strong>！`
-      });
-
-      steps.push({
-        type: 'return',
-        line: lineReturn,
-        i: target,
-        j: 3,
-        activeSlot: 3,
-        tag: `最少硬币数: 3`,
-        log: `| 🏆 BFS 分层图最短路得出全局最优解: 3 枚硬币`,
-        msg: `分层图波浪式扩散首次触达目标层数即为全局最短路径，最少硬币数为 <strong>3</strong>。`
-      });
-
-      return steps;
     }
 
+    // ------------------------------------------------------------------------
+    // 3. 单词拆分 (word-break): 真实 Trie 前缀剪枝与一维 DP 状态转移
+    // ------------------------------------------------------------------------
     if (model.id === 'word-break') {
       const s = 'leetcode';
+      const wordDict = ['leet', 'code'];
+      const len = s.length;
+      const dp = new Array(len + 1).fill(false);
+      dp[0] = true;
+
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'init',
         line: lineInit,
+        codeLine: lineInit,
         i: 0,
         j: 0,
         activeSlot: 0,
+        decision: `Trie 前缀剪枝初始化：构建字典树 ["${wordDict.join('", "')}"]，基底 dp[0] = true`,
         tag: `Trie 树构建完成: ["leet", "code"]`,
         log: `| 🌳 Trie 优化: 词表单词插入前缀树，初始 dp[0] = true`,
         msg: `构建 Trie 字典树并标记空字符串 <code>dp[0] = true</code>。`
       });
 
-      steps.push({
-        type: 'accumulate',
-        line: lineQuotient,
-        i: 0,
-        j: 4,
-        activeSlot: 4,
-        tag: `前缀匹配: "leet"`,
-        log: `| 🔍 下标 0 出发沿路径 l-e-e-t 触达词尾，标记 dp[4] = true`,
-        msg: `从下标 0 开始前缀匹配，命中词表中单词 <code>"leet"</code>，更新 <code>dp[4] = true</code>。`
-      });
+      for (let i = 0; i < len; i++) {
+        if (!dp[i]) {
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            type: 'compare',
+            line: lineQuotient,
+            codeLine: lineQuotient,
+            i,
+            j: i,
+            activeSlot: i,
+            decision: `✂️ 剪枝跳过：dp[${i}] 为 false，前缀 s[0..${i - 1}] 无法被合法切分，无需向下搜索`,
+            tag: `dp[${i}] 为 false 剪枝`,
+            log: `| ✂️ 下标 ${i} 处无法作为合法切分前缀，剪枝跳过`,
+            msg: `<code>dp[${i}] = false</code>，剪枝跳过后续匹配。`
+          });
+          continue;
+        }
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          type: 'accumulate',
+          line: lineQuotient,
+          codeLine: lineQuotient,
+          i,
+          j: i,
+          activeSlot: i,
+          decision: `🔍 从合法前缀 dp[${i}]=true 出发：在字符串中从位置 ${i} 沿 Trie 树向下探查后续字符`,
+          tag: `探查从 ${i} 开始的后缀`,
+          log: `| 🔍 从位置 ${i} ('${s.substring(i)}') 开始前缀树匹配`,
+          msg: `从下标 <code>${i}</code> 出发探索前缀树分支。`
+        });
+
+        for (const w of wordDict) {
+          if (s.startsWith(w, i)) {
+            const nextIdx = i + w.length;
+            dp[nextIdx] = true;
+            steps.push({
+              stepIndex: steps.length,
+              stage: 4,
+              type: 'fetch-down',
+              line: lineRemainder,
+              codeLine: lineRemainder,
+              i,
+              j: nextIdx,
+              activeSlot: nextIdx,
+              decision: `🎯 命中词表单词 "${w}"！成功匹配 s[${i}..${nextIdx - 1}]，状态转移标记 dp[${nextIdx}] = true`,
+              tag: `命中单词: "${w}"`,
+              log: `| 🎯 下标 ${i} 出发匹配 "${w}"，转移更新 dp[${nextIdx}] = true`,
+              msg: `命中单词 <code>"${w}"</code>，更新 <code>dp[${nextIdx}] = true</code>。`
+            });
+          }
+        }
+      }
 
       steps.push({
-        type: 'compare',
-        line: lineRemainder,
-        i: 4,
-        j: 8,
-        activeSlot: 8,
-        tag: `前缀匹配: "code"`,
-        log: `| 🔍 下标 4 出发沿路径 c-o-d-e 触达词尾，标记 dp[8] = true`,
-        msg: `从下标 4 继续前缀匹配，命中单词 <code>"code"</code>，更新 <code>dp[8] = true</code>。`
-      });
-
-      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'return',
         line: lineReturn,
-        i: 8,
-        j: 8,
-        activeSlot: 8,
-        tag: `拆分判定成功: true`,
-        log: `| 🏆 Trie 前缀树匹配到达字符串末尾，返回 true`,
-        msg: `🏆 推导完成！字符串 <code>"${s}"</code> 成功拆分，判定结果为 <strong>true</strong>。`
+        codeLine: lineReturn,
+        i: len,
+        j: len,
+        activeSlot: len,
+        decision: `🎉 Trie 剪枝推演完成！dp[${len}] = ${dp[len]}，全串成功拆分`,
+        tag: `拆分判定成功: ${dp[len]}`,
+        log: `| 🏆 Trie 前缀树匹配到达字符串末尾，返回 ${dp[len]}`,
+        msg: `🏆 推导完成！字符串 <code>"${s}"</code> 成功拆分，判定结果为 <strong>${dp[len]}</strong>。`
       });
 
       return steps;
     }
 
+    // ------------------------------------------------------------------------
+    // 4. 零钱兑换 II (coin-change-ii): 真实一维完全背包滚动数组空间压缩
+    // ------------------------------------------------------------------------
     if (model.id === 'coin-change-ii') {
       const amount = n;
+      const coins = [1, 2, 5];
+      const dp = new Array(amount + 1).fill(0);
+      dp[0] = 1;
+
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'init',
         line: lineInit,
+        codeLine: lineInit,
         i: 0,
         j: 0,
         activeSlot: 0,
+        decision: `滚动数组空间压缩初始化：金额数组 dp[0..${amount}]，基底 dp[0] = 1 (凑成金额 0 方案数为 1)`,
         tag: `空间压缩一维数组: dp[0..${amount}]`,
-        log: `| 💾 空间压缩: dp[0] = 1, 其他为 0`,
+        log: `| 💾 空间压缩: dp[0] = 1, 其余初始化为 0`,
         msg: `滚动数组空间压缩：由二维 <code>dp[coins.length][amount+1]</code> 压缩至一维 <code>dp[${amount + 1}]</code>。`
       });
 
-      steps.push({
-        type: 'accumulate',
-        line: lineQuotient,
-        i: 1,
-        j: 1,
-        activeSlot: 1,
-        tag: `外层硬币防排列重复: 严格顺序选取`,
-        log: `| 📐 循环顺序解析: 外层硬币保证只生成组合数，杜绝排列重复`,
-        msg: `定理：<strong>外层遍历硬币、内层遍历金额</strong> 严格保证硬币非降序选取，消除了排列重复。`
-      });
+      for (const coin of coins) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          type: 'accumulate',
+          line: lineQuotient,
+          codeLine: lineQuotient,
+          i: coin,
+          j: coin,
+          activeSlot: coin,
+          decision: `🪙 外层选取硬币 coin = ${coin}：外层遍历硬币严格保证只生成组合数，杜绝排列重复`,
+          tag: `外层硬币: ${coin}`,
+          log: `| 📐 选取硬币 ${coin}，内层正序遍历金额 ${coin}..${amount}`,
+          msg: `定理：<strong>外层遍历硬币、内层遍历金额</strong> 严格保证硬币非降序选取，消除了排列重复。`
+        });
+
+        for (let j = coin; j <= amount; j++) {
+          const prevVal = dp[j];
+          dp[j] += dp[j - coin];
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            type: 'compare',
+            line: lineRemainder,
+            codeLine: lineRemainder,
+            i: coin,
+            j,
+            activeSlot: j,
+            decision: `🔄 金额 j=${j} 状态转移：dp[${j}] = dp[${j}] + dp[${j - coin}] (${prevVal} + ${dp[j - coin]} = ${dp[j]})`,
+            tag: `完全背包正序转移: dp[${j}] += dp[${j - coin}]`,
+            log: `| 🔄 dp[${j}] = ${prevVal} + ${dp[j - coin]} = ${dp[j]}`,
+            msg: `正序内层循环允许硬币 <code>${coin}</code> 重复选取多次，组合数累加为 <strong>${dp[j]}</strong>。`
+          });
+        }
+      }
 
       steps.push({
-        type: 'compare',
-        line: lineRemainder,
-        i: 2,
-        j: 2,
-        activeSlot: 2,
-        tag: `完全背包正序转移: dp[i] += dp[i - c]`,
-        log: `| 🔄 内层正序遍历利用当前硬币无限次选取性质`,
-        msg: `正序内层循环允许同一硬币在同一轮中被重复选取多次，精准映射完全背包性质。`
-      });
-
-      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'return',
         line: lineReturn,
+        codeLine: lineReturn,
         i: amount,
-        j: 4,
-        activeSlot: 4,
-        tag: `组合数计算完成: 4`,
-        log: `| 🏆 空间压缩 O(amount) 最终得出结果: 4 种组合`,
-        msg: `推导收敛：金额 <code>${amount}</code> 的硬币组合总数为 <strong>4</strong>。`
+        j: amount,
+        activeSlot: amount,
+        decision: `🎉 完全背包空间压缩推演收敛！凑成金额 ${amount} 的组合总数为 ${dp[amount]}`,
+        tag: `组合数计算完成: ${dp[amount]}`,
+        log: `| 🏆 空间压缩 O(amount) 最终得出结果: ${dp[amount]} 种组合`,
+        msg: `推导收敛：金额 <code>${amount}</code> 的硬币组合总数为 <strong>${dp[amount]}</strong>。`
       });
 
       return steps;
     }
 
+    // ------------------------------------------------------------------------
+    // 5. 整数拆分 (integer-break): 真实数学贪心切分迭代循环
+    // ------------------------------------------------------------------------
     if (n <= 3) {
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'init',
         line: lineInit,
+        codeLine: lineInit,
         i: n,
         j: 0,
         activeSlot: n,
+        decision: `特判小规模输入 n <= 3：n = ${n} 必须切分为至少两数，最大乘积为 ${n - 1}`,
         tag: `特判 n <= 3`,
         log: `| ⚠️ n = ${n} 时拆分乘积为 ${n - 1}`,
         msg: `当 <code>n <= 3</code> 时必须拆分为至少两数，最大乘积为 <code>${n - 1}</code>。`
       });
       steps.push({
+        stepIndex: steps.length,
+        stage: 4,
         type: 'return',
         line: lineReturn,
+        codeLine: lineReturn,
         i: n,
         j: 0,
         activeSlot: n,
+        decision: `返回小规模极值结果: ${n - 1}`,
         tag: `结果: ${n - 1}`,
         log: `| 🏆 返回 ${n - 1}`,
         msg: `直接返回 <strong>${n - 1}</strong>。`
@@ -857,57 +1007,404 @@ export class PartitionDPCompiler {
       return steps;
     }
 
-    const quotient = Math.floor(n / 3);
-    const remainder = n % 3;
+    let rem = n;
+    let prod = 1;
 
     steps.push({
+      stepIndex: steps.length,
+      stage: 4,
       type: 'init',
       line: lineInit,
+      codeLine: lineInit,
       i: n,
       j: 0,
       activeSlot: n,
+      decision: `数学贪心极值分析：由均值不等式，数段长度取 3 乘积达到理论最大`,
       tag: `数学极值定理分析`,
       log: `| 📐 根据均值不等式，段长取 3 乘积最大`,
       msg: `数学定理：将数字尽可能拆分为 <strong>3</strong> 可以让整体乘积达到理论最大值。`
     });
 
     steps.push({
-      type: 'accumulate',
+      stepIndex: steps.length,
+      stage: 4,
+      type: 'compare',
       line: lineQuotient,
-      i: quotient,
-      j: 0,
+      codeLine: lineQuotient,
+      i: 3,
+      j: 2,
       activeSlot: 3,
-      tag: `可拆出 3 的个数: ${quotient}`,
-      log: `| 🔢 quotient = ${n} / 3 = ${quotient}`,
-      msg: `计算能完整切分出的 <code>3</code> 的数量：<code>quotient = ${quotient}</code>。`
+      decision: `基数优劣决策天平：对比基数 2 与 3 (2³ = 8 < 3² = 9)，基数 3 显著占优，贪心策略优先切分 3`,
+      tag: `基数对比: 3 优于 2`,
+      log: `| ⚖️ 2^3=8 < 3^2=9，优先选取因子 3`,
+      msg: `数学证明：<code>2³ = 8 < 3² = 9</code>，相同总和下因子 3 的乘积更大。`
     });
 
+    let round = 0;
+    while (rem > 4) {
+      round++;
+      rem -= 3;
+      prod *= 3;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        type: 'accumulate',
+        line: lineQuotient,
+        codeLine: lineQuotient,
+        i: rem,
+        j: round,
+        activeSlot: rem,
+        decision: `第 ${round} 轮贪心切除 3：剩余待拆分量 rem = ${rem}，当前累计乘积 prod = ${prod}`,
+        tag: `贪心切除 3 (第 ${round} 轮)`,
+        log: `| ✂️ 贪心切出 3: rem 减至 ${rem}, prod 乘至 ${prod}`,
+        msg: `连续切分出 <code>3</code>，当前乘积累积为 <strong>${prod}</strong>，剩余待切分 <code>${rem}</code>。`
+      });
+    }
+
     steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      type: 'compare',
+      line: lineRemainder,
+      codeLine: lineRemainder,
+      i: rem,
+      j: rem,
+      activeSlot: rem,
+      decision: `余数分支决策：剩余量 rem = ${rem}，若为 4 则保留 2×2=4；若为 2 或 3 则整段保留直接相乘`,
+      tag: `余数分类讨论: rem=${rem}`,
+      log: `| 📐 rem=${rem} 处于最优基底范围 [2, 4]，直接结清`,
+      msg: `当剩余量 <code>rem ≤ 4</code> 时，拆出 3 反而会导致乘积变小，整段保留直接相乘。`
+    });
+
+    prod *= rem;
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
       type: 'fetch-down',
       line: lineRemainder,
-      i: remainder,
-      j: 0,
-      activeSlot: remainder,
-      tag: `余数 remainder = ${remainder}`,
-      log: `| 🔢 remainder = ${n} % 3 = ${remainder}`,
-      msg: `计算切分后的余数：<code>remainder = ${remainder}</code>。`
+      codeLine: lineRemainder,
+      i: rem,
+      j: prod,
+      activeSlot: rem,
+      decision: `处理最终剩余量 rem = ${rem}：乘入最终乘积，总乘积更新为 ${prod}`,
+      tag: `收尾切分 rem = ${rem}`,
+      log: `| 🔢 剩余量 ${rem} 乘入，最终乘积 = ${prod}`,
+      msg: `最终剩余量为 <code>${rem}</code>（若是 4 则拆为 2×2，若是 2/3 则整段保留），总乘积为 <strong>${prod}</strong>。`
     });
 
-    let ans = 0;
-    if (remainder === 0) ans = Math.pow(3, quotient);
-    else if (remainder === 1) ans = Math.pow(3, quotient - 1) * 4;
-    else ans = Math.pow(3, quotient) * 2;
-
     steps.push({
+      stepIndex: steps.length,
+      stage: 4,
       type: 'return',
       line: lineReturn,
+      codeLine: lineReturn,
       i: n,
       j: 0,
       activeSlot: n,
-      tag: `最大乘积: ${ans}`,
-      log: `| 🏆 数学封闭解计算结果: ${ans}`,
-      msg: `最终通过 O(1) 幂运算得出最大拆分乘积为 <strong>${ans}</strong>。`
+      decision: `🎉 数学贪心推导完成！正整数 ${n} 的最大拆分乘积为 ${prod}`,
+      tag: `最大乘积: ${prod}`,
+      log: `| 🏆 数学封闭解计算结果: ${prod}`,
+      msg: `最终通过贪心切分迭代得出最大拆分乘积为 <strong>${prod}</strong>。`
     });
+
+    return steps;
+  }
+}
+
+/**
+ * 🌊 [BfsTransition] BFS 状态转移边描述
+ */
+export interface BfsTransition<TState> {
+  nextState: TState;
+  edgeLabel: string;
+  actionDesc?: string;
+  cost?: number;
+}
+
+/**
+ * 🌊 [IBfsProblemConfig] 基于 Template Method 模式的 BFS 最短路问题规约
+ */
+export interface IBfsProblemConfig<TState> {
+  modelId: string;
+  stage?: number;
+  initialState: TState;
+  isTarget: (state: TState) => boolean;
+  getTransitions: (state: TState) => BfsTransition<TState>[];
+  stateKey: (state: TState) => string | number;
+  formatState?: (state: TState) => string;
+  lineMap?: {
+    init?: number;
+    loop?: number;
+    expand?: number;
+    prune?: number;
+    hit?: number;
+    return?: number;
+  };
+  metricsBuilder?: (currentLevel: number, queueSize: number, visitedCount: number) => Record<string, string>;
+}
+
+/**
+ * 🌊 [BfsLayerStepCompiler] 通用 BFS 层序波浪扩展与最短路状态编译器深模块
+ * 
+ * 设计模式：
+ * 1. Template Method Pattern (模板方法模式)：定义标准分层图扩散、状态探查、防重复剪枝、目标判定与最短路径回溯骨架；
+ * 2. Flyweight Pattern (享元模式)：高效管理 visited 集合与前驱路径追踪；
+ * 3. Strategy Pattern (策略模式)：通过 IBfsProblemConfig 适配具体业务领域 (零钱兑换、单词接龙等)。
+ */
+export class BfsLayerStepCompiler {
+  public static compile<TState>(
+    model: IYamlAlgorithmModel,
+    config: IBfsProblemConfig<TState>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const stage = config.stage ?? 4;
+    const lines = config.lineMap || {};
+    const lineInit = lines.init ?? 1;
+    const lineLoop = lines.loop ?? 2;
+    const lineExpand = lines.expand ?? 3;
+    const linePrune = lines.prune ?? 4;
+    const lineHit = lines.hit ?? 5;
+    const lineReturn = lines.return ?? 6;
+
+    const formatState = config.formatState || ((s: TState) => String(s));
+
+    // 状态记录
+    interface BfsNode {
+      state: TState;
+      level: number;
+      parentKey: string | number | null;
+      edgeLabel: string | null;
+    }
+
+    const visited = new Map<string | number, BfsNode>();
+    const startKey = config.stateKey(config.initialState);
+
+    const rootNode: BfsNode = {
+      state: config.initialState,
+      level: 0,
+      parentKey: null,
+      edgeLabel: null,
+    };
+    visited.set(startKey, rootNode);
+
+    let queue: BfsNode[] = [rootNode];
+    let level = 0;
+    let hitTargetNode: BfsNode | null = null;
+
+    // Step 0: BFS 初始化
+    steps.push({
+      stepIndex: 0,
+      stage,
+      line: lineInit,
+      codeLine: lineInit,
+      decision: `🌊 BFS 最短路分层图初始化：起点状态 [${formatState(config.initialState)}] 入队，初始层级 level = 0`,
+      message: `广度优先搜索从起点波浪式向外扩散，首次触达目标状态的层数即为全局最少步数/最少硬币数`,
+      variables: {
+        level: 0,
+        'queue.size': 1,
+        'visited.size': 1,
+        currentState: formatState(config.initialState),
+      },
+      activeSlot: 0,
+      metrics: {
+        'phase': '🌊 BFS 初始化',
+        'level': '0',
+        'queue-len': '1',
+        'visited': '1',
+        ...(config.metricsBuilder ? config.metricsBuilder(0, 1, 1) : {}),
+      },
+    });
+
+    // 若初始状态自身就是目标
+    if (config.isTarget(config.initialState)) {
+      hitTargetNode = rootNode;
+    }
+
+    // 主层序遍历循环
+    while (queue.length > 0 && !hitTargetNode) {
+      const currentLevelSize = queue.length;
+      level++;
+
+      // 层级头步骤：宣告当前层波浪扩散
+      steps.push({
+        stepIndex: steps.length,
+        stage,
+        line: lineLoop,
+        codeLine: lineLoop,
+        decision: `🌊 第 ${level} 层波浪扩散开始：当前待扩展队列包含 ${currentLevelSize} 个状态节点`,
+        message: `本轮扩展产生的所有新状态均代表距离起点恰好需要 ${level} 步`,
+        variables: {
+          level,
+          currentLevelSize,
+          queueLength: queue.length,
+          visitedCount: visited.size,
+        },
+        activeSlot: level,
+        metrics: {
+          'phase': `🌊 扩散第 ${level} 层`,
+          'level': String(level),
+          'queue-len': String(queue.length),
+          'visited': String(visited.size),
+          ...(config.metricsBuilder ? config.metricsBuilder(level, queue.length, visited.size) : {}),
+        },
+      });
+
+      const nextLevelNodes: BfsNode[] = [];
+
+      for (let i = 0; i < currentLevelSize; i++) {
+        const curr = queue[i];
+        const transitions = config.getTransitions(curr.state);
+
+        for (const trans of transitions) {
+          const nextKey = config.stateKey(trans.nextState);
+          const nextFormatted = formatState(trans.nextState);
+
+          // 剪枝判定：已访问过（更短路径已经先到达）
+          if (visited.has(nextKey)) {
+            const prior = visited.get(nextKey)!;
+            steps.push({
+              stepIndex: steps.length,
+              stage,
+              line: linePrune,
+              codeLine: linePrune,
+              decision: `✂️ 状态剪枝：从 [${formatState(curr.state)}] 经 ${trans.edgeLabel} 转移至 [${nextFormatted}]，该状态已在第 ${prior.level} 轮访问，剪枝跳过`,
+              message: `BFS 保证先到达的一定步数更短，避免环路与重复计算`,
+              variables: {
+                from: formatState(curr.state),
+                action: trans.edgeLabel,
+                duplicateState: nextFormatted,
+                priorLevel: prior.level,
+              },
+              activeSlot: level,
+              metrics: {
+                'action': '✂️ 重复状态剪枝',
+                'level': String(level),
+                'queue-len': String(queue.length),
+              },
+            });
+            continue;
+          }
+
+          // 发现新状态
+          const childNode: BfsNode = {
+            state: trans.nextState,
+            level,
+            parentKey: config.stateKey(curr.state),
+            edgeLabel: trans.edgeLabel,
+          };
+          visited.set(nextKey, childNode);
+          nextLevelNodes.push(childNode);
+
+          // 目标判定
+          if (config.isTarget(trans.nextState)) {
+            hitTargetNode = childNode;
+
+            steps.push({
+              stepIndex: steps.length,
+              stage,
+              line: lineHit,
+              codeLine: lineHit,
+              decision: `🎯 命中目标状态！从 [${formatState(curr.state)}] 经 ${trans.edgeLabel} 首次触达目标 [${nextFormatted}]！当前层数 ${level} 必为全局最短路径`,
+              message: `分层图波浪式扩散首次触达目标即为全局最优解，无需继续搜索后续层级，直接剪枝终止！`,
+              variables: {
+                from: formatState(curr.state),
+                target: nextFormatted,
+                shortestSteps: level,
+                totalVisited: visited.size,
+              },
+              activeSlot: level,
+              metrics: {
+                'phase': '🎯 命中目标',
+                'shortest-path': String(level),
+                'status': '🏆 全局最优',
+              },
+            });
+
+            break; // 提前退出转移循环
+          } else {
+            // 普通扩展入队
+            steps.push({
+              stepIndex: steps.length,
+              stage,
+              line: lineExpand,
+              codeLine: lineExpand,
+              decision: `➕ 探索新状态：从 [${formatState(curr.state)}] 经 ${trans.edgeLabel} 产生新状态 [${nextFormatted}]，入队待下轮扩散`,
+              message: trans.actionDesc || `产生状态 ${nextFormatted}，记录距起点距离为 ${level}`,
+              variables: {
+                current: formatState(curr.state),
+                next: nextFormatted,
+                level,
+              },
+              activeSlot: level,
+              metrics: {
+                'action': '➕ 新状态入队',
+                'level': String(level),
+                'queue-len': String(nextLevelNodes.length),
+              },
+            });
+          }
+        }
+
+        if (hitTargetNode) break;
+      }
+
+      // 推进至下一层
+      queue = nextLevelNodes;
+    }
+
+    // 终局步骤
+    if (hitTargetNode) {
+      // 回溯重建最短转移序列
+      const path: string[] = [];
+      let trace: BfsNode | null = hitTargetNode;
+      while (trace) {
+        if (trace.edgeLabel) {
+          path.unshift(`${trace.edgeLabel} → [${formatState(trace.state)}]`);
+        } else {
+          path.unshift(`[${formatState(trace.state)}]`);
+        }
+        trace = trace.parentKey !== null ? visited.get(trace.parentKey) || null : null;
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage,
+        type: 'return',
+        line: lineReturn,
+        codeLine: lineReturn,
+        decision: `🎉 BFS 最短路推演成功！最少步数为 ${hitTargetNode.level}，最优转移路径：${path.join(' ')}`,
+        message: `BFS 分层图搜索严谨保证了多重状态转移下的全局无后效性与最短路最优解，最少需要 ${hitTargetNode.level} 步`,
+        msg: `BFS 分层图搜索首次触达目标层数即为全局最优解，最少硬币数/最少步数为 ${hitTargetNode.level}`,
+        log: `| 🏆 BFS 分层图最短路得出全局最优解: ${hitTargetNode.level}`,
+        variables: {
+          return: hitTargetNode.level,
+          shortestLevel: hitTargetNode.level,
+          totalExploredStates: visited.size,
+          path: path.join(' -> '),
+        },
+        activeSlot: hitTargetNode.level,
+        metrics: {
+          'status': '🏁 推演收敛',
+          'shortest-steps': String(hitTargetNode.level),
+          'visited-total': String(visited.size),
+        },
+      });
+    } else {
+      steps.push({
+        stepIndex: steps.length,
+        stage,
+        type: 'return',
+        line: lineReturn,
+        codeLine: lineReturn,
+        decision: `⚠️ 队列排空，无法触达目标状态，推演返回 -1 (无解)`,
+        message: `遍历所有可达状态空间均未能命中目标`,
+        msg: `无解，返回 -1`,
+        log: `| ⚠️ 无法触达目标，返回 -1`,
+        variables: { return: -1, totalVisited: visited.size },
+        activeSlot: -1,
+        metrics: { 'status': '❌ 无解返回 -1' },
+      });
+    }
 
     return steps;
   }

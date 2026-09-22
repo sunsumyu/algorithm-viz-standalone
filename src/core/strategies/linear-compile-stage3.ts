@@ -501,17 +501,42 @@ export function compileLinearStage3(
       const c1 = s[i - 1];
       const twoVal = i >= 2 ? parseInt(s.slice(i - 2, i), 10) : 0;
       let ways = 0;
-      if (c1 !== '0') {
+      const validOne = c1 !== '0';
+      const validTwo = i >= 2 && twoVal >= 10 && twoVal <= 26;
+
+      const rc = toRC(i);
+      const rcPrev1 = toRC(i - 1);
+      const rcPrev2 = i >= 2 ? toRC(i - 2) : undefined;
+
+      // 探查步骤 (compare)
+      steps.push({
+        type: 'compare',
+        line: lineLoopInner,
+        i: rc.r,
+        j: rc.c,
+        leftI: rcPrev1.r,
+        leftJ: rcPrev1.c,
+        topI: rcPrev2?.r,
+        topJ: rcPrev2?.c,
+        activeSlot: i,
+        grid: JSON.parse(JSON.stringify(matrix2d)),
+        dp1d: [...dp],
+        memo: [...dp],
+        tag: `比对字符合法性 [${c1}]`,
+        log: `| 🔍 考察位置 i=${i}: 单字符 '${c1}'(${validOne ? '合法' : '非正数字'})，双字符 '${twoVal}'(${validTwo ? '合法 10..26' : '无效'})`,
+        msg: `考察前缀 <code>"${s.slice(0, i)}"</code>：单字符 <code>'${c1}'</code> ${validOne ? '有效' : '无效'}，双字符 <code>'${twoVal}'</code> ${validTwo ? '有效' : '无效'}。`
+      });
+
+      if (validOne) {
         ways += dp[i - 1] || 0;
       }
-      if (i >= 2 && twoVal >= 10 && twoVal <= 26) {
+      if (validTwo) {
         ways += dp[i - 2] || 0;
       }
       dp[i] = ways;
       syncMatrix();
-      const rc = toRC(i);
-      const rcPrev1 = toRC(i - 1);
-      const rcPrev2 = i >= 2 ? toRC(i - 2) : undefined;
+
+      // 转移落盘步骤 (transfer)
       steps.push({
         type: 'transfer',
         line: lineTransfer,
