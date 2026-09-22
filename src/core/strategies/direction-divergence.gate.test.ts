@@ -480,10 +480,10 @@ describe('算法推导方向真实性与差异性物理门禁 (Direction Diverge
     expect(rSteps.some(s => s.type === 'return'), '逆推缺少 return 结束帧').toBe(true);
   });
 
-  it('真正单向的模型 (如 climb-stairs) 不应暴露伪逆推分支', () => {
+  it('爬楼梯 (climb-stairs) 符合全库双向推导契约，同时具备 forward 与 reverse 双向定义', () => {
     const climbModel = AlgorithmModelRepository.getModel('climb-stairs');
     const climbDirKeys = Object.keys(climbModel.directions || {});
-    expect(climbDirKeys).not.toContain('reverse');
     expect(climbDirKeys).toContain('forward');
+    expect(climbDirKeys).toContain('reverse');
   });
 });

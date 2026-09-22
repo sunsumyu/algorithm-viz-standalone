@@ -3,6 +3,7 @@ import { AlgorithmModelRepository } from './model-repository';
 import { UniversalStageEngine, UniversalStep } from './universal-stage-engine';
 import { YamlModelLoader } from './yaml-model-loader';
 import { GridVisualAdapter } from './renderers/grid-visual-adapter';
+import { AlgorithmStrategyRegistry } from './strategies/algorithm-strategy-registry';
 
 /**
  * 🛡️ [Universal Model Fidelity & Anchor Spec Guard]
@@ -27,6 +28,11 @@ describe('🛡️ Universal Model Fidelity & Anchor Spec Guard', () => {
   });
 
   modelIds.forEach((modelId) => {
+    // 纯理论课/总结文档 (如 dp-theory, stock-summary 等) 属于静态教学文档，无单步计算推导策略，跳过运行时 step 生成测试
+    if (!AlgorithmStrategyRegistry.has(modelId)) {
+      return;
+    }
+
     describe(`Algorithm Model: [${modelId}]`, () => {
       const model = AlgorithmModelRepository.getModel(modelId);
       const stageKeys = Object.keys(model.stages);
