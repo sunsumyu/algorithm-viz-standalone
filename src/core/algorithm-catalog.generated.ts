@@ -3486,7 +3486,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "best-time-stock",
     name: "买卖股票的最佳时机 II",
-    viewId: "algo-best-time-stock-view",
+    viewId: "best-time-stock",
     category: "greedy",
     description: "跨天利润贪心分解为每天相邻价差，只收集所有正向收益",
     icon: "📈",
@@ -3508,7 +3508,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "jump-game",
     name: "跳跃游戏 II",
-    viewId: "algo-jump-game-view",
+    viewId: "jump-game",
     category: "greedy",
     description: "求到达数组末尾的最少跳跃次数，触碰当前步覆盖边界即贪心跳跃",
     icon: "🦘",

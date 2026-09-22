@@ -3,7 +3,8 @@
  * LeetCode 45：维护当前步最远边界 (curDistance) 与下一步最远边界 (nextDistance)，触碰边界即贪心跳跃
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -274,47 +275,20 @@ export function renderJumpGameCanvas(container: HTMLElement, step: JumpStep): vo
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'jump-game',
   name: '跳跃游戏 II',
+  viewId: 'jump-game',
   category: 'greedy',
-  description: '求到达数组末尾的最少跳跃次数，触碰当前步覆盖边界即贪心跳跃',
   icon: '🦘',
   difficulty: 2,
   levelOrder: 6,
   learningGoal: '掌握跳跃游戏 II 中双边界推进与最小步数贪心触发机制',
-  inputs: [
-    {
-      id: 'nums',
-      label: '跳跃数组',
-      type: 'text',
-      defaultValue: '2,3,1,1,4',
-      placeholder: '2,3,1,1,4',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (2 步)', values: { nums: '2,3,1,1,4' } },
-    { label: '示例 2 (2 步)', values: { nums: '2,3,0,1,4' } },
-    { label: '步步推进 (3 步)', values: { nums: '1,1,1,1' } },
-  ],
-  metrics: [
-    { id: 'cur-pos', label: '当前扫描位置', color: '#2563eb' },
-    { id: 'cur-boundary', label: '当前跳跃右边界', color: '#7c3aed' },
-    { id: 'next-boundary', label: '下一步最远边界', color: '#059669' },
-    { id: 'jumps', label: '最少跳跃次数', color: '#f59e0b' },
-    { id: 'action', label: '贪心判定', color: '#7c3aed' },
-  ],
-  legend: [
-    { label: '🚪 当前跳跃右边界', color: '#7c3aed' },
-    { label: '🌐 下一步最远边界', color: '#059669' },
-    { label: '📍 当前扫描格', color: '#2563eb' },
-  ],
-  codeLanguages: JUMP_GAME_CODE_LANGUAGES,
-  problemHtml: JUMP_GAME_PROBLEM_HTML,
-  analysisHtml: JUMP_GAME_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawNums = parseNumberList(inputs.nums, '2,3,1,1,4');
-    return withMetrics(buildJumpGameSteps(rawNums.length > 0 ? rawNums : [2, 3, 1, 1, 4]));
-  },
-  renderCanvas: (container, step) => renderJumpGameCanvas(container, step as JumpStep),
+  description: '求到达数组末尾的最少跳跃次数，触碰当前步覆盖边界即贪心跳跃',
+  template: `<div id="jump-game" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerJumpGame(): void {
+  // 保持向前兼容导出
+}

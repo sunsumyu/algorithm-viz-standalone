@@ -3,7 +3,8 @@
  * LeetCode 122：跨天利润分解，贪心收集所有相邻两天的正向收益
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -277,48 +278,20 @@ export function renderBestTimeStockCanvas(container: HTMLElement, step: StockSte
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'best-time-stock',
   name: '买卖股票的最佳时机 II',
+  viewId: 'best-time-stock',
   category: 'greedy',
-  description: '跨天利润贪心分解为每天相邻价差，只收集所有正向收益',
   icon: '📈',
   difficulty: 2,
   levelOrder: 4,
   learningGoal: '掌握贪心算法中的利润等价分解思想，化解复杂多买多卖调度问题',
-  inputs: [
-    {
-      id: 'prices',
-      label: '价格序列',
-      type: 'text',
-      defaultValue: '7,1,5,3,6,4',
-      placeholder: '7,1,5,3,6,4',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (利润 7)', values: { prices: '7,1,5,3,6,4' } },
-    { label: '单调递增 (利润 4)', values: { prices: '1,2,3,4,5' } },
-    { label: '单调递减 (利润 0)', values: { prices: '7,6,4,3,1' } },
-    { label: '锯齿震荡 (利润 3)', values: { prices: '2,1,2,1,2,1' } },
-  ],
-  metrics: [
-    { id: 'cur-day', label: '当前扫描天', color: '#3b82f6' },
-    { id: 'daily-diff', label: '当日差值 diff', color: '#d97706' },
-    { id: 'total-profit', label: '累计总利润', color: '#059669' },
-    { id: 'tx-count', label: '交易笔数', color: '#a855f7' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📈 正收益买卖区间', color: '#10b981' },
-    { label: '📉 下跌跳过区间', color: '#ef4444' },
-    { label: '📍 当前扫描日', color: '#3b82f6' },
-  ],
-  codeLanguages: BEST_TIME_STOCK_CODE_LANGUAGES,
-  problemHtml: BEST_TIME_STOCK_PROBLEM_HTML,
-  analysisHtml: BEST_TIME_STOCK_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawPrices = parseNumberList(inputs.prices, '7,1,5,3,6,4');
-    return withMetrics(buildStockSteps(rawPrices.length > 0 ? rawPrices : [7, 1, 5, 3, 6, 4]));
-  },
-  renderCanvas: (container, step) => renderBestTimeStockCanvas(container, step as StockStep),
+  description: '跨天利润贪心分解为每天相邻价差，只收集所有正向收益',
+  template: `<div id="best-time-stock" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerBestTimeStock(): void {
+  // 保持向前兼容导出
+}

@@ -111,6 +111,7 @@ export class AlgorithmModelRepository {
     ['house-robber-iii', houseRobber3Model as IYamlAlgorithmModel],
     ['best-time-to-buy-and-sell-stock', stock1Model as IYamlAlgorithmModel],
     ['best-time-to-buy-and-sell-stock-ii', stock2Model as IYamlAlgorithmModel],
+    ['best-time-stock', stock2Model as IYamlAlgorithmModel],
     ['best-time-to-buy-and-sell-stock-iii', stock3Model as IYamlAlgorithmModel],
     ['integer-break', integerBreakModel as IYamlAlgorithmModel],
     ['perfect-squares', perfectSquaresModel as IYamlAlgorithmModel],

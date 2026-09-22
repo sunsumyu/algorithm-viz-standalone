@@ -32,7 +32,7 @@ export class StockStrategy implements IAlgorithmStrategy {
     return (
       modelId === this.modelId ||
       (this.modelId === 'best-time-to-buy-and-sell-stock' && (modelId === 'stock-1' || modelId === 'stock-i')) ||
-      (this.modelId === 'best-time-to-buy-and-sell-stock-ii' && (modelId === 'stock-2' || modelId === 'stock-ii')) ||
+      (this.modelId === 'best-time-to-buy-and-sell-stock-ii' && (modelId === 'stock-2' || modelId === 'stock-ii' || modelId === 'best-time-stock')) ||
       (this.modelId === 'best-time-to-buy-and-sell-stock-iii' && (modelId === 'stock-3' || modelId === 'stock-iii')) ||
       (this.modelId === 'best-time-to-buy-and-sell-stock-iv' && (modelId === 'stock-4' || modelId === 'stock-iv')) ||
       (this.modelId === 'best-time-to-buy-and-sell-stock-with-cooldown' && modelId === 'stock-cooldown') ||
