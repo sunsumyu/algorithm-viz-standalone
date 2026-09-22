@@ -581,11 +581,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       'coin-change-stage-4',     // 历史 BFS 仅 5 步待重构
       'word-break-stage-4',      // 历史 Trie 优化仅 4 步待重构
       'coin-change-ii-stage-4',  // 历史空间压缩仅 4 步待重构
-      // 门禁 8 新暴露出的历史贪心/DP 偷懒伪实现清单（严禁新增，逐题燃烧消灭）：
-      'min-arrows-stage-2',      // 历史记忆化仅 4 步
-      'non-overlapping-stage-2', // 历史记忆化仅 4 步
-      'merge-intervals-stage-2', // 历史记忆化仅 4 步
-      'partition-labels-stage-2',// 历史记忆化仅 4 步
       'candy-stage-2',           // 历史记忆化仅 4 步
       'decode-ways-stage-3',     // 历史递推DP仅 6 步 (默认入参短)
     ]);
@@ -698,27 +693,8 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
   // 强制断言全库所有已锁定算法与阶段的每一个推演步骤，必须 100% 具备有效正整数 step.line！
   // ==========================================================================
   describe('门禁 9: 全阶段代码联动高亮行号 100% 存在与有效性硬门禁 (Code Line Linkage Fidelity Gate)', () => {
-    // 门禁 9 首次全面清查暴露出的全库历史未绑定代码行号的遗留阶段受控燃烧清单（严禁新增，重构即删）
-    const KNOWN_LINE_FIDELITY_BURNDOWN = new Set([
-      'min-arrows-stage-1',
-      'min-arrows-stage-2',
-      'min-arrows-stage-3',
-      'min-arrows-stage-4',
-      'non-overlapping-stage-1',
-      'non-overlapping-stage-2',
-      'non-overlapping-stage-3',
-      'non-overlapping-stage-4',
-      'merge-intervals-stage-1',
-      'merge-intervals-stage-2',
-      'merge-intervals-stage-3',
-      'merge-intervals-stage-4',
-      'partition-labels-stage-1',
-      'partition-labels-stage-2',
-      'partition-labels-stage-3',
-      'partition-labels-stage-4',
-      'longest-palindromic-subsequence-stage-1',
-      'longest-palindromic-subsequence-stage-2',
-    ]);
+    // 门禁 9 全库已锁定算法全部阶段代码联动行号 100% 满分通过，受控燃烧清单已彻底清零（0 遗留，0 豁免，严禁新增！）
+    const KNOWN_LINE_FIDELITY_BURNDOWN = new Set<string>();
 
     it('所有已锁定算法的全部阶段与方向推导步骤，必须 100% 具备合法有效的代码行号 (typeof step.line === "number" && step.line >= 1)', () => {
       const lineViolations: string[] = [];

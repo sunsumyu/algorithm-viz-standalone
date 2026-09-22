@@ -120,6 +120,10 @@ export abstract class AbstractIntervalRecursionCompiler {
         stepData.type === 'diff-branch-left' ||
         stepData.type === 'diff-branch-right';
 
+      const finalLine = (typeof stepData.line === 'number' && stepData.line > 0)
+        ? stepData.line
+        : (ctx.anchorMap.entry || 1);
+
       steps.push({
         s,
         curI: stepData.i ?? 0,
@@ -130,7 +134,9 @@ export abstract class AbstractIntervalRecursionCompiler {
           coord,
           depth: idx + 1
         })),
-        ...stepData
+        ...stepData,
+        line: finalLine,
+        codeLine: finalLine,
       });
     };
 
@@ -255,9 +261,12 @@ export abstract class AbstractIntervalRecursionCompiler {
       currentNode.status = 'base';
       currentNode.tag = `= ${val}`;
 
-      const lineBoundary = baseCheck.lineKey
-        ? ctx.anchorMap[baseCheck.lineKey]
-        : ctx.anchorMap.boundary_cross || 5;
+      const lineBoundary =
+        (baseCheck.lineKey ? ctx.anchorMap[baseCheck.lineKey] : undefined) ||
+        ctx.anchorMap.boundary_cross ||
+        ctx.anchorMap.boundary_single ||
+        ctx.anchorMap.base ||
+        5;
 
       emitStep({
         type: 'boundary',
