@@ -31,8 +31,12 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
    - 网格探索 DP 族 $\rightarrow$ `GridUniquePathsCompiler`
    - 树形展开与记忆化 $\rightarrow$ `StateDependencyTreeCompiler`
 3. **策略类身材红线（LOC < 120 行）**：单题 `*Strategy.ts` 的唯一职责是「提取入参、规约转换与委托调用」，体积严禁超过 120 行。
-4. **强制自省门禁命令**：任何策略修改或新增后，必须运行：
+4. **强制自省门禁命令（死门禁！严禁伪绿灯）**：任何策略或算法修改、新增或重构后，必须运行：
    ```bash
+   # 1. 顶层抽象架构合规硬门禁（全库锁死零退化，杜绝旧方言）
+   npx vitest run src/core/top-level-abstraction-compliance.test.ts
+
+   # 2. 策略引擎身材红线与防私有编译器门禁
    npx vitest run src/core/strategies/top-level-abstraction.gate.test.ts
    ```
    若测试未通过，**必须严格阅读控制台报错中的【数学归约】与【纠偏指引】自动自愈修复**，严禁未经通过便交付！

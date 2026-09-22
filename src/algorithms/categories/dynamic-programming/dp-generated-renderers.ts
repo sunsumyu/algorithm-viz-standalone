@@ -523,6 +523,7 @@ const demos: DemoDef[] = [
       { label: 'LeetCode 样例 2 ("babgbag", "bag" Ans=5)', values: { s: 'babgbag', t: 'bag' } },
     ]
   ),
+  strDef('delete-operation-for-two-strings', '两个字符串的删除操作', '给定两个单词 word1 和 word2，返回使得 word1 和 word2 相同所需的最少删除步数。', '✂️', 'delete-operation-for-two-strings', 'sea', 'eat'),
   strDef('edit-distance', '编辑距离', '将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。', '✏️', 'edit-distance', 'horse', 'ros'),
   {
     id: 'interleaving-string',

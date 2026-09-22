@@ -28,96 +28,40 @@ description: "检查所有算法演示是否符合顶层抽象架构标准（YAM
 
 ---
 
-## 1. 合规检查清单（三层门禁）
+## 1. 合规检查清单（全库硬门禁）
 
-### L1：架构合规（自动化可检）
+门禁测试位于 `src/core/top-level-abstraction-compliance.test.ts`，**采用 100% 硬断言拦截，严禁使用软断言（toBeGreaterThanOrEqual(0)）与伪绿灯**：
 
-这些检查项可以通过代码静态分析和运行时断言自动验证：
+### L0：已锁定顶层抽象算法零退化硬门禁 (Zero-Regression Lock)
+针对全库已完成重构锁定的算法（含 DP 核心 30+ 题及贪心已迁移的 `can-jump`, `jump-game-ii`, `min-taps`, `min-arrows`, `non-overlapping`, `merge-intervals`, `partition-labels`, `best-time-stock` 等）：
+- [x] **L0-1**: 必须在 `AlgorithmModelRepository` 注册 YAML 模型；
+- [x] **L0-2**: 必须在 `AlgorithmStrategyRegistry` 注册 Strategy 策略适配器；
+- [x] **L0-3**: 必须挂载统一宿主 `UniversalStageVisualizer`；
+- [x] **L0-4**: YAML 模型必须 100% 具备 `forward` 和 `reverse` 双向定义；
+- [x] **L0-5**: YAML 模型必须 100% 具备 `stage-1` 到 `stage-4` 四阶段声明；
+- [x] **L0-6**: 严禁调用 `registerDeclarativeAlgorithm` 等旧方言。
+> **违规判定**：以上任何一项失败，门禁测试立即抛出致命错误并退出构建（Exit Code 1）。
 
-- [ ] **L1-1. DP 算法必须使用 UniversalStageVisualizer**
-  - 检查：`manifest.Visualizer === UniversalStageVisualizer`
-  - 违规案例：`target-sum-standard` 使用 `createDeclarativeVisualizer` 返回的自定义 Visualizer
+### L1：全库遗留未迁移算法受控燃烧白名单 (Burndown Whitelist Gate)
+- 覆盖 **`dynamic-programming` 与 `greedy`（贪心）全类目**；
+- 维护严格的 `KNOWN_LEGACY_UNMIGRATED` 清单；
+- **新算法硬拦截**：任何未登记在遗留白名单中、且未接入顶层抽象的算法，直接判定为非法私有接入，门禁立即红灯拦截！
+- **燃烧只减不增**：算法一旦重构完成，立即移出遗留白名单并加入 `LOCKED_TOP_LEVEL_ALGORITHMS` 永久锁死，严禁反弹！
 
-- [ ] **L1-2. DP 算法必须有 YAML 模型**
-  - 检查：`AlgorithmModelRepository.hasModel(id) === true`
-  - 违规案例：`target-sum-standard` 无对应 YAML 文件
-
-- [ ] **L1-3. DP 算法必须有策略实现**
-  - 检查：`AlgorithmStrategyRegistry.has(id) === true`
-  - 违规案例：`target-sum-standard` 无对应 Strategy 类
-
-- [ ] **L1-4. 禁止在 DP 类目使用 registerDeclarativeAlgorithm**
-  - 检查：静态代码扫描 `src/algorithms/categories/dynamic-programming/` 下的 `*-renderer.ts`，禁止出现 `registerDeclarativeAlgorithm` 调用
-  - 违规案例：`dp-067/*-renderer.ts`、`knapsack-073/*-renderer.ts` 等
-
-- [ ] **L1-5. 禁止先验注册遮蔽**
-  - 检查：`dp-generated-renderers.ts` 中注册的 ID 不应与 `dynamic-programming/` 目录下的手写 `*-renderer.ts` 冲突
-  - 违规案例：若 `target-sum` 同时在 `dp-generated-renderers.ts` 和 `target-sum-renderer.ts` 注册
-
-### L2：功能合规（半自动）
-
-这些检查项需要部分自动化 + 部分人工验证：
-
-- [ ] **L2-1. YAML 模型必须包含 directions**
-  - 检查：`model.directions.forward` 和 `model.directions.reverse` 存在且结构完整
-  - 说明：即使算法本身没有真正的逆推写法，也必须声明 `reverse` 方向（可为空操作或展示逆向填表）
-
-- [ ] **L2-2. YAML 模型必须包含四阶段**
-  - 检查：`model.stages` 包含 `stage-1`、`stage-2`、`stage-3`、`stage-4`
-  - 说明：每个阶段必须有 `type`、`name`、`desc`，以及 `code` 或 `variants`
-
-- [ ] **L2-3. 顶栏 Stage 胶囊存在**
-  - 检查：界面顶部正中央是否有 `[1 递归] [2 记忆化] [3 递推DP] [4 空间压缩]` 按钮
-  - 说明：由 `UniversalStageVisualizer` 自动提供，合规算法无需额外实现
-
-- [ ] **L2-4. 顺逆推切换按钮存在**
-  - 检查：顶栏右侧是否有 `[➜ 顺推] [← 逆推]` 按钮
-  - 说明：由 `UniversalStageVisualizer` 根据 YAML `directions` 自动提供
-
-### L3：视觉合规（人工）
-
-这些检查项需要人工对比黄金基准：
-
-- [ ] **L3-1. Card 1 状态空间沙盘**
-  - 检查：是否由 `StateSpacePresenter` / `GridVisualAdapter` 渲染 2D 状态网格，并具备动画卡通实体（小人）实时站位移动
-  - 说明：非网格类算法（如序列 DP）可使用一维序列变体，但必须使用顶层 Presenter
-
-- [ ] **L3-2. Card 2 业务专属看板**
-  - 检查：是否为领域专属辅助看板（如双串比对看板、一维状态流动条或状态依赖树），绝无平铺的孤立数字卡
-  - 说明：由 `MemoSlotVisualAdapter` / `DpTableVisualAdapter` / `RecursionTreeAdapter` 等顶层适配器提供
-
-- [ ] **L3-3. 宿主一致性**
-  - 检查：点击打开后，界面外观、交互手感与 LeetCode 115 不同的子序列（黄金基准）完全一致
-  - 说明：包括 iframe 架构、lite/full 切换、state-router、键盘快捷键等
+### L2：全库 YAML 模型完备性硬门禁 (Model Fidelity Gate)
+- 全库所有已注册 YAML 模型必须 100% 具备 `forward`/`reverse` 双向与 `stage-1` 到 `stage-4` 四阶段。
 
 ---
 
-## 2. 自动化门禁测试
-
-### 运行测试
+## 2. 自动化门禁测试命令
 
 ```bash
-# 运行顶层抽象合规门禁测试
+# 运行顶层抽象合规硬门禁（覆盖 DP & Greedy，零容忍）
 npx vitest run src/core/top-level-abstraction-compliance.test.ts
+
+# 运行深模块架构与策略身材红线门禁（LOC < 120，防私有编译器膨胀）
+npx vitest run src/core/strategies/top-level-abstraction.gate.test.ts
 ```
-
-### 测试内容
-
-测试文件 `src/core/top-level-abstraction-compliance.test.ts` 包含以下断言：
-
-1. **L1-1**: 所有 `dynamic-programming` 类目算法必须挂载 `UniversalStageVisualizer`
-2. **L1-2**: 所有 `dynamic-programming` 算法必须在 `AlgorithmModelRepository` 注册
-3. **L1-3**: 所有 `dynamic-programming` 算法必须在 `AlgorithmStrategyRegistry` 注册策略
-4. **L1-4**: `dynamic-programming` 类目严禁调用 `registerDeclarativeAlgorithm`（静态代码扫描）
-5. **L1-5**: 不存在手写 renderer 抢占顶层算法 ID
-6. **L2-1**: 所有 YAML 模型必须定义 `forward` 和 `reverse` 方向
-7. **L2-2**: 所有 YAML 模型必须定义 `stage-1` 到 `stage-4`
-
-### 测试设计原则
-
-- **报告违规而非阻断构建**：测试失败时输出详细违规清单，但不阻断 CI/CD（因历史违规较多）
-- **分层检查**：L1 架构合规项为硬门禁（必须通过），L2/L3 为软门禁（警告但不阻断）
-- **可扩展**：新增检查项时只需在测试文件中添加 `it` 块
 
 ---
 
