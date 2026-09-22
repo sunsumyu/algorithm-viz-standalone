@@ -1,17 +1,17 @@
 import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep } from '../universal-stage-engine';
-import { JumpGameIIStepCompiler } from './jump-game-ii-compiler';
+import { CanJumpStepCompiler } from './can-jump-compiler';
 
 /**
- * 跳跃游戏 II 顶层多态策略 (JumpGameIIStrategy)
- * 实现 IAlgorithmStrategy 统一接口，驱动 JumpGameIIStepCompiler。
+ * 跳跃游戏 I 顶层多态策略 (CanJumpStrategy)
+ * 实现 IAlgorithmStrategy 统一接口，驱动 CanJumpStepCompiler。
  */
-export class JumpGameIIStrategy implements IAlgorithmStrategy {
-  public readonly modelId: string = 'jump-game-ii';
+export class CanJumpStrategy implements IAlgorithmStrategy {
+  public readonly modelId: string = 'can-jump';
 
   public canHandle(modelId: string): boolean {
-    return modelId === 'jump-game-ii' || modelId === 'jump-game';
+    return modelId === 'can-jump';
   }
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
@@ -21,11 +21,12 @@ export class JumpGameIIStrategy implements IAlgorithmStrategy {
       .map((s) => parseInt(s.trim(), 10))
       .filter((n) => !isNaN(n));
 
-    return JumpGameIIStepCompiler.compile(
+    return CanJumpStepCompiler.compile(
       model,
       {
         nums: nums.length > 0 ? nums : [2, 3, 1, 1, 4],
         anchorMap: params.anchorMap,
+        direction: params.direction as 'forward' | 'reverse' | undefined,
       },
       params.stage ?? 1
     );

@@ -3,7 +3,8 @@
  * LeetCode 55：维护最大覆盖范围 (cover)，贪心推进直至覆盖终点
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
@@ -247,48 +248,20 @@ export function renderCanJumpCanvas(container: HTMLElement, step: CanJumpStep): 
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'can-jump',
   name: '跳跃游戏 I',
+  viewId: 'can-jump',
   category: 'greedy',
-  description: '维护最大跳跃覆盖范围，贪心判断能否到达数组末尾',
   icon: '🦘',
   difficulty: 2,
   levelOrder: 5,
   learningGoal: '理解贪心算法中覆盖范围（Cover Range）思想，避免陷入局部单步推导陷阱',
-  inputs: [
-    {
-      id: 'nums',
-      label: '跳跃数组',
-      type: 'text',
-      defaultValue: '2,3,1,1,4',
-      placeholder: '2,3,1,1,4',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (可达 true)', values: { nums: '2,3,1,1,4' } },
-    { label: '示例 2 (不可达 false)', values: { nums: '3,2,1,0,4' } },
-    { label: '单元素 (true)', values: { nums: '0' } },
-    { label: '长程跳跃', values: { nums: '1,1,1,3,0,0,0,0,4' } },
-  ],
-  metrics: [
-    { id: 'cur-pos', label: '当前扫描位置', color: '#3b82f6' },
-    { id: 'reach', label: '从该点可达', color: '#7e22ce' },
-    { id: 'cover', label: '最远覆盖范围', color: '#a855f7' },
-    { id: 'reach-goal', label: '终点可达性', color: '#059669' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '🏁 终点目标', color: '#10b981' },
-    { label: '📍 当前扫描格', color: '#3b82f6' },
-    { label: '🌐 最大覆盖范围', color: '#a855f7' },
-  ],
-  codeLanguages: CAN_JUMP_CODE_LANGUAGES,
-  problemHtml: CAN_JUMP_PROBLEM_HTML,
-  analysisHtml: CAN_JUMP_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawNums = parseNumberList(inputs.nums, '2,3,1,1,4');
-    return withMetrics(canJumpSteps(rawNums.length > 0 ? rawNums : [2, 3, 1, 1, 4]));
-  },
-  renderCanvas: (container, step) => renderCanJumpCanvas(container, step as CanJumpStep),
+  description: '维护最大跳跃覆盖范围，贪心判断能否到达数组末尾',
+  template: `<div id="can-jump" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerCanJump(): void {
+  // 保持向前兼容导出
+}

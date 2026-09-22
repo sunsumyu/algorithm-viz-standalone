@@ -1,0 +1,198 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 跳跃游戏 I 顶层领域模型
+# 对应：LeetCode 55 / 经典贪心算法专题
+# 包含：覆盖范围动态扩张、记忆化搜索、1D DP 与逆向贪心优化
+# ==============================================================================
+
+id: can-jump
+name: "跳跃游戏 I"
+nameEn: "Jump Game"
+category: "greedy"
+icon: "🦘"
+difficulty: 2
+levelOrder: 5
+learningGoal: "理解贪心算法中覆盖范围（Cover Range）思想，避免陷入局部单步推导陷阱"
+description: "给定一个非负整数数组 nums，最初位于数组的第一个下标。每个元素代表你在该位置可以跳跃的最大长度。判断是否能够到达最后一个下标。"
+defaultParams:
+  nums: "2, 3, 1, 1, 4"
+
+problem:
+  title: "跳跃游戏 I (Jump Game)"
+  difficulty: "中等"
+  tags: ["贪心", "数组", "动态规划", "LeetCode 55"]
+  description: "给你一个非负整数数组 <code>nums</code> ，你最初位于数组的 <strong>第一个下标</strong> 。数组中的每个元素代表你在该位置可以跳跃的最大长度。<br/><br/>判断你是否能够到达最后一个下标，如果可以，返回 <code>true</code> ；否则，返回 <code>false</code> 。"
+  examples:
+    - input: "nums = [2, 3, 1, 1, 4]"
+      output: "true"
+      explanation: "可以先跳 1 步，从下标 0 到达下标 1, 然后再从下标 1 跳 3 步到达最后一个下标。"
+    - input: "nums = [3, 2, 1, 0, 4]"
+      output: "false"
+      explanation: "无论怎样，总会到达下标为 3 的位置。但该下标的最大跳跃长度是 0 ， 所以永远不可能到达最后一个下标。"
+  constraints:
+    - "1 <= nums.length <= 10^4"
+    - "0 <= nums[i] <= 10^5"
+
+directions:
+  forward:
+    label: "正向扩张 (Cover 顺推)"
+    start: [0, 0]
+    target: [0, 4]
+    branches:
+      - name: "scan"
+        delta: [0, 1]
+        label: "扫描探查"
+      - name: "extend"
+        delta: [0, 1]
+        label: "扩张覆盖"
+
+  reverse:
+    label: "逆向寻底 (Target 逆推)"
+    description: "从终点开始向左寻找最左的可达支撑点"
+    startFormula: "终点下标 n-1"
+    target: "起点下标 0"
+    branches: []
+    combineFormula: "lastPos == 0"
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "跳跃游戏 I (最大覆盖范围)"
+    desc: "维护最大覆盖范围 cover，贪心推进直至覆盖终点"
+    card2Title: "贪心决策看板 (Greedy Decision Inspector)"
+    card2Desc: "实时监控当前扫描格、该格最远可达、全局最大覆盖范围 cover 以及终点可达性判定。"
+    code:
+      forward:
+        title: "CanJump.java"
+        source: |
+          public boolean canJump(int[] nums) {
+              if (nums.length <= 1) return true; // @step:entry
+              int cover = 0; // @step:init
+              for (int i = 0; i <= cover; i++) { // @step:loop
+                  cover = Math.max(cover, i + nums[i]); // @step:explore
+                  if (cover >= nums.length - 1) return true; // @step:success
+              }
+              return false; // @step:blocked
+          }
+    variants:
+      standard:
+        variantLabel: "标准贪心解法"
+        title: "CanJump.java"
+        code:
+          forward:
+            title: "CanJump.java"
+            source: |
+              public boolean canJump(int[] nums) {
+                  if (nums.length <= 1) return true; // @step:entry
+                  int cover = 0; // @step:init
+                  for (int i = 0; i <= cover; i++) { // @step:loop
+                      cover = Math.max(cover, i + nums[i]); // @step:explore
+                      if (cover >= nums.length - 1) return true; // @step:success
+                  }
+                  return false; // @step:blocked
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "跳跃游戏 I (记忆化递归)"
+    desc: "从位置 i 出发递归尝试所有跳跃步数，用 memo[i] 缓存不可达状态避免重复搜索"
+    card2Title: "记忆化搜索调用树 (Memoized Tree)"
+    card2Desc: "展示以 dfs(i) 为结点的状态转移树，实时展现剪枝命中与调用栈进出。"
+    code:
+      forward:
+        title: "CanJump_Memo.java"
+        source: |
+          public boolean canJump(int[] nums) {
+              int[] memo = new int[nums.length]; // @step:init
+              return dfs(nums, 0, memo); // @step:entry
+          }
+          private boolean dfs(int[] nums, int i, int[] memo) {
+              if (i >= nums.length - 1) return true; // @step:boundary
+              if (memo[i] != 0) return memo[i] == 1; // @step:cache_hit
+              for (int step = nums[i]; step >= 1; step--) { // @step:loop
+                  if (dfs(nums, i + step, memo)) { // @step:branch
+                      memo[i] = 1; // @step:memo_true
+                      return true;
+                  }
+              }
+              memo[i] = -1; // @step:memo_false
+              return false; // @step:return_false
+          }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "跳跃游戏 I (一维 DP 填表)"
+    desc: "dp[i] 表示从位置 i 是否能到达终点，自右向左逆序填表"
+    card2Title: "一维 DP 状态数组 (boolean[] dp)"
+    card2Desc: "自终点 n-1 向起点 0 逆序填表，dp[i] = any(dp[i + step])。"
+    code:
+      forward:
+        title: "CanJump_DP.java"
+        source: |
+          public boolean canJump(int[] nums) {
+              int n = nums.length;
+              boolean[] dp = new boolean[n]; // @step:init
+              dp[n - 1] = true; // @step:base
+              for (int i = n - 2; i >= 0; i--) { // @step:outer_loop
+                  for (int step = 1; step <= nums[i] && i + step < n; step++) { // @step:inner_loop
+                      if (dp[i + step]) { // @step:transfer
+                          dp[i] = true;
+                          break;
+                      }
+                  }
+              }
+              return dp[0]; // @step:return
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "跳跃游戏 I (逆向终点收缩)"
+    desc: "从终点倒序遍历，贪心将终点 target 向左移动，空间 O(1)，时间 O(n)"
+    card2Title: "逆向贪心决策条 (Reverse Target Tracker)"
+    card2Desc: "维护最左可达基底 lastPos，若 i + nums[i] >= lastPos 则更新 lastPos = i，最终判断 lastPos == 0。"
+    code:
+      forward:
+        title: "CanJump_Optimal.java"
+        source: |
+          public boolean canJump(int[] nums) {
+              int lastPos = nums.length - 1; // @step:init
+              for (int i = nums.length - 2; i >= 0; i--) { // @step:loop
+                  if (i + nums[i] >= lastPos) { // @step:check
+                      lastPos = i; // @step:shrink
+                  }
+              }
+              return lastPos == 0; // @step:done
+          }
+
+analysisHtml: |
+  <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+    <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
+      <span>💡</span> 贪心核心：无需纠结具体跳几步，关键看「覆盖范围」
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 转化问题为「最大覆盖范围」</div>
+        <p style="margin: 0; color: #94a3b8;">刚接触这道题很容易陷入思考「第 1 步跳 1 还是跳 2」的递归陷阱。实际上，每个位置上的数字代表的是<strong>最大能跳多远</strong>，而不是必须跳那么远。因此只要某个范围被覆盖，其中的每一个格子都可作为跳板！</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 局部最优与全局最优</div>
+        <p style="margin: 0; color: #94a3b8;">• <strong>局部最优</strong>：在当前覆盖范围 <code style="color: #fbbf24; font-family: monospace;">cover</code> 内，遍历每个位置并尝试延伸最大覆盖范围 <code style="color: #7dd3fc; font-family: monospace;">cover = Math.max(cover, i + nums[i])</code>。<br/>
+        • <strong>全局最优</strong>：只要最大覆盖范围能达到或超过终点下标（<code style="color: #34d399; font-family: monospace;">cover >= nums.length - 1</code>），即可断定必定可达！</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #f472b6; margin-bottom: 4px;">③ 线性单循环 O(N)</div>
+        <p style="margin: 0; color: #94a3b8;">仅在 <code style="color: #7dd3fc; font-family: monospace;">i <= cover</code> 的合法区间内移动。若 <code style="color: #fb7185; font-family: monospace;">cover</code> 无法进一步推进且未到终点，循环自然终止返回 <code style="color: #fb7185; font-family: monospace;">false</code>。</p>
+      </div>
+    </div>
+  </div>

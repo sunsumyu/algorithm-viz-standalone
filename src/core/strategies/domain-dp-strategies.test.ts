@@ -101,4 +101,33 @@ describe('Domain DP Strategies (背包、序列与一维独立算法策略)', ()
     expect(s4Steps).not.toBeNull();
     expect(s4Steps!.length).toBeGreaterThan(0);
   });
+
+  it('TargetSumStandard: 第 73 课标准版完整生成递归树与调用栈', () => {
+    const model = AlgorithmModelRepository.getModel('target-sum-standard');
+    expect(model).toBeDefined();
+
+    const s1Steps = AlgorithmStrategyRegistry.tryGenerate(model, { stage: 1, m: 5, n: 4 });
+    expect(s1Steps).not.toBeNull();
+    expect(s1Steps!.length).toBeGreaterThan(0);
+    expect(s1Steps![0].treeRoot).toBeDefined();
+    expect(s1Steps![0].activeNodeId).toBeDefined();
+    expect(s1Steps![0].callStack).toBeDefined();
+
+    const midStep1 = s1Steps![Math.floor(s1Steps!.length / 2)];
+    expect(midStep1.treeRoot).toBeDefined();
+    expect(midStep1.treeRoot!.children.length).toBeGreaterThan(0);
+    expect(midStep1.activeNodeId).toBeDefined();
+    expect(midStep1.callStack).toBeDefined();
+
+    const s2Steps = AlgorithmStrategyRegistry.tryGenerate(model, { stage: 2, m: 5, n: 4, isMemo: true });
+    expect(s2Steps).not.toBeNull();
+    expect(s2Steps!.length).toBeGreaterThan(0);
+    expect(s2Steps![0].treeRoot).toBeDefined();
+    expect(s2Steps![0].activeNodeId).toBeDefined();
+    expect(s2Steps![0].callStack).toBeDefined();
+
+    const lastStep2 = s2Steps![s2Steps!.length - 1];
+    expect(lastStep2.treeRoot).toBeDefined();
+  });
 });
+

@@ -40,6 +40,8 @@ import onesAndZeroesModel from './models/ones-and-zeroes.yaml';
 import multipleKnapsackModel from './models/multiple-knapsack.yaml';
 import profitableSchemesModel from './models/profitable-schemes.yaml';
 import jumpGameIIModel from './models/jump-game-ii.yaml';
+import canJumpModel from './models/can-jump.yaml';
+import minTapsModel from './models/minimum-number-of-taps-to-water-a-garden.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -57,6 +59,7 @@ import knapsackSummaryModel from './models/knapsack-summary.yaml';
 import stockSummaryModel from './models/stock-summary.yaml';
 import editDistanceSummaryModel from './models/edit-distance-summary.yaml';
 import treeDpTheoryModel from './models/tree-dp-theory.yaml';
+import targetSumStandardModel from './models/target-sum-standard.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -122,6 +125,9 @@ export class AlgorithmModelRepository {
     ['profitable-schemes', profitableSchemesModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
+    ['can-jump', canJumpModel as IYamlAlgorithmModel],
+    ['minimum-number-of-taps-to-water-a-garden', minTapsModel as IYamlAlgorithmModel],
+    ['min-taps', minTapsModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],
@@ -140,6 +146,7 @@ export class AlgorithmModelRepository {
     ['stock-summary', stockSummaryModel as IYamlAlgorithmModel],
     ['edit-distance-summary', editDistanceSummaryModel as IYamlAlgorithmModel],
     ['tree-dp-theory', treeDpTheoryModel as IYamlAlgorithmModel],
+    ['target-sum-standard', targetSumStandardModel as IYamlAlgorithmModel],
   ]);
 
   // 不可变阶段编译缓存表

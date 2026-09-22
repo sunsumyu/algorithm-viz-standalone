@@ -380,7 +380,12 @@ export class MemoSlotVisualAdapter {
     cardsRow.className = 'w-full grid grid-cols-1 sm:grid-cols-2 gap-3';
 
     decisions.forEach((dec) => {
-      const isSelected = dec.isSelected ?? false;
+      const isSelected = dec.isSelected ?? (decisions.length === 1 ? true : false);
+      const decAny = dec as any;
+      const label = dec.label || decAny.title || decAny.tag || '决策分支';
+      const formula = dec.formula || decAny.action || '';
+      const val = dec.value !== undefined ? dec.value : (decAny.val !== undefined ? decAny.val : '-');
+
       const card = document.createElement('div');
       card.className = `rounded-xl p-3 border transition-all flex flex-col justify-between ${
         isSelected
@@ -390,15 +395,15 @@ export class MemoSlotVisualAdapter {
 
       card.innerHTML = `
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-bold ${isSelected ? 'text-emerald-900 font-extrabold' : 'text-slate-600'}">${dec.label}</span>
+          <span class="text-xs font-bold ${isSelected ? 'text-emerald-900 font-extrabold' : 'text-slate-600'}">${label}</span>
           ${isSelected
             ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">🏆 较优选择</span>'
-            : '<span class="text-[10px] text-slate-400">次选分支</span>'}
+            : '<span class="text-[10px] text-slate-400">候选分支</span>'}
         </div>
-        <div class="text-[11px] font-mono text-slate-500 mb-1 truncate" title="${dec.formula}">${dec.formula}</div>
+        <div class="text-[11px] font-mono text-slate-500 mb-1 truncate" title="${formula}">${formula}</div>
         <div class="flex items-baseline justify-between pt-1 border-t ${isSelected ? 'border-emerald-200/80' : 'border-slate-200/50'}">
-          <span class="text-[10px] text-slate-400">代价合计:</span>
-          <span class="text-base sm:text-lg font-mono font-extrabold ${isSelected ? 'text-emerald-700' : 'text-slate-500'}">${dec.value}</span>
+          <span class="text-[10px] text-slate-400">结果/代价:</span>
+          <span class="text-base sm:text-lg font-mono font-extrabold ${isSelected ? 'text-emerald-700' : 'text-slate-500'}">${val}</span>
         </div>
       `;
       cardsRow.appendChild(card);

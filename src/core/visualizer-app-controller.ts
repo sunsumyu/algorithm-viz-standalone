@@ -600,7 +600,8 @@ export class VisualizerAppController {
    */
   public updateCard2SubViewTabs(): void {
     const isStringProblem = this.checkIsStringProblem();
-    StageNavigationCoordinator.updateCard2SubViewTabs(this.currentStage, this.card2SubView, isStringProblem);
+    const hasTree = (this.steps || []).some((s) => !!s.treeRoot);
+    StageNavigationCoordinator.updateCard2SubViewTabs(this.currentStage, this.card2SubView, isStringProblem, hasTree);
   }
 
   /**

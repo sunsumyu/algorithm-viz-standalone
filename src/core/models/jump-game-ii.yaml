@@ -60,6 +60,8 @@ stages:
     badgeBg: "bg-emerald-100 text-emerald-700"
     name: "跳跃游戏 II (边界接力)"
     desc: "维护当前步覆盖边界 curEnd 与下一步最远覆盖 nextReach，触碰边界即触发跳跃"
+    card2Title: "贪心状态看板 (Greedy State Inspector)"
+    card2Desc: "实时监控探针位置、当前跳跃右边界 curEnd、下一步最远探测 nextReach 与跳跃计数。"
     code:
       forward:
         title: "JumpGameII.java"
@@ -104,6 +106,8 @@ stages:
     badgeBg: "bg-purple-100 text-purple-700"
     name: "跳跃游戏 II (记忆化递归)"
     desc: "从位置 i 出发到达末尾的最小跳跃次数，用 memo[i] 缓存避免重复计算"
+    card2Title: "记忆化搜索剪枝树 (Memoized Tree)"
+    card2Desc: "从位置 i 出发到达末尾的最小跳跃次数，用 memo[i] 缓存避免重复计算。"
     code:
       forward:
         title: "JumpGameII_Memo.java"
@@ -128,12 +132,14 @@ stages:
           }
 
   stage-3:
-    shortName: "二维DP"
+    shortName: "递推DP"
     type: "tabulation"
     timeBadge: "O(n²)"
     badgeBg: "bg-blue-100 text-blue-700"
     name: "跳跃游戏 II (一维 DP 填表)"
     desc: "dp[i] 表示从位置 i 到达末尾的最小跳跃次数，从右往左填表"
+    card2Title: "一维 DP 状态数组 (int[] dp)"
+    card2Desc: "从终点自右向左逆序填表，dp[i] = min(dp[i+j] + 1)。"
     code:
       forward:
         title: "JumpGameII_DP.java"
@@ -160,6 +166,8 @@ stages:
     badgeBg: "bg-amber-100 text-amber-700"
     name: "跳跃游戏 II (贪心空间优化)"
     desc: "贪心双边界推进，空间 O(1)，时间 O(n)，最优解法"
+    card2Title: "贪心状态看板 (Greedy State Inspector)"
+    card2Desc: "实时监控探针位置、当前跳跃右边界 curEnd、下一步最远探测 nextReach 与跳跃计数。"
     code:
       forward:
         title: "JumpGameII_Optimal.java"

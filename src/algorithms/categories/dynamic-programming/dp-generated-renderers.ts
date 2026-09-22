@@ -425,7 +425,8 @@ const demos: DemoDef[] = [
   bagDef('knapsack-01-1d', '0-1背包问题（一维）', '滚动数组空间压缩：容量 j 必须从大到小倒序遍历，避免同件物品被重复选入。', '🎒', '01-knapsack'),
   numsDef('partition-equal-subset-sum', '分割等和子集', '判断是否能将数组划分为两个和相等的子集（转化为容量为 sum/2 的 0/1 背包）。', '⚖️', 'partition-subset', '1,5,11,5'),
   numsDef('last-stone-weight-ii', '最后一块石头的重量 II', '两两粉碎等价于将石头分成总重最接近的两堆（0/1 背包）。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
-  numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。', '🎯', 'target-sum', '1,1,1,1,1'),
+  numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。', '', 'target-sum', '1,1,1,1,1'),
+  numsDef('target-sum-standard', '目标和 (第 73 课标准版)', '左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，四阶段全演化（暴力递归/HashMap 记忆化/offset 平移 DP/01 背包转化）。', '🎯', 'target-sum-standard', '1,1,1,1,1'),
   {
     id: 'ones-and-zeroes',
     name: '一和零',
@@ -800,6 +801,7 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'partition-equal-subset-sum' },
   { type: 'demo', id: 'last-stone-weight-ii' },
   { type: 'demo', id: 'target-sum' },
+  { type: 'demo', id: 'target-sum-standard' },
   { type: 'demo', id: 'ones-and-zeroes' },
   { type: 'article', id: 'dp-week-summary-3' },
   { type: 'article', id: 'complete-knapsack-theory' },

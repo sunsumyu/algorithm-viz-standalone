@@ -800,9 +800,19 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     viewId: "target-sum",
     category: "dynamic-programming",
     description: "添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。",
-    icon: "🎯",
+    icon: "",
     difficulty: 1,
     levelOrder: 16,
+  },
+  {
+    id: "target-sum-standard",
+    name: "目标和 (第 73 课标准版)",
+    viewId: "target-sum-standard",
+    category: "dynamic-programming",
+    description: "左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，四阶段全演化（暴力递归/HashMap 记忆化/offset 平移 DP/01 背包转化）。",
+    icon: "🎯",
+    difficulty: 1,
+    levelOrder: 17,
   },
   {
     id: "ones-and-zeroes",
@@ -812,7 +822,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "二维费用 0-1 背包：最多含有 m 个 0 和 n 个 1 的最大子集大小。",
     icon: "0️⃣",
     difficulty: 1,
-    levelOrder: 17,
+    levelOrder: 18,
   },
   {
     id: "dp-week-summary-3",
@@ -822,7 +832,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "0/1 背包应用题大总结：分割等和子集、最后一块石头的重量 II、目标和、一和零。",
     icon: "🧭",
     difficulty: 1,
-    levelOrder: 18,
+    levelOrder: 19,
   },
   {
     id: "complete-knapsack-theory",
@@ -832,7 +842,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "完全背包：每件物品可以使用无限次，容量正序遍历的数学原理。",
     icon: "🧺",
     difficulty: 1,
-    levelOrder: 19,
+    levelOrder: 20,
   },
   {
     id: "complete-knapsack",
@@ -842,7 +852,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "每种物品有无限件可用：容量 j 正序遍历，允许同种物品累加。",
     icon: "🧺",
     difficulty: 1,
-    levelOrder: 20,
+    levelOrder: 21,
   },
   {
     id: "coin-change-ii",
@@ -852,7 +862,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "求凑成总金额的组合数：外层遍历硬币、内层正序遍历金额。",
     icon: "🪙",
     difficulty: 1,
-    levelOrder: 21,
+    levelOrder: 22,
   },
   {
     id: "combination-sum-iv",
@@ -862,7 +872,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "排列数完全背包：外层正序遍历容量、内层遍历物品。",
     icon: "🔢",
     difficulty: 1,
-    levelOrder: 22,
+    levelOrder: 23,
   },
   {
     id: "climb-stairs-advanced",
@@ -872,7 +882,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "一步可上 1..m 阶，等价于容量为 n 的排列数完全背包。",
     icon: "🪜",
     difficulty: 1,
-    levelOrder: 23,
+    levelOrder: 24,
   },
   {
     id: "dp-week-summary-4",
@@ -882,7 +892,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "完全背包之组合数 vs 排列数遍历顺序深度辨析。",
     icon: "🧭",
     difficulty: 1,
-    levelOrder: 24,
+    levelOrder: 25,
   },
   {
     id: "coin-change",
@@ -892,7 +902,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "凑成目标金额所需的最少硬币数（完全背包求最小值）。",
     icon: "🪙",
     difficulty: 1,
-    levelOrder: 25,
+    levelOrder: 26,
   },
   {
     id: "perfect-squares",
@@ -902,7 +912,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "和为 n 的完全平方数的最少数量（完全背包）。",
     icon: "🟩",
     difficulty: 1,
-    levelOrder: 26,
+    levelOrder: 27,
   },
   {
     id: "word-break",
@@ -912,7 +922,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "能否由字典单词拼接出目标字符串 s（排列型完全背包）。",
     icon: "🔤",
     difficulty: 1,
-    levelOrder: 27,
+    levelOrder: 28,
   },
   {
     id: "dp-week-summary-5",
@@ -922,7 +932,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "完全背包之零钱兑换（最值）与单词拆分（逻辑判定）总结。",
     icon: "🧭",
     difficulty: 1,
-    levelOrder: 28,
+    levelOrder: 29,
   },
   {
     id: "multiple-knapsack-theory",
@@ -932,7 +942,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "多重背包：有限件数背包模型、展开法与二进制拆分优化。",
     icon: "📦",
     difficulty: 1,
-    levelOrder: 29,
+    levelOrder: 30,
   },
   {
     id: "multiple-knapsack",
@@ -942,7 +952,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "每种物品有有限数量上限，可展开为 0-1 背包或二进制拆分。",
     icon: "📦",
     difficulty: 1,
-    levelOrder: 30,
+    levelOrder: 31,
   },
   {
     id: "profitable-schemes",
@@ -952,7 +962,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "三维计数 DP：在 n 名员工和最小利润限制下的工作分配方案数。",
     icon: "🏢",
     difficulty: 1,
-    levelOrder: 31,
+    levelOrder: 32,
   },
   {
     id: "knapsack-summary",
@@ -962,7 +972,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "背包大满贯：0/1、完全、多重背包及组合/排列/最值公式全景终极对照表。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 32,
+    levelOrder: 33,
   },
   {
     id: "house-robber",
@@ -972,7 +982,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "不相邻房屋最大金额：dp[i] = max(dp[i-1], dp[i-2] + nums[i])。",
     icon: "🏠",
     difficulty: 1,
-    levelOrder: 33,
+    levelOrder: 34,
   },
   {
     id: "house-robber-ii",
@@ -982,7 +992,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "环形房屋破圈为双区间：[0..n-2] 与 [1..n-1] 取最大值。",
     icon: "🏘️",
     difficulty: 1,
-    levelOrder: 34,
+    levelOrder: 35,
   },
   {
     id: "house-robber-iii",
@@ -992,7 +1002,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "二叉树树形 DP：后序遍历返回 [不偷当前节点, 偷当前节点] 状态二元组。",
     icon: "🌳",
     difficulty: 1,
-    levelOrder: 35,
+    levelOrder: 36,
   },
   {
     id: "best-time-to-buy-and-sell-stock",
@@ -1002,7 +1012,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "只能买卖一次：维护历史最低买入价与当日卖出最大差价。",
     icon: "📈",
     difficulty: 1,
-    levelOrder: 36,
+    levelOrder: 37,
   },
   {
     id: "best-time-to-buy-and-sell-stock-ii",
@@ -1011,16 +1021,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     category: "dynamic-programming",
     description: "可以进行多次交易：只要今天比昨天价格高就累加正收益。",
     icon: "📊",
-    difficulty: 1,
-    levelOrder: 37,
-  },
-  {
-    id: "dp-week-summary-6",
-    name: "动规周总结（六）",
-    viewId: "dp-week-summary-6",
-    category: "dynamic-programming",
-    description: "打家劫舍全家桶（线性、环形、树形）与股票买卖入门总结。",
-    icon: "🧭",
     difficulty: 1,
     levelOrder: 38,
   },
@@ -1036,6 +1036,16 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握经典暴力递归向记忆化搜索、严格表依赖与空间压缩的四段式蜕变全流程与设计思维",
   },
   {
+    id: "dp-week-summary-6",
+    name: "动规周总结（六）",
+    viewId: "dp-week-summary-6",
+    category: "dynamic-programming",
+    description: "打家劫舍全家桶（线性、环形、树形）与股票买卖入门总结。",
+    icon: "🧭",
+    difficulty: 1,
+    levelOrder: 39,
+  },
+  {
     id: "best-time-to-buy-and-sell-stock-iii",
     name: "买卖股票的最佳时机 III",
     viewId: "best-time-to-buy-and-sell-stock-iii",
@@ -1043,7 +1053,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "最多可以完成两笔交易：构建五状态有限状态机。",
     icon: "📉",
     difficulty: 1,
-    levelOrder: 39,
+    levelOrder: 40,
   },
   {
     id: "best-time-to-buy-and-sell-stock-iv",
@@ -1053,7 +1063,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "最多可以完成 k 笔交易：构建 2k+1 状态有限状态机。",
     icon: "💹",
     difficulty: 1,
-    levelOrder: 40,
+    levelOrder: 41,
   },
   {
     id: "best-time-to-buy-and-sell-stock-with-cooldown",
@@ -1063,7 +1073,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "卖出股票后有一天冷冻期：构建持有、冷冻、自由三状态机。",
     icon: "🧊",
     difficulty: 1,
-    levelOrder: 41,
+    levelOrder: 42,
   },
   {
     id: "best-time-to-buy-and-sell-stock-with-transaction-fee",
@@ -1073,7 +1083,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "每次交易产生手续费：卖出套现时扣减手续费。",
     icon: "💳",
     difficulty: 1,
-    levelOrder: 42,
+    levelOrder: 43,
   },
   {
     id: "dp-week-summary-7",
@@ -1083,7 +1093,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "股票买卖进阶：最多两次、最多K次、含冷冻期、含手续费状态机全析。",
     icon: "🧭",
     difficulty: 1,
-    levelOrder: 43,
+    levelOrder: 44,
   },
   {
     id: "stock-summary",
@@ -1093,7 +1103,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "六大股票买卖专题横向大对比与通用状态转移推导大表。",
     icon: "📈",
     difficulty: 1,
-    levelOrder: 44,
+    levelOrder: 45,
   },
   {
     id: "longest-increasing-subsequence",
@@ -1103,7 +1113,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "dp[i] 表示以 nums[i] 结尾的最长严格递增子序列长度。",
     icon: "📈",
     difficulty: 1,
-    levelOrder: 45,
+    levelOrder: 46,
   },
   {
     id: "longest-continuous-increasing-subsequence",
@@ -1113,7 +1123,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "要求严格相邻连续：只需向前看一位 dp[i] = dp[i-1] + 1。",
     icon: "📏",
     difficulty: 1,
-    levelOrder: 46,
+    levelOrder: 47,
   },
   {
     id: "longest-repeated-subarray",
@@ -1123,7 +1133,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。",
     icon: "🧩",
     difficulty: 1,
-    levelOrder: 47,
+    levelOrder: 48,
   },
   {
     id: "uncrossed-lines",
@@ -1133,7 +1143,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "连线不相交等价于两数组的最长公共子序列 (LCS)。",
     icon: "🧶",
     difficulty: 1,
-    levelOrder: 48,
+    levelOrder: 49,
   },
   {
     id: "max-subarray-dp",
@@ -1143,7 +1153,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。",
     icon: "➕",
     difficulty: 1,
-    levelOrder: 49,
+    levelOrder: 50,
   },
   {
     id: "distinct-subsequences",
@@ -1153,7 +1163,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "在字符串 s 的子序列中 t 出现的次数。",
     icon: "🧮",
     difficulty: 3,
-    levelOrder: 50,
+    levelOrder: 51,
   },
   {
     id: "edit-distance",
@@ -1163,7 +1173,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。",
     icon: "✏️",
     difficulty: 1,
-    levelOrder: 51,
+    levelOrder: 52,
   },
   {
     id: "edit-distance-summary",
@@ -1173,7 +1183,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "子序列匹配与增删改查四部曲：判断子序列、不同子序列、两个字符串的删除操作、编辑距离。",
     icon: "✍️",
     difficulty: 1,
-    levelOrder: 52,
+    levelOrder: 53,
   },
   {
     id: "interleaving-string",
@@ -1183,7 +1193,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "验证 s3 是否由 s1 和 s2 交错组成（LeetCode 97，双串交错状态转移）。",
     icon: "🔀",
     difficulty: 2,
-    levelOrder: 53,
+    levelOrder: 54,
   },
   {
     id: "min-delete-to-be-substring",
@@ -1193,7 +1203,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "求 s1 最少删除多少个字符可以成为 s2 的连续子串（左程云 Class068 题目 4）。",
     icon: "✂️",
     difficulty: 2,
-    levelOrder: 54,
+    levelOrder: 55,
   },
   {
     id: "palindromic-substrings",
@@ -1203,7 +1213,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "统计字符串中回文子串的总数目（区间 DP 从下往上遍历）。",
     icon: "🪞",
     difficulty: 1,
-    levelOrder: 55,
+    levelOrder: 56,
   },
   {
     id: "tree-dp-theory",
@@ -1213,7 +1223,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型动态规划的核心思想：后序遍历自底向上汇聚信息，每个节点向父节点汇报完成决策所需的充分信息元组。",
     icon: "🌲",
     difficulty: 2,
-    levelOrder: 56,
+    levelOrder: 57,
     learningGoal: "掌握树型DP\"信息汇报元组\"设计范式，学会从子节点收集信息、在当前节点完成决策",
   },
   {
@@ -1224,7 +1234,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。",
     icon: "📏",
     difficulty: 1,
-    levelOrder: 57,
+    levelOrder: 58,
   },
   {
     id: "max-path-sum",
@@ -1234,7 +1244,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。",
     icon: "🏔️",
     difficulty: 1,
-    levelOrder: 58,
+    levelOrder: 59,
   },
   {
     id: "largest-bst-subtree",
@@ -1244,7 +1254,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。",
     icon: "🔍",
     difficulty: 1,
-    levelOrder: 59,
+    levelOrder: 60,
   },
   {
     id: "tree-diameter",
@@ -1254,7 +1264,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。",
     icon: "📐",
     difficulty: 1,
-    levelOrder: 60,
+    levelOrder: 61,
   },
   {
     id: "binary-tree-cameras",
@@ -1264,7 +1274,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。",
     icon: "📷",
     difficulty: 1,
-    levelOrder: 61,
+    levelOrder: 62,
   },
   {
     id: "course-selection",
@@ -1274,7 +1284,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。",
     icon: "🎓",
     difficulty: 1,
-    levelOrder: 62,
+    levelOrder: 63,
   },
   {
     id: "minimum-fuel-cost",
@@ -1284,7 +1294,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。",
     icon: "⛽",
     difficulty: 1,
-    levelOrder: 63,
+    levelOrder: 64,
   },
   {
     id: "longest-path-different-characters",
@@ -1294,7 +1304,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。",
     icon: "🔤",
     difficulty: 1,
-    levelOrder: 64,
+    levelOrder: 65,
   },
   {
     id: "party-without-boss",
@@ -1304,7 +1314,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。",
     icon: "🎭",
     difficulty: 1,
-    levelOrder: 65,
+    levelOrder: 66,
   },
   {
     id: "height-removal-queries",
@@ -1314,7 +1324,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。",
     icon: "✂️",
     difficulty: 1,
-    levelOrder: 66,
+    levelOrder: 67,
   },
   {
     id: "minimum-score-after-removals",
@@ -1324,7 +1334,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。",
     icon: "🪓",
     difficulty: 1,
-    levelOrder: 67,
+    levelOrder: 68,
   },
   {
     id: "can-i-win",
@@ -1334,7 +1344,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。",
     icon: "🎲",
     difficulty: 1,
-    levelOrder: 68,
+    levelOrder: 69,
   },
   {
     id: "matchsticks-to-square",
@@ -1344,7 +1354,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP / 回溯：判断一组火柴能否恰好拼成一个正方形。将火柴分入 4 条等长边 (LeetCode 473)。",
     icon: "🔥",
     difficulty: 1,
-    levelOrder: 69,
+    levelOrder: 70,
   },
   {
     id: "partition-k-equal-subsets",
@@ -1354,7 +1364,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "状压DP / 回溯：将 n 个数划分为 k 个和相等的子集。回溯搜索 + 排序剪枝 (LeetCode 698)。",
     icon: "📦",
     difficulty: 1,
-    levelOrder: 70,
+    levelOrder: 71,
   },
   {
     id: "tsp-bitmask-dp",
@@ -1364,7 +1374,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "经典状压DP：dp[S][i] 表示经过集合 S 中所有城市且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。",
     icon: "🗺️",
     difficulty: 1,
-    levelOrder: 71,
+    levelOrder: 72,
   },
   {
     id: "dp-final-summary",
@@ -1374,7 +1384,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 72,
+    levelOrder: 73,
   },
   {
     id: "knapsack-01-standard",
@@ -1397,17 +1407,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 78,
     learningGoal: "掌握打折促销代数判别式的建立、倒贴预算的贪心收割与背包容量自适应扩增技巧",
-  },
-  {
-    id: "target-sum-standard",
-    name: "目标和 (01背包方案计数)",
-    viewId: "algo-target-sum-standard-view",
-    category: "dynamic-programming",
-    description: "左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，正负号划分数学推导转化为恰好凑出容量的方案计数 DP",
-    icon: "🎯",
-    difficulty: 2,
-    levelOrder: 79,
-    learningGoal: "掌握表达式符号分配向正负子集和的严谨代数化简、奇偶性守恒判定与方案数累加转移",
   },
   {
     id: "last-stone-weight-ii-standard",
@@ -3498,7 +3497,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "can-jump",
     name: "跳跃游戏 I",
-    viewId: "algo-can-jump-view",
+    viewId: "can-jump",
     category: "greedy",
     description: "维护最大跳跃覆盖范围，贪心判断能否到达数组末尾",
     icon: "🦘",
@@ -3987,9 +3986,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "jump-game-ii",
     name: "跳跃游戏 II (Jump Game II)",
-    viewId: "algo-jump-game-ii-view",
+    viewId: "jump-game-ii",
     category: "greedy",
-    description: "跳跃游戏 II (Jump Game II)",
+    description: "跳跃游戏 II (Jump Game II)：维护当前跳跃右边界 curEnd 与下一步最远覆盖 nextReach，触碰边界即贪心跳跃",
     icon: "🦘",
     difficulty: 2,
     levelOrder: 931,
@@ -3998,9 +3997,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "minimum-number-of-taps-to-water-a-garden",
     name: "灌溉花园的最少水龙头数目",
-    viewId: "algo-minimum-number-of-taps-to-water-a-garden-view",
+    viewId: "minimum-number-of-taps-to-water-a-garden",
     category: "greedy",
-    description: "灌溉花园的最少水龙头数目",
+    description: "将水龙头覆盖区间规约为区间接力模型，求解覆盖花园的最少水龙头数目",
     icon: "🚰",
     difficulty: 3,
     levelOrder: 932,

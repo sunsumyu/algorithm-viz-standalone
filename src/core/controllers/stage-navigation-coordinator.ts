@@ -390,13 +390,14 @@ export class StageNavigationCoordinator {
   public static updateCard2SubViewTabs(
     currentStage: string,
     card2SubView: 'tree' | 'alignment' | 'stack',
-    isStringProblem: boolean
+    isStringProblem: boolean,
+    hasTree: boolean = true
   ): void {
     if (typeof document === 'undefined') return;
     const bar = document.getElementById('card2-subview-bar');
     const selectEl = document.getElementById('card2-subview-select') as HTMLSelectElement | null;
 
-    if (currentStage !== 'stage-1' && currentStage !== 'stage-2') {
+    if (!hasTree || (currentStage !== 'stage-1' && currentStage !== 'stage-2')) {
       if (bar) {
         bar.classList.add('hidden');
         bar.classList.remove('inline-flex');

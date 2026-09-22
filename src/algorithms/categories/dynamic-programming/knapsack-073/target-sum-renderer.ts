@@ -556,18 +556,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   },
 });
 
-export const TargetSumVisualizer = Visualizer;
+// 注：target-sum-standard 已迁移到顶层抽象架构（YAML + Strategy + UniversalStageVisualizer）
+// 由 dp-generated-renderers.ts 统一注册，此文件不再单独注册
+// 旧版课族方言实现保留作为参考，但不再使用
 
-registerAlgorithm({
-  id: 'target-sum-standard',
-  name: '目标和 (01背包方案计数)',
-  viewId: 'algo-target-sum-standard-view',
-  category: 'dynamic-programming',
-  description: '左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，正负号划分数学推导转化为恰好凑出容量的方案计数 DP',
-  icon: '🎯',
-  template,
-  Visualizer,
-  difficulty: 2,
-  levelOrder: 79,
-  learningGoal: '掌握表达式符号分配向正负子集和的严谨代数化简、奇偶性守恒判定与方案数累加转移',
-});
+export const TargetSumVisualizer = Visualizer;

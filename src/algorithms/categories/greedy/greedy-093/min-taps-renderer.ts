@@ -3,6 +3,8 @@
  * 核心贪心：区间转换为右端点最远延伸 + 跳跃游戏模型
  */
 
+import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
 import { GREEDY_093_PROBLEMS } from './greedy-093-problem-content';
 import {
@@ -167,86 +169,18 @@ export function buildMinTapsSteps(n: number, ranges: number[]): MinTapsStep[] {
   return steps;
 }
 
-export const minTapsVisualizer = registerDeclarativeAlgorithm<MinTapsStep>({
+export const minTapsVisualizer = registerAlgorithm({
   id: 'minimum-number-of-taps-to-water-a-garden',
   name: '灌溉花园的最少水龙头数目',
+  viewId: 'minimum-number-of-taps-to-water-a-garden',
   category: 'greedy',
   icon: '🚰',
   difficulty: 3,
   levelOrder: 932,
   learningGoal: '掌握区间辐射模型转换为右边界跳跃最远延伸的贪心转化',
-  problemHtml: GREEDY_093_PROBLEMS.minTaps.html,
-  analysisHtml: GREEDY_093_PROBLEMS.minTaps.html,
-  inputs: [
-    {
-      id: 'input-n',
-      label: '花园长度 n',
-      type: 'number',
-      defaultValue: 5,
-      placeholder: '如 5',
-    },
-    {
-      id: 'input-ranges',
-      label: '各水龙头辐射半径 ranges',
-      type: 'text',
-      defaultValue: '3, 4, 1, 1, 0, 0',
-      placeholder: '3, 4, 1, 1, 0, 0',
-    },
-  ],
-  codeLanguages: MIN_TAPS_CODES,
-  buildSteps: (inputs: Record<string, any>) => {
-    const n = parseInt(String(inputs?.['input-n'] ?? 5), 10);
-    const rawRanges = String(inputs?.['input-ranges'] || '3, 4, 1, 1, 0, 0');
-    const ranges = rawRanges.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((x) => !isNaN(x));
-    return buildMinTapsSteps(isNaN(n) ? 5 : n, ranges);
-  },
-  renderCanvas: (stageContainer: HTMLElement, step: MinTapsStep) => {
-    stageContainer.innerHTML = '';
-
-    const mainCard = document.createElement('div');
-    mainCard.style.cssText = 'display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; box-sizing: border-box;';
-
-    // 顶部指标
-    mainCard.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-weight: 700; font-size: 13px; color: #1e293b;">花园范围: [0, <b>${step.n}</b>]</span>
-          <span style="color: #cbd5e1;">|</span>
-          <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #eff6ff; color: #1d4ed8; font-weight: 600;">当前覆盖右端: ${step.curEnd}</span>
-          <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #ecfdf5; color: #047857; font-weight: 600;">最远探测: ${step.nextReach}</span>
-        </div>
-        <div style="display: flex; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; align-items: center;">
-          <span style="color: #64748b;">最少水龙头数:</span>
-          <span style="color: ${step.isFailed ? '#dc2626' : '#059669'}; font-weight: 800; font-size: 16px;">${step.isFailed ? '-1 (无法覆盖)' : `${step.stepsCount} 个`}</span>
-        </div>
-      </div>
-    `;
-
-    // 中部水龙头区间看板
-    const tapsBox = document.createElement('div');
-    tapsBox.style.cssText = 'flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px; overflow-y: auto;';
-
-    step.taps.forEach((t) => {
-      const isCovered = t.left <= step.curEnd;
-      const card = document.createElement('div');
-      card.style.cssText = `display: flex; flex-direction: column; gap: 4px; background: ${isCovered ? '#eff6ff' : '#f8fafc'}; border: 1.5px solid ${isCovered ? '#3b82f6' : '#cbd5e1'}; border-radius: 8px; padding: 8px;`;
-
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-          <span style="font-weight: 700; font-size: 11px; color: #1e293b;">🚰 龙头 #${t.idx} (位置 ${t.center})</span>
-          <span style="font-size: 10px; font-weight: 700; color: #3b82f6;">半径 r=${t.radius}</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-top: 2px;">
-          <span style="color: #64748b;">覆盖区间:</span>
-          <span style="font-weight: 700; color: #1e293b; font-family: 'JetBrains Mono', monospace;">[${t.left}, ${t.right}]</span>
-        </div>
-      `;
-      tapsBox.appendChild(card);
-    });
-    mainCard.appendChild(tapsBox);
-
-    stageContainer.appendChild(mainCard);
-  },
+  description: '将水龙头覆盖区间规约为区间接力模型，求解覆盖花园的最少水龙头数目',
+  template: `<div id="minimum-number-of-taps-to-water-a-garden" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
 
 export function registerMinTaps(): void {

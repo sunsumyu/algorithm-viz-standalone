@@ -1,0 +1,224 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 灌溉花园的最少水龙头数目 顶层领域模型
+# 对应：LeetCode 1326 / 左神贪心算法专题 5
+# 包含：区间转换、跳跃游戏 II 映射、动态规划与贪心最优解
+# ==============================================================================
+
+id: minimum-number-of-taps-to-water-a-garden
+name: "灌溉花园的最少水龙头数目"
+nameEn: "Minimum Number of Taps to Water a Garden"
+category: "greedy"
+icon: "🚰"
+difficulty: 3
+levelOrder: 932
+learningGoal: "掌握区间辐射模型转换为右边界跳跃最远延伸的贪心转化"
+description: "在 [0, n] 的花园中分布有 n+1 个水龙头，每个水龙头的辐射半径为 ranges[i]。求完全灌溉花园所需的最少水龙头数，无法覆盖返回 -1。"
+defaultParams:
+  n: 5
+  ranges: "3, 4, 1, 1, 0, 0"
+
+problem:
+  title: "灌溉花园的最少水龙头数目 (Minimum Number of Taps to Water a Garden)"
+  difficulty: "困难"
+  tags: ["贪心", "数组", "动态规划", "LeetCode 1326"]
+  description: "在 <code>[0, n]</code> 的一维花园中分布着 <code>n + 1</code> 个水龙头，分别位于位置 <code>0, 1, ..., n</code>。<br/><br/>第 <code>i</code> 个水龙头的位置为 <code>i</code>，其灌溉范围为 <code>[max(0, i - ranges[i]), min(n, i + ranges[i])]</code>。<br/><br/>返回灌溉整个花园 <code>[0, n]</code> 所需的<strong>最少水龙头数目</strong>。如果无法灌溉整个花园，返回 <code>-1</code>。"
+  examples:
+    - input: "n = 5, ranges = [3, 4, 1, 1, 0, 0]"
+      output: "1"
+      explanation: "位置 1 处的水龙头灌溉范围为 [1 - 4, 1 + 4] = [-3, 5]，由于花园范围为 [0, 5]，该水龙头能完全灌溉整个花园。"
+    - input: "n = 3, ranges = [0, 0, 0, 0]"
+      output: "-1"
+      explanation: "即使开启所有水龙头，每个水龙头也只能灌溉其自身位置，无法覆盖整个花园区间。"
+  constraints:
+    - "1 <= n <= 10^4"
+    - "ranges.length == n + 1"
+    - "0 <= ranges[i] <= 100"
+
+directions:
+  forward:
+    label: "正向扩张 (区间顺推)"
+    start: [0, 0]
+    target: [0, 5]
+    branches:
+      - name: "build"
+        delta: [0, 1]
+        label: "区间转换"
+      - name: "jump"
+        delta: [0, 1]
+        label: "边界接力"
+
+  reverse:
+    label: "逆向探查 (倒序回溯)"
+    description: "从终点 n 回溯寻找覆盖终点的最小水龙头子集"
+    startFormula: "终点区间 [0, n]"
+    target: "起点 0"
+    branches: []
+    combineFormula: "逆向最少水龙头"
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "灌溉花园 (区间转跳跃游戏)"
+    desc: "将各龙头覆盖区间转化为左端点最远延伸 rightReach[l]，映射为跳跃游戏 II 边界推进"
+    card2Title: "水龙头区间与探测看板 (Tap Range Inspector)"
+    card2Desc: "展示各个水龙头的覆盖区间 [l, r]、各左端点出发的最远延伸 rightReach 以及当前覆盖边界与下一步最远探测。"
+    code:
+      forward:
+        title: "MinTaps.java"
+        source: |
+          public int minTaps(int n, int[] ranges) {
+              int[] rightReach = new int[n + 1]; // @step:entry
+              for (int i = 0; i <= n; i++) {
+                  int l = Math.max(0, i - ranges[i]);
+                  rightReach[l] = Math.max(rightReach[l], Math.min(n, i + ranges[i])); // @step:build
+              }
+              int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+              for (int i = 0; i < n; i++) { // @step:loop
+                  nextReach = Math.max(nextReach, rightReach[i]); // @step:explore
+                  if (i == curEnd) { // @step:check
+                      if (nextReach <= i) return -1; // @step:fail
+                      curEnd = nextReach; // @step:jump
+                      steps++;
+                  }
+              }
+              return steps; // @step:done
+          }
+    variants:
+      standard:
+        variantLabel: "标准贪心跳跃模型"
+        title: "MinTaps.java"
+        code:
+          forward:
+            title: "MinTaps.java"
+            source: |
+              public int minTaps(int n, int[] ranges) {
+                  int[] rightReach = new int[n + 1]; // @step:entry
+                  for (int i = 0; i <= n; i++) {
+                      int l = Math.max(0, i - ranges[i]);
+                      rightReach[l] = Math.max(rightReach[l], Math.min(n, i + ranges[i])); // @step:build
+                  }
+                  int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+                  for (int i = 0; i < n; i++) { // @step:loop
+                      nextReach = Math.max(nextReach, rightReach[i]); // @step:explore
+                      if (i == curEnd) { // @step:check
+                          if (nextReach <= i) return -1; // @step:fail
+                          curEnd = nextReach; // @step:jump
+                          steps++;
+                      }
+                  }
+                  return steps; // @step:done
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "灌溉花园 (记忆化搜索)"
+    desc: "dfs(cur) 表示覆盖到 cur 位置时所需的最少水龙头数，用 memo[cur] 缓存结果避免重复遍历"
+    card2Title: "区间覆盖递归调用树 (Interval DFS Tree)"
+    card2Desc: "展示以当前覆盖最右位置为状态的搜索调用树，实时反映不同水龙头选择与剪枝。"
+    code:
+      forward:
+        title: "MinTaps_Memo.java"
+        source: |
+          public int minTaps(int n, int[] ranges) {
+              int[] memo = new int[n + 1]; // @step:init
+              Arrays.fill(memo, -2);
+              int ans = dfs(0, n, ranges, memo); // @step:entry
+              return ans >= 10000 ? -1 : ans;
+          }
+          private int dfs(int cur, int n, int[] ranges, int[] memo) {
+              if (cur >= n) return 0; // @step:boundary
+              if (memo[cur] != -2) return memo[cur]; // @step:cache_hit
+              int minTaps = 10000;
+              for (int i = 0; i <= n; i++) { // @step:loop
+                  if (i - ranges[i] <= cur && i + ranges[i] > cur) { // @step:branch
+                      minTaps = Math.min(minTaps, 1 + dfs(i + ranges[i], n, ranges, memo));
+                  }
+              }
+              memo[cur] = minTaps; // @step:memo_store
+              return minTaps;
+          }
+
+  stage-3:
+    shortName: "递推DP"
+    type: "tabulation"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "灌溉花园 (一维 DP 填表)"
+    desc: "dp[i] 表示灌溉整个区间 [0, i] 所需的最少水龙头数"
+    card2Title: "一维 DP 状态数组 (int[] dp)"
+    card2Desc: "dp[i] 记录覆盖 [0, i] 花园的最小水龙头数，遍历水龙头区间更新 dp[right]。"
+    code:
+      forward:
+        title: "MinTaps_DP.java"
+        source: |
+          public int minTaps(int n, int[] ranges) {
+              int[] dp = new int[n + 1]; // @step:init
+              Arrays.fill(dp, n + 2); // @step:fill
+              dp[0] = 0; // @step:base
+              for (int i = 0; i <= n; i++) { // @step:outer_loop
+                  int left = Math.max(0, i - ranges[i]);
+                  int right = Math.min(n, i + ranges[i]);
+                  for (int j = left; j <= right; j++) { // @step:inner_loop
+                      dp[right] = Math.min(dp[right], dp[j] + 1); // @step:transfer
+                  }
+              }
+              return dp[n] > n + 1 ? -1 : dp[n]; // @step:return
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "灌溉花园 (贪心最优解)"
+    desc: "通过预处理将辐射区间映射到左端点数组，进行一次线性扫描确定最少水龙头"
+    card2Title: "贪心接力决策看板 (Greedy Relay Inspector)"
+    card2Desc: "实时监控当前覆盖右边界 curEnd、最远探测 nextReach 与水龙头开启次数。"
+    code:
+      forward:
+        title: "MinTaps_Optimal.java"
+        source: |
+          public int minTaps(int n, int[] ranges) {
+              int[] rightReach = new int[n + 1]; // @step:entry
+              for (int i = 0; i <= n; i++) {
+                  int l = Math.max(0, i - ranges[i]);
+                  rightReach[l] = Math.max(rightReach[l], Math.min(n, i + ranges[i])); // @step:build
+              }
+              int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+              for (int i = 0; i < n; i++) { // @step:loop
+                  nextReach = Math.max(nextReach, rightReach[i]); // @step:explore
+                  if (i == curEnd) { // @step:check
+                      if (nextReach <= i) return -1; // @step:fail
+                      curEnd = nextReach; // @step:jump
+                      steps++;
+                  }
+              }
+              return steps; // @step:done
+          }
+
+analysisHtml: |
+  <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+    <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
+      <span>💡</span> 贪心核心：辐射区间到跳跃模型的完美等价转化
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 区间降维预处理</div>
+        <p style="margin: 0; color: #94a3b8;">每个水龙头覆盖区间为 <code>[max(0, i - ranges[i]), min(n, i + ranges[i])]</code>。定义数组 <code>rightReach[l]</code>，记录所有左端点为 <code>l</code> 的水龙头所能延伸的最远右边界。这一步将无序的区间完全转换为“从位置 l 能跳多远”的跳跃游戏模型！</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 跳跃游戏 II 边界推进</div>
+        <p style="margin: 0; color: #94a3b8;">维护当前已覆盖右边界 <code>curEnd</code> 与下一步最远探测 <code>nextReach</code>。遍历 <code>i</code> 从 <code>0</code> 到 <code>n-1</code>：动态更新 <code>nextReach = max(nextReach, rightReach[i])</code>；当 <code>i == curEnd</code> 时，触碰边界，必须多开一个水龙头 <code>steps++</code> 并更新 <code>curEnd = nextReach</code>。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #f472b6; margin-bottom: 4px;">③ 断裂检测</div>
+        <p style="margin: 0; color: #94a3b8;">若在 <code>i == curEnd</code> 时发现 <code>nextReach <= i</code>，说明没有任何水龙头能越过当前位置，花园出现覆盖断层，必定无法完全覆盖，立即返回 <code>-1</code>。</p>
+      </div>
+    </div>
+  </div>

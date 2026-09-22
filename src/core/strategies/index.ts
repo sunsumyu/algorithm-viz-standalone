@@ -22,12 +22,17 @@ import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
 import { JumpGameIIStrategy } from './jump-game-ii-strategy';
 import { JumpGameIIStepCompiler } from './jump-game-ii-compiler';
+import { CanJumpStrategy } from './can-jump-strategy';
+import { CanJumpStepCompiler } from './can-jump-compiler';
+import { MinTapsStrategy } from './min-taps-strategy';
+import { IntervalRelayStepCompiler } from './interval-relay-step-compiler';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
 import { IntervalDpStrategy } from './interval-dp-strategy';
 import { DigitDpStrategy } from './digit-dp-strategy';
 import { UniversalStringDpStrategy } from './universal-string-dp-strategy';
+import { TargetSumStandardStrategy } from './target-sum-standard-strategy';
 
 export { UniversalStringDpStrategy, IntervalDpStrategy, DigitDpStrategy };
 
@@ -125,6 +130,11 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('unique-bst'));
   AlgorithmStrategyRegistry.register(new Linear1DStrategy('decode-ways'));
   AlgorithmStrategyRegistry.register(new JumpGameIIStrategy());
+  AlgorithmStrategyRegistry.register(new CanJumpStrategy());
+  AlgorithmStrategyRegistry.register(new MinTapsStrategy());
+
+  // Target Sum Standard (第 73 课标准版)
+  AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
 }
 
 AlgorithmStrategyRegistry.setDefaultInitializer(registerBuiltinStrategies);
@@ -154,7 +164,11 @@ export {
   PartitionDPStrategy,
   PartitionIntegerBreakStrategy,
   JumpGameIIStrategy,
-  JumpGameIIStepCompiler
+  JumpGameIIStepCompiler,
+  CanJumpStrategy,
+  CanJumpStepCompiler,
+  MinTapsStrategy,
+  IntervalRelayStepCompiler
 };
 
 export * from './strategy-helpers';

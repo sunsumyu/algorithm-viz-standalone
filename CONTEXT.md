@@ -189,10 +189,22 @@
 - **包含**：`parseNumberList` / `parseNumber` / `parseText` / `parseTreeArray` / `parseIntervals` / `parseCommandList` / `parseNumericGrid` / `parseBinaryGrid` / `parseGridInput`。
 - **职责**：统一分隔符容忍（半角/全角逗号+空白）、统一空值回退语义（列表类空结果回退；树层序区分合法空树 `[]` 与解析失败）；100% 零 DOM，可无头表驱动测试。
 
-### DomainAdapterCatalog (领域画布适配器目录)
-- **定义**：集中收编全库 10 个领域专属画板适配器的元信息注册表（`domain-adapter-catalog.ts`）。
-- **职责**：提供 `findAdapterById(id)` 和 `findAdapterByDomain(keyword)` 查询接口，让开发者快速发现可用适配器（树拓扑、数组轨道、DP 网格、递归树、3D 图论等）。
-- **设计决策**：适配器保持为独立静态工具类，不强制统一接口——因为二叉树 SVG 拓扑、数组双指针轨道、DP 网格体素等视觉形态差异巨大，统一接口会抹平本质差异。
+### IntervalRelayStepCompiler (区间接力与覆盖步进编译器深模块)
+- **定义**：统一全库所有区间贪心、跳跃游戏与边界接力覆盖题目的纯函数顶层推导引擎（`src/core/strategies/interval-relay-step-compiler.ts`）。
+- **包含**：
+  - 核心状态机三元组：`[curIdx 探针, curEnd 当前确认覆盖边界, nextReach 探索最远前沿]`。
+  - 四阶段演化全支持：Stage 1 & 4 贪心双边界接力、Stage 2 记忆化区间搜索（状态空间树 `UniversalTreeNode` + 剪枝）、Stage 3 一维 DP 表松弛转移。
+- **职责**：作为顶层唯一基建，严禁任何业务题目（如 `jump-game-ii`, `min-taps`, `video-stitching`）私写同质 StepCompiler。所有此类问题必须通过数学规约（`ranges` / `intervals` $\rightarrow$ `rightReach` / `jumpSpans`）后直接委托本模块。
+
+### CanonicalCompilerTaxonomy (顶层核心编译器族群字典与规约铁律)
+- **定义**：全库顶层算法策略推导引擎的白名单分类字典。
+  1. **线性 1D DP 族** $\rightarrow$ `LinearStepMatrixCompiler` (斐波那契、爬楼梯、解码方法、整数拆分等)
+  2. **背包族** $\rightarrow$ `KnapsackStepMatrixCompiler` (0-1背包、完全背包、目标和、分割等和子集等)
+  3. **双序列矩阵 DP 族** $\rightarrow$ `SequenceStepMatrixCompiler` (LCS、编辑距离、不同子序列、交错字符串等)
+  4. **区间接力与覆盖族** $\rightarrow$ `IntervalRelayStepCompiler` (跳跃游戏I/II、灌溉水龙头、视频拼接等)
+  5. **网格探索 DP 族** $\rightarrow$ `GridUniquePathsCompiler` (不同路径I/II、最小路径和等)
+  6. **状态依赖树展开族** $\rightarrow$ `StateDependencyTreeCompiler` (通用记忆化拓扑展开)
+- **规约铁律**：新增或重构算法必须首先进行数学规约。策略类（`*Strategy`）定位为极薄的**领域适配器（Domain Adapter，严格限 < 120 行）**，严禁未经 ADR 论证擅自新建私有 `*-compiler.ts`。
 
 ---
 

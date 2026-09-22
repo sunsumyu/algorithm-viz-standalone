@@ -302,12 +302,14 @@ export class StateSpacePresenter {
         }
       }
     } else if (currentStage === 'stage-1' || currentStage === 'stage-2') {
-      // 阶段 1 / 阶段 2: 复合子视图调度 (递归树 / 双串比对 / 调用栈与变量)
+      // 阶段 1 / 阶段 2: 复合子视图调度 (递归树 / 双串比对 / 调用栈与变量 / 状态槽位)
       const subView = options.card2SubView || 'tree';
       if (subView === 'alignment') {
         this.renderSequenceAlignmentCard2(container, step, options);
       } else if (subView === 'stack') {
         this.renderCallStackCard2(container, step, options);
+      } else if (!step.treeRoot && (step.stateArrays || step.decisions || step.dp1d)) {
+        GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       } else {
         RecursionTreeAdapter.renderRecursionTree(
           container,

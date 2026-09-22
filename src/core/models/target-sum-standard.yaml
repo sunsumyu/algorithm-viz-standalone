@@ -1,0 +1,252 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL DP MODEL] 目标和 (Target Sum) 四阶段全演化标准模型
+# 对应：LeetCode 494 / 左程云算法通关课 Class 073 Code03
+# 包含：暴力递归、HashMap 记忆化、offset 平移二维 DP、01 背包空间压缩
+# ==============================================================================
+
+id: target-sum-standard
+name: "目标和 (01 背包方案计数)"
+nameEn: "Target Sum"
+category: "dynamic-programming"
+icon: "🎯"
+difficulty: 2
+levelOrder: 79
+defaultStage: "stage-1"
+defaultDirection: "forward"
+learningGoal: "掌握表达式符号分配向正负子集和的严谨代数化简、奇偶性守恒判定与方案数累加转移"
+description: "左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，正负号划分数学推导转化为恰好凑出容量的方案计数 DP"
+
+defaultParams:
+  nums: [1, 1, 1, 1, 1]
+  target: 3
+
+problem:
+  leetcodeId: 494
+  title: "目标和 (Target Sum)"
+  difficulty: "Medium"
+  tags: ["动态规划", "回溯", "数组"]
+  description: |
+    给你一个非负整数数组 <code>nums</code> 和一个整数 <code>target</code>。
+    向数组中的每个整数前添加 <code>'+'</code> 或 <code>'-'</code> ，然后串联起所有整数，可以构造一个表达式。
+    返回可以通过上述方法构造的、运算结果等于 <code>target</code> 的不同表达式的数目。
+  examples:
+    - input: "nums = [1,1,1,1,1], target = 3"
+      output: "5"
+      explanation: "一共有 5 种方法让最终目标和为 3：-1+1+1+1+1, +1-1+1+1+1, +1+1-1+1+1, +1+1+1-1+1, +1+1+1+1-1"
+    - input: "nums = [1], target = 1"
+      output: "1"
+  constraints:
+    - "1 <= nums.length <= 20"
+    - "0 <= nums[i] <= 1000"
+    - "0 <= sum(nums[i]) <= 1000"
+    - "-1000 <= target <= 1000"
+  leetcodeUrl: "https://leetcode.cn/problems/target-sum/"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: "从第 0 个数字开始依次决策 +/−"
+    description: "从数组首部开始，对每个数字尝试添加 + 或 − 号，递归探索所有方案"
+    branches:
+      - name: "添加 + 号"
+        delta: [1, 0]
+        arrow: ""
+        description: "curSum += nums[i]，继续处理下一个数字"
+      - name: "添加 − 号"
+        delta: [1, 0]
+        arrow: "↙"
+        description: "curSum -= nums[i]，继续处理下一个数字"
+    combineFormula: "ways1 + ways2"
+  reverse:
+    label: "逆推 (倒序)"
+    name: "从末尾向首部反推"
+    description: "从数组末尾开始，逆向推导每个数字的符号选择"
+    branches: []
+    combineFormula: "逆向聚合"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2^N)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归 (+/− 分治)"
+      reverse: "阶段 1: 逆向暴力递归"
+    desc:
+      forward: "对每个数字尝试添加 + 或 − 号，展开为二叉决策树，搜索所有方案数"
+      reverse: "从末尾开始逆向推导每个数字的符号选择"
+    timeComplexity: "O(2^N)"
+    spaceComplexity: "O(N)"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        name: "暴力递归 (+/− 分治)"
+        desc: "每个数字前放 + 或 -，两种分支"
+        code:
+          forward: |
+            public int findTargetSumWays1(int[] nums, int target) { // @step:callRoot
+                return f1(nums, target, 0, 0);
+            }
+            // 从 i 开始，前面所有数字的累加和是 sum，返回最终能凑出 target 的方案数
+            private int f1(int[] nums, int target, int i, int sum) { // @step:fnEnter
+                if (i == nums.length) { // @step:baseCheck
+                    return sum == target ? 1 : 0;
+                }
+                // 给 nums[i] 添加 + 号
+                int ways1 = f1(nums, target, i + 1, sum + nums[i]); // @step:branch1
+                // 给 nums[i] 添加 - 号
+                int ways2 = f1(nums, target, i + 1, sum - nums[i]); // @step:branch2
+                return ways1 + ways2; // @step:returnSum
+            }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(N · sum)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: HashMap 记忆化"
+      reverse: "阶段 2: 逆向记忆化"
+    desc:
+      forward: "用嵌套 HashMap 缓存 (i, curSum) → 方案数，因为 curSum 可负，无法用二维数组"
+      reverse: "逆向推导并用 HashMap 缓存"
+    timeComplexity: "O(N · sum)"
+    spaceComplexity: "O(N · sum)"
+    variants:
+      standard:
+        variantLabel: "HashMap 记忆化版"
+        name: "嵌套 HashMap 缓存"
+        desc: "因为 sum 可能为负数，为了下标不出现负数，使用 HashMap"
+        code:
+          forward: |
+            public int findTargetSumWays2(int[] nums, int target) { // @step:callRoot
+                return f2(nums, target, 0, 0, new HashMap<>());
+            }
+            private int f2(int[] nums, int target, int i, int sum, HashMap<Integer, HashMap<Integer, Integer>> dp) { // @step:fnEnter
+                if (i == nums.length) { // @step:baseCheck
+                    return sum == target ? 1 : 0;
+                }
+                HashMap<Integer, Integer> inner = dp.get(i);
+                if (inner == null) {
+                    inner = new HashMap<>();
+                    dp.put(i, inner);
+                }
+                if (inner.containsKey(sum)) { // @step:memoCheck
+                    return inner.get(sum);
+                }
+                int ways1 = f2(nums, target, i + 1, sum + nums[i], dp); // @step:branch1
+                int ways2 = f2(nums, target, i + 1, sum - nums[i], dp); // @step:branch2
+                int res = ways1 + ways2; // @step:returnSum
+                inner.put(sum, res); // @step:memoStore
+                return res;
+            }
+
+  stage-3:
+    shortName: "二维 DP"
+    type: "tabulation-2d"
+    timeBadge: "O(N · sum)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: offset 平移二维 DP"
+      reverse: "阶段 3: 逆向填表"
+    desc:
+      forward: "将累加和范围 [-totalSum, +totalSum] 平移到 [0, 2·totalSum]，构造二维 DP 表"
+      reverse: "从末尾状态倒推"
+    timeComplexity: "O(N · sum)"
+    spaceComplexity: "O(N · sum)"
+    variants:
+      standard:
+        variantLabel: "offset 平移版"
+        name: "offset 平移二维 DP"
+        desc: "dp[i][j] 表示用前 i 个数凑出实际和 (j - offset) 的方案数"
+        code:
+          forward: |
+            public int findTargetSumWays3(int[] nums, int target) { // @step:callRoot
+                int n = nums.length;
+                int sum = 0;
+                for (int num : nums) sum += Math.abs(num);
+                int offset = sum;
+                int cols = 2 * sum + 1;
+                int[][] dp = new int[n + 1][cols]; // @step:initDp
+                dp[0][offset] = 1; // @step:initBase
+                for (int i = 1; i <= n; i++) { // @step:outerLoopI
+                    int num = nums[i - 1];
+                    for (int j = 0; j < cols; j++) { // @step:innerLoopJ
+                        int plusCol = j - num;
+                        int minusCol = j + num;
+                        int ways1 = plusCol >= 0 && plusCol < cols ? dp[i - 1][plusCol] : 0; // @step:plusBranch
+                        int ways2 = minusCol >= 0 && minusCol < cols ? dp[i - 1][minusCol] : 0; // @step:minusBranch
+                        dp[i][j] = ways1 + ways2; // @step:updateCell
+                    }
+                }
+                return dp[n][target + offset]; // @step:returnAns
+            }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(N · T)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 01 背包空间压缩"
+      reverse: "阶段 4: 逆向空间优化"
+    desc:
+      forward: "转化为子集和 (target+sum)/2 的 01 背包方案计数，一维数组逆序更新"
+      reverse: "逆向空间压缩"
+    timeComplexity: "O(N · T)"
+    spaceComplexity: "O(T)"
+    variants:
+      standard:
+        variantLabel: "01 背包转化版"
+        name: "01 背包空间压缩"
+        desc: "推导出正数集合 sum(P) = (target + sum) / 2，转化为一维 01 背包"
+        code:
+          forward: |
+            public int findTargetSumWays4(int[] nums, int target) { // @step:callRoot
+                int sum = 0;
+                for (int n : nums) sum += n;
+                if (sum < target || ((target & 1) ^ (sum & 1)) == 1) return 0; // @step:check
+                return subsets(nums, (target + sum) >> 1); // @step:delegate
+            }
+            // 从 nums 中挑选若干个数，使得累加和恰好等于 t 的方案数
+            private int subsets(int[] nums, int t) { // @step:subsets_entry
+                if (t < 0) return 0; // @step:subsets_check
+                int[] dp = new int[t + 1]; // @step:subsets_init
+                dp[0] = 1; // @step:subsets_base
+                for (int num : nums) { // @step:subsets_outer
+                    for (int j = t; j >= num; j--) { // @step:subsets_inner
+                        dp[j] += dp[j - num]; // @step:subsets_transfer
+                    }
+                }
+                return dp[t]; // @step:subsets_return
+            }
+
+analysisHtml: |
+  <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
+    <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
+      <span>💡</span> 目标和四种解法演进（左程云第 73 课）
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 方法 1 · 暴力递归</div>
+        <p style="margin: 0; color: #94a3b8;">状态定义为 <code style="color: #7dd3fc; font-family: monospace;">f(i, curSum)</code>：从第 <code style="color: #7dd3fc; font-family: monospace;">i</code> 个数字开始，前面已凑出累加和 <code style="color: #7dd3fc; font-family: monospace;">curSum</code>，最终能凑出 <code style="color: #7dd3fc; font-family: monospace;">target</code> 的方案数。每个数字前放 <code style="color: #fbbf24; font-family: monospace;">+</code> 或 <code style="color: #fbbf24; font-family: monospace;">-</code>，两种分支。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #a78bfa; margin-bottom: 4px;">② 方法 2 · 记忆化搜索</div>
+        <p style="margin: 0; color: #94a3b8;">在方法 1 基础上，用嵌套 <code style="color: #7dd3fc; font-family: monospace;">HashMap&lt;Integer, HashMap&lt;Integer, Integer&gt;&gt;</code> 缓存 <code style="color: #7dd3fc; font-family: monospace;">(i, curSum)</code> → 方案数。因为 <code style="color: #7dd3fc; font-family: monospace;">curSum</code> 可正可负，无法使用二维数组，必须用哈希表。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">③ 方法 3 · offset 平移二维 DP</div>
+        <p style="margin: 0; color: #94a3b8;">将累加和范围 <code style="color: #7dd3fc; font-family: monospace;">[-totalSum, +totalSum]</code> 平移到 <code style="color: #7dd3fc; font-family: monospace;">[0, 2·totalSum]</code>，构造二维 DP 表 <code style="color: #7dd3fc; font-family: monospace;">dp[i][j]</code> 表示用前 <code style="color: #7dd3fc; font-family: monospace;">i</code> 个数凑出实际和 <code style="color: #7dd3fc; font-family: monospace;">j - offset</code> 的方案数。</p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px;">④ 方法 4 · 转化为 01 背包（空间压缩）</div>
+        <p style="margin: 0; color: #94a3b8;">设添加 <code style="color: #7dd3fc; font-family: monospace;">+</code> 号的元素集合为 <code style="color: #7dd3fc; font-family: monospace;">P</code>，添加 <code style="color: #7dd3fc; font-family: monospace;">-</code> 号的元素集合为 <code style="color: #7dd3fc; font-family: monospace;">N</code>：<br/>
+        <code style="color: #34d399; font-family: monospace;">sum(P) - sum(N) = target</code><br/>
+        又因为 <code style="color: #7dd3fc; font-family: monospace;">sum = sum(P) + sum(N)</code>，两式相加：<br/>
+        <code style="color: #fbbf24; font-family: monospace;">2 · sum(P) = target + sum ⇒ sum(P) = (target + sum) / 2</code><br/>
+        问题等价于：挑选元素使其累加和恰好等于 <code style="color: #7dd3fc; font-family: monospace;">t = (target + sum) / 2</code> 的 01 背包方案计数。</p>
+      </div>
+    </div>
+  </div>
