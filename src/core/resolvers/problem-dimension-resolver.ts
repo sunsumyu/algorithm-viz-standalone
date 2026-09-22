@@ -51,7 +51,11 @@ export class ProblemDimensionResolver {
     'last-stone-weight-ii',
     'partition-equal-subset-sum',
     'multiple-knapsack',
-    'candy'
+    'candy',
+    'min-arrows',
+    'non-overlapping',
+    'merge-intervals',
+    'partition-labels'
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -159,7 +163,7 @@ export class ProblemDimensionResolver {
     // 4. 背包类问题 (weights/values/bagWeight/target)
     if (params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined) {
       const bag = Number(params.bagWeight ?? params.target ?? 0);
-      const wArr = params.weights ? this.toArray(params.weights) : [];
+      const wArr = params.weights ? this.toArray(params.weights) : (params.nums ? this.toArray(params.nums) : []);
       const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
       m = (!isStage4 && wArr.length > 0) ? wArr.length : 1;
       n = bag > 0 ? bag + 1 : 6;
@@ -168,7 +172,23 @@ export class ProblemDimensionResolver {
       return { m, n, is1D, category };
     }
 
-    // 5. 纯一维数组类型 (nums / ratings)
+    // 5. 纯一维数组与区间类型 (points / intervals / ratings / nums)
+    if (params.points !== undefined) {
+      const points = this.toArray(params.points);
+      m = 1;
+      n = points.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.intervals !== undefined) {
+      const intervals = this.toArray(params.intervals);
+      m = 1;
+      n = intervals.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
     if (params.ratings !== undefined) {
       const ratings = this.toArray(params.ratings);
       m = 1;
@@ -205,9 +225,20 @@ export class ProblemDimensionResolver {
     return { m, n, is1D, category };
   }
 
-  private static toArray(val: any): number[] {
-    if (Array.isArray(val)) return val.map(Number);
-    if (typeof val === 'string') return val.split(',').map(s => Number(s.trim()));
+  private static toArray(val: any): any[] {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      const trimmed = val.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) return parsed;
+        } catch {
+          // fallback to split
+        }
+      }
+      return val.split(',').map(s => Number(s.trim()));
+    }
     return [Number(val)];
   }
 }

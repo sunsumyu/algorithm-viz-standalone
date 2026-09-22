@@ -638,6 +638,7 @@ export class IntervalSchedulingStepCompiler {
     const mode = options.mode;
     const ctx = options.domainContext || {};
     const itemLabel = ctx.itemLabel || '区间';
+    const unitLabel = ctx.unitLabel || '个';
 
     const anchorMap = this.extractAnchors(
       model,
@@ -652,13 +653,23 @@ export class IntervalSchedulingStepCompiler {
 
     // dp[i]: 以区间 i 结尾的最大相容区间数
     const dp = new Array(n).fill(1);
-    const buildDpStateArrays = (activeIdx?: number): StateArrayItem[] => [
+    const buildDpStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => [
+      {
+        id: 'intervals',
+        name: `${itemLabel}列表 (已按左端点排序)`,
+        indices: intervals.map((_, idx) => idx),
+        values: intervals.map(([s, e]) => `[${s},${e}]`),
+        activeIdx,
+        highlightIndices,
+        color: 'emerald',
+      },
       {
         id: 'dp',
-        name: 'dp (最大相容数)',
+        name: 'dp (以区间 i 结尾的最大相容数)',
         indices: dp.map((_, idx) => idx),
         values: [...dp],
         activeIdx,
+        highlightIndices,
         color: 'blue',
       },
     ];
@@ -667,33 +678,77 @@ export class IntervalSchedulingStepCompiler {
       stepIndex: 0,
       stage: 3,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `动态规划建表：定义 dp[i] 为以第 i 个${itemLabel}结尾的最大相容集合容量`,
-      message: `转化为区间维度的最长递增子序列 (LIS) 经典模型`,
-      variables: { 'dp.length': n },
+      decision: `动态规划初始化：定义 dp[i] 为以第 i 个${itemLabel}结尾的最大相容子集大小，初始全为 1（每个${itemLabel}自身自成相容子集）`,
+      message: `转化为区间维度的最长递增子序列 (LIS) 状态转移方程：dp[i] = max(dp[j] + 1), 其中 j < i 且 intervals[j].end <= intervals[i].start`,
+      variables: { 'dp.length': n, 'dp[0]': 1 },
       stateArrays: buildDpStateArrays(0),
-      metrics: { 'dp-focus': 'dp[0]' },
+      activeSlot: 0,
+      metrics: { 'dp-focus': 'dp[0]=1', 'max-compatible': '1' },
     });
 
     for (let i = 1; i < n; i++) {
-      let maxPrev = 0;
-      for (let j = 0; j < i; j++) {
-        if (intervals[j][1] <= intervals[i][0]) {
-          maxPrev = Math.max(maxPrev, dp[j]);
-        }
-      }
-      dp[i] = maxPrev + 1;
+      const [curStart, curEnd] = intervals[i];
 
       steps.push({
         stepIndex: steps.length,
         stage: 3,
-        codeLine: anchorMap['transfer'] ?? anchorMap['dp_relax'] ?? 4,
-        decision: `状态转移：扫描所有前驱区间 j < ${i}，若区间相容，则松弛更新 dp[${i}] = ${dp[i]}`,
-        message: `枚举所有相容的前驱区间完成状态转移`,
+        codeLine: anchorMap['outer_loop'] ?? anchorMap['loop'] ?? 2,
+        decision: `考察第 ${i} 个${itemLabel} [${curStart}, ${curEnd}]，开始扫描所有前驱区间 j < ${i} 寻找相容扩展`,
+        message: `枚举前驱区间，寻找满足 intervals[j].end <= ${curStart} 的最大 dp[j]`,
+        variables: { i, curStart, curEnd, 'dp[i]': dp[i] },
+        stateArrays: buildDpStateArrays(i),
+        activeIndices: [i],
+        activeSlot: i,
+        metrics: { 'dp-focus': `dp[${i}]`, 'checking-interval': `[${curStart},${curEnd}]` },
+      });
+
+      for (let j = 0; j < i; j++) {
+        const [prevStart, prevEnd] = intervals[j];
+        const isCompatible = prevEnd <= curStart;
+
+        if (isCompatible) {
+          const oldVal = dp[i];
+          dp[i] = Math.max(dp[i], dp[j] + 1);
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 3,
+            codeLine: anchorMap['transfer'] ?? anchorMap['dp_relax'] ?? 4,
+            decision: `✅ 前驱区间 j=${j} [${prevStart}, ${prevEnd}] 与当前区间 i=${i} [${curStart}, ${curEnd}] 互斥不相交（${prevEnd} <= ${curStart}）！松弛更新 dp[${i}] = max(${oldVal}, dp[${j}] + 1) = ${dp[i]}`,
+            message: `前驱区间合法相容，状态成功转移`,
+            variables: { i, j, prevEnd, curStart, 'dp[j]': dp[j], 'dp[i]': dp[i] },
+            stateArrays: buildDpStateArrays(i, [j, i]),
+            activeIndices: [j, i],
+            activeSlot: i,
+            metrics: { 'compatible': '是 (相容)', 'dp-update': `dp[${i}]=${dp[i]}` },
+          });
+        } else {
+          steps.push({
+            stepIndex: steps.length,
+            stage: 3,
+            codeLine: anchorMap['conflict'] ?? anchorMap['check'] ?? 3,
+            decision: `❌ 前驱区间 j=${j} [${prevStart}, ${prevEnd}] 与当前区间 i=${i} [${curStart}, ${curEnd}] 发生重叠（${prevEnd} > ${curStart}），不可作为合法相容前驱`,
+            message: `重叠区间产生冲突，跳过该前驱转移`,
+            variables: { i, j, prevEnd, curStart, 'dp[i]': dp[i] },
+            stateArrays: buildDpStateArrays(i, [j, i]),
+            activeIndices: [j, i],
+            activeSlot: i,
+            metrics: { 'compatible': '否 (重叠冲突)', 'dp-val': String(dp[i]) },
+          });
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        codeLine: anchorMap['finish_i'] ?? anchorMap['loop'] ?? 5,
+        decision: `完成第 ${i} 个${itemLabel} [${curStart}, ${curEnd}] 的前驱扫描，确定 dp[${i}] = ${dp[i]}`,
+        message: `以该区间结尾的最大相容集合大小锁定为 ${dp[i]}`,
         variables: { i, 'dp[i]': dp[i] },
         stateArrays: buildDpStateArrays(i),
         activeIndices: [i],
         activeSlot: i,
-        metrics: { 'dp-val': String(dp[i]) },
+        metrics: { 'dp-final': `dp[${i}]=${dp[i]}` },
       });
     }
 
@@ -704,11 +759,11 @@ export class IntervalSchedulingStepCompiler {
       stepIndex: steps.length,
       stage: 3,
       codeLine: anchorMap['done'] ?? 8,
-      decision: `🎉 动态规划推演完成！最大相容区间数为 ${maxCompatible}，计算得出最终答案为 ${finalResult}`,
+      decision: `🎉 动态规划推演完成！最大相容${itemLabel}数为 ${maxCompatible}，计算得出最终目标答案为 ${finalResult} ${unitLabel}`,
       message: `区间 DP 表验证了贪心算法的全局最优解无偏差`,
-      variables: { maxCompatible, result: finalResult },
+      variables: { maxCompatible, return: finalResult },
       stateArrays: buildDpStateArrays(),
-      metrics: { 'status': '🏁 DP 完成', 'finalResult': String(finalResult) },
+      metrics: { 'status': '🏁 DP 完成', 'maxCompatible': String(maxCompatible), 'return': String(finalResult) },
     });
 
     return steps;
@@ -1121,24 +1176,32 @@ export class IntervalSchedulingStepCompiler {
     const anchorMap = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
 
     const chars = s.split('');
-    const dp = new Array(n + 1).fill(-1);
-    dp[0] = 0;
+    // 预处理各字符最后出现位置
+    const last: Record<string, number> = {};
+    for (let i = 0; i < n; i++) {
+      last[s[i]] = i;
+    }
 
-    const buildDpStateArrays = (activeIdx?: number): StateArrayItem[] => [
+    // dp[i]: 前缀 s[0..i] 所包含的封闭片段数量 (未闭合时记为当前已切出段数)
+    const dp = new Array(n).fill(0);
+
+    const buildDpStateArrays = (activeIdx?: number, highlightIndices?: number[]): StateArrayItem[] => [
       {
         id: 'chars',
         name: '字符序列 (s)',
         indices: chars.map((_, idx) => idx),
         values: chars,
-        activeIdx: activeIdx !== undefined ? activeIdx - 1 : undefined,
+        activeIdx,
+        highlightIndices,
         color: 'indigo',
       },
       {
         id: 'dp',
-        name: '划分 DP 数组 (dp[i] = 前缀有效最大切分段数)',
+        name: '片段 DP 数组 (dp[i] = 前缀 s[0..i] 累计封闭片段数)',
         indices: dp.map((_, idx) => idx),
-        values: dp.map((v) => (v === -1 ? '—' : String(v))),
+        values: dp.map((v) => String(v)),
         activeIdx,
+        highlightIndices,
         color: 'purple',
       },
     ];
@@ -1147,47 +1210,73 @@ export class IntervalSchedulingStepCompiler {
       stepIndex: 0,
       stage: 3,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `动态规划初始化：构建大小为 ${n + 1} 的 dp 数组，基准条件 dp[0] = 0`,
-      message: `定义 dp[i] 为前缀 s[0..i-1] 能够划分为互不干扰片段的最大数量`,
-      variables: { n, 'dp[0]': 0 },
+      decision: `动态规划建表：定义 dp[i] 为前缀 s[0..i] 能够划分出的合法封闭片段累计总数，预处理所有字符最终位置`,
+      message: `字符串按字符扩展转化为动态维护右边界 maxReach 的递推填表模型`,
+      variables: { n, uniqueChars: Object.keys(last).length },
       stateArrays: buildDpStateArrays(0),
-      metrics: { 'dp-val': '0' },
+      activeSlot: 0,
+      metrics: { 'dp-focus': 'dp[0]', 'cur-segment': '待扫描' },
     });
 
-    const keyPoints = [
-      { i: 9, prev: 0, sub: s.substring(0, 9), val: 1 },
-      { i: 16, prev: 9, sub: s.substring(9, 16), val: 2 },
-      { i: Math.min(24, n), prev: 16, sub: s.substring(16, Math.min(24, n)), val: 3 },
-    ];
+    let start = 0;
+    let maxReach = 0;
+    let completedSegments = 0;
 
-    for (const kp of keyPoints) {
-      if (kp.i <= n) {
-        dp[kp.i] = kp.val;
+    for (let i = 0; i < n; i++) {
+      const char = s[i];
+      const lastPos = last[char];
+      const oldReach = maxReach;
+      maxReach = Math.max(maxReach, lastPos);
+
+      if (i < maxReach) {
+        // 片段尚未闭合，继承已有封闭数
+        dp[i] = completedSegments;
+
         steps.push({
           stepIndex: steps.length,
           stage: 3,
-          codeLine: anchorMap['transfer'] ?? 5,
-          decision: `状态转移：检测子串 s[${kp.prev}..${kp.i - 1}]="${kp.sub}" 字符完全封闭，转移 dp[${kp.i}] = max(dp[${kp.i}], dp[${kp.prev}] + 1) = ${kp.val}`,
-          message: `前缀 [0..${kp.prev - 1}] 拼接封闭片段 [${kp.prev}..${kp.i - 1}]，形成 ${kp.val} 个合法切片`,
-          variables: { i: kp.i, prev: kp.prev, 'dp[i]': kp.val },
-          stateArrays: buildDpStateArrays(kp.i),
-          activeIndices: [kp.i],
-          activeSlot: kp.i,
-          metrics: { 'dp-val': String(kp.val) },
+          codeLine: anchorMap['transfer'] ?? anchorMap['loop'] ?? 3,
+          decision: `🔍 扫描字符 s[${i}]='${char}' (该字符最远至 [${lastPos}])，扩展当前片段右界至 max(${oldReach}, ${lastPos}) = ${maxReach}。由于 i < maxReach，片段未闭合，dp[${i}] = ${dp[i]}`,
+          message: `内部字符尚未全部闭合，片段继续向右延展`,
+          variables: { i, char, lastPos, maxReach, start, 'dp[i]': dp[i] },
+          stateArrays: buildDpStateArrays(i, [start, maxReach]),
+          activeIndices: [i],
+          activeSlot: i,
+          metrics: { 'cur-char': `'${char}'`, 'max-reach': `[${maxReach}]`, 'dp-val': String(dp[i]) },
         });
+      } else {
+        // i === maxReach，达成封闭端点
+        completedSegments += 1;
+        dp[i] = completedSegments;
+        const segmentStr = s.substring(start, i + 1);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          codeLine: anchorMap['cut'] ?? anchorMap['check'] ?? 6,
+          decision: `✂️ 触碰封闭断点 i=${i}！片段 s[${start}..${i}]="${segmentStr}" 内部所有字符均在右侧闭合！成功切出第 ${completedSegments} 个片段，更新 dp[${i}] = ${dp[i]}`,
+          message: `状态转移确认：前缀 s[0..${i}] 划分完成，转移增量更新 dp[${i}] = ${dp[i]}`,
+          variables: { i, char, segmentLen: i - start + 1, start, maxReach, 'dp[i]': dp[i] },
+          stateArrays: buildDpStateArrays(i, [start, i]),
+          activeIndices: [i],
+          activeSlot: i,
+          metrics: { 'cur-char': `'${char}'`, 'segment': `"${segmentStr}"`, 'dp-val': String(dp[i]) },
+        });
+
+        start = i + 1;
       }
     }
 
-    const finalResult = dp[n] !== -1 ? dp[n] : keyPoints[keyPoints.length - 1].val;
+    const finalResult = completedSegments;
 
     steps.push({
       stepIndex: steps.length,
       stage: 3,
       codeLine: anchorMap['done'] ?? 8,
-      decision: `🎉 划分 DP 表推演完成！前缀 s[0..${n - 1}] 的最大有效片段切分数为 ${finalResult}`,
-      message: `动态规划自底向上转移验证了贪心边界切分的最大段数全局最优解`,
+      decision: `🎉 划分 DP 表推演完成！前缀 s[0..${n - 1}] 的最终最大有效片段切分数为 ${finalResult}`,
+      message: `动态规划自底向上递推验证了贪心边界切分的最大段数全局最优解`,
       variables: { return: finalResult, totalLength: n },
-      stateArrays: buildDpStateArrays(n),
+      stateArrays: buildDpStateArrays(),
       metrics: { 'status': '🏁 DP 完成', 'finalResult': String(finalResult) },
     });
 

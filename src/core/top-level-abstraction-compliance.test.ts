@@ -16,6 +16,8 @@ import { algorithmRegistry } from './algorithm-registry';
 import { AlgorithmModelRepository } from './model-repository';
 import { AlgorithmStrategyRegistry } from './strategies/index';
 import { UniversalStageVisualizer } from '../algorithms/categories/dynamic-programming/unique-paths-renderer';
+import { ProblemDimensionResolver } from './resolvers/problem-dimension-resolver';
+import { VisualizerParamSynchronizer } from './controllers/visualizer-param-synchronizer';
 // 导入收获器以触发全量 611 个 renderer 的 eager 同步注册
 import './algorithm-catalog-indexer';
 
@@ -295,4 +297,176 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       ).toEqual([]);
     });
   });
+
+  // ==========================================================================
+  // 门禁 4: 维度解析与入参规模对齐硬检查 (Dimension Fidelity Gate)
+  // 杜绝因解析器未适配入参键名导致回退默认 n=6、产生视图脱节！
+  // ==========================================================================
+  describe('门禁 4: 维度解析与入参规模对齐硬检查 (Dimension Fidelity Gate)', () => {
+    it('已锁定算法的维度解析器输出必须与默认参数实际规模 100% 严密吻合', () => {
+      const dimensionMismatches: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+
+        const params = model.defaultParams;
+        if (!params) continue;
+
+        const checkParam = (paramName: string) => {
+          if (params[paramName] !== undefined) {
+            let expectedLen = 0;
+            try {
+              const parsed = typeof params[paramName] === 'string'
+                ? JSON.parse(params[paramName])
+                : params[paramName];
+              expectedLen = Array.isArray(parsed) ? parsed.length : 0;
+            } catch {
+              expectedLen = String(params[paramName]).split(/[\s,]+/).length;
+            }
+            if (expectedLen > 0) {
+              if (resolved.category === 'knapsack') {
+                if (resolved.m !== expectedLen) {
+                  dimensionMismatches.push(
+                    `${id} (背包 ${paramName} 物品规模为 ${expectedLen}，但 ProblemDimensionResolver 解析出 m=${resolved.m})`
+                  );
+                }
+              } else {
+                if (resolved.n !== expectedLen) {
+                  dimensionMismatches.push(
+                    `${id} (${paramName} 数组规模为 ${expectedLen}，但 ProblemDimensionResolver 解析出 n=${resolved.n})`
+                  );
+                }
+              }
+            }
+          }
+        };
+
+        checkParam('ratings');
+        checkParam('points');
+        checkParam('intervals');
+        checkParam('nums');
+      }
+
+      expect(
+        dimensionMismatches,
+        `❌ [DIMENSION_FIDELITY_FAIL] 以下已锁定算法的维度解析与默认参数规模脱节: ${dimensionMismatches.join('; ')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 门禁 5: 默认阶段声明与路由对齐硬检查 (Default Stage Alignment Gate)
+  // 杜绝 YAML 中声明了 defaultStage 却被硬编码或全局偏好篡改！
+  // ==========================================================================
+  describe('门禁 5: 默认阶段声明与路由对齐硬检查 (Default Stage Alignment Gate)', () => {
+    it('若 YAML 声明了 defaultStage，初始路由阶段必须 100% 与之完全一致', () => {
+      const stageMismatches: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        const model = AlgorithmModelRepository.getModel(id);
+        if (model.defaultStage) {
+          const resolved = VisualizerParamSynchronizer.resolveInitialState(model);
+          if (resolved.stage !== model.defaultStage) {
+            stageMismatches.push(
+              `${id} (声明 defaultStage='${model.defaultStage}'，但实际路由输出 stage='${resolved.stage}')`
+            );
+          }
+        }
+      }
+
+      expect(
+        stageMismatches,
+        `❌ [DEFAULT_STAGE_ALIGNMENT_FAIL] 以下算法的初始路由与 defaultStage 不符: ${stageMismatches.join('; ')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 门禁 6: 执行轨迹步进密度与全槽位覆盖硬检查 (Step Density & Slot Full Coverage Gate)
+  // 杜绝偷懒截断（如 Math.min(..., 6)）、杜绝伪步骤，确保所有槽位都有被访问与推演！
+  // ==========================================================================
+  describe('门禁 6: 执行轨迹步进密度与全槽位覆盖硬检查 (Step Density & Slot Full Coverage Gate)', () => {
+    it('已锁定的数组/序列算法在各阶段必须满足最小步进密度，且槽位覆盖率必须达到 100%', () => {
+      const densityViolations: string[] = [];
+      const coverageViolations: string[] = [];
+
+      // 重点审查包含物理槽位的一维数组算法
+      const arrayAlgorithmsToCheck = [
+        'candy',
+        'can-jump',
+        'jump-game-ii',
+        'min-arrows',
+        'non-overlapping',
+        'merge-intervals',
+        'partition-labels',
+      ].filter((id) => LOCKED_TOP_LEVEL_ALGORITHMS.includes(id));
+
+      for (const id of arrayAlgorithmsToCheck) {
+        const model = AlgorithmModelRepository.getModel(id);
+        const strategy = AlgorithmStrategyRegistry.get(id);
+        if (!strategy) continue;
+
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+        const n = resolved.n;
+
+        // 检查 Stage 1 与 Stage 3
+        const stagesToCheck = [1, 3];
+        for (const stageNum of stagesToCheck) {
+          const steps = strategy.generateSteps(model, { stage: stageNum, direction: 'forward' });
+
+          // 1. 步进密度检查：规模为 n 时，步数不能少于 n（杜绝粗暴跳步或空推演）
+          if (n >= 4 && steps.length < n) {
+            densityViolations.push(
+              `${id} Stage ${stageNum}: 规模 n=${n}，但仅生成了 ${steps.length} 步 (密度不足，疑似存在循环截断！)`
+            );
+          }
+
+          // 2. 槽位覆盖率检查：收集所有步骤中触及过的 slot 下标
+          const touchedSlots = new Set<number>();
+          for (const s of steps) {
+            if (s.activeSlot !== undefined && s.activeSlot >= 0 && s.activeSlot < n) {
+              touchedSlots.add(s.activeSlot);
+            }
+            if (s.actorState?.currentSlot !== undefined && s.actorState.currentSlot >= 0 && s.actorState.currentSlot < n) {
+              touchedSlots.add(s.actorState.currentSlot);
+            }
+            if (Array.isArray(s.activeIndices)) {
+              for (const idx of s.activeIndices) {
+                if (typeof idx === 'number' && idx >= 0 && idx < n) {
+                  touchedSlots.add(idx);
+                }
+              }
+            }
+          }
+
+          // 如果该阶段是全遍历（如 candy stage 1 / stage 3），要求 100% 覆盖 0..n-1
+          if (id === 'candy') {
+            const missingSlots: number[] = [];
+            for (let slot = 0; slot < n; slot++) {
+              if (!touchedSlots.has(slot)) {
+                missingSlots.push(slot);
+              }
+            }
+            if (missingSlots.length > 0) {
+              coverageViolations.push(
+                `${id} Stage ${stageNum}: 以下槽位从未被任何微步访问或处理: [${missingSlots.join(', ')}] (存在严重遗漏或截断！)`
+              );
+            }
+          }
+        }
+      }
+
+      expect(
+        densityViolations,
+        `❌ [STEP_DENSITY_FAIL] 检测到以下算法阶段步进密度严重不足: ${densityViolations.join('; ')}`
+      ).toEqual([]);
+
+      expect(
+        coverageViolations,
+        `❌ [SLOT_COVERAGE_FAIL] 检测到以下算法阶段存在被跳过/遗漏的槽位: ${coverageViolations.join('; ')}`
+      ).toEqual([]);
+    });
+  });
 });
+
