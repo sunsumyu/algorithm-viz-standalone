@@ -136,6 +136,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 1,
+      line: anchorMap['sort_g'] ?? anchorMap['sort'] ?? 1,
       codeLine: anchorMap['sort_g'] ?? anchorMap['sort'] ?? 1,
       decision: `初始化：将${seqALabel}与${seqBLabel}分别进行升序排序，准备按${isReverse ? '大项优先逆向' : '小项优先正向'}双指针贪心推演`,
       message: `单调性排序使得贪心选择具有最优子结构：局部满足最小开销`,
@@ -154,6 +155,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['init'] ?? 3,
         codeLine: anchorMap['init'] ?? 3,
         decision: `双指针初始化：child=0 指向最小胃口${itemALabel} g[0]=${g[0]}，cookie=0 指向最小尺寸${itemBLabel} s[0]=${s[0]}`,
         message: `从头开始线性推进匹配`,
@@ -173,6 +175,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['loop'] ?? 4,
           codeLine: anchorMap['loop'] ?? 4,
           decision: `🔄 循环判定：child=${child} < ${m} 且 cookie=${cookie} < ${n}，双序列均未越界，准备考察当前匹配对`,
           message: `循环条件满足，继续单调双指针流水线`,
@@ -188,6 +191,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['check'] ?? 5,
           codeLine: anchorMap['check'] ?? 5,
           decision: `🔍 贪心比对：考察${itemALabel} g[${child}]=${curG} 与 ${itemBLabel} s[${cookie}]=${curS}`,
           message: curS >= curG
@@ -210,6 +214,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 1,
+            line: anchorMap['matched'] ?? 6,
             codeLine: anchorMap['matched'] ?? 6,
             decision: `🎉 匹配成功！将 ${itemBLabel} s[${cookie}]=${curS} 分配给 ${itemALabel} g[${child - 1}]=${curG}，累计满足数增至 ${child}`,
             message: `贪心准则：用满足胃口的最小尺寸饼干，保留更大饼干给胃口更大的孩子`,
@@ -226,6 +231,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 1,
+            line: anchorMap['cookie_advance'] ?? 7,
             codeLine: anchorMap['cookie_advance'] ?? 7,
             decision: `⏩ 消耗饼干：当前饼干已成功分发，饼干指针推进至 cookie=${cookie}`,
             message: `每块饼干只能使用一次，单向消耗推进`,
@@ -242,6 +248,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 1,
+            line: anchorMap['cookie_advance'] ?? 7,
             codeLine: anchorMap['cookie_advance'] ?? 7,
             decision: `⏩ 尺寸不足舍弃：${itemBLabel} s[${cookie - 1}]=${curS} 无法满足最小胃口${itemALabel} g[${child}]=${curG}，直接舍弃，饼干指针推进至 cookie=${cookie}`,
             message: `单调性性质保证了跳过的正确性，不丢失任何可能解`,
@@ -259,6 +266,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['loop'] ?? 4,
         codeLine: anchorMap['loop'] ?? 4,
         decision: `🛑 循环终结：child=${child} >= ${m} 或 cookie=${cookie} >= ${n}，单调双指针扫描结束`,
         message: `双指针扫描完毕，准备返回最终满足的孩子总数`,
@@ -272,6 +280,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['done'] ?? 8,
         codeLine: anchorMap['done'] ?? 8,
         decision: `🏁 正向贪心推演完成！遍历结束，最多可满足 ${child} 个${itemALabel}`,
         message: `贪心策略达成全局最优解，时间复杂度 O(N log N + M log M)，空间复杂度 O(1)`,
@@ -291,6 +300,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['init'] ?? 3,
         codeLine: anchorMap['init'] ?? 3,
         decision: `逆向指针初始化：从后往前扫描，cookie=${n - 1} (最大饼干 s[${n - 1}]=${s[n - 1]})`,
         message: `逆向贪心准则：优先用当前最大尺寸饼干尝试满足最大胃口的孩子`,
@@ -310,6 +320,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['loop'] ?? 4,
           codeLine: anchorMap['loop'] ?? 4,
           decision: `🔄 逆向循环推进：考察孩子指针 child=${child} (胃口 g[${child}]=${curG})，饼干指针 cookie=${cookie}`,
           message: `从最大胃口孩子开始逆序探索`,
@@ -325,6 +336,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['check'] ?? 5,
           codeLine: anchorMap['check'] ?? 5,
           decision: `🔍 逆向贪心比对：考查最大可用饼干 s[${cookie}]=${curS} 是否足以满足大胃口孩子 g[${child}]=${curG}`,
           message: cookie >= 0 && curS >= curG
@@ -347,6 +359,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 1,
+            line: anchorMap['matched'] ?? 6,
             codeLine: anchorMap['matched'] ?? 6,
             decision: `🎉 逆向匹配成功！大饼干 s[${cookie}]=${curS} 满足了大胃口孩子 g[${child}]=${curG}，累计满足数增至 ${count}`,
             message: `逆向贪心有效消化了最大尺寸资源`,
@@ -363,6 +376,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 1,
+            line: anchorMap['cookie_advance'] ?? 7,
             codeLine: anchorMap['cookie_advance'] ?? 7,
             decision: `⏪ 消耗大饼干：该饼干已分配，逆向饼干指针前移至 cookie=${cookie}`,
             message: `消耗当前最大可用饼干，准备考察次大饼干`,
@@ -379,6 +393,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['done'] ?? 8,
         codeLine: anchorMap['done'] ?? 8,
         decision: `🏁 逆向贪心推演完成！获得与正向推演完全一致的全局最优解：最多满足 ${count} 个${itemALabel}`,
         message: `双向对称性证明了贪心选择性质的绝对严谨与无偏差`,
@@ -451,6 +466,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 2,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `递归搜索初始化：构建 (${m + 1} × ${n + 1}) 备忘录网格，自顶向下启动 dfs(0, 0) 探索最优分配决策树`,
       message: `dfs(i, j) 表示使用饼干 s[j..${n - 1}] 满足孩子 g[i..${m - 1}] 的最大数量，备忘录剪枝消除重叠计算`,
@@ -482,6 +498,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 2,
+        line: anchorMap['entry'] ?? 1,
         codeLine: anchorMap['entry'] ?? 1,
         decision: `🔍 深入调用 dfs(i=${i}, j=${j})：考查从第 ${i} 个孩子与第 ${j} 块饼干开始的分配子问题`,
         message: `自顶向下展开递归子树，当前探测坐标 (${i}, ${j})`,
@@ -505,6 +522,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
+          line: anchorMap['entry'] ?? 1,
           codeLine: anchorMap['entry'] ?? 1,
           decision: `🛑 触底边界返回：${i >= m ? `所有 ${m} 个孩子已考察完毕` : `所有 ${n} 块饼干已消耗殆尽`}，无法继续满足更多孩子，返回 0`,
           message: `边界基准条件成立，递归触底回溯`,
@@ -530,6 +548,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
+          line: anchorMap['memo_hit'] ?? 2,
           codeLine: anchorMap['memo_hit'] ?? 2,
           decision: `⚡ 记忆化剪枝命中！子状态 (i=${i}, j=${j}) 已经在备忘录 memo[${i}][${j}]=${cachedVal} 中缓存，直接剪枝返回，避免重复展开`,
           message: `备忘录成功剪除指数级重复搜索分支`,
@@ -556,6 +575,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
+          line: anchorMap['choose'] ?? 3,
           codeLine: anchorMap['choose'] ?? 3,
           decision: `✅ 贪心相容：饼干 s[${j}]=${curS} >= 孩子 g[${i}]=${curG}，可分发满足！启动分支探查：1 + dfs(${i + 1}, ${j + 1})`,
           message: `当前决策产生 1 个满足计数，并消耗这块饼干向后下探`,
@@ -577,6 +597,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
+          line: anchorMap['skip'] ?? 4,
           codeLine: anchorMap['skip'] ?? 4,
           decision: `🔍 分支探查：亦可跳过饼干 s[${j}]，尝试为孩子 g[${i}] 寻找后续饼干：dfs(${i}, ${j + 1})`,
           message: `全面探索所有可能分支以验证最优解`,
@@ -598,6 +619,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
+          line: anchorMap['skip'] ?? 4,
           codeLine: anchorMap['skip'] ?? 4,
           decision: `⏩ 尺寸不足：饼干 s[${j}]=${curS} < 孩子 g[${i}]=${curG}，无法满足！只能跳过当前饼干，下探子状态 dfs(${i}, ${j + 1})`,
           message: `单调性决定此饼干无法满足当前及后续更大胃口的孩子，单向跳过`,
@@ -623,6 +645,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 2,
+        line: anchorMap['done'] ?? 5,
         codeLine: anchorMap['done'] ?? 5,
         decision: `💾 回溯落盘：dfs(${i}, ${j}) 分支计算完成，取得最优解 ${best}，写入备忘录 memo[${i}][${j}]=${best}`,
         message: `子问题最优解已固化至二维备忘录矩阵中`,
@@ -648,6 +671,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 2,
+      line: anchorMap['done'] ?? 5,
       codeLine: anchorMap['done'] ?? 5,
       decision: `🎉 递归记忆化搜索全部完成！全局最优可满足孩子数为 ${finalOptimal}，备忘录矩阵与依赖树完全收敛`,
       message: `搜索树证明了贪心选择性质与动态规划最优子结构的一致性`,
@@ -716,6 +740,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 3,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `动态规划建表：构建 (${m + 1} × ${n + 1}) 的双序列 DP 矩阵。基准条件：dp[0][j]=0（无孩子时满足数为0），dp[i][0]=0（无饼干时满足数为0）`,
       message: `状态定义：dp[i][j] 表示使用前 j 块饼干满足前 i 个孩子的最大数量`,
@@ -735,6 +760,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 3,
+        line: anchorMap['outer_loop'] ?? 2,
         codeLine: anchorMap['outer_loop'] ?? 2,
         decision: `外层推进：考察第 ${i} 行（对应孩子 g[${i - 1}]=${curG}），准备遍历饼干列 j=1..${n} 进行状态转移`,
         message: `自底向上计算第 ${i} 行的状态转移矩阵`,
@@ -769,6 +795,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 3,
+          line: anchorMap['check'] ?? 3,
           codeLine: anchorMap['check'] ?? 3,
           decision: `🔍 聚焦单元格 dp[${i}][${j}]：考察孩子 g[${i - 1}]=${curG} 与 饼干 s[${j - 1}]=${curS}。比对状态依赖源：上方 dp[${i - 1}][${j}]=${topVal}，左方 dp[${i}][${j - 1}]=${leftVal}${canSatisfy ? `，左上匹配 dp[${i - 1}][${j - 1}]+1=${diagVal}` : '（当前饼干尺寸不足，无左上转移）'}`,
           message: canSatisfy
@@ -804,6 +831,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 3,
+          line: anchorMap['transfer'] ?? 4,
           codeLine: anchorMap['transfer'] ?? 4,
           decision: `✅ 转移确认：综合三方候选，取最大值 dp[${i}][${j}] = max(${topVal}, ${leftVal}${canSatisfy ? `, ${diagVal}` : ''}) = ${finalCellVal}，单元格落盘`,
           message: `单元格 dp[${i}][${j}] 计算完成并固化写入 DP 矩阵`,
@@ -830,6 +858,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 3,
+      line: anchorMap['done'] ?? 8,
       codeLine: anchorMap['done'] ?? 8,
       decision: `🎉 双序列 DP 状态填表完成！最终 dp[${m}][${n}] = ${finalResult}，全局最多可满足 ${finalResult} 个${itemALabel}`,
       message: `动态规划矩阵自底向上填表验证了单调贪心策略的全局最优性`,
@@ -914,6 +943,7 @@ export class TwoSequenceGreedyStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 4,
+      line: anchorMap['sort_g'] ?? 1,
       codeLine: anchorMap['sort_g'] ?? 1,
       decision: `空间极致压缩：舍弃 O(m*n) 的 DP 矩阵与备忘录，仅依靠升序序列与双指针流水线推进`,
       message: `辅助空间复杂度从 O(m*n) 直降为 O(1)，排序后单趟线性扫描直接产出最优解`,
@@ -930,6 +960,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 4,
+        line: anchorMap['init'] ?? 3,
         codeLine: anchorMap['init'] ?? 3,
         decision: `指针就绪：初始化 child=0 指向待满足的最小胃口孩子 g[0]=${g[0]}`,
         message: `单趟 for 循环推进 cookie 指针遍历整个饼干序列`,
@@ -949,6 +980,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 4,
+          line: anchorMap['loop'] ?? 4,
           codeLine: anchorMap['loop'] ?? 4,
           decision: `🔄 流水线扫描推进：cookie=${cookie} < ${n} 且 child=${child} < ${m}，推进饼干至 s[${cookie}]=${curS}`,
           message: `for 循环头部推进单趟扫描`,
@@ -964,6 +996,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 4,
+          line: anchorMap['check'] ?? 5,
           codeLine: anchorMap['check'] ?? 5,
           decision: `🔍 贪心比对：考察当前饼干 s[${cookie}]=${curS} 是否相容孩子 g[${child}]=${curG}`,
           message: curS >= curG
@@ -986,6 +1019,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 4,
+            line: anchorMap['matched'] ?? 6,
             codeLine: anchorMap['matched'] ?? 6,
             decision: `🎉 即时消化分配：将饼干 s[${cookie}]=${curS} 分配给孩子 g[${child - 1}]=${curG}，child 指针推进至 ${child}`,
             message: `满足计数原地累加，无需回溯任何中间状态表`,
@@ -1002,6 +1036,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 4,
+        line: anchorMap['done'] ?? 7,
         codeLine: anchorMap['done'] ?? 7,
         decision: `🏁 极致流转收敛：单趟流水线执行完毕，最终满足 ${child} 个${itemALabel}，空间 O(1)，时间 O(n log n)`,
         message: `单趟双指针直接达成全局最优，空间压缩圆满达成`,
@@ -1020,6 +1055,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 4,
+        line: anchorMap['init'] ?? 3,
         codeLine: anchorMap['init'] ?? 3,
         decision: `逆向压缩就绪：大饼干优先，cookie=${n - 1}，从最大胃口孩子开始逆序推进`,
         message: `逆向单趟扫描同样仅消耗 O(1) 辅助空间`,
@@ -1037,6 +1073,7 @@ export class TwoSequenceGreedyStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 4,
+          line: anchorMap['loop'] ?? 4,
           codeLine: anchorMap['loop'] ?? 4,
           decision: `🔍 逆向考查：大胃口孩子 g[${child}]=${curG}，当前最大饼干 s[${cookie}]=${curS}`,
           message: curS >= curG
@@ -1058,6 +1095,7 @@ export class TwoSequenceGreedyStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 4,
+            line: anchorMap['matched'] ?? 5,
             codeLine: anchorMap['matched'] ?? 5,
             decision: `🎉 逆向即时消化：s[${cookie + 1}]=${curS} 成功分配给 g[${child}]=${curG}，累计满足数增至 ${count}`,
             message: `高效消化最大尺寸资源`,
@@ -1073,6 +1111,7 @@ export class TwoSequenceGreedyStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 4,
+        line: anchorMap['done'] ?? 7,
         codeLine: anchorMap['done'] ?? 7,
         decision: `🏁 逆向流转收敛：单趟逆向扫描完毕，最多满足 ${count} 个${itemALabel}`,
         message: `双向对称性完全一致收敛`,

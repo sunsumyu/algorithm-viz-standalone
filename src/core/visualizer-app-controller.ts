@@ -315,7 +315,8 @@ export class VisualizerAppController {
 
     // 3. 代码逐行高亮与行内局部表达式聚焦（统一依据 flowPhase 或回溯语义判定）
     const isReturn = step.flowPhase === 'backtrack' || step.type === 'branch-return' || step.type === 'combine';
-    this.updateCodeHighlight(step.line, step.highlightText, isReturn, step);
+    const targetLine = step.line !== undefined ? step.line : (step as any).codeLine;
+    this.updateCodeHighlight(targetLine, step.highlightText, isReturn, step);
 
     // 4. URL Hash 状态持久化
     this.syncStateToHash(index);
@@ -691,8 +692,10 @@ export class VisualizerAppController {
       onRenderAnalysis: () => this.renderAnalysisView(),
       onHighlightCode: () => {
         const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
-        if (this.steps[curStep]) {
-          this.updateCodeHighlight(this.steps[curStep].line, this.steps[curStep].highlightText);
+        const currentStepObj = this.steps[curStep];
+        if (currentStepObj) {
+          const targetLine = currentStepObj.line !== undefined ? currentStepObj.line : (currentStepObj as any).codeLine;
+          this.updateCodeHighlight(targetLine, currentStepObj.highlightText);
         }
       }
     });

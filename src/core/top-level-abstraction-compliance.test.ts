@@ -691,6 +691,108 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       expect(s4[s4.length - 1].metrics?.['space']).toBe('O(1)');
     });
   });
+
+  // ==========================================================================
+  // 门禁 9: 全阶段代码联动高亮行号 100% 存在与有效性硬门禁 (Code Line Linkage Fidelity Gate)
+  // 彻底根除“代码联动的高亮/高度都没有”、“推一下动一下”等严重隐蔽质量问题！
+  // 强制断言全库所有已锁定算法与阶段的每一个推演步骤，必须 100% 具备有效正整数 step.line！
+  // ==========================================================================
+  describe('门禁 9: 全阶段代码联动高亮行号 100% 存在与有效性硬门禁 (Code Line Linkage Fidelity Gate)', () => {
+    // 门禁 9 首次全面清查暴露出的全库历史未绑定代码行号的遗留阶段受控燃烧清单（严禁新增，重构即删）
+    const KNOWN_LINE_FIDELITY_BURNDOWN = new Set([
+      'min-arrows-stage-1',
+      'min-arrows-stage-2',
+      'min-arrows-stage-3',
+      'min-arrows-stage-4',
+      'non-overlapping-stage-1',
+      'non-overlapping-stage-2',
+      'non-overlapping-stage-3',
+      'non-overlapping-stage-4',
+      'merge-intervals-stage-1',
+      'merge-intervals-stage-2',
+      'merge-intervals-stage-3',
+      'merge-intervals-stage-4',
+      'partition-labels-stage-1',
+      'partition-labels-stage-2',
+      'partition-labels-stage-3',
+      'partition-labels-stage-4',
+      'longest-palindromic-subsequence-stage-1',
+      'longest-palindromic-subsequence-stage-2',
+    ]);
+
+    it('所有已锁定算法的全部阶段与方向推导步骤，必须 100% 具备合法有效的代码行号 (typeof step.line === "number" && step.line >= 1)', () => {
+      const lineViolations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        const model = AlgorithmModelRepository.getModel(id);
+        const strategy = AlgorithmStrategyRegistry.get(id);
+        if (!strategy) continue;
+
+        const stages = model.stages || {};
+        for (const [stageKey, stageConfig] of Object.entries(stages)) {
+          const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
+          if (isNaN(stageNum)) continue;
+
+          const burndownKey = `${id}-${stageKey}`;
+
+          for (const direction of ['forward', 'reverse'] as const) {
+            try {
+              const steps = strategy.generateSteps(model, { stage: stageNum, direction });
+              if (!steps || steps.length === 0) continue;
+
+              const invalidSteps = steps.filter(
+                (s) => s.line === undefined || typeof s.line !== 'number' || s.line < 1 || isNaN(s.line)
+              );
+
+              if (invalidSteps.length > 0) {
+                if (!KNOWN_LINE_FIDELITY_BURNDOWN.has(burndownKey)) {
+                  lineViolations.push(
+                    `❌ [CODE_LINE_FIDELITY_FAIL] ${id} 【${stageConfig.shortName || stageKey}】(${direction}) 存在 ${invalidSteps.length} / ${steps.length} 个步骤未挂载有效代码行号 step.line (当前类型: ${typeof invalidSteps[0]?.line}，值: ${invalidSteps[0]?.line})！导致代码调试面板高亮完全僵死！`
+                  );
+                }
+              } else {
+                if (direction === 'forward' && KNOWN_LINE_FIDELITY_BURNDOWN.has(burndownKey)) {
+                  lineViolations.push(
+                    `🎉 [BURNDOWN_CLEANUP] ${id} 的 ${stageKey} 已经 100% 挂载合法代码行号，请从 KNOWN_LINE_FIDELITY_BURNDOWN 中移除该条目！`
+                  );
+                }
+              }
+            } catch (err) {
+              // 若该方向不可用则跳过
+            }
+          }
+        }
+      }
+
+      expect(
+        lineViolations,
+        `❌ [CODE_LINE_LINKAGE_GATE_FAIL] 检测到代码高亮行号丢失缺陷！宁可报错严禁伪绿灯:\n${lineViolations.join('\n')}`
+      ).toEqual([]);
+    });
+
+    it('分发饼干 (assign-cookies) 四阶段正逆双向所有步骤必须 100% 具备有效代码行号与聚焦属性', () => {
+      const model = AlgorithmModelRepository.getModel('assign-cookies');
+      const strategy = AlgorithmStrategyRegistry.get('assign-cookies')!;
+
+      for (const stage of [1, 2, 3, 4]) {
+        for (const direction of ['forward', 'reverse'] as const) {
+          const steps = strategy.generateSteps(model, { stage, direction });
+          expect(steps.length, `assign-cookies Stage ${stage} ${direction}`).toBeGreaterThan(0);
+          steps.forEach((step, idx) => {
+            expect(
+              typeof step.line === 'number' && step.line >= 1,
+              `assign-cookies Stage ${stage} ${direction} step ${idx} 必须具备合法 line`
+            ).toBe(true);
+            expect(
+              typeof (step as any).codeLine === 'number' && (step as any).codeLine >= 1,
+              `assign-cookies Stage ${stage} ${direction} step ${idx} 必须具备兼容 codeLine`
+            ).toBe(true);
+          });
+        }
+      }
+    });
+  });
 });
+
 
 

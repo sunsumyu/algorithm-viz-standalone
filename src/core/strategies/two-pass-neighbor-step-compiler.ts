@@ -127,6 +127,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 1,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `主函数入口：输入 ${n} 个孩子的评分列表 [${ratings.join(', ')}]，准备按${isReverse ? '右向左先行' : '左向右先行'}双向两次贪心推演`,
       message: `数学规约：相邻双边约束拆解为单向独立求解，分别满足左邻与右邻，最终取并集 max 达成全局最优`,
@@ -144,6 +145,7 @@ export class TwoPassNeighborStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['done'] ?? 14,
         codeLine: anchorMap['done'] ?? 14,
         decision: `边界情况：仅 1 个孩子，最少需要 1 颗糖果`,
         message: '单一孩子基准收敛',
@@ -164,6 +166,7 @@ export class TwoPassNeighborStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['left_inc'] ?? anchorMap['left_loop'] ?? 4,
           codeLine: anchorMap['left_inc'] ?? anchorMap['left_loop'] ?? 4,
           decision: `📈 [左向右扫描] 孩子 [${i}] 评分 ${cur} > 左边 [${i - 1}] 评分 ${prev}，贪心满足左邻约束：L[${i}] = L[${i - 1}] + 1 = ${left[i]}`,
           message: `贪心性质：评分严格更高者糖果数必须至少比左边多 1 颗`,
@@ -183,6 +186,7 @@ export class TwoPassNeighborStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 1,
+          line: anchorMap['left_check'] ?? 3,
           codeLine: anchorMap['left_check'] ?? 3,
           decision: `⏩ [左向右扫描] 孩子 [${i}] 评分 ${cur} ≤ 左边 [${i - 1}] 评分 ${prev}，不触发递增，保持基准 L[${i}] = 1`,
           message: `评分不高于左邻时，仅需满足「至少 1 颗糖果」的底线要求`,
@@ -214,6 +218,7 @@ export class TwoPassNeighborStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 1,
+        line: anchorMap['fuse'] ?? anchorMap['right_loop'] ?? 10,
         codeLine: anchorMap['fuse'] ?? anchorMap['right_loop'] ?? 10,
         decision: `📉 [右向左扫描 & 融合] 孩子 [${i}] 评分 ${ratings[i]} ${isInc ? `> 右邻 [${i + 1}] 评分 ${ratings[i + 1]} (R[${i}]=${right[i]})` : `≤ 右邻 (R[${i}]=1)`}，双向融合 max(L[${i}]=${left[i]}, R[${i}]=${right[i]}) = ${finalCandies[i]} 颗糖果`,
         message: `双向交汇：只有同时取 max(L[i], R[i])，才能在同时满足左侧和右侧严格偏序的同时保证糖果总数最少`,
@@ -244,6 +249,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 1,
+      line: anchorMap['done'] ?? 14,
       codeLine: anchorMap['done'] ?? 14,
       decision: `🎉 双向贪心推演完成！最少需要准备 ${totalCandies} 颗糖果，分配方案为 [${finalCandies.join(', ')}]`,
       message: `双向两次贪心严谨达成全局最优，时间复杂度 O(N)，空间复杂度 O(N)`,
@@ -288,6 +294,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 2,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `记忆化搜索入口：将评分偏序关系视为有向无环图 (DAG)，自顶向下探索每个孩子到山谷的最长依赖链`,
       message: `孩子 i 若评分高于邻居 j，则建立依赖边 i -> j，糖果数即为 DAG 中从 i 出发的最长路径长度 + 1`,
@@ -315,6 +322,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 1,
       stage: 2,
+      line: anchorMap['dfs'] ?? 4,
       codeLine: anchorMap['dfs'] ?? 4,
       decision: `探查山峰节点 [${maxIdx}] (评分=${ratings[maxIdx]})：向两侧较低评分孩子发起深度递归探查`,
       message: `山峰节点汇聚两侧降序坡度，糖果数取决于两侧最长链的较大者`,
@@ -337,6 +345,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 2,
       stage: 2,
+      line: anchorMap['dfs'] ?? 4,
       codeLine: anchorMap['dfs'] ?? 4,
       decision: `记忆化判定：检测左邻居已求得最优分配并在 memo 缓存命中，直接剪枝返回，避免重复展开`,
       message: `记忆化技术将 DAG 搜索从指数级复杂度剪枝压缩到严格 O(N)`,
@@ -348,6 +357,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 2,
+      line: anchorMap['done'] ?? 6,
       codeLine: anchorMap['done'] ?? 6,
       decision: `🎉 记忆化搜索树推演完成！所有节点最长链求解完毕，结果与贪心完全一致`,
       message: `DAG 最长路径记忆化严格证明了贪心策略的最优子结构无后效性`,
@@ -400,6 +410,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 3,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `拓扑 DP 初始化：全员初始赋值 dp[i] = 1，将 ${n} 个孩子按评分从小到大建立拓扑排序序列: [${order.map(i => `[${i}]:${ratings[i]}`).join(', ')}]`,
       message: `拓扑序保证：当计算孩子 i 的糖果数时，评分低于它的所有相邻孩子必然已经完成最优求解`,
@@ -419,6 +430,7 @@ export class TwoPassNeighborStepCompiler {
       steps.push({
         stepIndex: steps.length,
         stage: 3,
+        line: anchorMap['loop'] ?? 5,
         codeLine: anchorMap['loop'] ?? 5,
         decision: `📌 拓扑出队 (#${stepIdx + 1}/${order.length})：选取当前全局评分最低孩子 [${idx}] (评分=${curRating})，探险家前往槽位 [${idx}]`,
         message: `自底向上推进：由局部波谷向相邻两侧波峰逐级松弛传播最优解`,
@@ -443,6 +455,7 @@ export class TwoPassNeighborStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 3,
+            line: anchorMap['transfer_left'] ?? 6,
             codeLine: anchorMap['transfer_left'] ?? 6,
             decision: `⬅️ 检查左邻：孩子 [${idx}] 评分 ${curRating} > 左邻 [${idx - 1}] 评分 ${leftRating}，松弛更新 dp[${idx}] = max(${oldVal}, dp[${idx - 1}]+1 = ${dp[idx - 1] + 1}) = ${dp[idx]}`,
             message: `满足左侧约束：当前孩子评分更高，糖果数必须至少比左邻多 1`,
@@ -466,6 +479,7 @@ export class TwoPassNeighborStepCompiler {
           steps.push({
             stepIndex: steps.length,
             stage: 3,
+            line: anchorMap['transfer_right'] ?? 7,
             codeLine: anchorMap['transfer_right'] ?? 7,
             decision: `➡️ 检查右邻：孩子 [${idx}] 评分 ${curRating} > 右邻 [${idx + 1}] 评分 ${rightRating}，松弛更新 dp[${idx}] = max(${oldVal}, dp[${idx + 1}]+1 = ${dp[idx + 1] + 1}) = ${dp[idx]}`,
             message: `满足右侧约束：当前孩子评分更高，糖果数必须至少比右邻多 1`,
@@ -484,6 +498,7 @@ export class TwoPassNeighborStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 3,
+          line: anchorMap['loop'] ?? 5,
           codeLine: anchorMap['loop'] ?? 5,
           decision: `⛰️ 局部山谷判定：孩子 [${idx}] 评分 ${curRating} 不高于任何未处理或已处理邻居，保持基准糖果数 dp[${idx}] = 1`,
           message: `基准性质：局部波谷仅需分配底线 1 颗糖果即可满足题意`,
@@ -503,6 +518,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 3,
+      line: anchorMap['done'] ?? 9,
       codeLine: anchorMap['done'] ?? 9,
       decision: `🎉 拓扑 DP 表推演完成！全部 ${n} 个孩子按拓扑序依次松弛结束，最少糖果数为 ${total} 颗，分配方案为 [${dp.join(', ')}]`,
       message: `拓扑状态转移矩阵严谨收敛于全局最优解，时间复杂度 O(N log N)，空间复杂度 O(N)`,
@@ -542,6 +558,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: 0,
       stage: 4,
+      line: anchorMap['entry'] ?? 1,
       codeLine: anchorMap['entry'] ?? 1,
       decision: `常数空间优化入口：单趟线性扫描，使用 inc (上坡长)、dec (下坡长) 与 pre 变量实时统计，实现 O(1) 辅助空间`,
       message: `单趟峰谷贪心原理：将序列视为连绵起伏的山峦，上坡累加自然数列 1..k，下坡倒序累加并在超过波峰时补偿峰顶`,
@@ -568,6 +585,7 @@ export class TwoPassNeighborStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 4,
+          line: anchorMap['up_calc'] ?? 7,
           codeLine: anchorMap['up_calc'] ?? 7,
           decision: `↗️ [上坡/平坡] 孩子 [${i}] 评分 ${cur} >= 前者 ${prev}：下坡计数归零，分配 ${pre} 颗糖，累计糖果达 ${ret} 颗`,
           message: `上坡时糖果逐级爬升，记录历史最高峰顶 inc = ${inc}`,
@@ -587,6 +605,7 @@ export class TwoPassNeighborStepCompiler {
         steps.push({
           stepIndex: steps.length,
           stage: 4,
+          line: anchorMap['down_check'] ?? 10,
           codeLine: anchorMap['down_check'] ?? 10,
           decision: `↘️ [下坡] 孩子 [${i}] 评分 ${cur} < 前者 ${prev}：进入下坡段 (dec=${dec})，当前增加 ${dec} 颗糖，累计达 ${ret} 颗`,
           message: `下坡时视作反向自然数增长，若下坡长度赶上历史波峰，则需要给历史波峰补发 1 颗`,
@@ -601,6 +620,7 @@ export class TwoPassNeighborStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 4,
+      line: anchorMap['done'] ?? 15,
       codeLine: anchorMap['done'] ?? 15,
       decision: `🎉 单趟常数空间推演完成！无需额外数组，纯标量计数收敛于最优解 ${ret} 颗糖果`,
       message: `单趟坡度分析达成极致空间性能：时间复杂度 O(N)，辅助空间严格 O(1)`,

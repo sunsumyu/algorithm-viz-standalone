@@ -131,5 +131,21 @@ describe('双序列单调贪心匹配族顶层抽象门禁测试 (Two-Sequence G
       expect(last.variables?.return).toBe(3);
       expect(last.metrics?.['space']).toBe('O(1)');
     });
+
+    it('所有阶段 (Stage 1-4) 的每一个步骤必须 100% 具备有效代码行号 (typeof step.line === "number" && step.line >= 1)，彻底杜绝代码联动高亮失效', () => {
+      for (const stage of [1, 2, 3, 4]) {
+        for (const direction of ['forward', 'reverse'] as const) {
+          const steps = strategy.generateSteps(model, { stage, direction });
+          expect(steps.length, `Stage ${stage} ${direction} 必须有步骤`).toBeGreaterThan(0);
+          
+          steps.forEach((step, idx) => {
+            expect(
+              typeof step.line === 'number' && step.line >= 1,
+              `Stage ${stage} ${direction} 第 ${idx} 步 [${step.decision || step.message}] 的 step.line 必须为有效正整数，当前值为: ${step.line}`
+            ).toBe(true);
+          });
+        }
+      }
+    });
   });
 });

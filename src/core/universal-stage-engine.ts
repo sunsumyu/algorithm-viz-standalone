@@ -223,6 +223,17 @@ export class UniversalStageEngine {
         };
         prevSlot = slot;
       }
+
+      // 🌟 3. 代码行号权威契约物理归一化 (Code Line Authority Invariant - 全维度全阶段通用)
+      // 彻底消除策略层 line / codeLine 字段混淆，确保 step.line 与 codeLine 双向对齐且 100% 可用
+      const resolvedLine = step.line !== undefined
+        ? step.line
+        : ((step as any).codeLine !== undefined ? (step as any).codeLine : undefined);
+
+      if (resolvedLine !== undefined) {
+        step.line = resolvedLine;
+        (step as any).codeLine = resolvedLine;
+      }
     }
 
     return steps;
