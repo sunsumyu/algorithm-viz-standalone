@@ -3,7 +3,8 @@
  * LeetCode 455：贪心双指针小饼干优先分配
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   ASSIGN_COOKIES_PROBLEM_HTML,
@@ -252,49 +253,20 @@ export function renderAssignCookiesCanvas(container: HTMLElement, step: AssignCo
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'assign-cookies',
   name: '分发饼干',
+  viewId: 'assign-cookies',
   category: 'greedy',
-  description: '贪心双指针小饼干优先分配，最大化满足孩子数量',
   icon: '🍪',
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '掌握贪心算法在排序+双指针场景下的局部最优到全局最优推导',
-  inputs: [
-    { id: 'g', label: '胃口 g', type: 'text', defaultValue: '1,2,3', placeholder: '1,2,3' },
-    { id: 's', label: '饼干 s', type: 'text', defaultValue: '1,1', placeholder: '1,1' },
-  ],
-  presets: [
-    { label: '示例 1 (1解)', values: { g: '1,2,3', s: '1,1' } },
-    { label: '示例 2 (2解)', values: { g: '1,2', s: '1,2,3' } },
-    { label: '综合测试 (3解)', values: { g: '3,5,6,8', s: '1,3,4,7,9' } },
-  ],
-  metrics: [
-    { id: 'child-pointer', label: '孩子指针 i', color: '#ea580c' },
-    { id: 'cookie-pointer', label: '饼干指针 j', color: '#ea580c' },
-    { id: 'satisfied', label: '满足孩子数', color: '#10b981' },
-    { id: 'action', label: '当前操作', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '✓ 满足匹配', color: '#10b981' },
-    { label: '📍 当前扫描指针', color: '#ea580c' },
-    { label: '⏭️ 跳过过小饼干', color: '#94a3b8' },
-  ],
-  codeLanguages: ASSIGN_COOKIES_CODE_LANGUAGES,
-  problemHtml: ASSIGN_COOKIES_PROBLEM_HTML,
-  analysisHtml: ASSIGN_COOKIES_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const parseArr = (str: string, fallback: number[]) => {
-      const arr = str
-        .split(/[,，\s]+/)
-        .map((t) => parseInt(t.trim(), 10))
-        .filter((n) => !isNaN(n));
-      return arr.length > 0 ? arr : fallback;
-    };
-    const children = parseArr(String(inputs.g ?? '1,2,3'), [1, 2, 3]);
-    const cookies = parseArr(String(inputs.s ?? '1,1'), [1, 1]);
-    return withMetrics(assignCookiesSteps(children, cookies));
-  },
-  renderCanvas: (container, step) => renderAssignCookiesCanvas(container, step as AssignCookiesStep),
+  description: '贪心双指针小饼干优先分配，最大化满足孩子数量',
+  template: `<div id="assign-cookies" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerAssignCookies(): void {
+  // 保持向前兼容导出
+}

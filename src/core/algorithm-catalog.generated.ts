@@ -3463,7 +3463,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "assign-cookies",
     name: "分发饼干",
-    viewId: "algo-assign-cookies-view",
+    viewId: "assign-cookies",
     category: "greedy",
     description: "贪心双指针小饼干优先分配，最大化满足孩子数量",
     icon: "🍪",

@@ -151,6 +151,17 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: false, category };
     }
 
+    if (params.g !== undefined && params.s !== undefined) {
+      const g = this.toArray(params.g);
+      const s = this.toArray(params.s);
+      m = g.length;
+      n = s.length;
+      category = '2d-sequence';
+      const isStage3 = currentStage === 'stage-3';
+      const is1D = !isStage3;
+      return { m, n, is1D, category };
+    }
+
     // 3. 股票买卖系列 (prices 数组)
     if (params.prices !== undefined) {
       const prices = this.toArray(params.prices);

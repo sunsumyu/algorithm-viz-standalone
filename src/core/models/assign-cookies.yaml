@@ -1,0 +1,224 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 分发饼干 顶层领域模型
+# 对应：LeetCode 455 / 贪心双指针与双序列匹配专题
+# 包含：小饼干优先贪心、大饼干优先逆向推演、记忆化搜索树与双序列状态转移
+# ==============================================================================
+
+id: assign-cookies
+name: "分发饼干"
+nameEn: "Assign Cookies"
+category: "greedy"
+icon: "🍪"
+difficulty: 1
+levelOrder: 1
+learningGoal: "掌握贪心双指针核心：升序排序后，优先用最小可用饼干满足最小胃口孩子"
+description: "假设你是一位很棒的家长，想要给你的孩子们一些小饼干。但是，每个孩子最多只能给一块饼干。对每个孩子 i，都有一个胃口值 g[i]，每块饼干 j 都有一个尺寸 s[j]。只有当 s[j] >= g[i] 时，孩子才会满足。求最多能满足多少个孩子。"
+defaultParams:
+  g: "[1, 2, 3]"
+  s: "[1, 2, 4]"
+
+problem:
+  title: "分发饼干 (Assign Cookies)"
+  difficulty: "简单"
+  tags: ["贪心", "数组", "双指针", "排序", "LeetCode 455"]
+  description: "假设你是一位很棒的家长，想要给你的孩子们一些小饼干。但是，每个孩子最多只能给一块饼干。<br/><br/>对每个孩子 <code>i</code>，都有一个胃口值 <code>g[i]</code>，这是能让孩子们满足胃口的饼干的最小尺寸；并且每块饼干 <code>j</code>，都有一个尺寸 <code>s[j]</code>。如果 <code>s[j] >= g[i]</code>，我们可以将这个饼干 <code>j</code> 分配给孩子 <code>i</code>，这个孩子会得到满足。你的目标是尽可能满足越多数量的孩子，并输出这个最大数值。"
+  examples:
+    - input: "g = [1,2,3], s = [1,1]"
+      output: "1"
+      explanation: "你有三个孩子和两块小饼干，3个孩子的胃口值分别是：1,2,3。虽然你有两块小饼干，由于他们的尺寸都是1，你只能满足胃口是1的孩子。所以你应该输出1。"
+    - input: "g = [1,2], s = [1,2,3]"
+      output: "2"
+      explanation: "你有两个孩子和三块小饼干，2个孩子的胃口值分别是1,2。拥有的饼干数量和尺寸都足以让所有孩子满足。所以你应该输出2。"
+  constraints:
+    - "1 <= g.length <= 3 * 10^4"
+    - "0 <= s.length <= 3 * 10^4"
+    - "1 <= g[i], s[j] <= 2^31 - 1"
+
+directions:
+  forward:
+    label: "小饼干优先 (Forward Scan)"
+    start: [0, 0]
+    target: [0, 3]
+    branches:
+      - name: "match"
+        label: "满足匹配推进"
+      - name: "skip"
+        label: "饼干偏小寻找更大"
+
+  reverse:
+    label: "大饼干优先 (Reverse Scan)"
+    description: "逆向遍历：优先用当前最大尺寸饼干满足最大胃口的孩子"
+    startFormula: "最大尺寸饼干"
+    target: "胃口满足计数"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心"
+    type: "greedy"
+    timeBadge: "O(n log n + m log m)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "双指针贪心 (小饼干优先)"
+    desc: "将孩子胃口 g 和饼干尺寸 s 分别升序排序，优先用最小的合法饼干满足胃口最小的孩子"
+    card2Title: "贪心分配看板"
+    card2Desc: "监控当前考察孩子 g[i] 与饼干 s[j]，记录满足匹配与指针推演。"
+    code:
+      forward:
+        title: "FindContentChildren.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g); // @step:sort_g
+              Arrays.sort(s); // @step:sort_s
+              int child = 0; // @step:init
+              int cookie = 0;
+              while (child < g.length && cookie < s.length) { // @step:loop
+                  if (s[cookie] >= g[child]) { // @step:check
+                      child++; // @step:matched
+                  }
+                  cookie++; // @step:cookie_advance
+              }
+              return child; // @step:done
+          }
+      reverse:
+        title: "FindContentChildren_Reverse.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g); // @step:sort_g
+              Arrays.sort(s); // @step:sort_s
+              int count = 0; // @step:init
+              int cookie = s.length - 1;
+              for (int child = g.length - 1; child >= 0; child--) { // @step:loop
+                  if (cookie >= 0 && s[cookie] >= g[child]) { // @step:check
+                      count++; // @step:matched
+                      cookie--; // @step:cookie_advance
+                  }
+              }
+              return count; // @step:done
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n * m)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "记忆化搜索树 (递归子问题)"
+    desc: "自顶向下探索每个孩子分配饼干的分支状态，备忘录剪除重复子问题"
+    card2Title: "递归状态依赖树"
+    card2Desc: "观察自顶向下 dfs(child, cookie) 探索展开与剪枝过程。"
+    code:
+      forward:
+        title: "FindContentChildren_Memo.java"
+        source: |
+          public int dfs(int i, int j, int[][] memo, int[] g, int[] s) {
+              if (i == g.length || j == s.length) return 0; // @step:entry
+              if (memo[i][j] != -1) return memo[i][j]; // @step:memo_hit
+              if (s[j] >= g[i]) { // @step:choose
+                  memo[i][j] = 1 + dfs(i + 1, j + 1, memo, g, s);
+              } else {
+                  memo[i][j] = dfs(i, j + 1, memo, g, s); // @step:skip
+              }
+              return memo[i][j]; // @step:done
+          }
+      reverse:
+        title: "FindContentChildren_Memo_Reverse.java"
+        source: |
+          public int dfsReverse(int i, int j, int[][] memo, int[] g, int[] s) {
+              if (i < 0 || j < 0) return 0; // @step:entry
+              if (memo[i][j] != -1) return memo[i][j]; // @step:memo_hit
+              if (s[j] >= g[i]) { // @step:choose
+                  memo[i][j] = 1 + dfsReverse(i - 1, j - 1, memo, g, s);
+              } else {
+                  memo[i][j] = dfsReverse(i - 1, j, memo, g, s); // @step:skip
+              }
+              return memo[i][j]; // @step:done
+          }
+
+  stage-3:
+    shortName: "动态规划"
+    type: "dynamic-programming"
+    timeBadge: "O(n * m)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "双序列匹配 DP (状态填表)"
+    desc: "构建二维 DP 表 dp[i][j]：前 i 个孩子用前 j 块饼干达成的最大满足数"
+    card2Title: "双序列 DP 状态矩阵"
+    card2Desc: "直观展示 dp[i][j] 填表过程，验证局部贪心决策与全局状态转移的一致性。"
+    code:
+      forward:
+        title: "FindContentChildren_DP.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g);
+              Arrays.sort(s);
+              int m = g.length, n = s.length;
+              int[][] dp = new int[m + 1][n + 1]; // @step:entry
+              for (int i = 1; i <= m; i++) { // @step:outer_loop
+                  for (int j = 1; j <= n; j++) { // @step:inner_loop
+                      if (s[j - 1] >= g[i - 1]) { // @step:check
+                          dp[i][j] = Math.max(dp[i - 1][j - 1] + 1, dp[i][j - 1]); // @step:transfer
+                      } else {
+                          dp[i][j] = dp[i][j - 1]; // @step:skip
+                      }
+                  }
+              }
+              return dp[m][n]; // @step:done
+          }
+      reverse:
+        title: "FindContentChildren_DP_Reverse.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g);
+              Arrays.sort(s);
+              int m = g.length, n = s.length;
+              int[][] dp = new int[m + 1][n + 1]; // @step:entry
+              for (int i = 1; i <= m; i++) { // @step:outer_loop
+                  for (int j = 1; j <= n; j++) { // @step:inner_loop
+                      if (s[j - 1] >= g[i - 1]) { // @step:check
+                          dp[i][j] = Math.max(dp[i - 1][j - 1] + 1, dp[i][j - 1]); // @step:transfer
+                      } else {
+                          dp[i][j] = dp[i][j - 1]; // @step:skip
+                      }
+                  }
+              }
+              return dp[m][n]; // @step:done
+          }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(1) 空间"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "空间压缩 (单趟双指针最优解)"
+    desc: "将 O(n*m) 空间压缩至 O(1)，排序后单趟双指针贪心直接输出最优解"
+    card2Title: "极致优化看板"
+    card2Desc: "零额外空间消耗，展示单调双指针的高速匹配流转。"
+    code:
+      forward:
+        title: "FindContentChildren_Optimized.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g); // @step:sort_g
+              Arrays.sort(s); // @step:sort_s
+              int child = 0; // @step:init
+              for (int cookie = 0; cookie < s.length && child < g.length; cookie++) { // @step:loop
+                  if (s[cookie] >= g[child]) { // @step:check
+                      child++; // @step:matched
+                  }
+              }
+              return child; // @step:done
+          }
+      reverse:
+        title: "FindContentChildren_Optimized_Reverse.java"
+        source: |
+          public int findContentChildren(int[] g, int[] s) {
+              Arrays.sort(g); // @step:sort_g
+              Arrays.sort(s); // @step:sort_s
+              int count = 0; // @step:init
+              int cookie = s.length - 1;
+              for (int child = g.length - 1; child >= 0 && cookie >= 0; child--) { // @step:loop
+                  if (s[cookie] >= g[child]) { // @step:check
+                      count++; // @step:matched
+                      cookie--; // @step:cookie_advance
+                  }
+              }
+              return count; // @step:done
+          }

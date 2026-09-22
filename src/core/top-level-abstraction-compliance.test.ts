@@ -36,6 +36,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'merge-intervals',
   'partition-labels',
   'candy',
+  'assign-cookies',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -201,7 +202,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
     it('全库贪心 (greedy) 类目算法必须要么已锁定为顶层抽象，要么明确登记在历史遗留白名单中', () => {
       // 贪心类目受控历史遗留白名单（凡已迁移算法严禁登记在此！每重构一个即删除一个并移至 LOCKED 锁定！）
       const KNOWN_LEGACY_GREEDY_UNMIGRATED = new Set([
-        'assign-cookies',
         'lemonade',
         'gas-station',
         'max-subarray',
@@ -313,6 +313,27 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         const params = model.defaultParams;
         if (!params) continue;
 
+        if (params.g !== undefined && params.s !== undefined) {
+          let gLen = 0;
+          let sLen = 0;
+          try {
+            const pg = typeof params.g === 'string' ? JSON.parse(params.g) : params.g;
+            gLen = Array.isArray(pg) ? pg.length : String(params.g).split(/[\s,]+/).length;
+          } catch {
+            gLen = String(params.g).split(/[\s,]+/).length;
+          }
+          try {
+            const ps = typeof params.s === 'string' ? JSON.parse(params.s) : params.s;
+            sLen = Array.isArray(ps) ? ps.length : String(params.s).split(/[\s,]+/).length;
+          } catch {
+            sLen = String(params.s).split(/[\s,]+/).length;
+          }
+          if (resolved.m !== gLen || resolved.n !== sLen) {
+            dimensionMismatches.push(`${id} (双序列期望 m=${gLen}, n=${sLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          }
+          continue;
+        }
+
         const checkParam = (paramName: string) => {
           if (params[paramName] !== undefined) {
             let expectedLen = 0;
@@ -394,6 +415,7 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       // 重点审查包含物理槽位的一维数组算法
       const arrayAlgorithmsToCheck = [
         'candy',
+        'assign-cookies',
         'can-jump',
         'jump-game-ii',
         'min-arrows',

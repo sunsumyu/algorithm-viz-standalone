@@ -47,6 +47,7 @@ import nonOverlappingModel from './models/non-overlapping.yaml';
 import mergeIntervalsModel from './models/merge-intervals.yaml';
 import partitionLabelsModel from './models/partition-labels.yaml';
 import candyModel from './models/candy.yaml';
+import assignCookiesModel from './models/assign-cookies.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -139,6 +140,7 @@ export class AlgorithmModelRepository {
     ['merge-intervals', mergeIntervalsModel as IYamlAlgorithmModel],
     ['partition-labels', partitionLabelsModel as IYamlAlgorithmModel],
     ['candy', candyModel as IYamlAlgorithmModel],
+    ['assign-cookies', assignCookiesModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],
