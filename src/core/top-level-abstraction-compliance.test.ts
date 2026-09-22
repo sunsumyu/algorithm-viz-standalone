@@ -328,8 +328,8 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
           } catch {
             sLen = String(params.s).split(/[\s,]+/).length;
           }
-          if (resolved.m !== gLen || resolved.n !== sLen) {
-            dimensionMismatches.push(`${id} (双序列期望 m=${gLen}, n=${sLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          if (resolved.m !== gLen + 1 || resolved.n !== sLen + 1) {
+            dimensionMismatches.push(`${id} (双序列期望矩阵规格 m=${gLen + 1}, n=${sLen + 1}，但解析出 m=${resolved.m}, n=${resolved.n})`);
           }
           continue;
         }
@@ -435,13 +435,26 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         // 检查 Stage 1 与 Stage 3
         const stagesToCheck = [1, 3];
         for (const stageNum of stagesToCheck) {
+          const stageKey = `stage-${stageNum}`;
+          const resolvedStage = ProblemDimensionResolver.resolve(id, model.defaultParams, stageKey);
           const steps = strategy.generateSteps(model, { stage: stageNum, direction: 'forward' });
 
-          // 1. 步进密度检查：规模为 n 时，步数不能少于 n（杜绝粗暴跳步或空推演）
-          if (n >= 4 && steps.length < n) {
-            densityViolations.push(
-              `${id} Stage ${stageNum}: 规模 n=${n}，但仅生成了 ${steps.length} 步 (密度不足，疑似存在循环截断！)`
-            );
+          // 1. 步进密度检查 (严禁把二维当一维测！)
+          if (stageNum === 3 && (resolvedStage.category === '2d-grid' || resolvedStage.category === '2d-sequence')) {
+            const innerCells = (resolvedStage.m - 1) * (resolvedStage.n - 1);
+            const minRequired2DSteps = innerCells * 2; // 每个单元格至少 2 个微步 (Probe 探查 + Commit 落盘)
+            if (steps.length < minRequired2DSteps) {
+              densityViolations.push(
+                `${id} Stage 3 (2D矩阵 ${resolvedStage.m}×${resolvedStage.n}): 单元格总数 ${innerCells}，但仅生成了 ${steps.length} 步 (要求至少 ${minRequired2DSteps} 步，疑似缺少单元格双微步推演！)`
+              );
+            }
+          } else {
+            // 一维或区间序列问题
+            if (n >= 4 && steps.length < n) {
+              densityViolations.push(
+                `${id} Stage ${stageNum}: 规模 n=${n}，但仅生成了 ${steps.length} 步 (密度不足，疑似存在循环截断！)`
+              );
+            }
           }
 
           // 2. 槽位覆盖率检查：收集所有步骤中触及过的 slot 下标
@@ -487,6 +500,52 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       expect(
         coverageViolations,
         `❌ [SLOT_COVERAGE_FAIL] 检测到以下算法阶段存在被跳过/遗漏的槽位: ${coverageViolations.join('; ')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 门禁 7: 二维状态矩阵与依赖高亮物理契约硬检查 (2D Grid & Dependency Mandate Gate)
+  // 严禁二维算法偷懒只发 1D 数组冒充 2D 矩阵！严禁缺少单元格依赖高亮！
+  // ==========================================================================
+  describe('门禁 7: 二维状态矩阵与依赖高亮物理契约硬检查 (2D Grid & Dependency Mandate Gate)', () => {
+    it('二维网格或双序列算法在 Stage 3 填表阶段必须 100% 输出合法 grid 对象与依赖高亮', () => {
+      const gridViolations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-3');
+        if (resolved.category !== '2d-grid' && resolved.category !== '2d-sequence') continue;
+
+        const strategy = AlgorithmStrategyRegistry.get(id);
+        if (!strategy) continue;
+
+        const steps = strategy.generateSteps(model, { stage: 3, direction: 'forward' });
+        if (steps.length === 0) continue;
+
+        // 检查首步与中间步是否具备完备的 2D grid
+        const firstStep = steps[0];
+        if (!firstStep.grid || !Array.isArray(firstStep.grid)) {
+          gridViolations.push(`${id} Stage 3 首步缺失 2D grid 对象，导致沙盘退化为一维`);
+          continue;
+        }
+
+        if (firstStep.grid.length !== resolved.m || (firstStep.grid[0] && firstStep.grid[0].length !== resolved.n)) {
+          gridViolations.push(
+            `${id} Stage 3 grid 规格错误: 期望 ${resolved.m}×${resolved.n}，但实际为 ${firstStep.grid.length}×${firstStep.grid[0]?.length}`
+          );
+        }
+
+        // 检查是否有依赖高亮 (deps / topI / leftI)
+        const hasDeps = steps.some((s) => (s.deps && s.deps.length > 0) || s.topI !== undefined || s.leftI !== undefined);
+        if (!hasDeps) {
+          gridViolations.push(`${id} Stage 3 整个推演过程没有任何步骤输出 deps 依赖格高亮，图例形同虚设！`);
+        }
+      }
+
+      expect(
+        gridViolations,
+        `❌ [2D_GRID_MANDATE_FAIL] 检测到以下二维算法未提供合法的 2D Grid 矩阵或依赖高亮: ${gridViolations.join('; ')}`
       ).toEqual([]);
     });
   });

@@ -54,16 +54,38 @@ describe('双序列单调贪心匹配族顶层抽象门禁测试 (Two-Sequence G
       expect(rootStep.treeRoot?.val).toContain('dfs');
     });
 
-    it('Stage 3 双序列 DP 状态矩阵应正确填表并满足步进密度', () => {
+    it('Stage 3 双序列 DP 状态矩阵必须输出 2D Grid、具备单元格双微步与依赖高亮', () => {
       const steps = strategy.generateSteps(model, {
         stage: 3,
         direction: 'forward',
       });
-      // m=3, n=3, 矩阵填表步数远大于 3
-      expect(steps.length).toBeGreaterThanOrEqual(10);
+      // 3x3 矩阵，每个单元格必须有探查 (Probe) 与落盘 (Commit) 2 个微步，总步数应大于 20 步
+      expect(steps.length).toBeGreaterThanOrEqual(20);
+
+      const first = steps[0];
+      expect(first.grid).toBeDefined();
+      expect(first.grid?.length).toBe(4); // m + 1 = 4
+      expect(first.grid?.[0]?.length).toBe(4); // n + 1 = 4
+
+      // 必须包含携带 deps (包含上方/左方/左上) 的探查微步
+      const probeStep = steps.find((s) => s.deps && s.deps.length >= 2);
+      expect(probeStep, '必须存在明确声明上方与左方状态依赖源的探查微步').toBeDefined();
+
       const last = steps[steps.length - 1];
       expect(last.variables?.return).toBe(3);
-      expect(last.stateArrays?.find((a) => a.id === 'dp_row')).toBeDefined();
+      expect(last.grid).toBeDefined();
+
+      // 数学不变量硬断言：最终 DP 矩阵必须满足非递减单调性
+      const finalGrid = last.grid!;
+      for (let i = 1; i <= 3; i++) {
+        for (let j = 1; j <= 3; j++) {
+          const val = finalGrid[i][j] as number;
+          const top = finalGrid[i - 1][j] as number;
+          const left = finalGrid[i][j - 1] as number;
+          expect(val).toBeGreaterThanOrEqual(top);
+          expect(val).toBeGreaterThanOrEqual(left);
+        }
+      }
     });
   });
 });

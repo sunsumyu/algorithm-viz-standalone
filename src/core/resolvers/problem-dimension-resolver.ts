@@ -105,15 +105,33 @@ export class ProblemDimensionResolver {
     let n = 6;
     let category: ResolvedDimensions['category'] = '1d-linear';
 
+    // 0. 特殊二维费用背包 (如 ones-and-zeroes: strs 结合 m 个 0 和 n 个 1)
+    if (params.strs !== undefined && params.m !== undefined && params.n !== undefined) {
+      m = Number(params.m) + 1;
+      n = Number(params.n) + 1;
+      category = 'knapsack';
+      return { m, n, is1D: false, category };
+    }
+
+    // 0.1 优先检测是否具备双序列参数 (避免被后续的 params.m / params.n 误判为普通网格)
+    const hasSequenceParams = !!(
+      (params.nums1 !== undefined && params.nums2 !== undefined) ||
+      (params.text1 !== undefined && params.text2 !== undefined) ||
+      (params.word1 !== undefined && params.word2 !== undefined) ||
+      (params.s !== undefined && params.t !== undefined) ||
+      (params.s1 !== undefined && params.s2 !== undefined) ||
+      (params.g !== undefined && params.s !== undefined)
+    );
+
     // 1. 显式 m/n 网格类型 (例如不同路径、最小路径和)
-    if (this.GRID_PROBLEM_IDS.has(modelId) || (params.m !== undefined && params.n !== undefined && !params.nums1 && !params.text1)) {
+    if (!hasSequenceParams && (this.GRID_PROBLEM_IDS.has(modelId) || (params.m !== undefined && params.n !== undefined))) {
       m = Number(params.m ?? 3);
       n = Number(params.n ?? 3);
       category = '2d-grid';
       return { m, n, is1D: false, category };
     }
 
-    // 2. 双序列匹配类型 (nums1/nums2, text1/text2, word1/word2, s/t)
+    // 2. 双序列匹配类型 (nums1/nums2, text1/text2, word1/word2, s/t, s1/s2, g/s)
     if (params.nums1 !== undefined && params.nums2 !== undefined) {
       const n1 = this.toArray(params.nums1);
       const n2 = this.toArray(params.nums2);
@@ -154,8 +172,8 @@ export class ProblemDimensionResolver {
     if (params.g !== undefined && params.s !== undefined) {
       const g = this.toArray(params.g);
       const s = this.toArray(params.s);
-      m = g.length;
-      n = s.length;
+      m = g.length + 1;
+      n = s.length + 1;
       category = '2d-sequence';
       const isStage3 = currentStage === 'stage-3';
       const is1D = !isStage3;

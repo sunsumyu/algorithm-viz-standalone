@@ -439,8 +439,12 @@ export class TwoSequenceGreedyStepCompiler {
     const m = g.length;
     const n = s.length;
 
-    // dp[i][j]: 前 i 个孩子使用前 j 块饼干的最大满足数
-    const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    // dp[i][j]: 前 i 个孩子使用前 j 块饼干的最大满足数 ((m+1) x (n+1) 完整二维 DP 矩阵)
+    const dp: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
+    for (let j = 0; j <= n; j++) dp[0][j] = 0;
+    for (let i = 0; i <= m; i++) dp[i][0] = 0;
+
+    const cloneGrid = (): (number | null)[][] => dp.map((row) => [...row]);
 
     const buildStateArrays = (activeI?: number, activeJ?: number): StateArrayItem[] => [
       {
@@ -459,25 +463,22 @@ export class TwoSequenceGreedyStepCompiler {
         activeIdx: activeJ !== undefined && activeJ > 0 ? activeJ - 1 : undefined,
         color: 'amber',
       },
-      {
-        id: 'dp_row',
-        name: `DP 当前行 (dp[${activeI ?? m}][0..${n}])`,
-        indices: Array.from({ length: n + 1 }, (_, idx) => idx),
-        values: dp[activeI ?? m].map((v) => String(v)),
-        activeIdx: activeJ,
-        color: 'purple',
-      },
     ];
 
+    // Step 0: 初始矩阵与基准条件
     steps.push({
       stepIndex: 0,
       stage: 3,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `动态规划初始化：构建 (${m + 1} × ${n + 1}) 的双序列 DP 矩阵，基准状态全为 0`,
+      decision: `动态规划建表：构建 (${m + 1} × ${n + 1}) 的双序列 DP 矩阵。基准条件：dp[0][j]=0（无孩子时满足数为0），dp[i][0]=0（无饼干时满足数为0）`,
       message: `状态定义：dp[i][j] 表示使用前 j 块饼干满足前 i 个孩子的最大数量`,
       variables: { m, n, 'dp[0][0]': 0 },
+      grid: cloneGrid(),
+      i: 0,
+      j: 0,
+      currentI: 0,
+      currentJ: 0,
       stateArrays: buildStateArrays(0, 0),
-      activeSlot: 0,
       metrics: { [targetMetric]: '0', 'dp-cell': 'dp[0][0]=0' },
     });
 
@@ -488,9 +489,14 @@ export class TwoSequenceGreedyStepCompiler {
         stepIndex: steps.length,
         stage: 3,
         codeLine: anchorMap['outer_loop'] ?? 2,
-        decision: `外层推进：考察前 ${i} 个孩子，当前新增${itemALabel} g[${i - 1}]=${curG}，开始扫描饼干列`,
-        message: `自底向上计算第 ${i} 行的状态转移`,
+        decision: `外层推进：考察第 ${i} 行（对应孩子 g[${i - 1}]=${curG}），准备遍历饼干列 j=1..${n} 进行状态转移`,
+        message: `自底向上计算第 ${i} 行的状态转移矩阵`,
         variables: { i, 'g[i-1]': curG },
+        grid: cloneGrid(),
+        i,
+        j: 0,
+        currentI: i,
+        currentJ: 0,
         stateArrays: buildStateArrays(i, 0),
         activeIndices: [i - 1],
         activeSlot: i - 1,
@@ -500,48 +506,92 @@ export class TwoSequenceGreedyStepCompiler {
       for (let j = 1; j <= n; j++) {
         const curS = s[j - 1];
         const canSatisfy = curS >= curG;
+        const topVal = dp[i - 1][j] ?? 0;
+        const leftVal = dp[i][j - 1] ?? 0;
+        const diagVal = canSatisfy ? (dp[i - 1][j - 1] ?? 0) + 1 : 0;
 
+        const deps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [
+          { r: i - 1, c: j, type: 'top', label: `跳过孩子: ${topVal}` },
+          { r: i, c: j - 1, type: 'left', label: `跳过饼干: ${leftVal}` },
+        ];
         if (canSatisfy) {
-          dp[i][j] = Math.max(dp[i - 1][j - 1] + 1, dp[i][j - 1]);
-          steps.push({
-            stepIndex: steps.length,
-            stage: 3,
-            codeLine: anchorMap['transfer'] ?? 4,
-            decision: `✅ 匹配转移：饼干 s[${j - 1}]=${curS} >= 孩子 g[${i - 1}]=${curG}！转移方程 dp[${i}][${j}] = max(dp[${i - 1}][${j - 1}] + 1, dp[${i}][${j - 1}]) = ${dp[i][j]}`,
-            message: `可选择用当前饼干满足当前孩子，或继承前 j-1 块饼干的已有最优解`,
-            variables: { i, j, 'g[i-1]': curG, 's[j-1]': curS, 'dp[i][j]': dp[i][j] },
-            stateArrays: buildStateArrays(i, j),
-            activeIndices: [i - 1],
-            activeSlot: i - 1,
-            metrics: { [targetMetric]: String(dp[i][j]), 'dp-cell': `dp[${i}][${j}]=${dp[i][j]}` },
-          });
-        } else {
-          dp[i][j] = dp[i][j - 1];
-          steps.push({
-            stepIndex: steps.length,
-            stage: 3,
-            codeLine: anchorMap['skip'] ?? 5,
-            decision: `⏩ 跳过继承：饼干 s[${j - 1}]=${curS} < 孩子 g[${i - 1}]=${curG} 无法满足！继承上一列最优解 dp[${i}][${j}] = dp[${i}][${j - 1}] = ${dp[i][j]}`,
-            message: `饼干尺寸不足，当前饼干对该孩子无增益`,
-            variables: { i, j, 'g[i-1]': curG, 's[j-1]': curS, 'dp[i][j]': dp[i][j] },
-            stateArrays: buildStateArrays(i, j),
-            activeIndices: [i - 1],
-            activeSlot: i - 1,
-            metrics: { [targetMetric]: String(dp[i][j]), 'dp-cell': `dp[${i}][${j}]=${dp[i][j]}` },
-          });
+          deps.push({ r: i - 1, c: j - 1, type: 'diag', label: `满足配对: ${diagVal}` });
         }
+
+        // 微步 1: 探查与多向依赖比对 (Probe)
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          codeLine: anchorMap['check'] ?? 3,
+          decision: `🔍 聚焦单元格 dp[${i}][${j}]：考察孩子 g[${i - 1}]=${curG} 与 饼干 s[${j - 1}]=${curS}。比对状态依赖源：上方 dp[${i - 1}][${j}]=${topVal}，左方 dp[${i}][${j - 1}]=${leftVal}${canSatisfy ? `，左上匹配 dp[${i - 1}][${j - 1}]+1=${diagVal}` : '（当前饼干尺寸不足，无左上转移）'}`,
+          message: canSatisfy
+            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，支持从左上角配对转移！`
+            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，无法配对，仅能继承上方或左方最优解`,
+          variables: { i, j, 'g[i-1]': curG, 's[j-1]': curS, topVal, leftVal, diagVal },
+          grid: cloneGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          topI: i - 1,
+          topJ: j,
+          leftI: i,
+          leftJ: j - 1,
+          diagI: canSatisfy ? i - 1 : undefined,
+          diagJ: canSatisfy ? j - 1 : undefined,
+          deps,
+          topVal,
+          leftVal,
+          sumVal: diagVal,
+          stateArrays: buildStateArrays(i, j),
+          activeIndices: [i - 1],
+          activeSlot: i - 1,
+          metrics: { 'checking': `g[${i-1}]=${curG}, s[${j-1}]=${curS}`, 'canSatisfy': canSatisfy ? '是' : '否' },
+        });
+
+        // 决策落盘
+        const finalCellVal = Math.max(topVal, Math.max(leftVal, diagVal));
+        dp[i][j] = finalCellVal;
+
+        // 微步 2: 确认落盘与最优值确认 (Commit)
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          codeLine: anchorMap['transfer'] ?? 4,
+          decision: `✅ 转移确认：综合三方候选，取最大值 dp[${i}][${j}] = max(${topVal}, ${leftVal}${canSatisfy ? `, ${diagVal}` : ''}) = ${finalCellVal}，单元格落盘`,
+          message: `单元格 dp[${i}][${j}] 计算完成并固化写入 DP 矩阵`,
+          variables: { i, j, 'dp[i][j]': finalCellVal },
+          grid: cloneGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          deps,
+          topVal,
+          leftVal,
+          sumVal: finalCellVal,
+          stateArrays: buildStateArrays(i, j),
+          activeIndices: [i - 1],
+          activeSlot: i - 1,
+          metrics: { [targetMetric]: String(finalCellVal), 'dp-cell': `dp[${i}][${j}]=${finalCellVal}` },
+        });
       }
     }
 
-    const finalResult = dp[m][n];
+    const finalResult = dp[m][n] ?? 0;
 
     steps.push({
       stepIndex: steps.length,
       stage: 3,
       codeLine: anchorMap['done'] ?? 8,
-      decision: `🎉 双序列 DP 状态填表完成！最终 dp[${m}][${n}] = ${finalResult}，全局最大满足 ${finalResult} 个${itemALabel}`,
+      decision: `🎉 双序列 DP 状态填表完成！最终 dp[${m}][${n}] = ${finalResult}，全局最多可满足 ${finalResult} 个${itemALabel}`,
       message: `动态规划矩阵自底向上填表验证了单调贪心策略的全局最优性`,
       variables: { return: finalResult, m, n },
+      grid: cloneGrid(),
+      i: m,
+      j: n,
+      currentI: m,
+      currentJ: n,
       stateArrays: buildStateArrays(m, n),
       metrics: { [targetMetric]: String(finalResult), 'status': '🏁 DP 矩阵收敛' },
     });
