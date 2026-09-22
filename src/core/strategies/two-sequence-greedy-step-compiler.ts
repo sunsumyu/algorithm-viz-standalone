@@ -169,14 +169,30 @@ export class TwoSequenceGreedyStepCompiler {
         const curG = g[child];
         const curS = s[cookie];
 
+        // 微步 A: while 循环头部条件判断 (@step:loop)
         steps.push({
           stepIndex: steps.length,
           stage: 1,
-          codeLine: anchorMap['check'] ?? anchorMap['loop'] ?? 5,
+          codeLine: anchorMap['loop'] ?? 4,
+          decision: `🔄 循环判定：child=${child} < ${m} 且 cookie=${cookie} < ${n}，双序列均未越界，准备考察当前匹配对`,
+          message: `循环条件满足，继续单调双指针流水线`,
+          variables: { child, cookie, 'child < m': child < m, 'cookie < n': cookie < n, count: child },
+          dp1d: [...g],
+          stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
+          activeIndices: [child],
+          activeSlot: child,
+          metrics: { [targetMetric]: String(child), 'loop-check': `${child}<${m} && ${cookie}<${n}` },
+        });
+
+        // 微步 B: if 条件贪心比对 (@step:check)
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          codeLine: anchorMap['check'] ?? 5,
           decision: `🔍 贪心比对：考察${itemALabel} g[${child}]=${curG} 与 ${itemBLabel} s[${cookie}]=${curS}`,
           message: curS >= curG
-            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，完全满足！准备分配`
-            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，太小无法满足，跳过当前饼干寻找更大尺寸`,
+            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，相容满足！准备分配`
+            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，尺寸不足无法满足，将跳过此饼干寻找更大尺寸`,
           variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS, count: child },
           dp1d: [...g],
           stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
@@ -190,6 +206,7 @@ export class TwoSequenceGreedyStepCompiler {
           matchedCookies.push(cookie);
           child++;
 
+          // 微步 C1: 满足分支累加 (@step:matched)
           steps.push({
             stepIndex: steps.length,
             stage: 1,
@@ -201,26 +218,56 @@ export class TwoSequenceGreedyStepCompiler {
             stateArrays: buildStateArrays(child < m ? child : undefined, cookie, matchedChildren, matchedCookies),
             activeIndices: [child - 1],
             activeSlot: child - 1,
-            metrics: { [targetMetric]: String(child), 'action': '✅ 满足并推进' },
+            metrics: { [targetMetric]: String(child), 'action': '✅ 满足分配' },
           });
-        } else {
+
+          // 微步 C2: 消耗饼干推进指针 (@step:cookie_advance)
+          cookie++;
           steps.push({
             stepIndex: steps.length,
             stage: 1,
             codeLine: anchorMap['cookie_advance'] ?? 7,
-            decision: `⏩ 尺寸不足：${itemBLabel} s[${cookie}]=${curS} 无法满足当前最小胃口${itemALabel} g[${child}]=${curG}，后续更大胃口更无法满足，直接舍弃并前进饼干指针`,
-            message: `单调性性质保证了跳过的正确性，不丢失任何可能解`,
-            variables: { child, cookie: cookie + 1, count: child },
+            decision: `⏩ 消耗饼干：当前饼干已成功分发，饼干指针推进至 cookie=${cookie}`,
+            message: `每块饼干只能使用一次，单向消耗推进`,
+            variables: { child, cookie, count: child },
             dp1d: [...g],
-            stateArrays: buildStateArrays(child, cookie + 1, matchedChildren, matchedCookies),
+            stateArrays: buildStateArrays(child < m ? child : undefined, cookie < n ? cookie : undefined, matchedChildren, matchedCookies),
+            activeIndices: [child < m ? child : child - 1],
+            activeSlot: child < m ? child : child - 1,
+            metrics: { [targetMetric]: String(child), 'cookie-advance': `cookie=${cookie}` },
+          });
+        } else {
+          // 微步 C3: 尺寸不足，跳过并推进饼干指针 (@step:cookie_advance)
+          cookie++;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            codeLine: anchorMap['cookie_advance'] ?? 7,
+            decision: `⏩ 尺寸不足舍弃：${itemBLabel} s[${cookie - 1}]=${curS} 无法满足最小胃口${itemALabel} g[${child}]=${curG}，直接舍弃，饼干指针推进至 cookie=${cookie}`,
+            message: `单调性性质保证了跳过的正确性，不丢失任何可能解`,
+            variables: { child, cookie, count: child },
+            dp1d: [...g],
+            stateArrays: buildStateArrays(child, cookie < n ? cookie : undefined, matchedChildren, matchedCookies),
             activeIndices: [child],
             activeSlot: child,
             metrics: { [targetMetric]: String(child), 'action': '⏩ 跳过小饼干' },
           });
         }
-
-        cookie++;
       }
+
+      // 退出 while 循环判定微步 (@step:loop)
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        codeLine: anchorMap['loop'] ?? 4,
+        decision: `🛑 循环终结：child=${child} >= ${m} 或 cookie=${cookie} >= ${n}，单调双指针扫描结束`,
+        message: `双指针扫描完毕，准备返回最终满足的孩子总数`,
+        variables: { child, cookie, m, n },
+        dp1d: [...g],
+        activeSlot: Math.min(child, m - 1),
+        stateArrays: buildStateArrays(undefined, undefined, matchedChildren, matchedCookies),
+        metrics: { [targetMetric]: String(child), 'loop': '退出' },
+      });
 
       steps.push({
         stepIndex: steps.length,
@@ -248,6 +295,7 @@ export class TwoSequenceGreedyStepCompiler {
         decision: `逆向指针初始化：从后往前扫描，cookie=${n - 1} (最大饼干 s[${n - 1}]=${s[n - 1]})`,
         message: `逆向贪心准则：优先用当前最大尺寸饼干尝试满足最大胃口的孩子`,
         variables: { count: 0, cookie: n - 1 },
+        dp1d: [...g],
         stateArrays: buildStateArrays(m - 1, n - 1),
         activeIndices: [m - 1],
         activeSlot: m - 1,
@@ -258,15 +306,32 @@ export class TwoSequenceGreedyStepCompiler {
         const curG = g[child];
         const curS = cookie >= 0 ? s[cookie] : -1;
 
+        // 微步 A: for 循环头部推进 (@step:loop)
         steps.push({
           stepIndex: steps.length,
           stage: 1,
-          codeLine: anchorMap['check'] ?? anchorMap['loop'] ?? 5,
-          decision: `🔍 逆向比对：考察最大待满足${itemALabel} g[${child}]=${curG} 与 最大可用${itemBLabel} ${cookie >= 0 ? `s[${cookie}]=${curS}` : '已耗尽'}`,
+          codeLine: anchorMap['loop'] ?? 4,
+          decision: `🔄 逆向循环推进：考察孩子指针 child=${child} (胃口 g[${child}]=${curG})，饼干指针 cookie=${cookie}`,
+          message: `从最大胃口孩子开始逆序探索`,
+          variables: { child, cookie, 'g[child]': curG, count },
+          dp1d: [...g],
+          stateArrays: buildStateArrays(child, cookie >= 0 ? cookie : undefined, matchedChildren, matchedCookies),
+          activeIndices: [child],
+          activeSlot: child,
+          metrics: { [targetMetric]: String(count), 'loop-child': `child=${child}` },
+        });
+
+        // 微步 B: 贪心比对 (@step:check)
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          codeLine: anchorMap['check'] ?? 5,
+          decision: `🔍 逆向贪心比对：考查最大可用饼干 s[${cookie}]=${curS} 是否足以满足大胃口孩子 g[${child}]=${curG}`,
           message: cookie >= 0 && curS >= curG
-            ? `最大饼干 ${curS} 能够满足当前最大孩子 ${curG}，分配！`
-            : `最大饼干不足以满足当前孩子胃口，该孩子无法被任何饼干满足，逆向跳过`,
+            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，逆向相容满足！`
+            : (cookie < 0 ? `饼干已全部耗尽，无法满足该孩子` : `最大饼干 ${curS} < 胃口 ${curG}，当前孩子无法被满足，保留该饼干给稍小胃口的孩子`),
           variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS, count },
+          dp1d: [...g],
           stateArrays: buildStateArrays(child, cookie >= 0 ? cookie : undefined, matchedChildren, matchedCookies),
           activeIndices: [child],
           activeSlot: child,
@@ -274,22 +339,39 @@ export class TwoSequenceGreedyStepCompiler {
         });
 
         if (cookie >= 0 && curS >= curG) {
-          count++;
           matchedChildren.push(child);
           matchedCookies.push(cookie);
-          cookie--;
+          count++;
 
+          // 微步 C: 满足累加 (@step:matched)
           steps.push({
             stepIndex: steps.length,
             stage: 1,
             codeLine: anchorMap['matched'] ?? 6,
-            decision: `🎉 逆向匹配成功！大饼干 s[${cookie + 1}]=${curS} 满足了大胃口孩子 g[${child}]=${curG}，累计满足数增至 ${count}`,
+            decision: `🎉 逆向匹配成功！大饼干 s[${cookie}]=${curS} 满足了大胃口孩子 g[${child}]=${curG}，累计满足数增至 ${count}`,
             message: `逆向贪心有效消化了最大尺寸资源`,
             variables: { child, cookie, count },
+            dp1d: [...g],
             stateArrays: buildStateArrays(child, cookie >= 0 ? cookie : undefined, matchedChildren, matchedCookies),
             activeIndices: [child],
             activeSlot: child,
             metrics: { [targetMetric]: String(count), 'action': '✅ 逆向满足' },
+          });
+
+          // 微步 D: 饼干指针回退消耗 (@step:cookie_advance)
+          cookie--;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            codeLine: anchorMap['cookie_advance'] ?? 7,
+            decision: `⏪ 消耗大饼干：该饼干已分配，逆向饼干指针前移至 cookie=${cookie}`,
+            message: `消耗当前最大可用饼干，准备考察次大饼干`,
+            variables: { child, cookie, count },
+            dp1d: [...g],
+            stateArrays: buildStateArrays(child, cookie >= 0 ? cookie : undefined, matchedChildren, matchedCookies),
+            activeIndices: [child],
+            activeSlot: child,
+            metrics: { [targetMetric]: String(count), 'cookie-retreat': `cookie=${cookie}` },
           });
         }
       }
@@ -301,6 +383,8 @@ export class TwoSequenceGreedyStepCompiler {
         decision: `🏁 逆向贪心推演完成！获得与正向推演完全一致的全局最优解：最多满足 ${count} 个${itemALabel}`,
         message: `双向对称性证明了贪心选择性质的绝对严谨与无偏差`,
         variables: { return: count, totalChildren: m, totalCookies: n },
+        dp1d: [...g],
+        activeSlot: 0,
         stateArrays: buildStateArrays(undefined, undefined, matchedChildren, matchedCookies),
         metrics: { [targetMetric]: String(count), 'status': '🏁 逆向收敛' },
       });
@@ -861,14 +945,30 @@ export class TwoSequenceGreedyStepCompiler {
         const curG = g[child];
         const curS = s[cookie];
 
+        // 微步 A: for 循环头部推进与范围判定 (@step:loop)
         steps.push({
           stepIndex: steps.length,
           stage: 4,
           codeLine: anchorMap['loop'] ?? 4,
-          decision: `🔍 流水线扫描：饼干指针推进至 cookie=${cookie} (s[${cookie}]=${curS})，考查当前孩子 child=${child} (g[${child}]=${curG})`,
+          decision: `🔄 流水线扫描推进：cookie=${cookie} < ${n} 且 child=${child} < ${m}，推进饼干至 s[${cookie}]=${curS}`,
+          message: `for 循环头部推进单趟扫描`,
+          variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS },
+          dp1d: [...g],
+          stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
+          activeIndices: [child],
+          activeSlot: child,
+          metrics: { [targetMetric]: String(child), 'for-loop': `cookie=${cookie}` },
+        });
+
+        // 微步 B: if 条件比对 (@step:check)
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          codeLine: anchorMap['check'] ?? 5,
+          decision: `🔍 贪心比对：考察当前饼干 s[${cookie}]=${curS} 是否相容孩子 g[${child}]=${curG}`,
           message: curS >= curG
-            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，贪心相容！`
-            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，尺寸不足，流水线继续推进至下一块饼干`,
+            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，相容满足！`
+            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，尺寸不足，跳过该饼干继续向后流转`,
           variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS },
           dp1d: [...g],
           stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
@@ -882,10 +982,11 @@ export class TwoSequenceGreedyStepCompiler {
           matchedCookies.push(cookie);
           child++;
 
+          // 微步 C: 满足累加 (@step:matched)
           steps.push({
             stepIndex: steps.length,
             stage: 4,
-            codeLine: anchorMap['matched'] ?? 5,
+            codeLine: anchorMap['matched'] ?? 6,
             decision: `🎉 即时消化分配：将饼干 s[${cookie}]=${curS} 分配给孩子 g[${child - 1}]=${curG}，child 指针推进至 ${child}`,
             message: `满足计数原地累加，无需回溯任何中间状态表`,
             variables: { child, cookie, count: child },
