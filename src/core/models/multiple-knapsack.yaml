@@ -38,6 +38,13 @@ directions:
       - name: 选 k 件当前物品（k=1..nums[i]，k*weight[i] <= j）
         description: dp[i][j] = max(dp[i][j], dp[i-1][j-k*weight[i]] + k*value[i])
 
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从末尾目标向子问题基底反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
 stages:
   stage-1:
     shortName: "递归"

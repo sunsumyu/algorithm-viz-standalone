@@ -46,6 +46,13 @@ directions:
         formula: "j * dp[i - j]"
     combineFormula: "max(j * (i - j), j * dp[i - j])"
 
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从末尾目标向子问题基底反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
 stages:
   stage-1:
     shortName: "递归"

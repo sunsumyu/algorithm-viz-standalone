@@ -40,6 +40,23 @@ import onesAndZeroesModel from './models/ones-and-zeroes.yaml';
 import multipleKnapsackModel from './models/multiple-knapsack.yaml';
 import profitableSchemesModel from './models/profitable-schemes.yaml';
 import jumpGameIIModel from './models/jump-game-ii.yaml';
+import dpTheoryModel from './models/dp-theory.yaml';
+import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
+import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
+import dpWeekSummary3Model from './models/dp-week-summary-3.yaml';
+import dpWeekSummary4Model from './models/dp-week-summary-4.yaml';
+import dpWeekSummary5Model from './models/dp-week-summary-5.yaml';
+import dpWeekSummary6Model from './models/dp-week-summary-6.yaml';
+import dpWeekSummary7Model from './models/dp-week-summary-7.yaml';
+import dpFinalSummaryModel from './models/dp-final-summary.yaml';
+import knapsack01Theory1Model from './models/knapsack-01-theory-1.yaml';
+import knapsack01Theory2Model from './models/knapsack-01-theory-2.yaml';
+import completeKnapsackTheoryModel from './models/complete-knapsack-theory.yaml';
+import multipleKnapsackTheoryModel from './models/multiple-knapsack-theory.yaml';
+import knapsackSummaryModel from './models/knapsack-summary.yaml';
+import stockSummaryModel from './models/stock-summary.yaml';
+import editDistanceSummaryModel from './models/edit-distance-summary.yaml';
+import treeDpTheoryModel from './models/tree-dp-theory.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -105,6 +122,24 @@ export class AlgorithmModelRepository {
     ['profitable-schemes', profitableSchemesModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
+    // 理论/总结类模型
+    ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
+    ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],
+    ['dp-week-summary-2', dpWeekSummary2Model as IYamlAlgorithmModel],
+    ['dp-week-summary-3', dpWeekSummary3Model as IYamlAlgorithmModel],
+    ['dp-week-summary-4', dpWeekSummary4Model as IYamlAlgorithmModel],
+    ['dp-week-summary-5', dpWeekSummary5Model as IYamlAlgorithmModel],
+    ['dp-week-summary-6', dpWeekSummary6Model as IYamlAlgorithmModel],
+    ['dp-week-summary-7', dpWeekSummary7Model as IYamlAlgorithmModel],
+    ['dp-final-summary', dpFinalSummaryModel as IYamlAlgorithmModel],
+    ['knapsack-01-theory-1', knapsack01Theory1Model as IYamlAlgorithmModel],
+    ['knapsack-01-theory-2', knapsack01Theory2Model as IYamlAlgorithmModel],
+    ['complete-knapsack-theory', completeKnapsackTheoryModel as IYamlAlgorithmModel],
+    ['multiple-knapsack-theory', multipleKnapsackTheoryModel as IYamlAlgorithmModel],
+    ['knapsack-summary', knapsackSummaryModel as IYamlAlgorithmModel],
+    ['stock-summary', stockSummaryModel as IYamlAlgorithmModel],
+    ['edit-distance-summary', editDistanceSummaryModel as IYamlAlgorithmModel],
+    ['tree-dp-theory', treeDpTheoryModel as IYamlAlgorithmModel],
   ]);
 
   // 不可变阶段编译缓存表

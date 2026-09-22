@@ -1,0 +1,182 @@
+{
+  "l1_4_violations": [
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-067\\longest-increasing-path-renderer.ts",
+      "id": "longest-increasing-path",
+      "name": "矩阵中的最长递增路径 (LeetCode 329)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-067\\tree-count-height-m-renderer.ts",
+      "id": "tree-count-height-m",
+      "name": "节点数n高度不大于m的二叉树结构数"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-067\\word-search-renderer.ts",
+      "id": "word-search",
+      "name": "down"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-079-083\\digit-dp-basic-079-renderer.ts",
+      "id": "digit-dp-basic-079",
+      "name": "数位 DP 基础模型 (Class 079)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-079-083\\expected-value-dp-081-renderer.ts",
+      "id": "expected-value-dp-081",
+      "name": "期望 DP 与马尔可夫决策 (Class 081)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-079-083\\knuth-quadrangle-inequality-083-renderer.ts",
+      "id": "knuth-quadrangle-inequality-083",
+      "name": "四边形不等式优化 (Class 083)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-079-083\\rerooting-tree-dp-080-renderer.ts",
+      "id": "rerooting-tree-dp-080",
+      "name": "换根 DP 专题 (Class 080)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-079-083\\slope-optimization-dp-082-renderer.ts",
+      "id": "slope-optimization-dp-082",
+      "name": "斜率优化 DP 与单调队列凸包 (Class 082)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-084-088\\circular-interval-dp-087-renderer.ts",
+      "id": "circular-interval-dp-087",
+      "name": "环形区间 DP 与破环成链 (Class 087)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-084-088\\counting-dp-inclusion-exclusion-084-renderer.ts",
+      "id": "counting-dp-inclusion-exclusion-084",
+      "name": "计数 DP 与错排问题 (Class 084)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-084-088\\game-probability-dp-085-renderer.ts",
+      "id": "game-probability-dp-085",
+      "name": "博弈概率 DP 与倒推状态 (Class 085)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-084-088\\sos-profile-dp-086-renderer.ts",
+      "id": "sos-profile-dp-086",
+      "name": "高阶状压 DP 与 SOS 高维前缀和 (Class 086)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\dp-084-088\\tree-knapsack-dp-088-renderer.ts",
+      "id": "tree-knapsack-dp-088",
+      "name": "树上背包 DP 与泛化物品 (Class 088)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\palindrome-partitioning-ii-renderer.ts",
+      "id": "palindrome-partitioning-ii",
+      "name": "分割回文串 II"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\recursion-to-dp-038-renderer.ts",
+      "id": "recursion-to-dp-038",
+      "name": "Class 038: 经典递归向记忆化搜索与动态规划初步转换 (Recursion to DP)"
+    },
+    {
+      "file": "algorithms\\categories\\dynamic-programming\\word-break-ii-renderer.ts",
+      "id": "word-break-ii",
+      "name": "Hard 23: 单词拆分 II (Word Break II)"
+    }
+  ],
+  "l2_1_violations": [
+    "best-time-to-buy-and-sell-stock-ii",
+    "best-time-to-buy-and-sell-stock-iii",
+    "best-time-to-buy-and-sell-stock",
+    "climb-stairs",
+    "coin-change-ii",
+    "coin-change",
+    "complete-knapsack",
+    "decode-ways",
+    "fibonacci",
+    "house-robber-ii",
+    "house-robber-iii",
+    "house-robber",
+    "integer-break",
+    "jump-game-ii",
+    "knapsack-01",
+    "multiple-knapsack",
+    "perfect-squares",
+    "profitable-schemes",
+    "word-break"
+  ],
+  "l2_2_violations": [
+    {
+      "id": "house-robber-iii",
+      "missing": [
+        "stage-4"
+      ]
+    },
+    {
+      "id": "jump-game-ii",
+      "missing": [
+        "stage-2",
+        "stage-3",
+        "stage-4"
+      ]
+    }
+  ],
+  "l1_2_missing_yaml": [
+    "dp-theory",
+    "dp-week-summary-1",
+    "dp-week-summary-2",
+    "knapsack-01-theory-1",
+    "knapsack-01-theory-2",
+    "dp-week-summary-3",
+    "complete-knapsack-theory",
+    "dp-week-summary-4",
+    "dp-week-summary-5",
+    "multiple-knapsack-theory",
+    "knapsack-summary",
+    "dp-week-summary-6",
+    "recursion-to-dp-038",
+    "dp-week-summary-7",
+    "stock-summary",
+    "edit-distance-summary",
+    "tree-dp-theory",
+    "dp-final-summary",
+    "knapsack-01-standard",
+    "buy-goods-discount",
+    "target-sum-standard",
+    "last-stone-weight-ii-standard",
+    "dependent-knapsack-standard",
+    "top-k-subsequence-sum",
+    "find-kth-sum",
+    "partitioned-knapsack-standard",
+    "coins-from-piles",
+    "unbounded-knapsack-standard",
+    "regex-matching",
+    "wildcard-matching",
+    "buying-hay-min-cost",
+    "bounded-knapsack-naive",
+    "bounded-knapsack-binary",
+    "cherry-blossom-viewing",
+    "bounded-knapsack-monotonic-queue",
+    "coins-change-kinds",
+    "circular-interval-dp-087",
+    "counting-dp-inclusion-exclusion-084",
+    "digit-dp-basic-079",
+    "expected-value-dp-081",
+    "game-probability-dp-085",
+    "knuth-quadrangle-inequality-083",
+    "palindrome-partitioning-ii",
+    "rerooting-tree-dp-080",
+    "slope-optimization-dp-082",
+    "sos-profile-dp-086",
+    "tree-knapsack-dp-088",
+    "word-search",
+    "tree-count-height-m",
+    "longest-increasing-path",
+    "profile-dp-125",
+    "ternary-dp-126",
+    "binary-lifting-dp-129",
+    "monotonic-queue-dp-130",
+    "word-break-ii",
+    "dungeon-game-reverse-dp",
+    "stock-trading-state-machine",
+    "hard-russian-doll-envelopes",
+    "freedom-trail-ring-dp"
+  ]
+}

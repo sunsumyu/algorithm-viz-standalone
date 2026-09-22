@@ -234,11 +234,28 @@ npx vitest run src/core/algorithm-catalog-indexer.test.ts
 
 # 5. 全项目 TypeScript 类型检查（零编译警告）
 npm run typecheck
+
+# 6. 顶层抽象合规门禁（必须通过）
+npx vitest run src/core/top-level-abstraction-compliance.test.ts
 ```
 
 ---
 
-## 5. 典型重构参考案例
+## 6. 合规验证
+
+完成重构后，**必须**加载并执行 `top-level-abstraction-compliance` 技能进行全量合规检查：
+
+```bash
+npx vitest run src/core/top-level-abstraction-compliance.test.ts
+```
+
+任何一项失败都意味着重构未完成，严禁交付。
+
+合规检查技能详见：`.agents/skills/top-level-abstraction-compliance/SKILL.md`
+
+---
+
+## 7. 典型重构参考案例
 
 - **网格类 DP 黄金基准**：
   - YAML: `src/core/models/unique-paths-ii.yaml`

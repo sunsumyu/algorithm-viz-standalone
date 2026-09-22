@@ -51,6 +51,13 @@ directions:
         arrow: "↘️"
     combineFormula: "max(rob, notRob)"
 
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从末尾目标向子问题基底反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
 stages:
   stage-1:
     shortName: "递归"
@@ -144,6 +151,44 @@ stages:
                       int[] right = dfs(node.right); // @step:branch_right
                       int notRob = Math.max(left[0], left[1]) + Math.max(right[0], right[1]); // @step:transfer
                       int doRob = node.val + left[0] + right[0];
+                      return new int[]{notRob, doRob}; // @step:combine
+                  }
+              }
+
+  stage-4:
+    shortName: "最终优化"
+    type: "optimized"
+    timeBadge: "O(n)"
+    spaceBadge: "O(h)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 最终优化版 (空间 O(h))"
+    desc:
+      forward: "树形 DP 已是最优解法，空间复杂度 O(h) 为递归栈深度。此阶段展示完整的后序遍历实现与边界处理细节。"
+    variants:
+      standard:
+        variantLabel: "完整实现版"
+        title:
+          forward: "HouseRobber3_Optimized.java"
+        code:
+          forward:
+            title: "HouseRobber3_Optimized.java"
+            source: |
+              class Solution {
+                  public int rob(TreeNode root) { // @step:entry
+                      if (root == null) return 0; // @step:boundary
+                      int[] res = dfs(root); // @step:init
+                      return Math.max(res[0], res[1]); // @step:return
+                  }
+                  // 返回 [不偷当前节点的最大收益, 偷当前节点的最大收益]
+                  private int[] dfs(TreeNode node) { // @step:recursion
+                      if (node == null) return new int[]{0, 0}; // @step:boundary
+                      int[] left = dfs(node.left);   // @step:branch_left
+                      int[] right = dfs(node.right); // @step:branch_right
+                      // 不偷当前节点：左右子节点可偷可不偷，取各自最大值之和
+                      int notRob = Math.max(left[0], left[1]) + Math.max(right[0], right[1]); // @step:transfer
+                      // 偷当前节点：左右子节点都不能偷
+                      int doRob = node.val + left[0] + right[0]; // @step:transfer
                       return new int[]{notRob, doRob}; // @step:combine
                   }
               }

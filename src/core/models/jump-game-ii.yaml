@@ -45,6 +45,13 @@ directions:
         delta: [0, 1]
         label: "触发跳跃"
 
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从末尾目标向子问题基底反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
 stages:
   stage-1:
     shortName: "贪心"
@@ -89,6 +96,86 @@ stages:
                   }
                   return steps; // @step:done
               }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "跳跃游戏 II (记忆化递归)"
+    desc: "从位置 i 出发到达末尾的最小跳跃次数，用 memo[i] 缓存避免重复计算"
+    code:
+      forward:
+        title: "JumpGameII_Memo.java"
+        source: |
+          public int jump(int[] nums) {
+              int[] memo = new int[nums.length]; // @step:init
+              Arrays.fill(memo, -1); // @step:fill
+              return dfs(nums, 0, memo); // @step:entry
+          }
+          private int dfs(int[] nums, int i, int[] memo) {
+              if (i >= nums.length - 1) return 0; // @step:boundary
+              if (memo[i] != -1) return memo[i]; // @step:cache_hit
+              int minSteps = Integer.MAX_VALUE; // @step:min_init
+              for (int j = 1; j <= nums[i]; j++) { // @step:loop
+                  int sub = dfs(nums, i + j, memo); // @step:branch
+                  if (sub != Integer.MAX_VALUE) {
+                      minSteps = Math.min(minSteps, sub + 1); // @step:transfer
+                  }
+              }
+              memo[i] = minSteps; // @step:memo_store
+              return minSteps; // @step:return
+          }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "跳跃游戏 II (一维 DP 填表)"
+    desc: "dp[i] 表示从位置 i 到达末尾的最小跳跃次数，从右往左填表"
+    code:
+      forward:
+        title: "JumpGameII_DP.java"
+        source: |
+          public int jump(int[] nums) {
+              int n = nums.length;
+              int[] dp = new int[n]; // @step:init
+              Arrays.fill(dp, Integer.MAX_VALUE); // @step:fill
+              dp[n - 1] = 0; // @step:base
+              for (int i = n - 2; i >= 0; i--) { // @step:outer_loop
+                  for (int j = 1; j <= nums[i] && i + j < n; j++) { // @step:inner_loop
+                      if (dp[i + j] != Integer.MAX_VALUE) {
+                          dp[i] = Math.min(dp[i], dp[i + j] + 1); // @step:transfer
+                      }
+                  }
+              }
+              return dp[0]; // @step:return
+          }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "optimized"
+    timeBadge: "O(n)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "跳跃游戏 II (贪心空间优化)"
+    desc: "贪心双边界推进，空间 O(1)，时间 O(n)，最优解法"
+    code:
+      forward:
+        title: "JumpGameII_Optimal.java"
+        source: |
+          public int jump(int[] nums) {
+              if (nums.length <= 1) return 0; // @step:entry
+              int curEnd = 0, nextReach = 0, steps = 0; // @step:init
+              for (int i = 0; i < nums.length - 1; i++) { // @step:loop
+                  nextReach = Math.max(nextReach, i + nums[i]); // @step:explore
+                  if (i == curEnd) { // @step:check
+                      curEnd = nextReach; // @step:jump
+                      steps++;
+                  }
+              }
+              return steps; // @step:done
+          }
 
 analysisHtml: |
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">

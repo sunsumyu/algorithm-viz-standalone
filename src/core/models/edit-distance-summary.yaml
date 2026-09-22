@@ -1,0 +1,113 @@
+# ==============================================================================
+# 📚 [THEORY/ARTICLE MODEL] 理论/总结类算法模型
+# 本模型为理论讲解或阶段总结类内容，不需要四阶段演化。
+# ==============================================================================
+
+id: edit-distance-summary
+name: "编辑距离总结"
+category: "dynamic-programming"
+icon: "📝"
+difficulty: 1
+levelOrder: 999
+learningGoal: "编辑距离及相关双串 DP 问题总结"
+description: "编辑距离及相关双串 DP 问题总结"
+
+problem:
+  title: "编辑距离总结"
+  difficulty: "理论"
+  tags: ["动态规划", "理论", "总结"]
+  description: "编辑距离及相关双串 DP 问题总结"
+
+directions:
+  forward:
+    label: "正序"
+    branches: []
+    combineFormula: "N/A"
+  reverse:
+    label: "逆序"
+    branches: []
+    combineFormula: "N/A"
+
+stages:
+  stage-1:
+    shortName: "理论"
+    type: "theory"
+    timeBadge: "N/A"
+    badgeBg: "bg-gray-100 text-gray-700"
+    name:
+      forward: "理论讲解"
+    desc:
+      forward: "本内容为理论讲解或阶段总结，无具体算法演化步骤。"
+    variants:
+      standard:
+        variantLabel: "标准版"
+        title:
+          forward: "Theory.md"
+        code:
+          forward:
+            title: "Theory.md"
+            source: |
+              // 理论讲解内容
+
+
+  stage-2:
+    shortName: "记忆化"
+    type: "theory"
+    timeBadge: "N/A"
+    badgeBg: "bg-gray-100 text-gray-700"
+    name:
+      forward: "理论讲解（记忆化）"
+    desc:
+      forward: "本内容为理论讲解，无具体算法演化步骤。"
+    variants:
+      standard:
+        variantLabel: "标准版"
+        title:
+          forward: "Theory.md"
+        code:
+          forward:
+            title: "Theory.md"
+            source: |
+              // 理论讲解内容
+
+
+  stage-3:
+    shortName: "递推DP"
+    type: "theory"
+    timeBadge: "N/A"
+    badgeBg: "bg-gray-100 text-gray-700"
+    name:
+      forward: "理论讲解（递推 DP）"
+    desc:
+      forward: "本内容为理论讲解，无具体算法演化步骤。"
+    variants:
+      standard:
+        variantLabel: "标准版"
+        title:
+          forward: "Theory.md"
+        code:
+          forward:
+            title: "Theory.md"
+            source: |
+              // 理论讲解内容
+
+
+  stage-4:
+    shortName: "空间优化"
+    type: "theory"
+    timeBadge: "N/A"
+    badgeBg: "bg-gray-100 text-gray-700"
+    name:
+      forward: "理论讲解（空间优化）"
+    desc:
+      forward: "本内容为理论讲解，无具体算法演化步骤。"
+    variants:
+      standard:
+        variantLabel: "标准版"
+        title:
+          forward: "Theory.md"
+        code:
+          forward:
+            title: "Theory.md"
+            source: |
+              // 理论讲解内容
