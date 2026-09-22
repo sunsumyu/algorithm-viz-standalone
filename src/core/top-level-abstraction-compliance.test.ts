@@ -506,40 +506,59 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
 
   // ==========================================================================
   // 门禁 7: 二维状态矩阵与依赖高亮物理契约硬检查 (2D Grid & Dependency Mandate Gate)
-  // 严禁二维算法偷懒只发 1D 数组冒充 2D 矩阵！严禁缺少单元格依赖高亮！
+  // 严禁二维算法偷懒只发 1D 数组冒充 2D 矩阵！严禁缺少单元格依赖高亮！Stage 2 备忘录与 Stage 3 DP 均须遵循！
   // ==========================================================================
   describe('门禁 7: 二维状态矩阵与依赖高亮物理契约硬检查 (2D Grid & Dependency Mandate Gate)', () => {
-    it('二维网格或双序列算法在 Stage 3 填表阶段必须 100% 输出合法 grid 对象与依赖高亮', () => {
+    it('二维网格或双序列算法在 Stage 2 (记忆化) 与 Stage 3 (DP填表) 阶段必须 100% 输出合法 2D grid 对象与依赖/树结构', () => {
       const gridViolations: string[] = [];
 
       for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
         const model = AlgorithmModelRepository.getModel(id);
-        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-3');
-        if (resolved.category !== '2d-grid' && resolved.category !== '2d-sequence') continue;
-
         const strategy = AlgorithmStrategyRegistry.get(id);
         if (!strategy) continue;
 
-        const steps = strategy.generateSteps(model, { stage: 3, direction: 'forward' });
-        if (steps.length === 0) continue;
+        // 检查 Stage 2 (记忆化备忘录网格)
+        const resolved2 = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-2');
+        if (resolved2.category === '2d-grid' || resolved2.category === '2d-sequence') {
+          const steps2 = strategy.generateSteps(model, { stage: 2, direction: 'forward' });
+          if (steps2.length > 0) {
+            const first2 = steps2[0];
+            if (!first2.grid || !Array.isArray(first2.grid)) {
+              gridViolations.push(`${id} Stage 2 (记忆化) 首步缺失 2D grid 对象，导致备忘录网格无法呈现`);
+            } else if (first2.grid.length !== resolved2.m || (first2.grid[0] && first2.grid[0].length !== resolved2.n)) {
+              gridViolations.push(
+                `${id} Stage 2 grid 规格错误: 期望 ${resolved2.m}×${resolved2.n}，但实际为 ${first2.grid.length}×${first2.grid[0]?.length}`
+              );
+            }
 
-        // 检查首步与中间步是否具备完备的 2D grid
-        const firstStep = steps[0];
-        if (!firstStep.grid || !Array.isArray(firstStep.grid)) {
-          gridViolations.push(`${id} Stage 3 首步缺失 2D grid 对象，导致沙盘退化为一维`);
-          continue;
+            // Stage 2 必须具备真实状态依赖树
+            const hasTree = steps2.some((s) => s.treeRoot !== undefined);
+            if (!hasTree) {
+              gridViolations.push(`${id} Stage 2 记忆化阶段完全缺失 treeRoot 状态依赖树`);
+            }
+          }
         }
 
-        if (firstStep.grid.length !== resolved.m || (firstStep.grid[0] && firstStep.grid[0].length !== resolved.n)) {
-          gridViolations.push(
-            `${id} Stage 3 grid 规格错误: 期望 ${resolved.m}×${resolved.n}，但实际为 ${firstStep.grid.length}×${firstStep.grid[0]?.length}`
-          );
-        }
+        // 检查 Stage 3 (动态规划状态填表)
+        const resolved3 = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-3');
+        if (resolved3.category === '2d-grid' || resolved3.category === '2d-sequence') {
+          const steps3 = strategy.generateSteps(model, { stage: 3, direction: 'forward' });
+          if (steps3.length > 0) {
+            const first3 = steps3[0];
+            if (!first3.grid || !Array.isArray(first3.grid)) {
+              gridViolations.push(`${id} Stage 3 首步缺失 2D grid 对象，导致沙盘退化为一维`);
+            } else if (first3.grid.length !== resolved3.m || (first3.grid[0] && first3.grid[0].length !== resolved3.n)) {
+              gridViolations.push(
+                `${id} Stage 3 grid 规格错误: 期望 ${resolved3.m}×${resolved3.n}，但实际为 ${first3.grid.length}×${first3.grid[0]?.length}`
+              );
+            }
 
-        // 检查是否有依赖高亮 (deps / topI / leftI)
-        const hasDeps = steps.some((s) => (s.deps && s.deps.length > 0) || s.topI !== undefined || s.leftI !== undefined);
-        if (!hasDeps) {
-          gridViolations.push(`${id} Stage 3 整个推演过程没有任何步骤输出 deps 依赖格高亮，图例形同虚设！`);
+            // 检查是否有依赖高亮 (deps / topI / leftI)
+            const hasDeps = steps3.some((s) => (s.deps && s.deps.length > 0) || s.topI !== undefined || s.leftI !== undefined);
+            if (!hasDeps) {
+              gridViolations.push(`${id} Stage 3 整个推演过程没有任何步骤输出 deps 依赖格高亮，图例形同虚设！`);
+            }
+          }
         }
       }
 
@@ -549,5 +568,129 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       ).toEqual([]);
     });
   });
+
+  // ==========================================================================
+  // 门禁 8: 全声明标签卡完整性与防伪实现死门禁 (All Declared Stages Anti-Mock Gate)
+  // 严禁任何算法在任何声明标签卡中用 4 步或假装实现糊弄用户！宁可报错，绝不伪绿灯！
+  // ==========================================================================
+  describe('门禁 8: 全声明标签卡完整性与防伪实现死门禁 (All Declared Stages Anti-Mock Gate)', () => {
+    // 历史遗留假装实现受控燃烧名单（历史遗留低步数阶段，每重构一个即删除一个，严禁任何新增！）
+    const KNOWN_INSUFFICIENT_STEPS_BURNDOWN = new Set([
+      'integer-break-stage-4',   // 历史数学贪心仅 4 步待重构
+      'perfect-squares-stage-4', // 历史数论极值仅 5 步待重构
+      'coin-change-stage-4',     // 历史 BFS 仅 5 步待重构
+      'word-break-stage-4',      // 历史 Trie 优化仅 4 步待重构
+      'coin-change-ii-stage-4',  // 历史空间压缩仅 4 步待重构
+      // 门禁 8 新暴露出的历史贪心/DP 偷懒伪实现清单（严禁新增，逐题燃烧消灭）：
+      'min-arrows-stage-2',      // 历史记忆化仅 4 步
+      'non-overlapping-stage-2', // 历史记忆化仅 4 步
+      'merge-intervals-stage-2', // 历史记忆化仅 4 步
+      'partition-labels-stage-2',// 历史记忆化仅 4 步
+      'candy-stage-2',           // 历史记忆化仅 4 步
+      'decode-ways-stage-3',     // 历史递推DP仅 6 步 (默认入参短)
+    ]);
+
+    it('所有已锁定算法的全部声明阶段 (Stage 1-4) 均必须产生充分密度真实步骤，严禁任何偷懒跳步或假装实现', () => {
+      const mockViolations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        const model = AlgorithmModelRepository.getModel(id);
+        const strategy = AlgorithmStrategyRegistry.get(id);
+        if (!strategy) continue;
+
+        const stages = model.stages || {};
+        for (const [stageKey, stageConfig] of Object.entries(stages)) {
+          const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
+          if (isNaN(stageNum)) continue;
+
+          const steps = strategy.generateSteps(model, { stage: stageNum, direction: 'forward' });
+
+          // 核心硬门槛：严禁伪造实现（如仅有 4 步）
+          let minExpectedSteps = 6;
+          if (stageNum === 2) {
+            // 记忆化搜索树必须展开、下探、剪枝、回溯
+            minExpectedSteps = 10;
+          } else if (stageNum === 3) {
+            // 动态规划填表
+            minExpectedSteps = 8;
+          }
+
+          const burndownKey = `${id}-${stageKey}`;
+          if (steps.length < minExpectedSteps) {
+            if (!KNOWN_INSUFFICIENT_STEPS_BURNDOWN.has(burndownKey)) {
+              mockViolations.push(
+                `${id} 【${stageConfig.shortName || stageKey}】仅生成了 ${steps.length} 步 (低于红线下限 ${minExpectedSteps} 步，疑似只有骨架 Mock 或假装实现！宁可报错严禁虚假交付！)`
+              );
+            }
+          } else {
+            // 如果历史燃烧名单中的题目已经重构达标，强制要求从燃烧名单中删除，防止遗忘
+            if (KNOWN_INSUFFICIENT_STEPS_BURNDOWN.has(burndownKey)) {
+              mockViolations.push(
+                `🎉 [BURNDOWN_CLEANUP] ${id} 的 ${stageKey} 已经生成了 ${steps.length} 步，已达标！请从 KNOWN_INSUFFICIENT_STEPS_BURNDOWN 中移除该条目！`
+              );
+            }
+          }
+
+          // 步骤 stage 属性若显式声明，严禁与当前阶段冲突
+          const wrongStageSteps = steps.filter((s) => s.stage !== undefined && s.stage !== stageNum);
+          if (wrongStageSteps.length > 0) {
+            mockViolations.push(
+              `${id} 【${stageConfig.shortName || stageKey}】存在 ${wrongStageSteps.length} 个步骤的 step.stage 标记不等于当前阶段 ${stageNum} (检测到直接委托或阶段标记混淆！)`
+            );
+          }
+
+          // 检查每个步骤必须有真实的文字说明 (decision, message, msg, log)
+          const emptyDecisions = steps.filter(
+            (s) =>
+              (!s.decision || s.decision.trim().length === 0) &&
+              (!s.message || s.message.trim().length === 0) &&
+              (!s.msg || String(s.msg).trim().length === 0) &&
+              (!s.log || String(s.log).trim().length === 0)
+          );
+          if (emptyDecisions.length > 0) {
+            mockViolations.push(
+              `${id} 【${stageConfig.shortName || stageKey}】存在 ${emptyDecisions.length} 个无任何文字说明的空白伪步骤！`
+            );
+          }
+        }
+      }
+
+      expect(
+        mockViolations,
+        `❌ [ANTI_MOCK_GATE_FAIL] 发现严重偷懒或假装实现问题，宁可报错严禁伪绿灯:\n${mockViolations.join('\n')}`
+      ).toEqual([]);
+    });
+
+    it('分发饼干 (assign-cookies) 作为双序列黄金基准，四阶段步数与网格必须 100% 满分达标', () => {
+      const model = AlgorithmModelRepository.getModel('assign-cookies');
+      const strategy = AlgorithmStrategyRegistry.get('assign-cookies')!;
+
+      // Stage 1: 正向双指针 >= 6 步
+      const s1 = strategy.generateSteps(model, { stage: 1, direction: 'forward' });
+      expect(s1.length, 'Stage 1 贪心双指针步数').toBeGreaterThanOrEqual(6);
+      expect(s1.every((s) => s.stage === 1)).toBe(true);
+
+      // Stage 2: 真实 DFS 记忆化搜索树 + 2D 备忘录网格 >= 12 步 (彻底杜绝 4 步伪实现)
+      const s2 = strategy.generateSteps(model, { stage: 2, direction: 'forward' });
+      expect(s2.length, 'Stage 2 记忆化搜索步数必须 >= 12，杜绝 4 步假实现').toBeGreaterThanOrEqual(12);
+      expect(s2[0].grid, 'Stage 2 必须具备 (m+1)x(n+1) 二维备忘录网格').toBeDefined();
+      expect(s2.every((s) => s.stage === 2)).toBe(true);
+      expect(s2.some((s) => s.decision?.includes('剪枝') || s.decision?.includes('回溯落盘'))).toBe(true);
+
+      // Stage 3: 完备 2D DP 状态矩阵填表 >= 20 步 (带三向依赖)
+      const s3 = strategy.generateSteps(model, { stage: 3, direction: 'forward' });
+      expect(s3.length, 'Stage 3 DP 填表微步必须 >= 20 步').toBeGreaterThanOrEqual(20);
+      expect(s3[0].grid).toBeDefined();
+      expect(s3.every((s) => s.stage === 3)).toBe(true);
+      expect(s3.some((s) => s.deps && s.deps.length >= 2)).toBe(true);
+
+      // Stage 4: 空间压缩单趟流转 >= 6 步
+      const s4 = strategy.generateSteps(model, { stage: 4, direction: 'forward' });
+      expect(s4.length, 'Stage 4 空间压缩步数').toBeGreaterThanOrEqual(6);
+      expect(s4.every((s) => s.stage === 4)).toBe(true);
+      expect(s4[s4.length - 1].metrics?.['space']).toBe('O(1)');
+    });
+  });
 });
+
 

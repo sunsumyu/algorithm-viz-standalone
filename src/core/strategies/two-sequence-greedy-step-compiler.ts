@@ -304,7 +304,7 @@ export class TwoSequenceGreedyStepCompiler {
   }
 
   // ==========================================================================
-  // Stage 2: 递归回溯与记忆化搜索树 (UniversalTreeNode)
+  // Stage 2: 递归回溯与记忆化搜索树 (UniversalTreeNode & 2D Memo Grid)
   // ==========================================================================
   private static compileStage2(
     model: IYamlAlgorithmModel,
@@ -318,12 +318,38 @@ export class TwoSequenceGreedyStepCompiler {
 
     const anchorMap = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
     const rawA = options.seqA && options.seqA.length > 0 ? options.seqA : [1, 2, 3];
-    const rawB = options.seqB && options.seqB.length > 0 ? options.seqB : [1, 2, 4];
+    const rawB = options.seqB && options.seqB.length > 0 ? options.seqB : [1, 1];
     const g = [...rawA].sort((a, b) => a - b);
     const s = [...rawB].sort((a, b) => a - b);
+    const m = g.length;
+    const n = s.length;
 
+    // 二维备忘录网格 ((m+1) x (n+1))：null 表示未计算
+    const memo: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
+    const cloneMemoGrid = (): (number | null)[][] => memo.map((row) => [...row]);
+
+    const buildStateArrays = (activeI?: number, activeJ?: number): StateArrayItem[] => [
+      {
+        id: 'g',
+        name: `${itemALabel}序列 (g, m=${m})`,
+        indices: g.map((_, idx) => idx),
+        values: g.map((v) => String(v)),
+        activeIdx: activeI !== undefined && activeI >= 0 && activeI < m ? activeI : undefined,
+        color: 'emerald',
+      },
+      {
+        id: 's',
+        name: `${itemBLabel}序列 (s, n=${n})`,
+        indices: s.map((_, idx) => idx),
+        values: s.map((v) => String(v)),
+        activeIdx: activeJ !== undefined && activeJ >= 0 && activeJ < n ? activeJ : undefined,
+        color: 'amber',
+      },
+    ];
+
+    let nodeUid = 0;
     const rootTree: UniversalTreeNode = {
-      id: 'root',
+      id: 'dfs_root_0_0',
       r: 0,
       c: 0,
       val: 'dfs(0, 0)',
@@ -331,88 +357,219 @@ export class TwoSequenceGreedyStepCompiler {
       children: [],
     };
 
+    // 初始入口步
     steps.push({
       stepIndex: 0,
       stage: 2,
       codeLine: anchorMap['entry'] ?? 1,
-      decision: `递归搜索入口：自顶向下探索每个${itemALabel}匹配${itemBLabel}的分支决策，备忘录剪除重叠子问题`,
-      message: `dfs(i, j) 状态空间自顶向下展开：包含「满足并推进」与「跳过饼干」分支`,
-      variables: { i: 0, j: 0 },
+      decision: `递归搜索初始化：构建 (${m + 1} × ${n + 1}) 备忘录网格，自顶向下启动 dfs(0, 0) 探索最优分配决策树`,
+      message: `dfs(i, j) 表示使用饼干 s[j..${n - 1}] 满足孩子 g[i..${m - 1}] 的最大数量，备忘录剪枝消除重叠计算`,
+      variables: { i: 0, j: 0, m, n },
+      grid: cloneMemoGrid(),
+      i: 0,
+      j: 0,
+      currentI: 0,
+      currentJ: 0,
       treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'dfs-state': 'dfs(0, 0)' },
+      stateArrays: buildStateArrays(0, 0),
+      metrics: { 'dfs-state': 'dfs(0, 0)', [targetMetric]: '0' },
     });
 
-    // 展开代表性第一层分支
-    const branchMatch: UniversalTreeNode = {
-      id: 'branch_match_0',
-      r: 1,
-      c: 0,
-      val: `匹配 g[0]=${g[0]} 与 s[0]=${s[0]}`,
-      status: 'visited',
-      children: [],
-    };
-    const branchSkip: UniversalTreeNode = {
-      id: 'branch_skip_0',
-      r: 1,
-      c: 1,
-      val: `跳过 s[0] 探索 s[1]`,
-      status: 'pruned',
-      children: [],
-    };
-    rootTree.children = [branchMatch, branchSkip];
+    // 递归执行函数
+    const runDfs = (i: number, j: number, parentNode: UniversalTreeNode, branchLabel: string): number => {
+      nodeUid++;
+      const currentTreeNode: UniversalTreeNode = {
+        id: `node_${i}_${j}_${nodeUid}`,
+        r: i,
+        c: j,
+        val: branchLabel ? `${branchLabel} → dfs(${i}, ${j})` : `dfs(${i}, ${j})`,
+        status: 'active',
+        children: [],
+      };
+      parentNode.children.push(currentTreeNode);
 
-    steps.push({
-      stepIndex: 1,
-      stage: 2,
-      codeLine: anchorMap['choose'] ?? 3,
-      decision: `分支探查：g[0]=${g[0]} <= s[0]=${s[0]}，优先选取相容分支，产生子状态 dfs(1, 1)`,
-      message: `贪心选择在此处体现为深度优先搜索的最优优先展开策略`,
-      variables: { i: 1, j: 1 },
-      treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'dfs-state': 'dfs(1, 1)' },
-    });
+      // 微步 1: 进入调用探查
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        codeLine: anchorMap['entry'] ?? 1,
+        decision: `🔍 深入调用 dfs(i=${i}, j=${j})：考查从第 ${i} 个孩子与第 ${j} 块饼干开始的分配子问题`,
+        message: `自顶向下展开递归子树，当前探测坐标 (${i}, ${j})`,
+        variables: { i, j, 'g.length': m, 's.length': n },
+        grid: cloneMemoGrid(),
+        i,
+        j,
+        currentI: i,
+        currentJ: j,
+        treeRoot: cloneStateDepTree(rootTree),
+        stateArrays: buildStateArrays(i < m ? i : undefined, j < n ? j : undefined),
+        metrics: { 'dfs-state': `dfs(${i}, ${j})`, 'depth': `${i + j}` },
+      });
 
-    const subMatch: UniversalTreeNode = {
-      id: 'sub_match_1',
-      r: 2,
-      c: 0,
-      val: `dfs(2, 2)`,
-      status: 'active',
-      children: [],
-    };
-    branchMatch.children = [subMatch];
+      // 递归基 (Base Case)
+      if (i >= m || j >= n) {
+        currentTreeNode.status = 'visited';
+        currentTreeNode.val = `dfs(${i}, ${j}) = 0 (到达边界)`;
+        memo[i][j] = 0;
 
-    steps.push({
-      stepIndex: 2,
-      stage: 2,
-      codeLine: anchorMap['memo_hit'] ?? 4,
-      decision: `记忆化缓存：检测子状态 (i=1, j=1) 并写入备忘录 memo[1][1]，消除重叠搜索`,
-      message: `备忘录将指数级展开 O(2^(M+N)) 压缩至多项式级 O(M*N)`,
-      variables: { memoKey: 'memo_1_1', cached: true },
-      treeRoot: cloneStateDepTree(rootTree),
-      metrics: { 'memo': '记录状态最优解' },
-    });
-
-    // 计算实际结果
-    let expectedResult = 0;
-    let ci = 0, cj = 0;
-    while (ci < g.length && cj < s.length) {
-      if (s[cj] >= g[ci]) {
-        expectedResult++;
-        ci++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          codeLine: anchorMap['entry'] ?? 1,
+          decision: `🛑 触底边界返回：${i >= m ? `所有 ${m} 个孩子已考察完毕` : `所有 ${n} 块饼干已消耗殆尽`}，无法继续满足更多孩子，返回 0`,
+          message: `边界基准条件成立，递归触底回溯`,
+          variables: { i, j, return: 0 },
+          grid: cloneMemoGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i < m ? i : undefined, j < n ? j : undefined),
+          metrics: { 'dfs-state': `dfs(${i}, ${j}) 触底`, 'result': '0' },
+        });
+        return 0;
       }
-      cj++;
-    }
+
+      // 记忆化备忘录命中检查
+      if (memo[i][j] !== null) {
+        const cachedVal = memo[i][j]!;
+        currentTreeNode.status = 'pruned';
+        currentTreeNode.val = `dfs(${i}, ${j}) = ${cachedVal} (⚡备忘录剪枝)`;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          codeLine: anchorMap['memo_hit'] ?? 2,
+          decision: `⚡ 记忆化剪枝命中！子状态 (i=${i}, j=${j}) 已经在备忘录 memo[${i}][${j}]=${cachedVal} 中缓存，直接剪枝返回，避免重复展开`,
+          message: `备忘录成功剪除指数级重复搜索分支`,
+          variables: { i, j, 'memo[i][j]': cachedVal },
+          grid: cloneMemoGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i, j),
+          metrics: { 'memo-hit': `memo[${i}][${j}]=${cachedVal}`, 'action': '⚡ 剪枝' },
+        });
+        return cachedVal;
+      }
+
+      // 分支决策探查
+      const curG = g[i];
+      const curS = s[j];
+      let best = 0;
+
+      if (curS >= curG) {
+        // 分支 A: 分配满足当前饼干
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          codeLine: anchorMap['choose'] ?? 3,
+          decision: `✅ 贪心相容：饼干 s[${j}]=${curS} >= 孩子 g[${i}]=${curG}，可分发满足！启动分支探查：1 + dfs(${i + 1}, ${j + 1})`,
+          message: `当前决策产生 1 个满足计数，并消耗这块饼干向后下探`,
+          variables: { i, j, 'g[i]': curG, 's[j]': curS },
+          grid: cloneMemoGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i, j),
+          metrics: { 'branch': `分发 s[${j}] 给 g[${i}]`, 'comparison': `${curS} >= ${curG}` },
+        });
+
+        const takeRes = 1 + runDfs(i + 1, j + 1, currentTreeNode, `分发(g[${i}],s[${j}])`);
+        best = takeRes;
+
+        // 分支 B: 探查跳过当前饼干寻找更匹配分支
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          codeLine: anchorMap['skip'] ?? 4,
+          decision: `🔍 分支探查：亦可跳过饼干 s[${j}]，尝试为孩子 g[${i}] 寻找后续饼干：dfs(${i}, ${j + 1})`,
+          message: `全面探索所有可能分支以验证最优解`,
+          variables: { i, j: j + 1 },
+          grid: cloneMemoGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i, j),
+          metrics: { 'branch': `跳过 s[${j}]`, 'currentBest': String(best) },
+        });
+
+        const skipRes = runDfs(i, j + 1, currentTreeNode, `跳过 s[${j}]`);
+        best = Math.max(takeRes, skipRes);
+      } else {
+        // 饼干太小，无法满足当前孩子，唯一选择是跳过当前饼干
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          codeLine: anchorMap['skip'] ?? 4,
+          decision: `⏩ 尺寸不足：饼干 s[${j}]=${curS} < 孩子 g[${i}]=${curG}，无法满足！只能跳过当前饼干，下探子状态 dfs(${i}, ${j + 1})`,
+          message: `单调性决定此饼干无法满足当前及后续更大胃口的孩子，单向跳过`,
+          variables: { i, j, 'g[i]': curG, 's[j]': curS },
+          grid: cloneMemoGrid(),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          treeRoot: cloneStateDepTree(rootTree),
+          stateArrays: buildStateArrays(i, j),
+          metrics: { 'branch': `跳过偏小 s[${j}]`, 'comparison': `${curS} < ${curG}` },
+        });
+
+        best = runDfs(i, j + 1, currentTreeNode, `跳过 s[${j}]`);
+      }
+
+      // 递归回溯与备忘录落盘
+      memo[i][j] = best;
+      currentTreeNode.status = 'visited';
+      currentTreeNode.val = `dfs(${i}, ${j}) = ${best}`;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        codeLine: anchorMap['done'] ?? 5,
+        decision: `💾 回溯落盘：dfs(${i}, ${j}) 分支计算完成，取得最优解 ${best}，写入备忘录 memo[${i}][${j}]=${best}`,
+        message: `子问题最优解已固化至二维备忘录矩阵中`,
+        variables: { i, j, 'memo[i][j]': best },
+        grid: cloneMemoGrid(),
+        i,
+        j,
+        currentI: i,
+        currentJ: j,
+        treeRoot: cloneStateDepTree(rootTree),
+        stateArrays: buildStateArrays(i, j),
+        metrics: { [targetMetric]: String(best), 'memo-write': `memo[${i}][${j}]=${best}` },
+      });
+
+      return best;
+    };
+
+    // 启动根调用并挂载至 rootTree
+    const finalOptimal = runDfs(0, 0, rootTree, '根节点决策');
+    rootTree.val = `dfs(0, 0) = ${finalOptimal}`;
+    rootTree.status = 'visited';
 
     steps.push({
       stepIndex: steps.length,
       stage: 2,
-      codeLine: anchorMap['done'] ?? 6,
-      decision: `🎉 递归记忆化搜索完成！依赖树推演得出全局最大满足孩子数为 ${expectedResult}`,
+      codeLine: anchorMap['done'] ?? 5,
+      decision: `🎉 递归记忆化搜索全部完成！全局最优可满足孩子数为 ${finalOptimal}，备忘录矩阵与依赖树完全收敛`,
       message: `搜索树证明了贪心选择性质与动态规划最优子结构的一致性`,
-      variables: { return: expectedResult },
+      variables: { return: finalOptimal, m, n },
+      grid: cloneMemoGrid(),
+      i: 0,
+      j: 0,
+      currentI: 0,
+      currentJ: 0,
       treeRoot: cloneStateDepTree(rootTree),
-      metrics: { [targetMetric]: String(expectedResult), 'status': '🏁 搜索收敛' },
+      stateArrays: buildStateArrays(0, 0),
+      metrics: { [targetMetric]: String(finalOptimal), 'status': '🏁 搜索完备' },
     });
 
     return steps;
@@ -600,13 +757,219 @@ export class TwoSequenceGreedyStepCompiler {
   }
 
   // ==========================================================================
-  // Stage 4: 空间压缩与单趟双指针极致优化
+  // Stage 4: 空间压缩与单趟双指针极致优化 (O(1) Auxiliary Space)
   // ==========================================================================
   private static compileStage4(
     model: IYamlAlgorithmModel,
     options: TwoSequenceGreedyCompileOptions
   ): UniversalStep[] {
-    // 空间压缩阶段直接委托为极致单趟双指针流转
-    return this.compileStage1(model, options);
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const ctx = options.domainContext || {};
+    const seqALabel = ctx.seqALabel || '孩子胃口 (g)';
+    const seqBLabel = ctx.seqBLabel || '饼干尺寸 (s)';
+    const itemALabel = ctx.itemALabel || '孩子';
+    const itemBLabel = ctx.itemBLabel || '饼干';
+    const targetMetric = ctx.targetMetric || '满足孩子数';
+
+    const anchorMap = this.extractAnchors(
+      model,
+      4,
+      options.direction || 'forward',
+      options.anchorMap
+    );
+
+    const rawA = options.seqA && options.seqA.length > 0 ? options.seqA : [1, 2, 3];
+    const rawB = options.seqB && options.seqB.length > 0 ? options.seqB : [1, 1];
+    const g = [...rawA].sort((a, b) => a - b);
+    const s = [...rawB].sort((a, b) => a - b);
+    const m = g.length;
+    const n = s.length;
+
+    const buildStateArrays = (
+      activeChild?: number,
+      activeCookie?: number,
+      matchedChildren: number[] = [],
+      matchedCookies: number[] = []
+    ): StateArrayItem[] => [
+      {
+        id: 'g',
+        name: `${itemALabel}序列 (g, m=${m})`,
+        indices: g.map((_, idx) => idx),
+        values: g.map((v) => String(v)),
+        activeIdx: activeChild,
+        color: 'emerald',
+      },
+      {
+        id: 's',
+        name: `${itemBLabel}序列 (s, n=${n})`,
+        indices: s.map((_, idx) => idx),
+        values: s.map((v) => String(v)),
+        activeIdx: activeCookie,
+        color: 'amber',
+      },
+      {
+        id: 'matched_info',
+        name: 'O(1) 双指针压缩状态',
+        indices: [0, 1],
+        values: [
+          `已满足: ${matchedChildren.length}`,
+          `指针: [g:${activeChild ?? '完'}, s:${activeCookie ?? '完'}]`,
+        ],
+        color: 'indigo',
+      },
+    ];
+
+    // Step 0: 排序与就绪
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      codeLine: anchorMap['sort_g'] ?? 1,
+      decision: `空间极致压缩：舍弃 O(m*n) 的 DP 矩阵与备忘录，仅依靠升序序列与双指针流水线推进`,
+      message: `辅助空间复杂度从 O(m*n) 直降为 O(1)，排序后单趟线性扫描直接产出最优解`,
+      variables: { 'g.length': m, 's.length': n, spaceComplexity: 'O(1)' },
+      stateArrays: buildStateArrays(),
+      metrics: { [targetMetric]: '0', 'space': 'O(1)' },
+    });
+
+    if (!isReverse) {
+      let child = 0;
+      const matchedChildren: number[] = [];
+      const matchedCookies: number[] = [];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        codeLine: anchorMap['init'] ?? 3,
+        decision: `指针就绪：初始化 child=0 指向待满足的最小胃口孩子 g[0]=${g[0]}`,
+        message: `单趟 for 循环推进 cookie 指针遍历整个饼干序列`,
+        variables: { child: 0, cookie: 0 },
+        stateArrays: buildStateArrays(0, 0, matchedChildren, matchedCookies),
+        activeIndices: [0],
+        activeSlot: 0,
+        metrics: { [targetMetric]: '0', 'pointer': 'child=0' },
+      });
+
+      for (let cookie = 0; cookie < n && child < m; cookie++) {
+        const curG = g[child];
+        const curS = s[cookie];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          codeLine: anchorMap['loop'] ?? 4,
+          decision: `🔍 流水线扫描：饼干指针推进至 cookie=${cookie} (s[${cookie}]=${curS})，考查当前孩子 child=${child} (g[${child}]=${curG})`,
+          message: curS >= curG
+            ? `饼干尺寸 ${curS} >= 孩子胃口 ${curG}，贪心相容！`
+            : `饼干尺寸 ${curS} < 孩子胃口 ${curG}，尺寸不足，流水线继续推进至下一块饼干`,
+          variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS },
+          stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
+          activeIndices: [child],
+          activeSlot: child,
+          metrics: { [targetMetric]: String(child), 'check': `${curS} >= ${curG} ?` },
+        });
+
+        if (curS >= curG) {
+          matchedChildren.push(child);
+          matchedCookies.push(cookie);
+          child++;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            codeLine: anchorMap['matched'] ?? 5,
+            decision: `🎉 即时消化分配：将饼干 s[${cookie}]=${curS} 分配给孩子 g[${child - 1}]=${curG}，child 指针推进至 ${child}`,
+            message: `满足计数原地累加，无需回溯任何中间状态表`,
+            variables: { child, cookie, count: child },
+            stateArrays: buildStateArrays(child < m ? child : undefined, cookie, matchedChildren, matchedCookies),
+            activeIndices: [child - 1],
+            activeSlot: child - 1,
+            metrics: { [targetMetric]: String(child), 'action': '✅ 满足双增' },
+          });
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        codeLine: anchorMap['done'] ?? 7,
+        decision: `🏁 极致流转收敛：单趟流水线执行完毕，最终满足 ${child} 个${itemALabel}，空间 O(1)，时间 O(n log n)`,
+        message: `单趟双指针直接达成全局最优，空间压缩圆满达成`,
+        variables: { return: child, totalChildren: m, totalCookies: n },
+        stateArrays: buildStateArrays(undefined, undefined, matchedChildren, matchedCookies),
+        metrics: { [targetMetric]: String(child), 'space': 'O(1)', 'status': '🏁 O(1) 全局最优' },
+      });
+    } else {
+      let count = 0;
+      let cookie = n - 1;
+      const matchedChildren: number[] = [];
+      const matchedCookies: number[] = [];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        codeLine: anchorMap['init'] ?? 3,
+        decision: `逆向压缩就绪：大饼干优先，cookie=${n - 1}，从最大胃口孩子开始逆序推进`,
+        message: `逆向单趟扫描同样仅消耗 O(1) 辅助空间`,
+        variables: { count: 0, cookie: n - 1 },
+        stateArrays: buildStateArrays(m - 1, n - 1, matchedChildren, matchedCookies),
+        activeIndices: [m - 1],
+        activeSlot: m - 1,
+        metrics: { [targetMetric]: '0', 'pointer': `cookie=${n - 1}` },
+      });
+
+      for (let child = m - 1; child >= 0 && cookie >= 0; child--) {
+        const curG = g[child];
+        const curS = s[cookie];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          codeLine: anchorMap['loop'] ?? 4,
+          decision: `🔍 逆向考查：大胃口孩子 g[${child}]=${curG}，当前最大饼干 s[${cookie}]=${curS}`,
+          message: curS >= curG
+            ? `饼干足以满足最大胃口孩子！进行消化分配`
+            : `当前最大饼干不足以满足孩子 g[${child}]，当前孩子无法被满足，继续考察次大胃口孩子`,
+          variables: { child, cookie, 'g[child]': curG, 's[cookie]': curS },
+          stateArrays: buildStateArrays(child, cookie, matchedChildren, matchedCookies),
+          activeIndices: [child],
+          activeSlot: child,
+          metrics: { [targetMetric]: String(count), 'check': `${curS} >= ${curG} ?` },
+        });
+
+        if (curS >= curG) {
+          matchedChildren.push(child);
+          matchedCookies.push(cookie);
+          count++;
+          cookie--;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            codeLine: anchorMap['matched'] ?? 5,
+            decision: `🎉 逆向即时消化：s[${cookie + 1}]=${curS} 成功分配给 g[${child}]=${curG}，累计满足数增至 ${count}`,
+            message: `高效消化最大尺寸资源`,
+            variables: { child, cookie, count },
+            stateArrays: buildStateArrays(child, cookie >= 0 ? cookie : undefined, matchedChildren, matchedCookies),
+            activeIndices: [child],
+            activeSlot: child,
+            metrics: { [targetMetric]: String(count), 'action': '✅ 逆向满足' },
+          });
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        codeLine: anchorMap['done'] ?? 7,
+        decision: `🏁 逆向流转收敛：单趟逆向扫描完毕，最多满足 ${count} 个${itemALabel}`,
+        message: `双向对称性完全一致收敛`,
+        variables: { return: count, totalChildren: m, totalCookies: n },
+        stateArrays: buildStateArrays(undefined, undefined, matchedChildren, matchedCookies),
+        metrics: { [targetMetric]: String(count), 'space': 'O(1)', 'status': '🏁 逆向最优' },
+      });
+    }
+
+    return steps;
   }
 }
