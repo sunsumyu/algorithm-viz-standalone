@@ -352,9 +352,10 @@ export class StateSpacePresenter {
       } else if (!step.treeRoot && (step.stateArrays || step.decisions || step.dp1d)) {
         GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       } else {
+        const activeTree = step.treeRoot || ((step as any).treeNodes && (step as any).treeNodes[0]);
         RecursionTreeAdapter.renderRecursionTree(
           container,
-          step.treeRoot,
+          activeTree,
           step.activeNodeId,
           currentStage === 'stage-2'
         );

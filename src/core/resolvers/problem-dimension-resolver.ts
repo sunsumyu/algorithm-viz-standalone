@@ -224,11 +224,18 @@ export class ProblemDimensionResolver {
 
     // 4. 背包类问题 (weights/values/bagWeight/target)
     if (params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined) {
-      const bag = Number(params.bagWeight ?? params.target ?? 0);
+      let bag = Number(params.bagWeight ?? params.target ?? 0);
       const wArr = params.weights ? this.toArray(params.weights) : (params.nums ? this.toArray(params.nums) : []);
+      if ((modelId === 'target-sum' || modelId === 'target-sum-standard') && params.target !== undefined && wArr.length > 0) {
+        const sum = wArr.reduce((a, b) => a + Number(b), 0);
+        const t = Number(params.target);
+        if (Math.abs(t) <= sum && (sum + t) % 2 === 0) {
+          bag = (sum + t) / 2;
+        }
+      }
       const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
       m = (!isStage4 && wArr.length > 0) ? wArr.length : 1;
-      n = bag > 0 ? bag + 1 : 6;
+      n = bag >= 0 ? bag + 1 : 6;
       category = 'knapsack';
       const is1D = isStage4 || m <= 1 || this.PURE_1D_PROBLEM_IDS.has(modelId);
       return { m, n, is1D, category };

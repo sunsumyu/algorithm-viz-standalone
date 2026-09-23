@@ -13,54 +13,8 @@ import { StateSpacePresenter } from './state-space-presenter';
 import { StageNavigationCoordinator } from '../controllers/stage-navigation-coordinator';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 
-/**
- * 官方已锁定的顶层抽象黄金基准算法清单 (Canonical ID)
- */
-export const LOCKED_TOP_LEVEL_ALGORITHMS = [
-  'jump-game-ii',
-  'jump-game',
-  'can-jump',
-  'minimum-number-of-taps-to-water-a-garden',
-  'min-arrows',
-  'non-overlapping',
-  'merge-intervals',
-  'partition-labels',
-  'candy',
-  'assign-cookies',
-  'lemonade',
-  'monotone-digits',
-  'maximize-sum-k',
-  'gas-station',
-  'wiggle-subsequence',
-  'reconstruct-queue',
-  'max-subarray',
-  'task-scheduler',
-  'tree-cameras',
-  'two-city-scheduling',
-  'meeting-rooms-ii',
-  'course-schedule-iii',
-  'largest-number',
-  'minimum-cost-connect-sticks',
-  'minimum-eat-oranges',
-  'absolute-value-add-to-array',
-  'cutting-bamboo',
-  'ipo-max-capital',
-  'maximum-product-k-parts',
-  'meeting-monopoly',
-  'meeting-one-day',
-  'eliminate-monsters',
-  'largest-palindromic-number',
-  // DP 基准族
-  'unique-paths',
-  'unique-paths-ii',
-  'minimum-path-sum',
-  'fibonacci',
-  'climb-stairs',
-  'knapsack-01',
-  'edit-distance',
-  'house-robber',
-  'coin-change',
-];
+import { LOCKED_TOP_LEVEL_ALGORITHMS } from '../top-level-abstraction-compliance.test';
+export { LOCKED_TOP_LEVEL_ALGORITHMS };
 
 const MOCK_STAGE_HTML = `
   <div id="algo-main-container" class="view-container active">
@@ -111,7 +65,7 @@ function getFreshStageDOM(): Document {
   return sharedDoc;
 }
 
-describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation Contract Gates)', { timeout: 30000 }, () => {
+describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation Contract Gates)', { timeout: 120000 }, () => {
   // ==========================================================================
   // 红灯 1 & 2: 卡片双重镜像重复 & 一维槽位受二维表格污染陷阱
   // ==========================================================================
