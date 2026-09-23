@@ -57,6 +57,7 @@ export class ProblemDimensionResolver {
     'merge-intervals',
     'partition-labels',
     'lemonade',
+    'monotone-digits',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -257,6 +258,13 @@ export class ProblemDimensionResolver {
     if (params.s !== undefined) {
       m = 1;
       n = String(params.s).length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (modelId === 'monotone-digits' && params.n !== undefined) {
+      m = 1;
+      n = String(params.n).length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

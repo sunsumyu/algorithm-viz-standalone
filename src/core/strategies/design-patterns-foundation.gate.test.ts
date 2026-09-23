@@ -122,6 +122,7 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { MergeIntervalsStrategy } = await import('./merge-intervals-strategy');
       const { PartitionLabelsStrategy } = await import('./partition-labels-strategy');
       const { LemonadeStrategy } = await import('./lemonade-strategy');
+      const { MonotoneDigitsStrategy } = await import('./monotone-digits-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -131,6 +132,7 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         MergeIntervalsStrategy,
         PartitionLabelsStrategy,
         LemonadeStrategy,
+        MonotoneDigitsStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

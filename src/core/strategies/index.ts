@@ -37,6 +37,7 @@ import { AssignCookiesStrategy } from './assign-cookies-strategy';
 import { TwoSequenceGreedyStepCompiler } from './two-sequence-greedy-step-compiler';
 import { LemonadeStrategy } from './lemonade-strategy';
 import { ResourceGreedyStepCompiler } from './resource-greedy-step-compiler';
+import { MonotoneDigitsStrategy } from './monotone-digits-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -150,6 +151,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new CandyStrategy());
   AlgorithmStrategyRegistry.register(new AssignCookiesStrategy());
   AlgorithmStrategyRegistry.register(new LemonadeStrategy());
+  AlgorithmStrategyRegistry.register(new MonotoneDigitsStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -197,7 +199,8 @@ export {
   AssignCookiesStrategy,
   TwoSequenceGreedyStepCompiler,
   LemonadeStrategy,
-  ResourceGreedyStepCompiler
+  ResourceGreedyStepCompiler,
+  MonotoneDigitsStrategy
 };
 
 export * from './strategy-helpers';

@@ -16,6 +16,7 @@ import type { IYamlAlgorithmModel } from '../interfaces';
 import type { UniversalStep, StateArrayItem, UniversalTreeNode } from '../universal-stage-engine';
 import { YamlModelLoader } from '../yaml-model-loader';
 import { cloneStateDepTree } from './tree-clone';
+import { UniversalStepBuilder } from '../builders/universal-step-builder';
 
 export interface TwoPassCompileOptions {
   direction?: 'forward' | 'reverse';
@@ -737,4 +738,510 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 单调递增的数字 (LeetCode 738) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileMonotoneDigits(
+    model: IYamlAlgorithmModel,
+    rawNum: any,
+    options?: TwoPassCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const num = typeof rawNum === 'number' ? rawNum : (Number(rawNum) || 332);
+    switch (stage) {
+      case 2:
+        return this.compileMonotoneDigitsStage2(model, num, options);
+      case 3:
+        return this.compileMonotoneDigitsStage3(model, num, options);
+      case 4:
+        return this.compileMonotoneDigitsStage4(model, num, options);
+      case 1:
+      default:
+        return this.compileMonotoneDigitsStage1(model, num, options);
+    }
+  }
+
+  private static compileMonotoneDigitsStage1(
+    model: IYamlAlgorithmModel,
+    num: number,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const digits = String(num).split('').map(Number);
+    const n = digits.length;
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+    let flag = n;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(1)
+        .line(anchors.init || 2)
+        .slot(0)
+        .decision(`初始化：将数字 ${num} 拆解为 ${n} 位数数组 [${digits.join(', ')}]，初始置9标记 flag = ${flag}`)
+        .message(`准备开始从右向左逆序扫描，若相邻位破坏单调性则借位。`)
+        .variables({ num, flag, digits: [...digits] })
+        .metrics({ 'original': num, 'current-digits': digits.join(''), 'flag': flag })
+        .build()
+    );
+
+    // 1. 逆序扫描借位
+    for (let i = n - 1; i > 0; i--) {
+      // 探查步
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(1)
+          .line(anchors.check || 4)
+          .slot(i)
+          .highlightSlots([i - 1, i])
+          .decision(`逆序比较相邻位：考察 digits[${i - 1}]=${digits[i - 1]} 与 digits[${i}]=${digits[i]}`)
+          .message(`单调递增要求高位 <= 低位。比对 digits[${i - 1}] 与 digits[${i}]。`)
+          .variables({ i, high: digits[i - 1], low: digits[i], flag })
+          .metrics({ 'scan-i': i, 'check': `${digits[i - 1]} > ${digits[i]} ?` })
+          .build()
+      );
+
+      if (digits[i - 1] > digits[i]) {
+        digits[i - 1]--;
+        flag = i;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.borrow || 5)
+            .slot(i - 1)
+            .highlightSlots([i - 1])
+            .decision(`⚠️ 逆序比较发现 ${digits[i - 1] + 1} > ${digits[i]} 违规！高位借位减 1 变为 ${digits[i - 1]}，置9起点更新为 flag=${flag}`)
+            .message(`为保持最大且单调递增，将破坏递增的高位减 1，其后所有低位后续均将补齐为 9。`)
+            .variables({ i, 'borrowed-pos': i - 1, newHigh: digits[i - 1], flag, digits: [...digits] })
+            .metrics({ 'borrow': `pos ${i - 1} -> ${digits[i - 1]}`, 'flag': flag })
+            .build()
+        );
+      } else {
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.check || 4)
+            .slot(i - 1)
+            .highlightSlots([i - 1, i])
+            .decision(`✓ 逆序相邻位 ${digits[i - 1]} <= ${digits[i]} 满足单调递增，无需借位`)
+            .message(`当前局部满足单调递增，继续向左扫描高位。`)
+            .variables({ i, flag, digits: [...digits] })
+            .metrics({ 'status': '局部递增OK', 'flag': flag })
+            .build()
+        );
+      }
+    }
+
+    // 2. 正向置 9 循环
+    for (let i = flag; i < n; i++) {
+      digits[i] = 9;
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(1)
+          .line(anchors.fill9 || 9)
+          .slot(i)
+          .highlightSlots([i])
+          .decision(`后缀最大化置9：因高位发生借位，将低位 digits[${i}] 置为 9`)
+          .message(`贪心准则：高位减一后，后缀所有数位全部贪心取最大值 9。`)
+          .variables({ i, flag, digits: [...digits] })
+          .metrics({ [`digits[${i}]`]: '9', 'current-result': digits.join('') })
+          .build()
+      );
+    }
+
+    const finalVal = parseInt(digits.join(''), 10);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(1)
+        .line(anchors.done || 11)
+        .slot(0)
+        .decision(`🎉 贪心扫描推演完成！最终小于等于 ${num} 的最大单调递增数字为 ${finalVal}`)
+        .message(`完成全流程贪心求解，返回 ${finalVal}。`)
+        .variables({ return: finalVal, original: num })
+        .metrics({ 'final-result': finalVal, 'status': 'DONE' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMonotoneDigitsStage2(
+    model: IYamlAlgorithmModel,
+    num: number,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const digits = String(num).split('').map(Number);
+    const n = digits.length;
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const rootNode: UniversalTreeNode = {
+      id: 'node-root',
+      r: 0,
+      c: 0,
+      val: `Num(${num})`,
+      status: 'current',
+      children: [],
+    };
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(2)
+        .line(anchors.base || 2)
+        .slot(0)
+        .decision(`决策树根节点展开：初始数字 ${num}`)
+        .message(`构建自右向左数位决策依赖树，探索借位分支与贪心剪枝。`)
+        .variables({ num, len: n })
+        .tree(rootNode)
+        .build()
+    );
+
+    let flag = n;
+    let parentNode = rootNode;
+
+    for (let i = n - 1; i > 0; i--) {
+      // 微步 1: 递归深入探查 (@step:check)
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.check || 3)
+          .slot(i)
+          .highlightSlots([i - 1, i])
+          .decision(`递归探查：dfs(idx=${i}) 深入考察相邻数位 [${i - 1}] 与 [${i}]`)
+          .message(`进入递归调用帧，当前考察位索引 idx=${i}，比对相邻数值关系。`)
+          .variables({ idx: i, high: digits[i - 1], low: digits[i], flag })
+          .tree(rootNode)
+          .activeNode(parentNode.id)
+          .build()
+      );
+
+      // 微步 2: 分支条件评估
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.check || 3)
+          .slot(i - 1)
+          .highlightSlots([i - 1, i])
+          .decision(`条件评估：比对 digits[${i - 1}]=${digits[i - 1]} 与 digits[${i}]=${digits[i]} (${digits[i - 1] > digits[i] ? '违反单调递增' : '满足单调递增'})`)
+          .message(digits[i - 1] > digits[i] ? `由于 ${digits[i - 1]} > ${digits[i]}，必须发生高位借位减 1。` : `相邻位合法递增，无需借位。`)
+          .variables({ idx: i, high: digits[i - 1], low: digits[i], needsBorrow: digits[i - 1] > digits[i] })
+          .tree(rootNode)
+          .activeNode(parentNode.id)
+          .build()
+      );
+
+      // 微步 3: 决策转移与子树挂载
+      if (digits[i - 1] > digits[i]) {
+        digits[i - 1]--;
+        flag = i;
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: n - i,
+          c: 0,
+          val: `[${i-1}]借位->${digits[i-1]},flag=${flag}`,
+          status: 'visited',
+          tag: '借位减1',
+          children: [],
+        };
+        parentNode.children = [child];
+        parentNode = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_borrow || 5)
+            .slot(i - 1)
+            .highlightSlots([i - 1])
+            .decision(`探索借位分支：高位借位减 1 转移至 digits[${i - 1}]=${digits[i - 1]}，更新置9起点 flag=${flag}`)
+            .message(`探索借位子分支，更新置9标记点 flag=${flag}。`)
+            .variables({ idx: i, 'borrowed': digits[i - 1], flag })
+            .tree(rootNode)
+            .activeNode(child.id)
+            .build()
+        );
+      } else {
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: n - i,
+          c: 0,
+          val: `[${i-1}]保持->${digits[i-1]}`,
+          status: 'visited',
+          tag: '满足保持',
+          children: [],
+        };
+        parentNode.children = [child];
+        parentNode = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_keep || 7)
+            .slot(i - 1)
+            .highlightSlots([i - 1, i])
+            .decision(`探索保持分支：相邻位满足递增，转移至 dfs(idx=${i - 1})`)
+            .message(`无借位发生，保持当前数位继续深入。`)
+            .variables({ idx: i, flag })
+            .tree(rootNode)
+            .activeNode(child.id)
+            .build()
+        );
+      }
+    }
+
+    // 后缀置 9
+    for (let i = flag; i < n; i++) {
+      digits[i] = 9;
+      const child: UniversalTreeNode = {
+        id: `node-fill-${i}`,
+        r: n + (i - flag + 1),
+        c: 0,
+        val: `[${i}]置9`,
+        status: 'visited',
+        tag: '置9',
+        children: [],
+      };
+      parentNode.children = [child];
+      parentNode = child;
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.base || 2)
+          .slot(i)
+          .highlightSlots([i])
+          .decision(`递归回溯置9：将低位 [${i}] 补齐为 9`)
+          .message(`贪心后缀最大化展开。`)
+          .variables({ i, digits: [...digits] })
+          .tree(rootNode)
+          .activeNode(child.id)
+          .build()
+      );
+    }
+
+    const finalVal = parseInt(digits.join(''), 10);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(2)
+        .line(anchors.base || 2)
+        .slot(0)
+        .decision(`决策树完全遍历完成，最终生成最大单调递增数字 ${finalVal}`)
+        .message(`🎯 递归基底命中，返回最优结果。`)
+        .variables({ return: finalVal, original: num })
+        .tree(rootNode)
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMonotoneDigitsStage3(
+    model: IYamlAlgorithmModel,
+    num: number,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const digits = String(num).split('').map(Number);
+    const n = digits.length;
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    // grid: n 行, 2 列 (col 0: 当前位数字, col 1: 当前 flag 标记)
+    const grid: number[][] = Array.from({ length: n }, (_, idx) => [digits[idx], n]);
+    let flag = n;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(3)
+        .line(anchors.table_init || 3)
+        .slot(0)
+        .grid(grid)
+        .cell(0, 0)
+        .decision(`数位矩阵初始化：构造 ${n}×2 状态矩阵，记录各数位当前值与变9标记`)
+        .message(`第 0 列为数位数值，第 1 列为借位影响标记。`)
+        .variables({ len: n, flag: n })
+        .metrics({ 'table': '就绪', 'flag': n })
+        .build()
+    );
+
+    for (let i = n - 1; i > 0; i--) {
+      // 探查步
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(3)
+          .line(anchors.loop || 5)
+          .slot(i)
+          .highlightSlots([i - 1, i])
+          .grid(grid)
+          .cell(i, 0)
+          .decision(`状态探查：读取 table[${i - 1}][0]=${digits[i - 1]} 与 table[${i}][0]=${digits[i]}`)
+          .message(`比对两相邻位在当前推演步的数值。`)
+          .variables({ i, high: digits[i - 1], low: digits[i] })
+          .metrics({ 'current-i': i, 'check': `${digits[i - 1]} > ${digits[i]}` })
+          .build()
+      );
+
+      if (digits[i - 1] > digits[i]) {
+        digits[i - 1]--;
+        flag = i;
+        grid[i - 1][0] = digits[i - 1];
+        grid[i - 1][1] = flag;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.borrow || 7)
+            .slot(i - 1)
+            .highlightSlots([i - 1])
+            .grid(grid)
+            .cell(i - 1, 0)
+            .decision(`状态转移：高位借位减 1，table[${i - 1}] 更新为 [${digits[i - 1]}, flag=${flag}]`)
+            .message(`状态向量写回矩阵。`)
+            .variables({ i, newHigh: digits[i - 1], flag })
+            .metrics({ 'borrow-cell': `table[${i - 1}][0]=${digits[i - 1]}`, 'flag': flag })
+            .build()
+        );
+      } else {
+        grid[i - 1][1] = flag;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.record || 10)
+            .slot(i - 1)
+            .highlightSlots([i - 1, i])
+            .grid(grid)
+            .cell(i - 1, 1)
+            .decision(`状态转移：位 [${i - 1}] 维持原值 ${digits[i - 1]}，记录标记 flag=${flag}`)
+            .message(`状态保持稳定。`)
+            .variables({ i, val: digits[i - 1], flag })
+            .metrics({ 'status': '稳定', 'flag': flag })
+            .build()
+        );
+      }
+    }
+
+    // 置 9 状态更新
+    for (let i = flag; i < n; i++) {
+      digits[i] = 9;
+      grid[i][0] = 9;
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(3)
+          .line(anchors.record || 10)
+          .slot(i)
+          .highlightSlots([i])
+          .grid(grid)
+          .cell(i, 0)
+          .decision(`状态更新：将 table[${i}][0] 置为 9`)
+          .message(`后缀全部最大化赋值 9。`)
+          .variables({ i, val: 9, flag })
+          .metrics({ [`cell[${i}]`]: '9' })
+          .build()
+      );
+    }
+
+    const finalVal = parseInt(digits.join(''), 10);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(3)
+        .line(anchors.done || 12)
+        .slot(0)
+        .grid(grid)
+        .cell(0, 0)
+        .decision(`状态转移完成，矩阵收敛，最终结果为 ${finalVal}`)
+        .message(`🏁 全表填毕，返回最终数值。`)
+        .variables({ return: finalVal })
+        .metrics({ 'final': finalVal, 'status': 'TRUE' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMonotoneDigitsStage4(
+    model: IYamlAlgorithmModel,
+    num: number,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const digits = String(num).split('').map(Number);
+    const n = digits.length;
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+    let flag = n;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(4)
+        .line(anchors.init || 2)
+        .slot(0)
+        .decision(`原地空间压缩：将数字 ${num} 转化为字符数组 s，直接原地操作，空间复杂度 O(1)`)
+        .message(`零额外内存开销，原地双指针扫描。`)
+        .variables({ num, flag, len: n })
+        .metrics({ 'space': 'O(1)', 'flag': flag })
+        .build()
+    );
+
+    for (let i = n - 1; i > 0; i--) {
+      // 探查步
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.loop || 4)
+          .slot(i)
+          .highlightSlots([i - 1, i])
+          .decision(`[${i}] 原地探查：比对 s[${i - 1}]=${digits[i - 1]} 与 s[${i}]=${digits[i]}`)
+          .message(`寄存器比对相邻字符。`)
+          .variables({ i, high: digits[i - 1], low: digits[i], flag })
+          .metrics({ 'i': i, 'check': `${digits[i - 1]} > ${digits[i]}` })
+          .build()
+      );
+
+      if (digits[i - 1] > digits[i]) {
+        digits[i - 1]--;
+        flag = i;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(4)
+            .line(anchors.borrow || 5)
+            .slot(i - 1)
+            .highlightSlots([i - 1])
+            .decision(`[${i}] 原地借位：s[${i - 1}]-- 变为 '${digits[i - 1]}', flag 更新为 ${flag}`)
+            .message(`直接修改数组元素。`)
+            .variables({ i, borrowed: digits[i - 1], flag, currentS: digits.join('') })
+            .metrics({ 's': digits.join(''), 'flag': flag })
+            .build()
+        );
+      }
+    }
+
+    for (let i = flag; i < n; i++) {
+      digits[i] = 9;
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.fill9 || 7)
+          .slot(i)
+          .highlightSlots([i])
+          .decision(`[${i}] 原地置9：s[${i}] = '9'`)
+          .message(`极速单趟原地覆写。`)
+          .variables({ i, currentS: digits.join('') })
+          .metrics({ 's': digits.join('') })
+          .build()
+      );
+    }
+
+    const finalVal = parseInt(digits.join(''), 10);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(4)
+        .line(anchors.done || 8)
+        .slot(0)
+        .decision(`极速原地扫描完成，转换输出最优解 ${finalVal}`)
+        .message(`🏆 原地算法完成，返回 ${finalVal}。`)
+        .variables({ return: finalVal })
+        .metrics({ 'result': finalVal, 'status': 'DONE' })
+        .build()
+    );
+
+    return steps;
+  }
 }
+

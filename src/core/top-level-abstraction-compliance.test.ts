@@ -38,6 +38,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'candy',
   'assign-cookies',
   'lemonade',
+  'monotone-digits',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -205,7 +206,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       const KNOWN_LEGACY_GREEDY_UNMIGRATED = new Set([
         'gas-station',
         'max-subarray',
-        'monotone-digits',
         'maximize-sum-k',
         'reconstruct-queue',
         'wiggle-subsequence',

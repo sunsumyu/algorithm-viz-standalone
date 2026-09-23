@@ -1,0 +1,218 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 单调递增的数字 顶层领域模型
+# 对应：LeetCode 738 / 贪心逆序扫描与双向相邻约束传播专题
+# 包含：逆序借位贪心、递归决策分支树、位状态转移表与原地 O(1) 修改
+# ==============================================================================
+
+id: monotone-digits
+name: "单调递增的数字"
+nameEn: "Monotone Increasing Digits"
+category: "greedy"
+icon: "📈"
+difficulty: 2
+levelOrder: 15
+learningGoal: "掌握逆序贪心扫描与相邻约束传播思想：从右向左逆序扫描，高位借位减一后将后续全部置 9"
+description: "当且仅当每个相邻位数上的数字 x 和 y 满足 x <= y 时，我们称这个整数是单调递增的。给定一个整数 n ，返回小于或等于 n 的最大若干位整数，同时这个整数必须是单调递增的。"
+defaultParams:
+  n: "332"
+
+problem:
+  title: "单调递增的数字 (Monotone Increasing Digits)"
+  difficulty: "中等"
+  tags: ["贪心", "数学", "字符串", "LeetCode 738"]
+  description: "当且仅当每个相邻位数上的数字 <code>x</code> 和 <code>y</code> 满足 <code>x <= y</code> 时，我们称这个整数是单调递增的。<br/><br/>给定一个整数 <code>n</code> ，返回 <em>小于或等于 <code>n</code> 的最大若干位整数，同时这个整数必须是单调递增的</em> 。"
+  examples:
+    - input: "n = 10"
+      output: "9"
+      explanation: "小于或等于 10 的最大单调递增整数是 9。"
+    - input: "n = 1234"
+      output: "1234"
+      explanation: "1234 本身每个相邻位都满足递增条件，直接返回。"
+    - input: "n = 332"
+      output: "299"
+      explanation: "从右往左逆序扫描：3 > 2 违反递增，高位 3 减 1 变成 2，后位全部置 9，最终得到 299。"
+  constraints:
+    - "0 <= n <= 10^9"
+
+directions:
+  forward:
+    label: "逆序扫描借位贪心 (Backward Scan & Forward Fill 9)"
+    start: [0, 0]
+    target: [0, 3]
+    branches:
+      - name: "checkOk"
+        label: "满足递增"
+      - name: "borrow"
+        label: "逆序借位减1"
+      - name: "fill9"
+        label: "后缀全置9"
+
+  reverse:
+    label: "正序暴力对照推演 (Forward Brute Compare)"
+    description: "对比正向尝试减小数字与逆向快速定位借位点的效率差异"
+    startFormula: "高位优先观察"
+    target: "最大单调整数"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心扫描"
+    type: "greedy"
+    timeBadge: "O(log n) 时间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "逆序扫描借位贪心"
+    desc: "从右向左逆向比较相邻位：若 digits[i-1] > digits[i]，则高位借位减一并记录 flag=i；最后将 flag 后的位数全部置 9"
+    card2Title: "数位变动看板"
+    card2Desc: "展示数字各位数组在逆向扫描借位与正向全置 9 的演化过程。"
+    code:
+      forward:
+        title: "MonotoneIncreasingDigits.java"
+        source: |
+          public int monotoneIncreasingDigits(int n) {
+              char[] s = Integer.toString(n).toCharArray(); // @step:init
+              int flag = s.length; // @step:flag_init
+              for (int i = s.length - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { // @step:check
+                      s[i - 1]--; // @step:borrow
+                      flag = i; // @step:update_flag
+                  }
+              }
+              for (int i = flag; i < s.length; i++) { // @step:fill_loop
+                  s[i] = '9'; // @step:fill9
+              }
+              return Integer.parseInt(new String(s)); // @step:done
+          }
+      reverse:
+        title: "MonotoneIncreasingDigits_Reverse.java"
+        source: |
+          public int monotoneIncreasingDigits(int n) {
+              char[] s = Integer.toString(n).toCharArray(); // @step:init
+              int flag = s.length; // @step:flag_init
+              for (int i = s.length - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { // @step:check
+                      s[i - 1]--; // @step:borrow
+                      flag = i; // @step:update_flag
+                  }
+              }
+              for (int i = flag; i < s.length; i++) { // @step:fill_loop
+                  s[i] = '9'; // @step:fill9
+              }
+              return Integer.parseInt(new String(s)); // @step:done
+          }
+
+  stage-2:
+    shortName: "决策树"
+    type: "memoization"
+    timeBadge: "分支探索"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "位决策依赖树"
+    desc: "将每一位的借位与保持决策构建为依赖树，直观展现贪心剪除劣质组合的路径"
+    card2Title: "位分支依赖树"
+    card2Desc: "自右向左的逆向探索决策树与剪枝。"
+    code:
+      forward:
+        title: "Monotone_Tree.java"
+        source: |
+          public int dfs(int idx, char[] s, int flag) {
+              if (idx == 0) return buildResult(s, flag); // @step:base
+              if (s[idx - 1] > s[idx]) { // @step:check
+                  s[idx - 1]--; // @step:borrow
+                  return dfs(idx - 1, s, idx); // @step:branch_borrow
+              } else {
+                  return dfs(idx - 1, s, flag); // @step:branch_keep
+              }
+          }
+      reverse:
+        title: "Monotone_Tree_Reverse.java"
+        source: |
+          public int dfs(int idx, char[] s, int flag) {
+              if (idx == 0) return buildResult(s, flag); // @step:base
+              if (s[idx - 1] > s[idx]) { // @step:check
+                  s[idx - 1]--; // @step:borrow
+                  return dfs(idx - 1, s, idx); // @step:branch_borrow
+              } else {
+                  return dfs(idx - 1, s, flag); // @step:branch_keep
+              }
+          }
+
+  stage-3:
+    shortName: "状态转移"
+    type: "dynamic-programming"
+    timeBadge: "O(log n) 状态表"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "数位状态转移矩阵"
+    desc: "表格追踪每一位数字在逆向扫描过程中的数值演变与借位记录"
+    card2Title: "数位状态转移矩阵"
+    card2Desc: "展示各个数位在各阶段的数值演变快照。"
+    code:
+      forward:
+        title: "Monotone_DP.java"
+        source: |
+          public int solveTable(int n) {
+              char[] s = Integer.toString(n).toCharArray();
+              int len = s.length; // @step:entry
+              int[][] table = new int[len][2]; // @step:table_init
+              int flag = len;
+              for (int i = len - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { // @step:check
+                      s[i - 1]--; // @step:borrow
+                      flag = i; // @step:update_flag
+                  }
+                  table[i][0] = s[i] - '0'; // @step:record
+                  table[i][1] = flag;
+              }
+              return reconstruct(s, flag); // @step:done
+          }
+      reverse:
+        title: "Monotone_DP_Reverse.java"
+        source: |
+          public int solveTable(int n) {
+              char[] s = Integer.toString(n).toCharArray();
+              int len = s.length; // @step:entry
+              int[][] table = new int[len][2]; // @step:table_init
+              int flag = len;
+              for (int i = len - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { // @step:check
+                      s[i - 1]--; // @step:borrow
+                      flag = i; // @step:update_flag
+                  }
+                  table[i][0] = s[i] - '0'; // @step:record
+                  table[i][1] = flag;
+              }
+              return reconstruct(s, flag); // @step:done
+          }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(1) 原地"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "空间压缩 (原地字符数组修改)"
+    desc: "原地直接修改字符数组，仅用一个指针 flag 标记修改起始点，零额外内存"
+    card2Title: "极简原地流转看板"
+    card2Desc: "展示字符数组的高速原地修改与置 9。"
+    code:
+      forward:
+        title: "Monotone_Optimized.java"
+        source: |
+          public int monotoneIncreasingDigits(int n) {
+              char[] s = Integer.toString(n).toCharArray(); // @step:init
+              int flag = s.length; // @step:flag_init
+              for (int i = s.length - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { s[i - 1]--; flag = i; } // @step:borrow
+              }
+              for (int i = flag; i < s.length; i++) { s[i] = '9'; } // @step:fill9
+              return Integer.parseInt(new String(s)); // @step:done
+          }
+      reverse:
+        title: "Monotone_Optimized_Reverse.java"
+        source: |
+          public int monotoneIncreasingDigits(int n) {
+              char[] s = Integer.toString(n).toCharArray(); // @step:init
+              int flag = s.length; // @step:flag_init
+              for (int i = s.length - 1; i > 0; i--) { // @step:loop
+                  if (s[i - 1] > s[i]) { s[i - 1]--; flag = i; } // @step:borrow
+              }
+              for (int i = flag; i < s.length; i++) { s[i] = '9'; } // @step:fill9
+              return Integer.parseInt(new String(s)); // @step:done
+          }

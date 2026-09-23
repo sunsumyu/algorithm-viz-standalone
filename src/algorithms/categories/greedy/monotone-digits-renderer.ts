@@ -3,7 +3,8 @@
  * LeetCode 738：从右向左逆序扫描，若 chars[i-1] > chars[i] 则 chars[i-1]-- 且记录 flag = i，后续位全置 9
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   MONOTONE_DIGITS_PROBLEM_HTML,
@@ -217,48 +218,21 @@ export function renderMonotoneDigitsCanvas(container: HTMLElement, step: Monoton
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'monotone-digits',
   name: '单调递增的数字',
+  viewId: 'monotone-digits',
   category: 'greedy',
-  description: '逆序扫描借位减 1 并标记起点，后续位数统一贪心置 9，求小于等于 N 的最大单调数',
   icon: '📈',
   difficulty: 2,
-  levelOrder: 16,
+  levelOrder: 15,
   learningGoal: '掌握逆序遍历利用前序状态的解题技巧，理解贪心置 9 对数值最大化的精妙运用',
-  inputs: [
-    {
-      id: 'num',
-      label: '正整数 N',
-      type: 'number',
-      defaultValue: '986612',
-      placeholder: '正整数',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { num: '986612' } },
-    { label: '含平坡', values: { num: '332' } },
-    { label: '完全递增', values: { num: '12345' } },
-    { label: '多位借位', values: { num: '100' } },
-  ],
-  metrics: [
-    { id: 'pair', label: '逆序比较对', color: '#c026d3' },
-    { id: 'flag', label: '变9起始点 flag', color: '#2563eb' },
-    { id: 'value', label: '当前数值', color: '#c026d3' },
-    { id: 'digits', label: '当前位数组', color: '#059669' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前比较对', color: '#c026d3' },
-    { label: '9️⃣ 置 9 位', color: '#10b981' },
-  ],
-  codeLanguages: MONOTONE_DIGITS_CODE_LANGUAGES,
-  problemHtml: MONOTONE_DIGITS_PROBLEM_HTML,
-  analysisHtml: MONOTONE_DIGITS_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    let num = parseInt(String(inputs.num ?? '986612'), 10);
-    if (!Number.isFinite(num) || num < 0) num = 986612;
-    return withMetrics(buildMonotoneDigitsSteps(num));
-  },
-  renderCanvas: (container, step) => renderMonotoneDigitsCanvas(container, step as MonotoneStep),
+  description: '逆序扫描借位减 1 并标记起点，后续位数统一贪心置 9，求小于等于 N 的最大单调数',
+  template: `<div id="monotone-digits" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerMonotoneDigits(): void {
+  // 保持向前兼容导出
+}
+
