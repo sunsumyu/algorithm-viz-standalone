@@ -1,0 +1,162 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 森林中的兔子顶层领域模型
+# 对应：LeetCode 781 / 洛谷 / 贪心向上取整分组
+# 包含：频次统计、单组容量约束、决策树展开、状态演进矩阵、空间压缩
+# ==============================================================================
+
+id: rabbits-in-forest
+name: 森林中的兔子 (Rabbits in Forest)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 哈希表
+  - 数学
+  - 向上取整
+  - 状态树
+
+description: |
+  森林中有未知数量的兔子。提问其中若干只兔子 "还有多少只兔子与你（颜色）相同？"，
+  将答案收集在一个整数数组 answers 中，其中 answers[i] 是第 i 只兔子的回答。
+  给你数组 answers，返回森林中兔子的最少数量。
+  核心贪心策略：
+  1. 颜色容量贪心（Capacity Greedy）：
+     - 若一只兔子回答 x，说明与它同色的兔子还有 x 只，故该颜色兔子组的总容量最多为 x + 1 只。
+     - 若有 cnt 只兔子均回答 x，为了让兔子总数最少，我们应尽可能把这 cnt 只兔子塞入同一个颜色组中。
+     - 一个组最多容纳 x + 1 只，因此至少需要划分 ceil(cnt / (x + 1)) 个颜色组。
+     - 每个颜色组内实际必然存在 x + 1 只兔子（没发言的兔子也是真实存在的），
+     - 因此回答 x 贡献的兔子总数为：ceil(cnt / (x + 1)) * (x + 1) = ((cnt + x) / (x + 1)) * (x + 1)。
+  2. Forward: 词频统计 ➔ 向上取整贪心累加。
+  3. Reverse: 逆向排序扫描 ➔ 贪心同频合并对偶校验。
+
+defaultParams:
+  answers: [1, 1, 2]
+
+constraints:
+  - 1 <= answers.length <= 1000
+  - 0 <= answers[i] < 1000
+
+directions:
+  forward:
+    name: 词频统计向上取整贪心 (Frequency Ceil Greedy)
+    description: 统计各回答频次，依据容量 x+1 进行向上取整贪心求和
+  reverse:
+    name: 排序滑动窗口贪心合并 (Sorted Window Greedy)
+    description: 将回答排序后利用滑动窗口统计连续同值，贪心满额分批
+
+stages:
+  stage-1:
+    name: 暴力统计与频次划分
+    description: 逐只兔子探查发言，构建回答频次映射表
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 回答词频统计沙盘 (Frequency Map)
+    card2Desc: 统计各回答 x 出现的频次 cnt，为后续贪心分组提供依据
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 1: 频次统计与初始归类
+          Map<Integer, Integer> count = new HashMap<>();
+          for (int x : answers) {
+              count.put(x, count.getOrDefault(x, 0) + 1);
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          put: 4
+          done: 5
+
+  stage-2:
+    name: 颜色组容量约束决策树
+    description: 展开每种回答的单组容量约束与向上取整决策分支
+    complexity:
+      time: O(K)
+      space: O(K)
+    card2Title: 贪心划分决策树 (Decision Tree)
+    card2Desc: 针对每种回答 x，展开容量 x+1、划分组数与额外不可见兔子的推导拓扑
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 决策树分支判定
+          for (Map.Entry<Integer, Integer> entry : count.entrySet()) {
+              int x = entry.getKey();
+              int cnt = entry.getValue();
+              int capacity = x + 1;
+              int groups = (cnt + x) / capacity;
+              ans += groups * capacity;
+          }
+        lineMap:
+          entry: 1
+          loop: 2
+          unpack: 3
+          calcCap: 5
+          calcGroup: 6
+          accumulate: 7
+
+  stage-3:
+    name: 向上取整状态演进矩阵
+    description: 二维决策演进矩阵，逐行记录回答、容量、组数与贡献总数
+    complexity:
+      time: O(K)
+      space: O(K)
+    card2Title: 二维分组决策演进表 (State Matrix)
+    card2Desc: 动态追踪各回答 x 的发言数 cnt、组容量 cap、分配组数与累计最少兔子总数
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态决策矩阵追踪
+          int[][] matrix = new int[types][5];
+          int row = 0;
+          for (int x : count.keySet()) {
+              int cnt = count.get(x);
+              matrix[row][0] = x;
+              matrix[row][1] = cnt;
+              matrix[row][2] = x + 1;
+              matrix[row][3] = (cnt + x) / (x + 1);
+              matrix[row][4] = matrix[row][3] * (x + 1);
+              total += matrix[row][4];
+              row++;
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 4
+          fill: 6
+          calc: 9
+          sum: 11
+
+  stage-4:
+    name: 常数空间单趟极速状态机
+    description: 计数排序或流式遍历，边统计边结算，达到极致空间优化
+    complexity:
+      time: O(N)
+      space: O(MAX_VAL)
+    card2Title: 空间压缩状态机 (State Machine)
+    card2Desc: 数组计数器极速流转，容量饱满立即归整结算
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 空间压缩极速结算
+          int[] freq = new int[1001];
+          int ans = 0;
+          for (int x : answers) {
+              if (freq[x] % (x + 1) == 0) {
+                  ans += x + 1;
+              }
+              freq[x]++;
+          }
+          return ans;
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 4
+          check: 5
+          settle: 6
+          inc: 8
+          done: 10

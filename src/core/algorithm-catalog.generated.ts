@@ -3943,7 +3943,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "森林中的兔子 (Rabbits in Forest)",
     viewId: "algo-rabbits-in-forest-view",
     category: "greedy",
-    description: "森林中的兔子 (Rabbits in Forest)",
+    description: "LeetCode 781：同色合并与向上取整分组 ceil(cnt / (x + 1)) * (x + 1)",
     icon: "🐇",
     difficulty: 2,
     levelOrder: 922,

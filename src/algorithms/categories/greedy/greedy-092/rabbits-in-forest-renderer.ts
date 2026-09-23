@@ -3,7 +3,6 @@
  * 核心贪心：同色合并与向上取整分组 ceil(cnt / (x + 1)) * (x + 1)
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
 import { GREEDY_092_PROBLEMS } from './greedy-092-problem-content';
 import {
   RABBITS_IN_FOREST_CODES,
@@ -111,86 +110,25 @@ export function buildRabbitsInForestSteps(answers: number[]): RabbitsInForestSte
   return steps;
 }
 
-export const rabbitsInForestVisualizer = registerDeclarativeAlgorithm<RabbitsInForestStep>({
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+import { registerAlgorithm } from '../../../../core/registry';
+
+const template = `<div id="algo-rabbits-in-forest-view" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`;
+
+export const rabbitsInForestRenderer = UniversalStageVisualizer;
+export const rabbitsInForestVisualizer = UniversalStageVisualizer;
+
+registerAlgorithm({
   id: 'rabbits-in-forest',
   name: '森林中的兔子 (Rabbits in Forest)',
+  viewId: 'algo-rabbits-in-forest-view',
   category: 'greedy',
+  description: 'LeetCode 781：同色合并与向上取整分组 ceil(cnt / (x + 1)) * (x + 1)',
   icon: '🐇',
+  template,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 922,
   learningGoal: '掌握同回答兔子尽力归入同组的向上取整分组贪心推导',
-  problemHtml: GREEDY_092_PROBLEMS.rabbitsInForest.html,
-  analysisHtml: GREEDY_092_PROBLEMS.rabbitsInForest.html,
-  inputs: [
-    {
-      id: 'input-answers',
-      label: '兔子回答列表 answers',
-      type: 'text',
-      defaultValue: '1, 1, 2',
-      placeholder: '1, 1, 2',
-    },
-  ],
-  codeLanguages: RABBITS_IN_FOREST_CODES,
-  buildSteps: (inputs: Record<string, any>) => {
-    const raw = String(inputs?.['input-answers'] || '1, 1, 2');
-    const answers = raw.split(/[,，\s]+/).map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n));
-    return buildRabbitsInForestSteps(answers);
-  },
-  renderCanvas: (stageContainer: HTMLElement, step: RabbitsInForestStep) => {
-    stageContainer.innerHTML = '';
-
-    const mainCard = document.createElement('div');
-    mainCard.style.cssText = 'display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; box-sizing: border-box;';
-
-    // 顶部状态栏
-    mainCard.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-weight: 700; font-size: 13px; color: #1e293b;">发言兔子数: <b>${step.answers.length}</b></span>
-          <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: #eff6ff; color: #1d4ed8; font-weight: 600;">不同回答类型: ${Object.keys(step.freqMap).length} 种</span>
-        </div>
-        <div style="display: flex; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; align-items: center;">
-          <span style="color: #64748b;">最少兔子总数:</span>
-          <span style="color: #059669; font-weight: 800; font-size: 16px;">${step.totalRabbits} 只</span>
-        </div>
-      </div>
-    `;
-
-    // 中部各颜色组卡片
-    const groupsBox = document.createElement('div');
-    groupsBox.style.cssText = 'flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px; overflow-y: auto;';
-
-    if (step.groupsList.length === 0) {
-      groupsBox.innerHTML = '<div style="color: #94a3b8; font-size: 12px; font-style: italic; display: flex; align-items: center; justify-content: center; width: 100%;">等待统计与分组...</div>';
-    } else {
-      step.groupsList.forEach((g) => {
-        const isCur = step.curAnswer === g.answer;
-        const card = document.createElement('div');
-        card.style.cssText = `display: flex; flex-direction: column; gap: 6px; background: ${isCur ? '#eff6ff' : '#f8fafc'}; border: 1.5px solid ${isCur ? '#3b82f6' : '#cbd5e1'}; border-radius: 8px; padding: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);`;
-
-        card.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
-            <span style="font-weight: 700; font-size: 12px; color: #1e293b;">回答「还有 ${g.answer} 只同色」</span>
-            <span style="font-size: 10px; font-weight: 700; color: #3b82f6; background: #eff6ff; padding: 1px 6px; border-radius: 4px;">单组容量: ${g.groupCapacity}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px;">
-            <span style="color: #64748b;">发言兔子数:</span>
-            <span style="font-weight: 700; color: #334155; font-family: 'JetBrains Mono', monospace;">${g.count} 只</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 11px;">
-            <span style="color: #64748b;">贪心划分组数:</span>
-            <span style="font-weight: 700; color: #8b5cf6; font-family: 'JetBrains Mono', monospace;">${g.groupNum} 组</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 12px; background: #ffffff; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; margin-top: 4px;">
-            <span style="color: #64748b; font-weight: 600;">该类总兔子数:</span>
-            <span style="font-weight: 800; color: #059669; font-family: 'JetBrains Mono', monospace;">+${g.groupTotal} 只</span>
-          </div>
-        `;
-        groupsBox.appendChild(card);
-      });
-    }
-    mainCard.appendChild(groupsBox);
-
-    stageContainer.appendChild(mainCard);
-  },
 });
+

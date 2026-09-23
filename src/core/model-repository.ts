@@ -75,6 +75,7 @@ import longestSameZerosOnesModel from './models/longest-same-zeros-ones-interval
 import minimumInitialEnergyModel from './models/minimum-initial-energy-to-finish-tasks.yaml';
 import shortestUnsortedModel from './models/shortest-unsorted-continuous-subarray.yaml';
 import smallestRangeModel from './models/smallest-range-covering-elements-from-k-lists.yaml';
+import rabbitsInForestModel from './models/rabbits-in-forest.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -198,6 +199,7 @@ export class AlgorithmModelRepository {
     ['shortest-unsorted-subarray', shortestUnsortedModel as IYamlAlgorithmModel],
     ['smallest-range-covering-elements-from-k-lists', smallestRangeModel as IYamlAlgorithmModel],
     ['smallest-range', smallestRangeModel as IYamlAlgorithmModel],
+    ['rabbits-in-forest', rabbitsInForestModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

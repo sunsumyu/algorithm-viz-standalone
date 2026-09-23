@@ -65,6 +65,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'minimum-initial-energy-to-finish-tasks',
   'shortest-unsorted-continuous-subarray',
   'smallest-range-covering-elements-from-k-lists',
+  'rabbits-in-forest',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -242,7 +243,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'minimize-deviation',
         'min-operations-similar',
         'divide-array-seq',
-        'rabbits-in-forest',
         'cross-river',
         'string-transforms',
         'super-washing-machines',

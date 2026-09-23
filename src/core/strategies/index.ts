@@ -63,6 +63,7 @@ import { LongestSameZerosOnesStrategy } from './longest-same-zeros-ones-strategy
 import { MinimumInitialEnergyStrategy } from './minimum-initial-energy-strategy';
 import { ShortestUnsortedSubarrayStrategy } from './shortest-unsorted-subarray-strategy';
 import { SmallestRangeStrategy } from './smallest-range-strategy';
+import { RabbitsInForestStrategy } from './rabbits-in-forest-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -202,6 +203,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MinimumInitialEnergyStrategy());
   AlgorithmStrategyRegistry.register(new ShortestUnsortedSubarrayStrategy());
   AlgorithmStrategyRegistry.register(new SmallestRangeStrategy());
+  AlgorithmStrategyRegistry.register(new RabbitsInForestStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -275,7 +277,8 @@ export {
   LongestSameZerosOnesStrategy,
   MinimumInitialEnergyStrategy,
   ShortestUnsortedSubarrayStrategy,
-  SmallestRangeStrategy
+  SmallestRangeStrategy,
+  RabbitsInForestStrategy
 };
 
 export * from './strategy-helpers';
