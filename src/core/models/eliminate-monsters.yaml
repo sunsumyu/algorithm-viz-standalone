@@ -1,0 +1,169 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 消灭怪物的最大数量顶层领域模型
+# 对应：LeetCode 1921 / 贪心 EDF 调度 / 桶排序与时间轴判定
+# 包含：到达时间归一化、决策树展开、状态演进矩阵、空间压缩计数桶
+# ==============================================================================
+
+id: eliminate-monsters
+name: 消灭怪物的最大数量 (Eliminate Maximum Number of Monsters)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 排序
+  - 计数排序
+  - EDF调度
+  - 时序判定
+
+description: |
+  你正在玩一款防守基地的电子游戏。给你两个长度都为 n 的整数数组 dist 和 speed ，
+  其中 dist[i] 是第 i 只怪物的初始距离，speed[i] 是第 i 只怪物的速度（米/分）。
+  游戏在第 0 分钟开始。武器每分钟充能完毕，可以消灭一只怪物。
+  如果某只怪物到达的时间（向上取整）小于或等于武器射击的当前分钟数，游戏失败。
+  返回你能消灭的怪物的最大数量。
+
+  核心贪心归约（Earliest Deadline First 最早截止时间优先）：
+  1. 维度归一化：将怪物多维的「距离与速度」降维为单一度量——到达基地的分钟数 times[i] = ceil(dist[i] / speed[i])。
+  2. EDF 最优性：每分钟只能射击一次，迫在眉睫的怪物如果被延误将无可挽回，因此必须按到达时间升序贪心射击。
+  3. 越界判定：在第 i 分钟（已消灭 i 只怪物，当前正准备射击第 i 只），若排好序的 times[i] <= i，说明该怪物在武器射击前已冲入基地，游戏失败，最多消灭 i 只。
+  4. 空间优化：利用 O(N) 计数桶记录各到达时间的怪物数量，计算前缀累计到达怪物数，一旦在第 i 分钟前缀总和 > i 则立即熔断。
+
+defaultParams:
+  dist: [1, 3, 4]
+  speed: [1, 1, 1]
+
+constraints:
+  - n == dist.length == speed.length
+  - 1 <= n <= 10^5
+  - 1 <= dist[i], speed[i] <= 10^5
+
+directions:
+  forward:
+    name: 到达时间升序射击贪心 (Earliest Deadline First)
+    description: 归一化到达用时后升序排序，按分钟推进判定武器充能与射击时序
+  reverse:
+    name: 倒计时防守反向验证对偶 (Countdown Defensive Verification)
+    description: 从末端时刻逆向倒推安全容忍窗口，验证 EDF 调度的必要性
+
+stages:
+  stage-1:
+    name: 到达时间归一化与贪心推进模拟
+    description: 计算每只怪物到达用时，升序模拟每分钟充能与开火
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    card2Title: 怪物行进与充能射击沙盘 (EDF Timeline)
+    card2Desc: 追踪各怪物归一化到达时间、当前充能时刻与武器开火击杀状态
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 1: EDF 贪心推进模拟
+          int n = dist.length;
+          int[] times = new int[n];
+          for (int i = 0; i < n; i++) times[i] = (dist[i] + speed[i] - 1) / speed[i];
+          Arrays.sort(times);
+          for (int i = 0; i < n; i++) {
+              if (times[i] <= i) return i;
+          }
+          return n;
+        lineMap:
+          entry: 1
+          init: 2
+          calc: 4
+          sort: 5
+          loop: 6
+          check: 7
+          done: 9
+
+  stage-2:
+    name: 充能时序冲突决策树
+    description: 展开每只怪物到达时间与当前射击时刻的分支判定拓扑
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 时序冲突判定树 (Conflict Decision Tree)
+    card2Desc: 拓扑展开当前时刻射击安全判定（times[i] > i 开火存活 / times[i] <= i 基地失守）
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 时序决策判定
+          if (times[i] <= i) {
+              // 怪物到达时间 <= 当前时刻，无法在触碰基地前击杀
+              return i; // 游戏失败，返回已消灭数
+          } else {
+              // 当前时刻 < 怪物到达，开火消灭，武器进入下一轮冷却
+              eliminated++;
+          }
+        lineMap:
+          entry: 1
+          branchCheck: 2
+          breached: 4
+          elseBranch: 5
+          shotSuccess: 7
+
+  stage-3:
+    name: 到达时间与充能匹配演进矩阵
+    description: 二维决策演进矩阵，逐行记录怪物序号、距离、速度、到达耗时、射击时刻与判定
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 射击匹配演进矩阵 (Elimination Matrix)
+    card2Desc: 追踪各怪物距离 dist、速度 speed、耗时 times、射击时刻 minute 与击杀状态
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态追踪矩阵
+          int[][] matrix = new int[n][5];
+          for (int i = 0; i < n; i++) {
+              matrix[i][0] = dist[i];
+              matrix[i][1] = speed[i];
+              matrix[i][2] = times[i];
+              matrix[i][3] = i; // 射击时刻
+              matrix[i][4] = times[i] > i ? 1 : 0; // 存活状态
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          fillDist: 4
+          fillSpeed: 5
+          fillTime: 6
+          fillMinute: 7
+          fillStatus: 8
+
+  stage-4:
+    name: 计数排序空间压缩极速流转
+    description: O(N) 计数桶统计各到达时间的怪物，前缀累计检测突破点，极速常数开销
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 计数桶空间压缩状态机 (Bucket State Machine)
+    card2Desc: 计数桶快速收集到达时间，前缀和在线流转，突破安全上界立即熔断
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 计数桶空间压缩 O(N) 极速结算
+          int[] count = new int[n];
+          for (int i = 0; i < n; i++) {
+              int t = (dist[i] + speed[i] - 1) / speed[i];
+              if (t < n) count[t]++;
+          }
+          int total = 0;
+          for (int i = 1; i < n; i++) {
+              total += count[i];
+              if (total > i) return i;
+          }
+          return n;
+        lineMap:
+          entry: 1
+          init: 2
+          bucketFill: 4
+          countInc: 5
+          loop: 8
+          accumulate: 9
+          fuseCheck: 10
+          done: 12

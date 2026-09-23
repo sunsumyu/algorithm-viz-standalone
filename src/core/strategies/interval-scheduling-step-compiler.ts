@@ -4131,4 +4131,546 @@ export class IntervalSchedulingStepCompiler {
     return steps;
   }
 
+  // ==========================================================================
+  // 消灭怪物的最大数量 (LeetCode 1921) 四阶段全演进编译器
+  // ==========================================================================
+
+  /**
+   * 消灭怪物的最大数量 (LeetCode 1921) 四阶段全演进编译入口
+   */
+  public static compileEliminateMonsters(
+    model: IYamlAlgorithmModel,
+    rawDist?: number[],
+    rawSpeed?: number[],
+    options?: { direction?: 'forward' | 'reverse'; anchorMap?: Record<string, number> },
+    stage: number = 1
+  ): UniversalStep[] {
+    const defaultDist = [1, 3, 4];
+    const defaultSpeed = [1, 1, 1];
+    const dist = rawDist && rawDist.length > 0 ? rawDist : defaultDist;
+    const speed = rawSpeed && rawSpeed.length > 0 ? rawSpeed : defaultSpeed;
+
+    switch (stage) {
+      case 2:
+        return this.compileEliminateMonstersStage2(model, dist, speed, options);
+      case 3:
+        return this.compileEliminateMonstersStage3(model, dist, speed, options);
+      case 4:
+        return this.compileEliminateMonstersStage4(model, dist, speed, options);
+      case 1:
+      default:
+        return this.compileEliminateMonstersStage1(model, dist, speed, options);
+    }
+  }
+
+  private static compileEliminateMonstersStage1(
+    model: IYamlAlgorithmModel,
+    dist: number[],
+    speed: number[],
+    options?: { direction?: 'forward' | 'reverse'; anchorMap?: Record<string, number> }
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = Math.min(dist.length, speed.length);
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    const initialTimes: number[] = [];
+    for (let i = 0; i < n; i++) {
+      initialTimes.push(Math.ceil(dist[i] / speed[i]));
+    }
+
+    const slots = initialTimes.map((t, idx) => `M${idx}:${t}分`);
+    const colLabels = initialTimes.map((_, idx) => `怪物#${idx}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `👾 主函数入口：怪物数量 n = ${n}，准备执行 EDF (最早到达优先) 贪心射击`,
+      message: '武器每分钟开始充能就绪可消灭一只怪物；怪物触及基地即防守失败',
+      slots,
+      colLabels,
+      variables: { n },
+      metrics: { '怪物总数': String(n), '武器状态': '第 0 分钟初始就绪' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.calc || 4,
+      codeLine: anchors.calc || 4,
+      decision: `⏱️ 到达时间度量归一化：times = [${initialTimes.join(', ')}] 分钟，公式 ceil(dist / speed)`,
+      message: '多维物理距离与速度降维映射为时间轴刻度',
+      slots,
+      colLabels,
+      variables: { initialTimes },
+      metrics: { '用时度量': '已归一化' },
+    });
+
+    const sortedIndices = initialTimes.map((_, i) => i).sort((a, b) => initialTimes[a] - initialTimes[b]);
+    const sortedTimes = sortedIndices.map(i => initialTimes[i]);
+    const sortedSlots = sortedIndices.map(i => `M${i}:${initialTimes[i]}分`);
+    const sortedColLabels = sortedTimes.map((_, i) => `顺序#${i}`);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.sort || 5,
+      codeLine: anchors.sort || 5,
+      decision: `🎯 EDF 贪心升序排序：迫在眉睫的怪物必须最先消灭！排序后 times = [${sortedTimes.join(', ')}]`,
+      message: '最早截止时间优先调度排序',
+      slots: sortedSlots,
+      colLabels: sortedColLabels,
+      variables: { sortedTimes },
+      metrics: { '排序结果': `[${sortedTimes.join(',')}]` },
+    });
+
+    let ans = n;
+    for (let i = 0; i < n; i++) {
+      const t = sortedTimes[i];
+      const origId = sortedIndices[i];
+
+      if (t <= i) {
+        ans = i;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.check || 7,
+          codeLine: anchors.check || 7,
+          decision: `💥 第 ${i} 分钟：怪物 #${origId} 耗时 ${t} 分到达 ≤ 当前射击时刻 ${i} 分！怪物冲入基地，防线失守`,
+          message: '防御熔断，游戏结束',
+          slots: sortedSlots,
+          colLabels: sortedColLabels,
+          activeSlot: i,
+          variables: { i, t, ans: i },
+          metrics: { '当前时刻': `${i}分`, '到达时刻': `${t}分`, '判定': '防线被攻破' },
+        });
+        break;
+      } else {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.check || 7,
+          codeLine: anchors.check || 7,
+          decision: `🔫 第 ${i} 分钟：开火！成功消灭怪物 #${origId} (到达用时 ${t} 分 > 当前时刻 ${i} 分，安全)`,
+          message: `消灭第 ${i + 1} 只怪物`,
+          slots: sortedSlots,
+          colLabels: sortedColLabels,
+          activeSlot: i,
+          variables: { i, t, eliminated: i + 1 },
+          metrics: { '当前时刻': `${i}分`, '已消灭': `${i + 1}只`, '判定': '安全击杀' },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🏁 贪心演练结束：最多可消灭怪物数量为 ${ans} 只（共 ${n} 只）`,
+      message: ans === n ? '全歼！所有怪物在进入基地前被消灭' : `防线失守，累计消灭 ${ans} 只`,
+      slots: sortedSlots,
+      colLabels: sortedColLabels,
+      variables: { ans, n },
+      metrics: { '最大消灭数': `${ans}`, '战果': ans === n ? '基地完全守住' : '防线被破' },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 9,
+        codeLine: anchors.done || 9,
+        decision: `🏁 最终状态维持：最大消灭怪物数 = ${ans}`,
+        message: 'EDF最优解收敛',
+        slots: sortedSlots,
+        colLabels: sortedColLabels,
+        variables: { ans },
+        metrics: { '最终结果': `${ans}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileEliminateMonstersStage2(
+    model: IYamlAlgorithmModel,
+    dist: number[],
+    speed: number[],
+    options?: { direction?: 'forward' | 'reverse'; anchorMap?: Record<string, number> }
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = Math.min(dist.length, speed.length);
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const times: number[] = [];
+    for (let i = 0; i < n; i++) {
+      times.push(Math.ceil(dist[i] / speed[i]));
+    }
+    const sortedIndices = times.map((_, i) => i).sort((a, b) => times[a] - times[b]);
+    const sortedTimes = sortedIndices.map(i => times[i]);
+
+    const rootNode: UniversalTreeNode = {
+      id: 'root-monsters',
+      r: 0,
+      c: 0,
+      val: `EDF时序决策树 (n=${n})`,
+      status: 'root',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌳 构建 EDF 时序决策树根节点：准备按最早到达顺序展开时序安全判定`,
+      message: '决策树拓扑展开',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { n },
+      metrics: { '怪物总数': String(n), '决策模式': '时序判定' },
+    });
+
+    let ans = n;
+    for (let i = 0; i < n; i++) {
+      const t = sortedTimes[i];
+      const origId = sortedIndices[i];
+      const isBreached = t <= i;
+
+      const node: UniversalTreeNode = {
+        id: `node-m-${i}`,
+        r: 1,
+        c: i,
+        val: `第${i}分:射击M${origId}`,
+        status: isBreached ? 'failed' : 'active',
+        children: [
+          { id: `node-m-${i}-t`, r: 2, c: 0, val: `到达时间:${t}分`, status: 'info', children: [] },
+          { id: `node-m-${i}-res`, r: 2, c: 1, val: isBreached ? `突破失守(t=${t}<=i=${i})` : `击杀成功(t=${t}>i=${i})`, status: isBreached ? 'breach' : 'kill', children: [] },
+        ],
+      };
+      rootNode.children.push(node);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branchCheck || 2,
+        codeLine: anchors.branchCheck || 2,
+        decision: `🌿 分支判定第 ${i} 分钟：考察怪物 #${origId} (到达用时 ${t} 分)`,
+        message: '决策分支判定',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { i, t, origId },
+        metrics: { '当前时刻': `${i}分`, '到达耗时': `${t}分` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: isBreached ? (anchors.breached || 4) : (anchors.shotSuccess || 7),
+        codeLine: isBreached ? (anchors.breached || 4) : (anchors.shotSuccess || 7),
+        decision: isBreached
+          ? `💥 判定命中失守分支：到达时刻 ${t} <= 射击时刻 ${i}，防线崩溃，终止后续决策`
+          : `🔫 判定命中击杀分支：到达时刻 ${t} > 射击时刻 ${i}，成功消灭，进入下一分`,
+        message: isBreached ? '决策终止' : '安全通过',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { i, t, isBreached },
+        metrics: { '判定结果': isBreached ? '防守失败' : '安全消灭' },
+      });
+
+      if (isBreached) {
+        ans = i;
+        break;
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.shotSuccess || 7,
+      codeLine: anchors.shotSuccess || 7,
+      decision: `🏁 决策树全部构建收敛：最多消灭怪物数量 = ${ans}`,
+      message: '树形推导达成最优解',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { ans },
+      metrics: { '最大消灭数': `${ans}` },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.shotSuccess || 7,
+        codeLine: anchors.shotSuccess || 7,
+        decision: `🏁 决策树收敛确认：最大消灭数 ${ans}`,
+        message: '状态确认',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { ans },
+        metrics: { '最终结果': `${ans}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileEliminateMonstersStage3(
+    model: IYamlAlgorithmModel,
+    dist: number[],
+    speed: number[],
+    options?: { direction?: 'forward' | 'reverse'; anchorMap?: Record<string, number> }
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = Math.min(dist.length, speed.length);
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    const times: number[] = [];
+    for (let i = 0; i < n; i++) {
+      times.push(Math.ceil(dist[i] / speed[i]));
+    }
+    const sortedIndices = times.map((_, i) => i).sort((a, b) => times[a] - times[b]);
+    const sortedTimes = sortedIndices.map(i => times[i]);
+
+    const rowLabels = sortedIndices.map((orig, i) => `顺序${i}(M${orig})`);
+    const colLabels = ['初始距离', '速度', '到达用时', '射击时刻', '击杀状态'];
+    const grid: (number | null)[][] = Array.from({ length: n }, () => Array(5).fill(0));
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `📊 初始化射击匹配演进矩阵 matrix [${n}×5]：跟踪各怪物属性与击杀时序`,
+      message: '二维决策演进表初始化',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { n },
+      metrics: { '矩阵规模': `${n}×5` },
+    });
+
+    let ans = n;
+    for (let i = 0; i < n; i++) {
+      const orig = sortedIndices[i];
+      const d = dist[orig];
+      const s = speed[orig];
+      const t = sortedTimes[i];
+      const isAlive = t > i;
+
+      grid[i][0] = d;
+      grid[i][1] = s;
+      grid[i][2] = t;
+      grid[i][3] = i;
+      grid[i][4] = isAlive ? 1 : 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillDist || 4,
+        codeLine: anchors.fillDist || 4,
+        decision: `📝 填充矩阵行 ${i}：怪物 M${orig} 距离 = ${d}m，速度 = ${s}m/分`,
+        message: '记录物理参数',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 0,
+        variables: { i, orig, d, s },
+        metrics: { '当前行': `顺序#${i}`, '参数': `${d}m, ${s}m/s` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillTime || 6,
+        codeLine: anchors.fillTime || 6,
+        decision: `📝 填充行 ${i} 时序数据：到达耗时 = ${t}分，射击时刻 = 第${i}分`,
+        message: '记录时序参数',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 2,
+        variables: { i, t, shootMinute: i },
+        metrics: { '耗时': `${t}分`, '开火': `${i}分` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillStatus || 8,
+        codeLine: anchors.fillStatus || 8,
+        decision: isAlive
+          ? `📝 判定结果：耗时 ${t} > 时刻 ${i} ➔ 成功消灭 (状态=1)`
+          : `📝 判定结果：耗时 ${t} <= 时刻 ${i} ➔ 基地失守 (状态=0)`,
+        message: isAlive ? '击杀成功' : '防线被破',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 4,
+        variables: { i, isAlive },
+        metrics: { '击杀状态': isAlive ? '1 (成功)' : '0 (失败)' },
+      });
+
+      if (!isAlive) {
+        ans = i;
+        break;
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.fillStatus || 8,
+      codeLine: anchors.fillStatus || 8,
+      decision: `🏁 演进矩阵全部填毕：最终消灭怪物数量为 ${ans}`,
+      message: '矩阵推导收敛',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { ans },
+      metrics: { '最终结果': `${ans}只` },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillStatus || 8,
+        codeLine: anchors.fillStatus || 8,
+        decision: `🏁 矩阵状态维持：最终消灭怪物数 = ${ans}`,
+        message: '状态确认',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        variables: { ans },
+        metrics: { '最终结果': `${ans}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileEliminateMonstersStage4(
+    model: IYamlAlgorithmModel,
+    dist: number[],
+    speed: number[],
+    options?: { direction?: 'forward' | 'reverse'; anchorMap?: Record<string, number> }
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = Math.min(dist.length, speed.length);
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+
+    const count = new Array(n).fill(0);
+    const slots = count.map(c => String(c));
+    const colLabels = count.map((_, i) => `T=${i}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `⚡ 启动 O(N) 计数桶空间压缩：初始化容量为 ${n} 的计数桶 count[0..${n - 1}]`,
+      message: '计数桶极致流转初始化',
+      slots: count.map(c => String(c)),
+      colLabels,
+      variables: { n },
+      metrics: { '时间复杂度': 'O(N)', '空间复杂度': 'O(N)' },
+    });
+
+    for (let i = 0; i < n; i++) {
+      const t = Math.ceil(dist[i] / speed[i]);
+      if (t < n) {
+        count[t]++;
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.bucketFill || 4,
+        codeLine: anchors.bucketFill || 4,
+        decision: `📥 收集怪物 #${i} (用时 ${t}分)：${t < n ? `加入桶 count[${t}] (现有 ${count[t]} 只)` : '耗时 >= n 必可在基地前被杀，跳过装桶'}`,
+        message: '计数桶收集',
+        slots: count.map(c => String(c)),
+        colLabels,
+        activeSlot: t < n ? t : undefined,
+        variables: { i, t, countAtT: t < n ? count[t] : undefined },
+        metrics: { '收集进度': `${i + 1}/${n}` },
+      });
+    }
+
+    let total = 0;
+    let ans = n;
+
+    for (let i = 1; i < n; i++) {
+      total += count[i];
+      const isBreached = total > i;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.accumulate || 9,
+        codeLine: anchors.accumulate || 9,
+        decision: `🔄 第 ${i} 分钟前缀累加：截至第 ${i} 分钟到达的怪物总数为 total = ${total}`,
+        message: '前缀和流动判定',
+        slots: count.map(c => String(c)),
+        colLabels,
+        activeSlot: i,
+        variables: { i, total, capacity: i },
+        metrics: { '当前时刻': `${i}分`, '累计到达': `${total}只`, '容纳上限': `${i}只` },
+      });
+
+      if (isBreached) {
+        ans = i;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.fuseCheck || 10,
+          codeLine: anchors.fuseCheck || 10,
+          decision: `💥 计数桶熔断！前缀到达数 total = ${total} > 允许安全消除上限 ${i}！在第 ${i} 分钟失守`,
+          message: '安全容量越界，极速熔断',
+          slots: count.map(c => String(c)),
+          colLabels,
+          activeSlot: i,
+          variables: { i, total, ans: i },
+          metrics: { '熔断时刻': `${i}分`, '消灭总数': `${i}只` },
+        });
+        break;
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `🏁 计数桶极速结算完毕：最多可消灭怪物的数量为 ${ans} 只`,
+      message: '常数开销 O(N) 计数排序完美收敛',
+      slots: count.map(c => String(c)),
+      colLabels,
+      variables: { ans },
+      metrics: { '最终步数': `${ans}`, '算法性能': 'O(N) 线性' },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.done || 12,
+        codeLine: anchors.done || 12,
+        decision: `🏁 计数桶结算确认：结果为 ${ans}`,
+        message: '状态确认',
+        slots: count.map(c => String(c)),
+        colLabels,
+        variables: { ans },
+        metrics: { '最终结果': `${ans}` },
+      });
+    }
+
+    return steps;
+  }
 }

@@ -4053,7 +4053,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "消灭怪物的最大数量 (Eliminate Monsters)",
     viewId: "algo-eliminate-monsters-view",
     category: "greedy",
-    description: "消灭怪物的最大数量 (Eliminate Monsters)",
+    description: "LeetCode 1921：到达时间升序排序的贪心本质与防守时机判定 (EDF 调度与桶排序)",
     icon: "👾",
     difficulty: 2,
     levelOrder: 941,
