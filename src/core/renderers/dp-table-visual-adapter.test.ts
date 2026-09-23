@@ -117,4 +117,40 @@ describe('DpTableVisualAdapter (Deep Module) Unit Tests', () => {
     expect(container.innerHTML).toContain('容3');
     expect(container.innerHTML).toContain('物品(i) \\ 容量(j)');
   });
+
+  it('4. 成功渲染自定义结构化网格对象与贪心状态矩阵', () => {
+    const mockStep = {
+      i: 0,
+      j: 0,
+      grid: {
+        rows: 2,
+        cols: 3,
+        rowHeaders: ['M1', 'M2'],
+        colHeaders: ['区间', '指针', '决策'],
+        cornerLabel: '会议编号',
+        values: [
+          ['[1, 2]', '2', '选入'],
+          ['[2, 3]', '3', '选入']
+        ],
+        activeRow: 1,
+        activeCol: 2
+      }
+    };
+
+    DpTableVisualAdapter.renderStage3DPTable(container as any, mockStep, {
+      m: 2,
+      n: 3,
+      category: 'greedy'
+    });
+
+    expect(container.innerHTML).toContain('二维决策演进表 matrix');
+    expect(container.innerHTML).toContain('会议编号');
+    expect(container.innerHTML).toContain('M1');
+    expect(container.innerHTML).toContain('M2');
+    expect(container.innerHTML).toContain('区间');
+    expect(container.innerHTML).toContain('指针');
+    expect(container.innerHTML).toContain('决策');
+    expect(container.innerHTML).toContain('[1, 2]');
+    expect(container.innerHTML).toContain('选入');
+  });
 });

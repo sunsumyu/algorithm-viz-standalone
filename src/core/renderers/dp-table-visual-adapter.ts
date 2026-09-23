@@ -25,8 +25,24 @@ export class DpTableVisualAdapter {
   ): void {
     if (!container || !step) return;
     const { m, n, isReverse = false, rowLabels, colLabels, cornerLabel } = options;
-    const gridRows = (step.grid && step.grid.length > 0) ? step.grid.length : m;
-    const gridCols = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
+
+    // 0. 多态网格数据解构：同时无缝兼容二维数组、matrix 属性与带有元数据的网格对象
+    const rawGrid: any[][] | null = Array.isArray(step.grid)
+      ? step.grid
+      : (Array.isArray(step.matrix)
+        ? step.matrix
+        : (step.grid && Array.isArray(step.grid.values) ? step.grid.values : null));
+
+    const gridRows = rawGrid?.length
+      ?? step.grid?.rows
+      ?? ((step.grid && typeof step.grid.length === 'number') ? step.grid.length : m);
+    const gridCols = (rawGrid && rawGrid[0] && typeof rawGrid[0].length === 'number' ? rawGrid[0].length : undefined)
+      ?? step.grid?.cols
+      ?? ((step.grid && step.grid[0] && typeof step.grid[0].length === 'number') ? step.grid[0].length : n);
+
+    const effectiveRowLabels = rowLabels ?? step.grid?.rowHeaders ?? step.rowHeaders;
+    const effectiveColLabels = colLabels ?? step.grid?.colHeaders ?? step.colHeaders;
+    const effectiveCorner = cornerLabel ?? step.grid?.cornerLabel ?? step.grid?.corner ?? 'i\\j';
 
     container.innerHTML = '';
     container.className = 'w-full h-full flex flex-col items-center justify-start gap-1.5 p-1 overflow-auto relative';
@@ -35,18 +51,24 @@ export class DpTableVisualAdapter {
     const equationWrapper = document.createElement('div');
     equationWrapper.className = 'w-full max-w-lg mx-auto px-1 flex-shrink-0';
 
+    const getCellVal = (r?: number, c?: number) => {
+      if (r === undefined || c === undefined || r < 0 || c < 0) return '-';
+      return rawGrid?.[r]?.[c] ?? step.grid?.[r]?.[c] ?? '-';
+    };
+
     const topLabel = isReverse ? '下方' : '上方';
     const leftLabel = isReverse ? '右方' : '左方';
     const diagLabel = isReverse ? '右下' : '左上';
-    const topTxt = step.topVal !== undefined ? step.topVal : (step.topI >= 0 && step.topJ >= 0 ? step.grid?.[step.topI]?.[step.topJ] ?? '-' : '-');
-    const leftTxt = step.leftVal !== undefined ? step.leftVal : (step.leftI >= 0 && step.leftJ >= 0 ? step.grid?.[step.leftI]?.[step.leftJ] ?? '-' : '-');
-    const diagTxt = step.diagVal !== undefined ? step.diagVal : (step.diagI >= 0 && step.diagJ >= 0 ? step.grid?.[step.diagI]?.[step.diagJ] ?? '-' : '-');
-    const curVal = step.sumVal !== undefined ? step.sumVal : (step.i >= 0 && step.j >= 0 ? step.grid?.[step.i]?.[step.j] ?? '-' : '-');
+    const topTxt = step.topVal !== undefined ? step.topVal : getCellVal(step.topI, step.topJ);
+    const leftTxt = step.leftVal !== undefined ? step.leftVal : getCellVal(step.leftI, step.leftJ);
+    const diagTxt = step.diagVal !== undefined ? step.diagVal : getCellVal(step.diagI, step.diagJ);
+    const curVal = step.sumVal !== undefined ? step.sumVal : getCellVal(step.i, step.j);
     const hasDiag = (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) || step.diagVal !== undefined;
     const hasTop = (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) || step.topVal !== undefined;
     const hasLeft = (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) || step.leftVal !== undefined;
     const isGreedy = options.category === 'greedy' || step.category === 'greedy' || !!step.matrix;
-    const targetVar = isGreedy ? 'matrix' : 'dp';
+    const isCustomMatrix = !!step.matrix || (step.grid && !Array.isArray(step.grid) && Array.isArray(step.grid.values));
+    const targetVar = (isGreedy || isCustomMatrix) ? 'matrix' : 'dp';
 
     if (step.type === 'obstacle-cell' || step.type === 'obstacle-hit' || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && step.i >= 0 && step.j >= 0)) {
       equationWrapper.innerHTML = `
@@ -139,8 +161,9 @@ export class DpTableVisualAdapter {
         `;
       }
     } else {
-      const tableName = options.tableName || (isGreedy ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
-      const tableAction = options.tableAction || (isGreedy ? '准备动态追踪决策演进' : '准备逐格填表');
+      const isMatrix = isGreedy || isCustomMatrix;
+      const tableName = options.tableName || (isMatrix ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
+      const tableAction = options.tableAction || (isMatrix ? '准备动态追踪决策演进' : '准备逐格填表');
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
           <span>📊 ${tableName} <code>[0..${gridRows - 1}][0..${gridCols - 1}]</code>，${tableAction}</span>
@@ -156,28 +179,28 @@ export class DpTableVisualAdapter {
     const tableWrapper = document.createElement('div');
     tableWrapper.className = 'inline-block bg-white rounded-xl p-2 border border-slate-200/90 shadow-sm relative';
 
-    const corner = cornerLabel || 'i\\j';
+    const corner = effectiveCorner;
     let tableHtml = '<table class="border-collapse font-mono-code text-xs">';
     // 表头：列索引
-    tableHtml += `<thead><tr><th class="p-0.5 text-[10px] text-slate-400 font-normal">${corner}</th>`;
+    tableHtml += `<thead><tr><th class="p-1 text-[10px] text-slate-400 font-normal whitespace-nowrap">${corner}</th>`;
     for (let c = 0; c < gridCols; c++) {
-      const colTxt = colLabels?.[c] ?? `j=${c}`;
-      tableHtml += `<th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-center">${colTxt}</th>`;
+      const colTxt = effectiveColLabels?.[c] ?? `j=${c}`;
+      tableHtml += `<th class="px-2 py-1 text-[11px] font-bold text-slate-500 text-center whitespace-nowrap">${colTxt}</th>`;
     }
     tableHtml += '</tr></thead><tbody>';
 
     for (let r = 0; r < gridRows; r++) {
-      const rowTxt = rowLabels?.[r] ?? `i=${r}`;
-      tableHtml += `<tr><th class="px-1.5 py-0.5 text-[11px] font-bold text-slate-500 text-right">${rowTxt}</th>`;
+      const rowTxt = effectiveRowLabels?.[r] ?? `i=${r}`;
+      tableHtml += `<tr><th class="px-2 py-1 text-[11px] font-bold text-slate-500 text-right whitespace-nowrap">${rowTxt}</th>`;
       for (let c = 0; c < gridCols; c++) {
-        const isCur = step.i === r && step.j === c;
+        const isCur = (step.i === r && step.j === c) || (step.grid?.activeRow === r && step.grid?.activeCol === c);
         const isTop = step.topI === r && step.topJ === c;
         const isLeft = step.leftI === r && step.leftJ === c;
         const isDiag = step.diagI === r && step.diagJ === c;
         const isObstacle = step.obstacleGrid?.[r]?.[c] === 1;
-        const val = step.grid?.[r]?.[c] ?? null;
+        const val = rawGrid?.[r]?.[c] ?? step.grid?.[r]?.[c] ?? null;
 
-        let cellClass = 'w-10 h-10 sm:w-11 sm:h-11 border rounded-lg text-center font-bold relative transition-all duration-150 flex flex-col items-center justify-center ';
+        let cellClass = 'min-w-[40px] px-2 h-10 sm:h-11 border rounded-lg text-center font-bold relative transition-all duration-150 flex flex-col items-center justify-center ';
         let content = '';
 
         if (isCur) {
