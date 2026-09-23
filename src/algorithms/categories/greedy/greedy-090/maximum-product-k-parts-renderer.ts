@@ -408,7 +408,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MaxProductKStep>({
   },
 });
 
-export const maximumProductKPartsRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const maximumProductKPartsRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'maximum-product-k-parts',
   name: '分成 k 份的最大乘积',
@@ -417,7 +419,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code02：和为定值时均分定理，极差不能超过 1 的严格反证',
   icon: '📦',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 902,
   learningGoal: '掌握均分定理与极差大于等于 2 必劣化的代数反证法',

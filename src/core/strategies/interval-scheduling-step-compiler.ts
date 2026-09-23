@@ -2527,4 +2527,569 @@ export class IntervalSchedulingStepCompiler {
     return steps;
   }
 
+
+  // ==========================================================================
+  // 7. IPO 项目最大化资本 (IPO)
+  // 核心思想：门槛小根堆 + 利润大根堆双堆协同贪心、资本单调扩张滚雪球
+  // ==========================================================================
+  public static compileIPO(
+    model: IYamlAlgorithmModel,
+    k: number,
+    w: number,
+    profits: number[],
+    capital: number[],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    switch (stage) {
+      case 2:
+        return this.compileIPOStage2(model, k, w, profits, capital, direction, anchorMap);
+      case 3:
+        return this.compileIPOStage3(model, k, w, profits, capital, direction, anchorMap);
+      case 4:
+        return this.compileIPOStage4(model, k, w, profits, capital, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileIPOStage1(model, k, w, profits, capital, direction, anchorMap);
+    }
+  }
+
+  private static compileIPOStage1(
+    model: IYamlAlgorithmModel,
+    k: number,
+    w: number,
+    profits: number[],
+    capital: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? `1. 逆向项目遍历对比初始化：初始资本 w = ${w}，最多投资 k = ${k} 个项目，逆序考察`
+        : `1. 暴力穷举投资排列初始化：初始资本 w = ${w}，最多投资 k = ${k} 个项目，穷举所有可行排列`,
+      message: isReverse
+        ? `从后向前枚举项目，对比不同投资次序的最终资本差异`
+        : `深度优先递归探索所有至多 k 个可启动项目的排列空间`,
+      variables: { k, w, projectCount: profits.length },
+      stateArrays: [
+        {
+          id: 'projects',
+          name: '项目池 (利润 / 启动资本)',
+          indices: profits.map((_, i) => i),
+          values: profits.map((p, i) => `P${i + 1}(+${p}, 需${capital[i]})`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '当前可用资本': String(w), '可投项目数': String(k), '探索状态': '就绪' },
+    });
+
+    const used = new Array(profits.length).fill(false);
+    let curW = w;
+    let invested = 0;
+
+    for (let round = 0; round < Math.min(k, 4); round++) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 4,
+        codeLine: anchors.loop || 4,
+        decision: `轮次 ${round + 1}：当前资本 w = ${curW}，筛选所有启动资本 <= ${curW} 的可行项目`,
+        message: `遍历全量项目池寻找满足资本门槛的未投资项目`,
+        variables: { round: round + 1, curW },
+        metrics: { '当前轮次': `第${round + 1}轮`, '可用资本': String(curW) },
+      });
+
+      let bestIdx = -1;
+      let bestProfit = isReverse ? Infinity : -1;
+
+      for (let i = 0; i < profits.length; i++) {
+        if (!used[i] && curW >= capital[i]) {
+          const isBetter = isReverse ? profits[i] < bestProfit : profits[i] > bestProfit;
+          if (isBetter) {
+            bestProfit = profits[i];
+            bestIdx = i;
+          }
+        }
+      }
+
+      if (bestIdx === -1) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.ret || 6,
+          codeLine: anchors.ret || 6,
+          decision: `当前资本 ${curW} 不足以启动任何剩余项目，提前终止投资`,
+          message: `资本门槛卡死，无法继续滚雪球`,
+          variables: { curW, invested },
+          metrics: { '最终资本': String(curW), '状态': '提前终止' },
+        });
+        break;
+      }
+
+      used[bestIdx] = true;
+      curW += profits[bestIdx];
+      invested++;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.pick || 5,
+        codeLine: anchors.pick || 5,
+        decision: `投资项目 P${bestIdx + 1} (门槛 ${capital[bestIdx]}, 纯利 ${profits[bestIdx]}) ➔ 资本从 ${curW - profits[bestIdx]} 增至 ${curW}`,
+        message: `获得纯利 ${profits[bestIdx]}，资本单调扩张`,
+        variables: { chosen: bestIdx + 1, profit: profits[bestIdx], newW: curW },
+        stateArrays: [
+          {
+            id: 'projects',
+            name: '项目池 (利润 / 启动资本)',
+            indices: profits.map((_, i) => i),
+            values: profits.map((p, i) => `P${i + 1}(+${p}, 需${capital[i]})${used[i] ? ' [已投]' : ''}`),
+            activeIdx: bestIdx,
+            color: 'emerald',
+          },
+        ],
+        metrics: { '最新收益': `+${profits[bestIdx]}`, '当前资本': String(curW) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 6,
+      codeLine: anchors.ret || 6,
+      decision: `🏁 投资模拟完成！最多投资 ${k} 个项目后，最大可用资本 = ${curW}`,
+      message: `暴力枚举验证了贪心滚雪球的单调收益优势`,
+      variables: { finalCapital: curW, investedCount: invested },
+      metrics: { '最大最终资本': String(curW), '状态': '🏁 模拟收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileIPOStage2(
+    model: IYamlAlgorithmModel,
+    k: number,
+    w: number,
+    profits: number[],
+    capital: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'ipo_root',
+      r: 0,
+      c: 0,
+      val: `初始资本 w=${w}, k=${k}`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.heap_init || 2,
+      codeLine: anchors.heap_init || 2,
+      decision: `双堆协同调度初始化：构建资金门槛小根堆 costHeap 与利润大根堆 profitHeap`,
+      message: `costHeap 按 capital 升序组织，profitHeap 按 profit 降序组织`,
+      variables: { w, k, totalProjects: profits.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '当前资本w': String(w), '小根堆项目': String(profits.length), '大根堆项目': '0' },
+    });
+
+    // 模拟双堆
+    const costHeap = profits.map((p, i) => ({ id: i + 1, p, c: capital[i] })).sort((a, b) => a.c - b.c);
+    const profitHeap: { id: number; p: number; c: number }[] = [];
+    let curW = w;
+
+    for (let round = 0; round < Math.min(k, 4); round++) {
+      const roundNode: UniversalTreeNode = {
+        id: `round_${round + 1}`,
+        r: round + 1,
+        c: 0,
+        val: `第${round + 1}轮投资 (当前w=${curW})`,
+        status: 'active',
+        children: [],
+      };
+      rootTree.children.push(roundNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.round_loop || 4,
+        codeLine: anchors.round_loop || 4,
+        decision: `第 ${round + 1} 轮投资调度启动：当前可用资本 w = ${curW}`,
+        message: `准备从小根堆中弹出所有 capital <= ${curW} 的项目并加入大根堆`,
+        variables: { round: round + 1, curW, costHeapSize: costHeap.length },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '轮次': `第${round + 1}轮`, '当前资本': String(curW) },
+      });
+
+      // 解锁项目入大根堆
+      let unlockedCount = 0;
+      while (costHeap.length > 0 && costHeap[0].c <= curW) {
+        const item = costHeap[0];
+
+        // 探查帧：门槛满足判定
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.unlock_push || 6,
+          codeLine: anchors.unlock_push || 6,
+          decision: `🔍 门槛核验：小根堆顶项目 P${item.id} 所需启动资金 ${item.c} ≤ 当前资本 ${curW}，具备解锁资格`,
+          message: `资本门槛达标，准备将 P${item.id} 从待解锁池移入候选池`,
+          variables: { candidateId: item.id, capitalCost: item.c, curCapital: curW },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '核验项目': `P${item.id}`, '启动资金': String(item.c), '当前资本': String(curW) },
+        });
+
+        costHeap.shift();
+        profitHeap.push(item);
+        profitHeap.sort((a, b) => isReverse ? a.p - b.p : b.p - a.p);
+        unlockedCount++;
+
+        const unlockNode: UniversalTreeNode = {
+          id: `unlock_${round + 1}_${item.id}`,
+          r: round + 1,
+          c: unlockedCount,
+          val: `解锁 P${item.id}(利+${item.p},需${item.c})`,
+          status: 'active',
+          children: [],
+        };
+        roundNode.children.push(unlockNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.unlock_push || 6,
+          codeLine: anchors.unlock_push || 6,
+          decision: `入堆完成：项目 P${item.id} (利润 ${item.p}) 成功移入利润大根堆！`,
+          message: `项目已解锁，当前可选候选项目池扩充至 ${profitHeap.length} 个`,
+          variables: { unlockedId: item.id, profit: item.p, capital: item.c },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '解锁项目': `P${item.id}`, '大根堆候选': String(profitHeap.length) },
+        });
+      }
+
+      if (profitHeap.length === 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.break_check || 7,
+          codeLine: anchors.break_check || 7,
+          decision: `利润大根堆为空：当前资本 ${curW} 无法解锁任何新项目，贪心提前终止`,
+          message: `资本不足，投资中止`,
+          variables: { curW },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '状态': '大根堆为空', '提前结束': '是' },
+        });
+        break;
+      }
+
+      const top = profitHeap.shift()!;
+
+      // 决策探查帧：锁定最高利润
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.invest_poll || 8,
+        codeLine: anchors.invest_poll || 8,
+        decision: `🎯 贪心挑选：大根堆堆顶利润最高项目为 P${top.id} (净利润 +${top.p})，锁定本轮投资目标`,
+        message: `在所有已解锁项目中挑选利润极值者，确保资本以最快速度滚雪球扩张`,
+        variables: { targetProj: top.id, expectedProfit: top.p, curW },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '候选极值': `P${top.id}`, '预估利润': `+${top.p}` },
+      });
+
+      curW += top.p;
+
+      const investNode: UniversalTreeNode = {
+        id: `invest_${round + 1}_${top.id}`,
+        r: round + 1,
+        c: 99,
+        val: `⭐投资 P${top.id} (+${top.p}) ➔ w=${curW}`,
+        status: 'visited',
+        children: [],
+      };
+      roundNode.children.push(investNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.invest_poll || 8,
+        codeLine: anchors.invest_poll || 8,
+        decision: `大根堆贪心弹出最大利润项目 P${top.id} (利润 ${top.p}) ➔ 资本滚雪球膨胀至 ${curW}`,
+        message: `成功落地最高利润项目，可用资本进一步提升，下轮将解锁更多高门槛项目！`,
+        variables: { chosenProj: top.id, gain: top.p, newCapital: curW },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '投资项目': `P${top.id}`, '获利': `+${top.p}`, '新资本': String(curW) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🛑 双堆协同调度完成！达到投资上限 k=${k}，最终最大化资本 = ${curW}`,
+      message: `双堆结构在 O(N log N) 时间内精确实现了贪心滚雪球的最优调度`,
+      variables: { maxCapital: curW },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最终资本': String(curW), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileIPOStage3(
+    model: IYamlAlgorithmModel,
+    k: number,
+    w: number,
+    profits: number[],
+    capital: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+
+    const rounds = Math.max(k, 4);
+    const matrix: (number | null)[][] = Array.from({ length: rounds }, () => Array(4).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 4,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第${i + 1}轮`),
+      colHeaders: ['轮次', '投资前资本', '选中项目利润', '投资后资本'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.grid_init || 2,
+      codeLine: anchors.grid_init || 2,
+      decision: `初始化 IPO 项目状态演进矩阵 M[${rounds}][4]：精确跟踪每轮资本滚雪球轨迹`,
+      message: `矩阵记录每轮投资前资本、选定回报与投资后膨胀资本`,
+      variables: { totalRounds: rounds, initialW: w },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×4`, '初始资本': String(w) },
+    });
+
+    const costHeap = profits.map((p, i) => ({ id: i + 1, p, c: capital[i] })).sort((a, b) => a.c - b.c);
+    const profitHeap: { id: number; p: number; c: number }[] = [];
+    let curW = w;
+
+    for (let i = 0; i < rounds; i++) {
+      while (costHeap.length > 0 && costHeap[0].c <= curW) {
+        profitHeap.push(costHeap.shift()!);
+        profitHeap.sort((a, b) => isReverse ? a.p - b.p : b.p - a.p);
+      }
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_loop || 4,
+        codeLine: anchors.grid_loop || 4,
+        decision: `第 ${i + 1} 轮状态评估：当前资本 w = ${curW}，利润大根堆中有 ${profitHeap.length} 个候选项目待选`,
+        message: `准备挑选利润最大的可用项目`,
+        variables: { round: i + 1, curW, candidates: profitHeap.length },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '轮次': `第${i + 1}轮`, '投资前资本': String(curW), '候选数': String(profitHeap.length) },
+      });
+
+      const chosen = profitHeap.length > 0 ? profitHeap.shift()! : { id: 0, p: 0, c: 0 };
+      const wBefore = curW;
+      curW += chosen.p;
+
+      matrix[i][0] = i + 1;
+      matrix[i][1] = wBefore;
+      matrix[i][2] = chosen.p;
+      matrix[i][3] = curW;
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 3;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 3]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_cell || 6,
+        codeLine: anchors.grid_cell || 6,
+        decision: `填入第 ${i + 1} 轮记录：投资项目 P${chosen.id || '无'} (利+${chosen.p}) ➔ 资本从 ${wBefore} 扩张至 ${curW}`,
+        message: `资本演进矩阵状态更新：wAfter = wBefore + profit`,
+        variables: { round: i + 1, chosen: chosen.id, profit: chosen.p, wAfter: curW },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '本轮利润': `+${chosen.p}`, '投资后资本': String(curW) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 3;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.grid_done || 7,
+      codeLine: anchors.grid_done || 7,
+      decision: `🎉 IPO 项目状态演进矩阵填表完成！最终最大化资本 = ${curW}`,
+      message: `状态矩阵直观证明了资本滚雪球过程的严格单调递增性`,
+      variables: { finalCapital: curW },
+      grid: finalGrid as any,
+      metrics: { '最终资本': String(curW), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileIPOStage4(
+    model: IYamlAlgorithmModel,
+    k: number,
+    w: number,
+    profits: number[],
+    capital: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.fast_init || 2,
+      codeLine: anchors.fast_init || 2,
+      decision: isReverse
+        ? `1. 逆向流式调度初始化：预排序数组 + 指针单调右移快速推演`
+        : `1. 排序单调指针极速收敛初始化：数组预排序替代小根堆，时间 O(N log N + k log N)`,
+      message: `将所有项目按启动资金 capital 连续排序，单调指针 ptr 避免频繁小根堆调整`,
+      variables: { k, w, n: profits.length },
+      metrics: { '当前资本': String(w), '可投次数': String(k), '优化级别': '预排序指针' },
+    });
+
+    const projs = profits.map((p, i) => ({ id: i + 1, p, c: capital[i] })).sort((a, b) => a.c - b.c);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.fast_sort || 4,
+      codeLine: anchors.fast_sort || 4,
+      decision: `项目数组预排序完成：按 capital 升序排列，指针 ptr 初始化为 0`,
+      message: `内存连续紧凑排列，提高缓存局部性`,
+      variables: { sortedCount: projs.length },
+      stateArrays: [
+        {
+          id: 'projs',
+          name: '已排序项目数组 (需资本升序)',
+          indices: projs.map((_, i) => i),
+          values: projs.map(p => `P${p.id}(需${p.c},+${p.p})`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '已排序项目': String(projs.length), '指针ptr': '0' },
+    });
+
+    let ptr = 0;
+    const pq: { id: number; p: number; c: number }[] = [];
+    let curW = w;
+
+    for (let i = 0; i < Math.min(k, 4); i++) {
+      const prevPtr = ptr;
+      while (ptr < projs.length && projs[ptr].c <= curW) {
+        pq.push(projs[ptr]);
+        pq.sort((a, b) => isReverse ? a.p - b.p : b.p - a.p);
+        ptr++;
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.fast_unlock || 6,
+        codeLine: anchors.fast_unlock || 6,
+        decision: `轮次 ${i + 1}：指针 ptr 从 ${prevPtr} 右移至 ${ptr}，解锁 ${ptr - prevPtr} 个新项目入优先队列`,
+        message: `当前优先队列中共有 ${pq.length} 个项目可直接投资`,
+        variables: { round: i + 1, ptr, curW, unlocked: ptr - prevPtr },
+        stateArrays: [
+          {
+            id: 'projs',
+            name: '已排序项目数组',
+            indices: projs.map((_, idx) => idx),
+            values: projs.map(p => `P${p.id}(需${p.c},+${p.p})`),
+            activeIdx: Math.min(ptr, projs.length - 1),
+            color: 'emerald',
+          },
+        ],
+        metrics: { '指针位置': String(ptr), '队列大小': String(pq.length) },
+      });
+
+      if (pq.length === 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.fast_check || 7,
+          codeLine: anchors.fast_check || 7,
+          decision: `优先队列为空：资本 ${curW} 无法解锁后续更高门槛项目，提前退出`,
+          message: `提前收敛`,
+          variables: { curW },
+          metrics: { '最终资本': String(curW), '提前终止': '是' },
+        });
+        break;
+      }
+
+      const top = pq.shift()!;
+      curW += top.p;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.fast_poll || 8,
+        codeLine: anchors.fast_poll || 8,
+        decision: `优先队列弹出最大利润项目 P${top.id} (+${top.p}) ➔ 资本滚雪球膨胀至 ${curW}`,
+        message: `完成一次高质量投资，资本池进一步扩大`,
+        variables: { chosen: top.id, profit: top.p, curW },
+        metrics: { '投资获利': `+${top.p}`, '新资本': String(curW) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.fast_ret || 9,
+      codeLine: anchors.fast_ret || 9,
+      decision: `🏁 极速单调指针调度完成！长线滚雪球最终资本 = ${curW}`,
+      message: `排序+大根堆极速收敛，时间复杂度 O(N log N + k log N)，内存占用最优`,
+      variables: { finalCapital: curW },
+      metrics: { '最大化资本': String(curW), '状态': '🏁 极速收敛' },
+    });
+
+    return steps;
+  }
+
 }

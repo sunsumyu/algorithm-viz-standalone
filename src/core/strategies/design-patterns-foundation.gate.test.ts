@@ -138,6 +138,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { MinimumEatOrangesStrategy } = await import('./minimum-eat-oranges-strategy');
       const { AbsoluteValueAddToArrayStrategy } = await import('./absolute-value-add-to-array-strategy');
       const { CuttingBambooStrategy } = await import('./cutting-bamboo-strategy');
+      const { IPOStrategy } = await import('./ipo-strategy');
+      const { MaximumProductKPartsStrategy } = await import('./maximum-product-k-parts-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -163,6 +165,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         MinimumEatOrangesStrategy,
         AbsoluteValueAddToArrayStrategy,
         CuttingBambooStrategy,
+        IPOStrategy,
+        MaximumProductKPartsStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

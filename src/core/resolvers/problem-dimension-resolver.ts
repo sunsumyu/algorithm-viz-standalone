@@ -66,6 +66,8 @@ export class ProblemDimensionResolver {
     'minimum-eat-oranges',
     'absolute-value-add-to-array',
     'cutting-bamboo',
+    'ipo',
+    'maximum-product-k-parts',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -267,6 +269,14 @@ export class ProblemDimensionResolver {
       const costs = this.toArray(params.costs);
       m = 1;
       n = costs.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.profits !== undefined) {
+      const profits = this.toArray(params.profits);
+      m = 1;
+      n = profits.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

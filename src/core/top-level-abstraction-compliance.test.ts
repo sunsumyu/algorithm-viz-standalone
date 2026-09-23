@@ -54,6 +54,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'minimum-eat-oranges',
   'absolute-value-add-to-array',
   'cutting-bamboo',
+  'ipo-max-capital',
+  'maximum-product-k-parts',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -227,8 +229,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'ipo',
-        'maximum-product-k-parts',
         'meeting-monopoly',
         'meeting-one-day',
         'split-min-avg-sum',
@@ -248,7 +248,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'max-avg-pass-ratio',
         'min-cost-hire-workers',
         'fractional-programming-138',
-        'ipo-max-capital',
         'group-buy-tickets',
         'longest-same-zeros-ones-intervals',
         'minimum-initial-energy-to-finish-tasks',

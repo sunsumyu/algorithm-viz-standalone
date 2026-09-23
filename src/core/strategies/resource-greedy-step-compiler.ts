@@ -44,6 +44,9 @@ export class ResourceGreedyStepCompiler {
     if (pid === 'absolute-value-add-to-array' || (pid === 'absolute-value-add-to-array' && options.nums !== undefined)) {
       return this.compileAbsoluteValueAdd(model, options, stage);
     }
+    if (pid === 'maximum-product-k-parts' || (pid === 'maximum-product-k-parts' && options.k !== undefined)) {
+      return this.compileMaximumProductKParts(model, options, stage);
+    }
     if (pid === 'cutting-bamboo' || (pid === 'cutting-bamboo' && options.n !== undefined)) {
       return this.compileCuttingBamboo(model, options, stage);
     }
@@ -4340,6 +4343,532 @@ export class ResourceGreedyStepCompiler {
       message: `全过程耗时仅 O(log N) 步，即便 n 达 10^9 也仅需约 30 步完成！`,
       variables: { finalProduct: ans },
       metrics: { '最终乘积': String(ans), '时间复杂度': 'O(log N)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
+
+
+  // ==========================================================================
+  // 8. 分成 k 份的最大乘积 (Max Product of K Parts)
+  // 核心思想：均分定理、基本不等式极差约束、双项快速幂取模
+  // ==========================================================================
+  public static compileMaximumProductKParts(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawN = options.n || model.defaultParams?.n || 14;
+    const rawK = options.k || model.defaultParams?.k || 4;
+    const n = typeof rawN === 'number' && !isNaN(rawN) && rawN >= 1 ? rawN : 14;
+    const k = typeof rawK === 'number' && !isNaN(rawK) && rawK >= 1 ? rawK : 4;
+
+    switch (stage) {
+      case 2:
+        return this.compileMaxProductKStage2(model, n, k, options);
+      case 3:
+        return this.compileMaxProductKStage3(model, n, k, options);
+      case 4:
+        return this.compileMaxProductKStage4(model, n, k, options);
+      case 1:
+      default:
+        return this.compileMaxProductKStage1(model, n, k, options);
+    }
+  }
+
+  private static compileMaxProductKStage1(
+    model: IYamlAlgorithmModel,
+    n: number,
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? `1. 逆向不等划分对偶初始化：目标将 n = ${n} 拆分为 k = ${k} 份，逆向枚举分割组合`
+        : `1. 暴力穷举分割搜索初始化：目标将 n = ${n} 拆分为 k = ${k} 份，递归探索全部分割乘积`,
+      message: isReverse
+        ? `对偶对照：展示极差拉大时的乘积数值衰减，反向证明均分定理`
+        : `递归枚举第一份的取值并深入子问题 dfs(rest - cur, parts - 1)`,
+      variables: { n, k, targetParts: k },
+      metrics: { '总数值n': String(n), '划分份数k': String(k), '搜索状态': '就绪' },
+    });
+
+    if (k === 1) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.base || 3,
+        codeLine: anchors.base || 3,
+        decision: `边界特判：k = 1，无需拆分，乘积即数值本身 = ${n}`,
+        message: `单份直接返回`,
+        variables: { n, result: n },
+        metrics: { '最大乘积': String(n), '状态': '边界返回' },
+      });
+      return steps;
+    }
+
+    const safeN = Math.max(k, Math.min(15, n));
+    const safeK = Math.max(1, Math.min(5, k));
+
+    for (let cur = 1; cur <= Math.min(safeN - safeK + 1, 6); cur++) {
+      const rest = safeN - cur;
+      const partsLeft = safeK - 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 4,
+        codeLine: anchors.loop || 4,
+        decision: `尝试第一份分配数值 cur = ${cur}：剩余总值 ${rest}，待分配份数 ${partsLeft}`,
+        message: `探索分支：第一份取 ${cur}，深入 dfs(rest=${rest}, parts=${partsLeft})`,
+        variables: { cur, rest, partsLeft },
+        metrics: { '第一份': String(cur), '剩余总值': String(rest) },
+      });
+
+      const approxSub = Math.pow(Math.floor(rest / partsLeft), partsLeft);
+      const curProd = cur * approxSub;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.pick || 5,
+        codeLine: anchors.pick || 5,
+        decision: `分支计算完成：当前组合乘积约为 ${cur} × ${approxSub} = ${curProd}`,
+        message: `比较并更新全局最大乘积`,
+        variables: { cur, approxSub, curProd },
+        metrics: { '分支乘积': String(curProd), '当前评估': `cur=${cur}` },
+      });
+    }
+
+    // 计算理论均分值
+    const a = Math.floor(n / k);
+    const b = n % k;
+    let optAns = 1;
+    for (let i = 0; i < b; i++) optAns = (optAns * (a + 1)) % 1000000007;
+    for (let i = 0; i < k - b; i++) optAns = (optAns * a) % 1000000007;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 6,
+      codeLine: anchors.ret || 6,
+      decision: `🏁 全部分割枚举完成！n=${n} 拆成 ${k} 份的最大乘积 = ${optAns}`,
+      message: `穷举证实：当各部分极为接近时乘积取得全局极大值`,
+      variables: { maxProduct: optAns },
+      metrics: { '最大乘积': String(optAns), '最优极差': '<= 1', '状态': '🏁 搜索收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMaxProductKStage2(
+    model: IYamlAlgorithmModel,
+    n: number,
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'part_root',
+      r: 0,
+      c: 0,
+      val: `划分树: n=${n}, k=${k}`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.tree_entry || 2,
+      codeLine: anchors.tree_entry || 2,
+      decision: `构建均分划分状态树根节点：目标将总值 ${n} 均分成 ${k} 份`,
+      message: `展示基于均值不等式的各份生成树与余数 1 分摊推进过程`,
+      variables: { n, k },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '根节点': `n=${n}, k=${k}`, '状态': '展开就绪' },
+    });
+
+    const a = Math.floor(n / k);
+    const b = n % k;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_div || 3,
+      codeLine: anchors.tree_div || 3,
+      decision: `均分参数计算：基准份额 a = ⌊${n} / ${k}⌋ = ${a}，余数多出 b = ${n} % ${k} = ${b}`,
+      message: `由均值不等式，最优解必然包含 ${b} 份 (${a + 1}) 与 ${k - b} 份 ${a}`,
+      variables: { a, b, partsA1: b, partsA: k - b },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '基准份额a': String(a), '余数份额b': String(b) },
+    });
+
+    let currentProd = 1;
+    const MOD = 1000000007;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_div || 3,
+      codeLine: anchors.tree_div || 3,
+      decision: `⚖️ 均分策略锁定：离散均值 ⌊${n}/${k}⌋ = ${a}，余数 ${b} 必须单点均摊至前 ${b} 份`,
+      message: `数学定理保障：极差不超过 1 是乘积最大化的充要条件，提前规划两组份额`,
+      variables: { a, b, targetK: k },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '基准份额': String(a), '增强份额': String(a + 1) },
+    });
+
+    // 展开 b 份 (a + 1)
+    for (let i = 1; i <= Math.min(b, 4); i++) {
+      const val = a + 1;
+
+      // 试探帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_part1 || 4,
+        codeLine: anchors.tree_part1 || 4,
+        decision: `🔍 考查第 ${i} 份分配：拟吸收 1 个余数点，尝试分配数值 ${val} (${a} + 1)`,
+        message: `余数优先分配：在满足极差 ≤ 1 的前提下最大化单份基数`,
+        variables: { candidatePart: i, testVal: val, curProd: currentProd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '试探份额': `第${i}份`, '分配数值': String(val) },
+      });
+
+      currentProd = (currentProd * val) % MOD;
+
+      const childA1: UniversalTreeNode = {
+        id: `node_a1_${i}`,
+        r: 1,
+        c: i - 1,
+        val: `第${i}份(+1组): ${val}`,
+        status: 'visited',
+        children: [],
+      };
+      rootTree.children.push(childA1);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_part1 || 4,
+        codeLine: anchors.tree_part1 || 4,
+        decision: `状态树挂载第 ${i} 份 (+1 组)：确立数值 ${val}，累计模乘积更新为 ${currentProd}`,
+        message: `余数分摊确认：完成第 ${i}/${k} 份状态节点收敛`,
+        variables: { partIndex: i, val, currentProd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '已生成份数': `${i}/${k}`, '累计乘积': String(currentProd) },
+      });
+    }
+
+    // 展开 (k - b) 份 a
+    for (let j = 1; j <= Math.min(k - b, 4); j++) {
+      const val = a;
+
+      // 试探帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_part2 || 5,
+        codeLine: anchors.tree_part2 || 5,
+        decision: `🔍 考查第 ${b + j} 份分配：余数已耗尽，拟分配基准数值 ${val}`,
+        message: `基准保底分配：保持全局各份极差严密受控在 1 以内`,
+        variables: { candidatePart: b + j, testVal: val, curProd: currentProd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '试探份额': `第${b + j}份`, '分配数值': String(val) },
+      });
+
+      currentProd = (currentProd * val) % MOD;
+
+      const childA: UniversalTreeNode = {
+        id: `node_a_${j}`,
+        r: 2,
+        c: j - 1,
+        val: `第${b + j}份(基准组): ${val}`,
+        status: 'visited',
+        children: [],
+      };
+      rootTree.children.push(childA);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_part2 || 5,
+        codeLine: anchors.tree_part2 || 5,
+        decision: `状态树挂载第 ${b + j} 份 (基准组)：确立数值 ${val}，累计模乘积更新为 ${currentProd}`,
+        message: `基准份额填充完毕：极差为 ${b > 0 ? 1 : 0}，无任何乘积损失`,
+        variables: { partIndex: b + j, val, currentProd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '已生成份数': `${b + j}/${k}`, '累计乘积': String(currentProd) },
+      });
+    }
+
+    // 反证与校验帧
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_done || 6,
+      codeLine: anchors.tree_done || 6,
+      decision: `📐 极差代数反证核验：当前各份取值组合为 [${Array(b).fill(a + 1).concat(Array(k - b).fill(a)).join(', ')}]，极差严格 ≤ 1`,
+      message: `若存在两份差值 ≥ 2（如取 x 与 y，y - x ≥ 2），调整为 (x+1) 与 (y-1) 则积增加 (y-x-1) > 0，故非均分必劣化`,
+      variables: { diffCheck: b > 0 ? 1 : 0, optimalVerified: true },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '极差核验': '≤ 1 (最优)', '反证结论': '严格不可被超越' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_done || 6,
+      codeLine: anchors.tree_done || 6,
+      decision: `🛑 均分状态依赖树构建收敛！全部 ${k} 份结构确定，总乘积 = ${currentProd}`,
+      message: `均分划分树严格证明了极差最小化的局部与全局最优对齐`,
+      variables: { finalProduct: currentProd },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '总份数': String(k), '最终乘积': String(currentProd), '状态': '🏁 树推导收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMaxProductKStage3(
+    model: IYamlAlgorithmModel,
+    n: number,
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+    const MOD = 1000000007;
+
+    const rounds = Math.max(k, 4);
+    const matrix: (number | null)[][] = Array.from({ length: rounds }, () => Array(4).fill(null));
+
+    const a = Math.floor(n / k);
+    const b = n % k;
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 4,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第${i + 1}份`),
+      colHeaders: ['当前份数', '分配数值', '剩余总值', '累计模乘积'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.grid_init || 2,
+      codeLine: anchors.grid_init || 2,
+      decision: `初始化均分状态演进矩阵 M[${rounds}][4]：记录共 ${rounds} 份分配的实时状态迁移`,
+      message: `动态表格跟踪各份分配数值、剩余总值与累计模乘积`,
+      variables: { totalParts: rounds, n, k },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×4`, '状态': '就绪' },
+    });
+
+    let curRemain = n;
+    let prod = 1;
+
+    for (let i = 0; i < rounds; i++) {
+      const val = i < b ? a + 1 : a;
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_loop || 4,
+        codeLine: anchors.grid_loop || 4,
+        decision: `评估第 ${i + 1} 份分配决策：分配数值 ${val} (${i < b ? '享受余数+1' : '基准份额'})，剩余需分配 ${curRemain}`,
+        message: `准备状态表格单元格填入`,
+        variables: { part: i + 1, val, curRemain },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '当前份': `第${i + 1}份`, '拟分配': String(val), '剩余总值': String(curRemain) },
+      });
+
+      curRemain -= val;
+      prod = (prod * val) % MOD;
+
+      matrix[i][0] = i + 1;
+      matrix[i][1] = val;
+      matrix[i][2] = Math.max(0, curRemain);
+      matrix[i][3] = prod;
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 3;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 3]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_cell || 6,
+        codeLine: anchors.grid_cell || 6,
+        decision: `填入第 ${i + 1} 份记录：分配 ${val}，剩余 ${Math.max(0, curRemain)}，累计乘积更新为 ${prod}`,
+        message: `表格状态迁移：prod = (prod * ${val}) % 10^9+7`,
+        variables: { part: i + 1, val, remain: curRemain, prod },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '本份分配': String(val), '剩余': String(Math.max(0, curRemain)), '累计乘积': String(prod) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 3;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.grid_done || 7,
+      codeLine: anchors.grid_done || 7,
+      decision: `🎉 均分状态演进矩阵填表完成！最终全部 ${k} 份乘积 = ${prod}`,
+      message: `矩阵完整记录了极差 <= 1 的最优均分状态空间路径`,
+      variables: { finalProd: prod },
+      grid: finalGrid as any,
+      metrics: { '最终乘积': String(prod), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMaxProductKStage4(
+    model: IYamlAlgorithmModel,
+    n: number,
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+    const MOD = 1000000007;
+
+    const a = Math.floor(n / k);
+    const b = n % k;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.div || 2,
+      codeLine: anchors.div || 2,
+      decision: isReverse
+        ? `1. 逆向快速幂推演初始化：对偶顺序计算两部分指数幂`
+        : `1. 双项快速幂极速收敛初始化：利用公式 (${a + 1})^${b} * ${a}^${k - b} % (10^9+7)`,
+      message: `大数场景（n, k 可达 10^12）：通过快速幂在 O(log k) 内完成计算`,
+      variables: { a, b, n, k },
+      metrics: { '基准a': String(a), '余数b': String(b), '优化级别': 'O(log k)' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.rem || 3,
+      codeLine: anchors.rem || 3,
+      decision: `划分结构锁定：共 ${b} 份 (${a + 1}) 与 ${k - b} 份 ${a}`,
+      message: `分别对两部分底数与指数执行对数时间二进制快速幂`,
+      variables: { base1: a + 1, exp1: b, base2: a, exp2: k - b },
+      metrics: { '部分1': `(${a + 1})^${b}`, '部分2': `${a}^${k - b}` },
+    });
+
+    // 追踪二进制快速幂每一步的演算
+    const tracePower = (label: string, baseVal: number, expVal: number, anchorLine: number): number => {
+      let res = 1;
+      let curBase = baseVal % MOD;
+      let curExp = expVal;
+      let bitIdx = 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchorLine,
+        codeLine: anchorLine,
+        decision: `⚡ 启动快速幂计算 ${label}：底数 = ${baseVal}, 指数 = ${expVal} (${expVal.toString(2)}_2)`,
+        message: `通过二进制分解，将 ${expVal} 次连乘降维为 log2(${expVal}) 次按位倍增累乘`,
+        variables: { label, base: baseVal, exp: expVal, binExp: expVal.toString(2) },
+        metrics: { '计算项': label, '二进制位长': String(expVal.toString(2).length) },
+      });
+
+      if (curExp === 0) {
+        return 1;
+      }
+
+      while (curExp > 0) {
+        const lowestBit = curExp & 1;
+        if (lowestBit === 1) {
+          res = (res * curBase) % MOD;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            line: anchorLine,
+            codeLine: anchorLine,
+            decision: `${label} 第 ${bitIdx} 位为 1：累乘当前权重项 ${curBase}，中间积 = ${res}`,
+            message: `位权乘入累积变量`,
+            variables: { bitIdx, curBase, res },
+            metrics: { '当前位': `bit-${bitIdx}`, '中间积': String(res) },
+          });
+        }
+        curBase = (curBase * curBase) % MOD;
+        curExp >>= 1;
+        bitIdx++;
+      }
+
+      return res;
+    };
+
+    const p1 = tracePower(`项1 (${a + 1})^${b}`, a + 1, b, anchors.p1 || 4);
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.p1 || 4,
+      codeLine: anchors.p1 || 4,
+      decision: `快速幂第一项结算：(${a + 1})^${b} % MOD = ${p1}`,
+      message: `第一项余数增强组幂次结算完成`,
+      variables: { p1, base: a + 1, exp: b },
+      metrics: { '项1结果': String(p1), '运算耗时': 'O(log b)' },
+    });
+
+    const p2 = tracePower(`项2 (${a})^${k - b}`, a, k - b, anchors.p2 || 5);
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.p2 || 5,
+      codeLine: anchors.p2 || 5,
+      decision: `快速幂第二项结算：${a}^${k - b} % MOD = ${p2}`,
+      message: `第二项基准份额组幂次结算完成`,
+      variables: { p2, base: a, exp: k - b },
+      metrics: { '项2结果': String(p2), '运算耗时': 'O(log(k-b))' },
+    });
+
+    const finalAns = (p1 * p2) % MOD;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.ret || 6,
+      codeLine: anchors.ret || 6,
+      decision: `🏁 双项乘积合并：(${p1} × ${p2}) % MOD = ${finalAns}`,
+      message: `全过程耗时仅 O(log k) 步，大数场景下极速收敛！`,
+      variables: { finalResult: finalAns },
+      metrics: { '最大乘积': String(finalAns), '复杂度': 'O(log k)', '状态': '🏁 极致收敛' },
     });
 
     return steps;

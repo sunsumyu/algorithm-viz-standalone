@@ -53,6 +53,8 @@ import { MinimumCostConnectSticksStrategy } from './minimum-cost-connect-sticks-
 import { MinimumEatOrangesStrategy } from './minimum-eat-oranges-strategy';
 import { AbsoluteValueAddToArrayStrategy } from './absolute-value-add-to-array-strategy';
 import { CuttingBambooStrategy } from './cutting-bamboo-strategy';
+import { IPOStrategy } from './ipo-strategy';
+import { MaximumProductKPartsStrategy } from './maximum-product-k-parts-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -182,6 +184,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MinimumEatOrangesStrategy());
   AlgorithmStrategyRegistry.register(new AbsoluteValueAddToArrayStrategy());
   AlgorithmStrategyRegistry.register(new CuttingBambooStrategy());
+  AlgorithmStrategyRegistry.register(new IPOStrategy());
+  AlgorithmStrategyRegistry.register(new MaximumProductKPartsStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -245,7 +249,9 @@ export {
   MinimumCostConnectSticksStrategy,
   MinimumEatOrangesStrategy,
   AbsoluteValueAddToArrayStrategy,
-  CuttingBambooStrategy
+  CuttingBambooStrategy,
+  IPOStrategy,
+  MaximumProductKPartsStrategy
 };
 
 export * from './strategy-helpers';

@@ -1,0 +1,177 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 分成 k 份的最大乘积 顶层领域模型
+# 对应：大厂真实笔试真题 / 左程云算法讲解 090 Code02
+# 包含：数论贪心、均分定理、基本不等式极差约束、大数快速幂与代数反证
+# ==============================================================================
+
+id: maximum-product-k-parts
+name: 分成 k 份的最大乘积 (Max Product of K Parts)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数学
+  - 快速幂
+  - 整数拆分
+  - 基本不等式
+
+description: |
+  一个正整数 n 必须精确分成 k 份正整数，使得这 k 个正整数的乘积尽量大。
+  数字 n 和 k 规模可达 10^12，结果对 1000000007 (10^9+7) 取模。
+  核心数学归约（均分定理与基本不等式极差单调性）：
+  1. 均值不等式原理：多项之和为定值 S 时，各数值越接近，其乘积越大；
+  2. 离散整数极差反证法：
+     - 设存在两份 x 与 y 满足 x - y >= 2；
+     - 若将 x 减 1，y 加 1（和保持不变）：新乘积为 (x - 1)(y + 1) = xy + (x - y - 1) > xy；
+     - 故最优划分中任何两份的极差绝不可能超过 1；
+  3. 均分贪心算法：
+     - 基准份额：a = ⌊n / k⌋；
+     - 余数份额：b = n % k；
+     - 最优拆分恰由 b 个 (a + 1) 和 (k - b) 个 a 组成；
+     - 最大乘积为 (a + 1)^b * a^(k - b) % (10^9 + 7)；
+  4. Forward: 均分贪心快速幂方案（全局极值）；
+  5. Reverse: 极差放大对偶方案对照（数值对比反向证明均分最优性）。
+
+defaultParams:
+  n: 14
+  k: 4
+
+constraints:
+  - 1 <= k <= n <= 10^12
+
+directions:
+  forward:
+    name: 均分贪心快速幂方案 (Forward Equal Partition Greedy)
+    description: 依照均值不等式使各份极差 <= 1，通过快速幂在对数时间内计算大数模乘积
+  reverse:
+    name: 不等划分对偶对照 (Reverse Unequal Partition Dual)
+    description: 故意拉大各份极差进行反向数值对比，严格证明极差缩小对乘积的单调提升
+
+stages:
+  stage-1:
+    name: 暴力分割穷举对比
+    description: 递归枚举第一份的可能取值，自顶向下展示指数级划分搜索空间
+    complexity:
+      time: O(n^k)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxProduct(int n, int k) {
+              return dfs(n, k); // anchor:init
+          }
+          private int dfs(int rest, int partsLeft) {
+              if (partsLeft == 1) return rest; // anchor:base
+              int max = 0;
+              for (int cur = 1; cur <= rest - partsLeft + 1; cur++) { // anchor:loop
+                  max = Math.max(max, cur * dfs(rest - cur, partsLeft - 1)); // anchor:pick
+              }
+              return max; // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxProductReverse(int n, int k) {
+              return dfsReverse(n, k); // anchor:init
+          }
+          private int dfsReverse(int rest, int partsLeft) {
+              if (partsLeft == 1) return rest; // anchor:base
+              int max = 0;
+              for (int cur = rest - partsLeft + 1; cur >= 1; cur--) { // anchor:loop
+                  max = Math.max(max, cur * dfsReverse(rest - cur, partsLeft - 1)); // anchor:pick
+              }
+              return max; // anchor:ret
+          }
+
+  stage-2:
+    name: 均分划分状态树展开
+    description: 递归自顶向下构建 k 份均分过程的状态树，展现余数 1 分摊与乘积演进
+    complexity:
+      time: O(k)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        source: |
+          public int buildPartitionTree(long n, long k) { // anchor:tree_entry
+              long a = n / k, b = n % k; // anchor:tree_div
+              long ans = 1;
+              for (int i = 0; i < b; i++) ans = (ans * (a + 1)) % 1000000007; // anchor:tree_part1
+              for (int i = 0; i < k - b; i++) ans = (ans * a) % 1000000007; // anchor:tree_part2
+              return (int) ans; // anchor:tree_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int buildPartitionTreeReverse(long n, long k) { // anchor:tree_entry
+              long a = n / k, b = n % k; // anchor:tree_div
+              long ans = 1;
+              for (int i = 0; i < k - b; i++) ans = (ans * a) % 1000000007; // anchor:tree_part2
+              for (int i = 0; i < b; i++) ans = (ans * (a + 1)) % 1000000007; // anchor:tree_part1
+              return (int) ans; // anchor:tree_done
+          }
+
+  stage-3:
+    name: 均分状态演进矩阵
+    description: 二维矩阵实时跟踪当前份序号、分配数值、剩余总值与累计乘积状态
+    complexity:
+      time: O(k * 4)
+      space: O(k * 4)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackPartitionMatrix(long n, long k) {
+              int[][] matrix = new int[(int) k][4]; // [partIdx, allocVal, remainN, curProd] // anchor:grid_init
+              long a = n / k, b = n % k, prod = 1, curN = n;
+              for (int i = 0; i < k; i++) { // anchor:grid_loop
+                  long val = (i < b) ? a + 1 : a;
+                  curN -= val;
+                  prod = (prod * val) % 1000000007;
+                  matrix[i] = new int[]{i + 1, (int) val, (int) curN, (int) prod}; // anchor:grid_cell
+              }
+              return matrix; // anchor:grid_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackPartitionMatrixReverse(long n, long k) {
+              int[][] matrix = new int[(int) k][4]; // anchor:grid_init
+              long a = n / k, b = n % k, prod = 1, curN = n;
+              for (int i = 0; i < k; i++) { // anchor:grid_loop
+                  long val = (i < k - b) ? a : a + 1;
+                  curN -= val;
+                  prod = (prod * val) % 1000000007;
+                  matrix[i] = new int[]{i + 1, (int) val, (int) curN, (int) prod}; // anchor:grid_cell
+              }
+              return matrix; // anchor:grid_done
+          }
+
+  stage-4:
+    name: 双项快速幂极速收敛
+    description: 对 (a+1)^b 和 a^(k-b) 独立执行二进制快速幂，对数时间 O(log k) 极速得出大数模乘积
+    complexity:
+      time: O(log k)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxValue(long n, long k) {
+              long a = n / k; // anchor:div
+              long b = n % k; // anchor:rem
+              long p1 = power(a + 1, b, 1000000007); // anchor:p1
+              long p2 = power(a, k - b, 1000000007); // anchor:p2
+              return (int) ((p1 * p2) % 1000000007); // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxValueReverse(long n, long k) {
+              long a = n / k; // anchor:div
+              long b = n % k; // anchor:rem
+              long p2 = power(a, k - b, 1000000007); // anchor:p2
+              long p1 = power(a + 1, b, 1000000007); // anchor:p1
+              return (int) ((p1 * p2) % 1000000007); // anchor:ret
+          }

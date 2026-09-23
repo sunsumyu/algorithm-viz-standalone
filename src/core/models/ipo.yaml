@@ -1,0 +1,222 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] IPO 项目最大化资本 顶层领域模型
+# 对应：LeetCode 502 / 左程云算法讲解 090 Code05
+# 包含：双堆协同贪心、资本小根堆解锁、利润大根堆挑选、二维项目决策矩阵与滚雪球优势证明
+# ==============================================================================
+
+id: ipo-max-capital
+name: IPO 项目最大化资本 (IPO)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 堆（优先队列）
+  - 数组
+  - 排序
+
+description: |
+  假设力扣即将开始 IPO。现有 n 个项目，项目 i 的纯利润为 profits[i]，启动该项目需要最低资本 capital[i]。
+  初始拥有资本 w。最多可以选择 k 个不同的项目进行投资。
+  完成一个项目后，纯利润将直接加入可用资本中（capital 并不消耗，资本单调递增滚雪球）。
+  求最终能获得的最大资本。
+  核心数学归约（双优先队列协同贪心调度）：
+  1. 门槛小根堆 (costHeap)：将所有项目按启动资金 capital 升序组织；
+  2. 利润大根堆 (profitHeap)：维护所有当前资本 w 足以启动的项目，按纯利润 profit 降序组织；
+  3. 滚雪球贪心策略：
+     - 每轮将所有 capital <= w 的项目从小根堆解锁并转移入大根堆；
+     - 若大根堆为空，说明当前资本无法启动任何剩余项目，提前退出；
+     - 贪心从大根堆中弹出纯利润最大的项目落地，w += maxProfit；
+     - 重复 k 轮，资本具有单调扩张优势；
+  4. Forward: 双堆协同贪心滚雪球（求全局最大资本）；
+  5. Reverse: 逆向低利润或对偶策略对照（反向凸显贪心大根堆选择的最优性）。
+
+defaultParams:
+  k: 2
+  w: 0
+  profits: [1, 2, 3]
+  capital: [0, 1, 1]
+
+constraints:
+  - 1 <= k <= 10^5
+  - 0 <= w <= 10^9
+  - n == profits.length == capital.length
+  - 1 <= n <= 10^5
+  - 0 <= profits[i] <= 10^4
+  - 0 <= capital[i] <= 10^9
+
+directions:
+  forward:
+    name: 双堆协同最大利润贪心 (Forward Two-Heap Greedy)
+    description: 资金门槛小根堆负责解锁项目，利润大根堆贪心挑选最大回报滚雪球
+  reverse:
+    name: 最低门槛对偶策略对照 (Reverse Min-Capital Dual Comparison)
+    description: 对偶挑选门槛最低而非利润最大项目，通过收益差距严格凸显利润贪心的统治力
+
+stages:
+  stage-1:
+    name: 暴力搜索与投资排列对比
+    description: 穷举所有至多 k 个可行项目的排列组合，展示状态空间爆炸
+    complexity:
+      time: O(N^k)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        source: |
+          public int findMaximizedCapitalDFS(int k, int w, int[] profits, int[] capital) {
+              boolean[] used = new boolean[profits.length]; // anchor:init
+              return dfs(k, w, profits, capital, used); // anchor:dfs
+          }
+          private int dfs(int kLeft, int curW, int[] p, int[] c, boolean[] used) {
+              if (kLeft == 0) return curW; // anchor:base
+              int maxW = curW;
+              for (int i = 0; i < p.length; i++) { // anchor:loop
+                  if (!used[i] && curW >= c[i]) {
+                      used[i] = true;
+                      maxW = Math.max(maxW, dfs(kLeft - 1, curW + p[i], p, c, used)); // anchor:pick
+                      used[i] = false;
+                  }
+              }
+              return maxW; // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int findMaximizedCapitalReverse(int k, int w, int[] profits, int[] capital) {
+              boolean[] used = new boolean[profits.length]; // anchor:init
+              return dfsReverse(k, w, profits, capital, used); // anchor:dfs
+          }
+          private int dfsReverse(int kLeft, int curW, int[] p, int[] c, boolean[] used) {
+              if (kLeft == 0) return curW; // anchor:base
+              int maxW = curW;
+              for (int i = p.length - 1; i >= 0; i--) { // anchor:loop
+                  if (!used[i] && curW >= c[i]) {
+                      used[i] = true;
+                      maxW = Math.max(maxW, dfsReverse(kLeft - 1, curW + p[i], p, c, used)); // anchor:pick
+                      used[i] = false;
+                  }
+              }
+              return maxW; // anchor:ret
+          }
+
+  stage-2:
+    name: 双堆协同解锁推演
+    description: 资金门槛小根堆动态解锁可用项目，利润大根堆贪心挑选最大回报
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int findMaximizedCapital(int k, int w, int[] profits, int[] capital) {
+              PriorityQueue<int[]> costHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]); // anchor:heap_init
+              PriorityQueue<Integer> profitHeap = new PriorityQueue<>((a, b) -> b - a);
+              for (int i = 0; i < profits.length; i++) costHeap.add(new int[]{capital[i], profits[i]});
+              for (int round = 0; round < k; round++) { // anchor:round_loop
+                  while (!costHeap.isEmpty() && costHeap.peek()[0] <= w) { // anchor:unlock_loop
+                      profitHeap.add(costHeap.poll()[1]); // anchor:unlock_push
+                  }
+                  if (profitHeap.isEmpty()) break; // anchor:break_check
+                  w += profitHeap.poll(); // anchor:invest_poll
+              }
+              return w; // anchor:done
+          }
+      reverse:
+        language: java
+        source: |
+          public int findMaximizedCapitalReverse(int k, int w, int[] profits, int[] capital) {
+              PriorityQueue<int[]> costHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]); // anchor:heap_init
+              PriorityQueue<Integer> profitHeap = new PriorityQueue<>((a, b) -> a - b);
+              for (int i = 0; i < profits.length; i++) costHeap.add(new int[]{capital[i], profits[i]});
+              for (int round = 0; round < k; round++) { // anchor:round_loop
+                  while (!costHeap.isEmpty() && costHeap.peek()[0] <= w) { // anchor:unlock_loop
+                      profitHeap.add(costHeap.poll()[1]); // anchor:unlock_push
+                  }
+                  if (profitHeap.isEmpty()) break; // anchor:break_check
+                  w += profitHeap.poll(); // anchor:invest_poll
+              }
+              return w; // anchor:done
+          }
+
+  stage-3:
+    name: 项目状态矩阵与资本演进
+    description: 二维矩阵跟踪每个轮次的项目解锁池、选定项目回报及资本滚雪球轨迹
+    complexity:
+      time: O(k * 4)
+      space: O(k * 4)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackIPOStateMatrix(int k, int w, int[] profits, int[] capital) {
+              int[][] matrix = new int[k][4]; // [round, wBefore, chosenProfit, wAfter] // anchor:grid_init
+              PriorityQueue<int[]> costHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+              PriorityQueue<Integer> profitHeap = new PriorityQueue<>((a, b) -> b - a);
+              for (int i = 0; i < profits.length; i++) costHeap.add(new int[]{capital[i], profits[i]});
+              for (int i = 0; i < k; i++) { // anchor:grid_loop
+                  while (!costHeap.isEmpty() && costHeap.peek()[0] <= w) profitHeap.add(costHeap.poll()[1]);
+                  int p = profitHeap.isEmpty() ? 0 : profitHeap.poll();
+                  matrix[i] = new int[]{i + 1, w, p, w + p}; // anchor:grid_cell
+                  w += p;
+              }
+              return matrix; // anchor:grid_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackIPOStateMatrixReverse(int k, int w, int[] profits, int[] capital) {
+              int[][] matrix = new int[k][4]; // anchor:grid_init
+              PriorityQueue<int[]> costHeap = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+              PriorityQueue<Integer> profitHeap = new PriorityQueue<>((a, b) -> a - b);
+              for (int i = 0; i < profits.length; i++) costHeap.add(new int[]{capital[i], profits[i]});
+              for (int i = 0; i < k; i++) { // anchor:grid_loop
+                  while (!costHeap.isEmpty() && costHeap.peek()[0] <= w) profitHeap.add(costHeap.poll()[1]);
+                  int p = profitHeap.isEmpty() ? 0 : profitHeap.poll();
+                  matrix[i] = new int[]{i + 1, w, p, w + p}; // anchor:grid_cell
+                  w += p;
+              }
+              return matrix; // anchor:grid_done
+          }
+
+  stage-4:
+    name: 排序单调指针与极速收敛
+    description: 预排序数组替代小根堆，时间复杂度收敛至 O(N log N + k log N)，内存连续紧凑
+    complexity:
+      time: O(N log N + k log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int findMaximizedCapitalFast(int k, int w, int[] profits, int[] capital) {
+              int n = profits.length; // anchor:fast_init
+              int[][] projs = new int[n][2];
+              for (int i = 0; i < n; i++) projs[i] = new int[]{capital[i], profits[i]};
+              Arrays.sort(projs, (a, b) -> a[0] - b[0]); // anchor:fast_sort
+              PriorityQueue<Integer> pq = new PriorityQueue<>((a, b) -> b - a);
+              int ptr = 0; // anchor:fast_ptr
+              for (int i = 0; i < k; i++) { // anchor:fast_loop
+                  while (ptr < n && projs[ptr][0] <= w) pq.add(projs[ptr++][1]); // anchor:fast_unlock
+                  if (pq.isEmpty()) break; // anchor:fast_check
+                  w += pq.poll(); // anchor:fast_poll
+              }
+              return w; // anchor:fast_ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int findMaximizedCapitalFastReverse(int k, int w, int[] profits, int[] capital) {
+              int n = profits.length; // anchor:fast_init
+              int[][] projs = new int[n][2];
+              for (int i = 0; i < n; i++) projs[i] = new int[]{capital[i], profits[i]};
+              Arrays.sort(projs, (a, b) -> a[0] - b[0]); // anchor:fast_sort
+              PriorityQueue<Integer> pq = new PriorityQueue<>((a, b) -> a - b);
+              int ptr = 0; // anchor:fast_ptr
+              for (int i = 0; i < k; i++) { // anchor:fast_loop
+                  while (ptr < n && projs[ptr][0] <= w) pq.add(projs[ptr++][1]); // anchor:fast_unlock
+                  if (pq.isEmpty()) break; // anchor:fast_check
+                  w += pq.poll(); // anchor:fast_poll
+              }
+              return w; // anchor:fast_ret
+          }

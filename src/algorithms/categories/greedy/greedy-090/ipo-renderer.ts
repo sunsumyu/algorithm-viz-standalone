@@ -423,7 +423,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<IPOStep>({
   },
 });
 
-export const ipoRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const ipoRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'ipo-max-capital',
   name: 'IPO 最大化资本 (LeetCode 502)',
@@ -432,7 +434,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code05：启动金小根堆 + 纯利润大根堆双堆协同滚雪球',
   icon: '💰',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 905,
   learningGoal: '掌握双堆协同设计模式与超集支配单调扩张性质',
