@@ -281,9 +281,11 @@ export class StateSpacePresenter {
         let rowLabels: string[] | undefined;
         let colLabels: string[] | undefined;
         let cornerLabel: string | undefined;
-        if (AlgorithmModelRepository.hasModel(options.modelId)) {
-          const model = AlgorithmModelRepository.getModel(options.modelId);
-          const params = model.defaultParams as any;
+        const currentModel = AlgorithmModelRepository.hasModel(options.modelId) ? AlgorithmModelRepository.getModel(options.modelId) : null;
+        const currentCategory = currentModel?.category;
+
+        if (currentModel) {
+          const params = currentModel.defaultParams as any;
           if (params && params.weights && (params.bagWeight !== undefined || params.target !== undefined)) {
             const weights = Array.isArray(params.weights) ? params.weights : [];
             const values = Array.isArray(params.values) ? params.values : [];
@@ -298,11 +300,11 @@ export class StateSpacePresenter {
         if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
           RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
         } else if (is2DGrid && step.grid && step.grid.length > 1) {
-          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel });
+          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel, category: currentCategory });
         } else if (step.dp1d && step.dp1d.length > 0) {
           GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
         } else {
-          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel });
+          GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel, category: currentCategory });
         }
       }
     } else if (currentStage === 'stage-1' || currentStage === 'stage-2') {

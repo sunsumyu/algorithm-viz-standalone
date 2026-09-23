@@ -1070,6 +1070,9 @@ export class GridVisualAdapter {
       rowLabels?: string[];
       colLabels?: string[];
       cornerLabel?: string;
+      tableName?: string;
+      tableAction?: string;
+      category?: string;
     }
   ): void {
     DpTableVisualAdapter.renderStage3DPTable(container, step, options);

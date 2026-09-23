@@ -18,6 +18,9 @@ export class DpTableVisualAdapter {
       rowLabels?: string[];
       colLabels?: string[];
       cornerLabel?: string;
+      tableName?: string;
+      tableAction?: string;
+      category?: string;
     }
   ): void {
     if (!container || !step) return;
@@ -42,7 +45,8 @@ export class DpTableVisualAdapter {
     const hasDiag = (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) || step.diagVal !== undefined;
     const hasTop = (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) || step.topVal !== undefined;
     const hasLeft = (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) || step.leftVal !== undefined;
-    const targetVar = step.matrix ? 'matrix' : 'dp';
+    const isGreedy = options.category === 'greedy' || step.category === 'greedy' || !!step.matrix;
+    const targetVar = isGreedy ? 'matrix' : 'dp';
 
     if (step.type === 'obstacle-cell' || step.type === 'obstacle-hit' || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && step.i >= 0 && step.j >= 0)) {
       equationWrapper.innerHTML = `
@@ -135,9 +139,8 @@ export class DpTableVisualAdapter {
         `;
       }
     } else {
-      const isMatrix = !!step.matrix;
-      const tableName = isMatrix ? '二维决策状态表 matrix' : '二维 DP 状态表 dp';
-      const tableAction = isMatrix ? '准备动态追踪决策演进' : '准备逐格填表';
+      const tableName = options.tableName || (isGreedy ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
+      const tableAction = options.tableAction || (isGreedy ? '准备动态追踪决策演进' : '准备逐格填表');
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
           <span>📊 ${tableName} <code>[0..${gridRows - 1}][0..${gridCols - 1}]</code>，${tableAction}</span>
