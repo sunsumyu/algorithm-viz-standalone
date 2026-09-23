@@ -50,6 +50,7 @@ directions:
 stages:
   stage-1:
     name: 暴力独立子集搜索
+    shortName: 暴力搜索
     description: 暴力递归穷举所有不冲突的会议子集，评估各个子集的会议总数
     complexity:
       time: O(2^N)
@@ -94,6 +95,7 @@ stages:
 
   stage-2:
     name: 结束时间排序与小根堆状态树展开
+    shortName: 决策树
     description: 按 end 升序排序，自顶向下构建贪心状态依赖树，实时展示选入与冲突淘汰决策
     card2Title: "贪心决策与开辟依赖树 (Greedy Decision Tree)"
     card2Desc: "直观展现会议按时间排序后，贪心挑选与冲突淘汰的决策过程。"
@@ -146,7 +148,10 @@ stages:
 
   stage-3:
     name: 区间状态转移矩阵演进跟踪
+    shortName: 状态矩阵
     description: 二维矩阵完整记录各会议开始时间、结束时间、冲突判定与累计入选数
+    card2Title: "区间调度决策与兼容性沙盘"
+    card2Desc: "二维矩阵动态记录每场会议的时间边界、兼容性判定与贪心选入结果。"
     complexity:
       time: O(N log N)
       space: O(N)
@@ -189,6 +194,7 @@ stages:
 
   stage-4:
     name: 洛谷 P1803 数组桶 O(N) 极速收敛
+    shortName: 桶优化
     description: 建立 latest[end] 最晚开始时间数组，跳过显式排序，直接线性遍历时间轴
     complexity:
       time: O(N + MaxTime)

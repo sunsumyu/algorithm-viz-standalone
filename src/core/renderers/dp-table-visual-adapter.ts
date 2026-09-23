@@ -134,9 +134,12 @@ export class DpTableVisualAdapter {
         `;
       }
     } else {
+      const isMatrix = !!step.matrix;
+      const tableName = isMatrix ? '二维决策状态表 matrix' : '二维 DP 状态表 dp';
+      const tableAction = isMatrix ? '准备动态追踪决策演进' : '准备逐格填表';
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
-          <span>📊 二维 DP 状态表 <code>dp[0..${gridRows - 1}][0..${gridCols - 1}]</code>，准备逐格填表</span>
+          <span>📊 ${tableName} <code>[0..${gridRows - 1}][0..${gridCols - 1}]</code>，${tableAction}</span>
         </div>
       `;
     }

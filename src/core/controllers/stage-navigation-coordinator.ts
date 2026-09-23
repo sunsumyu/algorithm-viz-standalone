@@ -98,10 +98,19 @@ export class StageNavigationCoordinator {
     if (!container || !options.model.stages) return;
     container.innerHTML = '';
 
+    const isGreedy = options.model?.category === 'greedy';
+    const greedyShortNames: Record<string, string> = {
+      'stage-1': '暴力搜索',
+      'stage-2': '贪心判定',
+      'stage-3': '状态矩阵',
+      'stage-4': '极限压缩',
+    };
+
     const stageEntries = Object.entries(options.model.stages);
     stageEntries.forEach(([stageKey, stageSpec], idx) => {
       const stageNum = idx + 1;
-      const shortName = stageSpec.shortName || this.defaultShortNames[stageKey] || `阶段 ${stageNum}`;
+      const defaultName = isGreedy ? (greedyShortNames[stageKey] || `阶段 ${stageNum}`) : (this.defaultShortNames[stageKey] || `阶段 ${stageNum}`);
+      const shortName = stageSpec.shortName || defaultName;
       const timeBadge = stageSpec.timeBadge || '';
       const isActive = stageKey === options.currentStage;
 
@@ -503,14 +512,19 @@ export class StageNavigationCoordinator {
       return;
     }
 
-    // 2. 默认原生物理阶段标题与文案
     if (card2TitleEl) {
-      let defaultCard2Title = '一维状态数组 (int[] memo)';
+      const isGreedy = params.model?.category === 'greedy';
+      let defaultCard2Title = isGreedy ? '状态记录数组 (State Array)' : '一维状态数组 (int[] memo)';
       if (isTreeProblem) {
         if (params.currentStage === 'stage-1') defaultCard2Title = '递归搜索状态栈 (Recursive State)';
         else if (params.currentStage === 'stage-2') defaultCard2Title = '记忆化剪枝缓存 (Memoized Cache)';
         else if (params.currentStage === 'stage-3') defaultCard2Title = '一维 DP 状态转移数组 (int[] dp)';
         else defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
+      } else if (isGreedy) {
+        if (params.currentStage === 'stage-1') defaultCard2Title = '局部贪心模拟沙盘 (Local Optimal)';
+        else if (params.currentStage === 'stage-2') defaultCard2Title = '贪心决策依赖树 (Decision Tree)';
+        else if (params.currentStage === 'stage-3') defaultCard2Title = isStage32D ? '二维决策演进表 (State Matrix)' : '状态记录数组 (State Array)';
+        else if (params.currentStage === 'stage-4') defaultCard2Title = '空间压缩状态机 (State Machine)';
       } else {
         if (params.currentStage === 'stage-1') defaultCard2Title = '递归搜索调用树 (Recursive Call Tree)';
         else if (params.currentStage === 'stage-2') defaultCard2Title = '记忆化搜索剪枝树 (Memoized Tree)';
@@ -532,17 +546,18 @@ export class StageNavigationCoordinator {
         'course-selection',
       ].includes(params.model?.id);
 
-      const resolvedTitle = isTreeProblem
-        ? (isMultiArrayTree ? '多维状态数组监视面板 (Multi-Array Inspector)' : (stageTitle || defaultCard2Title))
-        : ((params.currentStage === 'stage-3' && isStage32D)
-          ? '二维 DP 状态转移表 (int[][] dp)'
-          : (stageTitle || defaultCard2Title));
+      const resolvedTitle = stageTitle
+        ? stageTitle
+        : (isTreeProblem && isMultiArrayTree
+          ? '多维状态数组监视面板 (Multi-Array Inspector)'
+          : defaultCard2Title);
 
       card2TitleEl.innerHTML = `<i class="fa-solid fa-bars-staggered text-slate-500"></i> ${resolvedTitle}`;
     }
 
     if (card2DescEl) {
-      let defaultCard2Desc = '空间优化: 只保存当前行的数据，不断滚动覆盖。';
+      const isGreedy = params.model?.category === 'greedy';
+      let defaultCard2Desc = isGreedy ? '空间极限压缩，常数级别辅助变量高速收敛。' : '空间优化: 只保存当前行的数据，不断滚动覆盖。';
       if (isTreeProblem) {
         if (params.model?.id === 'height-removal-queries') {
           defaultCard2Desc = '实时跟踪 DFN 时间戳、深度 deep[]、子树大小 size[]、前缀极值 maxLeft[]、后缀极值 maxRight[] 与查询答案 ans[]。';
@@ -562,6 +577,11 @@ export class StageNavigationCoordinator {
         else if (params.currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
         else if (params.currentStage === 'stage-3') defaultCard2Desc = '自底向上顺序填表，状态转移方程精准递推。';
         else defaultCard2Desc = '树型 DP 空间与时间优化求解。';
+      } else if (isGreedy) {
+        if (params.currentStage === 'stage-1') defaultCard2Desc = '基于局部最优策略逐步推进，直观观察贪心选择的正确性。';
+        else if (params.currentStage === 'stage-2') defaultCard2Desc = '展开贪心分支判定与约束条件校验。';
+        else if (params.currentStage === 'stage-3') defaultCard2Desc = isStage32D ? '二维矩阵动态记录每轮决策状态与极值收敛。' : '一维状态线性推进与最优解更新。';
+        else if (params.currentStage === 'stage-4') defaultCard2Desc = '空间极限压缩，常数级别辅助变量高速收敛。';
       } else {
         if (params.currentStage === 'stage-1') defaultCard2Desc = '自顶向下展开递归调用子问题，呈现指数级爆炸分支与重复计算。';
         else if (params.currentStage === 'stage-2') defaultCard2Desc = '引入备忘录剪枝，已计算子问题直接 O(1) 查表剪枝返回。';
@@ -583,9 +603,9 @@ export class StageNavigationCoordinator {
         ? (params.stageConfig.card2Desc[params.currentDirection] || params.stageConfig.card2Desc.forward)
         : params.stageConfig?.card2Desc;
 
-      card2DescEl.textContent = (isTreeProblem && isMultiArrayTree)
-        ? defaultCard2Desc
-        : (resolvedDesc || defaultCard2Desc);
+      card2DescEl.textContent = resolvedDesc
+        ? resolvedDesc
+        : ((isTreeProblem && isMultiArrayTree) ? defaultCard2Desc : defaultCard2Desc);
     }
 
     if (memoLenBadge) {
