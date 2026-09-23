@@ -3,7 +3,8 @@
  * LeetCode 1005: 绝对值降序排序 + 负数优先翻转 + 剩余奇数次翻转最小绝对值
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -241,56 +242,20 @@ export function renderMaximizeSumKCanvas(container: HTMLElement, step: MaxSumKSt
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'maximize-sum-k',
   name: 'K 次取反后最大化的数组和',
+  viewId: 'maximize-sum-k',
   category: 'greedy',
-  description: '绝对值降序排序，负数优先转正，剩余奇数次翻转最小绝对值',
   icon: '±',
   difficulty: 1,
   levelOrder: 7,
-  learningGoal: '掌握贪心算法中的绝对值排序策略与奇偶性分类讨论思维',
-  inputs: [
-    {
-      id: 'nums',
-      label: '整数数组',
-      type: 'text',
-      defaultValue: '2,-3,-1,5,-4',
-      placeholder: '逗号分隔整数',
-    },
-    {
-      id: 'k',
-      label: '翻转次数 K',
-      type: 'number',
-      defaultValue: '2',
-      placeholder: 'K',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { nums: '2,-3,-1,5,-4', k: '2' } },
-    { label: '示例 2', values: { nums: '3,-1,0,2', k: '3' } },
-    { label: '含零特判', values: { nums: '4,2,3', k: '1' } },
-  ],
-  metrics: [
-    { id: 'remaining-k', label: '剩余可用 K', color: '#e11d48' },
-    { id: 'flipped', label: '已翻转次数', color: '#0f172a' },
-    { id: 'sum', label: '当前数组和', color: '#059669' },
-    { id: 'array', label: '当前数组', color: '#475569' },
-    { id: 'action', label: '贪心策略', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前考察', color: '#e11d48' },
-    { label: '✓ 已翻转', color: '#10b981' },
-    { label: '⚠️ 负数', color: '#dc2626' },
-  ],
-  codeLanguages: MAXIMIZE_SUM_K_CODE_LANGUAGES,
-  problemHtml: MAXIMIZE_SUM_K_PROBLEM_HTML,
-  analysisHtml: MAXIMIZE_SUM_K_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const arr = parseNumberList(inputs.nums, '2,-3,-1,5,-4');
-    let k = parseInt(String(inputs.k ?? '2'), 10);
-    if (!Number.isFinite(k)) k = 2;
-    return withMetrics(buildMaxSumKSteps(arr.length ? arr : [2, -3, -1, 5, -4], k));
-  },
-  renderCanvas: (container, step) => renderMaximizeSumKCanvas(container, step as MaxSumKStep),
+  learningGoal: '掌握贪心算法中的绝对值排序策略与奇偶性分类讨论思维，理解有限配额资源调度模型与四阶段状态机演进',
+  description: '绝对值降序排序，负数优先转正，剩余奇数次翻转最小绝对值',
+  template: `<div id="maximize-sum-k" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerMaximizeSumK(): void {
+  // 保持向前兼容导出
+}

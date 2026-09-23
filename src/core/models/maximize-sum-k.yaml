@@ -1,0 +1,175 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] K次取反后最大化的数组和 顶层领域模型
+# 对应：LeetCode 1005 / 有限配额与单调贪心调度专题
+# 包含：绝对值排序降序优先、负数转正贪心、剩余奇数次翻转最小绝对值
+# ==============================================================================
+
+id: maximize-sum-k
+name: K 次取反后最大化的数组和
+category: greedy
+difficulty: easy
+tags:
+  - 贪心算法
+  - 数组
+  - 排序
+  - 配额调度
+
+description: |
+  给定一个整数数组 nums 和一个整数 k，你可以选择任意下标 i 将 nums[i] 替换为 -nums[i]，
+  重复该过程恰好 k 次（可以多次选择同一个下标）。返回修改后数组可能的最大总和。
+  核心贪心策略：
+  1. 按元素的绝对值大小降序排序；
+  2. 优先翻转绝对值大的负数（增益最大）；
+  3. 若负数全翻转后 k 仍有剩余且为奇数，则反复翻转绝对值最小的正数（损失最小）。
+
+defaultParams:
+  nums: [2, -3, -1, 5, -4]
+  k: 2
+
+constraints:
+  - 1 <= nums.length <= 10^4
+  - -100 <= nums[i] <= 100
+  - 1 <= k <= 10^4
+
+directions:
+  forward:
+    name: 绝对值降序贪心 (降序负数优先)
+    description: 优先翻转绝对值最大的负数使增益最大，剩余奇数配额时消耗绝对值最小项
+  reverse:
+    name: 最小堆动态维护贪心 (逆向配额探索)
+    description: 每次贪心取出当前全数组最小值取反，重复 k 次以实现全局最优
+
+stages:
+  stage-1:
+    name: 两次贪心流式模拟
+    description: 排序后第一趟贪心优先转正大负数，第二趟贪心处理奇数剩余配额
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int largestSumAfterKNegations(int[] nums, int k) {
+              // @step:sort 1. 将数组按照绝对值大小从大到小排序
+              nums = IntStream.of(nums).boxed().sorted((a, b) -> Math.abs(b) - Math.abs(a)).mapToInt(Integer::intValue).toArray();
+              // @step:flip_negative 2. 第一步贪心：遍历数组，遇到负数将其转为正数，同时 k--
+              for (int i = 0; i < nums.length; i++) {
+                  if (nums[i] < 0 && k > 0) {
+                      nums[i] = -nums[i];
+                      k--;
+                  }
+              }
+              // @step:flip_smallest 3. 第二步贪心：若 k 仍大于 0 且为奇数，翻转绝对值最小的元素
+              if (k % 2 == 1) nums[nums.length - 1] = -nums[nums.length - 1];
+              // @step:done 4. 求和返回
+              return Arrays.stream(nums).sum();
+          }
+      reverse:
+        language: java
+        source: |
+          public int largestSumAfterKNegationsMinHeap(int[] nums, int k) {
+              // @step:heap_init 优先队列最小堆初始化
+              PriorityQueue<Integer> pq = new PriorityQueue<>();
+              for (int x : nums) pq.offer(x);
+              // @step:heap_flip 贪心取出最小值翻转 k 次
+              while (k-- > 0) {
+                  pq.offer(-pq.poll());
+              }
+              // @step:done 统计堆内全部元素总和
+              int sum = 0;
+              while (!pq.isEmpty()) sum += pq.poll();
+              return sum;
+          }
+
+  stage-2:
+    name: 配额决策依赖树展开
+    description: 自顶向下以 dfs(i, k) 展开对每个元素的翻转或保留分支，评估剪枝与最优路径
+    complexity:
+      time: O(2^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:base 递归搜索基准条件判定
+          int dfs(int[] nums, int i, int k) {
+              // @step:entry 递归探查当前元素
+              if (i == nums.length) return (k % 2 == 1) ? -2 * minVal : 0;
+              // @step:branch_keep 决策分支 1: 保持当前元素原样
+              int keep = nums[i] + dfs(nums, i + 1, k);
+              // @step:branch_flip 决策分支 2: 消耗配额翻转当前元素
+              int flip = (k > 0) ? -nums[i] + dfs(nums, i + 1, k - 1) : Integer.MIN_VALUE;
+              // @step:optimal 归约最优抉择
+              return Math.max(keep, flip);
+          }
+      reverse:
+        language: java
+        source: |
+          // 逆向自底向上记忆化树搜索
+          int memoDfs(int[] nums, int i, int k, int[][] memo) {
+              if (i == nums.length) return 0;
+              if (memo[i][k] != 0) return memo[i][k];
+              return memo[i][k] = Math.max(nums[i] + memoDfs(nums, i+1, k, memo), -nums[i] + memoDfs(nums, i+1, k-1, memo));
+          }
+
+  stage-3:
+    name: 配额有限状态转移矩阵
+    description: 建立二维状态矩阵 dp[i][remK]，推导前 i 个元素消耗配额后的最大累计增益
+    complexity:
+      time: O(N * K)
+      space: O(N * K)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:dp_init 初始化状态表格 dp[i][k]
+          int[][] dp = new int[n + 1][k + 1];
+          // @step:dp_loop 双重循环状态演进
+          for (int i = 1; i <= n; i++) {
+              for (int remK = 0; remK <= k; remK++) {
+                  // @step:dp_transfer 状态转移方程求解最优总和
+                  dp[i][remK] = dp[i - 1][remK] + nums[i - 1];
+                  if (remK > 0) {
+                      dp[i][remK] = Math.max(dp[i][remK], dp[i - 1][remK - 1] - nums[i - 1]);
+                  }
+              }
+          }
+          // @step:dp_done 获取最优状态结果
+          return dp[n][k];
+      reverse:
+        language: java
+        source: |
+          // 逆向滚动状态更新
+          for (int remK = k; remK >= 0; remK--) {
+              dp[remK] = Math.max(dp[remK] + nums[i], remK > 0 ? dp[remK-1] - nums[i] : Integer.MIN_VALUE);
+          }
+
+  stage-4:
+    name: 空间压缩与单趟贪心寄存器
+    description: O(1) 额外空间，利用绝对值排序特性与常数个累加寄存器高速求和
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:reg_init 初始化累加和 sum 与剩余配额 k
+          int sum = 0;
+          // @step:reg_loop 单趟绝对值扫描，寄存器原地翻转
+          for (int i = 0; i < nums.length; i++) {
+              if (nums[i] < 0 && k > 0) { nums[i] = -nums[i]; k--; }
+              sum += nums[i];
+          }
+          // @step:reg_adjust 奇数配额修正末位最小绝对值
+          if (k % 2 == 1) sum -= 2 * nums[nums.length - 1];
+          // @step:reg_done 返回全局最大和
+          return sum;
+      reverse:
+        language: java
+        source: |
+          // 单趟统计正负分离与全局最小绝对值
+          int minAbs = Integer.MAX_VALUE, sum = 0;
+          for (int x : nums) { sum += x; minAbs = Math.min(minAbs, Math.abs(x)); }
+          return sum;

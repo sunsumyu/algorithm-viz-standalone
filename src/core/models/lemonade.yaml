@@ -89,9 +89,9 @@ stages:
               return true; // @step:done
           }
       reverse:
-        title: "LemonadeChange_Reverse.java"
+        title: "LemonadeChange_AltStrategy.java"
         source: |
-          public boolean lemonadeChange(int[] bills) {
+          public boolean lemonadeChangeAlternative(int[] bills) {
               int five = 0, ten = 0; // @step:init
               for (int bill : bills) { // @step:loop
                   if (bill == 5) { // @step:check5
@@ -100,10 +100,11 @@ stages:
                       if (five == 0) return false; // @step:fail10
                       five--; ten++; // @step:change10
                   } else { // @step:check20
-                      if (five > 0 && ten > 0) { // @step:opt20
-                          five--; ten--; // @step:change20_opt
-                      } else if (five >= 3) { // @step:alt20
+                      // 备选逆向探索：若优先消耗 3张5 元，极易耗尽通用找零储备
+                      if (five >= 3) { // @step:alt20
                           five -= 3; // @step:change20_alt
+                      } else if (five > 0 && ten > 0) { // @step:opt20
+                          five--; ten--; // @step:change20_opt
                       } else {
                           return false; // @step:fail20
                       }

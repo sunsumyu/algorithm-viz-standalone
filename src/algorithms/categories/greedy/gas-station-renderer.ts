@@ -3,7 +3,8 @@
  * LeetCode 134：维护当前候选起点油量 curSum 与全局净油量 totalSum，亏空时贪心重置起点为 i + 1
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
@@ -281,58 +282,20 @@ export function renderGasStationCanvas(container: HTMLElement, step: GasStationS
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'gas-station',
   name: '加油站',
+  viewId: 'gas-station',
   category: 'greedy',
-  description: '求绕环形路线行驶一周的唯一起点，累积净油量亏空即贪心将起点推进至 i + 1',
   icon: '⛽',
   difficulty: 2,
   levelOrder: 12,
-  learningGoal: '掌握环形路线贪心跳跃技巧，理解局部亏空排除法与全局收支判定的协同运用',
-  inputs: [
-    {
-      id: 'gas',
-      label: '加油量数组',
-      type: 'text',
-      defaultValue: '1,2,3,4,5',
-      placeholder: '1,2,3,4,5',
-    },
-    {
-      id: 'cost',
-      label: '消耗量数组',
-      type: 'text',
-      defaultValue: '3,4,5,1,2',
-      placeholder: '3,4,5,1,2',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (起点 3)', values: { gas: '1,2,3,4,5', cost: '3,4,5,1,2' } },
-    { label: '示例 2 (无解 -1)', values: { gas: '2,3,4', cost: '3,4,3' } },
-    { label: '首站即起点 (起点 0)', values: { gas: '5,1,2,3,4', cost: '4,4,1,5,1' } },
-  ],
-  metrics: [
-    { id: 'cur-tank', label: '当前油箱续航', color: '#059669' },
-    { id: 'total-tank', label: '全局净油量', color: '#475569' },
-    { id: 'start', label: '可行出发起点', color: '#d97706' },
-    { id: 'net-status', label: '全局收支判定', color: '#ef4444' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '+ 净盈余', color: '#10b981' },
-    { label: '- 净亏空', color: '#ef4444' },
-    { label: '🚩 候选起点', color: '#d97706' },
-    { label: '📍 当前站点', color: '#2563eb' },
-  ],
-  codeLanguages: GAS_STATION_CODE_LANGUAGES,
-  problemHtml: GAS_STATION_PROBLEM_HTML,
-  analysisHtml: GAS_STATION_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const gas = parseNumberList(inputs.gas, '1,2,3,4,5');
-    const cost = parseNumberList(inputs.cost, '3,4,5,1,2');
-    return withMetrics(
-      buildGasStationSteps(gas.length ? gas : [1, 2, 3, 4, 5], cost.length ? cost : [3, 4, 5, 1, 2])
-    );
-  },
-  renderCanvas: (container, step) => renderGasStationCanvas(container, step as GasStationStep),
+  learningGoal: '掌握环形路线贪心跳跃技巧，理解局部亏空排除法与全局收支判定的协同运用，理解有限能量流动与四阶段状态机演进',
+  description: '求绕环形路线行驶一周的唯一起点，累积净油量亏空即贪心将起点推进至 i + 1',
+  template: `<div id="gas-station" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerGasStation(): void {
+  // 保持向前兼容导出
+}

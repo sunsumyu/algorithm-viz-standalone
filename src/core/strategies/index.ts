@@ -38,6 +38,8 @@ import { TwoSequenceGreedyStepCompiler } from './two-sequence-greedy-step-compil
 import { LemonadeStrategy } from './lemonade-strategy';
 import { ResourceGreedyStepCompiler } from './resource-greedy-step-compiler';
 import { MonotoneDigitsStrategy } from './monotone-digits-strategy';
+import { MaximizeSumKStrategy } from './maximize-sum-k-strategy';
+import { GasStationStrategy } from './gas-station-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -152,6 +154,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new AssignCookiesStrategy());
   AlgorithmStrategyRegistry.register(new LemonadeStrategy());
   AlgorithmStrategyRegistry.register(new MonotoneDigitsStrategy());
+  AlgorithmStrategyRegistry.register(new MaximizeSumKStrategy());
+  AlgorithmStrategyRegistry.register(new GasStationStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -200,7 +204,9 @@ export {
   TwoSequenceGreedyStepCompiler,
   LemonadeStrategy,
   ResourceGreedyStepCompiler,
-  MonotoneDigitsStrategy
+  MonotoneDigitsStrategy,
+  MaximizeSumKStrategy,
+  GasStationStrategy
 };
 
 export * from './strategy-helpers';

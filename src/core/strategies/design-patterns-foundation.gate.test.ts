@@ -123,6 +123,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { PartitionLabelsStrategy } = await import('./partition-labels-strategy');
       const { LemonadeStrategy } = await import('./lemonade-strategy');
       const { MonotoneDigitsStrategy } = await import('./monotone-digits-strategy');
+      const { MaximizeSumKStrategy } = await import('./maximize-sum-k-strategy');
+      const { GasStationStrategy } = await import('./gas-station-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -133,6 +135,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         PartitionLabelsStrategy,
         LemonadeStrategy,
         MonotoneDigitsStrategy,
+        MaximizeSumKStrategy,
+        GasStationStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

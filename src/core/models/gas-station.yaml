@@ -1,0 +1,176 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 加油站 顶层领域模型
+# 对应：LeetCode 134 / 有限能量流动与环形调度专题
+# 包含：净油量前缀累加、亏空断油贪心重置候选起点、全局能量守恒判定
+# ==============================================================================
+
+id: gas-station
+name: 加油站
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 能量守恒
+  - 环形调度
+
+description: |
+  在一条环路上有 n 个加油站，其中第 i 个加油站有汽油 gas[i] 升。
+  你有一辆油箱容量无限的汽车，从第 i 个加油站开往第 i+1 个加油站需要消耗汽油 cost[i] 升。
+  你从其中的一个加油站出发，开始时油箱为空。
+  给定两个整数数组 gas 和 cost，如果你可以按顺序绕环路行驶一周，则返回出发时加油站的编号，否则返回 -1。
+  核心贪心策略：
+  1. 维护当前从 candidate 出发的净累计油量 curSum 与全局所有站点总净油量 totalSum；
+  2. 若在第 i 站发现 curSum < 0（断油），则说明从 start 到 i 之间的任意一站出发都无法跨越第 i 站；
+  3. 贪心将候选起点重置为 start = i + 1，同时 curSum 归零重置；
+  4. 遍历结束，若全局总净油量 totalSum < 0，则无论如何无法环绕一周，返回 -1；否则返回 start。
+
+defaultParams:
+  gas: [1, 2, 3, 4, 5]
+  cost: [3, 4, 5, 1, 2]
+
+constraints:
+  - n == gas.length == cost.length
+  - 1 <= n <= 10^5
+  - 0 <= gas[i], cost[i] <= 10^4
+
+directions:
+  forward:
+    name: 前缀净油量累加与断油重置贪心
+    description: 正向扫描站点净盈余，局部断油即证明前缀区间内所有起点均失效，贪心跳跃至下一站
+  reverse:
+    name: 逆向环形亏空回溯与最大蓄水点探索
+    description: 从后往前逆向寻找能够弥补前缀亏空的最大能量注入起点
+
+stages:
+  stage-1:
+    name: 贪心前缀净油量流动模拟
+    description: 单次扫描累积 curSum 与 totalSum，遇到亏空重置候选起点为 i+1
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int canCompleteCircuit(int[] gas, int[] cost) {
+              // @step:init 状态初始化：当前净油量 curSum、全局净油量 totalSum、候选起点 start
+              int curSum = 0, totalSum = 0, start = 0;
+              // @step:scan 正向遍历所有加油站点，计算净油量差值
+              for (int i = 0; i < gas.length; i++) {
+                  int net = gas[i] - cost[i];
+                  curSum += net;
+                  totalSum += net;
+                  // @step:reset 若当前累计油量出现断油亏空 (curSum < 0)，重置起点
+                  if (curSum < 0) {
+                      start = i + 1;
+                      curSum = 0;
+                  }
+              }
+              // @step:done 全局总能量判定：若总油量小于总消耗则无解
+              if (totalSum < 0) return -1;
+              return start;
+          }
+      reverse:
+        language: java
+        source: |
+          public int canCompleteCircuitReverse(int[] gas, int[] cost) {
+              // @step:init 逆向双指针模拟
+              int n = gas.length;
+              int start = n - 1, end = 0, sum = gas[start] - cost[start];
+              // @step:scan 能量不足时拓展起点，能量充裕时拓展终点
+              while (start > end) {
+                  if (sum >= 0) { sum += gas[end] - cost[end]; end++; }
+                  else { start--; sum += gas[start] - cost[start]; }
+              }
+              // @step:done 判定最终闭合回路总能量
+              return sum >= 0 ? start : -1;
+          }
+
+  stage-2:
+    name: 候选起点决策依赖树展开
+    description: 树形展示以各站点为起点时的续航分支与断油剪枝
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:base 决策树根节点展开
+          int dfsCircuit(int startStation, int currentStation, int tank) {
+              // @step:entry 探查从当前站点出发能否行驶至下一站
+              if (tank < 0) return -1; // @step:prune 能量耗尽，剪枝中断
+              if ((currentStation + 1) % n == startStation) return startStation;
+              // @step:branch 继续前行到下一站
+              int nextTank = tank + gas[currentStation] - cost[currentStation];
+              return dfsCircuit(startStation, (currentStation + 1) % n, nextTank);
+          }
+      reverse:
+        language: java
+        source: |
+          // 逆向自底向上状态转移树搜索
+          int dfsReverse(int u, int tank) {
+              if (tank < 0) return -1;
+              return tank;
+          }
+
+  stage-3:
+    name: 站点净油量与能量平衡矩阵
+    description: 建立二维状态表格跟踪每个站点 gas, cost, net, curSum, totalSum 的转移演化
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:dp_init 初始化状态跟踪矩阵 table[n][5]
+          int[][] table = new int[n][5];
+          // @step:dp_loop 逐站记录净值与累计油量演化
+          for (int i = 0; i < n; i++) {
+              int net = gas[i] - cost[i];
+              curSum += net;
+              table[i][0] = gas[i]; table[i][1] = cost[i]; table[i][2] = net;
+              table[i][3] = curSum; table[i][4] = totalSum;
+              // @step:dp_transfer 检查断油跳跃
+              if (curSum < 0) { start = i + 1; curSum = 0; }
+          }
+          // @step:dp_done 最终有效起点返回
+          return totalSum >= 0 ? start : -1;
+      reverse:
+        language: java
+        source: |
+          // 逆向滚动矩阵更新
+          for (int i = n - 1; i >= 0; i--) { table[i][2] = gas[i] - cost[i]; }
+
+  stage-4:
+    name: O(1) 空间极速寄存器推演
+    description: 空间极致压缩为仅使用 curSum, totalSum, start 三个基本寄存器的单趟流动
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:reg_init 寄存器初始化
+          int cur = 0, total = 0, start = 0;
+          // @step:reg_loop 单趟线性寄存器流动
+          for (int i = 0; i < gas.length; i++) {
+              int delta = gas[i] - cost[i];
+              cur += delta; total += delta;
+              if (cur < 0) { start = i + 1; cur = 0; }
+          }
+          // @step:reg_done 寄存器终态判定
+          return total < 0 ? -1 : start;
+      reverse:
+        language: java
+        source: |
+          // 极简寄存器判定
+          int total = 0, minTank = 0, start = 0;
+          for (int i = 0; i < gas.length; i++) {
+              total += gas[i] - cost[i];
+              if (total < minTank) { minTank = total; start = i + 1; }
+          }
+          return total < 0 ? -1 : (start % gas.length);

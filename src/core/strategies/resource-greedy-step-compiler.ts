@@ -22,12 +22,32 @@ import { YamlModelLoader } from '../yaml-model-loader';
 
 export interface ResourceGreedyCompileOptions {
   bills?: number[];
+  nums?: number[];
+  k?: number;
+  gas?: number[];
+  cost?: number[];
   direction?: 'forward' | 'reverse';
   anchorMap?: Record<string, number>;
+  problemId?: string;
 }
 
 export class ResourceGreedyStepCompiler {
   public static compile(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const pid = options.problemId || model.id;
+    if (pid === 'maximize-sum-k' || options.nums !== undefined) {
+      return this.compileMaximizeSumK(model, options, stage);
+    }
+    if (pid === 'gas-station' || options.gas !== undefined) {
+      return this.compileGasStation(model, options, stage);
+    }
+    return this.compileLemonade(model, options, stage);
+  }
+
+  public static compileLemonade(
     model: IYamlAlgorithmModel,
     options: ResourceGreedyCompileOptions,
     stage: number = 1
@@ -836,6 +856,873 @@ export class ResourceGreedyStepCompiler {
         .message(`🏆 极速扫描验证完毕，返回 true。`)
         .variables({ five, ten, success: true })
         .metrics({ 'five-reg': five, 'ten-reg': ten, 'status': 'TRUE' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // K 次取反后最大化的数组和 (LeetCode 1005) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileMaximizeSumK(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    switch (stage) {
+      case 2:
+        return this.compileMaximizeSumKStage2(model, options);
+      case 3:
+        return this.compileMaximizeSumKStage3(model, options);
+      case 4:
+        return this.compileMaximizeSumKStage4(model, options);
+      case 1:
+      default:
+        return this.compileMaximizeSumKStage1(model, options);
+    }
+  }
+
+  private static compileMaximizeSumKStage1(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawNums = options.nums && options.nums.length > 0 ? options.nums : [2, -3, -1, 5, -4];
+    const initialK = options.k !== undefined ? options.k : 2;
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...rawNums].sort((a, b) => Math.abs(b) - Math.abs(a));
+    let k = initialK;
+    let currentSum = sorted.reduce((acc, v) => acc + v, 0);
+
+    // 初始步骤：按绝对值从大到小排序
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(1)
+        .line(anchors.sort || 2)
+        .slot(0)
+        .decision(`第 1 步：按绝对值降序排序完成：[${sorted.join(', ')}]，初始总和 = ${currentSum}，剩余配额 K = ${k}`)
+        .message(`贪心策略分析：优先翻转绝对值大的负数（增益最大）。剩余配额 K = ${k}。`)
+        .variables({ k, currentSum, array: [...sorted] })
+        .metrics({
+          'rem-k': k,
+          'current-sum': currentSum,
+          'phase': '排序完成',
+        })
+        .build()
+    );
+
+    // 第一趟贪心：遍历数组翻转负数
+    for (let i = 0; i < sorted.length; i++) {
+      const slot = i;
+      if (sorted[i] < 0 && k > 0) {
+        const oldVal = sorted[i];
+        sorted[i] = -sorted[i];
+        k--;
+        currentSum += 2 * sorted[i];
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.flip_negative || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`🔄 优先翻转大负数：[${i}] 从 ${oldVal} -> ${sorted[i]}，和增加 ${2 * sorted[i]}，剩余配额 K = ${k}`)
+            .message(`负数转正增益最大：消除负数 ${oldVal}，总和增加 ${2 * sorted[i]}，当前总和 = ${currentSum}。`)
+            .variables({ i, oldVal, newVal: sorted[i], k, currentSum, array: [...sorted] })
+            .metrics({
+              'cur-idx': i,
+              'flip': `${oldVal} -> ${sorted[i]}`,
+              'rem-k': k,
+              'current-sum': currentSum,
+            })
+            .build()
+        );
+      } else {
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.flip_negative || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`⏩ 下标 [${i}]=${sorted[i]} 为非负数或配额已耗尽 (K=${k})，保持原样`)
+            .message(`无需翻转正数或零，继续向下考察。`)
+            .variables({ i, val: sorted[i], k, currentSum, array: [...sorted] })
+            .metrics({
+              'cur-idx': i,
+              'action': '跳过/保持',
+              'rem-k': k,
+              'current-sum': currentSum,
+            })
+            .build()
+        );
+      }
+    }
+
+    // 第二趟贪心：若 k 仍有剩余且为奇数，翻转绝对值最小的元素
+    if (k > 0 && k % 2 === 1) {
+      const minIdx = sorted.length - 1;
+      const oldVal = sorted[minIdx];
+      sorted[minIdx] = -sorted[minIdx];
+      currentSum += 2 * sorted[minIdx];
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(1)
+          .line(anchors.flip_smallest || 6)
+          .slot(minIdx)
+          .highlightSlots([minIdx])
+          .decision(`⚠️ 负数已耗尽但剩余配额 K=${k} 为奇数，必须翻转绝对值最小项 [${minIdx}]=${oldVal} -> ${sorted[minIdx]}`)
+          .message(`偶数次翻转可相互抵消，奇数次翻转必然改变一个数符号。贪心选取绝对值最小项翻转以最小化损失。`)
+          .variables({ minIdx, oldVal, newVal: sorted[minIdx], k, currentSum, array: [...sorted] })
+          .metrics({
+            'min-abs-flip': `${oldVal} -> ${sorted[minIdx]}`,
+            'rem-k': k,
+            'current-sum': currentSum,
+          })
+          .build()
+      );
+    }
+
+    // 完成步骤
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(1)
+        .line(anchors.done || 8)
+        .slot(sorted.length - 1)
+        .highlightSlots([sorted.length - 1])
+        .decision(`🎉 求解完毕：K次取反后可能的最大总和 = ${currentSum}`)
+        .message(`所有配额已贪心调度完毕，最终最大和为 ${currentSum}。`)
+        .variables({ currentSum, finalArray: [...sorted] })
+        .metrics({
+          'final-sum': currentSum,
+          'verdict': '求解成功',
+        })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMaximizeSumKStage2(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawNums = options.nums && options.nums.length > 0 ? options.nums : [2, -3, -1, 5, -4];
+    const initialK = options.k !== undefined ? options.k : 2;
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...rawNums].sort((a, b) => Math.abs(b) - Math.abs(a));
+    const rootNode: UniversalTreeNode = {
+      id: 'node-root',
+      r: 0,
+      c: 0,
+      val: `dfs(0, k=${initialK})`,
+      status: 'current',
+      children: [],
+    };
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(2)
+        .line(anchors.base || 2)
+        .slot(0)
+        .decision(`配额决策依赖树展开根节点：dfs(i=0, remK=${initialK})`)
+        .message(`从根节点开始自顶向下探索每个元素的翻转或保留决策。`)
+        .variables({ i: 0, k: initialK, sorted })
+        .tree(rootNode)
+        .build()
+    );
+
+    let curParent = rootNode;
+    let k = initialK;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const val = sorted[i];
+      const slot = i;
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.entry || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`递归探查：dfs(i=${i}, k=${k}) 考察当前绝对值元素 nums[${i}]=${val}`)
+          .message(`进入递归深度调用，当前可用翻转配额 k = ${k}。`)
+          .variables({ i, val, k })
+          .tree(rootNode)
+          .activeNode(curParent.id)
+          .build()
+      );
+
+      if (val < 0 && k > 0) {
+        k--;
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: i + 1,
+          c: 0,
+          val: `[${i}] 翻转 ${val}->${-val} (k=${k})`,
+          status: 'visited',
+          tag: '最优贪心翻转',
+          children: [],
+        };
+        curParent.children = [child];
+        curParent = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_flip || 5)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`决策分支：元素 ${val} < 0 且配额充足，贪心选择翻转分支 -> k 消耗为 ${k}`)
+            .message(`翻转带来正增益，剪枝排除不翻转分支。`)
+            .variables({ i, flippedVal: -val, k })
+            .tree(rootNode)
+            .activeNode(child.id)
+            .build()
+        );
+      } else {
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: i + 1,
+          c: 0,
+          val: `[${i}] 保持 ${val} (k=${k})`,
+          status: 'visited',
+          tag: '保持原样',
+          children: [],
+        };
+        curParent.children = [child];
+        curParent = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_keep || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`决策分支：元素 ${val} >= 0 或配额耗尽，选择保留分支 -> k 维持 ${k}`)
+            .message(`无收益翻转，保持原值。`)
+            .variables({ i, val, k })
+            .tree(rootNode)
+            .activeNode(child.id)
+            .build()
+        );
+      }
+    }
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(2)
+        .line(anchors.optimal || 6)
+        .slot(sorted.length - 1)
+        .highlightSlots([sorted.length - 1])
+        .decision(`依赖树遍历收敛：最优决策链构建完毕`)
+        .message(`完成所有元素的决策分支推演。`)
+        .variables({ k })
+        .tree(rootNode)
+        .activeNode(curParent.id)
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMaximizeSumKStage3(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawNums = options.nums && options.nums.length > 0 ? options.nums : [2, -3, -1, 5, -4];
+    const initialK = options.k !== undefined ? options.k : 2;
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...rawNums].sort((a, b) => Math.abs(b) - Math.abs(a));
+    const n = sorted.length;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(3)
+        .line(anchors.dp_init || 2)
+        .slot(0)
+        .decision(`初始化状态矩阵 dp[${n + 1}][${initialK + 1}]：前 i 个元素消耗配额的最优增益`)
+        .message(`表格行对应已处理元素数，列对应已消耗翻转配额。`)
+        .variables({ rows: n + 1, cols: initialK + 1 })
+        .metrics({ 'matrix-size': `${n + 1} × ${initialK + 1}` })
+        .build()
+    );
+
+    let k = initialK;
+    let sum = 0;
+
+    for (let i = 0; i < n; i++) {
+      const slot = i;
+      const val = sorted[i];
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(3)
+          .line(anchors.dp_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`状态演进：考察第 ${i + 1} 个元素 nums[${i}]=${val}`)
+          .message(`计算该元素在各配额下的最优状态转移。`)
+          .variables({ i: i + 1, val, remK: k })
+          .metrics({ 'current-i': i + 1, 'rem-k': k })
+          .build()
+      );
+
+      if (val < 0 && k > 0) {
+        val < 0 ? (sum += -val) : (sum += val);
+        k--;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`状态转移：dp[${i + 1}][${initialK - k}] = dp[${i}][${initialK - k - 1}] + ${-val}`)
+            .message(`消耗 1 次翻转配额，取得最大正向转移。`)
+            .variables({ i: i + 1, val: -val, accumulatedSum: sum })
+            .metrics({ 'transfer': `+${-val}`, 'accumulated-sum': sum })
+            .build()
+        );
+      } else {
+        sum += val;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`状态转移：dp[${i + 1}][${initialK - k}] = dp[${i}][${initialK - k}] + ${val}`)
+            .message(`直接继承前驱状态，总和累计。`)
+            .variables({ i: i + 1, val, accumulatedSum: sum })
+            .metrics({ 'transfer': `+${val}`, 'accumulated-sum': sum })
+            .build()
+        );
+      }
+    }
+
+    if (k % 2 === 1) {
+      sum -= 2 * sorted[n - 1];
+    }
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(3)
+        .line(anchors.dp_done || 6)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`状态矩阵归约完成：全局最优总和 dp[${n}][${initialK}] = ${sum}`)
+        .message(`完成二维状态表格推演。`)
+        .variables({ totalSum: sum })
+        .metrics({ 'optimal-sum': sum, 'status': '收敛' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileMaximizeSumKStage4(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawNums = options.nums && options.nums.length > 0 ? options.nums : [2, -3, -1, 5, -4];
+    const initialK = options.k !== undefined ? options.k : 2;
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...rawNums].sort((a, b) => Math.abs(b) - Math.abs(a));
+    let k = initialK;
+    let sum = 0;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(4)
+        .line(anchors.reg_init || 2)
+        .slot(0)
+        .decision(`O(1) 寄存器初始化：sum 寄存器归零，k 寄存器设为 ${k}`)
+        .message(`常数额外空间，利用原地数组操作进行极速流式推演。`)
+        .variables({ sum: 0, k })
+        .metrics({ 'sum-reg': 0, 'k-reg': k })
+        .build()
+    );
+
+    for (let i = 0; i < sorted.length; i++) {
+      const slot = i;
+      if (sorted[i] < 0 && k > 0) {
+        sorted[i] = -sorted[i];
+        k--;
+      }
+      sum += sorted[i];
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.reg_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`寄存器更新 [${i}]：nums[${i}]=${sorted[i]}，累加至 sum -> ${sum}，k=${k}`)
+          .message(`极速单趟原地累加。`)
+          .variables({ i, val: sorted[i], sum, k })
+          .metrics({ 'sum-reg': sum, 'k-reg': k })
+          .build()
+      );
+    }
+
+    if (k % 2 === 1) {
+      sum -= 2 * sorted[sorted.length - 1];
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.reg_adjust || 5)
+          .slot(sorted.length - 1)
+          .highlightSlots([sorted.length - 1])
+          .decision(`寄存器奇数调整：sum 扣减 2 * nums[${sorted.length - 1}] -> ${sum}`)
+          .message(`针对末位最小绝对值的常数时间修正。`)
+          .variables({ sum, k })
+          .metrics({ 'sum-reg': sum, 'k-reg': k })
+          .build()
+      );
+    }
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(4)
+        .line(anchors.reg_done || 7)
+        .slot(sorted.length - 1)
+        .highlightSlots([sorted.length - 1])
+        .decision(`O(1) 单趟扫描结束，最大总和寄存器 = ${sum}`)
+        .message(`完成 O(1) 空间极速求解。`)
+        .variables({ sum })
+        .metrics({ 'final-sum': sum, 'status': '完成' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 加油站 (LeetCode 134) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileGasStation(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    switch (stage) {
+      case 2:
+        return this.compileGasStationStage2(model, options);
+      case 3:
+        return this.compileGasStationStage3(model, options);
+      case 4:
+        return this.compileGasStationStage4(model, options);
+      case 1:
+      default:
+        return this.compileGasStationStage1(model, options);
+    }
+  }
+
+  private static compileGasStationStage1(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawGas = options.gas && options.gas.length > 0 ? options.gas : [1, 2, 3, 4, 5];
+    const rawCost = options.cost && options.cost.length > 0 ? options.cost : [3, 4, 5, 1, 2];
+    const n = Math.min(rawGas.length, rawCost.length);
+    const gas = rawGas.slice(0, n);
+    const cost = rawCost.slice(0, n);
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    let curSum = 0;
+    let totalSum = 0;
+    let start = 0;
+
+    // 初始步骤
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(1)
+        .line(anchors.init || 2)
+        .slot(0)
+        .decision(`初始化巡航状态：当前油量 curSum=0, 全局净油量 totalSum=0, 候选起点 start=0`)
+        .message(`共有 ${n} 个站点，准备正向单趟扫描寻找环绕起点。`)
+        .variables({ curSum: 0, totalSum: 0, start: 0, totalStations: n })
+        .metrics({
+          'candidate-start': 0,
+          'cur-tank': 0,
+          'total-tank': 0,
+          'status': '就绪',
+        })
+        .build()
+    );
+
+    for (let i = 0; i < n; i++) {
+      const slot = i;
+      const net = gas[i] - cost[i];
+      curSum += net;
+      totalSum += net;
+
+      if (curSum < 0) {
+        const oldStart = start;
+        start = i + 1;
+        curSum = 0;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.reset || 8)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`⚠️ 站点 [${i}] (油+${gas[i]}, 耗-${cost[i]}, 净${net}) 导致累计断油！区间 [${oldStart}..${i}] 均不可作为起点，候选起点重置为 ${start}，curSum 清零`)
+            .message(`断油证明：从 ${oldStart} 到 ${i} 之间任何一点出发，到 ${i} 的油量只会更少，因此直接跳跃至 ${start}。`)
+            .variables({ station: i, net, oldStart, newStart: start, curSum: 0, totalSum })
+            .metrics({
+              'station': i,
+              'net-delta': net,
+              'candidate-start': start,
+              'cur-tank': 0,
+              'total-tank': totalSum,
+              'status': '断油跳跃',
+            })
+            .build()
+        );
+      } else {
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.scan || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`✓ 站点 [${i}] (油+${gas[i]}, 耗-${cost[i]}, 净${net >= 0 ? '+' + net : net})，油箱剩余 curSum=${curSum} >= 0，续航正常`)
+            .message(`当前累计油量充裕，继续向下一站航行。`)
+            .variables({ station: i, net, start, curSum, totalSum })
+            .metrics({
+              'station': i,
+              'net-delta': net,
+              'candidate-start': start,
+              'cur-tank': curSum,
+              'total-tank': totalSum,
+              'status': '正常续航',
+            })
+            .build()
+        );
+      }
+    }
+
+    // 终态判定
+    const isSuccess = totalSum >= 0;
+    const finalResult = isSuccess ? start : -1;
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(1)
+        .line(anchors.done || 10)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(
+          isSuccess
+            ? `🎉 全局能量守恒判定成功：totalSum=${totalSum} >= 0，最终环绕闭环起点为站点 ${start}`
+            : `❌ 全局能量匮乏：totalSum=${totalSum} < 0，总消耗超过总油量，无法环绕一周，返回 -1`
+        )
+        .message(
+          isSuccess
+            ? `总供给大于总消耗，且区间断油已被贪心跳跃规避，从站点 ${start} 出发必然能够环绕全场。`
+            : `全环净油量亏空，无论从哪站出发最终都会断油。`
+        )
+        .variables({ totalSum, candidateStart: start, result: finalResult })
+        .metrics({
+          'final-result': finalResult,
+          'total-tank': totalSum,
+          'verdict': isSuccess ? '可行' : '无解',
+        })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileGasStationStage2(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawGas = options.gas && options.gas.length > 0 ? options.gas : [1, 2, 3, 4, 5];
+    const rawCost = options.cost && options.cost.length > 0 ? options.cost : [3, 4, 5, 1, 2];
+    const n = Math.min(rawGas.length, rawCost.length);
+    const gas = rawGas.slice(0, n);
+    const cost = rawCost.slice(0, n);
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const rootNode: UniversalTreeNode = {
+      id: 'node-root',
+      r: 0,
+      c: 0,
+      val: `CircuitExplore(stations=${n})`,
+      status: 'current',
+      children: [],
+    };
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(2)
+        .line(anchors.base || 2)
+        .slot(0)
+        .decision(`展开起点决策搜索树根节点：考察全环 ${n} 个候选起点`)
+        .message(`自顶向下展开各站点的续航决策与剪枝判定。`)
+        .variables({ totalStations: n })
+        .tree(rootNode)
+        .build()
+    );
+
+    let parentNode = rootNode;
+    let curTank = 0;
+    let start = 0;
+
+    for (let i = 0; i < n; i++) {
+      const slot = i;
+      const net = gas[i] - cost[i];
+      curTank += net;
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.entry || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`递归探查：Station [${i}] 续航校验 (gas=${gas[i]}, cost=${cost[i]}, net=${net})`)
+          .message(`探查当前站点是否导致能量链断裂。`)
+          .variables({ station: i, net, curTank, start })
+          .tree(rootNode)
+          .activeNode(parentNode.id)
+          .build()
+      );
+
+      if (curTank < 0) {
+        const failChild: UniversalTreeNode = {
+          id: `node-${i}-fail`,
+          r: i + 1,
+          c: 0,
+          val: `[${i}] 亏空剪枝`,
+          status: 'pruned',
+          tag: '能量耗尽',
+          children: [],
+        };
+        parentNode.children = [failChild];
+        start = i + 1;
+        curTank = 0;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.prune || 5)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`分支剪枝：站点 [${i}] 能量归零剪枝中断，重置起点为 ${start}`)
+            .message(`剪枝失效前缀，重定向搜索树根。`)
+            .variables({ station: i, failStart: start })
+            .tree(rootNode)
+            .activeNode(failChild.id)
+            .build()
+        );
+      } else {
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: i + 1,
+          c: 0,
+          val: `[${i}] 续航成功 (油量=${curTank})`,
+          status: 'visited',
+          tag: '持续航行',
+          children: [],
+        };
+        parentNode.children = [child];
+        parentNode = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`分支延伸：站点 [${i}] 成功通行，转移至下一站`)
+            .message(`续航状态完好，分支继续向下生长。`)
+            .variables({ station: i, curTank })
+            .tree(rootNode)
+            .activeNode(child.id)
+            .build()
+        );
+      }
+    }
+
+    return steps;
+  }
+
+  private static compileGasStationStage3(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawGas = options.gas && options.gas.length > 0 ? options.gas : [1, 2, 3, 4, 5];
+    const rawCost = options.cost && options.cost.length > 0 ? options.cost : [3, 4, 5, 1, 2];
+    const n = Math.min(rawGas.length, rawCost.length);
+    const gas = rawGas.slice(0, n);
+    const cost = rawCost.slice(0, n);
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(3)
+        .line(anchors.dp_init || 2)
+        .slot(0)
+        .decision(`初始化能量平衡矩阵 table[${n}][5]：追踪 gas, cost, net, curSum, totalSum`)
+        .message(`二维表格逐站呈现油量收支与累计能量分布。`)
+        .variables({ rows: n, cols: 5 })
+        .metrics({ 'matrix-size': `${n} × 5` })
+        .build()
+    );
+
+    let curSum = 0;
+    let totalSum = 0;
+    let start = 0;
+
+    for (let i = 0; i < n; i++) {
+      const slot = i;
+      const net = gas[i] - cost[i];
+      curSum += net;
+      totalSum += net;
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(3)
+          .line(anchors.dp_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`矩阵填表 [站${i}]：gas=${gas[i]}, cost=${cost[i]} -> 净差额 net=${net}`)
+          .message(`记录第 ${i} 站的能量收支指标。`)
+          .variables({ station: i, gas: gas[i], cost: cost[i], net })
+          .metrics({ 'cur-net': net, 'total-net': totalSum })
+          .build()
+      );
+
+      if (curSum < 0) {
+        start = i + 1;
+        curSum = 0;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`断油状态转移：curSum 亏空清零，候选起点跳跃更新为 ${start}`)
+            .message(`表格中标记断油区间并更新后续候选起点。`)
+            .variables({ station: i, candidateStart: start, curSum: 0 })
+            .metrics({ 'cur-tank': 0, 'candidate-start': start })
+            .build()
+        );
+      } else {
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`正常状态转移：curSum 累计为 ${curSum}，当前起点维持 ${start}`)
+            .message(`累积油量持续充足。`)
+            .variables({ station: i, candidateStart: start, curSum })
+            .metrics({ 'cur-tank': curSum, 'candidate-start': start })
+            .build()
+        );
+      }
+    }
+
+    const isSuccess = totalSum >= 0;
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(3)
+        .line(anchors.dp_done || 6)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(
+          isSuccess
+            ? `状态矩阵收敛：全环总净油量 totalSum=${totalSum} >= 0，最终环绕有效起点为 ${start}`
+            : `状态矩阵收敛：全环总净油量 totalSum=${totalSum} < 0，无解返回 -1`
+        )
+        .message(`完成二维状态表格分析。`)
+        .variables({ totalSum, result: isSuccess ? start : -1 })
+        .metrics({ 'final-verdict': isSuccess ? `站点 ${start}` : '-1' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileGasStationStage4(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const rawGas = options.gas && options.gas.length > 0 ? options.gas : [1, 2, 3, 4, 5];
+    const rawCost = options.cost && options.cost.length > 0 ? options.cost : [3, 4, 5, 1, 2];
+    const n = Math.min(rawGas.length, rawCost.length);
+    const gas = rawGas.slice(0, n);
+    const cost = rawCost.slice(0, n);
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    let cur = 0;
+    let total = 0;
+    let start = 0;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(4)
+        .line(anchors.reg_init || 2)
+        .slot(0)
+        .decision(`O(1) 寄存器极速流初始化：cur=0, total=0, start=0`)
+        .message(`仅用 3 个基础寄存器完成 O(1) 空间单趟线性扫描。`)
+        .variables({ cur: 0, total: 0, start: 0 })
+        .metrics({ 'cur-reg': 0, 'total-reg': 0, 'start-reg': 0 })
+        .build()
+    );
+
+    for (let i = 0; i < n; i++) {
+      const slot = i;
+      const delta = gas[i] - cost[i];
+      cur += delta;
+      total += delta;
+
+      if (cur < 0) {
+        start = i + 1;
+        cur = 0;
+      }
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.reg_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`寄存器流式迭代 [站${i}]：delta=${delta}，cur=${cur}，total=${total}，start=${start}`)
+          .message(`极速单趟寄存器刷新。`)
+          .variables({ i, delta, cur, total, start })
+          .metrics({ 'cur-reg': cur, 'total-reg': total, 'start-reg': start })
+          .build()
+      );
+    }
+
+    const result = total < 0 ? -1 : start;
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(4)
+        .line(anchors.reg_done || 5)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`寄存器终态判定完毕：最终有效起点 = ${result}`)
+        .message(`完成 O(1) 空间单趟极速求解。`)
+        .variables({ total, result })
+        .metrics({ 'result-reg': result, 'status': '完成' })
         .build()
     );
 

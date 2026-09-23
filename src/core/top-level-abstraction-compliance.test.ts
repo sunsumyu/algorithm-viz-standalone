@@ -39,6 +39,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'assign-cookies',
   'lemonade',
   'monotone-digits',
+  'maximize-sum-k',
+  'gas-station',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -204,9 +206,7 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
     it('全库贪心 (greedy) 类目算法必须要么已锁定为顶层抽象，要么明确登记在历史遗留白名单中', () => {
       // 贪心类目受控历史遗留白名单（凡已迁移算法严禁登记在此！每重构一个即删除一个并移至 LOCKED 锁定！）
       const KNOWN_LEGACY_GREEDY_UNMIGRATED = new Set([
-        'gas-station',
         'max-subarray',
-        'maximize-sum-k',
         'reconstruct-queue',
         'wiggle-subsequence',
         'tree-cameras',

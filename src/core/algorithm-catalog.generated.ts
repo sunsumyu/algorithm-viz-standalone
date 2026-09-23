@@ -3529,13 +3529,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "maximize-sum-k",
     name: "K 次取反后最大化的数组和",
-    viewId: "algo-maximize-sum-k-view",
+    viewId: "maximize-sum-k",
     category: "greedy",
     description: "绝对值降序排序，负数优先转正，剩余奇数次翻转最小绝对值",
     icon: "±",
     difficulty: 1,
     levelOrder: 7,
-    learningGoal: "掌握贪心算法中的绝对值排序策略与奇偶性分类讨论思维",
+    learningGoal: "掌握贪心算法中的绝对值排序策略与奇偶性分类讨论思维，理解有限配额资源调度模型与四阶段状态机演进",
   },
   {
     id: "min-arrows",
@@ -3595,13 +3595,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "gas-station",
     name: "加油站",
-    viewId: "algo-gas-station-view",
+    viewId: "gas-station",
     category: "greedy",
     description: "求绕环形路线行驶一周的唯一起点，累积净油量亏空即贪心将起点推进至 i + 1",
     icon: "⛽",
     difficulty: 2,
     levelOrder: 12,
-    learningGoal: "掌握环形路线贪心跳跃技巧，理解局部亏空排除法与全局收支判定的协同运用",
+    learningGoal: "掌握环形路线贪心跳跃技巧，理解局部亏空排除法与全局收支判定的协同运用，理解有限能量流动与四阶段状态机演进",
   },
   {
     id: "queue-vector-explained",
