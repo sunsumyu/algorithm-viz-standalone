@@ -68,6 +68,8 @@ export class ProblemDimensionResolver {
     'cutting-bamboo',
     'ipo',
     'maximum-product-k-parts',
+    'meeting-monopoly',
+    'meeting-one-day',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -237,6 +239,14 @@ export class ProblemDimensionResolver {
       const intervals = this.toArray(params.intervals);
       m = 1;
       n = intervals.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.events !== undefined) {
+      const events = this.toArray(params.events);
+      m = 1;
+      n = events.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

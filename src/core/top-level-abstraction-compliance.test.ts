@@ -56,6 +56,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'cutting-bamboo',
   'ipo-max-capital',
   'maximum-product-k-parts',
+  'meeting-monopoly',
+  'meeting-one-day',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -229,8 +231,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'meeting-monopoly',
-        'meeting-one-day',
         'split-min-avg-sum',
         'min-refueling-stops',
         'quiz-score',

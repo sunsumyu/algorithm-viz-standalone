@@ -140,6 +140,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { CuttingBambooStrategy } = await import('./cutting-bamboo-strategy');
       const { IPOStrategy } = await import('./ipo-strategy');
       const { MaximumProductKPartsStrategy } = await import('./maximum-product-k-parts-strategy');
+      const { MeetingMonopolyStrategy } = await import('./meeting-monopoly-strategy');
+      const { MeetingOneDayStrategy } = await import('./meeting-one-day-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -167,6 +169,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         CuttingBambooStrategy,
         IPOStrategy,
         MaximumProductKPartsStrategy,
+        MeetingMonopolyStrategy,
+        MeetingOneDayStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

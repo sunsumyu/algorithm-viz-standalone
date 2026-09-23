@@ -445,7 +445,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MeetingMonopolyStep
   },
 });
 
-export const meetingMonopolyRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const meetingMonopolyRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'meeting-monopoly',
   name: '会议独占最大数量 (LeetCode 435 / 洛谷 P1803)',
@@ -454,7 +456,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code03：结束时间排序贪心与洛谷最晚开始桶 O(N) 优化',
   icon: '📅',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 903,
   learningGoal: '理解结束时间贪心如何为后续留出最大可用时间裕度',

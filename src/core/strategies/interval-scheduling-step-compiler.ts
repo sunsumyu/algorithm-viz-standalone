@@ -3092,4 +3092,970 @@ export class IntervalSchedulingStepCompiler {
     return steps;
   }
 
+
+  // ==========================================================================
+  // 会议独占最大数量 (Meeting Monopoly / LeetCode 435 / 洛谷 P1803)
+  // ==========================================================================
+
+  public static compileMeetingMonopoly(
+    model: IYamlAlgorithmModel,
+    rawIntervals: (number[] | [number, number])[],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const intervals: [number, number][] = (rawIntervals && rawIntervals.length > 0)
+      ? rawIntervals.map(it => [it[0], it[1]] as [number, number])
+      : [[1, 2], [2, 3], [3, 4], [1, 3]];
+
+    switch (stage) {
+      case 2:
+        return this.compileMeetingMonopolyStage2(model, intervals, direction, anchorMap);
+      case 3:
+        return this.compileMeetingMonopolyStage3(model, intervals, direction, anchorMap);
+      case 4:
+        return this.compileMeetingMonopolyStage4(model, intervals, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileMeetingMonopolyStage1(model, intervals, direction, anchorMap);
+    }
+  }
+
+  private static compileMeetingMonopolyStage1(
+    model: IYamlAlgorithmModel,
+    intervals: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: isReverse
+        ? '1. 逆向递归独立子集搜索初始化：倒序枚举无冲突会议方案'
+        : '1. 暴力独立子集搜索初始化：递归穷举所有不冲突的会议子集',
+      message: '暴力搜索评估各会议选与不选构成的无交集独立子集容量',
+      variables: { totalMeetings: intervals.length, curEnd: 0 },
+      metrics: { '会议总数': String(intervals.length), '搜索状态': '就绪' },
+    });
+
+    let curEnd = 0;
+    let selectedCount = 0;
+
+    for (let i = 0; i < Math.min(intervals.length, 4); i++) {
+      const idx = isReverse ? intervals.length - 1 - i : i;
+      const [start, end] = intervals[idx];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.skip || 3,
+        codeLine: anchors.skip || 3,
+        decision: `分支 1：尝试跳过会议 M${idx + 1} [${start}, ${end}]`,
+        message: '递归探查跳过当前会议后的最大可安排会议数',
+        variables: { currentIdx: idx, curEnd, selectedCount },
+        metrics: { '当前考查': `M${idx + 1}`, '决策分支': '跳过' },
+      });
+
+      const canTake = start >= curEnd;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.take_check || 4,
+        codeLine: anchors.take_check || 4,
+        decision: canTake
+          ? `分支 2 验证通过：会议 M${idx + 1} 开始时间 ${start} ≥ 当前结束时间 ${curEnd}，可尝试选入`
+          : `分支 2 互斥剪枝：会议 M${idx + 1} 开始时间 ${start} < 当前结束时间 ${curEnd}，发生时间冲突`,
+        message: canTake ? '时间不冲突，深入探索选入分支' : '时间冲突，选入分支直接回溯剪枝',
+        variables: { currentIdx: idx, start, end, curEnd, canTake },
+        metrics: { '时间兼容': canTake ? '是' : '否', '冲突判定': canTake ? '无' : '发生冲突' },
+      });
+
+      if (canTake) {
+        curEnd = end;
+        selectedCount++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.take || 5,
+          codeLine: anchors.take || 5,
+          decision: `选入会议 M${idx + 1} [${start}, ${end}]：时间指针更新为 ${curEnd}，已选会议数 = ${selectedCount}`,
+          message: '选入会议并更新状态',
+          variables: { currentIdx: idx, curEnd, selectedCount },
+          metrics: { '已选会议': String(selectedCount), '占用终点': String(curEnd) },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 7,
+      codeLine: anchors.ret || 7,
+      decision: `🏁 暴力搜索收敛：在所有独立组合中评估得出最大会议数 = ${selectedCount}`,
+      message: '全部分支探索完成，贪心策略可直接在 O(N log N) 内求得完全一致的最优解',
+      variables: { maxMeetings: selectedCount },
+      metrics: { '最大会议数': String(selectedCount), '状态': '🏁 搜索收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingMonopolyStage2(
+    model: IYamlAlgorithmModel,
+    intervals: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+
+    const sorted = intervals
+      .map((item, id) => ({ id: id + 1, start: item[0], end: item[1] }))
+      .sort((a, b) => (isReverse ? b.start - a.start : a.end - b.end));
+
+    const rootTree: UniversalTreeNode = {
+      id: 'mm_root',
+      r: 0,
+      c: 0,
+      val: isReverse ? '逆向最晚开始调度树' : '按结束时间升序调度树',
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.sort || 1,
+      codeLine: anchors.sort || 1,
+      decision: isReverse
+        ? '1. 会议按开始时间 start 降序对偶排序：优先安排最晚开始的会议'
+        : '1. 会议按结束时间 end 升序排序：优先安排最早结束的会议，最大化留存后续可用时间',
+      message: '排序确立贪心选取的先后次序',
+      variables: { total: intervals.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '会议总数': String(intervals.length), '排序规则': isReverse ? 'start 降序' : 'end 升序' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? '状态初始化：已选场数 count = 0，逆向当前时间下界 curStart = +∞'
+        : '状态初始化：已选场数 count = 0，正向当前会议室释放时间 curEnd = 0',
+      message: '初始化调度指针',
+      variables: { count: 0, curPointer: isReverse ? 'INF' : 0 },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '已选场数': '0', '指针初始': isReverse ? '+∞' : '0' },
+    });
+
+    let count = 0;
+    let curEnd = 0;
+    let curStart = Infinity;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const m = sorted[i];
+      const isCompat = isReverse ? m.end <= curStart : m.start >= curEnd;
+
+      // 探查帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.loop || 3,
+        codeLine: anchors.loop || 3,
+        decision: `🔍 考查会议 M${m.id} [${m.start}, ${m.end}]：核验是否与当前会议室占用状态产生冲突`,
+        message: isReverse
+          ? `核验会议结束时间 ${m.end} 是否 ≤ 当前开始下界 ${curStart}`
+          : `核验会议开始时间 ${m.start} 是否 ≥ 当前结束时间 ${curEnd}`,
+        variables: { meetingId: m.id, start: m.start, end: m.end, pointer: isReverse ? curStart : curEnd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '考查会议': `M${m.id}`, '时间段': `[${m.start},${m.end}]` },
+      });
+
+      if (isCompat) {
+        count++;
+        if (isReverse) curStart = m.start;
+        else curEnd = m.end;
+
+        const pickNode: UniversalTreeNode = {
+          id: `pick_${m.id}`,
+          r: 1,
+          c: i,
+          val: `⭐选入 M${m.id}[${m.start},${m.end}]`,
+          status: 'visited',
+          children: [],
+        };
+        rootTree.children.push(pickNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.pick || 5,
+          codeLine: anchors.pick || 5,
+          decision: `✅ 贪心选入会议 M${m.id} [${m.start}, ${m.end}]！更新时间指针至 ${isReverse ? curStart : curEnd}，累计选入 ${count} 场`,
+          message: '无时间冲突，果断占用会议室并快速腾空，为后续留出最多时间',
+          variables: { chosen: m.id, count, newPointer: isReverse ? curStart : curEnd },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '选入状态': '✅ 选入', '已选总数': String(count) },
+        });
+      } else {
+        const dropNode: UniversalTreeNode = {
+          id: `drop_${m.id}`,
+          r: 2,
+          c: i,
+          val: `❌淘汰 M${m.id}(冲突)`,
+          status: 'pruned',
+          children: [],
+        };
+        rootTree.children.push(dropNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.conflict || 8,
+          codeLine: anchors.conflict || 8,
+          decision: `❌ 舍弃会议 M${m.id} [${m.start}, ${m.end}]：与已选会议时间重叠冲突，贪心放弃`,
+          message: '冲突会议直接丢弃，不增加会议室冲突',
+          variables: { discarded: m.id, count },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '选入状态': '❌ 冲突淘汰', '已选总数': String(count) },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🛑 状态依赖树构建完成！在独占条件下最多可举办 ${count} 场会议`,
+      message: '结束时间贪心排序严格保证了后续可用时间的最大化，数学归纳反证无懈可击',
+      variables: { maxMeetings: count },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最终最多会议': String(count), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingMonopolyStage3(
+    model: IYamlAlgorithmModel,
+    intervals: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+
+    const sorted = intervals
+      .map((item, id) => ({ id: id + 1, start: item[0], end: item[1] }))
+      .sort((a, b) => (isReverse ? b.start - a.start : a.end - b.end));
+
+    const rounds = sorted.length;
+    const matrix: (string | null)[][] = Array.from({ length: rounds }, () => Array(5).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 5,
+      rowHeaders: sorted.map(m => `M${m.id}`),
+      colHeaders: ['会议区间', '时间指针', '时间兼容性', '决策结果', '累计入选数'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.init || 1,
+      codeLine: anchors.init || 1,
+      decision: '初始化区间调度状态转移矩阵 M[N][5]：追踪每场会议的兼容性评估与时间边界流转',
+      message: '表格记录 [区间范围, 时间指针, 兼容判定, 决策, 累计场数]',
+      variables: { totalMeetings: rounds },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×5`, '状态': '就绪' },
+    });
+
+    let curEnd = 0;
+    let curStart = Infinity;
+    let count = 0;
+
+    for (let i = 0; i < rounds; i++) {
+      const m = sorted[i];
+      const isCompat = isReverse ? m.end <= curStart : m.start >= curEnd;
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 2;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.check || 3,
+        codeLine: anchors.check || 3,
+        decision: `矩阵评估第 ${i + 1} 行 M${m.id} [${m.start}, ${m.end}]：核验与指针 ${isReverse ? curStart : curEnd} 的兼容性`,
+        message: '准备写入兼容判定结果',
+        variables: { meeting: `M${m.id}`, pointer: isReverse ? curStart : curEnd },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '当前行': `M${m.id}`, '判定': isCompat ? '无冲突' : '冲突' },
+      });
+
+      if (isCompat) {
+        count++;
+        if (isReverse) curStart = m.start;
+        else curEnd = m.end;
+      }
+
+      matrix[i][0] = `[${m.start}, ${m.end}]`;
+      matrix[i][1] = String(isReverse ? (curStart === Infinity ? 'INF' : curStart) : curEnd);
+      matrix[i][2] = isCompat ? '✅ 兼容' : '❌ 冲突';
+      matrix[i][3] = isCompat ? '选入' : '舍弃';
+      matrix[i][4] = String(count);
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 4;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 4]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.update || 5,
+        codeLine: anchors.update || 5,
+        decision: `矩阵记录落盘：M${m.id} ${isCompat ? '✅ 选入' : '❌ 舍弃'}，累计举办场数 = ${count}`,
+        message: '完成该场会议状态转移',
+        variables: { meeting: `M${m.id}`, count },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '决策结果': isCompat ? '选入' : '舍弃', '累计总数': String(count) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 4;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 8,
+      codeLine: anchors.done || 8,
+      decision: `🎉 区间状态转移矩阵填表完成！最优独占调度可容纳 ${count} 场会议`,
+      message: '矩阵完整揭示了贪心策略如何自始至终维持最大可用时间裕度',
+      variables: { finalCount: count },
+      grid: finalGrid as any,
+      metrics: { '最多会议': String(count), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingMonopolyStage4(
+    model: IYamlAlgorithmModel,
+    intervals: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+
+    const maxEnd = Math.max(...intervals.map(x => x[1]), 10);
+    const latest: number[] = Array(maxEnd + 1).fill(-1);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.bucket_init || 1,
+      codeLine: anchors.bucket_init || 1,
+      decision: `洛谷 P1803 数组桶 O(N) 极速收敛初始化：开辟大小为 ${maxEnd + 1} 的 latest 桶数组`,
+      message: '若时间坐标范围有限，利用下标直接哈希映射替代比较排序，将时间复杂度降至 O(N + MaxTime)',
+      variables: { maxEnd },
+      metrics: { '桶规模': String(maxEnd + 1), '算法优化': '桶哈希 O(N)' },
+    });
+
+    for (const [start, end] of intervals) {
+      latest[end] = Math.max(latest[end], start);
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.bucket_fill || 3,
+      codeLine: anchors.bucket_fill || 3,
+      decision: '一次遍历装入桶：latest[end] 记录在 end 时刻结束的所有会议中最晚的开始时间',
+      message: '相同结束时间时，开始时间越晚占用时长越短，对后续影响越小，直接自然去重',
+      variables: { filledCount: intervals.length },
+      metrics: { '装桶完成': '是', '单桶时间复杂度': 'O(N)' },
+    });
+
+    let count = 0;
+    let curEnd = 0;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.scan_init || 4,
+      codeLine: anchors.scan_init || 4,
+      decision: '启动时间轴线性扫描：时间指针 t 从 0 推进至 ' + maxEnd,
+      message: '顺次扫描每个时间刻度，跳过 O(N log N) 排序过程',
+      variables: { t: 0, curEnd },
+      metrics: { '扫描起点': '0', '初始时间': '0' },
+    });
+
+    for (let t = 0; t <= maxEnd; t++) {
+      if (latest[t] !== -1) {
+        const start = latest[t];
+        const canTake = start >= curEnd;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.scan_loop || 5,
+          codeLine: anchors.scan_loop || 5,
+          decision: `扫描到时刻 t=${t} 存在会议 [start=${start}, end=${t}]：核验 ${start} ≥ ${curEnd}`,
+          message: canTake ? '时间不冲突，可直接贪心安排' : '与当前已安排会议冲突，跳过',
+          variables: { t, start, curEnd, canTake },
+          metrics: { '扫描时刻': `t=${t}`, '兼容性': canTake ? '无冲突' : '冲突' },
+        });
+
+        if (canTake) {
+          count++;
+          curEnd = t;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            line: anchors.scan_pick || 7,
+            codeLine: anchors.scan_pick || 7,
+            decision: `⚡ 线性贪心命中：在时刻 ${t} 参加会议 [start=${start}, end=${t}]！累计 ${count} 场`,
+            message: '桶优化极速直接收敛',
+            variables: { count, curEnd },
+            metrics: { '命中会议': `[${start},${t}]`, '已选总数': String(count) },
+          });
+        }
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🏁 洛谷 P1803 数组桶 O(N) 极速扫描完成！最终最多参加会议数 = ${count}`,
+      message: '成功展示了利用问题域时间有界特征规避比较排序的极致工程优化思想',
+      variables: { finalMaxMeetings: count },
+      metrics: { '最多会议': String(count), '时间复杂度': 'O(N + MaxTime)', '状态': '🏁 极速收敛' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 最多可以参加的会议数目 (Meeting One Day / LeetCode 1353)
+  // ==========================================================================
+
+  public static compileMeetingOneDay(
+    model: IYamlAlgorithmModel,
+    rawEvents: (number[] | [number, number])[],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const events: [number, number][] = (rawEvents && rawEvents.length > 0)
+      ? rawEvents.map(it => [it[0], it[1]] as [number, number])
+      : [[1, 2], [2, 3], [3, 4], [1, 2]];
+
+    switch (stage) {
+      case 2:
+        return this.compileMeetingOneDayStage2(model, events, direction, anchorMap);
+      case 3:
+        return this.compileMeetingOneDayStage3(model, events, direction, anchorMap);
+      case 4:
+        return this.compileMeetingOneDayStage4(model, events, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileMeetingOneDayStage1(model, events, direction, anchorMap);
+    }
+  }
+
+  private static compileMeetingOneDayStage1(
+    model: IYamlAlgorithmModel,
+    events: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+
+    const minDay = Math.min(...events.map(e => e[0]), 1);
+    const maxDay = Math.max(...events.map(e => e[1]), 4);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: isReverse
+        ? `1. 逆向递归匹配搜索初始化：从 Day ${maxDay} 倒推匹配会议`
+        : `1. 暴力匹配穷举搜索初始化：日期范围 [Day ${minDay}, Day ${maxDay}]，递归穷举参会方案`,
+      message: '递归尝试每一天安排哪一场会议或选择留空',
+      variables: { totalEvents: events.length, minDay, maxDay },
+      metrics: { '候选会议': String(events.length), '时间跨度': `Day ${minDay}~${maxDay}` },
+    });
+
+    let attended = 0;
+    for (let d = minDay; d <= Math.min(maxDay, minDay + 3); d++) {
+      const activeEvents = events.filter(e => e[0] <= d && d <= e[1]);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 3,
+        codeLine: anchors.loop || 3,
+        decision: `Day ${d} 考查：当前合法可选会议有 ${activeEvents.length} 场`,
+        message: '遍历所有在今天开放且未过期的会议',
+        variables: { currentDay: d, activeCount: activeEvents.length },
+        metrics: { '当前日期': `Day ${d}`, '可选会议': String(activeEvents.length) },
+      });
+
+      if (activeEvents.length > 0) {
+        attended++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.take || 6,
+          codeLine: anchors.take || 6,
+          decision: `Day ${d} 尝试参会：安排参加 [${activeEvents[0][0]}, ${activeEvents[0][1]}]，累计参会 = ${attended}`,
+          message: '选定一场会议并推进至下一天',
+          variables: { currentDay: d, attended },
+          metrics: { '参会决策': '参加', '累计场数': String(attended) },
+        });
+      } else {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.skip || 9,
+          codeLine: anchors.skip || 9,
+          decision: `Day ${d} 无可用会议或选择留空，直接推进至下一天`,
+          message: '留空跳过当前日期',
+          variables: { currentDay: d },
+          metrics: { '参会决策': '留空', '累计场数': String(attended) },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 10,
+      codeLine: anchors.ret || 10,
+      decision: `🏁 暴力搜索收敛：全排列匹配得出最多可参加 ${attended} 场会议`,
+      message: '穷举验证了在每日仅能参加一场会议约束下的理论上限',
+      variables: { maxAttended: attended },
+      metrics: { '最大参会数': String(attended), '状态': '🏁 搜索收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingOneDayStage2(
+    model: IYamlAlgorithmModel,
+    events: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+
+    const sorted = events
+      .map((e, idx) => ({ id: idx + 1, start: e[0], end: e[1] }))
+      .sort((a, b) => (isReverse ? b.end - a.end : a.start - b.start));
+
+    const minDay = Math.min(...events.map(e => e[0]), 1);
+    const maxDay = Math.max(...events.map(e => e[1]), 4);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'mod_root',
+      r: 0,
+      c: 0,
+      val: isReverse ? '逆向小根堆对偶调度树' : '正向日期逐日推进贪心树',
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.sort || 1,
+      codeLine: anchors.sort || 1,
+      decision: isReverse
+        ? '1. 会议按结束日 end 降序排序：逆向时间轴对偶初始化'
+        : '1. 会议按开始日 start 升序排序：确保随时间指针 day 推进，能够按时将新开放会议录入堆中',
+      message: '排序为时间流推进做好索引铺垫',
+      variables: { totalEvents: events.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '会议总数': String(events.length), '排序规则': isReverse ? 'end 降序' : 'start 升序' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.heap_init || 2,
+      codeLine: anchors.heap_init || 2,
+      decision: '初始化优先队列 pq：小根堆动态维护所有已开放但未过期的会议截止日 endDay',
+      message: '堆顶始终为「最快截止、最迫切需要参加」的会议',
+      variables: { minDay, maxDay },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '堆类型': '截止日小根堆', '当前堆大小': '0' },
+    });
+
+    let count = 0;
+    const pq: number[] = [];
+    let eventIdx = 0;
+
+    for (let day = minDay; day <= Math.min(maxDay, minDay + 4); day++) {
+      const dayNode: UniversalTreeNode = {
+        id: `day_${day}`,
+        r: 1,
+        c: day - minDay,
+        val: `Day ${day}`,
+        status: 'active',
+        children: [],
+      };
+      rootTree.children.push(dayNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.day_loop || 4,
+        codeLine: anchors.day_loop || 4,
+        decision: `📅 时间指针推进至 Day ${day}：开始本工作日的参会调度`,
+        message: '检查今日开放会议并淘汰历史已过期会议',
+        variables: { currentDay: day, curHeapSize: pq.length },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前日期': `Day ${day}`, '待选堆大小': String(pq.length) },
+      });
+
+      // 将今天开始的会议入堆
+      let newAdded = 0;
+      while (eventIdx < sorted.length && sorted[eventIdx].start === day) {
+        const ev = sorted[eventIdx++];
+        pq.push(ev.end);
+        pq.sort((a, b) => a - b);
+        newAdded++;
+
+        const addNode: UniversalTreeNode = {
+          id: `add_${ev.id}`,
+          r: 2,
+          c: pq.length - 1,
+          val: `入堆 M${ev.id}(截止Day ${ev.end})`,
+          status: 'active',
+          children: [],
+        };
+        dayNode.children.push(addNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.add_events || 5,
+          codeLine: anchors.add_events || 5,
+          decision: `📥 会议 M${ev.id} 今日开始开放 (截止日 Day ${ev.end})：加入小根堆，堆内候选 = ${pq.length} 场`,
+          message: '新可用会议入堆排队',
+          variables: { eventId: ev.id, start: ev.start, end: ev.end, heapSize: pq.length },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '今日入堆': `M${ev.id}`, '最新堆顶截止': String(pq[0]) },
+        });
+      }
+
+      // 淘汰过期会议
+      let expiredCount = 0;
+      while (pq.length > 0 && pq[0] < day) {
+        const expEnd = pq.shift()!;
+        expiredCount++;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.expire_poll || 6,
+          codeLine: anchors.expire_poll || 6,
+          decision: `⏰ 过期淘汰：堆顶会议截止日 Day ${expEnd} < 当前 Day ${day}，已永久失效废弃！`,
+          message: '过期未参加的会议丧失资格，直接弹出丢弃',
+          variables: { expiredDeadline: expEnd, day },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '过期淘汰': `Day ${expEnd}`, '剩余堆大小': String(pq.length) },
+        });
+      }
+
+      // 贪心参加最早截止会议
+      if (pq.length > 0) {
+        const chosenEnd = pq.shift()!;
+        count++;
+
+        const attendNode: UniversalTreeNode = {
+          id: `attend_${day}`,
+          r: 3,
+          c: day - minDay,
+          val: `⭐参会 (截止Day ${chosenEnd})`,
+          status: 'visited',
+          children: [],
+        };
+        dayNode.children.push(attendNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.attend_poll || 8,
+          codeLine: anchors.attend_poll || 8,
+          decision: `🎯 贪心挑选：Day ${day} 参加堆顶最早截止日为 Day ${chosenEnd} 的会议！累计已参加 ${count} 场`,
+          message: '由于该会议截止最早、容错度最低，优先消耗它绝不影响后续宽裕会议',
+          variables: { day, chosenDeadline: chosenEnd, totalAttended: count },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '今日参会': '✅ 参加', '累计参会': String(count), '余留待选': String(pq.length) },
+        });
+      } else {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.day_loop || 4,
+          codeLine: anchors.day_loop || 4,
+          decision: `Day ${day} 堆为空：今日无任何可用会议，时间指针空转自增`,
+          message: '本日轮空',
+          variables: { day },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '今日参会': '轮空', '累计参会': String(count) },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `🛑 日程推演完成！在每天至多参加一场会议的限制下，最多可参加 ${count} 场会议`,
+      message: '小根堆贪心策略在 O(N log N) 时间内达成全局最优匹配',
+      variables: { maxAttended: count },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最大参会数': String(count), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingOneDayStage3(
+    model: IYamlAlgorithmModel,
+    events: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+
+    const minDay = Math.min(...events.map(e => e[0]), 1);
+    const maxDay = Math.max(...events.map(e => e[1]), 4);
+    const totalDays = Math.min(maxDay - minDay + 1, 5);
+
+    const matrix: (string | null)[][] = Array.from({ length: totalDays }, () => Array(5).fill(null));
+
+    const formatGrid = () => ({
+      rows: totalDays,
+      cols: 5,
+      rowHeaders: Array.from({ length: totalDays }, (_, i) => `Day ${minDay + i}`),
+      colHeaders: ['日期', '堆内候选数', '堆顶最早截止日', '今日决策', '累计参会数'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.init || 1,
+      codeLine: anchors.init || 1,
+      decision: '初始化日期调度状态演进矩阵 M[Days][5]：记录每日候选池规模、截止日与决策流转',
+      message: '表格记录 [日期, 候选数, 最早截止日, 决策, 累计参会]',
+      variables: { totalDays },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${totalDays}×5`, '状态': '就绪' },
+    });
+
+    const pq: number[] = [];
+    let eventIdx = 0;
+    let count = 0;
+    const sorted = [...events].sort((a, b) => a[0] - b[0]);
+
+    for (let i = 0; i < totalDays; i++) {
+      const day = minDay + i;
+
+      while (eventIdx < sorted.length && sorted[eventIdx][0] === day) {
+        pq.push(sorted[eventIdx++][1]);
+        pq.sort((a, b) => a - b);
+      }
+      while (pq.length > 0 && pq[0] < day) {
+        pq.shift();
+      }
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.day_loop || 2,
+        codeLine: anchors.day_loop || 2,
+        decision: `矩阵记录 Day ${day}：当前小根堆内有效可用会议 ${pq.length} 场，堆顶最早截止日为 ${pq.length > 0 ? 'Day ' + pq[0] : '无'}`,
+        message: '准备评估今日参会决定',
+        variables: { day, heapSize: pq.length, earliestDeadline: pq[0] ?? null },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '当前日': `Day ${day}`, '候选数': String(pq.length) },
+      });
+
+      const canAttend = pq.length > 0;
+      let chosenEnd = -1;
+      if (canAttend) {
+        chosenEnd = pq.shift()!;
+        count++;
+      }
+
+      matrix[i][0] = `Day ${day}`;
+      matrix[i][1] = String(pq.length + (canAttend ? 1 : 0));
+      matrix[i][2] = chosenEnd !== -1 ? `Day ${chosenEnd}` : '-';
+      matrix[i][3] = canAttend ? `✅ 参会(截止${chosenEnd})` : '轮空';
+      matrix[i][4] = String(count);
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 4;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 4]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.matrix_log || 5,
+        codeLine: anchors.matrix_log || 5,
+        decision: `矩阵单元格落盘：Day ${day} ${canAttend ? '参加堆顶会议' : '轮空'}，累计已参加 ${count} 场会议`,
+        message: '完成该工作日状态转移',
+        variables: { day, count },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '今日决策': canAttend ? '参会' : '轮空', '累计参会': String(count) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = totalDays - 1;
+    finalGrid.activeCol = 4;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
+      decision: `🎉 日期调度状态矩阵填表完成！整个日程累计参加 ${count} 场会议`,
+      message: '状态矩阵展现了小根堆在动态时序决策中的单调支配性',
+      variables: { finalCount: count },
+      grid: finalGrid as any,
+      metrics: { '最大参会': String(count), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingOneDayStage4(
+    model: IYamlAlgorithmModel,
+    events: [number, number][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.proof_premise || 1,
+      codeLine: anchors.proof_premise || 1,
+      decision: '1. 贪心交换反证前提：设在当前 Day d，可选会议中有 A(截止日 d1) 与 B(截止日 d2)，其中 d1 < d2',
+      message: 'A 截止日更早，B 截止日更晚。假设存在某个最优解 OPT 在 Day d 选择了 B 而未选择 A',
+      variables: { d1: '早截止日', d2: '晚截止日', relation: 'd1 < d2' },
+      metrics: { '反证法前提': 'OPT 选择 B 放弃 A', '紧迫度比较': 'A 更紧迫' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_exchange || 2,
+      codeLine: anchors.proof_exchange || 2,
+      decision: '2. 构造微扰交换：考察 OPT 在后续天数是否参加了 A',
+      message: '情形一：OPT 在后续天数从未参加 A；情形二：OPT 在后续 Day d_k (d < d_k ≤ d1) 参加了 A',
+      variables: { branch1: '后续不参加 A', branch2: '后续在 Day dk 参加 A' },
+      metrics: { '情形分析': '两分类讨论', '交换目标': '证明不差于 OPT' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_subset || 3,
+      codeLine: anchors.proof_subset || 3,
+      decision: '3. 证明情形一：若 OPT 后续未参加 A，直接将 Day d 的 B 替换为 A，参会总数完全不变，合法性依然成立！',
+      message: '因为 d <= d1，A 在 Day d 完全合法可用',
+      variables: { replacementResult: '总数不减' },
+      metrics: { '情形一结论': '替换完全合法', '收益': '总数保持' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_dominant || 4,
+      codeLine: anchors.proof_dominant || 4,
+      decision: '4. 证明情形二：若 OPT 在后续 Day d_k 参加了 A，交换二者（Day d 参加 A，Day d_k 参加 B）！',
+      message: '由于 d_k ≤ d1 < d2，故在 Day d_k 参加 B 必然合法（B 截止于更晚的 d2），交换后总数不变！',
+      variables: { exchangeValid: true, d_k_vs_d2: 'd_k < d2' },
+      metrics: { '情形二结论': '区间包含支配', '单调性': '交换必定成立' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_dominant || 4,
+      codeLine: anchors.proof_dominant || 4,
+      decision: '5. 单调支配归纳传递：在任意决策点，选择更早截止的会议留给后续的解空间是选择晚截止会议解空间的超集',
+      message: '容忍度定理：S(A) ⊆ S(B)，消耗更小容忍度的资源是所有在线贪心调度的核心支配策略',
+      variables: { spaceSuperset: true },
+      metrics: { '状态空间关系': '超集单调支配', '决策性质': '在线贪心最优' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_ret || 5,
+      codeLine: anchors.proof_ret || 5,
+      decision: '6. 🏁 归纳收敛反证结论：早截止贪心策略具有全局最优支配性，放弃早截止会议绝不可能产生更好解',
+      message: '数学归纳法证明贪心选择的正确性，早截止失效不可逆性质成立！',
+      variables: { proofCompleted: true },
+      metrics: { '反证结论': '贪心必为最优解', '状态': '🏁 证明收敛' },
+    });
+
+    return steps;
+  }
+
 }

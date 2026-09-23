@@ -442,7 +442,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<MeetingOneDayStep>(
   },
 });
 
-export const meetingOneDayRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const meetingOneDayRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'meeting-one-day',
   name: '最多参加会议数目 (LeetCode 1353)',
@@ -451,7 +453,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code04：时间逐日推进与小根堆最早截止优先贪心',
   icon: '🗓️',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 904,
   learningGoal: '掌握紧迫度排序思想与早截止失效不可逆性反证',

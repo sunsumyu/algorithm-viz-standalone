@@ -55,6 +55,8 @@ import { AbsoluteValueAddToArrayStrategy } from './absolute-value-add-to-array-s
 import { CuttingBambooStrategy } from './cutting-bamboo-strategy';
 import { IPOStrategy } from './ipo-strategy';
 import { MaximumProductKPartsStrategy } from './maximum-product-k-parts-strategy';
+import { MeetingMonopolyStrategy } from './meeting-monopoly-strategy';
+import { MeetingOneDayStrategy } from './meeting-one-day-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -186,6 +188,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new CuttingBambooStrategy());
   AlgorithmStrategyRegistry.register(new IPOStrategy());
   AlgorithmStrategyRegistry.register(new MaximumProductKPartsStrategy());
+  AlgorithmStrategyRegistry.register(new MeetingMonopolyStrategy());
+  AlgorithmStrategyRegistry.register(new MeetingOneDayStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -251,7 +255,9 @@ export {
   AbsoluteValueAddToArrayStrategy,
   CuttingBambooStrategy,
   IPOStrategy,
-  MaximumProductKPartsStrategy
+  MaximumProductKPartsStrategy,
+  MeetingMonopolyStrategy,
+  MeetingOneDayStrategy
 };
 
 export * from './strategy-helpers';

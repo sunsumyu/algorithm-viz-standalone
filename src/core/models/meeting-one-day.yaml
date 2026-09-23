@@ -1,0 +1,229 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最多可以参加的会议数目顶层领域模型
+# 对应：LeetCode 1353 / 左程云算法讲解 090 Code04
+# 包含：时间指针逐日推进、小根堆维护最早截止日、状态树展开、矩阵演进跟踪、紧迫度反证
+# ==============================================================================
+
+id: meeting-one-day
+name: 最多参加会议数目 (Meeting One Day)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 堆（优先队列）
+  - 排序
+  - 数组
+  - 状态树
+
+description: |
+  给你一个会议日程表 events，其中 events[i] = [startDayi, endDayi] 表示第 i 个会议在 startDayi 天开始，在 endDayi 天结束。
+  你可以在 [startDayi, endDayi] 的任意一天参加第 i 个会议。但注意：你一天只能参加一场会议。
+  请你返回你可以参加的最大会议数目。
+  核心贪心策略：
+  1. 紧迫度排队（Earliest End Day First）：
+     - 将所有会议按开始日 start 升序排序；
+     - 维护一个当前日期指针 day，从小根堆中优先参加「截止日期最早」的会议；
+     - 为什么优先参加最早截止的会议？因为截止日越早的会议越快作废失效，其容忍度更低、紧迫度更高；
+     - 先参加紧迫会议，将宽裕会议留给后几天，绝不会劣化最终总数（反证法严格成立）。
+  2. Forward: 正向日期推进（从 minDay 推进至 maxDay，小根堆维护 end 升序）。
+  3. Reverse: 逆向日期倒推（从 maxDay 倒推至 minDay，大根堆维护 start 降序对偶）。
+
+defaultParams:
+  events:
+    - [1, 2]
+    - [2, 3]
+    - [3, 4]
+    - [1, 2]
+
+constraints:
+  - 1 <= events.length <= 10^5
+  - events[i].length == 2
+  - 1 <= startDayi <= endDayi <= 10^5
+
+directions:
+  forward:
+    name: 正向日期推进与最早截止小根堆贪心 (Forward Day Sweep Min-Heap)
+    description: 日期指针 day 正向自增，小根堆跟踪可用会议截止日，贪心参加最早截止者
+  reverse:
+    name: 逆向日期倒推与最晚开始大根堆对偶 (Reverse Day Sweep Max-Heap)
+    description: 日期指针从最后一天倒推，大根堆跟踪可用会议开始日，逆向时间轴对偶参加
+
+stages:
+  stage-1:
+    name: 暴力匹配穷举搜索
+    description: 递归枚举每一天是否参加某场有效会议，评估所有匹配方案的最大值
+    complexity:
+      time: O(N!)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          public int maxEventsDFS(int[][] events, int day, boolean[] used) {
+              int maxAns = 0;
+              for (int i = 0; i < events.length; i++) {
+                  if (!used[i] && events[i][0] <= day && day <= events[i][1]) {
+                      used[i] = true;
+                      maxAns = Math.max(maxAns, 1 + maxEventsDFS(events, day + 1, used));
+                      used[i] = false;
+                  }
+              }
+              maxAns = Math.max(maxAns, maxEventsDFS(events, day + 1, used)); // 当天不参会
+              return maxAns;
+          }
+        anchors:
+          entry: 1
+          loop: 3
+          check: 4
+          take: 6
+          skip: 9
+          ret: 10
+      reverse:
+        language: java
+        content: |
+          public int maxEventsDFSReverse(int[][] events, int day, boolean[] used) {
+              int maxAns = 0;
+              for (int i = 0; i < events.length; i++) {
+                  if (!used[i] && events[i][0] <= day && day <= events[i][1]) {
+                      used[i] = true;
+                      maxAns = Math.max(maxAns, 1 + maxEventsDFSReverse(events, day - 1, used));
+                      used[i] = false;
+                  }
+              }
+              maxAns = Math.max(maxAns, maxEventsDFSReverse(events, day - 1, used));
+              return maxAns;
+          }
+        anchors:
+          entry: 1
+          loop: 3
+          check: 4
+          take: 6
+          skip: 9
+          ret: 10
+
+  stage-2:
+    name: 日期推进与小根堆早截止状态树展开
+    description: 时间指针逐日推进，小根堆动态过滤失效会议并选出最早截止会议，状态树展示完整演进
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          Arrays.sort(events, (a, b) -> a[0] - b[0]);
+          PriorityQueue<Integer> pq = new PriorityQueue<>();
+          int i = 0, count = 0, n = events.length;
+          for (int day = 1; day <= maxDay; day++) {
+              while (i < n && events[i][0] == day) pq.offer(events[i++][1]);
+              while (!pq.isEmpty() && pq.peek() < day) pq.poll(); // 过期废弃
+              if (!pq.isEmpty()) {
+                  pq.poll(); // 参加最早截止会议
+                  count++;
+              }
+          }
+          return count;
+        anchors:
+          sort: 1
+          heap_init: 2
+          day_loop: 4
+          add_events: 5
+          expire_poll: 6
+          attend_poll: 8
+          done: 12
+      reverse:
+        language: java
+        content: |
+          Arrays.sort(events, (a, b) -> b[1] - a[1]);
+          PriorityQueue<Integer> maxPq = new PriorityQueue<>(Collections.reverseOrder());
+          int i = 0, count = 0, n = events.length;
+          for (int day = maxDay; day >= 1; day--) {
+              while (i < n && events[i][1] == day) maxPq.offer(events[i++][0]);
+              while (!maxPq.isEmpty() && maxPq.peek() > day) maxPq.poll();
+              if (!maxPq.isEmpty()) {
+                  maxPq.poll();
+                  count++;
+              }
+          }
+          return count;
+        anchors:
+          sort: 1
+          heap_init: 2
+          day_loop: 4
+          add_events: 5
+          expire_poll: 6
+          attend_poll: 8
+          done: 12
+
+  stage-3:
+    name: 日期调度状态矩阵跟踪
+    description: 矩阵动态记录每日可用候选池规模、堆顶截止日、参会决策与累计成果
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          // M[day] 记录当前天的状态
+          for (int day = minDay; day <= maxDay; day++) {
+              int poolSize = pq.size();
+              Integer earliestEnd = pq.peek();
+              boolean attended = !pq.isEmpty();
+              matrix[day] = new Object[]{day, poolSize, earliestEnd, attended, count};
+          }
+        anchors:
+          init: 1
+          day_loop: 2
+          matrix_log: 5
+          done: 7
+      reverse:
+        language: java
+        content: |
+          for (int day = maxDay; day >= minDay; day--) {
+              int poolSize = maxPq.size();
+              Integer latestStart = maxPq.peek();
+              boolean attended = !maxPq.isEmpty();
+              matrix[day] = new Object[]{day, poolSize, latestStart, attended, count};
+          }
+        anchors:
+          init: 1
+          day_loop: 2
+          matrix_log: 5
+          done: 7
+
+  stage-4:
+    name: 紧迫度优先与早截止不可逆反证
+    description: 数学严格反证：若在同等条件下放弃早截止会议，可能导致该会议永久失效造成净损失
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          // 贪心交换反证：
+          // 设最优解在 day 参加会议 B(end=d2)，贪心解参加 A(end=d1, d1 < d2)。
+          // 交换参加顺序：若在 day 参加 A，原 B 可以在后续 [day+1, d2] 参加。
+          // 由于 d1 < d2，A 能够合法存在的时间窗口是 B 的真子集，提前消耗 A 绝不会压缩 B 的可行域！
+          // 故贪心选择具有局部最优且单调支配性质。
+          return count;
+        anchors:
+          proof_premise: 1
+          proof_exchange: 2
+          proof_subset: 3
+          proof_dominant: 4
+          proof_ret: 5
+      reverse:
+        language: java
+        content: |
+          // 逆向对偶反证：
+          // 时间倒流视角下，会议合法区间 [start, day] 中 start 越大越紧迫。
+          // 逆向优先消耗最晚开始会议，完全对偶对称。
+          return count;
+        anchors:
+          proof_premise: 1
+          proof_exchange: 2
+          proof_subset: 3
+          proof_dominant: 4
+          proof_ret: 5
