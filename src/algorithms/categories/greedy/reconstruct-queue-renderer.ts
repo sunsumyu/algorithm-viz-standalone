@@ -3,7 +3,8 @@
  * LeetCode 406：[身高降序, k 升序] 排序，高个子先入队，矮个子直接按 k 插入对应槽位
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   RECONSTRUCT_QUEUE_PROBLEM_HTML,
@@ -216,55 +217,21 @@ export function renderReconstructQueueCanvas(container: HTMLElement, step: RQSte
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'reconstruct-queue',
   name: '根据身高重建队列',
+  viewId: 'reconstruct-queue',
   category: 'greedy',
-  description: '身高降序且 k 升序排序，高个子先入队确定相对骨架，矮个子直接按 k 插入槽位',
   icon: '👥',
   difficulty: 2,
   levelOrder: 15,
-  learningGoal: '掌握双维度贪心问题的排序拆解技巧，理解高维度先入队、低维度插空的经典解法',
-  inputs: [
-    {
-      id: 'people',
-      label: '人群 [身高, k] 二元组',
-      type: 'text',
-      defaultValue: '[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]',
-      placeholder: '[[h,k],...]',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (6人)', values: { people: '[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]' } },
-    { label: '示例 2 (6人)', values: { people: '[[6,0],[5,0],[4,0],[3,2],[2,2],[1,4]]' } },
-    { label: '密集高个 (6人)', values: { people: '[[2,4],[3,4],[4,4],[5,0],[6,0],[7,0]]' } },
-  ],
-  metrics: [
-    { id: 'cur-person', label: '当前待插人员', color: '#16a34a' },
-    { id: 'insert-idx', label: '目标插入槽位', color: '#2563eb' },
-    { id: 'queue-len', label: '当前队长', color: '#10b981' },
-    { id: 'queue', label: '重建队列', color: '#059669' },
-    { id: 'action', label: '贪心动作', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前待插', color: '#16a34a' },
-    { label: '✓ 已入队', color: '#10b981' },
-    { label: '⏳ 待处理', color: '#cbd5e1' },
-  ],
-  codeLanguages: RECONSTRUCT_QUEUE_CODE_LANGUAGES,
-  problemHtml: RECONSTRUCT_QUEUE_PROBLEM_HTML,
-  analysisHtml: RECONSTRUCT_QUEUE_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const raw = String(inputs.people ?? '[[7,0],[4,4],[7,1],[5,0],[6,1],[5,2]]');
-    let people: Array<[number, number]> = [];
-    try {
-      people = JSON.parse(raw);
-    } catch {
-      people = [];
-    }
-    return withMetrics(
-      buildReconstructQueueSteps(people.length ? people : ([[7, 0], [4, 4], [7, 1], [5, 0], [6, 1], [5, 2]] as Array<[number, number]>))
-    );
-  },
-  renderCanvas: (container, step) => renderReconstructQueueCanvas(container, step as RQStep),
+  learningGoal: '掌握双维度贪心问题的排序拆解技巧，理解高维度先入队、低维度插空的经典解法与四阶段演进',
+  description: '身高降序且 k 升序排序，高个子先入队确定相对骨架，矮个子直接按 k 插入槽位',
+  template: `<div id="reconstruct-queue" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerReconstructQueue(): void {
+  // 保持向前兼容导出
+}
+

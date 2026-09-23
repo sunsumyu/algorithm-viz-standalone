@@ -1,0 +1,168 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 根据身高重建队列 顶层领域模型
+# 对应：LeetCode 406 / 多维排序与有序结构调度专题
+# 包含：身高降序与k升序双维排序、贪心插入槽位、升序空格填充对偶
+# ==============================================================================
+
+id: reconstruct-queue
+name: 根据身高重建队列
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 排序
+  - 多维调度
+
+description: |
+  假设有打乱顺序的一群人站成一个队列，数组 people 表示每个人的属性，
+  其中 people[i] = [h_i, k_i] 表示第 i 个人的身高为 h_i ，前面正好有 k_i 个身高大于或等于 h_i 的人。
+  重新构造并返回输入数组 people 所表示的队列。
+  核心策略：
+  1. Forward 策略：身高按降序排列，身高相同时 k 升序排列。排好序后，依次将每个人插入到链表的第 k 个索引位置。
+     后插入的矮个子无论插入何处，都不会改变先插入的高个子前方高于或等于自身的人数！
+  2. Reverse 策略：身高按升序排列，从矮到高依次将第 i 个人放入当前队列剩余空槽中的第 (k + 1) 个空位。
+
+defaultParams:
+  people: [[7, 0], [4, 4], [7, 1], [5, 0], [6, 1], [5, 2]]
+
+constraints:
+  - 1 <= people.length <= 2000
+  - 0 <= h_i <= 10^6
+  - 0 <= k_i < people.length
+
+directions:
+  forward:
+    name: 身高降序优先与 k 索引链表插入 (High-to-Low Greedy)
+    description: 高个子先占位确定全局骨架，矮个子按自身 k 索引插入，绝不破坏高个子前方有效计数
+  reverse:
+    name: 身高升序放置与空格预留贪心 (Low-to-High Empty Slot)
+    description: 矮个子先考虑自身需要预留的 k 个更高空位，放置到剩余空槽中的第 k+1 个位置
+
+stages:
+  stage-1:
+    name: 贪心双维排序与动态插入模拟
+    description: 先按 [h降序, k升序] 排序，随后顺序将每个人插入到目标索引 k
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] reconstructQueue(int[][] people) {
+              // @step:sort 1. 身高从大到小排（身高相同 k 升序）
+              Arrays.sort(people, (a, b) -> (a[0] == b[0] ? a[1] - b[1] : b[0] - a[0]));
+              LinkedList<int[]> que = new LinkedList<>();
+              // @step:insert 2. 依次按 k 作为目标下标插入链表
+              for (int[] p : people) {
+                  que.add(p[1], p);
+              }
+              // @step:done 3. 队列构建完成，转为数组返回
+              return que.toArray(new int[people.length][]);
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] reconstructQueueEmptySlots(int[][] people) {
+              // @step:sort 逆向策略：按身高升序，k 降序排序
+              Arrays.sort(people, (a, b) -> (a[0] == b[0] ? b[1] - a[1] : a[0] - b[0]));
+              int n = people.length;
+              int[][] ans = new int[n][];
+              // @step:insert 为当前人寻找第 k + 1 个未被占用的空位
+              for (int[] p : people) {
+                  int spaces = p[1] + 1;
+                  for (int i = 0; i < n; i++) {
+                      if (ans[i] == null) {
+                          spaces--;
+                          if (spaces == 0) { ans[i] = p; break; }
+                      }
+                  }
+              }
+              // @step:done 4. 全员就位返回
+              return ans;
+          }
+
+  stage-2:
+    name: 槽位插入决策树展开
+    description: 自顶向下以 dfs(personIdx) 树形展示每个人在有序队列中寻找唯一合法插入位的过程
+    complexity:
+      time: O(N!)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:base 递归基准终止条件
+          void dfsInsert(List<int[]> queue, int[][] people, int i) {
+              // @step:entry 探查当前待排人员
+              if (i == people.length) return;
+              int[] p = people[i];
+              // @step:branch_find 计算目标插入索引 targetK = p[1]
+              queue.add(p[1], p);
+              // @step:recurse 递归推进至下一人
+              dfsInsert(queue, people, i + 1);
+          }
+      reverse:
+        language: java
+        source: |
+          // 逆向自底向上树搜索
+          boolean dfsSlots(int[][] ans, int[][] people, int idx) {
+              if (idx == people.length) return true;
+              return dfsSlots(ans, people, idx + 1);
+          }
+
+  stage-3:
+    name: 队列重构槽位状态跟踪矩阵
+    description: 二维矩阵追踪每一步插入时，队列中各元素的重分布与位移演进
+    complexity:
+      time: O(N^2)
+      space: O(N^2)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:dp_init 初始化状态跟踪矩阵 table[n][n]
+          int[][][] table = new int[n][n][2];
+          // @step:dp_loop 逐人执行贪心定位
+          for (int i = 0; i < n; i++) {
+              int[] p = sortedPeople[i];
+              queue.add(p[1], p);
+              // @step:dp_transfer 记录队列当前快照至状态矩阵第 i 行
+              for (int j = 0; j < queue.size(); j++) {
+                  table[i][j] = queue.get(j);
+              }
+          }
+          // @step:dp_done 重建完成
+          return table[n - 1];
+      reverse:
+        language: java
+        source: |
+          // 逆向空槽转移矩阵
+          for (int i = 0; i < n; i++) table[i][targetSlot] = people[i];
+
+  stage-4:
+    name: 原地数组与高效链表空间优化推演
+    description: 基于 LinkedList 或线段树实现常数或对数开销的原地高效维护
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:reg_init 初始化链表容器
+          List<int[]> list = new ArrayList<>(people.length);
+          // @step:reg_loop 单趟贪心插入
+          for (int[] p : people) {
+              list.add(p[1], p);
+          }
+          // @step:reg_done 返回最终排好序的队列
+          return list.toArray(new int[people.length][]);
+      reverse:
+        language: java
+        source: |
+          // 线段树 O(N log N) 极速插槽
+          SegmentTree st = new SegmentTree(n);
+          for (int[] p : people) { int pos = st.findKth(p[1] + 1); res[pos] = p; }
+          return res;

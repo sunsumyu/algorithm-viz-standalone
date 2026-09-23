@@ -1243,5 +1243,454 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 摆动序列 (LeetCode 376) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileWiggleSubsequence(
+    model: IYamlAlgorithmModel,
+    options?: (TwoPassCompileOptions & { nums?: number[] }) | any,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawNums = options?.nums ?? (Array.isArray(options) ? options : model.defaultParams?.nums) ?? [1, 7, 4, 9, 2, 5];
+    const nums: number[] = Array.isArray(rawNums)
+      ? rawNums.map(Number)
+      : typeof rawNums === 'string'
+      ? rawNums.split(/[\s,]+/).filter(Boolean).map(Number)
+      : [1, 7, 4, 9, 2, 5];
+
+    switch (stage) {
+      case 2:
+        return this.compileWiggleSubsequenceStage2(model, nums, options);
+      case 3:
+        return this.compileWiggleSubsequenceStage3(model, nums, options);
+      case 4:
+        return this.compileWiggleSubsequenceStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileWiggleSubsequenceStage1(model, nums, options);
+    }
+  }
+
+  private static compileWiggleSubsequenceStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    if (n <= 1) {
+      steps.push(
+        UniversalStepBuilder.create(0)
+          .stage(1)
+          .line(anchors.guard || 2)
+          .slot(0)
+          .decision(`特判：数组长度为 ${n} <= 1，直接返回长度 ${n}`)
+          .message(`空数组或单元素数组直接视作有效摆动序列。`)
+          .variables({ length: n, nums })
+          .metrics({ 'count': n, 'status': '边界直接返回' })
+          .build()
+      );
+      return steps;
+    }
+
+    let count = 1;
+    let preDiff = 0;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(1)
+        .line(anchors.init || 3)
+        .slot(0)
+        .decision(`初始化：起始假定最右端包含 1 个峰值/谷值，count = 1，preDiff = 0`)
+        .message(`准备开始单趟扫描，比较相邻两数差值 curDiff 与前驱差值 preDiff。`)
+        .variables({ count: 1, preDiff: 0, nums })
+        .metrics({ 'count': 1, 'preDiff': 0, 'phase': '初始化就绪' })
+        .build()
+    );
+
+    for (let i = 1; i < n; i++) {
+      const curDiff = nums[i] - nums[i - 1];
+      const slot = i;
+
+      if ((curDiff > 0 && preDiff <= 0) || (curDiff < 0 && preDiff >= 0)) {
+        count++;
+        const oldPre = preDiff;
+        preDiff = curDiff;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.peak_or_valley || 6)
+            .slot(slot)
+            .highlightSlots([i - 1, i])
+            .decision(`📈📉 捕获反转极值点！[${i-1}]=${nums[i-1]} -> [${i}]=${nums[i]} (差值=${curDiff > 0 ? '+' + curDiff : curDiff})，跨越方向反转，count 增至 ${count}`)
+            .message(`峰值或谷值判定成功：差值方向由 ${oldPre} 翻转为 ${preDiff}，计入摆动子序列。`)
+            .variables({ i, prev: nums[i - 1], curr: nums[i], curDiff, preDiff, count })
+            .metrics({
+              'cur-idx': i,
+              'diff': `${nums[i - 1]} -> ${nums[i]} (${curDiff > 0 ? '+' + curDiff : curDiff})`,
+              'count': count,
+              'status': curDiff > 0 ? '谷转峰 ↑' : '峰转谷 ↓',
+            })
+            .build()
+        );
+      } else {
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(1)
+            .line(anchors.loop || 4)
+            .slot(slot)
+            .highlightSlots([i - 1, i])
+            .decision(`⏩ 单调坡或平坡延伸：[${i-1}]=${nums[i-1]} -> [${i}]=${nums[i]} (差值=${curDiff})，过滤中间过渡节点，preDiff 保持 ${preDiff}，count 维持 ${count}`)
+            .message(`坡度未发生反转，贪心忽略单调坡中间节点，等待极值到来。`)
+            .variables({ i, prev: nums[i - 1], curr: nums[i], curDiff, preDiff, count })
+            .metrics({
+              'cur-idx': i,
+              'diff': `${nums[i - 1]} -> ${nums[i]} (${curDiff})`,
+              'count': count,
+              'status': '单调坡跳过',
+            })
+            .build()
+        );
+      }
+    }
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(1)
+        .line(anchors.done || 10)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`🎉 求解完成：最长摆动子序列长度为 ${count}`)
+        .message(`完成全数组扫描，返回最终摆动极值数量 ${count}。`)
+        .variables({ return: count, totalElements: n })
+        .metrics({ 'final-count': count, 'status': '完成' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileWiggleSubsequenceStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const memoGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(2).fill(null));
+    memoGrid[0][0] = 1;
+    memoGrid[0][1] = 1;
+
+    const rootNode: UniversalTreeNode = {
+      id: 'node-root',
+      r: 0,
+      c: 0,
+      val: `WiggleDFS(i=0)`,
+      status: 'current',
+      children: [],
+    };
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(2)
+        .line(anchors.base || 2)
+        .slot(0)
+        .decision(`自顶向下展开摆动决策依赖树根节点：dfs(i=0)`)
+        .message(`每个节点评估保留为峰谷或跳过单调坡的分支路径。`)
+        .variables({ i: 0, total: n })
+        .tree(rootNode)
+        .grid(memoGrid)
+        .build()
+    );
+
+    let curParent = rootNode;
+    let count = 1;
+    let preDiff = 0;
+
+    for (let i = 1; i < n; i++) {
+      const curDiff = nums[i] - nums[i - 1];
+      const slot = i;
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(2)
+          .line(anchors.entry || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`递归探查：dfs(i=${i}) 考察节点 nums[${i}]=${nums[i]}`)
+          .message(`评估与上一节点 nums[${i - 1}]=${nums[i - 1]} 的差值方向。`)
+          .variables({ i, val: nums[i], curDiff })
+          .tree(rootNode)
+          .grid(memoGrid)
+          .activeNode(curParent.id)
+          .build()
+      );
+
+      if ((curDiff > 0 && preDiff <= 0) || (curDiff < 0 && preDiff >= 0)) {
+        count++;
+        preDiff = curDiff;
+        memoGrid[i][curDiff > 0 ? 0 : 1] = count;
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: i,
+          c: 0,
+          val: `[${i}] 采纳极值点(${nums[i]}) count=${count}`,
+          status: 'visited',
+          tag: curDiff > 0 ? '波峰' : '波谷',
+          children: [],
+        };
+        curParent.children = [child];
+        curParent = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_pick || 6)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`决策分支：方向反转，采纳分支 -> count 增至 ${count}`)
+            .message(`极值点剪枝确认，作为关键摆动节点保留。`)
+            .variables({ i, count, preDiff })
+            .tree(rootNode)
+            .grid(memoGrid)
+            .activeNode(child.id)
+            .build()
+        );
+      } else {
+        memoGrid[i][0] = count;
+        memoGrid[i][1] = count;
+        const child: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: i,
+          c: 0,
+          val: `[${i}] 过滤坡度(${nums[i]}) count=${count}`,
+          status: 'pruned',
+          tag: '坡度过滤',
+          children: [],
+        };
+        curParent.children = [child];
+        curParent = child;
+
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(2)
+            .line(anchors.branch_skip || 4)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`决策分支：单调坡度，剪枝跳过 -> count 维持 ${count}`)
+            .message(`中间过渡节点不影响最优解，直接剪枝。`)
+            .variables({ i, count, preDiff })
+            .tree(rootNode)
+            .grid(memoGrid)
+            .activeNode(child.id)
+            .build()
+        );
+      }
+    }
+
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(2)
+        .line(anchors.optimal || 8)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`决策树推演收敛：最长摆动长度为 ${count}`)
+        .message(`决策树完整遍历完毕。`)
+        .variables({ return: count })
+        .tree(rootNode)
+        .grid(memoGrid)
+        .activeNode(curParent.id)
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileWiggleSubsequenceStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    const dpGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(2).fill(null));
+    dpGrid[0][0] = 1;
+    dpGrid[0][1] = 1;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(3)
+        .line(anchors.dp_init || 2)
+        .slot(0)
+        .decision(`初始化交替状态表格 dp[${n}][2]：up[0]=1, down[0]=1`)
+        .message(`二维状态矩阵：第 0 列记录上升结尾最大长度，第 1 列记录下降结尾最大长度。`)
+        .variables({ n, 'dp[0][0]': 1, 'dp[0][1]': 1 })
+        .grid(dpGrid)
+        .metrics({ 'matrix-size': `${n} × 2` })
+        .build()
+    );
+
+    let up = 1;
+    let down = 1;
+
+    for (let i = 1; i < n; i++) {
+      const slot = i;
+      const curDiff = nums[i] - nums[i - 1];
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(3)
+          .line(anchors.dp_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`状态演进 [${i}]：nums[${i}]=${nums[i]} 与 nums[${i - 1}]=${nums[i - 1]} 比对`)
+          .message(`差值 curDiff = ${curDiff}。`)
+          .variables({ i, curr: nums[i], prev: nums[i - 1], curDiff })
+          .grid(dpGrid)
+          .metrics({ 'cur-diff': curDiff })
+          .build()
+      );
+
+      if (curDiff > 0) {
+        up = down + 1;
+        dpGrid[i][0] = up;
+        dpGrid[i][1] = down;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 5)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`上升转移：nums[${i}] > nums[${i - 1}]，up[${i}] = down[${i - 1}] + 1 = ${up}，down 保持 ${down}`)
+            .message(`由前驱下降状态转移至当前上升状态。`)
+            .variables({ i, up, down })
+            .grid(dpGrid)
+            .metrics({ 'up': up, 'down': down, 'phase': '上升转移' })
+            .build()
+        );
+      } else if (curDiff < 0) {
+        down = up + 1;
+        dpGrid[i][0] = up;
+        dpGrid[i][1] = down;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 5)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`下降转移：nums[${i}] < nums[${i - 1}]，down[${i}] = up[${i - 1}] + 1 = ${down}，up 保持 ${up}`)
+            .message(`由前驱上升状态转移至当前下降状态。`)
+            .variables({ i, up, down })
+            .grid(dpGrid)
+            .metrics({ 'up': up, 'down': down, 'phase': '下降转移' })
+            .build()
+        );
+      } else {
+        dpGrid[i][0] = up;
+        dpGrid[i][1] = down;
+        steps.push(
+          UniversalStepBuilder.create(steps.length)
+            .stage(3)
+            .line(anchors.dp_transfer || 5)
+            .slot(slot)
+            .highlightSlots([slot])
+            .decision(`平坡保持：nums[${i}] == nums[${i - 1}]，up 与 down 均保持继承`)
+            .message(`平坡无增益，继承前驱。`)
+            .variables({ i, up, down })
+            .grid(dpGrid)
+            .metrics({ 'up': up, 'down': down, 'phase': '平坡继承' })
+            .build()
+        );
+      }
+    }
+
+    const maxAns = Math.max(up, down);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(3)
+        .line(anchors.dp_done || 7)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`状态表格演进收敛：max(up[${n - 1}], down[${n - 1}]) = ${maxAns}`)
+        .message(`完成二维状态表格求解。`)
+        .variables({ return: maxAns })
+        .grid(dpGrid)
+        .metrics({ 'final-max': maxAns, 'status': '收敛' })
+        .build()
+    );
+
+    return steps;
+  }
+
+  private static compileWiggleSubsequenceStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+
+    let up = 1;
+    let down = 1;
+
+    steps.push(
+      UniversalStepBuilder.create(0)
+        .stage(4)
+        .line(anchors.reg_init || 2)
+        .slot(0)
+        .decision(`O(1) 双寄存器初始化：up = 1, down = 1`)
+        .message(`利用 2 个局部寄存器完成常数空间的单趟极速推演。`)
+        .variables({ up: 1, down: 1 })
+        .metrics({ 'up-reg': 1, 'down-reg': 1 })
+        .build()
+    );
+
+    for (let i = 1; i < n; i++) {
+      const slot = i;
+      if (nums[i] > nums[i - 1]) {
+        up = down + 1;
+      } else if (nums[i] < nums[i - 1]) {
+        down = up + 1;
+      }
+
+      steps.push(
+        UniversalStepBuilder.create(steps.length)
+          .stage(4)
+          .line(anchors.reg_loop || 3)
+          .slot(slot)
+          .highlightSlots([slot])
+          .decision(`寄存器流式更新 [${i}]：nums[${i}]=${nums[i]} -> up=${up}, down=${down}`)
+          .message(`单趟常数开销寄存器更新。`)
+          .variables({ i, up, down })
+          .metrics({ 'up-reg': up, 'down-reg': down })
+          .build()
+      );
+    }
+
+    const ans = Math.max(up, down);
+    steps.push(
+      UniversalStepBuilder.create(steps.length)
+        .stage(4)
+        .line(anchors.reg_done || 5)
+        .slot(n - 1)
+        .highlightSlots([n - 1])
+        .decision(`极速单趟寄存器流推演完成：最大摆动长度 = ${ans}`)
+        .message(`完成 O(1) 空间极速求解。`)
+        .variables({ return: ans })
+        .metrics({ 'final-result': ans, 'status': '完成' })
+        .build()
+    );
+
+    return steps;
+  }
 }
 

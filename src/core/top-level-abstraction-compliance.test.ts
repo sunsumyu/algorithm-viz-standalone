@@ -41,6 +41,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'monotone-digits',
   'maximize-sum-k',
   'gas-station',
+  'wiggle-subsequence',
+  'reconstruct-queue',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -207,8 +209,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
       // 贪心类目受控历史遗留白名单（凡已迁移算法严禁登记在此！每重构一个即删除一个并移至 LOCKED 锁定！）
       const KNOWN_LEGACY_GREEDY_UNMIGRATED = new Set([
         'max-subarray',
-        'reconstruct-queue',
-        'wiggle-subsequence',
         'tree-cameras',
         'task-scheduler',
         'greedy-theory',

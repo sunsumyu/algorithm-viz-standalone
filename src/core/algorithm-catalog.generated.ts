@@ -3474,13 +3474,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "wiggle-subsequence",
     name: "摆动序列",
-    viewId: "algo-wiggle-subsequence-view",
+    viewId: "wiggle-subsequence",
     category: "greedy",
     description: "求最长摆动子序列，贪心过滤单调坡度与平坡，只统计波峰波谷",
     icon: "〰️",
     difficulty: 2,
     levelOrder: 2,
-    learningGoal: "掌握贪心算法在波形折线分析中的局部最优（保留峰谷）到全局最长的转化",
+    learningGoal: "掌握贪心算法在波形折线分析中的局部最优（保留峰谷）到全局最长的转化，理解状态机交替演进",
   },
   {
     id: "max-subarray",
@@ -3638,13 +3638,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "reconstruct-queue",
     name: "根据身高重建队列",
-    viewId: "algo-reconstruct-queue-view",
+    viewId: "reconstruct-queue",
     category: "greedy",
     description: "身高降序且 k 升序排序，高个子先入队确定相对骨架，矮个子直接按 k 插入槽位",
     icon: "👥",
     difficulty: 2,
     levelOrder: 15,
-    learningGoal: "掌握双维度贪心问题的排序拆解技巧，理解高维度先入队、低维度插空的经典解法",
+    learningGoal: "掌握双维度贪心问题的排序拆解技巧，理解高维度先入队、低维度插空的经典解法与四阶段演进",
   },
   {
     id: "tree-cameras",

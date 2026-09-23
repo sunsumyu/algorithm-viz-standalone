@@ -52,6 +52,8 @@ import lemonadeModel from './models/lemonade.yaml';
 import monotoneDigitsModel from './models/monotone-digits.yaml';
 import maximizeSumKModel from './models/maximize-sum-k.yaml';
 import gasStationModel from './models/gas-station.yaml';
+import wiggleSubsequenceModel from './models/wiggle-subsequence.yaml';
+import reconstructQueueModel from './models/reconstruct-queue.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -149,6 +151,8 @@ export class AlgorithmModelRepository {
     ['monotone-digits', monotoneDigitsModel as IYamlAlgorithmModel],
     ['maximize-sum-k', maximizeSumKModel as IYamlAlgorithmModel],
     ['gas-station', gasStationModel as IYamlAlgorithmModel],
+    ['wiggle-subsequence', wiggleSubsequenceModel as IYamlAlgorithmModel],
+    ['reconstruct-queue', reconstructQueueModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

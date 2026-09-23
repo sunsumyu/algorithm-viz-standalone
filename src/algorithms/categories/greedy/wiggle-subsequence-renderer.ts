@@ -3,7 +3,8 @@
  * LeetCode 376：贪心删除单调坡与平坡中间节点，统计波峰波谷数量
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
@@ -273,47 +274,21 @@ export function renderWiggleSubsequenceCanvas(container: HTMLElement, step: Wigg
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'wiggle-subsequence',
   name: '摆动序列',
+  viewId: 'wiggle-subsequence',
   category: 'greedy',
-  description: '求最长摆动子序列，贪心过滤单调坡度与平坡，只统计波峰波谷',
   icon: '〰️',
   difficulty: 2,
   levelOrder: 2,
-  learningGoal: '掌握贪心算法在波形折线分析中的局部最优（保留峰谷）到全局最长的转化',
-  inputs: [
-    {
-      id: 'nums',
-      label: '整数序列',
-      type: 'text',
-      defaultValue: '1,7,4,9,2,5',
-      placeholder: '逗号分隔数字',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { nums: '1,7,4,9,2,5' } },
-    { label: '示例 2', values: { nums: '1,17,5,10,13,15,10,5,16,8' } },
-    { label: '含平坡测试', values: { nums: '1,2,2,2,3,4' } },
-  ],
-  metrics: [
-    { id: 'cur-diff', label: '当前差值 curDiff', color: '#2563eb' },
-    { id: 'prev-diff', label: '上一摆动差值 preDiff', color: '#64748b' },
-    { id: 'wiggle-len', label: '当前摆动长度', color: '#0f172a' },
-    { id: 'sequence', label: '摆动子序列', color: '#059669' },
-    { id: 'action', label: '摆动判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📍 当前考察', color: '#3b82f6' },
-    { label: '✓ 保留峰谷', color: '#10b981' },
-    { label: '✗ 删除节点', color: '#94a3b8' },
-  ],
-  codeLanguages: WIGGLE_SUBSEQUENCE_CODE_LANGUAGES,
-  problemHtml: WIGGLE_SUBSEQUENCE_PROBLEM_HTML,
-  analysisHtml: WIGGLE_SUBSEQUENCE_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const nums = parseNumberList(inputs.nums, '1,7,4,9,2,5');
-    return withMetrics(wiggleSubsequenceSteps(nums.length ? nums : [1, 7, 4, 9, 2, 5]));
-  },
-  renderCanvas: (container, step) => renderWiggleSubsequenceCanvas(container, step as WiggleStep),
+  learningGoal: '掌握贪心算法在波形折线分析中的局部最优（保留峰谷）到全局最长的转化，理解状态机交替演进',
+  description: '求最长摆动子序列，贪心过滤单调坡度与平坡，只统计波峰波谷',
+  template: `<div id="wiggle-subsequence" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerWiggleSubsequence(): void {
+  // 保持向前兼容导出
+}
+
