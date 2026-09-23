@@ -174,9 +174,11 @@ export class DpTableVisualAdapter {
       const isMatrix = isGreedy || isCustomMatrix;
       const tableName = customTableName || (isMatrix ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
       const tableAction = customTableAction || (isMatrix ? '准备动态追踪决策演进' : '准备逐格填表');
+      const rowRange = gridRows > 1 ? `[0..${gridRows - 1}]` : (gridRows === 1 ? '[0]' : '[]');
+      const colRange = gridCols > 1 ? `[0..${gridCols - 1}]` : (gridCols === 1 ? '[0]' : '[]');
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
-          <span>📊 ${tableName} <code>[0..${gridRows - 1}][0..${gridCols - 1}]</code>，${tableAction}</span>
+          <span>📊 ${tableName} <code>${rowRange}${colRange}</code>，${tableAction}</span>
         </div>
       `;
     }
@@ -270,8 +272,9 @@ export class DpTableVisualAdapter {
    * 兼容方法：渲染 Stage-3 状态转移看板
    */
   public static renderTransferEquation(container: HTMLElement, step: any, isReverse = false): void {
-    const m = step.grid?.length || 3;
-    const n = step.grid?.[0]?.length || 3;
+    const rawGrid = Array.isArray(step.grid) ? step.grid : (Array.isArray(step.matrix) ? step.matrix : step.grid?.values);
+    const m = rawGrid?.length || step.grid?.rows || 3;
+    const n = (rawGrid && rawGrid[0]?.length) || step.grid?.cols || 3;
     this.renderStage3DPTable(container, step, { m, n, isReverse });
   }
 }
