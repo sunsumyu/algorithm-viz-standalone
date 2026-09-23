@@ -1,0 +1,187 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 砍竹子 II (剪绳子 II) 顶层领域模型
+# 对应：LeetCode 343 / 剑指 Offer 14-II / 左程云算法讲解 090 Code01
+# 包含：数论贪心、尽力拆 3、余数边界借位、大数快速幂取模与实数极值驻点证明
+# ==============================================================================
+
+id: cutting-bamboo
+name: 砍竹子 II (Cutting Bamboo II)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数学
+  - 动态规划
+  - 快速幂
+  - 整数拆分
+
+description: |
+  现需要将一根长为正整数 n 的竹子砍为若干段（每段长度均为正整数且段数 >= 2）。
+  请返回每段竹子长度的最大乘积是多少？答案需要对 1000000007 (10^9+7) 取模。
+  核心数学归约（连续极值驻点与离散尽力拆 3 贪心）：
+  1. 连续函数极值分析：将目标拆成 x 份均分，目标最大化 f(x) = x^(1/x)。
+     求导得驻点 x = e ≈ 2.718。离散整数中最接近 e 的是 3（f(3) ≈ 1.442 > f(2) ≈ 1.414）；
+  2. 尽力拆 3 贪心法则：
+     - 若余数为 0：全部拆为 3，乘积为 3^m；
+     - 若余数为 2：拆为 m 个 3 和 1 个 2，乘积为 3^m * 2；
+     - 若余数为 1：若留 1 则毫无增益（3 * 1 = 3），应借出一个 3 变为 2 * 2 = 4 > 3 * 1，乘积为 3^(m-1) * 4；
+  3. 特殊边界：当 n <= 3 时，因必须切至少一刀，结果为 n - 1；
+  4. 大数快速幂：n 达到 10^9 规模时，通过二进制快速幂在 O(log N) 内快速取模；
+  5. Forward: 贪心尽力拆 3 方案（全局最优解）；
+  6. Reverse: 对偶拆 2 方案对照（通过数值反差反向证明拆 3 的严格优越性）。
+
+defaultParams:
+  n: 10
+
+constraints:
+  - 2 <= n <= 1000
+  - 段数 k >= 2
+
+directions:
+  forward:
+    name: 贪心尽力拆 3 方案 (Forward Greedy Partition by 3)
+    description: 优先切出长度为 3 的竹段，根据余数 1/2 进行尾部最优修正，配合大数快速幂
+  reverse:
+    name: 对偶拆 2 方案对照 (Reverse Dual Partition by 2)
+    description: 优先切出长度为 2 的次优竹段，通过乘积数值对比严格凸显拆 3 的数学最优性
+
+stages:
+  stage-1:
+    name: 尽力拆 3 贪心推演
+    description: 贪心尽可能多地切出长度为 3 的段，动态处理余数 1 和 2 的借位修正
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int cuttingBambooGreedy(int n) {
+              if (n <= 3) return n - 1; // anchor:init
+              int m = n / 3, rem = n % 3; // anchor:div
+              long ans = 1;
+              if (rem == 1) { m -= 1; ans = 4; } // anchor:rem1
+              else if (rem == 2) { ans = 2; } // anchor:rem2
+              for (int i = 0; i < m; i++) ans = (ans * 3) % 1000000007; // anchor:loop
+              return (int) ans; // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int cuttingBambooDual2(int n) {
+              if (n <= 3) return n - 1; // anchor:init
+              int m = n / 2, rem = n % 2; // anchor:div
+              long ans = rem == 1 ? 3 : 1; // anchor:rem1
+              if (rem == 1) m -= 1;
+              for (int i = 0; i < m; i++) ans = (ans * 2) % 1000000007; // anchor:loop
+              return (int) ans; // anchor:ret
+          }
+
+  stage-2:
+    name: 递归分割展开树与备忘录剪枝
+    description: 递归探索各切分长度并缓存最优解，自顶向下展现状态依赖与剪枝收敛
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int dfs(int rest, int[] memo) { // anchor:dfs_entry
+              if (rest <= 4) return rest; // anchor:dfs_base
+              if (memo[rest] != 0) return memo[rest]; // anchor:dfs_memo
+              int max = 0;
+              for (int i = 1; i < rest; i++) { // anchor:dfs_loop
+                  max = Math.max(max, i * dfs(rest - i, memo)); // anchor:dfs_pick
+              }
+              return memo[rest] = max; // anchor:dfs_ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int dfsReverse(int rest, int[] memo) { // anchor:dfs_entry
+              if (rest <= 4) return rest; // anchor:dfs_base
+              if (memo[rest] != 0) return memo[rest]; // anchor:dfs_memo
+              int max = 0;
+              for (int i = rest - 1; i >= 1; i--) { // anchor:dfs_loop
+                  max = Math.max(max, i * dfsReverse(rest - i, memo)); // anchor:dfs_pick
+              }
+              return memo[rest] = max; // anchor:dfs_ret
+          }
+
+  stage-3:
+    name: 拆分状态演进矩阵
+    description: 二维演进矩阵实时跟踪竹子剩余长度、当前切割段数、累计乘积与模运算状态
+    complexity:
+      time: O(M * 4)
+      space: O(M * 4)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackCutMatrix(int n) {
+              int m = n / 3, rem = n % 3; // anchor:grid_init
+              int rounds = rem == 1 ? m + 1 : (rem == 2 ? m + 1 : m);
+              int[][] matrix = new int[rounds][4]; // [round, cutLen, remain, curProd]
+              long prod = 1;
+              for (int i = 0; i < rounds; i++) { // anchor:grid_loop
+                  int cut = (i == rounds - 1 && rem == 1) ? 4 : (i == rounds - 1 && rem == 2 ? 2 : 3);
+                  prod = (prod * cut) % 1000000007;
+                  matrix[i] = new int[]{i + 1, cut, n - (i + 1) * 3, (int) prod}; // anchor:grid_cell
+              }
+              return matrix; // anchor:grid_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackCutMatrixReverse(int n) {
+              int m = n / 2, rem = n % 2; // anchor:grid_init
+              int rounds = m;
+              int[][] matrix = new int[rounds][4];
+              long prod = 1;
+              for (int i = 0; i < rounds; i++) { // anchor:grid_loop
+                  int cut = 2;
+                  prod = (prod * cut) % 1000000007;
+                  matrix[i] = new int[]{i + 1, cut, n - (i + 1) * 2, (int) prod}; // anchor:grid_cell
+              }
+              return matrix; // anchor:grid_done
+          }
+
+  stage-4:
+    name: 大数快速幂极速收敛
+    description: 二进制快速幂算法在对数时间 O(log N) 内快速求出 3^m % (10^9+7)
+    complexity:
+      time: O(log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int fastPowerBamboo(int n) {
+              if (n <= 3) return n - 1; // anchor:pow_init
+              long ans = 1, base = 3;
+              int rem = n % 3, exp = n / 3;
+              if (rem == 1) { exp -= 1; ans = 4; } // anchor:pow_rem
+              else if (rem == 2) { ans = 2; }
+              while (exp > 0) { // anchor:pow_loop
+                  if ((exp & 1) == 1) ans = (ans * base) % 1000000007; // anchor:pow_mul
+                  base = (base * base) % 1000000007; // anchor:pow_sqr
+                  exp >>= 1; // anchor:pow_shift
+              }
+              return (int) ans; // anchor:pow_ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int fastPowerBambooReverse(int n) {
+              if (n <= 3) return n - 1; // anchor:pow_init
+              long ans = 1, base = 2;
+              int rem = n % 2, exp = n / 2;
+              if (rem == 1) { exp -= 1; ans = 3; } // anchor:pow_rem
+              while (exp > 0) { // anchor:pow_loop
+                  if ((exp & 1) == 1) ans = (ans * base) % 1000000007; // anchor:pow_mul
+                  base = (base * base) % 1000000007; // anchor:pow_sqr
+                  exp >>= 1; // anchor:pow_shift
+              }
+              return (int) ans; // anchor:pow_ret
+          }

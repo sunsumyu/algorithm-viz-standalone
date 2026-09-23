@@ -64,6 +64,8 @@ export class ProblemDimensionResolver {
     'largest-number',
     'minimum-cost-connect-sticks',
     'minimum-eat-oranges',
+    'absolute-value-add-to-array',
+    'cutting-bamboo',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([

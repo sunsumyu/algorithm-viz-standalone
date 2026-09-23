@@ -375,7 +375,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<AbsValueAddStep>({
   },
 });
 
-export const absoluteValueAddToArrayRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const absoluteValueAddToArrayRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'absolute-value-add-to-array',
   name: '加入差值绝对值直到长度固定',
@@ -384,7 +386,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code06：更相减损术闭包，GCD 数论极速推演与裴蜀定理证明',
   icon: '🔢',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 906,
   learningGoal: '掌握差值闭包收敛于 GCD 理想格点的数论贪心本质',

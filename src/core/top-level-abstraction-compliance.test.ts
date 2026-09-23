@@ -52,6 +52,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'largest-number',
   'minimum-cost-connect-sticks',
   'minimum-eat-oranges',
+  'absolute-value-add-to-array',
+  'cutting-bamboo',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -225,8 +227,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'absolute-value-add-to-array',
-        'cutting-bamboo',
         'ipo',
         'maximum-product-k-parts',
         'meeting-monopoly',

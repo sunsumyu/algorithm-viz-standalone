@@ -41,6 +41,12 @@ export class ResourceGreedyStepCompiler {
     stage: number = 1
   ): UniversalStep[] {
     const pid = options.problemId || model.id;
+    if (pid === 'absolute-value-add-to-array' || (pid === 'absolute-value-add-to-array' && options.nums !== undefined)) {
+      return this.compileAbsoluteValueAdd(model, options, stage);
+    }
+    if (pid === 'cutting-bamboo' || (pid === 'cutting-bamboo' && options.n !== undefined)) {
+      return this.compileCuttingBamboo(model, options, stage);
+    }
     if (pid === 'minimum-eat-oranges' || (pid === 'minimum-eat-oranges' && options.n !== undefined)) {
       return this.compileMinimumEatOranges(model, options, stage);
     }
@@ -3283,6 +3289,1057 @@ export class ResourceGreedyStepCompiler {
       message: `优先队列 Dijkstra 极速推进完成，时间复杂度 O(log^2 N)，空间复杂度 O(log N)`,
       variables: { return: finalDays },
       metrics: { '最终结果': `${finalDays}天`, '空间优化': 'O(log N)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
+
+
+  // ==========================================================================
+  // 6. 加入差值绝对值直到长度固定 (Absolute Value Add to Array)
+  // 核心思想：更相减损术闭包、裴蜀定理与欧几里得 GCD 数论收敛
+  // ==========================================================================
+  public static compileAbsoluteValueAdd(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawNums = options.nums || model.defaultParams?.nums || [3, 9];
+    const nums = Array.isArray(rawNums) && rawNums.length > 0 ? rawNums : [3, 9];
+
+    switch (stage) {
+      case 2:
+        return this.compileAbsValueStage2(model, nums, options);
+      case 3:
+        return this.compileAbsValueStage3(model, nums, options);
+      case 4:
+        return this.compileAbsValueStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileAbsValueStage1(model, nums, options);
+    }
+  }
+
+  private static compileAbsValueStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    const list = [...nums];
+    const set = new Set<number>(nums);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? `1. 逆向两两差值模拟初始化：初始数组 [${nums.join(', ')}]，反向配对两两探索差值绝对值`
+        : `1. 集合扩散与差值生成初始化：初始数组 [${nums.join(', ')}]，哈希集合初始大小 ${set.size}`,
+      message: isReverse
+        ? `逆序配对模拟：从后向前遍历两两元素组合，对比正向扩散路径`
+        : `更相减损模拟：任选两数计算 |a - b|，若集合中不存在则加入，直到集合封闭`,
+      variables: { currentSize: list.length },
+      stateArrays: [
+        {
+          id: 'list',
+          name: '当前差值闭包数组',
+          indices: list.map((_, i) => i),
+          values: list.map(String),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '当前元素数': String(list.length), '闭包状态': '扩散探索中' },
+    });
+
+    let round = 1;
+    while (steps.length < 12) {
+      const before = list.length;
+      let addedInRound = 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.whileLoop || 4,
+        codeLine: anchors.whileLoop || 4,
+        decision: `启动第 ${round} 轮两两差值全排列扫描：当前已有 ${before} 个数，待扫描配对数 ${(before * (before - 1)) / 2}`,
+        message: `双重循环遍历所有数对 (a, b) 并求差值绝对值`,
+        variables: { round, beforeCount: before },
+        metrics: { '轮次': `第${round}轮`, '已有数量': String(before) },
+      });
+
+      const pairs: [number, number][] = [];
+      if (isReverse) {
+        for (let i = before - 1; i >= 0; i--) {
+          for (let j = i - 1; j >= 0; j--) {
+            pairs.push([list[i], list[j]]);
+          }
+        }
+      } else {
+        for (let i = 0; i < before; i++) {
+          for (let j = i + 1; j < before; j++) {
+            pairs.push([list[i], list[j]]);
+          }
+        }
+      }
+
+      for (const [a, b] of pairs) {
+        if (steps.length >= 14) break;
+        const diff = Math.abs(a - b);
+        const isNew = !set.has(diff);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.checkDiff || 6,
+          codeLine: anchors.checkDiff || 6,
+          decision: `计算数对差值：|${a} - ${b}| = ${diff} ${isNew ? '➔ 🌟 发现新元素，加入集合！' : '➔ 集合已存在，跳过'}`,
+          message: isNew ? `生成新差值 ${diff}，闭包进一步扩充` : `冗余差值，集合保持不变`,
+          variables: { a, b, diff, isNew },
+          metrics: { '数对': `|${a}-${b}|`, '差值': String(diff), '状态': isNew ? '新元素' : '已存在' },
+        });
+
+        if (isNew) {
+          set.add(diff);
+          list.push(diff);
+          addedInRound++;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.add || 8,
+            codeLine: anchors.add || 8,
+            decision: `元素 ${diff} 正式落盘：当前数组长度扩充至 ${list.length} 个元素`,
+            message: `集合动态演进，新数将参与下一轮差值运算`,
+            variables: { newElem: diff, total: list.length },
+            stateArrays: [
+              {
+                id: 'list',
+                name: '当前差值闭包数组',
+                indices: list.map((_, i) => i),
+                values: list.map(String),
+                activeIdx: list.length - 1,
+                color: 'emerald',
+              },
+            ],
+            metrics: { '最新加入': String(diff), '当前总数': String(list.length) },
+          });
+        }
+      }
+
+      if (list.length === before || addedInRound === 0) {
+        break;
+      }
+      round++;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 10,
+      codeLine: anchors.ret || 10,
+      decision: `🏁 差值集合扩散完成！没有新数生成，最终稳定数组长度为 ${list.length}`,
+      message: `集合在差值运算下达到封闭状态 (Closure Reached)`,
+      variables: { finalSize: list.length },
+      stateArrays: [
+        {
+          id: 'list',
+          name: '最终封闭数组',
+          indices: list.map((_, i) => i),
+          values: list.map(String),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '最终长度': String(list.length), '闭包状态': '🏁 稳定收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileAbsValueStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const a0 = nums[0] ?? 3;
+    const b0 = nums[1] ?? 9;
+
+    const rootTree: UniversalTreeNode = {
+      id: 'gcd_root',
+      r: 0,
+      c: 0,
+      val: `更相减损树: gcd(${a0}, ${b0})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.tree_entry || 2,
+      codeLine: anchors.tree_entry || 2,
+      decision: `构建更相减损依赖树根节点：目标求解数对 (${a0}, ${b0}) 的差值收敛树`,
+      message: `展示两数相减至公约数的递归分支与状态展开`,
+      variables: { a: a0, b: b0 },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '根节点': `gcd(${a0},${b0})`, '状态': '展开就绪' },
+    });
+
+    let a = Math.max(a0, b0);
+    let b = Math.min(a0, b0);
+    let parent = rootTree;
+    let depth = 1;
+
+    while (b > 0 && steps.length < 14) {
+      const diff = a - b;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_entry || 2,
+        codeLine: anchors.tree_entry || 2,
+        decision: `树节点层级 ${depth} 展开：选取当前数对 (${a}, ${b}) 准备做差探索`,
+        message: `自顶向下减损分支推进，寻找公约数基底`,
+        variables: { currentA: a, currentB: b },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前数对': `(${a}, ${b})`, '树深': String(depth) },
+      });
+
+      const child: UniversalTreeNode = {
+        id: `node_${depth}`,
+        r: depth,
+        c: 0,
+        val: `减法单步: |${a} - ${b}| = ${diff}`,
+        status: diff === 0 ? 'visited' : 'active',
+        children: [],
+      };
+      parent.children.push(child);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_diff || 3,
+        codeLine: anchors.tree_diff || 3,
+        decision: `树节点深度 ${depth}：计算大数减小数 ${a} - ${b} = ${diff}`,
+        message: `生成新的差值节点 ${diff}，继续与 ${b} 组成新数对下探`,
+        variables: { currentA: a, currentB: b, diff },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前做差': `${a}-${b}=${diff}`, '树深': String(depth) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_recur || 4,
+        codeLine: anchors.tree_recur || 4,
+        decision: `下探更新数对：新状态 (大数=${Math.max(b, diff)}, 小数=${Math.min(b, diff)})`,
+        message: `将更小规模的数对推入下一层递归展开`,
+        variables: { nextA: Math.max(b, diff), nextB: Math.min(b, diff) },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '状态迁移': `(${b}, ${diff})`, '状态': '深入探索' },
+      });
+
+      parent = child;
+      const nextA = Math.max(b, diff);
+      const nextB = Math.min(b, diff);
+      a = nextA;
+      b = nextB;
+      depth++;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_diff || 3,
+        codeLine: anchors.tree_diff || 3,
+        decision: `节点验证：规模由原始规模缩小，当前子树规模降至 (${a}, ${b})`,
+        message: `更相减损单调递减性质保证算法必然在有限步内收敛`,
+        variables: { a, b },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '子树规模': `(${a}, ${b})`, '阶段': '单步验证' },
+      });
+
+      if (a === b) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.tree_base || 2,
+          codeLine: anchors.tree_base || 2,
+          decision: `触发相等基底特判：a == b == ${a}，两数相等两两相减必得0`,
+          message: `更相减损术终止条件达成，找到最小非零公约数 ${a}`,
+          variables: { baseGcd: a },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '终止状态': `a==b==${a}`, 'GCD': String(a) },
+        });
+        break;
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_base || 2,
+      codeLine: anchors.tree_base || 2,
+      decision: `🛑 减损树终止收敛！两数相等或归零，最小公约数基底 = ${a}`,
+      message: `证实所有差值必然以 gcd(arr) = ${a} 为原子单步单位！`,
+      variables: { gcd: a },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '公约数基底': String(a), '状态': '🏁 树推导收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileAbsValueStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+
+    const gcd = (x: number, y: number): number => y === 0 ? x : gcd(y, x % y);
+
+    let maxVal = 0;
+    let g = 0;
+    for (const x of nums) {
+      if (x > maxVal) maxVal = x;
+      g = gcd(g, x);
+    }
+    if (g === 0) g = 1;
+
+    // 状态矩阵：跟踪当前考察元素、实时GCD、当前最大值、闭包正整数项数
+    const rounds = Math.max(nums.length, 4);
+    const matrix: (number | null)[][] = Array.from({ length: rounds }, () => Array(4).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 4,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第${i + 1}步`),
+      colHeaders: ['输入数值', '当前GCD', '当前最大值', '推导项数(max/g)'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.matrix_init || 2,
+      codeLine: anchors.matrix_init || 2,
+      decision: `初始化差值闭包演进状态矩阵 M[${rounds}][4]：记录公约数收敛与空间上界变化`,
+      message: `矩阵记录每一步引入新数值对全局 GCD 与最大值的瞬时影响`,
+      variables: { totalRows: rounds },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×4`, '状态': '就绪' },
+    });
+
+    let curG = 0;
+    let curMax = 0;
+
+    for (let i = 0; i < rounds; i++) {
+      const val = nums[i % nums.length];
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.matrix_loop || 4,
+        codeLine: anchors.matrix_loop || 4,
+        decision: `步骤 ${i + 1}：读入考察数值 ${val}，准备与已有 GCD=${curG} 进行辗转相除累积`,
+        message: `更新公约数因子：新公约数 = gcd(${curG}, ${val})`,
+        variables: { step: i + 1, val, curG, curMax },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '当前数值': String(val), '操作': '因子提取' },
+      });
+
+      curG = curG === 0 ? val : gcd(curG, val);
+      curMax = Math.max(curMax, val);
+      const theoretical = Math.floor(curMax / curG);
+
+      matrix[i][0] = val;
+      matrix[i][1] = curG;
+      matrix[i][2] = curMax;
+      matrix[i][3] = theoretical;
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 3;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 1], [i - 1, 2]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.matrix_cell || 6,
+        codeLine: anchors.matrix_cell || 6,
+        decision: `矩阵填入第 ${i + 1} 步：当前 GCD=${curG}，最大值=${curMax} ➔ 闭包正整数项数 = ${curMax} / ${curG} = ${theoretical}`,
+        message: `裴蜀定理保证闭包正整数必然包含 ${curG}, 2*${curG}, ..., ${theoretical}*${curG}`,
+        variables: { val, curG, curMax, theoretical },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '实时GCD': String(curG), '项数': String(theoretical), '累计最大': String(curMax) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 3;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.matrix_done || 7,
+      codeLine: anchors.matrix_done || 7,
+      decision: `🎉 差值闭包演进矩阵填表收敛！全局正整数总项数 = ${Math.floor(curMax / curG)}`,
+      message: `完整矩阵证明更相减损术闭包在离散整数格点上的严密收敛性`,
+      variables: { finalGCD: curG, finalCount: Math.floor(curMax / curG) },
+      grid: finalGrid as any,
+      metrics: { '全局GCD': String(curG), '最终项数': String(Math.floor(curMax / curG)), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileAbsValueStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    const gcd = (x: number, y: number): number => y === 0 ? x : gcd(y, x % y);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? `1. 逆向单趟扫描初始化：从后向前遍历数组，以对偶顺序累计 GCD 与判定 0 状态`
+        : `1. 欧几里得 GCD 数论贪心极速推演初始化：扫描数组一次性计算全局 max 与 gcd`,
+      message: `时间复杂度 O(N + log M)，空间复杂度 O(1)，直接通过闭式公式计算`,
+      variables: { totalNums: nums.length },
+      metrics: { '当前GCD': '0', '当前最大值': '0', '优化级别': 'O(1)空间' },
+    });
+
+    let maxVal = 0;
+    let g = 0;
+    let hasZero = false;
+    const seen = new Set<number>();
+
+    const scanList = isReverse ? [...nums].reverse() : nums;
+
+    for (let i = 0; i < scanList.length; i++) {
+      const x = scanList[i];
+      const prevG = g;
+      const isDup = seen.has(x);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.loop || 4,
+        codeLine: anchors.loop || 4,
+        decision: `探查待处理元素 [${i}]: x = ${x}，评估其公约数因子与是否为零/重复`,
+        message: `流式遍历输入数组，保持 O(1) 空间占用`,
+        variables: { index: i, x, currentG: g, currentMax: maxVal },
+        stateArrays: [
+          {
+            id: 'scan',
+            name: '流式扫描数组',
+            indices: scanList.map((_, idx) => idx),
+            values: scanList.map(String),
+            activeIdx: i,
+            color: 'indigo',
+          },
+        ],
+        metrics: { '考察下标': String(i), '当前项': String(x), '操作': '流式提取' },
+      });
+
+      if (x === 0 || isDup) hasZero = true;
+      seen.add(x);
+      maxVal = Math.max(maxVal, x);
+      g = gcd(g, x);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.updateGCD || 7,
+        codeLine: anchors.updateGCD || 7,
+        decision: `落盘更新状态：maxVal = max(${maxVal}, ${x}) = ${maxVal}, gcd 转移为 gcd(${prevG}, ${x}) = ${g}`,
+        message: `数论更相减损性质：全局 GCD 在引入新元素后只减不增`,
+        variables: { index: i, x, maxVal, g, hasZero },
+        stateArrays: [
+          {
+            id: 'scan',
+            name: '流式扫描数组',
+            indices: scanList.map((_, idx) => idx),
+            values: scanList.map(String),
+            activeIdx: i,
+            color: 'emerald',
+          },
+        ],
+        metrics: { '扫描进度': `${i + 1}/${scanList.length}`, '实时GCD': String(g), '是否含0': hasZero ? '是' : '否' },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.checkZeroMax || 8,
+      codeLine: anchors.checkZeroMax || 8,
+      decision: `零状态与最大值收拢判定：全量扫描完毕，最大值 maxVal = ${maxVal}，零存在性判定 = ${hasZero ? '存在' : '不存在'}`,
+      message: `若初始包含0或存在重复元素，则做差必然生成0，终态数组需计入0`,
+      variables: { maxVal, g, hasZero },
+      metrics: { '最大值': String(maxVal), '全局GCD': String(g), '包含零': hasZero ? '是' : '否' },
+    });
+
+    const count = maxVal === 0 ? 1 : Math.floor(maxVal / g);
+    const finalAns = hasZero ? count + 1 : count;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.calcCount || 10,
+      codeLine: anchors.calcCount || 10,
+      decision: `代入数论闭式公式：正整数项数 = maxVal / g = ${maxVal} / ${g} = ${count} 个`,
+      message: `裴蜀定理与差值闭包保证：{1g, 2g, ..., ${count}g} 必然完整生成且无其他正数`,
+      variables: { maxVal, g, count },
+      metrics: { '正整数项数': String(count), '公约数g': String(g) },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.ret || 11,
+      codeLine: anchors.ret || 11,
+      decision: `🏁 最终长度确定：${hasZero ? `正整数 ${count} 个 + 包含零 1 个 = ${finalAns}` : `仅包含正整数 ${finalAns} 个`}！`,
+      message: `欧几里得数论贪心极速收敛完成，单趟扫描即得最优解`,
+      variables: { finalLength: finalAns, hasZero },
+      metrics: { '最终数组长度': String(finalAns), '含0修正': hasZero ? '+1' : '+0', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 7. 砍竹子 II (Cutting Bamboo II / 整数拆分大数快速幂)
+  // 核心思想：尽力拆 3、余数借位修正、连续实数极值驻点 e 与快速幂取模
+  // ==========================================================================
+  public static compileCuttingBamboo(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawN = options.n || model.defaultParams?.n || 10;
+    const n = typeof rawN === 'number' && !isNaN(rawN) && rawN >= 2 ? rawN : 10;
+
+    switch (stage) {
+      case 2:
+        return this.compileBambooStage2(model, n, options);
+      case 3:
+        return this.compileBambooStage3(model, n, options);
+      case 4:
+        return this.compileBambooStage4(model, n, options);
+      case 1:
+      default:
+        return this.compileBambooStage1(model, n, options);
+    }
+  }
+
+  private static compileBambooStage1(
+    model: IYamlAlgorithmModel,
+    n: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+    const MOD = 1000000007;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: isReverse
+        ? `1. 逆向对偶拆 2 对照初始化：目标竹子总长 n = ${n}，优先拆 2 对比数值`
+        : `1. 贪心尽力拆 3 推演初始化：目标竹子总长 n = ${n}，优先拆 3 追求最大乘积`,
+      message: isReverse
+        ? `对偶反差对比：展示以 2 为基准的切分乘积，严格凸显 3 的最优性`
+        : `核心贪心：尽力拆 3，余 1 借 3 化 2×2=4，余 2 留 2`,
+      variables: { n, target: isReverse ? '对偶拆2' : '贪心拆3' },
+      metrics: { '竹子总长': String(n), '算法特征': '拆3贪心' },
+    });
+
+    if (n <= 3) {
+      const ans = n - 1;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `边界特判：n = ${n} <= 3，题目要求至少切一刀 (段数 >= 2)，故最大乘积为 ${n} - 1 = ${ans}`,
+        message: `边界小规模特殊处理`,
+        variables: { n, ans },
+        metrics: { '最终乘积': String(ans), '状态': '边界返回' },
+      });
+      return steps;
+    }
+
+    const cutUnit = isReverse ? 2 : 3;
+    let m = Math.floor(n / cutUnit);
+    const rem = n % cutUnit;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.div || 3,
+      codeLine: anchors.div || 3,
+      decision: `整除分析：n = ${n} 除以 ${cutUnit} 得商 m = ${m}，余数 rem = ${rem}`,
+      message: `理论上可切出 ${m} 段长为 ${cutUnit} 的竹段，剩余 ${rem} 长度待修正`,
+      variables: { n, cutUnit, m, rem },
+      metrics: { '理论段数': String(m), '余数': String(rem) },
+    });
+
+    let tailAns = 1;
+    let tailDesc = '';
+    if (rem === 1) {
+      m -= 1;
+      tailAns = 4;
+      tailDesc = '余1若留1无收益，借出一根3组成 2×2=4 > 3×1';
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.rem1 || 5,
+        codeLine: anchors.rem1 || 5,
+        decision: `💡 核心余数借位修正：余数 rem = 1！${tailDesc}`,
+        message: `拆3段数调整为 ${m} 段，末尾分配 2×2=4`,
+        variables: { adjustedM: m, tailAns },
+        metrics: { '借位修正': '3+1 ➔ 2×2', '尾部增益': '4' },
+      });
+    } else if (rem === 2) {
+      tailAns = 2;
+      tailDesc = '余2直接保留为一段长为2的竹段';
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.rem2 || 6,
+        codeLine: anchors.rem2 || 6,
+        decision: `余数处理：rem = 2！${tailDesc}`,
+        message: `无需借位，末尾乘积因子为 2`,
+        variables: { m, tailAns },
+        metrics: { '余数处理': '直接留2', '尾部因子': '2' },
+      });
+    }
+
+    let prod = tailAns;
+    for (let i = 1; i <= Math.min(m, 5); i++) {
+      prod = (prod * cutUnit) % MOD;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 7,
+        codeLine: anchors.loop || 7,
+        decision: `切分第 ${i} 根长为 ${cutUnit} 的竹段：当前累计乘积 = ${prod}`,
+        message: `连续相乘计算最优拆分结果`,
+        variables: { segment: i, cutLen: cutUnit, currentProduct: prod },
+        metrics: { '已切段数': `${i}/${m}`, '累计乘积': String(prod) },
+      });
+    }
+
+    if (m > 5) {
+      for (let i = 6; i <= m; i++) {
+        prod = (prod * cutUnit) % MOD;
+      }
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 7,
+        codeLine: anchors.loop || 7,
+        decision: `批量切分剩余 ${m - 5} 段：全部乘积模 10^9+7 计算完毕，累计乘积 = ${prod}`,
+        message: `完成全量竹段切分`,
+        variables: { totalSegments: m, finalProduct: prod },
+        metrics: { '总切分段数': String(m), '最终模乘积': String(prod) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 8,
+      codeLine: anchors.ret || 8,
+      decision: `🎉 竹子拆分完成！长为 ${n} 的竹子最大切分乘积 = ${prod} (mod 10^9+7)`,
+      message: `贪心尽力拆 3 方案取得全局极值`,
+      variables: { finalAns: prod },
+      metrics: { '最大乘积': String(prod), '状态': '🏁 贪心收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileBambooStage2(
+    model: IYamlAlgorithmModel,
+    n: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'dfs_root',
+      r: 0,
+      c: 0,
+      val: `dfs(${n})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.dfs_entry || 2,
+      codeLine: anchors.dfs_entry || 2,
+      decision: `递归分割状态展开树根节点：dfs(rest = ${n})`,
+      message: `探索正整数 ${n} 分割成多段的所有可能切分方案并进行备忘录剪枝`,
+      variables: { rest: n },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '根节点': `dfs(${n})`, '状态': '树展开就绪' },
+    });
+
+    const memo = new Map<number, number>();
+    const cutsToExplore = [2, 3, 4];
+
+    for (let cutIdx = 0; cutIdx < cutsToExplore.length; cutIdx++) {
+      const cut = cutsToExplore[cutIdx];
+      const remain = n - cut;
+      if (remain < 1) continue;
+
+      const child: UniversalTreeNode = {
+        id: `cut_${cut}`,
+        r: 1,
+        c: cutIdx,
+        val: `切${cut} ➔ 剩${remain}`,
+        status: 'active',
+        children: [],
+      };
+      rootTree.children.push(child);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.dfs_loop || 4,
+        codeLine: anchors.dfs_loop || 4,
+        decision: `第一刀尝试切长为 ${cut} 的竹段：剩余长度 ${remain}，递归调用 dfs(${remain})`,
+        message: `子问题乘积估算：${cut} × dfs(${remain})`,
+        variables: { cut, remain },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前试切': String(cut), '剩余长': String(remain) },
+      });
+
+      // 展开下层节点
+      const subCuts = [2, 3];
+      for (let sIdx = 0; sIdx < subCuts.length; sIdx++) {
+        const subCut = subCuts[sIdx];
+        const subRemain = remain - subCut;
+        if (subRemain < 0) continue;
+
+        const grandChild: UniversalTreeNode = {
+          id: `sub_${cut}_${subCut}`,
+          r: 2,
+          c: sIdx,
+          val: `再切${subCut} ➔ 剩${subRemain}`,
+          status: memo.has(subRemain) ? 'visited' : 'active',
+          children: [],
+        };
+        child.children.push(grandChild);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.dfs_pick || 5,
+          codeLine: anchors.dfs_pick || 5,
+          decision: `在剩余 ${remain} 中尝试再切 ${subCut}：剩余 ${subRemain} ${memo.has(subRemain) ? '➔ 🎯 备忘录剪枝命中！' : ''}`,
+          message: `状态转移取最大值：max = Math.max(max, ${subCut} * dfs(${subRemain}))`,
+          variables: { subCut, subRemain, isCached: memo.has(subRemain) },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '第二刀': String(subCut), '剩余': String(subRemain) },
+        });
+
+        memo.set(subRemain, Math.max(subRemain, 2));
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.dfs_ret || 6,
+        codeLine: anchors.dfs_ret || 6,
+        decision: `分支回溯：切长 ${cut} 分支探索完毕，落盘备忘录 memo[${remain}]`,
+        message: `消除重叠子问题`,
+        variables: { cut, remain },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '已剪枝分支': `切${cut}`, '状态': '回溯落盘' },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.dfs_base || 3,
+      codeLine: anchors.dfs_base || 3,
+      decision: `🛑 递归状态展开树收敛！证实当每次切分优先为 3 时，状态分支达到乘积极值`,
+      message: `展示了记忆化剪枝对庞大指数树的压缩效果`,
+      variables: { totalMemo: memo.size },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '备忘录项数': String(memo.size), '状态': '🏁 树推导收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileBambooStage3(
+    model: IYamlAlgorithmModel,
+    n: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+    const MOD = 1000000007;
+
+    const m = Math.floor(n / 3);
+    const rem = n % 3;
+    const rounds = Math.max(rem === 1 ? m : (rem === 2 ? m + 1 : m), 4);
+    const matrix: (number | null)[][] = Array.from({ length: rounds }, () => Array(4).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 4,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第${i + 1}刀`),
+      colHeaders: ['切分长度', '剩余竹长', '本刀因子', '累计乘积(mod)'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.grid_init || 2,
+      codeLine: anchors.grid_init || 2,
+      decision: `初始化竹子切分状态演进矩阵 M[${rounds}][4]：跟踪共 ${rounds} 次切分的实时状态`,
+      message: `动态表格记录每次切割的长度、剩余长度与累计乘积`,
+      variables: { totalRounds: rounds, n },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×4`, '状态': '就绪' },
+    });
+
+    let currentRemain = n;
+    let prod = 1;
+
+    for (let i = 0; i < rounds; i++) {
+      let cut = 3;
+      if (i === rounds - 1) {
+        if (rem === 1) cut = 4;
+        else if (rem === 2) cut = 2;
+      }
+      if (currentRemain <= cut) cut = currentRemain;
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_loop || 5,
+        codeLine: anchors.grid_loop || 5,
+        decision: `第 ${i + 1} 刀决策评估：当前剩余竹长 ${currentRemain}，贪心选择切割长为 ${cut} 的竹段`,
+        message: `评估本段切分对总乘积的最优贡献`,
+        variables: { round: i + 1, currentRemain, cut },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '轮次': `第${i + 1}刀`, '拟切长度': String(cut), '剩余': String(currentRemain) },
+      });
+
+      currentRemain -= cut;
+      prod = (prod * cut) % MOD;
+
+      matrix[i][0] = cut;
+      matrix[i][1] = Math.max(0, currentRemain);
+      matrix[i][2] = cut;
+      matrix[i][3] = prod;
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 3;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 3]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_cell || 7,
+        codeLine: anchors.grid_cell || 7,
+        decision: `填入第 ${i + 1} 刀切分记录：切去 ${cut}，剩余 ${Math.max(0, currentRemain)}，累计乘积更新为 ${prod}`,
+        message: `状态转移表格累加状态：prod = (prod * ${cut}) % 10^9+7`,
+        variables: { cut, remain: currentRemain, prod },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '本刀切分': String(cut), '剩余长': String(Math.max(0, currentRemain)), '当前乘积': String(prod) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 3;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.grid_done || 9,
+      codeLine: anchors.grid_done || 9,
+      decision: `🎉 竹子切分状态演进矩阵填表完成！最终最大乘积 = ${prod}`,
+      message: `状态演进表格完整展示了贪心拆分过程的数学单调性`,
+      variables: { finalProduct: prod },
+      grid: finalGrid as any,
+      metrics: { '最终乘积': String(prod), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileBambooStage4(
+    model: IYamlAlgorithmModel,
+    n: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+    const MOD = 1000000007;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.pow_init || 2,
+      codeLine: anchors.pow_init || 2,
+      decision: isReverse
+        ? `1. 逆向快速幂推演初始化：以 2 为底数进行对数级指数幂计算`
+        : `1. 大数快速幂极速收敛初始化：目标竹长 n = ${n}，采用二进制快速幂在 O(log N) 求解 3^m % (10^9+7)`,
+      message: `大数场景（n 可达 10^9）：二进制快速幂大幅压缩运算步数，避免线性相乘超时`,
+      variables: { n },
+      metrics: { '竹子总长': String(n), '算法优化': 'O(log N)快速幂' },
+    });
+
+    if (n <= 3) {
+      const ans = n - 1;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.pow_init || 2,
+        codeLine: anchors.pow_init || 2,
+        decision: `边界特判：n = ${n}，结果为 ${ans}`,
+        message: `快速幂边界出口`,
+        variables: { ans },
+        metrics: { '最终乘积': String(ans), '状态': '边界完成' },
+      });
+      return steps;
+    }
+
+    const baseInit = isReverse ? 2 : 3;
+    let base = baseInit;
+    let exp = Math.floor(n / baseInit);
+    const rem = n % baseInit;
+    let ans = 1;
+
+    if (rem === 1) {
+      exp -= 1;
+      ans = isReverse ? 3 : 4;
+    } else if (rem === 2) {
+      ans = 2;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.pow_rem || 4,
+      codeLine: anchors.pow_rem || 4,
+      decision: `快速幂参数初始化：底数 base = ${base}, 指数 exp = ${exp}, 初始尾部系数 ans = ${ans}`,
+      message: `将大数乘法转换为指数的二进制位展开`,
+      variables: { base, exp, ans },
+      metrics: { '底数': String(base), '指数': String(exp), '初始系数': String(ans) },
+    });
+
+    let bitIdx = 0;
+    while (exp > 0 && steps.length < 12) {
+      const isOdd = (exp & 1) === 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.pow_loop || 6,
+        codeLine: anchors.pow_loop || 6,
+        decision: `二进制位 [${bitIdx}]: 当前指数 exp = ${exp} (${exp.toString(2)}₂)，当前末位为 ${exp & 1}`,
+        message: isOdd ? `末位为 1，需要将当前底数 base=${base} 乘入结果 ans` : `末位为 0，跳过乘法`,
+        variables: { bitIdx, exp, base, isOdd },
+        metrics: { '二进制位': String(bitIdx), '当前指数': String(exp), '当前底数': String(base) },
+      });
+
+      if (isOdd) {
+        ans = (ans * base) % MOD;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.pow_mul || 7,
+          codeLine: anchors.pow_mul || 7,
+          decision: `累乘结果：ans = (ans * ${base}) % MOD ➔ ans = ${ans}`,
+          message: `结果累积当前二进制权重的贡献`,
+          variables: { ans, base },
+          metrics: { '累计结果': String(ans), '操作': '结果相乘' },
+        });
+      }
+
+      base = (base * base) % MOD;
+      exp >>= 1;
+      bitIdx++;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.pow_sqr || 8,
+        codeLine: anchors.pow_sqr || 8,
+        decision: `底数平方自乘：base = (base * base) % MOD ➔ 新底数 = ${base}，指数右移 exp >>= 1 (剩余 exp=${exp})`,
+        message: `底数按倍增规律递增，为下一二进制位做准备`,
+        variables: { nextBase: base, nextExp: exp },
+        metrics: { '新底数': String(base), '剩余指数': String(exp) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.pow_ret || 10,
+      codeLine: anchors.pow_ret || 10,
+      decision: `🏁 二进制快速幂收敛！长为 ${n} 的竹子最终最大乘积 = ${ans} (mod 10^9+7)`,
+      message: `全过程耗时仅 O(log N) 步，即便 n 达 10^9 也仅需约 30 步完成！`,
+      variables: { finalProduct: ans },
+      metrics: { '最终乘积': String(ans), '时间复杂度': 'O(log N)', '状态': '🏁 极致收敛' },
     });
 
     return steps;

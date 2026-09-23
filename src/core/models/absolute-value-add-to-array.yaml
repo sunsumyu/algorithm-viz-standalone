@@ -1,0 +1,197 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 加入差值绝对值直到长度固定 顶层领域模型
+# 对应：大厂真实笔试真题 / 左程云算法讲解 090 Code06
+# 包含：数论贪心、更相减损术闭包、欧几里得 GCD、差值演进矩阵与裴蜀定理
+# ==============================================================================
+
+id: absolute-value-add-to-array
+name: 加入差值绝对值直到长度固定 (Add Absolute Values)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数论
+  - 数组
+  - 最大公约数
+  - 集合闭包
+
+description: |
+  给定一个非负整数数组 arr。任选其中两个数计算其差值的绝对值 |a - b|，
+  若该差值在数组中不存在则将其加入数组（每个差值只加入一次）。
+  重复此操作，直到数组长度不再变化为止。请返回最终数组的长度。
+  核心数学归约（更相减损术闭包与裴蜀定理）：
+  1. 任何两数不断做差，其非零最小可能生成值恰为所有输入数的最大公约数 g = gcd(arr)；
+  2. 一旦 g 进入集合，通过反复相加与做差，集合必然能够生成区间 [1, max(arr)] 内 g 的所有正整数倍数：
+     g, 2g, 3g, ..., (max/g) * g，共计 max(arr) / g 个正整数；
+  3. 0 的存在性：若输入数组本身含 0，或初始存在至少一对相同的数使得差值为 0，则集合中还包含 0，总长度需额外 +1；
+  4. Forward: 欧几里得辗转相除贪心收敛（O(N + log M) 极速计算）；
+  5. Reverse: 逆向暴力集合双重循环扩散（展示指数级扩散与冗余比对）。
+
+defaultParams:
+  nums: [3, 9]
+
+constraints:
+  - 1 <= arr.length <= 10^5
+  - 0 <= arr[i] <= 10^9
+
+directions:
+  forward:
+    name: 欧几里得 GCD 数论贪心收敛 (Forward Euclidean GCD Closure)
+    description: 利用最大公约数更相减损闭包性质，直接通过 max/gcd 与零状态判定得出最终长度
+  reverse:
+    name: 暴力集合两两扩散模拟 (Reverse Brute-Force Diffusion)
+    description: 显式模拟两两求差并加入集合的扩散过程，直观呈现收敛至公约数倍数的推演轨迹
+
+stages:
+  stage-1:
+    name: 暴力集合扩散与差值生成
+    description: 逐步计算集合中元素两两差值并扩充，展示动态收敛过程
+    complexity:
+      time: O(N^2 * round)
+      space: O(max/g)
+    code:
+      forward:
+        language: java
+        source: |
+          public int getFinalLengthDiffusion(int[] arr) {
+              Set<Integer> set = new HashSet<>(); // anchor:init
+              List<Integer> list = new ArrayList<>();
+              for (int x : arr) { set.add(x); list.add(x); }
+              while (true) { // anchor:whileLoop
+                  int before = list.size();
+                  for (int i = 0; i < before; i++) { // anchor:doubleLoop
+                      for (int j = i + 1; j < before; j++) {
+                          int diff = Math.abs(list.get(i) - list.get(j)); // anchor:checkDiff
+                          if (!set.contains(diff)) {
+                              set.add(diff); // anchor:add
+                              list.add(diff);
+                          }
+                      }
+                  }
+                  if (list.size() == before) break; // anchor:breakCheck
+              }
+              return list.size(); // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int getFinalLengthDiffusionReverse(int[] arr) {
+              Set<Integer> set = new HashSet<>(); // anchor:init
+              List<Integer> list = new ArrayList<>();
+              for (int x : arr) { set.add(x); list.add(x); }
+              while (true) { // anchor:whileLoop
+                  int before = list.size();
+                  for (int i = before - 1; i >= 0; i--) { // anchor:doubleLoop
+                      for (int j = i - 1; j >= 0; j--) {
+                          int diff = Math.abs(list.get(i) - list.get(j)); // anchor:checkDiff
+                          if (!set.contains(diff)) {
+                              set.add(diff); // anchor:add
+                              list.add(diff);
+                          }
+                      }
+                  }
+                  if (list.size() == before) break; // anchor:breakCheck
+              }
+              return list.size(); // anchor:ret
+          }
+
+  stage-2:
+    name: 更相减损依赖树展开
+    description: 递归自顶向下构建辗转做差的更相减损依赖树，展示差值收敛至 GCD 的路径
+    complexity:
+      time: O(log(max))
+      space: O(log(max))
+    code:
+      forward:
+        language: java
+        source: |
+          public int buildGcdTree(int a, int b) { // anchor:tree_entry
+              if (b == 0) return a; // anchor:tree_base
+              int diff = Math.abs(a - b); // anchor:tree_diff
+              return buildGcdTree(Math.min(a, b), diff); // anchor:tree_recur
+          }
+      reverse:
+        language: java
+        source: |
+          public int buildGcdTreeReverse(int a, int b) { // anchor:tree_entry
+              if (b == 0) return a; // anchor:tree_base
+              int diff = Math.abs(a - b); // anchor:tree_diff
+              return buildGcdTreeReverse(Math.min(a, b), diff); // anchor:tree_recur
+          }
+
+  stage-3:
+    name: 差值闭包状态演进矩阵
+    description: 二维演进表格精确跟踪每次做差产生的新数、当前全局 GCD 及闭包生成进度
+    complexity:
+      time: O(K * 4)
+      space: O(K * 4)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackClosureMatrix(int[] arr) {
+              int g = arr[0], max = arr[0]; // anchor:matrix_init
+              int[][] matrix = new int[arr.length + 5][4];
+              for (int i = 0; i < arr.length; i++) { // anchor:matrix_loop
+                  g = gcd(g, arr[i]);
+                  max = Math.max(max, arr[i]);
+                  matrix[i] = new int[]{arr[i], g, max, max / g}; // anchor:matrix_cell
+              }
+              return matrix; // anchor:matrix_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackClosureMatrixReverse(int[] arr) {
+              int g = arr[arr.length - 1], max = arr[arr.length - 1]; // anchor:matrix_init
+              int[][] matrix = new int[arr.length + 5][4];
+              for (int i = arr.length - 1; i >= 0; i--) { // anchor:matrix_loop
+                  g = gcd(g, arr[i]);
+                  max = Math.max(max, arr[i]);
+                  matrix[i] = new int[]{arr[i], g, max, max / g}; // anchor:matrix_cell
+              }
+              return matrix; // anchor:matrix_done
+          }
+
+  stage-4:
+    name: 欧几里得 GCD 数论极速推演
+    description: 全局线性扫描单趟求出 max 与 gcd，O(1) 数学公式直接闭式结算
+    complexity:
+      time: O(N + log(max))
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int getFinalLength(int[] arr) {
+              int max = 0, g = 0; // anchor:init
+              boolean hasZero = false;
+              Set<Integer> set = new HashSet<>();
+              for (int x : arr) { // anchor:loop
+                  if (x == 0 || set.contains(x)) hasZero = true; // anchor:checkZero
+                  set.add(x);
+                  max = Math.max(max, x);
+                  g = gcd(g, x); // anchor:updateGCD
+              }
+              if (max == 0) return 1; // anchor:checkZeroMax
+              int count = max / g; // anchor:calcCount
+              return hasZero ? count + 1 : count; // anchor:ret
+          }
+      reverse:
+        language: java
+        source: |
+          public int getFinalLengthReverse(int[] arr) {
+              int max = 0, g = 0; // anchor:init
+              boolean hasZero = false;
+              Set<Integer> set = new HashSet<>();
+              for (int i = arr.length - 1; i >= 0; i--) { // anchor:loop
+                  int x = arr[i];
+                  if (x == 0 || set.contains(x)) hasZero = true; // anchor:checkZero
+                  set.add(x);
+                  max = Math.max(max, x);
+                  g = gcd(g, x); // anchor:updateGCD
+              }
+              if (max == 0) return 1; // anchor:checkZeroMax
+              int count = max / g; // anchor:calcCount
+              return hasZero ? count + 1 : count; // anchor:ret
+          }

@@ -451,7 +451,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<BambooStep>({
   },
 });
 
-export const cuttingBambooRenderer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const cuttingBambooRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'cutting-bamboo',
   name: '砍竹子 II (剪绳子 II)',
@@ -460,7 +462,7 @@ registerAlgorithm({
   description: '左程云算法讲解090 Code01：LeetCode 343 / 剑指 Offer 14-II 尽力拆 3 与快速幂取模运算',
   icon: '🎋',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 901,
   learningGoal: '掌握均值不等式与导数极值驻点离散化为拆 3 的数学本质',
