@@ -49,6 +49,8 @@ import { TwoCitySchedulingStrategy } from './two-city-scheduling-strategy';
 import { MeetingRoomsIIStrategy } from './meeting-rooms-ii-strategy';
 import { CourseScheduleIIIStrategy } from './course-schedule-iii-strategy';
 import { LargestNumberStrategy } from './largest-number-strategy';
+import { MinimumCostConnectSticksStrategy } from './minimum-cost-connect-sticks-strategy';
+import { MinimumEatOrangesStrategy } from './minimum-eat-oranges-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -174,6 +176,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MeetingRoomsIIStrategy());
   AlgorithmStrategyRegistry.register(new CourseScheduleIIIStrategy());
   AlgorithmStrategyRegistry.register(new LargestNumberStrategy());
+  AlgorithmStrategyRegistry.register(new MinimumCostConnectSticksStrategy());
+  AlgorithmStrategyRegistry.register(new MinimumEatOrangesStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -233,7 +237,9 @@ export {
   TwoCitySchedulingStrategy,
   MeetingRoomsIIStrategy,
   CourseScheduleIIIStrategy,
-  LargestNumberStrategy
+  LargestNumberStrategy,
+  MinimumCostConnectSticksStrategy,
+  MinimumEatOrangesStrategy
 };
 
 export * from './strategy-helpers';

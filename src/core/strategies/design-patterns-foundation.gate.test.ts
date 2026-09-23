@@ -134,6 +134,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { MeetingRoomsIIStrategy } = await import('./meeting-rooms-ii-strategy');
       const { CourseScheduleIIIStrategy } = await import('./course-schedule-iii-strategy');
       const { LargestNumberStrategy } = await import('./largest-number-strategy');
+      const { MinimumCostConnectSticksStrategy } = await import('./minimum-cost-connect-sticks-strategy');
+      const { MinimumEatOrangesStrategy } = await import('./minimum-eat-oranges-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -155,6 +157,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         MeetingRoomsIIStrategy,
         CourseScheduleIIIStrategy,
         LargestNumberStrategy,
+        MinimumCostConnectSticksStrategy,
+        MinimumEatOrangesStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

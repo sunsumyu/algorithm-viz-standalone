@@ -1,0 +1,185 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 吃掉 N 个橘子的最少天数 顶层领域模型
+# 对应：LeetCode 1553 / 左程云算法讲解 089 Code04
+# 包含：贪心跨步除法、对数收敛证明、记忆化决策树、状态转移矩阵与流式结算
+# ==============================================================================
+
+id: minimum-eat-oranges
+name: 吃掉 N 个橘子的最少天数 (Minimum Days to Eat N Oranges)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 记忆化搜索
+  - 动态规划
+  - 递归
+  - 广度优先搜索
+
+description: |
+  厨房里有 n 个橘子，每天你可以选择以下三种操作之一：
+  1. 吃掉 1 个橘子；
+  2. 如果剩余橘子数 n 能被 2 整除，吃掉 n / 2 个橘子（剩下 n / 2 个）；
+  3. 如果剩余橘子数 n 能被 3 整除，吃掉 2 * (n / 3) 个橘子（剩下 n / 3 个）。
+  请你返回吃掉所有 n 个橘子所需的最少天数。
+  核心策略（贪心跨步除法）：
+  1. 绝不连续吃 1 个橘子超过 2 次：
+     - 若要通过除以 2 快速减半，只需先吃掉 (n % 2) 个，再花 1 天吃掉一半，花费：(n % 2) + 1 + f(n / 2) 天；
+     - 若要通过除以 3 极速缩减，只需先吃掉 (n % 3) 个，再花 1 天吃掉三分之二，花费：(n % 3) + 1 + f(n / 3) 天；
+  2. 转移方程：
+     f(n) = 1 + min( (n % 2) + f(n / 2), (n % 3) + f(n / 3) )
+  3. 复杂度：
+     递归树的高度仅为 O(log n)，全局不同状态数极少（O(log^2 n)），结合记忆化搜索瞬间收敛！
+  4. Forward: 优先探索 /3 极速缩减贪心分支；
+  5. Reverse: 优先探索 /2 折半除法对偶验证。
+
+defaultParams:
+  n: 10
+
+constraints:
+  - 1 <= n <= 2 * 10^9
+
+directions:
+  forward:
+    name: 跨步除法极速缩减贪心 (Forward Divide-by-3 Priority)
+    description: 优先探索 /3 跨步除法，在对数层数内极速压缩规模至 0
+  reverse:
+    name: 折半除法对偶探索 (Reverse Divide-by-2 Priority)
+    description: 优先探索 /2 折半跨步除法，对比收敛路径以验证贪心最优不变量
+
+stages:
+  stage-1:
+    name: 贪心跨步除法推演
+    description: 永远不连续吃 1 个橘子，每次贪心在大步除以 2 与大步除以 3 之间决策
+    complexity:
+      time: O(log^2 N)
+      space: O(log^2 N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int minDays(int n) {
+              if (n <= 1) return n; // anchor:base
+              Map<Integer, Integer> memo = new HashMap<>(); // anchor:memo_init
+              return dfs(n, memo); // anchor:call
+          }
+          private int dfs(int n, Map<Integer, Integer> memo) {
+              if (n <= 1) return n; // anchor:dfs_base
+              if (memo.containsKey(n)) return memo.get(n); // anchor:dfs_hit
+              int by3 = (n % 3) + 1 + dfs(n / 3, memo); // anchor:branch_3
+              int by2 = (n % 2) + 1 + dfs(n / 2, memo); // anchor:branch_2
+              int ans = Math.min(by3, by2); // anchor:choose_min
+              memo.put(n, ans); // anchor:memo_put
+              return ans; // anchor:done
+          }
+      reverse:
+        language: java
+        source: |
+          public int minDaysReverse(int n) {
+              if (n <= 1) return n; // anchor:base
+              Map<Integer, Integer> memo = new HashMap<>(); // anchor:memo_init
+              return dfs(n, memo); // anchor:call
+          }
+          private int dfs(int n, Map<Integer, Integer> memo) {
+              if (n <= 1) return n; // anchor:dfs_base
+              if (memo.containsKey(n)) return memo.get(n); // anchor:dfs_hit
+              int by2 = (n % 2) + 1 + dfs(n / 2, memo); // anchor:branch_2
+              int by3 = (n % 3) + 1 + dfs(n / 3, memo); // anchor:branch_3
+              int ans = Math.min(by2, by3); // anchor:choose_min
+              memo.put(n, ans); // anchor:memo_put
+              return ans; // anchor:done
+          }
+
+  stage-2:
+    name: 记忆化状态依赖树展开
+    description: 递归自顶向下探查状态依赖图，展示剪枝、记忆化命中与回溯过程
+    complexity:
+      time: O(log^2 N)
+      space: O(log^2 N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int dfsTree(int n) { // anchor:tree_entry
+              if (n <= 1) return n; // anchor:tree_base
+              // 探查 /3 跨步分支
+              int opt3 = (n % 3) + 1 + dfsTree(n / 3); // anchor:tree_sub3
+              // 探查 /2 跨步分支
+              int opt2 = (n % 2) + 1 + dfsTree(n / 2); // anchor:tree_sub2
+              return Math.min(opt3, opt2); // anchor:tree_backtrack
+          }
+      reverse:
+        language: java
+        source: |
+          public int dfsTreeReverse(int n) { // anchor:tree_entry
+              if (n <= 1) return n; // anchor:tree_base
+              int opt2 = (n % 2) + 1 + dfsTreeReverse(n / 2); // anchor:tree_sub2
+              int opt3 = (n % 3) + 1 + dfsTreeReverse(n / 3); // anchor:tree_sub3
+              return Math.min(opt2, opt3); // anchor:tree_backtrack
+          }
+
+  stage-3:
+    name: 状态矩阵与备忘录表格
+    description: 构建关键离散状态记忆化矩阵，精确呈现每个子问题的最优天数与来源
+    complexity:
+      time: O(K)
+      space: O(K)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackMemoMatrix(int n) {
+              // 记录关键状态矩阵：[状态k, 剩余n, /2开销, /3开销, 最优天数]
+              List<int[]> matrix = new ArrayList<>(); // anchor:matrix_init
+              computeMemo(n, matrix); // anchor:matrix_fill
+              return toArray(matrix); // anchor:matrix_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackMemoMatrixReverse(int n) {
+              List<int[]> matrix = new ArrayList<>(); // anchor:matrix_init
+              computeMemoReverse(n, matrix); // anchor:matrix_fill
+              return toArray(matrix); // anchor:matrix_done
+          }
+
+  stage-4:
+    name: 极速缓存与流式收敛
+    description: BFS 优先队列或双向对数级缓存流式收敛，以极简常数空间得出全局最优解
+    complexity:
+      time: O(log^2 N)
+      space: O(log N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int minDaysFast(int n) {
+              PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]); // anchor:fast_pq
+              pq.offer(new int[]{n, 0}); // anchor:fast_init
+              Set<Integer> visited = new HashSet<>(); // anchor:fast_vis
+              while (!pq.isEmpty()) { // anchor:fast_loop
+                  int[] cur = pq.poll();
+                  int rem = cur[0], days = cur[1];
+                  if (rem <= 1) return days + rem; // anchor:fast_done
+                  if (!visited.add(rem)) continue;
+                  pq.offer(new int[]{rem / 3, days + (rem % 3) + 1}); // anchor:fast_push3
+                  pq.offer(new int[]{rem / 2, days + (rem % 2) + 1}); // anchor:fast_push2
+              }
+              return 0;
+          }
+      reverse:
+        language: java
+        source: |
+          public int minDaysFastReverse(int n) {
+              PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[1] - b[1]); // anchor:fast_pq
+              pq.offer(new int[]{n, 0}); // anchor:fast_init
+              Set<Integer> visited = new HashSet<>(); // anchor:fast_vis
+              while (!pq.isEmpty()) { // anchor:fast_loop
+                  int[] cur = pq.poll();
+                  int rem = cur[0], days = cur[1];
+                  if (rem <= 1) return days + rem; // anchor:fast_done
+                  if (!visited.add(rem)) continue;
+                  pq.offer(new int[]{rem / 2, days + (rem % 2) + 1}); // anchor:fast_push2
+                  pq.offer(new int[]{rem / 3, days + (rem % 3) + 1}); // anchor:fast_push3
+              }
+              return 0;
+          }

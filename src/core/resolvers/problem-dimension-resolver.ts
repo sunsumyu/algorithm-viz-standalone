@@ -62,6 +62,8 @@ export class ProblemDimensionResolver {
     'meeting-rooms-ii',
     'course-schedule-iii',
     'largest-number',
+    'minimum-cost-connect-sticks',
+    'minimum-eat-oranges',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -239,6 +241,14 @@ export class ProblemDimensionResolver {
       const ratings = this.toArray(params.ratings);
       m = 1;
       n = ratings.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.sticks !== undefined) {
+      const sticks = this.toArray(params.sticks);
+      m = 1;
+      n = sticks.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

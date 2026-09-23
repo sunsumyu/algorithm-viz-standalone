@@ -61,6 +61,8 @@ import twoCitySchedulingModel from './models/two-city-scheduling.yaml';
 import meetingRoomsIIModel from './models/meeting-rooms-ii.yaml';
 import courseScheduleIIIModel from './models/course-schedule-iii.yaml';
 import largestNumberModel from './models/largest-number.yaml';
+import minimumCostConnectSticksModel from './models/minimum-cost-connect-sticks.yaml';
+import minimumEatOrangesModel from './models/minimum-eat-oranges.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -167,6 +169,8 @@ export class AlgorithmModelRepository {
     ['meeting-rooms-ii', meetingRoomsIIModel as IYamlAlgorithmModel],
     ['course-schedule-iii', courseScheduleIIIModel as IYamlAlgorithmModel],
     ['largest-number', largestNumberModel as IYamlAlgorithmModel],
+    ['minimum-cost-connect-sticks', minimumCostConnectSticksModel as IYamlAlgorithmModel],
+    ['minimum-eat-oranges', minimumEatOrangesModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

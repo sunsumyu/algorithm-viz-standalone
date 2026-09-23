@@ -1,0 +1,204 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 连接棒材的最低费用 顶层领域模型
+# 对应：LeetCode 1167 / 洛谷 P1090 合并果子 / 左程云算法讲解 089 Code03
+# 包含：哈夫曼最优二叉树、小根堆两两合并、决策树展开、二维代价矩阵与双队列优化
+# ==============================================================================
+
+id: minimum-cost-connect-sticks
+name: 连接棒材的最低费用 (Minimum Cost to Connect Sticks)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 堆（优先队列）
+  - 哈夫曼树
+  - 排序
+
+description: |
+  为了装修新房，你需要将一些木棒连接成一根大木棒。每次连接两根棒材的费用等于它们的长度之和。
+  连接两根棒材后，这两根棒材会成为一根长度为两者之和的新棒材。
+  请你计算将所有棒材连接成一根所需要的最低总费用。
+  核心策略（哈夫曼最优二叉树）：
+  1. 将全部木棒长度加入小根堆；
+  2. 只要堆中元素大于 1：
+     - 弹出当前最短的两根棒材 a 和 b；
+     - 产生本次连接花费 cost = a + b，计入总费用；
+     - 将合成的新棒材 (a + b) 重新放回小根堆中；
+  3. 数学证明：
+     - 总费用等于每个初始棒材长度乘以其在合并二叉树中的深度（∑ length_i * depth_i）；
+     - 每次选取最小的两根合并，能够确保长度越短的棒材深度越深，长度越长的棒材深度越浅，从而数学上严格保证总花费最小（Huffman 算法）。
+  4. Forward: 正序小根堆贪心合并（求最低连接总开销）；
+  5. Reverse: 逆向大根堆合并对偶验证（对比最劣开销树，反向凸显贪心最优性）。
+
+defaultParams:
+  sticks: [2, 4, 3, 5, 1]
+
+constraints:
+  - 1 <= sticks.length <= 10^4
+  - 1 <= sticks[i] <= 10^4
+
+directions:
+  forward:
+    name: 小根堆正向哈夫曼贪心合并 (Forward Min-Heap Huffman Merge)
+    description: 每次贪心取出两根最短木棒合并，使长棒材深度最浅，实现全局最低开销
+  reverse:
+    name: 大根堆最劣合并对偶对照 (Reverse Max-Heap Dual Comparison)
+    description: 每次取出最长木棒合并构建最劣二叉树，通过对偶对照严密验证贪心不变量
+
+stages:
+  stage-1:
+    name: 小根堆贪心两两合并
+    description: 利用小根堆动态维护剩余木棒，每次贪心合并最小两根并放回
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int connectSticks(int[] sticks) {
+              PriorityQueue<Integer> heap = new PriorityQueue<>(); // anchor:heap_init
+              for (int s : sticks) heap.offer(s); // anchor:heap_build
+              int totalCost = 0; // anchor:cost_init
+              while (heap.size() > 1) { // anchor:loop
+                  int a = heap.poll(); // anchor:poll_a
+                  int b = heap.poll(); // anchor:poll_b
+                  int cost = a + b; // anchor:merge
+                  totalCost += cost; // anchor:acc
+                  heap.offer(cost); // anchor:push_back
+              }
+              return totalCost; // anchor:done
+          }
+      reverse:
+        language: java
+        source: |
+          public int connectSticksReverse(int[] sticks) {
+              PriorityQueue<Integer> heap = new PriorityQueue<>((a, b) -> b - a); // anchor:heap_init
+              for (int s : sticks) heap.offer(s); // anchor:heap_build
+              int totalCost = 0; // anchor:cost_init
+              while (heap.size() > 1) { // anchor:loop
+                  int a = heap.poll(); // anchor:poll_a
+                  int b = heap.poll(); // anchor:poll_b
+                  int cost = a + b; // anchor:merge
+                  totalCost += cost; // anchor:acc
+                  heap.offer(cost); // anchor:push_back
+              }
+              return totalCost; // anchor:done
+          }
+
+  stage-2:
+    name: 哈夫曼合并决策树展开
+    description: 递归自底向上构建最优哈夫曼二叉树，展示合并分支与深度加权过程
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public Node buildHuffmanTree(int[] sticks) { // anchor:entry
+              PriorityQueue<Node> pq = new PriorityQueue<>((x, y) -> x.val - y.val); // anchor:tree_init
+              for (int s : sticks) pq.offer(new Node(s)); // anchor:leaf_nodes
+              while (pq.size() > 1) { // anchor:tree_loop
+                  Node left = pq.poll(); // anchor:left_child
+                  Node right = pq.poll(); // anchor:right_child
+                  Node parent = new Node(left.val + right.val, left, right); // anchor:parent_node
+                  pq.offer(parent); // anchor:tree_push
+              }
+              return pq.poll(); // anchor:tree_done
+          }
+      reverse:
+        language: java
+        source: |
+          public Node buildHuffmanTreeReverse(int[] sticks) { // anchor:entry
+              PriorityQueue<Node> pq = new PriorityQueue<>((x, y) -> y.val - x.val); // anchor:tree_init
+              for (int s : sticks) pq.offer(new Node(s)); // anchor:leaf_nodes
+              while (pq.size() > 1) { // anchor:tree_loop
+                  Node left = pq.poll(); // anchor:left_child
+                  Node right = pq.poll(); // anchor:right_child
+                  Node parent = new Node(left.val + right.val, left, right); // anchor:parent_node
+                  pq.offer(parent); // anchor:tree_push
+              }
+              return pq.poll(); // anchor:tree_done
+          }
+
+  stage-3:
+    name: 状态矩阵与代价演进
+    description: 二维演进矩阵跟踪 N-1 轮合并每步弹出项、合并项及累计总费用的动态演进
+    complexity:
+      time: O(N^2)
+      space: O(N^2)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] trackMergeMatrix(int[] sticks) {
+              int n = sticks.length; // anchor:grid_init
+              int[][] matrix = new int[n][4]; // anchor:grid_alloc [step, a, b, cost]
+              PriorityQueue<Integer> pq = new PriorityQueue<>(); // anchor:grid_pq
+              for (int s : sticks) pq.offer(s);
+              for (int i = 0; i < n - 1; i++) { // anchor:grid_loop
+                  int a = pq.poll(), b = pq.poll(), sum = a + b;
+                  matrix[i] = new int[]{i + 1, a, b, sum}; // anchor:grid_cell
+                  pq.offer(sum);
+              }
+              return matrix; // anchor:grid_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] trackMergeMatrixReverse(int[] sticks) {
+              int n = sticks.length; // anchor:grid_init
+              int[][] matrix = new int[n][4]; // anchor:grid_alloc
+              PriorityQueue<Integer> pq = new PriorityQueue<>((a, b) -> b - a);
+              for (int s : sticks) pq.offer(s);
+              for (int i = 0; i < n - 1; i++) { // anchor:grid_loop
+                  int a = pq.poll(), b = pq.poll(), sum = a + b;
+                  matrix[i] = new int[]{i + 1, a, b, sum}; // anchor:grid_cell
+                  pq.offer(sum);
+              }
+              return matrix; // anchor:grid_done
+          }
+
+  stage-4:
+    name: 双队列与原位流式极速收敛
+    description: 原始排序数组与生成队列双单调队列极速流转，时间降至 O(N log N + N)，空间常数流式
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int connectSticksTwoQueues(int[] sticks) {
+              Arrays.sort(sticks); // anchor:q_sort
+              Queue<Integer> q1 = new LinkedList<>(); // anchor:q_init
+              Queue<Integer> q2 = new LinkedList<>();
+              for (int s : sticks) q1.offer(s);
+              int ans = 0; // anchor:q_acc
+              while (q1.size() + q2.size() > 1) { // anchor:q_loop
+                  int a = getMin(q1, q2); // anchor:q_poll_a
+                  int b = getMin(q1, q2); // anchor:q_poll_b
+                  ans += a + b;
+                  q2.offer(a + b); // anchor:q_push
+              }
+              return ans; // anchor:q_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int connectSticksTwoQueuesReverse(int[] sticks) {
+              Arrays.sort(sticks);
+              Queue<Integer> q1 = new LinkedList<>(); // anchor:q_init
+              Queue<Integer> q2 = new LinkedList<>();
+              for (int i = sticks.length - 1; i >= 0; i--) q1.offer(sticks[i]);
+              int ans = 0; // anchor:q_acc
+              while (q1.size() + q2.size() > 1) { // anchor:q_loop
+                  int a = getMax(q1, q2); // anchor:q_poll_a
+                  int b = getMax(q1, q2); // anchor:q_poll_b
+                  ans += a + b;
+                  q2.offer(a + b); // anchor:q_push
+              }
+              return ans; // anchor:q_done
+          }

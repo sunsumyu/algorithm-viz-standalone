@@ -2044,4 +2044,487 @@ export class IntervalSchedulingStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 连接棒材的最低费用 (LeetCode 1167 / 洛谷 P1090) 顶层四阶段编译器
+  // 核心思想：小根堆哈夫曼最优合并树 (Huffman Merge Greedy)
+  // ==========================================================================
+  public static compileConnectSticks(
+    model: IYamlAlgorithmModel,
+    rawSticks: number[],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const sticks = rawSticks && rawSticks.length > 0 ? rawSticks : [2, 4, 3, 5, 1];
+
+    switch (stage) {
+      case 2:
+        return this.compileConnectSticksStage2(model, sticks, direction, anchorMap);
+      case 3:
+        return this.compileConnectSticksStage3(model, sticks, direction, anchorMap);
+      case 4:
+        return this.compileConnectSticksStage4(model, sticks, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileConnectSticksStage1(model, sticks, direction, anchorMap);
+    }
+  }
+
+  private static compileConnectSticksStage1(
+    model: IYamlAlgorithmModel,
+    sticks: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+
+    const heap = [...sticks];
+    heap.sort((a, b) => isReverse ? b - a : a - b);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.heap_init || 2,
+      codeLine: anchors.heap_init || 2,
+      decision: isReverse
+        ? `1. 逆向推演初始化：全部 ${sticks.length} 根木棒构建大根堆，准备执行最劣合并对偶验证`
+        : `1. 哈夫曼贪心初始化：全部 ${sticks.length} 根木棒构建小根堆，准备贪心两两合并`,
+      message: isReverse
+        ? `逆序对偶：每次取出最长两根合并，通过对比证明贪心取最小两根的严格最优性`
+        : `哈夫曼性质：每次合并当前最短的两根棒材，使其在合并树中深度更深，总权重最小`,
+      variables: { totalSticks: sticks.length, initialHeap: [...heap] },
+      stateArrays: [
+        {
+          id: 'heap',
+          name: isReverse ? '大根堆 (对偶)' : '小根堆 (已建堆)',
+          indices: heap.map((_, idx) => idx),
+          values: heap.map(v => `${v}米`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '初始棒材数': String(sticks.length), '堆类型': isReverse ? '大根堆' : '小根堆' },
+    });
+
+    let totalCost = 0;
+    let round = 1;
+
+    while (heap.length > 1) {
+      heap.sort((a, b) => isReverse ? b - a : a - b);
+      const a = heap[0];
+      const b = heap[1];
+
+      // 1. 比对检查帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 4,
+        codeLine: anchors.loop || 4,
+        decision: `[第 ${round} 轮合并] 锁定当前堆顶最优候选：两根最短棒材 [${a}米] 与 [${b}米]`,
+        message: `贪心法则：较小权值分配更大深度，产生合并代价 ${a} + ${b} = ${a + b}`,
+        variables: { round, a, b, nextCost: a + b },
+        stateArrays: [
+          {
+            id: 'heap',
+            name: '堆顶抽取检测',
+            indices: heap.map((_, idx) => idx),
+            values: heap.map(v => `${v}米`),
+            color: 'amber',
+          },
+        ],
+        activeIndices: [0, 1],
+        activeSlot: round - 1,
+        metrics: { '当前提取': `(${a}, ${b})`, '预计花费': String(a + b) },
+      });
+
+      // 2. 弹出并合并入堆
+      heap.splice(0, 2);
+      const cost = a + b;
+      totalCost += cost;
+      heap.push(cost);
+      heap.sort((a, b) => isReverse ? b - a : a - b);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.merge || 7,
+        codeLine: anchors.merge || 7,
+        decision: `[第 ${round} 轮完成] 成功合并：新木棒 [${cost}米] 重新压入堆，当前累计总费用 = ${totalCost}`,
+        message: `两根旧棒材归约缩减为一根复合棒材，堆规模变为 ${heap.length}`,
+        variables: { round, mergedCost: cost, totalCost, remainingHeap: [...heap] },
+        stateArrays: [
+          {
+            id: 'heap',
+            name: '合并后小根堆',
+            indices: heap.map((_, idx) => idx),
+            values: heap.map(v => `${v}米`),
+            color: 'emerald',
+          },
+        ],
+        activeSlot: round - 1,
+        metrics: { '本轮花费': String(cost), '累计总费用': String(totalCost), '剩余堆大小': String(heap.length) },
+      });
+
+      round++;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🏁 全体棒材合并收敛完成！最终合成唯一棒材 [${heap[0]}米]，最低总开销 = ${totalCost}`,
+      message: `哈夫曼最优树贪心策略以 O(N log N) 复杂度严格达成全局最低费用`,
+      variables: { return: totalCost, finalLength: heap[0] },
+      metrics: { '最终费用': String(totalCost), '最终长度': `${heap[0]}米`, '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileConnectSticksStage2(
+    model: IYamlAlgorithmModel,
+    sticks: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+
+    // 初始化叶子节点
+    const nodes: UniversalTreeNode[] = sticks.map((s, idx) => ({
+      id: `leaf_${idx}`,
+      r: 0,
+      c: idx,
+      val: `叶子#${idx + 1}: ${s}米`,
+      status: 'active',
+      children: [],
+    }));
+
+    const rootTree: UniversalTreeNode = {
+      id: 'huffman_root',
+      r: 0,
+      c: 0,
+      val: 'HuffmanTree(构建中)',
+      status: 'active',
+      children: [...nodes],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 2,
+      codeLine: anchors.entry || 2,
+      decision: `展开哈夫曼树决策树根节点：初始化 ${sticks.length} 个独立叶子节点`,
+      message: `自底向上两两成对构造父节点，展示加权路径长度 WPL 的演进`,
+      variables: { leafCount: sticks.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '决策树': '初始化', '叶子数': String(sticks.length) },
+    });
+
+    const activeList = [...sticks].map((val, idx) => ({ id: idx, val }));
+    let treeCost = 0;
+    let mergeIdx = 0;
+
+    while (activeList.length > 1) {
+      activeList.sort((a, b) => isReverse ? b.val - a.val : a.val - b.val);
+      const left = activeList[0];
+      const right = activeList[1];
+      const parentVal = left.val + right.val;
+      treeCost += parentVal;
+
+      activeList.splice(0, 2);
+      activeList.push({ id: 100 + mergeIdx, val: parentVal });
+
+      const parentNode: UniversalTreeNode = {
+        id: `node_parent_${mergeIdx}`,
+        r: mergeIdx + 1,
+        c: 0,
+        val: `父节点 [${parentVal}米] (由 ${left.val} + ${right.val} 归约)`,
+        status: 'active',
+        children: [
+          { id: `c_left_${mergeIdx}`, r: mergeIdx + 1, c: 0, val: `左: ${left.val}`, status: 'visited', children: [] },
+          { id: `c_right_${mergeIdx}`, r: mergeIdx + 1, c: 1, val: `右: ${right.val}`, status: 'visited', children: [] },
+        ],
+      };
+      rootTree.children.push(parentNode);
+
+      // 分支一：选择最小两子树合并
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_loop || 4,
+        codeLine: anchors.tree_loop || 4,
+        decision: `探查合并分支：结合 [${left.val}米] 与 [${right.val}米]，构造权值为 ${parentVal} 的二叉父节点`,
+        message: `深度加权原则：越晚合并的节点深度越浅，对全局 WPL 贡献越小`,
+        variables: { left: left.val, right: right.val, parentVal, treeCost },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前合并': `${left.val} + ${right.val}`, '生成节点': String(parentVal) },
+      });
+
+      // 分支二：权重累积与剪枝
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.parent_node || 7,
+        codeLine: anchors.parent_node || 7,
+        decision: `树形结构拓扑更新：父节点生成，剩余未合并子树规模缩减至 ${activeList.length} 棵`,
+        message: `自底向上收敛，局部最优决策严格单调递增`,
+        variables: { currentTreeCost: treeCost, remainingTrees: activeList.length },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '累计树权重': String(treeCost), '活跃子树': String(activeList.length) },
+      });
+
+      // 回溯落盘
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.tree_push || 8,
+        codeLine: anchors.tree_push || 8,
+        decision: `第 ${mergeIdx + 1} 轮树形合并完成，当前有效路径加权费用 = ${treeCost}`,
+        message: `落盘当前哈夫曼子树状态`,
+        variables: { mergeIdx: mergeIdx + 1, treeCost },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前开销': String(treeCost), '状态': '分支落盘' },
+      });
+
+      mergeIdx++;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.tree_done || 10,
+      codeLine: anchors.tree_done || 10,
+      decision: `🛑 哈夫曼二叉树构建完毕！全局最低 WPL 路径加权开销 = ${treeCost}`,
+      message: `证明了每次合并最短两根棒材构成的二叉树为唯一最优解`,
+      variables: { finalTreeCost: treeCost },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最优WPL': String(treeCost), '状态': '🏁 树形构建收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileConnectSticksStage3(
+    model: IYamlAlgorithmModel,
+    sticks: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+    const n = sticks.length;
+    const rounds = n - 1;
+
+    // matrix[rounds][4]: [轮次, 棒材A, 棒材B, 合并后花费]
+    const matrix: (number | null)[][] = Array.from({ length: rounds }, () => Array(4).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 4,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第${i + 1}轮`),
+      colHeaders: ['轮次', '棒材A', '棒材B', '合并费用'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.grid_init || 2,
+      codeLine: anchors.grid_init || 2,
+      decision: `初始化代价演进状态矩阵 M[${rounds}][4]：跟踪共 ${rounds} 轮两两合并状态`,
+      message: `矩阵记录每一步弹出的两个最小项与其合并产生的新开销`,
+      variables: { rounds, columns: 4 },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×4`, '初始状态': '就绪' },
+    });
+
+    const pq = [...sticks];
+    let total = 0;
+
+    for (let i = 0; i < rounds; i++) {
+      pq.sort((a, b) => isReverse ? b - a : a - b);
+      const a = pq.shift()!;
+      const b = pq.shift()!;
+      const cost = a + b;
+      total += cost;
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 2;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_loop || 7,
+        codeLine: anchors.grid_loop || 7,
+        decision: `矩阵第 ${i + 1} 轮两两取出：当前${isReverse ? '最大' : '最小'}两项 a=${a}, b=${b}，待合并新开销 = ${a} + ${b} = ${cost}`,
+        message: `从优先队列中取出两根棒材，准备进行哈夫曼合并并记录进代价状态矩阵`,
+        variables: { round: i + 1, a, b, pendingCost: cost },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '轮次': `第${i + 1}轮`, '操作': '弹出计算', '当前待合并': `${a}+${b}=${cost}` },
+      });
+
+      pq.push(cost);
+
+      matrix[i][0] = i + 1;
+      matrix[i][1] = a;
+      matrix[i][2] = b;
+      matrix[i][3] = cost;
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 3;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 3]]; // 依赖上一轮合并费用
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.grid_cell || 7,
+        codeLine: anchors.grid_cell || 7,
+        decision: `填入第 ${i + 1} 轮状态：棒材A=${a}，棒材B=${b} ➔ 本轮花费 ${cost}，累计总开销 = ${total}`,
+        message: `代价矩阵精确跟踪哈夫曼合并流中的每一次数值膨胀`,
+        variables: { round: i + 1, a, b, cost, total },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '轮次': `第${i + 1}轮`, '本轮花费': String(cost), '累计总开销': String(total) },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 3;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.grid_done || 9,
+      codeLine: anchors.grid_done || 9,
+      decision: `🎉 代价演进矩阵记录完毕！全部 ${rounds} 轮合并总开销 = ${total}`,
+      message: `完整展现了哈夫曼贪心推演每一步的状态迁移过程`,
+      variables: { finalTotalCost: total },
+      grid: finalGrid as any,
+      metrics: { '最低总开销': String(total), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileConnectSticksStage4(
+    model: IYamlAlgorithmModel,
+    sticks: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+
+    const sortedSticks = [...sticks].sort((a, b) => !isReverse ? a - b : b - a);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.q_init || 3,
+      codeLine: anchors.q_init || 3,
+      decision: `双队列极速流式推演初始化：q1 存放已排序初始棒材，q2 存放生成的新棒材`,
+      message: `利用双单调队列无需堆动态调整，时间复杂度降至 O(N log N + N)`,
+      variables: { sorted: sortedSticks, q2: [] },
+      stateArrays: [
+        {
+          id: 'q1',
+          name: 'q1 (初始有序队列)',
+          indices: sortedSticks.map((_, idx) => idx),
+          values: sortedSticks.map(v => `${v}米`),
+          color: 'indigo',
+        },
+        {
+          id: 'q2',
+          name: 'q2 (合并生成队列)',
+          indices: [],
+          values: [],
+          color: 'emerald',
+        },
+      ],
+      metrics: { 'q1大小': String(sortedSticks.length), 'q2大小': '0', '双队列': '就绪' },
+    });
+
+    const q1 = [...sortedSticks];
+    const q2: number[] = [];
+    let totalCost = 0;
+    let round = 1;
+
+    const getMinOrMax = () => {
+      if (q1.length === 0) return q2.shift()!;
+      if (q2.length === 0) return q1.shift()!;
+      if (!isReverse) {
+        return q1[0] <= q2[0] ? q1.shift()! : q2.shift()!;
+      } else {
+        return q1[0] >= q2[0] ? q1.shift()! : q2.shift()!;
+      }
+    };
+
+    while (q1.length + q2.length > 1) {
+      const a = getMinOrMax();
+      const b = getMinOrMax();
+      const cost = a + b;
+      totalCost += cost;
+      q2.push(cost);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.q_loop || 6,
+        codeLine: anchors.q_loop || 6,
+        decision: `[双队列流式合并 ${round}] 弹出 ${a} 与 ${b} ➔ 合并生成 ${cost} 进入 q2，总费用 = ${totalCost}`,
+        message: `单趟常数级指针调度，避免优先队列 log N 的维护开销`,
+        variables: { a, b, cost, totalCost, q1Len: q1.length, q2Len: q2.length },
+        stateArrays: [
+          {
+            id: 'q1',
+            name: 'q1 (有序队列)',
+            indices: q1.map((_, idx) => idx),
+            values: q1.map(v => `${v}米`),
+            color: 'indigo',
+          },
+          {
+            id: 'q2',
+            name: 'q2 (合并队列)',
+            indices: q2.map((_, idx) => idx),
+            values: q2.map(v => `${v}米`),
+            color: 'emerald',
+          },
+        ],
+        activeSlot: round - 1,
+        metrics: { '本轮合并': String(cost), '累计费用': String(totalCost), '流式进度': `第${round}轮` },
+      });
+
+      round++;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.q_done || 10,
+      codeLine: anchors.q_done || 10,
+      decision: `🏁 双队列常数级流式合并收敛！最终总开销 = ${totalCost}`,
+      message: `双队列流式仿真与小根堆算法完全一致，耗时显著降低`,
+      variables: { return: totalCost },
+      metrics: { '最终费用': String(totalCost), '优化方式': '双单调队列', '状态': '🏁 极速收敛' },
+    });
+
+    return steps;
+  }
+
 }

@@ -388,7 +388,9 @@ function parseAndBuild(inputs: Record<string, any>, stage: number): ConnectStick
   return buildConnectSticksStage3Steps(sticks);
 }
 
-export const MinimumCostConnectSticksVisualizer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const MinimumCostConnectSticksVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'minimum-cost-connect-sticks',
@@ -398,7 +400,7 @@ registerAlgorithm({
   description: '左程云算法讲解089 Code06：LeetCode 1167 / 洛谷 P1090 合并果子，小根堆贪心与最优哈夫曼树',
   icon: '🥢',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 896,
   learningGoal: '掌握哈夫曼树在加权路径长度最小化中的核心应用，理解小根堆合并的贪心选择性',

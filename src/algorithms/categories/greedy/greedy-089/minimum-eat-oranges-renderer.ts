@@ -473,7 +473,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<EatOrangesStep>({
   },
 });
 
-export const MinimumEatOrangesVisualizer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const MinimumEatOrangesVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'minimum-eat-oranges',
@@ -483,7 +485,7 @@ registerAlgorithm({
   description: '左程云算法讲解089 Code03：LeetCode 1553 吃掉N个橘子的最少天数，贪心跨步整除飞跃与记忆化剪枝',
   icon: '🍊',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 893,
   learningGoal: '掌握贪心策略如何大幅压缩递归搜索状态空间，理解 (n%2+1) 跨步跳跃的数学本质',
