@@ -48,6 +48,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'tree-cameras',
   'two-city-scheduling',
   'meeting-rooms-ii',
+  'course-schedule-iii',
+  'largest-number',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -221,8 +223,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'course-schedule-iii',
-        'largest-number',
         'minimum-cost-connect-sticks',
         'minimum-eat-oranges',
         'absolute-value-add-to-array',

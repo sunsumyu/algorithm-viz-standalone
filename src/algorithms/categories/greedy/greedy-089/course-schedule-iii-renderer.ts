@@ -511,7 +511,9 @@ function parseAndBuild(inputs: Record<string, any>, stage: number): CourseSchedu
   return buildCourseScheduleStage3Steps(courses);
 }
 
-export const CourseScheduleVisualizer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const CourseScheduleVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'course-schedule-iii',
@@ -521,7 +523,7 @@ registerAlgorithm({
   description: '左程云算法讲解089 Code05：LeetCode 630 课程表 III，经典反悔贪心大根堆与时间余裕置换',
   icon: '📅',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 895,
   learningGoal: '深入理解反悔贪心 (Regret Greedy) 思想，掌握大根堆在动态优化历史选择中的应用',

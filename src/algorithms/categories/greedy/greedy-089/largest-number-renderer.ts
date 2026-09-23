@@ -432,7 +432,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<LargestNumberStep>(
   },
 });
 
-export const LargestNumberVisualizer = Visualizer;
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+export const LargestNumberVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'largest-number',
@@ -442,7 +444,7 @@ registerAlgorithm({
   description: '左程云算法讲解089 Code01：LeetCode 179 最大数，自定义字符串拼接比较器贪心排序与前导0特判',
   icon: '🔢',
   template,
-  Visualizer,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 891,
   learningGoal: '掌握自定义拼接比较器 (b+a).compareTo(a+b) 的全序性证明与邻项交换法反证逻辑',

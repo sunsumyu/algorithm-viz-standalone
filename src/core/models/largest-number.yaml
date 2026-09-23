@@ -1,0 +1,172 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最大数 顶层领域模型
+# 对应：LeetCode 179 / 左程云算法讲解 089 Code01
+# 包含：自定义拼接排序、传递性证明、决策树探查、两两拼接矩阵与前导零特判
+# ==============================================================================
+
+id: largest-number
+name: 最大数 (Largest Number)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 字符串
+  - 排序
+  - 传递性证明
+
+description: |
+  给定一组非负整数 nums，重新排列每个数的顺序（每个数不可拆分）使之组成一个最大的整数。
+  输出结果可能非常大，所以你需要返回一个字符串而不是整数。
+  如果排序后最高位是 0，则整个结果应为 "0"（前导零特判）。
+  核心策略（自定义拼接排序）：
+  1. 对于任意两个数字字符串 a 和 b：
+     - 若 a + b > b + a，则 a 应该排在 b 前面；
+     - 若 a + b < b + a，则 b 应该排在 a 前面；
+  2. 数学证明：
+     - 该拼接比较规则满足「自反性」、「对称性」与「传递性」（Strict Weak Ordering）；
+     - 因此基于该比较器的排序算法（如快速排序或归并排序）能够直接求得全局最优解！
+  3. Forward: 降序贪心排序 (b + a).compareTo(a + b)，追求全局字典序最大数；
+  4. Reverse: 升序对偶排序 (a + b).compareTo(b + a)，追求全局字典序最小数对偶检验。
+
+defaultParams:
+  nums: [3, 30, 34, 5, 9]
+
+constraints:
+  - 1 <= nums.length <= 100
+  - 0 <= nums[i] <= 10^9
+
+directions:
+  forward:
+    name: 降序拼接贪心排序 (Forward Descending Greedy Sort)
+    description: 拼接比较 (b+a).compareTo(a+b)，降序排列使高位贡献最大化
+  reverse:
+    name: 升序拼接对偶排序 (Reverse Ascending Dual Sort)
+    description: 拼接比较 (a+b).compareTo(b+a)，升序排列推导最小拼接数以反向验证
+
+stages:
+  stage-1:
+    name: 传递性拼接贪心排序
+    description: 将数字转为字符串，按照 (b+a) 与 (a+b) 两两拼接字典序执行稳定排序
+    complexity:
+      time: O(N log N * K)
+      space: O(N * K)
+    code:
+      forward:
+        language: java
+        source: |
+          public String largestNumber(int[] nums) {
+              String[] strs = new String[nums.length]; // anchor:init
+              for (int i = 0; i < nums.length; i++) strs[i] = String.valueOf(nums[i]); // anchor:convert
+              Arrays.sort(strs, (a, b) -> (b + a).compareTo(a + b)); // anchor:sort
+              if (strs[0].equals("0")) return "0"; // anchor:zero_guard
+              StringBuilder sb = new StringBuilder(); // anchor:concat_init
+              for (String s : strs) sb.append(s); // anchor:concat
+              return sb.toString(); // anchor:done
+          }
+      reverse:
+        language: java
+        source: |
+          public String smallestNumber(int[] nums) {
+              String[] strs = new String[nums.length]; // anchor:init
+              for (int i = 0; i < nums.length; i++) strs[i] = String.valueOf(nums[i]); // anchor:convert
+              Arrays.sort(strs, (a, b) -> (a + b).compareTo(b + a)); // anchor:sort
+              if (strs[0].equals("0")) return "0"; // anchor:zero_guard
+              StringBuilder sb = new StringBuilder(); // anchor:concat_init
+              for (String s : strs) sb.append(s); // anchor:concat
+              return sb.toString(); // anchor:done
+          }
+
+  stage-2:
+    name: 全排列与字典序决策树
+    description: 暴力穷举所有排列可能，对比贪心决策在决策树中的深度优先探索与剪枝
+    complexity:
+      time: O(N!)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public void permute(String[] strs, int l, List<String> list) { // anchor:entry
+              if (l == strs.length) { // anchor:base
+                  list.add(String.join("", strs)); // anchor:collect
+                  return;
+              }
+              for (int i = l; i < strs.length; i++) { // anchor:loop
+                  swap(strs, l, i); // anchor:swap
+                  permute(strs, l + 1, list); // anchor:recurse
+                  swap(strs, l, i); // anchor:backtrack
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          public void permuteReverse(String[] strs, int r, List<String> list) { // anchor:entry
+              if (r < 0) { // anchor:base
+                  list.add(String.join("", strs)); // anchor:collect
+                  return;
+              }
+              for (int i = r; i >= 0; i--) { // anchor:loop
+                  swap(strs, r, i); // anchor:swap
+                  permuteReverse(strs, r - 1, list); // anchor:recurse
+                  swap(strs, r, i); // anchor:backtrack
+              }
+          }
+
+  stage-3:
+    name: 状态矩阵与两两拼接比对
+    description: 构建二维偏序比对矩阵，精确直观验证 (b+a) 与 (a+b) 相对顺序
+    complexity:
+      time: O(N^2)
+      space: O(N^2)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[][] buildComparisonMatrix(String[] strs) {
+              int n = strs.length; // anchor:grid_init
+              int[][] matrix = new int[n][n]; // anchor:grid_alloc
+              for (int i = 0; i < n; i++) { // anchor:grid_i
+                  for (int j = 0; j < n; j++) { // anchor:grid_j
+                      matrix[i][j] = (strs[i] + strs[j]).compareTo(strs[j] + strs[i]); // anchor:grid_cell
+                  }
+              }
+              return matrix; // anchor:grid_done
+          }
+      reverse:
+        language: java
+        source: |
+          public int[][] buildComparisonMatrixReverse(String[] strs) {
+              int n = strs.length; // anchor:grid_init
+              int[][] matrix = new int[n][n]; // anchor:grid_alloc
+              for (int i = n - 1; i >= 0; i--) { // anchor:grid_i
+                  for (int j = n - 1; j >= 0; j--) { // anchor:grid_j
+                      matrix[i][j] = (strs[j] + strs[i]).compareTo(strs[i] + strs[j]); // anchor:grid_cell
+                  }
+              }
+              return matrix; // anchor:grid_done
+          }
+
+  stage-4:
+    name: 极速原位流式收敛
+    description: 原位流式快速比较、前导零特判与高位最大化常数空间验证
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public String largestNumberFast(int[] nums) {
+              // 原位或流式流转排序
+              String[] arr = Arrays.stream(nums).mapToObj(String::valueOf).toArray(String[]::new); // anchor:stream_init
+              Arrays.sort(arr, (x, y) -> (y + x).compareTo(x + y)); // anchor:stream_sort
+              return arr[0].equals("0") ? "0" : String.join("", arr); // anchor:stream_done
+          }
+      reverse:
+        language: java
+        source: |
+          public String smallestNumberFast(int[] nums) {
+              String[] arr = Arrays.stream(nums).mapToObj(String::valueOf).toArray(String[]::new); // anchor:stream_init
+              Arrays.sort(arr, (x, y) -> (x + y).compareTo(y + x)); // anchor:stream_sort
+              return arr[0].equals("0") ? "0" : String.join("", arr); // anchor:stream_done
+          }
