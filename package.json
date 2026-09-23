@@ -16,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "export:standalone": "vite-node scripts/export-standalone.ts",
-    "meta:sync": "vite-node scripts/catalog-sync.ts"
+    "meta:sync": "vite-node scripts/catalog-sync.ts",
+    "audit:candidates": "vite-node scripts/audit-candidates.ts"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
