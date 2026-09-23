@@ -65,6 +65,7 @@ import { ShortestUnsortedSubarrayStrategy } from './shortest-unsorted-subarray-s
 import { SmallestRangeStrategy } from './smallest-range-strategy';
 import { RabbitsInForestStrategy } from './rabbits-in-forest-strategy';
 import { MinRefuelingStopsStrategy } from './min-refueling-stops-strategy';
+import { SuperWashingMachinesStrategy } from './super-washing-machines-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -206,6 +207,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new SmallestRangeStrategy());
   AlgorithmStrategyRegistry.register(new RabbitsInForestStrategy());
   AlgorithmStrategyRegistry.register(new MinRefuelingStopsStrategy());
+  AlgorithmStrategyRegistry.register(new SuperWashingMachinesStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -281,7 +283,8 @@ export {
   ShortestUnsortedSubarrayStrategy,
   SmallestRangeStrategy,
   RabbitsInForestStrategy,
-  MinRefuelingStopsStrategy
+  MinRefuelingStopsStrategy,
+  SuperWashingMachinesStrategy
 };
 
 export * from './strategy-helpers';

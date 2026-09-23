@@ -1,0 +1,174 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 超级洗衣机顶层领域模型
+# 对应：LeetCode 517 / 贪心局部流水瓶颈与前后缀净需求分解
+# 包含：单机净流向、决策树展开、状态演进矩阵、空间压缩
+# ==============================================================================
+
+id: super-washing-machines
+name: 超级洗衣机 (Super Washing Machines)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 前缀和
+  - 前后缀分解
+  - 流水瓶颈
+  - 局部极值
+
+description: |
+  假设有 n 台超级洗衣机放在同一排上。开始的时候，每台洗衣机内可能有一定量的衣服，也可能是空的。
+  在每一步操作中，你可以选择任意 m (1 <= m <= n) 台洗衣机，与此同时将每台洗衣机的一件衣服送到相邻的一台洗衣机。
+  给定一个整数数组 machines 代表从左至右每台洗衣机中的衣物数量，请给出能使所有洗衣机中衣物的数量相等的最少操作步数。
+  如果不能使每台洗衣机中衣物的数量相等，则返回 -1。
+
+  核心贪心归约（流水瓶颈定理）：
+  1. 整除性前置门禁：若总衣物数 sum 无法被洗衣机数量 n 整除，则永远无法均分，返回 -1。
+  2. 均值标杆：每台机器最终目标件数为 avg = sum / n。
+  3. 前后缀需求分解：
+     - 对于第 i 台机器，其左侧 [0..i-1] 共有 i 台机器，目标需要 i * avg 件，现有 leftSum 件，净缺额 leftNeed = i * avg - leftSum。
+     - 其右侧 [i+1..n-1] 共有 (n-1-i) 台机器，目标需要 (n-1-i) * avg 件，现有 rightSum 件，净缺额 rightNeed = (n-1-i) * avg - rightSum。
+  4. 单机双向流出瓶颈：
+     - 若 leftNeed > 0 且 rightNeed > 0，说明机器 i 必须同时向左和向右输送衣服！
+       但由于每步操作单台机器最多只能移出 1 件衣服（要么向左要么向右），因此必须串行移出，耗时为 leftNeed + rightNeed。
+     - 否则（单向流出或接收），左右两侧的操作可以并行进行，瓶颈为 max(|leftNeed|, |rightNeed|)。
+  5. 全局最优解：最少操作步数等于所有机器局部操作瓶颈的最大值 max_i(bottleneck_i)。
+
+defaultParams:
+  machines: [1, 0, 5]
+
+constraints:
+  - n == machines.length
+  - 1 <= n <= 10^4
+  - 0 <= machines[i] <= 10^5
+
+directions:
+  forward:
+    name: 前缀和流水瓶颈扫描 (Prefix Balance Greedy)
+    description: 维护前缀和，实时计算左右净需求并取最大单机流出与流经瓶颈
+  reverse:
+    name: 逆向后缀亏空倒推对偶 (Suffix Deficit Dual)
+    description: 从末端逆向维护后缀亏空，对偶验证各节点吞吐瓶颈的必要性
+
+stages:
+  stage-1:
+    name: 单机净流向与左右瓶颈扫描
+    description: 探查每台洗衣机衣物存量，计算左右两侧净需求与局部流转瓶颈
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: 洗衣机流水瓶颈沙盘 (Flow Bottleneck)
+    card2Desc: 实时追踪各洗衣机衣物存量、左右缺额与单向/双向流出瓶颈
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 1: 单机流水瓶颈模拟
+          int sum = 0, n = machines.length;
+          for (int num : machines) sum += num;
+          if (sum % n != 0) return -1;
+          int avg = sum / n, leftSum = 0, maxMoves = 0;
+          for (int i = 0; i < n; i++) {
+              int leftNeed = i * avg - leftSum;
+              int rightNeed = (n - 1 - i) * avg - (sum - leftSum - machines[i]);
+              int cur = (leftNeed > 0 && rightNeed > 0) ? (leftNeed + rightNeed) : Math.max(Math.abs(leftNeed), Math.abs(rightNeed));
+              maxMoves = Math.max(maxMoves, cur);
+              leftSum += machines[i];
+          }
+          return maxMoves;
+        lineMap:
+          entry: 1
+          sum: 3
+          check: 4
+          init: 5
+          loop: 6
+          leftNeed: 7
+          rightNeed: 8
+          bottleneck: 9
+          updateMax: 10
+          advance: 11
+          done: 13
+
+  stage-2:
+    name: 左右净需求邻域平衡决策树
+    description: 拓扑展开各洗衣机左侧赤字、右侧赤字与同时向两侧输出的双向冲突
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 需求赤字决策树 (Deficit Decision Tree)
+    card2Desc: 展开左右净需求的正负判定与单向穿透/双向串行移出的决策分叉
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 邻域平衡分支决策
+          if (leftNeed > 0 && rightNeed > 0) {
+              // 双向流出冲突：一台机器单步只能移出一件
+              bottleneck = leftNeed + rightNeed;
+          } else {
+              // 穿透传递或单侧补给：两端可并行吞吐
+              bottleneck = Math.max(Math.abs(leftNeed), Math.abs(rightNeed));
+          }
+        lineMap:
+          entry: 1
+          branchCheck: 2
+          dualOutput: 4
+          elseBranch: 5
+          parallelFlow: 7
+
+  stage-3:
+    name: 前后缀需求平衡状态矩阵
+    description: 二维决策演进矩阵，逐行记录机器索引、存量、左需、右需、瓶颈与全局峰值
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 流水平衡演进矩阵 (Balance Matrix)
+    card2Desc: 追踪各洗衣机左侧赤字 leftNeed、右侧赤字 rightNeed、本台瓶颈与累计最大步数
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态追踪矩阵
+          int[][] matrix = new int[n][5];
+          for (int i = 0; i < n; i++) {
+              matrix[i][0] = machines[i];
+              matrix[i][1] = leftNeed;
+              matrix[i][2] = rightNeed;
+              matrix[i][3] = bottleneck;
+              matrix[i][4] = maxMoves;
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          fillStock: 4
+          fillLeft: 5
+          fillRight: 6
+          fillNeck: 7
+          fillMax: 8
+
+  stage-4:
+    name: 空间压缩一维流水贪心瓶颈极值更新
+    description: 前缀和差值滚动单变量贪心维护，常数空间极速求出最大步数
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: 空间压缩状态机 (State Machine)
+    card2Desc: 维护一维累计前缀差值 balance，以绝对值最大割与衣服溢出量双重锁定下界
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 空间压缩极致贪心
+          int balance = 0, ans = 0;
+          for (int num : machines) {
+              balance += num - avg;
+              ans = Math.max(ans, Math.max(Math.abs(balance), num - avg));
+          }
+          return ans;
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          updateBalance: 4
+          calcAns: 5
+          done: 7

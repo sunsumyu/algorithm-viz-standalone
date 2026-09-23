@@ -77,6 +77,7 @@ import shortestUnsortedModel from './models/shortest-unsorted-continuous-subarra
 import smallestRangeModel from './models/smallest-range-covering-elements-from-k-lists.yaml';
 import rabbitsInForestModel from './models/rabbits-in-forest.yaml';
 import minRefuelingStopsModel from './models/minimum-number-of-refueling-stops.yaml';
+import superWashingMachinesModel from './models/super-washing-machines.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -203,6 +204,7 @@ export class AlgorithmModelRepository {
     ['rabbits-in-forest', rabbitsInForestModel as IYamlAlgorithmModel],
     ['minimum-number-of-refueling-stops', minRefuelingStopsModel as IYamlAlgorithmModel],
     ['min-refueling-stops', minRefuelingStopsModel as IYamlAlgorithmModel],
+    ['super-washing-machines', superWashingMachinesModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

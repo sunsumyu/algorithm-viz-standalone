@@ -4042,7 +4042,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "超级洗衣机 (Super Washing Machines)",
     viewId: "algo-super-washing-machines-view",
     category: "greedy",
-    description: "超级洗衣机 (Super Washing Machines)",
+    description: "LeetCode 517：前缀和与单机同时双向流出瓶颈 max(leftNeed + rightNeed, max(|leftNeed|, |rightNeed|))",
     icon: "🧺",
     difficulty: 3,
     levelOrder: 935,

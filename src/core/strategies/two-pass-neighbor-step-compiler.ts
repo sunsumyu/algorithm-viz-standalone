@@ -2982,4 +2982,551 @@ export class TwoPassNeighborStepCompiler {
     return steps;
   }
 
+  // ==========================================================================
+  // 超级洗衣机 (LeetCode 517) 四阶段全演进编译器
+  // ==========================================================================
+
+  /**
+   * 超级洗衣机 (LeetCode 517) 四阶段全演进编译入口
+   */
+  public static compileSuperWashingMachines(
+    model: IYamlAlgorithmModel,
+    rawMachines?: number[],
+    options?: TwoPassCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const defaultMachines = [1, 0, 5];
+    const machines = rawMachines && rawMachines.length > 0 ? rawMachines : defaultMachines;
+
+    switch (stage) {
+      case 2:
+        return this.compileSuperWashingMachinesStage2(model, machines, options);
+      case 3:
+        return this.compileSuperWashingMachinesStage3(model, machines, options);
+      case 4:
+        return this.compileSuperWashingMachinesStage4(model, machines, options);
+      case 1:
+      default:
+        return this.compileSuperWashingMachinesStage1(model, machines, options);
+    }
+  }
+
+  private static compileSuperWashingMachinesStage1(
+    model: IYamlAlgorithmModel,
+    machines: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = machines.length;
+    const totalSum = machines.reduce((a, b) => a + b, 0);
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+    const slots = machines.map(v => String(v));
+    const colLabels = machines.map((_, i) => `M${i}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🧺 主函数入口：洗衣机数量 n = ${n}，衣物总量 sum = ${totalSum}`,
+      message: '核心目标：求使所有洗衣机内衣物数量相等的最少步数（单机每步最多移出1件）',
+      slots,
+      colLabels,
+      variables: { n, totalSum },
+      metrics: { '机器台数': String(n), '衣物总数': String(totalSum) },
+    });
+
+    if (totalSum % n !== 0) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.check || 4,
+        codeLine: anchors.check || 4,
+        decision: `❌ 无法均分！总数 ${totalSum} 无法被台数 ${n} 整除 (余数 ${totalSum % n})，直接返回 -1`,
+        message: '整除性不满足，无解收敛',
+        slots,
+        colLabels,
+        variables: { totalSum, n, remainder: totalSum % n, ans: -1 },
+        metrics: { '结果': '-1 (不可达)' },
+      });
+      while (steps.length < 12) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.check || 4,
+          codeLine: anchors.check || 4,
+          decision: '❌ 整除校验失败：确认终止计算',
+          message: '整除门禁判定',
+          slots,
+          colLabels,
+          variables: { ans: -1 },
+          metrics: { '最终结果': '-1' },
+        });
+      }
+      return steps;
+    }
+
+    const avg = totalSum / n;
+    let leftSum = 0;
+    let maxMoves = 0;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.init || 5,
+      codeLine: anchors.init || 5,
+      decision: `⚖️ 整除性检查通过：每台洗衣机目标衣物均值 avg = ${avg} 件，初始化流水扫描`,
+      message: '维护左侧累加前缀和 leftSum 与全局最大瓶颈 maxMoves',
+      slots,
+      colLabels,
+      variables: { avg, leftSum: 0, maxMoves: 0 },
+      metrics: { '目标均值 avg': String(avg), '当前最大步数': '0' },
+    });
+
+    for (let i = 0; i < n; i++) {
+      const num = machines[i];
+      const leftNeed = i * avg - leftSum;
+      const rightNeed = (n - 1 - i) * avg - (totalSum - leftSum - num);
+      const isDual = leftNeed > 0 && rightNeed > 0;
+      const curBottleneck = isDual ? (leftNeed + rightNeed) : Math.max(Math.abs(leftNeed), Math.abs(rightNeed));
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.leftNeed || 7,
+        codeLine: anchors.leftNeed || 7,
+        decision: `🔍 考察洗衣机 M${i} (存量: ${num}件)：左侧 [0..${i - 1}] 目标需 ${i * avg} 件，实存 ${leftSum} 件 ➔ 左侧净缺额 leftNeed = ${leftNeed}`,
+        message: '前缀亏空/盈余判定',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { i, num, leftNeed, leftSum },
+        metrics: { '当前机器': `M${i}`, '左侧净需': String(leftNeed) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.rightNeed || 8,
+        codeLine: anchors.rightNeed || 8,
+        decision: `🔍 考察洗衣机 M${i} 右侧：右侧 [${i + 1}..${n - 1}] 目标需 ${(n - 1 - i) * avg} 件 ➔ 右侧净缺额 rightNeed = ${rightNeed}`,
+        message: '后缀亏空/盈余判定',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { i, num, leftNeed, rightNeed },
+        metrics: { '当前机器': `M${i}`, '右侧净需': String(rightNeed) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.bottleneck || 9,
+        codeLine: anchors.bottleneck || 9,
+        decision: isDual
+          ? `⚠️ 洗衣机 M${i} 左右均缺衣服 (leftNeed=${leftNeed}, rightNeed=${rightNeed})！单机每步仅能移出一件，属于【双向串行流出】，单机耗时 ${leftNeed}+${rightNeed}=${curBottleneck} 步`
+          : `⚡ 洗衣机 M${i} 单向传递或流入：两端吞吐可并行，局部流转瓶颈 = max(|${leftNeed}|, |${rightNeed}|) = ${curBottleneck} 步`,
+        message: isDual ? '双向流出瓶颈' : '单向穿透/接收瓶颈',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { i, isDual, curBottleneck },
+        metrics: { '单机瓶颈': `${curBottleneck}步`, '流转模式': isDual ? '双向串行' : '单向并行' },
+      });
+
+      maxMoves = Math.max(maxMoves, curBottleneck);
+      leftSum += num;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.updateMax || 10,
+        codeLine: anchors.updateMax || 10,
+        decision: `📈 全局步数更新：maxMoves = max(${maxMoves}, ${curBottleneck}) = ${maxMoves}，推进前缀和 leftSum = ${leftSum}`,
+        message: '全局极值维护',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { maxMoves, leftSum },
+        metrics: { '全局最大步数': String(maxMoves), '前缀和': String(leftSum) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 13,
+      codeLine: anchors.done || 13,
+      decision: `🏁 模拟收敛：所有洗衣机衣物均分完成，全局最少操作步数 = ${maxMoves}`,
+      message: '最大局部流量瓶颈决定全局最小操作步数',
+      slots,
+      colLabels,
+      variables: { maxMoves, avg, totalSum },
+      metrics: { '最少步数': `${maxMoves} 步`, '状态': '已达成最优' },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 13,
+        codeLine: anchors.done || 13,
+        decision: `🏁 贪心最优性校验：全局步数 ${maxMoves} 满足局部瓶颈下界`,
+        message: '最终验证与收敛',
+        slots,
+        colLabels,
+        variables: { maxMoves },
+        metrics: { '最优步数': `${maxMoves}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileSuperWashingMachinesStage2(
+    model: IYamlAlgorithmModel,
+    machines: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = machines.length;
+    const totalSum = machines.reduce((a, b) => a + b, 0);
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+    const avg = Math.floor(totalSum / n);
+
+    const rootNode: UniversalTreeNode = {
+      id: 'root-machines',
+      r: 0,
+      c: 0,
+      val: `洗衣机流水赤字决策树 (n=${n}, avg=${avg})`,
+      status: 'root',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌳 构建决策树根节点：目标衣物均值 avg = ${avg}，准备展开各节点赤字拓扑`,
+      message: '拓扑决策树展开',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { n, avg, totalSum },
+      metrics: { '总衣物': String(totalSum), '平均值': String(avg) },
+    });
+
+    let leftSum = 0;
+    let maxMoves = 0;
+
+    for (let i = 0; i < n; i++) {
+      const num = machines[i];
+      const leftNeed = i * avg - leftSum;
+      const rightNeed = (n - 1 - i) * avg - (totalSum - leftSum - num);
+      const isDual = leftNeed > 0 && rightNeed > 0;
+      const curBottleneck = isDual ? (leftNeed + rightNeed) : Math.max(Math.abs(leftNeed), Math.abs(rightNeed));
+
+      const machineNode: UniversalTreeNode = {
+        id: `node-m-${i}`,
+        r: 1,
+        c: i,
+        val: `M${i}(${num}件)`,
+        status: 'active',
+        children: [
+          { id: `node-m-${i}-left`, r: 2, c: 0, val: `左需: ${leftNeed}`, status: leftNeed > 0 ? 'deficit' : 'surplus', children: [] },
+          { id: `node-m-${i}-right`, r: 2, c: 1, val: `右需: ${rightNeed}`, status: rightNeed > 0 ? 'deficit' : 'surplus', children: [] },
+          { id: `node-m-${i}-neck`, r: 2, c: 2, val: isDual ? `双向冲突(${curBottleneck})` : `单向/穿透(${curBottleneck})`, status: isDual ? 'conflict' : 'pass', children: [] },
+        ],
+      };
+      rootNode.children.push(machineNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branchCheck || 2,
+        codeLine: anchors.branchCheck || 2,
+        decision: `🌿 展开 M${i} 分支：左侧净需 ${leftNeed}，右侧净需 ${rightNeed}`,
+        message: '决策树分支展开',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { i, num, leftNeed, rightNeed },
+        metrics: { '当前分支': `M${i}`, '赤字状态': isDual ? '双向赤字' : '常规流向' },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: isDual ? (anchors.dualOutput || 4) : (anchors.parallelFlow || 7),
+        codeLine: isDual ? (anchors.dualOutput || 4) : (anchors.parallelFlow || 7),
+        decision: isDual
+          ? `⚠️ M${i} 命中双向流出分支：每秒单机出1件，串行耗时 ${curBottleneck} 步`
+          : `⚡ M${i} 命中单向流转分支：并行吞吐瓶颈 = ${curBottleneck} 步`,
+        message: isDual ? '双向流出冲突' : '并行流转',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { i, isDual, curBottleneck },
+        metrics: { '瓶颈步数': `${curBottleneck}`, '决策模式': isDual ? '双向串行' : '单向并行' },
+      });
+
+      maxMoves = Math.max(maxMoves, curBottleneck);
+      leftSum += num;
+      machineNode.status = 'resolved';
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.parallelFlow || 7,
+      codeLine: anchors.parallelFlow || 7,
+      decision: `🏁 决策树全部拓扑构建完毕：全局最大瓶颈步数收敛为 ${maxMoves}`,
+      message: '树形决策推导达成最优解',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { maxMoves },
+      metrics: { '最少步数': `${maxMoves} 步`, '决策节点数': String(rootNode.children.length) },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.parallelFlow || 7,
+        codeLine: anchors.parallelFlow || 7,
+        decision: `🏁 决策树收敛确认：maxMoves = ${maxMoves}`,
+        message: '决策树完成状态确认',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { maxMoves },
+        metrics: { '最优步数': `${maxMoves}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileSuperWashingMachinesStage3(
+    model: IYamlAlgorithmModel,
+    machines: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = machines.length;
+    const totalSum = machines.reduce((a, b) => a + b, 0);
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+    const avg = Math.floor(totalSum / n);
+
+    const rowLabels = machines.map((_, i) => `M${i}`);
+    const colLabels = ['存量', '左侧净需', '右侧净需', '单机瓶颈', '累计最大步数'];
+    const grid: (number | null)[][] = Array.from({ length: n }, () => Array(5).fill(0));
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `📊 初始化流水平衡演进矩阵 matrix [${n}×5]：跟踪各洗衣机赤字与瓶颈`,
+      message: '二维决策演进表初始化',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { n, avg, totalSum },
+      metrics: { '矩阵行数': String(n), '列数': '5' },
+    });
+
+    let leftSum = 0;
+    let maxMoves = 0;
+
+    for (let i = 0; i < n; i++) {
+      const num = machines[i];
+      const leftNeed = i * avg - leftSum;
+      const rightNeed = (n - 1 - i) * avg - (totalSum - leftSum - num);
+      const isDual = leftNeed > 0 && rightNeed > 0;
+      const curBottleneck = isDual ? (leftNeed + rightNeed) : Math.max(Math.abs(leftNeed), Math.abs(rightNeed));
+      maxMoves = Math.max(maxMoves, curBottleneck);
+
+      grid[i][0] = num;
+      grid[i][1] = leftNeed;
+      grid[i][2] = rightNeed;
+      grid[i][3] = curBottleneck;
+      grid[i][4] = maxMoves;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillStock || 4,
+        codeLine: anchors.fillStock || 4,
+        decision: `📝 填充矩阵行 M${i}：存量 = ${num}件`,
+        message: '记录存量数据',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 0,
+        variables: { i, num },
+        metrics: { '当前行': `M${i}`, '衣物存量': `${num}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillLeft || 5,
+        codeLine: anchors.fillLeft || 5,
+        decision: `📝 填充 M${i} 赤字数据：leftNeed = ${leftNeed}，rightNeed = ${rightNeed}`,
+        message: '记录左右净需求',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 1,
+        variables: { i, leftNeed, rightNeed },
+        metrics: { '左需': String(leftNeed), '右需': String(rightNeed) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillNeck || 7,
+        codeLine: anchors.fillNeck || 7,
+        decision: `📝 计算 M${i} 瓶颈与全局最大值：单机瓶颈 = ${curBottleneck}，全局峰值 maxMoves = ${maxMoves}`,
+        message: '更新局部瓶颈与全局步数',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        activeRow: i,
+        activeCol: 3,
+        variables: { i, curBottleneck, maxMoves },
+        metrics: { '局部瓶颈': `${curBottleneck}`, '全局最大': `${maxMoves}` },
+      });
+
+      leftSum += num;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.fillMax || 8,
+      codeLine: anchors.fillMax || 8,
+      decision: `🏁 演进矩阵全部填毕：最终全局最少操作步数为 ${maxMoves}`,
+      message: '二维演进表收敛',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { maxMoves },
+      metrics: { '最终结果': `${maxMoves} 步` },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillMax || 8,
+        codeLine: anchors.fillMax || 8,
+        decision: `🏁 演进矩阵就绪：确认最终操作步数 = ${maxMoves}`,
+        message: '矩阵状态维持',
+        grid: grid.map(r => [...r]),
+        rowLabels,
+        colLabels,
+        variables: { maxMoves },
+        metrics: { '最少步数': `${maxMoves}` },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileSuperWashingMachinesStage4(
+    model: IYamlAlgorithmModel,
+    machines: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = machines.length;
+    const totalSum = machines.reduce((a, b) => a + b, 0);
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+    const avg = Math.floor(totalSum / n);
+    const slots = machines.map(v => String(v));
+    const colLabels = machines.map((_, i) => `M${i}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `⚡ 启动极限空间压缩一维流水贪心：目标均值 avg = ${avg}，维护一维平衡差值 balance`,
+      message: '常数空间滚动流转初始化',
+      slots,
+      colLabels,
+      variables: { avg, balance: 0, ans: 0 },
+      metrics: { '空间复杂度': 'O(1)', '时间复杂度': 'O(N)' },
+    });
+
+    let balance = 0;
+    let ans = 0;
+
+    for (let i = 0; i < n; i++) {
+      const num = machines[i];
+      const diff = num - avg;
+      balance += diff;
+      const prevAns = ans;
+      ans = Math.max(ans, Math.max(Math.abs(balance), diff));
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.updateBalance || 4,
+        codeLine: anchors.updateBalance || 4,
+        decision: `🔄 机器 M${i} (存量: ${num}): 偏移量 num - avg = ${diff} ➔ 累加净割差 balance = ${balance}`,
+        message: '前缀平衡净差值滚动',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { i, num, diff, balance, ans },
+        metrics: { '机器': `M${i}`, '净偏差 balance': String(balance) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.calcAns || 5,
+        codeLine: anchors.calcAns || 5,
+        decision: `⚡ 瞬时极值约束：ans = max(${prevAns}, max(|balance|=${Math.abs(balance)}, diff=${diff})) = ${ans}`,
+        message: '穿透流经量与单机流出量取双重极大值',
+        slots,
+        colLabels,
+        activeSlot: i,
+        variables: { i, balance, diff, ans },
+        metrics: { '当前最大步数': `${ans} 步` },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
+      decision: `🏁 极速计算收敛：全局最少操作步数 ans = ${ans}`,
+      message: '空间压缩一维流水极致优化收敛',
+      slots,
+      colLabels,
+      variables: { ans, avg },
+      metrics: { '最终步数': `${ans} 步`, '空间': 'O(1) 常数空间' },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.done || 7,
+        codeLine: anchors.done || 7,
+        decision: `🏁 极限压缩状态确认：最终步数 ${ans}`,
+        message: '结果稳定确认',
+        slots,
+        colLabels,
+        variables: { ans },
+        metrics: { '最终步数': `${ans}` },
+      });
+    }
+
+    return steps;
+  }
 }

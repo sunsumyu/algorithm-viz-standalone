@@ -67,6 +67,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'smallest-range-covering-elements-from-k-lists',
   'rabbits-in-forest',
   'minimum-number-of-refueling-stops',
+  'super-washing-machines',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -245,7 +246,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'divide-array-seq',
         'cross-river',
         'string-transforms',
-        'super-washing-machines',
         'cooking-plan',
         'cutting-tree',
         'eliminate-monsters',
