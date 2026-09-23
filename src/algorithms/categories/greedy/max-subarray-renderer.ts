@@ -3,7 +3,8 @@
  * LeetCode 53：连续和为负数时果断清零，贪心捕捉全局峰值
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
 import {
@@ -251,47 +252,21 @@ export function renderMaxSubarrayCanvas(container: HTMLElement, step: MSSStep): 
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'max-subarray',
   name: '最大子数组和',
+  viewId: 'max-subarray',
   category: 'greedy',
-  description: 'Kadane 贪心算法，连续累加和小于 0 时立即清零重新统计',
   icon: '📊',
   difficulty: 2,
   levelOrder: 3,
-  learningGoal: '掌握贪心算法在连续子数组求和中的局部最优（负和清零）与全局最优（最大和）',
-  inputs: [
-    {
-      id: 'nums',
-      label: '整数数组',
-      type: 'text',
-      defaultValue: '-2,1,-3,4,-1,2,1,-5,4',
-      placeholder: '-2,1,-3,4,-1,2,1,-5,4',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (和 6)', values: { nums: '-2,1,-3,4,-1,2,1,-5,4' } },
-    { label: '示例 3 (和 23)', values: { nums: '5,4,-1,7,8' } },
-    { label: '全负数测试 (和 -1)', values: { nums: '-3,-2,-1,-5' } },
-  ],
-  metrics: [
-    { id: 'cur-sum', label: '当前连续和 count', color: '#2563eb' },
-    { id: 'max-sum', label: '历史最大和 maxSum', color: '#059669' },
-    { id: 'best-range', label: '最优子数组区间', color: '#10b981' },
-    { id: 'cur-range', label: '当前扫描区间', color: '#60a5fa' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '🏆 历史最优区间', color: '#10b981' },
-    { label: '📍 当前累加区间', color: '#3b82f6' },
-    { label: '⚠️ 负数拉低', color: '#ef4444' },
-  ],
-  codeLanguages: MAX_SUBARRAY_CODE_LANGUAGES,
-  problemHtml: MAX_SUBARRAY_PROBLEM_HTML,
-  analysisHtml: MAX_SUBARRAY_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawNums = parseNumberList(inputs.nums, '-2,1,-3,4,-1,2,1,-5,4');
-    return withMetrics(buildMaxSubarraySteps(rawNums.length > 0 ? rawNums : [-2, 1, -3, 4, -1, 2, 1, -5, 4]));
-  },
-  renderCanvas: (container, step) => renderMaxSubarrayCanvas(container, step as MSSStep),
+  learningGoal: '掌握贪心算法在连续子数组求和中的局部最优（负和清零）与全局最优（最大和），理解Kadane算法四阶段演进',
+  description: 'Kadane 贪心算法，连续累加和小于 0 时立即清零重新统计',
+  template: `<div id="max-subarray" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerMaxSubarray(): void {
+  // 保持向前兼容导出
+}
+

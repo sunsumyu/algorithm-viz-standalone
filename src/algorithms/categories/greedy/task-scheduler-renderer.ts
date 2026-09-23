@@ -1,4 +1,5 @@
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import { StepBase } from '../../../core/step-visualizer';
 
 export interface TaskSchedulerStep extends StepBase {
@@ -350,78 +351,21 @@ export function renderTaskSchedulerCanvas(container: HTMLElement, step: TaskSche
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'task-scheduler',
   name: '任务调度器',
+  viewId: 'task-scheduler',
   category: 'greedy',
-  description: 'LeetCode 621：桶思想贪心调度 CPU 冷却间隔，耗时 = max(任务总数, (maxFreq-1)*(n+1)+maxCount)',
   icon: '⏱️',
   difficulty: 2,
   levelOrder: 99,
-  learningGoal: '掌握贪心策略与桶思想在 CPU 任务调度冷却间隔中的应用，理解最短调度耗时数学边界',
-  inputs: [
-    {
-      id: 'tasks',
-      label: '任务序列',
-      type: 'text',
-      defaultValue: 'AAABBB',
-      placeholder: '如 AAABBB 或 AAABBBCC'
-    },
-    {
-      id: 'n',
-      label: '冷却时间 n',
-      type: 'number',
-      defaultValue: 2,
-      min: 0,
-      max: 10
-    }
-  ],
-  presets: [
-    { label: '基础示例', values: { tasks: 'AAABBB', n: 2 } },
-    { label: '双最高频', values: { tasks: 'AAABBBCC', n: 2 } },
-    { label: '任务丰富无空闲', values: { tasks: 'ABCDEFG', n: 2 } },
-    { label: '长冷却', values: { tasks: 'AAAA', n: 3 } },
-  ],
-  metrics: [
-    { id: 'maxFreq', label: '最高频次', color: '#38bdf8' },
-    { id: 'maxCount', label: '并列最高频任务数', color: '#34d399' },
-    { id: 'idleCount', label: '空闲槽数', color: '#fbbf24' },
-    { id: 'totalSlots', label: '总耗时', color: '#c084fc' },
-  ],
-  legend: [
-    { label: '任务槽位（按种类着色）', color: '#38bdf8' },
-    { label: '💤 空闲槽 (IDLE)', color: '#94a3b8' },
-    { label: '最高频任务', color: '#38bdf8' },
-  ],
-  problemHtml: `
-    <div style="padding: 4px 2px; color: #e2e8f0; font-size: 0.92rem; line-height: 1.7;">
-      <p style="margin: 0 0 10px;">给你一个用字符数组表示的 CPU 需要执行的任务列表 <code style="color:#7dd3fc;">tasks</code>，以及一个冷却时间 <code style="color:#7dd3fc;">n</code>。每个相同任务之间必须有长度至少为 <code style="color:#7dd3fc;">n</code> 的冷却间隔（执行不同任务或处于空闲）。</p>
-      <p style="margin: 0 0 10px;">计算完成所有任务所需的<strong style="color:#fbbf24;">最短时间</strong>。</p>
-      <div style="background: rgba(30,41,59,0.55); border-left: 4px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 10px 14px; margin: 10px 0;">
-        <div style="font-weight: 600; color: #38bdf8; margin-bottom: 6px;">桶思想贪心核心</div>
-        <div>以最高频任务构建 <code>(maxFreq - 1)</code> 个容量 <code>(n + 1)</code> 的桶，其余任务依次填充：</div>
-        <div style="margin-top: 6px; font-family: monospace; color: #a5b4fc;">ans = max(tasks.length, (maxFreq - 1) × (n + 1) + maxCount)</div>
-      </div>
-      <div style="color:#94a3b8; font-size: 0.85rem;">
-        示例：tasks = AAABBB, n = 2 → maxFreq=3, maxCount=2 → (3-1)×3+2 = 8
-      </div>
-    </div>
-  `,
-  analysisHtml: `
-    <div style="padding: 4px 2px; color: #cbd5e1; font-size: 0.9rem; line-height: 1.8;">
-      <div style="font-weight: 600; color: #38bdf8; margin-bottom: 8px;">🧠 为什么这个公式是对的？</div>
-      <div>1️⃣ <b>下界一</b>：任务总数 tasks.length —— 每个任务至少占一个时间片；</div>
-      <div>2️⃣ <b>下界二</b>：最高频任务 A 出现 maxFreq 次，把时间轴切成 (maxFreq-1) 个完整冷却段 + 收尾段；每段至少 (n+1) 长，收尾还要放 maxCount 个并列最高频任务，故 ≥ (maxFreq-1)×(n+1)+maxCount；</div>
-      <div>3️⃣ <b>构造可达</b>：按列轮转调度（A ? ? | A ? ? | … A），种类不足用 IDLE 补，种类多余时向外扩展行 —— 两个下界同时可达，即最短耗时。</div>
-    </div>
-  `,
-  codeLanguages: TASK_SCHEDULER_CODES,
-  generateSteps: (inputs) => {
-    const taskStr = String(inputs.tasks || 'AAABBB');
-    const n = Number(inputs.n ?? 2);
-    return buildTaskSchedulerSteps(taskStr, n);
-  },
-  renderCanvas: (container, step) => {
-    renderTaskSchedulerCanvas(container, step as TaskSchedulerStep);
-  }
+  learningGoal: '掌握贪心策略与桶思想在 CPU 任务调度冷却间隔中的应用，理解最短调度耗时数学边界与四阶段演进',
+  description: 'LeetCode 621：桶思想贪心调度 CPU 冷却间隔，耗时 = max(任务总数, (maxFreq-1)*(n+1)+maxCount)',
+  template: `<div id="task-scheduler" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerTaskScheduler(): void {
+  // 保持向前兼容导出
+}
+

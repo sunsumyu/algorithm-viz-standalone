@@ -127,6 +127,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { GasStationStrategy } = await import('./gas-station-strategy');
       const { WiggleSubsequenceStrategy } = await import('./wiggle-subsequence-strategy');
       const { ReconstructQueueStrategy } = await import('./reconstruct-queue-strategy');
+      const { MaxSubarrayStrategy } = await import('./max-subarray-strategy');
+      const { TaskSchedulerStrategy } = await import('./task-scheduler-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -141,6 +143,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         GasStationStrategy,
         WiggleSubsequenceStrategy,
         ReconstructQueueStrategy,
+        MaxSubarrayStrategy,
+        TaskSchedulerStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

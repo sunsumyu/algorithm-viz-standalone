@@ -1692,5 +1692,790 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 最大子数组和 (LeetCode 53 / Kadane) 顶层四阶段编译器
+  // 归约：单调前后缀扫描与局部正增益贪心保留，属于相邻元素极值族群
+  // ==========================================================================
+  public static compileMaxSubarray(
+    model: IYamlAlgorithmModel,
+    options?: (TwoPassCompileOptions & { nums?: number[] }) | any,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawNums = options?.nums ?? (Array.isArray(options) ? options : model.defaultParams?.nums) ?? [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+    const nums: number[] = Array.isArray(rawNums)
+      ? rawNums.map(Number)
+      : typeof rawNums === 'string'
+      ? rawNums.split(/[\s,]+/).filter(Boolean).map(Number)
+      : [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+
+    switch (stage) {
+      case 2:
+        return this.compileMaxSubarrayStage2(model, nums, options);
+      case 3:
+        return this.compileMaxSubarrayStage3(model, nums, options);
+      case 4:
+        return this.compileMaxSubarrayStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileMaxSubarrayStage1(model, nums, options);
+    }
+  }
+
+  private static compileMaxSubarrayStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    if (!isReverse) {
+      let currentSum = 0;
+      let maxSum = nums[0];
+      let maxStart = 0;
+      let maxEnd = 0;
+      let curStart = 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `1. 初始化 Kadane 贪心状态：currentSum = 0，全局初始最优解 maxSum = ${maxSum}`,
+        message: `从左至右线性扫描，只要连续和保持为正，便对后续元素产生正增益`,
+        variables: { currentSum: 0, maxSum, n },
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '输入数组 nums',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(String),
+            color: 'indigo',
+          },
+          {
+            id: 'kadane',
+            name: 'Kadane 动态窗口 [curStart..i]',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(() => '0'),
+            color: 'emerald',
+          },
+        ],
+        activeIndices: [0],
+        activeSlot: 0,
+        metrics: { '当前连续和': '0', '全局最大和': String(maxSum), '状态': '初始化' },
+      });
+
+      for (let i = 0; i < n; i++) {
+        const x = nums[i];
+        currentSum += x;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.loop || 5,
+          codeLine: anchors.loop || 5,
+          decision: `2. 累加推进：考察 nums[${i}] = ${x}，连续和累加至 currentSum = ${currentSum}`,
+          message: `将当前元素纳入连续子段考察范围`,
+          variables: { i, val: x, currentSum, maxSum },
+          stateArrays: [
+            {
+              id: 'nums',
+              name: '输入数组 nums',
+              indices: nums.map((_, idx) => idx),
+              values: nums.map(String),
+              activeIdx: i,
+              color: 'indigo',
+            },
+            {
+              id: 'kadane',
+              name: '当前累积窗口',
+              indices: nums.map((_, idx) => idx),
+              values: nums.map((v, idx) => idx >= curStart && idx <= i ? String(v) : ''),
+              activeIdx: i,
+              color: 'emerald',
+            },
+          ],
+          activeIndices: [i],
+          activeSlot: i,
+          metrics: { '当前连续和': String(currentSum), '全局最大和': String(maxSum), '考察下标': String(i) },
+        });
+
+        if (currentSum > maxSum) {
+          maxSum = currentSum;
+          maxStart = curStart;
+          maxEnd = i;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.update || 8,
+            codeLine: anchors.update || 8,
+            decision: `★ 刷新全局最大和！currentSum = ${currentSum} > 历史 maxSum，更新 maxSum = ${maxSum}，当前最优区间 [${maxStart}..${maxEnd}]`,
+            message: `捕捉到当前更优连续子数组`,
+            variables: { i, currentSum, maxSum, maxStart, maxEnd },
+            stateArrays: [
+              {
+                id: 'nums',
+                name: '输入数组 nums',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map(String),
+                activeIdx: i,
+                color: 'indigo',
+              },
+              {
+                id: 'kadane',
+                name: '全局最优区间',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map((v, idx) => idx >= maxStart && idx <= maxEnd ? String(v) : ''),
+                color: 'emerald',
+              },
+            ],
+            activeIndices: [i],
+            activeSlot: i,
+            metrics: { '当前连续和': String(currentSum), '全局最大和': String(maxSum), '最优区间': `[${maxStart}..${maxEnd}]` },
+          });
+        }
+
+        if (currentSum < 0) {
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.reset || 11,
+            codeLine: anchors.reset || 11,
+            decision: `⚠️ 负收益断舍离：currentSum = ${currentSum} < 0，累加和已成为负资产，立即清零重置为 0！`,
+            message: `任何包含负和前缀的连续段都会拖累后续子数组，贪心抛弃`,
+            variables: { i, oldSum: currentSum, currentSum: 0, nextStart: i + 1 },
+            stateArrays: [
+              {
+                id: 'nums',
+                name: '输入数组 nums',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map(String),
+                activeIdx: i,
+                color: 'indigo',
+              },
+              {
+                id: 'kadane',
+                name: '连续和已清零',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map(() => ''),
+                color: 'amber',
+              },
+            ],
+            activeIndices: [i],
+            activeSlot: i,
+            metrics: { '当前连续和': '0 (清零)', '全局最大和': String(maxSum), '动作': '清零重置' },
+          });
+          currentSum = 0;
+          curStart = i + 1;
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 14,
+        codeLine: anchors.done || 14,
+        decision: `🏁 正向 Kadane 扫描完成！遍历收敛，全局最大子数组和为 ${maxSum}，区间 [${maxStart}..${maxEnd}]`,
+        message: `单趟 O(N) 线性扫描达成全局最优解`,
+        variables: { return: maxSum, maxStart, maxEnd, total: n },
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '最终最优解子数组',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map((v, idx) => idx >= maxStart && idx <= maxEnd ? `★${v}` : String(v)),
+            color: 'emerald',
+          },
+        ],
+        activeIndices: [maxEnd],
+        activeSlot: maxEnd,
+        metrics: { '全局最大和': String(maxSum), '状态': '🏁 扫描完成' },
+      });
+    } else {
+      // 逆向 Kadane
+      let currentSum = 0;
+      let maxSum = nums[n - 1];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `逆向 Kadane 扫描初始化：从右向左扫描，初始 maxSum = ${maxSum}`,
+        message: `逆序推演以每个位置为起点的最大连续和`,
+        variables: { currentSum: 0, maxSum, n },
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '逆序扫描数组',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(String),
+            color: 'amber',
+          },
+        ],
+        activeIndices: [n - 1],
+        activeSlot: n - 1,
+        metrics: { '逆向连续和': '0', '逆向最大和': String(maxSum) },
+      });
+
+      for (let i = n - 1; i >= 0; i--) {
+        const x = nums[i];
+        currentSum += x;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.loop || 5,
+          codeLine: anchors.loop || 5,
+          decision: `逆向累加 [${i}]：nums[${i}]=${x}，逆向连续和 currentSum = ${currentSum}`,
+          message: `从右向左延展连续段`,
+          variables: { i, val: x, currentSum, maxSum },
+          stateArrays: [
+            {
+              id: 'nums',
+              name: '逆序扫描',
+              indices: nums.map((_, idx) => idx),
+              values: nums.map(String),
+              activeIdx: i,
+              color: 'amber',
+            },
+          ],
+          activeIndices: [i],
+          activeSlot: i,
+          metrics: { '逆向连续和': String(currentSum), '逆向最大和': String(maxSum) },
+        });
+
+        if (currentSum > maxSum) {
+          maxSum = currentSum;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.update || 7,
+            codeLine: anchors.update || 7,
+            decision: `★ 逆向刷新最大和！currentSum = ${currentSum} > maxSum，更新 maxSum = ${maxSum}`,
+            message: `捕获更优逆向连续段`,
+            variables: { i, currentSum, maxSum },
+            stateArrays: [
+              {
+                id: 'nums',
+                name: '逆序扫描',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map(String),
+                activeIdx: i,
+                color: 'amber',
+              },
+            ],
+            activeIndices: [i],
+            activeSlot: i,
+            metrics: { '逆向连续和': String(currentSum), '逆向最大和': String(maxSum) },
+          });
+        }
+
+        if (currentSum < 0) {
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.reset || 9,
+            codeLine: anchors.reset || 9,
+            decision: `⚠️ 逆向负和清零：currentSum = ${currentSum} < 0，断开累加重新开始`,
+            message: `贪心抛弃负收益连续段`,
+            variables: { i, currentSum: 0 },
+            stateArrays: [
+              {
+                id: 'nums',
+                name: '逆序扫描',
+                indices: nums.map((_, idx) => idx),
+                values: nums.map(String),
+                activeIdx: i,
+                color: 'amber',
+              },
+            ],
+            activeIndices: [i],
+            activeSlot: i,
+            metrics: { '逆向连续和': '0 (清零)', '逆向最大和': String(maxSum) },
+          });
+          currentSum = 0;
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 11,
+        codeLine: anchors.done || 11,
+        decision: `🏁 逆向 Kadane 扫描完成！获得完全一致的最大子数组和：${maxSum}`,
+        message: `双向对称性证明了贪心局部最优解与全局最优的一致性`,
+        variables: { return: maxSum },
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '最终最优解',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(String),
+            color: 'amber',
+          },
+        ],
+        activeIndices: [0],
+        activeSlot: 0,
+        metrics: { '逆向最大和': String(maxSum), '状态': '🏁 逆向收敛' },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileMaxSubarrayStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const memoGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(2).fill(null));
+
+    const rootNode: UniversalTreeNode = {
+      id: 'div_root',
+      r: 0,
+      c: 0,
+      val: `solve([0..${n - 1}])`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.entry || 3,
+      codeLine: anchors.entry || 3,
+      decision: `分治决策树初始化：自顶向下构建区间 [0..${n - 1}] 分治递归树`,
+      message: `分治策略：最大子数组要么在左半部分，要么在右半部分，要么跨越中点`,
+      variables: { left: 0, right: n - 1, total: n },
+      treeRoot: cloneStateDepTree(rootNode),
+      grid: memoGrid.map(r => [...r]),
+      metrics: { '分治区间': `[0..${n - 1}]`, '阶段': '树形展开' },
+    });
+
+    let nodeUid = 0;
+    const buildDfs = (l: number, r: number, parentNode: UniversalTreeNode, depth: number): number => {
+      nodeUid++;
+      const mid = Math.floor((l + r) / 2);
+      const curId = `node_${l}_${r}_${nodeUid}`;
+
+      if (l === r) {
+        const val = nums[l];
+        const leafNode: UniversalTreeNode = {
+          id: curId,
+          r: depth,
+          c: l,
+          val: `[${l}]: ${val}`,
+          status: 'visited',
+          children: [],
+        };
+        parentNode.children.push(leafNode);
+        memoGrid[l][0] = val;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.base || 2,
+          codeLine: anchors.base || 2,
+          decision: `🛑 触底单元素基准：区间 [${l}..${r}] 仅含单元素 nums[${l}] = ${val}，直接返回`,
+          message: `分治触底返回叶子节点结果`,
+          variables: { l, r, val, depth },
+          treeRoot: cloneStateDepTree(rootNode),
+          grid: memoGrid.map(row => [...row]),
+          activeIndices: [l],
+          activeSlot: l,
+          metrics: { '单元素值': String(val), '深度': String(depth) },
+        });
+
+        return val;
+      }
+
+      const internalNode: UniversalTreeNode = {
+        id: curId,
+        r: depth,
+        c: mid,
+        val: `[${l}..${r}] mid=${mid}`,
+        status: 'active',
+        children: [],
+      };
+      parentNode.children.push(internalNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_left || 5,
+        codeLine: anchors.branch_left || 5,
+        decision: `🔍 分治二分：区间 [${l}..${r}] 中点 mid = ${mid}，下探左半区间 [${l}..${mid}]`,
+        message: `自顶向下展开左子树搜索`,
+        variables: { l, r, mid, depth },
+        treeRoot: cloneStateDepTree(rootNode),
+        grid: memoGrid.map(row => [...row]),
+        activeIndices: [mid],
+        activeSlot: mid,
+        metrics: { '当前区间': `[${l}..${r}]`, '中点': String(mid) },
+      });
+
+      const leftMax = buildDfs(l, mid, internalNode, depth + 1);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_right || 7,
+        codeLine: anchors.branch_right || 7,
+        decision: `🔍 下探右半区间：中点后半部分 [${mid + 1}..${r}]`,
+        message: `自顶向下展开右子树搜索`,
+        variables: { l: mid + 1, r, depth },
+        treeRoot: cloneStateDepTree(rootNode),
+        grid: memoGrid.map(row => [...row]),
+        activeIndices: [mid + 1],
+        activeSlot: mid + 1,
+        metrics: { '右区间': `[${mid + 1}..${r}]`, '左侧最大值': String(leftMax) },
+      });
+
+      const rightMax = buildDfs(mid + 1, r, internalNode, depth + 1);
+
+      // 计算跨中点连续和
+      let leftCross = -Infinity;
+      let sum = 0;
+      for (let i = mid; i >= l; i--) {
+        sum += nums[i];
+        leftCross = Math.max(leftCross, sum);
+      }
+      let rightCross = -Infinity;
+      sum = 0;
+      for (let i = mid + 1; i <= r; i++) {
+        sum += nums[i];
+        rightCross = Math.max(rightCross, sum);
+      }
+      const crossMax = leftCross + rightCross;
+      const best = Math.max(leftMax, Math.max(rightMax, crossMax));
+
+      memoGrid[mid][1] = best;
+      internalNode.val = `[${l}..${r}] = ${best}`;
+      internalNode.status = 'visited';
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.cross || 9,
+        codeLine: anchors.cross || 9,
+        decision: `跨中点归并：区间 [${l}..${r}] 左侧最大=${leftMax}，右侧最大=${rightMax}，跨中点最大=${crossMax}，合并最优值 = ${best}`,
+        message: `三方候选取最大，回溯合并结果`,
+        variables: { l, r, leftMax, rightMax, crossMax, best },
+        treeRoot: cloneStateDepTree(rootNode),
+        grid: memoGrid.map(row => [...row]),
+        activeIndices: [mid],
+        activeSlot: mid,
+        metrics: { '合并最大和': String(best), '跨中点和': String(crossMax) },
+      });
+
+      return best;
+    };
+
+    const overallBest = buildDfs(0, n - 1, rootNode, 1);
+    rootNode.val = `solve([0..${n - 1}]) = ${overallBest}`;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.entry || 3,
+      codeLine: anchors.entry || 3,
+      decision: `🎉 分治决策树遍历完成！全局最大连续子段和为 ${overallBest}`,
+      message: `分治时间复杂度 O(N log N)，树形结构证明了最优子结构的完整覆盖`,
+      variables: { return: overallBest },
+      treeRoot: cloneStateDepTree(rootNode),
+      grid: memoGrid.map(row => [...row]),
+      metrics: { '最终结果': String(overallBest), '状态': '🏁 决策树收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMaxSubarrayStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    // 1D DP 矩阵与 2D 状态跟踪矩阵 (n x 2)
+    const dp: number[] = new Array(n).fill(0);
+    dp[0] = nums[0];
+    let maxAns = dp[0];
+
+    const dpGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(2).fill(null));
+    dpGrid[0][0] = nums[0];
+    dpGrid[0][1] = dp[0];
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dp_init || 2,
+      codeLine: anchors.dp_init || 2,
+      decision: `动态规划初始化：dp[0] = nums[0] = ${nums[0]}，初始最大值 maxAns = ${maxAns}`,
+      message: `状态定义：dp[i] 表示以 nums[i] 结尾的连续子数组的最大和`,
+      variables: { 'dp[0]': dp[0], maxAns },
+      grid: dpGrid.map(r => [...r]),
+      stateArrays: [
+        {
+          id: 'nums',
+          name: '输入数组 nums',
+          indices: nums.map((_, idx) => idx),
+          values: nums.map(String),
+          color: 'indigo',
+        },
+        {
+          id: 'dp',
+          name: 'DP 状态数组 dp[i]',
+          indices: dp.map((_, idx) => idx),
+          values: dp.map((v, idx) => idx === 0 ? String(v) : ''),
+          color: 'purple',
+        },
+      ],
+      activeIndices: [0],
+      activeSlot: 0,
+      metrics: { 'dp[0]': String(dp[0]), '全局最大和': String(maxAns) },
+    });
+
+    for (let i = 1; i < n; i++) {
+      const prevDp = dp[i - 1];
+      const curNum = nums[i];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.dp_loop || 7,
+        codeLine: anchors.dp_loop || 7,
+        decision: `外层推进 [${i}]：准备计算以 nums[${i}] = ${curNum} 结尾的最大连续子数组和`,
+        message: `对比前驱最优解 dp[${i - 1}] = ${prevDp} 对当前元素的贡献`,
+        variables: { i, 'nums[i]': curNum, 'dp[i-1]': prevDp },
+        grid: dpGrid.map(r => [...r]),
+        i,
+        j: 0,
+        currentI: i,
+        currentJ: 0,
+        deps: [{ r: i - 1, c: 1, label: `前驱 dp[${i - 1}]=${prevDp}` }],
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '输入数组 nums',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(String),
+            activeIdx: i,
+            color: 'indigo',
+          },
+          {
+            id: 'dp',
+            name: 'DP 状态数组 dp[i]',
+            indices: dp.map((_, idx) => idx),
+            values: dp.map((v, idx) => idx < i ? String(v) : ''),
+            color: 'purple',
+          },
+        ],
+        activeIndices: [i],
+        activeSlot: i,
+        metrics: { '当前元素': String(curNum), '前驱 dp': String(prevDp) },
+      });
+
+      const chooseExtend = prevDp + curNum;
+      dp[i] = Math.max(curNum, chooseExtend);
+      dpGrid[i][0] = curNum;
+      dpGrid[i][1] = dp[i];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.dp_transfer || 9,
+        codeLine: anchors.dp_transfer || 9,
+        decision: `状态转移确认：dp[${i}] = max(${curNum}, ${prevDp} + ${curNum} = ${chooseExtend}) = ${dp[i]}，${dp[i] === curNum ? '独立另起新子段' : '承接前驱连续累加'}`,
+        message: `若前驱累积和为正，则承接；若前驱为负，则直接以当前元素为起点另起`,
+        variables: { i, 'dp[i]': dp[i], action: dp[i] === curNum ? '另起子数组' : '延续前驱' },
+        grid: dpGrid.map(r => [...r]),
+        i,
+        j: 1,
+        currentI: i,
+        currentJ: 1,
+        deps: [{ r: i - 1, c: 1, label: `前驱: ${prevDp}` }],
+        stateArrays: [
+          {
+            id: 'nums',
+            name: '输入数组 nums',
+            indices: nums.map((_, idx) => idx),
+            values: nums.map(String),
+            activeIdx: i,
+            color: 'indigo',
+          },
+          {
+            id: 'dp',
+            name: 'DP 状态数组 dp[i]',
+            indices: dp.map((_, idx) => idx),
+            values: dp.map((v, idx) => idx <= i ? String(v) : ''),
+            activeIdx: i,
+            color: 'purple',
+          },
+        ],
+        activeIndices: [i],
+        activeSlot: i,
+        metrics: { 'dp[i]': String(dp[i]), '决策': dp[i] === curNum ? '另起' : '累加' },
+      });
+
+      if (dp[i] > maxAns) {
+        maxAns = dp[i];
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.dp_update || 11,
+          codeLine: anchors.dp_update || 11,
+          decision: `★ 刷新全局最大和：maxAns = max(${maxAns}, dp[${i}]=${dp[i]}) = ${dp[i]}`,
+          message: `全局最大和由当前结尾的子段刷新`,
+          variables: { i, 'dp[i]': dp[i], maxAns },
+          grid: dpGrid.map(r => [...r]),
+          i,
+          j: 1,
+          currentI: i,
+          currentJ: 1,
+          stateArrays: [
+            {
+              id: 'nums',
+              name: '输入数组 nums',
+              indices: nums.map((_, idx) => idx),
+              values: nums.map(String),
+              activeIdx: i,
+              color: 'indigo',
+            },
+            {
+              id: 'dp',
+              name: 'DP 状态数组 dp[i]',
+              indices: dp.map((_, idx) => idx),
+              values: dp.map((v, idx) => idx <= i ? String(v) : ''),
+              activeIdx: i,
+              color: 'purple',
+            },
+          ],
+          activeIndices: [i],
+          activeSlot: i,
+          metrics: { '全局最大和': String(maxAns), '刷新位置': String(i) },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dp_done || 14,
+      codeLine: anchors.dp_done || 14,
+      decision: `🎉 DP 状态表格填表完毕！最终全局最大子数组和为 ${maxAns}`,
+      message: `动态规划以自底向上线性递推方式达成全局最优`,
+      variables: { return: maxAns, finalDp: dp },
+      grid: dpGrid.map(r => [...r]),
+      stateArrays: [
+        {
+          id: 'dp',
+          name: '最终完整 DP 表',
+          indices: dp.map((_, idx) => idx),
+          values: dp.map(String),
+          color: 'purple',
+        },
+      ],
+      activeIndices: [n - 1],
+      activeSlot: n - 1,
+      metrics: { '最终最大和': String(maxAns), '状态': '🏁 状态表收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMaxSubarrayStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+
+    let prev = 0;
+    let res = nums[0];
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.reg_init || 2,
+      codeLine: anchors.reg_init || 2,
+      decision: `空间极致压缩初始化：仅使用前驱滚动寄存器 prev = 0，全局最大值 res = ${res}`,
+      message: `舍弃 O(N) 辅助状态数组，空间复杂度从 O(N) 直降为 O(1)`,
+      variables: { prev: 0, res, spaceComplexity: 'O(1)' },
+      stateArrays: [
+        {
+          id: 'regs',
+          name: 'O(1) 滚动寄存器',
+          indices: [0, 1],
+          values: [`prev: 0`, `res: ${res}`],
+          color: 'indigo',
+        },
+      ],
+      metrics: { '空间复杂度': 'O(1)', '全局最大值': String(res) },
+    });
+
+    for (let i = 0; i < n; i++) {
+      const x = nums[i];
+      prev = Math.max(prev + x, x);
+      res = Math.max(res, prev);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.reg_loop || 4,
+        codeLine: anchors.reg_loop || 4,
+        decision: `滚动推进 [${i}]：x=${x} -> prev = max(prev+x, x) = ${prev}，res = ${res}`,
+        message: `单趟常数空间滚动迭代`,
+        variables: { i, x, prev, res },
+        stateArrays: [
+          {
+            id: 'regs',
+            name: 'O(1) 滚动寄存器',
+            indices: [0, 1],
+            values: [`prev: ${prev}`, `res: ${res}`],
+            color: 'indigo',
+          },
+        ],
+        activeIndices: [i],
+        activeSlot: i,
+        metrics: { 'prev': String(prev), 'res': String(res) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.reg_done || 8,
+      codeLine: anchors.reg_done || 8,
+      decision: `🏁 空间压缩流式推演收敛：全局最大和 = ${res}，时间 O(N)，空间 O(1)`,
+      message: `达成工业级最精炼空间优化`,
+      variables: { return: res },
+      stateArrays: [
+        {
+          id: 'regs',
+          name: '最终产出',
+          indices: [0],
+          values: [`res: ${res}`],
+          color: 'emerald',
+        },
+      ],
+      metrics: { '最终最大和': String(res), '空间占用': 'O(1)' },
+    });
+
+    return steps;
+  }
 }
+
 

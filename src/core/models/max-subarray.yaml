@@ -1,0 +1,187 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY / LINEAR DP MODEL] 最大子数组和 顶层领域模型
+# 对应：LeetCode 53 / 线性连续子段极值专题
+# 包含：Kadane 贪心清零、前缀和分治树、1D 动态规划矩阵、O(1) 空间压缩
+# ==============================================================================
+
+id: max-subarray
+name: 最大子数组和
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 动态规划
+  - 数组
+  - 分治
+
+description: |
+  给你一个整数数组 nums ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
+  子数组 是数组中的一个连续部分。
+  核心策略：
+  1. Forward 贪心策略 (Kadane)：实时累加连续和 currentSum，一旦累加和小于等于 0，则当前子序列对后续累加必然是负增益，立即清零重置；同时实时记录全局历史最大值 maxSum。
+  2. Reverse 动态规划策略：从后向前逆序推演以 i 开头的最大后缀和 dp[i] = max(nums[i], nums[i] + dp[i+1])。
+
+defaultParams:
+  nums: [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+
+constraints:
+  - 1 <= nums.length <= 10^5
+  - -10^4 <= nums[i] <= 10^4
+
+directions:
+  forward:
+    name: Kadane 贪心流动扫描与负和清零 (Forward Greedy)
+    description: 从左向右线性遍历，累加和为负时立即清零重置，贪心保留正数增益连续段
+  reverse:
+    name: 逆向连续后缀动态规划 (Backward Suffix DP)
+    description: 从右向左自底向上计算各位置作为起点的最大连续子数组和，验证全局最大子段和对称性
+
+stages:
+  stage-1:
+    name: Kadane 贪心连续扫描与负和清零
+    description: 单趟线性遍历，若当前连续和累加小于等于 0 则果断清零重新开始，实时刷新最大和
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxSubArray(int[] nums) {
+              // @step:init 1. 初始化连续和与全局最优解
+              int currentSum = 0;
+              int maxSum = nums[0];
+              // @step:loop 2. 单趟扫描数组元素
+              for (int x : nums) {
+                  currentSum += x;
+                  // @step:update 3. 实时刷新历史最高值
+                  if (currentSum > maxSum) {
+                      maxSum = currentSum;
+                  }
+                  // @step:reset 4. 若累计和为负，立即清零断舍离
+                  if (currentSum < 0) {
+                      currentSum = 0;
+                  }
+              }
+              // @step:done 5. 扫描收敛，返回全局最大连续和
+              return maxSum;
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxSubArrayReverse(int[] nums) {
+              // @step:init 逆向 Kadane 扫描初始化
+              int currentSum = 0;
+              int maxSum = nums[nums.length - 1];
+              // @step:loop 逆序从右至左扫描
+              for (int i = nums.length - 1; i >= 0; i--) {
+                  currentSum += nums[i];
+                  // @step:update 逆向刷新最大和
+                  if (currentSum > maxSum) maxSum = currentSum;
+                  // @step:reset 负收益清零
+                  if (currentSum < 0) currentSum = 0;
+              }
+              // @step:done 逆向遍历完毕返回最优解
+              return maxSum;
+          }
+
+  stage-2:
+    name: 分治区间搜索树展开
+    description: 基于分治思想将区间对半切分，树形自顶向下展示左右子区间与跨中点最大和合并
+    complexity:
+      time: O(N log N)
+      space: O(log N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:base 递归基准终止条件
+          int maxSubHelper(int[] nums, int left, int right) {
+              // @step:entry 探查当前分治区间 [left, right]
+              if (left == right) return nums[left];
+              int mid = (left + right) / 2;
+              // @step:branch_left 探查左半区间最大和
+              int leftMax = maxSubHelper(nums, left, mid);
+              // @step:branch_right 探查右半区间最大和
+              int rightMax = maxSubHelper(nums, mid + 1, right);
+              // @step:cross 跨越中点合并最大连续和
+              int crossMax = crossSum(nums, left, mid, right);
+              return Math.max(Math.max(leftMax, rightMax), crossMax);
+          }
+      reverse:
+        language: java
+        source: |
+          // 逆向自底向上线段树归并搜索
+          Status pushUp(Status l, Status r) {
+              int isum = l.isum + r.isum;
+              int lsum = Math.max(l.lsum, l.isum + r.lsum);
+              int rsum = Math.max(r.rsum, r.isum + l.rsum);
+              int msum = Math.max(Math.max(l.msum, r.msum), l.rsum + r.lsum);
+              return new Status(lsum, rsum, msum, isum);
+          }
+
+  stage-3:
+    name: 1D 线性动态规划状态转移填表
+    description: 状态定义 dp[i] 表示以 nums[i] 结尾的最大连续子数组和，dp[i] = max(nums[i], dp[i-1] + nums[i])
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxSubArrayDP(int[] nums) {
+              // @step:dp_init 初始化状态表格 dp[n]
+              int n = nums.length;
+              int[] dp = new int[n];
+              dp[0] = nums[0];
+              int maxAns = dp[0];
+              // @step:dp_loop 动态规划自底向上填表
+              for (int i = 1; i < n; i++) {
+                  // @step:dp_transfer 状态转移方程：继续累加 vs 重新开始
+                  dp[i] = Math.max(nums[i], dp[i - 1] + nums[i]);
+                  // @step:dp_update 刷新全局最大子段和
+                  maxAns = Math.max(maxAns, dp[i]);
+              }
+              // @step:dp_done DP 表填表完毕，返回全局最优值
+              return maxAns;
+          }
+      reverse:
+        language: java
+        source: |
+          // 逆向后缀 DP：从右向左构建 suffix_dp[i]
+          int[] dp = new int[n];
+          dp[n - 1] = nums[n - 1];
+          for (int i = n - 2; i >= 0; i--) {
+              dp[i] = Math.max(nums[i], nums[i] + dp[i + 1]);
+          }
+
+  stage-4:
+    name: 原地状态压缩与 O(1) 滚动更新
+    description: 舍弃长度为 N 的 DP 数组，仅使用前驱状态变量滚动更新，辅助空间缩减至 O(1)
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:reg_init 初始化滚动状态 prev 与 res
+          int prev = 0, res = nums[0];
+          // @step:reg_loop 单趟滚动推进
+          for (int x : nums) {
+              prev = Math.max(prev + x, x);
+              res = Math.max(res, prev);
+          }
+          // @step:reg_done 返回空间极致压缩后的全局最大值
+          return res;
+      reverse:
+        language: java
+        source: |
+          // 逆向 O(1) 原地滚动
+          int next = 0, res = nums[nums.length - 1];
+          for (int i = nums.length - 1; i >= 0; i--) {
+              next = Math.max(nums[i], nums[i] + next);
+              res = Math.max(res, next);
+          }
+          return res;

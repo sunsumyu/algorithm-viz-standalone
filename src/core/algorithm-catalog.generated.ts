@@ -3485,13 +3485,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "max-subarray",
     name: "最大子数组和",
-    viewId: "algo-max-subarray-view",
+    viewId: "max-subarray",
     category: "greedy",
     description: "Kadane 贪心算法，连续累加和小于 0 时立即清零重新统计",
     icon: "📊",
     difficulty: 2,
     levelOrder: 3,
-    learningGoal: "掌握贪心算法在连续子数组求和中的局部最优（负和清零）与全局最优（最大和）",
+    learningGoal: "掌握贪心算法在连续子数组求和中的局部最优（负和清零）与全局最优（最大和），理解Kadane算法四阶段演进",
   },
   {
     id: "best-time-stock",
@@ -3710,13 +3710,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "task-scheduler",
     name: "任务调度器",
-    viewId: "algo-task-scheduler-view",
+    viewId: "task-scheduler",
     category: "greedy",
     description: "LeetCode 621：桶思想贪心调度 CPU 冷却间隔，耗时 = max(任务总数, (maxFreq-1)*(n+1)+maxCount)",
     icon: "⏱️",
     difficulty: 2,
     levelOrder: 99,
-    learningGoal: "掌握贪心策略与桶思想在 CPU 任务调度冷却间隔中的应用，理解最短调度耗时数学边界",
+    learningGoal: "掌握贪心策略与桶思想在 CPU 任务调度冷却间隔中的应用，理解最短调度耗时数学边界与四阶段演进",
   },
   {
     id: "fractional-programming-138",
