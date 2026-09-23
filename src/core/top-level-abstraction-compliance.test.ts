@@ -66,6 +66,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'shortest-unsorted-continuous-subarray',
   'smallest-range-covering-elements-from-k-lists',
   'rabbits-in-forest',
+  'minimum-number-of-refueling-stops',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -238,7 +239,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'min-refueling-stops',
         'quiz-score',
         'minimize-deviation',
         'min-operations-similar',
@@ -255,7 +255,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'fractional-programming-138',
         'divide-array-into-increasing-sequences',
         'minimum-operations-to-make-similar',
-        'minimum-number-of-refueling-stops',
         'minimize-deviation-in-array',
         'quiz-score-maximization',
         'cross-river-classic',

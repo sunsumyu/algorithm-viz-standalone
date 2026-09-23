@@ -3984,10 +3984,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "minimum-number-of-refueling-stops",
-    name: "最低加油次数 (Min Refueling Stops)",
+    name: "最低加油次数 (Minimum Number of Refueling Stops)",
     viewId: "algo-minimum-number-of-refueling-stops-view",
     category: "greedy",
-    description: "最低加油次数 (Min Refueling Stops)",
+    description: "LeetCode 871：行进探测 + 大顶堆维护经过加油站油量（后悔贪心策略）",
     icon: "⛽",
     difficulty: 3,
     levelOrder: 926,

@@ -1,0 +1,182 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最低加油次数顶层领域模型
+# 对应：LeetCode 871 (Hard) / 洛谷 / 反悔贪心与大顶堆
+# 包含：行进探测、大顶堆反悔贪心、决策树展开、状态矩阵、一维空间压缩DP
+# ==============================================================================
+
+id: minimum-number-of-refueling-stops
+name: 最低加油次数 (Minimum Number of Refueling Stops)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 大顶堆
+  - 优先队列
+  - 反悔机制
+  - 动态规划
+  - 空间压缩
+
+description: |
+  汽车从起点出发驶向目的地 target，初始油量为 startFuel。沿途有若干加油站 stations，
+  其中 stations[i] = [position, fuel] 表示加油站距离起点的公里数和可加汽油升数。
+  车辆每行驶 1 公里消耗 1 升汽油。油箱容量无限。返回到达目的地所需的最低加油次数；若无法到达则返回 -1。
+  核心贪心策略：
+  1. 反悔式大顶堆贪心（Regret Greedy with Max-Heap）：
+     - 汽车应当「能走多远就走多远」，路过加油站时不立即耗费加油次数，而是把加油站的汽油存入备用大顶堆中；
+     - 只有当汽车当前油量不足以到达下一座加油站或目的地（即油量告急透支）时，才从历史路过的所有加油站中「反悔补油」；
+     - 贪心选择当前备用堆中油量最大的油桶加满，这样每次加油都能使最远续航距离获得最大增量，从而使加油总次数最少。
+  2. Forward: 正向大顶堆反悔贪心（优先提取经过的最大油量）。
+  3. Reverse: 逆向油量亏空倒推校验（从终点倒推最小油量需求）。
+
+defaultParams:
+  target: 100
+  startFuel: 10
+  stations:
+    - [10, 60]
+    - [20, 30]
+    - [30, 30]
+    - [60, 40]
+
+constraints:
+  - 1 <= target, startFuel <= 10^9
+  - 0 <= stations.length <= 500
+  - 0 < position_0 < position_1 < ... < target
+  - 1 <= fuel_i <= 10^9
+
+directions:
+  forward:
+    name: 大顶堆反悔贪心补油 (Max-Heap Regret Greedy)
+    description: 沿途收集汽油入堆，油量耗尽前夕贪心提取最大油桶，最少次数延伸续航
+  reverse:
+    name: 逆向油量亏空倒推对偶 (Reverse Fuel Deficit Dual)
+    description: 从终点反向推演各区段最小油量蓄水池与补给约束
+
+stages:
+  stage-1:
+    name: 暴力搜索与贪心模拟
+    description: 沿途行进探测，遇到加油站记录入堆，油量告急时提取最大汽油
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    card2Title: 行进探测与大顶堆沙盘 (Heap Sweep)
+    card2Desc: 车辆行进探测沿途加油站，大顶堆记录可用备用油桶
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 1: 大顶堆贪心模拟
+          PriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());
+          int curFuel = startFuel, stops = 0, i = 0, n = stations.length;
+          while (curFuel < target) {
+              while (i < n && stations[i][0] <= curFuel) {
+                  maxHeap.offer(stations[i][1]);
+                  i++;
+              }
+              if (maxHeap.isEmpty()) return -1;
+              curFuel += maxHeap.poll();
+              stops++;
+          }
+          return stops;
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 4
+          collect: 5
+          checkEmpty: 9
+          refuel: 10
+          done: 12
+
+  stage-2:
+    name: 反悔贪心分支决策树
+    description: 展开每个路过站点的探测分支、油量透支判定与堆顶提取决策
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    card2Title: 反悔加油决策树 (Regret Decision Tree)
+    card2Desc: 拓扑展开各站点的直达性校验与反悔取油分支
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 决策树分支判定
+          while (curFuel < target) {
+              if (i < n && stations[i][0] <= curFuel) {
+                  branchPass(stations[i]);
+              } else if (!maxHeap.isEmpty()) {
+                  int best = maxHeap.poll();
+                  branchRefuel(best);
+              } else {
+                  return -1;
+              }
+          }
+        lineMap:
+          entry: 1
+          loop: 2
+          branchPass: 3
+          branchRefuel: 5
+          fail: 8
+
+  stage-3:
+    name: 决策演进状态矩阵
+    description: 二维状态矩阵动态记录各轮推演中的最远续航、堆顶油量与累计加油数
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    card2Title: 续航演进状态矩阵 (State Matrix)
+    card2Desc: 动态追踪行进距离、备用油桶规模与累计加油决策
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态决策演进表
+          int[][] matrix = new int[stepsCount][5];
+          matrix[step][0] = curFuel;
+          matrix[step][1] = stationIdx;
+          matrix[step][2] = maxHeap.peek();
+          matrix[step][3] = stops;
+          matrix[step][4] = action;
+        lineMap:
+          entry: 1
+          init: 2
+          fillFuel: 3
+          fillStation: 4
+          fillHeap: 5
+          fillStops: 6
+          fillAction: 7
+
+  stage-4:
+    name: 极限空间压缩一维动态规划
+    description: 一维滚动数组 dp[j] 表示加 j 次油能达到的最远续航，空间压缩至 O(N)
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    card2Title: 空间压缩状态机 (State Machine)
+    card2Desc: 滚动数组 memo[j] 记录加 j 次油的最大续航里程，O(N) 空间极致收敛
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 一维空间压缩滚动DP
+          long[] dp = new long[n + 1];
+          dp[0] = startFuel;
+          for (int i = 0; i < n; i++) {
+              int pos = stations[i][0], fuel = stations[i][1];
+              for (int j = i; j >= 0; j--) {
+                  if (dp[j] >= pos) {
+                      dp[j + 1] = Math.max(dp[j + 1], dp[j] + fuel);
+                  }
+              }
+          }
+          for (int j = 0; j <= n; j++) {
+              if (dp[j] >= target) return j;
+          }
+          return -1;
+        lineMap:
+          entry: 1
+          init: 2
+          loopStations: 4
+          loopStops: 6
+          update: 8
+          findAns: 12
+          retAns: 13
+          fail: 15
