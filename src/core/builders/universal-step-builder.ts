@@ -111,10 +111,14 @@ export class UniversalStepBuilder {
   }
 
   /**
-   * 绑定性能指标与看板数据
+   * 绑定性能指标与看板数据 (支持 string 与 number 自动类型适配)
    */
-  public metrics(metrics: Record<string, string>): this {
-    this._step.metrics = { ...(this._step.metrics || {}), ...metrics };
+  public metrics(metrics: Record<string, string | number>): this {
+    const stringified: Record<string, string> = {};
+    for (const [k, v] of Object.entries(metrics)) {
+      stringified[k] = String(v);
+    }
+    this._step.metrics = { ...(this._step.metrics || {}), ...stringified };
     return this;
   }
 
@@ -132,6 +136,37 @@ export class UniversalStepBuilder {
   public deps(deps: Array<{ r: number; c: number; label?: string }>): this {
     this._step.deps = deps;
     return this;
+  }
+
+  /**
+   * 绑定高亮槽位集合
+   */
+  public highlightSlots(slots: number[]): this {
+    this._step.highlightSlots = [...slots];
+    this._step.activeIndices = [...slots];
+    return this;
+  }
+
+  /**
+   * 绑定单元格坐标 (等同于 coords)
+   */
+  public cell(r: number, c: number): this {
+    return this.coords(r, c);
+  }
+
+  /**
+   * 绑定当前激活的树节点 ID
+   */
+  public activeNode(nodeId: string): this {
+    this._step.activeNodeId = nodeId;
+    return this;
+  }
+
+  /**
+   * 绑定状态依赖树 (treeRoot 别名)
+   */
+  public tree(root: UniversalTreeNode): this {
+    return this.treeRoot(root);
   }
 
   /**

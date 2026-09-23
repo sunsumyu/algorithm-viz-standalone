@@ -55,7 +55,8 @@ export class ProblemDimensionResolver {
     'min-arrows',
     'non-overlapping',
     'merge-intervals',
-    'partition-labels'
+    'partition-labels',
+    'lemonade',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -240,6 +241,14 @@ export class ProblemDimensionResolver {
       const nums = this.toArray(params.nums);
       m = 1;
       n = nums.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.bills !== undefined) {
+      const bills = this.toArray(params.bills);
+      m = 1;
+      n = bills.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

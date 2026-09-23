@@ -3,7 +3,8 @@
  * LeetCode 860：每杯柠檬水 $5，收 $10 找 $5，收 $20 贪心优先找 $10+$5 其次找 3张 $5
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import { StepBase } from '../../../core/step-visualizer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import { parseNumberList } from '../../../core/input-primitives';
@@ -327,48 +328,21 @@ export function renderLemonadeCanvas(container: HTMLElement, step: LemonadeStep)
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'lemonade',
   name: '柠檬水找零',
+  viewId: 'lemonade',
   category: 'greedy',
-  description: '贪心维护各面额纸币数量，找零 $20 优先消耗专用 $10 纸币，保留万能 $5',
   icon: '🍋',
   difficulty: 1,
   levelOrder: 14,
-  learningGoal: '理解贪心策略中通用资源与受限资源的优先级调度思想',
-  inputs: [
-    {
-      id: 'bills',
-      label: '顾客支付账单',
-      type: 'text',
-      defaultValue: '5,5,5,10,20',
-      placeholder: '5,5,5,10,20',
-    },
-  ],
-  presets: [
-    { label: '示例 1 (成功 true)', values: { bills: '5,5,5,10,20' } },
-    { label: '示例 2 (失败 false)', values: { bills: '5,5,10,10,20' } },
-    { label: '3张$5备选 (成功)', values: { bills: '5,5,5,20' } },
-  ],
-  metrics: [
-    { id: 'cur-bill', label: '当前顾客支付', color: '#ca8a04' },
-    { id: 'change-need', label: '所需找零金额', color: '#dc2626' },
-    { id: 'cashier', label: '收银台储备', color: '#10b981' },
-    { id: 'change-given', label: '找零吐钞', color: '#3b82f6' },
-    { id: 'verdict', label: '找零可行性', color: '#059669' },
-    { id: 'action', label: '找零决策', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '💵 $5 纸币', color: '#10b981' },
-    { label: '💶 $10 纸币', color: '#3b82f6' },
-    { label: '💷 $20 纸币', color: '#ca8a04' },
-  ],
-  codeLanguages: LEMONADE_CODE_LANGUAGES,
-  problemHtml: LEMONADE_PROBLEM_HTML,
-  analysisHtml: LEMONADE_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
-    const rawBills = parseNumberList(inputs.bills, '5,5,5,10,20');
-    return withMetrics(buildLemonadeSteps(rawBills.length ? rawBills : [5, 5, 5, 10, 20]));
-  },
-  renderCanvas: (container, step) => renderLemonadeCanvas(container, step as LemonadeStep),
+  learningGoal: '理解贪心策略中通用资源与受限资源的优先级调度思想，掌握货币池受限优先消耗的决策树与状态机演进',
+  description: '贪心维护各面额纸币数量，找零 $20 优先消耗专用 $10 纸币，保留万能 $5',
+  template: `<div id="lemonade" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerLemonade(): void {
+  // 保持向前兼容导出
+}
+

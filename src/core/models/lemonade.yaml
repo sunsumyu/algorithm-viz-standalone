@@ -1,0 +1,282 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 柠檬水找零 顶层领域模型
+# 对应：LeetCode 860 / 贪心有限状态资源与货币池调度专题
+# 包含：保留通用货币贪心优先、分支决策依赖树、状态转移表与 O(1) 计数器压缩
+# ==============================================================================
+
+id: lemonade
+name: "柠檬水找零"
+nameEn: "Lemonade Change"
+category: "greedy"
+icon: "🍋"
+difficulty: 1
+levelOrder: 14
+learningGoal: "理解贪心策略中通用资源与受限资源的优先级调度思想：优先消耗专用纸币，保留万能纸币"
+description: "在柠檬水摊上，每一杯柠檬水的售价为 5 美元。顾客排队购买你的产品，一次购买一杯。每位顾客只买一杯柠檬水，然后向你付 5 美元、10 美元或 20 美元。你必须给每个顾客正确找零。一开始你手头没有任何零钱。如果你能给每位顾客正确找零，返回 true，否则返回 false。"
+defaultParams:
+  bills: "[5, 5, 5, 10, 20]"
+
+problem:
+  title: "柠檬水找零 (Lemonade Change)"
+  difficulty: "简单"
+  tags: ["贪心", "数组", "状态机", "LeetCode 860"]
+  description: "在柠檬水摊上，每一杯柠檬水的售价为 <code>5</code> 美元。顾客排队购买你的产品，（按账单 <code>bills</code> 所给的顺序）一次购买一杯。<br/><br/>每位顾客只买一杯柠檬水，然后向你付 <code>5</code> 美元、<code>10</code> 美元或 <code>20</code> 美元。你必须给每个顾客正确找零，也就是说净交易是每位顾客向你支付 <code>5</code> 美元。<br/><br/>注意，一开始你手头没有任何零钱。<br/><br/>如果你能给每位顾客正确找零，返回 <code>true</code> ，否则返回 <code>false</code> 。"
+  examples:
+    - input: "bills = [5,5,5,10,20]"
+      output: "true"
+      explanation: "前 3 位顾客付款 5 美元，收银台累计 3 张 5 美元。第 4 位顾客付款 10 美元，找回 1 张 5 美元（剩 2 张 5 美元，1 张 10 美元）。第 5 位顾客付款 20 美元，找回 1 张 10 美元和 1 张 5 美元。所有顾客都成功找零，返回 true。"
+    - input: "bills = [5,5,10,10,20]"
+      output: "false"
+      explanation: "前 2 位顾客付款 5 美元。接下来 2 位顾客付款 10 美元，分别找回 1 张 5 美元。此时手头无 5 美元。最后一位顾客付款 20 美元，无法找零 15 美元，返回 false。"
+  constraints:
+    - "1 <= bills.length <= 10^5"
+    - "bills[i] 不是 5 就是 10 或是 20"
+
+directions:
+  forward:
+    label: "贪心优先消耗 $10 纸币 (Forward Greedy)"
+    start: [0, 0]
+    target: [0, 5]
+    branches:
+      - name: "pay5"
+        label: "直接存入 $5"
+      - name: "change10"
+        label: "付 $10 找 $5"
+      - name: "change20Opt"
+        label: "付 $20 优先找 $10+$5"
+      - name: "change20Alt"
+        label: "付 $20 备选找 3张$5"
+
+  reverse:
+    label: "备选方案分析与逆向推演 (Reverse Evaluation)"
+    description: "探索当手头有 $10 时若盲目找 3张 $5 导致通用货币过早耗尽的短板"
+    startFormula: "逆向或备选策略"
+    target: "资源稳定性对比"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "贪心模拟"
+    type: "greedy"
+    timeBadge: "O(n) 时间"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name: "贪心货币池调度 (优先消耗受限货币)"
+    desc: "维护 5 元和 10 元现钞计数。遇到 20 元时贪心优先找一张 10 元和一张 5 元，保留万能的 5 元纸币"
+    card2Title: "收银台现钞储备看板"
+    card2Desc: "实时观测收银台现钞储备数量变化，直观对比找零吐钞分支与贪心决策。"
+    code:
+      forward:
+        title: "LemonadeChange.java"
+        source: |
+          public boolean lemonadeChange(int[] bills) {
+              int five = 0, ten = 0; // @step:init
+              for (int bill : bills) { // @step:loop
+                  if (bill == 5) { // @step:check5
+                      five++; // @step:recv5
+                  } else if (bill == 10) { // @step:check10
+                      if (five == 0) return false; // @step:fail10
+                      five--; ten++; // @step:change10
+                  } else { // @step:check20
+                      if (five > 0 && ten > 0) { // @step:opt20
+                          five--; ten--; // @step:change20_opt
+                      } else if (five >= 3) { // @step:alt20
+                          five -= 3; // @step:change20_alt
+                      } else {
+                          return false; // @step:fail20
+                      }
+                  }
+              }
+              return true; // @step:done
+          }
+      reverse:
+        title: "LemonadeChange_Reverse.java"
+        source: |
+          public boolean lemonadeChange(int[] bills) {
+              int five = 0, ten = 0; // @step:init
+              for (int bill : bills) { // @step:loop
+                  if (bill == 5) { // @step:check5
+                      five++; // @step:recv5
+                  } else if (bill == 10) { // @step:check10
+                      if (five == 0) return false; // @step:fail10
+                      five--; ten++; // @step:change10
+                  } else { // @step:check20
+                      if (five > 0 && ten > 0) { // @step:opt20
+                          five--; ten--; // @step:change20_opt
+                      } else if (five >= 3) { // @step:alt20
+                          five -= 3; // @step:change20_alt
+                      } else {
+                          return false; // @step:fail20
+                      }
+                  }
+              }
+              return true; // @step:done
+          }
+
+  stage-2:
+    shortName: "决策树"
+    type: "memoization"
+    timeBadge: "分支探索"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name: "找零分支决策依赖树"
+    desc: "将每一笔交易展开为决策状态树，直观对比贪心优先消耗 10 元分支与消耗 3 张 5 元分支的后续生存率"
+    card2Title: "状态分支依赖树"
+    card2Desc: "观察自顶向下各顾客账单引发的资源池转移状态。"
+    code:
+      forward:
+        title: "LemonadeChange_Tree.java"
+        source: |
+          public boolean dfs(int index, int five, int ten, int[] bills) {
+              if (index == bills.length) return true; // @step:base
+              int bill = bills[index]; // @step:entry
+              if (bill == 5) {
+                  return dfs(index + 1, five + 1, ten, bills); // @step:branch5
+              } else if (bill == 10) {
+                  if (five == 0) return false; // @step:prune10
+                  return dfs(index + 1, five - 1, ten + 1, bills); // @step:branch10
+              } else {
+                  if (five > 0 && ten > 0) {
+                      return dfs(index + 1, five - 1, ten - 1, bills); // @step:branch20_opt
+                  }
+                  if (five >= 3) {
+                      return dfs(index + 1, five - 3, ten, bills); // @step:branch20_alt
+                  }
+                  return false; // @step:prune20
+              }
+          }
+      reverse:
+        title: "LemonadeChange_Tree_Reverse.java"
+        source: |
+          public boolean dfs(int index, int five, int ten, int[] bills) {
+              if (index == bills.length) return true; // @step:base
+              int bill = bills[index]; // @step:entry
+              if (bill == 5) {
+                  return dfs(index + 1, five + 1, ten, bills); // @step:branch5
+              } else if (bill == 10) {
+                  if (five == 0) return false; // @step:prune10
+                  return dfs(index + 1, five - 1, ten + 1, bills); // @step:branch10
+              } else {
+                  if (five > 0 && ten > 0) {
+                      return dfs(index + 1, five - 1, ten - 1, bills); // @step:branch20_opt
+                  }
+                  if (five >= 3) {
+                      return dfs(index + 1, five - 3, ten, bills); // @step:branch20_alt
+                  }
+                  return false; // @step:prune20
+              }
+          }
+
+  stage-3:
+    shortName: "状态转移"
+    type: "dynamic-programming"
+    timeBadge: "O(n) 状态表"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name: "有限状态转移矩阵"
+    desc: "构建状态转移跟踪表，展示每一步顾客输入带来的货币池 (five, ten) 状态转移与断言"
+    card2Title: "货币池状态转移矩阵"
+    card2Desc: "通过表格清晰展现每个顾客交易前后的货币向量变化。"
+    code:
+      forward:
+        title: "LemonadeChange_DP.java"
+        source: |
+          public boolean checkTransfer(int[] bills) {
+              int n = bills.length; // @step:entry
+              int[][] state = new int[n + 1][2]; // @step:table_init
+              for (int i = 0; i < n; i++) { // @step:loop
+                  int bill = bills[i]; // @step:fetch
+                  if (bill == 5) {
+                      state[i + 1][0] = state[i][0] + 1; // @step:trans5
+                      state[i + 1][1] = state[i][1];
+                  } else if (bill == 10) {
+                      if (state[i][0] < 1) return false; // @step:check10
+                      state[i + 1][0] = state[i][0] - 1; // @step:trans10
+                      state[i + 1][1] = state[i][1] + 1;
+                  } else {
+                      if (state[i][0] >= 1 && state[i][1] >= 1) { // @step:check20_opt
+                          state[i + 1][0] = state[i][0] - 1; // @step:trans20_opt
+                          state[i + 1][1] = state[i][1] - 1;
+                      } else if (state[i][0] >= 3) { // @step:check20_alt
+                          state[i + 1][0] = state[i][0] - 3; // @step:trans20_alt
+                          state[i + 1][1] = state[i][1];
+                      } else {
+                          return false; // @step:fail20
+                      }
+                  }
+              }
+              return true; // @step:done
+          }
+      reverse:
+        title: "LemonadeChange_DP_Reverse.java"
+        source: |
+          public boolean checkTransfer(int[] bills) {
+              int n = bills.length; // @step:entry
+              int[][] state = new int[n + 1][2]; // @step:table_init
+              for (int i = 0; i < n; i++) { // @step:loop
+                  int bill = bills[i]; // @step:fetch
+                  if (bill == 5) {
+                      state[i + 1][0] = state[i][0] + 1; // @step:trans5
+                      state[i + 1][1] = state[i][1];
+                  } else if (bill == 10) {
+                      if (state[i][0] < 1) return false; // @step:check10
+                      state[i + 1][0] = state[i][0] - 1; // @step:trans10
+                      state[i + 1][1] = state[i][1] + 1;
+                  } else {
+                      if (state[i][0] >= 1 && state[i][1] >= 1) { // @step:check20_opt
+                          state[i + 1][0] = state[i][0] - 1; // @step:trans20_opt
+                          state[i + 1][1] = state[i][1] - 1;
+                      } else if (state[i][0] >= 3) { // @step:check20_alt
+                          state[i + 1][0] = state[i][0] - 3; // @step:trans20_alt
+                          state[i + 1][1] = state[i][1];
+                      } else {
+                          return false; // @step:fail20
+                      }
+                  }
+              }
+              return true; // @step:done
+          }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimized"
+    timeBadge: "O(1) 空间"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name: "空间压缩 (双变量极速状态机)"
+    desc: "将状态表压缩为两个计数寄存器 five 与 ten，O(1) 空间单趟高速线性推演"
+    card2Title: "极简寄存器状态机"
+    card2Desc: "零额外内存开销，以最高效的寄存器步进完成判定。"
+    code:
+      forward:
+        title: "LemonadeChange_Optimized.java"
+        source: |
+          public boolean lemonadeChange(int[] bills) {
+              int five = 0, ten = 0; // @step:init
+              for (int bill : bills) { // @step:loop
+                  if (bill == 5) { five++; } // @step:recv5
+                  else if (bill == 10) { // @step:recv10
+                      if (five == 0) return false; // @step:fail10
+                      five--; ten++; // @step:change10
+                  } else { // @step:recv20
+                      if (five > 0 && ten > 0) { five--; ten--; } // @step:opt20
+                      else if (five >= 3) { five -= 3; } // @step:alt20
+                      else { return false; } // @step:fail20
+                  }
+              }
+              return true; // @step:done
+          }
+      reverse:
+        title: "LemonadeChange_Optimized_Reverse.java"
+        source: |
+          public boolean lemonadeChange(int[] bills) {
+              int five = 0, ten = 0; // @step:init
+              for (int bill : bills) { // @step:loop
+                  if (bill == 5) { five++; } // @step:recv5
+                  else if (bill == 10) { // @step:recv10
+                      if (five == 0) return false; // @step:fail10
+                      five--; ten++; // @step:change10
+                  } else { // @step:recv20
+                      if (five > 0 && ten > 0) { five--; ten--; } // @step:opt20
+                      else if (five >= 3) { five -= 3; } // @step:alt20
+                      else { return false; } // @step:fail20
+                  }
+              }
+              return true; // @step:done
+          }

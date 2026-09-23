@@ -3616,13 +3616,13 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "lemonade",
     name: "柠檬水找零",
-    viewId: "algo-lemonade-view",
+    viewId: "lemonade",
     category: "greedy",
     description: "贪心维护各面额纸币数量，找零 $20 优先消耗专用 $10 纸币，保留万能 $5",
     icon: "🍋",
     difficulty: 1,
     levelOrder: 14,
-    learningGoal: "理解贪心策略中通用资源与受限资源的优先级调度思想",
+    learningGoal: "理解贪心策略中通用资源与受限资源的优先级调度思想，掌握货币池受限优先消耗的决策树与状态机演进",
   },
   {
     id: "reconstruct-queue",
