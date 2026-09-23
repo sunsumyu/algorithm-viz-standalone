@@ -1,0 +1,246 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最小区间 顶层领域模型
+# 对应：LeetCode 632 / 左程云 091 Code06 多路有序序列小根堆滑动窗口
+# ==============================================================================
+
+id: smallest-range-covering-elements-from-k-lists
+name: "最小区间"
+nameEn: "Smallest Range Covering Elements from K Lists"
+category: "greedy"
+icon: "🎯"
+difficulty: 3
+levelOrder: 912
+learningGoal: "掌握多路归并小根堆与滑动窗口的结合，利用贪心单调性持续收敛全局最小区间跨度"
+description: "你有 k 个 非递减排列 的整数列表。找到一个 最小 区间，使得 k 个列表中的每个列表都至少有一个数包含在其中。"
+defaultStage: stage-1
+defaultParams:
+  lists: "[[4, 10, 15, 24, 26], [0, 9, 12, 20], [5, 18, 22, 30]]"
+
+problem:
+  title: "最小区间 (Smallest Range Covering Elements from K Lists)"
+  difficulty: "困难"
+  leetcodeId: 632
+  tags: ["贪心", "数组", "哈希表", "滑动窗口", "堆 (优先队列)", "LeetCode 632"]
+  description: "你有 <code>k</code> 个 <strong>非递减排列</strong> 的整数列表。找到一个 <strong>最小</strong> 区间，使得 <code>k</code> 个列表中的每个列表都至少有一个数包含在其中。<br/><br/>我们定义如果 <code>b-a < d-c</code> 或者在 <code>b-a == d-c</code> 时 <code>a < c</code>，则区间 <code>[a, b]</code> 比 <code>[c, d]</code> 小。"
+  examples:
+    - input: "nums = [[4,10,15,24,26],[0,9,12,20],[5,18,22,30]]"
+      output: "[20,24]"
+      explanation: "列表 1：[4, 10, 15, 24, 26]，24 在区间 [20,24] 中。\n列表 2：[0, 9, 12, 20]，20 在区间 [20,24] 中。\n列表 3：[5, 18, 22, 30]，22 在区间 [20,24] 中。"
+    - input: "nums = [[1,2,3],[1,2,3],[1,2,3]]"
+      output: "[1,1]"
+  constraints:
+    - "nums.length == k"
+    - "1 <= k <= 3500"
+    - "1 <= nums[i].length <= 50"
+    - "-10^5 <= nums[i][j] <= 10^5"
+    - "nums[i] 按非递减顺序排列"
+
+directions:
+  forward:
+    label: "正向小根堆推进 (Min-Heap Sliding)"
+    start: [0, 0]
+    target: [2, 4]
+    branches:
+      - name: "heap_push"
+        label: "各列表首元素入小根堆"
+      - name: "heap_pop_advance"
+        label: "弹出堆顶最小值并推进对应列表"
+
+  reverse:
+    label: "逆向大根堆回溯 (Max-Heap Sliding)"
+    description: "从各列表末尾最大值开始，利用大根堆反向收缩区间"
+    startFormula: "各列表末尾"
+    target: "各列表起始"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "多路小根堆滑动"
+    name: 多路归并小根堆滑动窗口
+    card2Title: "多列表指针与小根堆沙盘 (Multi-Pointer Heap)"
+    card2Desc: "小根堆维护 k 个列表当前候选元素，变量 max 跟踪当前上限，每次弹出最小值尝试缩小区间跨度。"
+    description: 小根堆维护 k 个列表当前指针对应数值，实时记录最大值 max，每次弹出最小值 min 更新最优区间
+    complexity:
+      time: O(N log k)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        source: |
+          public int[] smallestRange(List<List<Integer>> nums) {
+              int k = nums.size();
+              // 堆存储: [val, listIdx, elemIdx]
+              PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);
+              int max = Integer.MIN_VALUE;
+              for (int i = 0; i < k; i++) {
+                  int val = nums.get(i).get(0);
+                  pq.offer(new int[]{val, i, 0});
+                  max = Math.max(max, val);
+              }
+              int ansL = pq.peek()[0], ansR = max;
+              while (pq.size() == k) {
+                  int[] cur = pq.poll();
+                  int min = cur[0], listIdx = cur[1], elemIdx = cur[2];
+                  if (max - min < ansR - ansL) {
+                      ansL = min;
+                      ansR = max;
+                  }
+                  if (elemIdx + 1 < nums.get(listIdx).size()) {
+                      int nextVal = nums.get(listIdx).get(elemIdx + 1);
+                      pq.offer(new int[]{nextVal, listIdx, elemIdx + 1});
+                      max = Math.max(max, nextVal);
+                  }
+              }
+              return new int[]{ansL, ansR};
+          }
+        anchors:
+          entry: 1
+          initHeap: 4
+          loop: 13
+          pop: 14
+          updateAns: 16
+          advance: 20
+          done: 27
+      reverse:
+        language: java
+        source: |
+          public int[] smallestRangeReverse(List<List<Integer>> nums) {
+              int k = nums.size();
+              PriorityQueue<int[]> maxPq = new PriorityQueue<>((a, b) -> b[0] - a[0]);
+              int min = Integer.MAX_VALUE;
+              for (int i = 0; i < k; i++) {
+                  int lastIdx = nums.get(i).size() - 1;
+                  int val = nums.get(i).get(lastIdx);
+                  maxPq.offer(new int[]{val, i, lastIdx});
+                  min = Math.min(min, val);
+              }
+              int ansL = min, ansR = maxPq.peek()[0];
+              while (maxPq.size() == k) {
+                  int[] cur = maxPq.poll();
+                  int max = cur[0], listIdx = cur[1], elemIdx = cur[2];
+                  if (max - min < ansR - ansL) {
+                      ansL = min;
+                      ansR = max;
+                  }
+                  if (elemIdx - 1 >= 0) {
+                      int prevVal = nums.get(listIdx).get(elemIdx - 1);
+                      maxPq.offer(new int[]{prevVal, listIdx, elemIdx - 1});
+                      min = Math.min(min, prevVal);
+                  }
+              }
+              return new int[]{ansL, ansR};
+          }
+        anchors:
+          entry: 1
+          initHeap: 3
+          loop: 13
+          pop: 14
+          updateAns: 16
+          advance: 20
+          done: 27
+
+  stage-2:
+    shortName: "堆拓扑决策树"
+    name: 堆拓扑决策树展开
+    card2Title: "堆顶弹出与区间收缩决策树 (Heap Decision Tree)"
+    card2Desc: "展示每次堆顶最小值弹出、当前全覆盖区间生成与更优解更新过程。"
+    description: 自顶向下构建状态决策树，展示每个步骤弹出最小值与推进新元素时对最优区间的更新过程
+    complexity:
+      time: O(N log k)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 堆决策展开树
+          while (pq.size() == k) {
+              int[] cur = pq.poll();
+              // 考察当前全覆盖区间 [min, max]
+              if (max - cur[0] < ansR - ansL) {
+                  ansL = cur[0];
+                  ansR = max;
+              }
+              // 推进同组下一个元素
+              advanceNext(cur[1], cur[2] + 1);
+          }
+        anchors:
+          loop: 2
+          poll: 3
+          calcRange: 5
+          advance: 10
+          done: 12
+      reverse:
+        language: java
+        source: |
+          while (maxPq.size() == k) {
+              int[] cur = maxPq.poll();
+              if (cur[0] - min < ansR - ansL) {
+                  ansL = min;
+                  ansR = cur[0];
+              }
+              advancePrev(cur[1], cur[2] - 1);
+          }
+        anchors:
+          loop: 1
+          poll: 2
+          calcRange: 3
+          advance: 8
+          done: 10
+
+  stage-3:
+    shortName: "跨度收敛状态矩阵"
+    name: 候选区间跨度收缩演进表
+    card2Title: "候选区间跨度演进矩阵 (Interval Shrink Table)"
+    card2Desc: "跟踪每轮贪心推进中的堆顶最小值、当前上限、当前跨度与最优跨度。"
+    description: 二维矩阵记录每轮循环中的堆顶值、max、当前区间跨度与全局最优答案
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 矩阵行记录: [step, heapMin, maxVal, curSpan, bestSpan]
+          for (int s = 0; s < steps; s++) {
+              int span = max - min;
+              boolean updated = span < bestSpan;
+          }
+        anchors:
+          init: 1
+          step: 2
+          done: 5
+      reverse:
+        language: java
+        source: |
+          for (int s = 0; s < steps; s++) {
+              int span = max - min;
+              boolean updated = span < bestSpan;
+          }
+        anchors:
+          init: 1
+          step: 2
+          done: 5
+
+  stage-4:
+    shortName: "极速贪心收敛"
+    name: 优先队列堆内状态与极速收敛
+    card2Title: "全局最小区间锁定 (Global Smallest Range)"
+    card2Desc: "输出最终收敛的最小区间 [ansL, ansR]，所有列表均有代表元素覆盖其内。"
+    description: 某个列表指针耗尽时算法收敛退出，输出最终最小区间 [ansL, ansR]
+    complexity:
+      time: O(N log k)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        source: |
+          // 列表耗尽，全局最小区间确立
+          return new int[]{ansL, ansR};
+        anchors:
+          ret: 2
+      reverse:
+        language: java
+        source: |
+          return new int[]{ansL, ansR};
+        anchors:
+          ret: 1

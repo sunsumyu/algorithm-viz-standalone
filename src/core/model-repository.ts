@@ -73,6 +73,8 @@ import splitMinAvgSumModel from './models/split-min-avg-sum.yaml';
 import groupBuyTicketsModel from './models/group-buy-tickets.yaml';
 import longestSameZerosOnesModel from './models/longest-same-zeros-ones-intervals.yaml';
 import minimumInitialEnergyModel from './models/minimum-initial-energy-to-finish-tasks.yaml';
+import shortestUnsortedModel from './models/shortest-unsorted-continuous-subarray.yaml';
+import smallestRangeModel from './models/smallest-range-covering-elements-from-k-lists.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -192,6 +194,10 @@ export class AlgorithmModelRepository {
     ['group-buy-tickets', groupBuyTicketsModel as IYamlAlgorithmModel],
     ['longest-same-zeros-ones-intervals', longestSameZerosOnesModel as IYamlAlgorithmModel],
     ['minimum-initial-energy-to-finish-tasks', minimumInitialEnergyModel as IYamlAlgorithmModel],
+    ['shortest-unsorted-continuous-subarray', shortestUnsortedModel as IYamlAlgorithmModel],
+    ['shortest-unsorted-subarray', shortestUnsortedModel as IYamlAlgorithmModel],
+    ['smallest-range-covering-elements-from-k-lists', smallestRangeModel as IYamlAlgorithmModel],
+    ['smallest-range', smallestRangeModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

@@ -74,6 +74,9 @@ export class ProblemDimensionResolver {
     'group-buy-tickets',
     'longest-same-zeros-ones-intervals',
     'minimum-initial-energy-to-finish-tasks',
+    'shortest-unsorted-continuous-subarray',
+    'shortest-unsorted-subarray',
+    'smallest-range-covering-elements-from-k-lists',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -323,6 +326,14 @@ export class ProblemDimensionResolver {
       const nums = this.toArray(params.nums);
       m = 1;
       n = nums.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.lists !== undefined) {
+      const lists = this.toArray(params.lists);
+      m = 1;
+      n = lists.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

@@ -3,7 +3,9 @@
  * 核心贪心：小顶堆维护多路游标 + 动态最大值追踪最小跨度
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_091_PROBLEMS } from './greedy-091-problem-content';
 import {
   SMALLEST_RANGE_CODES,
@@ -156,7 +158,7 @@ export function buildSmallestRangeSteps(lists: number[][]): SmallestRangeStep[] 
   return steps;
 }
 
-export const smallestRangeVisualizer = registerDeclarativeAlgorithm<SmallestRangeStep>({
+const { template } = createDeclarativeVisualizer<SmallestRangeStep>({
   id: 'smallest-range-covering-elements-from-k-lists',
   name: '最小区间 (Smallest Range)',
   category: 'greedy',
@@ -281,4 +283,21 @@ export const smallestRangeVisualizer = registerDeclarativeAlgorithm<SmallestRang
 
     stageContainer.appendChild(mainCard);
   },
+});
+
+export const smallestRangeVisualizer = UniversalStageVisualizer;
+export const smallestRangeRenderer = UniversalStageVisualizer;
+
+registerAlgorithm({
+  id: 'smallest-range-covering-elements-from-k-lists',
+  name: '最小区间 (Smallest Range Covering Elements from K Lists)',
+  viewId: 'algo-smallest-range-covering-elements-from-k-lists-view',
+  category: 'greedy',
+  icon: '🎯',
+  difficulty: 3,
+  levelOrder: 912,
+  description: 'k 个非递减排列的整数列表，通过小根堆维护多路游标并实时追踪当前最大值，贪心收敛能覆盖每个列表至少一个数的最小区间。',
+  learningGoal: '掌握多路归并小根堆与滑动窗口结合的局部贪心单调性收敛原理',
+  template,
+  Visualizer: UniversalStageVisualizer,
 });

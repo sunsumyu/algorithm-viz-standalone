@@ -3,7 +3,9 @@
  * 核心贪心：双向极值扫描判定左右无序边界
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_091_PROBLEMS } from './greedy-091-problem-content';
 import {
   SHORTEST_UNSORTED_CODES,
@@ -150,7 +152,7 @@ export function buildShortestUnsortedSteps(nums: number[]): ShortestUnsortedStep
   return steps;
 }
 
-export const shortestUnsortedSubarrayVisualizer = registerDeclarativeAlgorithm<ShortestUnsortedStep>({
+const { template } = createDeclarativeVisualizer<ShortestUnsortedStep>({
   id: 'shortest-unsorted-continuous-subarray',
   name: '最短无序连续子数组 (Shortest Unsorted Subarray)',
   category: 'greedy',
@@ -257,4 +259,21 @@ export const shortestUnsortedSubarrayVisualizer = registerDeclarativeAlgorithm<S
 
     stageContainer.appendChild(mainCard);
   },
+});
+
+export const shortestUnsortedSubarrayVisualizer = UniversalStageVisualizer;
+export const shortestUnsortedSubarrayRenderer = UniversalStageVisualizer;
+
+registerAlgorithm({
+  id: 'shortest-unsorted-continuous-subarray',
+  name: '最短无序连续子数组 (Shortest Unsorted Subarray)',
+  viewId: 'algo-shortest-unsorted-continuous-subarray-view',
+  category: 'greedy',
+  icon: '🔍',
+  difficulty: 2,
+  levelOrder: 911,
+  description: '寻找最短连续子数组，若对其升序排序则全数组有序。通过双向线性极值扫描在 O(N) 锁定无序区间左右边界。',
+  learningGoal: '掌握双向最值扫描锁定无序边界的局部贪心原理',
+  template,
+  Visualizer: UniversalStageVisualizer,
 });

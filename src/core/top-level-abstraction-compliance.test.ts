@@ -63,6 +63,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'group-buy-tickets',
   'longest-same-zeros-ones-intervals',
   'minimum-initial-energy-to-finish-tasks',
+  'shortest-unsorted-continuous-subarray',
+  'smallest-range-covering-elements-from-k-lists',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -251,8 +253,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'max-avg-pass-ratio',
         'min-cost-hire-workers',
         'fractional-programming-138',
-        'shortest-unsorted-continuous-subarray',
-        'smallest-range-covering-elements-from-k-lists',
         'divide-array-into-increasing-sequences',
         'minimum-operations-to-make-similar',
         'minimum-number-of-refueling-stops',

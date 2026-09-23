@@ -146,6 +146,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { GroupBuyTicketsStrategy } = await import('./group-buy-tickets-strategy');
       const { LongestSameZerosOnesStrategy } = await import('./longest-same-zeros-ones-strategy');
       const { MinimumInitialEnergyStrategy } = await import('./minimum-initial-energy-strategy');
+      const { ShortestUnsortedSubarrayStrategy } = await import('./shortest-unsorted-subarray-strategy');
+      const { SmallestRangeStrategy } = await import('./smallest-range-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -179,6 +181,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         GroupBuyTicketsStrategy,
         LongestSameZerosOnesStrategy,
         MinimumInitialEnergyStrategy,
+        ShortestUnsortedSubarrayStrategy,
+        SmallestRangeStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

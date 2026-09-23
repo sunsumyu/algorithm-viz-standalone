@@ -1,0 +1,222 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最短无序连续子数组 顶层领域模型
+# 对应：LeetCode 581 / 左程云 091 Code01 双向极值扫描
+# ==============================================================================
+
+id: shortest-unsorted-continuous-subarray
+name: "最短无序连续子数组"
+nameEn: "Shortest Unsorted Continuous Subarray"
+category: "greedy"
+icon: "🔍"
+difficulty: 2
+levelOrder: 911
+learningGoal: "掌握双向最值扫描锁定无序边界的局部贪心原理，将 O(N log N) 排序优化至 O(N) 线性常数空间"
+description: "给你一个整数数组 nums ，你需要找出一个 连续子数组 ，如果对这个子数组进行升序排序，那么整个数组都会变为升序排序。请你找出符合题意的 最短 连续子数组，并输出它的长度。"
+defaultStage: stage-1
+defaultParams:
+  nums: [2, 6, 4, 8, 10, 9, 15]
+
+problem:
+  title: "最短无序连续子数组 (Shortest Unsorted Continuous Subarray)"
+  difficulty: "中等"
+  leetcodeId: 581
+  tags: ["贪心", "数组", "双指针", "栈", "单调性", "LeetCode 581"]
+  description: "给你一个整数数组 <code>nums</code> ，你需要找出一个 <strong>连续子数组</strong> ，如果对这个子数组进行升序排序，那么整个数组都会变为升序排序。<br/><br/>请你找出符合题意的 <strong>最短</strong> 连续子数组，并输出它的长度。"
+  examples:
+    - input: "nums = [2,6,4,8,10,9,15]"
+      output: "5"
+      explanation: "你只需要对 [6, 4, 8, 10, 9] 进行升序排序，整个数组都会变为升序排序。"
+    - input: "nums = [1,2,3,4]"
+      output: "0"
+      explanation: "数组本身已有序，无需排序任何子数组。"
+    - input: "nums = [1]"
+      output: "0"
+  constraints:
+    - "1 <= nums.length <= 10^4"
+    - "-10^5 <= nums[i] <= 10^5"
+
+directions:
+  forward:
+    label: "正向极值扫描 (左向右锁定 R)"
+    start: [0, 0]
+    target: [0, 6]
+    branches:
+      - name: "find_right"
+        label: "从左向右扫描维护 max 定位 R"
+      - name: "find_left"
+        label: "从右向左扫描维护 min 定位 L"
+
+  reverse:
+    label: "逆向极值扫描 (右向左锁定 L)"
+    description: "优先从右到左扫描寻找最左违规边界，再从左到右寻找最右边界"
+    startFormula: "最右元素"
+    target: "最左元素"
+    branches: []
+
+stages:
+  stage-1:
+    shortName: "双向极值扫描"
+    name: 双向极值扫描基准对比
+    card2Title: "左右边界收敛沙盘 (Boundary Convergence)"
+    card2Desc: "正向扫描维护 max 定位最右违规点 R，逆向扫描维护 min 定位最左违规点 L。"
+    description: 正向扫描维护历史前缀最大值定位最右违规点 R，逆向扫描维护后缀最小值定位最左违规点 L
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int findUnsortedSubarray(int[] nums) {
+              int n = nums.length;
+              int max = Integer.MIN_VALUE, right = -1;
+              for (int i = 0; i < n; i++) {
+                  if (max > nums[i]) right = i;
+                  else max = nums[i];
+              }
+              int min = Integer.MAX_VALUE, left = n;
+              for (int i = n - 1; i >= 0; i--) {
+                  if (min < nums[i]) left = i;
+                  else min = nums[i];
+              }
+              return right == -1 ? 0 : right - left + 1;
+          }
+        anchors:
+          entry: 1
+          initRight: 3
+          scanRight: 4
+          initLeft: 8
+          scanLeft: 9
+          done: 13
+      reverse:
+        language: java
+        source: |
+          public int findUnsortedSubarrayReverse(int[] nums) {
+              int n = nums.length;
+              int min = Integer.MAX_VALUE, left = n;
+              for (int i = n - 1; i >= 0; i--) {
+                  if (min < nums[i]) left = i;
+                  else min = nums[i];
+              }
+              int max = Integer.MIN_VALUE, right = -1;
+              for (int i = 0; i < n; i++) {
+                  if (max > nums[i]) right = i;
+                  else max = nums[i];
+              }
+              return right == -1 ? 0 : right - left + 1;
+          }
+        anchors:
+          entry: 1
+          initLeft: 3
+          scanLeft: 4
+          initRight: 8
+          scanRight: 9
+          done: 13
+
+  stage-2:
+    shortName: "极值违规判定树"
+    name: 极值违规判定树与局部单调破坏
+    card2Title: "单调性破坏与极值决策树 (Monotonicity Violation Tree)"
+    card2Desc: "自顶向下展示各位置元素与历史极值对比以及边界更新过程。"
+    description: 自顶向下构建极值决策树，展示每个元素与历史极值比较时的违规逆序判定与边界更新
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 决策树分支：比较 nums[i] 与 max
+          for (int i = 0; i < n; i++) {
+              if (nums[i] < max) {
+                  // 违规逆序：更新右边界
+                  right = i;
+              } else {
+                  // 单调递增：更新最大值
+                  max = nums[i];
+              }
+          }
+        anchors:
+          loop: 2
+          violate: 4
+          update: 7
+          done: 9
+      reverse:
+        language: java
+        source: |
+          for (int i = n - 1; i >= 0; i--) {
+              if (nums[i] > min) {
+                  left = i;
+              } else {
+                  min = nums[i];
+              }
+          }
+        anchors:
+          loop: 1
+          violate: 2
+          update: 5
+          done: 7
+
+  stage-3:
+    shortName: "边界指针矩阵"
+    name: 边界指针收敛演进矩阵
+    card2Title: "无序区间扫描状态矩阵 (State Space Matrix)"
+    card2Desc: "二维矩阵精确跟踪每一步扫描中的索引、元素值、极值与边界变迁。"
+    description: 二维矩阵动态追踪扫描中的索引、当前元素、极值与左/右边界的演变过程
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          int[][] matrix = new int[n][4]; // [i, val, extreme, boundary]
+          for (int i = 0; i < n; i++) {
+              boolean violated = nums[i] < max;
+              if (violated) right = i;
+              else max = nums[i];
+          }
+        anchors:
+          init: 1
+          step: 2
+          done: 6
+      reverse:
+        language: java
+        source: |
+          for (int i = n - 1; i >= 0; i--) {
+              boolean violated = nums[i] > min;
+              if (violated) left = i;
+              else min = nums[i];
+          }
+        anchors:
+          init: 1
+          step: 2
+          done: 6
+
+  stage-4:
+    shortName: "区间锁定收敛"
+    name: 双指针向心挤压极速收敛
+    card2Title: "一维子数组高亮锁定 (Unsorted Range Lock)"
+    card2Desc: "空间压缩为常数级别，最终输出无序子数组长度。"
+    description: 常数空间完成无序区间的高亮锁定，直接输出 [L, R] 长度
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 最终边界结算
+          int ans = right == -1 ? 0 : (right - left + 1);
+          return ans;
+        anchors:
+          calc: 2
+          ret: 3
+      reverse:
+        language: java
+        source: |
+          int ans = left == n ? 0 : (right - left + 1);
+          return ans;
+        anchors:
+          calc: 1
+          ret: 2

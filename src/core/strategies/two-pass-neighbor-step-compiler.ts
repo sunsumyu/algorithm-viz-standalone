@@ -2476,6 +2476,510 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  /**
+   * 最短无序连续子数组 (LeetCode 581) 四阶段全演进编译入口
+   */
+  public static compileShortestUnsortedSubarray(
+    model: IYamlAlgorithmModel,
+    rawNums?: number[],
+    options?: TwoPassCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const defaultNums = [2, 6, 4, 8, 10, 9, 15];
+    const nums = rawNums && rawNums.length > 0 ? rawNums : defaultNums;
+
+    switch (stage) {
+      case 2:
+        return this.compileShortestUnsortedStage2(model, nums, options);
+      case 3:
+        return this.compileShortestUnsortedStage3(model, nums, options);
+      case 4:
+        return this.compileShortestUnsortedStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileShortestUnsortedStage1(model, nums, options);
+    }
+  }
+
+  private static compileShortestUnsortedStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    const slots = nums.map(v => String(v));
+    const colLabels = nums.map((_, i) => `[${i}]`);
+
+    // 0. 入口
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🎯 双向极值扫描初始化：输入数组长度 n = ${n}，寻找最短无序区间 [L, R]`,
+      message: '正向扫描维护历史前缀最大值锁定 R，逆向扫描维护历史后缀最小值锁定 L',
+      slots,
+      colLabels,
+      variables: { n, right: -1, left: n },
+      metrics: { '扫描阶段': '初始化', '右边界 R': '未锁定', '左边界 L': '未锁定' },
+    });
+
+    if (!isReverse) {
+      // 正向：先从左往右找 R，再从右往左找 L
+      let max = -Infinity;
+      let right = -1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.initRight || 3,
+        codeLine: anchors.initRight || 3,
+        decision: '➡️ 正向扫描启动：设定初始 max = -∞，准备自左向右扫描锁定最右违规点 R',
+        message: '当 nums[i] < max 时说明位置 i 无序，持续更新 right = i',
+        slots,
+        colLabels,
+        variables: { max: '-inf', right: -1 },
+        metrics: { '扫描阶段': '正向扫描', '前缀最大值': '-∞', '右边界 R': '-1' },
+      });
+
+      for (let i = 0; i < n; i++) {
+        const val = nums[i];
+        const isViolated = val < max;
+        if (isViolated) {
+          right = i;
+        } else {
+          max = val;
+        }
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scanRight || 4,
+          codeLine: anchors.scanRight || 4,
+          decision: isViolated
+            ? `⚠️ 索引 ${i} 违规逆序：nums[${i}]=${val} < max=${max}，更新最右违规点 right = ${i}`
+            : `✅ 索引 ${i} 保持单调递增：nums[${i}]=${val} >= max，更新前缀最大值 max = ${val}`,
+          message: isViolated ? '该元素小于左侧历史最大值，必属于无序重排区间' : '该元素大于等于前缀最大值，符合非递减升序',
+          slots,
+          colLabels,
+          activeSlot: i,
+          activeIndices: [i],
+          variables: { i, val, max, right },
+          metrics: { '当前元素': String(val), '前缀最大值': String(max), '右边界 R': String(right) },
+        });
+      }
+
+      let min = Infinity;
+      let left = n;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.initLeft || 8,
+        codeLine: anchors.initLeft || 8,
+        decision: '⬅️ 逆向扫描启动：设定初始 min = +∞，准备自右向左扫描锁定最左违规点 L',
+        message: '当 nums[i] > min 时说明位置 i 无序，持续更新 left = i',
+        slots,
+        colLabels,
+        variables: { min: '+inf', left: n, right },
+        metrics: { '扫描阶段': '逆向扫描', '后缀最小值': '+∞', '左边界 L': '未锁定', '右边界 R': String(right) },
+      });
+
+      for (let i = n - 1; i >= 0; i--) {
+        const val = nums[i];
+        const isViolated = val > min;
+        if (isViolated) {
+          left = i;
+        } else {
+          min = val;
+        }
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scanLeft || 9,
+          codeLine: anchors.scanLeft || 9,
+          decision: isViolated
+            ? `⚠️ 索引 ${i} 违规逆序：nums[${i}]=${val} > min=${min}，更新最左违规点 left = ${i}`
+            : `✅ 索引 ${i} 保持单调递减：nums[${i}]=${val} <= min，更新后缀最小值 min = ${val}`,
+          message: isViolated ? '该元素大于右侧历史最小值，必属于无序重排区间' : '该元素小于等于后缀最小值，符合非递减升序',
+          slots,
+          colLabels,
+          activeSlot: i,
+          activeIndices: [i],
+          variables: { i, val, min, left, right },
+          metrics: { '当前元素': String(val), '后缀最小值': String(min), '左边界 L': String(left), '右边界 R': String(right) },
+        });
+      }
+
+      const ans = right === -1 ? 0 : Math.max(0, right - left + 1);
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 13,
+        codeLine: anchors.done || 13,
+        decision: right === -1
+          ? '🏁 全数组天然升序排列，无需任何子数组重排，返回长度 0'
+          : `🏁 扫描收敛结算：无序区间为 [${left}, ${right}]，最短重排子数组长度 = ${ans}`,
+        message: `局部贪心双向扫描在 O(N) 时间、O(1) 空间内严格定位全域边界`,
+        slots,
+        colLabels,
+        variables: { left, right, ans },
+        metrics: { '最左边界 L': String(left), '最右边界 R': String(right), '子数组长度': String(ans) },
+      });
+    } else {
+      // 逆向：优先从右向左寻找 L，再从左向右寻找 R
+      let min = Infinity;
+      let left = n;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.initLeft || 3,
+        codeLine: anchors.initLeft || 3,
+        decision: '⬅️ 逆向模式扫描启动：设定初始 min = +∞，先自右向左锁定最左违规点 L',
+        message: '寻找从右向左第一次破坏后缀递增的违规点',
+        slots,
+        colLabels,
+        variables: { min: '+inf', left: n },
+        metrics: { '扫描阶段': '逆向优先', '后缀最小值': '+∞', '左边界 L': '未锁定' },
+      });
+
+      for (let i = n - 1; i >= 0; i--) {
+        const val = nums[i];
+        const isViolated = val > min;
+        if (isViolated) left = i;
+        else min = val;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scanLeft || 4,
+          codeLine: anchors.scanLeft || 4,
+          decision: isViolated
+            ? `⚠️ 索引 ${i} 违规逆序：nums[${i}]=${val} > min=${min}，锁定 left = ${i}`
+            : `✅ 索引 ${i} 单调递减：nums[${i}]=${val} <= min，更新 min = ${val}`,
+          message: '逆向维护后缀最小值',
+          slots,
+          colLabels,
+          activeSlot: i,
+          activeIndices: [i],
+          variables: { i, val, min, left },
+          metrics: { '后缀最小值': String(min), '左边界 L': String(left) },
+        });
+      }
+
+      let max = -Infinity;
+      let right = -1;
+
+      for (let i = 0; i < n; i++) {
+        const val = nums[i];
+        const isViolated = val < max;
+        if (isViolated) right = i;
+        else max = val;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scanRight || 9,
+          codeLine: anchors.scanRight || 9,
+          decision: isViolated
+            ? `⚠️ 索引 ${i} 违规逆序：nums[${i}]=${val} < max=${max}，锁定 right = ${i}`
+            : `✅ 索引 ${i} 单调递增：nums[${i}]=${val} >= max，更新 max = ${val}`,
+          message: '正向补充扫描维护前缀最大值',
+          slots,
+          colLabels,
+          activeSlot: i,
+          activeIndices: [i],
+          variables: { i, val, max, left, right },
+          metrics: { '前缀最大值': String(max), '左边界 L': String(left), '右边界 R': String(right) },
+        });
+      }
+
+      const ans = right === -1 ? 0 : Math.max(0, right - left + 1);
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 13,
+        codeLine: anchors.done || 13,
+        decision: `🏁 逆向双向扫描收敛：无序区间为 [${left}, ${right}]，最终长度 = ${ans}`,
+        message: '双向扫描结果严格对称一致',
+        slots,
+        colLabels,
+        variables: { left, right, ans },
+        metrics: { '最左边界 L': String(left), '最右边界 R': String(right), '子数组长度': String(ans) },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileShortestUnsortedStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+    const slots = nums.map(v => String(v));
+    const colLabels = nums.map((_, i) => `[${i}]`);
+
+    const root: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      val: `极值违规判定树 n=${n}`,
+      status: 'active',
+      children: [],
+    };
+
+    let max = -Infinity;
+    let right = -1;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.loop || 2,
+      codeLine: anchors.loop || 2,
+      decision: '🌲 极值决策树初始化：自顶向下挂载每个元素的比较分支',
+      message: '树节点展示元素与前缀最大值的单调关系判定',
+      slots,
+      colLabels,
+      treeNodes: [cloneStateDepTree(root)],
+      variables: { max: '-inf', right: -1 },
+      metrics: { '阶段': '决策树构建' },
+    });
+
+    for (let i = 0; i < n; i++) {
+      const val = nums[i];
+
+      // 1. 探查比较步骤
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.loop || 2,
+        codeLine: anchors.loop || 2,
+        decision: `🌲 探查决策分支 [索引 ${i}]：待核验元素 nums[${i}] = ${val}，与当前前缀最大值 max = ${max === -Infinity ? '-∞' : max} 进行单调性比较`,
+        message: '自顶向下分发决策分支，准备根据极值单调关系更新状态',
+        slots,
+        colLabels,
+        activeSlot: i,
+        activeIndices: [i],
+        treeNodes: [cloneStateDepTree(root)],
+        variables: { i, val, max, right },
+        metrics: { '当前待决元素': String(val), '当前前缀最大值': String(max) },
+      });
+
+      const violated = val < max;
+      if (violated) right = i;
+      else max = val;
+
+      const node: UniversalTreeNode = {
+        id: `node-${i}`,
+        r: 1,
+        c: i,
+        val: violated ? `nums[${i}]=${val} (违规逆序 R=${i})` : `nums[${i}]=${val} (升序单调 max=${val})`,
+        status: violated ? 'pruned' : 'base',
+        children: [],
+      };
+      root.children.push(node);
+
+      // 2. 决策结算步骤
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: violated ? (anchors.violate || 4) : (anchors.update || 7),
+        codeLine: violated ? (anchors.violate || 4) : (anchors.update || 7),
+        decision: violated
+          ? `⚠️ 分支裁定 [违规]：nums[${i}]=${val} < max(${max})，单调性破坏！右边界更新为 R = ${i}`
+          : `✅ 分支裁定 [合规]：nums[${i}]=${val} >= max，单调递增顺延，前缀最大值更新为 max = ${val}`,
+        message: '决策树节点状态更新完毕',
+        slots,
+        colLabels,
+        activeSlot: i,
+        activeIndices: [i],
+        treeNodes: [cloneStateDepTree(root)],
+        variables: { i, val, max, right },
+        metrics: { '当前元素': String(val), '当前最大值': String(max), '右边界 R': String(right) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🏁 极值违规决策树构建完毕：共遍历 ${n} 个节点，最终定位最右违规点 right = ${right}`,
+      message: '自顶向下分支判定完备，单调破坏点已全部收录',
+      slots,
+      colLabels,
+      treeNodes: [cloneStateDepTree(root)],
+      variables: { right, totalNodes: n },
+      metrics: { '总决策节点数': String(n), '最终右边界': String(right) },
+    });
+
+    return steps;
+  }
+
+  private static compileShortestUnsortedStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+    const slots = nums.map(v => String(v));
+    const colLabels = ['索引 i', '数值 nums[i]', '前缀最大值 max', '违规判定', '最右边界 R'];
+    const matrix: (string | number)[][] = [];
+    const rowLabels: string[] = [];
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.init || 1,
+      codeLine: anchors.init || 1,
+      decision: '📊 状态空间演进矩阵初始化：准备追踪每步扫描的极值与边界演变',
+      message: '二维矩阵多维度动态反映单调性扫描全景',
+      slots,
+      matrix: [],
+      rowLabels: [],
+      colLabels,
+      variables: { n },
+      metrics: { '矩阵行数': '0', '状态维度': '5' },
+    });
+
+    let max = -Infinity;
+    let right = -1;
+
+    for (let i = 0; i < n; i++) {
+      const val = nums[i];
+      const violated = val < max;
+      if (violated) right = i;
+      else max = val;
+
+      rowLabels.push(`Step ${i}`);
+      matrix.push([i, val, max, violated ? '⚠️ 违规逆序' : '✅ 正常递增', right === -1 ? '-' : right]);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.step || 2,
+        codeLine: anchors.step || 2,
+        decision: violated
+          ? `📊 矩阵新增行 [${i}]：数值 ${val} 产生逆序，最右边界推演至 ${right}`
+          : `📊 矩阵新增行 [${i}]：数值 ${val} 延续升序，前缀最大值更新为 ${max}`,
+        message: '状态表格记录历史极值与当前决策',
+        slots,
+        matrix: matrix.map(r => [...r]),
+        rowLabels: [...rowLabels],
+        colLabels,
+        activeSlot: i,
+        activeIndices: [i],
+        variables: { i, val, max, right },
+        metrics: { '当前行': String(i), '前缀最大值': String(max), '右边界': String(right) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 6,
+      codeLine: anchors.done || 6,
+      decision: `🏁 状态空间演进矩阵推演完毕：共记录 ${n} 步扫描全貌，无序右边界收敛至 ${right}`,
+      message: '全状态演进轨迹完整闭环',
+      slots,
+      matrix: matrix.map(r => [...r]),
+      rowLabels: [...rowLabels],
+      colLabels,
+      variables: { right, rows: n },
+      metrics: { '总记录数': String(n), '最终右边界': String(right) },
+    });
+
+    return steps;
+  }
+
+  private static compileShortestUnsortedStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+    const slots = nums.map(v => String(v));
+    const colLabels = nums.map((_, i) => `[${i}]`);
+
+    // 运行一次计算实际 left 和 right
+    let max = -Infinity, right = -1;
+    for (let i = 0; i < n; i++) {
+      if (nums[i] < max) right = i;
+      else max = nums[i];
+    }
+    let min = Infinity, left = n;
+    for (let i = n - 1; i >= 0; i--) {
+      if (nums[i] > min) left = i;
+      else min = nums[i];
+    }
+    const ans = right === -1 ? 0 : Math.max(0, right - left + 1);
+
+    // 模拟向心区间收敛过程
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.calc || 2,
+      codeLine: anchors.calc || 2,
+      decision: '⚡ 常数空间极速锁定：初始化边界寄存器 [L, R]',
+      message: 'O(1) 辅助空间直接推导无序子数组边界',
+      slots,
+      colLabels,
+      variables: { left, right, ans },
+      metrics: { '辅助空间': 'O(1)', '时间复杂度': 'O(N)' },
+    });
+
+    // 逐元素验证高亮区间锁定
+    for (let i = 0; i < n; i++) {
+      const inRange = i >= left && i <= right && right !== -1;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.calc || 2,
+        codeLine: anchors.calc || 2,
+        decision: inRange
+          ? `🔒 索引 ${i} (值 ${nums[i]}) 落在无序重排区间 [${left}, ${right}] 内`
+          : `🔓 索引 ${i} (值 ${nums[i]}) 属于两端有序区域，无需变动`,
+        message: '常数空间寄存器高速位移检验',
+        slots,
+        colLabels,
+        activeSlot: i,
+        activeIndices: inRange ? [i] : [],
+        variables: { i, val: nums[i], inRange, left, right },
+        metrics: { '当前位置': String(i), '状态': inRange ? '高亮锁定' : '有序放行' },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.ret || 3,
+      codeLine: anchors.ret || 3,
+      decision: right === -1
+        ? '🏁 数组完全有序，返回最终长度 0'
+        : `🏁 区间锁定完毕：最短无序连续子数组为 [${left}..${right}]，最终长度 = ${ans}`,
+      message: '空间压缩至极限 O(1)，运算极速收敛',
+      slots,
+      colLabels,
+      variables: { ans, left, right },
+      metrics: { '最左边界 L': String(left), '最右边界 R': String(right), '最终结果': String(ans) },
+    });
+
+    return steps;
+  }
+
 }
-
-
