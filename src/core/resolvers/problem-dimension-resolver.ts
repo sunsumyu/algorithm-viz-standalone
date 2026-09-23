@@ -72,6 +72,8 @@ export class ProblemDimensionResolver {
     'meeting-one-day',
     'split-min-avg-sum',
     'group-buy-tickets',
+    'longest-same-zeros-ones-intervals',
+    'minimum-initial-energy-to-finish-tasks',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -265,6 +267,14 @@ export class ProblemDimensionResolver {
       const games = this.toArray(params.games);
       m = 1;
       n = games.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.tasks !== undefined) {
+      const tasks = this.toArray(params.tasks);
+      m = 1;
+      n = tasks.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

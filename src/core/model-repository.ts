@@ -71,6 +71,8 @@ import meetingMonopolyModel from './models/meeting-monopoly.yaml';
 import meetingOneDayModel from './models/meeting-one-day.yaml';
 import splitMinAvgSumModel from './models/split-min-avg-sum.yaml';
 import groupBuyTicketsModel from './models/group-buy-tickets.yaml';
+import longestSameZerosOnesModel from './models/longest-same-zeros-ones-intervals.yaml';
+import minimumInitialEnergyModel from './models/minimum-initial-energy-to-finish-tasks.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -188,6 +190,8 @@ export class AlgorithmModelRepository {
     ['meeting-one-day', meetingOneDayModel as IYamlAlgorithmModel],
     ['split-min-avg-sum', splitMinAvgSumModel as IYamlAlgorithmModel],
     ['group-buy-tickets', groupBuyTicketsModel as IYamlAlgorithmModel],
+    ['longest-same-zeros-ones-intervals', longestSameZerosOnesModel as IYamlAlgorithmModel],
+    ['minimum-initial-energy-to-finish-tasks', minimumInitialEnergyModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

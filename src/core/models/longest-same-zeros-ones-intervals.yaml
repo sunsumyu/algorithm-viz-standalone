@@ -1,0 +1,168 @@
+id: "longest-same-zeros-ones-intervals"
+name: "两个0和1数量相等区间的最大长度"
+category: "greedy"
+difficulty: "hard"
+tags:
+  - "贪心"
+  - "抽屉原理"
+  - "极值边界"
+  - "区间比对"
+defaultStage: "stage-1"
+
+directions:
+  forward:
+    label: "正向极值贪心"
+    description: "从首尾元素相等性出发，由鸽巢原理直接判定最大长度为 n-1 或 n-2"
+  reverse:
+    label: "反向区间校验"
+    description: "从所有长度为 n-2 的区间反推，验证 01 统计碰撞的必然性与对偶极值"
+
+stages:
+  stage-1:
+    name: "暴力与两端对比"
+    description: "暴力枚举两端点，或直接对比 arr[0] 与 arr[n-1] 的同构性"
+  stage-2:
+    name: "抽屉原理决策树"
+    description: "构建状态依赖树，展开首尾相等 (n-1) 与首尾相异 (n-2) 的鸽巢推导"
+  stage-3:
+    name: "候选区间统计矩阵"
+    description: "矩阵记录长度为 n-1 和 n-2 的候选区间 0 和 1 统计分布，定位相等区间"
+  stage-4:
+    name: "鸽巢极值反证"
+    description: "通过反证法和鸽巢原理严格证明最大区间长度下界为 n-2 的充要性"
+
+codeSnippets:
+  javascript:
+    forward: |
+      function maxEqualIntervalLength(arr) {
+          const n = arr.length;
+          if (n <= 1) return 0;
+          if (n === 2) return arr[0] === arr[1] ? 1 : 0;
+          if (arr[0] === arr[n - 1]) {
+              return n - 1;
+          }
+          return n - 2;
+      }
+    reverse: |
+      function maxEqualIntervalLengthReverse(arr) {
+          const n = arr.length;
+          if (n <= 1) return 0;
+          if (n === 2) return arr[0] === arr[1] ? 1 : 0;
+          if (arr[0] !== arr[n - 1]) {
+              return n - 2;
+          }
+          return n - 1;
+      }
+  python:
+    forward: |
+      def maxEqualIntervalLength(arr: List[int]) -> int:
+          n = len(arr)
+          if n <= 1: return 0
+          if n == 2: return 1 if arr[0] == arr[1] else 0
+          if arr[0] == arr[n - 1]:
+              return n - 1
+          return n - 2
+    reverse: |
+      def maxEqualIntervalLengthReverse(arr: List[int]) -> int:
+          n = len(arr)
+          if n <= 1: return 0
+          if n == 2: return 1 if arr[0] == arr[1] else 0
+          if arr[0] != arr[n - 1]:
+              return n - 2
+          return n - 1
+  java:
+    forward: |
+      public int maxEqualIntervalLength(int[] arr) {
+          int n = arr.length;
+          if (n <= 1) return 0;
+          if (n == 2) return arr[0] == arr[1] ? 1 : 0;
+          if (arr[0] == arr[n - 1]) {
+              return n - 1;
+          }
+          return n - 2;
+      }
+    reverse: |
+      public int maxEqualIntervalLengthReverse(int[] arr) {
+          int n = arr.length;
+          if (n <= 1) return 0;
+          if (n == 2) return arr[0] == arr[1] ? 1 : 0;
+          if (arr[0] != arr[n - 1]) {
+              return n - 2;
+          }
+          return n - 1;
+      }
+  cpp:
+    forward: |
+      int maxEqualIntervalLength(vector<int>& arr) {
+          int n = arr.size();
+          if (n <= 1) return 0;
+          if (n == 2) return arr[0] == arr[1] ? 1 : 0;
+          if (arr[0] == arr[n - 1]) {
+              return n - 1;
+          }
+          return n - 2;
+      }
+    reverse: |
+      int maxEqualIntervalLengthReverse(vector<int>& arr) {
+          int n = arr.size();
+          if (n <= 1) return 0;
+          if (n == 2) return arr[0] == arr[1] ? 1 : 0;
+          if (arr[0] != arr[n - 1]) {
+              return n - 2;
+          }
+          return n - 1;
+      }
+
+anchors:
+  stage-1:
+    forward:
+      entry: 1
+      guard: 3
+      check: 5
+      ret1: 6
+      ret2: 8
+    reverse:
+      entry: 1
+      guard: 3
+      check: 5
+      ret2: 6
+      ret1: 8
+  stage-2:
+    forward:
+      root: 1
+      branch: 3
+      eval: 5
+      leaf: 6
+      done: 8
+    reverse:
+      root: 1
+      branch: 3
+      eval: 5
+      leaf: 6
+      done: 8
+  stage-3:
+    forward:
+      table_init: 1
+      row_n1: 3
+      row_n2: 5
+      match: 6
+      done: 8
+    reverse:
+      table_init: 1
+      row_n1: 3
+      row_n2: 5
+      match: 6
+      done: 8
+  stage-4:
+    forward:
+      pigeonhole_setup: 1
+      delta_bound: 3
+      collision_proof: 5
+      tightness: 6
+      done: 8
+    reverse:
+      pigeonhole_setup: 1
+      delta_bound: 3
+      collision_proof: 5
+      tightness: 6
+      done: 8

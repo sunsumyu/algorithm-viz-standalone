@@ -1,0 +1,165 @@
+id: "minimum-initial-energy-to-finish-tasks"
+name: "完成任务的最少初始能量"
+category: "greedy"
+difficulty: "hard"
+tags:
+  - "贪心"
+  - "排序"
+  - "邻项交换法"
+  - "能量调度"
+defaultStage: "stage-1"
+
+directions:
+  forward:
+    label: "正向差值贪心"
+    description: "按门槛与消耗之差 (minimum - actual) 降序排序，依次贪心累加所需初始能量"
+  reverse:
+    label: "逆向反推验证"
+    description: "从任务终点能量 0 反向推导每个任务所需的最小前置能量门槛"
+
+stages:
+  stage-1:
+    name: "排序与贪心模拟"
+    description: "按 (minimum - actual) 降序排序，通过 max(ans + actual, minimum) 正向推进"
+  stage-2:
+    name: "依赖树与能量拓扑"
+    description: "构建任务执行拓扑决策树，展开各任务门槛与余量能量依赖"
+  stage-3:
+    name: "能量演化状态矩阵"
+    description: "二维矩阵表格记录每个任务执行前后的能量水位变化与峰值需求"
+  stage-4:
+    name: "邻项交换极值证明"
+    description: "通过微扰交换法 (Exchange Argument) 严格证明按差值降序排序是全局最优充要条件"
+
+codeSnippets:
+  javascript:
+    forward: |
+      function minimumEffort(tasks) {
+          tasks.sort((a, b) => (b[1] - b[0]) - (a[1] - a[0]));
+          let ans = 0;
+          for (const [actual, minimum] of tasks) {
+              ans = Math.max(ans + actual, minimum);
+          }
+          return ans;
+      }
+    reverse: |
+      function minimumEffortReverse(tasks) {
+          tasks.sort((a, b) => (b[1] - b[0]) - (a[1] - a[0]));
+          let energy = 0;
+          for (let i = tasks.length - 1; i >= 0; i--) {
+              const [actual, minimum] = tasks[i];
+              energy = Math.max(energy + actual, minimum);
+          }
+          return energy;
+      }
+  python:
+    forward: |
+      def minimumEffort(tasks: List[List[int]]) -> int:
+          tasks.sort(key=lambda t: t[1] - t[0], reverse=True)
+          ans = 0
+          for actual, minimum in tasks:
+              ans = max(ans + actual, minimum)
+          return ans
+    reverse: |
+      def minimumEffortReverse(tasks: List[List[int]]) -> int:
+          tasks.sort(key=lambda t: t[1] - t[0], reverse=True)
+          energy = 0
+          for actual, minimum in reversed(tasks):
+              energy = max(energy + actual, minimum)
+          return energy
+  java:
+    forward: |
+      public int minimumEffort(int[][] tasks) {
+          Arrays.sort(tasks, (a, b) -> (b[1] - b[0]) - (a[1] - a[0]));
+          int ans = 0;
+          for (int[] task : tasks) {
+              ans = Math.max(ans + task[0], task[1]);
+          }
+          return ans;
+      }
+    reverse: |
+      public int minimumEffortReverse(int[][] tasks) {
+          Arrays.sort(tasks, (a, b) -> (b[1] - b[0]) - (a[1] - a[0]));
+          int energy = 0;
+          for (int i = tasks.length - 1; i >= 0; i--) {
+              energy = Math.max(energy + tasks[i][0], tasks[i][1]);
+          }
+          return energy;
+      }
+  cpp:
+    forward: |
+      int minimumEffort(vector<vector<int>>& tasks) {
+          sort(tasks.begin(), tasks.end(), [](const vector<int>& a, const vector<int>& b) {
+              return (b[1] - b[0]) < (a[1] - a[0]);
+          });
+          int ans = 0;
+          for (const auto& task : tasks) {
+              ans = max(ans + task[0], task[1]);
+          }
+          return ans;
+      }
+    reverse: |
+      int minimumEffortReverse(vector<vector<int>>& tasks) {
+          sort(tasks.begin(), tasks.end(), [](const vector<int>& a, const vector<int>& b) {
+              return (b[1] - b[0]) < (a[1] - a[0]);
+          });
+          int energy = 0;
+          for (int i = (int)tasks.size() - 1; i >= 0; i--) {
+              energy = max(energy + tasks[i][0], tasks[i][1]);
+          }
+          return energy;
+      }
+
+anchors:
+  stage-1:
+    forward:
+      entry: 1
+      sort: 2
+      loop: 4
+      accum: 5
+      done: 7
+    reverse:
+      entry: 1
+      sort: 2
+      loop: 4
+      accum: 5
+      done: 7
+  stage-2:
+    forward:
+      root: 1
+      branch: 2
+      eval: 4
+      leaf: 5
+      done: 7
+    reverse:
+      root: 1
+      branch: 2
+      eval: 4
+      leaf: 5
+      done: 7
+  stage-3:
+    forward:
+      table_init: 1
+      matrix_row: 2
+      matrix_update: 4
+      summary: 5
+      done: 7
+    reverse:
+      table_init: 1
+      matrix_row: 2
+      matrix_update: 4
+      summary: 5
+      done: 7
+  stage-4:
+    forward:
+      exchange_premise: 1
+      pairwise_compare: 2
+      algebra_cancel: 4
+      total_order: 5
+      done: 7
+    reverse:
+      exchange_premise: 1
+      pairwise_compare: 2
+      algebra_cancel: 4
+      total_order: 5
+      done: 7

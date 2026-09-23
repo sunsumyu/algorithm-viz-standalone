@@ -144,6 +144,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { MeetingOneDayStrategy } = await import('./meeting-one-day-strategy');
       const { SplitMinAvgSumStrategy } = await import('./split-min-avg-sum-strategy');
       const { GroupBuyTicketsStrategy } = await import('./group-buy-tickets-strategy');
+      const { LongestSameZerosOnesStrategy } = await import('./longest-same-zeros-ones-strategy');
+      const { MinimumInitialEnergyStrategy } = await import('./minimum-initial-energy-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -175,6 +177,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         MeetingOneDayStrategy,
         SplitMinAvgSumStrategy,
         GroupBuyTicketsStrategy,
+        LongestSameZerosOnesStrategy,
+        MinimumInitialEnergyStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

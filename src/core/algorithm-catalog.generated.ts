@@ -3908,9 +3908,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "minimum-initial-energy-to-finish-tasks",
     name: "最少初始能量 (Minimum Initial Energy)",
-    viewId: "algo-minimum-initial-energy-to-finish-tasks-view",
+    viewId: "algo-minimal-battery-power-view",
     category: "greedy",
-    description: "最少初始能量 (Minimum Initial Energy)",
+    description: "每个任务包含实际消耗与启动门槛，按门槛与消耗之差降序排列，通过邻项微扰交换法证明全局最少初始能量。",
     icon: "🔋",
     difficulty: 3,
     levelOrder: 915,
@@ -3919,9 +3919,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "longest-same-zeros-ones-intervals",
     name: "两个0和1数量相等区间的最大长度",
-    viewId: "algo-longest-same-zeros-ones-intervals-view",
+    viewId: "algo-longest-same-zeros-ones-view",
     category: "greedy",
-    description: "两个0和1数量相等区间的最大长度",
+    description: "找出两个不完全重合且0与1数量分别相等的最大区间，通过首尾字符比较与鸽巢原理直接在O(1)内确定最大长度为n-1或n-2。",
     icon: "⚖️",
     difficulty: 3,
     levelOrder: 916,

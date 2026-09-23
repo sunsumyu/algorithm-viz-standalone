@@ -1,9 +1,12 @@
 /**
- * 完成所有任务的最少初始能量 (LeetCode 1665) - 声明式教学级沙盘渲染器
+ * 完成所有任务的最少初始能量 (LeetCode 1665) - 顶层抽象架构全功能沙盘渲染器
  * 核心贪心：按 (minimum - actual) 差值降序排序，依次贪心累加能量门槛
+ * 遵循黄金基准，挂载 UniversalStageVisualizer 顶层宿主
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_091_PROBLEMS } from './greedy-091-problem-content';
 import {
   MINIMAL_BATTERY_POWER_CODES,
@@ -97,7 +100,7 @@ export function buildMinimalBatteryPowerSteps(rawTasks: [number, number][]): Min
   return steps;
 }
 
-export const minimalBatteryPowerVisualizer = registerDeclarativeAlgorithm<MinimalBatteryPowerStep>({
+const { template } = createDeclarativeVisualizer<MinimalBatteryPowerStep>({
   id: 'minimum-initial-energy-to-finish-tasks',
   name: '最少初始能量 (Minimum Initial Energy)',
   category: 'greedy',
@@ -194,4 +197,21 @@ export const minimalBatteryPowerVisualizer = registerDeclarativeAlgorithm<Minima
 
     stageContainer.appendChild(mainCard);
   },
+});
+
+export const minimalBatteryPowerVisualizer = UniversalStageVisualizer;
+export const minimalBatteryPowerRenderer = UniversalStageVisualizer;
+
+registerAlgorithm({
+  id: 'minimum-initial-energy-to-finish-tasks',
+  name: '最少初始能量 (Minimum Initial Energy)',
+  viewId: 'algo-minimal-battery-power-view',
+  category: 'greedy',
+  icon: '🔋',
+  difficulty: 3,
+  levelOrder: 915,
+  description: '每个任务包含实际消耗与启动门槛，按门槛与消耗之差降序排列，通过邻项微扰交换法证明全局最少初始能量。',
+  learningGoal: '掌握按 minimum - actual 差值贪心降序排序的能量消耗与逆推模拟原理',
+  template,
+  Visualizer: UniversalStageVisualizer,
 });

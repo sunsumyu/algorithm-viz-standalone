@@ -1,9 +1,12 @@
 /**
- * 两个 0 和 1 数量相等区间的最大长度 - 声明式教学级沙盘渲染器
+ * 两个 0 和 1 数量相等区间的最大长度 - 顶层抽象架构全功能沙盘渲染器
  * 核心贪心：抽屉原理与两端极值边界比较 (arr[0] == arr[n-1] ? n-1 : n-2)
+ * 遵循黄金基准，挂载 UniversalStageVisualizer 顶层宿主
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../../core/registry';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_091_PROBLEMS } from './greedy-091-problem-content';
 import {
   LONGEST_SAME_ZEROS_ONES_CODES,
@@ -134,7 +137,7 @@ export function buildLongestSameZerosOnesSteps(arr: number[]): LongestSameZerosO
   return steps;
 }
 
-export const longestSameZerosOnesVisualizer = registerDeclarativeAlgorithm<LongestSameZerosOnesStep>({
+const { template } = createDeclarativeVisualizer<LongestSameZerosOnesStep>({
   id: 'longest-same-zeros-ones-intervals',
   name: '两个0和1数量相等区间的最大长度',
   category: 'greedy',
@@ -233,4 +236,21 @@ export const longestSameZerosOnesVisualizer = registerDeclarativeAlgorithm<Longe
 
     stageContainer.appendChild(mainCard);
   },
+});
+
+export const longestSameZerosOnesVisualizer = UniversalStageVisualizer;
+export const longestSameZerosOnesRenderer = UniversalStageVisualizer;
+
+registerAlgorithm({
+  id: 'longest-same-zeros-ones-intervals',
+  name: '两个0和1数量相等区间的最大长度',
+  viewId: 'algo-longest-same-zeros-ones-view',
+  category: 'greedy',
+  icon: '⚖️',
+  difficulty: 3,
+  levelOrder: 916,
+  description: '找出两个不完全重合且0与1数量分别相等的最大区间，通过首尾字符比较与鸽巢原理直接在O(1)内确定最大长度为n-1或n-2。',
+  learningGoal: '掌握首尾字符相等与不相等的抽屉原理推导及 n-1 与 n-2 极值贪心',
+  template,
+  Visualizer: UniversalStageVisualizer,
 });
