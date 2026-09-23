@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-async function runVisualDemo() {
+async function runVisualDemo(): Promise<void> {
   console.log('🖥️ 正在屏幕上以【可见窗口模式 (Headed Mode)】启动浏览器...');
   
   const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';

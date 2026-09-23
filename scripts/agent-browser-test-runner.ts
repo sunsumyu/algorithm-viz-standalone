@@ -4,7 +4,14 @@ import path from 'path';
 
 const ARTIFACT_DIR = 'C:/Users/Aren/.gemini/antigravity-ide/brain/835fdfb5-fc9c-4b7d-906d-5fa90597f26f';
 
-async function runComprehensiveAgentBrowserTest() {
+interface TestReportItem {
+  step: string;
+  detail: string;
+  image: string;
+  status: 'PASS' | 'FAIL';
+}
+
+async function runComprehensiveAgentBrowserTest(): Promise<void> {
   console.log('🌐 Agent 正在启动真实浏览器环境执行深度交互测试与视觉快照捕获...');
 
   const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
@@ -23,7 +30,7 @@ async function runComprehensiveAgentBrowserTest() {
   });
   const page = await context.newPage();
 
-  const report = [];
+  const report: TestReportItem[] = [];
 
   try {
     // -------------------------------------------------------------

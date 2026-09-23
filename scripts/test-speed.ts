@@ -1,7 +1,6 @@
 import { chromium } from 'playwright';
-import path from 'path';
 
-async function testPerformance() {
+async function testPerformance(): Promise<void> {
   const browser = await chromium.launch({
     executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
     headless: true,
@@ -41,7 +40,7 @@ async function testPerformance() {
   console.log('⚡ 测试跨分类动态加载 (unique-paths)...');
   const t2 = Date.now();
   await page.evaluate(() => {
-    (window).algorithmManager?.showAlgorithm('unique-paths');
+    (window as any).algorithmManager?.showAlgorithm('unique-paths');
   });
   await page.waitForTimeout(500);
   console.log(`✅ 跨分类动态加载成功! 耗时: ${Date.now() - t2} ms`);

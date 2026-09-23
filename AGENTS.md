@@ -51,6 +51,12 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
 3. **响应式双栏核验**：确保视口宽度 $\ge 1024\text{px}$ 激活 Tailwind `lg:flex-row` 左右双栏黄金排布（左侧 50% 状态空间沙盘 + 右侧 50% 暗色代码终端），严禁以移动端退化折叠态交付。
 
 
+## 纯 TypeScript 规范（死门禁！遇到 JS 改成 TS）
+全库统一使用强类型 TypeScript：
+1. **禁止新建任何 JS 脚本**：包括 `scripts/` 下的工具脚本、临时脚本或测试辅助代码，一律使用 `.ts` 扩展名，严禁创建 `.js`、`.mjs`、`.cjs`。
+2. **遇到 JS 必须改成 TS**：无论在任何环节发现遗留或新增的 `.js` / `.mjs` / `.cjs` 文件，必须立即将其改造为类型安全的 `.ts` 文件，删除原 JS 文件，并用 `vite-node` 或 `vitest` 执行。
+3. **npm scripts 对齐**：`package.json` 中的命令如果执行脚本，统一使用 `vite-node scripts/*.ts`。
+
 ## 构建与测试
 ```bash
 npm install

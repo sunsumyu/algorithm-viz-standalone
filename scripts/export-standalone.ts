@@ -22,18 +22,21 @@ console.log('[Export Standalone] 开始扫描模型规范并构建离线单文�
 
 // 1. 读取所有 YAML 模型
 const modelsDir = path.resolve(rootDir, 'src', 'algorithms', 'specs', 'models');
-const modelFiles = fs.readdirSync(modelsDir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'));
-const embeddedModels = {};
+const embeddedModels: Record<string, any> = {};
 
-modelFiles.forEach(file => {
-  const fullPath = path.resolve(modelsDir, file);
-  const content = fs.readFileSync(fullPath, 'utf-8');
-  const parsed = jsYaml.load(content);
-  if (parsed && parsed.id) {
-    embeddedModels[parsed.id] = parsed;
-    console.log(`[Export Standalone] 已注入模型: ${parsed.id} (${parsed.name})`);
-  }
-});
+if (fs.existsSync(modelsDir)) {
+  const modelFiles = fs.readdirSync(modelsDir).filter(f => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+  modelFiles.forEach(file => {
+    const fullPath = path.resolve(modelsDir, file);
+    const content = fs.readFileSync(fullPath, 'utf-8');
+    const parsed = jsYaml.load(content) as any;
+    if (parsed && parsed.id) {
+      embeddedModels[parsed.id] = parsed;
+      console.log(`[Export Standalone] 已注入模型: ${parsed.id} (${parsed.name})`);
+    }
+  });
+}
 
 // 2. 导出精简版、精讲版与通用探索容器
 const targetTemplates = [

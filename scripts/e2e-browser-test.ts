@@ -4,7 +4,12 @@ import path from 'path';
 
 const ARTIFACT_DIR = 'C:/Users/Aren/.gemini/antigravity-ide/brain/835fdfb5-fc9c-4b7d-906d-5fa90597f26f';
 
-async function runBrowserTest() {
+interface TestResult {
+  test: string;
+  passed: boolean;
+}
+
+async function runBrowserTest(): Promise<void> {
   console.log('🚀 启动浏览器进行真实 E2E 自动化测试...');
   
   // 查找系统安装的 Edge 或 Chrome
@@ -23,7 +28,7 @@ async function runBrowserTest() {
   });
   const page = await context.newPage();
 
-  const results = [];
+  const results: TestResult[] = [];
 
   try {
     // ========================================================
@@ -43,7 +48,7 @@ async function runBrowserTest() {
 
     results.push({
       test: 'unique-paths-lite.html 初始加载',
-      passed: title.includes('不同路径') && algoTitle.includes('阶段 4')
+      passed: title.includes('不同路径') && (algoTitle?.includes('阶段 4') ?? false)
     });
 
     // 截图 1: 初始阶段 4
@@ -65,7 +70,7 @@ async function runBrowserTest() {
     console.log(`   当前步数进度: ${stepCounter}`);
     results.push({
       test: '单步操作与代码高亮联动',
-      passed: stepCounter.includes('/') && !stepCounter.startsWith('1 /')
+      passed: (stepCounter?.includes('/') ?? false) && !(stepCounter?.startsWith('1 /') ?? true)
     });
 
     // 截图 2: 单步调试中
@@ -87,7 +92,7 @@ async function runBrowserTest() {
 
     results.push({
       test: '阶段 1 朴素递归切换与树图渲染',
-      passed: stage1Title.includes('阶段 1') && stage1Code.includes('NaiveRecursiveForward') && treeSvg > 0
+      passed: (stage1Title?.includes('阶段 1') ?? false) && (stage1Code?.includes('NaiveRecursiveForward') ?? false) && treeSvg > 0
     });
 
     // 步进两步查看递归树节点展开
@@ -111,7 +116,7 @@ async function runBrowserTest() {
 
     results.push({
       test: '逆推倒序模式切换',
-      passed: reverseTitle.includes('逆推') && reverseCode.includes('NaiveRecursiveReverse')
+      passed: (reverseTitle?.includes('逆推') ?? false) && (reverseCode?.includes('NaiveRecursiveReverse') ?? false)
     });
 
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'e2e_04_reverse_mode.png') });
@@ -133,7 +138,7 @@ async function runBrowserTest() {
 
     results.push({
       test: '阶段 3 二维 DP 状态转移填表',
-      passed: stage3Title.includes('阶段 3')
+      passed: stage3Title?.includes('阶段 3') ?? false
     });
 
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'e2e_05_stage3_tabulation.png') });
@@ -152,7 +157,7 @@ async function runBrowserTest() {
 
     results.push({
       test: '阶段 4 变体切换 (外层 for 版)',
-      passed: forVariantTitle.includes('SolutionReverseFor') || forVariantTitle.includes('SolutionFor')
+      passed: (forVariantTitle?.includes('SolutionReverseFor') ?? false) || (forVariantTitle?.includes('SolutionFor') ?? false)
     });
 
     await page.screenshot({ path: path.join(ARTIFACT_DIR, 'e2e_06_stage4_for_variant.png') });

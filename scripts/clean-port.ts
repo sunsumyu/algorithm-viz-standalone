@@ -2,12 +2,12 @@ import { execSync } from 'child_process';
 
 const PORT = process.env.PORT || 3000;
 
-function cleanPort(port) {
+function cleanPort(port: number | string): void {
   try {
     if (process.platform === 'win32') {
       const output = execSync('netstat -ano', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
       const lines = output.trim().split('\n');
-      const pids = new Set();
+      const pids = new Set<string>();
       for (const line of lines) {
         const parts = line.trim().split(/\s+/);
         // Proto, Local Address, Foreign Address, State, PID

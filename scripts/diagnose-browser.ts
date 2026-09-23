@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-async function run() {
+async function run(): Promise<void> {
   console.log('[E2E-TEST] Launching browser...');
   const edgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
   const chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
@@ -14,7 +14,7 @@ async function run() {
 
   const page = await browser.newPage();
   
-  const logs = [];
+  const logs: string[] = [];
   page.on('console', msg => {
     console.log(`[BROWSER ${msg.type().toUpperCase()}]:`, msg.text());
     logs.push(`[${msg.type()}]: ${msg.text()}`);

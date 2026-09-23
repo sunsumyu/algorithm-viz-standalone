@@ -1,19 +1,17 @@
-import http from 'http';
-
-async function testFetch(url) {
+async function testFetch(url: string): Promise<string | undefined> {
   const t0 = Date.now();
   try {
     const res = await fetch(url);
     const text = await res.text();
     console.log(`[${Date.now() - t0}ms] GET ${url} -> ${res.status} (${text.length} bytes)`);
     return text;
-  } catch (e) {
+  } catch (e: any) {
     console.error(`[${Date.now() - t0}ms] GET ${url} FAILED:`, e.message);
   }
 }
 
-async function main() {
-  const html = await testFetch('http://127.0.0.1:3000/');
+async function main(): Promise<void> {
+  await testFetch('http://127.0.0.1:3000/');
   await testFetch('http://127.0.0.1:3000/@vite/client');
   await testFetch('http://127.0.0.1:3000/src/main.ts');
   await testFetch('http://127.0.0.1:3000/src/core/plugin-loader.ts');
