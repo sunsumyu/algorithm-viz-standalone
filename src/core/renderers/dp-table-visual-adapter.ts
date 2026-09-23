@@ -42,19 +42,20 @@ export class DpTableVisualAdapter {
     const hasDiag = (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) || step.diagVal !== undefined;
     const hasTop = (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) || step.topVal !== undefined;
     const hasLeft = (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) || step.leftVal !== undefined;
+    const targetVar = step.matrix ? 'matrix' : 'dp';
 
     if (step.type === 'obstacle-cell' || step.type === 'obstacle-hit' || (step.obstacleGrid?.[step.i]?.[step.j] === 1 && step.i >= 0 && step.j >= 0)) {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-amber-800 bg-amber-50/90 px-3 py-1 rounded-lg border border-amber-300 flex items-center justify-between shadow-xs">
           <span class="flex items-center gap-1.5"><span>🚧</span> <span>障碍格阻断:</span></span>
-          <span class="font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded">dp[${step.i}][${step.j}] = 0</span>
+          <span class="font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded">${targetVar}[${step.i}][${step.j}] = 0</span>
         </div>
       `;
     } else if (step.type === 'init-row' || step.type === 'init-col' || step.type === 'init-val' || step.type === 'init-slot') {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-emerald-700 bg-emerald-50/90 px-3 py-1 rounded-lg border border-emerald-200 flex items-center justify-between shadow-xs">
           <span class="flex items-center gap-1.5"><span class="animal-frog">🐸</span> <span>边界/起点初始化:</span></span>
-          <span class="font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded">dp[${step.i}][${step.j}] = ${curVal}</span>
+          <span class="font-extrabold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded">${targetVar}[${step.i}][${step.j}] = ${curVal}</span>
         </div>
       `;
     } else if (hasDiag && hasTop && hasLeft) {
@@ -76,7 +77,7 @@ export class DpTableVisualAdapter {
           <span class="text-slate-500 font-bold text-xs">)</span>
           <span class="text-slate-400 font-bold text-xs">+ 1 ➔</span>
           <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
-            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            <span class="animal-frog text-sm">🐸</span> <span>${targetVar}[${step.i}][${step.j}]:</span> <span>${curVal}</span>
           </div>
         </div>
       `;
@@ -89,7 +90,7 @@ export class DpTableVisualAdapter {
           </div>
           <span class="text-slate-400 font-bold text-xs">➔</span>
           <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
-            <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            <span class="animal-frog text-sm">🐸</span> <span>${targetVar}[${step.i}][${step.j}]:</span> <span>${curVal}</span>
           </div>
         </div>
       `;
@@ -111,8 +112,8 @@ export class DpTableVisualAdapter {
             </div>
             <span class="text-slate-500 font-bold text-xs">)</span>
             <span class="text-slate-400 font-bold text-xs">➔</span>
-            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
-              <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+              <span class="animal-frog text-sm">🐸</span> <span>${targetVar}[${step.i}][${step.j}]:</span> <span>${curVal}</span>
             </div>
           </div>
         `;
@@ -127,8 +128,8 @@ export class DpTableVisualAdapter {
               <span class="animal-cat text-sm">🐱</span> <span>${leftLabel}:</span> <span class="font-extrabold">${leftTxt}</span>
             </div>
             <span class="text-slate-400 font-bold text-xs">=</span>
-            <div class="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
-              <span class="animal-frog text-sm">🐸</span> <span>dp[${step.i}][${step.j}]:</span> <span>${curVal}</span>
+            <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-300 shadow-2xs">
+              <span class="animal-frog text-sm">🐸</span> <span>${targetVar}[${step.i}][${step.j}]:</span> <span>${curVal}</span>
             </div>
           </div>
         `;
