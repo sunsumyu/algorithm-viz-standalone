@@ -24,7 +24,17 @@ export class DpTableVisualAdapter {
     }
   ): void {
     if (!container || !step) return;
-    const { m, n, isReverse = false, rowLabels, colLabels, cornerLabel } = options;
+    const {
+      m,
+      n,
+      isReverse = false,
+      rowLabels,
+      colLabels,
+      cornerLabel,
+      tableName: customTableName,
+      tableAction: customTableAction,
+      category,
+    } = options;
 
     // 0. 多态网格数据解构：同时无缝兼容二维数组、matrix 属性与带有元数据的网格对象
     const rawGrid: any[][] | null = Array.isArray(step.grid)
@@ -66,7 +76,7 @@ export class DpTableVisualAdapter {
     const hasDiag = (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) || step.diagVal !== undefined;
     const hasTop = (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) || step.topVal !== undefined;
     const hasLeft = (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) || step.leftVal !== undefined;
-    const isGreedy = options.category === 'greedy' || step.category === 'greedy' || !!step.matrix;
+    const isGreedy = category === 'greedy' || step.category === 'greedy' || !!step.matrix;
     const isCustomMatrix = !!step.matrix || (step.grid && !Array.isArray(step.grid) && Array.isArray(step.grid.values));
     const targetVar = (isGreedy || isCustomMatrix) ? 'matrix' : 'dp';
 
@@ -162,8 +172,8 @@ export class DpTableVisualAdapter {
       }
     } else {
       const isMatrix = isGreedy || isCustomMatrix;
-      const tableName = options.tableName || (isMatrix ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
-      const tableAction = options.tableAction || (isMatrix ? '准备动态追踪决策演进' : '准备逐格填表');
+      const tableName = customTableName || (isMatrix ? '二维决策演进表 matrix' : '二维 DP 状态表 dp');
+      const tableAction = customTableAction || (isMatrix ? '准备动态追踪决策演进' : '准备逐格填表');
       equationWrapper.innerHTML = `
         <div class="text-xs text-slate-500 font-mono py-1 px-3 text-center bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-center gap-2">
           <span>📊 ${tableName} <code>[0..${gridRows - 1}][0..${gridCols - 1}]</code>，${tableAction}</span>
