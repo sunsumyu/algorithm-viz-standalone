@@ -234,13 +234,23 @@ export class StageNavigationCoordinator {
       }
     }
 
+    const rawName = stageConfig.name;
+    const stageName = typeof rawName === 'object' && rawName !== null
+      ? (rawName[currentDirection] || rawName.forward || rawName.reverse || '')
+      : (typeof rawName === 'string' ? rawName : '');
+
+    const rawDesc = stageConfig.desc;
+    const stageDesc = typeof rawDesc === 'object' && rawDesc !== null
+      ? (rawDesc[currentDirection] || rawDesc.forward || rawDesc.reverse || '')
+      : (typeof rawDesc === 'string' ? rawDesc : '');
+
     const titleEl = document.getElementById('header-algo-title') || document.getElementById('stage-title-text');
     if (titleEl) {
-      titleEl.textContent = stageConfig.name || '';
-      titleEl.title = stageConfig.desc || '';
+      titleEl.textContent = stageName;
+      titleEl.title = stageDesc;
     }
     const descEl = document.getElementById('header-algo-desc') || document.getElementById('stage-desc-text');
-    if (descEl) descEl.textContent = stageConfig.desc || '';
+    if (descEl) descEl.textContent = stageDesc;
 
     const complexityBadge = document.getElementById('header-complexity-badge');
     if (complexityBadge) {
@@ -518,8 +528,8 @@ export class StageNavigationCoordinator {
       if (isTreeProblem) {
         if (params.currentStage === 'stage-1') defaultCard2Title = '递归搜索状态栈 (Recursive State)';
         else if (params.currentStage === 'stage-2') defaultCard2Title = '记忆化剪枝缓存 (Memoized Cache)';
-        else if (params.currentStage === 'stage-3') defaultCard2Title = '一维 DP 状态转移数组 (int[] dp)';
-        else defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
+        else if (params.currentStage === 'stage-3') defaultCard2Title = isGreedy ? '树型状态决策看板 (State Vector)' : '一维 DP 状态转移数组 (int[] dp)';
+        else defaultCard2Title = isGreedy ? '空间优化状态机 (State Machine)' : '空间压缩滚动数组 (int[] memo)';
       } else if (isGreedy) {
         if (params.currentStage === 'stage-1') defaultCard2Title = '局部贪心模拟沙盘 (Local Optimal)';
         else if (params.currentStage === 'stage-2') defaultCard2Title = '贪心决策依赖树 (Decision Tree)';
@@ -576,7 +586,7 @@ export class StageNavigationCoordinator {
         } else if (params.currentStage === 'stage-1') defaultCard2Desc = '先序/后序遍历整树，自底向上递归求解子树最优解。';
         else if (params.currentStage === 'stage-2') defaultCard2Desc = '利用状态缓存避免树上重复遍历与重叠子问题。';
         else if (params.currentStage === 'stage-3') defaultCard2Desc = '自底向上顺序填表，状态转移方程精准递推。';
-        else defaultCard2Desc = '树型 DP 空间与时间优化求解。';
+        else defaultCard2Desc = isGreedy ? '树型贪心空间极限压缩，状态向量高速收敛。' : '树型 DP 空间与时间优化求解。';
       } else if (isGreedy) {
         if (params.currentStage === 'stage-1') defaultCard2Desc = '基于局部最优策略逐步推进，直观观察贪心选择的正确性。';
         else if (params.currentStage === 'stage-2') defaultCard2Desc = '展开贪心分支判定与约束条件校验。';

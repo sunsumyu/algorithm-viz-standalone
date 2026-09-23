@@ -15,6 +15,8 @@
     "typecheck:watch": "tsc -b --noEmit --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:presentation": "vitest run src/core/renderers/presentation-contract.gate.test.ts --pool=forks",
+    "test:gate": "vitest run src/core/top-level-abstraction-compliance.test.ts src/core/strategies/top-level-abstraction.gate.test.ts src/core/renderers/presentation-contract.gate.test.ts --pool=forks",
     "export:standalone": "vite-node scripts/export-standalone.ts",
     "meta:sync": "vite-node scripts/catalog-sync.ts",
     "audit:candidates": "vite-node scripts/audit-candidates.ts"
@@ -22,7 +24,9 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsdom": "^30.0.0",
     "@types/three": "^0.185.4",
+    "jsdom": "^30.1.1",
     "playwright": "^1.62.1",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",

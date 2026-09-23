@@ -3901,8 +3901,8 @@ export class TwoPassNeighborStepCompiler {
     const rowLabels = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
     const colLabels = ['数字', '原始频次', '可成对数', '实际放置', '剩余单数'];
 
-    // 标准二维数值/字符串矩阵
-    const grid: (number | string)[][] = Array.from({ length: 10 }, (_, r) => [
+    // 标准二维数值矩阵
+    const grid: (number | null)[][] = Array.from({ length: 10 }, (_, r) => [
       9 - r,
       counts[9 - r],
       0,

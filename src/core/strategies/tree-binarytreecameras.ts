@@ -653,6 +653,8 @@ function compileBinaryTreeCamerasStage3(
     message: `状态维度说明：0=待覆盖(留给父节点), 1=安装相机(覆盖父子与自身), 2=已被覆盖(无需再装)`,
     variables: { totalNodes: postOrderNodes.length, states: ['0:待覆盖', '1:装相机', '2:已覆盖'] },
     metrics: { '状态表尺寸': `${postOrderNodes.length} × 3`, '推导序列': '后序自底向上' },
+    activeNodeId: root.id,
+    treeRoot: toUniversalTree(root, root.id),
   });
 
   // 每个节点的状态转移推导
@@ -683,6 +685,8 @@ function compileBinaryTreeCamerasStage3(
       ],
       activeSlot: idx,
       metrics: { '考察节点': node.id, '左子状态': String(leftState), '右子状态': String(rightState) },
+      activeNodeId: node.id,
+      treeRoot: toUniversalTree(root, node.id),
     });
 
     let currentState = 0;
@@ -719,6 +723,8 @@ function compileBinaryTreeCamerasStage3(
       ],
       activeSlot: idx,
       metrics: { '节点状态': String(currentState), '相机累计': String(cameras) },
+      activeNodeId: node.id,
+      treeRoot: toUniversalTree(root, node.id),
     });
   }
 
@@ -735,8 +741,23 @@ function compileBinaryTreeCamerasStage3(
       message: `边界约束闭环`,
       variables: { rootId: root.id, finalCameras: cameras },
       metrics: { '根特判': '追加相机', '最终相机数': String(cameras) },
+      activeNodeId: root.id,
+      treeRoot: toUniversalTree(root, root.id),
     });
   }
+
+  steps.push({
+    stepIndex: steps.length,
+    stage: 3,
+    line: lineDpDone,
+    codeLine: lineDpDone,
+    decision: `树形 DP 状态转移收敛：全树完成覆盖，最少需要相机 ${cameras} 台`,
+    message: `全表填毕收敛`,
+    variables: { totalCameras: cameras },
+    metrics: { '最终结果': `${cameras} 台相机`, '推导': '收敛完成' },
+    activeNodeId: root.id,
+    treeRoot: toUniversalTree(root, root.id),
+  });
 
   steps.push({
     stepIndex: steps.length,
@@ -788,6 +809,8 @@ function compileBinaryTreeCamerasStage4(
       },
     ],
     metrics: { '空间复杂度': 'O(h)', 'space': 'O(1)', '相机寄存器': '0' },
+    activeNodeId: root.id,
+    treeRoot: toUniversalTree(root, root.id),
   });
 
   // 极速扫描后序遍历节点
@@ -838,6 +861,8 @@ function compileBinaryTreeCamerasStage4(
       ],
       activeSlot: i,
       metrics: { '当前节点': node.id, '寄存器 cameras': String(cameras), 'space': 'O(1)' },
+      activeNodeId: node.id,
+      treeRoot: toUniversalTree(root, node.id),
     });
   }
 
@@ -854,6 +879,8 @@ function compileBinaryTreeCamerasStage4(
       message: `常数时间补足根节点相机`,
       variables: { rootRet, cameras },
       metrics: { '根相机追加': 'YES', 'cameras': String(cameras), 'space': 'O(1)' },
+      activeNodeId: root.id,
+      treeRoot: toUniversalTree(root, root.id),
     });
   } else {
     steps.push({
@@ -865,6 +892,8 @@ function compileBinaryTreeCamerasStage4(
       message: `根节点已在监控覆盖范围内，维持当前相机计数`,
       variables: { rootRet, cameras },
       metrics: { '根相机追加': 'NO', 'cameras': String(cameras), 'space': 'O(1)' },
+      activeNodeId: root.id,
+      treeRoot: toUniversalTree(root, root.id),
     });
   }
 
@@ -877,6 +906,8 @@ function compileBinaryTreeCamerasStage4(
     message: `极速求解成功，时间复杂度 O(N)，空间复杂度 O(h)`,
     variables: { return: cameras },
     metrics: { '最终结果': String(cameras), '空间开销': 'O(h)', 'space': 'O(1)', '状态': '🏁 极致收敛' },
+    activeNodeId: root.id,
+    treeRoot: toUniversalTree(root, root.id),
   });
 
   return steps;

@@ -14,6 +14,7 @@ import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
 import { AlgorithmModelRepository } from '../model-repository';
+import { parseTreeArray, buildRawTree, toUniversalTree } from '../strategies/tree-dp-shared';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
@@ -108,10 +109,23 @@ export class StateSpacePresenter {
       container.style.boxShadow = 'none';
       container.style.background = 'transparent';
 
-      if (step.treeRoot) {
+      let activeTree = step.treeRoot;
+      if (!activeTree && AlgorithmModelRepository.hasModel(modelId)) {
+        const model = AlgorithmModelRepository.getModel(modelId);
+        const rawRoot = (model.defaultParams as any)?.root ?? '[0,0,null,0,0]';
+        try {
+          const arr = parseTreeArray(rawRoot);
+          const rawTree = buildRawTree(arr);
+          if (rawTree) {
+            activeTree = toUniversalTree(rawTree, rawTree.id);
+          }
+        } catch {}
+      }
+
+      if (activeTree) {
         RecursionTreeAdapter.renderRecursionTree(
           container,
-          step.treeRoot,
+          activeTree,
           step.activeNodeId,
           currentStage === 'stage-2'
         );
@@ -119,7 +133,8 @@ export class StateSpacePresenter {
       return;
     }
 
-    const effectiveM = (step.grid && step.grid.length > 1) ? step.grid.length : m;
+    const isPureGrid = isGridProblem || ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(modelId);
+    const effectiveM = isPureGrid ? ((step.grid && step.grid.length > 1) ? step.grid.length : m) : (m > 1 ? m : 1);
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
 
     // 1. 3D WebGL 立体透视沙盘更新
@@ -227,16 +242,36 @@ export class StateSpacePresenter {
     }
 
     // 2. 2D 平面网格/槽位沙盘渲染
-    GridVisualAdapter.renderGrid(container, step, {
+    // 强防御：若非 2D 网格问题且 effectiveM === 1，Card 1 作为一维沙盘，绝不接受多行决策矩阵污染与二维行列标！
+    let stepForCard1 = step;
+    let card1RowLabels = rowLabels;
+    let card1CornerLabel = cornerLabel;
+    let card1ColLabels = colLabels;
+
+    if (!isPureGrid && effectiveM === 1) {
+      stepForCard1 = {
+        ...step,
+        grid: step.grid && step.grid.length > 0 ? [step.grid[0]] : undefined,
+        rowLabels: undefined,
+      };
+      card1RowLabels = undefined;
+      card1CornerLabel = '槽位(i)';
+      // 彻底隔离：若存在 step.grid 说明原 colLabels 是二维决策表的属性标头（初始距离/速度等），Card 1 只能使用真实槽位标号
+      if (step.grid && step.grid.length > 1) {
+        card1ColLabels = step.slotLabels || Array.from({ length: effectiveN }, (_, c) => `槽${c}`);
+      }
+    }
+
+    GridVisualAdapter.renderGrid(container, stepForCard1, {
       m: effectiveM,
       n: effectiveN,
       isReverse,
       modelId,
       isGridProblem,
-      rowLabels,
-      colLabels,
+      rowLabels: card1RowLabels,
+      colLabels: card1ColLabels,
       isMatch,
-      cornerLabel,
+      cornerLabel: card1CornerLabel,
       deps: (step as any).deps,
     });
   }

@@ -55,12 +55,6 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts'],
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        maxThreads: 4,
-        minThreads: 1
-      }
-    }
+    pool: 'forks',
   },
 });
