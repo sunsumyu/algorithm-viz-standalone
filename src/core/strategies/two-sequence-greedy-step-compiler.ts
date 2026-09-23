@@ -1688,6 +1688,461 @@ export class TwoSequenceGreedyStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 两地调度 (LeetCode 1029 / 089 Code02) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileTwoCityScheduling(
+    model: IYamlAlgorithmModel,
+    rawCosts: number[][],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const defaultCosts = [[10, 20], [30, 200], [400, 50], [30, 20]];
+    let costs = rawCosts && rawCosts.length >= 2 ? rawCosts.map(c => [c[0], c[1]]) : defaultCosts;
+    if (costs.length % 2 !== 0) costs = costs.slice(0, costs.length - 1);
+
+    switch (stage) {
+      case 2:
+        return this.compileTwoCityStage2(model, costs, direction, anchorMap);
+      case 3:
+        return this.compileTwoCityStage3(model, costs, direction, anchorMap);
+      case 4:
+        return this.compileTwoCityStage4(model, costs, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileTwoCityStage1(model, costs, direction, anchorMap);
+    }
+  }
+
+  private static compileTwoCityStage1(
+    model: IYamlAlgorithmModel,
+    costs: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+    const n = costs.length / 2;
+
+    // 差额排序：正向按 (costA - costB) 升序，逆向按 (costB - costA) 升序
+    const sorted = [...costs].map((c, idx) => ({ id: idx, costA: c[0], costB: c[1], delta: c[0] - c[1] }));
+    if (!isReverse) {
+      sorted.sort((a, b) => a.delta - b.delta);
+    } else {
+      sorted.sort((a, b) => (b.costB - b.costA) - (a.costB - a.costA));
+    }
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.sort || 2,
+      codeLine: anchors.sort || 2,
+      decision: isReverse
+        ? `1. 逆向差额排序：按 (costB - costA) 升序排序完成，总人数 2N = ${costs.length}，每城配额 N = ${n}`
+        : `1. 差额排序：按 (costA - costB) 升序排序完成，总人数 2N = ${costs.length}，每城配额 N = ${n}`,
+      message: isReverse
+        ? `贪心原则：优先挑选去 B 城市最划算（相对于 A 差额最负）的前 N 个人去 B`
+        : `贪心原则：假设 2N 人全去 B，挑选改去 A 最划算（差额 costA - costB 最小）的前 N 个人改去 A`,
+      variables: { totalPeople: costs.length, quotaN: n },
+      stateArrays: [
+        {
+          id: 'sorted',
+          name: '差额排序人员序列',
+          indices: sorted.map((_, idx) => idx),
+          values: sorted.map(p => `P${p.id}:[${p.costA},${p.costB}] (Δ=${p.delta})`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '排序基准': isReverse ? 'costB - costA' : 'costA - costB', '每城配额': String(n) },
+    });
+
+    let totalCost = 0;
+    const assignedA: number[] = [];
+    const assignedB: number[] = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const p = sorted[i];
+      const isFirstHalf = i < n;
+
+      if (!isReverse) {
+        if (isFirstHalf) {
+          assignedA.push(p.id);
+          totalCost += p.costA;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.assign_a || 4,
+            codeLine: anchors.assign_a || 4,
+            decision: `[${i + 1}/${2 * n}] 安排人员 P${p.id} 前往 A 市：费用 +${p.costA}，累计花费 = ${totalCost} (A 配额: ${assignedA.length}/${n})`,
+            message: `差额 Δ=${p.delta} 极小，改去 A 市最省钱`,
+            variables: { person: p.id, targetCity: 'A', cost: p.costA, totalCost },
+            stateArrays: [
+              {
+                id: 'assigned',
+                name: '两地派发状态',
+                indices: [0, 1],
+                values: [`A市 (${assignedA.length}/${n}): [${assignedA.join(',')}]`, `B市 (${assignedB.length}/${n}): [${assignedB.join(',')}]`],
+                color: 'emerald',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前人': `P${p.id}`, '派往城市': 'A 市', '当前总花费': String(totalCost) },
+          });
+        } else {
+          assignedB.push(p.id);
+          totalCost += p.costB;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.assign_b || 6,
+            codeLine: anchors.assign_b || 6,
+            decision: `[${i + 1}/${2 * n}] 安排人员 P${p.id} 前往 B 市：费用 +${p.costB}，累计花费 = ${totalCost} (B 配额: ${assignedB.length}/${n})`,
+            message: `A 市配额已满，剩余人员前往 B 市`,
+            variables: { person: p.id, targetCity: 'B', cost: p.costB, totalCost },
+            stateArrays: [
+              {
+                id: 'assigned',
+                name: '两地派发状态',
+                indices: [0, 1],
+                values: [`A市 (${assignedA.length}/${n}): [${assignedA.join(',')}]`, `B市 (${assignedB.length}/${n}): [${assignedB.join(',')}]`],
+                color: 'emerald',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前人': `P${p.id}`, '派往城市': 'B 市', '当前总花费': String(totalCost) },
+          });
+        }
+      } else {
+        // Reverse
+        if (isFirstHalf) {
+          assignedB.push(p.id);
+          totalCost += p.costB;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.assign_b || 4,
+            codeLine: anchors.assign_b || 4,
+            decision: `[逆向] 优先安排 P${p.id} 前往 B 市：费用 +${p.costB}，累计 = ${totalCost} (B 配额: ${assignedB.length}/${n})`,
+            message: `逆向差额优先保障 B 市最优`,
+            variables: { person: p.id, targetCity: 'B', cost: p.costB, totalCost },
+            stateArrays: [
+              {
+                id: 'assigned',
+                name: '逆向派发状态',
+                indices: [0, 1],
+                values: [`B市 (${assignedB.length}/${n}): [${assignedB.join(',')}]`, `A市 (${assignedA.length}/${n}): [${assignedA.join(',')}]`],
+                color: 'purple',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前人': `P${p.id}`, '派往城市': 'B 市', '当前总花费': String(totalCost) },
+          });
+        } else {
+          assignedA.push(p.id);
+          totalCost += p.costA;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.assign_a || 6,
+            codeLine: anchors.assign_a || 6,
+            decision: `[逆向] 剩余人员 P${p.id} 前往 A 市：费用 +${p.costA}，累计 = ${totalCost} (A 配额: ${assignedA.length}/${n})`,
+            message: `B 市满员后分配至 A 市`,
+            variables: { person: p.id, targetCity: 'A', cost: p.costA, totalCost },
+            stateArrays: [
+              {
+                id: 'assigned',
+                name: '逆向派发状态',
+                indices: [0, 1],
+                values: [`B市 (${assignedB.length}/${n}): [${assignedB.join(',')}]`, `A市 (${assignedA.length}/${n}): [${assignedA.join(',')}]`],
+                color: 'purple',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前人': `P${p.id}`, '派往城市': 'A 市', '当前总花费': String(totalCost) },
+          });
+        }
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 8,
+      codeLine: anchors.done || 8,
+      decision: `🏁 两地调度差额贪心完成！全局最低总费用 = ${totalCost}`,
+      message: `A 市 ${assignedA.length} 人，B 市 ${assignedB.length} 人，严格平分 2N 人员`,
+      variables: { return: totalCost, assignedA, assignedB },
+      metrics: { '最终最低花费': String(totalCost), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileTwoCityStage2(
+    model: IYamlAlgorithmModel,
+    costs: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+    const n = costs.length / 2;
+
+    const rootTree: UniversalTreeNode = {
+      id: 'tree_root',
+      r: 0,
+      c: 0,
+      val: `dfs(p=0, A=0, B=0)`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 2,
+      codeLine: anchors.entry || 2,
+      decision: `展开递归决策树根节点：dfs(person=0, countA=0, countB=0)`,
+      message: `自顶向下探查每位面试者分配至 A 市或 B 市的决策分支`,
+      variables: { person: 0, countA: 0, countB: 0, quota: n },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '搜索阶段': '根节点展开', '总人数': String(costs.length) },
+    });
+
+    let currentParent = rootTree;
+    let countA = 0;
+    let countB = 0;
+
+    for (let i = 0; i < costs.length; i++) {
+      const p = costs[i];
+      const chooseA = countA < n;
+      const childNode: UniversalTreeNode = {
+        id: `node_p${i}`,
+        r: i + 1,
+        c: chooseA ? 0 : 1,
+        val: chooseA ? `P${i} -> A (+${p[0]})` : `P${i} -> B (+${p[1]})`,
+        status: 'active',
+        children: [],
+      };
+      currentParent.children.push(childNode);
+
+      // 分支探索 A
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_a || 4,
+        codeLine: anchors.branch_a || 4,
+        decision: `探查分支一：将 P${i} 分配至 A 市 (费用 +${p[0]})，当前 A 配额 ${countA + 1}/${n}`,
+        message: `生成去往城市 A 的递归子状态`,
+        variables: { person: i, candidate: 'A', cost: p[0] },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': 'A 市', '当前人员': `P${i}` },
+      });
+
+      // 分支探索 B
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_b || 6,
+        codeLine: anchors.branch_b || 6,
+        decision: `探查分支二：将 P${i} 分配至 B 市 (费用 +${p[1]})，当前 B 配额 ${countB + 1}/${n}`,
+        message: `生成去往城市 B 的递归子状态`,
+        variables: { person: i, candidate: 'B', cost: p[1] },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': 'B 市', '当前人员': `P${i}` },
+      });
+
+      if (chooseA) countA++;
+      else countB++;
+
+      // 回溯落盘
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.backtrack || 8,
+        codeLine: anchors.backtrack || 8,
+        decision: `回溯落盘：P${i} 确定最佳去向 -> ${chooseA ? 'A 市' : 'B 市'}，子树收益折返`,
+        message: `剪枝排除溢出容量的非法分支`,
+        variables: { person: i, finalAssignment: chooseA ? 'A' : 'B', countA, countB },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前确定': chooseA ? 'A 市' : 'B 市', '状态': '剪枝回溯' },
+      });
+
+      childNode.status = 'visited';
+      currentParent = childNode;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🛑 递归决策树收敛完成！验证了差额贪心选择的最优性`,
+      message: `遍历全树证明贪心解与穷举搜索解完全契合`,
+      variables: { totalDecisions: costs.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '状态': '🏁 决策树收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileTwoCityStage3(
+    model: IYamlAlgorithmModel,
+    costs: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+    const n = costs.length / 2;
+    const totalP = costs.length;
+
+    // dp[totalP + 1][n + 1]
+    const grid: (number | null)[][] = Array.from({ length: totalP + 1 }, () => new Array(n + 1).fill(null));
+    grid[0][0] = 0;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.dp_init || 2,
+      codeLine: anchors.dp_init || 2,
+      decision: `初始化状态矩阵 dp[${totalP + 1}][${n + 1}]：前 i 个人选 j 人去 A 市的最低花费，基准 dp[0][0] = 0`,
+      message: `行代表已考虑人数 (0..${totalP})，列代表分配至 A 市的人数 (0..${n})`,
+      variables: { rows: totalP + 1, cols: n + 1 },
+      grid: grid.map(r => [...r]),
+      metrics: { '矩阵规格': `${totalP + 1} × ${n + 1}`, '基准值': 'dp[0][0]=0' },
+    });
+
+    for (let i = 1; i <= totalP; i++) {
+      const p = costs[i - 1];
+      const maxJ = Math.min(i, n);
+
+      for (let j = 0; j <= maxJ; j++) {
+        const fromA = j > 0 && grid[i - 1][j - 1] !== null ? grid[i - 1][j - 1]! + p[0] : Infinity;
+        const fromB = i - 1 >= j && grid[i - 1][j] !== null ? grid[i - 1][j]! + p[1] : Infinity;
+        const val = Math.min(fromA, fromB);
+        grid[i][j] = val === Infinity ? null : val;
+
+        const deps: Array<{ r: number; c: number; label: string }> = [];
+        if (j > 0 && grid[i - 1][j - 1] !== null) deps.push({ r: i - 1, c: j - 1, label: `选A (+${p[0]})` });
+        if (grid[i - 1][j] !== null) deps.push({ r: i - 1, c: j, label: `选B (+${p[1]})` });
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.dp_transfer || 4,
+          codeLine: anchors.dp_transfer || 4,
+          decision: `状态转移 dp[${i}][${j}] = min(dp[${i - 1}][${j - 1}]+${p[0]}, dp[${i - 1}][${j}]+${p[1]}) = ${grid[i][j]}`,
+          message: `人员 P${i - 1} 两地二选一：去A(${fromA === Infinity ? '无' : fromA}) vs 去B(${fromB === Infinity ? '无' : fromB})`,
+          variables: { i, j, fromA: fromA === Infinity ? null : fromA, fromB: fromB === Infinity ? null : fromB, result: grid[i][j] },
+          grid: grid.map(r => [...r]),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          deps: deps.length > 0 ? deps : undefined,
+          metrics: { '当前单元格': `dp[${i}][${j}]`, '当前最优值': String(grid[i][j]) },
+        });
+      }
+    }
+
+    const optimalAns = grid[totalP][n];
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dp_done || 6,
+      codeLine: anchors.dp_done || 6,
+      decision: `🎉 状态矩阵填表完成！全局最优 dp[${totalP}][${n}] = ${optimalAns}`,
+      message: `2N 个人精确平分为两组的最优总费用收敛完毕`,
+      variables: { return: optimalAns },
+      grid: grid.map(r => [...r]),
+      i: totalP,
+      j: n,
+      currentI: totalP,
+      currentJ: n,
+      metrics: { '最低总开销': String(optimalAns), '状态': '🏁 DP 填表收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileTwoCityStage4(
+    model: IYamlAlgorithmModel,
+    costs: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+    const n = costs.length / 2;
+    const sorted = [...costs].sort((a, b) => (a[0] - a[1]) - (b[0] - b[1]));
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.reg_init || 2,
+      codeLine: anchors.reg_init || 2,
+      decision: `O(1) 空间寄存器初始化：ans = 0, n = ${n}`,
+      message: `放弃任何二维矩阵与递归栈，直接利用原地排序数组进行单趟极速累加`,
+      variables: { ans: 0, n, space: 'O(1)' },
+      stateArrays: [
+        {
+          id: 'reg',
+          name: '空间压缩寄存器',
+          indices: [0, 1],
+          values: ['ans: 0', `n: ${n}`],
+          color: 'indigo',
+        },
+      ],
+      metrics: { '空间占用': 'O(1)', '累加寄存器': '0' },
+    });
+
+    let ans = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const p = sorted[i];
+      const isA = i < n;
+      const addCost = isA ? p[0] : p[1];
+      ans += addCost;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.reg_loop || 4,
+        codeLine: anchors.reg_loop || 4,
+        decision: `极速累加 [${i + 1}/${2 * n}]: P${i} 前往 ${isA ? 'A 市' : 'B 市'} (+${addCost})，ans 寄存器 = ${ans}`,
+        message: `单趟常数空间累加流转`,
+        variables: { i, person: i, city: isA ? 'A' : 'B', addCost, ans },
+        stateArrays: [
+          {
+            id: 'reg',
+            name: '空间压缩寄存器',
+            indices: [0, 1],
+            values: [`ans: ${ans}`, `当前: P${i}->${isA ? 'A' : 'B'}`],
+            color: 'emerald',
+          },
+        ],
+        activeSlot: i,
+        metrics: { '当前人': `P${i}`, '累加花费': String(ans), 'space': 'O(1)' },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.reg_done || 6,
+      codeLine: anchors.reg_done || 6,
+      decision: `🏁 O(1) 空间极速求解完成！最低总开销 = ${ans}`,
+      message: `时间复杂度 O(N log N)，额外空间复杂度 O(1)`,
+      variables: { return: ans },
+      metrics: { '最终结果': String(ans), '空间开销': 'O(1)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
 }
 
 

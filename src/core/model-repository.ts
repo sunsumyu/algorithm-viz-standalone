@@ -57,6 +57,8 @@ import reconstructQueueModel from './models/reconstruct-queue.yaml';
 import maxSubarrayModel from './models/max-subarray.yaml';
 import taskSchedulerModel from './models/task-scheduler.yaml';
 import treeCamerasModel from './models/tree-cameras.yaml';
+import twoCitySchedulingModel from './models/two-city-scheduling.yaml';
+import meetingRoomsIIModel from './models/meeting-rooms-ii.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -159,6 +161,8 @@ export class AlgorithmModelRepository {
     ['max-subarray', maxSubarrayModel as IYamlAlgorithmModel],
     ['task-scheduler', taskSchedulerModel as IYamlAlgorithmModel],
     ['tree-cameras', treeCamerasModel as IYamlAlgorithmModel],
+    ['two-city-scheduling', twoCitySchedulingModel as IYamlAlgorithmModel],
+    ['meeting-rooms-ii', meetingRoomsIIModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

@@ -1527,4 +1527,521 @@ export class IntervalSchedulingStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 会议室 II (LeetCode 253 / 089 Code05) 顶层四阶段编译器
+  // ==========================================================================
+  public static compileMeetingRoomsII(
+    model: IYamlAlgorithmModel,
+    rawIntervals: number[][],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const defaultIntervals = [[0, 30], [5, 10], [15, 20], [7, 12]];
+    const intervals = rawIntervals && rawIntervals.length > 0 ? rawIntervals.map(iv => [iv[0], iv[1]]) : defaultIntervals;
+
+    switch (stage) {
+      case 2:
+        return this.compileMeetingRoomsStage2(model, intervals, direction, anchorMap);
+      case 3:
+        return this.compileMeetingRoomsStage3(model, intervals, direction, anchorMap);
+      case 4:
+        return this.compileMeetingRoomsStage4(model, intervals, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileMeetingRoomsStage1(model, intervals, direction, anchorMap);
+    }
+  }
+
+  private static compileMeetingRoomsStage1(
+    model: IYamlAlgorithmModel,
+    intervals: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+
+    const sorted = [...intervals].map((iv, idx) => ({ id: idx, start: iv[0], end: iv[1] }));
+    if (!isReverse) {
+      sorted.sort((a, b) => a.start - b.start);
+    } else {
+      sorted.sort((a, b) => b.end - a.end);
+    }
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.sort || 2,
+      codeLine: anchors.sort || 2,
+      decision: isReverse
+        ? `1. 逆向按结束时间降序排序完成：共 ${sorted.length} 场会议，时间倒流规划大根堆`
+        : `1. 按开始时间升序排序完成：共 ${sorted.length} 场会议，准备贪心小根堆排定`,
+      message: isReverse
+        ? `倒序时间轴：大根堆维护当前所有正在使用中会议室的「最迟开始时间」`
+        : `正序时间轴：小根堆维护当前所有正在使用中会议室的「最早释放时间」以复用`,
+      variables: { totalMeetings: sorted.length },
+      stateArrays: [
+        {
+          id: 'sorted',
+          name: '时间有序会议列表',
+          indices: sorted.map((_, idx) => idx),
+          values: sorted.map(m => `M${m.id}:[${m.start},${m.end}]`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '会议总数': String(sorted.length), '排序依据': isReverse ? 'end 降序' : 'start 升序' },
+    });
+
+    const heap: number[] = []; // 模拟小根堆（或逆向大根堆）
+    const firstMeeting = sorted[0];
+    const initialKey = isReverse ? firstMeeting.start : firstMeeting.end;
+    heap.push(initialKey);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.heap_init || 4,
+      codeLine: anchors.heap_init || 4,
+      decision: `2. 首个会议 M${firstMeeting.id} [${firstMeeting.start}, ${firstMeeting.end}] 入堆，开辟首间会议室 Room#1 (跟踪点: ${initialKey})`,
+      message: `初始化优先队列堆顶`,
+      variables: { meetingId: firstMeeting.id, heapTop: initialKey, rooms: 1 },
+      stateArrays: [
+        {
+          id: 'heap',
+          name: '会议室占用堆',
+          indices: [0],
+          values: [`Room#1 (至 ${initialKey})`],
+          color: 'emerald',
+        },
+      ],
+      metrics: { '当前会议室数': '1', '最早释放点': String(initialKey) },
+    });
+
+    for (let i = 1; i < sorted.length; i++) {
+      const m = sorted[i];
+      heap.sort((a, b) => isReverse ? b - a : a - b);
+      const top = heap[0];
+      const canReuse = !isReverse ? m.start >= top : m.end <= top;
+
+      // 阶段 1 比对检测帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.scan || 5,
+        codeLine: anchors.scan || 5,
+        decision: `[${i + 1}/${sorted.length}] 考察会议 M${m.id} [${m.start}, ${m.end}]：与当前最早空闲释放时间 ${top} 进行冲突检测`,
+        message: canReuse
+          ? `前序房间在 ${top} 腾空，满足当前会议时间条件，可直接无缝接力复用！`
+          : `前序房间最早在 ${top} 才释放，当前会议已开始，发生并发重叠冲突！`,
+        variables: { meeting: m.id, start: m.start, end: m.end, top, canReuse },
+        stateArrays: [
+          {
+            id: 'heap',
+            name: '会议室占用堆 (比对中)',
+            indices: heap.map((_, idx) => idx),
+            values: heap.map((t, idx) => `Room#${idx + 1} (至 ${t})`),
+            color: 'amber',
+          },
+        ],
+        activeSlot: i,
+        metrics: { '当前会议': `M${m.id}`, '堆顶最早释放': String(top), '检测结果': canReuse ? '可复用' : '⚠️ 冲突' },
+      });
+
+      if (canReuse) {
+        heap.shift(); // 腾退复用
+        heap.push(!isReverse ? m.end : m.start);
+        heap.sort((a, b) => isReverse ? b - a : a - b);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scan || 6,
+          codeLine: anchors.scan || 6,
+          decision: `[${i + 1}/${sorted.length}] 会议 M${m.id} [${m.start}, ${m.end}] 成功复用已腾空会议室！当前会议室维持 ${heap.length} 间`,
+          message: `时间不重叠，无须额外开辟新会议室，直接接力占用`,
+          variables: { meeting: m.id, action: 'reuse', reusedTop: top, newHeapTop: heap[0], rooms: heap.length },
+          stateArrays: [
+            {
+              id: 'heap',
+              name: '会议室占用堆 (复用)',
+              indices: heap.map((_, idx) => idx),
+              values: heap.map((t, idx) => `Room#${idx + 1} (至 ${t})`),
+              color: 'emerald',
+            },
+          ],
+          activeSlot: i,
+          metrics: { '当前会议': `M${m.id}`, '决策': '复用旧房间', '会议室数': String(heap.length) },
+        });
+      } else {
+        heap.push(!isReverse ? m.end : m.start);
+        heap.sort((a, b) => isReverse ? b - a : a - b);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.scan || 6,
+          codeLine: anchors.scan || 6,
+          decision: `[${i + 1}/${sorted.length}] 冲突！会议 M${m.id} [${m.start}, ${m.end}] 与当前最早释放 ${top} 重叠，必须开辟新会议室 Room#${heap.length}！`,
+          message: `并发冲突，必须扩容新会议室以承载重叠时段`,
+          variables: { meeting: m.id, action: 'open_new', conflictWith: top, rooms: heap.length },
+          stateArrays: [
+            {
+              id: 'heap',
+              name: '会议室占用堆 (扩容)',
+              indices: heap.map((_, idx) => idx),
+              values: heap.map((t, idx) => `Room#${idx + 1} (至 ${t})`),
+              color: 'rose',
+            },
+          ],
+          activeSlot: i,
+          metrics: { '当前会议': `M${m.id}`, '决策': '⚠️ 开辟新房间', '会议室数': String(heap.length) },
+        });
+      }
+    }
+
+    const minRooms = heap.length;
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 8,
+      codeLine: anchors.done || 8,
+      decision: `🏁 贪心推演收敛完成！满足所有会议所需的最少会议室数量 = ${minRooms}`,
+      message: `小根堆动态追踪完美保证了重叠会议室内资源的极致复用`,
+      variables: { return: minRooms, totalMeetings: sorted.length },
+      metrics: { '最少会议室数': String(minRooms), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingRoomsStage2(
+    model: IYamlAlgorithmModel,
+    intervals: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+    const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'tree_root',
+      r: 0,
+      c: 0,
+      val: `dfs(meeting=0, rooms=1)`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 2,
+      codeLine: anchors.entry || 2,
+      decision: `展开会议室分配决策树根节点：dfs(meeting=0, rooms=1)`,
+      message: `自顶向下探查每个会议是复用已释放会议室还是开辟新房间`,
+      variables: { meetingIdx: 0, activeRooms: 1 },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '决策树': '初始化', '会议总数': String(sorted.length) },
+    });
+
+    let currentParent = rootTree;
+    let rooms = 1;
+    let lastEnd = sorted[0][1];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const m = sorted[i];
+      const canReuse = m[0] >= lastEnd;
+      if (!canReuse) rooms++;
+      else lastEnd = m[1];
+
+      const childNode: UniversalTreeNode = {
+        id: `node_m${i}`,
+        r: i,
+        c: canReuse ? 0 : 1,
+        val: canReuse ? `M${i} 复用会议室` : `M${i} 开辟新房 (总:${rooms})`,
+        status: 'active',
+        children: [],
+      };
+      currentParent.children.push(childNode);
+
+      // 分支一：复用尝试
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_reuse || 4,
+        codeLine: anchors.branch_reuse || 4,
+        decision: `探查分支一：会议 M${i} [${m[0]}, ${m[1]}] 尝试复用空闲会议室 (前序结束: ${lastEnd})`,
+        message: canReuse ? `无重叠，复用可行` : `时间冲突，不可复用`,
+        variables: { meeting: i, canReuse, lastEnd },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': '复用旧房', '当前会议': `M${i}` },
+      });
+
+      // 分支二：开辟新房
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_new || 6,
+        codeLine: anchors.branch_new || 6,
+        decision: `探查分支二：会议 M${i} 产生并发峰值，开辟新会议室分支 (并发数: ${rooms})`,
+        message: `重叠导致并发计数递增`,
+        variables: { meeting: i, rooms },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': '开辟新房', '当前并发': String(rooms) },
+      });
+
+      // 决策剪枝判断
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.backtrack || 7,
+        codeLine: anchors.backtrack || 7,
+        decision: `记忆化剪枝比对：判断 M${i} 最优转移路径 (最优解选择: ${canReuse ? '复用旧房' : '扩容新房'})`,
+        message: `比较两分支开销，剪除劣质搜索分支`,
+        variables: { meeting: i, bestChoice: canReuse ? 'reuse' : 'open_new' },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '局部最优': canReuse ? '复用' : '扩容', '状态': '剪枝比较' },
+      });
+
+      // 回溯落盘
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.backtrack || 8,
+        codeLine: anchors.backtrack || 8,
+        decision: `决策落盘与分支回溯：会议 M${i} 归属已排定，当前有效会议室需求 = ${rooms}`,
+        message: `剪枝完成，折返向上汇报`,
+        variables: { meeting: i, settledRooms: rooms },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '决策落盘': `需求 ${rooms} 间`, '状态': '剪枝回溯' },
+      });
+
+      childNode.status = 'visited';
+      currentParent = childNode;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🛑 会议室分配决策树遍历收敛！全局最少房间峰值需求为 ${rooms}`,
+      message: `完整构建了全树重叠调度的决策分支图`,
+      variables: { finalRooms: rooms },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最少会议室': String(rooms), '状态': '🏁 树形遍历收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingRoomsStage3(
+    model: IYamlAlgorithmModel,
+    intervals: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+
+    // 上下车差分事件：[time, delta, meetingIdx]
+    // 结束点 delta=-1 优先于开始点 delta=+1（同时间点先下后上）
+    const events: Array<{ time: number; delta: number; id: number }> = [];
+    intervals.forEach((iv, idx) => {
+      events.push({ time: iv[0], delta: 1, id: idx });
+      events.push({ time: iv[1], delta: -1, id: idx });
+    });
+    events.sort((a, b) => a.time === b.time ? a.delta - b.delta : a.time - b.time);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.diff_init || 2,
+      codeLine: anchors.diff_init || 2,
+      decision: `初始化时间轴差分事件：生成 ${events.length} 个离散上下车事件点`,
+      message: `上下车模型：会议开始 = +1 占用会议室，会议结束 = -1 释放会议室`,
+      variables: { eventCount: events.length },
+      stateArrays: [
+        {
+          id: 'events',
+          name: '上下车差分事件流',
+          indices: events.map((_, idx) => idx),
+          values: events.map(e => `T${e.time}: M${e.id} (${e.delta > 0 ? '+1' : '-1'})`),
+          color: 'indigo',
+        },
+      ],
+      metrics: { '事件总数': String(events.length), '差分思想': '前缀和最大并发' },
+    });
+
+    let currentRooms = 0;
+    let maxRooms = 0;
+
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i];
+      currentRooms += e.delta;
+      if (currentRooms > maxRooms) maxRooms = currentRooms;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.diff_scan || 4,
+        codeLine: anchors.diff_scan || 4,
+        decision: `时间点 T=${e.time} 发生事件：会议 M${e.id} ${e.delta > 0 ? '开始 (+1)' : '结束 (-1)'}，当前并发 = ${currentRooms}，历史最高 = ${maxRooms}`,
+        message: `沿离散时间轴流式计算前缀和`,
+        variables: { time: e.time, delta: e.delta, currentRooms, maxRooms },
+        stateArrays: [
+          {
+            id: 'concurrency',
+            name: '时间线并发指标',
+            indices: [0, 1],
+            values: [`当前并发房间: ${currentRooms}`, `历史峰值会议室: ${maxRooms}`],
+            color: e.delta > 0 ? 'rose' : 'emerald',
+          },
+        ],
+        activeSlot: i,
+        metrics: { '时间点': `T=${e.time}`, '实时并发': String(currentRooms), '峰值': String(maxRooms) },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.diff_done || 6,
+      codeLine: anchors.diff_done || 6,
+      decision: `🎉 上下车差分时间线扫描完成！历史最高并发峰值 = ${maxRooms} 间会议室`,
+      message: `最大重叠区间点理论与贪心小根堆算法完全一致`,
+      variables: { return: maxRooms },
+      metrics: { '最高并发': String(maxRooms), '状态': '🏁 差分收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileMeetingRoomsStage4(
+    model: IYamlAlgorithmModel,
+    intervals: number[][],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+    const n = intervals.length;
+
+    const starts = intervals.map(iv => iv[0]).sort((a, b) => a - b);
+    const ends = intervals.map(iv => iv[1]).sort((a, b) => a - b);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.reg_init || 2,
+      codeLine: anchors.reg_init || 2,
+      decision: `双指针堆外 O(1) 极速流转初始化：starts 与 ends 独立排序，指针 endIdx = 0, rooms = 0`,
+      message: `舍弃额外堆结构，利用两个单调序列的自然滑动窗口进行常数空间推演`,
+      variables: { starts, ends, endIdx: 0, rooms: 0, space: 'O(1)' },
+      stateArrays: [
+        {
+          id: 'pointers',
+          name: '双指针序列',
+          indices: [0, 1],
+          values: [`starts: [${starts.join(',')}]`, `ends: [${ends.join(',')}]`],
+          color: 'indigo',
+        },
+      ],
+      metrics: { '空间复杂度': 'O(1)', '双指针': '就绪' },
+    });
+
+    let rooms = 0;
+    let endIdx = 0;
+
+    for (let i = 0; i < n; i++) {
+      const isConflict = starts[i] < ends[endIdx];
+
+      // 1. 比对检查步骤
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.reg_loop || 3,
+        codeLine: anchors.reg_loop || 3,
+        decision: `[${i + 1}/${n}] 考察双指针：当前会议开始 starts[${i}]=${starts[i]} 对比 最早结束 ends[${endIdx}]=${ends[endIdx]}`,
+        message: isConflict
+          ? `会议开始时间早于当前最早结束时间，发生重叠冲突！`
+          : `会议开始时间晚于或等于最早结束时间，会议室已空出可复用！`,
+        variables: { i, start: starts[i], end: ends[endIdx], endIdx, isConflict },
+        stateArrays: [
+          {
+            id: 'state',
+            name: '双指针流转比对',
+            indices: [0, 1],
+            values: [`当前指针 start[${i}]: ${starts[i]}`, `最早释放 end[${endIdx}]: ${ends[endIdx]}`],
+            color: 'amber',
+          },
+        ],
+        activeSlot: i,
+        metrics: { '当前开始': String(starts[i]), '最早释放': String(ends[endIdx]), '比对': isConflict ? '冲突' : '复用' },
+      });
+
+      if (isConflict) {
+        rooms++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.reg_loop || 4,
+          codeLine: anchors.reg_loop || 4,
+          decision: `[${i + 1}/${n}] 冲突生效！starts[${i}] < ends[${endIdx}]，rooms++ -> ${rooms}`,
+          message: `新会议在最早结束前发生，增加会议室容量`,
+          variables: { i, start: starts[i], end: ends[endIdx], rooms, endIdx },
+          stateArrays: [
+            {
+              id: 'state',
+              name: '双指针流转状态',
+              indices: [0, 1],
+              values: [`当前所需会议室: ${rooms}`, `当前最早释放: ${ends[endIdx]}`],
+              color: 'rose',
+            },
+          ],
+          activeSlot: i,
+          metrics: { '当前开始': String(starts[i]), '所需房间': String(rooms) },
+        });
+      } else {
+        endIdx++;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.reg_loop || 4,
+          codeLine: anchors.reg_loop || 4,
+          decision: `[${i + 1}/${n}] 复用生效！starts[${i}] >= ends[${endIdx - 1}]，滑动释放指针 endIdx++ -> ${endIdx}`,
+          message: `前序会议室已释放，直接复用无需扩容`,
+          variables: { i, start: starts[i], end: ends[endIdx], rooms, endIdx },
+          stateArrays: [
+            {
+              id: 'state',
+              name: '双指针流转状态',
+              indices: [0, 1],
+              values: [`当前所需会议室: ${rooms}`, `当前最早释放: ${ends[endIdx]}`],
+              color: 'emerald',
+            },
+          ],
+          activeSlot: i,
+          metrics: { '当前开始': String(starts[i]), '复用成功': 'YES' },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.reg_done || 6,
+      codeLine: anchors.reg_done || 6,
+      decision: `🏁 双指针 O(1) 极速推演完成！最少需要 ${rooms} 间会议室`,
+      message: `时间复杂度 O(N log N)，额外空间复杂度 O(1)，无堆开销`,
+      variables: { return: rooms },
+      metrics: { '最终结果': String(rooms), '空间开销': 'O(1)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
 }

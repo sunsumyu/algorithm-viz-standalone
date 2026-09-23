@@ -9,6 +9,7 @@
 
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_089_PROBLEMS } from './greedy-089-problem-content';
 import {
   TWO_CITY_STAGE1_CODES,
@@ -574,12 +575,12 @@ export const TwoCitySchedulingVisualizer = Visualizer;
 registerAlgorithm({
   id: 'two-city-scheduling',
   name: '两地调度 (Two City Scheduling)',
-  viewId: 'algo-two-city-scheduling-view',
+  viewId: 'two-city-scheduling',
   category: 'greedy',
   description: '左程云算法讲解089 Code02：LeetCode 1029 两地调度，差额排序贪心策略与数学置换反证法',
   icon: '✈️',
-  template,
-  Visualizer,
+  template: `<div id="two-city-scheduling" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 892,
   learningGoal: '理解差额排序在多选一资源分配中的恒等式转化，掌握增量排序的本质',

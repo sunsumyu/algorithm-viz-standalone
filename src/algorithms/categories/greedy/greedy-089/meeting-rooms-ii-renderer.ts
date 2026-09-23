@@ -9,6 +9,7 @@
 
 import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_089_PROBLEMS } from './greedy-089-problem-content';
 import {
   MEETING_ROOMS_STAGE1_CODES,
@@ -483,12 +484,12 @@ export const MeetingRoomsVisualizer = Visualizer;
 registerAlgorithm({
   id: 'meeting-rooms-ii',
   name: '会议室 II (Meeting Rooms II)',
-  viewId: 'algo-meeting-rooms-ii-view',
+  viewId: 'meeting-rooms-ii',
   category: 'greedy',
   description: '左程云算法讲解089 Code04：LeetCode 253 会议室 II，小根堆动态维护最早结束时间与多轨道甘特图',
   icon: '🏢',
-  template,
-  Visualizer,
+  template: `<div id="meeting-rooms-ii" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 894,
   learningGoal: '掌握小根堆在区间调度与重叠问题中的核心应用，理解最早空闲复用的贪心策略',

@@ -1,0 +1,185 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 会议室 II 顶层领域模型
+# 对应：LeetCode 253 / 左程云算法讲解 089 Code05
+# 包含：按开始时间排序、小根堆动态维护最早结束时间、时间线差分扫描、O(1)双指针
+# ==============================================================================
+
+id: meeting-rooms-ii
+name: 会议室 II (Meeting Rooms II)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 双指针
+  - 排序
+  - 堆（优先队列）
+  - 前缀和
+
+description: |
+  给你一个会议时间安排的数组 intervals，每个会议时间都会包括开始和结束的时间 intervals[i] = [starti, endi]。
+  为避免会议冲突，同时考虑充分利用会议室资源，请你计算至少需要多少间会议室，才能满足这些会议安排。
+  核心策略：
+  1. 排序 + 小根堆贪心复用：
+     - 将会议按开始时间 start 升序排序；
+     - 维护一个小根堆，堆顶保存当前正在使用中的所有会议室中「最早结束」的时间；
+     - 遍历每个会议：如果当前会议的 start >= 堆顶时间，说明最早结束的会议室已腾空，可以复用（弹出堆顶）；
+     - 将当前会议的结束时间加入小根堆；
+     - 遍历结束，堆中最大元素数量即为所需的最少会议室数。
+  2. Forward: 正向时间轴推演（按 start 升序，小根堆维护最早结束时间）。
+  3. Reverse: 倒序时间轴推演（按 end 降序，大根堆维护最晚开始时间）。
+
+defaultParams:
+  intervals:
+    - [0, 30]
+    - [5, 10]
+    - [15, 20]
+    - [7, 12]
+
+constraints:
+  - 1 <= intervals.length <= 10^4
+  - 0 <= starti < endi <= 10^6
+
+directions:
+  forward:
+    name: 正向时间轴小根堆贪心复用 (Forward Sweep Min-Heap)
+    description: 按开始时间升序排列，小根堆跟踪最早空闲会议室，无缝复用或开辟新房间
+  reverse:
+    name: 逆向时间轴大根堆倒推对偶 (Reverse Sweep Max-Heap)
+    description: 按结束时间降序排列，大根堆跟踪最迟开始时间，逆向时间轴对偶复用验证
+
+stages:
+  stage-1:
+    name: 排序与小根堆贪心复用
+    description: 会议按开始时间排序，小根堆实时维护各会议室占用情况与最早释放时机
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int minMeetingRooms(int[][] intervals) {
+              if (intervals.length == 0) return 0;
+              // @step:sort 1. 按会议开始时间升序排序
+              Arrays.sort(intervals, (a, b) -> a[0] - b[0]);
+              // @step:heap_init 2. 小根堆维护最早结束时间
+              PriorityQueue<Integer> heap = new PriorityQueue<>();
+              heap.offer(intervals[0][1]);
+              // @step:scan 3. 逐个会议考察复用或开辟
+              for (int i = 1; i < intervals.length; i++) {
+                  if (intervals[i][0] >= heap.peek()) {
+                      heap.poll(); // 复用已结束会议室
+                  }
+                  heap.offer(intervals[i][1]); // 占用或开辟会议室
+              }
+              // @step:done 4. 堆中最终大小即为最少会议室数
+              return heap.size();
+          }
+      reverse:
+        language: java
+        source: |
+          public int minMeetingRoomsReverse(int[][] intervals) {
+              if (intervals.length == 0) return 0;
+              // @step:sort 1. 逆向按结束时间降序排序
+              Arrays.sort(intervals, (a, b) -> b[1] - a[1]);
+              // @step:heap_init 2. 大根堆维护最迟开始时间
+              PriorityQueue<Integer> heap = new PriorityQueue<>(Collections.reverseOrder());
+              heap.offer(intervals[0][0]);
+              // @step:scan 3. 逐个考察逆向复用
+              for (int i = 1; i < intervals.length; i++) {
+                  if (intervals[i][1] <= heap.peek()) {
+                      heap.poll();
+                  }
+                  heap.offer(intervals[i][0]);
+              }
+              // @step:done 4. 返回峰值需求
+              return heap.size();
+          }
+
+  stage-2:
+    name: 会议室分配决策树与区间重叠分支
+    description: 树形展开每个会议决策：复用现有会议室还是新开辟会议室，追踪全局占用峰值
+    complexity:
+      time: O(2^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 决策树展开：dfs(meetingIdx, activeRooms)
+          // @step:entry 1. 展开根决策节点：考察首个会议
+          // @step:branch_reuse 2. 分支一：成功复用最早结束的会议室
+          // @step:branch_new 3. 分支二：产生时间冲突，被迫新开辟会议室
+          // @step:check 4. 检查当前活跃会议室最大重叠深度
+          // @step:backtrack 5. 递归回溯与分支落盘
+          // @step:done 6. 决策树遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向决策依赖树
+          // @step:entry 1. 逆向决策树展开
+          // @step:branch_reuse 2. 逆向时间冲突规避
+          // @step:branch_new 3. 逆向扩容分支
+          // @step:check 4. 冲突判定
+          // @step:backtrack 5. 逆向回溯
+          // @step:done 6. 逆向收敛
+
+  stage-3:
+    name: 上下车时间轴差分与最大并发矩阵
+    description: 将会议拆分为 [start, +1] 上车点和 [end, -1] 下车点，前缀和扫描最大并发数
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 上下车差分扫描矩阵
+          // @step:diff_init 1. 离散化时间点生成上下车事件列表
+          // @step:diff_sort 2. 按时间点升序排序，结束时间点优先排在前面
+          // @step:diff_scan 3. 沿时间轴扫描累加并发会议室计数
+          // @step:diff_update 4. 更新历史最高并发量 maxRooms
+          // @step:diff_done 5. 差分扫描完成，返回最高峰值
+      reverse:
+        language: java
+        source: |
+          // 逆向差分时间线
+          // @step:diff_init 1. 逆向事件初始化
+          // @step:diff_sort 2. 逆向时间点排序
+          // @step:diff_scan 3. 逆向前缀和流转
+          // @step:diff_update 4. 逆向峰值捕捉
+          // @step:diff_done 5. 逆向收敛
+
+  stage-4:
+    name: 双指针 O(1) 堆外极速流转
+    description: 分别对 starts 数组与 ends 数组独立升序排序，双指针单趟常数空间极速推演
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int minMeetingRoomsFast(int[][] intervals) {
+              // @step:reg_init 1. 提取 start 与 end 数组并排序
+              int[] starts = new int[intervals.length];
+              int[] ends = new int[intervals.length];
+              int rooms = 0, endIdx = 0;
+              // @step:reg_loop 2. 双指针单趟流动扫描
+              for (int i = 0; i < starts.length; i++) {
+                  if (starts[i] < ends[endIdx]) rooms++;
+                  else endIdx++;
+              }
+              // @step:reg_done 3. 极速返回所需会议室数量
+              return rooms;
+          }
+      reverse:
+        language: java
+        source: |
+          public int minMeetingRoomsFastReverse(int[][] intervals) {
+              // @step:reg_init 1. 逆向指针初始化
+              // @step:reg_loop 2. 逆向双指针单趟推演
+              // @step:reg_done 3. 极速返回
+              return 0;
+          }

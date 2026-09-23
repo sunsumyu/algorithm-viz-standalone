@@ -46,6 +46,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'max-subarray',
   'task-scheduler',
   'tree-cameras',
+  'two-city-scheduling',
+  'meeting-rooms-ii',
   'best-time-stock',
 
   // 动态规划族群 (Dynamic Programming)
@@ -221,10 +223,8 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         // 子目录专题 (greedy-089 ~ greedy-094)
         'course-schedule-iii',
         'largest-number',
-        'meeting-rooms-ii',
         'minimum-cost-connect-sticks',
         'minimum-eat-oranges',
-        'two-city-scheduling',
         'absolute-value-add-to-array',
         'cutting-bamboo',
         'ipo',

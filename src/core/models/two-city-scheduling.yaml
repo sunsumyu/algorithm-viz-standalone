@@ -1,0 +1,160 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 两地调度 顶层领域模型
+# 对应：LeetCode 1029 / 左程云算法讲解 089 Code02
+# 包含：差额排序贪心、回溯决策依赖树、二维费用状态矩阵、O(1)空间原地流转
+# ==============================================================================
+
+id: two-city-scheduling
+name: 两地调度 (Two City Scheduling)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 排序
+  - 动态规划
+
+description: |
+  公司计划面试 2N 个人。给定一个数组 costs，其中 costs[i] = [aCosti, bCosti]，
+  表示第 i 个人飞往 A 市的费用为 aCosti，飞往 B 市的费用为 bCosti。
+  返回将每个人都飞到某座城市的最低费用，要求每个城市都有 N 个人抵达。
+  核心策略：
+  1. 差额排序贪心：假设所有 2N 个人先全部飞往 B 市，总花费为 sum(costs[i][1])。
+     若将第 i 个人从 B 改去 A，增量花费为 (costs[i][0] - costs[i][1])。
+     贪心策略：将所有人按 (costA - costB) 升序排序，挑选差值最小的前 N 个人改去 A 市，
+     剩余 N 个人维持去 B 市，总花费即可达到全局最小。
+  2. Forward: 按 (costA - costB) 升序排序，优先选取去 A 市最节省的前 N 人。
+  3. Reverse: 按 (costB - costA) 升序排序，优先选取去 B 市最节省的前 N 人。
+
+defaultParams:
+  costs:
+    - [10, 20]
+    - [30, 200]
+    - [400, 50]
+    - [30, 20]
+
+constraints:
+  - 2 <= costs.length <= 100
+  - costs.length 为偶数
+  - 1 <= aCosti, bCosti <= 1000
+
+directions:
+  forward:
+    name: 差额排序优先分配 A 市 (A-Oriented Difference Greedy)
+    description: 所有人预设去 B 市，按 (costA - costB) 升序挑选前 N 个改去 A 市最划算的人
+  reverse:
+    name: 差额排序优先分配 B 市 (B-Oriented Difference Greedy)
+    description: 所有人预设去 A 市，按 (costB - costA) 升序挑选前 N 个改去 B 市最划算的人
+
+stages:
+  stage-1:
+    name: 差额排序贪心调度
+    description: 按两地差值升序排序，前 N 人安排至第一座城市，后 N 人安排至第二座城市
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int twoCitySchedCost(int[][] costs) {
+              // @step:sort 1. 按 (costA - costB) 升序排序
+              Arrays.sort(costs, (a, b) -> (a[0] - a[1]) - (b[0] - b[1]));
+              int totalCost = 0;
+              int n = costs.length / 2;
+              // @step:assign_a 2. 前 n 个人前往城市 A
+              for (int i = 0; i < n; i++) totalCost += costs[i][0];
+              // @step:assign_b 3. 后 n 个人前往城市 B
+              for (int i = n; i < 2 * n; i++) totalCost += costs[i][1];
+              // @step:done 4. 返回最低调度总费用
+              return totalCost;
+          }
+      reverse:
+        language: java
+        source: |
+          public int twoCitySchedCostReverse(int[][] costs) {
+              // @step:sort 1. 按 (costB - costA) 升序排序
+              Arrays.sort(costs, (a, b) -> (a[1] - a[0]) - (b[1] - b[0]));
+              int totalCost = 0;
+              int n = costs.length / 2;
+              // @step:assign_b 2. 前 n 个人前往城市 B
+              for (int i = 0; i < n; i++) totalCost += costs[i][1];
+              // @step:assign_a 3. 后 n 个人前往城市 A
+              for (int i = n; i < 2 * n; i++) totalCost += costs[i][0];
+              // @step:done 4. 返回最低调度总费用
+              return totalCost;
+          }
+
+  stage-2:
+    name: 递归分支与决策依赖树展开
+    description: 展开每位面试者选择 A 市或 B 市的递归分支树，展示容量剪枝与最优路径回溯
+    complexity:
+      time: O(2^(2N))
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 决策树遍历：dfs(personIdx, countA, countB)
+          // @step:entry 1. 展开根节点 dfs(0, 0, 0)
+          // @step:branch_a 2. 分支选择：分配当前人员去 A 市
+          // @step:branch_b 3. 分支选择：分配当前人员去 B 市
+          // @step:prune 4. 配额溢出剪枝 (countA > N || countB > N)
+          // @step:backtrack 5. 递归回溯取较小开销
+          // @step:done 6. 决策树遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向决策依赖树
+          // @step:entry 1. 逆向决策树展开
+          // @step:branch_b 2. 优先尝试 B 市分支
+          // @step:branch_a 3. 备选尝试 A 市分支
+          // @step:prune 4. 配额约束剪枝
+          // @step:backtrack 5. 逆向回溯
+          // @step:done 6. 逆向收敛
+
+  stage-3:
+    name: 二维状态转移矩阵 DP 填表
+    description: 构建 dp[i][j] 状态矩阵，表示前 i 个人中有 j 个人飞往城市 A 的最低总开销
+    complexity:
+      time: O(N^2)
+      space: O(N^2)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态转移矩阵：dp[2N+1][N+1]
+          // @step:dp_init 1. 初始化矩阵 dp，dp[0][0] = 0
+          // @step:dp_loop 2. 外层遍历人员 i 从 1 到 2N
+          // @step:dp_transfer 3. 状态转移：dp[i][j] = min(dp[i-1][j-1] + costA, dp[i-1][j] + costB)
+          // @step:dp_done 4. 全局最优：dp[2N][N]
+      reverse:
+        language: java
+        source: |
+          // 逆向动态规划填表
+          // @step:dp_init 1. 逆向矩阵初始化
+          // @step:dp_loop 2. 逆向人员扫描
+          // @step:dp_transfer 3. 逆向状态转移
+          // @step:dp_done 4. 逆向矩阵收敛
+
+  stage-4:
+    name: O(1) 额外空间极速差值流转
+    description: 原地排序并单趟流式累加，空间复杂度降至 O(1)，极速产出全局最优解
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 原地单趟累加极速求解
+          // @step:reg_init 1. 寄存器初始化：ans=0, n=len/2
+          // @step:reg_loop 2. 单趟极速累加：前 n 个人加 costA，后 n 个人加 costB
+          // @step:reg_done 3. 极速返回最低总开销
+      reverse:
+        language: java
+        source: |
+          // 逆向极速累加
+          // @step:reg_init 1. 逆向寄存器初始化
+          // @step:reg_loop 2. 逆向极速累加
+          // @step:reg_done 3. 极速返回

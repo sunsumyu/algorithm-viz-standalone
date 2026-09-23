@@ -58,6 +58,8 @@ export class ProblemDimensionResolver {
     'partition-labels',
     'lemonade',
     'monotone-digits',
+    'two-city-scheduling',
+    'meeting-rooms-ii',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -235,6 +237,14 @@ export class ProblemDimensionResolver {
       const ratings = this.toArray(params.ratings);
       m = 1;
       n = ratings.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.costs !== undefined) {
+      const costs = this.toArray(params.costs);
+      m = 1;
+      n = costs.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

@@ -130,6 +130,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { MaxSubarrayStrategy } = await import('./max-subarray-strategy');
       const { TaskSchedulerStrategy } = await import('./task-scheduler-strategy');
       const { TreeCamerasStrategy } = await import('./tree-cameras-strategy');
+      const { TwoCitySchedulingStrategy } = await import('./two-city-scheduling-strategy');
+      const { MeetingRoomsIIStrategy } = await import('./meeting-rooms-ii-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -147,6 +149,8 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         MaxSubarrayStrategy,
         TaskSchedulerStrategy,
         TreeCamerasStrategy,
+        TwoCitySchedulingStrategy,
+        MeetingRoomsIIStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

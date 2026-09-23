@@ -45,6 +45,8 @@ import { ReconstructQueueStrategy } from './reconstruct-queue-strategy';
 import { MaxSubarrayStrategy } from './max-subarray-strategy';
 import { TaskSchedulerStrategy } from './task-scheduler-strategy';
 import { TreeCamerasStrategy } from './tree-cameras-strategy';
+import { TwoCitySchedulingStrategy } from './two-city-scheduling-strategy';
+import { MeetingRoomsIIStrategy } from './meeting-rooms-ii-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -166,6 +168,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MaxSubarrayStrategy());
   AlgorithmStrategyRegistry.register(new TaskSchedulerStrategy());
   AlgorithmStrategyRegistry.register(new TreeCamerasStrategy());
+  AlgorithmStrategyRegistry.register(new TwoCitySchedulingStrategy());
+  AlgorithmStrategyRegistry.register(new MeetingRoomsIIStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -221,7 +225,9 @@ export {
   ReconstructQueueStrategy,
   MaxSubarrayStrategy,
   TaskSchedulerStrategy,
-  TreeCamerasStrategy
+  TreeCamerasStrategy,
+  TwoCitySchedulingStrategy,
+  MeetingRoomsIIStrategy
 };
 
 export * from './strategy-helpers';

@@ -3743,7 +3743,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "two-city-scheduling",
     name: "两地调度 (Two City Scheduling)",
-    viewId: "algo-two-city-scheduling-view",
+    viewId: "two-city-scheduling",
     category: "greedy",
     description: "左程云算法讲解089 Code02：LeetCode 1029 两地调度，差额排序贪心策略与数学置换反证法",
     icon: "✈️",
@@ -3765,7 +3765,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "meeting-rooms-ii",
     name: "会议室 II (Meeting Rooms II)",
-    viewId: "algo-meeting-rooms-ii-view",
+    viewId: "meeting-rooms-ii",
     category: "greedy",
     description: "左程云算法讲解089 Code04：LeetCode 253 会议室 II，小根堆动态维护最早结束时间与多轨道甘特图",
     icon: "🏢",
