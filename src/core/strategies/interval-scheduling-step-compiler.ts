@@ -3220,6 +3220,9 @@ export class IntervalSchedulingStepCompiler {
       .map((item, id) => ({ id: id + 1, start: item[0], end: item[1] }))
       .sort((a, b) => (isReverse ? b.start - a.start : a.end - b.end));
 
+    const slotCols = sorted.map(m => `M${m.id}`);
+    const slotLabels: string[] = sorted.map(m => `[${m.start},${m.end}]`);
+
     const rootTree: UniversalTreeNode = {
       id: 'mm_root',
       r: 0,
@@ -3240,6 +3243,10 @@ export class IntervalSchedulingStepCompiler {
       message: '排序确立贪心选取的先后次序',
       variables: { total: intervals.length },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: 0,
+      highlightSlots: [0],
+      slots: [...slotLabels],
+      colLabels: slotCols,
       metrics: { '会议总数': String(intervals.length), '排序规则': isReverse ? 'start 降序' : 'end 升序' },
     });
 
@@ -3254,12 +3261,17 @@ export class IntervalSchedulingStepCompiler {
       message: '初始化调度指针',
       variables: { count: 0, curPointer: isReverse ? 'INF' : 0 },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: 0,
+      highlightSlots: [0],
+      slots: [...slotLabels],
+      colLabels: slotCols,
       metrics: { '已选场数': '0', '指针初始': isReverse ? '+∞' : '0' },
     });
 
     let count = 0;
     let curEnd = 0;
     let curStart = Infinity;
+    const pickedIndices: number[] = [];
 
     for (let i = 0; i < sorted.length; i++) {
       const m = sorted[i];
@@ -3277,11 +3289,17 @@ export class IntervalSchedulingStepCompiler {
           : `核验会议开始时间 ${m.start} 是否 ≥ 当前结束时间 ${curEnd}`,
         variables: { meetingId: m.id, start: m.start, end: m.end, pointer: isReverse ? curStart : curEnd },
         treeRoot: cloneStateDepTree(rootTree),
+        activeSlot: i,
+        highlightSlots: [...pickedIndices, i],
+        slots: [...slotLabels],
+        colLabels: slotCols,
         metrics: { '考查会议': `M${m.id}`, '时间段': `[${m.start},${m.end}]` },
       });
 
       if (isCompat) {
         count++;
+        pickedIndices.push(i);
+        slotLabels[i] = '✅选入';
         if (isReverse) curStart = m.start;
         else curEnd = m.end;
 
@@ -3304,12 +3322,17 @@ export class IntervalSchedulingStepCompiler {
           message: '无时间冲突，果断占用会议室并快速腾空，为后续留出最多时间',
           variables: { chosen: m.id, count, newPointer: isReverse ? curStart : curEnd },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: i,
+          highlightSlots: [...pickedIndices],
+          slots: [...slotLabels],
+          colLabels: slotCols,
           metrics: { '选入状态': '✅ 选入', '已选总数': String(count) },
         });
       } else {
+        slotLabels[i] = '❌冲突';
         const dropNode: UniversalTreeNode = {
           id: `drop_${m.id}`,
-          r: 2,
+          r: 1,
           c: i,
           val: `❌淘汰 M${m.id}(冲突)`,
           status: 'pruned',
@@ -3323,9 +3346,15 @@ export class IntervalSchedulingStepCompiler {
           line: anchors.conflict || 8,
           codeLine: anchors.conflict || 8,
           decision: `❌ 舍弃会议 M${m.id} [${m.start}, ${m.end}]：与已选会议时间重叠冲突，贪心放弃`,
-          message: '冲突会议直接丢弃，不增加会议室冲突',
+          message: isReverse
+            ? `结束时间 ${m.end} > 当前占用下界 ${curStart}，发生冲突`
+            : `开始时间 ${m.start} < 当前占用释放时间 ${curEnd}，发生冲突`,
           variables: { discarded: m.id, count },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: i,
+          highlightSlots: [...pickedIndices],
+          slots: [...slotLabels],
+          colLabels: slotCols,
           metrics: { '选入状态': '❌ 冲突淘汰', '已选总数': String(count) },
         });
       }
@@ -3340,6 +3369,10 @@ export class IntervalSchedulingStepCompiler {
       message: '结束时间贪心排序严格保证了后续可用时间的最大化，数学归纳反证无懈可击',
       variables: { maxMeetings: count },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: sorted.length - 1,
+      highlightSlots: [...pickedIndices],
+      slots: [...slotLabels],
+      colLabels: slotCols,
       metrics: { '最终最多会议': String(count), '状态': '🏁 调度收敛' },
     });
 
@@ -3687,6 +3720,10 @@ export class IntervalSchedulingStepCompiler {
 
     const minDay = Math.min(...events.map(e => e[0]), 1);
     const maxDay = Math.max(...events.map(e => e[1]), 4);
+    const totalDays = Math.min(maxDay - minDay + 1, 5);
+    const dayCols = Array.from({ length: totalDays }, (_, idx) => `Day ${minDay + idx}`);
+    const dayLabels: string[] = Array(totalDays).fill('待排');
+    const attendedSlots: number[] = [];
 
     const rootTree: UniversalTreeNode = {
       id: 'mod_root',
@@ -3708,6 +3745,10 @@ export class IntervalSchedulingStepCompiler {
       message: '排序为时间流推进做好索引铺垫',
       variables: { totalEvents: events.length },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: 0,
+      highlightSlots: [0],
+      slots: [...dayLabels],
+      colLabels: dayCols,
       metrics: { '会议总数': String(events.length), '排序规则': isReverse ? 'end 降序' : 'start 升序' },
     });
 
@@ -3720,6 +3761,10 @@ export class IntervalSchedulingStepCompiler {
       message: '堆顶始终为「最快截止、最迫切需要参加」的会议',
       variables: { minDay, maxDay },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: 0,
+      highlightSlots: [0],
+      slots: [...dayLabels],
+      colLabels: dayCols,
       metrics: { '堆类型': '截止日小根堆', '当前堆大小': '0' },
     });
 
@@ -3728,6 +3773,7 @@ export class IntervalSchedulingStepCompiler {
     let eventIdx = 0;
 
     for (let day = minDay; day <= Math.min(maxDay, minDay + 4); day++) {
+      const slotIdx = Math.min(day - minDay, totalDays - 1);
       const dayNode: UniversalTreeNode = {
         id: `day_${day}`,
         r: 1,
@@ -3747,6 +3793,10 @@ export class IntervalSchedulingStepCompiler {
         message: '检查今日开放会议并淘汰历史已过期会议',
         variables: { currentDay: day, curHeapSize: pq.length },
         treeRoot: cloneStateDepTree(rootTree),
+        activeSlot: slotIdx,
+        highlightSlots: [...attendedSlots, slotIdx],
+        slots: [...dayLabels],
+        colLabels: dayCols,
         metrics: { '当前日期': `Day ${day}`, '待选堆大小': String(pq.length) },
       });
 
@@ -3777,6 +3827,10 @@ export class IntervalSchedulingStepCompiler {
           message: '新可用会议入堆排队',
           variables: { eventId: ev.id, start: ev.start, end: ev.end, heapSize: pq.length },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: slotIdx,
+          highlightSlots: [...attendedSlots, slotIdx],
+          slots: [...dayLabels],
+          colLabels: dayCols,
           metrics: { '今日入堆': `M${ev.id}`, '最新堆顶截止': String(pq[0]) },
         });
       }
@@ -3796,6 +3850,10 @@ export class IntervalSchedulingStepCompiler {
           message: '过期未参加的会议丧失资格，直接弹出丢弃',
           variables: { expiredDeadline: expEnd, day },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: slotIdx,
+          highlightSlots: [...attendedSlots, slotIdx],
+          slots: [...dayLabels],
+          colLabels: dayCols,
           metrics: { '过期淘汰': `Day ${expEnd}`, '剩余堆大小': String(pq.length) },
         });
       }
@@ -3804,6 +3862,8 @@ export class IntervalSchedulingStepCompiler {
       if (pq.length > 0) {
         const chosenEnd = pq.shift()!;
         count++;
+        attendedSlots.push(slotIdx);
+        dayLabels[slotIdx] = `✅M(止${chosenEnd})`;
 
         const attendNode: UniversalTreeNode = {
           id: `attend_${day}`,
@@ -3824,9 +3884,14 @@ export class IntervalSchedulingStepCompiler {
           message: '由于该会议截止最早、容错度最低，优先消耗它绝不影响后续宽裕会议',
           variables: { day, chosenDeadline: chosenEnd, totalAttended: count },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: slotIdx,
+          highlightSlots: [...attendedSlots],
+          slots: [...dayLabels],
+          colLabels: dayCols,
           metrics: { '今日参会': '✅ 参加', '累计参会': String(count), '余留待选': String(pq.length) },
         });
       } else {
+        dayLabels[slotIdx] = '轮空';
         steps.push({
           stepIndex: steps.length,
           stage: 2,
@@ -3836,6 +3901,10 @@ export class IntervalSchedulingStepCompiler {
           message: '本日轮空',
           variables: { day },
           treeRoot: cloneStateDepTree(rootTree),
+          activeSlot: slotIdx,
+          highlightSlots: [...attendedSlots],
+          slots: [...dayLabels],
+          colLabels: dayCols,
           metrics: { '今日参会': '轮空', '累计参会': String(count) },
         });
       }
@@ -3850,6 +3919,10 @@ export class IntervalSchedulingStepCompiler {
       message: '小根堆贪心策略在 O(N log N) 时间内达成全局最优匹配',
       variables: { maxAttended: count },
       treeRoot: cloneStateDepTree(rootTree),
+      activeSlot: totalDays - 1,
+      highlightSlots: [...attendedSlots],
+      slots: [...dayLabels],
+      colLabels: dayCols,
       metrics: { '最大参会数': String(count), '状态': '🏁 调度收敛' },
     });
 

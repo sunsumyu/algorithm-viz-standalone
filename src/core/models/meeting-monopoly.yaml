@@ -57,7 +57,7 @@ stages:
     code:
       forward:
         language: java
-        content: |
+        source: |
           public int maxMeetingsDFS(int[][] intervals, int idx, int curEnd) {
               if (idx == intervals.length) return 0;
               int skip = maxMeetingsDFS(intervals, idx + 1, curEnd);
@@ -75,7 +75,7 @@ stages:
           ret: 7
       reverse:
         language: java
-        content: |
+        source: |
           public int maxMeetingsDFSReverse(int[][] intervals, int idx, int curStart) {
               if (idx < 0) return 0;
               int skip = maxMeetingsDFSReverse(intervals, idx - 1, curStart);
@@ -95,13 +95,15 @@ stages:
   stage-2:
     name: 结束时间排序与小根堆状态树展开
     description: 按 end 升序排序，自顶向下构建贪心状态依赖树，实时展示选入与冲突淘汰决策
+    card2Title: "贪心决策与开辟依赖树 (Greedy Decision Tree)"
+    card2Desc: "直观展现会议按时间排序后，贪心挑选与冲突淘汰的决策过程。"
     complexity:
       time: O(N log N)
       space: O(N)
     code:
       forward:
         language: java
-        content: |
+        source: |
           Arrays.sort(intervals, (a, b) -> a[1] - b[1]);
           int count = 0, curEnd = 0;
           for (int[] m : intervals) {
@@ -122,7 +124,7 @@ stages:
           done: 10
       reverse:
         language: java
-        content: |
+        source: |
           Arrays.sort(intervals, (a, b) -> b[0] - a[0]);
           int count = 0, curStart = Integer.MAX_VALUE;
           for (int[] m : intervals) {
@@ -151,7 +153,7 @@ stages:
     code:
       forward:
         language: java
-        content: |
+        source: |
           // M[i] 记录第 i 场会议的状态决策
           for (int i = 0; i < n; i++) {
               boolean valid = intervals[i][0] >= curEnd;
@@ -169,7 +171,7 @@ stages:
           done: 8
       reverse:
         language: java
-        content: |
+        source: |
           for (int i = 0; i < n; i++) {
               boolean valid = intervals[i][1] <= curStart;
               if (valid) {
@@ -194,7 +196,7 @@ stages:
     code:
       forward:
         language: java
-        content: |
+        source: |
           int[] latest = new int[maxEnd + 1];
           Arrays.fill(latest, -1);
           for (int[] m : intervals) latest[m[1]] = Math.max(latest[m[1]], m[0]);
@@ -215,7 +217,7 @@ stages:
           done: 10
       reverse:
         language: java
-        content: |
+        source: |
           int[] earliest = new int[maxEnd + 1];
           Arrays.fill(earliest, Integer.MAX_VALUE);
           for (int[] m : intervals) earliest[m[0]] = Math.min(earliest[m[0]], m[1]);

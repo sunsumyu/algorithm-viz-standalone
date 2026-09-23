@@ -290,7 +290,7 @@ export class GridVisualAdapter {
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
         const key = `${r},${c}`;
-        const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? null) : null);
+        const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? step.slots?.[c] ?? null) : null);
         const isStandingCell = (r === activeStandingI && c === activeStandingJ);
         const isTop = (effTopI === r && effTopJ === c) || (effDeps.some(d => d.r === r && d.c === c && d.type === 'top') ?? false);
         const isLeft = (effLeftI === r && effLeftJ === c) || (effDeps.some(d => d.r === r && d.c === c && d.type === 'left') ?? false);
@@ -604,7 +604,7 @@ export class GridVisualAdapter {
         const key = `${r},${c}`;
         const isActive = r === activeI && c === activeJ;
         const isTrail = !isActive && activeTrailSet.has(key);
-        const cellVal = step.grid?.[r]?.[c] ?? null;
+        const cellVal = step.grid?.[r]?.[c] ?? (m === 1 && r === 0 ? (step.dp1d?.[c] ?? step.memo?.[c] ?? step.memoSnapshot?.[c] ?? step.slots?.[c] ?? null) : null);
 
         // 依赖单元格判定 (top / left / diag 或通用 deps)
         const expectedTopR = isReverse ? activeI + 1 : activeI - 1;

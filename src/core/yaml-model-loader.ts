@@ -91,10 +91,14 @@ export class YamlModelLoader {
    * 编译单段带有 @step:anchor 标签的源码，生成纯净代码、行号高亮 HTML 与语义锚点索引表
    */
   public static compileSource(snippet: any, lang: string = 'java'): CompiledCodeResult {
-    const rawSource = typeof snippet === 'string' ? snippet : (snippet?.source || snippet?.code);
+    const rawSource = typeof snippet === 'string'
+      ? snippet
+      : (snippet?.source || snippet?.code || snippet?.content);
     if (!snippet || typeof rawSource !== 'string') {
       return {
-        title: typeof snippet === 'object' ? (snippet?.title || snippet?.name || '') : '',
+        title: typeof snippet === 'object'
+          ? (snippet?.title || snippet?.name || (snippet?.language ? `${snippet.language.toUpperCase()} 实现` : ''))
+          : '',
         cleanSource: '',
         codeHtml: '',
         lineCount: 0,
@@ -213,7 +217,7 @@ export class YamlModelLoader {
       if (typeof stage.code === 'string') {
         codeSnippet = { title: name, source: stage.code };
       } else if (typeof stage.code === 'object') {
-        if ('source' in stage.code) {
+        if ('source' in stage.code || 'content' in stage.code) {
           codeSnippet = stage.code as any;
         } else {
           codeSnippet = stage.code[direction] || stage.code.forward;
@@ -236,7 +240,7 @@ export class YamlModelLoader {
         if (typeof (variant as any).code === 'string') {
           snippet = { title: (variant as any).name || vTitle, source: (variant as any).code };
         } else if (variant.code && typeof variant.code === 'object') {
-          if ('source' in variant.code) {
+          if ('source' in variant.code || 'content' in variant.code) {
             snippet = variant.code as any;
           } else {
             const raw = variant.code[direction] || variant.code.forward;

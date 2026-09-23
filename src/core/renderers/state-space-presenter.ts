@@ -222,6 +222,10 @@ export class StateSpacePresenter {
       }
     }
 
+    if (!colLabels && (step.colLabels || step.slotLabels)) {
+      colLabels = step.colLabels || step.slotLabels;
+    }
+
     // 2. 2D 平面网格/槽位沙盘渲染
     GridVisualAdapter.renderGrid(container, step, {
       m: effectiveM,

@@ -3830,10 +3830,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "meeting-one-day",
-    name: "最多参加会议数目 (LeetCode 1353)",
+    name: "最多可以参加的会议数目 (LeetCode 1353)",
     viewId: "algo-meeting-one-day-view",
     category: "greedy",
-    description: "左程云算法讲解090 Code04：时间逐日推进与小根堆最早截止优先贪心",
+    description: "LeetCode 1353 / 左程云算法讲解090 Code04：最多可以参加的会议数目（最多参加会议数目），时间逐日推进与小根堆最早截止优先贪心。",
     icon: "🗓️",
     difficulty: 3,
     levelOrder: 904,
