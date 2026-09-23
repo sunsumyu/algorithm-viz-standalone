@@ -1,0 +1,219 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 分割数组得到最小平均值和顶层领域模型
+# 对应：左程云算法讲解 091 Code01 / 经典大厂笔试真题
+# 包含：升序排序、前 k-1 小值独占单元素集合、大数值合并稀释、均值不等式反证
+# ==============================================================================
+
+id: split-min-avg-sum
+name: 分割数组得到最小平均值和 (Split Min Avg Sum)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 排序
+  - 数组
+  - 数学证明
+  - 状态树
+
+description: |
+  给定一个整数数组 arr，将其分割成 k 个非空的互不相交的子集，要求最小化每个集合平均值的累加和（平均值向下取整或保留实数）。
+  核心贪心策略：
+  1. 升序排序：
+     - 将数组 arr 升序排序得到 sorted；
+     - 最小的 k-1 个元素 [sorted[0], ..., sorted[k-2]] 各自独占一个单元素集合；
+     - 剩余的所有较大元素 [sorted[k-1], ..., sorted[n-1]] 全部并入第 k 个集合。
+  2. 为什么这样最优？（均值稀释原理）：
+     - 一个数值 x 独占集合时，对总和贡献的权重是 x / 1 = x；
+     - 若将数值 y 放入大小为 S 的集合中，它对总和贡献的权重被稀释为 y / S；
+     - 越大的数值，越需要将其分母 S 尽可能做大以达到极致稀释；
+     - 最小的数本身体量小，无法再通过稀释获取显著收益，因此由它们独占大小为 1 的集合。
+  3. Forward: 正向升序推演（前 k-1 个小值独占，剩余大数合并稀释）。
+  4. Reverse: 逆向对偶对比（展示非贪心或乱序划分导致的平均值和爆炸劣化）。
+
+defaultParams:
+  arr: [9, 1, 8, 2, 7, 3, 6]
+  k: 3
+
+constraints:
+  - 1 <= arr.length <= 10^5
+  - 1 <= k <= arr.length
+  - 0 <= arr[i] <= 10^9
+
+directions:
+  forward:
+    name: 升序单元素独占与大数合并稀释 (Forward Ascending Dilution)
+    description: 数组升序排列，最小 k-1 个数各自独占集合，剩余元素全部合入大集合稀释
+  reverse:
+    name: 逆向对偶降序与离散均值对比 (Reverse Descending Dual Contrast)
+    description: 对偶顺序考查反向分配对均值和的劣化效应，严格证明贪心解的唯一极小性
+
+stages:
+  stage-1:
+    name: 暴力划分穷举对比
+    description: 暴力递归枚举所有可能的 k 分割方案，展示非贪心组合的均值和劣化
+    complexity:
+      time: O(k^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          public int minAverageSumDFS(int[] arr, int k, int idx, List<List<Integer>> groups) {
+              if (idx == arr.length) {
+                  int total = 0;
+                  for (List<Integer> g : groups) {
+                      if (g.isEmpty()) return Integer.MAX_VALUE;
+                      int sum = 0;
+                      for (int v : g) sum += v;
+                      total += sum / g.size();
+                  }
+                  return total;
+              }
+              int minAns = Integer.MAX_VALUE;
+              for (int i = 0; i < k; i++) {
+                  groups.get(i).add(arr[idx]);
+                  minAns = Math.min(minAns, minAverageSumDFS(arr, k, idx + 1, groups));
+                  groups.get(i).remove(groups.get(i).size() - 1);
+              }
+              return minAns;
+          }
+        anchors:
+          entry: 1
+          leaf_check: 2
+          loop: 11
+          add: 12
+          ret: 16
+      reverse:
+        language: java
+        content: |
+          public int minAverageSumDFSReverse(int[] arr, int k, int idx, List<List<Integer>> groups) {
+              // 逆向深度探索
+              return minAverageSumDFS(arr, k, idx, groups);
+          }
+        anchors:
+          entry: 1
+          leaf_check: 2
+          loop: 11
+          add: 12
+          ret: 16
+
+  stage-2:
+    name: 贪心前缀独占与状态依赖树展开
+    description: 升序排列后构建 k 集合生成树，实时跟踪单元素集合确立与大集合聚合过程
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        content: |
+          Arrays.sort(arr);
+          int totalAvg = 0;
+          for (int i = 0; i < k - 1; i++) {
+              totalAvg += arr[i]; // 单元素集合，均值即数值自身
+          }
+          int restSum = 0;
+          for (int i = k - 1; i < arr.length; i++) {
+              restSum += arr[i];
+          }
+          int restCount = arr.length - (k - 1);
+          totalAvg += restSum / restCount; // 大集合稀释
+          return totalAvg;
+        anchors:
+          sort: 1
+          init: 2
+          single_loop: 3
+          single_add: 4
+          rest_sum: 6
+          dilute: 10
+          done: 12
+      reverse:
+        language: java
+        content: |
+          Arrays.sort(arr);
+          // 逆向倒序核验各集合均值
+          int totalAvg = 0;
+          for (int i = 0; i < k - 1; i++) totalAvg += arr[i];
+          int restSum = 0;
+          for (int i = k - 1; i < arr.length; i++) restSum += arr[i];
+          totalAvg += restSum / (arr.length - k + 1);
+          return totalAvg;
+        anchors:
+          sort: 1
+          init: 2
+          single_loop: 4
+          single_add: 5
+          rest_sum: 6
+          dilute: 8
+          done: 9
+
+  stage-3:
+    name: 分组状态演进矩阵跟踪
+    description: 矩阵动态记录每个分组的 [集合ID, 包含元素, 集合元素和, 集合元素个数, 集合平均值, 累计总和]
+    complexity:
+      time: O(N log N)
+      space: O(k)
+    code:
+      forward:
+        language: java
+        content: |
+          // M[i] 记录第 i 个集合的状态
+          for (int i = 0; i < k - 1; i++) {
+              matrix[i] = new Object[]{i + 1, "[" + arr[i] + "]", arr[i], 1, arr[i], runningTotal};
+          }
+          matrix[k - 1] = new Object[]{k, lastElems, restSum, restCount, lastAvg, finalTotal};
+        anchors:
+          init: 1
+          single_matrix: 2
+          dilute_matrix: 5
+          done: 6
+      reverse:
+        language: java
+        content: |
+          // 逆向矩阵对偶对照
+          for (int i = 0; i < k - 1; i++) {
+              matrix[i] = new Object[]{i + 1, "[" + arr[i] + "]", arr[i], 1, arr[i], runningTotal};
+          }
+          matrix[k - 1] = new Object[]{k, lastElems, restSum, restCount, lastAvg, finalTotal};
+        anchors:
+          init: 1
+          single_matrix: 2
+          dilute_matrix: 5
+          done: 6
+
+  stage-4:
+    name: 均值稀释极值定理严格反证
+    description: 数学反证：若交换单元素集合与大集合中任意元素，差值求导严格大于 0，必劣化
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        content: |
+          // 设小集合元素为 a，大集合包含 b (a < b)，大集合元素个数为 S (S >= 2)。
+          // 原平均和增量: a/1 + b/S
+          // 交换后的增量: b/1 + a/S
+          // 两者之差: (b + a/S) - (a + b/S) = (b - a) * (1 - 1/S)
+          // 由于 b > a 且 S >= 2，必有 (b - a) > 0 且 (1 - 1/S) > 0！
+          // 故交换后平均和必然严格变大！贪心分配是全局唯一极小值！
+          return totalAvg;
+        anchors:
+          proof_premise: 1
+          proof_orig: 2
+          proof_swap: 3
+          proof_diff: 4
+          proof_conclusion: 5
+          proof_ret: 6
+      reverse:
+        language: java
+        content: |
+          // 逆向对偶反证：同理严格成立
+          return totalAvg;
+        anchors:
+          proof_premise: 1
+          proof_orig: 2
+          proof_swap: 3
+          proof_diff: 4
+          proof_conclusion: 5
+          proof_ret: 6

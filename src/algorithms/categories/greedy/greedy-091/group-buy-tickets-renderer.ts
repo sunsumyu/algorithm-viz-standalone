@@ -3,7 +3,9 @@
  * 核心贪心：大顶堆维护边际增益 Delta = B - K * (2x + 1)
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
 import { GREEDY_091_PROBLEMS } from './greedy-091-problem-content';
 import {
   GROUP_BUY_TICKETS_CODES,
@@ -147,7 +149,7 @@ export function buildGroupBuyTicketsSteps(n: number, games: [number, number][]):
   return steps;
 }
 
-export const groupBuyTicketsVisualizer = registerDeclarativeAlgorithm<GroupBuyTicketsStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<GroupBuyTicketsStep>({
   id: 'group-buy-tickets',
   name: '组团买票 (Group Buy Tickets)',
   category: 'greedy',
@@ -259,4 +261,21 @@ export const groupBuyTicketsVisualizer = registerDeclarativeAlgorithm<GroupBuyTi
 
     stageContainer.appendChild(mainCard);
   },
+});
+
+export const groupBuyTicketsVisualizer = UniversalStageVisualizer;
+export const groupBuyTicketsRenderer = UniversalStageVisualizer;
+
+registerAlgorithm({
+  id: 'group-buy-tickets',
+  name: '组团买票 (Group Buy Tickets)',
+  viewId: 'algo-group-buy-tickets-view',
+  category: 'greedy',
+  icon: '🎟️',
+  difficulty: 3,
+  levelOrder: 913,
+  description: '每个项目购票费用为 Bx - Kx^2，利用二阶导小于 0 的凹函数性质，通过大根堆维护边际增益进行贪心调度。',
+  learningGoal: '掌握大顶堆维护边际增益 Delta = B - K*(2x+1) 的离散极值贪心分配机制',
+  template,
+  Visualizer: UniversalStageVisualizer,
 });

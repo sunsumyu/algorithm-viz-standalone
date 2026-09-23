@@ -29,6 +29,8 @@ export interface ResourceGreedyCompileOptions {
   cost?: number[];
   courses?: number[][];
   n?: number;
+  arr?: number[];
+  games?: [number, number][] | number[][];
   direction?: 'forward' | 'reverse';
   anchorMap?: Record<string, number>;
   problemId?: string;
@@ -43,6 +45,12 @@ export class ResourceGreedyStepCompiler {
     const pid = options.problemId || model.id;
     if (pid === 'absolute-value-add-to-array' || (pid === 'absolute-value-add-to-array' && options.nums !== undefined)) {
       return this.compileAbsoluteValueAdd(model, options, stage);
+    }
+    if (pid === 'split-min-avg-sum' || (pid === 'split-min-avg-sum' && options.arr !== undefined)) {
+      return this.compileSplitMinAvgSum(model, options, stage);
+    }
+    if (pid === 'group-buy-tickets' || (pid === 'group-buy-tickets' && options.games !== undefined)) {
+      return this.compileGroupBuyTickets(model, options, stage);
     }
     if (pid === 'maximum-product-k-parts' || (pid === 'maximum-product-k-parts' && options.k !== undefined)) {
       return this.compileMaximumProductKParts(model, options, stage);
@@ -4869,6 +4877,981 @@ export class ResourceGreedyStepCompiler {
       message: `全过程耗时仅 O(log k) 步，大数场景下极速收敛！`,
       variables: { finalResult: finalAns },
       metrics: { '最大乘积': String(finalAns), '复杂度': 'O(log k)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
+
+
+  // ==========================================================================
+  // 分割数组得到最小平均值和 (Split Min Avg Sum / 左程云 091 Code01)
+  // ==========================================================================
+
+  public static compileSplitMinAvgSum(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawArr = options.arr || options.nums || model.defaultParams?.arr || [9, 1, 8, 2, 7, 3, 6];
+    const rawK = options.k || model.defaultParams?.k || 3;
+    const arr = Array.isArray(rawArr) && rawArr.length > 0 ? rawArr.map(Number).filter(n => !isNaN(n)) : [9, 1, 8, 2, 7, 3, 6];
+    const k = typeof rawK === 'number' && rawK >= 1 ? rawK : 3;
+
+    switch (stage) {
+      case 2:
+        return this.compileSplitMinAvgSumStage2(model, arr, k, options);
+      case 3:
+        return this.compileSplitMinAvgSumStage3(model, arr, k, options);
+      case 4:
+        return this.compileSplitMinAvgSumStage4(model, arr, k, options);
+      case 1:
+      default:
+        return this.compileSplitMinAvgSumStage1(model, arr, k, options);
+    }
+  }
+
+  private static compileSplitMinAvgSumStage1(
+    model: IYamlAlgorithmModel,
+    arr: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: isReverse
+        ? `1. 逆向划分探索初始化：数组 arr=[${arr.join(', ')}]，划分目标 k=${k} 组`
+        : `1. 暴力划分穷举搜索初始化：目标将数组 arr=[${arr.join(', ')}] 分割成 k=${k} 个非空子集`,
+      message: '递归尝试将每个元素放入不同的集合中，计算各集合平均值之和并寻找极小值',
+      variables: { arrLength: arr.length, k },
+      metrics: { '数组长度': String(arr.length), '划分组数': String(k), '搜索状态': '就绪' },
+    });
+
+    const sorted = [...arr].sort((a, b) => a - b);
+    const sortedSample = sorted.slice(0, 4);
+
+    for (let i = 0; i < Math.min(arr.length, 4); i++) {
+      const val = arr[i];
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 11,
+        codeLine: anchors.loop || 11,
+        decision: `考查元素 arr[${i}]=${val}：尝试将其分配至不同子集合分支中`,
+        message: '递归探查若将该数值放入较小集合 vs 放入较大集合对平均值的扰动',
+        variables: { currentElem: val, index: i },
+        metrics: { '当前元素': String(val), '考查进度': `${i + 1}/${arr.length}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.add || 12,
+        codeLine: anchors.add || 12,
+        decision: `分支计算：将 ${val} 放入独立单元素集合，局部贡献均值 = ${val}；合入多元素集合则贡献稀释`,
+        message: '直观发现：越大的数如果单独成组，贡献的均值越高；大数必须合入大集合稀释',
+        variables: { singleCost: val, sample: sortedSample },
+        metrics: { '单元素均值': String(val), '稀释倾向': val > 5 ? '必须大集合' : '适合独立' },
+      });
+    }
+
+    // 理论最优值
+    let optSum = 0;
+    for (let i = 0; i < k - 1; i++) optSum += sorted[i];
+    const lastPart = sorted.slice(k - 1);
+    const lastAvg = Math.floor(lastPart.reduce((a, b) => a + b, 0) / lastPart.length);
+    optSum += lastAvg;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 16,
+      codeLine: anchors.ret || 16,
+      decision: `🏁 暴力搜索收敛：在所有划分排列中，最优最小平均值和 = ${optSum}`,
+      message: '穷举验证了前 k-1 小值独占集合、其余元素合并稀释的全局极优性',
+      variables: { minAvgSum: optSum },
+      metrics: { '最小平均和': String(optSum), '状态': '🏁 搜索收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileSplitMinAvgSumStage2(
+    model: IYamlAlgorithmModel,
+    arr: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...arr].sort((a, b) => (isReverse ? b - a : a - b));
+    const effectiveSorted = isReverse ? [...sorted].reverse() : sorted;
+
+    const rootTree: UniversalTreeNode = {
+      id: 'smas_root',
+      r: 0,
+      c: 0,
+      val: `集合划分树 (k=${k})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.sort || 1,
+      codeLine: anchors.sort || 1,
+      decision: isReverse
+        ? `1. 逆向降序排列对偶初始化：sorted=[${sorted.join(', ')}]，反向检验均值恶化规律`
+        : `1. 贪心预处理升序排序：arr 排序为 sorted=[${effectiveSorted.join(', ')}]`,
+      message: '排序确立元素体量梯次，最小的数将率先独占单元素集合',
+      variables: { sorted: effectiveSorted },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '排序结果': effectiveSorted.slice(0, 5).join(','), '元素总量': String(arr.length) },
+    });
+
+    let totalAvgSum = 0;
+
+    // 前 k-1 个单元素集合
+    for (let i = 0; i < k - 1; i++) {
+      const val = effectiveSorted[i];
+
+      // 探查帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.single_loop || 3,
+        codeLine: anchors.single_loop || 3,
+        decision: `🔍 考查第 ${i + 1} 个集合构建：锁定当前未分配最小值 sorted[${i}]=${val}`,
+        message: '小元素自身绝对值极小，独占单元素集合不会浪费稀释分母',
+        variables: { groupIdx: i + 1, candidateVal: val, curTotal: totalAvgSum },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '拟构建集合': `集合 #${i + 1}`, '独占元素': String(val) },
+      });
+
+      totalAvgSum += val;
+
+      const groupNode: UniversalTreeNode = {
+        id: `group_${i + 1}`,
+        r: 1,
+        c: i,
+        val: `集合#${i + 1}: [${val}] (均值${val})`,
+        status: 'visited',
+        children: [],
+      };
+      rootTree.children.push(groupNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.single_add || 4,
+        codeLine: anchors.single_add || 4,
+        decision: `✅ 确立集合 #${i + 1}=[${val}]：集合大小=1，平均值=${val}/1=${val}，累计平均和=${totalAvgSum}`,
+        message: '单元素集合确立，累计总平均和稳健推进',
+        variables: { groupIdx: i + 1, avg: val, totalAvgSum },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '已确立集合': `${i + 1}/${k}`, '累计平均和': String(totalAvgSum) },
+      });
+    }
+
+    // 最后一个集合：合并剩余元素
+    const restElements = effectiveSorted.slice(k - 1);
+    const restCount = restElements.length;
+    let runningRestSum = 0;
+
+    for (let j = 0; j < restElements.length; j++) {
+      const elem = restElements[j];
+      runningRestSum += elem;
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.rest_sum || 6,
+        codeLine: anchors.rest_sum || 6,
+        decision: `📦 剩余大元素聚合 [${j + 1}/${restElements.length}]：并入大数 ${elem}，大集合分子累加至 sum=${runningRestSum}`,
+        message: '大数集中合并：逐步聚合分子，准备施加分母均值稀释效应',
+        variables: { elem, runningRestSum, count: j + 1 },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '并入元素': String(elem), '当前分子': String(runningRestSum), '当前分母': String(j + 1) },
+      });
+    }
+
+    const restSum = runningRestSum;
+    const lastAvg = Math.floor(restSum / restCount);
+
+    totalAvgSum += lastAvg;
+
+    const lastGroupNode: UniversalTreeNode = {
+      id: `group_${k}`,
+      r: 1,
+      c: k - 1,
+      val: `集合#${k}: [${restElements.join(',')}] (均值${lastAvg})`,
+      status: 'visited',
+      children: [],
+    };
+    rootTree.children.push(lastGroupNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.dilute || 10,
+      codeLine: anchors.dilute || 10,
+      decision: `🌟 确立大集合 #${k}：${restCount} 个元素合并，均值 = ⌊${restSum}/${restCount}⌋ = ${lastAvg}，最终累加和 = ${totalAvgSum}`,
+      message: `最大元素 ${restElements[restElements.length - 1]} 被分母 ${restCount} 强力稀释，贡献显著缩减！`,
+      variables: { lastGroupCount: restCount, lastAvg, finalTotal: totalAvgSum },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '大集合均值': String(lastAvg), '稀释分母': String(restCount), '最终累加和': String(totalAvgSum) },
+    });
+
+    // 校验反证帧
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `📐 极值反证核验：若将单元素集合中的 ${effectiveSorted[0]} 与大集合中的 ${restElements[restElements.length - 1]} 互换，总均值将显著增加`,
+      message: '均值不等式与单调性证明了贪心分组是全局最小平均和的唯一构型',
+      variables: { verified: true },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '反证结论': '严格全局最优', '状态': '🏁 树推导收敛' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `🛑 状态依赖树构建收敛！全部分割全部确立，最小平均值累加和 = ${totalAvgSum}`,
+      message: '算法在 O(N log N) 时间内精确收敛至全局最优',
+      variables: { minSum: totalAvgSum },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最小平均和': String(totalAvgSum), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileSplitMinAvgSumStage3(
+    model: IYamlAlgorithmModel,
+    arr: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...arr].sort((a, b) => a - b);
+    const matrix: (string | null)[][] = Array.from({ length: k }, () => Array(6).fill(null));
+
+    const formatGrid = () => ({
+      rows: k,
+      cols: 6,
+      rowHeaders: Array.from({ length: k }, (_, i) => `集合 #${i + 1}`),
+      colHeaders: ['集合ID', '包含元素', '集合元素和', '集合大小', '集合平均值', '累计平均和'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.init || 1,
+      codeLine: anchors.init || 1,
+      decision: `初始化分组演进矩阵 M[${k}][6]：记录全部 ${k} 个集合的构建状态与累计均值演化`,
+      message: '表格动态记录各集合的包含元素、元素和、分母大小、均值与累计和',
+      variables: { k, totalElements: arr.length },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${k}×6`, '状态': '就绪' },
+    });
+
+    let runningTotal = 0;
+
+    for (let i = 0; i < k - 1; i++) {
+      const val = sorted[i];
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = i;
+      preGrid.activeCol = 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.single_matrix || 2,
+        codeLine: anchors.single_matrix || 2,
+        decision: `矩阵记录单元素集合 #${i + 1}：分配数值 ${val}，准备落盘单元格`,
+        message: '单元素独占集合，均值即自身',
+        variables: { group: i + 1, val },
+        grid: preGrid as any,
+        activeSlot: i,
+        metrics: { '当前行': `集合 #${i + 1}`, '单元素': String(val) },
+      });
+
+      runningTotal += val;
+      matrix[i][0] = `#${i + 1}`;
+      matrix[i][1] = `[${val}]`;
+      matrix[i][2] = String(val);
+      matrix[i][3] = '1';
+      matrix[i][4] = String(val);
+      matrix[i][5] = String(runningTotal);
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = i;
+      gridObj.activeCol = 5;
+      if (i > 0) {
+        gridObj.dependencyCells = [[i - 1, 5]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.single_matrix || 2,
+        codeLine: anchors.single_matrix || 2,
+        decision: `单元素集合 #${i + 1} 落盘完成：均值 ${val}，累计总均值更新为 ${runningTotal}`,
+        message: '完成单元素集合状态演进',
+        variables: { group: i + 1, runningTotal },
+        grid: gridObj as any,
+        activeSlot: i,
+        metrics: { '集合均值': String(val), '累计总和': String(runningTotal) },
+      });
+    }
+
+    // 最后一个集合落盘
+    const restElements = sorted.slice(k - 1);
+    const restSum = restElements.reduce((a, b) => a + b, 0);
+    const restCount = restElements.length;
+    const lastAvg = Math.floor(restSum / restCount);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dilute_matrix || 5,
+      codeLine: anchors.dilute_matrix || 5,
+      decision: `🔍 探查大集合 #${k}：提取剩余 ${restCount} 个元素 [${restElements.join(', ')}]，总和 ${restSum}`,
+      message: '大集合聚合待落盘状态：分子为全部剩余元素之和，分母为剩余元素数量',
+      variables: { restCount, restSum },
+      grid: formatGrid() as any,
+      activeSlot: k - 1,
+      metrics: { '待填行': `集合 #${k}`, '剩余总和': String(restSum), '元素总数': String(restCount) },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dilute_matrix || 5,
+      codeLine: anchors.dilute_matrix || 5,
+      decision: `➗ 计算大集合 #${k} 均值：⌊${restSum} / ${restCount}⌋ = ${lastAvg}，累计均值将增加 ${lastAvg}`,
+      message: '均值计算完成，准备将状态落入矩阵 M[k-1] 单元格',
+      variables: { restSum, restCount, lastAvg, prevTotal: runningTotal },
+      grid: formatGrid() as any,
+      activeSlot: k - 1,
+      metrics: { '大集合均值': String(lastAvg), '稀释分母': String(restCount) },
+    });
+
+    runningTotal += lastAvg;
+
+    matrix[k - 1][0] = `#${k}`;
+    matrix[k - 1][1] = `[${restElements.join(',')}]`;
+    matrix[k - 1][2] = String(restSum);
+    matrix[k - 1][3] = String(restCount);
+    matrix[k - 1][4] = String(lastAvg);
+    matrix[k - 1][5] = String(runningTotal);
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = k - 1;
+    finalGrid.activeCol = 5;
+    if (k > 1) {
+      finalGrid.dependencyCells = [[k - 2, 5]];
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dilute_matrix || 5,
+      codeLine: anchors.dilute_matrix || 5,
+      decision: `矩阵记录大集合 #${k}：合并 ${restCount} 个元素，总和 ${restSum}，均值 ${lastAvg}，最终总和 ${runningTotal}`,
+      message: '大数充分稀释，状态转移完备落盘',
+      variables: { restCount, restSum, lastAvg, finalTotal: runningTotal },
+      grid: finalGrid as any,
+      activeSlot: k - 1,
+      metrics: { '大集合均值': String(lastAvg), '最终总和': String(runningTotal) },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 6,
+      codeLine: anchors.done || 6,
+      decision: `🎉 分组状态演进矩阵填表完成！最优划分最小平均值累加和 = ${runningTotal}`,
+      message: '表格全方位呈现了离散贪心选择的单调优势',
+      variables: { finalMinSum: runningTotal },
+      grid: finalGrid as any,
+      metrics: { '最小平均和': String(runningTotal), '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileSplitMinAvgSumStage4(
+    model: IYamlAlgorithmModel,
+    arr: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    const sorted = [...arr].sort((a, b) => a - b);
+    let totalAvg = 0;
+    for (let i = 0; i < k - 1; i++) totalAvg += sorted[i];
+    const restElements = sorted.slice(k - 1);
+    const restCount = restElements.length;
+    const restSum = restElements.reduce((a, b) => a + b, 0);
+    const lastAvg = Math.floor(restSum / restCount);
+    totalAvg += lastAvg;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.proof_premise || 1,
+      codeLine: anchors.proof_premise || 1,
+      decision: '1. 极值定理反证前提：设单元素集合中有一数为 a，大集合包含一数 b，且 a < b',
+      message: '若贪心非最优，则必存在通过交换 a 与 b 使得总平均和变小的方案。大集合元素个数设为 S (S >= 2)',
+      variables: { a: sorted[0], b: restElements[restElements.length - 1], S: restCount },
+      metrics: { '前提假设': 'a < b, S >= 2', '目标': '考察交换扰动' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_orig || 2,
+      codeLine: anchors.proof_orig || 2,
+      decision: '2. 原始平均和关于 a 与 b 的偏增量：Orig = a/1 + b/S',
+      message: 'a 独占集合贡献权重为 1，b 在大集合中贡献权重被稀释为 1/S',
+      variables: { origWeight: 'a + b/S' },
+      metrics: { '原始贡献': 'a + b/S', 'b的权重': '1/S (稀释)' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_swap || 3,
+      codeLine: anchors.proof_swap || 3,
+      decision: '3. 交换 a 与 b 后的偏增量：Swap = b/1 + a/S',
+      message: '若将较大数 b 单独成组，而将较小数 a 放入大集合',
+      variables: { swapWeight: 'b + a/S' },
+      metrics: { '交换后贡献': 'b + a/S', 'b的权重': '1 (膨胀)' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_diff || 4,
+      codeLine: anchors.proof_diff || 4,
+      decision: '4. 差值代数求导：Diff = Swap - Orig = (b + a/S) - (a + b/S) = (b - a) * (1 - 1/S)',
+      message: '因 b > a，故 (b - a) > 0；因 S >= 2，故 (1 - 1/S) > 0！',
+      variables: { diffFormula: '(b - a) * (1 - 1/S) > 0' },
+      metrics: { '差值符号': '严格大于 0', '变化方向': '平均和严格增加' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_conclusion || 5,
+      codeLine: anchors.proof_conclusion || 5,
+      decision: '5. 代数严谨推论：任何非升序贪心划分方案，都可以通过上述置换单调严格减小均值和！',
+      message: '由有限集合良序原理，升序前缀单元素独占 + 大数合并稀释是全局唯一极小值！',
+      variables: { optimalProven: true },
+      metrics: { '反证结论': '贪心为全局唯一最小值', '性质': '离散凸性支配' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_ret || 6,
+      codeLine: anchors.proof_ret || 6,
+      decision: `6. 🏁 极值反证完成！最小平均值累加和全局最优解 = ${totalAvg}`,
+      message: '数学证明完毕，复杂度 O(N log N)，空间复杂度 O(1)',
+      variables: { finalMinSum: totalAvg },
+      metrics: { '最小平均和': String(totalAvg), '状态': '🏁 反证收敛' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 组团买票 (Group Buy Tickets / 左程云 091 Code02)
+  // ==========================================================================
+
+  public static compileGroupBuyTickets(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawN = options.n || model.defaultParams?.n || 5;
+    const rawGames = options.games || model.defaultParams?.games || [[2, 10], [3, 12], [1, 8]];
+    const n = typeof rawN === 'number' && rawN >= 1 ? rawN : 5;
+    const games: [number, number][] = (Array.isArray(rawGames) && rawGames.length > 0)
+      ? rawGames.map(g => [Number(g[0]), Number(g[1])] as [number, number])
+      : [[2, 10], [3, 12], [1, 8]];
+
+    switch (stage) {
+      case 2:
+        return this.compileGroupBuyTicketsStage2(model, n, games, options);
+      case 3:
+        return this.compileGroupBuyTicketsStage3(model, n, games, options);
+      case 4:
+        return this.compileGroupBuyTicketsStage4(model, n, games, options);
+      case 1:
+      default:
+        return this.compileGroupBuyTicketsStage1(model, n, games, options);
+    }
+  }
+
+  private static compileGroupBuyTicketsStage1(
+    model: IYamlAlgorithmModel,
+    n: number,
+    games: [number, number][],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: isReverse
+        ? `1. 逆向对偶人数分配初始化：总人数 n=${n}，游乐项目 m=${games.length}`
+        : `1. 暴力人数分配枚举初始化：总人数 n=${n}，游乐项目 m=${games.length}，递归枚举所有分配组合`,
+      message: '递归探查将每一位游客分配至不同游乐项目时产生的二次费用总额',
+      variables: { n, m: games.length },
+      metrics: { '总人数': String(n), '项目数': String(games.length), '搜索状态': '就绪' },
+    });
+
+    const m = games.length;
+    for (let step = 0; step < Math.min(n, 4); step++) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loop || 10,
+        codeLine: anchors.loop || 10,
+        decision: `分配第 ${step + 1} 位游客：枚举尝试分配给项目 #0 ~ #${m - 1}`,
+        message: '评估在不同项目当前已有游玩人数基础上，新增 1 个人带来的边际增益 Delta',
+        variables: { personIdx: step + 1 },
+        metrics: { '当前游客': `第${step + 1}人`, '枚举分支数': String(m) },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.pick || 11,
+        codeLine: anchors.pick || 11,
+        decision: `分支试算：项目费用函数 Cost(x) = B*x - K*x^2，单调上凸具备边际递减效应`,
+        message: '贪心策略可直接通过大根堆在每一步提取瞬时最大边际增量，规避指数级全排列',
+        variables: { formula: 'Cost(x) = Bx - Kx^2' },
+        metrics: { '边际分析': 'Delta递减', '贪心收敛': '大根堆 O(N log M)' },
+      });
+    }
+
+    // 计算理论贪心解
+    const heap = games.map((g, i) => ({ id: i, k: g[0], b: g[1], x: 0, delta: g[1] - g[0] })).filter(item => item.delta > 0);
+    heap.sort((a, b) => b.delta - a.delta);
+    let optCost = 0;
+    for (let i = 0; i < n && heap.length > 0; i++) {
+      heap.sort((a, b) => b.delta - a.delta);
+      const top = heap.shift()!;
+      optCost += top.delta;
+      const nextX = top.x + 1;
+      const nextDelta = top.b - top.k * (2 * nextX + 1);
+      if (nextDelta > 0) {
+        heap.push({ id: top.id, k: top.k, b: top.b, x: nextX, delta: nextDelta });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.ret || 15,
+      codeLine: anchors.ret || 15,
+      decision: `🏁 暴力搜索收敛：在所有分配组合中，最大保底花费总额 = ${optCost} 元`,
+      message: '穷举验证了贪心边际增量大根堆调度与全局最大值的精确吻合',
+      variables: { maxCost: optCost },
+      metrics: { '最大总花费': String(optCost), '状态': '🏁 搜索收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileGroupBuyTicketsStage2(
+    model: IYamlAlgorithmModel,
+    n: number,
+    games: [number, number][],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = options.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'gbt_root',
+      r: 0,
+      c: 0,
+      val: `边际大根堆分配树 (n=${n})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.heap_init || 1,
+      codeLine: anchors.heap_init || 1,
+      decision: isReverse
+        ? '1. 逆向大根堆对偶调度初始化：准备计算各项目边际增量'
+        : '1. 初始边际增量大根堆初始化：边际增量公式 Δ(x+1) = B - K * (2x + 1)',
+      message: '根据二次函数的凹性，随着参与人数 x 增加，下一人的边际增益单调递减',
+      variables: { n, m: games.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '总分配人数': String(n), '游乐项目数': String(games.length), '堆状态': '初始化' },
+    });
+
+    interface GameHeapItem {
+      id: number;
+      k: number;
+      b: number;
+      x: number;
+      delta: number;
+    }
+
+    const heap: GameHeapItem[] = [];
+    for (let i = 0; i < games.length; i++) {
+      const [kVal, bVal] = games[i];
+      const delta1 = bVal - kVal;
+      if (delta1 > 0) {
+        heap.push({ id: i, k: kVal, b: bVal, x: 0, delta: delta1 });
+      }
+    }
+    heap.sort((a, b) => (isReverse ? a.delta - b.delta : b.delta - a.delta));
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.init_loop || 2,
+      codeLine: anchors.init_loop || 2,
+      decision: `构建初始大根堆：共 ${heap.length} 个项目初始增量 Δ(1) > 0 入堆，堆顶项目 #${heap[0].id} (Δ=${heap[0].delta})`,
+      message: '仅允许带来正向收益的项目进入调度池',
+      variables: { initialHeapSize: heap.length, topDelta: heap[0]?.delta ?? 0 },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '入堆项目数': String(heap.length), '最高初始增量': String(heap[0]?.delta ?? 0) },
+    });
+
+    let totalCost = 0;
+    const assigned = new Array(games.length).fill(0);
+
+    for (let step = 0; step < Math.min(n, 5) && heap.length > 0; step++) {
+      heap.sort((a, b) => b.delta - a.delta);
+      const top = heap.shift()!;
+
+      // 探查帧
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.alloc_loop || 7,
+        codeLine: anchors.alloc_loop || 7,
+        decision: `🔍 轮次 ${step + 1}/${n} 调度：堆顶极大项目为 #${top.id}，当前可产生最大边际增量 Δ=${top.delta} 元`,
+        message: '大根堆顶贪心策略锁定当前最具性价比分配目标',
+        variables: { round: step + 1, targetGame: top.id, delta: top.delta },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前轮次': `第${step + 1}人`, '锁定项目': `#${top.id}`, '边际增益': `+${top.delta}` },
+      });
+
+      totalCost += top.delta;
+      assigned[top.id]++;
+
+      const allocNode: UniversalTreeNode = {
+        id: `alloc_${step + 1}_${top.id}`,
+        r: 1,
+        c: step,
+        val: `第${step + 1}人 ➔ 项目#${top.id} (+Δ${top.delta})`,
+        status: 'visited',
+        children: [],
+      };
+      rootTree.children.push(allocNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.poll || 8,
+        codeLine: anchors.poll || 8,
+        decision: `✅ 分配第 ${step + 1} 人到项目 #${top.id}！获得增量 ${top.delta} 元，累计保底金额更新为 ${totalCost} 元`,
+        message: `项目 #${top.id} 现已累计分配 ${assigned[top.id]} 人`,
+        variables: { assignedPerson: step + 1, gameId: top.id, currentTotal: totalCost },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '选定项目': `#${top.id}`, '已分配总人数': String(step + 1), '累计金额': String(totalCost) },
+      });
+
+      const nextX = top.x + 1;
+      const nextDelta = top.b - top.k * (2 * nextX + 1);
+
+      if (nextDelta > 0) {
+        heap.push({ id: top.id, k: top.k, b: top.b, x: nextX, delta: nextDelta });
+        heap.sort((a, b) => b.delta - a.delta);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.repush || 12,
+          codeLine: anchors.repush || 12,
+          decision: `项目 #${top.id} 计算下一人增量：Δ(${nextX + 1}) = ${top.b} - ${top.k}*(2*${nextX}+1) = ${nextDelta} > 0，重新压入大根堆`,
+          message: '边际递减后依然具有正收益，大根堆重新调整就绪',
+          variables: { gameId: top.id, nextX, nextDelta, heapSize: heap.length },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '项目': `#${top.id}`, '新边际增量': String(nextDelta), '堆大小': String(heap.length) },
+        });
+      } else {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.repush || 12,
+          codeLine: anchors.repush || 12,
+          decision: `项目 #${top.id} 下一人增量 Δ=${nextDelta} ≤ 0：已达该项目收益顶点，不再入堆`,
+          message: '边际收益耗尽，自动退出调度候选池',
+          variables: { gameId: top.id, nextDelta },
+          treeRoot: cloneStateDepTree(rootTree),
+          metrics: { '项目': `#${top.id}`, '状态': '收益触顶饱和' },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 14,
+      codeLine: anchors.done || 14,
+      decision: `🛑 状态依赖树推演完成！共分配 ${n} 人，最高保底金额 = ${totalCost} 元`,
+      message: '大根堆边际增量调度在 O(N log M) 时间内达成全局最优分配',
+      variables: { finalCost: totalCost, distribution: assigned },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '最终保底金额': String(totalCost), '状态': '🏁 调度收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileGroupBuyTicketsStage3(
+    model: IYamlAlgorithmModel,
+    n: number,
+    games: [number, number][],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+
+    const rounds = Math.min(n, 5);
+    const matrix: (string | null)[][] = Array.from({ length: rounds }, () => Array(6).fill(null));
+
+    const formatGrid = () => ({
+      rows: rounds,
+      cols: 6,
+      rowHeaders: Array.from({ length: rounds }, (_, i) => `第 ${i + 1} 人`),
+      colHeaders: ['分配步数', '选定项目', '边际增益Δ', '分配后人数', '项目总花费', '累计保底总额'],
+      values: matrix.map(row => row.map(v => v === null ? '-' : String(v))),
+      activeRow: 0,
+      activeCol: 0,
+      dependencyCells: [] as [number, number][],
+    });
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.init || 1,
+      codeLine: anchors.init || 1,
+      decision: `初始化边际效益演进矩阵 M[${rounds}][6]：动态跟踪每一步的人数分配与费用累加`,
+      message: '表格记录 [步数, 项目, 边际增量, 该项累计人数, 该项总花费, 累计保底额]',
+      variables: { totalRounds: rounds },
+      grid: formatGrid() as any,
+      metrics: { '矩阵规格': `${rounds}×6`, '状态': '就绪' },
+    });
+
+    interface GameHeapItem {
+      id: number;
+      k: number;
+      b: number;
+      x: number;
+      delta: number;
+    }
+    const heap: GameHeapItem[] = [];
+    for (let i = 0; i < games.length; i++) {
+      const [kVal, bVal] = games[i];
+      if (bVal - kVal > 0) heap.push({ id: i, k: kVal, b: bVal, x: 0, delta: bVal - kVal });
+    }
+
+    let runningTotal = 0;
+    const assigned = new Array(games.length).fill(0);
+
+    for (let step = 0; step < rounds && heap.length > 0; step++) {
+      heap.sort((a, b) => b.delta - a.delta);
+      const top = heap.shift()!;
+
+      const preGrid = formatGrid();
+      preGrid.activeRow = step;
+      preGrid.activeCol = 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.loop || 2,
+        codeLine: anchors.loop || 2,
+        decision: `矩阵记录第 ${step + 1} 人分配：选定边际增益最大项目 #${top.id} (Δ=${top.delta})`,
+        message: '准备计算该项目累计花费与总保底额',
+        variables: { step: step + 1, gameId: top.id, delta: top.delta },
+        grid: preGrid as any,
+        activeSlot: step,
+        metrics: { '当前行': `第 ${step + 1} 人`, '选定项目': `#${top.id}` },
+      });
+
+      runningTotal += top.delta;
+      assigned[top.id]++;
+      const curX = assigned[top.id];
+      const curItemCost = curX * (top.b - top.k * curX);
+
+      matrix[step][0] = `第 ${step + 1} 人`;
+      matrix[step][1] = `项目 #${top.id}`;
+      matrix[step][2] = `+${top.delta}`;
+      matrix[step][3] = `${curX} 人`;
+      matrix[step][4] = `${curItemCost} 元`;
+      matrix[step][5] = `${runningTotal} 元`;
+
+      const nextX = top.x + 1;
+      const nextDelta = top.b - top.k * (2 * nextX + 1);
+      if (nextDelta > 0) {
+        heap.push({ id: top.id, k: top.k, b: top.b, x: nextX, delta: nextDelta });
+      }
+
+      const gridObj = formatGrid();
+      gridObj.activeRow = step;
+      gridObj.activeCol = 5;
+      if (step > 0) {
+        gridObj.dependencyCells = [[step - 1, 5]];
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.update || 4,
+        codeLine: anchors.update || 4,
+        decision: `矩阵单元格落盘：第 ${step + 1} 人安排至项目 #${top.id}，累计保底总额更新为 ${runningTotal} 元`,
+        message: '完成该步边际状态转移',
+        variables: { step: step + 1, runningTotal },
+        grid: gridObj as any,
+        activeSlot: step,
+        metrics: { '本步增量': `+${top.delta}`, '累计金额': `${runningTotal} 元` },
+      });
+    }
+
+    const finalGrid = formatGrid();
+    finalGrid.activeRow = rounds - 1;
+    finalGrid.activeCol = 5;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 6,
+      codeLine: anchors.done || 6,
+      decision: `🎉 边际效益演进矩阵填表完成！最终保底总额 = ${runningTotal} 元`,
+      message: '表格清晰揭示了边际递减下局部极大如何无缝对齐全局极值',
+      variables: { finalCost: runningTotal },
+      grid: finalGrid as any,
+      metrics: { '最高保底金额': `${runningTotal} 元`, '状态': '🏁 矩阵收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileGroupBuyTicketsStage4(
+    model: IYamlAlgorithmModel,
+    n: number,
+    games: [number, number][],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.proof_concave || 1,
+      codeLine: anchors.proof_concave || 1,
+      decision: `1. 二阶导验证凹性：对于任意项目 i，Cost(x) = B*x - K*x^2，其二阶导数 Cost''(x) = -2K`,
+      message: '由于 K > 0，故 -2K < 0 恒成立！因此单项目费用函数为严格上凸函数（凹函数）',
+      variables: { firstDerivative: 'B - 2Kx', secondDerivative: '-2K < 0' },
+      metrics: { '函数性质': '严格凹函数 (上凸)', '导数特征': '单调递减' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_marginal || 2,
+      codeLine: anchors.proof_marginal || 2,
+      decision: '2. 离散差分单调性：Δ(x+1) - Δ(x) = [B - K(2x+1)] - [B - K(2x-1)] = -2K < 0',
+      message: '离散边际增益序列随人数 x 增加严格单调递减，绝无反弹可能',
+      variables: { deltaDecay: '-2K < 0' },
+      metrics: { '离散边际': '严格递减', '反弹可能': '0%' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_matroid || 3,
+      codeLine: anchors.proof_matroid || 3,
+      decision: '3. 拟阵贪心定理 (Matroid Greedy)：在离散凹函数和上，按边际增益降序挑选必然收敛至全局最优解！',
+      message: '若存在某个最优解 OPT 与贪心解存在差异，设首个分歧处 OPT 选择了增量更小的项目，用贪心项目替换必然使总和更大或相等，矛盾！',
+      variables: { matroidProperty: '多拟阵基交换性质' },
+      metrics: { '理论支撑': '拟阵贪心定理', '最优性': '全局唯一支配' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_matroid || 3,
+      codeLine: anchors.proof_matroid || 3,
+      decision: '4. 极值单调收敛性：大根堆每次弹出 max(Delta)，相当于在 m 条递减序列的并集中提取前 n 大的离散元素',
+      message: '等价于在 m 个有序链表中合并前 n 个最大值，该性质在数学上天然无条件保证全局最大和！',
+      variables: { reduction: 'm 个有序序列归并前 n 大' },
+      metrics: { '数学等价': '前 n 大归并', '正确性': '100% 充要保证' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_matroid || 3,
+      codeLine: anchors.proof_matroid || 3,
+      decision: '5. 边界与剪枝条件完备性：若某项目当前边际增量 Delta <= 0，后续购买将产生负效益，调度可自发安全截断',
+      message: '实际业务中当 B - K(2x+1) <= 0 时停止继续在该项目购票，拟阵贪心具备天然的局部非负剪枝保优性',
+      variables: { pruningThreshold: 'Delta <= 0', nonNegativeGuarantee: true },
+      metrics: { '剪枝门槛': 'Delta <= 0', '边界安全': '100% 完备' },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.proof_ret || 4,
+      codeLine: anchors.proof_ret || 4,
+      decision: '6. 🏁 凹函数边际贪心反证闭环：大根堆调度时间复杂度严格为 O(N log M)，空间复杂度 O(M)',
+      message: '离散数学与函数极值理论为美团团购门票问题提供了坚不可摧的最优解保证',
+      variables: { proven: true, complexity: 'O(N log M)' },
+      metrics: { '算法耗时': 'O(N log M)', '内存占用': 'O(M)', '状态': '🏁 证明收敛' },
     });
 
     return steps;

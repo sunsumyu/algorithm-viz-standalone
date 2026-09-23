@@ -69,6 +69,8 @@ import ipoModel from './models/ipo.yaml';
 import maximumProductKPartsModel from './models/maximum-product-k-parts.yaml';
 import meetingMonopolyModel from './models/meeting-monopoly.yaml';
 import meetingOneDayModel from './models/meeting-one-day.yaml';
+import splitMinAvgSumModel from './models/split-min-avg-sum.yaml';
+import groupBuyTicketsModel from './models/group-buy-tickets.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -184,6 +186,8 @@ export class AlgorithmModelRepository {
     ['maximum-product-k-parts', maximumProductKPartsModel as IYamlAlgorithmModel],
     ['meeting-monopoly', meetingMonopolyModel as IYamlAlgorithmModel],
     ['meeting-one-day', meetingOneDayModel as IYamlAlgorithmModel],
+    ['split-min-avg-sum', splitMinAvgSumModel as IYamlAlgorithmModel],
+    ['group-buy-tickets', groupBuyTicketsModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

@@ -59,6 +59,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'meeting-monopoly',
   'meeting-one-day',
   'best-time-stock',
+  'split-min-avg-sum',
+  'group-buy-tickets',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -231,7 +233,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'split-min-avg-sum',
         'min-refueling-stops',
         'quiz-score',
         'minimize-deviation',
@@ -248,7 +249,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'max-avg-pass-ratio',
         'min-cost-hire-workers',
         'fractional-programming-138',
-        'group-buy-tickets',
         'longest-same-zeros-ones-intervals',
         'minimum-initial-energy-to-finish-tasks',
         'shortest-unsorted-continuous-subarray',

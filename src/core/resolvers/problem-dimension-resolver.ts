@@ -70,6 +70,8 @@ export class ProblemDimensionResolver {
     'maximum-product-k-parts',
     'meeting-monopoly',
     'meeting-one-day',
+    'split-min-avg-sum',
+    'group-buy-tickets',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -247,6 +249,22 @@ export class ProblemDimensionResolver {
       const events = this.toArray(params.events);
       m = 1;
       n = events.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.arr !== undefined) {
+      const arr = this.toArray(params.arr);
+      m = 1;
+      n = arr.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.games !== undefined) {
+      const games = this.toArray(params.games);
+      m = 1;
+      n = games.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

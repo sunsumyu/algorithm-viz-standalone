@@ -57,6 +57,8 @@ import { IPOStrategy } from './ipo-strategy';
 import { MaximumProductKPartsStrategy } from './maximum-product-k-parts-strategy';
 import { MeetingMonopolyStrategy } from './meeting-monopoly-strategy';
 import { MeetingOneDayStrategy } from './meeting-one-day-strategy';
+import { SplitMinAvgSumStrategy } from './split-min-avg-sum-strategy';
+import { GroupBuyTicketsStrategy } from './group-buy-tickets-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -190,6 +192,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MaximumProductKPartsStrategy());
   AlgorithmStrategyRegistry.register(new MeetingMonopolyStrategy());
   AlgorithmStrategyRegistry.register(new MeetingOneDayStrategy());
+  AlgorithmStrategyRegistry.register(new SplitMinAvgSumStrategy());
+  AlgorithmStrategyRegistry.register(new GroupBuyTicketsStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -257,7 +261,9 @@ export {
   IPOStrategy,
   MaximumProductKPartsStrategy,
   MeetingMonopolyStrategy,
-  MeetingOneDayStrategy
+  MeetingOneDayStrategy,
+  SplitMinAvgSumStrategy,
+  GroupBuyTicketsStrategy
 };
 
 export * from './strategy-helpers';
