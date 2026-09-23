@@ -129,6 +129,7 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
       const { ReconstructQueueStrategy } = await import('./reconstruct-queue-strategy');
       const { MaxSubarrayStrategy } = await import('./max-subarray-strategy');
       const { TaskSchedulerStrategy } = await import('./task-scheduler-strategy');
+      const { TreeCamerasStrategy } = await import('./tree-cameras-strategy');
 
       const strategyClasses = [
         AssignCookiesStrategy,
@@ -145,6 +146,7 @@ describe('🏛️ Design Patterns Foundation & Standard Architecture Gate', () =
         ReconstructQueueStrategy,
         MaxSubarrayStrategy,
         TaskSchedulerStrategy,
+        TreeCamerasStrategy,
       ];
 
       for (const StrategyCls of strategyClasses) {

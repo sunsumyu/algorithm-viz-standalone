@@ -44,6 +44,7 @@ import { WiggleSubsequenceStrategy } from './wiggle-subsequence-strategy';
 import { ReconstructQueueStrategy } from './reconstruct-queue-strategy';
 import { MaxSubarrayStrategy } from './max-subarray-strategy';
 import { TaskSchedulerStrategy } from './task-scheduler-strategy';
+import { TreeCamerasStrategy } from './tree-cameras-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -164,6 +165,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new ReconstructQueueStrategy());
   AlgorithmStrategyRegistry.register(new MaxSubarrayStrategy());
   AlgorithmStrategyRegistry.register(new TaskSchedulerStrategy());
+  AlgorithmStrategyRegistry.register(new TreeCamerasStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -218,7 +220,8 @@ export {
   WiggleSubsequenceStrategy,
   ReconstructQueueStrategy,
   MaxSubarrayStrategy,
-  TaskSchedulerStrategy
+  TaskSchedulerStrategy,
+  TreeCamerasStrategy
 };
 
 export * from './strategy-helpers';

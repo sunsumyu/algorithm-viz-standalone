@@ -66,6 +66,7 @@ export class ProblemDimensionResolver {
     'max-path-sum',
     'tree-diameter',
     'binary-tree-cameras',
+    'tree-cameras',
     'course-selection',
     'minimum-fuel-cost',
     'longest-path-different-characters',

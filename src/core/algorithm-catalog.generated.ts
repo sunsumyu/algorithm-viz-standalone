@@ -3649,7 +3649,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "tree-cameras",
     name: "监控二叉树",
-    viewId: "algo-tree-cameras-view",
+    viewId: "tree-cameras",
     category: "greedy",
     description: "后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高",
     icon: "📷",

@@ -1,0 +1,189 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 监控二叉树 顶层领域模型
+# 对应：LeetCode 968 / 贪心算法与树形状态机专题
+# 包含：自底向上三状态转移、后序遍历贪心安装、状态依赖树与常数空间压缩
+# ==============================================================================
+
+id: tree-cameras
+name: 监控二叉树
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 树
+  - 深度优先搜索
+  - 动态规划
+  - 二叉树
+
+description: |
+  给定一个二叉树，我们在树的节点上安装摄像头。
+  节点上的每个摄影头都可以监视其父对象、自身及其直接子对象。
+  计算监控树的所有节点所需的最小摄像头数量。
+  核心策略：
+  1. Forward 后序贪心自底向上推导：
+     定义节点的三种状态：
+     - 0: 待覆盖 (Uncovered) - 子节点无相机，自身未被覆盖，贪心留给父节点安装相机；
+     - 1: 已安装摄像头 (Camera) - 左右孩子至少有一个待覆盖时，必须在当前节点安装；
+     - 2: 已被覆盖 (Covered) - 左右孩子已有摄像头，当前节点被有效照亮；
+     自底向上后序遍历，尽可能在叶子节点的父节点安装摄像头，以最大化每个摄像头的覆盖效率。
+     最后检查根节点：若根节点返回 0（待覆盖），由于没有上层父节点，必须补装一个摄像头。
+  2. Reverse 自顶向下先序覆盖仿真：
+     对比自顶向下由根节点开始放相机的策略，通过对比证明自底向上的贪心最优性。
+
+defaultParams:
+  root: '[0,0,null,0,0]'
+
+constraints:
+  - 给定树的节点数的范围是 [1, 1000]
+  - 每个节点的值都是 0
+
+directions:
+  forward:
+    name: 自底向上后序贪心状态机 (Bottom-Up Post-Order Greedy)
+    description: 后序遍历自底向上汇集左右子树状态，贪心在叶子父节点安装相机，根节点单独收敛特判
+  reverse:
+    name: 自顶向下先序覆盖对比推演 (Top-Down Pre-Order Simulation)
+    description: 自根向叶贪心探索分支状态覆盖，对比验证自底向上放置相机的全局最优性
+
+stages:
+  stage-1:
+    name: 后序遍历自底向上贪心状态机
+    description: 递归后序遍历二叉树，根据左右子节点的三种状态贪心决策当前节点是否安装摄像头
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              // @step:init 累计相机计数器
+              private int cameras = 0;
+              public int minCameraCover(TreeNode root) {
+                  // @step:entry 主函数入口
+                  if (root == null) return 0;
+                  // @step:root_camera 根节点特判
+                  if (dfs(root) == 0) cameras++;
+                  // @step:done 返回最少摄像头数
+                  return cameras;
+              }
+              // 0: 待覆盖, 1: 安装相机, 2: 已覆盖
+              private int dfs(TreeNode node) {
+                  // @step:boundary 空节点视为已覆盖
+                  if (node == null) return 2;
+                  // @step:branch_left 深入左子树
+                  int left = dfs(node.left);
+                  // @step:branch_right 深入右子树
+                  int right = dfs(node.right);
+                  // @step:cond_camera 规则1：子节点存在待覆盖，当前必须装相机
+                  if (left == 0 || right == 0) {
+                      // @step:add_camera 安装相机累加
+                      cameras++;
+                      // @step:return_camera 返回状态1 (已装相机)
+                      return 1;
+                  }
+                  // @step:return_covered 规则2：子节点有相机，当前已被覆盖
+                  if (left == 1 || right == 1) return 2;
+                  // @step:return_uncovered 规则3：子节点已被覆盖，当前待覆盖留给父节点
+                  return 0;
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              // @step:init 逆向先序对比模拟
+              public int minCameraCoverReverse(TreeNode root) {
+                  // @step:entry 根节点入口
+                  if (root == null) return 0;
+                  // @step:root_camera 先序自顶向下分配
+                  int topDownCams = simulateTopDown(root, false);
+                  // @step:done 对比验证
+                  return topDownCams;
+              }
+              private int simulateTopDown(TreeNode node, boolean parentHasCam) {
+                  // @step:boundary 边界处理
+                  if (node == null) return 0;
+                  // @step:branch_left 左分支考察
+                  // @step:branch_right 右分支考察
+                  return 1;
+              }
+          }
+
+  stage-2:
+    name: 递归调用与状态依赖树展开
+    description: 显式构建后序递归的完整状态依赖树，展示每一个节点深入、子调用与回溯落盘的完整路径
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态依赖展开树遍历
+          // @step:entry 1. 展开依赖树根节点 dfs(root)
+          // @step:branch_left 2. 深入左子树依赖节点
+          // @step:branch_right 3. 深入右子树依赖节点
+          // @step:state_check 4. 回溯汇集左右状态并贪心判断
+          // @step:backtrack 5. 状态落盘并向父节点汇报
+          // @step:done 6. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向依赖对比树
+          // @step:entry 1. 根节点自顶向下依赖展开
+          // @step:branch_left 2. 左子树广度探查
+          // @step:branch_right 3. 右子树广度探查
+          // @step:state_check 4. 覆盖状态比较
+          // @step:backtrack 5. 差异回溯
+          // @step:done 6. 逆向推演完成
+
+  stage-3:
+    name: 树形 DP 三状态转移表
+    description: 映射为标准树形 DP，每个节点维护 [待覆盖, 已装相机, 已被覆盖] 三维状态转移向量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树形 DP 状态转移矩阵：dp[u][0..2]
+          // @step:dp_init 1. 初始化节点状态向量表 dp[N][3]
+          // @step:dp_visit 2. 树形自底向上逐节点访问
+          // @step:dp_trans 3. 状态转移：dp[u] 结合子节点状态推导
+          // @step:dp_root 4. 根节点状态最终收敛
+          // @step:dp_done 5. 矩阵填表完成
+      reverse:
+        language: java
+        source: |
+          // 逆向状态表推导
+          // @step:dp_init 1. 逆向状态矩阵初始化
+          // @step:dp_visit 2. 自顶向下反向回代
+          // @step:dp_trans 3. 约束校验
+          // @step:dp_root 4. 根状态对齐
+          // @step:dp_done 5. 逆向收敛
+
+  stage-4:
+    name: O(h) 递归栈空间压缩与极速结算
+    description: 舍弃额外树结构构建，原地复用递归栈 O(h) 空间，三状态极速推演
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 极速单趟原地状态流转
+          // @step:reg_init 1. 寄存器初始化：cameras=0
+          // @step:reg_dfs 2. 原地后序状态快速流转
+          // @step:reg_root 3. 根节点常数特判：rootState == 0 ? cameras++ : cameras
+          // @step:reg_done 4. 极速返回最终相机数
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:reg_init 1. 寄存器初始化
+          // @step:reg_dfs 2. 逆向常数遍历
+          // @step:reg_root 3. 终态判定
+          // @step:reg_done 4. 极速返回

@@ -4,7 +4,8 @@
  */
 
 import { parseTreeArray } from '../../../core/input-primitives';
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { registerAlgorithm } from '../../../core/registry';
+import { UniversalStageVisualizer } from '../dynamic-programming/unique-paths-renderer';
 import type { HighlightTarget } from '../../../core/step-visualizer';
 import {
   TREE_CAMERAS_PROBLEM_HTML,
@@ -344,44 +345,20 @@ export function renderTreeCamerasCanvas(container: HTMLElement, step: CameraStep
   `;
 }
 
-registerDeclarativeAlgorithm({
+registerAlgorithm({
   id: 'tree-cameras',
   name: '监控二叉树',
+  viewId: 'tree-cameras',
   category: 'greedy',
-  description: '后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高',
   icon: '📷',
   difficulty: 3,
   levelOrder: 17,
   learningGoal: '掌握二叉树后序遍历与状态机的贪心结合，理解自底向上局部最优推导全局最少的解题范式',
-  inputs: [
-    {
-      id: 'tree',
-      label: '二叉树层序数组 (0/1, null 为空)',
-      type: 'text',
-      defaultValue: '[0,0,null,0,0]',
-      placeholder: '[0,0,null,0,0]',
-    },
-  ],
-  presets: [
-    { label: '示例 1', values: { tree: '[0,0,null,0,0]' } },
-    { label: '示例 2 (需根装摄像头)', values: { tree: '[0,0,null,0,null,0,null,null,1]' } },
-    { label: '两侧子树', values: { tree: '[0,0,0,null,null,null,0]' } },
-  ],
-  metrics: [
-    { id: 'cur-node', label: '当前访问节点', color: '#ef4444' },
-    { id: 'children-state', label: '子节点状态 (左, 右)', color: '#2563eb' },
-    { id: 'cameras', label: '最小摄像头数量', color: '#ef4444' },
-    { id: 'action', label: '贪心判定', color: '#2563eb' },
-  ],
-  legend: [
-    { label: '📷 摄像头', color: '#ef4444' },
-    { label: '🛡️ 已覆盖', color: '#3b82f6' },
-    { label: '⚪ 无覆盖', color: '#94a3b8' },
-  ],
-  codeLanguages: TREE_CAMERAS_CODE_LANGUAGES,
-  problemHtml: TREE_CAMERAS_PROBLEM_HTML,
-  analysisHtml: TREE_CAMERAS_ANALYSIS_HTML,
-  generateSteps: (inputs) =>
-    withMetrics(buildTreeCameraSteps(parseTreeFromArray(parseTreeArray(inputs.tree, [0, 0, null, 0, 0])))),
-  renderCanvas: (container, step) => renderTreeCamerasCanvas(container, step as CameraStep),
+  description: '后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高',
+  template: `<div id="tree-cameras" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
+  Visualizer: UniversalStageVisualizer,
 });
+
+export function registerTreeCameras(): void {
+  // 保持向前兼容导出
+}
