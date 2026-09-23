@@ -1,0 +1,181 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最大回文数字顶层领域模型
+# 对应：LeetCode 2384 / 贪心高位成对填充与前导零特判
+# 包含：频次统计、高位成对贪心、前导零决策树、对称状态演进矩阵、常数空间极限压缩
+# ==============================================================================
+
+id: largest-palindromic-number
+name: 最大回文数字 (Largest Palindromic Number)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 哈希表
+  - 字符串
+  - 双向前后缀
+  - 状态树
+
+description: |
+  给你一个仅由数字（0 - 9）组成的字符串 num。
+  你可以按任意顺序重新排列 num 中的数字，构造出一个最大的回文整数。
+  该整数不能含有任何前导 0（除非结果本身就是 "0"）。
+  返回以字符串形式表示的所能构成的最大回文整数。
+  
+  核心贪心策略：
+  1. 高位贪心成对填充（Greedy Paired Placement）：
+     - 数字越大，权值越高，越应放在回文的两侧最高位。
+     - 统计 0-9 各数字出现频次，从 9 到 0 倒序扫描，若频次 >= 2，则每次成对消耗 count[d] - (count[d] % 2)，左右两端对称放置。
+  2. 前导零特判（Leading Zero Guard）：
+     - 数字 0 不能作为回文的外层首位。如果当前左侧半部尚未放置任何非零数字（left 为空），则跳过 0 的成对填充。
+  3. 奇数中心核贪心（Max Odd Center Element）：
+     - 从 9 到 0 扫描剩余频次为奇数（或未用完）的数字，选取最大的单张数字放置在回文正中心。
+  4. 结果拼接：最终拼接 left + center + reverse(left)。若全为空则退化返回 "0"。
+
+defaultParams:
+  num: "444947137"
+
+constraints:
+  - 1 <= num.length <= 10^5
+  - num 仅由数字（0 - 9）组成
+
+directions:
+  forward:
+    name: 高位贪心成对构建 (High-to-Low Paired Greedy)
+    description: 倒序 9 到 0 贪心成对提取构建前后缀，规避前导零并挑选最大中心位
+  reverse:
+    name: 逆向奇偶校验与对偶验证 (Dual Parity Verification)
+    description: 从低位或中心向外扩展对称性验证，双向核对回文最大性
+
+stages:
+  stage-1:
+    name: 频次统计与高位贪心成对构建
+    description: 统计 0-9 词频桶，从 9 到 0 倒序贪心成对构建回文前后缀
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: 0-9 计数桶与构建沙盘 (Count Buckets)
+    card2Desc: 统计各数字频次，高位成对消耗并在两侧对称部署
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 1: 频次统计与高位成对构建
+          int[] count = new int[10];
+          for (char c : num.toCharArray()) count[c - '0']++;
+          StringBuilder left = new StringBuilder();
+          for (int d = 9; d >= 0; d--) {
+              if (d == 0 && left.length() == 0) continue; // 前导零拦截
+              int pairs = count[d] / 2;
+              while (pairs-- > 0) left.append(d);
+              count[d] %= 2;
+          }
+          String mid = "";
+          for (int d = 9; d >= 0; d--) {
+              if (count[d] > 0) { mid = String.valueOf(d); break; }
+          }
+          if (left.length() == 0 && mid.isEmpty()) return "0";
+          return left.toString() + mid + left.reverse().toString();
+        lineMap:
+          entry: 1
+          count: 2
+          loop: 4
+          guardZero: 5
+          placePair: 6
+          findMid: 10
+          assemble: 14
+
+  stage-2:
+    name: 前导零与中位冲突决策树
+    description: 树形展开 9..0 逐个数字的成对装配、前导零熔断及中心核决策
+    complexity:
+      time: O(1)
+      space: O(1)
+    card2Title: 贪心决策拓扑树 (Decision Tree)
+    card2Desc: 递归展示从高位到低位的放置选择分支、前导零拦截与中核决断
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 决策树分支判定
+          for (int d = 9; d >= 0; d--) {
+              if (count[d] >= 2) {
+                  if (d == 0 && left.isEmpty()) {
+                      // 决策：首位禁止前导零，跳过成对填充
+                      branch = "SKIP_LEADING_ZERO";
+                  } else {
+                      // 决策：成对插入左右两翼
+                      branch = "INSERT_PAIRS";
+                      left.append(String.valueOf(d).repeat(count[d] / 2));
+                  }
+              }
+          }
+        lineMap:
+          entry: 1
+          loop: 2
+          checkPair: 3
+          guardZero: 4
+          insertPair: 8
+          done: 12
+
+  stage-3:
+    name: 前后缀对称匹配状态矩阵
+    description: 二维决策演进矩阵，追踪各数字在左右翼的镜像位置与中心候选
+    complexity:
+      time: O(1)
+      space: O(1)
+    card2Title: 二维对称映射矩阵 (Symmetry Matrix)
+    card2Desc: 动态追踪各数字的原始频次、成对数、左右放置索引及中心核匹配
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态决策矩阵追踪
+          int[][] matrix = new int[10][5];
+          for (int d = 9; d >= 0; d--) {
+              matrix[9 - d][0] = d;              // 数字
+              matrix[9 - d][1] = count[d];       // 频次
+              matrix[9 - d][2] = count[d] / 2;   // 成对数
+              matrix[9 - d][3] = isLeadingZero ? 0 : matrix[9 - d][2]; // 实放数
+              matrix[9 - d][4] = count[d] % 2;   // 剩余单数
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          record: 4
+          update: 7
+          done: 9
+
+  stage-4:
+    name: 常数空间 O(1) 计数桶极限压缩
+    description: 10 个数字桶下的在线贪心流式装配，空间极致优化
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: 计数桶空间压缩状态机 (Bucket State Machine)
+    card2Desc: 固定大小长度为 10 的频次数组，瞬时就地对称生成字符串
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 空间压缩极速结算
+          int[] freq = new int[10];
+          for (int i = 0; i < n; i++) freq[num.charAt(i) - '0']++;
+          char[] res = new char[n];
+          int l = 0, r = n - 1;
+          for (int d = 9; d >= 0; d--) {
+              if (d == 0 && l == 0) break;
+              while (freq[d] >= 2) {
+                  res[l++] = (char)('0' + d);
+                  res[r--] = (char)('0' + d);
+                  freq[d] -= 2;
+              }
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          count: 3
+          loop: 6
+          guardZero: 7
+          streamPair: 8
+          done: 14

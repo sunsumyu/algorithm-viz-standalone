@@ -69,6 +69,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'minimum-number-of-refueling-stops',
   'super-washing-machines',
   'eliminate-monsters',
+  'largest-palindromic-number',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -249,7 +250,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'string-transforms',
         'cooking-plan',
         'cutting-tree',
-        'largest-palindromic-number',
         'max-avg-pass-ratio',
         'min-cost-hire-workers',
         'fractional-programming-138',

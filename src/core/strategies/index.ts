@@ -67,6 +67,7 @@ import { RabbitsInForestStrategy } from './rabbits-in-forest-strategy';
 import { MinRefuelingStopsStrategy } from './min-refueling-stops-strategy';
 import { SuperWashingMachinesStrategy } from './super-washing-machines-strategy';
 import { EliminateMonstersStrategy } from './eliminate-monsters-strategy';
+import { LargestPalindromicNumberStrategy } from './largest-palindromic-number-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -210,6 +211,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new MinRefuelingStopsStrategy());
   AlgorithmStrategyRegistry.register(new SuperWashingMachinesStrategy());
   AlgorithmStrategyRegistry.register(new EliminateMonstersStrategy());
+  AlgorithmStrategyRegistry.register(new LargestPalindromicNumberStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -287,7 +289,8 @@ export {
   RabbitsInForestStrategy,
   MinRefuelingStopsStrategy,
   SuperWashingMachinesStrategy,
-  EliminateMonstersStrategy
+  EliminateMonstersStrategy,
+  LargestPalindromicNumberStrategy
 };
 
 export * from './strategy-helpers';

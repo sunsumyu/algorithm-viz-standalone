@@ -4064,7 +4064,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "最大回文数字 (Largest Palindromic Number)",
     viewId: "algo-largest-palindromic-number-view",
     category: "greedy",
-    description: "最大回文数字 (Largest Palindromic Number)",
+    description: "LeetCode 2384：高位贪心成对填充与前导0特判逻辑 (双向前后缀对称填装)",
     icon: "🔢",
     difficulty: 2,
     levelOrder: 942,

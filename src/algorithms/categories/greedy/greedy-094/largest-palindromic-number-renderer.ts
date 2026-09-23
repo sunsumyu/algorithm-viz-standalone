@@ -3,16 +3,11 @@
  * 核心贪心：高位贪心成对填充与最高单数中心放置
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { GREEDY_094_PROBLEMS } from './greedy-094-problem-content';
 import {
   LARGEST_PALINDROMIC_NUMBER_CODES,
   LARGEST_PALINDROMIC_NUMBER_LINES,
 } from './greedy-094-stage-codes';
-import {
-  Greedy094Step,
-  renderDecisionBalance,
-} from './greedy-094-shared';
+import { Greedy094Step } from './greedy-094-shared';
 
 export interface LargestPalindromicStep extends Greedy094Step {
   numStr: string;
@@ -141,100 +136,29 @@ export function buildLargestPalindromicSteps(num: string): LargestPalindromicSte
   return steps;
 }
 
-export const largestPalindromicVisualizer = registerDeclarativeAlgorithm<LargestPalindromicStep>({
+import { registerAlgorithm } from '../../../../core/registry';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+
+const template = `<div id="algo-largest-palindromic-number-view" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`;
+
+export const largestPalindromicRenderer = UniversalStageVisualizer;
+export const largestPalindromicVisualizer = UniversalStageVisualizer;
+
+registerAlgorithm({
   id: 'largest-palindromic-number',
   name: '最大回文数字 (Largest Palindromic Number)',
+  viewId: 'algo-largest-palindromic-number-view',
   category: 'greedy',
+  description: 'LeetCode 2384：高位贪心成对填充与前导0特判逻辑 (双向前后缀对称填装)',
   icon: '🔢',
+  template,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 942,
   learningGoal: '掌握高位贪心成对填充与前导0特判逻辑',
-  problemHtml: GREEDY_094_PROBLEMS.largestPalindromicNumber.html,
-  analysisHtml: GREEDY_094_PROBLEMS.largestPalindromicNumber.html,
-  inputs: [
-    {
-      id: 'input-num',
-      label: '数字字符串 num',
-      type: 'text',
-      defaultValue: '444947137',
-      placeholder: '444947137',
-    },
-  ],
-  codeLanguages: LARGEST_PALINDROMIC_NUMBER_CODES,
-  buildSteps: (inputs: Record<string, any>) => {
-    const num = String(inputs?.['input-num'] || '444947137').trim();
-    return buildLargestPalindromicSteps(num);
-  },
-  renderCanvas: (stageContainer: HTMLElement, step: LargestPalindromicStep) => {
-    stageContainer.innerHTML = '';
-
-    const mainCard = document.createElement('div');
-    mainCard.style.cssText = 'display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; box-sizing: border-box;';
-
-    // 顶部状态与回文展示
-    const rightPart = step.leftPart.split('').reverse().join('');
-    mainCard.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <div style="font-weight: 700; font-size: 13px; color: #1e293b;">回文组装槽位:</div>
-        <div style="display: flex; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; align-items: center;">
-          <span style="background: #eff6ff; color: #2563eb; padding: 3px 8px; border-radius: 4px; border: 1px dashed #93c5fd;">[左] ${step.leftPart || '空'}</span>
-          <span style="color: #94a3b8;">+</span>
-          <span style="background: #fef2f2; color: #dc2626; padding: 3px 8px; border-radius: 4px; border: 1px dashed #fca5a5;">[中] ${step.midPart || '空'}</span>
-          <span style="color: #94a3b8;">+</span>
-          <span style="background: #eff6ff; color: #2563eb; padding: 3px 8px; border-radius: 4px; border: 1px dashed #93c5fd;">[右] ${rightPart || '空'}</span>
-        </div>
-      </div>
-    `;
-
-    // 数字频次看板 (9 down to 0)
-    const freqBox = document.createElement('div');
-    freqBox.style.cssText = 'flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;';
-
-    const title = document.createElement('div');
-    title.style.cssText = 'font-size: 12px; font-weight: 700; color: #475569;';
-    title.textContent = '📊 0-9 数字剩余可用频次 (贪心由 9 至 0 扫描)';
-    freqBox.appendChild(title);
-
-    const digitGrid = document.createElement('div');
-    digitGrid.style.cssText = 'display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px;';
-
-    for (let d = 9; d >= 0; d--) {
-      const count = step.counts[d];
-      const isCur = step.currentDigit === d;
-
-      let border = '#e2e8f0';
-      let bg = count > 0 ? '#f0fdf4' : '#f8fafc';
-      let textColor = count > 0 ? '#15803d' : '#94a3b8';
-
-      if (isCur) {
-        border = '#3b82f6';
-        bg = '#eff6ff';
-        textColor = '#1d4ed8';
-      }
-
-      const cell = document.createElement('div');
-      cell.style.cssText = `display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; border-radius: 6px; border: 1.5px solid ${border}; background: ${bg}; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;`;
-      cell.innerHTML = `
-        <span style="font-size: 15px; color: ${textColor};">${d}</span>
-        <span style="font-size: 10px; color: #64748b; margin-top: 2px;">剩 ${count}</span>
-      `;
-      digitGrid.appendChild(cell);
-    }
-    freqBox.appendChild(digitGrid);
-    mainCard.appendChild(freqBox);
-
-    // 决策天平 (大数在前 vs 小数在前)
-    const balanceBox = document.createElement('div');
-    renderDecisionBalance(balanceBox, {
-      leftTitle: '高位优先放置大数字 (9..0)',
-      leftVal: '最高位贡献数值权重指数级放大',
-      rightTitle: '随意放置数字',
-      rightVal: '导致更高位被较小数字占据',
-      winner: 'left',
-      reason: '贪心法则：回文两翼是数值权值最高位，从 9 向 0 配对是唯一使回文最大化的途径',
-    });
-    mainCard.appendChild(balanceBox);
-
-    stageContainer.appendChild(mainCard);
-  },
 });
+
+export function registerLargestPalindromicNumber(): void {
+  // 保持向前兼容导出
+}
+

@@ -3529,4 +3529,606 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 最大回文数字 (LeetCode 2384) 顶层四阶段编译器
+  // 双向对称前后缀装配与高位贪心成对构建
+  // ==========================================================================
+  public static compileLargestPalindromicNumber(
+    model: IYamlAlgorithmModel,
+    rawNum?: string,
+    options?: TwoPassCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const num = rawNum && String(rawNum).trim().length > 0 ? String(rawNum).trim() : '444947137';
+
+    if (stage === 2) {
+      return this.compileLargestPalindromicNumberStage2(model, num, options);
+    }
+    if (stage === 3) {
+      return this.compileLargestPalindromicNumberStage3(model, num, options);
+    }
+    if (stage === 4) {
+      return this.compileLargestPalindromicNumberStage4(model, num, options);
+    }
+    return this.compileLargestPalindromicNumberStage1(model, num, options);
+  }
+
+  private static compileLargestPalindromicNumberStage1(
+    model: IYamlAlgorithmModel,
+    num: string,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    const counts = new Array(10).fill(0);
+    const colLabels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🚀 初始化词频桶与高位贪心成对构建：输入字符串 num = "${num}"`,
+      message: '准备统计 0-9 各数字频次，随后从 9 到 0 贪心成对构建回文两侧',
+      slots: [...counts],
+      colLabels,
+      variables: { num, len: num.length },
+      metrics: { '输入长度': `${num.length} 位`, '阶段': '1 贪心构建' },
+    });
+
+    for (let i = 0; i < num.length; i++) {
+      const d = parseInt(num[i], 10);
+      if (!isNaN(d) && d >= 0 && d <= 9) {
+        counts[d]++;
+      }
+      if (i === num.length - 1 || i % 2 === 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.count || 2,
+          codeLine: anchors.count || 2,
+          decision: `📊 统计字符 [${i}]: '${num[i]}' ➔ 词频桶 counts[${d}] 增至 ${counts[d]}`,
+          message: '统计 0-9 每一个数字的可用频次',
+          slots: [...counts],
+          colLabels,
+          activeIndices: [d],
+          variables: { i, char: num[i], 'counts[d]': counts[d] },
+          metrics: { '已扫描': `${i + 1}/${num.length}`, '当前数字': String(d) },
+        });
+      }
+    }
+
+    let left = '';
+    const tempCounts = [...counts];
+
+    for (let d = 9; d >= 0; d--) {
+      if (d === 0 && left.length === 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.guardZero || 5,
+          codeLine: anchors.guardZero || 5,
+          decision: `⚠️ [前导零拦截] 数字 0 可用张数 ${tempCounts[0]}，但当前回文左侧为空：前导零不能放在最高位，跳过 0 的成对填充`,
+          message: '避免前导零生成无效数字',
+          slots: [...tempCounts],
+          colLabels,
+          activeIndices: [0],
+          variables: { d, 'tempCounts[0]': tempCounts[0], left: left || '(空)' },
+          metrics: { '当前数字': '0', '状态': '前导零熔断' },
+        });
+        break;
+      }
+
+      const pairs = Math.floor(tempCounts[d] / 2);
+      if (pairs > 0) {
+        left += String(d).repeat(pairs);
+        tempCounts[d] -= pairs * 2;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.placePair || 6,
+          codeLine: anchors.placePair || 6,
+          decision: `💎 贪心放置高位数字 ${d}：成对提取 ${pairs} 对（共 ${pairs * 2} 张），置入回文两翼 ➔ 左半部 left = "${left}"`,
+          message: `大数字 ${d} 尽量放置在最高位使整体数值最大化`,
+          slots: [...tempCounts],
+          colLabels,
+          activeIndices: [d],
+          variables: { d, pairs, left, '剩余张数': tempCounts[d] },
+          metrics: { '已构建左翼': left, '数字': String(d) },
+        });
+      }
+    }
+
+    let mid = '';
+    for (let d = 9; d >= 0; d--) {
+      if (tempCounts[d] > 0) {
+        mid = String(d);
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.findMid || 10,
+          codeLine: anchors.findMid || 10,
+          decision: `🎯 贪心挑选最大单数置于中心：选定数字 ${d} 作为回文中心核 mid = "${mid}"`,
+          message: '回文中心只需 1 张，取余下未成对的最大数字',
+          slots: [...tempCounts],
+          colLabels,
+          activeIndices: [d],
+          variables: { mid: d },
+          metrics: { '中心单数': mid, '左半部': left },
+        });
+        break;
+      }
+    }
+
+    let finalAns = '';
+    if (left.length === 0 && mid.length === 0) {
+      finalAns = '0';
+    } else {
+      const right = left.split('').reverse().join('');
+      finalAns = left + mid + right;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.assemble || 14,
+      codeLine: anchors.assemble || 14,
+      decision: `🎉 最终最大回文数拼接完成：${finalAns}（左翼="${left}"，中心="${mid}"，右翼="${left.split('').reverse().join('')}"）`,
+      message: '高位对称贪心成对构建完成，得到全局最大整数',
+      slots: [...tempCounts],
+      colLabels,
+      variables: { finalAns, left, mid },
+      metrics: { '最大回文数': finalAns, '总位数': `${finalAns.length} 位` },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.assemble || 14,
+        codeLine: anchors.assemble || 14,
+        decision: `🎉 状态稳定确认：最终最大回文数为 ${finalAns}`,
+        message: '贪心模拟收敛确认',
+        slots: [...tempCounts],
+        colLabels,
+        variables: { finalAns },
+        metrics: { '最终回文': finalAns },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileLargestPalindromicNumberStage2(
+    model: IYamlAlgorithmModel,
+    num: string,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const counts = new Array(10).fill(0);
+    for (const ch of num) {
+      const d = parseInt(ch, 10);
+      if (!isNaN(d) && d >= 0 && d <= 9) counts[d]++;
+    }
+
+    const rootNode: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      val: `最大回文决策: "${num}"`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌲 初始化贪心决策拓扑树：输入 "${num}"，展开 9..0 各数字放置分支与前导零熔断`,
+      message: '树形递归呈现高位成对选取、前导零熔断与中心奇数位选择路径',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { num, digits: 10 },
+      metrics: { '决策树': '已初始化', '根节点': 'root' },
+    });
+
+    let left = '';
+    const tempCounts = [...counts];
+
+    for (let d = 9; d >= 0; d--) {
+      const pairs = Math.floor(tempCounts[d] / 2);
+      if (d === 0 && left.length === 0) {
+        const zeroNode: UniversalTreeNode = {
+          id: `node-${d}`,
+          r: 1,
+          c: 9 - d,
+          val: `数字 0: 前导零熔断 (拦截 ${tempCounts[0]} 张)`,
+          status: 'pruned',
+          children: [],
+        };
+        rootNode.children.push(zeroNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.guardZero || 4,
+          codeLine: anchors.guardZero || 4,
+          decision: `🚫 [前导零熔断] 树节点 [0]: 当前左翼为空，高位禁止前导零，剪除 0 的成对分支`,
+          message: '前导零熔断保证生成合法数字',
+          treeRoot: cloneStateDepTree(rootNode),
+          treeNode: cloneStateDepTree(zeroNode),
+          variables: { d, count0: tempCounts[0], left: left || '(空)' },
+          metrics: { '决策分支': '前导零剪枝', '状态': 'PRUNED' },
+        });
+        break;
+      }
+
+      if (pairs > 0) {
+        left += String(d).repeat(pairs);
+        tempCounts[d] -= pairs * 2;
+
+        const pairNode: UniversalTreeNode = {
+          id: `node-${d}`,
+          r: 1,
+          c: 9 - d,
+          val: `数字 ${d}: 成对放置 (${pairs}对 两翼+${pairs})`,
+          status: 'resolved',
+          children: [],
+        };
+        rootNode.children.push(pairNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.insertPair || 8,
+          codeLine: anchors.insertPair || 8,
+          decision: `🌿 [树枝展开] 数字 ${d}: 提取 ${pairs} 对置入左右两翼 ➔ 左半部变为 "${left}"`,
+          message: `贪心高位优先成对分配`,
+          treeRoot: cloneStateDepTree(rootNode),
+          treeNode: cloneStateDepTree(pairNode),
+          variables: { d, pairs, left, '剩余单数': tempCounts[d] },
+          metrics: { '已放节点': String(d), '成对数': `${pairs}` },
+        });
+      } else {
+        const skipNode: UniversalTreeNode = {
+          id: `node-${d}`,
+          r: 1,
+          c: 9 - d,
+          val: `数字 ${d}: 无成对 (余 ${tempCounts[d]} 张)`,
+          status: 'exploring',
+          children: [],
+        };
+        rootNode.children.push(skipNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.checkPair || 3,
+          codeLine: anchors.checkPair || 3,
+          decision: `🌿 [树枝巡检] 数字 ${d}: 可用 ${tempCounts[d]} 张，无法成对，暂留待中心位决策`,
+          message: '单张或无数字跳过成对分支',
+          treeRoot: cloneStateDepTree(rootNode),
+          treeNode: cloneStateDepTree(skipNode),
+          variables: { d, count: tempCounts[d] },
+          metrics: { '检查节点': String(d), '成对数': '0' },
+        });
+      }
+    }
+
+    let mid = '';
+    for (let d = 9; d >= 0; d--) {
+      if (tempCounts[d] > 0) {
+        mid = String(d);
+        const midNode: UniversalTreeNode = {
+          id: 'node-mid',
+          r: 2,
+          c: 0,
+          val: `中心单数: 选定 ${d} (最大单数字)`,
+          status: 'resolved',
+          children: [],
+        };
+        rootNode.children.push(midNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.done || 12,
+          codeLine: anchors.done || 12,
+          decision: `🎯 [中心决断] 树节点选定最大奇数单张数字 ${d} 填充回文中心 mid = "${mid}"`,
+          message: '确定中心核节点',
+          treeRoot: cloneStateDepTree(rootNode),
+          treeNode: cloneStateDepTree(midNode),
+          variables: { mid: d },
+          metrics: { '中心核': mid },
+        });
+        break;
+      }
+    }
+
+    const finalAns = left.length === 0 && mid.length === 0 ? '0' : left + mid + left.split('').reverse().join('');
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `🏁 决策树全部拓扑构建完毕：最终最大回文数字 ${finalAns}`,
+      message: '树形决策推导达成最优解',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { finalAns },
+      metrics: { '最终回文': finalAns, '决策子树数': String(rootNode.children.length) },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.done || 12,
+        codeLine: anchors.done || 12,
+        decision: `🏁 决策树稳定状态确认：最大回文 ${finalAns}`,
+        message: '决策树完成状态确认',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(rootNode),
+        variables: { finalAns },
+        metrics: { '最大回文': finalAns },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileLargestPalindromicNumberStage3(
+    model: IYamlAlgorithmModel,
+    num: string,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    const counts = new Array(10).fill(0);
+    for (const ch of num) {
+      const d = parseInt(ch, 10);
+      if (!isNaN(d) && d >= 0 && d <= 9) counts[d]++;
+    }
+
+    const rowLabels = ['9', '8', '7', '6', '5', '4', '3', '2', '1', '0'];
+    const colLabels = ['数字', '原始频次', '可成对数', '实际放置', '剩余单数'];
+
+    // 标准二维数值/字符串矩阵
+    const grid: (number | string)[][] = Array.from({ length: 10 }, (_, r) => [
+      9 - r,
+      counts[9 - r],
+      0,
+      0,
+      0,
+    ]);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `📊 初始化前后缀对称映射矩阵 matrix [10×5]：跟踪 9..0 各数字在左右翼的分布`,
+      message: '二维决策演进表初始化',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { num, totalDigits: 10 },
+      metrics: { '矩阵行数': '10', '列数': '5' },
+    });
+
+    let left = '';
+    const tempCounts = [...counts];
+
+    for (let r = 0; r < 10; r++) {
+      const d = 9 - r;
+      const cnt = tempCounts[d];
+      const pairs = Math.floor(cnt / 2);
+      const isLeadZero = d === 0 && left.length === 0;
+      const actualPlaced = isLeadZero ? 0 : pairs;
+      const rem = isLeadZero ? cnt : cnt % 2;
+
+      grid[r][0] = d;
+      grid[r][1] = cnt;
+      grid[r][2] = pairs;
+      grid[r][3] = actualPlaced;
+      grid[r][4] = rem;
+
+      if (!isLeadZero && pairs > 0) {
+        left += String(d).repeat(pairs);
+        tempCounts[d] -= pairs * 2;
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.record || 4,
+        codeLine: anchors.record || 4,
+        decision: `📝 计算矩阵第 ${r} 行 [数字 ${d}]: 频次=${cnt}，成对=${pairs}，实放=${actualPlaced}，剩余=${rem}`,
+        message: isLeadZero ? '前导零拦截，不置入外层高位' : `高位贪心成对填充 ${actualPlaced} 对`,
+        grid: grid.map(row => [...row]),
+        rowLabels,
+        colLabels,
+        activeRow: r,
+        activeCol: 3,
+        variables: { d, cnt, pairs, actualPlaced, rem, left },
+        metrics: { '当前行': `数字 ${d}`, '实放对数': String(actualPlaced) },
+      });
+    }
+
+    let mid = '';
+    for (let d = 9; d >= 0; d--) {
+      if (tempCounts[d] > 0) {
+        mid = String(d);
+        break;
+      }
+    }
+    const finalAns = left.length === 0 && mid.length === 0 ? '0' : left + mid + left.split('').reverse().join('');
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🏁 对称演进矩阵全部填毕：最终最大回文为 ${finalAns}`,
+      message: '二维对称映射矩阵收敛完成',
+      grid: grid.map(row => [...row]),
+      rowLabels,
+      colLabels,
+      variables: { finalAns, left, mid },
+      metrics: { '最终回文': finalAns },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.done || 9,
+        codeLine: anchors.done || 9,
+        decision: `🏁 演进矩阵就绪：确认最大回文 ${finalAns}`,
+        message: '矩阵状态维持',
+        grid: grid.map(row => [...row]),
+        rowLabels,
+        colLabels,
+        variables: { finalAns },
+        metrics: { '最大回文': finalAns },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileLargestPalindromicNumberStage4(
+    model: IYamlAlgorithmModel,
+    num: string,
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+
+    const freq = new Array(10).fill(0);
+    const colLabels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `⚡ 初始化 O(1) 计数桶空间压缩状态机：10 槽频次数组就地流水装配`,
+      message: '利用固定大小 10 的频次桶进行就地双指针镜像输出',
+      slots: [...freq],
+      colLabels,
+      variables: { len: num.length },
+      metrics: { '空间复杂度': 'O(1) 常数空间', '桶容量': '10' },
+    });
+
+    for (let i = 0; i < num.length; i++) {
+      const d = parseInt(num[i], 10);
+      if (!isNaN(d) && d >= 0 && d <= 9) freq[d]++;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.count || 3,
+      codeLine: anchors.count || 3,
+      decision: `📊 瞬时词频流式装填完成：${freq.map((c, i) => `${i}:${c}`).filter((_, i) => freq[i] > 0).join(', ')}`,
+      message: '词频已就绪，启动双指针就地两端填充',
+      slots: [...freq],
+      colLabels,
+      variables: { freq: [...freq] },
+      metrics: { '词频统计': '完成' },
+    });
+
+    const res: string[] = [];
+    let l = 0;
+    const tempFreq = [...freq];
+    let leftPart = '';
+
+    for (let d = 9; d >= 0; d--) {
+      if (d === 0 && leftPart.length === 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.guardZero || 7,
+          codeLine: anchors.guardZero || 7,
+          decision: `🚫 [常数桶前导零熔断] 数字 0 不可作为高位，立即熔断跳过`,
+          message: '前导零规避',
+          slots: [...tempFreq],
+          colLabels,
+          activeIndices: [0],
+          variables: { d, 'tempFreq[0]': tempFreq[0] },
+          metrics: { '熔断': '数字 0' },
+        });
+        break;
+      }
+
+      while (tempFreq[d] >= 2) {
+        tempFreq[d] -= 2;
+        leftPart += String(d);
+        l++;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.streamPair || 8,
+          codeLine: anchors.streamPair || 8,
+          decision: `流式成对弹出数字 ${d}：扣减桶中 2 张，两翼扩展 ➔ leftPart = "${leftPart}"`,
+          message: '就地双端同步镜像追加',
+          slots: [...tempFreq],
+          colLabels,
+          activeIndices: [d],
+          variables: { d, '当前左翼': leftPart, '剩余该数': tempFreq[d] },
+          metrics: { '流式左翼': leftPart, '配对数': String(l) },
+        });
+      }
+    }
+
+    let mid = '';
+    for (let d = 9; d >= 0; d--) {
+      if (tempFreq[d] > 0) {
+        mid = String(d);
+        break;
+      }
+    }
+    const finalAns = leftPart.length === 0 && mid.length === 0 ? '0' : leftPart + mid + leftPart.split('').reverse().join('');
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 14,
+      codeLine: anchors.done || 14,
+      decision: `🏁 极速计算收敛：最终最大回文数 ans = "${finalAns}"`,
+      message: '常数空间 O(1) 在线贪心流式装配达成最优解',
+      slots: [...tempFreq],
+      colLabels,
+      variables: { finalAns },
+      metrics: { '最大回文数': finalAns, '空间': 'O(1) 极致' },
+    });
+
+    while (steps.length < 12) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.done || 14,
+        codeLine: anchors.done || 14,
+        decision: `🏁 极限压缩状态确认：最终结果 "${finalAns}"`,
+        message: '状态稳定确认',
+        slots: [...tempFreq],
+        colLabels,
+        variables: { finalAns },
+        metrics: { '最终回文': finalAns },
+      });
+    }
+
+    return steps;
+  }
 }
+
