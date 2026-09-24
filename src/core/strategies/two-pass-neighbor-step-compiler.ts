@@ -3053,20 +3053,6 @@ export class TwoPassNeighborStepCompiler {
         variables: { totalSum, n, remainder: totalSum % n, ans: -1 },
         metrics: { '结果': '-1 (不可达)' },
       });
-      while (steps.length < 12) {
-        steps.push({
-          stepIndex: steps.length,
-          stage: 1,
-          line: anchors.check || 4,
-          codeLine: anchors.check || 4,
-          decision: '❌ 整除校验失败：确认终止计算',
-          message: '整除门禁判定',
-          slots,
-          colLabels,
-          variables: { ans: -1 },
-          metrics: { '最终结果': '-1' },
-        });
-      }
       return steps;
     }
 
@@ -3169,20 +3155,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最少步数': `${maxMoves} 步`, '状态': '已达成最优' },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 1,
-        line: anchors.done || 13,
-        codeLine: anchors.done || 13,
-        decision: `🏁 贪心最优性校验：全局步数 ${maxMoves} 满足局部瓶颈下界`,
-        message: '最终验证与收敛',
-        slots,
-        colLabels,
-        variables: { maxMoves },
-        metrics: { '最优步数': `${maxMoves}` },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.verify || 14,
+      codeLine: anchors.verify || 14,
+      decision: `🏁 贪心最优性校验：全局步数 ${maxMoves} 满足局部瓶颈下界，已达成全局最优`,
+      message: '最终验证与收敛',
+      slots,
+      colLabels,
+      variables: { maxMoves },
+      metrics: { '最优步数': `${maxMoves}` },
+    });
 
     return steps;
   }
@@ -3275,13 +3259,26 @@ export class TwoPassNeighborStepCompiler {
       maxMoves = Math.max(maxMoves, curBottleneck);
       leftSum += num;
       machineNode.status = 'resolved';
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.updateMax || 8,
+        codeLine: anchors.updateMax || 8,
+        decision: `✨ M${i} 分支结算收敛：局部瓶颈 ${curBottleneck}，更新全局最优下界 maxMoves = ${maxMoves}`,
+        message: '更新全局瓶颈',
+        treeRoot: cloneStateDepTree(rootNode),
+        treeNode: cloneStateDepTree(machineNode),
+        variables: { i, curBottleneck, maxMoves },
+        metrics: { '当前最大': `${maxMoves} 步` }
+      });
     }
 
     steps.push({
       stepIndex: steps.length,
       stage: 2,
-      line: anchors.parallelFlow || 7,
-      codeLine: anchors.parallelFlow || 7,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
       decision: `🏁 决策树全部拓扑构建完毕：全局最大瓶颈步数收敛为 ${maxMoves}`,
       message: '树形决策推导达成最优解',
       treeRoot: cloneStateDepTree(rootNode),
@@ -3290,20 +3287,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最少步数': `${maxMoves} 步`, '决策节点数': String(rootNode.children.length) },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 2,
-        line: anchors.parallelFlow || 7,
-        codeLine: anchors.parallelFlow || 7,
-        decision: `🏁 决策树收敛确认：maxMoves = ${maxMoves}`,
-        message: '决策树完成状态确认',
-        treeRoot: cloneStateDepTree(rootNode),
-        treeNode: cloneStateDepTree(rootNode),
-        variables: { maxMoves },
-        metrics: { '最优步数': `${maxMoves}` },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.verify || 9,
+      codeLine: anchors.verify || 9,
+      decision: `🏁 决策树收敛确认：单机瓶颈与跨区流动双重下界收敛完毕，maxMoves = ${maxMoves}`,
+      message: '决策树完成状态确认',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { maxMoves },
+      metrics: { '最优步数': `${maxMoves}` },
+    });
 
     return steps;
   }
@@ -3419,21 +3414,19 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最终结果': `${maxMoves} 步` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 3,
-        line: anchors.fillMax || 8,
-        codeLine: anchors.fillMax || 8,
-        decision: `🏁 演进矩阵就绪：确认最终操作步数 = ${maxMoves}`,
-        message: '矩阵状态维持',
-        grid: grid.map(r => [...r]),
-        rowLabels,
-        colLabels,
-        variables: { maxMoves },
-        metrics: { '最少步数': `${maxMoves}` },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.verify || 9,
+      codeLine: anchors.verify || 9,
+      decision: `🏁 演进矩阵就绪：确认最终操作步数 = ${maxMoves}，矩阵状态转移完全吻合`,
+      message: '矩阵状态维持',
+      grid: grid.map(r => [...r]),
+      rowLabels,
+      colLabels,
+      variables: { maxMoves },
+      metrics: { '最少步数': `${maxMoves} 步` },
+    });
 
     return steps;
   }
@@ -3516,20 +3509,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最终步数': `${ans} 步`, '空间': 'O(1) 常数空间' },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 4,
-        line: anchors.done || 7,
-        codeLine: anchors.done || 7,
-        decision: `🏁 极限压缩状态确认：最终步数 ${ans}`,
-        message: '结果稳定确认',
-        slots,
-        colLabels,
-        variables: { ans },
-        metrics: { '最终步数': `${ans}` },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.verify || 8,
+      codeLine: anchors.verify || 8,
+      decision: `🏁 极限压缩状态确认：常数空间最优步数 ${ans} 校验通过`,
+      message: '结果稳定确认',
+      slots,
+      colLabels,
+      variables: { ans },
+      metrics: { '最终步数': `${ans}` },
+    });
 
     return steps;
   }
@@ -3688,20 +3679,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最大回文数': finalAns, '总位数': `${finalAns.length} 位` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 1,
-        line: anchors.assemble || 14,
-        codeLine: anchors.assemble || 14,
-        decision: `🎉 状态稳定确认：最终最大回文数为 ${finalAns}`,
-        message: '贪心模拟收敛确认',
-        slots: [...tempCounts],
-        colLabels,
-        variables: { finalAns },
-        metrics: { '最终回文': finalAns },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.verify || 15,
+      codeLine: anchors.verify || 15,
+      decision: `⚡ 贪心最优性证明：高位放置更大数字使整体数值最大，成对对称部署保持回文性质，结果 ${finalAns} 达到全局最大值`,
+      message: '回文贪心构造性质验证通过',
+      slots: [...tempCounts],
+      colLabels,
+      variables: { finalAns },
+      metrics: { '最优性验证': '严格通过' },
+    });
 
     return steps;
   }
@@ -3870,20 +3859,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最终回文': finalAns, '决策子树数': String(rootNode.children.length) },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 2,
-        line: anchors.done || 12,
-        codeLine: anchors.done || 12,
-        decision: `🏁 决策树稳定状态确认：最大回文 ${finalAns}`,
-        message: '决策树完成状态确认',
-        treeRoot: cloneStateDepTree(rootNode),
-        treeNode: cloneStateDepTree(rootNode),
-        variables: { finalAns },
-        metrics: { '最大回文': finalAns },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.verify || 13,
+      codeLine: anchors.verify || 13,
+      decision: '⚡ 树形决策网络验证：前导零分支被正确剪除，高位成对优先级严格高于低位，决策树推导收敛于全局最优解',
+      message: '决策树全局最优性验证通过',
+      treeRoot: cloneStateDepTree(rootNode),
+      treeNode: cloneStateDepTree(rootNode),
+      variables: { finalAns },
+      metrics: { '最优性验证': '严格通过' },
+    });
 
     return steps;
   }
@@ -3990,21 +3977,19 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最终回文': finalAns },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 3,
-        line: anchors.done || 9,
-        codeLine: anchors.done || 9,
-        decision: `🏁 演进矩阵就绪：确认最大回文 ${finalAns}`,
-        message: '矩阵状态维持',
-        grid: grid.map(row => [...row]),
-        rowLabels,
-        colLabels,
-        variables: { finalAns },
-        metrics: { '最大回文': finalAns },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.verify || 10,
+      codeLine: anchors.verify || 10,
+      decision: '⚡ 二维对称状态映射矩阵验证：各数字左右实放对数与中心单核分配严格满足回文对称守恒',
+      message: '对称矩阵一致性验证通过',
+      grid: grid.map(row => [...row]),
+      rowLabels,
+      colLabels,
+      variables: { finalAns },
+      metrics: { '对称守恒': '严格通过' },
+    });
 
     return steps;
   }
@@ -4093,12 +4078,41 @@ export class TwoPassNeighborStepCompiler {
           metrics: { '流式左翼': leftPart, '配对数': String(l) },
         });
       }
+
+      if (tempFreq[d] === 1 && d > 0) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.reserveOdd || 9,
+          codeLine: anchors.reserveOdd || 9,
+          decision: `保留单张数字 ${d}：桶中余 1 张无法成对，保留作为中心核 mid 候选`,
+          message: '单张数字保留为中心候选',
+          slots: [...tempFreq],
+          colLabels,
+          activeIndices: [d],
+          variables: { d, 'tempFreq[d]': tempFreq[d] },
+          metrics: { '候选中心': String(d) },
+        });
+      }
     }
 
     let mid = '';
     for (let d = 9; d >= 0; d--) {
       if (tempFreq[d] > 0) {
         mid = String(d);
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.centerMid || 11,
+          codeLine: anchors.centerMid || 11,
+          decision: `🎯 选定最大剩余单数 ${d} 作为回文中心核 mid = "${mid}"`,
+          message: '就地中位确定',
+          slots: [...tempFreq],
+          colLabels,
+          activeIndices: [d],
+          variables: { mid },
+          metrics: { '中心核': mid, '左翼': leftPart },
+        });
         break;
       }
     }
@@ -4117,20 +4131,18 @@ export class TwoPassNeighborStepCompiler {
       metrics: { '最大回文数': finalAns, '空间': 'O(1) 极致' },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 4,
-        line: anchors.done || 14,
-        codeLine: anchors.done || 14,
-        decision: `🏁 极限压缩状态确认：最终结果 "${finalAns}"`,
-        message: '状态稳定确认',
-        slots: [...tempFreq],
-        colLabels,
-        variables: { finalAns },
-        metrics: { '最终回文': finalAns },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.verify || 15,
+      codeLine: anchors.verify || 15,
+      decision: '⚡ O(1) 常数空间极限压缩收敛确认：10 槽固定词频桶就地双指针镜像输出达到最优',
+      message: '常数空间算法收敛',
+      slots: [...tempFreq],
+      colLabels,
+      variables: { finalAns },
+      metrics: { '空间复杂度': 'O(1) 常数' },
+    });
 
     return steps;
   }

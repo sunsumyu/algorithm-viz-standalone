@@ -559,4 +559,249 @@ describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation
       ).toEqual([]);
     });
   });
+
+  // ==========================================================================
+  // 红灯 13 & 14: 双向推导语义倒挂与假对偶偷懒克隆陷阱
+  // ==========================================================================
+  describe('🚨 红灯陷阱 13 & 14: 双向推导语义倒挂与假对偶偷懒克隆', () => {
+    it('当模型声明支持 reverse 逆向推导时，必须生成充分有效步骤且严禁 100% 克隆正向步骤', () => {
+      const violations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+        if (!model.directions?.reverse) continue;
+
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+
+        for (const stageKey of ['stage-1', 'stage-3']) {
+          const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
+          const fSteps = UniversalStageEngine.generateSteps(model, {
+            stage: stageNum,
+            m: resolved.m,
+            n: resolved.n,
+            direction: 'forward',
+          });
+
+          const rSteps = UniversalStageEngine.generateSteps(model, {
+            stage: stageNum,
+            m: resolved.m,
+            n: resolved.n,
+            direction: 'reverse',
+          });
+
+          // 陷阱 13 判定：声明了 reverse，但 reverse 步骤数为空或过少 (< 3)
+          if (!rSteps || rSteps.length < 3) {
+            violations.push(
+              `🚨 [REVERSE_DIRECTION_STARVATION_TRAP] ${id} (${stageKey}): 声明了 reverse 逆向模式，但生成的逆向步骤数仅为 ${rSteps?.length || 0}！`
+            );
+            continue;
+          }
+
+          // 陷阱 14 判定：假对偶克隆（若正向步数 > 3，逆向步数与正向完全相同且所有步骤文本 100% 毫无差异）
+          if (fSteps.length > 3 && rSteps.length === fSteps.length) {
+            const getStepText = (s?: any) => (s ? (s.decision || s.msg || s.log || s.tag || '') : '');
+            let isIdenticalClone = true;
+            for (let i = 0; i < fSteps.length; i++) {
+              if (getStepText(fSteps[i]) !== getStepText(rSteps[i]) || fSteps[i].line !== rSteps[i].line) {
+                isIdenticalClone = false;
+                break;
+              }
+            }
+            if (isIdenticalClone) {
+              violations.push(
+                `🚨 [FAKE_REVERSE_CLONE_TRAP] ${id} (${stageKey}): 逆向步骤与正向步骤文本 100% 镜像完全相同，属于未真正实现的假对偶模式！`
+              );
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法击中了双向推导倒挂或假逆向克隆红灯:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 红灯 15 & 16: 激活单元格越界与吉祥物指示符悬空陷阱
+  // ==========================================================================
+  describe('🚨 红灯陷阱 15 & 16: 激活单元格越界与吉祥物指示符悬空', () => {
+    it('二维表格当前操作坐标 (step.i, step.j) 与探查器必须在合法网格边界内，严禁越界悬空', () => {
+      const violations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+
+        // 检验阶段 3 状态表格
+        const steps = UniversalStageEngine.generateSteps(model, {
+          stage: 3,
+          m: resolved.m,
+          n: resolved.n,
+          direction: 'forward',
+        });
+
+        if (!steps || steps.length === 0) continue;
+
+        for (let idx = 0; idx < steps.length; idx++) {
+          const step = steps[idx];
+          if (!step.grid || !Array.isArray(step.grid) || step.grid.length === 0) continue;
+
+          const numRows = step.grid.length;
+          const numCols = Array.isArray(step.grid[0]) ? step.grid[0].length : 0;
+          if (numCols === 0) continue;
+
+          // 陷阱 15 判定：step.i 越界
+          if (typeof step.i === 'number' && !isNaN(step.i)) {
+            if (step.i < 0 || step.i >= numRows) {
+              violations.push(
+                `🚨 [CELL_ROW_OUT_OF_BOUNDS_TRAP] ${id} (stage-3, 步骤 ${idx + 1}): 当前行索引 i=${step.i} 超出表格行界 [0..${numRows - 1}]！`
+              );
+              break;
+            }
+          }
+
+          // 陷阱 16 判定：step.j 越界
+          if (typeof step.j === 'number' && !isNaN(step.j)) {
+            if (step.j < 0 || step.j >= numCols) {
+              violations.push(
+                `🚨 [CELL_COL_OUT_OF_BOUNDS_TRAP] ${id} (stage-3, 步骤 ${idx + 1}): 当前列索引 j=${step.j} 超出表格列界 [0..${numCols - 1}]！`
+              );
+              break;
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法击中了激活单元格越界或指示符悬空红灯:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 红灯 17 & 18: 表头列数错位与槽位数据污染陷阱
+  // ==========================================================================
+  describe('🚨 红灯陷阱 17 & 18: 表头列数错位与槽位数据污染', () => {
+    it('表格 colLabels 列数必须与数据列完全对齐，且 slots 数组严禁包含 undefined/null/NaN/[object Object]', () => {
+      const violations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+
+        for (const stageKey of ['stage-1', 'stage-2', 'stage-3', 'stage-4']) {
+          const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
+          const steps = UniversalStageEngine.generateSteps(model, {
+            stage: stageNum,
+            m: resolved.m,
+            n: resolved.n,
+            direction: 'forward',
+          });
+
+          if (!steps || steps.length === 0) continue;
+
+          for (let sIdx = 0; sIdx < Math.min(5, steps.length); sIdx++) {
+            const step = steps[sIdx];
+
+            // 陷阱 18 判定：slots 数组污染
+            if (step.slots && Array.isArray(step.slots)) {
+              for (let i = 0; i < step.slots.length; i++) {
+                const item = String(step.slots[i]);
+                if (item === 'undefined' || item === 'null' || item === 'NaN' || item.includes('[object Object]')) {
+                  violations.push(
+                    `🚨 [SLOTS_DATA_CORRUPTION_TRAP] ${id} (${stageKey}, 步骤 ${sIdx + 1}): slots[${i}] 含有污染数据 "${item}"！`
+                  );
+                  break;
+                }
+              }
+            }
+
+            // 陷阱 17 判定：纯网格 colLabels 与 grid 列数严重错位（差异 > 1）
+            if (step.grid && Array.isArray(step.grid) && step.grid[0] && Array.isArray(step.grid[0]) && step.colLabels) {
+              const gridCols = step.grid[0].length;
+              const labelCols = step.colLabels.length;
+              // 允许 labelCols == gridCols 或 labelCols == gridCols + 1 (带有首列表头)
+              if (Math.abs(gridCols - labelCols) > 1 && labelCols > 0) {
+                violations.push(
+                  `🚨 [COL_HEADER_MISALIGNMENT_TRAP] ${id} (${stageKey}, 步骤 ${sIdx + 1}): colLabels 列数 (${labelCols}) 与实际网格列数 (${gridCols}) 严重错位！`
+                );
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法击中了表头列数错位或槽位数据污染红灯:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 红灯 19 & 20: 步骤密度枯竭假实现与死循环停滞陷阱
+  // ==========================================================================
+  describe('🚨 红灯陷阱 19 & 20: 步骤密度枯竭假实现与死循环停滞', () => {
+    it('所有已锁定算法的全部阶段必须产生充分步骤 (>= 4 步)，且连续步骤严禁行号与变量死锁停滞', () => {
+      const violations: string[] = [];
+
+      for (const id of LOCKED_TOP_LEVEL_ALGORITHMS) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
+
+        for (const stageKey of ['stage-1', 'stage-2', 'stage-3', 'stage-4']) {
+          const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
+          const steps = UniversalStageEngine.generateSteps(model, {
+            stage: stageNum,
+            m: resolved.m,
+            n: resolved.n,
+            direction: 'forward',
+          });
+
+          // 陷阱 19 判定：步骤总数过少（极简单常数 DP 如 fibonacci 除外）
+          if (id !== 'fibonacci' && id !== 'climb-stairs') {
+            if (!steps || steps.length < 4) {
+              violations.push(
+                `🚨 [STEP_DENSITY_STARVATION_TRAP] ${id} (${stageKey}): 步骤数量严重枯竭 (仅产生 ${steps?.length || 0} 步)！属于偷懒假实现！`
+              );
+              continue;
+            }
+          }
+
+          // 陷阱 20 判定：连续 5 步以上完全死锁停滞（line 与 msg 完全不动）
+          let stagnantCount = 1;
+          for (let i = 1; i < steps.length; i++) {
+            const prev = steps[i - 1];
+            const curr = steps[i];
+            const prevMsg = prev.decision || prev.msg || '';
+            const currMsg = curr.decision || curr.msg || '';
+            if (prev.line === curr.line && prevMsg === currMsg && prevMsg.length > 0) {
+              stagnantCount++;
+              if (stagnantCount >= 6) {
+                violations.push(
+                  `🚨 [DEAD_LOOP_STAGNATION_TRAP] ${id} (${stageKey}, 步骤 ${i + 1}): 连续 ${stagnantCount} 步停留在行号 ${curr.line} 且描述完全相同！属于死循环停滞！`
+                );
+                break;
+              }
+            } else {
+              stagnantCount = 1;
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法击中了步骤密度枯竭或死锁停滞红灯:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
 });

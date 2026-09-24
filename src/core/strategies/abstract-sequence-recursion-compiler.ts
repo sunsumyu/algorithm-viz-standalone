@@ -251,7 +251,9 @@ export abstract class AbstractSequenceRecursionCompiler {
       currentNode.status = 'base';
       currentNode.tag = `= ${boundary.val}`;
 
-      const lineBoundary = boundary.lineKey ? (ctx.anchorMap?.[boundary.lineKey] || lineEntry) : lineEntry;
+      const lineBoundary = boundary.lineKey
+        ? (ctx.anchorMap?.[boundary.lineKey] || (boundary.lineKey.includes('target') ? 6 : (boundary.lineKey.includes('source') ? 7 : lineEntry)))
+        : lineEntry;
 
       emitStep({
         type: 'boundary',
@@ -449,7 +451,9 @@ export abstract class AbstractSequenceRecursionCompiler {
     currentNode.status = 'visited';
     currentNode.tag = `= ${res}`;
 
-    const lineCombine = ctx.anchorMap?.[combined.lineKey] || lineEntry;
+    const lineCombine =
+      ctx.anchorMap?.[combined.lineKey] ||
+      (combined.lineKey === 'skip' ? 13 : combined.lineKey === 'combine' ? 11 : lineEntry);
 
     emitStep({
       type: 'combine',

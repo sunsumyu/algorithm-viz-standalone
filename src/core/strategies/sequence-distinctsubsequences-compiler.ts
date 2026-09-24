@@ -44,9 +44,9 @@ class DistinctSubsequencesRecursionCompiler extends AbstractSequenceRecursionCom
         isBase: true,
         val: 1,
         lineKey: 'boundary_target',
-        tag: isForward ? 'Base Case (目标串匹配完成)' : 'Base Case (目标串前缀耗尽)',
-        log: `| 🎬 满足 Base Case: 目标串已全部匹配完毕，返回 1`,
-        msg: `🎬 目标串已全部匹配完毕，成功寻得 1 种有效子序列方案，返回 <strong>1</strong>。`
+        tag: isForward ? `Base Case: 目标串匹配完成 (i=${i})` : `Base Case: 目标串前缀耗尽 (i=${i})`,
+        log: `| 🎬 满足 Base Case: 目标串已在 i=${i} 全部匹配完毕，返回 1`,
+        msg: `🎬 目标串已在 <code>i=${i}</code> 全部匹配完毕，成功寻得 1 种有效子序列方案，返回 <strong>1</strong>。`
       };
     }
 
@@ -56,9 +56,9 @@ class DistinctSubsequencesRecursionCompiler extends AbstractSequenceRecursionCom
         isBase: true,
         val: 0,
         lineKey: 'boundary_source',
-        tag: 'Base Case (s耗尽)',
-        log: `| 🎬 满足 Base Case: 源串字符已耗尽但目标串未完毕，返回 0`,
-        msg: `🎬 源串 <code>s</code> 字符已耗尽，无法凑齐目标串 <code>t</code>，返回 <strong>0</strong>。`
+        tag: `Base Case: s耗尽 (j=${j})`,
+        log: `| 🎬 满足 Base Case: 源串在 i=${i} 耗尽但目标串仍在 j=${j}，返回 0`,
+        msg: `🎬 源串在 <code>i=${i}</code> 字符已耗尽（目标串处于 <code>j=${j}</code>），无法凑齐目标串，返回 <strong>0</strong>。`
       };
     }
 
@@ -164,7 +164,7 @@ class DistinctSubsequencesRecursionCompiler extends AbstractSequenceRecursionCom
         lineKey: 'combine',
         tag: '合并匹配与跳过方案',
         log: `| ✨ 合并分支: dfs(${i}, ${j}) = 匹配(${valMatch}) + 跳过(${valSkip}) = ${res}${ctx.isMemo ? ' [存入备忘录]' : ''}`,
-        msg: `✨ 汇总分支决策：<code>匹配分支 (${valMatch}) + 跳过分支 (${valSkip}) = <strong>${res}</strong></code>。`
+        msg: `✨ 汇总分支决策：<code>dfs(${i}, ${j})</code> 匹配分支 (${valMatch}) + 跳过分支 (${valSkip}) = <strong>${res}</strong>。`
       };
     } else {
       const res = branchResults[0] ?? 0;
@@ -173,7 +173,7 @@ class DistinctSubsequencesRecursionCompiler extends AbstractSequenceRecursionCom
         lineKey: 'skip',
         tag: '单分支返回',
         log: `| ↩️ 不匹配分支返回: dfs(${i}, ${j}) = ${res}${ctx.isMemo ? ' [存入备忘录]' : ''}`,
-        msg: `↩️ 不匹配分支探索结束，返回 <strong>${res}</strong>。`
+        msg: `↩️ 不匹配分支探索结束：<code>dfs(${i}, ${j})</code> 返回 <strong>${res}</strong>。`
       };
     }
   }

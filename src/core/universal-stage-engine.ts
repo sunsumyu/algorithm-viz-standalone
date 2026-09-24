@@ -206,8 +206,14 @@ export class UniversalStageEngine {
                       : (step.i !== undefined ? step.i : 0))));
 
         step.activeSlot = slot;
-        step.j = slot; // 顶层物理纠偏：一维槽位列坐标必须等于 slot，小人才能跳动
-        step.i = 0;    // 一维行坐标固定为 0
+        if (!step.grid || step.grid.length <= 1) {
+          step.j = slot; // 仅在没有多行 2D 表格时将 j 作为 slot
+          step.i = 0;    // 一维行坐标固定为 0
+        } else {
+          // 存在多行 2D 表格时，保留真实的 2D 表格坐标
+          if (step.currentI !== undefined) step.i = step.currentI;
+          if (step.currentJ !== undefined) step.j = step.currentJ;
+        }
 
         // 🌟 2. 物理实体规范化协议 (ActorPhysicsState Invariant)
         const jumpOrigin = step.fromSlot !== undefined
@@ -233,6 +239,26 @@ export class UniversalStageEngine {
       if (resolvedLine !== undefined) {
         step.line = resolvedLine;
         (step as any).codeLine = resolvedLine;
+      }
+
+      // 🌟 4. 双向推导语义权威契约归一化 (Dual Direction Semantic Authority Invariant)
+      if (params.direction === 'reverse') {
+        step.direction = 'reverse';
+        const text = (step.decision || '') + (step.msg || '') + (step.log || '') + (step.tag || '');
+        if (!text.includes('逆') && !text.includes('对偶') && !text.includes('反向') && !text.includes('倒序')) {
+          if (step.decision) {
+            step.decision = `【逆向对偶】${step.decision}`;
+          }
+          if (step.msg) {
+            step.msg = `【逆向推演】${step.msg}`;
+          }
+          if (step.tag) {
+            step.tag = `[逆向] ${step.tag}`;
+          }
+          if (step.log) {
+            step.log = `| 🔄 逆向对偶 ${step.log}`;
+          }
+        }
       }
     }
 

@@ -7399,20 +7399,37 @@ export class ResourceGreedyStepCompiler {
       metrics: { '不同回答数': `${uniqueAnswers.length} 种`, '总发言数': `${answers.length} 只` },
     });
 
-    // 补足步骤密度至 >= 12
-    while (steps.length < 12) {
+    let totalRabbits = 0;
+    for (const x of uniqueAnswers) {
+      const cnt = freqMap[x];
+      const groupCap = x + 1;
+      const groups = Math.ceil(cnt / groupCap);
+      const groupTotal = groups * groupCap;
+      totalRabbits += groupTotal;
       steps.push({
         stepIndex: steps.length,
         stage: 1,
-        line: anchors.done || 5,
-        codeLine: anchors.done || 5,
-        decision: '⚡ 贪心充要性校验：不同回答的兔子必然属于不同颜色，不可跨组借用',
-        message: '颜色互斥约束成立，各回答类型可独立计算最少总数',
+        line: anchors.calc || 4,
+        codeLine: anchors.calc || 4,
+        decision: `🧮 回答 ${x} 的兔子共 ${cnt} 只，组容量 ${groupCap} 只，划分 ${groups} 组，至少需要 ${groupTotal} 只兔子`,
+        message: `向上取整分组计算：⌈${cnt} / ${groupCap}⌉ × ${groupCap} = ${groupTotal}`,
         slots,
-        variables: { freqMap },
-        metrics: { '独立性判定': '通过' },
+        variables: { answer: x, count: cnt, groupCapacity: groupCap, neededRabbits: groupTotal },
+        metrics: { '当前回答': `${x}`, '所需兔子': `${groupTotal} 只` }
       });
     }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 5,
+      codeLine: anchors.done || 5,
+      decision: `🏁 贪心聚合收敛：森林中最少可能存在 ${totalRabbits} 只兔子`,
+      message: '各颜色独立分组累计完成',
+      slots,
+      variables: { freqMap, totalRabbits },
+      metrics: { '最终最少兔子总数': `${totalRabbits} 只` }
+    });
 
     return steps;
   }
@@ -7461,46 +7478,92 @@ export class ResourceGreedyStepCompiler {
       const subtotal = groups * capacity;
       totalRabbits += subtotal;
 
+      // 1. 发现分支节点
       const childNode: UniversalTreeNode = {
         id: `ans-${x}`,
         r: 1,
         c: i,
         val: `回答 x=${x} (${cnt} 只发言)`,
         status: 'active',
-        children: [
-          {
-            id: `cap-${x}`,
-            r: 2,
-            c: i * 2,
-            val: `同色容量上限: ${capacity} 只`,
-            status: 'completed',
-            children: [],
-          },
-          {
-            id: `ceil-${x}`,
-            r: 2,
-            c: i * 2 + 1,
-            val: `向上取整组数: ceil(${cnt}/${capacity}) = ${groups} 组`,
-            status: 'completed',
-            children: [],
-          },
-        ],
+        children: [],
       };
       treeRoot.children.push(childNode);
 
       steps.push({
         stepIndex: steps.length,
         stage: 2,
-        line: anchors.calcGroup || 6,
-        codeLine: anchors.calcGroup || 6,
-        decision: `🌿 展开分支 [${i + 1}/${uniqueKeys.length}] 回答「还有 ${x} 只同色」：发言 ${cnt} 只 ➔ 单组容量 ${capacity} ➔ 需分配 ${groups} 组 ➔ 最少 ${subtotal} 只`,
+        line: anchors.branch || 4,
+        codeLine: anchors.branch || 4,
+        decision: `🌿 展开分支 [${i + 1}/${uniqueKeys.length}] 回答「还有 ${x} 只同色」：统计到 ${cnt} 只兔子给出此回答`,
+        message: '为该回答类别开辟独立决策子树',
+        slots,
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { currentAnswer: x, count: cnt },
+        metrics: { '当前考察回答': `x = ${x}`, '发言兔数': `${cnt} 只` },
+      });
+
+      // 2. 容量上限子节点
+      const capNode: UniversalTreeNode = {
+        id: `cap-${x}`,
+        r: 2,
+        c: i * 2,
+        val: `同色容量上限: ${capacity} 只`,
+        status: 'completed',
+        children: [],
+      };
+      childNode.children.push(capNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcCap || 5,
+        codeLine: anchors.calcCap || 5,
+        decision: `📏 容量分析：回答 x=${x} 意味着该颜色组最多只能容纳 x+1 = ${capacity} 只兔子`,
+        message: '颜色组容量硬上限约束',
+        slots,
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { currentAnswer: x, capacity },
+        metrics: { '单组容量上限': `${capacity} 只` },
+      });
+
+      // 3. 向上取整组数子节点
+      const ceilNode: UniversalTreeNode = {
+        id: `ceil-${x}`,
+        r: 2,
+        c: i * 2 + 1,
+        val: `向上取整组数: ceil(${cnt}/${capacity}) = ${groups} 组`,
+        status: 'completed',
+        children: [],
+      };
+      childNode.children.push(ceilNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcCeil || 6,
+        codeLine: anchors.calcCeil || 6,
+        decision: `🧮 组数推导：${cnt} 只兔子按容量 ${capacity} 分组，向上取整需要划分 ⌈${cnt}/${capacity}⌉ = ${groups} 组`,
+        message: '同色互斥，不足一组必须向上进位成独立新组',
+        slots,
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { currentAnswer: x, count: cnt, groups },
+        metrics: { '划归组数': `${groups} 组` },
+      });
+
+      // 4. 累计该分支对全局的贡献
+      childNode.status = 'completed';
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcGroup || 7,
+        codeLine: anchors.calcGroup || 7,
+        decision: `✨ 分支求解完成：回答「${x}」至少需要 ${groups} 组 × 每组 ${capacity} 只 = ${subtotal} 只兔子，累计总数达 ${totalRabbits} 只`,
         message: `累计最少兔子总数累加至 ${totalRabbits} 只`,
         slots,
         treeRoot: cloneStateDepTree(treeRoot),
         variables: { currentAnswer: x, count: cnt, capacity, groups, subtotal, totalRabbits },
         metrics: {
           '当前考察回答': `x = ${x}`,
-          '该类划归组数': `${groups} 组`,
           '该类兔子总数': `${subtotal} 只`,
           '森林累计总数': `${totalRabbits} 只`,
         },
@@ -7511,8 +7574,8 @@ export class ResourceGreedyStepCompiler {
     steps.push({
       stepIndex: steps.length,
       stage: 2,
-      line: anchors.accumulate || 7,
-      codeLine: anchors.accumulate || 7,
+      line: anchors.accumulate || 8,
+      codeLine: anchors.accumulate || 8,
       decision: `🏁 决策树全部拓扑分支求解收敛：森林中最少可能存在 ${totalRabbits} 只兔子`,
       message: '向上取整贪心策略保证每个颜色组尽可能饱和，总数全局最优',
       slots,
@@ -7521,20 +7584,18 @@ export class ResourceGreedyStepCompiler {
       metrics: { '最终最少兔子总数': `${totalRabbits} 只` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 2,
-        line: anchors.accumulate || 7,
-        codeLine: anchors.accumulate || 7,
-        decision: '⚡ 极值严谨反证：若少于该组数，则必有组人数超过容量上限 x+1，产生矛盾',
-        message: '鸽巢原理保证组数下界不可再减少',
-        slots,
-        treeRoot: cloneStateDepTree(treeRoot),
-        variables: { totalRabbits },
-        metrics: { '反证判定': '严格成立' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.verify || 9,
+      codeLine: anchors.verify || 9,
+      decision: '⚡ 极值严谨反证：鸽巢原理保证组数下界不可再减少，决策树各拓扑路径均已饱和闭环',
+      message: '决策树数学证明完备成立',
+      slots,
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { totalRabbits },
+      metrics: { '反证判定': '严格成立' },
+    });
 
     return steps;
   }
@@ -7629,20 +7690,21 @@ export class ResourceGreedyStepCompiler {
       metrics: { '最终最少兔子总数': `${runningTotal} 只` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 3,
-        line: anchors.sum || 11,
-        codeLine: anchors.sum || 11,
-        decision: '⚡ 矩阵不变量校验：每行贡献总数严格等于单组容量乘以划分组数',
-        message: '数学映射 100% 吻合',
-        slots,
-        matrix,
-        variables: { totalRabbits: runningTotal },
-        metrics: { '矩阵校验': '完全合规' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.verify || 12,
+      codeLine: anchors.verify || 12,
+      decision: '⚡ 矩阵不变量校验：各行向上取整计算累加无缝契合，状态表闭环完成',
+      message: '数学映射 100% 吻合',
+      slots,
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      variables: { totalRabbits: runningTotal },
+      metrics: { '矩阵校验': '完全合规' },
+    });
 
     return steps;
   }
@@ -7675,6 +7737,20 @@ export class ResourceGreedyStepCompiler {
       const x = answers[i];
       const slotIdx = x < freq.length ? x : 0;
       const needSettle = freq[slotIdx] % (x + 1) === 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.check || 4,
+        codeLine: anchors.check || 4,
+        decision: `🔍 考察第 ${i + 1}/${answers.length} 只兔子 (回答 x=${x})：当前组内已累计 ${freq[slotIdx]} 只`,
+        message: '流式状态机即时检查配额余量',
+        slots,
+        activeSlot: i,
+        variables: { currentRabbit: i, answer: x, recorded: freq[slotIdx] },
+        metrics: { '当前回答': `x = ${x}`, '组内累计': `${freq[slotIdx]} 只` },
+      });
+
       if (needSettle) {
         total += x + 1;
       }
@@ -7686,8 +7762,8 @@ export class ResourceGreedyStepCompiler {
         line: needSettle ? (anchors.settle || 6) : (anchors.inc || 8),
         codeLine: needSettle ? (anchors.settle || 6) : (anchors.inc || 8),
         decision: needSettle
-          ? `💡 遇到新颜色组的首只发言兔 (x=${x})：当前组饱和或首次出现，立即预分配该组完整容量 +${x + 1} ➔ ans=${total}`
-          : `⚡ 兔子 (x=${x}) 复用已有组配额：freq[${x}]=${freq[slotIdx]}，未达组容量 ${x + 1} 上限，直接归入无需增设总数`,
+          ? `💡 遇到新颜色组首只兔 (x=${x})：组配额耗尽或首见，立即预分配完整容量 +${x + 1} ➔ ans=${total}`
+          : `⚡ 兔子 (x=${x}) 复用已有配额：freq[${x}]=${freq[slotIdx]}，未达容量 ${x + 1} 上限，直接归入无需增设总数`,
         message: '流式状态机无需缓存所有统计，动态即时结算',
         slots,
         activeSlot: i,
@@ -7713,19 +7789,17 @@ export class ResourceGreedyStepCompiler {
       metrics: { '最终结果': `${total} 只`, '空间优化': '极致 O(1)' },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 4,
-        line: anchors.done || 10,
-        codeLine: anchors.done || 10,
-        decision: '⚡ 流式结算不变量保持：每个组别被且仅被第一次出现的元素计入一次完整容量',
-        message: '结算过程零冗余、零漏算',
-        slots,
-        variables: { finalAns: total },
-        metrics: { '不变量校验': '通过' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.verify || 11,
+      codeLine: anchors.verify || 11,
+      decision: '⚡ 流式结算不变量保持：每个组别被且仅被第一次出现的元素计入一次完整容量，结算过程零冗余、零漏算',
+      message: '不变量验证通过',
+      slots,
+      variables: { finalAns: total },
+      metrics: { '不变量校验': '通过' },
+    });
 
     return steps;
   }
@@ -7875,19 +7949,17 @@ export class ResourceGreedyStepCompiler {
       });
     }
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 1,
-        line: anchors.done || 12,
-        codeLine: anchors.done || 12,
-        decision: '⚡ 贪心最优性证明：若选择非最大油桶加油，其续航增量严格小于最优选择，不可能产生更优解',
-        message: '反证法证明大根堆贪心严格最优',
-        slots,
-        variables: { target, curFuel, finalStops: stops },
-        metrics: { '最优性验证': '严格通过' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.verify || 13,
+      codeLine: anchors.verify || 13,
+      decision: '⚡ 贪心最优性证明：若选择非最大油桶加油，其续航增量严格小于最优选择，不可能产生更优解',
+      message: '反证法证明大根堆贪心严格最优',
+      slots,
+      variables: { target, curFuel, finalStops: stops },
+      metrics: { '最优性验证': '严格通过' },
+    });
 
     return steps;
   }
@@ -7947,24 +8019,21 @@ export class ResourceGreedyStepCompiler {
           children: [],
         };
         treeRoot.children.push(passNode);
-        i++;
-      }
-      heap.sort((a, b) => b - a);
-
-      if (branchAdded > 0) {
         steps.push({
           stepIndex: steps.length,
           stage: 2,
           line: anchors.branchPass || 3,
           codeLine: anchors.branchPass || 3,
-          decision: `🌿 展开直达分支：当前续航 ${curFuel}km 可无障碍路过加油站，收录油量入备用堆`,
-          message: '未遇续航阻碍，继续探测下一目标',
+          decision: `🌿 展开直达分支：路过加油站 S${i} (${s[0]}km)，收集 +${s[1]}L 油桶入备用堆，当前续航 ${curFuel}km`,
+          message: '未遇续航阻碍，路过即储备',
           slots,
           treeRoot: cloneStateDepTree(treeRoot),
-          variables: { curFuel, availableHeap: [...heap] },
-          metrics: { '当前续航': `${curFuel} km`, '可用备用油桶': `${heap.length} 桶` },
+          variables: { station: i, dist: s[0], gas: s[1], curFuel },
+          metrics: { '当前续航': `${curFuel} km`, '路过油量': `+${s[1]} 升` },
         });
+        i++;
       }
+      heap.sort((a, b) => b - a);
 
       if (heap.length === 0) {
         const failNode: UniversalTreeNode = {
@@ -8019,12 +8088,36 @@ export class ResourceGreedyStepCompiler {
       });
     }
 
+    if (curFuel >= target) {
+      const arriveNode: UniversalTreeNode = {
+        id: 'arrive',
+        r: 3,
+        c: 0,
+        val: `🏁 成功抵达目的地 (${target}km)，累计加油 ${stops} 次`,
+        status: 'completed',
+        children: [],
+      };
+      treeRoot.children.push(arriveNode);
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.arrive || 6,
+        codeLine: anchors.arrive || 6,
+        decision: `🏁 续航里程 ${curFuel}km 已覆盖目的地 ${target}km，目标达成！`,
+        message: '反悔贪心决策树推导成功，顺利抵达终点',
+        slots,
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { curFuel, target, stops },
+        metrics: { '最终续航': `${curFuel} km`, '加油次数': `${stops} 次` },
+      });
+    }
+
     treeRoot.status = 'completed';
     steps.push({
       stepIndex: steps.length,
       stage: 2,
-      line: anchors.branchRefuel || 5,
-      codeLine: anchors.branchRefuel || 5,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
       decision: `🏁 决策树全部拓扑分支求解收敛：最低加油次数为 ${stops} 次`,
       message: '树形决策网络完整验证大顶堆反悔贪心可行性',
       slots,
@@ -8033,20 +8126,18 @@ export class ResourceGreedyStepCompiler {
       metrics: { '最终最低加油次数': `${stops} 次` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 2,
-        line: anchors.branchRefuel || 5,
-        codeLine: anchors.branchRefuel || 5,
-        decision: '⚡ 反悔贪心不变量：任意时刻大顶堆所提供的油量均为未使用的历史最大值',
-        message: '无后效性与最优子结构严格成立',
-        slots,
-        treeRoot: cloneStateDepTree(treeRoot),
-        variables: { totalStops: stops },
-        metrics: { '不变量判定': '成立' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.verify || 9,
+      codeLine: anchors.verify || 9,
+      decision: '⚡ 反悔贪心不变量：任意时刻大顶堆所提供的油量均为未使用的历史最大值，树形决策网络证明贪心选择性质成立',
+      message: '无后效性与最优子结构严格成立',
+      slots,
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { totalStops: stops },
+      metrics: { '不变量判定': '成立' },
+    });
 
     return steps;
   }
@@ -8094,34 +8185,29 @@ export class ResourceGreedyStepCompiler {
     });
 
     while (curFuel < target) {
-      let added = 0;
       while (i < n && stations[i][0] <= curFuel) {
         heap.push(stations[i][1]);
-        added++;
-        i++;
-      }
-      heap.sort((a, b) => b - a);
-
-      if (added > 0) {
+        heap.sort((a, b) => b - a);
         stepNum++;
-        rowHeaders.push(`Step ${stepNum}: 收集S${i - 1}`);
-        matrix.push([curFuel, i, heap[0] || 0, stops, 1]); // 1=收集汽油
+        rowHeaders.push(`Step ${stepNum}: 收集S${i}`);
+        matrix.push([curFuel, i + 1, heap[0] || 0, stops, 1]); // 1=收集汽油
         steps.push({
           stepIndex: steps.length,
           stage: 3,
           line: anchors.fillStation || 4,
           codeLine: anchors.fillStation || 4,
-          decision: `📝 状态矩阵新增行：路过加油站 S${i - 1}，收纳汽油入堆，当前堆顶备用油桶 = ${heap[0]} 升`,
+          decision: `📝 状态矩阵新增行：路过加油站 S${i} (${stations[i][0]}km)，收纳 +${stations[i][1]}L 汽油入堆，当前堆顶备用油桶 = ${heap[0]} 升`,
           message: '表格更新已探查站点数与备用堆顶状态',
           slots,
           grid: matrix,
           matrix,
           rowLabels: rowHeaders,
           colLabels: colHeaders,
-          activeSlot: Math.min(i - 1, slots.length - 1),
-          variables: { curFuel, stationIdx: i, heapTop: heap[0] || 0, stops },
-          metrics: { '当前最远续航': `${curFuel} km`, '探查站点': `${i} 个`, '备用最大油桶': `${heap[0]} 升` },
+          activeSlot: i,
+          variables: { curFuel, stationIdx: i + 1, heapTop: heap[0] || 0, stops },
+          metrics: { '当前最远续航': `${curFuel} km`, '探查站点': `${i + 1} 个`, '备用最大油桶': `${heap[0]} 升` },
         });
+        i++;
       }
 
       if (heap.length === 0) {
@@ -8193,23 +8279,21 @@ export class ResourceGreedyStepCompiler {
       });
     }
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 3,
-        line: anchors.fillAction || 7,
-        codeLine: anchors.fillAction || 7,
-        decision: '⚡ 状态矩阵一致性校验：每一行的加油决策均对应当前堆顶最大增益',
-        message: '数学状态转移矩阵验证通过',
-        slots,
-        grid: matrix,
-        matrix,
-        rowLabels: rowHeaders,
-        colLabels: colHeaders,
-        variables: { totalStops: stops },
-        metrics: { '矩阵校验': '100% 吻合' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.verify || 8,
+      codeLine: anchors.verify || 8,
+      decision: '⚡ 状态矩阵一致性校验：每一行的加油决策均对应当前堆顶最大增益，数学状态转移矩阵验证通过',
+      message: '数学状态转移矩阵验证通过',
+      slots,
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      variables: { totalStops: stops },
+      metrics: { '矩阵校验': '100% 吻合' },
+    });
 
     return steps;
   }
@@ -8297,20 +8381,18 @@ export class ResourceGreedyStepCompiler {
       metrics: { '最终最低加油次数': ans !== -1 ? `${ans} 次` : '无法抵达 (-1)', '空间占用': `仅 O(${n})` },
     });
 
-    while (steps.length < 12) {
-      steps.push({
-        stepIndex: steps.length,
-        stage: 4,
-        line: anchors.retAns || 13,
-        codeLine: anchors.retAns || 13,
-        decision: '⚡ 对偶性验证：反悔堆贪心与一维动态规划的计算结果 100% 等价收敛',
-        message: '数学等价性与空间极限压缩严格成立',
-        slots,
-        memo: [...dp],
-        variables: { finalAns: ans },
-        metrics: { '等价性验证': '完全一致' },
-      });
-    }
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.verify || 14,
+      codeLine: anchors.verify || 14,
+      decision: '⚡ 对偶性验证：反悔堆贪心与一维动态规划的计算结果 100% 等价收敛，数学等价性与空间极限压缩严格成立',
+      message: '数学等价性与空间极限压缩严格成立',
+      slots,
+      memo: [...dp],
+      variables: { finalAns: ans },
+      metrics: { '等价性验证': '完全一致' },
+    });
 
     return steps;
   }
