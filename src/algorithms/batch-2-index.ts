@@ -124,6 +124,8 @@ import './categories/graph/trapping-water-ii-renderer';
 import './batch-30-index';
 // 左程云 Class 063: 双向广搜与双向搜索（折半搜索）(Batch 31)
 import './batch-31-index';
+// 左程云 Class 065: A* 算法与常见面试题 (Batch 32)
+import './batch-32-index';
 import './categories/graph/a-star-journey-renderer';
 import './categories/graph/couples-holding-hands-renderer';
 import './categories/graph/people-secret-renderer';

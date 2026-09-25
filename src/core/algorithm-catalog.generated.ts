@@ -2596,6 +2596,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 27,
     learningGoal: "掌握 A* 启发式搜索的核心设计、f/g/h 估价体系与 Dijkstra 算法的本质异同",
+    aliases: ["a-star-journey-065","a-star-class065","a-star-grid-pathfinding"],
   },
   {
     id: "dijkstra-basic",
@@ -3234,6 +3235,17 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "LeetCode 1462: 判断有向图中任意两门课程是否存在先修可达性。使用拓扑排序带动状态传递闭包，将多路查询优化为 O(1)。",
   },
   {
+    id: "eight-puzzle-065",
+    name: "八数码难题 (A* 逆序对剪枝)",
+    viewId: "algo-eight-puzzle-065-view",
+    category: "graph",
+    description: "左程云 Class 065 Code03：3x3 棋盘滑动，逆序对奇偶可解性判定与曼哈顿距离启发式 A* 搜索 (洛谷 P1379)",
+    icon: "📊",
+    difficulty: 2,
+    levelOrder: 99,
+    aliases: ["eight-puzzle-1379","luogu-p1379","eight-puzzle-class065"],
+  },
+  {
     id: "number-of-provinces",
     name: "大厂高频真题: 省份数量 (Number of Provinces)",
     viewId: "algo-number-of-provinces-view",
@@ -3274,6 +3286,17 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 3,
     levelOrder: 99,
+  },
+  {
+    id: "sliding-puzzle-065",
+    name: "滑动谜题 (A* 启发式搜索)",
+    viewId: "algo-sliding-puzzle-065-view",
+    category: "graph",
+    description: "左程云 Class 065 Code02：2x3 网格滑动谜题，曼哈顿距离启发函数 h 与 A* 优先队列定向加速寻路 (LeetCode 773)",
+    icon: "📊",
+    difficulty: 2,
+    levelOrder: 99,
+    aliases: ["sliding-puzzle-773","leetcode-773","sliding-puzzle-class065"],
   },
   {
     id: "snacks-ways-buy-tickets-063",
@@ -3561,7 +3584,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 6202,
     learningGoal: "掌握 BFS 结合贪心首字符剪枝的高效状态空间搜索，杜绝同集合贴纸的不同排列导致的指数爆炸",
-    aliases: ["stickers-to-spell-word","stickers-691"],
+    aliases: ["stickers-to-spell-word","stickers-691","stickers-class065"],
   },
   {
     id: "minimum-obstacles-062",

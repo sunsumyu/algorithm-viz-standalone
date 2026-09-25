@@ -220,7 +220,7 @@ export function buildStickers062Steps(preset: string = 'classic_thehat'): Sticke
 
 export const stickersToSpellWord062Visualizer = registerDeclarativeAlgorithm<StickersStep>({
   id: 'stickers-to-spell-word-062',
-  aliases: ['stickers-to-spell-word', 'stickers-691'],
+  aliases: ['stickers-to-spell-word', 'stickers-691', 'stickers-class065'],
   name: '贴纸拼词与状态空间广搜 (Class 062)',
   category: 'graph',
   icon: '🏷️',

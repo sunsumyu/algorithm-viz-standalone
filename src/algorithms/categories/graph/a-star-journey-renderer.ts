@@ -455,6 +455,7 @@ registerAlgorithm({
   Visualizer,
   difficulty: 3,
   levelOrder: 27,
+  aliases: ['a-star-journey-065', 'a-star-class065', 'a-star-grid-pathfinding'],
   learningGoal: '掌握 A* 启发式搜索的核心设计、f/g/h 估价体系与 Dijkstra 算法的本质异同',
 });
 
