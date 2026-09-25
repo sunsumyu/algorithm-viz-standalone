@@ -143,6 +143,14 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     const feeInput = root?.querySelector('#dp-input-fee') as HTMLInputElement | null;
     const wordDictInput = root?.querySelector('#dp-input-wordDict') as HTMLInputElement | null;
     const directionInput = root?.querySelector('#dp-input-direction') as HTMLSelectElement | HTMLInputElement | null;
+    const rowInput = root?.querySelector('#dp-input-row') as HTMLInputElement | null;
+    const colInput = root?.querySelector('#dp-input-column') as HTMLInputElement | null;
+    const maxMoveInput = root?.querySelector('#dp-input-maxMove') as HTMLInputElement | null;
+    const startRowInput = root?.querySelector('#dp-input-startRow') as HTMLInputElement | null;
+    const startColInput = root?.querySelector('#dp-input-startColumn') as HTMLInputElement | null;
+    const minProfitInput = root?.querySelector('#dp-input-minProfit') as HTMLInputElement | null;
+    const groupInput = root?.querySelector('#dp-input-group') as HTMLInputElement | null;
+    const profitInput = root?.querySelector('#dp-input-profit') as HTMLInputElement | null;
 
     if (numsInput) inputObj.nums = parseNums(numsInput.value, [1, 2, 3]);
     if (pricesInput) inputObj.prices = parseNums(pricesInput.value, [7, 1, 5, 3, 6, 4]);
@@ -163,6 +171,23 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     if (feeInput) inputObj.fee = parseInt(feeInput.value, 10) || 2;
     if (wordDictInput) inputObj.wordDict = parseWords(wordDictInput.value, ['leet', 'code']);
     if (directionInput) inputObj.direction = directionInput.value;
+    if (rowInput) inputObj.row = parseInt(rowInput.value, 10) || 0;
+    if (colInput) inputObj.column = parseInt(colInput.value, 10) || 0;
+    if (maxMoveInput) inputObj.maxMove = parseInt(maxMoveInput.value, 10) || 2;
+    if (startRowInput) inputObj.startRow = parseInt(startRowInput.value, 10) || 0;
+    if (startColInput) inputObj.startColumn = parseInt(startColInput.value, 10) || 0;
+    if (minProfitInput) inputObj.minProfit = parseInt(minProfitInput.value, 10) || 3;
+    if (groupInput) inputObj.group = parseNums(groupInput.value, [2, 2]);
+    if (profitInput) inputObj.profit = parseNums(profitInput.value, [2, 3]);
+
+    // paths-divisible-by-k 默认网格
+    if (specId === 'paths-divisible-by-k' && !inputObj.grid) {
+      inputObj.grid = [
+        [5, 2, 4],
+        [3, 0, 5],
+        [0, 7, 2],
+      ];
+    }
 
     // 特殊网格默认障碍处理
     if (specId === 'unique-paths-ii' && !inputObj.grid) {
@@ -492,8 +517,9 @@ const demos: DemoDef[] = [
   {
     id: 'profitable-schemes',
     name: '盈利计划',
-    description: '三维计数 DP：在 n 名员工和最小利润限制下的工作分配方案数。',
+    description: '三维计数 DP：在 n 名员工和最小利润限制下的工作分配方案数 (LeetCode 879)。',
     icon: '🏢',
+    aliases: ['profitable-schemes-069', 'profitable-schemes-class069', 'leetcode-879'],
     inputs: [
       { id: 'n', label: '员工数 n', value: '5', width: 90 },
       { id: 'minProfit', label: '最小利润', value: '3', width: 90 },
@@ -502,6 +528,75 @@ const demos: DemoDef[] = [
     ],
     examples: [{ label: '示例', values: { n: '5', minProfit: '3', group: '2,2', profit: '2,3' } }],
     build: makeEngineBuilder('profitable-schemes'),
+  },
+  {
+    id: 'knight-probability',
+    name: '骑士在棋盘上的概率',
+    description: '三维概率 DP：求国际象棋骑士走 k 步后仍留在 n x n 棋盘上的概率 (LeetCode 688)。',
+    icon: '♞',
+    aliases: ['knight-probability-069', 'knight-probability-class069', 'leetcode-688'],
+    inputs: [
+      { id: 'n', label: '棋盘大小 n', value: '3', width: 90 },
+      { id: 'k', label: '步数 k', value: '2', width: 80 },
+      { id: 'row', label: '起始行 row', value: '0', width: 90 },
+      { id: 'column', label: '起始列 col', value: '0', width: 90 },
+    ],
+    examples: [
+      { label: 'n=3, k=2, (0,0)', values: { n: '3', k: '2', row: '0', column: '0' } },
+      { label: 'n=1, k=0, (0,0)', values: { n: '1', k: '0', row: '0', column: '0' } },
+    ],
+    build: makeEngineBuilder('knight-probability'),
+  },
+  {
+    id: 'out-of-boundary-paths',
+    name: '出界的路径数',
+    description: '三维计数 DP：在 m x n 网格中移动至多 maxMove 步将球移出边界的路径总数 (LeetCode 576)。',
+    icon: '⚽',
+    aliases: ['out-of-boundary-paths-069', 'out-of-boundary-class069', 'leetcode-576'],
+    inputs: [
+      { id: 'm', label: '行数 m', value: '2', width: 80 },
+      { id: 'n', label: '列数 n', value: '2', width: 80 },
+      { id: 'maxMove', label: '最大步数', value: '2', width: 90 },
+      { id: 'startRow', label: '起始行', value: '0', width: 80 },
+      { id: 'startColumn', label: '起始列', value: '0', width: 80 },
+    ],
+    examples: [
+      { label: '2x2, move=2, (0,0)', values: { m: '2', n: '2', maxMove: '2', startRow: '0', startColumn: '0' } },
+      { label: '1x3, move=3, (0,1)', values: { m: '1', n: '3', maxMove: '3', startRow: '0', startColumn: '1' } },
+    ],
+    build: makeEngineBuilder('out-of-boundary-paths'),
+  },
+  {
+    id: 'paths-divisible-by-k',
+    name: '矩阵中和能被 K 整除的路径',
+    description: '三维网格余数 DP：从左上到右下，求路径和模 k 余数为 0 的路径数 (LeetCode 2435)。',
+    icon: '🔢',
+    aliases: ['paths-divisible-by-k-069', 'paths-divisible-class069', 'leetcode-2435'],
+    inputs: [
+      { id: 'm', label: '行数 m', value: '3', width: 80 },
+      { id: 'n', label: '列数 n', value: '3', width: 80 },
+      { id: 'k', label: '除数 k', value: '3', width: 80 },
+    ],
+    examples: [
+      { label: '3x3, k=3', values: { m: '3', n: '3', k: '3' } },
+    ],
+    build: makeEngineBuilder('paths-divisible-by-k'),
+  },
+  {
+    id: 'scramble-string',
+    name: '扰乱字符串',
+    description: '三维区间 DP：判断两个等长字符串是否可以通过二叉树切分扰乱得到 (LeetCode 87)。',
+    icon: '🔀',
+    aliases: ['scramble-string-069', 'scramble-string-class069', 'leetcode-87'],
+    inputs: [
+      { id: 's1', label: '原字符串 s1', value: 'great', width: 140 },
+      { id: 's2', label: '目标字符串 s2', value: 'rgeat', width: 140 },
+    ],
+    examples: [
+      { label: 's1="great", s2="rgeat"', values: { s1: 'great', s2: 'rgeat' } },
+      { label: 's1="abcde", s2="caebd"', values: { s1: 'abcde', s2: 'caebd' } },
+    ],
+    build: makeEngineBuilder('scramble-string'),
   },
   numsDef('house-robber', '打家劫舍', '不相邻房屋最大金额：dp[i] = max(dp[i-1], dp[i-2] + nums[i])。', '🏠', 'house-robber', '1,2,3,1'),
   numsDef('house-robber-ii', '打家劫舍 II', '环形房屋破圈为双区间：[0..n-2] 与 [1..n-1] 取最大值。', '🏘️', 'house-robber-ii', '2,3,2'),
@@ -827,6 +922,10 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'article', id: 'multiple-knapsack-theory' },
   { type: 'demo', id: 'multiple-knapsack' },
   { type: 'demo', id: 'profitable-schemes' },
+  { type: 'demo', id: 'knight-probability' },
+  { type: 'demo', id: 'out-of-boundary-paths' },
+  { type: 'demo', id: 'paths-divisible-by-k' },
+  { type: 'demo', id: 'scramble-string' },
   { type: 'article', id: 'knapsack-summary' },
   { type: 'demo', id: 'house-robber' },
   { type: 'demo', id: 'house-robber-ii' },
