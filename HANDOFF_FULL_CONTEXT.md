@@ -353,3 +353,66 @@
 2. **样式隔离铁律**：
    - 绝不要在全局样式中使用宽泛的包含选择器（如 `[class*="-h"]`、`[class*="-s"]`）；
    - 代码终端与高亮系统（`.algo-code-line`, `.algo-code-ident`, `.dark-terminal-auto-frame`）具有神圣的暗色封闭性，任何亮色归一化逻辑都不得突破该边界。
+
+---
+
+## 十、第三阶段：双版本长处综合整合（Bi-Version Synthesis）与 Class 062 专题接入
+
+### 1. 核心执行原则（AGENTS.md 死门禁）
+根据工程守则，严禁另起炉灶建立平行重复文件，更严禁粗暴删除库内旧版本。必须全面执行双版本长处综合整合（Bi-Version Synthesis, NOT Deletion）：
+- **旧版本长处**：细致打磨的参数输入框（`inputs`）、丰富的典型预设用例（`presets`）、成熟稳定的 SVG/Canvas 渲染器与边界处理；
+- **新版本长处**：体系化名师讲义（`problemHtml`）、Java/C++/Python/JS 四语言精准行号联动（`codeLanguages`/`codeLine`）、深度解构的演化阶段（Stage 1-4）；
+- **单一事实来源与别名统合**：统合两者为单一事实来源，保留主 ID 并将旧/新版别名挂载至 `aliases: [...]`。
+
+### 2. 已完成整合与新增提交明细
+
+#### Commit `c7f8516`: 树族与链表族双版本整合 & 资源贪心编译器 & 声明式表现层门禁
+- **树族与链表族整合**：
+  - 二叉树层序遍历（`binary-tree-level-order-traversal` 融合 LeetCode 102 双版本，兼容 `level-order-traversal-class` 别名）；
+  - 最近公共祖先（`lowest-common-ancestor` 融合 LeetCode 236 双版本，兼容 `lowest-common-ancestor-class` 别名）；
+  - 反转链表（`reverse-linked-list` 融合 LeetCode 206 双版本）；
+  - 合并两个有序链表（`merge-two-sorted-lists` 融合 LeetCode 21 双版本）；
+  - K 个一组反转链表（`reverse-nodes-in-k-group` 融合 LeetCode 25 双版本）。
+- **核心编译器建设**：
+  - 新增 `src/core/strategies/resource-greedy-step-compiler.ts`（资源贪心统一编译器，LOC < 120 标准身材）。
+- **新增表现层门禁**：
+  - 新增 `src/core/renderers/declarative-presentation-contract.gate.test.ts`，全量扫描已注册声明式算法 Card 1 DOM 表现层契约（零标题嵌入、零指标镜像重复、零决策框套娃）。
+
+#### Commit `ec517fa`: 最后一块石头的重量 II（Last Stone Weight II）双版本统合
+- **问题与背景**：库内原存在 `last-stone-weight-ii` 与 `last-stone-weight-ii-standard` 两个版本。
+- **整合举措**：
+  - 确立 `last-stone-weight-ii` 为全库唯一主 ID，别名兼容 `last-stone-weight-ii-standard`；
+  - 综合旧版本细腻的参数输入和预设用例，以及新版本的 4 阶段演化讲义与四语言代码高亮；
+  - 更新 `knapsack-family-strategy.ts`、`model-repository.ts`、`problem-dimension-resolver.ts` 与 `dp-generated-renderers.ts`。
+
+#### Commit `748aada`: 左程云 Class 062 宽度优先遍历及其扩展专题接入 (Batch 30)
+- **专题目录**：`src/algorithms/categories/graph/graph-062/`
+- **新增 6 个算法垂直切片**：
+  1. `as-far-from-land-062-renderer.ts` (LeetCode 1162 · 地图分析，多源 BFS，海洋到陆地最大距离)
+  2. `stickers-to-spell-word-062-renderer.ts` (LeetCode 691 · 贴纸拼词，字符串状态空间剪枝 BFS)
+  3. `minimum-obstacles-062-renderer.ts` (LeetCode 2290 · 到达角落需要移除的最小障碍物数，0-1 双端队列 BFS)
+  4. `minimum-cost-valid-path-062-renderer.ts` (LeetCode 1368 · 网格中有效路径最小代价，0-1 BFS 双端队列扩展)
+  5. `trapping-rain-water-ii-062-renderer.ts` (LeetCode 407 · 二维接雨水 II，小根堆外围向内收缩，主 ID `trapping-rain-water-ii-062`，别名 `trapping-rain-water-ii-class062`，无缝避开已有主 ID `trapping-water-ii` 冲突并互补)
+  6. `word-ladder-ii-062-renderer.ts` (LeetCode 126 · 单词接龙 II，分层 BFS 确定距离 + DFS 逆向回溯所有最短路径)
+- **支持套件**：
+  - `graph-062-shared.ts`：网格/队列/堆/字符串通用状态空间渲染器与 DOM 构建器；
+  - `graph-062-stage-codes.ts`：Java / C++ / Python / JS 四语言专业级高保真代码实现；
+  - `graph-062-problem-content.ts`：名师讲义、核心解题思想与复杂度分析；
+  - `graph-062.test.ts`：13 个测试套件，全面覆盖 6 题的步进生成、DOM 挂载与边界特判；
+  - `src/algorithms/batch-30-index.ts`：批量导入索引，已在 `src/algorithms/batch-2-index.ts` 接入。
+
+---
+
+## 十一、当前最新工程状态与门禁验证
+
+| 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
+| :--- | :--- | :--- | :--- |
+| **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.6s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 4ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 54.8s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 29.8s |
+| **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (619 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 81.4s (自动化拦截并放行) |
+| **Git 状态** | `git status` | **Clean (ahead by 3 commits)** | `748aada` 固化落盘 |
