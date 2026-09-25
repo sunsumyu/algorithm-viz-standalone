@@ -460,6 +460,21 @@
 - **全量条目与新鲜度**：
   - `meta:sync` 自动同步全库，目录算法总条目数提升至 **633 题**。
 
+#### Commit `f888d18`: 左程云 Class 070 子数组最大累加和与子矩阵最大累加和专题接入与 636 门禁
+- **专题目录**：`src/algorithms/categories/dynamic-programming/dp-070/` 与 `dp-generated-renderers.ts`
+- **四维查重与长处综合**：
+  - `max-subarray` (LeetCode 53 · 最大子数组和)：库内已有 `greedy` 分类下的全阶段演示，统合别名 `['max-subarray-greedy', 'kadane-algorithm', 'leetcode-53']`；
+  - `max-subarray-dp` (LeetCode 53 · DP 视角)：动态规划分类下的标准一维 DP，统合别名 `['max-subarray-dp-070', 'max-subarray-class070', 'leetcode-53-dp']`，形成贪心负和清零与 DP 前缀累加的完美对比；
+  - `max-circular-subarray` (LeetCode 918 · 环形子数组的最大和)：双向 Kadane 算法，常规内部最大子段和与跨边界（总和 - 最小子段和）取最大，全负数特判，别名 `['max-circular-subarray-070', 'max-circular-subarray-class070', 'leetcode-918']`；
+  - `max-product-subarray` (LeetCode 152 · 乘积最大子数组)：正负双轨动态规划状态维护，遇到负数对换 `maxDp` 与 `minDp`，别名 `['max-product-subarray-070', 'max-product-subarray-class070', 'leetcode-152']`；
+  - `magic-scroll` (魔法卷轴问题)：前后缀分解 + Kadane 变体，至多两次变零操作，逐分界点高密度探索，别名 `['magic-scroll-070', 'magic-scroll-class070', 'magic-scroll-problem']`。
+- **关键架构优化**：
+  - 在 `src/algorithms/categories/dynamic-programming/dp-generated-renderers.ts` 的 `makeEngineBuilder` 中补齐 `defaultNums` 防御性映射，支持默认值、`numsInput` 与对象传入三种模式；
+  - 在 `max-circular-subarray.spec.ts`、`max-product-subarray.spec.ts`、`magic-scroll.spec.ts` 中补充精准 1-based `codeLine`；
+  - `src/algorithms/categories/dynamic-programming/dp-070/dp-070.test.ts` 19 个单元测试用例 100% 绿灯通过。
+- **全量条目与新鲜度**：
+  - `meta:sync` 自动同步全库，目录算法总条目数从 633 题提升至 **636 题**。
+
 ---
 
 ## 十一、当前最新工程状态与门禁验证
@@ -467,17 +482,19 @@
 | 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
 | :--- | :--- | :--- | :--- |
 | **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
-| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.0s |
-| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 5ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 41.3s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 20.5s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 2.0s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 9ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 53.0s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 32.3s |
 | **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
 | **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
 | **Class 065 专题测试** | `src/algorithms/categories/graph/graph-065/graph-065.test.ts` | **PASS (10/10 tests)** | 全部通过 |
 | **Class 066 专题测试** | `src/algorithms/categories/dynamic-programming/dp-066/dp-066.test.ts` | **PASS (13/13 tests)** | 全部通过 |
 | **Class 069 专题测试** | `src/algorithms/categories/dynamic-programming/dp-069/dp-069.test.ts` | **PASS (11/11 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (633 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 66.0s (全绿通过) |
+| **Class 070 专题测试** | `src/algorithms/categories/dynamic-programming/dp-070/dp-070.test.ts` | **PASS (19/19 tests)** | 全部通过 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (636 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 86.6s (全绿通过) |
+
 
 
 
