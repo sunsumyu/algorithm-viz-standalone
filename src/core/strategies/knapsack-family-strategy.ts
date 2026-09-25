@@ -26,7 +26,7 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
   public canHandle(modelId: string): boolean {
     return (
       modelId === this.modelId ||
-      (this.modelId === 'last-stone-weight-ii' && (modelId === 'last-stone-weight-2' || modelId === 'last_stone_weight_ii')) ||
+      (this.modelId === 'last-stone-weight-ii' && (modelId === 'last-stone-weight-2' || modelId === 'last_stone_weight_ii' || modelId === 'last-stone-weight-ii-standard')) ||
       (this.modelId === 'complete-knapsack' && (modelId === 'unbounded-knapsack' || modelId === 'complete_knapsack')) ||
       (this.modelId === 'coin-change-ii' && (modelId === 'coin-change-2' || modelId === 'coin2')) ||
       (this.modelId === 'coin-change' && modelId === 'coin1') ||

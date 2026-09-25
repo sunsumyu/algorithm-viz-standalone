@@ -160,6 +160,7 @@ export class AlgorithmModelRepository {
     ['coin-change-ii', coinChange2Model as IYamlAlgorithmModel],
     ['last-stone-weight-ii', lastStoneWeightIIModel as IYamlAlgorithmModel],
     ['last-stone-weight-2', lastStoneWeightIIModel as IYamlAlgorithmModel],
+    ['last-stone-weight-ii-standard', lastStoneWeightIIModel as IYamlAlgorithmModel],
     ['ones-and-zeroes', onesAndZeroesModel as IYamlAlgorithmModel],
     ['ones-and-zeros', onesAndZeroesModel as IYamlAlgorithmModel],
     ['multiple-knapsack', multipleKnapsackModel as IYamlAlgorithmModel],

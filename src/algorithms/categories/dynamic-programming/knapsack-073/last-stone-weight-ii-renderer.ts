@@ -618,18 +618,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   },
 });
 
+// 注：last-stone-weight-ii-standard 已迁移到顶层抽象架构（YAML + Strategy + UniversalStageVisualizer）
+// 由 dp-generated-renderers.ts 统一注册，此文件不再单独注册
+// 旧版课族方言实现保留作为参考，但不再使用
+
 export const LastStoneWeightIIVisualizer = Visualizer;
 
-registerAlgorithm({
-  id: 'last-stone-weight-ii-standard',
-  name: '最后一块石头的重量 II',
-  viewId: 'algo-last-stone-weight-ii-standard-view',
-  category: 'dynamic-programming',
-  description: '左程云算法通关课 Class 073 Code04：LeetCode 1049 最后一块石头，两两粉碎对消等价于两堆差值极小化，归约为 <= sum/2 01 背包',
-  icon: '🪨',
-  template,
-  Visualizer,
-  difficulty: 2,
-  levelOrder: 80,
-  learningGoal: '掌握碰撞粉碎过程的代数符号转化、最接近半和 near 的求解以及最终结果 sum-2*near 的推导',
-});

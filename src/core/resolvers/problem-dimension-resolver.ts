@@ -49,6 +49,7 @@ export class ProblemDimensionResolver {
     'combination-sum-iv',
     'target-sum',
     'last-stone-weight-ii',
+    'last-stone-weight-ii-standard',
     'partition-equal-subset-sum',
     'multiple-knapsack',
     'candy',
