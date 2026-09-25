@@ -409,6 +409,24 @@
   - `graph-063.test.ts`：15 个单元测试套件全部通过；
   - `src/algorithms/batch-31-index.ts`：批量索引接入 `batch-2-index.ts`。
 
+#### Commit `85ed53a`: 左程云 Class 066 从递归入手一维动态规划专题接入与双版本统合
+- **专题目录**：`src/algorithms/categories/dynamic-programming/dp-066/`
+- **新增 4 个核心算法垂直切片**：
+  1. `min-cost-tickets-066-renderer.ts` (LeetCode 983 · 最低票价，1/7/30天跳跃逆向动态规划)
+  2. `decode-ways-ii-066-renderer.ts` (LeetCode 639 · 解码方法 II，带 '*' 通配符字符讨论与空间压缩一维 DP)
+  3. `ugly-number-ii-066-renderer.ts` (LeetCode 264 · 丑数 II，三指针多路有序链表动态归并 DP)
+  4. `unique-substrings-wraparound-066-renderer.ts` (LeetCode 467 · 环绕字符串中唯一的子字符串，26 字母结尾最长连续长度一维 DP 与数学归约)
+- **双版本长处综合整合（Bi-Version Synthesis）已有 3 题别名统合**：
+  1. `fibonacci`：补充别名 `['fibonacci-066', 'fibonacci-class066', 'leetcode-509']`；
+  2. `decode-ways`：补充别名 `['decode-ways-066', 'decode-ways-class066', 'leetcode-91']`；
+  3. `longest-valid-parentheses`：补充别名 `['longest-valid-parentheses-066', 'longest-valid-parentheses-class066', 'leetcode-32']`；
+- **支持套件**：
+  - `dp-066-shared.ts`：一维 DP 槽位条、丑数三指针步进沙盘、26 字母结尾槽位表；
+  - `dp-066-stage-codes.ts`：四语言（Java / C++ / Python / JS）专业实现与精细 1-based 行号字典；
+  - `dp-066-problem-content.ts`：左神核心解题讲义、跳跃归约与时空复杂度剖析；
+  - `dp-066.test.ts`：13 个单元测试用例 100% 覆盖并全绿通过；
+  - `src/algorithms/batch-dynamic-programming-index.ts`：动态规划批次入口挂载模块。
+
 ---
 
 ## 十一、当前最新工程状态与门禁验证
@@ -416,11 +434,13 @@
 | 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
 | :--- | :--- | :--- | :--- |
 | **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
-| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 2.5s |
-| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 15ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 75.3s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 41.6s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.8s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 7ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 60.1s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 37.8s |
 | **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
 | **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (623 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 114.5s (全绿通过) |
+| **Class 066 专题测试** | `src/algorithms/categories/dynamic-programming/dp-066/dp-066.test.ts` | **PASS (13/13 tests)** | 全部通过 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (627 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 86.4s (全绿通过) |
+
