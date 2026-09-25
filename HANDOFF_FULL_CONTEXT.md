@@ -427,6 +427,21 @@
   - `dp-066.test.ts`：13 个单元测试用例 100% 覆盖并全绿通过；
   - `src/algorithms/batch-dynamic-programming-index.ts`：动态规划批次入口挂载模块。
 
+#### Commit `dd7dd5a`: 左程云 Class 065 A* 算法与常见面试题专题接入与别名统合
+- **专题目录**：`src/algorithms/categories/graph/graph-065/`
+- **新增 2 个核心算法垂直切片**：
+  1. `sliding-puzzle-065-renderer.ts` (LeetCode 773 · 滑动谜题，2x3 网格 A* 启发式搜索，曼哈顿距离 $h = \sum |r-tr| + |c-tc|$)
+  2. `eight-puzzle-065-renderer.ts` (洛谷 P1379 · 八数码难题，3x3 棋盘滑动，逆序对奇偶剪枝 + 曼哈顿启发式定向寻路)
+- **已有算法长处综合与别名统合**：
+  1. `a-star-journey`：补充别名 `['a-star-journey-065', 'a-star-class065', 'a-star-grid-pathfinding']`；
+  2. `stickers-to-spell-word-062`：补充别名 `['stickers-to-spell-word', 'stickers-691', 'stickers-class065']`；
+- **支持套件**：
+  - `graph-065-shared.ts`：2x3 与 3x3 棋盘网格动态沙盘、曼哈顿估价与逆序对奇偶标识组件；
+  - `graph-065-stage-codes.ts`：四语言（Java / C++ / Python / JS）专业实现与 1-based 行号字典；
+  - `graph-065-problem-content.ts`：名师讲义、曼哈顿可采纳性数学证明与时空复杂度剖析；
+  - `graph-065.test.ts`：10 个单元测试用例全绿通过；
+  - `src/algorithms/batch-32-index.ts`：通过 `batch-2-index.ts` 接入全库。
+
 ---
 
 ## 十一、当前最新工程状态与门禁验证
@@ -434,13 +449,15 @@
 | 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
 | :--- | :--- | :--- | :--- |
 | **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
-| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.8s |
-| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 7ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 60.1s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 37.8s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.0s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 5ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 47.7s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 21.5s |
 | **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
 | **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
+| **Class 065 专题测试** | `src/algorithms/categories/graph/graph-065/graph-065.test.ts` | **PASS (10/10 tests)** | 全部通过 |
 | **Class 066 专题测试** | `src/algorithms/categories/dynamic-programming/dp-066/dp-066.test.ts` | **PASS (13/13 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (627 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 86.4s (全绿通过) |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (629 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 69.6s (全绿通过) |
+
 
