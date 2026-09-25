@@ -95,28 +95,7 @@ export function buildCopyRandomList035Steps(): CopyRandomList035Step[] {
   return steps;
 }
 
-export const copyRandomList035Visualizer = registerDeclarativeAlgorithm<CopyRandomList035Step>({
-  id: 'copy-random-list-035',
-  name: '复杂链表的深拷贝 (Class 035)',
-  category: 'linked-list',
-  difficulty: 'medium',
-  problemContent: LINKED_LIST_034_038_PROBLEMS.copyRandomList035,
-  sourceCodes: COPY_RANDOM_LIST_035_CODES,
-  generateSteps: buildCopyRandomList035Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderCopyRandomBoard(
-          step.nodes,
-          step.stage,
-          step.desc
-        )}
-        ${renderFormulaCard(
-          '原地插桩法克隆链表核心恒等式',
-          '\\text{cur.next.random} = \\text{cur.random.next}',
-          '利用相邻位置关系替代哈希表的空间查找开销，使得空间复杂度从 $O(N)$ 直降至真正的 $O(1)$ 常数空间。'
-        )}
-      </div>
-    `;
-  },
-});
+// 【双版本长处整合】已整合至 ../copy-list-random-pointer-042-renderer.ts
+// 唯一事实来源：copy-list-random-pointer-042 (aliases: ['copy-random-list-035'])
+import { copyListRandomPointer042Visualizer } from '../copy-list-random-pointer-042-renderer';
+export const copyRandomList035Visualizer = copyListRandomPointer042Visualizer;

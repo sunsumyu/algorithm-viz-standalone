@@ -18,6 +18,74 @@ import { SplitterEngine, SplitterStorage } from './splitter-engine';
 import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { registerAlgorithm } from './registry';
 
+/**
+ * 架构级沙盘纯净化与防套娃卫士 (Card 1 DOM Purity Enforcement)
+ * 彻底根除业务渲染器在 Card 1 内部越权拼装的标题、状态药丸网格与决策卡，
+ * 杜绝与 Card 2/Card 3 的上下镜像重复，并消除多余固定内边距避免视口溢出被截断。
+ */
+export function sanitizeSandboxDom(sandboxContainer: HTMLElement | null): void {
+  if (!sandboxContainer) return;
+
+  // 1. 剥离误植在 Card 1 内部的标题 (h1~h6) 及其纯头部容器
+  const headings = Array.from(sandboxContainer.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+  headings.forEach((heading) => {
+    const parent = heading.parentElement;
+    // 若父容器仅为标题+徽章条且不含真实数据结构实体，则整体移除
+    if (
+      parent &&
+      parent !== sandboxContainer &&
+      parent.children.length <= 3 &&
+      parent.querySelector('svg, canvas, table, pre, code, .node, .cell') === null
+    ) {
+      parent.remove();
+    } else {
+      heading.remove();
+    }
+  });
+
+  // 2. 剥离误植在 Card 1 内部的冗余决策卡片与指标面板
+  const candidateDivs = Array.from(sandboxContainer.querySelectorAll<HTMLElement>('div'));
+  candidateDivs.forEach((el) => {
+    // 绝对守门：若元素包含核心视觉实体，不可移除
+    if (el.querySelector('svg, canvas, table, pre, code, .node, .cell, input, button') !== null) {
+      return;
+    }
+
+    const text = (el.textContent || '').trim();
+
+    // 判定 1：误植的底部状态/决策卡片（如 "🎯 状态: ..." 或包含 "🎯"）
+    if (/🎯\s*(状态|决策)/.test(text) && el.children.length <= 4) {
+      el.remove();
+      return;
+    }
+
+    // 判定 2：误植的 flex 药丸指标面板（renderMetricsPanel 产生的多个 "k: v" 药丸集合）
+    if (el.children.length >= 2 && el.children.length <= 8) {
+      const isMetricPillContainer = Array.from(el.children).every((ch) => {
+        const chText = (ch.textContent || '').trim();
+        return chText.includes(':') && chText.length < 50 && ch.querySelectorAll('*').length <= 3;
+      });
+      if (isMetricPillContainer && /(当前|节点|高度|指标|跨度|最左|最右|leaf|Token|阶段|平衡|收益|方向|状态)/.test(text)) {
+        el.remove();
+        return;
+      }
+    }
+  });
+
+  // 3. 根容器自适应修正：若顶层单一包裹 div 写死了固定 padding/margin 导致溢出，予以自适应优化
+  if (sandboxContainer.children.length === 1) {
+    const singleChild = sandboxContainer.firstElementChild as HTMLElement | null;
+    if (singleChild && singleChild.tagName === 'DIV' && singleChild.querySelector('svg, canvas') !== null) {
+      if (singleChild.style.padding === '16px' || singleChild.style.padding === '20px') {
+        singleChild.style.padding = '8px';
+      }
+      if (singleChild.style.background === '#f8fafc' || singleChild.style.background === 'rgb(248, 250, 252)') {
+        singleChild.style.background = 'transparent';
+      }
+    }
+  }
+}
+
 export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
   protected codeLines: string[] = [];
   protected spec: DeclarativeAlgorithmSpec<TStep>;
@@ -140,8 +208,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       });
     });
 
-    // 绑定 Shared 预设案例下拉选框交互
-    PresetCasePresenter.bindSelect(this.root, this.spec.presets, () => {
+    // 绑定 Shared 预设案例下拉选框交互（顶层抽象规约）
+    const resolvedPresets = PresetCasePresenter.resolvePresets(this.spec.presets, this.spec.inputs);
+    PresetCasePresenter.bindSelect(this.root, resolvedPresets, () => {
       this.start();
     });
 
@@ -590,7 +659,14 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         const curStep = this.steps[this.currentIndex] as any;
         if (curStep.metrics) {
           Object.entries(curStep.metrics).forEach(([key, val]) => {
-            const el = this.metricElements.get(key) || (this.root?.querySelector(`#metric-${key}`) as HTMLElement | null);
+            let el: HTMLElement | null | undefined = this.metricElements.get(key);
+            if (!el && this.root) {
+              try {
+                el = (this.root.querySelector(`#metric-${CSS.escape(key)}`) || this.root.querySelector(`#${CSS.escape(key)}`)) as HTMLElement | null;
+              } catch {
+                el = null;
+              }
+            }
             if (el) el.textContent = String(val);
           });
         }
@@ -652,6 +728,10 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     }
   }
 
+  protected sanitizeSandboxDom(): void {
+    sanitizeSandboxDom(this.sandboxContainer);
+  }
+
   /**
    * 渲染单步状态
    */
@@ -676,6 +756,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           stageId: this.currentStageId,
           is3DMode: this.is3DMode,
         });
+        sanitizeSandboxDom(this.sandboxContainer);
       } catch (err) {
         this.renderPipelineError(this.sandboxContainer, err, '主视觉沙盘 (Card 1)');
       }
@@ -864,10 +945,14 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     // 2. 更新通用实时解说文本与指标卡片
     if (anyStep.metrics && typeof anyStep.metrics === 'object') {
       Object.entries(anyStep.metrics).forEach(([key, val]) => {
-        const metricEl =
-          this.metricElements.get(key) ||
-          (this.root?.querySelector(`#metric-${key}`) as HTMLElement | null) ||
-          (this.root?.querySelector(`#${key}`) as HTMLElement | null);
+        let metricEl: HTMLElement | null | undefined = this.metricElements.get(key);
+        if (!metricEl && this.root) {
+          try {
+            metricEl = (this.root.querySelector(`#metric-${CSS.escape(key)}`) || this.root.querySelector(`#${CSS.escape(key)}`)) as HTMLElement | null;
+          } catch {
+            metricEl = null;
+          }
+        }
         if (metricEl) {
           metricEl.textContent = String(val);
         }
@@ -1062,6 +1147,12 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   };
 }
 
+const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
+
+export function getDeclarativeSpecs(): Map<string, DeclarativeAlgorithmSpec<any>> {
+  return DECLARATIVE_SPECS;
+}
+
 /**
  * 高杠杆一站式声明式算法注册入口 (Deep Module Seam)
  * 接受纯粹的领域算法声明式规范 (DeclarativeAlgorithmSpec)，
@@ -1073,6 +1164,7 @@ export function registerDeclarativeAlgorithm<TStep extends StepBase = any>(
   template: string;
   Visualizer: new () => DeclarativeAlgorithmVisualizer<TStep>;
 } {
+  DECLARATIVE_SPECS.set(spec.id, spec);
   const result = createDeclarativeVisualizer(spec);
   registerAlgorithm({
     id: spec.id,

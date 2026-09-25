@@ -78,6 +78,7 @@ export class ProblemDimensionResolver {
     'shortest-unsorted-subarray',
     'smallest-range-covering-elements-from-k-lists',
     'largest-palindromic-number',
+    'min-cost-hire-workers',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -246,6 +247,22 @@ export class ProblemDimensionResolver {
       const points = this.toArray(params.points);
       m = 1;
       n = points.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.quality !== undefined) {
+      const q = this.toArray(params.quality);
+      m = 1;
+      n = q.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.classes !== undefined) {
+      const cls = this.toArray(params.classes);
+      m = 1;
+      n = cls.length;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

@@ -3,14 +3,29 @@
 ## 项目概览
 Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript、Vite 6 + vitest，Tauri 2 Rust 后端。
 
+## 算法实现与重构前置死门禁（死门禁！强制查重 + 双版本长处综合整合，严禁直接删掉）
+在动手编写、接入或修改任何算法前，**必须强制执行查重与版本整合规范**：
+1. **强制前置四维查重（第 0 步门禁）**：严禁拿到需求直接新建文件！必须先无条件执行全库四维检索：
+   - **LeetCode / 权威题号**：如 `grep "102"`、`grep "236"`；
+   - **英文函数名 / 类名**：如 `grep "levelOrder"`、`grep "lowestCommonAncestor"`；
+   - **中文核心关键词**：如 `grep "层序遍历"`、`grep "最近公共祖先"`；
+   - **全量元数据与目录**：核验 `src/algorithms/categories/` 与 `src/core/algorithm-catalog.generated.ts`。
+2. **双版本长处综合整合（Bi-Version Synthesis, NOT Deletion）**：
+   - 若库内已存在对应算法或出现两个版本，**绝对严禁另起炉灶建平行文件，更绝对严禁粗暴删除其中任一版本**！
+   - **必须综合提取两个版本的长处进行深度融合整合**：
+     - **旧版本长处**：细致打磨的参数输入框（`inputs`）、丰富的典型预设用例（`presets` 案例下拉选择）、成熟稳定的 SVG/Canvas 画布渲染器与边界处理；
+     - **新版本长处**：体系化名师讲义（`problemHtml`）、Java/C++/Python/JS 四语言精准 1-based 行号联动（`codeLanguages` / `codeLine`）、深度解构的 Stage 演化阶段；
+     - **唯一事实来源与别名统合（Aliases）**：将两者长处融为一体，保留核心主 ID，将课号/别名加入 `aliases: [...]`，保持全库单一事实来源，消除平行冗余。
+
 ## 元数据规范（重要！）
 算法元数据的**唯一手写源**是各 renderer 的注册调用（`registerDeclarativeAlgorithm` / `registerAlgorithm` / `dp-generated` 三种方言）。
 
 ### 加算法的正确流程
-1. 在 `src/algorithms/categories/<类目>/` 下写 `*-renderer.ts`，自注册
-2. 把 import 加进对应的 `batch-N-index.ts`
-3. 若新类目：在 `algorithm-loader.ts` 的 `BATCH_LOADERS` 里加一行
-4. 运行 `npm run meta:sync` → 生成物自动更新 → `git diff src/core/algorithm-catalog.generated.ts` 确认
+1. **先执行第 0 步四维查重**；若已存在，转入「双版本长处综合整合」，严禁新建；
+2. 若确实为全库全新算法，在 `src/algorithms/categories/<类目>/` 下写 `*-renderer.ts`，自注册；
+3. 把 import 加进对应的 `batch-N-index.ts`；
+4. 若新类目：在 `algorithm-loader.ts` 的 `BATCH_LOADERS` 里加一行；
+5. 运行 `npm run meta:sync` → 生成物自动更新 → `git diff src/core/algorithm-catalog.generated.ts` 确认。
 
 **禁止**手写编辑 `algorithm-catalog.generated.ts`——它是生成物。
 

@@ -342,6 +342,7 @@ export function renderReverseKGroupCanvas(container: HTMLElement, step: KGroupSt
 
 export const reverseNodesInKGroupVisualizer = registerDeclarativeAlgorithm<KGroupStep>({
   id: 'reverse-nodes-in-k-group',
+  aliases: ['reverse-k-group-037'],
   name: 'Hard 21: K 个一组翻转链表 (Reverse Nodes in k-Group)',
   category: 'linked-list',
   icon: '🔁',

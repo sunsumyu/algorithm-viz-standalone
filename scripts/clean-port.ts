@@ -2,6 +2,25 @@ import { execSync } from 'child_process';
 
 const PORT = process.env.PORT || 3000;
 
+function sleep(ms: number): void {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {}
+}
+
+function isPortListening(port: number | string): boolean {
+  try {
+    if (process.platform === 'win32') {
+      const output = execSync('netstat -ano', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
+      return output.includes(`:${port} `) && output.includes('LISTENING');
+    } else {
+      const pid = execSync(`lsof -t -i:${port} -sTCP:LISTEN`, { encoding: 'utf-8' }).trim();
+      return Boolean(pid);
+    }
+  } catch {
+    return false;
+  }
+}
+
 function cleanPort(port: number | string): void {
   try {
     if (process.platform === 'win32') {
@@ -25,10 +44,18 @@ function cleanPort(port: number | string): void {
       }
       for (const pid of pids) {
         try {
-          execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
-          console.log(`[clean-port] Successfully terminated listening process ${pid} on port ${port}`);
+          execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
+          console.log(`[clean-port] Successfully terminated listening process tree ${pid} on port ${port}`);
         } catch {
           // ignore already terminated
+        }
+      }
+      // 等待端口真正被 Windows 内核释放，防止紧接着启动 vite 时遭遇 EADDRINUSE
+      if (pids.size > 0) {
+        let attempts = 0;
+        while (attempts < 15 && isPortListening(port)) {
+          sleep(100);
+          attempts++;
         }
       }
     } else {
@@ -36,6 +63,7 @@ function cleanPort(port: number | string): void {
       if (pid) {
         execSync(`kill -9 ${pid}`, { stdio: 'ignore' });
         console.log(`[clean-port] Successfully terminated listening process ${pid} on port ${port}`);
+        sleep(200);
       }
     }
   } catch {

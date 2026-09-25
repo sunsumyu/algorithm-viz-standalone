@@ -1,0 +1,198 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 最大平均通过率顶层领域模型
+# 对应：LeetCode 1792 / 贪心 边际增量大根堆与聪明学生分配
+# 包含：边际增益计算、决策树展开、状态演进矩阵、空间优化状态机
+# ==============================================================================
+
+id: max-avg-pass-ratio
+name: 最大平均通过率 (Maximum Average Pass Ratio)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 堆（优先队列）
+
+description: |
+  一所学校里有一些班级，每个班级由 classes[i] = [pass_i, total_i] 表示，其中 pass_i 表示通过考试的学生总数，total_i 表示学生总数。
+  给你一些额外的聪明学生 extraStudents ，这些学生必定会通过考试。
+  你需要将这 extraStudents 名学生分配到各个班级中，使得所有班级的 平均通过率 最大。
+  一个班级的 通过率 是该班级通过考试的学生总数除以学生总数。
+  平均通过率 是所有班级的通过率之和除以班级数目。
+  返回在分配完所有额外学生后可能达到的 最大平均通过率 。
+
+  核心贪心策略（边际增量大根堆架构）：
+  1. 边际增量定义：若将 1 名聪明学生分配给通过情况为 [p, t] 的班级，该班级通过率从 p/t 提升至 (p+1)/(t+1)，
+     其边际增益为 Δ(p, t) = (p+1)/(t+1) - p/t = (t - p) / (t * (t + 1))；
+  2. 边际效用严格递减：由于 Δ(p+1, t+1) < Δ(p, t)，函数呈现严格凹性（Concave）。这意味着随着同一个班级被分配更多学生，其边际增益单调递减；
+  3. 大根堆动态调度：为了让总平均通过率增加最多，每一轮都应当贪心地将学生分配给当前边际增益 Δ 最大的班级；
+  4. 优先队列收敛：将所有班级按当前 Δ 组织为大根堆，每轮 O(log N) 弹出堆顶班级增派 1 名学生并更新其增益重新入堆，总耗时 O((N + E) log N)。
+
+defaultParams:
+  classes:
+    - [1, 2]
+    - [3, 5]
+    - [2, 2]
+  extraStudents: 2
+
+constraints:
+  - 1 <= classes.length <= 10^5
+  - classes[i].length == 2
+  - 1 <= pass_i <= total_i <= 10^5
+  - 1 <= extraStudents <= 10^5
+
+directions:
+  forward:
+    name: 边际增量大根堆主导贪心 (Diminishing Marginal Gain with Max-Heap)
+    description: 优先将聪明学生分配给边际增益 Δ=(t-p)/(t*(t+1)) 最大的班级
+  reverse:
+    name: 最低初始比率反例对比 (Counter-Intuitive Lowest-Ratio Comparison)
+    description: 对比若盲目给绝对通过率最低的班级增派学生，因分母巨大导致增益极微的反例剖析
+
+stages:
+  stage-1:
+    name: 边际增益大根堆贪心仿真
+    description: 基于凹函数边际效用递减原理，优先队列每次提取增益最大班级
+    complexity:
+      time: O((N + E) log N)
+      space: O(N)
+    card2Title: 班级边际增益看板与大根堆沙盘 (Marginal Gain Heap)
+    card2Desc: 观察各班级下一次学生增派带来的边际增量 Δ 及堆顶动态维护
+    code:
+      forward:
+        language: java
+        source: |
+          public double maxAverageRatio(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:entry
+              PriorityQueue<double[]> maxHeap = new PriorityQueue<>((a, b) -> Double.compare(b[0], a[0])); // anchor:init_heap
+              for (int i = 0; i < n; i++) {
+                  int p = classes[i][0], t = classes[i][1];
+                  maxHeap.offer(new double[]{gain(p, t), p, t});
+              }
+              while (extraStudents-- > 0) { // anchor:loop_extra
+                  double[] cur = maxHeap.poll(); // anchor:pop_top
+                  int p = (int) cur[1] + 1, t = (int) cur[2] + 1; // anchor:assign_gain
+                  maxHeap.offer(new double[]{gain(p, t), p, t}); // anchor:push_heap
+              }
+              double totalRatio = 0.0; // anchor:calc_avg
+              while (!maxHeap.isEmpty()) {
+                  double[] cur = maxHeap.poll();
+                  totalRatio += cur[1] / cur[2];
+              }
+              return totalRatio / n; // anchor:done
+          }
+          private double gain(double p, double t) { return (p + 1) / (t + 1) - p / t; }
+      reverse:
+        language: java
+        source: |
+          public double counterLowestRatio(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:entry
+              Arrays.sort(classes, (a, b) -> Double.compare((double) a[0] / a[1], (double) b[0] / b[1])); // anchor:init_heap
+              while (extraStudents-- > 0) { // anchor:loop_extra
+                  classes[0][0]++; classes[0][1]++; // anchor:pop_top
+                  Arrays.sort(classes, (a, b) -> Double.compare((double) a[0] / a[1], (double) b[0] / b[1])); // anchor:assign_gain
+              }
+              double totalRatio = 0.0; // anchor:calc_avg
+              for (int[] c : classes) totalRatio += (double) c[0] / c[1];
+              return totalRatio / n; // anchor:done
+          }
+
+  stage-2:
+    name: 边际效用递减对偶决策树
+    description: 展开每一步对不同班级增派的边际增量分支对比，验证贪心选择无后效性
+    complexity:
+      time: O(E * N)
+      space: O(N)
+    card2Title: 边际收益推导决策树 (Marginal Utility Decision Tree)
+    card2Desc: 比较贪心极值选择与次优选择的长期收益差距
+    code:
+      forward:
+        language: java
+        source: |
+          public double maxAverageRatioTree(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:tree_root
+              double baseAvg = evalTotalRatio(classes) / n; // anchor:tree_eval
+              for (int step = 1; step <= extraStudents; step++) { // anchor:tree_branch
+                  int bestIdx = findMaxGainClass(classes);
+                  classes[bestIdx][0]++; classes[bestIdx][1]++; // anchor:tree_prune
+              }
+              return evalTotalRatio(classes) / n; // anchor:tree_done
+          }
+      reverse:
+        language: java
+        source: |
+          public double lowestRatioTree(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:tree_root
+              double baseAvg = evalTotalRatio(classes) / n; // anchor:tree_eval
+              for (int step = 1; step <= extraStudents; step++) { // anchor:tree_branch
+                  int worstIdx = findLowestRatioClass(classes);
+                  classes[worstIdx][0]++; classes[worstIdx][1]++; // anchor:tree_prune
+              }
+              return evalTotalRatio(classes) / n; // anchor:tree_done
+          }
+
+  stage-3:
+    name: 状态矩阵与增益填表验证
+    description: 模拟多轮分配下各班级的通过率演化状态网格
+    complexity:
+      time: O(E * N)
+      space: O(N)
+    card2Title: 班级通过率演进矩阵 (Class Pass Ratio Evolution Grid)
+    card2Desc: 记录每轮额外学生分配后所有班级的通过率和增益矩阵
+    code:
+      forward:
+        language: java
+        source: |
+          public double maxAverageRatioGrid(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:grid_init
+              double[][] history = new double[extraStudents + 1][n]; // anchor:grid_round
+              for (int r = 1; r <= extraStudents; r++) { // anchor:grid_update
+                  int best = pickBestGain(classes);
+                  classes[best][0]++; classes[best][1]++;
+              }
+              return calcFinalAvg(classes); // anchor:grid_summary
+          }
+      reverse:
+        language: java
+        source: |
+          public double lowestRatioGrid(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:grid_init
+              double[][] history = new double[extraStudents + 1][n]; // anchor:grid_round
+              for (int r = 1; r <= extraStudents; r++) { // anchor:grid_update
+                  int worst = pickLowestRatio(classes);
+                  classes[worst][0]++; classes[worstIdx][1]++;
+              }
+              return calcFinalAvg(classes); // anchor:grid_summary
+          }
+
+  stage-4:
+    name: 优先队列槽位极速运算
+    description: 利用就地堆结构或固定槽位，以 O(N) 原地空间极速完成分配
+    complexity:
+      time: O((N + E) log N)
+      space: O(1) 额外空间
+    card2Title: 优先队列槽位极速运算 (Priority Queue Slots Optimization)
+    card2Desc: 极简槽位状态机与动态寄存器滚动更新
+    code:
+      forward:
+        language: java
+        source: |
+          public double maxAverageRatioOpt(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:opt_init
+              PriorityQueue<int[]> pq = new PriorityQueue<>(n, (a, b) -> Double.compare(gain(b), gain(a))); // anchor:opt_heapify
+              while (extraStudents-- > 0) { // anchor:opt_step
+                  int[] top = pq.poll(); top[0]++; top[1]++; pq.offer(top);
+              }
+              return computeSum(pq) / n; // anchor:opt_done
+          }
+      reverse:
+        language: java
+        source: |
+          public double lowestRatioOpt(int[][] classes, int extraStudents) {
+              int n = classes.length; // anchor:opt_init
+              PriorityQueue<int[]> pq = new PriorityQueue<>(n, (a, b) -> Double.compare(ratio(a), ratio(b))); // anchor:opt_heapify
+              while (extraStudents-- > 0) { // anchor:opt_step
+                  int[] top = pq.poll(); top[0]++; top[1]++; pq.offer(top);
+              }
+              return computeSum(pq) / n; // anchor:opt_done
+          }

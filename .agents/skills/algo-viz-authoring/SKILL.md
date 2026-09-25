@@ -7,11 +7,12 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 
 本规范是本算法可视化沙盘系统（Algorithm Visualizer）关于**步进生成器（Step Generator）**、**代码联动高亮（Code Linkage）**、**演化阶段（Stage Evolution）**、**动画实体物理沙盘（Sandbox Entity）**、**UI 布局与空间交互（UI Layout）**及**自动化测试（Vitest Invariants）**的唯一事实标准。
 
-> **核心诫律**：本项目旨在构建**教学级、高可读性、高保真**的算法推演交互系统。所有算法必须让学习者“知其然更知其所以然”。严禁粗制滥造、严禁跳步运行、严禁单一硬编码、严禁单点修改而不做全局核验。
+> **核心诫律**：本项目旨在构建**教学级、高可读性、高保真**的算法推演交互系统。所有算法必须让学习者“知其然更知其所以然”。严禁粗制滥造、严禁跳步运行、严禁单一硬编码、严禁单点修改而不做全局核验。**严禁未查重盲目新建，严禁双版本粗暴二选一删除，必须综合两版本长处深度整合！**
 
 ---
 
 ## 目录
+0. [实现前强制死门禁：四维查重与双版本长处综合整合 (Preflight De-duplication & Bi-Version Synthesis)](#0-实现前强制死门禁四维查重与双版本长处综合整合)
 1. [全项目历史七大典型故障深度复盘 (The 7 Historical Anti-Patterns)](#1-全项目历史七大典型故障深度复盘)
 2. [代码联动与执行粒度规范 (Code Linkage & Granularity Standards)](#2-代码联动与执行粒度规范)
 3. [算法“四段式”与正逆序演化规范 (4-Stage Evolution & Bidirectional Traversal)](#3-算法四段式与正逆序演化规范)
@@ -20,6 +21,34 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 6. [重置状态与幂等性规范 (Reset & Idempotency)](#6-重置状态与幂等性规范)
 7. [全量排查与 Vitest 自动化约束规范 (Whole-Suite Audit & TDD Invariants)](#7-全量排查与-vitest-自动化约束规范)
 8. [标准生产模板与提交前 Checklist (Standard Template & Checklist)](#8-标准生产模板与提交前-checklist)
+
+---
+
+## 0. 实现前强制死门禁：四维查重与双版本长处综合整合
+
+在着手编写、接入或修改任何算法前，**必须无条件执行本门禁**：
+
+### 0.1 强制前置四维查重（第 0 步门禁）
+严禁接到需求（如新课号/题目大纲）后直接新建文件！必须先在全库执行四维检索：
+1. **LeetCode / 题目权威题号**：如 `grep "102"`、`grep "236"`、`grep "105"`；
+2. **英文核心函数名 / 类名**：如 `grep "levelOrder"`、`grep "lowestCommonAncestor"`、`grep "buildTree"`；
+3. **中文核心关键词**：如 `grep "层序遍历"`、`grep "最近公共祖先"`、`grep "前序与中序构造"`；
+4. **类目目录与全量元数据**：核验 `src/algorithms/categories/<类目>/` 现有文件与 `src/core/algorithm-catalog.generated.ts`。
+
+### 0.2 双版本长处综合整合铁律（Bi-Version Synthesis, NOT Deletion）
+若库内已存在同题实现，或者排查出同题目的两个版本，**绝对禁止粗暴删掉其中一个版本，也绝对禁止另建平行割裂文件！必须综合两者的长处进行整合**：
+- **旧版本的不可替代长处**：
+  - 长期打磨的自定义参数输入控件（`inputs`），支持用户输入任意测试用例；
+  - 丰富的典型测试用例预设（`presets` 案例下拉选择），覆盖基础用例、极端空/单节点、单链倾斜树、对称树等；
+  - 稳定成熟的 SVG/Canvas 画布渲染、节点几何排布、连线计算与视口自适应逻辑。
+- **新版本的不可替代长处**：
+  - 体系化名师讲义解析（`problemHtml` / `explanation`），教学深度与原理剖析透彻；
+  - Java、C++、Python、JavaScript 四语言齐备的源码面板与精准 1-based 相对行号高亮联动（`codeLanguages` / `codeLine`）；
+  - 深度解构的演化阶段（Stage Evolution，如暴力递归 ➔ 记忆化 ➔ 迭代 ➔ 空间优化）。
+- **整合落地标准**：
+  1. **优势互补融合**：把旧版本的 `inputs`、`presets` 和优秀画布注入到新架构中，同时把新版本的名师讲义、四语言代码面板和高亮行号字典完整合入。
+  2. **唯一事实来源（Single Source of Truth）**：全库保留唯一主 renderer 文件与主算法 ID（如 `binary-tree-level-order`），严禁保留两个平行的 `.ts` 文件。
+  3. **别名机制统合（Aliases）**：将课号 ID（如 `tree-036-level-order`）登记进主算法的 `aliases: [...]` 数组中，确保无论用户通过课号大纲、搜索框还是直接 URL 访问，均能无缝导航至唯一的集大成版本！
 
 ---
 
@@ -127,6 +156,25 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
       1. **有错误是好事，高层抽象约束就是为了把错报出来**：严厉的报错机制是强制倒逼领域完整性的核心杠杆。
       2. **绝对不要为了修错而修错**：严禁任何弱化报错、静默降级、绕过契约的掩耳盗铃行为。
       3. **追溯深层原因并正面实现契约**：报错提示“模型未在仓储中找到”，唯一合法的修复方式是按照规范补齐该算法的 YAML 领域模型（`src/core/models/<id>.yaml`）、注册到 `AlgorithmModelRepository` 并完善顶层策略引擎。
+24. **未查重盲目新建与双版本粗暴二选一铁律 (De-duplication Preflight & Bi-Version Synthesis Invariant)**：
+    - *故障现象*：
+      1. 收到新任务（如课号专题 Class 036 / 037）后，未查验代码库是否已存在同题目经典算法（如 LC 102、LC 236、LC 98），直接另起炉灶新建平行文件夹和十几个重复文件，造成库内同一道题出现两套孤立实现，严重破坏单一事实来源（Single Source of Truth）。
+      2. 当发现同一道题存在新旧两个版本时，为了“省事”直接将其中一个版本粗暴删除，导致原本旧版本积累的优秀交互（如 `inputs` 输入控件、`presets` 案例下拉选择、成熟的画布布局）或新版本的高质量讲义、四语言代码行号被单向抹杀。
+    - *根本原因*：
+      1. 缺乏实现前的全库四维检索意识，把“按课号整理”误当成了“必须新建文件”；
+      2. 把“重构整合”误当成了“非此即彼的删除覆盖”，缺乏“取两者长处融合”的深度架构意识。
+    - *严格规范（死门禁）*：
+      1. **强制前置四维查重（Preflight De-duplication Gate）**：在动手写任何新算法前，必须无条件执行全库四维检索：
+         - **LeetCode / 题目权威题号**：如 `grep "102"`、`grep "236"`；
+         - **英文核心函数名 / 类名**：如 `grep "levelOrder"`、`grep "lowestCommonAncestor"`；
+         - **中文核心关键词**：如 `grep "层序遍历"`、`grep "最近公共祖先"`；
+         - **类目目录与全量元数据**：检查 `src/algorithms/categories/<类目>/` 现有文件与 `algorithm-catalog.generated.ts`。
+      2. **双版本长处综合整合（Bi-Version Synthesis, NOT Deletion）**：
+         - 库内只要已存在同题实现，**严禁另建平行文件，更严禁粗暴删除任一版本**！
+         - **必须综合两个版本的长处进行深度融合整合**：
+           - **保留旧版本长处**：保留其经过长期打磨的自定义输入控件（`inputs`）、丰富的典型预设用例（`presets` 案例下拉选择）、成熟稳定的 SVG/Canvas 画布渲染器与边界处理；
+           - **融入新版本长处**：融入体系化名师讲义（`problemHtml`）、Java/C++/Python/JS 四语言精准 1-based 行号联动（`codeLanguages` / `codeLine`）、深度解构的 Stage 演化阶段；
+           - **单一事实来源与别名统合（Aliases Mapping）**：在统一的文件中注册，主 ID 保留标准命名，同时将课号（如 `tree-036-level-order`）注入 `aliases: [...]`，确保老路由与新大纲索引双向畅通，全库维持唯一事实来源。
 
 ---
 
@@ -463,6 +511,7 @@ export function buildStandardAlgorithmSteps(inputs: Record<string, any>): AlgoSt
 ```
 
 ### 8.2 终极提交前审查 Checklist (Pre-submission Checklist)
+- [ ] **强制前置查重与双版本长处整合（第 0 步门禁）**：实现前已无条件执行全库四维检索（LC题号、英文函数名、中文核心词、Catalog目录）；若库内已存在旧实现，**绝对禁止粗暴删掉任一版本，绝对禁止新建平行割裂文件**，必须综合双版本长处（保留旧版本的输入控件/预设案例下拉/成熟画布，融入新版本的名师讲义/四语言行号/阶段演化），以主 ID + `aliases` 统合为唯一事实来源。
 - [ ] **行号自查**：所有行号来自独立代码片段（1-based），杜绝外部大文件行号（无 500+ / 600+ 超界行）。
 - [ ] **四语言齐备**：Java、C++、Python、JavaScript 行号字典完备映射，无单值硬编码；优先走 `@step:` 锚点路线（`CodeStepIndexer` / `StageCodeRegistry`），手写 lines 字典仅作退路且必须集中在文件顶部；使用点无四语种四行展开。
 - [ ] **生命周期闭环**：包含 Step 0（入口行）与收敛返回行，不跳步、不突兀。

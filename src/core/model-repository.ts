@@ -80,6 +80,8 @@ import minRefuelingStopsModel from './models/minimum-number-of-refueling-stops.y
 import superWashingMachinesModel from './models/super-washing-machines.yaml';
 import eliminateMonstersModel from './models/eliminate-monsters.yaml';
 import largestPalindromicNumberModel from './models/largest-palindromic-number.yaml';
+import minCostHireWorkersModel from './models/min-cost-hire-workers.yaml';
+import maxAvgPassRatioModel from './models/max-avg-pass-ratio.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -209,6 +211,8 @@ export class AlgorithmModelRepository {
     ['super-washing-machines', superWashingMachinesModel as IYamlAlgorithmModel],
     ['eliminate-monsters', eliminateMonstersModel as IYamlAlgorithmModel],
     ['largest-palindromic-number', largestPalindromicNumberModel as IYamlAlgorithmModel],
+    ['min-cost-hire-workers', minCostHireWorkersModel as IYamlAlgorithmModel],
+    ['max-avg-pass-ratio', maxAvgPassRatioModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

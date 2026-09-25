@@ -68,6 +68,8 @@ import { MinRefuelingStopsStrategy } from './min-refueling-stops-strategy';
 import { SuperWashingMachinesStrategy } from './super-washing-machines-strategy';
 import { EliminateMonstersStrategy } from './eliminate-monsters-strategy';
 import { LargestPalindromicNumberStrategy } from './largest-palindromic-number-strategy';
+import { MinCostHireWorkersStrategy } from './min-cost-hire-workers-strategy';
+import { MaxAvgPassRatioStrategy } from './max-avg-pass-ratio-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -212,6 +214,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new SuperWashingMachinesStrategy());
   AlgorithmStrategyRegistry.register(new EliminateMonstersStrategy());
   AlgorithmStrategyRegistry.register(new LargestPalindromicNumberStrategy());
+  AlgorithmStrategyRegistry.register(new MinCostHireWorkersStrategy());
+  AlgorithmStrategyRegistry.register(new MaxAvgPassRatioStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -290,7 +294,9 @@ export {
   MinRefuelingStopsStrategy,
   SuperWashingMachinesStrategy,
   EliminateMonstersStrategy,
-  LargestPalindromicNumberStrategy
+  LargestPalindromicNumberStrategy,
+  MinCostHireWorkersStrategy,
+  MaxAvgPassRatioStrategy
 };
 
 export * from './strategy-helpers';

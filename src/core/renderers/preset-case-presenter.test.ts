@@ -90,4 +90,29 @@ describe('PresetCasePresenter Shared Component', () => {
       dummyPresets[0]
     );
   });
+
+  it('should resolve explicit presets when defined', () => {
+    const res = PresetCasePresenter.resolvePresets(dummyPresets, []);
+    expect(res).toBe(dummyPresets);
+    expect(res.length).toBe(3);
+  });
+
+  it('should auto-infer default baseline preset from inputs when presets are missing', () => {
+    const inputs = [
+      { id: 'arr', defaultValue: '[1, 2, 3]', label: '输入数组' },
+      { id: 'target', defaultValue: '5', label: '目标值' },
+      { id: 'algo', defaultValue: 'dfs', type: 'select', options: [{ label: '深度优先', value: 'dfs' }, { label: '广度优先', value: 'bfs' }] },
+    ];
+    const inferred = PresetCasePresenter.resolvePresets(undefined, inputs as any);
+    expect(inferred.length).toBe(2);
+    expect(inferred[0].label).toContain('标准基准用例');
+    expect(inferred[0].values).toEqual({ arr: '[1, 2, 3]', target: '5', algo: 'dfs' });
+    expect(inferred[1].label).toContain('备选变体用例');
+    expect(inferred[1].values.algo).toBe('bfs');
+  });
+
+  it('should return empty array when neither presets nor inputs are provided', () => {
+    expect(PresetCasePresenter.resolvePresets(undefined, undefined)).toEqual([]);
+    expect(PresetCasePresenter.resolvePresets([], [])).toEqual([]);
+  });
 });

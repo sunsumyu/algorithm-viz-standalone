@@ -23,5 +23,6 @@ import './categories/tree/max-sum-bst-036-renderer';
 import './categories/tree/tree-serialization-037-renderer';
 import './categories/tree/paper-folding-040-renderer';
 import './categories/tree/binary-tree-maximum-path-sum-renderer';
+import './batch-29-index';
 
 export {};

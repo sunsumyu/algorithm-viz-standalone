@@ -92,28 +92,7 @@ export function buildReverseKGroup037Steps(): ReverseKGroup037Step[] {
   return steps;
 }
 
-export const reverseKGroup037Visualizer = registerDeclarativeAlgorithm<ReverseKGroup037Step>({
-  id: 'reverse-k-group-037',
-  name: 'K 个一组翻转链表 (Class 037)',
-  category: 'linked-list',
-  difficulty: 'hard',
-  problemContent: LINKED_LIST_034_038_PROBLEMS.reverseKGroup037,
-  sourceCodes: REVERSE_K_GROUP_037_CODES,
-  generateSteps: buildReverseKGroup037Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderReverseKGroupBoard(
-          step.groups,
-          step.k,
-          step.phase
-        )}
-        ${renderFormulaCard(
-          'K 个一组链表翻转核心不变量',
-          '\\text{lastTeamEnd.next} = \\text{end}, \\quad \\text{start.next} = \\text{nextGroup}',
-          '每组翻转后，原头变新尾，原尾变新头。牢牢抓住上一组尾与下一组头，即可在 $O(1)$ 常数空间内实现稳健的跨组缝合。'
-        )}
-      </div>
-    `;
-  },
-});
+// 【双版本长处整合】已整合至 ../reverse-nodes-in-k-group-renderer.ts
+// 唯一事实来源：reverse-nodes-in-k-group (aliases: ['reverse-k-group-037'])
+import { reverseNodesInKGroupVisualizer } from '../reverse-nodes-in-k-group-renderer';
+export const reverseKGroup037Visualizer = reverseNodesInKGroupVisualizer;

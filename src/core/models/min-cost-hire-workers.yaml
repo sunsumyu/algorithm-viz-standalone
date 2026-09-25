@@ -1,0 +1,213 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 雇佣 K 名工人的最低成本顶层领域模型
+# 对应：LeetCode 857 / 贪心 性价比排序 + 大根堆动态淘汰最大工作量
+# 包含：单价基准升序、决策树展开、状态演进矩阵、空间优化状态机
+# ==============================================================================
+
+id: min-cost-hire-workers
+name: 雇佣 K 名工人的最低成本 (Minimum Cost to Hire K Workers)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 数组
+  - 堆（优先队列）
+  - 排序
+
+description: |
+  有 n 名工人。给定两个整数数组 quality 和 wage ，其中 quality[i] 表示第 i 名工人的工作质量，wage[i] 表示第 i 名工人的最低期望工资。
+  现在我们想雇佣恰好 k 名工人。在雇佣一组 k 名工人时，我们必须按照下述规则向他们支付工资：
+  1. 对该组中的每名工人，其工资必须与其工作质量成正比；
+  2. 该组中的每名工人至少应当得到其最低期望工资。
+  返回组成满足上述条件的付费群体所需的最低总金额。
+
+  核心贪心策略（双重贪心架构）：
+  1. 维度归一化：每名工人的最低期望单位质量报酬为 ratio[i] = wage[i] / quality[i]；
+  2. 统一定价基准：为了满足选中的 k 名工人中所有人的最低期望，团队的报酬单价必须取被选工人中最大的 ratio（即基准单价）；
+  3. 外层升序排序：将所有工人按 ratio 升序排列。当我们遍历到工人 i 并将其作为团队中 ratio 最大的工人时，前序已选工人由于期望单价更低，其实际薪资必定满足或超过其最低期望；
+  4. 内层大根堆收敛：在基准单价固定的情况下，团队总金额 = ratio * sum(quality)。要使总金额最小，必须使选中的 k 名工人的 quality 总和 sumQuality 最小！
+  5. 动态反悔机制：使用大根堆维护已选工人的 quality。当堆大小超过 k 时，贪心地弹出堆顶工作量最大的工人，释放最多 quality 冗余，降低 sumQuality，持续刷新全局最低开销！
+
+defaultParams:
+  quality: [10, 20, 5]
+  wage: [70, 50, 30]
+  k: 2
+
+constraints:
+  - n == quality.length == wage.length
+  - 1 <= k <= n <= 10^4
+  - 1 <= quality[i], wage[i] <= 10^4
+
+directions:
+  forward:
+    name: 性价比升序主导贪心 (Ratio Ascending Greedy with Max Heap)
+    description: 工人按期望单价 (wage/quality) 升序排列，大根堆维护最小 quality 和
+  reverse:
+    name: 性价比降序对比与反效性辨析 (Ratio Descending & Counter-Example Contrast)
+    description: 倒序验证为什么必须按性价比升序以保证后续工资不低于所有入选工人期望
+
+stages:
+  stage-1:
+    name: 性价比升序排序与大根堆维护
+    description: 固定组内最高期望单价作为计价基准，大根堆淘汰最大工作量
+    complexity:
+      time: O(N log N)
+      space: O(K)
+    card2Title: 雇佣成本与工人品质大根堆沙盘 (Worker Ratio & Quality Heap)
+    card2Desc: 观察工人按单价递增的选拔过程及大根堆动态淘汰最大工作量
+    code:
+      forward:
+        language: java
+        source: |
+          public double mincostToHireWorkers(int[] quality, int[] wage, int k) {
+              int n = quality.length; // anchor:entry
+              double[][] workers = new double[n][2];
+              for (int i = 0; i < n; i++) {
+                  workers[i] = new double[]{(double) wage[i] / quality[i], (double) quality[i]};
+              }
+              Arrays.sort(workers, (a, b) -> Double.compare(a[0], b[0])); // anchor:sortRatio
+              PriorityQueue<Double> maxHeap = new PriorityQueue<>((a, b) -> Double.compare(b, a)); // anchor:heap_init
+              double sumQ = 0, minCost = Double.MAX_VALUE; // anchor:vars_init
+              for (double[] w : workers) { // anchor:scan
+                  maxHeap.offer(w[1]); // anchor:maintainQ
+                  sumQ += w[1];
+                  if (maxHeap.size() > k) { // anchor:evict
+                      sumQ -= maxHeap.poll();
+                  }
+                  if (maxHeap.size() == k) { // anchor:updateAns
+                      minCost = Math.min(minCost, sumQ * w[0]);
+                  }
+              }
+              return minCost; // anchor:done
+          }
+      reverse:
+        language: java
+        source: |
+          public double mincostToHireWorkersReverse(int[] quality, int[] wage, int k) {
+              int n = quality.length; // anchor:entry
+              double[][] workers = new double[n][2];
+              for (int i = 0; i < n; i++) {
+                  workers[i] = new double[]{(double) wage[i] / quality[i], (double) quality[i]};
+              }
+              Arrays.sort(workers, (a, b) -> Double.compare(b[0], a[0])); // anchor:sortRatio
+              PriorityQueue<Double> maxHeap = new PriorityQueue<>((a, b) -> Double.compare(b, a)); // anchor:heap_init
+              double sumQ = 0, minCost = Double.MAX_VALUE; // anchor:vars_init
+              for (double[] w : workers) { // anchor:scan
+                  maxHeap.offer(w[1]); // anchor:maintainQ
+                  sumQ += w[1];
+                  if (maxHeap.size() > k) { // anchor:evict
+                      sumQ -= maxHeap.poll();
+                  }
+                  if (maxHeap.size() == k) { // anchor:updateAns
+                      minCost = Math.min(minCost, sumQ * w[0]);
+                  }
+              }
+              return minCost; // anchor:done
+          }
+
+  stage-2:
+    name: 工人选拔与淘汰决策树
+    description: 展开每名工人“选拔入堆”与“堆满淘汰极值”的回溯分支决策拓扑
+    complexity:
+      time: O(2^N)
+      space: O(N)
+    card2Title: 工人选拔决策树 (Worker Selection Tree)
+    card2Desc: 拓扑展开当前工人纳入团队、大根堆淘汰超额质量与剪枝路径
+    code:
+      forward:
+        language: java
+        source: |
+          // Stage 2: 工人选拔与回溯决策树
+          void dfs(int idx, int count, double sumQ, double curRatio) {
+              if (count == k) { // anchor:base
+                  minCost = Math.min(minCost, sumQ * curRatio); // anchor:update
+                  return;
+              }
+              if (idx == n) return; // anchor:prune
+              // 分支 1: 跳过当前工人 idx // anchor:skip
+              dfs(idx + 1, count, sumQ, curRatio);
+              // 分支 2: 选择当前工人 idx 并更新团队最大 ratio // anchor:take
+              dfs(idx + 1, count + 1, sumQ + workers[idx][1], Math.max(curRatio, workers[idx][0]));
+          }
+      reverse:
+        language: java
+        source: |
+          // Stage 2: 逆向考察决策树
+          void dfsReverse(int idx, int count, double sumQ, double curRatio) {
+              if (count == k) { // anchor:base
+                  minCost = Math.min(minCost, sumQ * curRatio); // anchor:update
+                  return;
+              }
+              if (idx < 0) return; // anchor:prune
+              // 分支 1: 跳过工人 idx // anchor:skip
+              dfsReverse(idx - 1, count, sumQ, curRatio);
+              // 分支 2: 选择工人 idx // anchor:take
+              dfsReverse(idx - 1, count + 1, sumQ + workers[idx][1], Math.max(curRatio, workers[idx][0]));
+          }
+
+  stage-3:
+    name: 选拔状态与代价转移矩阵
+    description: 构建以工人编号为行、入选人数为列的二维状态矩阵 dp[i][j]，直观对比全局最优
+    complexity:
+      time: O(N * K)
+      space: O(N * K)
+    card2Title: 选拔状态与代价矩阵 (DP State Matrix)
+    card2Desc: 二维矩阵追踪前 i 名工人选 j 人的最小工作量与当前成本
+    code:
+      forward:
+        language: java
+        source: |
+          // Stage 3: 选拔代价二维状态矩阵
+          double[][] dp = new double[n + 1][k + 1]; // anchor:dp_init
+          for (int i = 1; i <= n; i++) { // anchor:loop_i
+              for (int j = 1; j <= Math.min(i, k); j++) { // anchor:loop_j
+                  // 状态转移：考虑是否选入第 i 名工人 // anchor:dp_trans
+                  dp[i][j] = Math.min(dp[i - 1][j], dp[i - 1][j - 1] + workers[i - 1][1]);
+              }
+          }
+          double ans = dp[n][k] * maxRatio; // anchor:dp_done
+      reverse:
+        language: java
+        source: |
+          // Stage 3: 选拔代价二维状态矩阵（逆推）
+          double[][] dp = new double[n + 1][k + 1]; // anchor:dp_init
+          for (int i = 1; i <= n; i++) { // anchor:loop_i
+              for (int j = 1; j <= Math.min(i, k); j++) { // anchor:loop_j
+                  dp[i][j] = Math.min(dp[i - 1][j], dp[i - 1][j - 1] + workers[i - 1][1]); // anchor:dp_trans
+              }
+          }
+          double ans = dp[n][k] * maxRatio; // anchor:dp_done
+
+  stage-4:
+    name: 空间优化大根堆状态机
+    description: 仅维护大小为 K 的大根堆与 sumQuality 寄存器，以 O(K) 极简空间极速收敛
+    complexity:
+      time: O(N log K)
+      space: O(K)
+    card2Title: O(K) 极简状态机 (Optimized Heap Machine)
+    card2Desc: 紧凑追踪当前堆顶淘汰质量与全局最低总成本 minCost
+    code:
+      forward:
+        language: java
+        source: |
+          // Stage 4: O(K) 空间优化大根堆
+          PriorityQueue<Double> heap = new PriorityQueue<>(k, Collections.reverseOrder()); // anchor:opt_init
+          double sumQ = 0, ans = Double.MAX_VALUE; // anchor:opt_vars
+          for (double[] w : workers) { // anchor:opt_loop
+              heap.offer(w[1]); sumQ += w[1]; // anchor:opt_push
+              if (heap.size() > k) sumQ -= heap.poll(); // anchor:opt_pop
+              if (heap.size() == k) ans = Math.min(ans, sumQ * w[0]); // anchor:opt_calc
+          }
+          return ans; // anchor:opt_done
+      reverse:
+        language: java
+        source: |
+          // Stage 4: 空间优化逆向对比
+          PriorityQueue<Double> heap = new PriorityQueue<>(k, Collections.reverseOrder()); // anchor:opt_init
+          double sumQ = 0, ans = Double.MAX_VALUE; // anchor:opt_vars
+          for (double[] w : workers) { // anchor:opt_loop
+              heap.offer(w[1]); sumQ += w[1]; // anchor:opt_push
+              if (heap.size() > k) sumQ -= heap.poll(); // anchor:opt_pop
+              if (heap.size() == k) ans = Math.min(ans, sumQ * w[0]); // anchor:opt_calc
+          }
+          return ans; // anchor:opt_done

@@ -72,31 +72,7 @@ export function buildIntersectionList036Steps(): IntersectionList036Step[] {
   return steps;
 }
 
-export const intersectionLinkedList036Visualizer = registerDeclarativeAlgorithm<IntersectionList036Step>({
-  id: 'intersection-linked-list-036',
-  name: '相交链表与有环无环判定 (Class 036)',
-  category: 'linked-list',
-  difficulty: 'medium',
-  problemContent: LINKED_LIST_034_038_PROBLEMS.intersectionLinkedList036,
-  sourceCodes: INTERSECTION_LIST_036_CODES,
-  generateSteps: buildIntersectionList036Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderIntersectionBoard(
-          step.listA,
-          step.listB,
-          step.loopA,
-          step.loopB,
-          step.intersectNode,
-          step.statusDesc
-        )}
-        ${renderFormulaCard(
-          '单链表相交三大拓扑准则',
-          '\\begin{cases} \\text{无环相交} & \\iff \\text{尾节点相同，长链先走 } \\Delta \\\\ \\text{有环相同入环点} & \\iff \\text{loopA} == \\text{loopB}, \\text{ 相交在入环前} \\\\ \\text{有环不同入环点} & \\iff \\text{从 loopA 出发能绕环到达 loopB} \\end{cases}',
-          '若一个链表有环而另一个无环，由于单向指针无法产生分叉，两者绝对不可能相交。'
-        )}
-      </div>
-    `;
-  },
-});
+// 【双版本长处整合】已整合至 ../intersection-linked-list-renderer.ts
+// 唯一事实来源：intersection-linked-list (aliases: ['intersection-linked-list-036'])
+import { intersectionLinkedListVisualizer } from '../intersection-linked-list-renderer';
+export const intersectionLinkedList036Visualizer = intersectionLinkedListVisualizer;

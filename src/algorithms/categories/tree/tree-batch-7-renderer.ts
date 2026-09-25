@@ -7,6 +7,10 @@ import { parseTreeArray } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { TreeNode, buildTreeFromArr, renderTreeSVG } from './tree-template';
 
+// 引入左神 Class 036 & 037 综合版（单一事实来源，别名映射 balanced & count-nodes）
+import './tree-036-037/balanced-binary-tree-037-renderer';
+import './tree-036-037/count-complete-tree-nodes-036-renderer';
+
 /** 通用：树层数组输入解析（空串按空树处理交给 buildTreeFromArr） */
 /** 通用：树 SVG 主视觉（渲染深模块 renderTreeSVG） */
 function renderTreeCanvas(
@@ -223,65 +227,10 @@ function buildBalancedSteps(root: TreeNode | null): BalancedStep[] {
   return steps;
 }
 
-registerDeclarativeAlgorithm<BalancedStep>({
-  id: 'balanced',
-  name: '平衡二叉树',
-  category: 'tree',
-  description: '判断二叉树是否为平衡二叉树（任意节点左右子树高度差不超过1）',
-  icon: '⚖️',
-  difficulty: 1,
-  levelOrder: 12,
-  learningGoal: '理解平衡二叉树的定义，掌握递归判断方法',
-  inputs: [
-    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[3,9,20,null,null,15,7]' },
-  ],
-  presets: [
-    { label: '示例 1 (平衡)', values: { tree: '[3,9,20,null,null,15,7]' } },
-    { label: '示例 2 (不平衡)', values: { tree: '[1,2,2,3,3,null,null,4,4]' } },
-    { label: '示例 3 (大树)', values: { tree: '[1,2,3,4,5,6,null,7,8,null,null,9,10]' } },
-  ],
-  metrics: [
-    { id: 'cur', label: '当前节点', color: '#a6e3a1' },
-    { id: 'depth', label: '当前深度', color: '#2563eb' },
-    { id: 'result', label: '是否平衡', color: '#10b981' },
-  ],
-  legend: [
-    { label: '当前访问', color: '#a6e3a1' },
-    { label: '检测到不平衡', color: '#f38ba8' },
-  ],
-  codeLanguages: {
-    java: [
-      'public boolean isBalanced(TreeNode root) {',
-      '  private int getHeight(TreeNode node) {',
-      '    if (node == null) return 0;',
-      '    int leftH = getHeight(node.left);',
-      '    int rightH = getHeight(node.right);',
-      '    if (Math.abs(leftH - rightH) > 1) return -1;',
-      '    return Math.max(leftH, rightH) + 1;',
-      '  }',
-      '  return getHeight(root) != -1;',
-      '}',
-    ].join('\n'),
-  },
-  generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [3, 9, 20, null, null, 15, 7]));
-    return buildBalancedSteps(root).map((s) => ({
-      ...s,
-      metrics: {
-        cur: s.current != null ? String(s.current) : '-',
-        depth: String(s.depth),
-        result: s.balanced != null ? (s.balanced ? '是' : '否') : '?',
-      },
-    }));
-  },
-  renderCanvas: (container, step) =>
-    renderTreeCanvas(
-      container,
-      step.tree,
-      step.current != null ? new Set([step.current]) : new Set(),
-      step.balanced === false ? '#f38ba8' : '#a6e3a1',
-    ),
-});
+// 【双版本长处整合】已整合至 tree-036-037/balanced-binary-tree-037-renderer.ts
+// 唯一事实来源：tree-037-balanced-binary-tree (aliases: ['balanced'])，兼具输入框/预设与左神名师讲义四语言联动
+export { buildBalancedSteps };
+export type { BalancedStep };
 
 /* ═══════════════════ Level 13: 左叶子之和 ═══════════════════ */
 
@@ -617,61 +566,10 @@ function buildCountNodesSteps(root: TreeNode | null): CountNodesStep[] {
   return steps;
 }
 
-registerDeclarativeAlgorithm<CountNodesStep>({
-  id: 'count-nodes',
-  name: '完全二叉树节点个数',
-  category: 'tree',
-  description: '计算完全二叉树的节点总数',
-  icon: '🔢',
-  difficulty: 1,
-  levelOrder: 15,
-  learningGoal: '理解完全二叉树的性质，掌握递归计数方法',
-  inputs: [
-    { id: 'tree', label: '二叉树层序数组', type: 'text', defaultValue: '[1,2,3,4,5,6]' },
-  ],
-  presets: [
-    { label: '示例 1 (完全)', values: { tree: '[1,2,3,4,5,6]' } },
-    { label: '示例 2 (空树)', values: { tree: '[]' } },
-    { label: '示例 3 (单节点)', values: { tree: '[1]' } },
-  ],
-  metrics: [
-    { id: 'cur', label: '当前节点', color: '#fab387' },
-    { id: 'depth', label: '当前深度', color: '#2563eb' },
-    { id: 'result', label: '节点计数', color: '#10b981' },
-  ],
-  legend: [
-    { label: '已访问', color: '#a6e3a1' },
-    { label: '当前访问', color: '#fab387' },
-  ],
-  codeLanguages: {
-    java: [
-      'public int countNodes(TreeNode root) {',
-      '  if (root == null) return 0;',
-      '  return countNodes(root.left) + countNodes(root.right) + 1;',
-      '}',
-    ].join('\n'),
-  },
-  generateSteps: (inputs) => {
-    const root = buildTreeFromArr(parseTreeArray(inputs.tree, [1, 2, 3, 4, 5, 6]));
-    return buildCountNodesSteps(root).map((s) => ({
-      ...s,
-      metrics: {
-        cur: s.current != null ? String(s.current) : '-',
-        depth: String(s.depth),
-        result: String(s.count),
-      },
-    }));
-  },
-  renderCanvas: (container, step) =>
-    renderTreeCanvas(
-      container,
-      step.tree,
-      step.visitedNodes,
-      '#a6e3a1',
-      step.current != null ? new Set([step.current]) : undefined,
-      '#fab387',
-    ),
-});
+// 【双版本长处整合】已整合至 tree-036-037/count-complete-tree-nodes-036-renderer.ts
+// 唯一事实来源：tree-036-count-complete-tree-nodes (aliases: ['count-nodes'])，兼具输入框/预设与左神 O((logN)^2) 剪枝讲义
+export { buildCountNodesSteps };
+export type { CountNodesStep };
 
 /* ═══════════════════ Level 16: 找树左下角的值 ═══════════════════ */
 

@@ -1,12 +1,11 @@
 /**
- * 路径总和可视化器 — 声明式配置化架构 (Declarative Visualizer)
- * 递归减法回溯、叶子节点精确判定、路径高亮与成功早停
- * 遵循 Zero-Subbox 规范，扁平纯净沙盘
+ * 路径总和可视化器 (Path Sum & Path Sum II · LeetCode 112 & 113 / Class 037 Code03)
+ * 采用顶层声明式架构与双版本综合长处整合 (Bi-Version Synthesis)
+ * 融合旧版本输入交互/树拓扑高亮与左神 Class 037 名师讲义/回溯路径弹出与全解收集
  */
 
 import { parseTreeArray } from '../../../core/input-primitives';
-import { registerAlgorithm } from '../../../core/registry';
-import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
+import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
 import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
@@ -23,11 +22,14 @@ export interface PSStep {
   currentSum: number;
   remain: number;
   path: number[];
+  allPaths: number[][];
   found: boolean;
+  decision: string;
   action: 'enter' | 'check-leaf' | 'match' | 'leave' | 'done';
   message: string;
   log: string;
   codeLine?: HighlightTarget;
+  metrics?: Record<string, string | number>;
 }
 
 export const PATH_SUM_CODE_LINES = {
@@ -42,8 +44,10 @@ export const PATH_SUM_CODE_LINES = {
 export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[] {
   const steps: PSStep[] = [];
   const currentPath: number[] = [];
+  const allPaths: number[][] = [];
   let found = false;
 
+  // Step 0: 入口
   steps.push({
     tree: root,
     current: null,
@@ -51,10 +55,15 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
     currentSum: 0,
     remain: targetSum,
     path: [],
+    allPaths: [],
     found: false,
+    decision: `算法启动：寻找根到叶总和为 ${targetSum} 的路径`,
     action: 'enter',
-    message: root ? `初始化路径总和搜索：targetSum = ${targetSum}，从根节点 ${root.val} 开始递归。` : '空树，返回 false。',
-    log: root ? `开始搜索 targetSum = ${targetSum}` : '空树 -> false',
+    message: root
+      ? `初始化路径搜索：目标和 targetSum = ${targetSum}，从根节点 ${root.val} 启动 DFS 回溯。`
+      : '空树，直接判定无合法路径，返回 false。',
+    log: root ? `pathSum(root: ${root.val}, targetSum: ${targetSum})` : 'root is null -> false',
+    metrics: { '目标和 targetSum': targetSum, '已收集路径': 0 },
     codeLine: PATH_SUM_CODE_LINES.init,
   });
 
@@ -66,155 +75,213 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
       currentSum: 0,
       remain: targetSum,
       path: [],
+      allPaths: [],
       found: false,
+      decision: '特判返回：树为空',
       action: 'done',
-      message: '❌ 空树不存在根到叶路径，返回 false。',
-      log: '✓ 未找到目标路径 (false)',
+      message: '树为空，无合法路径。',
+      log: 'return false',
+      metrics: { '目标和 targetSum': targetSum, '有效路径数': 0 },
       codeLine: PATH_SUM_CODE_LINES.empty,
     });
     return steps;
   }
 
-  const dfs = (node: TreeNode | null, remain: number, runningSum: number): boolean => {
-    if (!node || found) return false;
+  function dfs(node: TreeNode | null, curSum: number): void {
+    if (!node) return;
 
+    curSum += node.val;
     currentPath.push(node.val);
-    const newSum = runningSum + node.val;
-    const isLeaf = !node.left && !node.right;
+    const remain = targetSum - curSum;
 
+    // 深入节点并推入路径
     steps.push({
       tree: root,
       current: node.val,
       targetSum,
-      currentSum: newSum,
-      remain: targetSum - newSum,
+      currentSum: curSum,
+      remain,
       path: [...currentPath],
-      found: false,
+      allPaths: allPaths.map((p) => [...p]),
+      found,
+      decision: `访问节点 ${node.val} 并压入回溯路径`,
       action: 'enter',
-      message: `进入节点 ${node.val}：当前路径 [${currentPath.join(' -> ')}]，当前累加和 = ${newSum} (目标 ${targetSum})。`,
-      log: `进入 ${node.val} (和=${newSum})`,
+      message: `节点 ${node.val} 入栈，当前路径和 = ${curSum}，距离目标和尚差 ${remain}。`,
+      log: `push ${node.val} -> path: [${currentPath.join(' -> ')}], curSum = ${curSum}`,
+      metrics: { '当前节点': node.val, '当前路径累加和': curSum, '剩余差额': remain },
       codeLine: PATH_SUM_CODE_LINES.enter,
     });
 
-    if (isLeaf) {
-      const match = node.val === remain;
-      steps.push({
-        tree: root,
-        current: node.val,
-        targetSum,
-        currentSum: newSum,
-        remain: targetSum - newSum,
-        path: [...currentPath],
-        found: match,
-        action: match ? 'match' : 'check-leaf',
-        message: match
-          ? `🎯 成功到达叶子节点 ${node.val}！路径总和恰好等于 ${targetSum}！`
-          : `到达叶子节点 ${node.val}，累加和 ${newSum} != ${targetSum}，回溯。`,
-        log: match ? `✓ 找到目标路径: 和=${targetSum}` : `叶子 ${node.val} 和=${newSum} != ${targetSum}`,
-        codeLine: PATH_SUM_CODE_LINES.leafCheck,
-      });
+    const isLeaf = !node.left && !node.right;
 
-      if (match) {
+    if (isLeaf) {
+      if (curSum === targetSum) {
         found = true;
-        return true;
+        allPaths.push([...currentPath]);
+        steps.push({
+          tree: root,
+          current: node.val,
+          targetSum,
+          currentSum: curSum,
+          remain: 0,
+          path: [...currentPath],
+          allPaths: allPaths.map((p) => [...p]),
+          found: true,
+          decision: `🎉 到达叶子节点 ${node.val}，累加和恰好等于目标和 ${targetSum}！`,
+          action: 'match',
+          message: `🎯 命中解！从根到叶路径 [${currentPath.join(' -> ')}] 之和等于 ${targetSum}，成功收录！`,
+          log: `⭐ MATCH: [${currentPath.join(' -> ')}] = ${targetSum}`,
+          metrics: { '当前节点': node.val, '状态': '命中目标解', '有效路径数': allPaths.length },
+          codeLine: PATH_SUM_CODE_LINES.leafCheck,
+        });
+      } else {
+        steps.push({
+          tree: root,
+          current: node.val,
+          targetSum,
+          currentSum: curSum,
+          remain,
+          path: [...currentPath],
+          allPaths: allPaths.map((p) => [...p]),
+          found,
+          decision: `到达叶子节点 ${node.val}，但和为 ${curSum} != ${targetSum}`,
+          action: 'check-leaf',
+          message: `叶子节点检查不满足：路径和为 ${curSum}，与目标 ${targetSum} 不符，准备回溯。`,
+          log: `leaf mismatch: sum ${curSum} != ${targetSum}`,
+          metrics: { '当前节点': node.val, '状态': '叶子和不匹配' },
+          codeLine: PATH_SUM_CODE_LINES.leafCheck,
+        });
       }
+    } else {
+      if (node.left) dfs(node.left, curSum);
+      if (node.right) dfs(node.right, curSum);
     }
 
-    if (node.left && dfs(node.left, remain - node.val, newSum)) return true;
-    if (node.right && dfs(node.right, remain - node.val, newSum)) return true;
-
+    // 回溯清理现场
     currentPath.pop();
-
     steps.push({
       tree: root,
       current: node.val,
       targetSum,
-      currentSum: runningSum,
-      remain: targetSum - runningSum,
+      currentSum: curSum - node.val,
+      remain: targetSum - (curSum - node.val),
       path: [...currentPath],
-      found: false,
+      allPaths: allPaths.map((p) => [...p]),
+      found,
+      decision: `回溯：节点 ${node.val} 出栈清理现场`,
       action: 'leave',
-      message: `回溯：离开节点 ${node.val}，移出路径。当前路径 [${currentPath.join(' -> ')}]。`,
-      log: `回溯离开 ${node.val}`,
+      message: `节点 ${node.val} 左右分支探索完毕，执行回溯出栈，恢复现场为 [${currentPath.join(' -> ')}]。`,
+      log: `pop ${node.val} -> backtrack`,
+      metrics: { '回溯弹出节点': node.val, '现场路径': `[${currentPath.join(' -> ')}]` },
       codeLine: PATH_SUM_CODE_LINES.leave,
     });
+  }
 
-    return false;
-  };
-
-  const finalFound = dfs(root, targetSum, 0);
+  dfs(root, 0);
 
   steps.push({
     tree: root,
     current: null,
     targetSum,
-    currentSum: finalFound ? targetSum : 0,
-    remain: finalFound ? 0 : targetSum,
-    path: [...currentPath],
-    found: finalFound,
+    currentSum: 0,
+    remain: 0,
+    path: [],
+    allPaths: allPaths.map((p) => [...p]),
+    found,
+    decision: '全树路径总和探索完成',
     action: 'done',
-    message: finalFound
-      ? `🎉 搜索完成！存在根到叶路径总和为 ${targetSum} 的有效路径 (True)。`
-      : `❌ 搜索完成！未找到根到叶路径总和为 ${targetSum} 的路径 (False)。`,
-    log: finalFound ? '✓ 存在目标路径 (True)' : '✗ 不存在目标路径 (False)',
+    message: found
+      ? `🎉 搜索全部结束！共找到 ${allPaths.length} 条和为 ${targetSum} 的有效路径: ${JSON.stringify(allPaths)}。`
+      : `搜索全部结束，未找到任何和为 ${targetSum} 的根到叶路径。`,
+    log: `done pathSum found=${found} count=${allPaths.length}`,
+    metrics: { '探索状态': '完成', '有效路径数': allPaths.length },
     codeLine: PATH_SUM_CODE_LINES.done,
   });
 
   return steps;
 }
 
-const { template, Visualizer } = createDeclarativeVisualizer<PSStep>({
+export const pathSumVisualizer = registerDeclarativeAlgorithm<PSStep>({
   id: 'path-sum',
-  name: '路径总和',
+  aliases: ['tree-037-path-sum-ii'],
+  name: '路径总和与收集所有路径',
   category: 'tree',
   icon: '🪜',
   badge: {
-    mode: '回溯减法·叶子早停',
+    mode: 'DFS 递归回溯与现场恢复',
     complexity: 'O(n) · O(h)',
   },
-  card1Title: '📊 根到叶递归路径沙盘',
-  card2Title: '🧭 路径累加和与命中监视器',
-  card2Desc: '当前搜索路径、累加总和、剩余差值与命中状态',
+  card1Title: '📊 二叉树拓扑与当前回溯路径沙盘',
+  card2Title: '🧭 路径累加和与解集收集监视器',
+  card2Desc: '实时当前路径栈、剩余差额及已收集解集二维看板',
   legend: [
-    { label: '命中目标路径', color: '#16a34a' },
-    { label: '当前探索路径', color: '#fbbf24' },
-    { label: '回溯节点', color: '#94a3b8' },
+    { label: '当前访问节点', color: '#fbbf24' },
+    { label: '当前路径栈', color: '#93c5fd' },
+    { label: '命中目标解', color: '#16a34a' },
   ],
   inputs: [
     {
       id: 'input-tree',
       label: '二叉树层序',
       type: 'text',
-      defaultValue: '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1',
-      width: '160px',
-      placeholder: '5, 4, 8, 11, null, 13, 4...',
+      defaultValue: '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1',
+      width: '180px',
+      placeholder: '5, 4, 8, 11...',
     },
     {
       id: 'input-target-sum',
       label: '目标和 targetSum',
       type: 'number',
       defaultValue: 22,
-      width: '45px',
+      width: '50px',
     },
   ],
   presets: [
-    { label: '示例 1 (sum=22)', values: { 'input-tree': '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1', 'input-target-sum': 22 } },
-    { label: '简单示例 (sum=5)', values: { 'input-tree': '1, 2, 3', 'input-target-sum': 5 } },
-    { label: '无匹配 (sum=100)', values: { 'input-tree': '1, 2, 3', 'input-target-sum': 100 } },
+    {
+      label: 'LeetCode 示例 1: 经典双解 (sum=22)',
+      values: {
+        'input-tree': '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1',
+        'input-target-sum': 22,
+      },
+      description: '两条有效路径 [5,4,11,2] 和 [5,8,4,5]',
+    },
+    {
+      label: '单解路径示例 (sum=18)',
+      values: {
+        'input-tree': '1, 2, 3, 4, 5, 6, 7',
+        'input-target-sum': 10,
+      },
+      description: '满二叉树路径 [1, 3, 6]',
+    },
+    {
+      label: '无匹配过大目标 (sum=100)',
+      values: {
+        'input-tree': '1, 2, 3',
+        'input-target-sum': 100,
+      },
+      description: '搜索完全探索但无解',
+    },
   ],
   metrics: [
     { id: 'cur-sum', label: '当前路径累加和', color: '#2563eb' },
     { id: 'remain-diff', label: '剩余所需差值', color: '#f59e0b' },
-    { id: 'found-status', label: '路径总和判定', color: '#16a34a' },
+    { id: 'found-status', label: '有效路径数', color: '#16a34a' },
   ],
   codeLanguages: PATH_SUM_CODE_LANGUAGES,
   problemHtml: PATH_SUM_PROBLEM_HTML,
   analysisHtml: PATH_SUM_ANALYSIS_HTML,
-  buildSteps: (inputs) => {
-    const raw = inputs['input-tree'] || '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1';
-    const arr = parseTreeArray(raw, [5, 4, 8, 11, null, 13, 4, 7, 2, null, null, null, 1]);
+  generateSteps: (inputs) => {
+    const raw = inputs?.['input-tree'] || inputs?.['tree'] || '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1';
+    const arr = parseTreeArray(raw, [5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1]);
     const root = buildTree(arr);
-    const target = parseInt(inputs['input-target-sum'] || '22', 10);
+    const target = parseInt(String(inputs?.['input-target-sum'] ?? inputs?.['targetSum'] ?? '22'), 10);
+    return buildPSSteps(root, target);
+  },
+  buildSteps: (inputs) => {
+    const raw = inputs?.['input-tree'] || inputs?.['tree'] || '5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1';
+    const arr = parseTreeArray(raw, [5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1]);
+    const root = buildTree(arr);
+    const target = parseInt(String(inputs?.['input-target-sum'] ?? inputs?.['targetSum'] ?? '22'), 10);
     return buildPSSteps(root, target);
   },
   renderCanvas: (container, step) => {
@@ -223,10 +290,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<PSStep>({
       current: step.current,
       secondaryHighlightedNodes: step.path,
       primaryColor: step.found ? '#16a34a' : '#fbbf24',
-      secondaryColor: step.found ? '#34d399' : '#93c5fd',
+      secondaryColor: '#93c5fd',
     });
 
-    const root = container.closest('#algo-path-sum-view');
+    const root = container.closest('#algo-path-sum-view') || container.parentElement;
     if (root) {
       const sumEl = root.querySelector('#metric-cur-sum');
       const diffEl = root.querySelector('#metric-remain-diff');
@@ -235,39 +302,62 @@ const { template, Visualizer } = createDeclarativeVisualizer<PSStep>({
       if (sumEl) sumEl.textContent = `${step.currentSum} / ${step.targetSum}`;
       if (diffEl) diffEl.textContent = `${step.remain}`;
       if (foundEl) {
-        foundEl.textContent = step.found ? '命中目标路径 (True)' : step.action === 'done' ? '无匹配路径 (False)' : '搜索探索中';
-        foundEl.style.color = step.found ? '#16a34a' : step.action === 'done' ? '#ef4444' : '#2563eb';
+        foundEl.textContent = `${step.allPaths.length} 条已收集`;
+        foundEl.style.color = step.allPaths.length > 0 ? '#16a34a' : '#64748b';
       }
 
-      // 在 Card 2 中展示当前路径
+      // 在 Card 2 中展示当前路径与全部收集结果
       const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
       if (customMetricsContainer) {
+        const pathChips =
+          step.path.length > 0
+            ? step.path
+                .map(
+                  (v, idx) => `
+                <div style="display: flex; align-items: center;">
+                  <span style="padding: 2px 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 6px; font-size: 11px; font-weight: 700; font-family: monospace;">${v}</span>
+                  ${idx < step.path.length - 1 ? '<span style="color: #94a3b8; font-size: 10px; margin: 0 4px;">➔</span>' : ''}
+                </div>`
+                )
+                .join('')
+            : '<span style="color:#94a3b8; font-size:11px; font-style:italic;">路径为空 (回溯到根节点外)</span>';
+
+        const allPathsHtml =
+          step.allPaths.length > 0
+            ? step.allPaths
+                .map(
+                  (p, idx) => `
+                <div style="display: flex; align-items: center; gap: 6px; padding: 2px 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+                  <span style="font-size: 10.5px; font-weight: 700; color: #166534;">解 ${idx + 1}:</span>
+                  <span style="font-size: 11px; font-family: monospace; color: #15803d; font-weight: 600;">[${p.join(' ➔ ')}]</span>
+                </div>`
+                )
+                .join('')
+            : '<span style="color:#94a3b8; font-size:11px; font-style:italic;">等待首条匹配路径...</span>';
+
         customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 10.5px; font-weight: 700; color: #475569;">当前回溯路径:</span>
-              <span style="font-size: 10px; color: #64748b; font-family: monospace;">目标和: ${step.targetSum}</span>
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #475569; padding: 6px 0;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 700; color: #334155;">当前 DFS 回溯路径栈:</span>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                ${pathChips}
+              </div>
             </div>
-            <div style="padding: 4px 8px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: ${step.found ? '#16a34a' : '#2563eb'};">
-              ${step.path.join(' -> ') || '未开始'}
+
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <span style="font-size: 11px; font-weight: 700; color: #334155;">已收集有效路径总集 (LC 113):</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                ${allPathsHtml}
+              </div>
+            </div>
+
+            <div style="padding: 8px 10px; background: #f1f5f9; border-radius: 6px; font-size: 11px; color: #475569;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${step.decision}</div>
+              <div>${step.message}</div>
             </div>
           </div>
         `;
       }
     }
   },
-});
-
-registerAlgorithm({
-  id: 'path-sum',
-  name: '路径总和',
-  viewId: 'algo-path-sum-view',
-  category: 'tree',
-  description: '递归回溯减法求解根到叶路径总和是否等于目标值 targetSum',
-  icon: '🪜',
-  template,
-  Visualizer,
-  difficulty: 1,
-  levelOrder: 7,
-  learningGoal: '掌握二叉树递归回溯中累计和与剩余差值的高效比对与叶子节点判决技巧',
 });

@@ -32,6 +32,7 @@ export class AlgorithmRegistry {
   private readonly metadataMap: Map<string, AlgorithmMetadata> = new Map();
   private readonly manifestsMap: Map<string, AlgorithmManifest> = new Map();
   private readonly templatesMap: Map<string, string> = new Map();
+  private readonly aliasMap: Map<string, string> = new Map();
   private readonly batchLoader: (category: string) => Promise<void>;
 
   constructor(options: AlgorithmRegistryOptions = {}) {
@@ -40,6 +41,11 @@ export class AlgorithmRegistry {
     const initial = options.initialMetadata ?? ALL_ALGORITHM_METADATA ?? [];
     initial.forEach((meta) => {
       this.metadataMap.set(meta.id, meta);
+      if (meta.aliases && Array.isArray(meta.aliases)) {
+        for (const alias of meta.aliases) {
+          this.aliasMap.set(alias, meta.id);
+        }
+      }
     });
   }
 
@@ -66,6 +72,11 @@ export class AlgorithmRegistry {
 
     this.manifestsMap.set(manifest.id, manifest);
     this.metadataMap.set(manifest.id, manifest);
+    if (manifest.aliases && Array.isArray(manifest.aliases)) {
+      for (const alias of manifest.aliases) {
+        this.aliasMap.set(alias, manifest.id);
+      }
+    }
     if (manifest.viewId && manifest.template) {
       this.templatesMap.set(manifest.viewId, manifest.template);
     }
@@ -77,48 +88,46 @@ export class AlgorithmRegistry {
   public getMetadata(id: string): AlgorithmMetadata | undefined {
     let meta = this.metadataMap.get(id);
     if (!meta) {
-      for (const m of this.metadataMap.values()) {
-        if (m.aliases && m.aliases.includes(id)) {
-          meta = m;
-          break;
-        }
+      const canonicalId = this.aliasMap.get(id);
+      if (canonicalId) {
+        meta = this.metadataMap.get(canonicalId);
       }
     }
     return meta;
   }
 
   /**
-   * 获取全量算法元数据列表
+   * 获取全量算法元数据列表（保证 ID 唯一，无重复项）
    */
   public getAllMetadata(): AlgorithmMetadata[] {
     return Array.from(this.metadataMap.values());
   }
 
   /**
-   * 判断算法清单是否已注册（即对应 chunk 已被加载）
+   * 判断算法清单是否已注册（即对应 chunk 已被加载，支持别名解析）
    */
   public hasManifest(id: string): boolean {
     if (this.manifestsMap.has(id)) return true;
-    const meta = this.getMetadata(id);
-    return Boolean(meta && this.manifestsMap.has(meta.id));
+    const canonicalId = this.aliasMap.get(id);
+    return Boolean(canonicalId && this.manifestsMap.has(canonicalId));
   }
 
   /**
-   * 获取已注册的算法清单
+   * 获取已注册的算法清单（支持别名解析）
    */
   public getManifest(id: string): AlgorithmManifest | undefined {
     let manifest = this.manifestsMap.get(id);
     if (!manifest) {
-      const meta = this.getMetadata(id);
-      if (meta) {
-        manifest = this.manifestsMap.get(meta.id);
+      const canonicalId = this.aliasMap.get(id);
+      if (canonicalId) {
+        manifest = this.manifestsMap.get(canonicalId);
       }
     }
     return manifest;
   }
 
   /**
-   * 获取所有已注册的算法清单
+   * 获取所有已注册的算法清单（保证无重复项）
    */
   public getAllManifests(): AlgorithmManifest[] {
     return Array.from(this.manifestsMap.values());

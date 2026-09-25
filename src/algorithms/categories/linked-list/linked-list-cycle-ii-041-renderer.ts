@@ -334,43 +334,7 @@ export function renderLinkedListCycleCanvas(container: HTMLElement, step: Linked
   `;
 }
 
-export const linkedListCycleII041Visualizer = registerDeclarativeAlgorithm<LinkedListCycleStep>({
-  id: 'linked-list-cycle-ii-041',
-  name: '环形链表入环点判定 (Class 041)',
-  category: 'linked-list',
-  icon: '🔄',
-  difficulty: 2,
-  levelOrder: 41,
-  learningGoal: '掌握 Floyd 快慢指针判圈算法，深刻理解 a = k*L - b 距离公式推导，学会 O(1) 空间精准定位入环节点',
-  problemHtml: `
-    <div style="line-height: 1.6;">
-      <h3>课程核心内容 (Class 041 / LeetCode 142)</h3>
-      <p>给定一个链表的头节点 <code>head</code>，判断链表中是否有环。如果有环，返回链表开始入环的第一个节点；如果无环，则返回 <code>null</code>：</p>
-      <ul>
-        <li><strong>不能修改链表结构</strong>，且只能使用 $O(1)$ 的内存空间。</li>
-        <li><strong>阶段一</strong>：慢指针一次走 1 步，快指针一次走 2 步。如果快指针指向空，说明无环；如果相遇，则必定有环。</li>
-        <li><strong>阶段二</strong>：快指针回到头节点 <code>head</code>，步长改为 1，慢指针停在相遇点。两个指针同时出发，每次走 1 步，<strong>再次相遇的节点必定是入环节点</strong>！</li>
-      </ul>
-    </div>
-  `,
-  codeLanguages: CYCLE_II_CODES,
-  inputs: [
-    {
-      id: 'scenario',
-      label: '链表拓扑模式',
-      type: 'select',
-      defaultValue: 'has_cycle',
-      options: [
-        { label: '有环经典用例 [3, 2, 0, -4] (pos = 1)', value: 'has_cycle' },
-        { label: '无环直线链表 [3, 2, 0, -4] (pos = -1)', value: 'no_cycle' },
-      ],
-    },
-  ],
-  generateSteps: (input) => {
-    const hasCycle = (input?.scenario || 'has_cycle') === 'has_cycle';
-    return buildLinkedListCycleSteps(hasCycle);
-  },
-  renderCanvas: (container, step) => {
-    renderLinkedListCycleCanvas(container, step);
-  },
-});
+// 【双版本长处整合】已整合至 ./linked-list-cycle-ii-renderer.ts
+// 唯一事实来源：linked-list-cycle-ii (aliases: ['linked-list-cycle-ii-041'])
+import { linkedListCycleIIVisualizer } from './linked-list-cycle-ii-renderer';
+export const linkedListCycleII041Visualizer = linkedListCycleIIVisualizer;

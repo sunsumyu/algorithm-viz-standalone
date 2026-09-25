@@ -287,6 +287,7 @@ export function renderCopyListCanvas(container: HTMLElement, step: CopyListStep)
 
 export const copyListRandomPointer042Visualizer = registerDeclarativeAlgorithm<CopyListStep>({
   id: 'copy-list-random-pointer-042',
+  aliases: ['copy-random-list-035'],
   name: '复杂链表的复制 (Class 042)',
   category: 'linked-list',
   icon: '📋',

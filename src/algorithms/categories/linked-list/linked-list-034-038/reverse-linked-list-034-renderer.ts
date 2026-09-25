@@ -115,30 +115,7 @@ export function buildReverseLinkedList034Steps(): ReverseLinkedList034Step[] {
   return steps;
 }
 
-export const reverseLinkedList034Visualizer = registerDeclarativeAlgorithm<ReverseLinkedList034Step>({
-  id: 'reverse-linked-list-034',
-  name: '单双链表反转 (Class 034)',
-  category: 'linked-list',
-  difficulty: 'easy',
-  problemContent: LINKED_LIST_034_038_PROBLEMS.reverseLinkedList034,
-  sourceCodes: REVERSE_LINKED_LIST_034_CODES,
-  generateSteps: buildReverseLinkedList034Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderReverseListBoard(
-          step.nodes,
-          step.pre,
-          step.cur,
-          step.nxt,
-          step.stage
-        )}
-        ${renderFormulaCard(
-          '单链表反转复杂度定理',
-          'T(N) = O(N), \\quad S(N) = O(1)',
-          '仅需常量个辅助指针 (pre, cur, next)，无需申请任何额外节点空间，线性扫描一次即可完成反转。'
-        )}
-      </div>
-    `;
-  },
-});
+// 【双版本长处整合】已整合至 ../reverse-linked-list-renderer.ts
+// 唯一事实来源：reverse-linked-list (aliases: ['reverse-linked-list-034'])
+import { reverseLinkedListVisualizer } from '../reverse-linked-list-renderer';
+export const reverseLinkedList034Visualizer = reverseLinkedListVisualizer;

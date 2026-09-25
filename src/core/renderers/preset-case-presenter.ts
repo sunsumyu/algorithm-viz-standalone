@@ -26,6 +26,56 @@ export class PresetCasePresenter {
   public static readonly DEFAULT_PLACEHOLDER = '选择案例...';
 
   /**
+   * 顶层抽象规约：解析并自愈算法的预设案例列表。
+   * 1. 显式优先：若 Spec 中声明了非空 presets，直接采用。
+   * 2. 自动自愈规约：若存在 inputs 但未显式提供 presets，自动由 inputs 的 defaultValue 规约出基准案例，
+   *    确保全库所有具备输入控件的算法 100% 自动接入「案例: 选择案例... ⌵」顶层下拉交互。
+   */
+  public static resolvePresets(
+    presets?: PresetCaseDef[],
+    inputs?: Array<{ id: string; defaultValue: any; type?: string; options?: { label: string; value: any }[] }>
+  ): PresetCaseDef[] {
+    if (presets && presets.length > 0) {
+      return presets;
+    }
+    if (!inputs || inputs.length === 0) {
+      return [];
+    }
+
+    const defaultValues: Record<string, any> = {};
+    inputs.forEach((input) => {
+      defaultValues[input.id] = input.defaultValue ?? '';
+    });
+
+    const inferred: PresetCaseDef[] = [
+      {
+        label: '标准基准用例 (默认)',
+        values: { ...defaultValues },
+        description: '系统基于标准参数自动规约的基准推导案例',
+      },
+    ];
+
+    const altValues: Record<string, any> = { ...defaultValues };
+    let hasAlt = false;
+    for (const input of inputs) {
+      if (input.type === 'select' && input.options && input.options.length > 1) {
+        altValues[input.id] = input.options[1].value;
+        hasAlt = true;
+      }
+    }
+
+    if (hasAlt) {
+      inferred.push({
+        label: '备选变体用例',
+        values: altValues,
+        description: '切换不同分支选项的变体案例',
+      });
+    }
+
+    return inferred;
+  }
+
+  /**
    * 纯函数：根据预设案例配置列表编译生成标准下拉选框 HTML 骨架
    */
   public static renderSelectHtml(

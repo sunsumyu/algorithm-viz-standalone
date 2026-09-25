@@ -302,8 +302,9 @@ export function renderLinkedListCycleIICanvas(container: HTMLElement, step: Cycl
   `;
 }
 
-registerDeclarativeAlgorithm({
+export const linkedListCycleIIVisualizer = registerDeclarativeAlgorithm({
   id: 'linked-list-cycle-ii',
+  aliases: ['linked-list-cycle-ii-041'],
   name: '环形链表 II',
   category: 'linked-list',
   description: 'LeetCode 142 · 快慢指针判断环形与相遇点，严谨数学推导 (x = z) 寻找入环口',

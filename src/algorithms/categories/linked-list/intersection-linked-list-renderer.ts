@@ -297,8 +297,9 @@ export function renderIntersectionLinkedListCanvas(container: HTMLElement, step:
   `;
 }
 
-registerDeclarativeAlgorithm({
+export const intersectionLinkedListVisualizer = registerDeclarativeAlgorithm({
   id: 'intersection-linked-list',
+  aliases: ['intersection-linked-list-036'],
   name: '链表相交',
   category: 'linked-list',
   description: '面试题 02.07 / LC 160 · 双指针浪漫换道相遇，巧妙消除长度差确定两链表交点',

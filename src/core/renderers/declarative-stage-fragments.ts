@@ -86,9 +86,10 @@ export function renderInputsHtml(inputs: InputControlDef[] | undefined): string 
     .join('');
 }
 
-/** 2. 预设案例下拉选框（统一走 Shared PresetCasePresenter） */
+/** 2. 预设案例下拉选框（统一走 Shared PresetCasePresenter 顶层抽象规约） */
 export function renderPresetSelectHtml(spec: DeclarativeAlgorithmSpec): string {
-  return PresetCasePresenter.renderSelectHtml(spec.presets);
+  const resolved = PresetCasePresenter.resolvePresets(spec.presets, spec.inputs);
+  return PresetCasePresenter.renderSelectHtml(resolved);
 }
 
 /** 3. 顺推 / 逆推 方向切换器（像素级复用《不同路径》dir-tabs-container 模板） */

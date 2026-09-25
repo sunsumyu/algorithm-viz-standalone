@@ -8,6 +8,10 @@ import { StepVisualizer } from '../../../core/step-visualizer';
 import { registerAlgorithm } from '../../../core/registry';
 import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog, BstStep } from './tree-template';
+
+// 引入左神 Class 037 综合版（单一事实来源，别名映射 bst-lca & bst-trim）
+import './tree-036-037/lowest-common-ancestor-bst-037-renderer';
+import './tree-036-037/trim-bst-037-renderer';
 import maxTreeTemplate from './max-tree.html';
 import mergeTreesTemplate from './merge-trees.html';
 import buildTree2Template from './build-tree-2.html';
@@ -500,19 +504,9 @@ class BSTLCAVisualizer extends BSTVisualizer {
   }
 }
 
-registerAlgorithm({
-  id: 'bst-lca',
-  name: 'BST最近公共祖先',
-  viewId: 'algo-bst-lca-view',
-  category: 'tree',
-  description: '利用BST性质找最近公共祖先',
-  icon: '🔗',
-  template: bstLcaTemplate,
-  Visualizer: BSTLCAVisualizer,
-  difficulty: 2,
-  levelOrder: 20,
-  learningGoal: '利用BST性质优化LCA查找',
-});
+// 【双版本长处整合】已整合至 tree-036-037/lowest-common-ancestor-bst-037-renderer.ts
+// 唯一事实来源：tree-037-lowest-common-ancestor-bst (aliases: ['bst-lca'])，兼具输入框/预设与左神分流讲义四语言联动
+export { BSTLCAVisualizer };
 
 // ========== Level 21: BST 插入操作 ==========
 class BSTInsertVisualizer extends BSTVisualizer {
@@ -834,19 +828,9 @@ class BSTTrimVisualizer extends BSTVisualizer {
   }
 }
 
-registerAlgorithm({
-  id: 'bst-trim',
-  name: '修剪BST',
-  viewId: 'algo-bst-trim-view',
-  category: 'tree',
-  description: '修剪BST使所有节点值在[low, high]范围内',
-  icon: '✂️',
-  template: bstTrimTemplate,
-  Visualizer: BSTTrimVisualizer,
-  difficulty: 2,
-  levelOrder: 25,
-  learningGoal: '理解BST修剪的递归逻辑',
-});
+// 【双版本长处整合】已整合至 tree-036-037/trim-bst-037-renderer.ts
+// 唯一事实来源：tree-037-trim-bst (aliases: ['bst-trim'])，兼具输入框/预设与左神单侧修剪讲义四语言联动
+export { BSTTrimVisualizer };
 
 // ========== Level 26: 有序数组转 BST ==========
 class SortedArrayToBSTVisualizer extends BSTVisualizer {

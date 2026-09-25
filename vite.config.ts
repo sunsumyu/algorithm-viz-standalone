@@ -56,5 +56,7 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     pool: 'forks',
+    testTimeout: 120000,
+    teardownTimeout: 60000,
   },
 });

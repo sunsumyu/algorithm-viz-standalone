@@ -105,7 +105,7 @@ export function buildReachableSteps(graph: number[][] = DEFAULT_GRAPH): RPStep[]
       return;
     }
 
-    for (const next of graph[node]) {
+    for (const next of (graph[node] || [])) {
       currentPath.push(next);
       dfs(next);
       currentPath.pop();
