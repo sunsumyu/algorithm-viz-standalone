@@ -1,0 +1,235 @@
+/**
+ * 左程云算法通关课 Class 066: 最低票价 (Minimum Cost For Tickets · LeetCode 983)
+ * 一维动态规划逆向跳跃状态转移
+ */
+
+import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { DP_066_PROBLEMS } from './dp-066-problem-content';
+import {
+  MIN_COST_TICKETS_066_CODES,
+  MIN_COST_TICKETS_066_LINES,
+} from './dp-066-stage-codes';
+import { Dp066StepBase, renderLinearDpArray } from './dp-066-shared';
+
+export interface MinCostTicketsStep extends Dp066StepBase {
+  days: number[];
+  costs: number[];
+  dp: number[];
+  currentI?: number;
+  branch1Cost?: number;
+  branch7Cost?: number;
+  branch30Cost?: number;
+  bestCost?: number;
+  jumpIdx1?: number;
+  jumpIdx7?: number;
+  jumpIdx30?: number;
+}
+
+const PRESETS_DATA: Record<string, { days: number[]; costs: number[] }> = {
+  standard: {
+    days: [1, 4, 6, 7, 8, 20],
+    costs: [2, 7, 15],
+  },
+  dense_days: {
+    days: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 31],
+    costs: [2, 7, 15],
+  },
+  sparse_days: {
+    days: [1, 10, 20, 30, 40, 50],
+    costs: [3, 10, 25],
+  },
+};
+
+export function buildMinCostTickets066Steps(presetKey: string = 'standard'): MinCostTicketsStep[] {
+  const data = PRESETS_DATA[presetKey] || PRESETS_DATA.standard;
+  const days = [...data.days];
+  const costs = [...data.costs];
+  const n = days.length;
+  const durations = [1, 7, 30];
+
+  const steps: MinCostTicketsStep[] = [];
+  const lines = MIN_COST_TICKETS_066_LINES;
+
+  const dp: number[] = new Array(n + 1).fill(0);
+
+  // Step 0: 入口纯净帧
+  steps.push({
+    days,
+    costs,
+    dp: [...dp],
+    line: lines.entry.javascript,
+    message: `🚀 初始化最低票价一维动态规划：共有 ${n} 个旅行日，通行证费用分别为 [1天: $${costs[0]}, 7天: $${costs[1]}, 30天: $${costs[2]}]。`,
+    explanation: '定义 dp[i] 为从第 i 个旅行日开始完成后续所有旅行的最低花费。自底向上逆向推导，基准条件 dp[n] = 0。',
+    metrics: { '旅行日数': n, '当前阶段': '初始化', '基准条件': 'dp[n]=0' },
+  });
+
+  // Step 1: 分配 dp 表
+  steps.push({
+    days,
+    costs,
+    dp: [...dp],
+    line: lines.initDp.javascript,
+    message: `📊 创建长度为 ${n + 1} 的 dp 数组，初始全 0。dp[${n}] = 0 作为虚拟终点哨兵。`,
+    explanation: '当已完成全部计划日（达到下标 n）时，后续花费自然为 0。',
+    metrics: { '旅行日数': n, 'dp数组大小': n + 1, '当前阶段': '开辟DP表' },
+  });
+
+  // 逆向遍历每个旅行日
+  for (let i = n - 1; i >= 0; i--) {
+    const curDay = days[i];
+
+    // 计算三个分支的跳跃目标和花费
+    let j1 = i;
+    while (j1 < n && days[j1] < curDay + durations[0]) j1++;
+    const cost1 = costs[0] + dp[j1];
+
+    let j7 = i;
+    while (j7 < n && days[j7] < curDay + durations[1]) j7++;
+    const cost7 = costs[1] + dp[j7];
+
+    let j30 = i;
+    while (j30 < n && days[j30] < curDay + durations[2]) j30++;
+    const cost30 = costs[2] + dp[j30];
+
+    // 步骤：考察第 i 个旅行日
+    steps.push({
+      days,
+      costs,
+      dp: [...dp],
+      currentI: i,
+      line: lines.outerLoop.javascript,
+      message: `🔍 考察旅行日 #${i} (第 ${curDay} 天)：开始评估 1天/7天/30天 三种购票方案。`,
+      explanation: `当前决策基点为第 ${curDay} 天，分别计算覆盖 1/7/30 天后能跳跃到的下一个有效旅行日。`,
+      highlightedIndices: [i],
+      metrics: { '当前旅行日': `第${curDay}天 (i=${i})`, '决策状态': '评估方案' },
+    });
+
+    // 步骤：三种方案对比
+    steps.push({
+      days,
+      costs,
+      dp: [...dp],
+      currentI: i,
+      branch1Cost: cost1,
+      branch7Cost: cost7,
+      branch30Cost: cost30,
+      jumpIdx1: j1,
+      jumpIdx7: j7,
+      jumpIdx30: j30,
+      line: lines.skipDays.javascript,
+      message: `💡 方案对比：1天票跳至 #${j1}(第${days[j1] ?? '末尾'}天) 需$${cost1} | 7天票跳至 #${j7}(第${days[j7] ?? '末尾'}天) 需$${cost7} | 30天票跳至 #${j30}(第${days[j30] ?? '末尾'}天) 需$${cost30}`,
+      explanation: `1天票覆盖[${curDay}, ${curDay}]；7天票覆盖[${curDay}, ${curDay + 6}]；30天票覆盖[${curDay}, ${curDay + 29}]。`,
+      highlightedIndices: [i, j1, j7, j30].filter((idx) => idx <= n),
+      metrics: {
+        '1天方案': `$${costs[0]}+dp[${j1}]=$${cost1}`,
+        '7天方案': `$${costs[1]}+dp[${j7}]=$${cost7}`,
+        '30天方案': `$${costs[2]}+dp[${j30}]=$${cost30}`,
+      },
+    });
+
+    const best = Math.min(cost1, cost7, cost30);
+    dp[i] = best;
+
+    // 步骤：确定最优解并写表
+    steps.push({
+      days,
+      costs,
+      dp: [...dp],
+      currentI: i,
+      bestCost: best,
+      branch1Cost: cost1,
+      branch7Cost: cost7,
+      branch30Cost: cost30,
+      line: lines.saveDp.javascript,
+      message: `✅ 第 ${curDay} 天决策完成：取三者最小值 min(${cost1}, ${cost7}, ${cost30}) = $${best}，写入 dp[${i}] = ${best}。`,
+      explanation: `完成自第 ${curDay} 天起的子问题求解。`,
+      highlightedIndices: [i],
+      metrics: { '当前旅行日': `第${curDay}天`, '最优花费': `$${best}`, '已完成天数': n - i },
+    });
+  }
+
+  // 终点帧：返回 dp[0]
+  steps.push({
+    days,
+    costs,
+    dp: [...dp],
+    currentI: 0,
+    bestCost: dp[0],
+    line: lines.returnAns.javascript,
+    message: `🎉 逆向递推圆满结束！完成所有计划旅行日的最低总花费为 dp[0] = $${dp[0]}！`,
+    explanation: '自底向上求解完毕，dp[0] 汇聚了从第一个旅行日开始覆盖全年的全局最优策略。',
+    highlightedIndices: [0],
+    metrics: { '全局最低总花费': `$${dp[0]}`, '总旅行日数': n, '状态': '求解完毕' },
+  });
+
+  return steps;
+}
+
+registerDeclarativeAlgorithm({
+  id: 'min-cost-tickets-066',
+  name: '最低票价 (一维DP跳跃)',
+  category: 'dynamic-programming',
+  difficulty: '中等',
+  description: '左程云 Class 066 Code02：旅行日逆向一维动态规划，1/7/30天通行证跨度跳跃自底向上递推 (LeetCode 983)',
+  aliases: ['min-cost-tickets-983', 'leetcode-983', 'min-cost-tickets-class066'],
+  problemHtml: DP_066_PROBLEMS['min-cost-tickets-066'].problemHtml,
+  analysisHtml: DP_066_PROBLEMS['min-cost-tickets-066'].complexityHtml,
+  codeLanguages: MIN_COST_TICKETS_066_CODES,
+  inputs: [
+    {
+      id: 'preset',
+      label: '旅行用例选择',
+      type: 'select',
+      defaultValue: 'standard',
+      options: [
+        { label: '标准用例 (6个旅行日)', value: 'standard' },
+        { label: '密集连号用例 (12个旅行日)', value: 'dense_days' },
+        { label: '稀疏跨月用例 (6个跨月旅行日)', value: 'sparse_days' },
+      ],
+    },
+  ],
+  presets: [
+    { label: '标准用例 (6个旅行日)', values: { preset: 'standard' } },
+    { label: '密集连号用例 (12个旅行日)', values: { preset: 'dense_days' } },
+    { label: '稀疏跨月用例 (6个跨月旅行日)', values: { preset: 'sparse_days' } },
+  ],
+  generateSteps: (inputs: Record<string, any>) => buildMinCostTickets066Steps(inputs?.preset),
+  renderCanvas: (container: HTMLElement, step: MinCostTicketsStep) => {
+    const { days, costs, dp, currentI, branch1Cost, branch7Cost, branch30Cost, bestCost } = step;
+
+    const daysLabels = days.map((d, idx) => `i=${idx} (${d}日)`);
+    daysLabels.push(`i=${days.length} (终点)`);
+
+    const dpArrayHtml = renderLinearDpArray({
+      dp,
+      activeIdx: currentI,
+      labels: daysLabels,
+      title: '一维 DP 数组 dp[i] (从第 i 个旅行日起的最低花费)',
+      summaryText: currentI !== undefined ? `当前正在推导: 第 ${days[currentI]} 天` : '全局结果视图',
+    });
+
+    const branchHtml = currentI !== undefined && branch1Cost !== undefined ? `
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px;">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:8px; font-size:12px;">
+          <div style="font-weight:700; color:#1d4ed8;">🎫 1 天通行证 ($${costs[0]})</div>
+          <div style="margin-top:4px; color:#475569;">跳跃开销: <strong>$${branch1Cost}</strong></div>
+        </div>
+        <div style="background:#fdf4ff; border:1px solid #f5d0fe; border-radius:6px; padding:8px; font-size:12px;">
+          <div style="font-weight:700; color:#a21caf;">🎫 7 天通行证 ($${costs[1]})</div>
+          <div style="margin-top:4px; color:#475569;">跳跃开销: <strong>$${branch7Cost}</strong></div>
+        </div>
+        <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:6px; padding:8px; font-size:12px;">
+          <div style="font-weight:700; color:#c2410c;">🎫 30 天通行证 ($${costs[2]})</div>
+          <div style="margin-top:4px; color:#475569;">跳跃开销: <strong>$${branch30Cost}</strong></div>
+        </div>
+      </div>
+    ` : '';
+
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
+        ${dpArrayHtml}
+        ${branchHtml}
+      </div>
+    `;
+  },
+});

@@ -29,6 +29,9 @@ import './categories/dynamic-programming/knapsack-075/cherry-blossom-viewing-ren
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-monotonic-queue-renderer';
 import './categories/dynamic-programming/knapsack-075/coins-change-kinds-renderer';
 
+// 左程云算法讲解066【必备】从递归入手一维动态规划 4大全新切片渲染器
+import './categories/dynamic-programming/dp-066';
+
 // 左程云算法讲解067【必备】从递归入手二维动态规划 6大经典算法渲染器
 // 注：min-path-sum / longest-common-subsequence / longest-palindromic-subsequence 已接入
 // dp-generated-renderers 统一黄金舞台（YAML 模型 + UniversalStageVisualizer），此处仅保留未迁移项。

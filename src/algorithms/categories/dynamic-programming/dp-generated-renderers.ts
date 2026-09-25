@@ -51,6 +51,8 @@ export type DemoDef = {
   levelOrder?: number;
   /** 本关的学习目标（一句话） */
   learningGoal?: string;
+  /** 名称别名 */
+  aliases?: string[];
 };
 
 // ---------------------------------------------------------------------------
@@ -261,6 +263,7 @@ function registerDemo(def: DemoDef): void {
     difficulty: def.difficulty ?? 1,
     levelOrder: def.levelOrder ?? 1,
     learningGoal: def.learningGoal,
+    aliases: def.aliases,
     template: `<div id="${def.id}" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
     Visualizer: UniversalStageVisualizer,
   });
@@ -401,7 +404,10 @@ const articles: ArticleDef[] = dpArticles;
 // ---------------------------------------------------------------------------
 
 const demos: DemoDef[] = [
-  oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
+  {
+    ...oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
+    aliases: ['fibonacci-066', 'fibonacci-class066', 'leetcode-509'],
+  },
   oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
   numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
   {
@@ -409,6 +415,7 @@ const demos: DemoDef[] = [
     name: '解码方法',
     description: '数字串翻译方案数（LeetCode 91）：取 1 位或 2 位数字映射为 A-Z。',
     icon: '🔢',
+    aliases: ['decode-ways-066', 'decode-ways-class066', 'leetcode-91'],
     inputs: [{ id: 's', label: '数字串 s', value: '226', width: 140 }],
     examples: [
       { label: 's="226"', values: { s: '226' } },
