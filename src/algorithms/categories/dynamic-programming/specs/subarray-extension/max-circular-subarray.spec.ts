@@ -192,6 +192,7 @@ export const MaxCircularSubarraySpec: AlgorithmSpec = {
           { name: '初始 minSum', value: String(minSum) },
         ],
         metrics: { maxSum },
+        codeLine: 3,
       })
     );
 
@@ -219,6 +220,7 @@ export const MaxCircularSubarraySpec: AlgorithmSpec = {
             { name: '数组累加和 total', value: String(total) },
           ],
           metrics: { maxSum },
+          codeLine: 6,
         })
       );
     }
@@ -237,6 +239,7 @@ export const MaxCircularSubarraySpec: AlgorithmSpec = {
           { name: '最终结果', value: String(ans) },
         ],
         metrics: { maxSum: ans },
+        codeLine: 12,
       })
     );
 

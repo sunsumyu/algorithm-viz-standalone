@@ -152,7 +152,19 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     const groupInput = root?.querySelector('#dp-input-group') as HTMLInputElement | null;
     const profitInput = root?.querySelector('#dp-input-profit') as HTMLInputElement | null;
 
-    if (numsInput) inputObj.nums = parseNums(numsInput.value, [1, 2, 3]);
+    let defaultNums = [1, 2, 3];
+    if (specId === 'max-subarray-dp') defaultNums = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+    else if (specId === 'max-circular-subarray') defaultNums = [1, -2, 3, -2];
+    else if (specId === 'max-product-subarray') defaultNums = [2, 3, -2, 4];
+    else if (specId === 'magic-scroll') defaultNums = [1, -2, 3, 5, -1, 2];
+
+    if (numsInput) inputObj.nums = parseNums(numsInput.value, defaultNums);
+    if (!inputObj.nums && inputObj.numsInput) {
+      inputObj.nums = parseNums(inputObj.numsInput, defaultNums);
+    }
+    if (!inputObj.nums && ['max-subarray-dp', 'max-circular-subarray', 'max-product-subarray', 'magic-scroll'].includes(specId)) {
+      inputObj.nums = defaultNums;
+    }
     if (pricesInput) inputObj.prices = parseNums(pricesInput.value, [7, 1, 5, 3, 6, 4]);
     if (weightsInput) inputObj.weights = parseNums(weightsInput.value, [1, 3, 4]);
     if (valuesInput) inputObj.values = parseNums(valuesInput.value, [15, 20, 30]);
@@ -611,7 +623,43 @@ const demos: DemoDef[] = [
   numsDef('longest-continuous-increasing-subsequence', '最长连续递增序列', '要求严格相邻连续：只需向前看一位 dp[i] = dp[i-1] + 1。', '📏', 'longest-continuous-increasing-subsequence', '1,3,5,4,7'),
   strDef('longest-repeated-subarray', '最长重复子数组', '两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。', '🧩', 'longest-repeated-subarray', '1,2,3,2,1', '3,2,1,4,7'),
   strDef('uncrossed-lines', '不相交的线', '连线不相交等价于两数组的最长公共子序列 (LCS)。', '🧶', 'uncrossed-lines', '1,4,2', '1,2,4'),
-  numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
+  {
+    ...numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
+    aliases: ['max-subarray-dp-070', 'max-subarray-class070', 'leetcode-53-dp'],
+  },
+  {
+    ...numsDef('max-circular-subarray', '环形子数组的最大和', '双向 Kadane 算法：环形最大和 = max(常规最大和, 总和 - 最小和)。', '🔄', 'max-circular-subarray', '1,-2,3,-2'),
+    aliases: ['max-circular-subarray-070', 'max-circular-subarray-class070', 'leetcode-918'],
+    difficulty: 2,
+    learningGoal: '掌握双向 Kadane 算法与环形跨界转化的数学等价性（总和减去最小子数组和）',
+    examples: [
+      { label: '内部最大 [1,-2,3,-2] Ans=3', values: { nums: '1,-2,3,-2' } },
+      { label: '跨首尾 [5,-3,5] Ans=10', values: { nums: '5,-3,5' } },
+      { label: '全负数 [-3,-2,-3] Ans=-2', values: { nums: '-3,-2,-3' } },
+    ],
+  },
+  {
+    ...numsDef('max-product-subarray', '乘积最大子数组', '正负双状态 DP：乘法负负得正，每个位置同时维护最大与最小乘积。', '✖️', 'max-product-subarray', '2,3,-2,4'),
+    aliases: ['max-product-subarray-070', 'max-product-subarray-class070', 'leetcode-152'],
+    difficulty: 2,
+    learningGoal: '掌握正负双轨动态规划状态维护，理解极小负数乘以负数跃升为极大正数的双状态交替机制',
+    examples: [
+      { label: '经典正负 [2,3,-2,4] Ans=6', values: { nums: '2,3,-2,4' } },
+      { label: '含有0 [-2,0,-1] Ans=0', values: { nums: '-2,0,-1' } },
+      { label: '偶数个负数 [-2,3,-4] Ans=24', values: { nums: '-2,3,-4' } },
+    ],
+  },
+  {
+    ...numsDef('magic-scroll', '魔法卷轴问题', '前后缀分解 + Kadane 变体：至多使用两次魔法卷轴变零，求最大累加和。', '📜', 'magic-scroll', '1,-2,3,5,-1,2'),
+    aliases: ['magic-scroll-070', 'magic-scroll-class070', 'magic-scroll-problem'],
+    difficulty: 2,
+    learningGoal: '掌握前后缀分解技术与 Kadane 变体的结合，深刻理解至多两次无重叠区间修改的最优求解范式',
+    examples: [
+      { label: '经典例题 [1,-2,3,5,-1,2] Ans=11', values: { nums: '1,-2,3,5,-1,2' } },
+      { label: '全负数变零 [-5,-2,-3] Ans=0', values: { nums: '-5,-2,-3' } },
+      { label: '全正数无需变零 [10,20,30] Ans=60', values: { nums: '10,20,30' } },
+    ],
+  },
   strDef(
     'distinct-subsequences',
     '不同的子序列',
@@ -944,6 +992,9 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'longest-repeated-subarray' },
   { type: 'demo', id: 'uncrossed-lines' },
   { type: 'demo', id: 'max-subarray-dp' },
+  { type: 'demo', id: 'max-circular-subarray' },
+  { type: 'demo', id: 'max-product-subarray' },
+  { type: 'demo', id: 'magic-scroll' },
   { type: 'demo', id: 'is-subsequence' },
   { type: 'demo', id: 'distinct-subsequences' },
   { type: 'demo', id: 'delete-operation-for-two-strings' },

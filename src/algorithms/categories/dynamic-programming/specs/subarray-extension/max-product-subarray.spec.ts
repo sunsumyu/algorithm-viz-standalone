@@ -181,6 +181,7 @@ export const MaxProductSubarraySpec: AlgorithmSpec = {
           { name: '以当前结尾 minDp', value: String(minDp) },
         ],
         metrics: { maxProduct: ans },
+        codeLine: 3,
       })
     );
 
@@ -215,6 +216,7 @@ export const MaxProductSubarraySpec: AlgorithmSpec = {
             { name: '全局 ans', value: String(ans) },
           ],
           metrics: { maxProduct: ans },
+          codeLine: 6,
         })
       );
     }
@@ -228,6 +230,7 @@ export const MaxProductSubarraySpec: AlgorithmSpec = {
           { name: '最终最大乘积', value: String(ans) },
         ],
         metrics: { maxProduct: ans },
+        codeLine: 10,
       })
     );
 

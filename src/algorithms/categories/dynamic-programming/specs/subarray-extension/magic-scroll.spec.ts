@@ -249,6 +249,7 @@ export const MagicScrollSpec: AlgorithmSpec = {
           { name: '数组长度', value: String(n) },
         ],
         metrics: { maxSum: total },
+        codeLine: 4,
       })
     );
 
@@ -257,10 +258,33 @@ export const MagicScrollSpec: AlgorithmSpec = {
 
     for (let i = 0; i < n - 1; i++) {
       const combined = -(preMin[i] + sufMin[i + 1]);
-      if (combined > maxProfit) {
+      const isBetter = combined > maxProfit;
+      if (isBetter) {
         maxProfit = combined;
         bestSplit = i;
       }
+
+      steps.push(
+        makeTraceStep({
+          dp1d: nums.map((v, idx) => ({
+            value: v,
+            label: idx <= i ? '前缀' : '后缀',
+            state: idx === i ? 'active' : 'computed',
+          })),
+          current: { index: i },
+          message: `👉 考察分界点 <strong>i=${i}</strong>：左侧[0..${i}]消除最小和 <code>${preMin[i]}</code>，右侧[${i + 1}..${n - 1}]消除最小和 <code>${sufMin[i + 1]}</code>。<br/>• 当前两卷轴消除收益：<code>${combined}</code> (历史最佳: <code>${maxProfit}</code>)。`,
+          log: `split at ${i}: preMin=${preMin[i]}, sufMin=${sufMin[i + 1]}, combined=${combined}, best=${maxProfit}`,
+          vars: [
+            { name: '分界点 i', value: String(i) },
+            { name: '左半段最小和', value: String(preMin[i]) },
+            { name: '右半段最小和', value: String(sufMin[i + 1]) },
+            { name: '双卷轴消除增益', value: String(combined) },
+            { name: '历史最高增益', value: String(maxProfit) },
+          ],
+          metrics: { maxSum: total + Math.max(0, maxProfit) },
+          codeLine: 18,
+        })
+      );
     }
 
     const finalAns = total + Math.max(0, maxProfit);
@@ -272,7 +296,7 @@ export const MagicScrollSpec: AlgorithmSpec = {
           label: `pre[${i}]`,
           state: i === bestSplit ? 'active' : 'computed',
         })),
-        message: `🔍 前缀扫描完成：前缀各截断点最小子段和 preMin = [${preMin.join(', ')}]；后缀最小子段和 sufMin = [${sufMin.join(', ')}]。最佳分界点为 index=${bestSplit}。`,
+        message: `🔍 遍历完成：前缀各截断点最小子段和 preMin = [${preMin.join(', ')}]；后缀最小子段和 sufMin = [${sufMin.join(', ')}]。最佳分界点为 index=${bestSplit}。`,
         log: `preMin=[${preMin.join(', ')}], sufMin=[${sufMin.join(', ')}], maxProfit=${maxProfit}`,
         vars: [
           { name: '单次卷轴增益', value: String(-preMin[n - 1]) },
@@ -280,6 +304,7 @@ export const MagicScrollSpec: AlgorithmSpec = {
           { name: '最佳分界索引', value: String(bestSplit) },
         ],
         metrics: { maxSum: finalAns },
+        codeLine: 19,
       })
     );
 
@@ -296,6 +321,7 @@ export const MagicScrollSpec: AlgorithmSpec = {
           { name: '最终最大总和', value: String(finalAns) },
         ],
         metrics: { maxSum: finalAns },
+        codeLine: 20,
       })
     );
 

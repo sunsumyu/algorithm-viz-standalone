@@ -262,6 +262,7 @@ registerAlgorithm({
   levelOrder: 3,
   learningGoal: '掌握贪心算法在连续子数组求和中的局部最优（负和清零）与全局最优（最大和），理解Kadane算法四阶段演进',
   description: 'Kadane 贪心算法，连续累加和小于 0 时立即清零重新统计',
+  aliases: ['max-subarray-greedy', 'kadane-algorithm', 'leetcode-53'],
   template: `<div id="max-subarray" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,
   Visualizer: UniversalStageVisualizer,
 });
