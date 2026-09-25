@@ -122,6 +122,8 @@ import './categories/graph/alien-dict-renderer';
 import './categories/graph/trapping-water-ii-renderer';
 // 左程云 Class 062: 宽度优先遍历及其扩展 (Batch 30)
 import './batch-30-index';
+// 左程云 Class 063: 双向广搜与双向搜索（折半搜索）(Batch 31)
+import './batch-31-index';
 import './categories/graph/a-star-journey-renderer';
 import './categories/graph/couples-holding-hands-renderer';
 import './categories/graph/people-secret-renderer';

@@ -394,12 +394,20 @@
   4. `minimum-cost-valid-path-062-renderer.ts` (LeetCode 1368 · 网格中有效路径最小代价，0-1 BFS 双端队列扩展)
   5. `trapping-rain-water-ii-062-renderer.ts` (LeetCode 407 · 二维接雨水 II，小根堆外围向内收缩，主 ID `trapping-rain-water-ii-062`，别名 `trapping-rain-water-ii-class062`，无缝避开已有主 ID `trapping-water-ii` 冲突并互补)
   6. `word-ladder-ii-062-renderer.ts` (LeetCode 126 · 单词接龙 II，分层 BFS 确定距离 + DFS 逆向回溯所有最短路径)
+
+#### Class 063: 左程云双向广搜与双向搜索（折半搜索 Meet in the Middle）专题接入 (Batch 31)
+- **专题目录**：`src/algorithms/categories/graph/graph-063/`
+- **接入 4 个核心算法垂直切片**：
+  1. `word-ladder-063-renderer.ts` (LeetCode 127 · 单词接龙，双向广搜波前扩散，与旧版 `bi-bfs` 互补整合)
+  2. `snacks-ways-buy-tickets-063-renderer.ts` (洛谷 P4799 · 牛牛的背包问题 / 世界冰球锦标赛，折半拆分 + 二分计数)
+  3. `closest-subsequence-sum-063-renderer.ts` (LeetCode 1755 · 最接近目标值的子序列和，折半搜索 + 双指针相向逼近)
+  4. `partition-minimize-difference-063-renderer.ts` (LeetCode 2035 · 分割数组使数组和差最小，折半搜索 + 选数个数分桶二分)
 - **支持套件**：
-  - `graph-062-shared.ts`：网格/队列/堆/字符串通用状态空间渲染器与 DOM 构建器；
-  - `graph-062-stage-codes.ts`：Java / C++ / Python / JS 四语言专业级高保真代码实现；
-  - `graph-062-problem-content.ts`：名师讲义、核心解题思想与复杂度分析；
-  - `graph-062.test.ts`：13 个测试套件，全面覆盖 6 题的步进生成、DOM 挂载与边界特判；
-  - `src/algorithms/batch-30-index.ts`：批量导入索引，已在 `src/algorithms/batch-2-index.ts` 接入。
+  - `graph-063-shared.ts`：波前沙盘与双向数组/分桶呈现器；
+  - `graph-063-stage-codes.ts`：Java / C++ / Python / JS 四语言专业高保真实现与 1-based 行号映射；
+  - `graph-063-problem-content.ts`：系统名师讲义、解题精髓与时空复杂度分析；
+  - `graph-063.test.ts`：15 个单元测试套件全部通过；
+  - `src/algorithms/batch-31-index.ts`：批量索引接入 `batch-2-index.ts`。
 
 ---
 
@@ -408,11 +416,11 @@
 | 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
 | :--- | :--- | :--- | :--- |
 | **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
-| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.6s |
-| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 4ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 54.8s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 29.8s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 2.5s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 15ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 75.3s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 41.6s |
 | **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (619 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 81.4s (自动化拦截并放行) |
-| **Git 状态** | `git status` | **Clean (ahead by 3 commits)** | `748aada` 固化落盘 |
+| **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (623 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 114.5s (全绿通过) |
