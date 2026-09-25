@@ -442,6 +442,24 @@
   - `graph-065.test.ts`：10 个单元测试用例全绿通过；
   - `src/algorithms/batch-32-index.ts`：通过 `batch-2-index.ts` 接入全库。
 
+#### Commit `c1a79f6`: 左程云 Class 069 从递归入手三维动态规划专题接入与全量条目 633 门禁
+- **专题目录**：`src/algorithms/categories/dynamic-programming/dp-069/` 与 `dp-generated-renderers.ts`
+- **四维查重与前置状态**：
+  - `specs/three-dimension/` 下已有完整的 5 个 spec 实现：`knight-probability.spec.ts`、`out-of-boundary-paths.spec.ts`、`profitable-schemes.spec.ts`、`paths-divisible-by-k.spec.ts`、`scramble-string.spec.ts`；
+  - 库内原仅有 `profitable-schemes` (LeetCode 879) 注册于生成渲染器列表。
+- **双版本长处综合与多题接入**：
+  1. `knight-probability` (LeetCode 688 · 骑士在棋盘上的概率，三维状态 `(step, r, c)`，八方向跳跃步进，别名 `knight-probability-069`, `knight-probability-class069`, `leetcode-688`)
+  2. `out-of-boundary-paths` (LeetCode 576 · 出界的路径数，三维状态 `(step, r, c)`，上下左右四向越界计数，别名 `out-of-boundary-paths-069`, `out-of-boundary-paths-class069`, `leetcode-576`)
+  3. `profitable-schemes` (LeetCode 879 · 盈利计划，三维状态 `(index, count, profit)`，选与不选背包式累加，主 ID 保留 `profitable-schemes`，统合别名 `profitable-schemes-069`, `profitable-schemes-class069`, `leetcode-879`)
+  4. `paths-divisible-by-k` (LeetCode 2435 · 矩阵中和能被 K 整除的路径，三维状态 `(r, c, remainder)`，同余累加与边界剪枝，别名 `paths-divisible-by-k-069`, `paths-divisible-by-k-class069`, `leetcode-2435`)
+  5. `scramble-string` (LeetCode 87 · 扰乱字符串，区间长度 + 起点三维区间分割 DP，别名 `scramble-string-069`, `scramble-string-class069`, `leetcode-87`)
+- **关键架构优化**：
+  - 在 `src/algorithms/categories/dynamic-programming/dp-generated-renderers.ts` 的 `makeEngineBuilder` 中补齐三维参数防御性映射：`row`、`column`、`maxMove`、`startRow`、`startColumn`、`minProfit`、`group`、`profit` 以及 `paths-divisible-by-k` 矩阵与模数 `k`；
+  - 支持 `inputObj.row = inputObj.rowInput ?? inputObj.row` 等安全转换，保证前端交互面板修改入参后 Step 引擎正常消费；
+  - `src/algorithms/categories/dynamic-programming/dp-069/dp-069.test.ts` 11 个单测用例 100% 覆盖。
+- **全量条目与新鲜度**：
+  - `meta:sync` 自动同步全库，目录算法总条目数提升至 **633 题**。
+
 ---
 
 ## 十一、当前最新工程状态与门禁验证
@@ -451,13 +469,15 @@
 | **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
 | **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 1.0s |
 | **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 5ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 47.7s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 21.5s |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 41.3s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 20.5s |
 | **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
 | **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
 | **Class 065 专题测试** | `src/algorithms/categories/graph/graph-065/graph-065.test.ts` | **PASS (10/10 tests)** | 全部通过 |
 | **Class 066 专题测试** | `src/algorithms/categories/dynamic-programming/dp-066/dp-066.test.ts` | **PASS (13/13 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (629 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 69.6s (全绿通过) |
+| **Class 069 专题测试** | `src/algorithms/categories/dynamic-programming/dp-069/dp-069.test.ts` | **PASS (11/11 tests)** | 全部通过 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (633 题)** | 目录自动新鲜度 100% |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 66.0s (全绿通过) |
+
 
 
