@@ -136,6 +136,7 @@ export function buildMoSteps(arr: number[], queries: { l: number; r: number; id:
 export const moAlgorithmVisualizer = registerDeclarativeAlgorithm<MoStep>({
   id: 'mo-algorithm-159',
   name: '莫队算法 (Class 159)',
+  aliases: ['class159-code01', 'mo-algorithm-159'],
   category: 'search',
   icon: '🔍',
   difficulty: 3,

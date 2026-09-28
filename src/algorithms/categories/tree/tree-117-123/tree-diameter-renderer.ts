@@ -202,6 +202,7 @@ export function buildTreeDiameterSteps(
 export const treeDiameterVisualizer = registerDeclarativeAlgorithm<TreeDiameterStep>({
   id: 'tree-diameter-123',
   name: '树的直径 (Class 123)',
+  aliases: ['class123-code01', 'tree-diameter', 'tree-diameter-123'],
   category: 'tree',
   icon: '📏',
   difficulty: 2,

@@ -108,6 +108,7 @@ export function buildSmallSum044Steps(): SmallSum044Step[] {
 
 export const smallSumMerge044Visualizer = registerDeclarativeAlgorithm<SmallSum044Step>({
   id: 'small-sum-merge-044',
+  aliases: ['class044-code01', 'class011-code01', 'small-sum-merge-044', 'small-sum', 'merge-sort-small-sum-022'],
   name: '小和问题与翻转对 (Class 044)',
   category: 'sort',
   difficulty: 'medium',

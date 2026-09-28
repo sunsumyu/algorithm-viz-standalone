@@ -199,6 +199,7 @@ export const manacherVisualizer = registerDeclarativeAlgorithm<ManacherStep>({
   icon: '🪞',
   difficulty: 2,
   levelOrder: 103,
+  aliases: ['class103-code01', 'manacher-algo', 'manacher', 'leetcode-5', 'longest-palindromic-substring'],
   learningGoal: '掌握特殊占位符转化、对称中心 C 与右边界 R 维护、以及利用镜像点 i\' 的 O(1) 继承与 O(N) 线性时间证明',
   problemHtml: STRING_100_105_PROBLEMS.manacher.html,
   analysisHtml: STRING_100_105_PROBLEMS.manacher.html,

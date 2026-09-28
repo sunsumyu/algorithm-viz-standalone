@@ -155,6 +155,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 942,
+  aliases: ['class094-code02', 'largest-palindromic-2384', 'leetcode-2384'],
   learningGoal: '掌握高位贪心成对填充与前导0特判逻辑',
 });
 

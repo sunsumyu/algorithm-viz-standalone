@@ -418,6 +418,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<AlienStep>({
 
 registerAlgorithm({
   id: 'alien-dict',
+  aliases: ['class059-code03', 'alien-dictionary-269', 'alien-dict-269'],
   name: '火星词典拓扑排序 (Alien Dictionary)',
   viewId: 'algo-alien-dict-view',
   icon: '👽',

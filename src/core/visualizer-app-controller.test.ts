@@ -343,9 +343,32 @@ describe('VisualizerAppController Deep Module', () => {
     expect(inputM?.value).toBe('8'); // 'rabbbit'.length + 1
     expect(inputN?.value).toBe('7'); // 'rabbit'.length + 1
 
+    const stageTabs = elementsMap.get('stage-tabs-container');
+    const stage3Btn = stageTabs?.children.find(c => c.dataset.stage === 'stage-3');
+    stage3Btn?.dispatch('click');
     const badgeMemoLen = elementsMap.get('badge-memo-len');
     expect(badgeMemoLen?.textContent).toBe('8 × 7');
 
+    controller.destroy();
+  });
+
+  it('应该正确装配顶栏预设案例下拉选框并支持用例切换', () => {
+    const controller = new VisualizerAppController({ mode: 'lite', defaultModelId: 'partition-equal-subset-sum' });
+    controller.init();
+
+    const selectEl = elementsMap.get('stage-preset-select');
+    expect(selectEl).toBeDefined();
+
+    // 验证初始状态为第一个案例 nums = [1, 5, 11, 5]
+    expect(controller['model'].defaultParams?.nums).toEqual([1, 5, 11, 5]);
+
+    // 模拟用户在下拉框切换到第二个案例 nums = [1, 2, 3, 5]
+    if (selectEl) {
+      selectEl.value = '1';
+      selectEl.dispatch('change');
+    }
+
+    expect(controller['model'].defaultParams?.nums).toEqual([1, 2, 3, 5]);
     controller.destroy();
   });
 

@@ -133,6 +133,7 @@ export function buildRollbackDSUSteps(): RollbackDSUStep[] {
 export const rollbackDSUVisualizer = registerDeclarativeAlgorithm<RollbackDSUStep>({
   id: 'rollback-dsu-182',
   name: '可撤销并查集 (Rollback DSU / Class 182)',
+  aliases: ['class182-code01', 'rollback-dsu-182', 'undoable-dsu'],
   category: 'tree',
   icon: '⏪',
   difficulty: 3,

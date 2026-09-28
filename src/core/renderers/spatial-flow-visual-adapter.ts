@@ -53,7 +53,7 @@ export class SpatialFlowVisualAdapter {
     const { m, n } = options;
     const isGridProblem =
       options.isGridProblem ??
-      (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : true);
+      (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : true);
     const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
 
     // 1. 递归路径足迹连线 (Stage 1 & Stage 2) - 仅在网格迷宫问题上绘制空间探索足迹连线

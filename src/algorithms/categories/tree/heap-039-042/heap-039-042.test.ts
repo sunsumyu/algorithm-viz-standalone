@@ -78,4 +78,41 @@ describe('左神比较器、堆结构与加强堆专题 (Class 039 ~ 042) 综合
       verify1BasedCodeLines(steps, HEAP_MEDIAN_STREAM_042_CODES);
     });
   });
+
+  // 5. 注册中心与别名统合门禁 (Class 039 ~ 042)
+  describe('注册中心与别名统合门禁 (Class 039 ~ 042)', () => {
+    it('全量算法与别名必须在 algorithmRegistry 中正确解析', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-23-index');
+
+      const expectedMappings = [
+        {
+          id: 'comparator-priority-queue-039',
+          aliases: ['class039-code01', 'comparator-priority-queue', 'priority-queue-comparator'],
+        },
+        {
+          id: 'heap-sort-040',
+          aliases: ['class040-code01', 'heap-sort-040', 'heap-sort', 'heapify'],
+        },
+        {
+          id: 'heap-greater-041',
+          aliases: ['class041-code01', 'heap-greater-041', 'heap-greater', 'indexed-priority-queue'],
+        },
+        {
+          id: 'heap-median-stream-042',
+          aliases: ['class042-code02', 'find-median-from-data-stream-295', 'leetcode-295', 'median-finder'],
+        },
+      ];
+
+      for (const item of expectedMappings) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases).toContain(alias);
+          const resolvedByAlias = algorithmRegistry.getManifest(alias);
+          expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

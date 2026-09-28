@@ -87,4 +87,51 @@ describe('左神快速幂与矩阵快速幂专题二 (math-098) 自动化测试�
     verifyLineMap(steps, ATTENDANCE_RECORD_CODES);
     expect(steps[steps.length - 1].finalValue).toBe(8);
   });
+
+  it('8. Class 098 快速幂与矩阵快速幂专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'quick-power-098',
+        aliases: ['class098-code01', 'quick-power', 'powx-n-50', 'leetcode-50'],
+      },
+      {
+        id: 'fibonacci-matrix-power-098',
+        aliases: ['class098-code02', 'fibonacci-matrix', 'fibonacci-number-509', 'leetcode-509'],
+      },
+      {
+        id: 'climbing-stairs-matrix-098',
+        aliases: ['class098-code03', 'climbing-stairs-matrix', 'climbing-stairs-70', 'leetcode-70'],
+      },
+      {
+        id: 'tribonacci-matrix-power-098',
+        aliases: ['class098-code04', 'tribonacci-matrix', 'tribonacci-number-1137', 'leetcode-1137'],
+      },
+      {
+        id: 'domino-tromino-matrix-098',
+        aliases: ['class098-code05', 'domino-tromino', 'domino-tromino-790', 'leetcode-790'],
+      },
+      {
+        id: 'count-vowels-matrix-098',
+        aliases: ['class098-code06', 'count-vowels-matrix', 'count-vowels-1220', 'leetcode-1220'],
+      },
+      {
+        id: 'attendance-record-matrix-098',
+        aliases: ['class098-code07', 'attendance-record-matrix', 'student-attendance-record-ii-552', 'leetcode-552'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

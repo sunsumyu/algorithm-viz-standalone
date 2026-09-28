@@ -101,6 +101,7 @@ export function buildHeapGreater041Steps(): HeapGreater041Step[] {
 
 export const heapGreater041Visualizer = registerDeclarativeAlgorithm<HeapGreater041Step>({
   id: 'heap-greater-041',
+  aliases: ['class041-code01', 'heap-greater-041', 'heap-greater', 'indexed-priority-queue'],
   name: '手动实现加强堆 (Class 041)',
   category: 'tree',
   difficulty: 'hard',

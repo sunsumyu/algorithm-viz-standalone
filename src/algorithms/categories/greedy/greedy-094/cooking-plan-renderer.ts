@@ -125,6 +125,7 @@ export const cookingPlanVisualizer = registerDeclarativeAlgorithm<CookingPlanSte
   icon: '🍳',
   difficulty: 3,
   levelOrder: 946,
+  aliases: ['class094-code06', 'reducing-dishes-1402', 'leetcode-1402', 'reducing-dishes'],
   learningGoal: '掌握后缀和贪心累加机制与时间加权效应',
   problemHtml: GREEDY_094_PROBLEMS.cookingPlan.html,
   analysisHtml: GREEDY_094_PROBLEMS.cookingPlan.html,

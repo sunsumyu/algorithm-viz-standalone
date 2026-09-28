@@ -277,6 +277,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code01：洛谷 P1048 采药，经典 01 背包与滚动数组倒序空间压缩',
   icon: '🎒',
+  aliases: ['class073-code01', 'knapsack-01-073', 'knapsack-01', 'luogu-p1048'],
   template,
   Visualizer,
   difficulty: 1,

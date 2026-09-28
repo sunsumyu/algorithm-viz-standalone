@@ -167,6 +167,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 944,
+  aliases: ['class094-code04', 'min-cost-hire-workers-857', 'leetcode-857', 'hire-k-workers'],
   learningGoal: '掌握基准单价升序外层贪心与大根堆最小化质量和内层贪心的双重贪心架构',
 });
 

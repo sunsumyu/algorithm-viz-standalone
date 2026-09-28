@@ -108,6 +108,7 @@ export const fibonacciMatrixVisualizer = registerDeclarativeAlgorithm<FibMatrixS
   icon: '🌀',
   difficulty: 3,
   levelOrder: 982,
+  aliases: ['class098-code02', 'fibonacci-matrix', 'fibonacci-number-509', 'leetcode-509'],
   learningGoal: '掌握常系数线性齐次递推数列转化为状态转移矩阵快速幂的标准范式',
   problemHtml: MATH_098_PROBLEMS.fibonacciMatrix.html,
   analysisHtml: MATH_098_PROBLEMS.fibonacciMatrix.html,

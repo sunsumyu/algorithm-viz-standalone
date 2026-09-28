@@ -457,4 +457,5 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 904,
   learningGoal: '掌握紧迫度排序思想与早截止失效不可逆性反证',
+  aliases: ['class090-code04', 'meeting-one-day-1353', 'leetcode-1353'],
 });

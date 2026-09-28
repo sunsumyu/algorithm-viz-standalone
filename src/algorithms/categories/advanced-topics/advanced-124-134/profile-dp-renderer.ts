@@ -154,6 +154,7 @@ export function buildProfileDpSteps(n: number, m: number): ProfileDpStep[] {
 export const profileDpVisualizer = registerDeclarativeAlgorithm<ProfileDpStep>({
   id: 'profile-dp-125',
   name: '轮廓线 DP (Class 125)',
+  aliases: ['class125-code01', 'profile-dp', 'profile-dp-125', 'domino-tiling'],
   category: 'dynamic-programming',
   icon: '🏁',
   difficulty: 3,

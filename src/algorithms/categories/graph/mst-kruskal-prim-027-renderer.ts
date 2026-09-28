@@ -231,6 +231,7 @@ export const mst027Visualizer = registerDeclarativeAlgorithm<Mst027Step>({
   icon: '🌐',
   difficulty: 2,
   levelOrder: 27,
+  aliases: ['class027-code01', 'class027-code02', 'mst-kruskal-prim-027', 'mst-kruskal-prim', 'luogu-p3366'],
   learningGoal: '掌握 Kruskal 贪心加边与并查集防环机制，理解 Prim 节点集割边扩展定理与最小生成树应用',
   problemHtml: `
     <div style="font-family: inherit; line-height: 1.6; color: #1e293b;">

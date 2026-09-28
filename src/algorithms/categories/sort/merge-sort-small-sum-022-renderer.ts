@@ -367,6 +367,7 @@ export const mergeSortSmallSum022Visualizer = registerDeclarativeAlgorithm<Small
   icon: '➕',
   difficulty: 2,
   levelOrder: 22,
+  aliases: ['class022-code01', 'merge-sort-small-sum-022', 'small-sum-022'],
   learningGoal: '深刻理解归并排序 Merge 阶段跨组单调性在统计小和与逆序对中的降维加速威力',
   problemHtml: `
     <div style="line-height: 1.6;">

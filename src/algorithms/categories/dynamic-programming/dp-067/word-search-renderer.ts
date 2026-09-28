@@ -1504,6 +1504,7 @@ const WordSearchDeclarativeResult = registerDeclarativeAlgorithm<WordSearchStep>
   category: 'dynamic-programming',
   description: '左程云算法讲解067 Code02：LeetCode 79 单词搜索，无后效性反例深度辨析与启发式剪枝',
   icon: '🔍',
+  aliases: ['class067-code02', 'word-search-067', 'word-search-problem', 'leetcode-79'],
   difficulty: 2,
   levelOrder: 102,
   learningGoal: '理解无后效性是动态规划的核心前提，掌握带回溯的现场恢复与首尾字符频次剪枝优化',

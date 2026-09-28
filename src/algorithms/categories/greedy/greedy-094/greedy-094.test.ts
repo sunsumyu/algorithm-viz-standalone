@@ -97,4 +97,47 @@ describe('左神贪心专题 6 (greedy-094) 自动化测试套件', () => {
     const last = steps[steps.length - 1];
     expect(last.totalSum).toBe(14);
   });
+
+  it('7. Class 094 贪心算法专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-5-index');
+
+    const expectedMappings = [
+      {
+        id: 'eliminate-monsters',
+        aliases: ['class094-code01', 'eliminate-monsters-1921', 'leetcode-1921', 'eliminate-maximum-monsters'],
+      },
+      {
+        id: 'largest-palindromic-number',
+        aliases: ['class094-code02', 'largest-palindromic-2384', 'leetcode-2384'],
+      },
+      {
+        id: 'max-avg-pass-ratio',
+        aliases: ['class094-code03', 'max-avg-pass-ratio-1792', 'leetcode-1792', 'max-average-pass-ratio'],
+      },
+      {
+        id: 'min-cost-hire-workers',
+        aliases: ['class094-code04', 'min-cost-hire-workers-857', 'leetcode-857', 'hire-k-workers'],
+      },
+      {
+        id: 'cutting-tree',
+        aliases: ['class094-code05', 'cutting-trees', 'poj-2784'],
+      },
+      {
+        id: 'cooking-plan',
+        aliases: ['class094-code06', 'reducing-dishes-1402', 'leetcode-1402', 'reducing-dishes'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

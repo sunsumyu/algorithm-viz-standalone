@@ -126,6 +126,7 @@ export function buildXorGaussianSteps(rawMatrix: number[][], n: number): XorGaus
 export const xorGaussianVisualizer = registerDeclarativeAlgorithm<XorGaussianStep>({
   id: 'xor-gaussian-134',
   name: '异或高斯消元 (Class 134)',
+  aliases: ['class134-code01', 'xor-gaussian', 'xor-gaussian-134', 'gf2-gaussian'],
   category: 'math',
   icon: '🔲',
   difficulty: 3,

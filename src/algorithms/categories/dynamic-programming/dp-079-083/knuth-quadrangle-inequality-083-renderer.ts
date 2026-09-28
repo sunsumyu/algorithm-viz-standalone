@@ -168,6 +168,7 @@ export const knuthQuadrangle083Visualizer = registerDeclarativeAlgorithm<Knuth08
   name: '四边形不等式优化 (Class 083)',
   category: 'dynamic-programming',
   difficulty: 'hard',
+  aliases: ['class083-quadrangle', 'knuth-quadrangle-inequality', 'stone-merging-quadrangle', 'quadrangle-inequality-083'],
   problemContent: DP_079_083_PROBLEMS.knuthQuadrangle083,
   sourceCodes: KNUTH_QUADRANGLE_083_CODES,
   generateSteps: buildKnuth083Steps,

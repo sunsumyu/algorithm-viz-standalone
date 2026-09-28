@@ -128,6 +128,7 @@ export function buildBinaryLiftingDpSteps(
 export const binaryLiftingDpVisualizer = registerDeclarativeAlgorithm<BinaryLiftingDpStep>({
   id: 'binary-lifting-dp-129',
   name: '倍增优化 DP (Class 129)',
+  aliases: ['class129-code01', 'binary-lifting-dp', 'binary-lifting-dp-129'],
   category: 'dynamic-programming',
   icon: '⚡',
   difficulty: 2,

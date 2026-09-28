@@ -173,6 +173,7 @@ export const minOperationsSimilarVisualizer = registerDeclarativeAlgorithm<MinOp
   icon: '🔄',
   difficulty: 3,
   levelOrder: 923,
+  aliases: ['class092-code03', 'min-operations-similar-2449', 'leetcode-2449', 'make-array-similar'],
   learningGoal: '掌握奇偶分类独立排序与排序不等式顺位对齐的正差值累加贪心法',
   problemHtml: GREEDY_092_PROBLEMS.minOperationsSimilar.html,
   analysisHtml: GREEDY_092_PROBLEMS.minOperationsSimilar.html,

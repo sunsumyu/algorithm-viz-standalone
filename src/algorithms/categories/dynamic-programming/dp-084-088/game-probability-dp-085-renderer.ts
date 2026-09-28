@@ -142,6 +142,7 @@ export const gameProbability085Visualizer = registerDeclarativeAlgorithm<GameDp0
   name: '博弈概率 DP 与倒推状态 (Class 085)',
   category: 'dynamic-programming',
   difficulty: 'medium',
+  aliases: ['class085-game-dp', 'game-probability-dp', 'stone-game-877', 'leetcode-877'],
   problemContent: DP_084_088_PROBLEMS.gameProbability085,
   sourceCodes: GAME_PROBABILITY_085_CODES,
   generateSteps: buildGameDp085Steps,

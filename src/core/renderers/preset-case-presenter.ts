@@ -163,6 +163,140 @@ export class PresetCasePresenter {
 
     return selectEl;
   }
+
+  /**
+   * 将字符串如 `nums = [1, 5, 11, 5]` 或 `m = 3, n = 7` 解析为键值对字典
+   */
+  public static parseInputString(inputStr?: string): Record<string, any> {
+    if (!inputStr || typeof inputStr !== 'string') return {};
+    const res: Record<string, any> = {};
+    const regex = /([a-zA-Z0-9_]+)\s*=\s*(\[[^\]]*\]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^,\n\r;]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(inputStr)) !== null) {
+      const key = match[1].trim();
+      let rawVal = match[2].trim();
+      if (rawVal.startsWith('[') && rawVal.endsWith(']')) {
+        try {
+          res[key] = JSON.parse(rawVal.replace(/'/g, '"'));
+        } catch {
+          res[key] = rawVal.slice(1, -1).split(',').map((s) => {
+            const trimmed = s.trim();
+            const num = Number(trimmed);
+            return isNaN(num) ? trimmed : num;
+          });
+        }
+      } else if ((rawVal.startsWith('"') && rawVal.endsWith('"')) || (rawVal.startsWith("'") && rawVal.endsWith("'"))) {
+        res[key] = rawVal.slice(1, -1);
+      } else if (rawVal === 'true') {
+        res[key] = true;
+      } else if (rawVal === 'false') {
+        res[key] = false;
+      } else if (!isNaN(Number(rawVal)) && rawVal !== '') {
+        res[key] = Number(rawVal);
+      } else {
+        res[key] = rawVal;
+      }
+    }
+    return res;
+  }
+
+  /**
+   * 从 YAML 模型中解析预设案例列表 (从 problem.examples 及 defaultParams 自动自愈规约)
+   */
+  public static resolveFromModel(model: any): PresetCaseDef[] {
+    if (!model) return [];
+    if (model.presets && Array.isArray(model.presets) && model.presets.length > 0) {
+      return model.presets;
+    }
+    const presets: PresetCaseDef[] = [];
+    const defaultParams = model.defaultParams || {};
+    const examples = model.problem?.examples || [];
+
+    for (let idx = 0; idx < examples.length; idx++) {
+      const ex = examples[idx];
+      const parsedValues = this.parseInputString(ex.input);
+      const label = ex.input ? ex.input.trim() : `示例 ${idx + 1}`;
+      presets.push({
+        label,
+        values: Object.keys(parsedValues).length > 0 ? parsedValues : { ...defaultParams },
+        description: ex.explanation || `示例 ${idx + 1}`
+      });
+    }
+
+    if (presets.length === 0 && Object.keys(defaultParams).length > 0) {
+      const labelParts: string[] = [];
+      for (const [k, v] of Object.entries(defaultParams)) {
+        const valStr = Array.isArray(v) ? `[${v.join(', ')}]` : (typeof v === 'string' ? `"${v}"` : String(v));
+        labelParts.push(`${k} = ${valStr}`);
+      }
+      presets.push({
+        label: labelParts.join(', ') || '默认参数',
+        values: { ...defaultParams },
+        description: '算法默认基准用例'
+      });
+    }
+
+    return presets;
+  }
+
+  /**
+   * 自动探测与当前参数最匹配的预设案例索引
+   */
+  public static findMatchingPresetIndex(presets: PresetCaseDef[], currentParams?: Record<string, any>): number {
+    if (!presets || presets.length === 0 || !currentParams) return 0;
+    const matchIdx = presets.findIndex((p) => {
+      if (!p.values) return false;
+      const keys = Object.keys(p.values);
+      if (keys.length === 0) return false;
+      return keys.every((k) => {
+        const v1 = p.values[k];
+        const v2 = currentParams[k];
+        if (Array.isArray(v1) && Array.isArray(v2)) {
+          return v1.length === v2.length && v1.every((val, i) => val === v2[i]);
+        }
+        return String(v1) === String(v2);
+      });
+    });
+    return matchIdx >= 0 ? matchIdx : 0;
+  }
+
+  /**
+   * 纯函数：根据预设案例配置列表编译生成全屏自适应/Tailwind 风格的标准下拉选框 HTML 骨架
+   */
+  public static renderTailwindSelectHtml(
+    presets?: PresetCaseDef[],
+    selectedIndex: number = 0,
+    options?: { selectId?: string; labelText?: string; maxWidth?: string }
+  ): string {
+    if (!presets || presets.length === 0) {
+      return '';
+    }
+
+    const selectId = options?.selectId || 'stage-preset-select';
+    const labelText = options?.labelText || this.DEFAULT_LABEL_TEXT;
+    const maxWidth = options?.maxWidth || '240px';
+
+    const optionsHtml = presets
+      .map((p, idx) => {
+        const isSelected = idx === selectedIndex;
+        const cleanLabel = (p.label || `案例 ${idx + 1}`)
+          .replace(/\(.*\)/, '')
+          .replace(/（.*）/, '')
+          .trim();
+        const descAttr = p.description ? ` title="${escapeAttr(p.description)}"` : '';
+        return `<option value="${idx}"${isSelected ? ' selected' : ''}${descAttr}>${escapeHtml(cleanLabel)}</option>`;
+      })
+      .join('');
+
+    return `
+      <div class="flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded-xl border border-slate-200 text-xs shadow-2xs flex-shrink-0" id="preset-select-wrapper">
+        <span class="text-slate-500 font-semibold text-[11px] flex-shrink-0">${escapeHtml(labelText)}</span>
+        <select id="${selectId}" class="bg-white border border-slate-300 rounded px-1.5 py-0.5 text-slate-800 font-semibold text-xs focus:outline-none focus:border-blue-500 shadow-2xs truncate cursor-pointer" style="max-width: ${maxWidth};" title="选择测试案例">
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
+  }
 }
 
 function escapeHtml(str: string): string {

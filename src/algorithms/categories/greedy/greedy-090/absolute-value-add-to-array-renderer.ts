@@ -390,4 +390,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 906,
   learningGoal: '掌握差值闭包收敛于 GCD 理想格点的数论贪心本质',
+  aliases: ['class090-code06', 'absolute-value-add', 'gcd-closure-array'],
 });

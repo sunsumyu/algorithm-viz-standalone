@@ -171,6 +171,7 @@ export function buildScapegoatSteps(keys: number[], alpha: number = 0.7): Scapeg
 export const scapegoatTreeVisualizer = registerDeclarativeAlgorithm<ScapegoatStep>({
   id: 'scapegoat-tree-153',
   name: '替罪羊树 (Class 153)',
+  aliases: ['class153-code01', 'scapegoat-tree', 'scapegoat-tree-153'],
   category: 'tree',
   icon: '🐐',
   difficulty: 3,

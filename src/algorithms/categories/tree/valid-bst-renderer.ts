@@ -204,7 +204,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
 
 export const validBstVisualizer = registerDeclarativeAlgorithm<VBStep>({
   id: 'valid-bst',
-  aliases: ['tree-037-validate-bst'],
+  aliases: ['class023-code01', 'class037-code05', 'valid-bst', 'tree-037-validate-bst', 'leetcode-98'],
   name: '验证二叉搜索树',
   category: 'tree',
   icon: '🛡️',

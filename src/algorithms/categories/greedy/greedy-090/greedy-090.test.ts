@@ -189,4 +189,30 @@ describe('左神贪心算法专题 2 (Class 090) 综合测试套件', () => {
       expect(last.theoreticalCount).toBe(4);
     });
   });
+
+  describe('Class 090 贪心算法专题 注册中心与别名统合门禁', () => {
+    const expectedGreedy090 = [
+      { id: 'cutting-bamboo', aliases: ['class090-code01', 'cutting-bamboo-343', 'leetcode-343', 'integer-break-ii'] },
+      { id: 'maximum-product-k-parts', aliases: ['class090-code02', 'max-product-k-parts', 'divide-k-parts'] },
+      { id: 'meeting-monopoly', aliases: ['class090-code03', 'meeting-monopoly-435', 'leetcode-435', 'luogu-p1803'] },
+      { id: 'meeting-one-day', aliases: ['class090-code04', 'meeting-one-day-1353', 'leetcode-1353'] },
+      { id: 'ipo-max-capital', aliases: ['class090-code05', 'ipo', 'ipo-502', 'leetcode-502'] },
+      { id: 'absolute-value-add-to-array', aliases: ['class090-code06', 'absolute-value-add', 'gcd-closure-array'] },
+    ];
+
+    it('Class 090 全量 6 大贪心算法必须成功注册且别名可正反向查询', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-5-index');
+
+      for (const item of expectedGreedy090) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `算法 [${item.id}] 必须成功注册`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases, `算法 [${item.id}] 必须包含别名 [${alias}]`).toContain(alias);
+          const byAlias = algorithmRegistry.getManifest(alias);
+          expect(byAlias?.id, `别名 [${alias}] 必须解析至主 ID [${item.id}]`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

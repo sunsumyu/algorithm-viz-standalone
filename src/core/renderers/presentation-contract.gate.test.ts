@@ -804,4 +804,249 @@ describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation
       ).toEqual([]);
     });
   });
+
+  // ==========================================================================
+  // 红灯 21 & 22: 背包族群全阶段维度健全性与状态空间严禁误判纯一维
+  // ==========================================================================
+  describe('🚨 红灯陷阱 21 & 22: 背包族群全阶段维度健全性死门禁', () => {
+    it('所有背包算法（分割等和子集、目标和、最后一块石头、01背包等）在二维DP阶段严禁被判为纯一维', () => {
+      const knapsackIds = [
+        'knapsack-01-2d',
+        'knapsack-01-1d',
+        'complete-knapsack',
+        'partition-equal-subset-sum',
+        'last-stone-weight-ii',
+        'target-sum',
+      ];
+
+      const violations: string[] = [];
+
+      for (const id of knapsackIds) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+
+        // 1. 验证 isPure1DProblem 绝对为 false
+        const isPure1D = ProblemDimensionResolver.isPure1DProblem(id, model.defaultParams);
+        if (isPure1D) {
+          violations.push(`🚨 [KNAPSACK_PURE_1D_TRAP] ${id}: 被错误标记为 isPure1DProblem=true！背包状态必须为二维！`);
+        }
+
+        // 2. 验证 Stage 3 下维度归约必须为二维：m > 1, n > 1, is1D === false
+        const resolvedStage3 = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-3');
+        if (resolvedStage3.is1D || resolvedStage3.m <= 1 || resolvedStage3.n <= 1) {
+          violations.push(
+            `🚨 [KNAPSACK_STAGE3_DIMENSION_TRAP] ${id}: Stage 3 维度错误！m=${resolvedStage3.m}, n=${resolvedStage3.n}, is1D=${resolvedStage3.is1D}！必须为 m>1 且 is1D=false！`
+          );
+        }
+
+        // 3. 验证 Stage 4 下维度归约必须为空间压缩：m === 1, is1D === true
+        const resolvedStage4 = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-4');
+        if (!resolvedStage4.is1D || resolvedStage4.m !== 1) {
+          violations.push(
+            `🚨 [KNAPSACK_STAGE4_DIMENSION_TRAP] ${id}: Stage 4 必须为一维空间压缩！m=${resolvedStage4.m}, is1D=${resolvedStage4.is1D}！`
+          );
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下背包算法违背了维度健全性门禁:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 红灯 23 & 24: 任何子视图模式下 Card 2 绝不出现“标题是树内容是表”脑裂与尺寸撒谎
+  // ==========================================================================
+  describe('🚨 红灯陷阱 23 & 24: 全激活子视图下 Card 2 零脑裂死门禁', () => {
+    it('当 activeSubView 传入 tree/matrix/default 时，只要渲染出二维表格，标题绝对禁止叫树，且徽章尺寸必须与表格真实行列数相等', () => {
+      const violations: string[] = [];
+      const testIds = ['partition-equal-subset-sum', 'knapsack-01-2d', 'target-sum', 'unique-paths-ii'];
+
+      for (const id of testIds) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+        const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams, 'stage-3');
+
+        const steps = UniversalStageEngine.generateSteps(model, {
+          stage: 3,
+          m: resolved.m,
+          n: resolved.n,
+          direction: 'forward',
+        });
+        if (!steps || steps.length === 0) continue;
+        const step = steps[0];
+
+        // 测试所有可能的 activeSubView 状态 (包括用户切换或 localStorage 残留的 'tree')
+        for (const subView of ['tree', 'matrix', 'default']) {
+          const doc = getFreshStageDOM();
+          const stageConfig = model.stages?.['stage-3'] || {};
+
+          StageNavigationCoordinator.updateCard2HeaderMeta({
+            model,
+            stageConfig,
+            currentStage: 'stage-3',
+            currentDirection: 'forward',
+            activeSubView: subView,
+            effectiveM: (step.grid && step.grid.length > 1) ? step.grid.length : resolved.m,
+            effectiveN: (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : resolved.n,
+          });
+
+          StateSpacePresenter.renderLiteVisuals(
+            {
+              currentStage: 'stage-3',
+              step,
+              m: resolved.m,
+              n: resolved.n,
+              modelId: id,
+              isReverse: false,
+              isGridProblem: false,
+              stage3SubView: subView as any,
+            },
+            steps,
+            0,
+            doc.getElementById('algo-main-container')
+          );
+
+          const card2TitleEl = doc.getElementById('card2-title');
+          const badgeEl = doc.getElementById('badge-memo-len');
+          const card2ContentEl = doc.getElementById('memo-array-container');
+
+          const title = card2TitleEl?.textContent || '';
+          const badge = badgeEl?.textContent || '';
+          const html = card2ContentEl?.innerHTML || '';
+
+          const hasTable = html.includes('<table') || html.includes('dp-table') || (html.includes('grid-cell') && step.grid);
+          const hasTree = html.includes('<svg') && html.includes('tree');
+
+          if (hasTable && !hasTree) {
+            if (title.includes('树') || title.toLowerCase().includes('tree')) {
+              violations.push(
+                `🚨 [PERSISTENT_SPLIT_BRAIN_TRAP] ${id} (subView=${subView}): Card 2 渲染了二维表格，但标题仍被误改写为 "${title}"！`
+              );
+            }
+          }
+
+          if (step.grid && step.grid.length > 1 && step.grid[0] && step.grid[0].length > 0) {
+            const actualRows = step.grid.length;
+            const actualCols = step.grid[0].length;
+            const expectedBadge = `${actualRows} × ${actualCols}`;
+            if (badge.includes('×') && badge !== expectedBadge && !hasTree) {
+              violations.push(
+                `🚨 [PERSISTENT_BADGE_LIE_TRAP] ${id} (subView=${subView}): 矩阵实际为 ${expectedBadge}，但徽章显示 "${badge}"！`
+              );
+            }
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法在子视图模式下触发了 Card 2 脑裂或徽章撒谎:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
+
+  // ==========================================================================
+  // 红灯 25 & 26: 阶段演进纯粹性与视觉隐喻越界死门禁
+  // ==========================================================================
+  describe('🚨 红灯陷阱 25 & 26: 阶段演进纯粹性与视觉隐喻越界死门禁', () => {
+    it('在 Stage 1 与 Stage 2 中，非网格地图问题严禁渲染探险家小人与终点旗子，背包算法 Card 1 必须呈现物品决策沙盘，Card 2 徽章严禁出现矩阵尺寸撒谎', () => {
+      const violations: string[] = [];
+      const testKnapsackIds = ['partition-equal-subset-sum', 'knapsack-01-2d', 'target-sum', 'last-stone-weight-ii', 'coin-change'];
+
+      for (const id of testKnapsackIds) {
+        if (!AlgorithmModelRepository.hasModel(id)) continue;
+        const model = AlgorithmModelRepository.getModel(id);
+
+        for (const stageKey of ['stage-1', 'stage-2']) {
+          const stageNum = stageKey === 'stage-1' ? 1 : 2;
+          const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams, stageKey);
+
+          const steps = UniversalStageEngine.generateSteps(model, {
+            stage: stageNum,
+            m: resolved.m,
+            n: resolved.n,
+            direction: 'forward',
+          });
+          if (!steps || steps.length === 0) continue;
+          const step = steps[0];
+
+          const doc = getFreshStageDOM();
+          const stageConfig = model.stages?.[stageKey] || {};
+
+          // 更新头部与元数据
+          StageNavigationCoordinator.updateHeaderMeta(
+            model,
+            stageConfig,
+            stageKey,
+            'forward',
+            resolved.m,
+            resolved.n
+          );
+
+          // 渲染视觉
+          StateSpacePresenter.renderLiteVisuals(
+            {
+              currentStage: stageKey,
+              step,
+              m: resolved.m,
+              n: resolved.n,
+              modelId: id,
+              isReverse: false,
+              isGridProblem: false,
+            },
+            steps,
+            0,
+            doc.getElementById('algo-main-container')
+          );
+
+          const card1Wrapper = doc.getElementById('card1-wrapper');
+          const card1Html = card1Wrapper?.innerHTML || '';
+          const card1TitleEl = doc.getElementById('card1-title');
+          const card1Title = card1TitleEl?.textContent || '';
+          const badgeEl = doc.getElementById('badge-memo-len');
+          const badgeText = badgeEl?.textContent || '';
+
+          // 1. 检验探险家小人与终点旗子越界污染
+          if (card1Html.includes('adventurer-char') || card1Html.includes('adventurer-char-holder')) {
+            violations.push(
+              `🚨 [ADVENTURER_OVERREACH_TRAP] ${id} (${stageKey}): Card 1 非网格物理地图，却渲染了探险家小人 (adventurer-char)！`
+            );
+          }
+          if (card1Html.includes('🏁')) {
+            violations.push(
+              `🚨 [FLAG_OVERREACH_TRAP] ${id} (${stageKey}): Card 1 非网格物理地图，却插了终点旗子 (🏁)！`
+            );
+          }
+
+          // 2. 检验背包决策沙盘存在性
+          if (stageKey === 'stage-1') {
+            if (!card1Html.includes('knapsack-sandbox-container') || !card1Html.includes('候选物品池')) {
+              violations.push(
+                `🚨 [KNAPSACK_SANDBOX_MISSING_TRAP] ${id} (${stageKey}): 阶段 1 未正确呈现背包物品决策沙盘，而是提前泄露了网格或空容器！`
+              );
+            }
+            if (card1Title.includes('二维状态网格')) {
+              violations.push(
+                `🚨 [STAGE1_GRID_TITLE_LEAK_TRAP] ${id} (${stageKey}): 阶段 1 标题不可提前宣称为 "二维状态网格"，当前标题为 "${card1Title}"！`
+              );
+            }
+          }
+
+          // 3. 检验 Card 2 徽章真实性（树视图严禁带矩阵规格 ×）
+          if (badgeText.includes('×') || badgeText.includes('x')) {
+            violations.push(
+              `🚨 [TREE_BADGE_DIMENSION_LIE_TRAP] ${id} (${stageKey}): Card 2 展示的是二叉决策树，但右上角徽章仍谎报矩阵规格 "${badgeText}"！`
+            );
+          }
+        }
+      }
+
+      expect(
+        violations,
+        `❌ 以下算法违背了阶段演进纯粹性与视觉隐喻越界死门禁:\n${violations.join('\n')}`
+      ).toEqual([]);
+    });
+  });
 });

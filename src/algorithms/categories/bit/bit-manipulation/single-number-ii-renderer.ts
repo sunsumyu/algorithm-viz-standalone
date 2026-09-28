@@ -100,6 +100,7 @@ export const singleNumberIIRenderer = registerDeclarativeAlgorithm<SingleNumberI
   category: 'bit',
   categoryName: '位运算与状态压缩',
   description: '只出现一次的数字 II：模 3 状态机位运算常数空间解法',
+  aliases: ['class031-code01', 'single-number-137', 'leetcode-137', 'single-number-2'],
   timeComplexity: BIT_PROBLEMS.singleNumberII.timeComplexity,
   spaceComplexity: BIT_PROBLEMS.singleNumberII.spaceComplexity,
   analysisHtml: BIT_PROBLEMS.singleNumberII.html,

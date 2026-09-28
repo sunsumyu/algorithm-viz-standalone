@@ -125,6 +125,7 @@ export function buildEulerianSteps(): EulerianStep[] {
 export const eulerianPathVisualizer = registerDeclarativeAlgorithm<EulerianStep>({
   id: 'eulerian-path-circuit-187',
   name: '欧拉路径与欧拉回路 (Class 187)',
+  aliases: ['class187-code01', 'eulerian-path-circuit-187', 'hierholzer-algorithm'],
   category: 'graph',
   icon: '🔄',
   difficulty: 3,

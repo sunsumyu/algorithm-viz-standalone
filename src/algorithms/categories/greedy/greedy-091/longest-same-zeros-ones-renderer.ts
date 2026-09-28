@@ -251,6 +251,7 @@ registerAlgorithm({
   levelOrder: 916,
   description: '找出两个不完全重合且0与1数量分别相等的最大区间，通过首尾字符比较与鸽巢原理直接在O(1)内确定最大长度为n-1或n-2。',
   learningGoal: '掌握首尾字符相等与不相等的抽屉原理推导及 n-1 与 n-2 极值贪心',
+  aliases: ['class091-code06', 'longest-same-zeros-ones', 'two-intervals-equal-zeros-ones'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

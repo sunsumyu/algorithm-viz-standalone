@@ -1,3 +1,4 @@
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 /**
  * 左程云算法通关课 Class 062: 地图分析 (As Far from Land as Possible · LeetCode 1162)
  * 多源 BFS 波前同心圆扩散求最大曼哈顿距离
@@ -46,7 +47,7 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
   }
 
   const n = g.length;
-  const grid = g.map((row) => [...row]);
+  const grid = snapshotGrid2D(g);
   const distMap = Array.from({ length: n }, () => new Array(n).fill(-1));
   const visited = Array.from({ length: n }, () => new Array(n).fill(false));
 
@@ -69,10 +70,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
 
   // Step 0: 入口与初始化
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     curCoord: null,
-    distMap: distMap.map((r) => [...r]),
-    visited: visited.map((r) => [...r]),
+    distMap: snapshotGrid2D(distMap),
+    visited: snapshotGrid2D(visited),
     currentWave: 0,
     queueSnapshot: queue.map((c) => [...c] as [number, number]),
     decision: '算法启动：识别陆地与海洋格子，构建多源 BFS 初始队列表',
@@ -85,10 +86,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
 
   if (lands === 0 || seas === 0) {
     steps.push({
-      grid: grid.map((r) => [...r]),
+      grid: snapshotGrid2D(grid),
       curCoord: null,
-      distMap: distMap.map((r) => [...r]),
-      visited: visited.map((r) => [...r]),
+      distMap: snapshotGrid2D(distMap),
+      visited: snapshotGrid2D(visited),
       currentWave: -1,
       queueSnapshot: [],
       decision: '特判全陆地或全海洋异常用例',
@@ -103,10 +104,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
 
   // Step 1: 所有陆地并发入队
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     curCoord: null,
-    distMap: distMap.map((r) => [...r]),
-    visited: visited.map((r) => [...r]),
+    distMap: snapshotGrid2D(distMap),
+    visited: snapshotGrid2D(visited),
     currentWave: 0,
     queueSnapshot: queue.map((c) => [...c] as [number, number]),
     decision: '多源并发：将所有陆地单元格同时作为第 0 层源点入队',
@@ -134,10 +135,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
       const [r, c] = cur;
 
       steps.push({
-        grid: grid.map((row) => [...row]),
+        grid: snapshotGrid2D(grid),
         curCoord: [r, c],
-        distMap: distMap.map((row) => [...row]),
-        visited: visited.map((row) => [...row]),
+        distMap: snapshotGrid2D(distMap),
+        visited: snapshotGrid2D(visited),
         currentWave: dist,
         queueSnapshot: queue.map((coord) => [...coord] as [number, number]),
         decision: `探查当前波前格 (${r}, ${c})，当前到最近陆地距离为 ${dist}`,
@@ -158,10 +159,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
           queue.push([nr, nc]);
 
           steps.push({
-            grid: grid.map((row) => [...row]),
+            grid: snapshotGrid2D(grid),
             curCoord: [nr, nc],
-            distMap: distMap.map((row) => [...row]),
-            visited: visited.map((row) => [...row]),
+            distMap: snapshotGrid2D(distMap),
+            visited: snapshotGrid2D(visited),
             currentWave: dist + 1,
             queueSnapshot: queue.map((coord) => [...coord] as [number, number]),
             decision: `波前漫延至海洋格 (${nr}, ${nc})，登记曼哈顿距离为 ${dist + 1}`,
@@ -178,10 +179,10 @@ export function buildAsFarFromLand062Steps(preset: string = 'classic_3x3'): AsFa
 
   // 终态
   steps.push({
-    grid: grid.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
     curCoord: null,
-    distMap: distMap.map((row) => [...row]),
-    visited: visited.map((row) => [...row]),
+    distMap: snapshotGrid2D(distMap),
+    visited: snapshotGrid2D(visited),
     currentWave: dist,
     queueSnapshot: [],
     decision: `多源 BFS 搜索完毕：全局离陆地最远海洋格的最大距离为 ${dist}`,

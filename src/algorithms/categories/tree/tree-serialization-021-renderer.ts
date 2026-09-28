@@ -327,6 +327,7 @@ export const treeSerializationVisualizer = registerDeclarativeAlgorithm<Tree021S
   icon: '🌲',
   difficulty: 2,
   levelOrder: 21,
+  aliases: ['class021-code01', 'tree-serialization-021', 'serialize-and-deserialize-binary-tree', 'leetcode-297'],
   learningGoal: '掌握二叉树空节点标记设计，实现先序与层序序列化字符串与二叉树拓扑结构互转',
   problemHtml: `
     <div style="line-height: 1.6;">

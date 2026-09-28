@@ -172,6 +172,7 @@ export const fibonacciGameVisualizer = registerDeclarativeAlgorithm<FibonacciSte
   icon: '🌀',
   difficulty: 3,
   levelOrder: 955,
+  aliases: ['class095-code05', 'fibonacci-game', 'zeckendorf-game'],
   learningGoal: '掌握齐肯多夫定理 (Zeckendorf) 唯一不连续斐波那契分解与必胜步取法',
   problemHtml: GAME_095_PROBLEMS.fibonacciGame.html,
   analysisHtml: GAME_095_PROBLEMS.fibonacciGame.html,

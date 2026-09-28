@@ -231,6 +231,7 @@ export const acAutomatonVisualizer = registerDeclarativeAlgorithm<ACAutomatonSte
   icon: '🤖',
   difficulty: 3,
   levelOrder: 102,
+  aliases: ['class102-code01', 'ac-automaton', 'aho-corasick', 'luogu-p3808'],
   learningGoal: '深入理解 Trie 前缀树与 KMP fail 失败指针的融合，掌握单次线性扫描并发匹配多个模式串的高效原理',
   problemHtml: STRING_100_105_PROBLEMS.acAutomaton.html,
   analysisHtml: STRING_100_105_PROBLEMS.acAutomaton.html,

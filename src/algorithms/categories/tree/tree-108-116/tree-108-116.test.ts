@@ -17,6 +17,8 @@ import {
   INTERVAL_MERGE_SEGMENT_TREE_CODES,
   SWEEP_LINE_CODES,
 } from './tree-108-116-stage-codes';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 
 function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
@@ -126,4 +128,27 @@ describe('左神高阶区间数据结构专题 (Class 108 ~ 116) 综合测试套
       expect(steps[steps.length - 1].totalArea).toBe(175);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 108 ~ 115)', () => {
+    it('所有高阶区间课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class108-code01': 'fenwick-tree-108',
+        'class109-code01': 'fenwick-inversion-109',
+        'class110-code01': 'segment-tree-110',
+        'class111-code01': 'dynamic-segment-tree-111',
+        'class112-code01': 'value-segment-tree-112',
+        'class113-code01': 'interval-merge-segment-tree-113',
+        'class115-code01': 'sweep-line-115',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

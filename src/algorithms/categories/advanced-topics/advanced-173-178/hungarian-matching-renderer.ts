@@ -125,6 +125,7 @@ export function buildHungarianSteps(): HungarianStep[] {
 export const hungarianMatchingVisualizer = registerDeclarativeAlgorithm<HungarianStep>({
   id: 'hungarian-matching-175',
   name: '二分图最大匹配 匈牙利算法 (Class 175)',
+  aliases: ['class175-code01', 'hungarian-matching-175', 'hungarian'],
   category: 'graph',
   icon: '🎯',
   difficulty: 3,

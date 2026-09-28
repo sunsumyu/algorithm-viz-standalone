@@ -357,6 +357,7 @@ export function renderDecodeCanvas(container: HTMLElement, step: DecodeStep): vo
 
 export const nestedRecursionDecode039Visualizer = registerDeclarativeAlgorithm<DecodeStep>({
   id: 'nested-recursion-decode-039',
+  aliases: ['class039-code02', 'decode-string', 'decode-string-039', 'leetcode-394'],
   name: 'Class 039: 嵌套结构递归解法母题 (Decode String)',
   category: 'string',
   icon: '🪆',

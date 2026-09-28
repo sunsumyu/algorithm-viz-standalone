@@ -120,10 +120,28 @@ import './categories/graph/bi-bfs-renderer';
 import './categories/graph/topo-dp-renderer';
 import './categories/graph/alien-dict-renderer';
 import './categories/graph/trapping-water-ii-renderer';
+// 左程云 Class 059: 拓扑排序与 Kahn 算法 专题 (Batch 41)
+import './batch-41-index';
+// 左程云 Class 056: 并查集·上 专题 (Batch 40)
+import './batch-40-index';
+// 左程云 Class 055: 单调队列·下 专题 (Batch 39)
+import './batch-39-index';
+// 左程云 Class 054: 单调队列·上 专题 (Batch 38)
+import './batch-38-index';
+// 左程云 Class 053: 单调栈·下 专题 (Batch 37)
+import './batch-37-index';
+// 左程云 Class 052: 单调栈·上 专题 (Batch 36)
+import './batch-36-index';
+// 左程云 Class 060: 拓扑排序扩展专题 (Batch 35)
+import './batch-35-index';
+// 左程云 Class 061: 最短路全解专题 (Batch 34)
+import './batch-34-index';
 // 左程云 Class 062: 宽度优先遍历及其扩展 (Batch 30)
 import './batch-30-index';
 // 左程云 Class 063: 双向广搜与双向搜索（折半搜索）(Batch 31)
 import './batch-31-index';
+// 左程云 Class 064: Dijkstra 算法及其扩展 (Batch 33)
+import './batch-33-index';
 // 左程云 Class 065: A* 算法与常见面试题 (Batch 32)
 import './batch-32-index';
 import './categories/graph/a-star-journey-renderer';
@@ -208,6 +226,7 @@ import './categories/monotonic-stack/verify-preorder-sequence-in-bst-renderer';
 import './categories/stack/min-stack-renderer';
 import './categories/string/palindrome-pairs-renderer';
 import './categories/linked-list/reorder-list-renderer';
+import './categories/linked-list/palindrome-linked-list-034-renderer';
 import './categories/hash-table/sort-characters-by-frequency-renderer';
 import './categories/graph/number-of-provinces-renderer';
 import './categories/tree/sum-root-to-leaf-numbers-renderer';

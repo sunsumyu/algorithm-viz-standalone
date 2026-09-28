@@ -201,6 +201,7 @@ export const kmpVisualizer = registerDeclarativeAlgorithm<KmpStep>({
   icon: '⚡',
   difficulty: 2,
   levelOrder: 100,
+  aliases: ['class100-code01', 'kmp-algo', 'kmp', 'leetcode-28', 'luogu-p3375'],
   learningGoal: '彻底掌握 KMP 线性字符串匹配原理、next 数组最长公共前后缀推导与指针不回退加速机制',
   problemHtml: STRING_100_105_PROBLEMS.kmp.html,
   analysisHtml: STRING_100_105_PROBLEMS.kmp.html,

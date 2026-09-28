@@ -1011,6 +1011,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法讲解067 Code06：LeetCode 329 矩阵最长递增路径，严格偏序天然有向无环图 (DAG) 与记忆化搜索',
   icon: '⛰️',
+  aliases: ['class067-code06', 'longest-increasing-path-067', 'longest-increasing-path-in-a-matrix', 'leetcode-329'],
   template,
   Visualizer,
   difficulty: 3,

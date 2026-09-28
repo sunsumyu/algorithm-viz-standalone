@@ -250,7 +250,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 063 Code04：选数约束下的折半搜索 Meet in the Middle，按选数个数 k 分桶 + 二分逼近目标半和 (LeetCode 2035)',
-  aliases: ['partition-minimize-diff-2035', 'partition-array-min-diff'],
+  aliases: ['class063-code04', 'partition-minimize-difference-063', 'partition-minimize-diff-2035', 'partition-array-min-diff', 'leetcode-2035'],
   problemHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].complexityHtml,
   codeLanguages: PARTITION_MIN_DIFF_063_CODES,

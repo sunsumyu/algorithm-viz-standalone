@@ -17,6 +17,8 @@ import {
   TREE_DIFFERENCE_CODES,
   TREE_DIAMETER_CODES,
 } from './tree-117-123-stage-codes';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 
 function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
@@ -169,4 +171,26 @@ describe('左神倍增与树上高阶问题专题 (Class 117 ~ 123) 综合测试
       verify1BasedCodeLines(steps, TREE_DIAMETER_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 117 ~ 123)', () => {
+    it('所有树上倍增与剖分课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class117-code01': 'sparse-table-117',
+        'class118-code01': 'tree-lca-binary-lifting-118',
+        'class120-code01': 'tree-centroid-120',
+        'class121-code01': 'hld-heavy-light-decomposition-121',
+        'class122-code01': 'tree-difference-122',
+        'class123-code01': 'tree-diameter-123',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

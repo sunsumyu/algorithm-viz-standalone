@@ -111,6 +111,7 @@ export function buildSkipListSteps(values: number[]): SkipListStep[] {
 export const skiplistVisualizer = registerDeclarativeAlgorithm<SkipListStep>({
   id: 'skiplist-151',
   name: '跳表 (Class 151)',
+  aliases: ['class151-code01', 'skiplist', 'skiplist-151', 'skip-list'],
   category: 'tree',
   icon: '📑',
   difficulty: 2,

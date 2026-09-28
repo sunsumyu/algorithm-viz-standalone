@@ -96,6 +96,7 @@ export const climbingStairsMatrixVisualizer = registerDeclarativeAlgorithm<Climb
   icon: '🪜',
   difficulty: 2,
   levelOrder: 983,
+  aliases: ['class098-code03', 'climbing-stairs-matrix', 'climbing-stairs-70', 'leetcode-70'],
   learningGoal: '掌握斐波那契同构问题在矩阵快速幂中的初值代入 [dp(2)=2, dp(1)=1]',
   problemHtml: MATH_098_PROBLEMS.climbingStairsMatrix.html,
   analysisHtml: MATH_098_PROBLEMS.climbingStairsMatrix.html,

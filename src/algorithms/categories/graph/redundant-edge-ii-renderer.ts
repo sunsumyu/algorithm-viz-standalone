@@ -299,6 +299,7 @@ export function renderRedundantEdgeIICanvas(container: HTMLElement, step: Redund
 
 registerDeclarativeAlgorithm({
   id: 'redundant-edge-ii',
+  aliases: ['class057-code01', 'redundant-connection-ii-685', 'redundant-edge-2'],
   name: '冗余连接 II (Redundant Connection II)',
   category: 'graph',
   icon: '🔁',

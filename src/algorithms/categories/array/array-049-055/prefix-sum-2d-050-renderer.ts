@@ -90,6 +90,7 @@ export function buildPrefixSum2D050Steps(): PrefixSum2D050Step[] {
 
 export const prefixSum2D050Visualizer = registerDeclarativeAlgorithm<PrefixSum2D050Step>({
   id: 'prefix-sum-2d-050',
+  aliases: ['class050-code01', 'range-sum-query-2d', 'leetcode-304', 'prefix-sum-2d'],
   name: '二维前缀和与区域检索 (Class 050)',
   category: 'array',
   difficulty: 'medium',

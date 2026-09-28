@@ -170,6 +170,7 @@ export const threeStonesFibonacciVisualizer = registerDeclarativeAlgorithm<Three
   icon: '🪨',
   difficulty: 3,
   levelOrder: 964,
+  aliases: ['class096-code04', 'three-stones-fibonacci', 'hdu-1847-ext'],
   learningGoal: '掌握非传统转移步长（斐波那契数）下的单堆 SG 打表与多堆异或合成',
   problemHtml: GAME_096_PROBLEMS.threeStonesFibonacciSg.html,
   analysisHtml: GAME_096_PROBLEMS.threeStonesFibonacciSg.html,

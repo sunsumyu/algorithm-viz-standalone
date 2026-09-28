@@ -133,7 +133,26 @@ export class StateSpacePresenter {
       return;
     }
 
-    const isPureGrid = isGridProblem || ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(modelId);
+    const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(modelId);
+    if (isKnapsack && (currentStage === 'stage-1' || currentStage === 'stage-2')) {
+      this.renderKnapsackSandbox(container, step, options);
+      return;
+    }
+
+    // 彻底清除在 Stage 1/2 背包沙盘中可能残留的 flex 布局属性，恢复标准网格沙盘容器规格
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = '';
+    container.style.width = '';
+    container.style.maxWidth = '';
+    container.className = 'grid gap-2 transition-all duration-300 relative z-0';
+
+    const parentWrapper = container.parentElement;
+    if (parentWrapper && parentWrapper.id !== 'grid-board-wrapper') {
+      parentWrapper.className = 'flex-1 flex flex-col items-center justify-center min-h-[260px] bg-slate-50/40 rounded-xl p-4 border border-slate-200/60 relative';
+      parentWrapper.style.width = '';
+    }
+
+    const isPureGrid = isGridProblem || ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(modelId);
     const effectiveM = isPureGrid ? ((step.grid && step.grid.length > 1) ? step.grid.length : m) : (m > 1 ? m : 1);
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
 
@@ -375,7 +394,7 @@ export class StateSpacePresenter {
     if (typeof document === 'undefined' && !rootScope) return;
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(options.modelId);
-    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId);
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId);
     const fullOptions = { ...options, isGridProblem };
 
     const card1El = (this.queryScoped(rootScope || null, '#card1-wrapper') ||
@@ -574,8 +593,12 @@ export class StateSpacePresenter {
     }
 
     if (!gridContainer) return;
-    gridContainer.innerHTML = '';
+    gridContainer.style.display = 'grid';
+    gridContainer.className = 'grid gap-2 transition-all duration-300 relative z-0';
+    gridContainer.style.width = '';
+    gridContainer.style.maxWidth = '';
     gridContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+    gridContainer.innerHTML = '';
 
     for (let r = 0; r < m; r++) {
       for (let c = 0; c < n; c++) {
@@ -632,7 +655,7 @@ export class StateSpacePresenter {
       return;
     }
 
-    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(modelId);
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(modelId);
     const is3DLayered = ['out-of-boundary-paths', 'knight-probability', 'paths-divisible-by-k', 'profitable-schemes', 'scramble-string'].includes(modelId);
 
     if (is3DMode) {
@@ -856,6 +879,159 @@ export class StateSpacePresenter {
             <span>动作决策:</span>
           </div>
           <div class="text-[11.5px] leading-relaxed">${step.msg || step.log || step.tag || '递归探索中...'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * 阶段 1 & 阶段 2 背包候选物品池与当前决策沙盘 (Item Decision Sandbox)
+   * 彻底杜绝阶段 1/2 提前泄露未被计算的 2D DP 大网格，并消除迷宫小人和终点旗子的视觉隐喻越界
+   */
+  public static renderKnapsackSandbox(
+    container: HTMLElement,
+    step: UniversalStep,
+    options: StateSpacePresentationOptions
+  ): void {
+    if (!container) return;
+
+    // 彻底重置父级与容器样式，杜绝被 inline-grid / inline-flex 挤压成细窄条
+    container.className = 'w-full h-full flex flex-col relative z-0 bg-transparent border-0 shadow-none p-0';
+    container.style.gridTemplateColumns = 'none';
+    container.style.display = 'flex';
+    container.style.width = '100%';
+    container.style.maxWidth = '100%';
+
+    const parentWrapper = container.parentElement;
+    if (parentWrapper) {
+      parentWrapper.className = 'w-full h-full flex flex-col items-stretch justify-start relative overflow-auto p-1';
+      parentWrapper.style.width = '100%';
+    }
+    const grandWrapper = parentWrapper?.parentElement;
+    if (grandWrapper) {
+      grandWrapper.className = 'bg-slate-50/70 rounded-xl p-2 border border-slate-200/80 flex flex-col items-stretch justify-start flex-1 min-h-0 overflow-auto relative scroll-smooth w-full';
+      grandWrapper.style.width = '100%';
+    }
+
+    // 隐藏 3D 相关容器与河流屏障
+    const threeContainer = this.queryScoped(container, '#three-canvas-container');
+    if (threeContainer) threeContainer.classList.add('hidden');
+    const threeControls = this.queryScoped(container, '#three-controls-bar');
+    if (threeControls) {
+      threeControls.classList.add('hidden');
+      threeControls.classList.remove('flex');
+    }
+    const riverBarrier = this.queryScoped(container, '#grid-river-barrier');
+    if (riverBarrier) riverBarrier.style.display = 'none';
+    const arrowsSvg = this.queryScoped(container, '#grid-arrows-svg');
+    if (arrowsSvg) arrowsSvg.style.display = 'none';
+
+    // 提取物品池与容量
+    let items: Array<{ index: number; weight: number; value: number }> = [];
+    let capacity = options.n > 1 ? options.n - 1 : 11;
+
+    if (AlgorithmModelRepository.hasModel(options.modelId)) {
+      const model = AlgorithmModelRepository.getModel(options.modelId);
+      const params = (model.defaultParams as any) || {};
+      if (params.nums && Array.isArray(params.nums)) {
+        items = params.nums.map((num: number, idx: number) => ({
+          index: idx,
+          weight: num,
+          value: num
+        }));
+        const sum = params.nums.reduce((a: number, b: number) => a + b, 0);
+        capacity = sum % 2 === 0 ? sum / 2 : capacity;
+      } else if (params.weights && Array.isArray(params.weights)) {
+        const values = Array.isArray(params.values) ? params.values : [];
+        items = params.weights.map((w: number, idx: number) => ({
+          index: idx,
+          weight: w,
+          value: values[idx] ?? w
+        }));
+        capacity = params.bagWeight ?? params.target ?? capacity;
+      }
+    }
+
+    if (items.length === 0) {
+      items = Array.from({ length: Math.max(1, options.m) }, (_, i) => ({
+        index: i,
+        weight: 1,
+        value: 1
+      }));
+    }
+
+    const curI = step.i !== undefined ? step.i : 0;
+    const curTarget = step.j !== undefined ? step.j : capacity;
+    const curItem = items[curI];
+
+    container.innerHTML = `
+      <div class="knapsack-sandbox-container w-full h-full flex flex-col justify-between p-3.5 overflow-y-auto font-sans bg-slate-50/50 dark:bg-slate-900/40 rounded-xl border border-slate-200/80 dark:border-slate-800">
+        <!-- 顶部：候选物品列表 -->
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-boxes-stacked text-blue-600"></i> 候选物品池 (待考察序列)
+            </span>
+            <span class="text-[11px] font-mono text-slate-500">共 ${items.length} 件物品</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            ${items.map((item, idx) => {
+              const isCurrent = idx === curI;
+              const isPast = idx < curI;
+              const cardClass = isCurrent
+                ? 'border-blue-500 bg-blue-50/90 dark:bg-blue-950/40 shadow-sm ring-2 ring-blue-400/40 scale-[1.02]'
+                : isPast
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/40 opacity-70'
+                : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80';
+              const badgeClass = isCurrent
+                ? 'bg-blue-600 text-white'
+                : isPast
+                ? 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400';
+              return `
+                <div class="relative p-2.5 rounded-lg border flex flex-col gap-1 transition-all ${cardClass}">
+                  ${isCurrent ? '<div class="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-blue-600 text-white shadow whitespace-nowrap">当前考察 ↓</div>' : ''}
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-mono font-bold px-1 rounded ${badgeClass}">#${item.index}</span>
+                    <span class="text-[10px] text-slate-500">w:${item.weight}</span>
+                  </div>
+                  <div class="text-sm font-extrabold text-slate-800 dark:text-slate-100 text-center py-1">
+                    数值 ${item.weight}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- 中部：背包容量与剩余目标进度 -->
+        <div class="my-2.5 p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-2xs">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-weight-hanging text-amber-500"></i> 当前递归层目标容量
+            </span>
+            <span class="font-mono text-xs font-extrabold text-blue-600 dark:text-blue-400">
+              curTarget = ${curTarget} / ${capacity}
+            </span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden flex">
+            <div class="bg-blue-600 h-full transition-all duration-300" style="width: ${Math.max(0, Math.min(100, ((capacity - curTarget) / (capacity || 1)) * 100))}%;"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+            <span>已凑集总和: <strong>${capacity - curTarget}</strong></span>
+            <span>${curItem ? (curTarget >= curItem.weight ? '✅ 剩余容量充足，可探索选入' : '⚠️ 剩余容量不足，跳过该物品') : '探索完毕'}</span>
+          </div>
+        </div>
+
+        <!-- 底部：当前帧探索解说与阶段演化提示 -->
+        <div class="p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/50 text-[11px] text-slate-700 dark:text-slate-300 flex items-start gap-2">
+          <i class="fa-solid fa-lightbulb text-amber-500 mt-0.5 flex-shrink-0"></i>
+          <div>
+            <div class="font-bold text-blue-700 dark:text-blue-400 mb-0.5">
+              ${options.currentStage === 'stage-2' ? '阶段 2 记忆化搜索：剪枝已计算状态' : '阶段 1 纯递归演化：自顶向下选/不选二叉决策'}
+            </div>
+            <div>${step.msg || step.log || step.tag || '正在递归探索分支...'}</div>
+          </div>
         </div>
       </div>
     `;

@@ -109,6 +109,7 @@ export function buildPrefixSum049Steps(): PrefixSum049Step[] {
 
 export const prefixSumBasic049Visualizer = registerDeclarativeAlgorithm<PrefixSum049Step>({
   id: 'prefix-sum-basic-049',
+  aliases: ['class049-code01', 'subarray-sum-equals-k-560', 'leetcode-560', 'prefix-sum-k'],
   name: '一维前缀和与哈希表结合 (Class 049)',
   category: 'array',
   difficulty: 'medium',

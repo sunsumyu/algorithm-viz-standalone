@@ -287,6 +287,7 @@ export const netherlandsFlagVisualizer = registerDeclarativeAlgorithm<Netherland
   icon: '🇳🇱',
   difficulty: 1,
   levelOrder: 24,
+  aliases: ['class024-code01', 'netherlands-flag-024', 'netherlands-flag', 'dutch-national-flag', 'sort-colors-75'],
   learningGoal: '深刻掌握荷兰国旗小于/等于/大于三向划分算法，理解随机快速排序 Partition 核心',
   problemHtml: `
     <div style="line-height: 1.6;">

@@ -170,6 +170,7 @@ describe('左程云 Class 070: 子数组最大累加和与子矩阵最大累加�
       const manifest = algorithmRegistry.getManifest('max-subarray-dp');
       expect(manifest).toBeDefined();
       expect(manifest?.category).toBe('dynamic-programming');
+      expect(manifest?.aliases).toContain('class070-code01');
       expect(manifest?.aliases).toContain('max-subarray-dp-070');
       expect(manifest?.aliases).toContain('leetcode-53-dp');
     });
@@ -177,16 +178,19 @@ describe('左程云 Class 070: 子数组最大累加和与子矩阵最大累加�
     it('新扩展算法别名完整配置且单一事实来源无碰撞', () => {
       const circ = algorithmRegistry.getManifest('max-circular-subarray');
       expect(circ).toBeDefined();
+      expect(circ?.aliases).toContain('class070-code02');
       expect(circ?.aliases).toContain('max-circular-subarray-070');
       expect(circ?.aliases).toContain('leetcode-918');
 
       const prod = algorithmRegistry.getManifest('max-product-subarray');
       expect(prod).toBeDefined();
+      expect(prod?.aliases).toContain('class070-code03');
       expect(prod?.aliases).toContain('max-product-subarray-070');
       expect(prod?.aliases).toContain('leetcode-152');
 
       const scroll = algorithmRegistry.getManifest('magic-scroll');
       expect(scroll).toBeDefined();
+      expect(scroll?.aliases).toContain('class070-code04');
       expect(scroll?.aliases).toContain('magic-scroll-070');
       expect(scroll?.aliases).toContain('magic-scroll-problem');
     });

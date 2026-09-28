@@ -174,7 +174,7 @@ export class ThreeGridVisualAdapter implements IVisualRenderer {
     this.voxelCells = [];
     this.clearTransferTubes();
 
-    const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : true);
+    const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : true);
 
     this.boardGroup = new THREE.Group();
     const cellSize = 1.0;

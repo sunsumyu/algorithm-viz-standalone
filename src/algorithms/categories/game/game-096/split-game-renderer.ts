@@ -130,6 +130,7 @@ export const splitGameVisualizer = registerDeclarativeAlgorithm<SplitGameStep>({
   icon: '🪓',
   difficulty: 3,
   levelOrder: 966,
+  aliases: ['class096-code06', 'split-game-sg', 'split-stones-game', 'poj-2311'],
   learningGoal: '掌握游戏裂变为两个平行子游戏的 SG 函数异或合成与状态空间递归树解析',
   problemHtml: GAME_096_PROBLEMS.splitGameSg.html,
   analysisHtml: GAME_096_PROBLEMS.splitGameSg.html,

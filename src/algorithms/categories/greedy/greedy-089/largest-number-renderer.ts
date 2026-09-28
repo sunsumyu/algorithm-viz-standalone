@@ -448,4 +448,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 891,
   learningGoal: '掌握自定义拼接比较器 (b+a).compareTo(a+b) 的全序性证明与邻项交换法反证逻辑',
+  aliases: ['class089-code01', 'largest-number-179', 'leetcode-179'],
 });

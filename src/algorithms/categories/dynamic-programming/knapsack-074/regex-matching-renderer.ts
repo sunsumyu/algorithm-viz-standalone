@@ -439,6 +439,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code04：LeetCode 10 正则匹配，星号 * 任意次匹配转化为完全背包斜率优化 dp[i][j] = dp[i][j+2] || (match && dp[i+1][j])',
   icon: '🔤',
+  aliases: ['class074-code04', 'regex-matching-074', 'regular-expression-matching', 'leetcode-10'],
   template,
   Visualizer,
   difficulty: 3,

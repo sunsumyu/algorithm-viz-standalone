@@ -129,6 +129,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 922,
+  aliases: ['class092-code02', 'rabbits-in-forest-781', 'leetcode-781'],
   learningGoal: '掌握同回答兔子尽力归入同组的向上取整分组贪心推导',
 });
 

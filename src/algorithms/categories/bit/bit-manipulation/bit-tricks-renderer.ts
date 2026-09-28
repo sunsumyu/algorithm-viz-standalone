@@ -131,6 +131,7 @@ export const bitTricksRenderer = registerDeclarativeAlgorithm<BitTricksStep>({
   category: 'bit',
   categoryName: '位运算与状态压缩',
   description: 'Brian Kernighan 算法与最右侧 1 的提取、抹除与 2 的幂判定',
+  aliases: ['class030-code01', 'class002-code01', 'brian-kernighan', 'bit-tricks-030'],
   timeComplexity: BIT_PROBLEMS.bitTricks.timeComplexity,
   spaceComplexity: BIT_PROBLEMS.bitTricks.spaceComplexity,
   analysisHtml: BIT_PROBLEMS.bitTricks.html,

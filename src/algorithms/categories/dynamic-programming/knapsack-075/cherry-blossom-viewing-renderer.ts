@@ -739,6 +739,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 075 Code03：洛谷 P1833 观赏樱花，统一融合 01 背包、完全背包与多重背包的经典混合背包模版',
   icon: '🌸',
+  aliases: ['class075-code04', 'class075-code03', 'cherry-blossom-viewing-075', 'mixed-knapsack', 'luogu-p1833'],
   template,
   Visualizer,
   difficulty: 2,

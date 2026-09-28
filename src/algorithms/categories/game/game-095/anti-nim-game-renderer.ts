@@ -146,6 +146,7 @@ export const antiNimGameVisualizer = registerDeclarativeAlgorithm<AntiNimStep>({
   icon: '🪞',
   difficulty: 3,
   levelOrder: 954,
+  aliases: ['class095-code04', 'anti-nim-game', 'misere-nim', 'sj-theorem', 'poj-3480'],
   learningGoal: '掌握 Misère 反博弈、SJ (Sprague-Grundy for Misère) 定理与充裕堆控制权',
   problemHtml: GAME_095_PROBLEMS.antiNimGame.html,
   analysisHtml: GAME_095_PROBLEMS.antiNimGame.html,

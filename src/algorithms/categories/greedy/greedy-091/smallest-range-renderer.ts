@@ -298,6 +298,7 @@ registerAlgorithm({
   levelOrder: 912,
   description: 'k 个非递减排列的整数列表，通过小根堆维护多路游标并实时追踪当前最大值，贪心收敛能覆盖每个列表至少一个数的最小区间。',
   learningGoal: '掌握多路归并小根堆与滑动窗口结合的局部贪心单调性收敛原理',
+  aliases: ['class091-code02', 'smallest-range-632', 'leetcode-632', 'smallest-range'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

@@ -56,4 +56,31 @@ describe('左神一维与二维差分专题三 (array-diff) 自动化测试套�
     expect(last.ansMatrix![2][2]).toBe(8); // 5 + 3 = 8
     expect(last.ansMatrix![3][3]).toBe(3);
   });
+
+  it('3. Class 047-048 一维与二维差分专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'diff-array-1d-047',
+        aliases: ['class047-code01', 'diff-array-1d', 'corporate-flight-bookings-1109', 'leetcode-1109', 'luogu-p2367'],
+      },
+      {
+        id: 'diff-array-2d-048',
+        aliases: ['class048-code01', 'diff-array-2d', 'stamping-grid-2132', 'leetcode-2132', 'luogu-p3397'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

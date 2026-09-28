@@ -106,6 +106,7 @@ export const countVowelsMatrixVisualizer = registerDeclarativeAlgorithm<CountVow
   icon: '🔤',
   difficulty: 3,
   levelOrder: 986,
+  aliases: ['class098-code06', 'count-vowels-matrix', 'count-vowels-1220', 'leetcode-1220'],
   learningGoal: '掌握字符相邻约束图向有向图邻接转移矩阵的转化与全状态求和',
   problemHtml: MATH_098_PROBLEMS.countVowels.html,
   analysisHtml: MATH_098_PROBLEMS.countVowels.html,

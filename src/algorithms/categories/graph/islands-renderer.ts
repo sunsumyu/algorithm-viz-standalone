@@ -278,6 +278,7 @@ export function renderIslandsCanvas(container: HTMLElement, step: IslandsStep): 
 
 registerDeclarativeAlgorithm({
   id: 'islands',
+  aliases: ['class029-code01', 'islands', 'number-of-islands', 'leetcode-200'],
   name: '岛屿数量 (DFS)',
   category: 'graph',
   description: '使用深度优先搜索沉岛法计算二维网格中连通岛屿的数量',

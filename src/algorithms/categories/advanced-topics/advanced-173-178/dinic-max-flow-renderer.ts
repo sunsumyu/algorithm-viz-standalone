@@ -130,6 +130,7 @@ export function buildDinicSteps(): DinicStep[] {
 export const dinicMaxFlowVisualizer = registerDeclarativeAlgorithm<DinicStep>({
   id: 'dinic-max-flow-173',
   name: '网络流最大流 Dinic (Class 173)',
+  aliases: ['class173-code01', 'dinic-max-flow-173', 'dinic'],
   category: 'graph',
   icon: '🌊',
   difficulty: 3,

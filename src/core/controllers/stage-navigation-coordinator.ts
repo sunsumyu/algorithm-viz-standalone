@@ -259,7 +259,7 @@ export class StageNavigationCoordinator {
     }
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(model.id);
-    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(model.id);
+    const isGridProblem = ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(model.id);
     const card1El = (document.getElementById('card1-wrapper') || document.getElementById('card1-title')?.parentElement?.parentElement || document.getElementById('card1-title')?.parentElement) as HTMLElement | null;
     const btnToggle3d = document.getElementById('btn-toggle-3d');
     const card1TitleEl = document.getElementById('card1-title');
@@ -285,9 +285,12 @@ export class StageNavigationCoordinator {
       boardWrapper.className = 'w-full h-full flex flex-col items-center justify-start relative overflow-auto';
     }
 
+    const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(model?.id);
     if (card1TitleEl) {
       if (isTreeProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-emerald-600"></i> 🌲 二叉树拓扑结构与剪枝 (Tree Topology)`;
+      } else if (isKnapsack && (currentStage === 'stage-1' || currentStage === 'stage-2')) {
+        card1TitleEl.innerHTML = `<i class="fa-solid fa-boxes-stacked text-blue-600"></i> 候选物品池与决策沙盘 (Item Decision Sandbox)`;
       } else if (isGridProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-table-cells text-slate-500"></i> 二维网格 (虚拟地图 ${effectiveM}×${effectiveN})`;
       } else if (is1DProblem) {
@@ -478,7 +481,7 @@ export class StageNavigationCoordinator {
     const memoLenBadge = document.getElementById('badge-memo-len');
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(params.model?.id, { m: params.effectiveM, n: params.effectiveN });
-    const isStage32D = params.effectiveM > 1;
+    const isStage32D = params.effectiveM > 1 || (params.currentStage === 'stage-3' && !ProblemDimensionResolver.isPure1DProblem(params.model?.id));
 
     // 1. 特殊多态子视图优先响应：串比对、调用栈、状态依赖树
     if (params.activeSubView === 'alignment') {
@@ -509,7 +512,9 @@ export class StageNavigationCoordinator {
       return;
     }
 
-    if (params.activeSubView === 'tree' && params.currentStage === 'stage-3') {
+    // 只有在树型问题或具有真实树模型时，才允许 Card 2 标为状态依赖树，杜绝表格冒充树的脑裂！
+    const hasRealTree = isTreeProblem || Boolean((params as any).hasTree);
+    if (params.activeSubView === 'tree' && params.currentStage === 'stage-3' && hasRealTree) {
       if (card2TitleEl) {
         card2TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-blue-600 dark:text-blue-400"></i> 状态依赖拓扑树 (Dependency Tree)`;
       }
@@ -517,7 +522,7 @@ export class StageNavigationCoordinator {
         card2DescEl.textContent = '依赖解析：可视化展现状态之间的推导拓扑与计算次序。';
       }
       if (memoLenBadge) {
-        memoLenBadge.textContent = `${params.effectiveM} × ${params.effectiveN}`;
+        memoLenBadge.textContent = '拓扑依赖树';
       }
       return;
     }
@@ -629,6 +634,8 @@ export class StageNavigationCoordinator {
         memoLenBadge.textContent = '3 组状态数组';
       } else if (isTreeProblem) {
         memoLenBadge.textContent = `状态槽位: ${params.effectiveN}`;
+      } else if (params.currentStage === 'stage-1' || params.currentStage === 'stage-2') {
+        memoLenBadge.textContent = params.currentStage === 'stage-1' ? '二叉决策树' : '记忆化剪枝树';
       } else if (params.currentStage === 'stage-4' || params.effectiveM <= 1) {
         memoLenBadge.textContent = `长度: ${params.effectiveN}`;
       } else {

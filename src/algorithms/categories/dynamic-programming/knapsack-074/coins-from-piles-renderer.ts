@@ -716,6 +716,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code02：LeetCode 2218 取硬币，自顶向下连续拿取的前缀和预处理转分组背包互斥选择',
   icon: '🪙',
+  aliases: ['class074-code02', 'coins-from-piles-074', 'maximum-value-of-k-coins-from-piles', 'leetcode-2218'],
   template,
   Visualizer,
   difficulty: 3,

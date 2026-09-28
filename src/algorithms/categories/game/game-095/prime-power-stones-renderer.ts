@@ -137,6 +137,7 @@ export const primePowerStonesVisualizer = registerDeclarativeAlgorithm<PrimePowe
   icon: '⚡',
   difficulty: 2,
   levelOrder: 952,
+  aliases: ['class095-code02', 'prime-power-stones', 'prime-power-game'],
   learningGoal: '理解素数幂不可整除 6 的数论特性与博弈周期规律打表证明',
   problemHtml: GAME_095_PROBLEMS.primePowerStones.html,
   analysisHtml: GAME_095_PROBLEMS.primePowerStones.html,

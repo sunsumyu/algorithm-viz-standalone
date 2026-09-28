@@ -121,6 +121,7 @@ export function buildMobiusSteps(n: number, m: number): MobiusStep[] {
 export const mobiusInversionVisualizer = registerDeclarativeAlgorithm<MobiusStep>({
   id: 'mobius-inversion-165',
   name: '莫比乌斯反演 (Class 165)',
+  aliases: ['class165-code01', 'mobius-inversion-165', 'mobius-inversion'],
   category: 'math',
   icon: '🔍',
   difficulty: 3,

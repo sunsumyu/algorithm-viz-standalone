@@ -102,6 +102,7 @@ export function buildPersistentSegSteps(arr: number[], queryL: number = 2, query
 export const persistentSegmentTreeVisualizer = registerDeclarativeAlgorithm<PersistentSegStep>({
   id: 'persistent-segment-tree-156',
   name: '可持久化线段树 / 主席树 (Class 156)',
+  aliases: ['class156-code01', 'persistent-segment-tree-156', 'chairman-tree'],
   category: 'tree',
   icon: '📚',
   difficulty: 3,

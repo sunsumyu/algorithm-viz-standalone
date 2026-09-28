@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 非负数组前k个最小的子序列累加和 (Top K Subsequence Sum) - 声明式 4-Card 沙盘渲染器
  * 核心：大容量数据超越 01 背包限制，使用小根堆/优先队列 O(N log N + K log K) 状态机高效扩展
  * 架构重构：引入四语言代码联动、小根堆分支状态机沙盘与已收集榜单舱
@@ -343,6 +343,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code06：非负数组前k个最小子序列和，小根堆状态机 O(NlogN + KlogK) 两路扩展最优解',
   icon: '🌲',
+  aliases: ['class073-code06', 'top-k-subsequence-sum-073', 'top-k-subsequence-sum-problem'],
   template,
   Visualizer,
   difficulty: 3,

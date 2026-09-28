@@ -3,6 +3,27 @@
  */
 
 export const SEARCH_058_PROBLEMS = {
+  floodFill058: `
+### Class 058: 图像渲染与洪水填充核心模版 (Flood Fill / LeetCode 733)
+
+#### 核心知识点与大纲
+1. **洪水填充（Flood Fill）算法哲学**：
+   - 就像 Windows 画图工具里的“油漆桶”工具：点击一个像素点，与其相连且颜色相同的所有连通区域瞬间被新颜色浸染。
+   - 算法从起始坐标 \`(sr, sc)\` 出发，获取起始旧颜色 \`origColor = image[sr][sc]\`。
+   - 若当前格子颜色等于 \`origColor\`，则将其改染为 \`newColor\`，并递归向上下左右四个方向辐射扩散。
+2. **致命死循环陷阱（死门禁重点）**：
+   - 如果 \`origColor == newColor\`（即目标新颜色与原颜色完全一致），**如果不加特判，递归将会一直在相同颜色中无休止扩散，导致栈溢出死循环崩溃**！
+   - **防御性前置守门**：\`if (image[sr][sc] == newColor) return image;\` 必须作为第一道门禁。
+3. **边界与递归基**：
+   - 越界检查：\`r < 0 || r >= rows || c < 0 || c >= cols\`
+   - 颜色不匹配：\`image[r][c] != origColor\`
+   - 满足上述任意一条立即回溯返回。
+
+#### 复杂度分析
+- **时间复杂度**：$O(M \\times N)$，网格中每个格子最多被访问常数次。
+- **空间复杂度**：$O(M \\times N)$，递归调用栈深度最坏情况下为网格全部格子连通成一条蛇形长链。
+`,
+
   makingLargeIsland058: `
 ### Class 058: 洪水填充高频扩展与最大人工岛 (Making A Large Island)
 

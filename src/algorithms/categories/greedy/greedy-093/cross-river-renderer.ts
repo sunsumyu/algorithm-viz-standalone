@@ -185,6 +185,7 @@ export const crossRiverVisualizer = registerDeclarativeAlgorithm<CrossRiverStep>
   icon: '🛶',
   difficulty: 2,
   levelOrder: 934,
+  aliases: ['class093-code04', 'cross-river', 'poj-1700', 'bridge-crossing'],
   learningGoal: '掌握过河问题中策略一（最快者当船夫）与策略二（双快护航最慢同行）的贪心比对',
   problemHtml: GREEDY_093_PROBLEMS.crossRiver.html,
   analysisHtml: GREEDY_093_PROBLEMS.crossRiver.html,

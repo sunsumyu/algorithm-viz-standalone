@@ -258,6 +258,7 @@ export function buildLucas144Steps(n: number, m: number, p: number): Lucas144Ste
 export const lucas144Visualizer = registerDeclarativeAlgorithm<Lucas144Step>({
   id: 'lucas-theorem-144',
   name: '卢卡斯定理 (Class 144)',
+  aliases: ['class144-code01', 'lucas-theorem', 'lucas-theorem-144'],
   category: 'math',
   icon: '⚛️',
   difficulty: 3,

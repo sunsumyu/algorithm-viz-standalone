@@ -267,7 +267,7 @@ export function renderReverseLinkedListCanvas(container: HTMLElement, step: RLSt
 
 export const reverseLinkedListVisualizer = registerDeclarativeAlgorithm({
   id: 'reverse-linked-list',
-  aliases: ['reverse-linked-list-034'],
+  aliases: ['class034-code01', 'reverse-linked-list-034', 'leetcode-206'],
   name: '反转链表',
   category: 'linked-list',
   description: 'LeetCode 206 · 双指针迭代原地修改指针指向，暂存 next 节点防止链表断裂',

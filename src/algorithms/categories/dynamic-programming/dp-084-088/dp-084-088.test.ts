@@ -147,4 +147,29 @@ describe('左神进阶动态规划专题（第二弹）(Class 084 ~ 088) 综合�
       verify1BasedCodeLines(steps1, TREE_KNAPSACK_088_CODES);
     });
   });
+
+  describe('进阶动态规划专题（第二弹）(Class 084 ~ 088) 注册中心与别名统合门禁', () => {
+    const expectedBatch27 = [
+      { id: 'counting-dp-inclusion-exclusion-084', aliases: ['class084-counting-dp', 'counting-dp-derangement', 'derangement-problem', 'inclusion-exclusion-084'] },
+      { id: 'game-probability-dp-085', aliases: ['class085-game-dp', 'game-probability-dp', 'stone-game-877', 'leetcode-877'] },
+      { id: 'sos-profile-dp-086', aliases: ['class086-sos-dp', 'sos-profile-dp', 'sum-over-subsets', 'codeforces-165e'] },
+      { id: 'circular-interval-dp-087', aliases: ['class087-circular-dp', 'circular-interval-dp', 'energy-necklace-1063', 'luogu-p1063'] },
+      { id: 'tree-knapsack-dp-088', aliases: ['class088-tree-knapsack', 'tree-knapsack-dp', 'generalized-knapsack-on-tree', 'luogu-p2014'] },
+    ];
+
+    it('5 大进阶 DP 模型第二弹必须成功注册并且别名双向解析正常', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-27-index');
+
+      for (const item of expectedBatch27) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `算法 [${item.id}] 必须成功注册`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases, `算法 [${item.id}] 必须包含别名 [${alias}]`).toContain(alias);
+          const byAlias = algorithmRegistry.getManifest(alias);
+          expect(byAlias?.id, `别名 [${alias}] 必须解析至主 ID [${item.id}]`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

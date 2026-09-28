@@ -344,6 +344,7 @@ export const mergeKSortedListsVisualizer = registerDeclarativeAlgorithm<MergeKLi
   icon: '🔗',
   difficulty: 3,
   levelOrder: 18,
+  aliases: ['class015-code01', 'merge-k-sorted-lists', 'leetcode-23', 'merge-k-lists'],
   learningGoal: '掌握小根堆多路归并算法模型，理解 O(N log K) 复杂度证明与多路数据流并发合并思想',
   metrics: [
     { id: 'heapTop', label: '小根堆堆顶 (Heap Top)', color: 'emerald' },

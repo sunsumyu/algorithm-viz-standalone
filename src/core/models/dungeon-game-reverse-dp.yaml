@@ -1,0 +1,383 @@
+# ==============================================================================
+# 🏆 地下城游戏反向 DP (Dungeon Game / Knight Princess) 模型规范
+# 本规范为「地下城游戏 (LeetCode 174)」四阶段全演化标准实现。
+# 包含：正向后效性对比、逆向递归搜索、备忘录剪枝、二维DP填表与一维空间滚动压缩。
+# ==============================================================================
+
+id: dungeon-game-reverse-dp
+name: "地下城游戏反向 DP"
+nameEn: "Dungeon Game Reverse DP"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🏰"
+difficulty: 3
+levelOrder: 174
+learningGoal: "透彻理解正向 DP 的后效性死局，掌握从终点公主房向起点逆向推导最低初始健康值的经典建模技巧"
+description: "大厂高频面试经典（LeetCode 174）：骑士救公主，任何时刻血量必须 >= 1，反向状态转移 dp[i][j] = max(1, min(右, 下) - dungeon[i][j])。"
+defaultParams:
+  m: 3
+  n: 3
+  grid:
+    - [-2, -3, 3]
+    - [-5, -10, 1]
+    - [10, 30, -5]
+
+problem:
+  leetcodeId: 174
+  title: "地下城游戏"
+  difficulty: "困难"
+  tags: ["数组", "动态规划", "矩阵"]
+  description: "恶魔抓走了公主并关在地下城右下角 <code>(m - 1, n - 1)</code>。骑士从左上角 <code>(0, 0)</code> 出发拯救公主：骑士初始有一个健康点数，每次只能<strong>向右</strong>或<strong>向下</strong>移动一步。房间中数值为负数表示扣血，非负数表示加血。任何时刻骑士的血量都不能降到 <code>0</code> 或以下（必须 $\\ge 1$）。请计算骑士拯救公主所需要的<strong>最低初始生命值</strong>。"
+  examples:
+    - input: "dungeon = [[-2,-3,3],[-5,-10,1],[10,30,-5]]"
+      output: "7"
+      explanation: "骑士初始需要 7 点血，最优路径为右 -> 右 -> 下 -> 下：7 - 2 = 5 -> 5 - 3 = 2 -> 2 + 3 = 5 -> 5 + 1 = 6 -> 6 - 5 = 1，沿途始终维持 >= 1 生命值。"
+  constraints:
+    - "m == dungeon.length"
+    - "n == dungeon[i].length"
+    - "1 <= m, n <= 200"
+    - "-1000 <= dungeon[i][j] <= 1000"
+  leetcodeUrl: "https://leetcode.cn/problems/dungeon-game/"
+
+directions:
+  reverse:
+    label: "逆推 (终点向起点★)"
+    startFormula: "[m - 1, n - 1]"
+    target: [0, 0]
+    branches:
+      - name: "down"
+        delta: [1, 0]
+        label: "向下依赖"
+        codeVar: "down"
+        arrow: "⬇️"
+      - name: "right"
+        delta: [0, 1]
+        label: "向右依赖"
+        codeVar: "right"
+        arrow: "➡️"
+    combineFormula: "Math.max(1, Math.min(down, right) - dungeon[i][j])"
+  forward:
+    label: "顺推 (递归视角)"
+    start: [0, 0]
+    targetFormula: "[m - 1, n - 1]"
+    branches:
+      - name: "down"
+        delta: [1, 0]
+        label: "向下走"
+        codeVar: "down"
+        arrow: "⬇️"
+      - name: "right"
+        delta: [0, 1]
+        label: "向右走"
+        codeVar: "right"
+        arrow: "➡️"
+    combineFormula: "Math.max(1, Math.min(down, right) - dungeon[i][j])"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      reverse: "阶段 1: 朴素递归 (自顶向下逆推生命值)"
+      forward: "阶段 1: 朴素递归 (自顶向下逆推生命值)"
+    desc:
+      reverse: "dfs(i, j) 表示从房间 (i, j) 出发到达公主房所需的最低生命值。终点返回 max(1, 1 - dungeon)，越界返回无穷大，当前返回 max(1, min(下, 右) - dungeon[i][j])。"
+      forward: "dfs(i, j) 表示从房间 (i, j) 出发到达公主房所需的最低生命值。"
+    variants:
+      terminal:
+        variantLabel: "越界拦截版"
+        title:
+          reverse: "DungeonGame_Recursive.java (递归版)"
+          forward: "DungeonGame_Recursive.java (递归版)"
+        code:
+          reverse:
+            title: "DungeonGame_Recursive.java (递归版)"
+            source: |
+              class Solution {
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      return dfs(dungeon, 0, 0);
+                  }
+                  private int dfs(int[][] dungeon, int i, int j) { // @step:entry
+                      int m = dungeon.length, n = dungeon[0].length;
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds
+                      if (i == m - 1 && j == n - 1) { // @step:boundary
+                          return Math.max(1, 1 - dungeon[i][j]);
+                      }
+                      int down = dfs(dungeon, i + 1, j);  // @step:branch_down
+                      int right = dfs(dungeon, i, j + 1); // @step:branch_right
+                      int minNext = Math.min(down, right);
+                      return Math.max(1, minNext - dungeon[i][j]); // @step:combine
+                  }
+              }
+          forward:
+            title: "DungeonGame_ForwardExploration.java"
+            source: |
+              class Solution {
+                  // 顺推尝试：自起点 (0, 0) 向终点探索，记录 (minInit, curHp)
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      return dfsForward(dungeon, 0, 0, 1, 1);
+                  }
+                  private int dfsForward(int[][] d, int i, int j, int curHp, int minInit) { // @step:entry
+                      int m = d.length, n = d[0].length;
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds
+                      curHp += d[i][j];
+                      if (curHp <= 0) {
+                          minInit += (1 - curHp);
+                          curHp = 1;
+                      }
+                      if (i == m - 1 && j == n - 1) return minInit; // @step:boundary
+                      int down = dfsForward(d, i + 1, j, curHp, minInit);  // @step:branch_down
+                      int right = dfsForward(d, i, j + 1, curHp, minInit); // @step:branch_right
+                      return Math.min(down, right); // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      reverse: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+      forward: "阶段 2: 记忆化搜索 (消除重叠子问题)"
+    desc:
+      reverse: "引入 memo[m][n] 矩阵缓存每个房间的最低血量。若已算过则直接 O(1) 返回，时间复杂度从 O(2^(m+n)) 降为 O(m×n)。"
+      forward: "引入 memo[m][n] 矩阵缓存每个房间的最低血量。"
+    variants:
+      terminal:
+        variantLabel: "二维备忘录版"
+        title:
+          reverse: "DungeonGame_Memo.java (记忆化搜索)"
+          forward: "DungeonGame_Memo.java (记忆化搜索)"
+        code:
+          reverse:
+            title: "DungeonGame_Memo.java (记忆化搜索)"
+            source: |
+              class Solution {
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      int[][] memo = new int[m][n];
+                      return dfs(dungeon, 0, 0, memo);
+                  }
+                  private int dfs(int[][] dungeon, int i, int j, int[][] memo) { // @step:entry
+                      int m = dungeon.length, n = dungeon[0].length;
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds
+                      if (i == m - 1 && j == n - 1) { // @step:boundary
+                          return Math.max(1, 1 - dungeon[i][j]);
+                      }
+                      if (memo[i][j] > 0) return memo[i][j]; // @step:cache_hit
+                      int down = dfs(dungeon, i + 1, j, memo);  // @step:branch_down
+                      int right = dfs(dungeon, i, j + 1, memo); // @step:branch_right
+                      int minNext = Math.min(down, right);
+                      return memo[i][j] = Math.max(1, minNext - dungeon[i][j]); // @step:combine
+                  }
+              }
+          forward:
+            title: "DungeonGame_ForwardMemo.java"
+            source: |
+              class Solution {
+                  // 顺推记忆化：携带 curHp 展开状态搜索
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      Integer[][][] memo = new Integer[m][n][300];
+                      return dfsForwardMemo(dungeon, 0, 0, 1, 1, memo);
+                  }
+                  private int dfsForwardMemo(int[][] d, int i, int j, int curHp, int minInit, Integer[][][] memo) { // @step:entry
+                      int m = d.length, n = d[0].length;
+                      if (i >= m || j >= n) return Integer.MAX_VALUE; // @step:out_of_bounds
+                      curHp += d[i][j];
+                      if (curHp <= 0) {
+                          minInit += (1 - curHp);
+                          curHp = 1;
+                      }
+                      if (i == m - 1 && j == n - 1) return minInit; // @step:boundary
+                      int hpKey = Math.min(curHp, 299);
+                      if (memo[i][j][hpKey] != null) return memo[i][j][hpKey]; // @step:cache_hit
+                      int down = dfsForwardMemo(d, i + 1, j, curHp, minInit, memo);  // @step:branch_down
+                      int right = dfsForwardMemo(d, i, j + 1, curHp, minInit, memo); // @step:branch_right
+                      return memo[i][j][hpKey] = Math.min(down, right); // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(m×n)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      reverse: "阶段 3: 逆向二维 DP 填表 (公主房向起点逆推★)"
+      forward: "阶段 3: 逆向二维 DP 填表 (公主房向起点逆推★)"
+    desc:
+      reverse: "dp[i][j] 表示进入 (i, j) 房间所需的最低生命值。从右下角逆推：dp[i][j] = max(1, min(dp[i+1][j], dp[i][j+1]) - dungeon[i][j])。"
+      forward: "从右下角逆推：dp[i][j] = max(1, min(dp[i+1][j], dp[i][j+1]) - dungeon[i][j])。"
+    variants:
+      if:
+        variantLabel: "标准逆推版"
+        title:
+          reverse: "DungeonGame_2D.java (反向 DP 填表)"
+          forward: "DungeonGame_2D.java (反向 DP 填表)"
+        code:
+          reverse:
+            title: "DungeonGame_2D.java (反向 DP 填表)"
+            source: |
+              class Solution {
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      int[][] dp = new int[m][n]; // @step:init
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_j
+                              if (i == m - 1 && j == n - 1) {
+                                  dp[i][j] = Math.max(1, 1 - dungeon[i][j]); // @step:init_val
+                              } else if (i == m - 1) {
+                                  dp[i][j] = Math.max(1, dp[i][j + 1] - dungeon[i][j]); // @step:init_val
+                              } else if (j == n - 1) {
+                                  dp[i][j] = Math.max(1, dp[i + 1][j] - dungeon[i][j]); // @step:init_val
+                              } else {
+                                  int minNext = Math.min(dp[i + 1][j], dp[i][j + 1]);
+                                  dp[i][j] = Math.max(1, minNext - dungeon[i][j]); // @step:transfer
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+          forward:
+            title: "DungeonGame_ForwardBinaryDP.java"
+            source: |
+              class Solution {
+                  // 顺推二分初始健康值 + 正向 DP 检验连通性
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      int left = 1, right = 1000000, ans = right;
+                      while (left <= right) { // @step:loop_i
+                          int mid = left + (right - left) / 2;
+                          if (canReach(dungeon, m, n, mid)) { // @step:loop_j
+                              ans = mid;
+                              right = mid - 1; // @step:transfer
+                          } else {
+                              left = mid + 1; // @step:init_val
+                          }
+                      }
+                      return ans; // @step:return
+                  }
+                  private boolean canReach(int[][] d, int m, int n, int initHp) {
+                      int[][] hp = new int[m][n];
+                      hp[0][0] = initHp + d[0][0];
+                      if (hp[0][0] <= 0) return false;
+                      for (int i = 0; i < m; i++) {
+                          for (int j = 0; j < n; j++) {
+                              if (i == 0 && j == 0) continue;
+                              int fromUp = (i > 0 && hp[i - 1][j] > 0) ? hp[i - 1][j] + d[i][j] : 0;
+                              int fromLeft = (j > 0 && hp[i][j - 1] > 0) ? hp[i][j - 1] + d[i][j] : 0;
+                              hp[i][j] = Math.max(fromUp, fromLeft);
+                          }
+                      }
+                      return hp[m - 1][n - 1] > 0;
+                  }
+              }
+
+  stage-4:
+    shortName: "一维优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(n) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      reverse: "阶段 4: 一维滚动空间压缩 (O(n) 最优空间)"
+      forward: "阶段 4: 一维滚动空间压缩 (O(n) 最优空间)"
+    desc:
+      reverse: "dp[i][j] 只依赖右侧 dp[i][j+1] 和下方 dp[i+1][j]，可用长度为 n 的一维数组 memo 逆序覆盖滚动计算。"
+      forward: "长度为 n 的一维数组 memo 逆序滚动更新。"
+    variants:
+      if:
+        variantLabel: "一维滚动数组版"
+        title:
+          reverse: "DungeonGame_1D_Optimized.java (空间压缩)"
+          forward: "DungeonGame_1D_Optimized.java (空间压缩)"
+        code:
+          reverse:
+            title: "DungeonGame_1D_Optimized.java (空间压缩)"
+            source: |
+              class Solution {
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      int[] memo = new int[n]; // @step:init
+                      memo[n - 1] = Math.max(1, 1 - dungeon[m - 1][n - 1]); // @step:init_val
+                      for (int j = n - 2; j >= 0; j--) { // @step:init_row
+                          memo[j] = Math.max(1, memo[j + 1] - dungeon[m - 1][j]);
+                      }
+                      for (int i = m - 2; i >= 0; i--) { // @step:loop_i
+                          memo[n - 1] = Math.max(1, memo[n - 1] - dungeon[i][n - 1]); // @step:init_col
+                          for (int j = n - 2; j >= 0; j--) { // @step:loop_j
+                              int fromDown = memo[j];      // @step:fetch_down
+                              int fromRight = memo[j + 1]; // @step:fetch_right
+                              memo[j] = Math.max(1, Math.min(fromDown, fromRight) - dungeon[i][j]); // @step:accumulate
+                          }
+                      }
+                      return memo[0]; // @step:return
+                  }
+              }
+          forward:
+            title: "DungeonGame_Forward1DOptimized.java"
+            source: |
+              class Solution {
+                  // 顺推一维空间压缩验证
+                  public int calculateMinimumHP(int[][] dungeon) {
+                      int m = dungeon.length, n = dungeon[0].length;
+                      int left = 1, right = 1000000, ans = right;
+                      while (left <= right) { // @step:loop_i
+                          int mid = left + (right - left) / 2;
+                          int[] dp = new int[n]; // @step:init
+                          dp[0] = mid + dungeon[0][0]; // @step:init_val
+                          if (dp[0] > 0) {
+                              for (int j = 1; j < n; j++) dp[j] = dp[j - 1] > 0 ? dp[j - 1] + dungeon[0][j] : 0; // @step:init_row
+                              for (int i = 1; i < m; i++) { // @step:init_col
+                                  dp[0] = dp[0] > 0 ? dp[0] + dungeon[i][0] : 0;
+                                  for (int j = 1; j < n; j++) { // @step:loop_j
+                                      int maxPrev = Math.max(dp[j], dp[j - 1]); // @step:fetch_down
+                                      dp[j] = maxPrev > 0 ? maxPrev + dungeon[i][j] : 0; // @step:accumulate
+                                  }
+                              }
+                          }
+                          if (dp[n - 1] > 0) { ans = mid; right = mid - 1; } else { left = mid + 1; }
+                      }
+                      return ans; // @step:return
+                  }
+              }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 地下城游戏反向 DP 5 步法系统精讲"
+  summary: "LeetCode 174 经典困难题。为什么正向 DP 会失败？正向 DP 无法在局部做贪心决策，因为扣血与加血的先后顺序有强后效性。逆向定义则彻底解除后效性！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i][j]</code>：进入房间 <code>(i, j)</code> 时，为了能够救出公主并存活所必需的<strong>最低初始健康点数</strong>（必须 $\\ge 1$）。"
+      icon: "🎯"
+      badge: "逆向状态"
+    - label: "二、状态转移方程"
+      desc: "<code>dp[i][j] = max(1, min(dp[i+1][j], dp[i][j+1]) - dungeon[i][j])</code>。下一格所需更小者减去当前格收益，且不能低于 1。"
+      icon: "🔄"
+      badge: "min 下一步 - 当前格"
+    - label: "三、边界与初始化"
+      desc: "右下角公主房：<code>dp[m-1][n-1] = max(1, 1 - dungeon[m-1][n-1])</code>；最底行只能向右；最右列只能向下。"
+      icon: "🎬"
+      badge: "终点基准"
+    - label: "四、遍历顺序"
+      desc: "自底向上、自右向左逆推遍历（从 <code>m-1</code> 到 <code>0</code>，从 <code>n-1</code> 到 <code>0</code>）。一维压缩时倒序滚动覆盖更新。"
+      icon: "🧭"
+      badge: "倒序逆推"
+    - label: "五、举例推导"
+      desc: "以 3x3 样例 [[-2,-3,3],[-5,-10,1],[10,30,-5]] 为例，公主房 (-5) 需 6 血，沿途逆推最终在 (0, 0) 需要 7 点血，沿途血量恒 >= 1。"
+      icon: "📊"
+      badge: "答案验证"
+
+faqList:
+  - question: "为什么正向动态规划无法解决地下城游戏？"
+    answer: "如果从起点正推，到达某个房间 (i, j) 存在两个维度的指标：'到达此处的最大剩余血量'和'沿途曾要求的最低初始血量'。两个指标常常冲突（如一条路前期扣血多但后期补血多，另一条路前期平稳但后期无补血），无法单凭一个标量值做出局部最优选择，违背无后效性。而逆向推导只关心'从此处走到终点还需要多少血'，指标单一确定！"
+    tag: "后效性分析"
+  - question: "为什么转移方程中需要与 1 取 Math.max？"
+    answer: "骑士生命值在任何时刻都不能降为 0 或负数，即必须至少为 1。如果某个房间加血很多（如 +30），算得 minNext - 30 可能会是负数甚至 0，但这并不意味着骑士能以 0 血进入房间，进入任何房间前骑士必须活生生地活着（HP >= 1）。"
+    tag: "生存约束"

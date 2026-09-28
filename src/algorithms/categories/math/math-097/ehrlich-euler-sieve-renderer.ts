@@ -144,6 +144,7 @@ export const ehrlichEulerSieveVisualizer = registerDeclarativeAlgorithm<EulerSie
   icon: '🧮',
   difficulty: 3,
   levelOrder: 974,
+  aliases: ['class097-code04', 'euler-sieve', 'ehrlich-euler-sieve', 'linear-sieve', 'luogu-p3383'],
   learningGoal: '领悟欧拉筛 i % p == 0 最小质因子不重不漏筛除的核心数学设计',
   problemHtml: MATH_097_PROBLEMS.ehrlichEulerSieve.html,
   analysisHtml: MATH_097_PROBLEMS.ehrlichEulerSieve.html,

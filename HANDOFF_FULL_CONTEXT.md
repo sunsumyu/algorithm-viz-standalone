@@ -475,25 +475,37 @@
 - **全量条目与新鲜度**：
   - `meta:sync` 自动同步全库，目录算法总条目数从 633 题提升至 **636 题**。
 
+#### Commit `最新进度`: 必备篇全量补齐 (Class 052~064)、进阶 DP 专题 (Class 068, 071~081) 接入与全库 693 题门禁
+- **全量课程覆盖与别名统合**：
+  1. **单调栈与单调队列 (Class 052~055 / Batch 36~39)**：每日温度、柱状图最大矩形、全 1 子矩形、大鱼吃小鱼、移掉 K 位数字、滑动窗口最大值、花盆接水、和至少为 K 的最短子数组等；
+  2. **并查集与图论进阶 (Class 056, 059~064 / Batch 33~35, 40~41)**：情侣牵手置换环、拓扑排序 DAG 关键路径、最短路全家桶（朴素/堆优化 Dijkstra、Bellman-Ford、SPFA、Floyd、负权环）、分层图与状态压缩；
+  3. **双串 DP 专题 (Class 068)**：不同的子序列、编辑距离、交错字符串、最少删除使成为子串、两个字符串的删除操作；
+  4. **LIS 扩展专题 (Class 071~072)**：最长递增子序列个数、堆叠长方体最大高度、使数组 K 递增最少操作；
+  5. **区间 DP、树型 DP 与状压 DP 专题 (Class 076~081)**：多边形三角剖分、预测赢家、戳气球、树上最长距离/路径和、最大二叉搜索子树、相邻字符不同最长路径、没有上司的舞会、树上删边最小得分、我能赢吗、火柴拼正方形、划分为k个相等的子集、戴帽子方案数、优化账单、好子集的数目等；
+- **全量核心架构与门禁验证**：
+  - 新增 `src/core/class-curriculum-coverage.test.ts` 课程覆盖率门禁：Class 001~105 连续无间断覆盖，必备篇+进阶篇已交付课程别名 100% 对齐（>= 176 门）；
+  - 控制器集成 [PresetCasePresenter](file:///f:/chain/algorithm-viz-standalone/src/core/renderers/preset-case-presenter.ts)：顶栏自适应预设案例下拉选框联动；
+  - `meta:sync` 自动同步全库，目录算法总条目数从 636 题跃升至 **693 题**。
+
 ---
 
 ## 十一、当前最新工程状态与门禁验证
 
 | 验证项 | 指令 / 测试文件 | 结果 | 耗时 / 备注 |
 | :--- | :--- | :--- | :--- |
-| **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 30s |
-| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 2.0s |
-| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 9ms |
-| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (26/26 tests)** | 53.0s |
-| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 32.3s |
-| **Class 062 专题测试** | `src/algorithms/categories/graph/graph-062/graph-062.test.ts` | **PASS (13/13 tests)** | 全部通过 |
-| **Class 063 专题测试** | `src/algorithms/categories/graph/graph-063/graph-063.test.ts` | **PASS (15/15 tests)** | 全部通过 |
-| **Class 065 专题测试** | `src/algorithms/categories/graph/graph-065/graph-065.test.ts` | **PASS (10/10 tests)** | 全部通过 |
-| **Class 066 专题测试** | `src/algorithms/categories/dynamic-programming/dp-066/dp-066.test.ts` | **PASS (13/13 tests)** | 全部通过 |
-| **Class 069 专题测试** | `src/algorithms/categories/dynamic-programming/dp-069/dp-069.test.ts` | **PASS (11/11 tests)** | 全部通过 |
-| **Class 070 专题测试** | `src/algorithms/categories/dynamic-programming/dp-070/dp-070.test.ts` | **PASS (19/19 tests)** | 全部通过 |
-| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (636 题)** | 目录自动新鲜度 100% |
-| **Git Pre-commit 联合门禁** | `npm run test:gate` (47/47 tests) | **PASS (47/47 tests)** | 86.6s (全绿通过) |
+| **全库 TypeScript 类型检查** | `npm run typecheck` (`tsc -b --noEmit`) | **PASS (0 错误)** | 约 35s |
+| **顶层抽象合规硬门禁** | `top-level-abstraction-compliance.test.ts` | **PASS (16/16 tests)** | 0.9s |
+| **身材红线与防私有编译器** | `top-level-abstraction.gate.test.ts` | **PASS (3/3 tests)** | 7ms |
+| **表现层真实渲染契约门禁** | `presentation-contract.gate.test.ts` | **PASS (29/29 tests)** | 47.6s |
+| **全声明式算法 DOM 表现层门禁** | `declarative-presentation-contract.gate.test.ts` | **PASS (2/2 tests)** | 31.5s |
+| **Git Pre-commit 联合门禁** | `npm run test:gate` | **PASS (50/50 tests)** | 79.0s (全绿通过) |
+| **生产打包构建** | `npm run build` | **PASS (✓ built in 19.0s)** | 生产包生成完整 |
+| **全量目录元数据与新鲜度** | `npm run meta:sync` & `algorithm-catalog-indexer.test.ts` | **PASS (693 题)** | 目录自动收获 693 题，无重复主 ID |
+| **课程覆盖率门禁** | `src/core/class-curriculum-coverage.test.ts` | **PASS (1/1 tests)** | 必备篇(001~099)+进阶篇 176 门课程全覆盖 |
+| **Class 052~056, 059~061, 064 专题** | `src/algorithms/categories/` 各模块测试 | **PASS (121/121 tests)** | 全部绿灯通过 |
+| **Class 068, 071~072, 076~081 专题** | 各 DP 专题测试套件 | **PASS (60/60 tests)** | 全部绿灯通过 |
+| **控制器与用例选择器测试** | `src/core/visualizer-app-controller.test.ts` | **PASS (13/13 tests)** | 预设案例下拉联动验证全通过 |
+
 
 
 

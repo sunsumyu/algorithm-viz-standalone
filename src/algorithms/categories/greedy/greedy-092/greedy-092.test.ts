@@ -99,4 +99,47 @@ describe('左神贪心专题 4 (greedy-092) 自动化测试套件', () => {
     const last = steps[steps.length - 1];
     expect(last.stops).toBe(2);
   });
+
+  it('7. Class 092 贪心与排序进阶专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-5-index');
+
+    const expectedMappings = [
+      {
+        id: 'minimize-deviation-in-array',
+        aliases: ['class092-code01', 'minimize-deviation-1675', 'leetcode-1675', 'minimize-deviation'],
+      },
+      {
+        id: 'rabbits-in-forest',
+        aliases: ['class092-code02', 'rabbits-in-forest-781', 'leetcode-781'],
+      },
+      {
+        id: 'minimum-operations-to-make-similar',
+        aliases: ['class092-code03', 'min-operations-similar-2449', 'leetcode-2449', 'make-array-similar'],
+      },
+      {
+        id: 'quiz-score-maximization',
+        aliases: ['class092-code04', 'quiz-score', 'quiz-score-max'],
+      },
+      {
+        id: 'divide-array-into-increasing-sequences',
+        aliases: ['class092-code05', 'divide-array-increasing-1121', 'leetcode-1121', 'divide-array-seq'],
+      },
+      {
+        id: 'minimum-number-of-refueling-stops',
+        aliases: ['class092-code06', 'min-refueling-stops-871', 'leetcode-871', 'min-refueling-stops'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

@@ -167,6 +167,7 @@ export function buildFractionalSteps(
 export const fractionalProgrammingVisualizer = registerDeclarativeAlgorithm<FractionalStep>({
   id: 'fractional-programming-138',
   name: '01 分数规划 (Class 138)',
+  aliases: ['class138-code01', 'fractional-programming', 'fractional-programming-138', 'dinkelbach'],
   category: 'greedy',
   icon: '⚖️',
   difficulty: 3,

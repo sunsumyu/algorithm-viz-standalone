@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
 import { buildPartitionedKnapsackSteps } from './partitioned-knapsack-renderer';
 import { buildCoinsFromPilesSteps } from './coins-from-piles-renderer';
 import { buildUnboundedKnapsackSteps } from './unbounded-knapsack-renderer';
@@ -162,4 +163,30 @@ describe('左程云算法讲解074 (背包DP-分组背包、完全背包) 完整
       s6.forEach((s) => expect(getLine(s.codeLine)).toBeGreaterThan(0));
     });
   });
+
+  // ==========================================
+  // 8. Class 074 全 6 题算法中心注册与课号别名统合核验
+  // ==========================================
+  describe('8. Class 074 全 6 题算法中心注册与课号别名统合核验', () => {
+    const class074Suites = [
+      { id: 'partitioned-knapsack-standard', code: 'class074-code01', alias: 'partitioned-knapsack-074' },
+      { id: 'coins-from-piles', code: 'class074-code02', alias: 'coins-from-piles-074' },
+      { id: 'unbounded-knapsack-standard', code: 'class074-code03', alias: 'unbounded-knapsack-074' },
+      { id: 'regex-matching', code: 'class074-code04', alias: 'regex-matching-074' },
+      { id: 'wildcard-matching', code: 'class074-code05', alias: 'wildcard-matching-074' },
+      { id: 'buying-hay-min-cost', code: 'class074-code06', alias: 'buying-hay-min-cost-074' },
+    ];
+
+    it.each(class074Suites)('算法 ID "$id" 应已注册且包含别名 "$code"', ({ id, code, alias }) => {
+      const manifest = algorithmRegistry.getManifest(id);
+      expect(manifest, `算法 ${id} 必须注册`).toBeDefined();
+      expect(manifest?.id).toBe(id);
+      expect(manifest?.category).toBe('dynamic-programming');
+      expect(manifest?.aliases).toContain(code);
+      expect(manifest?.aliases).toContain(alias);
+      expect(manifest?.template).toBeDefined();
+      expect(manifest?.Visualizer).toBeDefined();
+    });
+  });
 });
+

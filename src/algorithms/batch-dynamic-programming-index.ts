@@ -45,6 +45,9 @@ import './categories/dynamic-programming/recursion-to-dp-038-renderer';
 import './categories/dynamic-programming/word-break-ii-renderer';
 import './categories/dynamic-programming/palindrome-partitioning-ii-renderer';
 
+// 左程云算法讲解071 & 072【必备】最长递增子序列与高阶扩展 3大全新渲染器
+import './categories/dynamic-programming/dp-071-072';
+
 export {};
 
 

@@ -120,6 +120,7 @@ export function buildMergeSort043Steps(): MergeSort043Step[] {
 
 export const mergeSort043Visualizer = registerDeclarativeAlgorithm<MergeSort043Step>({
   id: 'merge-sort-043',
+  aliases: ['class043-code01', 'class010-code01', 'class009-code01', 'merge-sort-043', 'merge-sort'],
   name: '归并排序原理 (Class 043)',
   category: 'sort',
   difficulty: 'easy',

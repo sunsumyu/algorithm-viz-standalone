@@ -94,6 +94,7 @@ export function buildPersistentTreapSteps(): PersistentTreapStep[] {
 export const persistentTreapVisualizer = registerDeclarativeAlgorithm<PersistentTreapStep>({
   id: 'persistent-treap-157',
   name: '可持久化平衡树 (Class 157)',
+  aliases: ['class157-code01', 'persistent-treap-157'],
   category: 'tree',
   icon: '🎋',
   difficulty: 3,

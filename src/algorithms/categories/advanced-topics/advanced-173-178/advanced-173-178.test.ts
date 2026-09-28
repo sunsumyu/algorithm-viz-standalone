@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildDinicSteps } from './dinic-max-flow-renderer';
 import { buildMCMFSteps } from './mcmf-cost-flow-renderer';
 import { buildHungarianSteps } from './hungarian-matching-renderer';
@@ -99,4 +101,26 @@ describe('左神网络流、二分图匹配与高阶图论专题 (Class 173 ~ 17
       verify1BasedCodeLines(steps, BLOCK_CUT_TREE_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 173 ~ 178)', () => {
+    it('所有网络流、二分图匹配与高阶图论课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class173-code01': 'dinic-max-flow-173',
+        'class174-code01': 'mcmf-cost-flow-174',
+        'class175-code01': 'hungarian-matching-175',
+        'class176-code01': 'km-matching-176',
+        'class177-code01': 'chordal-graph-mcs-177',
+        'class178-code01': 'block-cut-tree-178',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

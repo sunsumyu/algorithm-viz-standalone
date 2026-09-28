@@ -242,4 +242,30 @@ describe('第 89 课贪心专题 1：全算法防退化与四语言联动核验'
       verifyStepInvariants(steps, CONNECT_STICKS_STAGE3_CODES, '连接棒材 Stage 3');
     });
   });
+
+  describe('Class 089 贪心算法专题 注册中心与别名统合门禁', () => {
+    const expectedGreedy089 = [
+      { id: 'largest-number', aliases: ['class089-code01', 'largest-number-179', 'leetcode-179'] },
+      { id: 'two-city-scheduling', aliases: ['class089-code02', 'two-city-scheduling-1029', 'leetcode-1029'] },
+      { id: 'minimum-eat-oranges', aliases: ['class089-code03', 'minimum-eat-oranges-1553', 'leetcode-1553'] },
+      { id: 'meeting-rooms-ii', aliases: ['class089-code04', 'meeting-rooms-ii-253', 'leetcode-253'] },
+      { id: 'course-schedule-iii', aliases: ['class089-code05', 'course-schedule-iii-630', 'leetcode-630'] },
+      { id: 'minimum-cost-connect-sticks', aliases: ['class089-code06', 'minimum-cost-connect-sticks-1167', 'leetcode-1167', 'luogu-p1090', 'merge-fruits'] },
+    ];
+
+    it('Class 089 全量 6 大贪心算法必须成功注册且别名可正反向查询', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-5-index');
+
+      for (const item of expectedGreedy089) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `算法 [${item.id}] 必须成功注册`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases, `算法 [${item.id}] 必须包含别名 [${alias}]`).toContain(alias);
+          const byAlias = algorithmRegistry.getManifest(alias);
+          expect(byAlias?.id, `别名 [${alias}] 必须解析至主 ID [${item.id}]`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

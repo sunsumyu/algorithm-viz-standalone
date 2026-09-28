@@ -177,6 +177,7 @@ export const minTapsVisualizer = registerAlgorithm({
   icon: '🚰',
   difficulty: 3,
   levelOrder: 932,
+  aliases: ['class093-code02', 'min-taps-1326', 'leetcode-1326', 'min-taps', 'water-garden'],
   learningGoal: '掌握区间辐射模型转换为右边界跳跃最远延伸的贪心转化',
   description: '将水龙头覆盖区间规约为区间接力模型，求解覆盖花园的最少水龙头数目',
   template: `<div id="minimum-number-of-taps-to-water-a-garden" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,

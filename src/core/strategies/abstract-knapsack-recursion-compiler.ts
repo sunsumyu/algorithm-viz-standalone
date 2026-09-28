@@ -142,6 +142,24 @@ export abstract class AbstractKnapsackRecursionCompiler {
       treeRoot: cloneTree(rootNode)
     });
 
+    if (anchorMap?.dfs_start && anchorMap.dfs_start !== lineMainEntry) {
+      emitStep({
+        type: 'branch-call',
+        i: 0,
+        j: target,
+        grid: JSON.parse(JSON.stringify(gridState)),
+        activeStack: [],
+        visited: [],
+        line: anchorMap.dfs_start,
+        tag: `发起递归: dfs(0, ${target})`,
+        log: `| 🚀 主函数调用: 开始进入递归搜索 dfs(0, ${target})`,
+        msg: `主函数发起调用：从物品 <code>0</code> 和目标容量 <code>${target}</code> 开始递归搜索。`,
+        gridHighlight: { i: 0, j: target },
+        activeNodeId: rootNode.id,
+        treeRoot: cloneTree(rootNode)
+      });
+    }
+
     const total = this.runDfs(0, target, rootNode, ctx, emitStep);
     const isCoinMin = ctx.config.kind === 'coin-change-min';
     const finalDiff = ctx.config.kind === 'last-stone-weight' && ctx.config.oddCheck?.sum !== undefined
@@ -186,14 +204,14 @@ export abstract class AbstractKnapsackRecursionCompiler {
     ctx.visitedCells.add(key);
     currentNode.status = 'current';
 
-    const lineDfsStart = ctx.anchorMap.entry || ctx.anchorMap.dfs_start || (ctx.isMemo ? 6 : 4);
-    const lineBaseMatch = ctx.anchorMap.boundary || ctx.anchorMap.base_match || (ctx.isMemo ? 15 : 12);
-    const lineBaseOverflow = ctx.anchorMap.boundary || ctx.anchorMap.base_overflow || (ctx.isMemo ? 17 : 14);
-    const lineCacheHit = ctx.anchorMap.cache_hit || 19;
-    const lineBranchNotTake = ctx.anchorMap.branch_not_take || ctx.anchorMap.branch_down || (ctx.isMemo ? 22 : 17);
-    const lineCondTake = ctx.anchorMap.cond_take || lineBranchNotTake;
-    const lineBranchTake = ctx.anchorMap.branch_take || ctx.anchorMap.branch_right || (ctx.isMemo ? 26 : 21);
-    const lineCombine = ctx.anchorMap.combine || (ctx.isMemo ? 28 : 23);
+    const lineDfsEntry = ctx.anchorMap.dfs_entry || ctx.anchorMap.recursion || (ctx.isMemo ? 10 : 8);
+    const lineBaseMatch = ctx.anchorMap.base_match || ctx.anchorMap.boundary || (ctx.isMemo ? 11 : 9);
+    const lineBaseOverflow = ctx.anchorMap.base_overflow || ctx.anchorMap.boundary || (ctx.isMemo ? 12 : 10);
+    const lineCacheHit = ctx.anchorMap.cache_hit || (ctx.isMemo ? 13 : 11);
+    const lineBranchNotTake = ctx.anchorMap.branch_not_take || ctx.anchorMap.branch_down || (ctx.isMemo ? 15 : 12);
+    const lineCondTake = ctx.anchorMap.cond_take || ctx.anchorMap.cond || (ctx.isMemo ? 17 : 14);
+    const lineBranchTake = ctx.anchorMap.branch_take || ctx.anchorMap.branch_right || (ctx.isMemo ? 18 : 15);
+    const lineCombine = ctx.anchorMap.combine || (ctx.isMemo ? 20 : 17);
 
     const safeI = Math.min(i, ctx.n - 1);
     const safeJ = Math.max(0, Math.min(curTarget, ctx.capacity));
@@ -206,7 +224,7 @@ export abstract class AbstractKnapsackRecursionCompiler {
       grid: JSON.parse(JSON.stringify(ctx.gridState)),
       activeStack: [...ctx.activeStack],
       visited: [...ctx.visitedCells],
-      line: lineDfsStart,
+      line: lineDfsEntry,
       tag: `dfs(${i}, ${curTarget})`,
       log: `| ➡️ 进入搜索: dfs(物品索引=${i}, 剩余容量/目标=${curTarget})`,
       msg: `进入递归搜索：当前考虑第 <code>${i}</code> 件物品，剩余容量/目标为 <code>${curTarget}</code>。`,
@@ -222,9 +240,9 @@ export abstract class AbstractKnapsackRecursionCompiler {
         currentNode.status = baseCheck.val ? 'base' : 'pruned';
         currentNode.tag = `= ${baseCheck.val}`;
       }
-      const lineBoundary = baseCheck.lineKey
-        ? (ctx.anchorMap[baseCheck.lineKey] || lineBaseMatch)
-        : (curTarget === 0 ? lineBaseMatch : lineBaseOverflow);
+      const lineBoundary = baseCheck.lineKey && ctx.anchorMap[baseCheck.lineKey]
+        ? ctx.anchorMap[baseCheck.lineKey]
+        : (baseCheck.lineKey === 'base_overflow' || curTarget !== 0 ? lineBaseOverflow : lineBaseMatch);
 
       emitStep({
         type: 'boundary',

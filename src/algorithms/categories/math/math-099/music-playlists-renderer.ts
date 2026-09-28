@@ -111,6 +111,7 @@ export const musicPlaylistsVisualizer = registerDeclarativeAlgorithm<MusicPlayli
   icon: '🎵',
   difficulty: 3,
   levelOrder: 996,
+  aliases: ['class099-code06', 'music-playlists', 'number-of-music-playlists-920', 'leetcode-920'],
   learningGoal: '领会斯特林数思想在动态规划状态定义中的具象应用（新歌扩展 vs 安全间距旧歌重播）',
   problemHtml: MATH_099_PROBLEMS.musicPlaylists.html,
   analysisHtml: MATH_099_PROBLEMS.musicPlaylists.html,

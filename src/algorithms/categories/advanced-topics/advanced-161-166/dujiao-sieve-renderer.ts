@@ -153,6 +153,7 @@ export function buildDujiaoSteps(targetN: number): DujiaoStep[] {
 export const dujiaoSieveVisualizer = registerDeclarativeAlgorithm<DujiaoStep>({
   id: 'dujiao-sieve-164',
   name: '杜教筛 (Class 164)',
+  aliases: ['class164-code01', 'dujiao-sieve-164', 'dujiao-sieve'],
   category: 'math',
   icon: '🎯',
   difficulty: 3,

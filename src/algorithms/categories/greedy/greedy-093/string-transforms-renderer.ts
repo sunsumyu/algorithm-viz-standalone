@@ -140,6 +140,7 @@ export const stringTransformsVisualizer = registerDeclarativeAlgorithm<StringTra
   icon: '🔤',
   difficulty: 3,
   levelOrder: 933,
+  aliases: ['class093-code03', 'string-transforms-1153', 'leetcode-1153', 'string-transforms'],
   learningGoal: '掌握字符集一对多单值映射检测与26全字母满射置换死锁的拓扑判断',
   problemHtml: GREEDY_093_PROBLEMS.stringTransforms.html,
   analysisHtml: GREEDY_093_PROBLEMS.stringTransforms.html,

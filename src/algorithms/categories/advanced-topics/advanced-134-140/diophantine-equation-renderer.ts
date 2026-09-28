@@ -160,6 +160,7 @@ export function buildDiophantineSteps(
 export const diophantineVisualizer = registerDeclarativeAlgorithm<DiophantineStep>({
   id: 'diophantine-equation-140',
   name: '二元一次不定方程 (Class 140)',
+  aliases: ['class140-code01', 'diophantine-equation', 'diophantine-equation-140', 'linear-diophantine'],
   category: 'math',
   icon: '⚖️',
   difficulty: 2,

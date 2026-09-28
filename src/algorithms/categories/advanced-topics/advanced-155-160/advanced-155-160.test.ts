@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildLCTSteps } from './lct-link-cut-tree-renderer';
 import { buildPersistentSegSteps } from './persistent-segment-tree-renderer';
 import { buildPersistentTreapSteps } from './persistent-treap-renderer';
@@ -115,4 +117,26 @@ describe('左神进阶数据结构与多项式专题 (Class 155 ~ 160) 综合测
       verify1BasedCodeLines(steps, FFT_POLYNOMIAL_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 155 ~ 160)', () => {
+    it('所有进阶数据结构与多项式课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class155-code01': 'lct-link-cut-tree-155',
+        'class156-code01': 'persistent-segment-tree-156',
+        'class157-code01': 'persistent-treap-157',
+        'class158-code01': 'dsu-on-tree-158',
+        'class159-code01': 'mo-algorithm-159',
+        'class160-code01': 'fft-polynomial-160',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

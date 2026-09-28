@@ -134,6 +134,7 @@ export function buildLinearBasisKthSteps(rawNums: number[], k: number): LinearBa
 export const linearBasisKthVisualizer = registerDeclarativeAlgorithm<LinearBasisKthStep>({
   id: 'linear-basis-kth-137',
   name: '线性基第 K 小异或和 (Class 137)',
+  aliases: ['class137-code01', 'linear-basis-kth', 'linear-basis-kth-137', 'kth-xor-basis'],
   category: 'math',
   icon: '🎚️',
   difficulty: 3,

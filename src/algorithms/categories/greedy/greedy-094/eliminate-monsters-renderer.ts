@@ -153,6 +153,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 941,
+  aliases: ['class094-code01', 'eliminate-monsters-1921', 'leetcode-1921', 'eliminate-maximum-monsters'],
   learningGoal: '掌握到达时间升序排序的贪心本质与防守时机判定',
 });
 

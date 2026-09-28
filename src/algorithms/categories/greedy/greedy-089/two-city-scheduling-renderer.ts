@@ -584,4 +584,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 892,
   learningGoal: '理解差额排序在多选一资源分配中的恒等式转化，掌握增量排序的本质',
+  aliases: ['class089-code02', 'two-city-scheduling-1029', 'leetcode-1029'],
 });

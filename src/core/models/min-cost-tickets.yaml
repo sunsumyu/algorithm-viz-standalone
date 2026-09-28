@@ -1,0 +1,338 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL DP MODEL] 最低票价 (Minimum Cost For Tickets) 顶层领域黄金模型
+# 对应：LeetCode 983 / 左神算法通关班 Class 066 Code02
+# 包含：三分支递归穷举、一维备忘录剪枝、自底向上逆向跳跃一维DP与二分查找落点优化
+# ==============================================================================
+
+id: min-cost-tickets-066
+name: "最低票价"
+nameEn: "Minimum Cost For Tickets"
+category: "dynamic-programming"
+icon: "🎫"
+difficulty: 2
+levelOrder: 66
+learningGoal: "掌握一维旅行日逆向动态规划与 1/7/30 天区间跳跃状态转移，理解基于单调性的二分查找跨度对数加速"
+description: "最低票价（LeetCode 983 / 左神 Class 066）：给定旅行日数组与三种通行证费用，自底向上逆向跳跃填表求完成所有旅行的最低总费用。"
+defaultParams:
+  days: "1, 4, 6, 7, 8, 20"
+  costs: "2, 7, 15"
+
+problem:
+  leetcodeId: 983
+  title: "最低票价 (Minimum Cost For Tickets)"
+  difficulty: "中等"
+  tags: ["动态规划", "数组", "二分查找", "LeetCode 983"]
+  description: "在一个火车旅行很受欢迎的国度，你提前一年规划了一些旅行。旅行日在一个按升序排列的整数数组 <code>days</code> 中给出。每个日期的取值范围为 <code>1</code> 到 <code>365</code>。<br/><br/>火车票有 3 种不同的销售方式：<br/>• 1 天通行证售价为 <code>costs[0]</code> 美元；<br/>• 7 天通行证售价为 <code>costs[1]</code> 美元；<br/>• 30 天通行证售价为 <code>costs[2]</code> 美元。<br/><br/>通行证允许你在购买的连续天数内随意旅行。例如你在第 2 天购买了 7 天通行证，则可以在第 2, 3, 4, 5, 6, 7, 8 天随意通行。<br/><br/>返回你想要完成在给定的列表 <code>days</code> 中列出的每一天的旅行所需要的<strong>最低费用</strong>。"
+  examples:
+    - input: "days = [1, 4, 6, 7, 8, 20], costs = [2, 7, 15]"
+      output: "11"
+      explanation: "在第 1 天购买 1 天通行证 ($2)，在第 4 天购买 7 天通行证 ($7，覆盖第 4~10 天)，在第 20 天购买 1 天通行证 ($2)，总花费为 $11。"
+    - input: "days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 30, 31], costs = [2, 7, 15]"
+      output: "17"
+      explanation: "在第 1 天购买 30 天通行证 ($15)，在第 31 天购买 1 天通行证 ($2)，总花费为 $17。"
+  constraints:
+    - "1 <= days.length <= 365"
+    - "1 <= days[i] <= 365"
+    - "days 按顺序严格递增"
+    - "costs.length == 3"
+    - "1 <= costs[i] <= 1000"
+  leetcodeUrl: "https://leetcode.cn/problems/min-cost-for-tickets/"
+
+directions:
+  forward:
+    label: "顺推 (正序推进)"
+    branches:
+      - name: "pass1"
+        delta: [1, 0]
+        label: "1天通行证"
+        codeVar: "c1"
+        arrow: "🎫"
+      - name: "pass7"
+        delta: [7, 0]
+        label: "7天通行证"
+        codeVar: "c7"
+        arrow: "🎟️"
+      - name: "pass30"
+        delta: [30, 0]
+        label: "30天通行证"
+        codeVar: "c30"
+        arrow: "🛫"
+    combineFormula: "min(costs[k] + dp[next])"
+  reverse:
+    label: "逆推 (自底向上跳跃)"
+    branches:
+      - name: "pass1"
+        delta: [1, 0]
+        label: "1天方案跳跃"
+        codeVar: "c1"
+        arrow: "🎫"
+      - name: "pass7"
+        delta: [7, 0]
+        label: "7天方案跳跃"
+        codeVar: "c7"
+        arrow: "🎟️"
+      - name: "pass30"
+        delta: [30, 0]
+        label: "30天方案跳跃"
+        codeVar: "c30"
+        arrow: "🛫"
+    combineFormula: "min(costs[0] + dp[j1], costs[1] + dp[j7], costs[2] + dp[j30])"
+
+stages:
+  stage-1:
+    shortName: "暴力递归"
+    type: "recursion"
+    timeBadge: "O(3^N)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 1: 暴力递归 (顺向深度遍历)"
+      reverse: "阶段 1: 暴力递归 (指数级三分支穷举)"
+    desc:
+      forward: "从首个旅行日开始顺向决策，尝试买 1/7/30 天票并跨步递归。"
+      reverse: "定义 f(i) 为从第 i 个旅行日开始完成后续所有旅行的最低花费，每个旅行日展开 1/7/30 天三个决策分支。"
+    variants:
+      standard:
+        variantLabel: "标准递归版"
+        title:
+          forward: "MinCostTickets_Recursive_Forward.java"
+          reverse: "MinCostTickets_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "MinCostTickets_Recursive_Forward.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      return f(days, costs, 0);
+                  }
+                  private int f(int[] days, int[] costs, int i) { // @step:entry
+                      if (i >= days.length) return 0; // @step:boundary // 全部计划日均已覆盖
+                      int ans = Integer.MAX_VALUE;
+                      int[] duration = {1, 7, 30};
+                      for (int k = 0, j = i; k < 3; k++) { // @step:loop_branch // 遍历三种通行证
+                          while (j < days.length && days[j] < days[i] + duration[k]) { // @step:skip_days // 跨过覆盖期
+                              j++;
+                          }
+                          ans = Math.min(ans, costs[k] + f(days, costs, j)); // @step:recursive_call // 递归子问题
+                      }
+                      return ans; // @step:return
+                  }
+              }
+          reverse:
+            title: "MinCostTickets_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      return f(days, costs, 0);
+                  }
+                  private int f(int[] days, int[] costs, int i) { // @step:entry
+                      if (i >= days.length) return 0; // @step:boundary // 到达终点花费为0
+                      int ans = Integer.MAX_VALUE;
+                      int[] duration = {1, 7, 30};
+                      for (int k = 0, j = i; k < 3; k++) { // @step:loop_branch // 评估1/7/30天方案
+                          while (j < days.length && days[j] < days[i] + duration[k]) { // @step:skip_days // 跳过覆盖日
+                              j++;
+                          }
+                          ans = Math.min(ans, costs[k] + f(days, costs, j)); // @step:recursive_call // 累加票价并深入递归
+                      }
+                      return ans; // @step:return
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(N)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (备忘录剪枝)"
+      reverse: "阶段 2: 逆向记忆化 (带权后向备忘)"
+    desc:
+      forward: "使用 memo[i] 缓存从第 i 个旅行日起的最低花费，命中直接 O(1) 返回。"
+      reverse: "通过 memo[i] 记录子问题最优解，多路跳转汇聚到同一旅行日时直接读取缓存，消除 3^N 算力爆炸。"
+    variants:
+      standard:
+        variantLabel: "一维备忘录版"
+        title:
+          forward: "MinCostTickets_Memo_Forward.java"
+          reverse: "MinCostTickets_Memo_Reverse.java"
+        code:
+          forward:
+            title: "MinCostTickets_Memo_Forward.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int[] memo = new int[days.length];
+                      Arrays.fill(memo, -1);
+                      return f(days, costs, 0, memo);
+                  }
+                  private int f(int[] days, int[] costs, int i, int[] memo) { // @step:entry
+                      if (i >= days.length) return 0; // @step:boundary
+                      if (memo[i] != -1) return memo[i]; // @step:cache_hit // 缓存命中剪枝
+                      int ans = Integer.MAX_VALUE;
+                      int[] duration = {1, 7, 30};
+                      for (int k = 0, j = i; k < 3; k++) { // @step:loop_branch
+                          while (j < days.length && days[j] < days[i] + duration[k]) j++; // @step:skip_days
+                          ans = Math.min(ans, costs[k] + f(days, costs, j, memo)); // @step:recursive_call
+                      }
+                      return memo[i] = ans; // @step:store_memo // 写入备忘录
+                  }
+              }
+          reverse:
+            title: "MinCostTickets_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int[] memo = new int[days.length];
+                      Arrays.fill(memo, -1);
+                      return f(days, costs, 0, memo);
+                  }
+                  private int f(int[] days, int[] costs, int i, int[] memo) { // @step:entry
+                      if (i >= days.length) return 0; // @step:boundary
+                      if (memo[i] != -1) return memo[i]; // @step:cache_hit // 备忘录命中直接返回
+                      int ans = Integer.MAX_VALUE;
+                      int[] duration = {1, 7, 30};
+                      for (int k = 0, j = i; k < 3; k++) { // @step:loop_branch
+                          while (j < days.length && days[j] < days[i] + duration[k]) j++; // @step:skip_days
+                          ans = Math.min(ans, costs[k] + f(days, costs, j, memo)); // @step:recursive_call
+                      }
+                      return memo[i] = ans; // @step:store_memo // 保存并返回最优结果
+                  }
+              }
+
+  stage-3:
+    shortName: "一维DP"
+    type: "tabulation-1d"
+    timeBadge: "O(N)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 一维动态规划 (正序严格表递推)"
+      reverse: "阶段 3: 严格一维DP (自底向上逆向跳跃)"
+    desc:
+      forward: "开辟长度为 n+1 的 dp 数组，dp[i] 表示完成前 i 个旅行日的最低花费。"
+      reverse: "dp[i] 表示从第 i 个旅行日开始完成所有旅行的最低费用，dp[i] = min_{k}(costs[k] + dp[j_k])，从后向前倒序填表。"
+    variants:
+      standard:
+        variantLabel: "一维数组递推版"
+        title:
+          forward: "MinCostTickets_DP_Forward.java"
+          reverse: "MinCostTickets_DP_Reverse.java"
+        code:
+          forward:
+            title: "MinCostTickets_DP_Forward.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int n = days.length;
+                      int[] dp = new int[n + 1]; // @step:init // 初始化一维 DP 表
+                      int[] duration = {1, 7, 30};
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i // 自底向上逆推
+                          int ans = Integer.MAX_VALUE;
+                          for (int k = 0, j = i; k < 3; k++) { // @step:loop_k // 考察三种通行证
+                              while (j < n && days[j] < days[i] + duration[k]) { // @step:skip_days // 寻找跨度落点
+                                  j++;
+                              }
+                              ans = Math.min(ans, costs[k] + dp[j]); // @step:update_ans // 比较方案代价
+                          }
+                          dp[i] = ans; // @step:transfer // 状态落盘写入 dp[i]
+                      }
+                      return dp[0]; // @step:return // 返回从首日开始全局最优解
+                  }
+              }
+          reverse:
+            title: "MinCostTickets_DP_Reverse.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int n = days.length;
+                      int[] dp = new int[n + 1]; // @step:init // dp[n]=0 作为终点基准
+                      int[] duration = {1, 7, 30};
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i // 自后往前倒序推导
+                          int ans = Integer.MAX_VALUE;
+                          for (int k = 0, j = i; k < 3; k++) { // @step:loop_k // 1/7/30天方案
+                              while (j < n && days[j] < days[i] + duration[k]) { // @step:skip_days // 线性推进找下一个旅行日
+                                  j++;
+                              }
+                              ans = Math.min(ans, costs[k] + dp[j]); // @step:update_ans // 取各方案较小者
+                          }
+                          dp[i] = ans; // @step:transfer // 状态更新 dp[i] = ans
+                      }
+                      return dp[0]; // @step:return // dp[0] 即为完成全部行程的最低票价
+                  }
+              }
+
+  stage-4:
+    shortName: "二分优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(N log N)"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 二分查找跳跃优化 (对数落点加速)"
+      reverse: "阶段 4: 二分跳跃加速 (lower_bound 优化)"
+    desc:
+      forward: "利用 days 数组的严格单调递增特性，通过二分查找将确定下一旅行日由 O(N) 降至 O(log N)。"
+      reverse: "由于 days 递增有序，7 天与 30 天通行证的跳跃落点直接二分查找 lower_bound，单步状态转移效率极大提升。"
+    variants:
+      standard:
+        variantLabel: "二分对数优化版"
+        title:
+          forward: "MinCostTickets_BinarySearch_Forward.java"
+          reverse: "MinCostTickets_BinarySearch_Reverse.java"
+        code:
+          forward:
+            title: "MinCostTickets_BinarySearch_Forward.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int n = days.length;
+                      int[] dp = new int[n + 1]; // @step:init
+                      int[] duration = {1, 7, 30};
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          int ans = Integer.MAX_VALUE;
+                          for (int k = 0; k < 3; k++) { // @step:loop_k
+                              int target = days[i] + duration[k];
+                              int j = binarySearch(days, i, n, target); // @step:binary_search // 二分查找落点下标
+                              ans = Math.min(ans, costs[k] + dp[j]); // @step:update_ans
+                          }
+                          dp[i] = ans; // @step:transfer
+                      }
+                      return dp[0]; // @step:return
+                  }
+                  private static int binarySearch(int[] days, int l, int r, int target) {
+                      int ans = r;
+                      while (l < r) {
+                          int m = (l + r) / 2;
+                          if (days[m] >= target) { ans = m; r = m; }
+                          else { l = m + 1; }
+                      }
+                      return ans;
+                  }
+              }
+          reverse:
+            title: "MinCostTickets_BinarySearch_Reverse.java"
+            source: |
+              class Solution {
+                  public int mincostTickets(int[] days, int[] costs) {
+                      int n = days.length;
+                      int[] dp = new int[n + 1]; // @step:init
+                      int[] duration = {1, 7, 30};
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i // 自底向上逆推
+                          int ans = Integer.MAX_VALUE;
+                          for (int k = 0; k < 3; k++) { // @step:loop_k
+                              int target = days[i] + duration[k];
+                              int j = binarySearch(days, i, n, target); // @step:binary_search // 二分对数快速定位 j
+                              ans = Math.min(ans, costs[k] + dp[j]); // @step:update_ans
+                          }
+                          dp[i] = ans; // @step:transfer
+                      }
+                      return dp[0]; // @step:return
+                  }
+                  private static int binarySearch(int[] days, int l, int r, int target) {
+                      int ans = r;
+                      while (l < r) {
+                          int m = (l + r) / 2;
+                          if (days[m] >= target) { ans = m; r = m; }
+                          else { l = m + 1; }
+                      }
+                      return ans;
+                  }
+              }

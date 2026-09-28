@@ -369,6 +369,7 @@ export const radixSort028Visualizer = registerDeclarativeAlgorithm<RadixSortStep
   icon: '🧮',
   difficulty: 2,
   levelOrder: 28,
+  aliases: ['class028-code01', 'radix-sort-028', 'radix-sort'],
   learningGoal: '透彻理解非基于比较的基数排序算法，掌握前缀累加和表划分与从右向左保持稳定性的数学设计',
   problemHtml: `
     <div style="line-height: 1.6;">

@@ -133,6 +133,7 @@ export const bashGameVisualizer = registerDeclarativeAlgorithm<BashGameStep>({
   icon: '🪨',
   difficulty: 2,
   levelOrder: 951,
+  aliases: ['class095-code01', 'bash-game', 'hdu-1846'],
   learningGoal: '掌握经典巴什博弈的周期剩余与互补配对制胜原理',
   problemHtml: GAME_095_PROBLEMS.bashGame.html,
   analysisHtml: GAME_095_PROBLEMS.bashGame.html,

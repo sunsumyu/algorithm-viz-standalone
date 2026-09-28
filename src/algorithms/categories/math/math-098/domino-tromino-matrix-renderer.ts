@@ -111,6 +111,7 @@ export const dominoTrominoMatrixVisualizer = registerDeclarativeAlgorithm<Domino
   icon: '🀄',
   difficulty: 3,
   levelOrder: 985,
+  aliases: ['class098-code05', 'domino-tromino', 'domino-tromino-790', 'leetcode-790'],
   learningGoal: '通过几何骨牌覆盖推导出线性递推式，并转化为 3×3 矩阵快速幂加速',
   problemHtml: MATH_098_PROBLEMS.dominoTromino.html,
   analysisHtml: MATH_098_PROBLEMS.dominoTromino.html,

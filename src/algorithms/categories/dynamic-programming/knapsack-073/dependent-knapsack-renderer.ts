@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 有依赖的背包(模版) (洛谷 P1064 金明的预算方案) - 声明式 4-Card 沙盘渲染器
  * 核心：主件 + 至多2个附件展开为 4 种互斥方案的分组背包
  * 架构重构：引入四语言代码联动、主附组合双层沙盘与实时预算载荷舱
@@ -423,6 +423,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code05：洛谷 P1064 金明的预算方案，主件附件组合展开为互斥分组背包求解',
   icon: '🛍️',
+  aliases: ['class073-code05', 'dependent-knapsack-073', 'dependent-knapsack', 'luogu-p1064'],
   template,
   Visualizer,
   difficulty: 2,

@@ -433,6 +433,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code05：LeetCode 44 通配符，通配星号 * 匹配任意字符串转化为经典完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]',
   icon: '🃏',
+  aliases: ['class074-code05', 'wildcard-matching-074', 'wildcard-matching-problem', 'leetcode-44'],
   template,
   Visualizer,
   difficulty: 3,

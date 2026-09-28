@@ -4,6 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildSBSteps } from './sb-tree-renderer';
 import { buildRBSteps } from './red-black-tree-renderer';
 import { buildSkipListSteps } from './skiplist-renderer';
@@ -157,4 +159,26 @@ describe('左神有序表专题 (Class 149 ~ 154) 综合测试套件', () => {
       verify1BasedCodeLines(steps, FHQ_TREAP_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 149 ~ 154)', () => {
+    it('所有有序表全家桶课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class149-code01': 'sb-tree-149',
+        'class150-code01': 'red-black-tree-150',
+        'class151-code01': 'skiplist-151',
+        'class152-code01': 'splay-tree-152',
+        'class153-code01': 'scapegoat-tree-153',
+        'class154-code01': 'treap-fhq-154',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

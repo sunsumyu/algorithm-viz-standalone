@@ -16,6 +16,7 @@ import { SplitterEngine } from './splitter-engine';
 import { StateSpacePresenter } from './renderers/state-space-presenter';
 import { ProblemDimensionResolver } from './resolvers/problem-dimension-resolver';
 import { AnalysisKnowledgePresenter } from './renderers/analysis-knowledge-presenter';
+import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { VisualizerParamSynchronizer } from './controllers/visualizer-param-synchronizer';
 import { StageNavigationCoordinator } from './controllers/stage-navigation-coordinator';
 import { RightPanelTabCoordinator } from './controllers/right-panel-tab-coordinator';
@@ -50,6 +51,7 @@ export class VisualizerAppController {
   private leftVerticalSplitter: SplitterEngine | null = null;
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
+  private selectedPresetIndex = 0;
   public stage3SubView: 'matrix' | 'tree' | 'alignment' = 'matrix';
   public stage4SubView: 'memo' | 'alignment' = 'memo';
   public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
@@ -183,9 +185,10 @@ export class VisualizerAppController {
     // 同步参数到 DOM 控件
     VisualizerParamSynchronizer.syncControlsToDom({ m: this.m, n: this.n }, resolved.is1D);
 
-    // 应用主题并装配顶栏主题选择器
+    // 应用主题并装配顶栏主题选择器与预设案例选择器
     this.themeManager.applyThemeToDom();
     this.renderThemeSelector();
+    this.renderPresetSelector();
     this.themeManager.subscribe(() => {
       if (this.steps.length > 0) {
         const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
@@ -240,11 +243,32 @@ export class VisualizerAppController {
     if (this.isDestroyed || typeof document === 'undefined') return;
 
     const resolved = ProblemDimensionResolver.resolve(this.modelId, this.model?.defaultParams, this.currentStage);
-    const dims = VisualizerParamSynchronizer.readInputDimensions(resolved.m, resolved.n);
-    this.m = resolved.is1D ? 1 : dims.m;
-    this.n = dims.n;
+    if (resolved.category === '2d-grid') {
+      const dims = VisualizerParamSynchronizer.readInputDimensions(resolved.m, resolved.n);
+      this.m = dims.m;
+      this.n = dims.n;
+    } else {
+      this.m = resolved.is1D ? 1 : resolved.m;
+      this.n = resolved.n;
+    }
 
     VisualizerParamSynchronizer.syncControlsToDom({ m: this.m, n: this.n }, resolved.is1D);
+
+    // 非网格问题智能隐藏 m/n 网格尺寸输入组与硬编码预设按钮组、应用按钮
+    const gridInputs = document.getElementById('grid-dimension-inputs') || document.getElementById('input-m')?.parentElement;
+    if (gridInputs) {
+      gridInputs.style.display = resolved.category === '2d-grid' ? '' : 'none';
+    }
+    const hardcodedPresetGroup = document.querySelector('.preset-btn')?.parentElement;
+    if (hardcodedPresetGroup) {
+      hardcodedPresetGroup.style.display = resolved.category === '2d-grid' ? '' : 'none';
+    }
+    const btnGenerate = document.getElementById('btn-generate');
+    if (btnGenerate) {
+      btnGenerate.style.display = resolved.category === '2d-grid' ? '' : 'none';
+    }
+
+    this.syncPresetSelector();
 
     const stageConfig = AlgorithmModelRepository.getCompiledStage(this.model.id, this.currentStage, this.currentDirection);
     if (!stageConfig) return;
@@ -868,6 +892,91 @@ export class VisualizerAppController {
           if (this.timeline) this.timeline.setSpeed(speedMs);
         }
       });
+    }
+  }
+
+  /**
+   * 动态装配顶栏预设案例下拉选框 (统一由 PresetCasePresenter 规约驱动)
+   */
+  private renderPresetSelector(): void {
+    if (typeof document === 'undefined') return;
+
+    let container = document.getElementById('preset-selector-container');
+    if (!container) {
+      // 智能寻找挂载点：优先挂载于网格尺寸控件之前，或在方向切换器之后
+      const gridInputs = document.getElementById('grid-dimension-inputs') || document.getElementById('input-m')?.parentElement;
+      if (gridInputs && gridInputs.parentElement) {
+        container = document.createElement('div');
+        container.id = 'preset-selector-container';
+        container.className = 'inline-flex items-center flex-shrink-0';
+        gridInputs.parentElement.insertBefore(container, gridInputs);
+      } else {
+        const anchor = document.getElementById('dir-tabs-container') || document.getElementById('stage-tabs-container');
+        if (anchor && anchor.parentElement) {
+          container = document.createElement('div');
+          container.id = 'preset-selector-container';
+          container.className = 'inline-flex items-center flex-shrink-0';
+          anchor.parentElement.insertBefore(container, anchor.nextSibling);
+        }
+      }
+    }
+
+    if (!container) return;
+
+    const presets = PresetCasePresenter.resolveFromModel(this.model);
+    if (!presets || presets.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    this.selectedPresetIndex = PresetCasePresenter.findMatchingPresetIndex(presets, this.model.defaultParams);
+
+    container.innerHTML = PresetCasePresenter.renderTailwindSelectHtml(presets, this.selectedPresetIndex, {
+      selectId: 'stage-preset-select',
+      labelText: '案例:',
+      maxWidth: '240px'
+    });
+
+    const selectEl = (document.getElementById('stage-preset-select') || container.querySelector('#stage-preset-select')) as HTMLSelectElement | null;
+    if (selectEl) {
+      selectEl.addEventListener('change', () => {
+        const idx = parseInt(selectEl.value, 10);
+        if (!isNaN(idx) && presets[idx]) {
+          this.selectedPresetIndex = idx;
+          const chosen = presets[idx];
+          if (chosen.values) {
+            this.model.defaultParams = {
+              ...(this.model.defaultParams || {}),
+              ...chosen.values
+            };
+            if (chosen.values.m !== undefined) {
+              const inM = document.getElementById('input-m') as HTMLInputElement | null;
+              if (inM) inM.value = String(chosen.values.m);
+            }
+            if (chosen.values.n !== undefined) {
+              const inN = document.getElementById('input-n') as HTMLInputElement | null;
+              if (inN) inN.value = String(chosen.values.n);
+            }
+          }
+          this.loadAndReset();
+        }
+      });
+    }
+  }
+
+  /**
+   * 同步更新预设选框的选中状态
+   */
+  private syncPresetSelector(): void {
+    if (typeof document === 'undefined') return;
+    const selectEl = document.getElementById('stage-preset-select') as HTMLSelectElement | null;
+    if (selectEl) {
+      const presets = PresetCasePresenter.resolveFromModel(this.model);
+      const matchIdx = PresetCasePresenter.findMatchingPresetIndex(presets, this.model.defaultParams);
+      if (matchIdx >= 0) {
+        this.selectedPresetIndex = matchIdx;
+        selectEl.value = String(matchIdx);
+      }
     }
   }
 }

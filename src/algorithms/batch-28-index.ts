@@ -5,5 +5,6 @@
  */
 
 import './categories/search/search-058/making-large-island-058-renderer';
+import './categories/search/search-058/flood-fill-058-renderer';
 
 export {};

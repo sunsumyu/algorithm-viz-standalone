@@ -12,7 +12,7 @@ import { generateGridUniquePathsStage4 } from './grid-unique-paths-stage4';
 export class GridUniquePathsStrategy implements IAlgorithmStrategy {
   public readonly modelId: string;
 
-  constructor(modelId: 'unique-paths' | 'unique-paths-ii' | 'min-path-sum' = 'unique-paths') {
+  constructor(modelId: 'unique-paths' | 'unique-paths-ii' | 'min-path-sum' | 'dungeon-game-reverse-dp' = 'unique-paths') {
     this.modelId = modelId;
   }
 

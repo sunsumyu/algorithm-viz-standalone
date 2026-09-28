@@ -149,6 +149,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 935,
+  aliases: ['class093-code05', 'super-washing-machines-517', 'leetcode-517', 'washing-machines'],
   learningGoal: '掌握前缀和与单机同时双向流出瓶颈 max(leftNeed + rightNeed, max(|leftNeed|, |rightNeed|)) 的贪心证明',
 });
 

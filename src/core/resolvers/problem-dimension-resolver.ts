@@ -19,7 +19,29 @@ export class ProblemDimensionResolver {
   private static readonly GRID_PROBLEM_IDS = new Set([
     'unique-paths',
     'unique-paths-ii',
-    'min-path-sum'
+    'min-path-sum',
+    'dungeon-game-reverse-dp'
+  ]);
+
+  private static readonly KNAPSACK_PROBLEM_IDS = new Set([
+    'knapsack-01-2d',
+    'knapsack-01-1d',
+    'knapsack-01',
+    'complete-knapsack',
+    'complete-knapsack-067',
+    'partition-equal-subset-sum',
+    'partition-equal-subset-sum-070',
+    'last-stone-weight-ii',
+    'last-stone-weight-ii-standard',
+    'target-sum',
+    'target-sum-standard',
+    'target-sum-070',
+    'coin-change',
+    'coin-change-067',
+    'coin-change-ii',
+    'ones-and-zeroes',
+    'multiple-knapsack',
+    'combination-sum-iv',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -45,13 +67,8 @@ export class ProblemDimensionResolver {
     'perfect-squares',
     'coin-change',
     'coin-change-ii',
-    'word-break',
     'combination-sum-iv',
-    'target-sum',
-    'last-stone-weight-ii',
-    'last-stone-weight-ii-standard',
-    'partition-equal-subset-sum',
-    'multiple-knapsack',
+    'word-break',
     'candy',
     'min-arrows',
     'non-overlapping',
@@ -80,6 +97,8 @@ export class ProblemDimensionResolver {
     'smallest-range-covering-elements-from-k-lists',
     'largest-palindromic-number',
     'min-cost-hire-workers',
+    'max-product-subarray',
+    'max-circular-subarray',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -109,9 +128,17 @@ export class ProblemDimensionResolver {
    * 判断目标模型或参数是否为纯一维线性动规问题
    */
   public static isPure1DProblem(modelId: string, params?: Record<string, any>): boolean {
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId)) return false;
     if (this.PURE_1D_PROBLEM_IDS.has(modelId)) return true;
     if (params && params.m === 1) return true;
     return false;
+  }
+
+  /**
+   * 判断目标模型是否为背包问题族群
+   */
+  public static isKnapsackProblem(modelId: string): boolean {
+    return this.KNAPSACK_PROBLEM_IDS.has(modelId);
   }
 
   /**
@@ -224,22 +251,39 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: true, category };
     }
 
-    // 4. 背包类问题 (weights/values/bagWeight/target)
-    if (params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined) {
-      let bag = Number(params.bagWeight ?? params.target ?? 0);
-      const wArr = params.weights ? this.toArray(params.weights) : (params.nums ? this.toArray(params.nums) : []);
-      if ((modelId === 'target-sum' || modelId === 'target-sum-standard') && params.target !== undefined && wArr.length > 0) {
-        const sum = wArr.reduce((a, b) => a + Number(b), 0);
+    // 4. 背包类问题族群 (Knapsack Domain Problems)
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined) {
+      const wArr = params.weights
+        ? this.toArray(params.weights)
+        : (params.coins
+          ? this.toArray(params.coins)
+          : (params.stones
+            ? this.toArray(params.stones)
+            : (params.nums ? this.toArray(params.nums) : [])));
+
+      let bag = Number(params.bagWeight ?? params.target ?? params.amount ?? 0);
+
+      // 特殊背包容量数学归约：
+      if (modelId === 'partition-equal-subset-sum' && wArr.length > 0) {
+        const sum = wArr.reduce((a: number, b: number) => a + Number(b), 0);
+        bag = sum % 2 === 0 ? sum / 2 : 0;
+      } else if ((modelId === 'last-stone-weight-ii' || modelId === 'last-stone-weight-ii-standard') && wArr.length > 0) {
+        const sum = wArr.reduce((a: number, b: number) => a + Number(b), 0);
+        bag = Math.floor(sum / 2);
+      } else if ((modelId === 'target-sum' || modelId === 'target-sum-standard') && params.target !== undefined && wArr.length > 0) {
+        const sum = wArr.reduce((a: number, b: number) => a + Number(b), 0);
         const t = Number(params.target);
         if (Math.abs(t) <= sum && (sum + t) % 2 === 0) {
           bag = (sum + t) / 2;
         }
       }
+
+      const isPure1D = this.PURE_1D_PROBLEM_IDS.has(modelId);
       const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
-      m = (!isStage4 && wArr.length > 0) ? wArr.length : 1;
+      m = (!isStage4 && !isPure1D && wArr.length > 0) ? wArr.length : 1;
       n = bag >= 0 ? bag + 1 : 6;
       category = 'knapsack';
-      const is1D = isStage4 || m <= 1 || this.PURE_1D_PROBLEM_IDS.has(modelId);
+      const is1D = isStage4 || isPure1D || m <= 1;
       return { m, n, is1D, category };
     }
 

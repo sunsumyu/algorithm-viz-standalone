@@ -108,6 +108,7 @@ export function buildChordalMCSSteps(): ChordalMCSStep[] {
 export const chordalGraphMCSVisualizer = registerDeclarativeAlgorithm<ChordalMCSStep>({
   id: 'chordal-graph-mcs-177',
   name: '弦图与最大势算法 MCS (Class 177)',
+  aliases: ['class177-code01', 'chordal-graph-mcs-177', 'chordal-graph'],
   category: 'graph',
   icon: '🎻',
   difficulty: 3,

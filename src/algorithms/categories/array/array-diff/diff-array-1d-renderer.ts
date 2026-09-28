@@ -145,6 +145,7 @@ export const diffArray1DVisualizer = registerDeclarativeAlgorithm<Diff1DStep>({
   icon: '🎚️',
   difficulty: 2,
   levelOrder: 471,
+  aliases: ['class047-code01', 'diff-array-1d', 'corporate-flight-bookings-1109', 'leetcode-1109', 'luogu-p2367'],
   learningGoal: '掌握差分与前缀和互为逆运算的数学本质，实现 O(1) 极速区间修改',
   problemHtml: ARRAY_DIFF_PROBLEMS.diff1D.html,
   analysisHtml: ARRAY_DIFF_PROBLEMS.diff1D.html,

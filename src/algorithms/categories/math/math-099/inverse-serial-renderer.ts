@@ -102,6 +102,7 @@ export const inverseSerialVisualizer = registerDeclarativeAlgorithm<InverseSeria
   icon: '📈',
   difficulty: 3,
   levelOrder: 992,
+  aliases: ['class099-code02', 'inverse-serial', 'linear-inverses', 'luogu-p3811'],
   learningGoal: '掌握带余除法向模逆元递推式 inv[i] = (p - p/i) * inv[p%i] % p 的推导与 O(n) 实现',
   problemHtml: MATH_099_PROBLEMS.inverseSerial.html,
   analysisHtml: MATH_099_PROBLEMS.inverseSerial.html,

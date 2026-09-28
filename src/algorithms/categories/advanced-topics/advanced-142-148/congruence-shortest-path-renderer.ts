@@ -141,6 +141,7 @@ export function buildCongruenceSteps(x: number, y: number, z: number, h: number)
 export const congruenceShortestPathVisualizer = registerDeclarativeAlgorithm<CongruenceStep>({
   id: 'congruence-shortest-path-143',
   name: '同余最短路 (Class 143)',
+  aliases: ['class143-code01', 'congruence-shortest-path', 'congruence-shortest-path-143', 'elevator-congruence'],
   category: 'graph',
   icon: '🏢',
   difficulty: 3,

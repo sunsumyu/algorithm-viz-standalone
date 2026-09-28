@@ -166,6 +166,7 @@ export function buildTernaryDpSteps(n: number, m: number): TernaryDpStep[] {
 export const ternaryDpVisualizer = registerDeclarativeAlgorithm<TernaryDpStep>({
   id: 'ternary-dp-126',
   name: '三进制状压 DP (Class 126)',
+  aliases: ['class126-code01', 'ternary-dp', 'ternary-dp-126', 'ternary-state-compression'],
   category: 'dynamic-programming',
   icon: '🔺',
   difficulty: 3,

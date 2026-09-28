@@ -281,6 +281,7 @@ export function buildTrieXorMaxSteps(nums: number[], maxBit: number = 5): Trie10
 export const trieXorMaxVisualizer = registerDeclarativeAlgorithm<Trie107Step>({
   id: 'trie-xor-max-107',
   name: '01-Trie 与异或最大值 (Class 107)',
+  aliases: ['class107-code01', 'trie-xor-max', 'trie-xor-max-107', 'maximum-xor', 'leetcode-421', 'luogu-p4551'],
   category: 'tree',
   icon: '🌲',
   difficulty: 3,

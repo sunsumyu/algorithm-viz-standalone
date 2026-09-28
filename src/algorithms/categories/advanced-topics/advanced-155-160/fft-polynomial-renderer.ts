@@ -104,6 +104,7 @@ export function buildFFTSteps(a: number[], b: number[]): FFTStep[] {
 export const fftPolynomialVisualizer = registerDeclarativeAlgorithm<FFTStep>({
   id: 'fft-polynomial-160',
   name: '快速傅里叶变换 FFT (Class 160)',
+  aliases: ['class160-code01', 'fft-polynomial-160', 'fft'],
   category: 'math',
   icon: '⚡',
   difficulty: 3,

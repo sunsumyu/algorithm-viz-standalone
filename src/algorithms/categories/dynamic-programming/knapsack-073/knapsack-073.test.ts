@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import '../dp-generated-renderers';
 import { buildKnapsack01Steps } from './knapsack-01-renderer';
 import { buildBuyGoodsDiscountSteps } from './buy-goods-discount-renderer';
 import { buildTargetSumSteps } from './target-sum-renderer';
@@ -364,5 +366,32 @@ describe('左程云算法讲解073 (背包DP-01背包、有依赖的背包) 完�
       });
     });
   });
+
+  // ==========================================
+  // 9. Class 073 全 7 题算法中心注册与课号别名统合核验
+  // ==========================================
+  describe('9. Class 073 全 7 题算法中心注册与课号别名统合核验', () => {
+    const class073Suites = [
+      { id: 'knapsack-01-standard', code: 'class073-code01', alias: 'knapsack-01-073' },
+      { id: 'buy-goods-discount', code: 'class073-code02', alias: 'buy-goods-discount-073' },
+      { id: 'target-sum', code: 'class073-code03', alias: 'target-sum-073' },
+      { id: 'last-stone-weight-ii', code: 'class073-code04', alias: 'last-stone-weight-ii-073' },
+      { id: 'dependent-knapsack-standard', code: 'class073-code05', alias: 'dependent-knapsack-073' },
+      { id: 'top-k-subsequence-sum', code: 'class073-code06', alias: 'top-k-subsequence-sum-073' },
+      { id: 'find-kth-sum', code: 'class073-code07', alias: 'find-kth-sum-073' },
+    ];
+
+    it.each(class073Suites)('算法 ID "$id" 应已注册且包含别名 "$code"', ({ id, code, alias }) => {
+      const manifest = algorithmRegistry.getManifest(id);
+      expect(manifest, `算法 ${id} 必须注册`).toBeDefined();
+      expect(manifest?.id).toBe(id);
+      expect(manifest?.category).toBe('dynamic-programming');
+      expect(manifest?.aliases).toContain(code);
+      expect(manifest?.aliases).toContain(alias);
+      expect(manifest?.template).toBeDefined();
+      expect(manifest?.Visualizer).toBeDefined();
+    });
+  });
 });
+
 

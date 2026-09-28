@@ -268,6 +268,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code01：洛谷 P1757 通天之分组背包，组内物品至多选 1 件，容量倒序外层枚举防止组内多选',
   icon: '🗂️',
+  aliases: ['class074-code01', 'partitioned-knapsack-074', 'partitioned-knapsack', 'luogu-p1757'],
   template,
   Visualizer,
   difficulty: 2,

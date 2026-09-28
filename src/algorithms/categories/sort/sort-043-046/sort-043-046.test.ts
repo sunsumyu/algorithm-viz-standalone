@@ -74,4 +74,41 @@ describe('左神经典归并与快速排序专题 (Class 043 ~ 046) 综合测试
       verify1BasedCodeLines(steps, QUICK_SELECT_046_CODES);
     });
   });
+
+  // 5. 注册中心与别名统合门禁 (Class 043 ~ 046)
+  describe('注册中心与别名统合门禁 (Class 043 ~ 046)', () => {
+    it('全量算法与别名必须在 algorithmRegistry 中正确解析', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-24-index');
+
+      const expectedMappings = [
+        {
+          id: 'merge-sort-043',
+          aliases: ['class043-code01', 'merge-sort-043', 'merge-sort'],
+        },
+        {
+          id: 'small-sum-merge-044',
+          aliases: ['class044-code01', 'small-sum-merge-044', 'small-sum', 'merge-sort-small-sum-022'],
+        },
+        {
+          id: 'quick-sort-dutch-flag-045',
+          aliases: ['class045-code01', 'quick-sort-dutch-flag-045', 'dutch-flag', 'quick-sort'],
+        },
+        {
+          id: 'quick-select-046',
+          aliases: ['class046-code01', 'quick-select-046', 'quick-select', 'kth-largest-element'],
+        },
+      ];
+
+      for (const item of expectedMappings) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases).toContain(alias);
+          const resolvedByAlias = algorithmRegistry.getManifest(alias);
+          expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

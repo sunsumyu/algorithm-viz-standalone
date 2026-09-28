@@ -233,7 +233,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 063 Code01：双向广搜经典，小集合优先相向扩展，空间复杂度从 b^d 锐减至 2*b^(d/2) (LeetCode 127)',
-  aliases: ['word-ladder-class063', 'bi-bfs-class063', 'word-ladder-127'],
+  aliases: ['class063-code01', 'word-ladder-063', 'word-ladder-class063', 'bi-bfs-class063', 'word-ladder-127', 'leetcode-127'],
   problemHtml: GRAPH_063_PROBLEMS['word-ladder-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['word-ladder-063'].complexityHtml,
   codeLanguages: WORD_LADDER_063_CODES,

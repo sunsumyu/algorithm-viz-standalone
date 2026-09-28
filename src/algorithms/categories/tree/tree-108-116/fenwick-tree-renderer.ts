@@ -151,6 +151,7 @@ export function buildFenwickTreeSteps(
 export const fenwickTreeVisualizer = registerDeclarativeAlgorithm<FenwickStep>({
   id: 'fenwick-tree-108',
   name: '树状数组核心原理 (Class 108)',
+  aliases: ['class108-code01', 'fenwick-tree', 'fenwick-tree-108', 'binary-indexed-tree', 'bit'],
   category: 'tree',
   icon: '🌳',
   difficulty: 2,

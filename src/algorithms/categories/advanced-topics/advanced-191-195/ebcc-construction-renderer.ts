@@ -134,6 +134,7 @@ export function buildEBCCConstructionSteps(): EBCCConstructionStep[] {
 export const ebccConstructionVisualizer = registerDeclarativeAlgorithm<EBCCConstructionStep>({
   id: 'ebcc-construction-191',
   name: '边双连通缩点与加边构造 (Class 191)',
+  aliases: ['class191-code01', 'ebcc-construction-191', 'ebcc-add-edges'],
   category: 'graph',
   icon: '🌲',
   difficulty: 3,

@@ -130,6 +130,7 @@ export function buildSegmentTreeDivideSteps(): SegmentTreeDivideStep[] {
 export const segmentTreeDivideVisualizer = registerDeclarativeAlgorithm<SegmentTreeDivideStep>({
   id: 'segment-tree-divide-181',
   name: '线段树分治 (Segment Tree Divide / Class 181)',
+  aliases: ['class181-code01', 'segment-tree-divide-181', 'timeline-segment-tree-divide'],
   category: 'tree',
   icon: '⏱️',
   difficulty: 3,

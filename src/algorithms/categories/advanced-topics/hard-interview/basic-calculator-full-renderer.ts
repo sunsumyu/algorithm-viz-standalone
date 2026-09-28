@@ -563,6 +563,7 @@ export function renderCalculatorSandbox(step: CalculatorStep): string {
 
 export const basicCalculatorVisualizer = registerDeclarativeAlgorithm<CalculatorStep>({
   id: 'basic-calculator-full',
+  aliases: ['class039-calculator', 'basic-calculator', 'basic-calculator-full', 'leetcode-772'],
   name: '大厂高频真题: 全功能表达式计算器 (Basic Calculator)',
   category: 'stack',
   icon: '🧮',

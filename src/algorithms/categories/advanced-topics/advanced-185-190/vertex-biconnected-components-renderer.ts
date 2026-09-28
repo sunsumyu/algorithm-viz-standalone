@@ -113,6 +113,7 @@ export function buildVertexBCCSteps(): VertexBCCStep[] {
 export const vertexBCCVisualizer = registerDeclarativeAlgorithm<VertexBCCStep>({
   id: 'vertex-biconnected-components-190',
   name: '割点与点双连通分量 v-BCC (Class 190)',
+  aliases: ['class190-code01', 'vertex-biconnected-components-190', 'vertex-bcc'],
   category: 'graph',
   icon: '📍',
   difficulty: 3,

@@ -104,6 +104,7 @@ export const inverseFactorialVisualizer = registerDeclarativeAlgorithm<Factorial
   icon: '🎲',
   difficulty: 3,
   levelOrder: 993,
+  aliases: ['class099-code03', 'inverse-factorial', 'combination-ncr', 'factorial-inverses'],
   learningGoal: '掌握阶乘倒推逆元全量预处理，达成 O(1) 极速回答任意组合数',
   problemHtml: MATH_099_PROBLEMS.inverseFactorial.html,
   analysisHtml: MATH_099_PROBLEMS.inverseFactorial.html,

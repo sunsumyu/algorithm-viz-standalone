@@ -1,0 +1,296 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL LINEAR DP MODEL] 乘积最大子数组 顶层领域模型
+# 对应：LeetCode 152 / 线性连续子段极值专题 / 左程云 070 讲
+# 包含：正负双轨动态规划、负数极值翻转、双轨记忆化树、O(1) 滚动空间压缩
+# ==============================================================================
+
+id: max-product-subarray
+name: 乘积最大子数组
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 动态规划
+  - 数组
+  - 线性DP
+
+description: |
+  给你一个整数数组 nums ，请你找出数组中乘积最大的非空连续子数组（该子数组中至少包含一个数字），并返回该子数组所对应的乘积。
+  核心策略（正负双轨 DP）：
+  由于乘法具有“负负得正”的非单调性质，之前的极小负数乘以当前负数会一跃成为极大正数。
+  因此在遍历数组时，必须在每个位置同时记录：
+  1. 以 nums[i] 结尾的最大乘积 maxDp；
+  2. 以 nums[i] 结尾的最小乘积 minDp。
+  当遇到负数时，交换 maxDp 和 minDp 后再进行常规转移。
+
+defaultParams:
+  nums: [2, 3, -2, 4]
+
+constraints:
+  - 1 <= nums.length <= 2 * 10^4
+  - -10 <= nums[i] <= 10
+
+directions:
+  forward:
+    name: 正向正负双轨动态规划 (Forward Double Track DP)
+    description: 从左向右线性遍历，同时维护以当前元素结尾的最大乘积 maxDp 与最小乘积 minDp，遇到负数时两者角色互换
+  reverse:
+    name: 逆向正负双轨动态规划 (Backward Double Track DP)
+    description: 从右向左自底向上计算各位置作为起点的最大与最小连续后缀乘积，验证对称性
+
+stages:
+  stage-1:
+    name: 朴素暴力搜索与正负极值分治
+    description: 枚举所有可能的子数组起点与终点，计算连续累乘积并实时刷新全局历史最大乘积
+    complexity:
+      time: O(N²)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxProduct(int[] nums) {
+              // @step:init 全局最优解初始化
+              int ans = nums[0];
+              // @step:loop 遍历每个子数组起点 i
+              for (int i = 0; i < nums.length; i++) {
+                  int prod = 1;
+                  // @step:inner 枚举以 i 为起点的连续子数组终点 j
+                  for (int j = i; j < nums.length; j++) {
+                      prod *= nums[j];
+                      // @step:update 实时刷新全局最大乘积
+                      if (prod > ans) {
+                          ans = prod;
+                      }
+                  }
+              }
+              // @step:done 搜索结束返回最优解
+              return ans;
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxProductReverse(int[] nums) {
+              // @step:init 逆向搜索初始化
+              int ans = nums[nums.length - 1];
+              // @step:loop 逆向枚举子数组终点 j
+              for (int j = nums.length - 1; j >= 0; j--) {
+                  int prod = 1;
+                  // @step:inner 向左延伸子数组起点 i
+                  for (int i = j; i >= 0; i--) {
+                      prod *= nums[i];
+                      // @step:update 逆向刷新最大值
+                      if (prod > ans) {
+                          ans = prod;
+                      }
+                  }
+              }
+              // @step:done 逆向遍历结束
+              return ans;
+          }
+
+  stage-2:
+    name: 双轨记忆化状态展开
+    description: 建立二维备忘录 memo[i][2]，消除对同一子区间的重复计算并清晰呈现最大/最小双轨决策
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // @step:init 记忆化备忘录定义 (memo[i][0] 为 max, memo[i][1] 为 min)
+          int[][] memo;
+          public int maxProduct(int[] nums) {
+              int n = nums.length;
+              memo = new int[n][2];
+              // @step:entry 递归自顶向下计算
+              return dfs(nums, n - 1, 0);
+          }
+          int dfs(int[] nums, int i, int isMin) {
+              // @step:base 递归边界
+              if (i == 0) return nums[0];
+              // @step:cache 查表剪枝
+              if (memo[i][isMin] != 0) return memo[i][isMin];
+              int prevMax = dfs(nums, i - 1, 0);
+              int prevMin = dfs(nums, i - 1, 1);
+              // @step:combine 转移合并
+              int curMax = Math.max(nums[i], Math.max(prevMax * nums[i], prevMin * nums[i]));
+              int curMin = Math.min(nums[i], Math.min(prevMax * nums[i], prevMin * nums[i]));
+              memo[i][0] = curMax; memo[i][1] = curMin;
+              // @step:return 返回当前状态
+              return isMin == 1 ? curMin : curMax;
+          }
+      reverse:
+        language: java
+        source: |
+          // @step:init 逆向记忆化备忘录定义
+          int[][] memo;
+          public int maxProductReverse(int[] nums) {
+              int n = nums.length;
+              memo = new int[n][2];
+              // @step:entry 从起点向右逆向记忆化
+              return dfsRev(nums, 0, 0);
+          }
+          int dfsRev(int[] nums, int i, int isMin) {
+              // @step:base 逆向边界
+              if (i == nums.length - 1) return nums[i];
+              // @step:cache 逆向查表
+              if (memo[i][isMin] != 0) return memo[i][isMin];
+              int nextMax = dfsRev(nums, i + 1, 0);
+              int nextMin = dfsRev(nums, i + 1, 1);
+              // @step:combine 逆向合并
+              int curMax = Math.max(nums[i], Math.max(nextMax * nums[i], nextMin * nums[i]));
+              int curMin = Math.min(nums[i], Math.min(nextMax * nums[i], nextMin * nums[i]));
+              memo[i][0] = curMax; memo[i][1] = curMin;
+              // @step:return 逆向返回
+              return isMin == 1 ? curMin : curMax;
+          }
+
+  stage-3:
+    name: 双轨动态规划填表 (maxDp 与 minDp)
+    description: 建立平行双轨数组，每一步依据当前元素符号决定是否翻转极值，彻底展示负负得正数学美感
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxProduct(int[] nums) {
+              int n = nums.length;
+              // @step:init 分配双轨 DP 数组
+              int[] maxDp = new int[n];
+              int[] minDp = new int[n];
+              maxDp[0] = minDp[0] = nums[0];
+              int ans = nums[0];
+              // @step:loop 顺序遍历填表
+              for (int i = 1; i < n; i++) {
+                  int x = nums[i];
+                  // @step:swap 候选值乘积计算
+                  int cand1 = maxDp[i - 1] * x;
+                  int cand2 = minDp[i - 1] * x;
+                  // @step:transfer 双轨状态转移
+                  maxDp[i] = Math.max(x, Math.max(cand1, cand2));
+                  minDp[i] = Math.min(x, Math.min(cand1, cand2));
+                  // @step:update 刷新全局最优
+                  if (maxDp[i] > ans) ans = maxDp[i];
+              }
+              // @step:return 返回最优解
+              return ans;
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxProductReverse(int[] nums) {
+              int n = nums.length;
+              // @step:init 逆向分配双轨后缀 DP
+              int[] maxDp = new int[n];
+              int[] minDp = new int[n];
+              maxDp[n - 1] = minDp[n - 1] = nums[n - 1];
+              int ans = nums[n - 1];
+              // @step:loop 逆序遍历后缀
+              for (int i = n - 2; i >= 0; i--) {
+                  int x = nums[i];
+                  // @step:swap 逆向候选值计算
+                  int cand1 = maxDp[i + 1] * x;
+                  int cand2 = minDp[i + 1] * x;
+                  // @step:transfer 逆向状态转移
+                  maxDp[i] = Math.max(x, Math.max(cand1, cand2));
+                  minDp[i] = Math.min(x, Math.min(cand1, cand2));
+                  // @step:update 逆向刷新最优
+                  if (maxDp[i] > ans) ans = maxDp[i];
+              }
+              // @step:return 逆向返回答案
+              return ans;
+          }
+
+  stage-4:
+    name: O(1) 滚动双变量空间压缩
+    description: 丢弃一维数组，仅保留两个滚动变量 maxDp 与 minDp，遇到负数直接 swap，达到空间极致
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxProduct(int[] nums) {
+              // @step:init 初始化 O(1) 滚动极值
+              int maxDp = nums[0], minDp = nums[0];
+              int ans = nums[0];
+              // @step:loop 单趟线性滚动
+              for (int i = 1; i < nums.length; i++) {
+                  int x = nums[i];
+                  // @step:swap 负数符号翻转交换
+                  if (x < 0) {
+                      int t = maxDp; maxDp = minDp; minDp = t;
+                  }
+                  // @step:transfer 压缩滚动更新
+                  maxDp = Math.max(x, maxDp * x);
+                  minDp = Math.min(x, minDp * x);
+                  // @step:update 刷新全局最大值
+                  if (maxDp > ans) ans = maxDp;
+              }
+              // @step:return 返回最终结果
+              return ans;
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxProductReverse(int[] nums) {
+              // @step:init 逆向初始化滚动极值
+              int n = nums.length;
+              int maxDp = nums[n - 1], minDp = nums[n - 1];
+              int ans = nums[n - 1];
+              // @step:loop 逆向单趟线性滚动
+              for (int i = n - 2; i >= 0; i--) {
+                  int x = nums[i];
+                  // @step:swap 负数符号翻转交换
+                  if (x < 0) {
+                      int t = maxDp; maxDp = minDp; minDp = t;
+                  }
+                  // @step:transfer 逆向压缩滚动更新
+                  maxDp = Math.max(x, maxDp * x);
+                  minDp = Math.min(x, minDp * x);
+                  // @step:update 逆向刷新全局最大值
+                  if (maxDp > ans) ans = maxDp;
+              }
+              // @step:return 逆向返回最终结果
+              return ans;
+          }
+
+# ==============================================================================
+# 系统五步法解题解析 (Five-Step System Analysis)
+# ==============================================================================
+keyPoints:
+  title: "🎯 乘积最大子数组正负双轨 DP 系统精讲"
+  summary: "LeetCode 152 经典高频题。由于乘法中负负得正，传统单轨连续最大和（Kadane）失效，必须双轨并进！"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>maxDp[i]</code> 为以 <code>nums[i]</code> 结尾的最大连续子数组乘积；<code>minDp[i]</code> 为以 <code>nums[i]</code> 结尾的最小连续子数组乘积。"
+      icon: "🎯"
+      badge: "双轨状态"
+    - label: "二、状态转移方程"
+      desc: "若 <code>nums[i] >= 0</code>，<code>maxDp[i] = max(x, maxDp[i-1] * x)</code>；若 <code>nums[i] < 0</code>，乘负数导致最值反转，<code>maxDp[i] = max(x, minDp[i-1] * x)</code>。"
+      icon: "🔄"
+      badge: "负负得正翻转"
+    - label: "三、边界与初始化"
+      desc: "初始 <code>maxDp[0] = minDp[0] = nums[0]</code>，全局答案初始 <code>ans = nums[0]</code>。"
+      icon: "🎬"
+      badge: "首元素基准"
+    - label: "四、遍历顺序"
+      desc: "从左至右单趟线性扫描（从 <code>1</code> 到 <code>n - 1</code>），每一步常数时间转移，总时间 O(N)。"
+      icon: "🧭"
+      badge: "单趟扫描"
+    - label: "五、空间优化"
+      desc: "由于每一步只依赖前一个位置的 <code>maxDp[i-1]</code> 与 <code>minDp[i-1]</code>，用两个局部标量即可完成 O(1) 空间滚动。"
+      icon: "📊"
+      badge: "O(1) 滚动"
+
+faqList:
+  - question: "为什么 Kadane 算法不能直接用于最大乘积？"
+    answer: "Kadane 算法针对的是加法，加负数只会单调递减；但乘法不同，乘极小的负数可能会因为后续再次乘负数而反转成为全局极大正数，破坏了贪心局部最优的子结构单调性，因此必须同时记录极小值。"
+    tag: "数学机理"
+  - question: "数组中包含 0 时如何处理？"
+    answer: "当遇到 0 时，x * maxDp 和 x * minDp 均归零，Math.max(0, 0, 0) 会自然将 maxDp 重置为 0，相当于自然隔断并重新开启新的子数组探索，无需额外特殊特判分支。"
+    tag: "零值边界"

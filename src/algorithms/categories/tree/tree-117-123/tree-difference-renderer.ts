@@ -216,6 +216,7 @@ export function buildTreeDiffSteps(
 export const treeDifferenceVisualizer = registerDeclarativeAlgorithm<TreeDiffStep>({
   id: 'tree-difference-122',
   name: '树上差分 (Class 122)',
+  aliases: ['class122-code01', 'tree-difference', 'tree-difference-122'],
   category: 'tree',
   icon: '🔀',
   difficulty: 3,

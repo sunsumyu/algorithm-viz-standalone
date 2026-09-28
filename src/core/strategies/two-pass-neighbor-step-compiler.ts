@@ -4146,5 +4146,829 @@ export class TwoPassNeighborStepCompiler {
 
     return steps;
   }
+
+  // ==========================================================================
+  // 乘积最大子数组 (LeetCode 152: Maximum Product Subarray) 四阶段全演进编译器
+  // ==========================================================================
+
+  public static compileMaxProductSubarray(
+    model: IYamlAlgorithmModel,
+    options?: (TwoPassCompileOptions & { nums?: number[] }) | any,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawNums = options?.nums ?? (Array.isArray(options) ? options : model.defaultParams?.nums) ?? [2, 3, -2, 4];
+    const nums: number[] = Array.isArray(rawNums)
+      ? rawNums.map(Number)
+      : typeof rawNums === 'string'
+      ? rawNums.split(/[\s,]+/).filter(Boolean).map(Number)
+      : [2, 3, -2, 4];
+
+    switch (stage) {
+      case 2:
+        return this.compileMaxProductSubarrayStage2(model, nums, options);
+      case 3:
+        return this.compileMaxProductSubarrayStage3(model, nums, options);
+      case 4:
+        return this.compileMaxProductSubarrayStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileMaxProductSubarrayStage1(model, nums, options);
+    }
+  }
+
+  private static compileMaxProductSubarrayStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, options?.direction || 'forward', options?.anchorMap);
+
+    if (!isReverse) {
+      let ans = nums[0];
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `1. 初始化暴力搜索：全局初始最优解 ans = ${ans}`,
+        message: `枚举所有可能的连续子数组起点与终点，记录累乘积并刷新最优值`,
+        variables: { ans, n },
+        slots: [...nums],
+        metrics: { '全局最大乘积': String(ans) },
+      });
+
+      for (let i = 0; i < n; i++) {
+        let prod = 1;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.loop || 4,
+          codeLine: anchors.loop || 4,
+          decision: `固定子数组起点 i = ${i} (nums[${i}] = ${nums[i]})`,
+          message: `从起点 ${i} 向右展开探索连续累乘`,
+          variables: { i, ans },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...nums],
+          metrics: { '当前起点': `i=${i}`, '全局最大乘积': String(ans) },
+        });
+
+        for (let j = i; j < n; j++) {
+          prod *= nums[j];
+          const isBetter = prod > ans;
+          if (isBetter) ans = prod;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: isBetter ? (anchors.update || 9) : (anchors.inner || 7),
+            codeLine: isBetter ? (anchors.update || 9) : (anchors.inner || 7),
+            decision: `区间 [${i}..${j}] 连续乘积 = ${prod}${isBetter ? ` ➔ 刷新全局最高值 ans = ${ans} 🎉` : ` (未超过当前最优 ans=${ans})`}`,
+            message: `计算子数组 [${nums.slice(i, j + 1).join(', ')}] 累乘积`,
+            variables: { i, j, prod, ans },
+            activeIndices: Array.from({ length: j - i + 1 }, (_, k) => i + k),
+            activeSlot: j,
+            slots: [...nums],
+            metrics: { '子数组乘积': String(prod), '全局最优': String(ans) },
+          });
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 14,
+        codeLine: anchors.done || 14,
+        decision: `暴力枚举结束，找到全局最大连续乘积 = ${ans}`,
+        message: `全子区间遍历验证完成，算法收敛`,
+        variables: { finalAns: ans },
+        slots: [...nums],
+        metrics: { '最终最大乘积': String(ans) },
+      });
+    } else {
+      let ans = nums[n - 1];
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `1. 逆向枚举初始化：全局初始最优解 ans = ${ans}`,
+        message: `从右向左逆向枚举子数组终点与起点`,
+        variables: { ans, n },
+        slots: [...nums],
+        metrics: { '全局最大乘积': String(ans) },
+      });
+
+      for (let j = n - 1; j >= 0; j--) {
+        let prod = 1;
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.loop || 4,
+          codeLine: anchors.loop || 4,
+          decision: `逆向枚举固定子数组终点 j = ${j} (nums[${j}] = ${nums[j]})`,
+          message: `从终点 ${j} 向左延伸`,
+          variables: { j, ans },
+          activeIndices: [j],
+          activeSlot: j,
+          slots: [...nums],
+          metrics: { '当前终点': `j=${j}`, '全局最大乘积': String(ans) },
+        });
+
+        for (let i = j; i >= 0; i--) {
+          prod *= nums[i];
+          const isBetter = prod > ans;
+          if (isBetter) ans = prod;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: isBetter ? (anchors.update || 9) : (anchors.inner || 7),
+            codeLine: isBetter ? (anchors.update || 9) : (anchors.inner || 7),
+            decision: `逆向区间 [${i}..${j}] 乘积 = ${prod}${isBetter ? ` ➔ 刷新全局最高值 ans = ${ans} 🎉` : ` (未超过当前最优 ans=${ans})`}`,
+            message: `计算逆向子数组 [${nums.slice(i, j + 1).join(', ')}] 累乘积`,
+            variables: { i, j, prod, ans },
+            activeIndices: Array.from({ length: j - i + 1 }, (_, k) => i + k),
+            activeSlot: i,
+            slots: [...nums],
+            metrics: { '子数组乘积': String(prod), '全局最优': String(ans) },
+          });
+        }
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.done || 14,
+        codeLine: anchors.done || 14,
+        decision: `逆向暴力枚举完成，找到全局最大连续乘积 = ${ans}`,
+        message: `逆向扫描收敛`,
+        variables: { finalAns: ans },
+        slots: [...nums],
+        metrics: { '最终最大乘积': String(ans) },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileMaxProductSubarrayStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 2, options?.direction || 'forward', options?.anchorMap);
+
+    const rootTree: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      edgeLabel: isReverse ? `maxProductRev(0..${n - 1})` : `maxProduct(0..${n - 1})`,
+      status: 'active',
+      val: `nums=[${nums.join(', ')}]`,
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.init || 3,
+      codeLine: anchors.init || 3,
+      decision: `1. 初始化双轨记忆化递归树：分配 memo[${n}][2] 矩阵`,
+      message: `memo[i][0] 记录以 nums[i] 结尾的最大乘积，memo[i][1] 记录以 nums[i] 结尾的最小乘积`,
+      variables: { n, 'memo.length': n },
+      slots: [...nums],
+      stateDepTree: cloneStateDepTree(rootTree),
+      metrics: { '备忘录尺寸': `${n}x2`, '状态空间': '正负双轨' },
+    });
+
+    const memo: { max: number; min: number }[] = [];
+
+    if (!isReverse) {
+      memo.push({ max: nums[0], min: nums[0] });
+      let globalAns = nums[0];
+
+      const baseNode: UniversalTreeNode = {
+        id: 'node-0',
+        r: 0,
+        c: 0,
+        edgeLabel: `dfs(0)`,
+        status: 'visited',
+        val: `max=${nums[0]}, min=${nums[0]}`,
+        children: [],
+      };
+      rootTree.children!.push(baseNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.base || 9,
+        codeLine: anchors.base || 9,
+        decision: `递归基准：位置 0 无前驱，maxDp[0] = minDp[0] = nums[0] = ${nums[0]}`,
+        message: `单元素子数组乘积基准建立`,
+        variables: { i: 0, curNum: nums[0], max: nums[0], min: nums[0] },
+        activeIndices: [0],
+        activeSlot: 0,
+        slots: [...nums],
+        stateDepTree: cloneStateDepTree(rootTree),
+        metrics: { '当前最大': String(nums[0]), '当前最小': String(nums[0]) },
+      });
+
+      for (let i = 1; i < n; i++) {
+        const x = nums[i];
+        const prev = memo[i - 1];
+
+        const curNode: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: 0,
+          c: i,
+          edgeLabel: `dfs(${i}) [x=${x}]`,
+          status: 'active',
+          val: `展开中...`,
+          children: [
+            {
+              id: `node-${i}-prevMax`,
+              r: 0,
+              c: i - 1,
+              edgeLabel: `prevMax=${prev.max}`,
+              status: 'visited',
+              val: `× ${x} = ${prev.max * x}`,
+              children: [],
+            },
+            {
+              id: `node-${i}-prevMin`,
+              r: 0,
+              c: i - 1,
+              edgeLabel: `prevMin=${prev.min}`,
+              status: 'visited',
+              val: `× ${x} = ${prev.min * x}`,
+              children: [],
+            },
+          ],
+        };
+        rootTree.children!.push(curNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.entry || 7,
+          codeLine: anchors.entry || 7,
+          decision: `自顶向下展开节点 dfs(${i})：探查 nums[${i}] = ${x}`,
+          message: `查表依赖前驱 dfs(${i - 1}) 的 [max, min] 双轨状态`,
+          variables: { i, x, 'prev.max': prev.max, 'prev.min': prev.min },
+          activeIndices: [i - 1, i],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { '待决策元素': `x=${x}` },
+        });
+
+        const c1 = prev.max * x;
+        const c2 = prev.min * x;
+        const curMax = Math.max(x, Math.max(c1, c2));
+        const curMin = Math.min(x, Math.min(c1, c2));
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.cache || 11,
+          codeLine: anchors.cache || 11,
+          decision: `评估双轨转移候选：c1 = prev.max(${prev.max}) × ${x} = ${c1}，c2 = prev.min(${prev.min}) × ${x} = ${c2}`,
+          message: `查表获取前驱 dfs(${i - 1}) 的极值并计算候选积`,
+          variables: { i, x, cand1: c1, cand2: c2 },
+          activeIndices: [i - 1, i],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { '候选1(正)': String(c1), '候选2(负/转正)': String(c2) },
+        });
+
+        memo.push({ max: curMax, min: curMin });
+        if (curMax > globalAns) globalAns = curMax;
+
+        curNode.status = 'visited';
+        curNode.val = `max=${curMax}, min=${curMin}`;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.combine || 13,
+          codeLine: anchors.combine || 13,
+          decision: `合并双轨状态：max=max(${x}, ${c1}, ${c2}) = ${curMax}, min=min(...) = ${curMin}，写入备忘录 memo[${i}]`,
+          message: `考虑负负得正翻转，完成状态合并与记忆化缓存`,
+          variables: { i, curMax, curMin, globalAns },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { 'memo[i].max': String(curMax), 'memo[i].min': String(curMin), '全局最高': String(globalAns) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.return || 18,
+        codeLine: anchors.return || 18,
+        decision: `记忆化自顶向下收敛，全局最大乘积最优解为 ${globalAns}`,
+        message: `记忆化剪枝树构建完毕，时间复杂度降至 O(N)`,
+        variables: { finalAns: globalAns },
+        slots: [...nums],
+        stateDepTree: cloneStateDepTree(rootTree),
+        metrics: { '最终最大乘积': String(globalAns) },
+      });
+    } else {
+      memo.push({ max: nums[n - 1], min: nums[n - 1] });
+      let globalAns = nums[n - 1];
+
+      const baseNode: UniversalTreeNode = {
+        id: `node-${n - 1}`,
+        r: 0,
+        c: n - 1,
+        edgeLabel: `dfsRev(${n - 1})`,
+        status: 'visited',
+        val: `max=${nums[n - 1]}, min=${nums[n - 1]}`,
+        children: [],
+      };
+      rootTree.children!.push(baseNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.base || 9,
+        codeLine: anchors.base || 9,
+        decision: `逆向递归基准：位置 ${n - 1} 为最右端，maxDp = minDp = nums[${n - 1}] = ${nums[n - 1]}`,
+        message: `逆向单元素后缀乘积基准`,
+        variables: { i: n - 1, curNum: nums[n - 1] },
+        activeIndices: [n - 1],
+        activeSlot: n - 1,
+        slots: [...nums],
+        stateDepTree: cloneStateDepTree(rootTree),
+        metrics: { '逆向最大': String(nums[n - 1]), '逆向最小': String(nums[n - 1]) },
+      });
+
+      for (let i = n - 2; i >= 0; i--) {
+        const x = nums[i];
+        const prev = memo[memo.length - 1];
+
+        const curNode: UniversalTreeNode = {
+          id: `node-${i}`,
+          r: 0,
+          c: i,
+          edgeLabel: `dfsRev(${i}) [x=${x}]`,
+          status: 'active',
+          val: `逆向展开中...`,
+          children: [],
+        };
+        rootTree.children!.push(curNode);
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.entry || 7,
+          codeLine: anchors.entry || 7,
+          decision: `逆向自顶向下展开 dfsRev(${i})：探查 nums[${i}] = ${x}`,
+          message: `查表依赖右侧后缀 dfsRev(${i + 1}) 的双轨状态`,
+          variables: { i, x, 'prev.max': prev.max, 'prev.min': prev.min },
+          activeIndices: [i, i + 1],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { '逆向待探查': `x=${x}` },
+        });
+
+        const c1 = prev.max * x;
+        const c2 = prev.min * x;
+        const curMax = Math.max(x, Math.max(c1, c2));
+        const curMin = Math.min(x, Math.min(c1, c2));
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.cache || 11,
+          codeLine: anchors.cache || 11,
+          decision: `逆向评估双轨候选：c1 = prev.max(${prev.max}) × ${x} = ${c1}，c2 = prev.min(${prev.min}) × ${x} = ${c2}`,
+          message: `查表获取右侧后缀 dfsRev(${i + 1}) 的极值并计算候选积`,
+          variables: { i, x, cand1: c1, cand2: c2 },
+          activeIndices: [i, i + 1],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { '逆向候选1': String(c1), '逆向候选2': String(c2) },
+        });
+
+        memo.push({ max: curMax, min: curMin });
+        if (curMax > globalAns) globalAns = curMax;
+
+        curNode.status = 'visited';
+        curNode.val = `max=${curMax}, min=${curMin}`;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 2,
+          line: anchors.combine || 13,
+          codeLine: anchors.combine || 13,
+          decision: `逆向合并双轨状态：max=${curMax}, min=${curMin}，写入逆向备忘录`,
+          message: `完成逆向记忆化缓存`,
+          variables: { i, curMax, curMin, globalAns },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...nums],
+          stateDepTree: cloneStateDepTree(rootTree),
+          metrics: { '逆向最大': String(curMax), '逆向最小': String(curMin), '全局最高': String(globalAns) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.return || 18,
+        codeLine: anchors.return || 18,
+        decision: `逆向记忆化递归收敛，全局最大乘积最优解为 ${globalAns}`,
+        message: `逆向记忆化展开完毕`,
+        variables: { finalAns: globalAns },
+        slots: [...nums],
+        stateDepTree: cloneStateDepTree(rootTree),
+        metrics: { '最终最大乘积': String(globalAns) },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileMaxProductSubarrayStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 3, options?.direction || 'forward', options?.anchorMap);
+
+    const maxDp = new Array(n).fill(0);
+    const minDp = new Array(n).fill(0);
+
+    if (!isReverse) {
+      maxDp[0] = nums[0];
+      minDp[0] = nums[0];
+      let ans = nums[0];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.init || 3,
+        codeLine: anchors.init || 3,
+        decision: `1. 初始化双轨动态规划状态：maxDp[0] = minDp[0] = nums[0] = ${nums[0]}，全局最大值初始 ans = ${ans}`,
+        message: `建立两条平行 DP 轨道，maxDp 追踪正向峰值，minDp 追踪负向极小值`,
+        variables: { 'maxDp[0]': maxDp[0], 'minDp[0]': minDp[0], ans },
+        slots: [...nums],
+        activeIndices: [0],
+        activeSlot: 0,
+        metrics: { 'maxDp[0]': String(maxDp[0]), 'minDp[0]': String(minDp[0]), '全局最优': String(ans) },
+      });
+
+      for (let i = 1; i < n; i++) {
+        const x = nums[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.loop || 7,
+          codeLine: anchors.loop || 7,
+          decision: `顺序推进至索引 i = ${i}，当前元素 nums[${i}] = ${x}`,
+          message: `准备转移计算以 nums[${i}] 结尾的最大与最小乘积`,
+          variables: { i, x, 'maxDp[i-1]': maxDp[i - 1], 'minDp[i-1]': minDp[i - 1] },
+          activeIndices: [i - 1, i],
+          activeSlot: i,
+          slots: [...nums],
+          metrics: { '当前位置': `i=${i}`, '当前元素': String(x) },
+        });
+
+        const c1 = maxDp[i - 1] * x;
+        const c2 = minDp[i - 1] * x;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.swap || 9,
+          codeLine: anchors.swap || 9,
+          decision: `计算候选极值：maxDp[${i - 1}] × ${x} = ${c1}，minDp[${i - 1}] × ${x} = ${c2}${x < 0 ? ' (⚠️ 乘以负数，导致原极小值成为更大候选)' : ''}`,
+          message: `双轨交叉候选值计算`,
+          variables: { i, x, cand1: c1, cand2: c2 },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...nums],
+          metrics: { 'cand1(来自max)': String(c1), 'cand2(来自min)': String(c2) },
+        });
+
+        maxDp[i] = Math.max(x, Math.max(c1, c2));
+        minDp[i] = Math.min(x, Math.min(c1, c2));
+        const updated = maxDp[i] > ans;
+        if (updated) ans = maxDp[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: updated ? (anchors.update || 14) : (anchors.transfer || 12),
+          codeLine: updated ? (anchors.update || 14) : (anchors.transfer || 12),
+          decision: `双轨状态确定：maxDp[${i}] = ${maxDp[i]}，minDp[${i}] = ${minDp[i]}${updated ? ` ➔ 刷新全局最优 ans = ${ans} 🏆` : ''}`,
+          message: `完成索引 ${i} 的双轨状态填表与全局最优维护`,
+          variables: { i, 'maxDp[i]': maxDp[i], 'minDp[i]': minDp[i], ans },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...maxDp],
+          metrics: { 'maxDp[i]': String(maxDp[i]), 'minDp[i]': String(minDp[i]), '全局最优': String(ans) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.return || 17,
+        codeLine: anchors.return || 17,
+        decision: `填表结束！全局最大连续子数组乘积收敛为 ${ans}`,
+        message: `双轨动态规划 O(N) 填表完毕`,
+        variables: { finalAns: ans },
+        slots: [...maxDp],
+        metrics: { '最终最大乘积': String(ans) },
+      });
+    } else {
+      maxDp[n - 1] = nums[n - 1];
+      minDp[n - 1] = nums[n - 1];
+      let ans = nums[n - 1];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.init || 3,
+        codeLine: anchors.init || 3,
+        decision: `1. 逆向双轨 DP 初始化：maxDp[${n - 1}] = minDp[${n - 1}] = nums[${n - 1}] = ${nums[n - 1]}`,
+        message: `从右向左构建后缀最大乘积与最小乘积轨道`,
+        variables: { 'maxDp[last]': maxDp[n - 1], 'minDp[last]': minDp[n - 1], ans },
+        slots: [...nums],
+        activeIndices: [n - 1],
+        activeSlot: n - 1,
+        metrics: { '逆向初始最优': String(ans) },
+      });
+
+      for (let i = n - 2; i >= 0; i--) {
+        const x = nums[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.loop || 7,
+          codeLine: anchors.loop || 7,
+          decision: `逆向推进至索引 i = ${i}，当前元素 nums[${i}] = ${x}`,
+          message: `结合右侧后缀 maxDp[${i + 1}] 与 minDp[${i + 1}] 进行转移`,
+          variables: { i, x, 'maxDp[i+1]': maxDp[i + 1], 'minDp[i+1]': minDp[i + 1] },
+          activeIndices: [i, i + 1],
+          activeSlot: i,
+          slots: [...nums],
+          metrics: { '逆向位置': `i=${i}`, '当前元素': String(x) },
+        });
+
+        const c1 = maxDp[i + 1] * x;
+        const c2 = minDp[i + 1] * x;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.swap || 9,
+          codeLine: anchors.swap || 9,
+          decision: `逆向计算候选极值：c1 = ${c1}, c2 = ${c2}${x < 0 ? ' (⚠️ 负数导致最值颠倒)' : ''}`,
+          message: `逆向双轨交叉候选值计算`,
+          variables: { i, x, cand1: c1, cand2: c2 },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...nums],
+          metrics: { 'cand1': String(c1), 'cand2': String(c2) },
+        });
+
+        maxDp[i] = Math.max(x, Math.max(c1, c2));
+        minDp[i] = Math.min(x, Math.min(c1, c2));
+        const updated = maxDp[i] > ans;
+        if (updated) ans = maxDp[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: updated ? (anchors.update || 14) : (anchors.transfer || 12),
+          codeLine: updated ? (anchors.update || 14) : (anchors.transfer || 12),
+          decision: `逆向状态确定：maxDp[${i}] = ${maxDp[i]}，minDp[${i}] = ${minDp[i]}${updated ? ` ➔ 刷新全局最优 ans = ${ans} 🏆` : ''}`,
+          message: `逆向双轨填表完成`,
+          variables: { i, 'maxDp[i]': maxDp[i], 'minDp[i]': minDp[i], ans },
+          activeIndices: [i],
+          activeSlot: i,
+          slots: [...maxDp],
+          metrics: { 'maxDp[i]': String(maxDp[i]), 'minDp[i]': String(minDp[i]), '全局最优': String(ans) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.return || 17,
+        codeLine: anchors.return || 17,
+        decision: `逆向填表完成，全局最大连续乘积 = ${ans}`,
+        message: `逆向双轨 DP 收敛`,
+        variables: { finalAns: ans },
+        slots: [...maxDp],
+        metrics: { '最终最大乘积': String(ans) },
+      });
+    }
+
+    return steps;
+  }
+
+  private static compileMaxProductSubarrayStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options?: TwoPassCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const n = nums.length;
+    const isReverse = options?.direction === 'reverse';
+    const anchors = this.extractAnchors(model, 4, options?.direction || 'forward', options?.anchorMap);
+
+    if (!isReverse) {
+      let maxDp = nums[0];
+      let minDp = nums[0];
+      let ans = nums[0];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `⚡ 初始化 O(1) 空间滚动变量：maxDp = minDp = ${nums[0]}，ans = ${ans}`,
+        message: `丢弃数组占用，仅在寄存器中维护两个滚动变量`,
+        variables: { maxDp, minDp, ans },
+        slots: [maxDp, minDp],
+        colLabels: ['maxDp 极值', 'minDp 极值'],
+        metrics: { '空间复杂度': 'O(1) 极致常数', '当前最大': String(maxDp) },
+      });
+
+      for (let i = 1; i < n; i++) {
+        const x = nums[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.loop || 5,
+          codeLine: anchors.loop || 5,
+          decision: `单趟推进到 nums[${i}] = ${x}`,
+          message: `准备利用滚动寄存器更新当前极值`,
+          variables: { i, x, maxDp, minDp, ans },
+          slots: [maxDp, minDp],
+          colLabels: ['maxDp', 'minDp'],
+          metrics: { '当前元素': String(x) },
+        });
+
+        if (x < 0) {
+          const t = maxDp;
+          maxDp = minDp;
+          minDp = t;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            line: anchors.swap || 8,
+            codeLine: anchors.swap || 8,
+            decision: `⚠️ 检测到负数 x = ${x} < 0：就地交换两个滚动变量 [maxDp, minDp] = [${maxDp}, ${minDp}]`,
+            message: `负负得正翻转：原最小值乘负数将产生最大正数`,
+            variables: { x, maxDp, minDp },
+            slots: [maxDp, minDp],
+            colLabels: ['maxDp (翻转后)', 'minDp (翻转后)'],
+            metrics: { '翻转状态': '已完成交换' },
+          });
+        }
+
+        maxDp = Math.max(x, maxDp * x);
+        minDp = Math.min(x, minDp * x);
+        const updated = maxDp > ans;
+        if (updated) ans = maxDp;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: updated ? (anchors.update || 14) : (anchors.transfer || 11),
+          codeLine: updated ? (anchors.update || 14) : (anchors.transfer || 11),
+          decision: `滚动变量原地覆盖：maxDp = ${maxDp}, minDp = ${minDp}${updated ? ` ➔ 刷新全局最优 ans = ${ans} 🏆` : ''}`,
+          message: `无需分配额外内存，直接覆盖更新`,
+          variables: { i, maxDp, minDp, ans },
+          slots: [maxDp, minDp],
+          colLabels: ['maxDp 最新', 'minDp 最新'],
+          metrics: { 'maxDp': String(maxDp), 'minDp': String(minDp), '全局最优': String(ans) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.return || 17,
+        codeLine: anchors.return || 17,
+        decision: `⚡ O(1) 滚动更新收敛：全局最大乘积 = ${ans}`,
+        message: `极致空间优化完成`,
+        variables: { finalAns: ans },
+        slots: [ans],
+        colLabels: ['最终最优解'],
+        metrics: { '空间复杂度': 'O(1)', '最终答案': String(ans) },
+      });
+    } else {
+      let maxDp = nums[n - 1];
+      let minDp = nums[n - 1];
+      let ans = nums[n - 1];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.init || 2,
+        codeLine: anchors.init || 2,
+        decision: `⚡ 逆向初始化 O(1) 空间滚动变量：maxDp = minDp = ${nums[n - 1]}`,
+        message: `从右向左逆向滚动`,
+        variables: { maxDp, minDp, ans },
+        slots: [maxDp, minDp],
+        colLabels: ['maxDp 逆向', 'minDp 逆向'],
+        metrics: { '空间复杂度': 'O(1)' },
+      });
+
+      for (let i = n - 2; i >= 0; i--) {
+        const x = nums[i];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: anchors.loop || 5,
+          codeLine: anchors.loop || 5,
+          decision: `逆向单趟推进到 nums[${i}] = ${x}`,
+          message: `逆向滚动更新`,
+          variables: { i, x, maxDp, minDp, ans },
+          slots: [maxDp, minDp],
+          colLabels: ['maxDp', 'minDp'],
+          metrics: { '当前元素': String(x) },
+        });
+
+        if (x < 0) {
+          const t = maxDp;
+          maxDp = minDp;
+          minDp = t;
+
+          steps.push({
+            stepIndex: steps.length,
+            stage: 4,
+            line: anchors.swap || 8,
+            codeLine: anchors.swap || 8,
+            decision: `⚠️ 逆向检测到负数 x = ${x} < 0：就地交换两个滚动变量 [maxDp, minDp] = [${maxDp}, ${minDp}]`,
+            message: `逆向负负得正翻转`,
+            variables: { x, maxDp, minDp },
+            slots: [maxDp, minDp],
+            colLabels: ['maxDp (翻转后)', 'minDp (翻转后)'],
+            metrics: { '翻转状态': '已完成交换' },
+          });
+        }
+
+        maxDp = Math.max(x, maxDp * x);
+        minDp = Math.min(x, minDp * x);
+        const updated = maxDp > ans;
+        if (updated) ans = maxDp;
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 4,
+          line: updated ? (anchors.update || 14) : (anchors.transfer || 11),
+          codeLine: updated ? (anchors.update || 14) : (anchors.transfer || 11),
+          decision: `逆向滚动原地覆盖：maxDp = ${maxDp}, minDp = ${minDp}${updated ? ` ➔ 刷新全局最优 ans = ${ans} 🏆` : ''}`,
+          message: `逆向覆盖更新`,
+          variables: { i, maxDp, minDp, ans },
+          slots: [maxDp, minDp],
+          colLabels: ['maxDp 最新', 'minDp 最新'],
+          metrics: { 'maxDp': String(maxDp), 'minDp': String(minDp), '全局最优': String(ans) },
+        });
+      }
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.return || 17,
+        codeLine: anchors.return || 17,
+        decision: `⚡ 逆向 O(1) 滚动更新收敛：全局最大乘积 = ${ans}`,
+        message: `逆向空间优化完成`,
+        variables: { finalAns: ans },
+        slots: [ans],
+        colLabels: ['最终最优解'],
+        metrics: { '空间复杂度': 'O(1)', '最终答案': String(ans) },
+      });
+    }
+
+    return steps;
+  }
 }
 

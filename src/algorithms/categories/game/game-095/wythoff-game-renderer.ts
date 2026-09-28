@@ -155,6 +155,7 @@ export const wythoffGameVisualizer = registerDeclarativeAlgorithm<WythoffStep>({
   icon: '⚖️',
   difficulty: 3,
   levelOrder: 956,
+  aliases: ['class095-code06', 'wythoff-game', 'poj-1067'],
   learningGoal: '领略黄金分割比 phi 在威佐夫博弈奇异局势生成中的精妙数学对应',
   problemHtml: GAME_095_PROBLEMS.wythoffGame.html,
   analysisHtml: GAME_095_PROBLEMS.wythoffGame.html,

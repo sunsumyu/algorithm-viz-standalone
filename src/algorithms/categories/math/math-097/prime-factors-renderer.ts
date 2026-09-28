@@ -130,6 +130,7 @@ export const primeFactorsVisualizer = registerDeclarativeAlgorithm<PrimeFactorsS
   icon: '🌱',
   difficulty: 2,
   levelOrder: 973,
+  aliases: ['class097-code03', 'prime-factors', 'prime-factorization'],
   learningGoal: '理解算术基本定理唯一性，掌握 sqrt(n) 试除与末尾剩余大质因子提取',
   problemHtml: MATH_097_PROBLEMS.primeFactors.html,
   analysisHtml: MATH_097_PROBLEMS.primeFactors.html,

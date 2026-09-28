@@ -418,6 +418,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
 
 registerAlgorithm({
   id: 'people-secret',
+  aliases: ['class057-code03', 'find-all-people-with-secret-2092', 'people-secret-2092'],
   name: '找出知晓秘密的所有专家 (Find All People With Secret)',
   viewId: 'algo-people-secret-view',
   category: 'graph',

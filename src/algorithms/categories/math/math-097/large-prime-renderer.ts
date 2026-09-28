@@ -182,6 +182,7 @@ export const largePrimeVisualizer = registerDeclarativeAlgorithm<MillerRabinStep
   icon: '🛡️',
   difficulty: 3,
   levelOrder: 972,
+  aliases: ['class097-code02', 'large-prime', 'miller-rabin', 'miller-rabin-test'],
   learningGoal: '掌握费马小定理、二次探测定理与确定性基底快速素数判定',
   problemHtml: MATH_097_PROBLEMS.largePrime.html,
   analysisHtml: MATH_097_PROBLEMS.largePrime.html,

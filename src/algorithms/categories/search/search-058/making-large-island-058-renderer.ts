@@ -135,11 +135,12 @@ export function buildLargeIsland058Steps(): LargeIsland058Step[] {
 
 export const makingLargeIsland058Visualizer = registerDeclarativeAlgorithm<LargeIsland058Step>({
   id: 'making-large-island-058',
+  aliases: ['class058-code05', 'making-a-large-island-827', 'make-largest-island-058'],
   name: '洪水填充与最大人工岛 (Class 058)',
   category: 'search',
   difficulty: 'hard',
   problemContent: SEARCH_058_PROBLEMS.makingLargeIsland058,
-  sourceCodes: MAKING_LARGE_ISLAND_058_CODES,
+  codeLanguages: MAKING_LARGE_ISLAND_058_CODES,
   generateSteps: buildLargeIsland058Steps,
   renderCanvas: (container, step) => {
     container.innerHTML = `

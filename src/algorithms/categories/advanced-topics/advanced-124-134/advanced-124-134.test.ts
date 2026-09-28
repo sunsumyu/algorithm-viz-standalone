@@ -17,6 +17,8 @@ import {
   MONOTONIC_QUEUE_DP_CODES,
   GAUSSIAN_ELIMINATION_CODES,
 } from './advanced-124-134-stage-codes';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 
 function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
@@ -135,4 +137,27 @@ describe('左神高阶遍历与 DP/高斯消元专题 (Class 124 ~ 134) 综合�
       verify1BasedCodeLines(steps, GAUSSIAN_ELIMINATION_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 124 ~ 133)', () => {
+    it('所有高阶 DP、Morris 与高斯消元课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class124-code01': 'morris-traversal-124',
+        'class125-code01': 'profile-dp-125',
+        'class126-code01': 'ternary-dp-126',
+        'class129-code01': 'binary-lifting-dp-129',
+        'class130-code01': 'monotonic-queue-dp-130',
+        'class132-code01': 'linear-basis-132',
+        'class133-code01': 'gaussian-elimination-133',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

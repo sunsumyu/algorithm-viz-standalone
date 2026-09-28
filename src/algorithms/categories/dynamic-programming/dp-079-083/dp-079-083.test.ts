@@ -134,4 +134,29 @@ describe('左神进阶动态规划专题 (Class 079 ~ 083) 综合测试套件', 
       verify1BasedCodeLines(steps, KNUTH_QUADRANGLE_083_CODES);
     });
   });
+
+  describe('进阶动态规划专题 (Class 079 ~ 083) 注册中心与别名统合门禁', () => {
+    const expectedBatch26 = [
+      { id: 'digit-dp-basic-079', aliases: ['class079-digit-dp', 'digit-dp-basic', 'count-digit-one-233', 'leetcode-233'] },
+      { id: 'rerooting-tree-dp-080', aliases: ['class080-rerooting-dp', 'rerooting-tree-dp', 'sum-of-distances-in-tree-834', 'leetcode-834'] },
+      { id: 'expected-value-dp-081', aliases: ['class081-expected-dp', 'expected-value-dp', 'knight-probability-in-chessboard-688', 'leetcode-688'] },
+      { id: 'slope-optimization-dp-082', aliases: ['class082-slope-opt', 'slope-optimization-dp', 'toy-packing-slope-opt', 'luogu-p3195'] },
+      { id: 'knuth-quadrangle-inequality-083', aliases: ['class083-quadrangle', 'knuth-quadrangle-inequality', 'stone-merging-quadrangle', 'quadrangle-inequality-083'] },
+    ];
+
+    it('5 大进阶 DP 模型必须成功注册并且别名双向解析正常', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-26-index');
+
+      for (const item of expectedBatch26) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `算法 [${item.id}] 必须成功注册`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases, `算法 [${item.id}] 必须包含别名 [${alias}]`).toContain(alias);
+          const byAlias = algorithmRegistry.getManifest(alias);
+          expect(byAlias?.id, `别名 [${alias}] 必须解析至主 ID [${item.id}]`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

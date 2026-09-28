@@ -381,6 +381,7 @@ export const treeTraversal020Visualizer = registerDeclarativeAlgorithm<Traversal
   icon: '🥞',
   difficulty: 2,
   levelOrder: 20,
+  aliases: ['class020-code01', 'tree-traversal-iterative-020', 'iterative-traversal', 'tree-traversal-stack'],
   learningGoal: '掌握使用显式单栈/双栈模拟递归调用过程，深入理解先序、中序、后序在栈内的时序转换',
   problemHtml: `
     <div style="font-family: inherit; line-height: 1.6; color: #1e293b;">

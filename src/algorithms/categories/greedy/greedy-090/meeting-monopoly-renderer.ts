@@ -460,4 +460,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 903,
   learningGoal: '理解结束时间贪心如何为后续留出最大可用时间裕度',
+  aliases: ['class090-code03', 'meeting-monopoly-435', 'leetcode-435', 'luogu-p1803'],
 });

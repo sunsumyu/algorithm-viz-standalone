@@ -120,6 +120,7 @@ export function buildNTTSteps(a: number[], b: number[]): NTTStep[] {
 export const nttTransformVisualizer = registerDeclarativeAlgorithm<NTTStep>({
   id: 'ntt-transform-161',
   name: '快速数论变换 NTT (Class 161)',
+  aliases: ['class161-code01', 'ntt-transform-161', 'ntt'],
   category: 'math',
   icon: '⚡',
   difficulty: 3,

@@ -112,6 +112,7 @@ export const cuttingTreeVisualizer = registerDeclarativeAlgorithm<CuttingTreeSte
   icon: '🌲',
   difficulty: 3,
   levelOrder: 945,
+  aliases: ['class094-code05', 'cutting-trees', 'poj-2784'],
   learningGoal: '掌握增长率升序邻项交换律确定砍伐序，结合0-1背包DP收敛全局最优',
   problemHtml: GREEDY_094_PROBLEMS.cuttingTree.html,
   analysisHtml: GREEDY_094_PROBLEMS.cuttingTree.html,

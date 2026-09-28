@@ -212,6 +212,7 @@ registerAlgorithm({
   levelOrder: 915,
   description: '每个任务包含实际消耗与启动门槛，按门槛与消耗之差降序排列，通过邻项微扰交换法证明全局最少初始能量。',
   learningGoal: '掌握按 minimum - actual 差值贪心降序排序的能量消耗与逆推模拟原理',
+  aliases: ['class091-code05', 'minimal-battery-power', 'minimum-initial-energy-1665', 'leetcode-1665'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

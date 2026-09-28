@@ -723,6 +723,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code06：洛谷 P2918 购买干草，至少 H 磅允许超额，容量上界扩充至 H + maxVal 的完全背包求极小值',
   icon: '🌾',
+  aliases: ['class074-code06', 'buying-hay-min-cost-074', 'buying-hay', 'luogu-p2918'],
   template,
   Visualizer,
   difficulty: 2,

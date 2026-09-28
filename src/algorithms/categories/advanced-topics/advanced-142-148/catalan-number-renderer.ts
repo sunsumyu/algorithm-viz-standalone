@@ -84,6 +84,7 @@ export function buildCatalanSteps(n: number): CatalanStep[] {
 export const catalanNumberVisualizer = registerDeclarativeAlgorithm<CatalanStep>({
   id: 'catalan-number-147',
   name: '卡特兰数与格路计数 (Class 147)',
+  aliases: ['class147-code01', 'catalan-number', 'catalan-number-147', 'dyck-path'],
   category: 'math',
   icon: '📈',
   difficulty: 2,

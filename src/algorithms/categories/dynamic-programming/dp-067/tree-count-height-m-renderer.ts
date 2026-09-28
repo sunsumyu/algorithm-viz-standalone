@@ -975,6 +975,7 @@ export const TreeCountHeightMDeclarativeResult = registerDeclarativeAlgorithm<an
   category: 'dynamic-programming',
   description: '左程云算法讲解067 Code05：节点数为n高度不大于m的二叉树结构种类数，左右子树独立形态笛卡尔乘积累加',
   icon: '🌲',
+  aliases: ['class067-code05', 'tree-count-height-m-067', 'binary-tree-count-height-m'],
   difficulty: 3,
   levelOrder: 105,
   learningGoal: '掌握树形规模拆分思想、左右子树笛卡尔乘积计数模型以及二维列滚动空间压缩',

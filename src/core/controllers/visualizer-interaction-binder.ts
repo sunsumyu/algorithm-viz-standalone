@@ -56,6 +56,62 @@ export class VisualizerInteractionBinder {
     if (btnFontDec) btnFontDec.addEventListener('click', () => actions.onFontScale?.(-0.5));
     if (btnFontInc) btnFontInc.addEventListener('click', () => actions.onFontScale?.(0.5));
 
+    // 2.1 代码复制按钮 (#btn-code-copy) 跨环境双保险复制与即时反馈
+    const btnCodeCopy = document.getElementById('btn-code-copy');
+    if (btnCodeCopy && (btnCodeCopy as any)._bound !== true) {
+      (btnCodeCopy as any)._bound = true;
+      btnCodeCopy.addEventListener('click', async () => {
+        const codeBox = document.getElementById('code-content') || document.getElementById('code-container-box') || document.getElementById('code-lines-wrapper');
+        const text = codeBox?.textContent || (codeBox as any)?.innerText || '';
+        if (!text.trim()) return;
+
+        let success = false;
+        try {
+          if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            success = true;
+          }
+        } catch {}
+
+        if (!success && typeof document !== 'undefined') {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.top = '0';
+            ta.style.left = '0';
+            ta.style.width = '2em';
+            ta.style.height = '2em';
+            ta.style.padding = '0';
+            ta.style.border = 'none';
+            ta.style.outline = 'none';
+            ta.style.boxShadow = 'none';
+            ta.style.background = 'transparent';
+            ta.setAttribute('readonly', '');
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            ta.setSelectionRange(0, text.length);
+            success = document.execCommand('copy');
+            document.body.removeChild(ta);
+          } catch {}
+        }
+
+        const copyText = btnCodeCopy.querySelector('.copy-text') || btnCodeCopy;
+        const copyIcon = btnCodeCopy.querySelector('.fa-copy, i, svg');
+        const oldText = copyText.textContent;
+        btnCodeCopy.classList.add('bg-emerald-700', 'text-emerald-100', 'border-emerald-500');
+        btnCodeCopy.classList.remove('bg-slate-800', 'text-slate-300');
+        copyText.textContent = '已复制!';
+
+        setTimeout(() => {
+          btnCodeCopy.classList.remove('bg-emerald-700', 'text-emerald-100', 'border-emerald-500');
+          btnCodeCopy.classList.add('bg-slate-800', 'text-slate-300');
+          copyText.textContent = oldText || '复制';
+        }, 1500);
+      });
+    }
+
     // 3. Stage 3 子视图切换
     const btnSubMatrix = document.getElementById('btn-subview-matrix');
     const btnSubTree = document.getElementById('btn-subview-tree');

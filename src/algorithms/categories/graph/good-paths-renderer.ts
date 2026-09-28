@@ -458,6 +458,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<GoodPathsStep>({
 
 registerAlgorithm({
   id: 'good-paths',
+  aliases: ['class057-code04', 'number-of-good-paths-2421', 'good-paths-2421'],
   name: '好路径的数目 (Number of Good Paths)',
   viewId: 'algo-good-paths-view',
   category: 'graph',

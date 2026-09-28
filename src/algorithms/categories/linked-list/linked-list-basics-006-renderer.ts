@@ -463,6 +463,7 @@ export const linkedListBasicsVisualizer = registerDeclarativeAlgorithm<LinkedLis
   icon: '🔗',
   difficulty: 1,
   levelOrder: 6,
+  aliases: ['class006-code01', 'class006-code02', 'linked-list-basics-006', 'linked-list-basics'],
   learningGoal: '掌握单双链表就地反转、删除指定节点与双向链表构建 FIFO 队列与 LIFO 栈',
   problemHtml: `
     <div style="line-height: 1.6;">

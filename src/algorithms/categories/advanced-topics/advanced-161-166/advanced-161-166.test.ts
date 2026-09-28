@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildNTTSteps } from './ntt-transform-renderer';
 import { buildPolyInvSteps } from './polynomial-inverse-renderer';
 import { buildFWTSteps } from './fwt-walsh-renderer';
@@ -109,4 +111,26 @@ describe('左神多项式全家桶与进阶数论专题 (Class 161 ~ 166) 综合
       expect(last.ans).toBe(1);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 161 ~ 166)', () => {
+    it('所有多项式与数论高阶课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class161-code01': 'ntt-transform-161',
+        'class162-code01': 'polynomial-inverse-162',
+        'class163-code01': 'fwt-walsh-163',
+        'class164-code01': 'dujiao-sieve-164',
+        'class165-code01': 'mobius-inversion-165',
+        'class166-code01': 'lucas-theorem-166',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

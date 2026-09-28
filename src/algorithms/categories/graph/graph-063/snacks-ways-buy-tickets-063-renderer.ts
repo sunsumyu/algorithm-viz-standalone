@@ -185,7 +185,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '中等',
   description: '左程云 Class 063 Code02：超大背包容量折半搜索 Meet in the Middle，两路生成 + 二分累计 (洛谷 P4799)',
-  aliases: ['snacks-ways-063', 'luogu-p4799', 'meet-in-the-middle-backpack'],
+  aliases: ['class063-code02', 'snacks-ways-buy-tickets-063', 'snacks-ways-063', 'luogu-p4799', 'meet-in-the-middle-backpack'],
   problemHtml: GRAPH_063_PROBLEMS['snacks-ways-buy-tickets-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['snacks-ways-buy-tickets-063'].complexityHtml,
   codeLanguages: SNACKS_WAYS_063_CODES,

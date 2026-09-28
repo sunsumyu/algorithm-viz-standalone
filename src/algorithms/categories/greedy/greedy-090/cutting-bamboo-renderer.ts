@@ -466,4 +466,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 901,
   learningGoal: '掌握均值不等式与导数极值驻点离散化为拆 3 的数学本质',
+  aliases: ['class090-code01', 'cutting-bamboo-343', 'leetcode-343', 'integer-break-ii'],
 });

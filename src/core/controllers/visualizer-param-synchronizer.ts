@@ -99,9 +99,11 @@ export class VisualizerParamSynchronizer {
     if (isNaN(m) || m < 1) m = defaultM;
     if (isNaN(n) || n < 1) n = defaultN;
 
-    // 约束在 [1, 10] 范围
-    m = Math.min(Math.max(m, 1), 10);
-    n = Math.min(Math.max(n, 1), 10);
+    // 约束在 [1, max] 范围，动态适配默认尺寸（如默认尺寸大于 10 时动态放宽，否则钳制在 10）
+    const maxM = Math.max(10, defaultM);
+    const maxN = Math.max(10, defaultN);
+    m = Math.min(Math.max(m, 1), maxM);
+    n = Math.min(Math.max(n, 1), maxN);
 
     return { m, n };
   }

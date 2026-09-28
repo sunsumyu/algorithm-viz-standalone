@@ -198,6 +198,7 @@ export function buildCrt141Steps(mList: number[], aList: number[]): Crt141Step[]
 export const crt141Visualizer = registerDeclarativeAlgorithm<Crt141Step>({
   id: 'crt-141',
   name: '中国剩余定理 (Class 141)',
+  aliases: ['class141-code01', 'crt', 'crt-141', 'chinese-remainder-theorem'],
   category: 'math',
   icon: '📜',
   difficulty: 3,

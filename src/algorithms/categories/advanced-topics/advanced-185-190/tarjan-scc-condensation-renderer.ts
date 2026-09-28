@@ -126,6 +126,7 @@ export function buildTarjanSCCSteps(): TarjanSCCStep[] {
 export const tarjanSCCVisualizer = registerDeclarativeAlgorithm<TarjanSCCStep>({
   id: 'tarjan-scc-condensation-188',
   name: '强连通分量与 Tarjan 缩点 (Class 188)',
+  aliases: ['class188-code01', 'tarjan-scc-condensation-188', 'tarjan-scc'],
   category: 'graph',
   icon: '🎯',
   difficulty: 3,

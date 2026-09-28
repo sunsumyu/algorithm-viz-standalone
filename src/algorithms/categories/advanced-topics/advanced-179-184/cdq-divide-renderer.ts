@@ -111,6 +111,7 @@ export function buildCDQDivideSteps(): CDQDivideStep[] {
 export const cdqDivideVisualizer = registerDeclarativeAlgorithm<CDQDivideStep>({
   id: 'cdq-divide-183',
   name: 'CDQ 分治 (CDQ Divide & Conquer / Class 183)',
+  aliases: ['class183-code01', 'cdq-divide-183', 'cdq-divide-conquer'],
   category: 'search',
   icon: '🎯',
   difficulty: 3,

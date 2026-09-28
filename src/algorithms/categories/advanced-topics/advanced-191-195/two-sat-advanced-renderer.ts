@@ -119,6 +119,7 @@ export function buildTwoSatAdvancedSteps(): TwoSatAdvancedStep[] {
 export const twoSatAdvancedVisualizer = registerDeclarativeAlgorithm<TwoSatAdvancedStep>({
   id: 'two-sat-advanced-195',
   name: '2-SAT 进阶应用与方案构造 (Class 195)',
+  aliases: ['class195-code01', 'two-sat-advanced-195', 'two-sat-prefix-optimization'],
   category: 'graph',
   icon: '👑',
   difficulty: 3,

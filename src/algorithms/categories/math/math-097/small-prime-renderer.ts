@@ -134,6 +134,7 @@ export const smallPrimeVisualizer = registerDeclarativeAlgorithm<SmallPrimeStep>
   icon: '🔍',
   difficulty: 2,
   levelOrder: 971,
+  aliases: ['class097-code01', 'small-prime', 'trial-division-prime', 'is-prime'],
   learningGoal: '掌握 6k±1 试除加速与 sqrt(n) 边界剪枝数论原理',
   problemHtml: MATH_097_PROBLEMS.smallPrime.html,
   analysisHtml: MATH_097_PROBLEMS.smallPrime.html,

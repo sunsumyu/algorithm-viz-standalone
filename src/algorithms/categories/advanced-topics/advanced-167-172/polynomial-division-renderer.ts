@@ -169,6 +169,7 @@ export function buildPolyDivSteps(a: number[], b: number[]): PolyDivStep[] {
 export const polynomialDivisionVisualizer = registerDeclarativeAlgorithm<PolyDivStep>({
   id: 'polynomial-division-170',
   name: '多项式除法与取模 (Class 170)',
+  aliases: ['class170-code01', 'polynomial-division-170', 'poly-division'],
   category: 'math',
   icon: '➗',
   difficulty: 3,

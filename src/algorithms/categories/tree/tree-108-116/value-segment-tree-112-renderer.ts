@@ -219,6 +219,7 @@ export function buildValueSegTreeSteps(
 export const valueSegTreeVisualizer = registerDeclarativeAlgorithm<ValueSegTreeStep>({
   id: 'value-segment-tree-112',
   name: '权值线段树与单点更新 (Class 112)',
+  aliases: ['class112-code01', 'value-segment-tree', 'value-segment-tree-112', 'kth-smallest-seg-tree'],
   category: 'tree',
   icon: '⚖️',
   difficulty: 3,

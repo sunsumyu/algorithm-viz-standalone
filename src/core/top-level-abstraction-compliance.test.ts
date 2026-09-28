@@ -109,6 +109,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'multiple-knapsack',
   'profitable-schemes',
   'target-sum',
+  'max-product-subarray',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

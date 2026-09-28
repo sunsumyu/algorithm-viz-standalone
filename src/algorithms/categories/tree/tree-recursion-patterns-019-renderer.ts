@@ -303,6 +303,7 @@ export const treeRecursion019Visualizer = registerDeclarativeAlgorithm<TreeRecur
   icon: '🌲',
   difficulty: 2,
   levelOrder: 19,
+  aliases: ['class019-code01', 'tree-recursion-patterns-019', 'tree-dp-patterns'],
   learningGoal: '彻底掌握树形 DP 递归套路，学会设计统一 Info 结构体解决平衡树、搜索二叉树与树最大距离等高频考题',
   problemHtml: `
     <div style="line-height: 1.6;">

@@ -181,6 +181,7 @@ export function buildPolyLnExpSteps(a: number[], deg: number): PolyLnExpStep[] {
 export const polynomialLnExpVisualizer = registerDeclarativeAlgorithm<PolyLnExpStep>({
   id: 'polynomial-ln-exp-172',
   name: '多项式对数与指数 ln/exp (Class 172)',
+  aliases: ['class172-code01', 'polynomial-ln-exp-172', 'poly-ln-exp'],
   category: 'math',
   icon: '📈',
   difficulty: 3,

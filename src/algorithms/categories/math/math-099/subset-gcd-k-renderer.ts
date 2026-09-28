@@ -114,6 +114,7 @@ export const subsetGcdKVisualizer = registerDeclarativeAlgorithm<SubsetGcdStep>(
   icon: '🧮',
   difficulty: 3,
   levelOrder: 994,
+  aliases: ['class099-code04', 'subset-gcd-k', 'subset-gcd-inclusion-exclusion'],
   learningGoal: '掌握倍数计数向公约数计数的倒序容斥转化与多项式去重',
   problemHtml: MATH_099_PROBLEMS.subsetGcdK.html,
   analysisHtml: MATH_099_PROBLEMS.subsetGcdK.html,

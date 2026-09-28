@@ -109,6 +109,7 @@ export function buildSparseTableSteps(
 export const sparseTableVisualizer = registerDeclarativeAlgorithm<SparseTableStep>({
   id: 'sparse-table-117',
   name: 'ST 表 (Sparse Table) RMQ (Class 117)',
+  aliases: ['class117-code01', 'sparse-table', 'sparse-table-117', 'st-table', 'rmq'],
   category: 'tree',
   icon: '📊',
   difficulty: 2,

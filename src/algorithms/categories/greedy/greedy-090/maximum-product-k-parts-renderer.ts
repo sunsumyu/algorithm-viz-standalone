@@ -423,4 +423,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 902,
   learningGoal: '掌握均分定理与极差大于等于 2 必劣化的代数反证法',
+  aliases: ['class090-code02', 'max-product-k-parts', 'divide-k-parts'],
 });

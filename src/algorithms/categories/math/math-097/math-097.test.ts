@@ -76,4 +76,39 @@ describe('左渗透数论专题一 (math-097) 自动化测试套件', () => {
     const last = steps[steps.length - 1];
     expect(last.primesFound).toEqual([2, 3, 5, 7, 11, 13, 17, 19, 23, 29]);
   });
+
+  it('5. Class 097 质数与因数分解专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'small-prime-097',
+        aliases: ['class097-code01', 'small-prime', 'trial-division-prime', 'is-prime'],
+      },
+      {
+        id: 'large-prime-miller-rabin-097',
+        aliases: ['class097-code02', 'large-prime', 'miller-rabin', 'miller-rabin-test'],
+      },
+      {
+        id: 'prime-factors-097',
+        aliases: ['class097-code03', 'prime-factors', 'prime-factorization'],
+      },
+      {
+        id: 'ehrlich-euler-sieve-097',
+        aliases: ['class097-code04', 'euler-sieve', 'ehrlich-euler-sieve', 'linear-sieve', 'luogu-p3383'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

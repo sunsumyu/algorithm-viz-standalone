@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 找出数组的第K大和 (LeetCode 2386) - 声明式 4-Card 沙盘渲染器
  * 核心：正负数分离基准 + 绝对值数组映射 + 归约为前 K 小和堆优化
  * 架构重构：引入四语言代码联动、小根堆分支状态机沙盘与第K大和对决舱
@@ -350,6 +350,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code07：LeetCode 2386 找出数组的第K大和，正负数分离基准 + 绝对值数组映射 + 归约为前 K 小和堆优化',
   icon: '🔍',
+  aliases: ['class073-code07', 'find-kth-sum-073', 'find-the-k-sum-of-an-array', 'leetcode-2386'],
   template,
   Visualizer,
   difficulty: 3,

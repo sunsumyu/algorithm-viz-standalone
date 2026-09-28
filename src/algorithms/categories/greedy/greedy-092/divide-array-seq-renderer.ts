@@ -106,6 +106,7 @@ export const divideArraySeqVisualizer = registerDeclarativeAlgorithm<DivideArray
   icon: '📊',
   difficulty: 3,
   levelOrder: 925,
+  aliases: ['class092-code05', 'divide-array-increasing-1121', 'leetcode-1121', 'divide-array-seq'],
   learningGoal: '掌握众数频次瓶颈与鸽巢原理判定 nums.length >= maxFreq * k',
   problemHtml: GREEDY_092_PROBLEMS.divideArraySeq.html,
   analysisHtml: GREEDY_092_PROBLEMS.divideArraySeq.html,

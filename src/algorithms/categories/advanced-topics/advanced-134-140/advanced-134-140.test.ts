@@ -17,6 +17,8 @@ import {
   EXGCD_CODES,
   DIOPHANTINE_CODES,
 } from './advanced-134-140-stage-codes';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 
 function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
@@ -125,4 +127,27 @@ describe('左神线性代数、线性基与数论扩展专题 (Class 134 ~ 140) 
       expect(lastStep.minPositiveX).toBeUndefined();
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 134 ~ 141)', () => {
+    it('所有数论扩展、线性基与分数规划课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class134-code01': 'xor-gaussian-134',
+        'class136-code01': 'linear-basis-136',
+        'class137-code01': 'linear-basis-kth-137',
+        'class138-code01': 'fractional-programming-138',
+        'class139-code01': 'exgcd-139',
+        'class140-code01': 'diophantine-equation-140',
+        'class141-code01': 'crt-141',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

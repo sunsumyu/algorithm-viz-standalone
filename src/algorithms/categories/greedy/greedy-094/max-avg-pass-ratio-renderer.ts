@@ -135,6 +135,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,
   levelOrder: 943,
+  aliases: ['class094-code03', 'max-avg-pass-ratio-1792', 'leetcode-1792', 'max-average-pass-ratio'],
   learningGoal: '理解大根堆维护边际增益递减特征的贪心选择策略',
 });
 

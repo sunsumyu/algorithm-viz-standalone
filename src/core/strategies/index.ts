@@ -70,6 +70,8 @@ import { EliminateMonstersStrategy } from './eliminate-monsters-strategy';
 import { LargestPalindromicNumberStrategy } from './largest-palindromic-number-strategy';
 import { MinCostHireWorkersStrategy } from './min-cost-hire-workers-strategy';
 import { MaxAvgPassRatioStrategy } from './max-avg-pass-ratio-strategy';
+import { MaxProductSubarrayStrategy } from './max-product-subarray-strategy';
+import { MinCostTicketsStrategy } from './min-cost-tickets-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -119,6 +121,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths'));
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('unique-paths-ii'));
   AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('min-path-sum'));
+  AlgorithmStrategyRegistry.register(new GridUniquePathsStrategy('dungeon-game-reverse-dp'));
 
   // Knapsack DP
   AlgorithmStrategyRegistry.register(new KnapsackPartitionSubsetStrategy());
@@ -216,6 +219,8 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new LargestPalindromicNumberStrategy());
   AlgorithmStrategyRegistry.register(new MinCostHireWorkersStrategy());
   AlgorithmStrategyRegistry.register(new MaxAvgPassRatioStrategy());
+  AlgorithmStrategyRegistry.register(new MaxProductSubarrayStrategy());
+  AlgorithmStrategyRegistry.register(new MinCostTicketsStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -296,7 +301,9 @@ export {
   EliminateMonstersStrategy,
   LargestPalindromicNumberStrategy,
   MinCostHireWorkersStrategy,
-  MaxAvgPassRatioStrategy
+  MaxAvgPassRatioStrategy,
+  MaxProductSubarrayStrategy,
+  MinCostTicketsStrategy
 };
 
 export * from './strategy-helpers';

@@ -669,6 +669,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 075 Code05：POJ 1742 找零硬币，混合背包三路分支与布尔窗口滑块统计平摊 O(1) 状态转移',
   icon: '💰',
+  aliases: ['class075-code05', 'coins-change-kinds-075', 'coins-change-kinds-problem', 'poj-1742'],
   template,
   Visualizer,
   difficulty: 3,

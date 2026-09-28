@@ -116,6 +116,7 @@ export function buildFWTSteps(a: number[], b: number[], op: 'XOR' | 'OR' | 'AND'
 export const fwtWalshVisualizer = registerDeclarativeAlgorithm<FWTStep>({
   id: 'fwt-walsh-163',
   name: '快速沃尔什变换 FWT (Class 163)',
+  aliases: ['class163-code01', 'fwt-walsh-163', 'fwt'],
   category: 'math',
   icon: '🧬',
   difficulty: 3,

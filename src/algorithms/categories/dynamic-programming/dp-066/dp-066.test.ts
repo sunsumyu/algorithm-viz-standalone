@@ -183,15 +183,25 @@ describe('左程云 Class 066: 从递归入手一维动态规划专题测试', (
   });
 
   describe('5. Class 066 别名统合与唯一性核验', () => {
-    it('三道已有算法的 Class 066 别名能够正确索引', () => {
-      const fibo = algorithmRegistry.getManifest('fibonacci');
-      expect(fibo?.aliases).toContain('fibonacci-066');
+    it('全量 7 道算法的 Class 066 规范别名能够正确双向索引', () => {
+      const expectedMappings = [
+        { id: 'fibonacci', alias: 'class066-code01' },
+        { id: 'min-cost-tickets-066', alias: 'class066-code02' },
+        { id: 'decode-ways', alias: 'class066-code03' },
+        { id: 'decode-ways-ii-066', alias: 'class066-code04' },
+        { id: 'ugly-number-ii-066', alias: 'class066-code05' },
+        { id: 'longest-valid-parentheses', alias: 'class066-code06' },
+        { id: 'unique-substrings-wraparound-066', alias: 'class066-code07' },
+      ];
 
-      const decode = algorithmRegistry.getManifest('decode-ways');
-      expect(decode?.aliases).toContain('decode-ways-066');
+      for (const item of expectedMappings) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `算法 ${item.id} 必须已注册`).toBeDefined();
+        expect(manifest?.aliases).toContain(item.alias);
 
-      const paren = algorithmRegistry.getManifest('longest-valid-parentheses');
-      expect(paren?.aliases).toContain('longest-valid-parentheses-066');
+        const resolved = algorithmRegistry.getManifest(item.alias);
+        expect(resolved?.id, `别名 ${item.alias} 应解析至 ${item.id}`).toBe(item.id);
+      }
     });
   });
 });

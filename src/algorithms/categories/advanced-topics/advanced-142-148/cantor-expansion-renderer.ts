@@ -110,6 +110,7 @@ export function buildCantorSteps(perm: number[]): CantorStep[] {
 export const cantorExpansionVisualizer = registerDeclarativeAlgorithm<CantorStep>({
   id: 'cantor-expansion-146',
   name: '康托展开与逆康托展开 (Class 146)',
+  aliases: ['class146-code01', 'cantor-expansion', 'cantor-expansion-146', 'cantor-ranking'],
   category: 'math',
   icon: '🔢',
   difficulty: 2,

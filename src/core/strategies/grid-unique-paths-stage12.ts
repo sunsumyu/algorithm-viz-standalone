@@ -25,7 +25,8 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
 
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
     const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
-    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
+    const isDungeon = model.id === 'dungeon-game-reverse-dp';
+    const isMinPath = (model.id === 'min-path-sum' || Boolean(weightsGrid)) && !isDungeon;
 
     const isForward = direction === 'forward';
     const isTerminal = variant === 'terminal';
@@ -116,9 +117,9 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       // 越界拦截判断 (Terminal Variant)
       if (isTerminal) {
         if (isOutOfBounds(r, c)) {
-          const oobVal = isMinPath ? Infinity : 0;
+          const oobVal = (isMinPath || isDungeon) ? Infinity : 0;
           currentTreeNode.status = 'pruned';
-          currentTreeNode.tag = isMinPath ? '⛔越界=∞' : '⛔越界=0';
+          currentTreeNode.tag = (isMinPath || isDungeon) ? '⛔越界=∞' : '⛔越界=0';
 
           const outOfBoundsDir = r >= mVal ? 'river' : (c >= nVal ? 'right-wall' : (r < 0 ? 'top-wall' : 'left-wall'));
 
@@ -188,7 +189,9 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
         }
 
         if (isTarget(r, c)) {
-          const targetVal = isMinPath ? (weightsGrid ? weightsGrid[r][c] : 1) : 1;
+          const targetVal = isDungeon
+            ? Math.max(1, 1 - (weightsGrid ? (weightsGrid[r]?.[c] ?? 0) : 0))
+            : (isMinPath ? (weightsGrid ? weightsGrid[r][c] : 1) : 1);
           gridState[r][c] = targetVal;
           currentTreeNode.status = 'base';
           currentTreeNode.tag = `= ${targetVal}`;
@@ -407,8 +410,16 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       const res2 = dfs(next2R, next2C, child2Node, r, c);
 
       // 合并分支结果
-      const cellWeight = isMinPath ? (weightsGrid ? (weightsGrid[r]?.[c] ?? 0) : 0) : 0;
-      const combined = isMinPath ? (Math.min(res1, res2) + cellWeight) : (res1 + res2);
+      const cellWeight = weightsGrid ? (weightsGrid[r]?.[c] ?? 0) : 0;
+      let combined: number;
+      if (isDungeon) {
+        const minNext = Math.min(res1, res2);
+        combined = Math.max(1, minNext - cellWeight);
+      } else if (isMinPath) {
+        combined = Math.min(res1, res2) + cellWeight;
+      } else {
+        combined = res1 + res2;
+      }
       gridState[r][c] = combined;
       currentTreeNode.status = 'visited';
       currentTreeNode.tag = `= ${combined}`;
@@ -430,13 +441,17 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
         activeStack: [...activeStack],
         visited: [...visitedCells],
         line: lineCombine,
-        tag: isMinPath ? `最小路径和: ${combined}` : `合并子分支: ${combined}`,
-        log: isMinPath
-          ? `| ✨ 汇总分支结果：dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = ${combined}${isMemo ? ' [写入备忘录]' : ''}`
-          : `| ✨ 汇总分支结果：dfs(${r}, ${c}) = (${res1} + ${res2}) = ${combined}${isMemo ? ' [写入备忘录]' : ''}`,
-        msg: isMinPath
-          ? `✨ 汇总子分支：<code>dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`
-          : `✨ 汇总子分支：<code>dfs(${r}, ${c}) = ${res1} + ${res2} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`,
+        tag: isDungeon ? `最低HP需求: ${combined}` : (isMinPath ? `最小路径和: ${combined}` : `合并子分支: ${combined}`),
+        log: isDungeon
+          ? `| 🏰 汇总地下城生命值：dfs(${r}, ${c}) = max(1, min(${res1}, ${res2}) - (${cellWeight})) = ${combined}${isMemo ? ' [写入备忘录]' : ''}`
+          : (isMinPath
+            ? `| ✨ 汇总分支结果：dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = ${combined}${isMemo ? ' [写入备忘录]' : ''}`
+            : `| ✨ 汇总分支结果：dfs(${r}, ${c}) = (${res1} + ${res2}) = ${combined}${isMemo ? ' [写入备忘录]' : ''}`),
+        msg: isDungeon
+          ? `🏰 汇总所需生命值：<code>dfs(${r}, ${c}) = max(1, min(${res1}, ${res2}) - (${cellWeight})) = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`
+          : (isMinPath
+            ? `✨ 汇总子分支：<code>dfs(${r}, ${c}) = min(${res1}, ${res2}) + ${cellWeight} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`
+            : `✨ 汇总子分支：<code>dfs(${r}, ${c}) = ${res1} + ${res2} = <strong>${combined}</strong></code>${isMemo ? '，并记录至备忘录中。' : '。'}`),
         topI: isForward ? r + 1 : r - 1,
         topJ: c,
         leftI: r,

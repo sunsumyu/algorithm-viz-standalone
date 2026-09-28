@@ -17,6 +17,8 @@ import {
   CATALAN_NUMBER_CODES,
   AVL_TREE_CODES,
 } from './advanced-142-148-stage-codes';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 
 function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
@@ -152,4 +154,27 @@ describe('左神进阶算法专题 (Class 142 ~ 148) 综合测试套件', () => 
       verify1BasedCodeLines(steps, AVL_TREE_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 142 ~ 148)', () => {
+    it('所有高阶组合计数、同余与 AVL 树课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class142-code01': 'diff-constraints-system-142',
+        'class143-code01': 'congruence-shortest-path-143',
+        'class144-code01': 'lucas-theorem-144',
+        'class145-code01': 'binomial-inversion-145',
+        'class146-code01': 'cantor-expansion-146',
+        'class147-code01': 'catalan-number-147',
+        'class148-code01': 'avl-tree-148',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

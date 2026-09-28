@@ -122,7 +122,7 @@ export class GridVisualAdapter {
     ) {
       const isGrid =
         options.isGridProblem ??
-        (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : false);
+        (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : false);
 
       const isMatch =
         Boolean(step.isMatch) ||
@@ -232,14 +232,21 @@ export class GridVisualAdapter {
   public static renderGrid(container: HTMLElement, step: any, options: GridRenderOptions): void {
     if (!container || !step) return;
     const { m, n, isReverse = false } = options;
-    const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum'].includes(options.modelId) : true);
+    const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : true);
+
+    if (container.style) {
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+      container.style.width = '';
+      container.style.maxWidth = '';
+    }
+    container.className = 'grid gap-2 transition-all duration-300 relative z-0';
 
     if (options.rowLabels || options.colLabels) {
       this.renderLabeledGrid(container, step, options);
       return;
     }
 
-    container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
     container.innerHTML = '';
 
     const isStairs = (options.modelId === 'climb-stairs' || options.modelId === 'min-cost' || options.modelId === 'min-cost-climbing-stairs');
@@ -440,11 +447,18 @@ export class GridVisualAdapter {
           const hopStyle = isHopping ? `style="--jump-offset-x: ${deltaCols * 100}%;"` : '';
           const hopClass = isHopping ? 'is-hopping' : '';
 
+          const adventurerHtml = isGridProblem
+            ? `<div class="adventurer-char-holder ${hopClass} absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30" ${hopStyle}>
+                ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : (isHopping ? 'jumping' : 'walking'), isFinish })}
+              </div>`
+            : `<div class="absolute -top-1 -right-1 flex h-2.5 w-2.5 pointer-events-none z-20">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600 border border-white"></span>
+              </div>`;
+
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-blue-50/90 border-blue-500 shadow-sm`;
           cellEl.innerHTML = `
-            <div class="adventurer-char-holder ${hopClass} absolute -top-7 left-1/2 -translate-x-1/2 pointer-events-none z-30" ${hopStyle}>
-              ${this.getAdventurerSvgHtml({ state: isFinish ? 'cheering' : (isHopping ? 'jumping' : 'walking'), isFinish })}
-            </div>
+            ${adventurerHtml}
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
@@ -491,7 +505,7 @@ export class GridVisualAdapter {
           cellEl.className = `viz-cell is-empty ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border border-slate-200 text-slate-400`;
           cellEl.innerHTML = `
             <span class="cell-coord text-[9px] absolute top-0.5 left-1 text-slate-400">${coordText}</span>
-            ${isFinish ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
+            ${isFinish && isGridProblem ? `<span class="text-xs absolute bottom-1 right-1 opacity-70">🏁</span>` : ''}
             <span class="cell-val text-sm font-medium mt-2">-</span>
           `;
         }
@@ -500,7 +514,7 @@ export class GridVisualAdapter {
     }
 
     const hasAdventurer = container.querySelector('.adventurer-char') !== null;
-    if (!hasAdventurer) {
+    if (isGridProblem && !hasAdventurer) {
       const targetR = Math.min(m - 1, Math.max(0, activeStandingI ?? 0));
       const targetC = Math.min(n - 1, Math.max(0, activeStandingJ ?? 0));
       const targetCell = container.querySelector(`[data-coord="${targetR},${targetC}"]`) || container.firstElementChild;

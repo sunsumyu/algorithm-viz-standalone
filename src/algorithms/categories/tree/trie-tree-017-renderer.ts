@@ -373,6 +373,7 @@ export const trieTree017Visualizer = registerDeclarativeAlgorithm<Trie017Step>({
   icon: '🌳',
   difficulty: 2,
   levelOrder: 17,
+  aliases: ['class017-code01', 'trie-tree-017', 'trie-prefix-tree', 'leetcode-208'],
   learningGoal: '深入掌握前缀树节点 pass / end 核心设计，理解多模式串共享公共前缀的快速前缀统计机制',
   problemHtml: `
     <div style="font-family: inherit; line-height: 1.6; color: #1e293b;">

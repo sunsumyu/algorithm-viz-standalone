@@ -144,6 +144,7 @@ export const countingDp084Visualizer = registerDeclarativeAlgorithm<Counting084S
   name: '计数 DP 与错排问题 (Class 084)',
   category: 'dynamic-programming',
   difficulty: 'medium',
+  aliases: ['class084-counting-dp', 'counting-dp-derangement', 'derangement-problem', 'inclusion-exclusion-084'],
   problemContent: DP_084_088_PROBLEMS.countingDp084,
   sourceCodes: COUNTING_DP_084_CODES,
   generateSteps: buildCounting084Steps,

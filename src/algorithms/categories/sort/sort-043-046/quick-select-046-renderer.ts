@@ -73,6 +73,7 @@ export function buildQuickSelect046Steps(): QuickSelect046Step[] {
 
 export const quickSelect046Visualizer = registerDeclarativeAlgorithm<QuickSelect046Step>({
   id: 'quick-select-046',
+  aliases: ['class046-code01', 'class013-code01', 'quick-select-046', 'quick-select', 'kth-largest-element'],
   name: '快速选择算法 (Class 046)',
   category: 'sort',
   difficulty: 'medium',

@@ -274,6 +274,7 @@ registerAlgorithm({
   levelOrder: 911,
   description: '寻找最短连续子数组，若对其升序排序则全数组有序。通过双向线性极值扫描在 O(N) 锁定无序区间左右边界。',
   learningGoal: '掌握双向最值扫描锁定无序边界的局部贪心原理',
+  aliases: ['class091-code01', 'shortest-unsorted-subarray-581', 'leetcode-581', 'shortest-unsorted-subarray'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

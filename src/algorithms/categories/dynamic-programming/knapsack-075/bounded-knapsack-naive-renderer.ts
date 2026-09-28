@@ -683,6 +683,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 075 Code01：洛谷 P1776 宝物筛选，多重背包基准朴素三重循环枚举每种物品件数 k',
   icon: '📦',
+  aliases: ['class075-code01', 'bounded-knapsack-naive-075', 'multiple-knapsack-naive', 'luogu-p1776-naive'],
   template,
   Visualizer,
   difficulty: 2,

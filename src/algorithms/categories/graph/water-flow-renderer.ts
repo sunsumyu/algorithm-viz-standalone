@@ -311,6 +311,7 @@ export function renderWaterFlowCanvas(container: HTMLElement, step: WFStep): voi
 
 registerDeclarativeAlgorithm({
   id: 'water-flow',
+  aliases: ['class058-code04', 'pacific-atlantic-417'],
   name: '太平洋大西洋水流 (LC 417)',
   category: 'graph',
   description: '逆向思维：分别从太平洋与大西洋边界逆流登山搜索，求双洋可达性交集',

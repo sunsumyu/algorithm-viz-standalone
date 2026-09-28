@@ -106,6 +106,7 @@ export function buildArithmeticDiff051Steps(): ArithmeticDiff051Step[] {
 
 export const arithmeticDiff051Visualizer = registerDeclarativeAlgorithm<ArithmeticDiff051Step>({
   id: 'arithmetic-sequence-difference-051',
+  aliases: ['class051-code01', 'luogu-p4231', 'arithmetic-diff-4231', 'arithmetic-sequence-difference'],
   name: '等差数列差分与两次前缀和 (Class 051)',
   category: 'array',
   difficulty: 'hard',

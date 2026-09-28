@@ -167,6 +167,7 @@ registerAlgorithm({
   icon: '🦘',
   difficulty: 2,
   levelOrder: 931,
+  aliases: ['class093-code01', 'jump-game-ii-45', 'leetcode-45', 'jump-game-2'],
   learningGoal: '掌握分段推进右边界与下一步最远覆盖的贪心跳跃策略',
   description: '跳跃游戏 II (Jump Game II)：维护当前跳跃右边界 curEnd 与下一步最远覆盖 nextReach，触碰边界即贪心跳跃',
   template: `<div id="jump-game-ii" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`,

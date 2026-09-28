@@ -424,7 +424,7 @@ export const longestValidParenthesesVisualizer = registerDeclarativeAlgorithm<Pa
   icon: '🧶',
   difficulty: 3,
   levelOrder: 32,
-  aliases: ['longest-valid-parentheses-066', 'longest-valid-parentheses-class066', 'leetcode-32'],
+  aliases: ['class066-code06', 'longest-valid-parentheses-066', 'longest-valid-parentheses-class066', 'leetcode-32'],
   learningGoal: '掌握 LeetCode 32 最长有效连续括号的栈底基准哨兵法与动态规划状态转移技巧',
   problemHtml: `
     <div style="line-height: 1.6;">

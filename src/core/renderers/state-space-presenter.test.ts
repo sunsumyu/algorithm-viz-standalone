@@ -411,5 +411,46 @@ describe('StateSpacePresenter (Deep Facade & Scoped Container)', () => {
       })
     );
   });
+
+  it('从背包沙盘 Stage 1 切换到 Stage 3 时，container 的 display 和 class 必须重置为 grid，杜绝 flex 单列排布', () => {
+    const parent = new MockElement('grid-wrapper');
+    const container = new MockElement('grid-container');
+    parent.appendChild(container);
+
+    const step: UniversalStep = {
+      type: 'entry',
+      i: 0,
+      j: 11,
+      grid: [[0]]
+    };
+
+    // 1. 在 Stage 1 下渲染背包沙盘
+    StateSpacePresenter.renderCard1(container as any, {
+      currentStage: 'stage-1',
+      step,
+      m: 4,
+      n: 12,
+      isReverse: false,
+      modelId: 'partition-equal-subset-sum'
+    });
+
+    expect(container.style.display).toBe('flex');
+    expect(container.className).toContain('flex-col');
+
+    // 2. 切换到 Stage 3（二维DP）
+    StateSpacePresenter.renderCard1(container as any, {
+      currentStage: 'stage-3',
+      step,
+      m: 4,
+      n: 12,
+      isReverse: false,
+      modelId: 'partition-equal-subset-sum'
+    });
+
+    // 必须恢复为标准的 display: grid 与 grid 类名，消除单列纵向坍塌
+    expect(container.style.display).toBe('grid');
+    expect(container.className).toContain('grid');
+    expect(container.className).not.toContain('flex-col');
+  });
 });
 

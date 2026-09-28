@@ -112,6 +112,7 @@ export function buildVirtualNodesSteps(): VirtualNodesStep[] {
 export const virtualNodesConstructionVisualizer = registerDeclarativeAlgorithm<VirtualNodesStep>({
   id: 'virtual-nodes-construction-192',
   name: '虚点优化建图与虚拟源汇 (Class 192)',
+  aliases: ['class192-code01', 'virtual-nodes-construction-192', 'virtual-nodes-graph'],
   category: 'graph',
   icon: '🎯',
   difficulty: 3,

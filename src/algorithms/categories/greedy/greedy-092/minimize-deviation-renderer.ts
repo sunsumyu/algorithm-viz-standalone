@@ -132,6 +132,7 @@ export const minimizeDeviationVisualizer = registerDeclarativeAlgorithm<Minimize
   icon: '📉',
   difficulty: 3,
   levelOrder: 921,
+  aliases: ['class092-code01', 'minimize-deviation-1675', 'leetcode-1675', 'minimize-deviation'],
   learningGoal: '掌握全奇数乘以2的数值单调归一化与大顶堆贪心缩小极差的证明',
   problemHtml: GREEDY_092_PROBLEMS.minimizeDeviation.html,
   analysisHtml: GREEDY_092_PROBLEMS.minimizeDeviation.html,

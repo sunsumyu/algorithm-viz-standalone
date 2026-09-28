@@ -511,6 +511,7 @@ export const binarySearch004Visualizer = registerDeclarativeAlgorithm<BinarySear
   icon: '🎯',
   difficulty: 1,
   levelOrder: 4,
+  aliases: ['class004-code02', 'class005-code01', 'binary-search-logarithmic-004', 'binary-search-verifier', 'logarithmic-verifier'],
   learningGoal: '掌握有序数组二分边界查找、无序数组局部最小值二分，以及对数器大样本随机对比验证思想',
   problemHtml: `
     <div style="line-height: 1.6;">

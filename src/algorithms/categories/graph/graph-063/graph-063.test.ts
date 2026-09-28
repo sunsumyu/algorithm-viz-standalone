@@ -153,5 +153,23 @@ describe('左程云 Class 063 算法专题全量测试', () => {
         }
       }
     });
+
+    it('所有 4 个算法必须具备规范的 class063-codeXX 课号别名与权威题目别名', () => {
+      const aliasMap: Record<string, string[]> = {
+        'word-ladder-063': ['class063-code01', 'leetcode-127'],
+        'snacks-ways-buy-tickets-063': ['class063-code02', 'luogu-p4799'],
+        'closest-subsequence-sum-063': ['class063-code03', 'leetcode-1755'],
+        'partition-minimize-difference-063': ['class063-code04', 'leetcode-2035'],
+      };
+
+      for (const [id, expectedAliases] of Object.entries(aliasMap)) {
+        const manifest = algorithmRegistry.getManifest(id);
+        expect(manifest).toBeDefined();
+        for (const alias of expectedAliases) {
+          expect(manifest?.aliases, `${id} 应包含别名 ${alias}`).toContain(alias);
+        }
+      }
+    });
   });
 });
+

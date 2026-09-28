@@ -174,6 +174,7 @@ export const stringHashVisualizer = registerDeclarativeAlgorithm<StringHashStep>
   icon: '🗝️',
   difficulty: 2,
   levelOrder: 105,
+  aliases: ['class105-code01', 'string-hash', 'rolling-hash', 'luogu-p3370'],
   learningGoal: '掌握 P 进制字符串哈希与前缀累加模型，学会利用乘方差分在 O(1) 常数时间内精确提取并比对任意子串',
   problemHtml: STRING_100_105_PROBLEMS.stringHash.html,
   analysisHtml: STRING_100_105_PROBLEMS.stringHash.html,

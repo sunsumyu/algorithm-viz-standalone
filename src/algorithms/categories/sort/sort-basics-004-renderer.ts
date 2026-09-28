@@ -296,6 +296,7 @@ export const sortBasics004Visualizer = registerDeclarativeAlgorithm<Sort004Step>
   icon: '📶',
   difficulty: 1,
   levelOrder: 4,
+  aliases: ['class001-code01', 'class003-code01', 'class004-code01', 'sort-basics-004', 'selection-sort-004', 'bubble-sort-004', 'insertion-sort-004'],
   learningGoal: '掌握选择排序、冒泡排序、插入排序的核心指针演化与大 O 复杂度最坏/最好情形分析',
   problemHtml: `
     <div style="font-family: inherit; line-height: 1.6; color: #1e293b;">

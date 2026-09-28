@@ -438,4 +438,5 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 905,
   learningGoal: '掌握双堆协同设计模式与超集支配单调扩张性质',
+  aliases: ['class090-code05', 'ipo', 'ipo-502', 'leetcode-502'],
 });

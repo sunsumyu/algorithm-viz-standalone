@@ -113,4 +113,47 @@ describe('左神经典博弈专题一 (game-095) 自动化测试套件', () => {
     verifyLineMap(stepsNonCold, WYTHOFF_GAME_CODES);
     expect(stepsNonCold[stepsNonCold.length - 1].isFirstWin).toBe(true);
   });
+
+  it('7. Class 095 经典博弈论专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'bash-game-095',
+        aliases: ['class095-code01', 'bash-game', 'hdu-1846'],
+      },
+      {
+        id: 'prime-power-stones-095',
+        aliases: ['class095-code02', 'prime-power-stones', 'prime-power-game'],
+      },
+      {
+        id: 'nim-game-095',
+        aliases: ['class095-code03', 'nim-game', 'nim-game-292', 'leetcode-292', 'hdu-1850'],
+      },
+      {
+        id: 'anti-nim-game-095',
+        aliases: ['class095-code04', 'anti-nim-game', 'misere-nim', 'sj-theorem', 'poj-3480'],
+      },
+      {
+        id: 'fibonacci-game-095',
+        aliases: ['class095-code05', 'fibonacci-game', 'zeckendorf-game'],
+      },
+      {
+        id: 'wythoff-game-095',
+        aliases: ['class095-code06', 'wythoff-game', 'poj-1067'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

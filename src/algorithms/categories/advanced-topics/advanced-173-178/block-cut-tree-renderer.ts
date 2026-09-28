@@ -93,6 +93,7 @@ export function buildBlockCutSteps(): BlockCutStep[] {
 export const blockCutTreeVisualizer = registerDeclarativeAlgorithm<BlockCutStep>({
   id: 'block-cut-tree-178',
   name: '圆方树 Block-Cut Tree (Class 178)',
+  aliases: ['class178-code01', 'block-cut-tree-178', 'cactus-block-cut-tree'],
   category: 'graph',
   icon: '🌵',
   difficulty: 3,

@@ -40,6 +40,10 @@ export class ModelSynthesisEngine {
     'matchsticks-to-square': { nums: [1, 1, 2, 2, 2], n: 5 },
     'partition-k-equal-subsets': { nums: [4, 3, 2, 3, 5, 2, 1], k: 4, n: 7 },
     'tsp-bitmask-dp': { n: 4 },
+    'number-of-ways-wear-hats': { hats: [[3, 4], [4, 5], [5]], n: 3 },
+    'optimal-account-balancing': { transactions: [[0, 1, 10], [2, 0, 5]], n: 3 },
+    'good-subsets': { nums: [4, 2, 3, 15], n: 4 },
+    'distribute-repeating-integers': { nums: [1, 1, 2, 2], quantity: [2, 2], n: 4 },
     'count-digit-one': { n: 13 },
     'non-negative-consecutive-ones': { n: 5 },
   };

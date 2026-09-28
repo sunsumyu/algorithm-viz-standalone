@@ -104,6 +104,7 @@ export function buildHeapSort040Steps(): HeapSort040Step[] {
 
 export const heapSort040Visualizer = registerDeclarativeAlgorithm<HeapSort040Step>({
   id: 'heap-sort-040',
+  aliases: ['class040-code01', 'class014-code01', 'heap-sort-040', 'heap-sort', 'heapify'],
   name: '堆结构与堆排序 (Class 040)',
   category: 'tree',
   difficulty: 'medium',

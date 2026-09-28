@@ -92,6 +92,7 @@ export function buildPrefixSuffixSteps(): PrefixSuffixStep[] {
 export const prefixSuffixGraphVisualizer = registerDeclarativeAlgorithm<PrefixSuffixStep>({
   id: 'prefix-suffix-graph-193',
   name: '前缀与后缀优化建图 (Class 193)',
+  aliases: ['class193-code01', 'prefix-suffix-graph-193', 'prefix-optimization-graph'],
   category: 'graph',
   icon: '⛓️',
   difficulty: 3,

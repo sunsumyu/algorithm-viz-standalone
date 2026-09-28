@@ -691,6 +691,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 075 Code02：洛谷 P1776 宝物筛选，将多重背包物品按二进制位权拆解转化为 01 背包的标准模版',
   icon: '✂️',
+  aliases: ['class075-code02', 'bounded-knapsack-binary-075', 'multiple-knapsack-binary', 'luogu-p1776'],
   template,
   Visualizer,
   difficulty: 2,

@@ -146,6 +146,7 @@ export function buildKMSteps(): KMStep[] {
 export const kmMatchingVisualizer = registerDeclarativeAlgorithm<KMStep>({
   id: 'km-matching-176',
   name: '二分图最大权完美匹配 KM 算法 (Class 176)',
+  aliases: ['class176-code01', 'km-matching-176', 'km-algorithm'],
   category: 'graph',
   icon: '⚖️',
   difficulty: 3,

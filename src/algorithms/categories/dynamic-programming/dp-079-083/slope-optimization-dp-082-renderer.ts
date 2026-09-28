@@ -196,6 +196,7 @@ export const slopeOptDp082Visualizer = registerDeclarativeAlgorithm<SlopeOpt082S
   name: '斜率优化 DP 与单调队列凸包 (Class 082)',
   category: 'dynamic-programming',
   difficulty: 'hard',
+  aliases: ['class082-slope-opt', 'slope-optimization-dp', 'toy-packing-slope-opt', 'luogu-p3195'],
   problemContent: DP_079_083_PROBLEMS.slopeOptDp082,
   sourceCodes: SLOPE_OPTIMIZATION_DP_082_CODES,
   generateSteps: buildSlopeOpt082Steps,

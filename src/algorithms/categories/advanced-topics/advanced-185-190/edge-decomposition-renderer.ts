@@ -117,6 +117,7 @@ export function buildEdgeDecompSteps(): EdgeDecompStep[] {
 export const edgeDecompositionVisualizer = registerDeclarativeAlgorithm<EdgeDecompStep>({
   id: 'edge-decomposition-186',
   name: '树上边分治与边分树 (Class 186)',
+  aliases: ['class186-code01', 'edge-decomposition-186', 'edge-centroid-decomposition'],
   category: 'tree',
   icon: '✂️',
   difficulty: 3,

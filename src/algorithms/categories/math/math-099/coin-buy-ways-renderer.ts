@@ -118,6 +118,7 @@ export const coinBuyWaysVisualizer = registerDeclarativeAlgorithm<CoinBuyStep>({
   icon: '🪙',
   difficulty: 3,
   levelOrder: 995,
+  aliases: ['class099-code05', 'coin-buy-ways', 'haoi-2008-coins', 'luogu-p1450'],
   learningGoal: '掌握完全背包预处理与 2^k 状态子集容斥原理（奇减偶加）化解有限背包的妙法',
   problemHtml: MATH_099_PROBLEMS.coinBuyWays.html,
   analysisHtml: MATH_099_PROBLEMS.coinBuyWays.html,

@@ -130,6 +130,7 @@ export const coinFlipGameVisualizer = registerDeclarativeAlgorithm<CoinFlipStep>
   icon: '🪙',
   difficulty: 3,
   levelOrder: 965,
+  aliases: ['class096-code05', 'coin-flip-game', 'coin-flip-sg', 'turning-turtles'],
   learningGoal: '掌握翻硬币博弈独立可加性与 Turning Turtles 正面朝上位置 SG 异或合成',
   problemHtml: GAME_096_PROBLEMS.coinFlipGameSg.html,
   analysisHtml: GAME_096_PROBLEMS.coinFlipGameSg.html,

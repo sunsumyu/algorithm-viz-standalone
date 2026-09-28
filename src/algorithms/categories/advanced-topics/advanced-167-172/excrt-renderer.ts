@@ -132,6 +132,7 @@ export function buildEXCRTSteps(eqs: EXCRTEquation[]): EXCRTStep[] {
 export const excrtVisualizer = registerDeclarativeAlgorithm<EXCRTStep>({
   id: 'excrt-theorem-168',
   name: '扩展中国剩余定理 EXCRT (Class 168)',
+  aliases: ['class168-code01', 'excrt-theorem-168', 'excrt'],
   category: 'math',
   icon: '🧩',
   difficulty: 3,

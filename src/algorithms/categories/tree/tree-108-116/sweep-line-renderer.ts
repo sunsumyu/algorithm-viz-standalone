@@ -140,6 +140,7 @@ export function buildSweepLineSteps(rectangles: Rectangle[]): SweepLineStep[] {
 export const sweepLineVisualizer = registerDeclarativeAlgorithm<SweepLineStep>({
   id: 'sweep-line-115',
   name: '扫描线与矩形面积并 (Class 115)',
+  aliases: ['class115-code01', 'sweep-line', 'sweep-line-115', 'rectangle-area-union'],
   category: 'tree',
   icon: '📐',
   difficulty: 3,

@@ -110,6 +110,7 @@ export const singleNumberIIIRenderer = registerDeclarativeAlgorithm<SingleNumber
   category: 'bit',
   categoryName: '位运算与状态压缩',
   description: '只出现一次的数字 III：异或分组与最低位 1 的分流算法',
+  aliases: ['class032-code01', 'single-number-260', 'leetcode-260', 'single-number-3'],
   timeComplexity: BIT_PROBLEMS.singleNumberIII.timeComplexity,
   spaceComplexity: BIT_PROBLEMS.singleNumberIII.spaceComplexity,
   analysisHtml: BIT_PROBLEMS.singleNumberIII.html,

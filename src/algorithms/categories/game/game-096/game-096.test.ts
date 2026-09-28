@@ -102,4 +102,47 @@ describe('左神 SG 函数与综合博弈专题二 (game-096) 自动化测试套
     expect(last.sgTable![2]).toBe(1); // 2 分裂为 (1,1) -> SG(1)^SG(1)=0 -> mex=1
     expect(last.sgTable).toBeDefined();
   });
+
+  it('7. Class 096 SG 函数与综合博弈专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'bash-game-sg-096',
+        aliases: ['class096-code01', 'bash-game-sg', 'bash-sg'],
+      },
+      {
+        id: 'nim-game-sg-096',
+        aliases: ['class096-code02', 'nim-game-sg', 'nim-sg'],
+      },
+      {
+        id: 'two-stones-bash-096',
+        aliases: ['class096-code03', 'two-stones-bash', 'two-pile-bash'],
+      },
+      {
+        id: 'three-stones-fibonacci-096',
+        aliases: ['class096-code04', 'three-stones-fibonacci', 'hdu-1847-ext'],
+      },
+      {
+        id: 'coin-flip-game-sg-096',
+        aliases: ['class096-code05', 'coin-flip-game', 'coin-flip-sg', 'turning-turtles'],
+      },
+      {
+        id: 'split-game-sg-096',
+        aliases: ['class096-code06', 'split-game-sg', 'split-stones-game', 'poj-2311'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

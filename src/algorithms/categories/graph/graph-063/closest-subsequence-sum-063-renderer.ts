@@ -222,7 +222,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 063 Code03：折半搜索 Meet in the Middle + 双指针相向逼近，时间复杂度 O(2^(N/2) * log(2^(N/2))) (LeetCode 1755)',
-  aliases: ['closest-subsequence-sum', 'min-abs-subsequence-sum-1755'],
+  aliases: ['class063-code03', 'closest-subsequence-sum-063', 'closest-subsequence-sum', 'min-abs-subsequence-sum-1755', 'leetcode-1755'],
   problemHtml: GRAPH_063_PROBLEMS['closest-subsequence-sum-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['closest-subsequence-sum-063'].complexityHtml,
   codeLanguages: CLOSEST_SUBSEQUENCE_SUM_063_CODES,

@@ -107,3 +107,84 @@ export const MAKING_LARGE_ISLAND_058_LINES: Record<string, CodeMapping> = {
   combineAreas:{ java: 15, cpp: 15, python: 14, javascript: 15 },
   returnAns:   { java: 20, cpp: 20, python: 16, javascript: 20 },
 };
+
+// -------------------------------------------------------------
+// Code01: 图像渲染 (Flood Fill / LeetCode 733)
+// -------------------------------------------------------------
+export const FLOOD_FILL_058_CODES: Record<string, string[]> = {
+  java: [
+    'public int[][] floodFill(int[][] image, int sr, int sc, int color) {', // 1
+    '    if (image[sr][sc] == color) return image; // 避免同色死循环', // 2
+    '    int orig = image[sr][sc];', // 3
+    '    dfs(image, sr, sc, orig, color);', // 4
+    '    return image;', // 5
+    '}', // 6
+    'private void dfs(int[][] img, int r, int c, int orig, int color) {', // 7
+    '    if (r < 0 || r >= img.length || c < 0 || c >= img[0].length || img[r][c] != orig) return;', // 8
+    '    img[r][c] = color;', // 9
+    '    dfs(img, r - 1, c, orig, color); // 上', // 10
+    '    dfs(img, r + 1, c, orig, color); // 下', // 11
+    '    dfs(img, r, c - 1, orig, color); // 左', // 12
+    '    dfs(img, r, c + 1, orig, color); // 右', // 13
+    '}', // 14
+  ],
+  cpp: [
+    'vector<vector<int>> floodFill(vector<vector<int>>& image, int sr, int sc, int color) {', // 1
+    '    if (image[sr][sc] == color) return image;', // 2
+    '    int orig = image[sr][sc];', // 3
+    '    dfs(image, sr, sc, orig, color);', // 4
+    '    return image;', // 5
+    '}', // 6
+    'void dfs(vector<vector<int>>& img, int r, int c, int orig, int color) {', // 7
+    '    if (r < 0 || r >= img.size() || c < 0 || c >= img[0].size() || img[r][c] != orig) return;', // 8
+    '    img[r][c] = color;', // 9
+    '    dfs(img, r - 1, c, orig, color);', // 10
+    '    dfs(img, r + 1, c, orig, color);', // 11
+    '    dfs(img, r, c - 1, orig, color);', // 12
+    '    dfs(img, r, c + 1, orig, color);', // 13
+    '}', // 14
+  ],
+  python: [
+    'def flood_fill(image: list[list[int]], sr: int, sc: int, color: int) -> list[list[int]]:', // 1
+    '    if image[sr][sc] == color:', // 2
+    '        return image', // 3
+    '    orig = image[sr][sc]', // 4
+    '    def dfs(r: int, c: int):', // 5
+    '        if not (0 <= r < len(image) and 0 <= c < len(image[0])) or image[r][c] != orig:', // 6
+    '            return', // 7
+    '        image[r][c] = color', // 8
+    '        dfs(r - 1, c)', // 9
+    '        dfs(r + 1, c)', // 10
+    '        dfs(r, c - 1)', // 11
+    '        dfs(r, c + 1)', // 12
+    '    dfs(sr, sc)', // 13
+    '    return image', // 14
+  ],
+  javascript: [
+    'function floodFill(image, sr, sc, color) {', // 1
+    '    if (image[sr][sc] === color) return image;', // 2
+    '    const orig = image[sr][sc];', // 3
+    '    function dfs(r, c) {', // 4
+    '        if (r < 0 || r >= image.length || c < 0 || c >= image[0].length || image[r][c] !== orig) return;', // 5
+    '        image[r][c] = color;', // 6
+    '        dfs(r - 1, c);', // 7
+    '        dfs(r + 1, c);', // 8
+    '        dfs(r, c - 1);', // 9
+    '        dfs(r, c + 1);', // 10
+    '    }', // 11
+    '    dfs(sr, sc);', // 12
+    '    return image;', // 13
+    '}', // 14
+  ],
+};
+
+export const FLOOD_FILL_058_LINES: Record<string, CodeMapping> = {
+  entry:      { java: 1, cpp: 1, python: 1, javascript: 1 },
+  checkSame:  { java: 2, cpp: 2, python: 2, javascript: 2 },
+  startDfs:   { java: 4, cpp: 4, python: 13, javascript: 12 },
+  checkBound: { java: 8, cpp: 8, python: 6, javascript: 5 },
+  dyeCell:    { java: 9, cpp: 9, python: 8, javascript: 6 },
+  spread:     { java: 10, cpp: 10, python: 9, javascript: 7 },
+  returnAns:  { java: 5, cpp: 5, python: 14, javascript: 13 },
+};
+

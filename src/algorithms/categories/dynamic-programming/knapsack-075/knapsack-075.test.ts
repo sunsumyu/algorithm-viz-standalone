@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
 import {
   buildBoundedKnapsackNaiveSteps,
 } from './bounded-knapsack-naive-renderer';
@@ -319,4 +320,29 @@ describe('🧪 Class 075 背包DP - 多重背包与混合背包核心逻辑与�
       expect(last.dpTable[3][10]).toBe(0);
     });
   });
+
+  // ==========================================
+  // 6. Class 075 全 5 题算法中心注册与课号别名统合核验
+  // ==========================================
+  describe('6. Class 075 全 5 题算法中心注册与课号别名统合核验', () => {
+    const class075Suites = [
+      { id: 'bounded-knapsack-naive', code: 'class075-code01', alias: 'bounded-knapsack-naive-075' },
+      { id: 'bounded-knapsack-binary', code: 'class075-code02', alias: 'bounded-knapsack-binary-075' },
+      { id: 'bounded-knapsack-monotonic-queue', code: 'class075-code03', alias: 'bounded-knapsack-monotonic-queue-075' },
+      { id: 'cherry-blossom-viewing', code: 'class075-code04', alias: 'cherry-blossom-viewing-075' },
+      { id: 'coins-change-kinds', code: 'class075-code05', alias: 'coins-change-kinds-075' },
+    ];
+
+    it.each(class075Suites)('算法 ID "$id" 应已注册且包含别名 "$code"', ({ id, code, alias }) => {
+      const manifest = algorithmRegistry.getManifest(id);
+      expect(manifest, `算法 ${id} 必须注册`).toBeDefined();
+      expect(manifest?.id).toBe(id);
+      expect(manifest?.category).toBe('dynamic-programming');
+      expect(manifest?.aliases).toContain(code);
+      expect(manifest?.aliases).toContain(alias);
+      expect(manifest?.template).toBeDefined();
+      expect(manifest?.Visualizer).toBeDefined();
+    });
+  });
 });
+

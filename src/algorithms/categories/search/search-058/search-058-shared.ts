@@ -6,6 +6,8 @@
 import { StepBase } from '../../../../core/step-visualizer';
 
 export interface Search058Step extends StepBase {
+  title?: string;
+  description?: string;
   decision: string;
   message: string;
   log: string;
@@ -73,3 +75,76 @@ export function renderLargeIslandBoard(
     </div>
   `;
 }
+
+const COLOR_PALETTE: Record<number, { bg: string; border: string; text: string; name: string }> = {
+  0: { bg: '#f1f5f9', border: '#cbd5e1', text: '#475569', name: '灰色(0)' },
+  1: { bg: '#fee2e2', border: '#f87171', text: '#b91c1c', name: '红色(1)' },
+  2: { bg: '#dbeafe', border: '#60a5fa', text: '#1d4ed8', name: '蓝色(2)' },
+  3: { bg: '#dcfce7', border: '#4ade80', text: '#15803d', name: '绿色(3)' },
+  4: { bg: '#fef3c7', border: '#fbbf24', text: '#b45309', name: '黄色(4)' },
+};
+
+export function renderFloodFillBoard(
+  image: number[][],
+  curR: number,
+  curC: number,
+  origColor: number,
+  newColor: number,
+  sr: number,
+  sc: number
+): string {
+  const rows = image.length;
+  const cols = rows > 0 ? image[0].length : 0;
+
+  const origConf = COLOR_PALETTE[origColor] || { bg: '#ffffff', border: '#94a3b8', text: '#334155', name: `颜色(${origColor})` };
+  const newConf = COLOR_PALETTE[newColor] || { bg: '#ffffff', border: '#94a3b8', text: '#334155', name: `颜色(${newColor})` };
+
+  let cellsHtml = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const val = image[r][c];
+      const isCur = r === curR && c === curC;
+      const isStart = r === sr && c === sc;
+      const conf = COLOR_PALETTE[val] || { bg: '#ffffff', border: '#cbd5e1', text: '#334155', name: String(val) };
+
+      let border = conf.border;
+      let outline = 'none';
+      if (isCur) {
+        border = '#dc2626';
+        outline = '2px solid #dc2626';
+      } else if (isStart) {
+        outline = '2px dashed #3b82f6';
+      }
+
+      cellsHtml += `
+        <div style="aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    border-radius: 8px; border: 2px solid ${border}; outline: ${outline}; background: ${conf.bg};
+                    min-width: 44px; min-height: 44px;">
+          <span style="font-size: 14px; font-weight: 800; color: ${conf.text};">${val}</span>
+          <span style="font-size: 8px; color: #64748b;">(${r},${c})</span>
+        </div>
+      `;
+    }
+  }
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 6px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 11.5px; font-weight: 700; color: #334155;">🎨 图像渲染 (Flood Fill 洪水填充沙盘, 网格 ${rows}x${cols})</span>
+        <div style="display: flex; gap: 8px; font-size: 10.5px; font-weight: 700;">
+          <span style="padding: 2px 6px; border-radius: 4px; background: ${origConf.bg}; color: ${origConf.text}; border: 1px solid ${origConf.border};">目标旧色: ${origConf.name}</span>
+          <span style="padding: 2px 6px; border-radius: 4px; background: ${newConf.bg}; color: ${newConf.text}; border: 1px solid ${newConf.border};">渲染新色: ${newConf.name}</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 8px; max-width: ${cols * 56}px; margin: 0 auto;">
+        ${cellsHtml}
+      </div>
+
+      <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; color: #475569;">
+        <span>🎯 起始坐标: (${sr}, ${sc}) · 当前扫描: ${curR >= 0 ? `(${curR}, ${curC})` : '未开始/已完成'}</span>
+      </div>
+    </div>
+  `;
+}
+

@@ -21,7 +21,8 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
     const isUniquePathsII = model.id === 'unique-paths-ii';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
     const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
-    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
+    const isDungeon = model.id === 'dungeon-game-reverse-dp';
+    const isMinPath = (model.id === 'min-path-sum' || Boolean(weightsGrid)) && !isDungeon;
 
     const lineInit = anchorMap?.init || (variant === 'if' ? 4 : 4);
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || 8;
@@ -64,7 +65,71 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       msg: `创建长度为 <code>${nVal}</code> 的一维滚动状态数组 <code>memo</code>，初始值全为 0。`
     });
 
-    if (isMinPath && weightsGrid) {
+    if (isDungeon && weightsGrid) {
+      memo[nVal - 1] = Math.max(1, 1 - weightsGrid[mVal - 1][nVal - 1]);
+      pushStep({
+        type: 'init-slot',
+        line: lineInitVal,
+        i: mVal - 1,
+        j: nVal - 1,
+        activeSlot: nVal - 1,
+        slotMode: 'updated',
+        memoj: memo[nVal - 1],
+        tag: `终点初始化 memo[${nVal - 1}]=${memo[nVal - 1]}`,
+        log: `| 🎬 逆推终点 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+        msg: `逆推终点初始化 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+      });
+
+      for (let j = nVal - 2; j >= 0; j--) {
+        memo[j] = Math.max(1, memo[j + 1] - weightsGrid[mVal - 1][j]);
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i: mVal - 1,
+          j,
+          activeSlot: j,
+          slotMode: 'updated',
+          memoj: memo[j],
+          tag: `最末行逆推 memo[${j}]=${memo[j]}`,
+          log: `| 🎬 最末行 memo[${j}] = ${memo[j]}`,
+          msg: `最末行逆推 <code>memo[${j}] = ${memo[j]}</code>。`
+        });
+      }
+
+      for (let i = mVal - 2; i >= 0; i--) {
+        memo[nVal - 1] = Math.max(1, memo[nVal - 1] - weightsGrid[i][nVal - 1]);
+        pushStep({
+          type: 'init-slot',
+          line: lineInitVal,
+          i,
+          j: nVal - 1,
+          activeSlot: nVal - 1,
+          slotMode: 'updated',
+          memoj: memo[nVal - 1],
+          tag: `最右列逆推 memo[${nVal - 1}]=${memo[nVal - 1]}`,
+          log: `| 🎬 最右列 memo[${nVal - 1}] = ${memo[nVal - 1]}`,
+          msg: `最右列逆推 <code>memo[${nVal - 1}] = ${memo[nVal - 1]}</code>。`
+        });
+
+        for (let j = nVal - 2; j >= 0; j--) {
+          const fromDown = memo[j];
+          const fromRight = memo[j + 1];
+          memo[j] = Math.max(1, Math.min(fromDown, fromRight) - weightsGrid[i][j]);
+          pushStep({
+            type: 'accumulate',
+            line: lineAccumulate,
+            i,
+            j,
+            activeSlot: j,
+            slotMode: 'updated',
+            memoj: memo[j],
+            tag: `memo[${j}] = ${memo[j]}`,
+            log: `| ✨ 滚动更新 memo[${j}] = ${memo[j]}`,
+            msg: `一维状态覆盖：<code>memo[${j}] = <strong>${memo[j]}</strong></code>。`
+          });
+        }
+      }
+    } else if (isMinPath && weightsGrid) {
       if (isForward) {
         memo[0] = weightsGrid[0][0];
         pushStep({

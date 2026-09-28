@@ -149,6 +149,7 @@ export function buildLCTSteps(n: number, initialEdges: { u: number; v: number }[
 export const lctVisualizer = registerDeclarativeAlgorithm<LCTStep>({
   id: 'lct-link-cut-tree-155',
   name: '动态树 Link-Cut Tree (Class 155)',
+  aliases: ['class155-code01', 'lct', 'lct-link-cut-tree-155', 'link-cut-tree'],
   category: 'tree',
   icon: '🌲',
   difficulty: 3,

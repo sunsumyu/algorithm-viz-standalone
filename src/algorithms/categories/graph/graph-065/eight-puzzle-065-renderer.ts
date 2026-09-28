@@ -282,7 +282,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 065 Code03：3x3 棋盘滑动，逆序对奇偶可解性判定与曼哈顿距离启发式 A* 搜索 (洛谷 P1379)',
-  aliases: ['eight-puzzle-1379', 'luogu-p1379', 'eight-puzzle-class065'],
+  aliases: ['class065-code03', 'eight-puzzle-065', 'eight-puzzle-1379', 'luogu-p1379', 'eight-puzzle-class065'],
   problemHtml: GRAPH_065_PROBLEMS['eight-puzzle-065'].problemHtml,
   analysisHtml: GRAPH_065_PROBLEMS['eight-puzzle-065'].complexityHtml,
   codeLanguages: EIGHT_PUZZLE_065_CODES,

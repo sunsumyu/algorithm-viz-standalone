@@ -138,6 +138,7 @@ export const bashGameSgVisualizer = registerDeclarativeAlgorithm<BashSgStep>({
   icon: '🧮',
   difficulty: 3,
   levelOrder: 961,
+  aliases: ['class096-code01', 'bash-game-sg', 'bash-sg'],
   learningGoal: '通过自底向上推导与 mex 算子观察巴什博弈 SG(x) = x % (m+1) 周期性的诞生',
   problemHtml: GAME_096_PROBLEMS.bashGameSg.html,
   analysisHtml: GAME_096_PROBLEMS.bashGameSg.html,

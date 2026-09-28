@@ -89,6 +89,7 @@ export function buildComparator039Steps(): Comparator039Step[] {
 
 export const comparatorPriorityQueue039Visualizer = registerDeclarativeAlgorithm<Comparator039Step>({
   id: 'comparator-priority-queue-039',
+  aliases: ['class039-code01', 'class016-code01', 'comparator-priority-queue', 'priority-queue-comparator'],
   name: '比较器与优先级队列 (Class 039)',
   category: 'tree',
   difficulty: 'easy',

@@ -109,6 +109,7 @@ export const bitsetArrayRenderer = registerDeclarativeAlgorithm<BitsetArrayStep>
   category: 'bit',
   categoryName: '位运算与状态压缩',
   description: '位图结构设计与实现：高性能海量数据去重与常数时间增删查',
+  aliases: ['class033-code01', 'bitmap-array', 'bitset', 'bit-map'],
   timeComplexity: BIT_PROBLEMS.bitsetArray.timeComplexity,
   spaceComplexity: BIT_PROBLEMS.bitsetArray.spaceComplexity,
   analysisHtml: BIT_PROBLEMS.bitsetArray.html,

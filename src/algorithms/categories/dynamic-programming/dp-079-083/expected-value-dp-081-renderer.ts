@@ -143,6 +143,7 @@ export const expectedValueDp081Visualizer = registerDeclarativeAlgorithm<Expecte
   name: '期望 DP 与马尔可夫决策 (Class 081)',
   category: 'dynamic-programming',
   difficulty: 'medium',
+  aliases: ['class081-expected-dp', 'expected-value-dp', 'knight-probability-in-chessboard-688', 'leetcode-688'],
   problemContent: DP_079_083_PROBLEMS.expectedValueDp081,
   sourceCodes: EXPECTED_VALUE_DP_081_CODES,
   generateSteps: buildExpectedValue081Steps,

@@ -11,5 +11,7 @@ import './categories/stack/eval-rpn-renderer';
 import './categories/stack/sliding-window-max-renderer';
 import './categories/stack/top-k-frequent-renderer';
 import './categories/advanced-topics/hard-interview/basic-calculator-full-renderer';
+import './categories/stack/reverse-stack-using-recursive-036-renderer';
+import './categories/stack/sort-stack-using-recursive-036-renderer';
 
 export {};

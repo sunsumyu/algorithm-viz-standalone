@@ -140,6 +140,7 @@ export function buildMonotonicQueueDpSteps(
 export const monotonicQueueDpVisualizer = registerDeclarativeAlgorithm<MonotonicQueueDpStep>({
   id: 'monotonic-queue-dp-130',
   name: '单调队列优化 DP (Class 130)',
+  aliases: ['class130-code01', 'monotonic-queue-dp', 'monotonic-queue-dp-130', 'sliding-window-dp'],
   category: 'dynamic-programming',
   icon: '🎢',
   difficulty: 3,

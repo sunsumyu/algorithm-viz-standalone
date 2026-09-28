@@ -129,9 +129,22 @@ describe('左程云 Class 065: A* 算法与经典面试题专题测试', () => {
   });
 
   describe('3. Class 065 别名统合核验', () => {
-    it('A* 网格寻路 a-star-journey 别名应包含 a-star-journey-065', () => {
+    it('A* 网格寻路 a-star-journey 别名应包含 class065-code01 与 a-star-journey-065', () => {
       const manifest = algorithmRegistry.getManifest('a-star-journey');
+      expect(manifest?.aliases).toContain('class065-code01');
       expect(manifest?.aliases).toContain('a-star-journey-065');
+    });
+
+    it('滑动谜题 sliding-puzzle-065 别名应包含 class065-code02 与 leetcode-773', () => {
+      const manifest = algorithmRegistry.getManifest('sliding-puzzle-065');
+      expect(manifest?.aliases).toContain('class065-code02');
+      expect(manifest?.aliases).toContain('leetcode-773');
+    });
+
+    it('八数码难题 eight-puzzle-065 别名应包含 class065-code03 与 luogu-p1379', () => {
+      const manifest = algorithmRegistry.getManifest('eight-puzzle-065');
+      expect(manifest?.aliases).toContain('class065-code03');
+      expect(manifest?.aliases).toContain('luogu-p1379');
     });
 
     it('贴纸拼词 stickers-to-spell-word-062 别名应包含 stickers-class065', () => {
@@ -140,3 +153,4 @@ describe('左程云 Class 065: A* 算法与经典面试题专题测试', () => {
     });
   });
 });
+

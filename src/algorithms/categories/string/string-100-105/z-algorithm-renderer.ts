@@ -159,6 +159,7 @@ export const zAlgorithmVisualizer = registerDeclarativeAlgorithm<ZAlgorithmStep>
   icon: '📦',
   difficulty: 2,
   levelOrder: 104,
+  aliases: ['class104-code01', 'z-algorithm', 'extended-kmp', 'luogu-p5410'],
   learningGoal: '理解 Z-Box 匹配盒机制、后缀与前缀 LCP 的线性递推原理及其与 KMP、Manacher 的对偶设计思想',
   problemHtml: STRING_100_105_PROBLEMS.zAlgorithm.html,
   analysisHtml: STRING_100_105_PROBLEMS.zAlgorithm.html,

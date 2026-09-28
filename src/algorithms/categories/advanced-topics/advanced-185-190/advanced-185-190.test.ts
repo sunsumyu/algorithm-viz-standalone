@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildEulerDfnSteps } from './euler-dfn-lca-renderer';
 import { buildEdgeDecompSteps } from './edge-decomposition-renderer';
 import { buildEulerianSteps } from './eulerian-path-circuit-renderer';
@@ -106,4 +108,26 @@ describe('左神高阶树论、欧拉图与连通性分量专题 (Class 185 ~ 19
       verify1BasedCodeLines(steps, VERTEX_BCC_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 185 ~ 190)', () => {
+    it('所有高阶树论、欧拉图与连通性分量课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class185-code01': 'euler-dfn-lca-185',
+        'class186-code01': 'edge-decomposition-186',
+        'class187-code01': 'eulerian-path-circuit-187',
+        'class188-code01': 'tarjan-scc-condensation-188',
+        'class189-code01': 'edge-biconnected-components-189',
+        'class190-code01': 'vertex-biconnected-components-190',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

@@ -6,6 +6,7 @@ export interface Dp066StepBase {
   message: string;
   explanation?: string;
   line: number;
+  codeLine?: import('../../../../core/step-visualizer').HighlightTarget;
   highlightedIndices?: number[];
   metrics?: Record<string, string | number>;
 }

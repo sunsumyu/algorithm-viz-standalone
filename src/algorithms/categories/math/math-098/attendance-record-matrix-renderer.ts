@@ -104,6 +104,7 @@ export const attendanceRecordMatrixVisualizer = registerDeclarativeAlgorithm<Att
   icon: '📋',
   difficulty: 3,
   levelOrder: 987,
+  aliases: ['class098-code07', 'attendance-record-matrix', 'student-attendance-record-ii-552', 'leetcode-552'],
   learningGoal: '掌握有限状态机 (DFA) 到 6×6 状态转移矩阵的构建与多重合法约束解析',
   problemHtml: MATH_098_PROBLEMS.attendanceRecord.html,
   analysisHtml: MATH_098_PROBLEMS.attendanceRecord.html,

@@ -129,6 +129,7 @@ export function buildParallelBSSteps(): ParallelBSStep[] {
 export const parallelBinarySearchVisualizer = registerDeclarativeAlgorithm<ParallelBSStep>({
   id: 'parallel-binary-search-184',
   name: '整体二分 (Parallel Binary Search / Class 184)',
+  aliases: ['class184-code01', 'parallel-binary-search-184', 'overall-binary-search'],
   category: 'search',
   icon: '⚖️',
   difficulty: 3,

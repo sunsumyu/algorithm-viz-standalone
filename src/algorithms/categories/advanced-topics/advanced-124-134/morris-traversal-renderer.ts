@@ -152,6 +152,7 @@ export function buildMorrisSteps(
 export const morrisVisualizer = registerDeclarativeAlgorithm<MorrisStep>({
   id: 'morris-traversal-124',
   name: 'Morris 遍历 (Class 124)',
+  aliases: ['class124-code01', 'morris-traversal', 'morris-traversal-124', 'inorder-morris'],
   category: 'tree',
   icon: '🧵',
   difficulty: 3,

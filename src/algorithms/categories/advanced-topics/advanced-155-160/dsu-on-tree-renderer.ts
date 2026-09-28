@@ -125,6 +125,7 @@ export function buildDSUSteps(): DSUStep[] {
 export const dsuOnTreeVisualizer = registerDeclarativeAlgorithm<DSUStep>({
   id: 'dsu-on-tree-158',
   name: '树上启发式合并 DSU on Tree (Class 158)',
+  aliases: ['class158-code01', 'dsu-on-tree-158'],
   category: 'tree',
   icon: '🌳',
   difficulty: 3,

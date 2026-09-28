@@ -146,6 +146,7 @@ export function buildFHQSteps(items: { val: number; pri: number }[], splitKey: n
 export const fhqTreapVisualizer = registerDeclarativeAlgorithm<FHQStep>({
   id: 'treap-fhq-154',
   name: '非旋 Treap / FHQ-Treap (Class 154)',
+  aliases: ['class154-code01', 'treap-fhq', 'treap-fhq-154', 'fhq-treap'],
   category: 'tree',
   icon: '🎋',
   difficulty: 3,

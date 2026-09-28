@@ -129,6 +129,7 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     const weightsInput = root?.querySelector('#dp-input-weights') as HTMLInputElement | null;
     const valuesInput = root?.querySelector('#dp-input-values') as HTMLInputElement | null;
     const coinsInput = root?.querySelector('#dp-input-coins') as HTMLInputElement | null;
+    const stonesInput = root?.querySelector('#dp-input-stones') as HTMLInputElement | null;
     const sInput = root?.querySelector('#dp-input-s') as HTMLInputElement | null;
     const tInput = root?.querySelector('#dp-input-t') as HTMLInputElement | null;
     const s1Input = root?.querySelector('#dp-input-s1') as HTMLInputElement | null;
@@ -169,6 +170,11 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     if (weightsInput) inputObj.weights = parseNums(weightsInput.value, [1, 3, 4]);
     if (valuesInput) inputObj.values = parseNums(valuesInput.value, [15, 20, 30]);
     if (coinsInput) inputObj.coins = parseNums(coinsInput.value, [1, 2, 5]);
+    if (stonesInput) inputObj.stones = parseNums(stonesInput.value, [3, 2, 4, 1]);
+    if (!inputObj.stones && specId === 'merge-stones') inputObj.stones = [3, 2, 4, 1];
+    if (specId === 'min-score-triangulation' && (!inputObj.values || inputObj.values.length < 3)) {
+      inputObj.values = valuesInput ? parseNums(valuesInput.value, [1, 2, 3]) : [1, 2, 3];
+    }
     if (sInput) inputObj.s = sInput.value.trim();
     if (tInput) inputObj.t = tInput.value.trim();
     if (s1Input) inputObj.s1 = s1Input.value.trim();
@@ -191,6 +197,19 @@ export function makeEngineBuilder(specId: string): DemoBuilder {
     if (minProfitInput) inputObj.minProfit = parseInt(minProfitInput.value, 10) || 3;
     if (groupInput) inputObj.group = parseNums(groupInput.value, [2, 2]);
     if (profitInput) inputObj.profit = parseNums(profitInput.value, [2, 3]);
+
+    const quantityInput = root?.querySelector('#dp-input-quantity') as HTMLInputElement | null;
+    if (quantityInput) inputObj.quantity = parseNums(quantityInput.value, [2, 2]);
+
+    const hatsInput = root?.querySelector('#dp-input-hats') as HTMLInputElement | null;
+    if (hatsInput) {
+      try { inputObj.hats = JSON.parse(hatsInput.value); } catch { inputObj.hats = [[3, 4], [4, 5], [5]]; }
+    }
+
+    const transactionsInput = root?.querySelector('#dp-input-transactions') as HTMLInputElement | null;
+    if (transactionsInput) {
+      try { inputObj.transactions = JSON.parse(transactionsInput.value); } catch { inputObj.transactions = [[0, 1, 10], [2, 0, 5]]; }
+    }
 
     // paths-divisible-by-k 默认网格
     if (specId === 'paths-divisible-by-k' && !inputObj.grid) {
@@ -443,16 +462,22 @@ const articles: ArticleDef[] = dpArticles;
 const demos: DemoDef[] = [
   {
     ...oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
-    aliases: ['fibonacci-066', 'fibonacci-class066', 'leetcode-509'],
+    aliases: ['class066-code01', 'fibonacci-066', 'fibonacci-class066', 'leetcode-509'],
   },
-  oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
-  numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
+  {
+    ...oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
+    aliases: ['class066-code01-alt', 'climbing-stairs', 'climb-stairs', 'leetcode-70'],
+  },
+  {
+    ...numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
+    aliases: ['min-cost-climbing-stairs', 'min-cost-stairs', 'leetcode-746'],
+  },
   {
     id: 'decode-ways',
     name: '解码方法',
     description: '数字串翻译方案数（LeetCode 91）：取 1 位或 2 位数字映射为 A-Z。',
     icon: '🔢',
-    aliases: ['decode-ways-066', 'decode-ways-class066', 'leetcode-91'],
+    aliases: ['class066-code03', 'decode-ways-066', 'decode-ways-class066', 'leetcode-91'],
     inputs: [{ id: 's', label: '数字串 s', value: '226', width: 140 }],
     examples: [
       { label: 's="226"', values: { s: '226' } },
@@ -468,10 +493,22 @@ const demos: DemoDef[] = [
   bagDef('knapsack-01-2d', '0-1背包问题（二维）', '每个物品只能使用一次：dp[i][j] 表示前 i 件物品在容量 j 下的最大价值。', '🎒', '01-knapsack'),
   bagDef('knapsack-01-1d', '0-1背包问题（一维）', '滚动数组空间压缩：容量 j 必须从大到小倒序遍历，避免同件物品被重复选入。', '🎒', '01-knapsack'),
   numsDef('partition-equal-subset-sum', '分割等和子集', '判断是否能将数组划分为两个和相等的子集（转化为容量为 sum/2 的 0/1 背包）。', '⚖️', 'partition-subset', '1,5,11,5'),
-  numsDef('last-stone-weight-ii', '最后一块石头的重量 II', '两两粉碎等价于将石头分成总重最接近的两堆（0/1 背包）。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
-  numsDef('last-stone-weight-ii-standard', '最后一块石头的重量 II (第 73 课标准版)', '左程云算法通关课 Class 073 Code04：LeetCode 1049 最后一块石头，两两粉碎对消等价于两堆差值极小化，归约为 <= sum/2 01 背包。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
-  numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。', '', 'target-sum', '1,1,1,1,1'),
-  numsDef('target-sum-standard', '目标和 (第 73 课标准版)', '左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，四阶段全演化（暴力递归/HashMap 记忆化/offset 平移 DP/01 背包转化）。', '🎯', 'target-sum-standard', '1,1,1,1,1'),
+  {
+    ...numsDef('last-stone-weight-ii', '最后一块石头的重量 II', '两两粉碎等价于将石头分成总重最接近的两堆（0/1 背包）。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
+    aliases: ['class073-code04', 'last-stone-weight-ii-073', 'leetcode-1049'],
+  },
+  {
+    ...numsDef('last-stone-weight-ii-standard', '最后一块石头的重量 II (第 73 课标准版)', '左程云算法通关课 Class 073 Code04：LeetCode 1049 最后一块石头，两两粉碎对消等价于两堆差值极小化，归约为 <= sum/2 01 背包。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
+    aliases: ['class073-code04-std', 'last-stone-weight-ii-standard-073'],
+  },
+  {
+    ...numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。', '🎯', 'target-sum', '1,1,1,1,1'),
+    aliases: ['class073-code03', 'target-sum-073', 'leetcode-494'],
+  },
+  {
+    ...numsDef('target-sum-standard', '目标和 (第 73 课标准版)', '左程云算法通关课 Class 073 Code03：LeetCode 494 目标和，四阶段全演化（暴力递归/HashMap 记忆化/offset 平移 DP/01 背包转化）。', '🎯', 'target-sum-standard', '1,1,1,1,1'),
+    aliases: ['class073-code03-std', 'target-sum-standard-073'],
+  },
   {
     id: 'ones-and-zeroes',
     name: '一和零',
@@ -531,7 +568,7 @@ const demos: DemoDef[] = [
     name: '盈利计划',
     description: '三维计数 DP：在 n 名员工和最小利润限制下的工作分配方案数 (LeetCode 879)。',
     icon: '🏢',
-    aliases: ['profitable-schemes-069', 'profitable-schemes-class069', 'leetcode-879'],
+    aliases: ['class069-code03', 'profitable-schemes-069', 'profitable-schemes-class069', 'leetcode-879'],
     inputs: [
       { id: 'n', label: '员工数 n', value: '5', width: 90 },
       { id: 'minProfit', label: '最小利润', value: '3', width: 90 },
@@ -546,7 +583,7 @@ const demos: DemoDef[] = [
     name: '骑士在棋盘上的概率',
     description: '三维概率 DP：求国际象棋骑士走 k 步后仍留在 n x n 棋盘上的概率 (LeetCode 688)。',
     icon: '♞',
-    aliases: ['knight-probability-069', 'knight-probability-class069', 'leetcode-688'],
+    aliases: ['class069-code01', 'knight-probability-069', 'knight-probability-class069', 'leetcode-688'],
     inputs: [
       { id: 'n', label: '棋盘大小 n', value: '3', width: 90 },
       { id: 'k', label: '步数 k', value: '2', width: 80 },
@@ -564,7 +601,7 @@ const demos: DemoDef[] = [
     name: '出界的路径数',
     description: '三维计数 DP：在 m x n 网格中移动至多 maxMove 步将球移出边界的路径总数 (LeetCode 576)。',
     icon: '⚽',
-    aliases: ['out-of-boundary-paths-069', 'out-of-boundary-class069', 'leetcode-576'],
+    aliases: ['class069-code02', 'out-of-boundary-paths-069', 'out-of-boundary-class069', 'leetcode-576'],
     inputs: [
       { id: 'm', label: '行数 m', value: '2', width: 80 },
       { id: 'n', label: '列数 n', value: '2', width: 80 },
@@ -583,7 +620,7 @@ const demos: DemoDef[] = [
     name: '矩阵中和能被 K 整除的路径',
     description: '三维网格余数 DP：从左上到右下，求路径和模 k 余数为 0 的路径数 (LeetCode 2435)。',
     icon: '🔢',
-    aliases: ['paths-divisible-by-k-069', 'paths-divisible-class069', 'leetcode-2435'],
+    aliases: ['class069-code04', 'paths-divisible-by-k-069', 'paths-divisible-class069', 'leetcode-2435'],
     inputs: [
       { id: 'm', label: '行数 m', value: '3', width: 80 },
       { id: 'n', label: '列数 n', value: '3', width: 80 },
@@ -599,7 +636,7 @@ const demos: DemoDef[] = [
     name: '扰乱字符串',
     description: '三维区间 DP：判断两个等长字符串是否可以通过二叉树切分扰乱得到 (LeetCode 87)。',
     icon: '🔀',
-    aliases: ['scramble-string-069', 'scramble-string-class069', 'leetcode-87'],
+    aliases: ['class069-code05', 'scramble-string-069', 'scramble-string-class069', 'leetcode-87'],
     inputs: [
       { id: 's1', label: '原字符串 s1', value: 'great', width: 140 },
       { id: 's2', label: '目标字符串 s2', value: 'rgeat', width: 140 },
@@ -619,17 +656,20 @@ const demos: DemoDef[] = [
   stockDef('best-time-to-buy-and-sell-stock-iv', '买卖股票的最佳时机 IV', '最多可以完成 k 笔交易：构建 2k+1 状态有限状态机。', '💹', 'best-time-to-buy-and-sell-stock-iv', [{ id: 'k', label: '最大交易次数 k', value: '2', width: 110 }]),
   stockDef('best-time-to-buy-and-sell-stock-with-cooldown', '买卖股票的最佳时机含冷冻期', '卖出股票后有一天冷冻期：构建持有、冷冻、自由三状态机。', '🧊', 'best-time-to-buy-and-sell-stock-with-cooldown'),
   stockDef('best-time-to-buy-and-sell-stock-with-transaction-fee', '买卖股票的最佳时机含手续费', '每次交易产生手续费：卖出套现时扣减手续费。', '💳', 'best-time-to-buy-and-sell-stock-with-transaction-fee', [{ id: 'fee', label: '交易手续费 fee', value: '2', width: 110 }]),
-  numsDef('longest-increasing-subsequence', '最长递增子序列', 'dp[i] 表示以 nums[i] 结尾的最长严格递增子序列长度。', '📈', 'longest-increasing-subsequence', '10,9,2,5,3,7,101,18'),
+  {
+    ...numsDef('longest-increasing-subsequence', '最长递增子序列', 'dp[i] 表示以 nums[i] 结尾的最长严格递增子序列长度。', '📈', 'longest-increasing-subsequence', '10,9,2,5,3,7,101,18'),
+    aliases: ['class071-code01', 'longest-increasing-subsequence-071', 'lis-300', 'leetcode-300'],
+  },
   numsDef('longest-continuous-increasing-subsequence', '最长连续递增序列', '要求严格相邻连续：只需向前看一位 dp[i] = dp[i-1] + 1。', '📏', 'longest-continuous-increasing-subsequence', '1,3,5,4,7'),
   strDef('longest-repeated-subarray', '最长重复子数组', '两数组中连续公共子数组的最长长度：相等时仅从左上角对角线累加。', '🧩', 'longest-repeated-subarray', '1,2,3,2,1', '3,2,1,4,7'),
   strDef('uncrossed-lines', '不相交的线', '连线不相交等价于两数组的最长公共子序列 (LCS)。', '🧶', 'uncrossed-lines', '1,4,2', '1,2,4'),
   {
     ...numsDef('max-subarray-dp', '最大子数组和', '连续子数组最大和：dp[i] = max(nums[i], dp[i-1] + nums[i])。', '➕', 'max-subarray-dp', '-2,1,-3,4,-1,2,1,-5,4'),
-    aliases: ['max-subarray-dp-070', 'max-subarray-class070', 'leetcode-53-dp'],
+    aliases: ['class070-code01', 'max-subarray-dp-070', 'max-subarray-class070', 'leetcode-53-dp'],
   },
   {
     ...numsDef('max-circular-subarray', '环形子数组的最大和', '双向 Kadane 算法：环形最大和 = max(常规最大和, 总和 - 最小和)。', '🔄', 'max-circular-subarray', '1,-2,3,-2'),
-    aliases: ['max-circular-subarray-070', 'max-circular-subarray-class070', 'leetcode-918'],
+    aliases: ['class070-code02', 'max-circular-subarray-070', 'max-circular-subarray-class070', 'leetcode-918'],
     difficulty: 2,
     learningGoal: '掌握双向 Kadane 算法与环形跨界转化的数学等价性（总和减去最小子数组和）',
     examples: [
@@ -640,7 +680,7 @@ const demos: DemoDef[] = [
   },
   {
     ...numsDef('max-product-subarray', '乘积最大子数组', '正负双状态 DP：乘法负负得正，每个位置同时维护最大与最小乘积。', '✖️', 'max-product-subarray', '2,3,-2,4'),
-    aliases: ['max-product-subarray-070', 'max-product-subarray-class070', 'leetcode-152'],
+    aliases: ['class070-code03', 'max-product-subarray-070', 'max-product-subarray-class070', 'leetcode-152'],
     difficulty: 2,
     learningGoal: '掌握正负双轨动态规划状态维护，理解极小负数乘以负数跃升为极大正数的双状态交替机制',
     examples: [
@@ -651,7 +691,7 @@ const demos: DemoDef[] = [
   },
   {
     ...numsDef('magic-scroll', '魔法卷轴问题', '前后缀分解 + Kadane 变体：至多使用两次魔法卷轴变零，求最大累加和。', '📜', 'magic-scroll', '1,-2,3,5,-1,2'),
-    aliases: ['magic-scroll-070', 'magic-scroll-class070', 'magic-scroll-problem'],
+    aliases: ['class070-code04', 'magic-scroll-070', 'magic-scroll-class070', 'magic-scroll-problem'],
     difficulty: 2,
     learningGoal: '掌握前后缀分解技术与 Kadane 变体的结合，深刻理解至多两次无重叠区间修改的最优求解范式',
     examples: [
@@ -660,27 +700,33 @@ const demos: DemoDef[] = [
       { label: '全正数无需变零 [10,20,30] Ans=60', values: { nums: '10,20,30' } },
     ],
   },
-  strDef(
-    'distinct-subsequences',
-    '不同的子序列',
-    '在字符串 s 的子序列中 t 出现的次数。',
-    '🧮',
-    'distinct-subsequences',
-    'rabbbit',
-    'rabbit',
-    3,
-    [
-      { label: 'LeetCode 样例 1 ("rabbbit", "rabbit" Ans=3)', values: { s: 'rabbbit', t: 'rabbit' } },
-      { label: 'LeetCode 样例 2 ("babgbag", "bag" Ans=5)', values: { s: 'babgbag', t: 'bag' } },
-    ]
-  ),
-  strDef('delete-operation-for-two-strings', '两个字符串的删除操作', '给定两个单词 word1 和 word2，返回使得 word1 和 word2 相同所需的最少删除步数。', '✂️', 'delete-operation-for-two-strings', 'sea', 'eat'),
-  strDef('edit-distance', '编辑距离', '将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。', '✏️', 'edit-distance', 'horse', 'ros'),
+  {
+    ...strDef(
+      'distinct-subsequences',
+      '不同的子序列',
+      '在字符串 s 的子序列中 t 出现的次数。',
+      '🧮',
+      'distinct-subsequences',
+      'rabbbit',
+      'rabbit',
+      3,
+      [
+        { label: 'LeetCode 样例 1 ("rabbbit", "rabbit" Ans=3)', values: { s: 'rabbbit', t: 'rabbit' } },
+        { label: 'LeetCode 样例 2 ("babgbag", "bag" Ans=5)', values: { s: 'babgbag', t: 'bag' } },
+      ]
+    ),
+    aliases: ['class068-code01', 'distinct-subsequences-068', 'distinct-subsequences-problem', 'leetcode-115'],
+  },
+  {
+    ...strDef('edit-distance', '编辑距离', '将 word1 转换成 word2 所使用的最少操作数（插入、删除、替换）。', '✏️', 'edit-distance', 'horse', 'ros'),
+    aliases: ['class068-code02', 'edit-distance-068', 'edit-distance-problem', 'leetcode-72'],
+  },
   {
     id: 'interleaving-string',
     name: '交错字符串',
     description: '验证 s3 是否由 s1 和 s2 交错组成（LeetCode 97，双串交错状态转移）。',
     icon: '🔀',
+    aliases: ['class068-code03', 'interleaving-string-068', 'interleaving-string-problem', 'leetcode-97'],
     difficulty: 2,
     inputs: [
       { id: 's1', label: '字符串 s1', value: 'aabcc', width: 140 },
@@ -698,6 +744,7 @@ const demos: DemoDef[] = [
     name: '最少删除使成为子串',
     description: '求 s1 最少删除多少个字符可以成为 s2 的连续子串（左程云 Class068 题目 4）。',
     icon: '✂️',
+    aliases: ['class068-code04', 'min-delete-to-be-substring-068', 'min-delete-substring'],
     difficulty: 2,
     inputs: [
       { id: 's1', label: '母串 s1', value: 'abdf', width: 140 },
@@ -708,6 +755,10 @@ const demos: DemoDef[] = [
       { label: '无重叠 (全删 Ans=3)', values: { s1: 'abc', s2: 'def' } },
     ],
     build: makeEngineBuilder('min-delete-to-be-substring'),
+  },
+  {
+    ...strDef('delete-operation-for-two-strings', '两个字符串的删除操作', '给定两个单词 word1 和 word2，返回使得 word1 和 word2 相同所需的最少删除步数。', '✂️', 'delete-operation-for-two-strings', 'sea', 'eat'),
+    aliases: ['class068-code05', 'delete-operation-for-two-strings-068', 'delete-operation-two-strings', 'leetcode-583'],
   },
   {
     id: 'palindromic-substrings',
@@ -726,6 +777,7 @@ const demos: DemoDef[] = [
     name: '树的最大距离',
     description: '树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。',
     icon: '📏',
+    aliases: ['class078-code01', 'tree-max-distance'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
     examples: [
       { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
@@ -738,6 +790,7 @@ const demos: DemoDef[] = [
     name: '二叉树最大路径和',
     description: '树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。',
     icon: '🏔️',
+    aliases: ['class078-code02', 'binary-tree-maximum-path-sum', 'leetcode-124'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '-10,9,20,null,null,15,7', width: 220 }],
     examples: [
       { label: '[-10,9,20,null,null,15,7]', values: { root: '-10,9,20,null,null,15,7' } },
@@ -751,6 +804,7 @@ const demos: DemoDef[] = [
     name: '最大BST子树',
     description: '树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。',
     icon: '🔍',
+    aliases: ['class078-code03', 'largest-bst-subtree-333', 'leetcode-333'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '10,5,15,1,8,null,7', width: 220 }],
     examples: [
       { label: '[10,5,15,1,8,null,7]', values: { root: '10,5,15,1,8,null,7' } },
@@ -763,6 +817,7 @@ const demos: DemoDef[] = [
     name: '二叉树的直径',
     description: '树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。',
     icon: '📐',
+    aliases: ['class078-code04', 'diameter-of-binary-tree', 'leetcode-543'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
     examples: [
       { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
@@ -775,6 +830,7 @@ const demos: DemoDef[] = [
     name: '监控二叉树',
     description: '树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。',
     icon: '📷',
+    aliases: ['class078-code05', 'binary-tree-cameras-968', 'leetcode-968'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '0,0,null,0,0', width: 200 }],
     examples: [
       { label: '[0,0,null,0,0]', values: { root: '0,0,null,0,0' } },
@@ -787,6 +843,7 @@ const demos: DemoDef[] = [
     name: '选课（树上背包DP）',
     description: '树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。',
     icon: '🎓',
+    aliases: ['class079-code02', 'course-schedule-tree', 'luogu-p2014'],
     inputs: [
       { id: 'n', label: '课程数 n', value: '4', width: 80 },
       { id: 'm', label: '最多选 m 门', value: '3', width: 80 },
@@ -802,6 +859,7 @@ const demos: DemoDef[] = [
     name: '到达首都的最少油耗',
     description: '树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。',
     icon: '⛽',
+    aliases: ['class079-code03', 'minimum-fuel-cost-2477', 'leetcode-2477'],
     inputs: [
       { id: 'seats', label: '车座 seats', value: '2', width: 80 },
     ],
@@ -816,6 +874,7 @@ const demos: DemoDef[] = [
     name: '相邻字符不同的最长路径',
     description: '树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。',
     icon: '🔤',
+    aliases: ['class079-code04', 'longest-path-diff-chars', 'leetcode-2246'],
     inputs: [
       { id: 's', label: '字符分配 s', value: 'abacbe', width: 140 },
     ],
@@ -830,6 +889,7 @@ const demos: DemoDef[] = [
     name: '没有上司的舞会',
     description: '树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。',
     icon: '🎭',
+    aliases: ['class079-code01', 'house-robber-iii', 'luogu-p1352'],
     inputs: [
       { id: 'n', label: '员工数 n', value: '7', width: 80 },
     ],
@@ -843,6 +903,7 @@ const demos: DemoDef[] = [
     name: '移除子树后的二叉树高度',
     description: '树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。',
     icon: '✂️',
+    aliases: ['class079-code05', 'height-removal-queries-2458', 'leetcode-2458'],
     inputs: [
       { id: 'queries', label: '查询节点 queries', value: '4', width: 120 },
     ],
@@ -857,6 +918,7 @@ const demos: DemoDef[] = [
     name: '从树中删除边的最小分数',
     description: '树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。',
     icon: '🪓',
+    aliases: ['class079-code06', 'min-score-removals-2322', 'leetcode-2322'],
     inputs: [
       { id: 'nums', label: '节点权值 nums', value: '1,5,5,4,11', width: 140 },
     ],
@@ -866,41 +928,43 @@ const demos: DemoDef[] = [
     build: makeEngineBuilder('minimum-score-after-removals'),
   },
 
-  // 状压DP 演示 (Bitmask DP Demos — 第080讲)
+  // 状压DP 演示 (Bitmask DP Demos — 第080讲：状压dp-上)
   // ---------------------------------------------------------------------------
   {
     id: 'can-i-win',
     name: '我能赢吗',
-    description: '状压DP + 博弈论：用位掩码记录 1~n 哪些数字已被选取，记忆化搜索判断先手是否必胜 (LeetCode 464)。',
+    description: '左程云算法讲解080 Code03：LeetCode 464 我能赢吗，状压DP + 博弈论，用位掩码记录可选数字集合与先手必胜记忆化搜索。',
     icon: '🎲',
     inputs: [
       { id: 'n', label: '可选上限 n', value: '4', width: 80 },
       { id: 'm', label: '目标 m', value: '6', width: 80 },
     ],
     examples: [
-      { label: 'n=4, m=6', values: { n: '4', m: '6' } },
-      { label: 'n=10, m=11', values: { n: '10', m: '11' } },
+      { label: 'n=4, m=6 (先手必胜)', values: { n: '4', m: '6' } },
+      { label: 'n=10, m=11 (先手必败)', values: { n: '10', m: '11' } },
     ],
     build: makeEngineBuilder('can-i-win'),
+    aliases: ['class080-code03', 'can-i-win-464', 'leetcode-464'],
   },
   {
     id: 'matchsticks-to-square',
     name: '火柴拼正方形',
-    description: '状压DP / 回溯：判断一组火柴能否恰好拼成一个正方形。将火柴分入 4 条等长边 (LeetCode 473)。',
+    description: '左程云算法讲解080 Code02延伸：LeetCode 473 火柴拼正方形，状压DP与子集和划分，将火柴等分至4条等长边。',
     icon: '🔥',
     inputs: [
       { id: 'nums', label: '火柴长度', value: '1,1,2,2,2', width: 160 },
     ],
     examples: [
-      { label: '[1,1,2,2,2]', values: { nums: '1,1,2,2,2' } },
-      { label: '[3,3,3,3,4]', values: { nums: '3,3,3,3,4' } },
+      { label: '[1,1,2,2,2] (可拼成)', values: { nums: '1,1,2,2,2' } },
+      { label: '[3,3,3,3,4] (不可拼成)', values: { nums: '3,3,3,3,4' } },
     ],
     build: makeEngineBuilder('matchsticks-to-square'),
+    aliases: ['class080-code02-ext', 'matchsticks-to-square-473', 'leetcode-473'],
   },
   {
     id: 'partition-k-equal-subsets',
     name: '划分为k个相等子集',
-    description: '状压DP / 回溯：将 n 个数划分为 k 个和相等的子集。回溯搜索 + 排序剪枝 (LeetCode 698)。',
+    description: '左程云算法讲解080 Code02：LeetCode 698 划分为k个相等的子集，状压DP + 剪枝回溯，等和子集装箱分配。',
     icon: '📦',
     inputs: [
       { id: 'nums', label: '数组', value: '4,3,2,3,5,2,1', width: 180 },
@@ -911,19 +975,83 @@ const demos: DemoDef[] = [
       { label: '[1,2,3,4], k=3', values: { nums: '1,2,3,4', k: '3' } },
     ],
     build: makeEngineBuilder('partition-k-equal-subsets'),
+    aliases: ['class080-code02', 'partition-k-equal-subsets-698', 'leetcode-698'],
   },
   {
     id: 'tsp-bitmask-dp',
     name: '旅行商问题 TSP',
-    description: '经典状压DP：dp[S][i] 表示经过集合 S 中所有城市且当前在 i 的最短路径，O(2^n·n^2) 求最短回路。',
+    description: '左程云算法讲解080 Code01：经典旅行商问题 TSP，状压DP求经过所有节点且当前在 i 的最短哈密顿回路。',
     icon: '🗺️',
     inputs: [
       { id: 'n', label: '城市数 n', value: '4', width: 80 },
     ],
     examples: [
-      { label: 'n=4', values: { n: '4' } },
+      { label: 'n=4 城市回路', values: { n: '4' } },
     ],
     build: makeEngineBuilder('tsp-bitmask-dp'),
+    aliases: ['class080-code01', 'tsp-bitmask', 'traveling-salesperson'],
+  },
+
+  // 状压DP 进阶 (Bitmask DP Demos — 第081讲：状压dp-下)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'number-of-ways-wear-hats',
+    name: '每个人戴不同帽子的方案数',
+    description: '左程云算法讲解081 Code01：LeetCode 1434 每个人戴不同帽子的方案数，维度反转状压 DP（人少帽子多，对人状压逐顶帽子决策）。',
+    icon: '🎩',
+    inputs: [
+      { id: 'hats', label: '帽子分配二维数组 (JSON)', value: '[[3,4],[4,5],[5]]', width: 220 },
+    ],
+    examples: [
+      { label: '3人3帽 [[3,4],[4,5],[5]]', values: { hats: '[[3,4],[4,5],[5]]' } },
+      { label: '2人2帽 [[3,5,1],[3,5]]', values: { hats: '[[3,5,1],[3,5]]' } },
+    ],
+    build: makeEngineBuilder('number-of-ways-wear-hats'),
+    aliases: ['class081-code01', 'number-of-ways-wear-hats-1434', 'leetcode-1434'],
+  },
+  {
+    id: 'optimal-account-balancing',
+    name: '最优账单平衡',
+    description: '左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，和为0子集最大化贪心状压 DP。',
+    icon: '⚖️',
+    inputs: [
+      { id: 'transactions', label: '交易记录 (JSON)', value: '[[0,1,10],[2,0,5]]', width: 220 },
+    ],
+    examples: [
+      { label: '3人转账 [[0,1,10],[2,0,5]]', values: { transactions: '[[0,1,10],[2,0,5]]' } },
+    ],
+    build: makeEngineBuilder('optimal-account-balancing'),
+    aliases: ['class081-code02', 'optimal-account-balancing-465', 'leetcode-465'],
+  },
+  {
+    id: 'good-subsets',
+    name: '好子集的数目',
+    description: '左程云算法讲解081 Code03：LeetCode 1994 好子集的数目，数论质因数分解与 01 背包计数状压 DP。',
+    icon: '✨',
+    inputs: [
+      { id: 'nums', label: '数组 nums', value: '4,2,3,15', width: 160 },
+    ],
+    examples: [
+      { label: '[4,2,3,15]', values: { nums: '4,2,3,15' } },
+      { label: '[1,2,3,4]', values: { nums: '1,2,3,4' } },
+    ],
+    build: makeEngineBuilder('good-subsets'),
+    aliases: ['class081-code03', 'good-subsets-1994', 'leetcode-1994'],
+  },
+  {
+    id: 'distribute-repeating-integers',
+    name: '分配重复整数',
+    description: '左程云算法讲解081 Code04：LeetCode 1655 分配重复整数，频次统计与子掩码高效枚举状压 DP。',
+    icon: '📊',
+    inputs: [
+      { id: 'nums', label: '数组 nums', value: '1,1,2,2', width: 140 },
+      { id: 'quantity', label: '顾客需求 quantity', value: '2,2', width: 140 },
+    ],
+    examples: [
+      { label: 'nums=[1,1,2,2], q=[2,2]', values: { nums: '1,1,2,2', quantity: '2,2' } },
+    ],
+    build: makeEngineBuilder('distribute-repeating-integers'),
+    aliases: ['class081-code04', 'distribute-repeating-integers-1655', 'leetcode-1655'],
   },
 ];
 
@@ -1021,6 +1149,11 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'matchsticks-to-square' },
   { type: 'demo', id: 'partition-k-equal-subsets' },
   { type: 'demo', id: 'tsp-bitmask-dp' },
+  // 状压DP 进阶（第081讲：状压dp-下）
+  { type: 'demo', id: 'number-of-ways-wear-hats' },
+  { type: 'demo', id: 'optimal-account-balancing' },
+  { type: 'demo', id: 'good-subsets' },
+  { type: 'demo', id: 'distribute-repeating-integers' },
   { type: 'article', id: 'dp-final-summary' },
 ];
 
@@ -1051,6 +1184,7 @@ registerDemo({
   name: '最小路径和 (LeetCode 64)',
   description: '左程云算法讲解067 Code01：LeetCode 64 最小路径和，从递归到二维DP与空间压缩完整演化',
   icon: '📉',
+  aliases: ['class067-code01', 'min-path-sum-067', 'minimum-path-sum', 'leetcode-64'],
   inputs: [
     { id: 'm', label: '行 m', value: '3', width: 80 },
     { id: 'n', label: '列 n', value: '3', width: 80 },
@@ -1066,6 +1200,7 @@ registerDemo({
   name: '最长公共子序列 (LCS)',
   description: '左程云算法讲解067 Code03：LeetCode 1143 最长公共子序列，经典双串对角线依赖与 leftUp 寄存器暂存优化',
   icon: '🔀',
+  aliases: ['class067-code03', 'lcs', 'longest-common-subsequence-067', 'leetcode-1143'],
   inputs: [
     { id: 's', label: 'text1', value: 'abcde', width: 120 },
     { id: 't', label: 'text2', value: 'ace', width: 120 },
@@ -1081,6 +1216,7 @@ registerDemo({
   name: '最长回文子序列 (LPS)',
   description: '左程云算法讲解067 Code04：LeetCode 516 最长回文子序列，区间DP经典半三角矩阵与 leftDown 空间压缩',
   icon: '🪞',
+  aliases: ['class067-code04', 'lps', 'longest-palindromic-subsequence-067', 'leetcode-516'],
   inputs: [{ id: 's', label: '字符串 s', value: 'bbbab', width: 130 }],
   build: makeEngineBuilder('longest-palindromic-subsequence'),
   difficulty: 2,
@@ -1089,13 +1225,90 @@ registerDemo({
 });
 
 registerDemo({
+  id: 'min-score-triangulation',
+  name: '多边形三角剖分的最低得分 (Min Score Triangulation)',
+  description: '左程云算法讲解076 Code01：LeetCode 1039 多边形三角剖分，基准边分割点的区间 DP 经典模型。',
+  icon: '📐',
+  inputs: [{ id: 'values', label: '顶点权值 values', value: '1,2,3', width: 150 }],
+  build: makeEngineBuilder('min-score-triangulation'),
+  difficulty: 2,
+  levelOrder: 1039,
+  learningGoal: '掌握凸多边形三角剖分模型，固定底边 (i, j) 枚举第三个顶点 k 划分两半独立子多边形的区间 DP 最优分割思想',
+  aliases: ['class076-code01', 'min-score-triangulation-1039', 'leetcode-1039'],
+  examples: [
+    { label: '三角基础 [1, 2, 3] Ans=6', values: { values: '1,2,3' } },
+    { label: '四边形 [3, 7, 4, 5] Ans=144', values: { values: '3,7,4,5' } },
+    { label: '五边形 [1, 3, 1, 4, 1, 5] Ans=13', values: { values: '1,3,1,4,1,5' } },
+  ],
+});
+
+registerDemo({
+  id: 'predict-the-winner',
+  name: '预测赢家 (Predict the Winner / 纸牌博弈)',
+  description: '左程云算法讲解076 Code02：LeetCode 486 预测赢家/纸牌博弈，博弈论极小化极大区间动态规划。',
+  icon: '🃏',
+  inputs: [{ id: 'nums', label: 'nums (逗号分隔)', value: '1,5,2', width: 150 }],
+  build: makeEngineBuilder('predict-the-winner'),
+  difficulty: 2,
+  levelOrder: 486,
+  learningGoal: '掌握博弈论双人轮流博弈的区间 DP 状态建模，理解 dp[i][j] 表示当前玩家在 [i, j] 区间能够获得的最大净胜分',
+  aliases: ['class076-code02', 'predict-the-winner-486', 'leetcode-486', 'cards-in-line'],
+  examples: [
+    { label: '先手必输 [1, 5, 2] False', values: { nums: '1,5,2' } },
+    { label: '先手必胜 [1, 5, 233, 7] True', values: { nums: '1,5,233,7' } },
+  ],
+});
+
+registerDemo({
   id: 'burst-balloons',
   name: '大厂高频真题: 戳气球 (Burst Balloons)',
-  description: '大厂高频真题: 戳气球 (Burst Balloons)',
+  description: '左程云算法讲解076 Code03：LeetCode 312 戳气球，区间 DP 逆向思维之最后戳破气球模型。',
   icon: '🎈',
-  inputs: [{ id: 'nums', label: 'nums', value: '3,1,5,8', width: 150 }],
+  inputs: [{ id: 'nums', label: 'nums (逗号分隔)', value: '3,1,5,8', width: 150 }],
   build: makeEngineBuilder('burst-balloons'),
   difficulty: 3,
   levelOrder: 312,
   learningGoal: '深刻理解区间 DP 逆向思维，通过枚举最后戳破的气球消解子问题边界依赖',
+  aliases: ['class076-code03', 'burst-balloons-312', 'leetcode-312'],
+  examples: [
+    { label: '经典四气球 [3, 1, 5, 8] Ans=167', values: { nums: '3,1,5,8' } },
+    { label: '双气球 [1, 5] Ans=10', values: { nums: '1,5' } },
+  ],
+});
+
+registerDemo({
+  id: 'strange-printer',
+  name: '奇怪的打印机 (Strange Printer)',
+  description: '左程云算法讲解076 Code04：LeetCode 664 奇怪的打印机，字符涂色刷漆贪心抵消的区间 DP。',
+  icon: '🖨️',
+  inputs: [{ id: 's', label: '字符串 s', value: 'aaabbb', width: 150 }],
+  build: makeEngineBuilder('strange-printer'),
+  difficulty: 3,
+  levelOrder: 664,
+  learningGoal: '理解区间两端字符相同时可通过连续刷漆免费顺带刷出末尾字符的区间 DP 边界消减技巧',
+  aliases: ['class076-code04', 'strange-printer-664', 'leetcode-664'],
+  examples: [
+    { label: '两段纯色 "aaabbb" Ans=2', values: { s: 'aaabbb' } },
+    { label: '交错三段 "aba" Ans=2', values: { s: 'aba' } },
+  ],
+});
+
+registerDemo({
+  id: 'merge-stones',
+  name: '合并石头的最低成本 (Minimum Cost to Merge Stones)',
+  description: '左程云算法讲解077 Code01：LeetCode 1000 K堆石头合并，可达性模条件与多堆合并区间 DP。',
+  icon: '🪨',
+  inputs: [
+    { id: 'stones', label: '石头堆 stones (逗号分隔)', value: '3,2,4,1', width: 140 },
+    { id: 'k', label: '单次合并堆数 k', value: '2', width: 100 },
+  ],
+  build: makeEngineBuilder('merge-stones'),
+  difficulty: 3,
+  levelOrder: 1000,
+  learningGoal: '掌握扩展区间 DP 状态维度以记录合并堆数，深刻理解 (n-1) % (k-1) === 0 可行性判定与前缀和代价累加',
+  aliases: ['class077-code01', 'merge-stones-1000', 'leetcode-1000'],
+  examples: [
+    { label: '相邻两堆合并 [3,2,4,1] k=2 Ans=20', values: { stones: '3,2,4,1', k: '2' } },
+    { label: '三堆合并 [3,5,1,2,6] k=3 Ans=25', values: { stones: '3,5,1,2,6', k: '3' } },
+  ],
 });

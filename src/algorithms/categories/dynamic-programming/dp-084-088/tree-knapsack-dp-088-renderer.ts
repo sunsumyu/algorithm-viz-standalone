@@ -176,6 +176,7 @@ export const treeKnapsack088Visualizer = registerDeclarativeAlgorithm<TreeKnapsa
   name: '树上背包 DP 与泛化物品 (Class 088)',
   category: 'dynamic-programming',
   difficulty: 'hard',
+  aliases: ['class088-tree-knapsack', 'tree-knapsack-dp', 'generalized-knapsack-on-tree', 'luogu-p2014'],
   problemContent: DP_084_088_PROBLEMS.treeKnapsack088,
   sourceCodes: TREE_KNAPSACK_088_CODES,
   generateSteps: buildTreeKnapsack088Steps,

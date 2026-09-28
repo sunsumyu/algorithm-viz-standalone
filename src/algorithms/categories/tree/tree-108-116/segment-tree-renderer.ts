@@ -205,6 +205,7 @@ export function buildSegmentTreeSteps(
 export const segmentTreeVisualizer = registerDeclarativeAlgorithm<SegmentTreeStep>({
   id: 'segment-tree-110',
   name: '经典线段树与懒标记 (Class 110)',
+  aliases: ['class110-code01', 'segment-tree', 'segment-tree-110', 'segment-tree-lazy'],
   category: 'tree',
   icon: '🌲',
   difficulty: 2,

@@ -1,3 +1,4 @@
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 /**
  * 左程云算法通关课 Class 062: 使网格图至少有一条有效路径的最小代价 (LeetCode 1368)
  * 0-1 BFS 边权判定：顺应箭头代价为 0 插队头，更改箭头代价为 1 插队尾
@@ -50,7 +51,7 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
 
   const m = g.length;
   const n = g[0].length;
-  const grid = g.map((r) => [...r]);
+  const grid = snapshotGrid2D(g);
   const dist = Array.from({ length: m }, () => new Array(n).fill(Infinity));
   const visited = Array.from({ length: m }, () => new Array(n).fill(false));
 
@@ -58,11 +59,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
 
   // Step 0: 入口
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     curCoord: null,
-    distMap: dist.map((r) => [...r]),
+    distMap: snapshotGrid2D(dist),
     dequeSnapshot: [],
-    visited: visited.map((r) => [...r]),
+    visited: snapshotGrid2D(visited),
     minCost: Infinity,
     decision: '算法启动：识别网格初始方向箭头 (1:右, 2:左, 3:下, 4:上)',
     message: `网格尺寸 ${m}x${n}，目标以最小修改代价从 (0, 0) 到达 (${m - 1}, ${n - 1})。`,
@@ -76,11 +77,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
   dist[0][0] = 0;
   deque.push({ r: 0, c: 0, dist: 0 });
   steps.push({
-    grid: grid.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
     curCoord: [0, 0],
-    distMap: dist.map((r) => [...r]),
+    distMap: snapshotGrid2D(dist),
     dequeSnapshot: deque.map((x) => ({ ...x })),
-    visited: visited.map((r) => [...r]),
+    visited: snapshotGrid2D(visited),
     minCost: 0,
     decision: '起点初始入队：dist[0][0] = 0，加入双端队列队头',
     message: '从 (0, 0) 出发初始修改代价为 0，插在队头。',
@@ -109,11 +110,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
     visited[r][c] = true;
 
     steps.push({
-      grid: grid.map((row) => [...row]),
+      grid: snapshotGrid2D(grid),
       curCoord: [r, c],
-      distMap: dist.map((row) => [...row]),
+      distMap: snapshotGrid2D(dist),
       dequeSnapshot: deque.map((x) => ({ ...x })),
-      visited: visited.map((row) => [...row]),
+      visited: snapshotGrid2D(visited),
       minCost: curD,
       decision: `弹出当前格 (${r}, ${c})，当前累计修改箭头代价为 ${curD}`,
       message: `格 (${r}, ${c}) 的天然指向为 ${ARROW_SYMBOLS[grid[r][c]]}。准备探测四周 4 个移动方向。`,
@@ -136,11 +137,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
         const weight = grid[r][c] === d ? 0 : 1;
 
         steps.push({
-          grid: grid.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
           curCoord: [r, c],
-          distMap: dist.map((row) => [...row]),
+          distMap: snapshotGrid2D(dist),
           dequeSnapshot: deque.map((x) => ({ ...x })),
-          visited: visited.map((row) => [...row]),
+          visited: snapshotGrid2D(visited),
           minCost: curD,
           decision: `向 ${ARROW_SYMBOLS[d]} 探查邻格 (${nr}, ${nc})：${weight === 0 ? '顺应天然箭头 (代价 0)' : '需改箭头 (代价 1)'}`,
           message: weight === 0
@@ -158,11 +159,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
           if (weight === 0) {
             deque.unshift({ r: nr, c: nc, dist: dist[nr][nc] });
             steps.push({
-              grid: grid.map((row) => [...row]),
+              grid: snapshotGrid2D(grid),
               curCoord: [nr, nc],
-              distMap: dist.map((row) => [...row]),
+              distMap: snapshotGrid2D(dist),
               dequeSnapshot: deque.map((x) => ({ ...x })),
-              visited: visited.map((row) => [...row]),
+              visited: snapshotGrid2D(visited),
               minCost: curD,
               decision: `零代价转移到 (${nr}, ${nc})：插在队头 (addFirst)`,
               message: `到达 (${nr}, ${nc}) 累计代价仍为 ${dist[nr][nc]}，立即加入队头参与同层探索。`,
@@ -174,11 +175,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
           } else {
             deque.push({ r: nr, c: nc, dist: dist[nr][nc] });
             steps.push({
-              grid: grid.map((row) => [...row]),
+              grid: snapshotGrid2D(grid),
               curCoord: [nr, nc],
-              distMap: dist.map((row) => [...row]),
+              distMap: snapshotGrid2D(dist),
               dequeSnapshot: deque.map((x) => ({ ...x })),
-              visited: visited.map((row) => [...row]),
+              visited: snapshotGrid2D(visited),
               minCost: curD,
               decision: `改向代价 1 转移到 (${nr}, ${nc})：插在队尾 (addLast)`,
               message: `到达 (${nr}, ${nc}) 累计代价提升为 ${dist[nr][nc]}，入队尾等待后续轮次。`,
@@ -195,11 +196,11 @@ export function buildMinimumCostValidPath062Steps(preset: string = 'classic_3x3'
 
   // 终态步骤
   steps.push({
-    grid: grid.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
     curCoord: [m - 1, n - 1],
-    distMap: dist.map((row) => [...row]),
+    distMap: snapshotGrid2D(dist),
     dequeSnapshot: [],
-    visited: visited.map((row) => [...row]),
+    visited: snapshotGrid2D(visited),
     minCost: minAns,
     decision: `0-1 BFS 搜索完成：到达终点所需最小箭头修改代价为 ${minAns}`,
     message: `成功找到有效路径！通过将网格箭头转向建模为 0-1 边权图，在严格 O(M×N) 时间内达成全局最优解。`,

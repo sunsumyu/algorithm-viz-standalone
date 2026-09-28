@@ -205,6 +205,7 @@ export function buildSplaySteps(keys: number[], targetSplayKey?: number): SplayS
 export const splayTreeVisualizer = registerDeclarativeAlgorithm<SplayStep>({
   id: 'splay-tree-152',
   name: '伸展树与区间翻转 (Class 152)',
+  aliases: ['class152-code01', 'splay-tree', 'splay-tree-152', 'splay'],
   category: 'tree',
   icon: '🎯',
   difficulty: 3,

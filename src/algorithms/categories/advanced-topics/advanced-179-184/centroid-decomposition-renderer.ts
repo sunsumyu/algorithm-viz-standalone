@@ -126,6 +126,7 @@ export function buildCentroidSteps(): CentroidStep[] {
 export const centroidDecompositionVisualizer = registerDeclarativeAlgorithm<CentroidStep>({
   id: 'centroid-decomposition-179',
   name: '点分治 (Centroid Decomposition / Class 179)',
+  aliases: ['class179-code01', 'centroid-decomposition-179', 'tree-centroid-decomposition'],
   category: 'tree',
   icon: '🌲',
   difficulty: 3,

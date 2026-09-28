@@ -158,6 +158,7 @@ export function buildLinearBasisSteps(nums: number[]): LinearBasisStep[] {
 export const linearBasisVisualizer = registerDeclarativeAlgorithm<LinearBasisStep>({
   id: 'linear-basis-136',
   name: '线性基与最大异或和 (Class 136)',
+  aliases: ['class136-code01', 'linear-basis-136', 'max-xor-basis'],
   category: 'math',
   icon: '🧬',
   difficulty: 3,

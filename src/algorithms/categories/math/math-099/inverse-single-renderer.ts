@@ -70,6 +70,7 @@ export const inverseSingleVisualizer = registerDeclarativeAlgorithm<InverseSingl
   icon: '➗',
   difficulty: 2,
   levelOrder: 991,
+  aliases: ['class099-code01', 'inverse-single', 'modular-inverse-single', 'fermat-inverse'],
   learningGoal: '掌握质数模数下费马小定理 a^(p-2) 快速幂求逆元与除法取模转化',
   problemHtml: MATH_099_PROBLEMS.inverseSingle.html,
   analysisHtml: MATH_099_PROBLEMS.inverseSingle.html,

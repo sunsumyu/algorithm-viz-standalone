@@ -109,6 +109,7 @@ export const tribonacciMatrixVisualizer = registerDeclarativeAlgorithm<Tribonacc
   icon: '🔺',
   difficulty: 3,
   levelOrder: 984,
+  aliases: ['class098-code04', 'tribonacci-matrix', 'tribonacci-number-1137', 'leetcode-1137'],
   learningGoal: '掌握 3 阶常系数线性递推向 3×3 状态转移矩阵的拓展构建与快速计算',
   problemHtml: MATH_098_PROBLEMS.tribonacciMatrix.html,
   analysisHtml: MATH_098_PROBLEMS.tribonacciMatrix.html,

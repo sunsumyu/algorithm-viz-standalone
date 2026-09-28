@@ -108,6 +108,7 @@ export function buildEulerDfnSteps(): EulerDfnStep[] {
 export const eulerDfnLcaVisualizer = registerDeclarativeAlgorithm<EulerDfnStep>({
   id: 'euler-dfn-lca-185',
   name: '欧拉序与 DFN 序求 LCA (Class 185)',
+  aliases: ['class185-code01', 'euler-dfn-lca-185', 'euler-lca'],
   category: 'tree',
   icon: '📜',
   difficulty: 3,

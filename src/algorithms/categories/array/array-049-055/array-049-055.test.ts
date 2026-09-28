@@ -107,4 +107,37 @@ describe('左神前缀和、差分与单调栈队列专题 (Class 049 ~ 055) 综
       verify1BasedCodeLines(steps, VALID_SUBARRAY_LIMIT_055_CODES);
     });
   });
+
+  // 8. 注册中心与别名统合门禁 (Class 049 ~ 051)
+  describe('注册中心与别名统合门禁 (Class 049 ~ 051)', () => {
+    it('全量算法与别名必须在 algorithmRegistry 中正确解析', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-25-index');
+
+      const expectedMappings = [
+        {
+          id: 'prefix-sum-basic-049',
+          aliases: ['class049-code01', 'subarray-sum-equals-k-560', 'leetcode-560', 'prefix-sum-k'],
+        },
+        {
+          id: 'prefix-sum-2d-050',
+          aliases: ['class050-code01', 'range-sum-query-2d', 'leetcode-304', 'prefix-sum-2d'],
+        },
+        {
+          id: 'arithmetic-sequence-difference-051',
+          aliases: ['class051-code01', 'luogu-p4231', 'arithmetic-diff-4231', 'arithmetic-sequence-difference'],
+        },
+      ];
+
+      for (const item of expectedMappings) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases).toContain(alias);
+          const resolvedByAlias = algorithmRegistry.getManifest(alias);
+          expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

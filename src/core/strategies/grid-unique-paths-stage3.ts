@@ -19,7 +19,8 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
     const isUniquePathsII = model.id === 'unique-paths-ii';
     const obstacleGrid = UniversalStageEngine.getDynamicObstacleGrid(model, mVal, nVal);
     const weightsGrid = UniversalStageEngine.getDynamicWeightsGrid(model, mVal, nVal);
-    const isMinPath = model.id === 'min-path-sum' || Boolean(weightsGrid);
+    const isDungeon = model.id === 'dungeon-game-reverse-dp';
+    const isMinPath = (model.id === 'min-path-sum' || Boolean(weightsGrid)) && !isDungeon;
 
     const lineInit = anchorMap?.init || (isUniquePathsII ? 4 : (isForward ? 4 : 4));
     const lineInitVal = anchorMap?.init_val || anchorMap?.init_row || (isUniquePathsII ? 7 : (isForward ? 6 : 6));
@@ -44,7 +45,36 @@ import { UniversalStageEngine, type UniversalStep, type UniversalTreeNode } from
       msg: `创建大小为 <code>${mVal} × ${nVal}</code> 的二维 DP 状态表格，初始值全为 0。`
     });
 
-    if (isMinPath && weightsGrid) {
+    if (isDungeon && weightsGrid) {
+      for (let r = mVal - 1; r >= 0; r--) {
+        for (let c = nVal - 1; c >= 0; c--) {
+          if (r === mVal - 1 && c === nVal - 1) {
+            dp[r][c] = Math.max(1, 1 - weightsGrid[r][c]);
+          } else {
+            const downVal = r < mVal - 1 ? (dp[r + 1][c] ?? Infinity) : Infinity;
+            const rightVal = c < nVal - 1 ? (dp[r][c + 1] ?? Infinity) : Infinity;
+            const minNext = Math.min(downVal, rightVal);
+            dp[r][c] = Math.max(1, minNext - weightsGrid[r][c]);
+          }
+          steps.push({
+            type: 'transfer',
+            line: (r === mVal - 1 && c === nVal - 1) ? lineInitVal : lineTransfer,
+            i: r,
+            j: c,
+            topI: r < mVal - 1 ? r + 1 : -1,
+            topJ: r < mVal - 1 ? c : -1,
+            leftI: c < nVal - 1 ? r : -1,
+            leftJ: c < nVal - 1 ? c + 1 : -1,
+            gridHighlight: { i: r, j: c },
+            weightsGrid,
+            grid: JSON.parse(JSON.stringify(dp)),
+            tag: `dp[${r}][${c}] = ${dp[r][c]}`,
+            log: `| 🏰 进入房间 (${r}, ${c}) 所需最低血量: dp[${r}][${c}] = ${dp[r][c]}`,
+            msg: `逆推计算：进入房间 (${r}, ${c}) 最低生命值 <code>dp[${r}][${c}] = <strong>${dp[r][c]}</strong></code>。`
+          });
+        }
+      }
+    } else if (isMinPath && weightsGrid) {
       if (isForward) {
         for (let r = 0; r < mVal; r++) {
           for (let c = 0; c < nVal; c++) {

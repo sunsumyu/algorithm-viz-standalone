@@ -241,6 +241,7 @@ registerAlgorithm({
   levelOrder: 914,
   description: '将数组分为 k 个子集使各子集平均值之和最小，通过不等式证明前 k-1 小值独占单元素集合，其余大数合并稀释。',
   learningGoal: '掌握前k-1小值独占集合与其余大数合并稀释的贪心不等式证明',
+  aliases: ['class091-code04', 'split-minimum-average-sum'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

@@ -76,4 +76,43 @@ describe('左神贪心专题 5 (greedy-093) 自动化测试套件', () => {
     const last = steps[steps.length - 1];
     expect(last.maxMoves).toBe(3);
   });
+
+  it('6. Class 093 贪心算法专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-5-index');
+
+    const expectedMappings = [
+      {
+        id: 'jump-game-ii',
+        aliases: ['class093-code01', 'jump-game-ii-45', 'leetcode-45', 'jump-game-2'],
+      },
+      {
+        id: 'minimum-number-of-taps-to-water-a-garden',
+        aliases: ['class093-code02', 'min-taps-1326', 'leetcode-1326', 'min-taps', 'water-garden'],
+      },
+      {
+        id: 'string-transforms-into-another-string',
+        aliases: ['class093-code03', 'string-transforms-1153', 'leetcode-1153', 'string-transforms'],
+      },
+      {
+        id: 'cross-river-classic',
+        aliases: ['class093-code04', 'cross-river', 'poj-1700', 'bridge-crossing'],
+      },
+      {
+        id: 'super-washing-machines',
+        aliases: ['class093-code05', 'super-washing-machines-517', 'leetcode-517', 'washing-machines'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

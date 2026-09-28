@@ -126,6 +126,7 @@ export const quizScoreVisualizer = registerDeclarativeAlgorithm<QuizScoreStep>({
   icon: '📝',
   difficulty: 2,
   levelOrder: 924,
+  aliases: ['class092-code04', 'quiz-score', 'quiz-score-max'],
   learningGoal: '掌握基准假定结合边际差值 (A - B) 降序贪心排序选择的经典转化模型',
   problemHtml: GREEDY_092_PROBLEMS.quizScore.html,
   analysisHtml: GREEDY_092_PROBLEMS.quizScore.html,

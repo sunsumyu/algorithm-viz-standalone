@@ -101,6 +101,7 @@ export const twoStonesBashVisualizer = registerDeclarativeAlgorithm<TwoStonesBas
   icon: '🧱',
   difficulty: 3,
   levelOrder: 963,
+  aliases: ['class096-code03', 'two-stones-bash', 'two-pile-bash'],
   learningGoal: '通过二维 SG 状态转移矩阵理解两个独立博弈子系统的异或合成与对称平衡',
   problemHtml: GAME_096_PROBLEMS.twoStonesBashSg.html,
   analysisHtml: GAME_096_PROBLEMS.twoStonesBashSg.html,

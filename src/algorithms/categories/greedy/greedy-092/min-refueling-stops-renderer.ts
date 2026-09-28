@@ -158,6 +158,7 @@ registerAlgorithm({
   Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 926,
+  aliases: ['class092-code06', 'min-refueling-stops-871', 'leetcode-871', 'min-refueling-stops'],
   learningGoal: '掌握后悔贪心策略与大顶堆动态补油机制',
 });
 

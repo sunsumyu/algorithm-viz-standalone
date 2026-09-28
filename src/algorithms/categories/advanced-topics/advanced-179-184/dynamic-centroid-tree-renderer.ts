@@ -125,6 +125,7 @@ export function buildDynamicCentroidSteps(): DynamicCentroidStep[] {
 export const dynamicCentroidTreeVisualizer = registerDeclarativeAlgorithm<DynamicCentroidStep>({
   id: 'dynamic-centroid-tree-180',
   name: '动态点分治 / 点分树 (Dynamic Centroid Tree / Class 180)',
+  aliases: ['class180-code01', 'dynamic-centroid-tree-180', 'point-divide-tree'],
   category: 'tree',
   icon: '🌳',
   difficulty: 3,

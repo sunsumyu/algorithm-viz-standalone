@@ -21,6 +21,7 @@ import './categories/advanced-topics/hard-interview/longest-valid-parentheses-re
 import './categories/advanced-topics/hard-interview/russian-doll-envelopes-renderer';
 import './categories/advanced-topics/hard-interview/substring-concatenation-renderer';
 import './categories/string/nested-recursion-decode-039-renderer';
+import './categories/string/count-of-atoms-039-renderer';
 
 export {};
 

@@ -743,6 +743,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 073 Code02：LeetCode LCP 51 夏季特惠，心理不吃亏判别式 -> 贪心白嫖必选 + 剩余游戏 01 背包转化',
   icon: '🎮',
+  aliases: ['class073-code02', 'buy-goods-discount-073', 'summer-discount', 'lcp-51'],
   template,
   Visualizer,
   difficulty: 2,

@@ -224,7 +224,7 @@ registerDeclarativeAlgorithm({
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 065 Code02：2x3 网格滑动谜题，曼哈顿距离启发函数 h 与 A* 优先队列定向加速寻路 (LeetCode 773)',
-  aliases: ['sliding-puzzle-773', 'leetcode-773', 'sliding-puzzle-class065'],
+  aliases: ['class065-code02', 'sliding-puzzle-065', 'sliding-puzzle-773', 'leetcode-773', 'sliding-puzzle-class065'],
   problemHtml: GRAPH_065_PROBLEMS['sliding-puzzle-065'].problemHtml,
   analysisHtml: GRAPH_065_PROBLEMS['sliding-puzzle-065'].complexityHtml,
   codeLanguages: SLIDING_PUZZLE_065_CODES,

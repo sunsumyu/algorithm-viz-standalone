@@ -238,6 +238,7 @@ export function buildLinearBasis132Steps(nums: number[], maxBit: number = 5): Li
 export const linearBasis132Visualizer = registerDeclarativeAlgorithm<LinearBasis132Step>({
   id: 'linear-basis-132',
   name: '线性基与异或空间基底 (Class 132)',
+  aliases: ['class132-code01', 'linear-basis', 'linear-basis-132', 'xor-basis'],
   category: 'math',
   icon: '🧮',
   difficulty: 3,

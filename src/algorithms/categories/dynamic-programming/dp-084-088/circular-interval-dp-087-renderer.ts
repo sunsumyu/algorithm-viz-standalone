@@ -138,6 +138,7 @@ export const circularInterval087Visualizer = registerDeclarativeAlgorithm<Circul
   name: '环形区间 DP 与破环成链 (Class 087)',
   category: 'dynamic-programming',
   difficulty: 'hard',
+  aliases: ['class087-circular-dp', 'circular-interval-dp', 'energy-necklace-1063', 'luogu-p1063'],
   problemContent: DP_084_088_PROBLEMS.circularInterval087,
   sourceCodes: CIRCULAR_INTERVAL_087_CODES,
   generateSteps: buildCircularInterval087Steps,

@@ -103,6 +103,7 @@ export const nimGameSgVisualizer = registerDeclarativeAlgorithm<NimSgStep>({
   icon: '📐',
   difficulty: 3,
   levelOrder: 962,
+  aliases: ['class096-code02', 'nim-game-sg', 'nim-sg'],
   learningGoal: '通过数学归纳法与 mex 算子证明 SG(x) = x 恒成立，揭示 Bouton 定理本质',
   problemHtml: GAME_096_PROBLEMS.nimGameSg.html,
   analysisHtml: GAME_096_PROBLEMS.nimGameSg.html,

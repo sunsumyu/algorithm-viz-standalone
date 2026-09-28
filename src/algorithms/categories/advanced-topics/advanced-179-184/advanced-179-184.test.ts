@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildCentroidSteps } from './centroid-decomposition-renderer';
 import { buildDynamicCentroidSteps } from './dynamic-centroid-tree-renderer';
 import { buildSegmentTreeDivideSteps } from './segment-tree-divide-renderer';
@@ -105,4 +107,26 @@ describe('左神高阶分治全家桶专题 (Class 179 ~ 184) 综合测试套件
       verify1BasedCodeLines(steps, PARALLEL_BINARY_SEARCH_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 179 ~ 184)', () => {
+    it('所有高阶分治全家桶课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class179-code01': 'centroid-decomposition-179',
+        'class180-code01': 'dynamic-centroid-tree-180',
+        'class181-code01': 'segment-tree-divide-181',
+        'class182-code01': 'rollback-dsu-182',
+        'class183-code01': 'cdq-divide-183',
+        'class184-code01': 'parallel-binary-search-184',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

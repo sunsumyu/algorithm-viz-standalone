@@ -137,6 +137,7 @@ export const sosDp086Visualizer = registerDeclarativeAlgorithm<SosDp086Step>({
   name: '高阶状压 DP 与 SOS 高维前缀和 (Class 086)',
   category: 'dynamic-programming',
   difficulty: 'hard',
+  aliases: ['class086-sos-dp', 'sos-profile-dp', 'sum-over-subsets', 'codeforces-165e'],
   problemContent: DP_084_088_PROBLEMS.sosDp086,
   sourceCodes: SOS_DP_086_CODES,
   generateSteps: buildSosDp086Steps,

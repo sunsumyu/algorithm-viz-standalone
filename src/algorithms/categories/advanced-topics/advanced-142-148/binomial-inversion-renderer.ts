@@ -84,6 +84,7 @@ export function buildDerangementSteps(n: number): DerangementStep[] {
 export const binomialInversionVisualizer = registerDeclarativeAlgorithm<DerangementStep>({
   id: 'binomial-inversion-145',
   name: '二项式反演与错排问题 (Class 145)',
+  aliases: ['class145-code01', 'binomial-inversion', 'binomial-inversion-145', 'derangement'],
   category: 'math',
   icon: '🧮',
   difficulty: 2,

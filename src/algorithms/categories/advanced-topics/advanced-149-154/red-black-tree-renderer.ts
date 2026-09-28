@@ -256,6 +256,7 @@ export function buildRBSteps(keys: number[]): RBStep[] {
 export const redBlackTreeVisualizer = registerDeclarativeAlgorithm<RBStep>({
   id: 'red-black-tree-150',
   name: '红黑树 (Class 150)',
+  aliases: ['class150-code01', 'red-black-tree', 'red-black-tree-150', 'rbtree'],
   category: 'tree',
   icon: '🔴',
   difficulty: 3,

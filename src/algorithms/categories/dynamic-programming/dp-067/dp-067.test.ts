@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getManifest } from '../../../../core/registry';
+import '../dp-generated-renderers';
 import './index';
 import {
   buildWordSearchStage1Steps,
@@ -179,22 +180,25 @@ describe('🧪 Class 067 从递归入手二维动态规划 全量测试套件（
   });
 
   // ==========================================
-  // 7. 算法注册与元数据核验
+  // 7. 算法注册与元数据核验 (Class 067 全 6 题统合验证)
   // ==========================================
-  describe('算法中心全局注册核验', () => {
-    // Code01/03/04 已由 dp-generated-renderers 统一黄金舞台挂载，
-    // 注册核验由 src/core/full-catalog-audit.test.ts 全量承接。
-    const expectedIds = [
-      'word-search',
-      'tree-count-height-m',
-      'longest-increasing-path',
+  describe('算法中心全局注册核验与课号别名统合', () => {
+    const class067Suites = [
+      { id: 'min-path-sum', code: 'class067-code01', alias: 'min-path-sum-067' },
+      { id: 'word-search', code: 'class067-code02', alias: 'word-search-067' },
+      { id: 'longest-common-subsequence', code: 'class067-code03', alias: 'longest-common-subsequence-067' },
+      { id: 'longest-palindromic-subsequence', code: 'class067-code04', alias: 'longest-palindromic-subsequence-067' },
+      { id: 'tree-count-height-m', code: 'class067-code05', alias: 'tree-count-height-m-067' },
+      { id: 'longest-increasing-path', code: 'class067-code06', alias: 'longest-increasing-path-067' },
     ];
 
-    it.each(expectedIds)('算法 ID "%s" 应已成功注册至全局算法注册中心', (id) => {
+    it.each(class067Suites)('算法 ID "$id" 应已注册且包含别名 "$code"', ({ id, code, alias }) => {
       const algo = getManifest(id);
-      expect(algo).toBeDefined();
+      expect(algo, `算法 ${id} 必须注册`).toBeDefined();
       expect(algo?.id).toBe(id);
       expect(algo?.category).toBe('dynamic-programming');
+      expect(algo?.aliases).toContain(code);
+      expect(algo?.aliases).toContain(alias);
       expect(algo?.template).toBeDefined();
       expect(algo?.Visualizer).toBeDefined();
     });
@@ -324,6 +328,7 @@ describe('🧪 Class 067 从递归入手二维动态规划 全量测试套件（
           if (selector === '#lcs-2d-board-wrapper') {
             return {
               innerHTML: '',
+              style: {},
               classList: { remove: () => {}, add: () => {}, contains: () => false },
             };
           }

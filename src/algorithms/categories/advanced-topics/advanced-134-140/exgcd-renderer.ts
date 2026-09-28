@@ -143,6 +143,7 @@ export function buildExgcdSteps(initA: number, initB: number): ExgcdStep[] {
 export const exgcdVisualizer = registerDeclarativeAlgorithm<ExgcdStep>({
   id: 'exgcd-139',
   name: '扩展欧几里得算法 (Class 139)',
+  aliases: ['class139-code01', 'exgcd', 'exgcd-139', 'extended-euclidean'],
   category: 'math',
   icon: '🤝',
   difficulty: 2,

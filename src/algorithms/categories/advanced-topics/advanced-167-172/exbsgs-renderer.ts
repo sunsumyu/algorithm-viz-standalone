@@ -225,6 +225,7 @@ export function buildEXBSGSSteps(origA: number, origB: number, origP: number): E
 export const exbsgsVisualizer = registerDeclarativeAlgorithm<EXBSGSStep>({
   id: 'exbsgs-algorithm-169',
   name: '扩展 BSGS (Class 169)',
+  aliases: ['class169-code01', 'exbsgs-algorithm-169', 'exbsgs'],
   category: 'math',
   icon: '🔍',
   difficulty: 3,

@@ -426,11 +426,12 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
       this.progressSlider.max = String(Math.max(0, this.steps.length - 1));
       this.progressSlider.value = String(this.currentIndex);
     }
-    if (step.codeLine != null) {
+    const targetLine = (step as any).codeLine ?? (step as any).line;
+    if (targetLine != null) {
       if (this.codeTerminal) {
-        this.codeTerminal.highlightLine(step.codeLine);
+        this.codeTerminal.highlightLine(targetLine);
       } else if (this.codePanel) {
-        this.codePanel.highlight(step.codeLine);
+        this.codePanel.highlight(targetLine);
       }
     }
     // 更新代码面板下方变量监视器（支持 step.vars 与 step.metrics 双向同步）

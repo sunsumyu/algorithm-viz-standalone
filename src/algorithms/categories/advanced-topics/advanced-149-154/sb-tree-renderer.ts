@@ -210,6 +210,7 @@ export function buildSBSteps(keys: number[]): SBStep[] {
 export const sbTreeVisualizer = registerDeclarativeAlgorithm<SBStep>({
   id: 'sb-tree-149',
   name: 'Size Balanced Tree (Class 149)',
+  aliases: ['class149-code01', 'sb-tree', 'sb-tree-149', 'size-balanced-tree'],
   category: 'tree',
   icon: '🌳',
   difficulty: 3,

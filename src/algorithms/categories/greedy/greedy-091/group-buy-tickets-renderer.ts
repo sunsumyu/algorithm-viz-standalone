@@ -276,6 +276,7 @@ registerAlgorithm({
   levelOrder: 913,
   description: '每个项目购票费用为 Bx - Kx^2，利用二阶导小于 0 的凹函数性质，通过大根堆维护边际增益进行贪心调度。',
   learningGoal: '掌握大顶堆维护边际增益 Delta = B - K*(2x+1) 的离散极值贪心分配机制',
+  aliases: ['class091-code03', 'meituan-group-buy-tickets', 'group-buy-tickets-meituan'],
   template,
   Visualizer: UniversalStageVisualizer,
 });

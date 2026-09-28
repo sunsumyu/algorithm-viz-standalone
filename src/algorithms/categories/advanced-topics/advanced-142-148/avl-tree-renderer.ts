@@ -214,6 +214,7 @@ export function buildAVLSteps(keys: number[]): AVLStep[] {
 export const avlTreeVisualizer = registerDeclarativeAlgorithm<AVLStep>({
   id: 'avl-tree-148',
   name: 'AVL 平衡二叉搜索树 (Class 148)',
+  aliases: ['class148-code01', 'avl-tree', 'avl-tree-148', 'self-balancing-bst'],
   category: 'tree',
   icon: '🌲',
   difficulty: 3,

@@ -262,6 +262,7 @@ export function renderTopologicalSortCanvas(container: HTMLElement, step: TopoSt
 
 registerDeclarativeAlgorithm({
   id: 'topological-sort',
+  aliases: ['class059-code02', 'class026-code01', 'course-schedule-ii-210', 'topo-sort-kahn'],
   name: '拓扑排序 (Topological Sort)',
   category: 'graph',
   description: '左程云算法通关课 Class 059 / 060：基于入度削减的 Kahn 算法，实现有向无环图（DAG）的线性拓扑序列求解与环路检测 (LeetCode 210)',

@@ -170,6 +170,7 @@ export function buildPolySqrtSteps(a: number[], deg: number): PolySqrtStep[] {
 export const polynomialSqrtVisualizer = registerDeclarativeAlgorithm<PolySqrtStep>({
   id: 'polynomial-sqrt-171',
   name: '多项式开方 (Class 171)',
+  aliases: ['class171-code01', 'polynomial-sqrt-171', 'poly-sqrt'],
   category: 'math',
   icon: '√',
   difficulty: 3,

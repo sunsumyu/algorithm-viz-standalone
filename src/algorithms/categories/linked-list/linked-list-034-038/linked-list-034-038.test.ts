@@ -88,4 +88,45 @@ describe('左神经典链表高频与递归专题 (Class 034 ~ 038) 综合测试
       verify1BasedCodeLines(steps, MERGE_SORTED_LISTS_038_CODES);
     });
   });
+
+  // 6. 注册中心与别名统合门禁 (Class 034 ~ 038)
+  describe('注册中心与别名统合门禁 (Class 034 ~ 038)', () => {
+    it('全量算法与别名必须在 algorithmRegistry 中正确解析', async () => {
+      const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+      await import('../../../batch-22-index');
+
+      const expectedMappings = [
+        {
+          id: 'reverse-linked-list',
+          aliases: ['class034-code01', 'reverse-linked-list-034', 'leetcode-206'],
+        },
+        {
+          id: 'copy-list-random-pointer-042',
+          aliases: ['class035-code01', 'class042-code01', 'copy-random-list-035', 'copy-list-random-pointer', 'copy-random-list', 'leetcode-138'],
+        },
+        {
+          id: 'intersection-linked-list',
+          aliases: ['class036-code01', 'intersection-linked-list-036', 'intersection-of-two-linked-lists', 'leetcode-160'],
+        },
+        {
+          id: 'reverse-nodes-in-k-group',
+          aliases: ['class037-code01', 'reverse-k-group-037', 'reverse-nodes-in-k-group-25', 'leetcode-25'],
+        },
+        {
+          id: 'merge-sorted-lists-038',
+          aliases: ['class038-code01', 'merge-two-sorted-lists', 'leetcode-21', 'merge-two-sorted-lists-21'],
+        },
+      ];
+
+      for (const item of expectedMappings) {
+        const manifest = algorithmRegistry.getManifest(item.id);
+        expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+        for (const alias of item.aliases) {
+          expect(manifest?.aliases).toContain(alias);
+          const resolvedByAlias = algorithmRegistry.getManifest(alias);
+          expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+        }
+      }
+    });
+  });
 });

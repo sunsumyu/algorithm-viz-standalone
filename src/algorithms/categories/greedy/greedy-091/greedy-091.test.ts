@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
 import { buildShortestUnsortedSteps } from './shortest-unsorted-subarray-renderer';
 import { buildSmallestRangeSteps } from './smallest-range-renderer';
 import { buildGroupBuyTicketsSteps } from './group-buy-tickets-renderer';
@@ -101,4 +102,46 @@ describe('左神贪心专题 3 (greedy-091) 自动化测试套件', () => {
     const last = steps[steps.length - 1];
     expect(last.maxLen).toBe(5); // n-1 = 5 (arr[0]=0 == arr[5]=0)
   });
+
+  it('7. Class 091 大厂高频笔试真题专题 注册中心与别名统合门禁', async () => {
+    await import('../../../batch-5-index');
+    const expectedMappings = [
+      {
+        id: 'shortest-unsorted-continuous-subarray',
+        aliases: ['class091-code01', 'shortest-unsorted-subarray-581', 'leetcode-581', 'shortest-unsorted-subarray'],
+      },
+      {
+        id: 'smallest-range-covering-elements-from-k-lists',
+        aliases: ['class091-code02', 'smallest-range-632', 'leetcode-632', 'smallest-range'],
+      },
+      {
+        id: 'group-buy-tickets',
+        aliases: ['class091-code03', 'meituan-group-buy-tickets', 'group-buy-tickets-meituan'],
+      },
+      {
+        id: 'split-min-avg-sum',
+        aliases: ['class091-code04', 'split-minimum-average-sum'],
+      },
+      {
+        id: 'minimum-initial-energy-to-finish-tasks',
+        aliases: ['class091-code05', 'minimal-battery-power', 'minimum-initial-energy-1665', 'leetcode-1665'],
+      },
+      {
+        id: 'longest-same-zeros-ones-intervals',
+        aliases: ['class091-code06', 'longest-same-zeros-ones', 'two-intervals-equal-zeros-ones'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+
+

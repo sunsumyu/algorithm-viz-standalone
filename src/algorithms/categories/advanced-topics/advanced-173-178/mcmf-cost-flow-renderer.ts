@@ -117,6 +117,7 @@ export function buildMCMFSteps(): MCMFStep[] {
 export const mcmfCostFlowVisualizer = registerDeclarativeAlgorithm<MCMFStep>({
   id: 'mcmf-cost-flow-174',
   name: '最小费用最大流 MCMF (Class 174)',
+  aliases: ['class174-code01', 'mcmf-cost-flow-174', 'mcmf'],
   category: 'graph',
   icon: '💰',
   difficulty: 3,

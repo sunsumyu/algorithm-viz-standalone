@@ -176,6 +176,7 @@ export function buildEXLucasSteps(n: number, m: number, p: number): EXLucasStep[
 export const exLucasVisualizer = registerDeclarativeAlgorithm<EXLucasStep>({
   id: 'exlucas-theorem-167',
   name: '扩展卢卡斯定理 EXLucas (Class 167)',
+  aliases: ['class167-code01', 'exlucas-theorem-167', 'exlucas'],
   category: 'math',
   icon: '👑',
   difficulty: 3,

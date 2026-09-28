@@ -150,6 +150,7 @@ export function buildFenwickInversionSteps(nums: number[]): FenwickInversionStep
 export const fenwickInversionVisualizer = registerDeclarativeAlgorithm<FenwickInversionStep>({
   id: 'fenwick-inversion-109',
   name: '树状数组求逆序对数 (Class 109)',
+  aliases: ['class109-code01', 'fenwick-inversion', 'fenwick-inversion-109', 'inversion-pairs-bit'],
   category: 'tree',
   icon: '🔄',
   difficulty: 2,

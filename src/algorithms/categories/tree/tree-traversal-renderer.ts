@@ -271,5 +271,6 @@ registerAlgorithm({
   Visualizer,
   difficulty: 1,
   levelOrder: 1,
+  aliases: ['class018-code01', 'tree-traversal', 'binary-tree-traversal', 'preorder-inorder-postorder'],
   learningGoal: '彻底掌握二叉树前中后序递归遍历的访问时机、调用栈深度与输出时机',
 });

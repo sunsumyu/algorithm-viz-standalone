@@ -270,6 +270,7 @@ export function renderMaxIslandAreaCanvas(container: HTMLElement, step: MIAStep)
 
 registerDeclarativeAlgorithm({
   id: 'max-island-area',
+  aliases: ['class058-code02', 'max-area-of-island-695'],
   name: '岛屿的最大面积',
   category: 'graph',
   description: '使用深度优先搜索计算并返回网格中最大连通岛屿的面积',

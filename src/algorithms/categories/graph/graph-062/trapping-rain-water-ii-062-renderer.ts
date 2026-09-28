@@ -1,3 +1,4 @@
+import { snapshotGrid2D } from '../../../../core/strategies/grid-snapshot';
 /**
  * 左程云算法通关课 Class 062: 二维接雨水 II (Trapping Rain Water II · LeetCode 407)
  * 小根堆优先队列 + 木桶短板效应向内收缩
@@ -48,7 +49,7 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
   const m = grid.length;
   const n = grid[0].length;
 
-  const waterLevel: number[][] = grid.map((r) => [...r]);
+  const waterLevel: number[][] = snapshotGrid2D(grid);
   const visited: boolean[][] = Array.from({ length: m }, () => new Array(n).fill(false));
   const heap: Array<{ r: number; c: number; w: number }> = [];
 
@@ -56,9 +57,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
 
   // Step 0: 入口
   steps.push({
-    grid: grid.map((r) => [...r]),
-    waterLevel: waterLevel.map((r) => [...r]),
-    visited: visited.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
+    waterLevel: snapshotGrid2D(waterLevel),
+    visited: snapshotGrid2D(visited),
     curR: -1,
     curC: -1,
     curBoardHeight: 0,
@@ -84,9 +85,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
   heap.sort((a, b) => a.w - b.w);
 
   steps.push({
-    grid: grid.map((r) => [...r]),
-    waterLevel: waterLevel.map((r) => [...r]),
-    visited: visited.map((r) => [...r]),
+    grid: snapshotGrid2D(grid),
+    waterLevel: snapshotGrid2D(waterLevel),
+    visited: snapshotGrid2D(visited),
     curR: -1,
     curC: -1,
     curBoardHeight: heap[0]?.w ?? 0,
@@ -112,9 +113,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
     const { r, c, w: boardH } = cur;
 
     steps.push({
-      grid: grid.map((row) => [...row]),
-      waterLevel: waterLevel.map((row) => [...row]),
-      visited: visited.map((row) => [...row]),
+      grid: snapshotGrid2D(grid),
+      waterLevel: snapshotGrid2D(waterLevel),
+      visited: snapshotGrid2D(visited),
       curR: r,
       curC: c,
       curBoardHeight: boardH,
@@ -141,9 +142,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
           waterLevel[nr][nc] = boardH;
 
           steps.push({
-            grid: grid.map((row) => [...row]),
-            waterLevel: waterLevel.map((row) => [...row]),
-            visited: visited.map((row) => [...row]),
+            grid: snapshotGrid2D(grid),
+            waterLevel: snapshotGrid2D(waterLevel),
+            visited: snapshotGrid2D(visited),
             curR: nr,
             curC: nc,
             curBoardHeight: boardH,
@@ -163,9 +164,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
         heap.sort((a, b) => a.w - b.w);
 
         steps.push({
-          grid: grid.map((row) => [...row]),
-          waterLevel: waterLevel.map((row) => [...row]),
-          visited: visited.map((row) => [...row]),
+          grid: snapshotGrid2D(grid),
+          waterLevel: snapshotGrid2D(waterLevel),
+          visited: snapshotGrid2D(visited),
           curR: nr,
           curC: nc,
           curBoardHeight: newBoardH,
@@ -184,9 +185,9 @@ export function buildTrappingWaterII062Steps(preset: string = 'classic_3x6'): Tr
 
   // 终态步骤
   steps.push({
-    grid: grid.map((row) => [...row]),
-    waterLevel: waterLevel.map((row) => [...row]),
-    visited: visited.map((row) => [...row]),
+    grid: snapshotGrid2D(grid),
+    waterLevel: snapshotGrid2D(waterLevel),
+    visited: snapshotGrid2D(visited),
     curR: -1,
     curC: -1,
     curBoardHeight: 0,

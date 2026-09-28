@@ -438,7 +438,7 @@ export class KnapsackStepMatrixCompiler {
 
     const lineInit = anchorMap?.init || 2;
     const lineOuter = anchorMap?.outer_loop || anchorMap?.loop_i || 4;
-    const lineTransfer = anchorMap?.transfer || anchorMap?.transfer_max || 6;
+    const lineTransfer = anchorMap?.calc_max || anchorMap?.transfer_max || anchorMap?.transfer || anchorMap?.update || 6;
     const lineReturn = anchorMap?.return || 10;
 
     const isCountKind = kind === 'target-sum' || kind === 'coin-change-count';

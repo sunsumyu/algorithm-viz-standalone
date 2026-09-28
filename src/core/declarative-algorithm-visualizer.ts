@@ -966,8 +966,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
     // 2.5 驱动暗色代码终端行高亮与变量监控 (每一行都是一步，绝不跳步)
     if (this.codeTerminal) {
-      if (anyStep.codeLine != null) {
-        this.codeTerminal.highlightLine(anyStep.codeLine);
+      const targetLine = anyStep.codeLine ?? anyStep.line;
+      if (targetLine != null) {
+        this.codeTerminal.highlightLine(targetLine);
       }
       // 保证代码框纯净，绝不将 Card 2 外部 metrics 泄露悬浮至代码终端内
       this.codeTerminal.updateVars(anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : [], anyStep);

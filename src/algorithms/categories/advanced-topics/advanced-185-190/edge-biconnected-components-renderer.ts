@@ -125,6 +125,7 @@ export function buildEdgeBCCSteps(): EdgeBCCStep[] {
 export const edgeBCCVisualizer = registerDeclarativeAlgorithm<EdgeBCCStep>({
   id: 'edge-biconnected-components-189',
   name: '割边与边双连通分量 e-BCC (Class 189)',
+  aliases: ['class189-code01', 'edge-biconnected-components-189', 'edge-bcc'],
   category: 'graph',
   icon: '🌉',
   difficulty: 3,

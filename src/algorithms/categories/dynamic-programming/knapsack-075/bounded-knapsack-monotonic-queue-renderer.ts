@@ -610,6 +610,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 075 Code04：洛谷 P1776 宝物筛选，按余数分组同余链，使用单调双端队列滑动窗口最值达到理论 O(NW) 极限复杂度',
   icon: '⚡',
+  aliases: ['class075-code03', 'bounded-knapsack-monotonic-queue-075', 'multiple-knapsack-mono-queue', 'luogu-p1776-mono-queue'],
   template,
   Visualizer,
   difficulty: 3,

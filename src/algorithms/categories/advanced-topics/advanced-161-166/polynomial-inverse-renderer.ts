@@ -149,6 +149,7 @@ export function buildPolyInvSteps(a: number[], deg: number): PolyInvStep[] {
 export const polynomialInverseVisualizer = registerDeclarativeAlgorithm<PolyInvStep>({
   id: 'polynomial-inverse-162',
   name: '多项式求逆 (Class 162)',
+  aliases: ['class162-code01', 'polynomial-inverse-162', 'poly-inverse'],
   category: 'math',
   icon: '🔄',
   difficulty: 3,

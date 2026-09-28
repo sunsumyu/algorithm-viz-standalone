@@ -81,4 +81,47 @@ describe('左神逆元与组合数学专题三 (math-099) 自动化测试套件'
     verifyLineMap(steps, MUSIC_PLAYLISTS_CODES);
     expect(steps[steps.length - 1].finalValue).toBe(6);
   });
+
+  it('7. Class 099 逆元与同余方程专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'inverse-single-099',
+        aliases: ['class099-code01', 'inverse-single', 'modular-inverse-single', 'fermat-inverse'],
+      },
+      {
+        id: 'inverse-serial-099',
+        aliases: ['class099-code02', 'inverse-serial', 'linear-inverses', 'luogu-p3811'],
+      },
+      {
+        id: 'inverse-factorial-099',
+        aliases: ['class099-code03', 'inverse-factorial', 'combination-ncr', 'factorial-inverses'],
+      },
+      {
+        id: 'subset-gcd-k-099',
+        aliases: ['class099-code04', 'subset-gcd-k', 'subset-gcd-inclusion-exclusion'],
+      },
+      {
+        id: 'coin-buy-ways-099',
+        aliases: ['class099-code05', 'coin-buy-ways', 'haoi-2008-coins', 'luogu-p1450'],
+      },
+      {
+        id: 'music-playlists-099',
+        aliases: ['class099-code06', 'music-playlists', 'number-of-music-playlists-920', 'leetcode-920'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
+

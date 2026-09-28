@@ -287,6 +287,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法通关课 Class 074 Code03：洛谷 P1616 疯狂的采药，每件物品可选任意次，空间压缩后正序枚举容量 j',
   icon: '🌿',
+  aliases: ['class074-code03', 'unbounded-knapsack-074', 'unbounded-knapsack', 'complete-knapsack', 'luogu-p1616'],
   template,
   Visualizer,
   difficulty: 1,

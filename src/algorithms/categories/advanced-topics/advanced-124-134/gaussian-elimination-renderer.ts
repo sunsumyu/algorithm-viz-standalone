@@ -146,6 +146,7 @@ export function buildGaussianSteps(rawMatrix: number[][], n: number): GaussianSt
 export const gaussianEliminationVisualizer = registerDeclarativeAlgorithm<GaussianStep>({
   id: 'gaussian-elimination-133',
   name: '高斯消元法 (Class 133)',
+  aliases: ['class133-code01', 'gaussian-elimination', 'gaussian-elimination-133', 'linear-system-gaussian'],
   category: 'math',
   icon: '🔢',
   difficulty: 3,

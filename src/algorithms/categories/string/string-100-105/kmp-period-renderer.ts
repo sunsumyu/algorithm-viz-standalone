@@ -174,6 +174,7 @@ export const kmpPeriodVisualizer = registerDeclarativeAlgorithm<KmpPeriodStep>({
   icon: '🔁',
   difficulty: 2,
   levelOrder: 101,
+  aliases: ['class101-code01', 'kmp-period', 'luogu-p4391', 'string-period'],
   learningGoal: '掌握 KMP next[n] 的周期平移性质、最小正周期与字符串重复覆盖判定',
   problemHtml: STRING_100_105_PROBLEMS.kmpPeriod.html,
   analysisHtml: STRING_100_105_PROBLEMS.kmpPeriod.html,

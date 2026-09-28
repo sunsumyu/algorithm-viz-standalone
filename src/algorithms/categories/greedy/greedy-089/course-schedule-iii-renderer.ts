@@ -520,11 +520,12 @@ registerAlgorithm({
   name: '课程表 III (Course Schedule III)',
   viewId: 'algo-course-schedule-iii-view',
   category: 'greedy',
-  description: '左程云算法讲解089 Code05：LeetCode 630 课程表 III，经典反悔贪心大根堆与时间余裕置换',
+  description: '左程云算法讲解089 Code06：LeetCode 630 课程表 III，经典反悔贪心大根堆与时间余裕置换',
   icon: '📅',
   template,
   Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 895,
   learningGoal: '深入理解反悔贪心 (Regret Greedy) 思想，掌握大根堆在动态优化历史选择中的应用',
+  aliases: ['class089-code05', 'course-schedule-iii-630', 'leetcode-630'],
 });

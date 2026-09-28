@@ -55,6 +55,7 @@ import gasStationModel from './models/gas-station.yaml';
 import wiggleSubsequenceModel from './models/wiggle-subsequence.yaml';
 import reconstructQueueModel from './models/reconstruct-queue.yaml';
 import maxSubarrayModel from './models/max-subarray.yaml';
+import maxProductSubarrayModel from './models/max-product-subarray.yaml';
 import taskSchedulerModel from './models/task-scheduler.yaml';
 import treeCamerasModel from './models/tree-cameras.yaml';
 import twoCitySchedulingModel from './models/two-city-scheduling.yaml';
@@ -100,6 +101,8 @@ import stockSummaryModel from './models/stock-summary.yaml';
 import editDistanceSummaryModel from './models/edit-distance-summary.yaml';
 import treeDpTheoryModel from './models/tree-dp-theory.yaml';
 import targetSumStandardModel from './models/target-sum-standard.yaml';
+import dungeonGameReverseDpModel from './models/dungeon-game-reverse-dp.yaml';
+import minCostTicketsModel from './models/min-cost-tickets.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -214,6 +217,18 @@ export class AlgorithmModelRepository {
     ['largest-palindromic-number', largestPalindromicNumberModel as IYamlAlgorithmModel],
     ['min-cost-hire-workers', minCostHireWorkersModel as IYamlAlgorithmModel],
     ['max-avg-pass-ratio', maxAvgPassRatioModel as IYamlAlgorithmModel],
+    ['dungeon-game-reverse-dp', dungeonGameReverseDpModel as IYamlAlgorithmModel],
+    ['dungeon-game', dungeonGameReverseDpModel as IYamlAlgorithmModel],
+    ['max-product-subarray', maxProductSubarrayModel as IYamlAlgorithmModel],
+    ['max-product-subarray-070', maxProductSubarrayModel as IYamlAlgorithmModel],
+    ['max-product-subarray-class070', maxProductSubarrayModel as IYamlAlgorithmModel],
+    ['leetcode-152', maxProductSubarrayModel as IYamlAlgorithmModel],
+    ['min-cost-tickets-066', minCostTicketsModel as IYamlAlgorithmModel],
+    ['class066-code02', minCostTicketsModel as IYamlAlgorithmModel],
+    ['min-cost-tickets', minCostTicketsModel as IYamlAlgorithmModel],
+    ['min-cost-tickets-983', minCostTicketsModel as IYamlAlgorithmModel],
+    ['leetcode-983', minCostTicketsModel as IYamlAlgorithmModel],
+    ['min-cost-tickets-class066', minCostTicketsModel as IYamlAlgorithmModel],
     // 理论/总结类模型
     ['dp-theory', dpTheoryModel as IYamlAlgorithmModel],
     ['dp-week-summary-1', dpWeekSummary1Model as IYamlAlgorithmModel],

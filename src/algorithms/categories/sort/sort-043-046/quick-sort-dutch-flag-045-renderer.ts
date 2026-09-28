@@ -93,6 +93,7 @@ export function buildQuickSortDutchFlag045Steps(): QuickSortDutchFlag045Step[] {
 
 export const quickSortDutchFlag045Visualizer = registerDeclarativeAlgorithm<QuickSortDutchFlag045Step>({
   id: 'quick-sort-dutch-flag-045',
+  aliases: ['class045-code01', 'class012-code01', 'quick-sort-dutch-flag-045', 'dutch-flag', 'quick-sort'],
   name: '快速排序与荷兰国旗三路划分 (Class 045)',
   category: 'sort',
   difficulty: 'medium',

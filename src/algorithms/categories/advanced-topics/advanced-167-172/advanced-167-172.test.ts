@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildEXLucasSteps } from './exlucas-renderer';
 import { buildEXCRTSteps } from './excrt-renderer';
 import { buildEXBSGSSteps } from './exbsgs-renderer';
@@ -128,4 +130,26 @@ describe('左神进阶数论与高阶形式幂级数专题 (Class 167 ~ 172) 综
       verify1BasedCodeLines(steps, POLYNOMIAL_LN_EXP_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 167 ~ 172)', () => {
+    it('所有扩展数论与高阶形式幂级数课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class167-code01': 'exlucas-theorem-167',
+        'class168-code01': 'excrt-theorem-168',
+        'class169-code01': 'exbsgs-algorithm-169',
+        'class170-code01': 'polynomial-division-170',
+        'class171-code01': 'polynomial-sqrt-171',
+        'class172-code01': 'polynomial-ln-exp-172',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

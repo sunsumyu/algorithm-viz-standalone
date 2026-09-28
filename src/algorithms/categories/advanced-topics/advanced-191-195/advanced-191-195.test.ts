@@ -3,6 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { algorithmRegistry } from '../../../../core/algorithm-registry';
+import { loadAllAlgorithmBatches } from '../../../../core/algorithm-loader';
 import { buildEBCCConstructionSteps } from './ebcc-construction-renderer';
 import { buildVirtualNodesSteps } from './virtual-nodes-construction-renderer';
 import { buildPrefixSuffixSteps } from './prefix-suffix-graph-renderer';
@@ -94,4 +96,25 @@ describe('左神优化建图全家桶与 2-SAT 专题 (Class 191 ~ 195) 综合�
       verify1BasedCodeLines(steps, TWO_SAT_ADVANCED_CODES);
     });
   });
+
+  describe('课程系统别名覆盖与注册中心闭环 (Class 191 ~ 195)', () => {
+    it('所有优化建图全家桶与 2-SAT 课程别名必须被注册中心无损解析', async () => {
+      await loadAllAlgorithmBatches();
+
+      const expectedCurriculumMap: Record<string, string> = {
+        'class191-code01': 'ebcc-construction-191',
+        'class192-code01': 'virtual-nodes-construction-192',
+        'class193-code01': 'prefix-suffix-graph-193',
+        'class194-code01': 'two-sat-algorithm-194',
+        'class195-code01': 'two-sat-advanced-195',
+      };
+
+      for (const [alias, canonicalId] of Object.entries(expectedCurriculumMap)) {
+        const resolved = await algorithmRegistry.resolve(alias);
+        expect(resolved, `别名 ${alias} 必须能够被 algorithmRegistry 成功解析`).toBeDefined();
+        expect(resolved?.id).toBe(canonicalId);
+      }
+    });
+  });
 });
+

@@ -81,4 +81,38 @@ describe('左神位运算神技与位图专题四 (bit-manipulation) 自动化�
     const lastMissing = stepsMissing[stepsMissing.length - 1];
     expect(lastMissing.bitsetView?.result).toBe(false);
   });
+
+  it('5. Class 030~033 位运算专题 注册中心与别名统合门禁', async () => {
+    const { algorithmRegistry } = await import('../../../../core/algorithm-registry');
+    await import('../../../batch-6-index');
+
+    const expectedMappings = [
+      {
+        id: 'bit-tricks',
+        aliases: ['class030-code01', 'brian-kernighan', 'bit-tricks-030'],
+      },
+      {
+        id: 'single-number-ii',
+        aliases: ['class031-code01', 'single-number-137', 'leetcode-137', 'single-number-2'],
+      },
+      {
+        id: 'single-number-iii',
+        aliases: ['class032-code01', 'single-number-260', 'leetcode-260', 'single-number-3'],
+      },
+      {
+        id: 'bitset-array',
+        aliases: ['class033-code01', 'bitmap-array', 'bitset', 'bit-map'],
+      },
+    ];
+
+    for (const item of expectedMappings) {
+      const manifest = algorithmRegistry.getManifest(item.id);
+      expect(manifest, `Algorithm with id ${item.id} must be registered`).toBeDefined();
+      for (const alias of item.aliases) {
+        expect(manifest?.aliases).toContain(alias);
+        const resolvedByAlias = algorithmRegistry.getManifest(alias);
+        expect(resolvedByAlias?.id, `Alias ${alias} should resolve to ${item.id}`).toBe(item.id);
+      }
+    }
+  });
 });
