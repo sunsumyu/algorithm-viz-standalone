@@ -39,10 +39,29 @@ describe('JPS Problem Content & Code Panel', () => {
   });
 });
 
-describe('JPS 4-Stage Step Generation', () => {
-  it('应能针对默认预设生成全部 4 阶段步骤', () => {
+describe('JPS Step Generation & Multi-Mode Support', () => {
+  it('默认模式应为纯粹独立的 JPS 跳点极速寻路，直达终点', () => {
     const steps = buildJumpPointSearchSteps('corner');
-    expect(steps.length).toBeGreaterThan(15);
+    expect(steps.length).toBeGreaterThan(3);
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.stage).toBe('stage4_jps_full');
+    expect(lastStep.finalPath.length).toBeGreaterThan(0);
+    // 纯 JPS 模式中不混杂 A* 步骤
+    const actions = steps.map(s => s.action);
+    expect(actions).toContain('init');
+    expect(actions).toContain('found-jump-point');
+    expect(actions).toContain('reach-goal');
+  });
+
+  it('JPS 探索跳点数应显著少于 A* 探索节点数', () => {
+    const steps = buildJumpPointSearchSteps('plain', 'jps');
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.jpsVisitedCount).toBeLessThan(lastStep.astarVisitedCount);
+    expect(lastStep.astarVisitedCount).toBeGreaterThan(10);
+  });
+
+  it('四阶段连贯演进模式 (journey) 应按序包含所有阶段', () => {
+    const steps = buildJumpPointSearchSteps('corner', 'journey');
     const stages = new Set(steps.map(s => s.stage));
     expect(stages).toContain('stage1_astar');
     expect(stages).toContain('stage2_prune');
@@ -50,20 +69,12 @@ describe('JPS 4-Stage Step Generation', () => {
     expect(stages).toContain('stage4_jps_full');
   });
 
-  it('Stage 4 必须成功搜索到终点并重构出最终路径', () => {
-    const steps = buildJumpPointSearchSteps('corner', 'stage4');
-    const lastStep = steps[steps.length - 1];
-    expect(lastStep.finalPath.length).toBeGreaterThan(0);
-    expect(lastStep.stage).toBe('stage4_jps_full');
-  });
+  it('A* 模式与剪枝模式应各自生成纯净专业步骤', () => {
+    const astarSteps = buildJumpPointSearchSteps('corner', 'astar');
+    expect(astarSteps.every(s => s.stage === 'stage1_astar')).toBe(true);
 
-  it('JPS 探索节点数应显著少于 A* 探索节点数', () => {
-    const steps = buildJumpPointSearchSteps('plain');
-    const astarStep = steps.find(s => s.stage === 'stage1_astar' && s.action === 'reach-goal');
-    const jpsStep = steps.find(s => s.stage === 'stage4_jps_full' && s.action === 'reach-goal');
-    expect(astarStep).toBeDefined();
-    expect(jpsStep).toBeDefined();
-    expect(jpsStep!.jpsVisitedCount).toBeLessThan(astarStep!.astarVisitedCount);
+    const pruneSteps = buildJumpPointSearchSteps('corner', 'pruning');
+    expect(pruneSteps.some(s => s.stage === 'stage2_prune')).toBe(true);
   });
 });
 
