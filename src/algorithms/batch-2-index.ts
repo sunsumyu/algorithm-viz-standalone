@@ -88,6 +88,7 @@ import './categories/graph/spfa-renderer';
 import './categories/graph/negative-cycle-renderer';
 import './categories/graph/floyd-renderer';
 import './categories/graph/a-star-renderer';
+import './categories/graph/jump-point-search-renderer';
 import './categories/graph/limited-shortest-path-renderer';
 import './categories/graph/shortest-path-summary-renderer';
 import './categories/graph/graph-summary-renderer';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import {
   JUMP_POINT_SEARCH_PROBLEM_HTML,
@@ -65,3 +66,26 @@ describe('JPS 4-Stage Step Generation', () => {
     expect(jpsStep!.jpsVisitedCount).toBeLessThan(astarStep!.astarVisitedCount);
   });
 });
+
+describe('JPS Canvas Presentation & Registry', () => {
+  it('应成功自注册到 algorithmRegistry 并具有正确的属性', async () => {
+    const { algorithmRegistry } = await import('../../../core/algorithm-registry');
+    const manifest = algorithmRegistry.getManifest('jump-point-search');
+    expect(manifest).toBeDefined();
+    expect(manifest?.name).toContain('跳点搜索');
+    expect(manifest?.category).toBe('graph');
+    expect(manifest?.aliases).toContain('jps');
+  });
+
+  it('渲染函数应在 DOM 容器中构建合法的网格沙盘与样式', async () => {
+    const { renderJumpPointSearchCanvas } = await import('./jump-point-search-renderer');
+    const container = document.createElement('div');
+    const steps = buildJumpPointSearchSteps('corner');
+    renderJumpPointSearchCanvas(container, steps[steps.length - 1]);
+    expect(container.innerHTML).toContain('grid');
+    expect(container.innerHTML).not.toContain('[object Object]');
+    expect(container.innerHTML).not.toContain('undefined');
+    expect(container.innerHTML).not.toContain('NaN');
+  });
+});
+

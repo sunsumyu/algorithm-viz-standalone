@@ -779,3 +779,180 @@ export function withMetrics(steps: JpsStep[]): JpsStep[] {
     };
   });
 }
+
+/** 渲染沙盘主画布 */
+export function renderJumpPointSearchCanvas(container: HTMLElement, step: JpsStep): void {
+  const { grid, start, goal, currentNode, finalPath, openSet, closedSet, jumpPoints, forcedNeighbors, naturalNeighbors, rays } = step;
+  const m = grid.length;
+  const n = grid[0].length;
+
+  const pathMap = new Set(finalPath.map(([r, c]) => `${r},${c}`));
+  const openMap = new Set(openSet.map(([r, c]) => `${r},${c}`));
+  const closedMap = new Set(closedSet.map(([r, c]) => `${r},${c}`));
+  const jpMap = new Set(jumpPoints.map(([r, c]) => `${r},${c}`));
+  const fnMap = new Set(forcedNeighbors.map(([r, c]) => `${r},${c}`));
+  const nnMap = new Set(naturalNeighbors.map(([r, c]) => `${r},${c}`));
+
+  // 展开光束射线经过的路径
+  const rayMap = new Set<string>();
+  for (const ray of rays || []) {
+    let cr = ray.from[0];
+    let cc = ray.from[1];
+    const sdr = Math.sign(ray.to[0] - ray.from[0]);
+    const sdc = Math.sign(ray.to[1] - ray.from[1]);
+    while (cr !== ray.to[0] || cc !== ray.to[1]) {
+      rayMap.add(`${cr},${cc}`);
+      cr += sdr;
+      cc += sdc;
+    }
+    rayMap.add(`${ray.to[0]},${ray.to[1]}`);
+  }
+
+  const cellSize = Math.min(36, Math.max(22, Math.floor(380 / Math.max(m, n))));
+  const fontSize = cellSize >= 30 ? 11 : 9;
+
+  const cellBase = `width: ${cellSize}px; height: ${cellSize}px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: ${fontSize}px; font-weight: 800; border: 1.5px solid transparent; box-sizing: border-box; transition: all 0.15s ease;`;
+
+  let cellsHtml = '';
+  for (let r = 0; r < m; r++) {
+    for (let c = 0; c < n; c++) {
+      const key = `${r},${c}`;
+      const isStart = start[0] === r && start[1] === c;
+      const isGoal = goal[0] === r && goal[1] === c;
+      const isWall = grid[r][c] === 1;
+      const isCurrent = currentNode && currentNode[0] === r && currentNode[1] === c;
+      const isPath = pathMap.has(key);
+      const isJp = jpMap.has(key);
+      const isFn = fnMap.has(key);
+      const isNn = nnMap.has(key);
+      const isRay = rayMap.has(key);
+      const isOpen = openMap.has(key);
+      const isClosed = closedMap.has(key);
+
+      let style = cellBase;
+      let label = '';
+
+      if (isStart) {
+        style += 'background: #dbeafe; color: #1d4ed8; border-color: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,0.3);';
+        label = 'S';
+      } else if (isGoal) {
+        style += 'background: #dcfce7; color: #15803d; border-color: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.3);';
+        label = 'G';
+      } else if (isWall) {
+        style += 'background: #1e293b; color: #64748b; border-color: #334155;';
+        label = '■';
+      } else if (isPath) {
+        style += 'background: #10b981; color: #ffffff; border-color: #059669; font-weight: 900;';
+        label = '★';
+      } else if (isFn) {
+        style += 'background: #fef3c7; color: #b45309; border-color: #f59e0b; font-weight: 900;';
+        label = 'FN';
+      } else if (isJp) {
+        style += 'background: #ede9fe; color: #6d28d9; border-color: #8b5cf6; box-shadow: 0 0 8px rgba(139,92,246,0.4); font-weight: 900;';
+        label = 'JP';
+      } else if (isNn) {
+        style += 'background: #ccfbf1; color: #0f766e; border-color: #14b8a6;';
+        label = 'NN';
+      } else if (isRay) {
+        style += 'background: #e0f2fe; color: #0284c7; border-color: #38bdf8;';
+        label = '⚡';
+      } else if (isOpen) {
+        style += 'background: #fef9c3; color: #a16207; border-color: #ca8a04;';
+        label = 'o';
+      } else if (isClosed) {
+        style += 'background: #f8fafc; color: #94a3b8; border-color: #e2e8f0;';
+        label = '·';
+      }
+
+      if (isCurrent) {
+        style += 'background: #fed7aa; color: #c2410c; border-color: #ea580c; transform: scale(1.08); box-shadow: 0 0 8px rgba(234, 88, 12, 0.4); z-index: 2;';
+      }
+
+      cellsHtml += `<div style="${style}"><span>${label}</span></div>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 10px; box-sizing: border-box;">
+      <div style="display: inline-grid; grid-template-columns: repeat(${n}, ${cellSize}px); gap: 4px; padding: 12px; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); user-select: none;">
+        ${cellsHtml}
+      </div>
+      <div style="font-family: system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 600; color: #475569; text-align: center; max-width: 90%;">
+        ${step.statusText}
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b;">
+        f(n) = g(${step.g}) + h(${step.h}) = ${step.f}
+      </div>
+    </div>
+  `;
+}
+
+registerDeclarativeAlgorithm({
+  id: 'jump-point-search',
+  name: '跳点搜索 (Jump Point Search, JPS)',
+  category: 'graph',
+  description: '跳过网格对称路径！结合自然邻居剪枝、强迫邻居与递归射线跳跃，相比传统 A* 实现节点访问数量级降低',
+  icon: '⚡',
+  difficulty: 3,
+  levelOrder: 10,
+  learningGoal: '掌握均匀网格对称剪枝原理、自然邻居与强迫邻居定义，以及水平/垂直/对角线复合跳跃机制',
+  aliases: ['jps', 'jump-point-search-grid', 'a-star-jps'],
+  inputs: [
+    {
+      id: 'preset',
+      label: '地图预设',
+      type: 'select',
+      defaultValue: 'corner',
+      options: [
+        { label: '经典拐角 (8×10)', value: 'corner' },
+        { label: '开阔平原 (10×14)', value: 'plain' },
+        { label: '迷宫障碍 (12×16)', value: 'maze' },
+      ],
+    },
+    {
+      id: 'mode',
+      label: '演示阶段',
+      type: 'select',
+      defaultValue: 'all',
+      options: [
+        { label: '全部 4 阶段连贯教学', value: 'all' },
+        { label: 'Stage 1: 传统 A* 泛洪痛点', value: 'stage1' },
+        { label: 'Stage 2: 剪枝与强迫邻居原理', value: 'stage2' },
+        { label: 'Stage 3: 递归射线跳跃机制', value: 'stage3' },
+        { label: 'Stage 4: 完整 JPS 极速实战', value: 'stage4' },
+      ],
+    },
+  ],
+  presets: [
+    { label: '经典拐角 (8×10 微观强迫邻居)', values: { preset: 'corner', mode: 'all' } },
+    { label: '开阔平原 (10×14 A*泛洪 vs JPS穿透)', values: { preset: 'plain', mode: 'all' } },
+    { label: '迷宫障碍 (12×16 复合跳跃)', values: { preset: 'maze', mode: 'all' } },
+  ],
+  metrics: [
+    { id: 'metric-jps-stage', label: '演进阶段', color: '#8b5cf6' },
+    { id: 'metric-jps-cur', label: '当前考察点', color: '#ea580c' },
+    { id: 'metric-jps-open', label: 'Open 堆规模', color: '#ca8a04' },
+    { id: 'metric-jps-visited', label: '访问/跳点数', color: '#3b82f6' },
+    { id: 'metric-jps-saved', label: '性能优化率', color: '#10b981' },
+  ],
+  legend: [
+    { label: '起点 S', state: 'comparing' },
+    { label: '终点 G', state: 'sorted' },
+    { label: '障碍物', color: '#1e293b' },
+    { label: '跳点 (JP)', color: '#8b5cf6' },
+    { label: '强迫邻居 (FN)', color: '#f59e0b' },
+    { label: '自然邻居 (NN)', color: '#14b8a6' },
+    { label: '跳跃射线', color: '#38bdf8' },
+    { label: '最优路径', state: 'discovered' },
+  ],
+  codeLanguages: JUMP_POINT_SEARCH_CODE_LANGUAGES,
+  problemHtml: JUMP_POINT_SEARCH_PROBLEM_HTML,
+  analysisHtml: JUMP_POINT_SEARCH_ANALYSIS_HTML,
+  generateSteps: (inputs) => {
+    const presetKey = (inputs?.preset as string) || 'corner';
+    const mode = (inputs?.mode as string) || 'all';
+    return buildJumpPointSearchSteps(presetKey, mode);
+  },
+  renderCanvas: (container, step) => renderJumpPointSearchCanvas(container, step as JpsStep),
+});
+
