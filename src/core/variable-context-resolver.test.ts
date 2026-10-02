@@ -98,4 +98,34 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(summary).toContain('i: 3');
     expect(summary).toContain('j: 1');
   });
+
+  it('should accurately resolve l=0 from staticQueueState and scope without false positive from arithmetic r - l', () => {
+    const step = {
+      tree: { val: 3 },
+      current: null,
+      levelIndex: 0,
+      levelSize: 1,
+      staticQueueState: { array: [3], l: 0, r: 1, windowSize: 1 },
+      scope: { l: 0, r: 1, size: 1 },
+      decision: '锁定本层大小: size = r - l = 1 - 0 = 1',
+      log: 'int size = r - l -> 1',
+      codeLine: 11,
+    };
+
+    const varsMap = VariableContextResolver.resolve(step);
+    const lVar = VariableContextResolver.getVariable(varsMap, 'l');
+    const rVar = VariableContextResolver.getVariable(varsMap, 'r');
+    const sizeVar = VariableContextResolver.getVariable(varsMap, 'size');
+
+    expect(lVar?.value).toBe('0');
+    expect(rVar?.value).toBe('1');
+    expect(sizeVar?.value).toBe('1');
+
+    const summary = VariableContextResolver.formatInlineSummary(varsMap, 'int size = r - l;');
+    expect(summary).toContain('l: 0');
+    expect(summary).toContain('r: 1');
+    expect(summary).toContain('size: 1');
+    expect(summary).not.toContain('l: 1');
+  });
 });
+

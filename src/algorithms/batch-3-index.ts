@@ -4,6 +4,11 @@
 
 import './categories/tree/tree-traversal-renderer';
 import './categories/tree/tree-depth-renderer';
+import './categories/tree/min-depth-renderer';
+import './categories/tree/left-leaves-renderer';
+import './categories/tree/all-paths-renderer';
+import './categories/tree/bottom-left-renderer';
+import './categories/tree/max-tree-renderer';
 import './categories/tree/valid-bst-renderer';
 import './categories/tree/binary-tree-level-renderer';
 import './categories/tree/lca-renderer';

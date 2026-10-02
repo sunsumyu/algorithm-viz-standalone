@@ -11,8 +11,11 @@ export interface TreeCanvasState {
   current: number | null;
   highlightedNodes?: number[];
   secondaryHighlightedNodes?: number[];
+  visitedNodes?: number[];
   primaryColor?: string;
   secondaryColor?: string;
+  visitedColor?: string;
+  labels?: Map<number, string>;
 }
 
 export class TreeCanvasAdapter {
@@ -25,20 +28,34 @@ export class TreeCanvasAdapter {
       current,
       highlightedNodes = [],
       secondaryHighlightedNodes = [],
+      visitedNodes = [],
       primaryColor = '#fbbf24',
-      secondaryColor = '#34d399',
+      secondaryColor = '#60a5fa',
+      visitedColor = '#34d399',
+      labels,
     } = state;
 
     const primarySet = new Set<number>(highlightedNodes);
     if (current != null) primarySet.add(current);
 
     const secondarySet = new Set<number>(secondaryHighlightedNodes);
+    const visitedSet = new Set<number>(visitedNodes);
 
     // 清空并挂载 SVG 容器
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.justifyContent = 'center';
 
-    renderTreeSVG(container, tree, primarySet, primaryColor, secondarySet, secondaryColor);
+    renderTreeSVG(
+      container,
+      tree,
+      primarySet,
+      primaryColor,
+      secondarySet,
+      secondaryColor,
+      labels,
+      visitedSet,
+      visitedColor,
+    );
   }
 }

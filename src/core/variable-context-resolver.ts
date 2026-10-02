@@ -62,6 +62,20 @@ export class VariableContextResolver {
       }
     }
 
+    // ── 0.1 优先解包 step.staticQueueState (静态队列状态权威指针) ─────
+    if (s.staticQueueState && typeof s.staticQueueState === 'object') {
+      const sq = s.staticQueueState;
+      if (typeof sq.l === 'number' && !varsMap.has('l')) {
+        varsMap.set('l', { name: 'l', value: String(sq.l), type: 'number', raw: sq.l });
+      }
+      if (typeof sq.r === 'number' && !varsMap.has('r')) {
+        varsMap.set('r', { name: 'r', value: String(sq.r), type: 'number', raw: sq.r });
+      }
+      if (typeof sq.windowSize === 'number' && !varsMap.has('size')) {
+        varsMap.set('size', { name: 'size', value: String(sq.windowSize), type: 'number', raw: sq.windowSize });
+      }
+    }
+
     // ── 1. 扫描 step 自身常见基础属性 ─────────────────────────────
     for (const [k, val] of Object.entries(s)) {
       if (this.IGNORED_KEYS.has(k)) continue;
@@ -137,6 +151,13 @@ export class VariableContextResolver {
     const kvRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]\s*(-?\d+(?:\.\d+)?|'[^']*'|"[^"]*"|true|false)\b/g;
     let match: RegExpExecArray | null;
     while ((match = kvRegex.exec(text)) !== null) {
+      const idx = match.index;
+      // 避免误判算术表达式中的连续等式或减法操作数，如 "size = r - l = 1" 中误将 "- l = 1" 判定为 l=1
+      const prefix = text.slice(Math.max(0, idx - 4), idx).trim();
+      if (/[-+*/%]$/.test(prefix)) {
+        continue;
+      }
+
       const varName = match[1];
       const varVal = match[2].trim();
       if (

@@ -5,7 +5,7 @@ import { buildVBSteps } from './valid-bst-renderer';
 import { buildTSSteps } from './tree-symmetric-renderer';
 import { buildTDSteps } from './tree-depth-renderer';
 import { buildPSSteps } from './path-sum-renderer';
-import { buildBTLSteps } from './binary-tree-level-renderer';
+import { buildBTLSteps, buildStaticArrayLevelOrderSteps } from './binary-tree-level-renderer';
 import { buildTreeInvertSteps } from './tree-invert-renderer';
 import { buildBSTSearchSteps } from './bst-search-renderer';
 import { buildTreeSteps } from './build-tree-renderer';
@@ -18,7 +18,7 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       const steps = buildTTSteps(root, 'pre');
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toEqual([1, 2, 3]);
-      expect(lastStep.message).toContain('前序（根左右）遍历完成');
+      expect(lastStep.message).toMatch(/前序（根左右）.*遍历完成/);
     });
 
     it('2. 中序遍历 [1, 2, 3] 产生左根右顺序 [2, 1, 3]', () => {
@@ -114,6 +114,25 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       const steps = buildBTLSteps(null);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toEqual([]);
+    });
+
+    it('13b. 最终收尾步与遍历全阶段必须完整保持已访问节点高亮与 metrics 存在', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const staticSteps = buildStaticArrayLevelOrderSteps(root);
+      expect(staticSteps.length).toBeGreaterThan(30);
+
+      // 验证每一个 step 都有 metrics 字典
+      for (const step of staticSteps) {
+        expect(step.metrics).toBeDefined();
+        expect(step.metrics!['cur-level']).toBeDefined();
+        expect(step.metrics!['queue-size']).toBeDefined();
+        expect(step.metrics!['total-collected']).toBeDefined();
+      }
+
+      // 验证最后几步收敛时，全树所有 5 个节点都已在 result.flat() 中，不可退化为白色无高亮
+      const finalStep = staticSteps[staticSteps.length - 1];
+      const allCollected = finalStep.result.flat();
+      expect(allCollected.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
     });
   });
 

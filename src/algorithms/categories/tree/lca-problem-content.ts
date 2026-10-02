@@ -1,5 +1,5 @@
 /**
- * 二叉树的最近公共祖先 (Lowest Common Ancestor of a Binary Tree · LeetCode 236)
+ * 二叉树的最近公共祖先 (Lowest Common Ancestor of a Binary Tree · LeetCode 236 / Class 037 Code04)
  * 领域知识与题解精讲配置声明
  */
 
@@ -22,26 +22,42 @@ export const LCA_PROBLEM_HTML = `
 export const LCA_ANALYSIS_HTML = `
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
     <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
-      <span>💡</span> 后序遍历自底向上回溯与四种分支归并情况
+      <span>💡</span> 三大经典演化阶段剖析
     </h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 后序递归四象限状态合并</div>
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① Stage 1: 后序自底向上递归汇聚 (Divide & Conquer)</div>
         <p style="margin: 0; color: #94a3b8;">
         1. <strong>终止条件：</strong> 若 <code style="color: #f87171; font-family: monospace;">root == null || root == p || root == q</code>，直接返回 <code style="color: #38bdf8; font-family: monospace;">root</code>；<br/>
-        2. <strong>递归左右子树：</strong> <code style="color: #38bdf8; font-family: monospace;">TreeNode left = lowestCommonAncestor(root.left, p, q);</code> 和 <code style="color: #fbbf24; font-family: monospace;">TreeNode right = lowestCommonAncestor(root.right, p, q);</code>；<br/>
-        3. <strong>结果合并：</strong><br/>
-        &nbsp;&nbsp;• <strong>左右均非空：</strong> 说明 p 和 q 分布在 root 的两侧，<strong>当前 root 就是 LCA</strong>，返回 <code style="color: #34d399; font-family: monospace;">root</code>；<br/>
-        &nbsp;&nbsp;• <strong>左空右非空：</strong> 说明 p 和 q 都在右子树，返回 <code style="color: #fbbf24; font-family: monospace;">right</code>；<br/>
-        &nbsp;&nbsp;• <strong>左非空右空：</strong> 说明 p 和 q 都在左子树，返回 <code style="color: #38bdf8; font-family: monospace;">left</code>；<br/>
-        &nbsp;&nbsp;• <strong>左右皆空：</strong> 说明子树不包含 p 和 q，返回 <code style="color: #64748b; font-family: monospace;">null</code>。
+        2. <strong>左右递归：</strong> 分别获取左右子树的返回值 left 和 right；<br/>
+        3. <strong>分支归并：</strong><br/>
+        &nbsp;&nbsp;• <strong>左右均非空：</strong> 说明 p 和 q 分布在 root 两侧，<strong>当前 root 就是 LCA</strong>；<br/>
+        &nbsp;&nbsp;• <strong>单侧非空：</strong> 说明两目标均在同一子树，向上传递非空返回值；<br/>
+        &nbsp;&nbsp;• <strong>左右皆空：</strong> 返回 null。
         </p>
       </div>
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 复杂度分析</div>
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② Stage 2: 父节点哈希表与回溯祖先集合 (Parent Map & Visited Set)</div>
         <p style="margin: 0; color: #94a3b8;">
-        • 时间复杂度：<code style="color: #34d399; font-family: monospace;">O(n)</code>，二叉树每个节点至多被访问一次。<br/>
-        • 空间复杂度：<code style="color: #60a5fa; font-family: monospace;">O(h)</code>，递归深度取决于树高。
+        1. <strong>建立父指针：</strong> 使用 BFS/队列从根遍历，建立 <code style="color: #34d399; font-family: monospace;">parentMap[child] = parent</code>，直到 p 与 q 均被记录；<br/>
+        2. <strong>收集 p 祖先链：</strong> 从 p 沿父指针向上回溯直至根节点，将经过的所有节点加入 <code style="color: #60a5fa; font-family: monospace;">visited</code> 集合；<br/>
+        3. <strong>查找首个交汇点：</strong> 从 q 沿父指针向上回溯，遇到的<strong>第一个出现在 visited 集合中的节点</strong>即为最近公共祖先。
+        </p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 4px;">③ Stage 3: 根至目标显式双路径交汇比对 (Root-to-Node Path Trace)</div>
+        <p style="margin: 0; color: #94a3b8;">
+        1. <strong>提取直达路径：</strong> 运用 DFS 回溯分别提取从 root 到 p 与从 root 到 q 的节点序列（如 <code style="color: #38bdf8; font-family: monospace;">pathP</code> 与 <code style="color: #fde047; font-family: monospace;">pathQ</code>）；<br/>
+        2. <strong>双指针同步扫描：</strong> 从索引 0 开始向后逐一比对两路径元素，两序列分叉前夕的最后一个相同节点即为 LCA。<br/>
+        • 视觉表现极具几何直观性，展现树上分叉点定位的物理本质。
+        </p>
+      </div>
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">④ 复杂度对比</div>
+        <p style="margin: 0; color: #94a3b8;">
+        • Stage 1 (后序递归): 时间 <code style="color: #34d399; font-family: monospace;">O(N)</code>，空间 <code style="color: #60a5fa; font-family: monospace;">O(H)</code>，代码极致精炼。<br/>
+        • Stage 2 (父节点哈希): 时间 <code style="color: #34d399; font-family: monospace;">O(N)</code>，空间 <code style="color: #60a5fa; font-family: monospace;">O(N)</code>，模拟树上带父指针跳跃。<br/>
+        • Stage 3 (路径比对): 时间 <code style="color: #34d399; font-family: monospace;">O(N)</code>，空间 <code style="color: #60a5fa; font-family: monospace;">O(H)</code>，直观呈现分叉点收敛过程。
         </p>
       </div>
     </div>

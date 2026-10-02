@@ -12,7 +12,6 @@ import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog, BstStep } from '.
 // 引入左神 Class 037 综合版（单一事实来源，别名映射 bst-lca & bst-trim）
 import './tree-036-037/lowest-common-ancestor-bst-037-renderer';
 import './tree-036-037/trim-bst-037-renderer';
-import maxTreeTemplate from './max-tree.html';
 import mergeTreesTemplate from './merge-trees.html';
 import buildTree2Template from './build-tree-2.html';
 import bstLcaTemplate from './bst-lca.html';
@@ -25,136 +24,10 @@ import sortedArrayToBstTemplate from './sorted-array-to-bst.html';
 import bstToGstTemplate from './bst-to-gst.html';
 
 // ========== Level 17: 最大二叉树 ==========
-interface MaxTreeStep {
-  tree: TreeNode | null;
-  current: number | null;
-  depth: number;
-  maxVal: number | null;
-  message: string;
-  log: string;
-  codeLine?: number | number[];
-}
+// 引入最大二叉树多阶段演进版（单一事实来源，挂载主 ID 'max-tree'，别名 leetcode-654）
+import './max-tree-renderer';
+export { buildMaxTreeSteps, type MaxTreeStep } from './max-tree-renderer';
 
-function buildMaxTreeSteps(nums: number[]): MaxTreeStep[] {
-  const steps: MaxTreeStep[] = [];
-
-  steps.push({
-    tree: null, current: null, depth: 0, maxVal: null,
-    message: '开始构建最大二叉树',
-    log: '开始',
-    codeLine: 1,
-  });
-
-  const build = (nums: number[], depth: number): TreeNode | null => {
-    if (nums.length === 0) return null;
-
-    let maxIdx = 0;
-    for (let i = 1; i < nums.length; i++) {
-      if (nums[i] > nums[maxIdx]) maxIdx = i;
-    }
-
-    steps.push({
-      tree: null, current: nums[maxIdx], depth, maxVal: nums[maxIdx],
-      message: `数组 ${JSON.stringify(nums)} 中最大值 ${nums[maxIdx]} 在索引 ${maxIdx}`,
-      log: `最大值 ${nums[maxIdx]} (索引${maxIdx})`,
-      codeLine: 2,
-    });
-
-    const root: TreeNode = {
-      val: nums[maxIdx],
-      left: build(nums.slice(0, maxIdx), depth + 1),
-      right: build(nums.slice(maxIdx + 1), depth + 1),
-    };
-
-    steps.push({
-      tree: root, current: root.val, depth, maxVal: root.val,
-      message: `节点 ${root.val} 构建完成`,
-      log: `节点 ${root.val} 完成`,
-      codeLine: 3,
-    });
-
-    return root;
-  };
-
-  const tree = build(nums, 0);
-  steps.push({
-    tree, current: null, depth: 0, maxVal: null,
-    message: '最大二叉树构建完成',
-    log: '完成',
-    codeLine: 4,
-  });
-
-  return steps;
-}
-
-class MaxTreeVisualizer extends StepVisualizer<MaxTreeStep> {
-  protected codeLines = [
-    'public TreeNode constructMaximumBinaryTree(int[] nums) {',
-    '    if (nums.length == 0) return null;',
-    '    int maxIdx = 0;',
-    '    for (int i = 1; i < nums.length; i++)',
-    '        if (nums[i] > nums[maxIdx]) maxIdx = i;',
-    '    TreeNode root = new TreeNode(nums[maxIdx]);',
-    '    root.left = constructMaximumBinaryTree(Arrays.copyOfRange(nums, 0, maxIdx));',
-    '    root.right = constructMaximumBinaryTree(Arrays.copyOfRange(nums, maxIdx + 1, nums.length));',
-    '    return root;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 最大二叉树';
-
-  private nums: number[] = [3, 2, 1, 6, 0, 5];
-  private treeEl: HTMLElement | null = null;
-  private logEl: HTMLElement | null = null;
-  private curEl: HTMLElement | null = null;
-  private depthEl: HTMLElement | null = null;
-  private resultEl: HTMLElement | null = null;
-
-  protected initDOMElements(): void {
-    if (!this.root) return;
-    this.treeEl = this.root.querySelector('#mt-tree');
-    this.logEl = this.root.querySelector('#mt-log');
-    this.curEl = this.root.querySelector('#mt-cur');
-    this.depthEl = this.root.querySelector('#mt-depth');
-    this.resultEl = this.root.querySelector('#mt-result');
-    this.bindPlaybackControls();
-    this.bindExamples({
-      '1': () => { this.nums = [3, 2, 1, 6, 0, 5]; this.start(); },
-      '2': () => { this.nums = [1, 2, 3]; this.start(); },
-      '3': () => { this.nums = [1, 2, 3, 4, 5, 6, 7]; this.start(); },
-    });
-  }
-
-  protected buildSteps(): MaxTreeStep[] {
-    return buildMaxTreeSteps(this.nums);
-  }
-
-  protected renderStep(step: MaxTreeStep): void {
-    if (this.treeEl) {
-      renderTreeSVG(this.treeEl, step.tree, step.current != null ? new Set([step.current]) : new Set(), '#cba6f7');
-    }
-    if (this.curEl) this.curEl.textContent = step.current != null ? String(step.current) : '-';
-    if (this.depthEl) this.depthEl.textContent = String(step.depth);
-    if (this.resultEl) this.resultEl.textContent = step.maxVal != null ? String(step.maxVal) : '?';
-    if (this.logEl) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map(s => s.log);
-      renderLog(this.logEl, logs, this.currentIndex);
-    }
-  }
-}
-
-registerAlgorithm({
-  id: 'max-tree',
-  name: '最大二叉树',
-  viewId: 'algo-max-tree-view',
-  category: 'tree',
-  description: '根据数组构建最大二叉树：最大值作为根，递归构建左右子树',
-  icon: '🌲',
-  template: maxTreeTemplate,
-  Visualizer: MaxTreeVisualizer,
-  difficulty: 2,
-  levelOrder: 17,
-  learningGoal: '理解递归构建树的思想，找到最大值作为根节点',
-});
 
 // ========== Level 18: 合并二叉树 ==========
 interface MergeTreesStep {

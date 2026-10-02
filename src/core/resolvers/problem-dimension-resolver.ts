@@ -99,6 +99,9 @@ export class ProblemDimensionResolver {
     'min-cost-hire-workers',
     'max-product-subarray',
     'max-circular-subarray',
+    'min-cost-tickets',
+    'min-cost-tickets-066',
+    'class066-code02',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -372,6 +375,14 @@ export class ProblemDimensionResolver {
       const courses = this.toArray(params.courses);
       m = 1;
       n = courses.length;
+      category = '1d-linear';
+      return { m, n, is1D: true, category };
+    }
+
+    if (params.days !== undefined) {
+      const days = this.toArray(params.days);
+      m = 1;
+      n = days.length + 1;
       category = '1d-linear';
       return { m, n, is1D: true, category };
     }

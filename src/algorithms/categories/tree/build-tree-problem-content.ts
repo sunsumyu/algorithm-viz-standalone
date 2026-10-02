@@ -1,20 +1,23 @@
 /**
- * 从前序与中序遍历序列构造二叉树 (Construct Binary Tree from Preorder and Inorder Traversal · LeetCode 105)
- * 领域知识与题解精讲配置声明
+ * 从前序/后序与中序遍历构造二叉树 (Construct Binary Tree · LeetCode 105 & 106 / Zuoshen Class 036 Code07)
+ * 多阶段演进领域知识与题解精讲
  */
 
 export const BUILD_TREE_PROBLEM_HTML = `
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <span style="padding: 2px 6px; border-radius: 4px; background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);">LeetCode 105</span>
+      <span style="padding: 2px 6px; border-radius: 4px; background: rgba(59,130,246,0.2); color: #60a5fa; font-weight: 700; border: 1px solid rgba(59,130,246,0.3);">LeetCode 105 / 106</span>
       <span style="padding: 2px 6px; border-radius: 4px; background: rgba(245,158,11,0.2); color: #fbbf24; font-weight: 700; border: 1px solid rgba(245,158,11,0.3);">Medium</span>
-      <h2 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0;">从前序与中序遍历序列构造二叉树</h2>
+      <span style="padding: 2px 6px; border-radius: 4px; background: rgba(16,185,129,0.2); color: #34d399; font-weight: 700; border: 1px solid rgba(16,185,129,0.3);">左神 Class 036</span>
+      <h2 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0;">从前序/后序与中序遍历构造二叉树</h2>
     </div>
-    <p style="margin: 0;">给定两个整数数组 <code style="color: #38bdf8; font-family: monospace;">preorder</code> 和 <code style="color: #fde047; font-family: monospace;">inorder</code> ，其中 <code style="color: #38bdf8; font-family: monospace;">preorder</code> 是二叉树的先序遍历， <code style="color: #fde047; font-family: monospace;">inorder</code> 是同一棵树的中序遍历，请构造二叉树并返回其根节点。</p>
+    <p style="margin: 0;">给定二叉树的两种遍历序列（前序+中序 或 后序+中序），每个序列元素互不相同，请构造二叉树并返回其根节点。</p>
     <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px; font-family: monospace; font-size: 11px;">
-      <div style="color: #34d399; font-weight: 700;">示例:</div>
-      <div>输入: preorder = [3, 9, 20, 15, 7], inorder = [9, 3, 15, 20, 7]</div>
-      <div>输出: [3, 9, 20, null, null, 15, 7]</div>
+      <div style="color: #34d399; font-weight: 700;">经典示例:</div>
+      <div>前序 preorder = [3, 9, 20, 15, 7]</div>
+      <div>中序 inorder  = [9, 3, 15, 20, 7]</div>
+      <div>后序 postorder = [9, 15, 7, 20, 3]</div>
+      <div style="color: #38bdf8;">还原二叉树: [3, 9, 20, null, null, 15, 7]</div>
     </div>
   </div>
 `;
@@ -22,101 +25,36 @@ export const BUILD_TREE_PROBLEM_HTML = `
 export const BUILD_TREE_ANALYSIS_HTML = `
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
     <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
-      <span>💡</span> 前序定根、中序切分子树区间
+      <span>💡</span> 三阶段算法演进体系 (Three-Stage Evolution)
     </h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 递归构造六步法</div>
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">Stage 1: 前序+中序分治切分递归构造 (LC 105)</div>
         <p style="margin: 0; color: #94a3b8;">
-        1. <strong>终止条件：</strong> 若前序或中序区间为空，返回 <code style="color: #f87171; font-family: monospace;">null</code>；<br/>
-        2. <strong>前序首元素为根：</strong> <code style="color: #38bdf8; font-family: monospace;">rootVal = preorder[preStart]</code>；<br/>
-        3. <strong>在中序中定位根位置：</strong> 找到 <code style="color: #fde047; font-family: monospace;">inRoot</code> 下标，将中序切分为左子树 <code style="color: #60a5fa; font-family: monospace;">[inStart..inRoot-1]</code> 和右子树 <code style="color: #a855f7; font-family: monospace;">[inRoot+1..inEnd]</code>；<br/>
-        4. <strong>计算左子树长度：</strong> <code style="color: #fbbf24; font-family: monospace;">leftLen = inRoot - inStart</code>；<br/>
-        5. <strong>切分前序区间：</strong> 左子树对应 <code style="color: #60a5fa; font-family: monospace;">[preStart+1 .. preStart+leftLen]</code>，右子树对应 <code style="color: #a855f7; font-family: monospace;">[preStart+leftLen+1 .. preEnd]</code>；<br/>
-        6. <strong>递归组装左右孩子：</strong> <code style="color: #34d399; font-family: monospace;">root.left = build(...); root.right = build(...);</code>。
+        1. <strong>前序首元素定根：</strong> <code style="color: #38bdf8; font-family: monospace;">rootVal = preorder[pL]</code>；<br/>
+        2. <strong>哈希表 O(1) 定位中序根位置：</strong> 在中序中找到下标 <code style="color: #fde047; font-family: monospace;">inRoot</code>；<br/>
+        3. <strong>计算左子树跨度：</strong> <code style="color: #fbbf24; font-family: monospace;">leftLen = inRoot - iL</code>；<br/>
+        4. <strong>精准切分递归：</strong> 左子树 <code style="color: #60a5fa; font-family: monospace;">pre[pL+1 .. pL+leftLen]</code> 与 <code style="color: #60a5fa; font-family: monospace;">in[iL .. inRoot-1]</code>；右子树 <code style="color: #a855f7; font-family: monospace;">pre[pL+leftLen+1 .. pR]</code> 与 <code style="color: #a855f7; font-family: monospace;">in[inRoot+1 .. iR]</code>。
         </p>
       </div>
+
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 复杂度分析</div>
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">Stage 2: 后序+中序分治切分递归构造 (LC 106)</div>
         <p style="margin: 0; color: #94a3b8;">
-        • 时间复杂度：使用哈希表预存中序索引后为严格线性 <code style="color: #34d399; font-family: monospace;">O(n)</code>。<br/>
-        • 空间复杂度：哈希表与递归栈占用 <code style="color: #60a5fa; font-family: monospace;">O(n)</code>。
+        1. <strong>后序尾元素定根：</strong> <code style="color: #34d399; font-family: monospace;">rootVal = postorder[postR]</code>；<br/>
+        2. <strong>同样通过 inMap 定位：</strong> <code style="color: #fde047; font-family: monospace;">leftLen = inRoot - inL</code>；<br/>
+        3. <strong>后序区间切分对应：</strong> 左子树在后序中为 <code style="color: #60a5fa; font-family: monospace;">[postL .. postL+leftLen-1]</code>；右子树为 <code style="color: #a855f7; font-family: monospace;">[postL+leftLen .. postR-1]</code>。
+        </p>
+      </div>
+
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #c084fc; margin-bottom: 4px;">Stage 3: 迭代显式栈模拟重构 ($O(N)$ 零哈希表 · LC 105 迭代法)</div>
+        <p style="margin: 0; color: #94a3b8;">
+        • 维护节点单调前序探索栈 <code style="color: #c084fc; font-family: monospace;">stack</code> 和中序指针 <code style="color: #38bdf8; font-family: monospace;">inIdx = 0</code>。<br/>
+        • 遍历前序数组：若栈顶元素与中序指针不匹配，说明仍处于一路向左的分支，将新节点挂载为当前栈顶的<strong>左孩子</strong>并压栈；<br/>
+        • 若栈顶与中序指针匹配，说明左边界已达，通过持续出栈回溯到拐点父节点，将新节点挂载为该节点的<strong>右孩子</strong>并压栈。
         </p>
       </div>
     </div>
   </div>
 `;
-
-export const BUILD_TREE_CODE_LANGUAGES: Record<string, string[]> = {
-  java: [
-    'public class Solution {',
-    '    private Map<Integer, Integer> inMap = new HashMap<>();',
-    '    public TreeNode buildTree(int[] preorder, int[] inorder) {',
-    '        for (int i = 0; i < inorder.length; i++) inMap.put(inorder[i], i);',
-    '        return build(preorder, 0, preorder.length - 1, 0, inorder.length - 1);',
-    '    }',
-    '    private TreeNode build(int[] pre, int pL, int pR, int iL, int iR) {',
-    '        if (pL > pR || iL > iR) return null;',
-    '        int rootVal = pre[pL];',
-    '        TreeNode root = new TreeNode(rootVal);',
-    '        int inRoot = inMap.get(rootVal);',
-    '        int leftLen = inRoot - iL;',
-    '        root.left = build(pre, pL + 1, pL + leftLen, iL, inRoot - 1);',
-    '        root.right = build(pre, pL + leftLen + 1, pR, inRoot + 1, iR);',
-    '        return root;',
-    '    }',
-    '}',
-  ],
-  cpp: [
-    'class Solution {',
-    '    unordered_map<int, int> inMap;',
-    'public:',
-    '    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {',
-    '        for (int i = 0; i < inorder.size(); i++) inMap[inorder[i]] = i;',
-    '        return build(preorder, 0, preorder.size() - 1, 0, inorder.size() - 1);',
-    '    }',
-    '    TreeNode* build(vector<int>& pre, int pL, int pR, int iL, int iR) {',
-    '        if (pL > pR || iL > iR) return nullptr;',
-    '        int rootVal = pre[pL];',
-    '        TreeNode* root = new TreeNode(rootVal);',
-    '        int inRoot = inMap[rootVal];',
-    '        int leftLen = inRoot - iL;',
-    '        root->left = build(pre, pL + 1, pL + leftLen, iL, inRoot - 1);',
-    '        root->right = build(pre, pL + leftLen + 1, pR, inRoot + 1, iR);',
-    '        return root;',
-    '    }',
-    '};',
-  ],
-  python: [
-    'class Solution:',
-    '    def buildTree(self, preorder: list[int], inorder: list[int]) -> Optional[TreeNode]:',
-    '        in_map = {val: idx for idx, val in enumerate(inorder)}',
-    '        def build(pL, pR, iL, iR):',
-    '            if pL > pR or iL > iR: return None',
-    '            root_val = preorder[pL]',
-    '            root = TreeNode(root_val)',
-    '            in_root = in_map[root_val]',
-    '            left_len = in_root - iL',
-    '            root.left = build(pL + 1, pL + left_len, iL, in_root - 1)',
-    '            root.right = build(pL + left_len + 1, pR, in_root + 1, iR)',
-    '            return root',
-    '        return build(0, len(preorder) - 1, 0, len(inorder) - 1)',
-  ],
-  javascript: [
-    'var buildTree = function(preorder, inorder) {',
-    '    const inMap = new Map();',
-    '    inorder.forEach((val, idx) => inMap.set(val, idx));',
-    '    const build = (pL, pR, iL, iR) => {',
-    '        if (pL > pR || iL > iR) return null;',
-    '        const rootVal = preorder[pL];',
-    '        const root = new TreeNode(rootVal);',
-    '        const inRoot = inMap[rootVal];',
-    '        const leftLen = inRoot - iL;',
-    '        root.left = build(pL + 1, pL + leftLen, iL, inRoot - 1);',
-    '        root.right = build(pL + leftLen + 1, pR, inRoot + 1, iR);',
-    '        return root;',
-    '    };',
-    '    return build(0, preorder.length - 1, 0, inorder.length - 1);',
-    '};',
-  ],
-};

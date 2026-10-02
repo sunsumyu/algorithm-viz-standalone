@@ -21,6 +21,8 @@ export function renderTreeSVG(
   secondaryHighlight?: Set<number>,
   secondaryColor?: string,
   labels?: Map<number, string>,
+  visitedHighlight?: Set<number>,
+  visitedColor?: string,
 ): void {
   if (!root) { container.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-weight: 500;">（空树）</span>'; return; }
   container.innerHTML = '';
@@ -33,6 +35,7 @@ export function renderTreeSVG(
   const draw = (node: TreeNode, x: number, y: number, spread: number) => {
     const isH = highlight.has(node.val);
     const isS = secondaryHighlight?.has(node.val);
+    const isV = visitedHighlight?.has(node.val);
     if (node.left) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
@@ -52,14 +55,19 @@ export function renderTreeSVG(
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '19');
     let fill = '#ffffff', stroke = '#64748b';
-    if (isH) { fill = highlightColor || '#0284c7'; stroke = highlightColor || '#0284c7'; }
-    else if (isS && secondaryColor) { fill = secondaryColor; stroke = secondaryColor; }
+    if (isH) {
+      fill = highlightColor || '#0284c7'; stroke = highlightColor || '#0284c7';
+    } else if (isS && secondaryColor) {
+      fill = secondaryColor; stroke = secondaryColor;
+    } else if (isV && visitedColor) {
+      fill = visitedColor; stroke = visitedColor;
+    }
     c.setAttribute('fill', fill); c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', '2.5');
     svg.appendChild(c);
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', String(x)); t.setAttribute('y', String(y + 5));
     t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('fill', isH || isS ? '#ffffff' : '#0f172a');
+    t.setAttribute('fill', isH || isS || isV ? '#ffffff' : '#0f172a');
     t.setAttribute('font-family', "'JetBrains Mono', monospace");
     t.setAttribute('font-size', '13');
     t.setAttribute('font-weight', '700');
@@ -70,7 +78,7 @@ export function renderTreeSVG(
       const lb = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       lb.setAttribute('x', String(x)); lb.setAttribute('y', String(y - 23));
       lb.setAttribute('text-anchor', 'middle');
-      lb.setAttribute('fill', isH ? (highlightColor || '#0284c7') : '#059669');
+      lb.setAttribute('fill', isH ? (highlightColor || '#0284c7') : (isV ? (visitedColor || '#059669') : '#059669'));
       lb.setAttribute('font-family', "'JetBrains Mono', monospace");
       lb.setAttribute('font-size', '11');
       lb.setAttribute('font-weight', '700');

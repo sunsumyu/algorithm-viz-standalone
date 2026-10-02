@@ -8,11 +8,11 @@
  */
 
 import '../path-sum-renderer';
-import { buildPSSteps, pathSumVisualizer } from '../path-sum-renderer';
+import { buildPathSumStage2BacktrackSteps, pathSumVisualizer } from '../path-sum-renderer';
 import { buildTreeFromArr } from '../tree-template';
 
 export { pathSumVisualizer as pathSumII037Visualizer };
 
 export function buildPathSumII037Steps() {
-  return buildPSSteps(buildTreeFromArr([5, 4, 8, 11, null, 9, 2]), 22);
+  return buildPathSumStage2BacktrackSteps(buildTreeFromArr([5, 4, 8, 11, null, 9, 2]), 22);
 }

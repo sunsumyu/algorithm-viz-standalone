@@ -31,7 +31,7 @@
   - `JUMP_POINT_SEARCH_CODE_LANGUAGES: Record<string, string>` (Java, C++, Python, JavaScript)
   - `JPS_CODE_LINES: Record<string, Record<string, number | number[]>>` (行号锚点映射)
 
-- [ ] **Step 1: 编写测试用例验证讲义与代码结构**
+- [x] **Step 1: 编写测试用例验证讲义与代码结构**
 在 `src/algorithms/categories/graph/jump-point-search.test.ts` 中编写测试：
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -73,18 +73,18 @@ describe('JPS Problem Content & Code Panel', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试验证失败（文件尚不存在）**
+- [x] **Step 2: 运行测试验证失败（文件尚不存在）**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：FAIL（找不到模块 `jump-point-search-problem-content`）。
 
-- [ ] **Step 3: 编写 `jump-point-search-problem-content.ts`**
+- [x] **Step 3: 编写 `jump-point-search-problem-content.ts`**
 实现详尽的高亮讲义与工业级 4 语言标准 JPS 实现，定义 `JPS_CODE_LINES` 锚点。
 
-- [ ] **Step 4: 重新运行测试验证通过**
+- [x] **Step 4: 重新运行测试验证通过**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：PASS。
 
-- [ ] **Step 5: 提交本任务产物**
+- [x] **Step 5: 提交本任务产物**
 ```bash
 git add src/algorithms/categories/graph/jump-point-search-problem-content.ts src/algorithms/categories/graph/jump-point-search.test.ts
 git commit -m "feat(graph): add JPS problem content and multi-language code templates"
@@ -106,7 +106,7 @@ git commit -m "feat(graph): add JPS problem content and multi-language code temp
   - 核心跳点探测函数 `jump(grid, x, y, dx, dy, goal)`
   - 强迫邻居判定函数 `hasForcedNeighbor(grid, x, y, dx, dy)`
 
-- [ ] **Step 1: 在测试中补充 4-Stage 步骤覆盖与算法正确性断言**
+- [x] **Step 1: 在测试中补充 4-Stage 步骤覆盖与算法正确性断言**
 在 `jump-point-search.test.ts` 中增加：
 ```typescript
 import { buildJumpPointSearchSteps } from './jump-point-search-renderer';
@@ -140,11 +140,11 @@ describe('JPS 4-Stage Step Generation', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试验证失败**
+- [x] **Step 2: 运行测试验证失败**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：FAIL（`jump-point-search-renderer` 尚无导出）。
 
-- [ ] **Step 3: 编写 4 阶段步骤生成器及 JPS 核心数学引擎**
+- [x] **Step 3: 编写 4 阶段步骤生成器及 JPS 核心数学引擎**
 实现：
 1. 标准 8-向网格与切比雪夫/八角距离启发函数；
 2. Stage 1: 8-向经典 A*，记录扩展节点数与泛洪网格；
@@ -153,11 +153,11 @@ describe('JPS 4-Stage Step Generation', () => {
 5. Stage 4: 完整 JPS 优先队列寻路与终点路径回溯；
 6. `withMetrics` 封装指标输出（A* vs JPS 节点节省率计算）。
 
-- [ ] **Step 4: 运行测试验证通过**
+- [x] **Step 4: 运行测试验证通过**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：PASS。
 
-- [ ] **Step 5: 提交本任务产物**
+- [x] **Step 5: 提交本任务产物**
 ```bash
 git add src/algorithms/categories/graph/jump-point-search-renderer.ts src/algorithms/categories/graph/jump-point-search.test.ts
 git commit -m "feat(graph): implement JPS 4-stage step generation engine and core pruning logic"
@@ -178,7 +178,7 @@ git commit -m "feat(graph): implement JPS 4-stage step generation engine and cor
   - `registerDeclarativeAlgorithm` 自注册元数据与预设配置
   - `batch-2-index.ts` 中引入 `./categories/graph/jump-point-search-renderer`
 
-- [ ] **Step 1: 在测试中验证渲染器 DOM 生成与注册信息**
+- [x] **Step 1: 在测试中验证渲染器 DOM 生成与注册信息**
 在 `jump-point-search.test.ts` 中增加：
 ```typescript
 import { renderJumpPointSearchCanvas } from './jump-point-search-renderer';
@@ -204,22 +204,22 @@ describe('JPS Canvas Presentation & Registry', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试验证失败**
+- [x] **Step 2: 运行测试验证失败**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：FAIL（未定义 `renderJumpPointSearchCanvas` 及尚未注册）。
 
-- [ ] **Step 3: 编写 Canvas 渲染器并执行 `registerDeclarativeAlgorithm`**
+- [x] **Step 3: 编写 Canvas 渲染器并执行 `registerDeclarativeAlgorithm`**
 实现：
 1. 具备高质感视觉设计：起点 `S`、终点 `G`、障碍物、强迫邻居 `FN` 警示角标、核心跳点 `JP` 芯片徽章、射线光束、最优路径；
 2. 底部辅助演进说明栏；
 3. 声明式注册配置：3 个预设（开阔平原、经典拐角、迷宫障碍）、1 个模式参数（4 阶段完整 / 单阶段单独体验）、高亮指标（阶段、当前点、Open 堆、访问节点对比）；
 4. 在 `src/algorithms/batch-2-index.ts` 中加入 `import './categories/graph/jump-point-search-renderer';`。
 
-- [ ] **Step 4: 运行测试验证通过**
+- [x] **Step 4: 运行测试验证通过**
 运行：`npx vitest run src/algorithms/categories/graph/jump-point-search.test.ts`
 预期：PASS。
 
-- [ ] **Step 5: 提交本任务产物**
+- [x] **Step 5: 提交本任务产物**
 ```bash
 git add src/algorithms/categories/graph/jump-point-search-renderer.ts src/algorithms/batch-2-index.ts src/algorithms/categories/graph/jump-point-search.test.ts
 git commit -m "feat(graph): add JPS canvas renderer and declarative algorithm registration"
@@ -233,24 +233,24 @@ git commit -m "feat(graph): add JPS canvas renderer and declarative algorithm re
 - Update: `src/core/algorithm-catalog.generated.ts`（通过 `npm run meta:sync` 自动生成）
 - Audit: 全门禁测试流水线
 
-- [ ] **Step 1: 运行 `npm run meta:sync` 更新元数据**
+- [x] **Step 1: 运行 `npm run meta:sync` 更新元数据**
 运行：`npm run meta:sync`
 预期：自动检测到新算法 `jump-point-search` 并更新 `algorithm-catalog.generated.ts`。
 
-- [ ] **Step 2: 验证目录索引器门禁测试**
+- [x] **Step 2: 验证目录索引器门禁测试**
 运行：`npx vitest run src/core/algorithm-catalog-indexer.test.ts`
 预期：PASS（目录新鲜度与零漂移验证通过）。
 
-- [ ] **Step 3: 执行顶层抽象与表现层真实契约门禁**
+- [x] **Step 3: 执行顶层抽象与表现层真实契约门禁**
 运行：`npx vitest run src/core/top-level-abstraction-compliance.test.ts`
 运行：`npm run test:presentation`
 预期：PASS（卡片零镜像、零 `[object Object]`、无 NaN、行号有效）。
 
-- [ ] **Step 4: 执行全量 TypeScript 类型检查**
+- [x] **Step 4: 执行全量 TypeScript 类型检查**
 运行：`npm run typecheck`
 预期：PASS（0 错误）。
 
-- [ ] **Step 5: 提交元数据生成物与最终代码**
+- [x] **Step 5: 提交元数据生成物与最终代码**
 ```bash
 git add src/core/algorithm-catalog.generated.ts
 git commit -m "chore: sync algorithm catalog for jump-point-search"
