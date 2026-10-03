@@ -46,6 +46,19 @@ export interface BalancedTree037Step extends Tree036Step {
   pruned?: boolean;
 }
 
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
+}
+
 // 历史经典拓扑节点定义 (保持 100% 兼容历史 SVG 沙盘)
 const BALANCED_TREE_NODES: TreeNode036[] = [
   { id: 1, val: 3, left: 2, right: 3 },
@@ -229,10 +242,13 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
     statusBadge: { text: rootInfo.isBalanced ? '全树平衡' : '判定失衡', type: rootInfo.isBalanced ? 'success' : 'danger' },
   });
 
+  const allTreeVals = collectTreeValues(root);
+
   // 收尾最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
+    visitedNodes: allTreeVals,
     decision: rootInfo.isBalanced
       ? '全树最终判定：二叉树严格平衡 (TRUE)'
       : '全树最终判定：二叉树出现严重失衡 (FALSE)',
@@ -429,9 +445,12 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
   const finalRes = check(root);
   const isBal = finalRes !== -1;
 
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
+    visitedNodes: allTreeVals,
     decision: isBal
       ? `check(root) 返回高度 ${finalRes} != -1，最终判定：全树平衡 (TRUE)`
       : `check(root) 返回 -1，最终判定：全树失衡 (FALSE)`,
@@ -632,10 +651,13 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 最终全部节点出栈完毕且无失衡
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
+    visitedNodes: allTreeVals,
     decision: '显式后序遍历完毕，全树所有节点均平衡，返回 true',
     message: '栈内所有节点全部安全弹出且未触发任何失衡退出，整棵树为平衡二叉树！',
     log: 'while loop finished without imbalance -> return true',
@@ -680,10 +702,26 @@ export function buildBalancedTree037Steps(treeRaw?: string): BalancedTree037Step
 // =========================================================================
 function renderBalancedTreeCanvas(container: HTMLElement, step: BalancedTree037Step): void {
   if (step.tree) {
+    const isDone = step.decision.includes('完成') || step.decision.includes('最终判定') || step.decision.includes('完毕') || step.statusBadge?.type === 'success' || step.statusBadge?.type === 'danger';
+    const allTreeVals = collectTreeValues(step.tree);
+    let current = step.current;
+    let visitedNodes = step.visitedNodes;
+    let secondaryHighlightedNodes = step.secondaryCurrent != null ? [step.secondaryCurrent] : [];
+
+    if (isDone) {
+      if (current === null) {
+        current = step.tree.val;
+      }
+      if (!visitedNodes || visitedNodes.length === 0) {
+        visitedNodes = allTreeVals;
+      }
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
-      current: step.current,
-      secondaryHighlightedNodes: step.secondaryCurrent != null ? [step.secondaryCurrent] : [],
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
       primaryColor: '#f59e0b',
       secondaryColor: '#38bdf8',
       visitedColor: '#34d399',

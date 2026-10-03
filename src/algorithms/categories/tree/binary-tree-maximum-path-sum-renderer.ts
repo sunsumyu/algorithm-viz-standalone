@@ -39,6 +39,21 @@ export interface PathSumStep extends StepBase {
   tree?: TreeNode | null;
   stageId?: string;
   metrics?: Record<string, string | number>;
+  visitedNodes?: number[];
+  highlightedNodes?: number[];
+}
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
 }
 
 export const MAX_PATH_SUM_CODES = MAX_PATH_SUM_STAGE1_CODES;
@@ -220,8 +235,10 @@ export function buildMaxPathSumStage1Steps(root: TreeNode | null): PathSumStep[]
 
   dfs(root);
 
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
-    currentNode: null,
+    currentNode: root ? root.val : null,
     leftGain: 0,
     rightGain: 0,
     currentArchSum: globalMax,
@@ -235,6 +252,8 @@ export function buildMaxPathSumStage1Steps(root: TreeNode | null): PathSumStep[]
     statusBadge: { text: `最终最大和: ${globalMax}`, type: 'success' },
     tree: cloneStateDepTree(root),
     stageId: 'stage-1',
+    visitedNodes: allTreeVals,
+    highlightedNodes: bestPath.length > 0 ? [...bestPath] : allTreeVals,
     metrics: { '最终最大路径和': globalMax, '最优节点集': bestPath.join(' ➔ ') },
   });
 
@@ -381,8 +400,10 @@ export function buildMaxPathSumStage2InfoSteps(root: TreeNode | null): PathSumSt
 
   const finalInfo = processNode(root);
 
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
-    currentNode: null,
+    currentNode: root ? root.val : null,
     leftGain: 0,
     rightGain: 0,
     currentArchSum: finalInfo ? finalInfo.maxPathSum : 0,
@@ -396,6 +417,7 @@ export function buildMaxPathSumStage2InfoSteps(root: TreeNode | null): PathSumSt
     statusBadge: { text: `收敛: ${finalInfo?.maxPathSum}`, type: 'success' },
     tree: cloneStateDepTree(root),
     stageId: 'stage-2',
+    visitedNodes: allTreeVals,
     metrics: { '最终结果': finalInfo?.maxPathSum ?? 0 },
   });
 
@@ -511,8 +533,10 @@ export function buildMaxPathSumStage3StackSteps(root: TreeNode | null): PathSumS
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
-    currentNode: null,
+    currentNode: root ? root.val : null,
     leftGain: 0,
     rightGain: 0,
     currentArchSum: globalMax,
@@ -526,6 +550,7 @@ export function buildMaxPathSumStage3StackSteps(root: TreeNode | null): PathSumS
     statusBadge: { text: `结果: ${globalMax}`, type: 'success' },
     tree: cloneStateDepTree(root),
     stageId: 'stage-3',
+    visitedNodes: allTreeVals,
     metrics: { '最终结果': globalMax },
   });
 
@@ -639,11 +664,28 @@ export const binaryTreeMaximumPathSumVisualizer = registerDeclarativeAlgorithm<P
 
 export function renderMaxPathSumCanvas(container: HTMLElement, step: PathSumStep): void {
   if (step.tree) {
+    const isDone = step.decision.includes('完毕') || step.decision.includes('完成') || step.statusBadge?.type === 'success';
+    const allTreeVals = collectTreeValues(step.tree);
+    let current = step.currentNode;
+    let visitedNodes = step.visitedNodes;
+
+    if (isDone) {
+      if (current === null && step.tree) {
+        current = step.tree.val;
+      }
+      if (!visitedNodes || visitedNodes.length === 0) {
+        visitedNodes = allTreeVals;
+      }
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
-      current: step.currentNode,
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      secondaryHighlightedNodes: step.bestArchPath && step.bestArchPath.length > 0 ? step.bestArchPath : [],
       primaryColor: '#fbbf24',
       secondaryColor: '#34d399',
+      visitedColor: '#38bdf8',
     });
   } else {
     container.innerHTML = `

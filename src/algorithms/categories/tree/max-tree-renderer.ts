@@ -40,6 +40,20 @@ export interface MaxTreeStep {
   stackVals?: number[];
   activeNum?: number | null;
   metrics?: Record<string, string>;
+  visitedNodes?: number[];
+}
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
 }
 
 import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
@@ -224,13 +238,15 @@ export function buildMaxTreeStage1Steps(nums: number[]): MaxTreeStep[] {
   };
 
   const finalRoot = build(0, nums.length - 1, 0);
+  const allTreeVals = collectTreeValues(finalRoot);
 
   steps.push({
     tree: cloneTree(finalRoot),
     current: finalRoot ? finalRoot.val : null,
     depth: 0,
     maxVal: finalRoot ? finalRoot.val : null,
-    highlightNodes: finalRoot ? new Set([finalRoot.val]) : new Set(),
+    highlightNodes: new Set(allTreeVals),
+    visitedNodes: allTreeVals,
     nums: [...nums],
     message: `最大二叉树构建完成，根节点为 ${finalRoot ? finalRoot.val : 'null'}`,
     log: `构建完成，根节点=${finalRoot ? finalRoot.val : 'null'}`,
@@ -365,6 +381,8 @@ export function buildMaxTreeStage2StackSteps(nums: number[]): MaxTreeStep[] {
   }
 
   const root = stack[0];
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
     tree: cloneTree(root),
     current: root.val,
@@ -372,7 +390,8 @@ export function buildMaxTreeStage2StackSteps(nums: number[]): MaxTreeStep[] {
     maxVal: root.val,
     nums: [...nums],
     stackVals: stack.map((n) => n.val),
-    highlightNodes: new Set([root.val]),
+    highlightNodes: new Set(allTreeVals),
+    visitedNodes: allTreeVals,
     message: `扫描结束，栈底节点 ${root.val} 即为全树最大根节点`,
     log: `构建完毕，笛卡尔树根节点=${root.val}`,
     codeLine: lines.returnRoot,
@@ -544,13 +563,16 @@ export function buildMaxTreeStage3IterativeSteps(nums: number[]): MaxTreeStep[] 
     });
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   steps.push({
     tree: cloneTree(root),
     current: root.val,
     depth: 0,
     maxVal: root.val,
     nums: [...nums],
-    highlightNodes: new Set([root.val]),
+    highlightNodes: new Set(allTreeVals),
+    visitedNodes: allTreeVals,
     message: `显式任务栈清空，全树构建完成，根节点为 ${root.val}`,
     log: `构建完成，根节点=${root.val}`,
     codeLine: lines.returnRoot,
@@ -585,7 +607,16 @@ function renderMaxTreeCanvas(container: HTMLElement, step: MaxTreeStep): void {
     return;
   }
 
-  const highlight = step.highlightNodes || (step.current != null ? new Set([step.current]) : new Set<number>());
+  const isDone = step.message.includes('完成') || step.message.includes('结束') || step.log.includes('完成');
+  const allTreeVals = collectTreeValues(step.tree);
+  let highlight = step.highlightNodes;
+
+  if (isDone && (!highlight || highlight.size <= 1)) {
+    highlight = new Set(allTreeVals);
+  } else if (!highlight) {
+    highlight = step.current != null ? new Set([step.current]) : new Set<number>();
+  }
+
   renderTreeSVG(container, step.tree, highlight, '#cba6f7', new Set(), '#89b4fa');
 }
 

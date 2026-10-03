@@ -1075,6 +1075,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.maxGlobalSum).toBe(42);
+      expect(last.currentNode).toBe(-10);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([-10, 9, 20, 15, 7]));
     });
 
     it('Stage 1: 全负数树 [-3, -2, -1] 应返回最大单个节点 -1', () => {
@@ -1095,6 +1097,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.maxGlobalSum).toBe(42);
+      expect(last.currentNode).toBe(-10);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([-10, 9, 20, 15, 7]));
     });
 
     it('Stage 2: 简单树 [1, 2, 3] 返回 6', () => {
@@ -1114,6 +1118,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.maxGlobalSum).toBe(42);
+      expect(last.currentNode).toBe(-10);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([-10, 9, 20, 15, 7]));
     });
 
     it('空树情况下三大 Stage 安全退出返回 0', () => {
@@ -1148,6 +1154,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.totalSum).toBe(1026);
+      expect(last.currentNodeId).toBe(4);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 9, 0, 5, 1]));
       expect(last.completedPaths.length).toBe(3);
     });
 
@@ -1162,6 +1170,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.totalSum).toBe(1026);
+      expect(last.currentNodeId).toBe(4);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 9, 0, 5, 1]));
       expect(last.completedPaths.length).toBe(3);
     });
 
@@ -1176,6 +1186,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       const last = steps[steps.length - 1];
       expect(last.totalSum).toBe(1026);
+      expect(last.currentNodeId).toBe(4);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 9, 0, 5, 1]));
       expect(last.completedPaths.length).toBe(3);
     });
 
@@ -1281,6 +1293,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(3);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
       expect(last.metrics?.['整树平衡判定']).toContain('TRUE');
     });
 
@@ -1298,7 +1312,10 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       for (let i = 0; i < balSteps.length; i++) {
         assertCodeLineWithinBounds(balSteps[i].codeLine, BALANCED_TREE_037_STAGE2_CODES, `Balanced Stage 2 Step ${i}`);
       }
-      expect(balSteps[balSteps.length - 1].metrics?.['整树平衡判定']).toContain('TRUE');
+      const lastBal2 = balSteps[balSteps.length - 1];
+      expect(lastBal2.current).toBe(3);
+      expect(lastBal2.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
+      expect(lastBal2.metrics?.['整树平衡判定']).toContain('TRUE');
 
       const unbalRoot = buildTreeFromArr([1, 2, 2, 3, 3, null, null, 4, 4]);
       const unbalSteps = buildBalancedStage2PruneSteps(unbalRoot);
@@ -1313,7 +1330,10 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       for (let i = 0; i < balSteps.length; i++) {
         assertCodeLineWithinBounds(balSteps[i].codeLine, BALANCED_TREE_037_STAGE3_CODES, `Balanced Stage 3 Step ${i}`);
       }
-      expect(balSteps[balSteps.length - 1].metrics?.['整树平衡判定']).toContain('TRUE');
+      const lastBal3 = balSteps[balSteps.length - 1];
+      expect(lastBal3.current).toBe(3);
+      expect(lastBal3.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
+      expect(lastBal3.metrics?.['整树平衡判定']).toContain('TRUE');
 
       const unbalRoot = buildTreeFromArr([1, 2, 2, 3, 3, null, null, 4, 4]);
       const unbalSteps = buildBalancedStage3StackSteps(unbalRoot);
@@ -1571,6 +1591,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.tree!.val).toBe(6);
       expect(last.tree!.left!.val).toBe(3);
       expect(last.tree!.right!.val).toBe(5);
+      expect(last.current).toBe(6);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 2, 1, 6, 0, 5]));
     });
 
     it('Stage 2: 单调栈 O(N) 笛卡尔树构建且四语言行号合法', () => {
@@ -1586,6 +1608,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.tree!.val).toBe(6);
       expect(last.tree!.left!.val).toBe(3);
       expect(last.tree!.right!.val).toBe(5);
+      expect(last.current).toBe(6);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 2, 1, 6, 0, 5]));
     });
 
     it('Stage 3: 显式任务栈迭代构建且四语言行号合法', () => {
@@ -1601,6 +1625,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.tree!.val).toBe(6);
       expect(last.tree!.left!.val).toBe(3);
       expect(last.tree!.right!.val).toBe(5);
+      expect(last.current).toBe(6);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 2, 1, 6, 0, 5]));
     });
 
     it('三大 Stage 对递增序列 [1, 2, 3, 4] 根节点统一为 4', () => {

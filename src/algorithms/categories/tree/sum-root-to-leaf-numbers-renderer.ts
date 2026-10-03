@@ -52,6 +52,22 @@ export interface SumNumbersStep extends StepBase {
   stageId?: string;
   queueState?: { node: number; sum: number }[];
   stackState?: { node: number; sum: number }[];
+  visitedNodes?: number[];
+  highlightedNodes?: number[];
+  statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+}
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
 }
 
 export const SUM_NUMBERS_STAGE1_LINES = {
@@ -306,14 +322,16 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
   }
 
   const finalResult = dfs(root, 0);
+  const allTreeVals = collectTreeValues(root);
 
   steps.push({
-    currentNodeId: null,
-    activePathNodeIds: [],
+    currentNodeId: root ? root.val : null,
+    activePathNodeIds: allTreeVals,
+    visitedNodes: allTreeVals,
     completedPaths: [...completedPaths],
     totalSum: finalResult,
     decision: `🎉 全树 DFS 遍历完成！所有根到叶节点路径数字之和为 ${finalResult}`,
-    metrics: { '当前节点': '完成', '当前路径值': '-', '已累加和': finalResult, '递归深度': 0 },
+    metrics: { '当前节点': root ? `Node(${root.val})` : '完成', '当前路径值': '-', '已累加和': finalResult, '递归深度': 0 },
     message: `计算收官：全树共 ${completedPaths.length} 条有效路径，总和为 ${finalResult}`,
     log: `SumNumbers Stage 1 done. Total = ${finalResult}`,
     codeLine: linesMap.done,
@@ -488,10 +506,13 @@ export function buildSumNumbersStage2BfsSteps(root: TreeNode | null): SumNumbers
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // Done
   steps.push({
-    currentNodeId: null,
-    activePathNodeIds: [],
+    currentNodeId: root ? root.val : null,
+    activePathNodeIds: allTreeVals,
+    visitedNodes: allTreeVals,
     completedPaths: [...completedPaths],
     totalSum,
     decision: `🎉 BFS 双队列层序遍历完成！所有根到叶数字之和为 ${totalSum}`,
@@ -671,10 +692,13 @@ export function buildSumNumbersStage3StackSteps(root: TreeNode | null): SumNumbe
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // Done
   steps.push({
-    currentNodeId: null,
-    activePathNodeIds: [],
+    currentNodeId: root ? root.val : null,
+    activePathNodeIds: allTreeVals,
+    visitedNodes: allTreeVals,
     completedPaths: [...completedPaths],
     totalSum,
     decision: `🎉 显式双栈迭代前序遍历完成！所有根到叶数字之和为 ${totalSum}`,
@@ -867,9 +891,10 @@ export function generateSumNumbersSteps(nodesInput?: TreeNodeData[]): SumNumbers
 
   steps.push({
     nodes,
-    currentNodeId: null,
+    currentNodeId: 1,
     callStack: [],
-    activePathNodeIds: [],
+    activePathNodeIds: nodes.map((n) => n.id),
+    visitedNodes: nodes.map((n) => n.id),
     completedPaths: [...completedPaths],
     totalSum: result,
     decision: `全树 DFS 遍历完成！所有根到叶节点路径数字之和为 ${result}`,
@@ -889,10 +914,23 @@ export function renderSumNumbersCanvas(container: HTMLElement, step: SumNumbersS
   const { nodes, currentNodeId, activePathNodeIds, completedPaths, totalSum, tree, queueState, stackState } = step;
 
   if (tree) {
+    const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.statusBadge?.type === 'success';
+    const allTreeVals = collectTreeValues(tree);
+    let current = currentNodeId;
+    let visitedNodes = step.visitedNodes;
+    let highlightedNodes = activePathNodeIds;
+
+    if (isDone) {
+      if (current === null && tree) current = tree.val;
+      if (!visitedNodes || visitedNodes.length === 0) visitedNodes = allTreeVals;
+      if (!highlightedNodes || highlightedNodes.length === 0) highlightedNodes = allTreeVals;
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree,
-      current: currentNodeId,
-      highlightedNodes: activePathNodeIds,
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      highlightedNodes: highlightedNodes && highlightedNodes.length > 0 ? highlightedNodes : undefined,
       primaryColor: '#f59e0b',
       secondaryColor: '#38bdf8',
       visitedColor: '#34d399',
