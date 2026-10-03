@@ -24,6 +24,7 @@ description: "使用基于「不同路径 II」黄金基准与 YAML 驱动模型
 - **报错是架构契约守门人在履职**：如 `[VisualizerAppController] 算法模型 "${id}" 未在仓储中找到！禁止错误回退至其他算法` 是系统最高层的防腐门禁。
 - **严禁掩耳盗铃**：严禁吞掉错误（try-catch）、严禁私自 fallback 到无关算法、严禁从目录中临时移除或写临时 patch。
 - **正面攻坚履约**：必须按照规范创建完整的 `src/core/models/<algorithm-id>.yaml`，在 `AlgorithmModelRepository` 静态注册，并在策略引擎中补齐 Stage 1~4。
+- **测试断言不可篡改（No Test Tampering）**：严禁为了跑通门禁私自删改、注释 `universal-model-fidelity.test.ts` 或各阶段门禁断言，严禁将精准匹配弱化为软断言；报错必须通过补全 YAML 与实现自愈，严禁“改测试迎合残缺实现”！
 
 ---
 

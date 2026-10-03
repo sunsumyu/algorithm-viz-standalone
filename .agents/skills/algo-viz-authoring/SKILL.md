@@ -53,7 +53,7 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 2. **严格一行一步与零静默（Strict One-Line-One-Step）**：代码面板必须完整展示所有被调用的辅助函数。每一次状态变更都必须映射到具体代码行，杜绝高亮冻结（Zero Line Freezing）与循环静默跳步。
 3. **深模块与公共模板复用**：所有递归树/状态依赖树必须接入 `RecursionTreeAdapter`，数组快照必须调用 `GridSnapshotPrimitives`，严禁在业务 Renderer 中私建重复轮子。
 4. **视觉连续性与零 undefined 脏渲染**：双序列/双指针对比必须包含末尾 `EOF` 哨兵格子，指针越界不消失；严禁在卡片或日志中输出 `'undefined'` 或 `NaN`。
-5. **100% 硬测试断言**：每个算法必须配备包含入口帧、四语言行号合法性以及关键变量演化的单测，严禁伪绿灯。
+5. **测试不可篡改与防自测陷阱（No Test Tampering & No Mock Tests）**：严禁 AI 自写自测闭环（断言契约 RED 必须先行）；绝对严禁为了通过测试而私自删改、注释已有测试断言，或将精准断言篡改为模糊软断言；报错必须自愈修复业务代码，严禁“改测试迎合错误实现”！严禁伪绿灯。
 
 ---
 
