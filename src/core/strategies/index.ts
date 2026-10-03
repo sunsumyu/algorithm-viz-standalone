@@ -17,7 +17,7 @@ import { LinearStepMatrixCompiler } from './linear-step-matrix-compiler';
 import { PartitionDPStrategy, PartitionIntegerBreakStrategy } from './partition-integer-break-strategy';
 
 import { KnapsackFamilyStrategy } from './knapsack-family-strategy';
-import { HouseRobberStrategy } from './house-robber-strategy';
+import { HouseRobberFamilyStrategy, HouseRobberStrategy } from './house-robber-family-strategy';
 import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
 import { JumpGameIIStrategy } from './jump-game-ii-strategy';
@@ -237,6 +237,7 @@ export {
   KnapsackTargetSumStrategy,
   KnapsackCombinationSum4Strategy,
   KnapsackFamilyStrategy,
+  HouseRobberFamilyStrategy,
   HouseRobberStrategy,
   StockStrategy,
   SequenceAdvancedStrategy,

@@ -9,13 +9,13 @@ export type HouseRobberModelId =
   | 'house-robber-iii';
 
 /**
- * 打家劫舍家族独立算法策略模块 (HouseRobberStrategy)
+ * 打家劫舍家族独立算法策略模块 (HouseRobberFamilyStrategy)
  * 覆盖全部 3 道经典打家劫舍题型：
  * - 打家劫舍 I (LC 198): 线性间隔选优
  * - 打家劫舍 II (LC 213): 环形数组拆解为两个单链线性问题
  * - 打家劫舍 III (LC 337): 树形 DP 后序遍历
  */
-export class HouseRobberStrategy implements IAlgorithmStrategy {
+export class HouseRobberFamilyStrategy implements IAlgorithmStrategy {
   public readonly modelId: string;
 
   constructor(modelId: HouseRobberModelId | string = 'house-robber') {
@@ -1028,3 +1028,6 @@ export class HouseRobberStrategy implements IAlgorithmStrategy {
     return steps;
   }
 }
+
+export const HouseRobberStrategy = HouseRobberFamilyStrategy;
+

@@ -94,10 +94,8 @@ describe('顶层抽象与架构血缘自省门禁 (Top-Level Abstraction Gates)'
   });
 
   it('门禁 2: 业务策略类 (Strategy) 必须为轻量领域适配器，体积严禁超过 120 行 (Thin Strategy Gate)', () => {
-    // 历史遗留待重构的单体策略豁免清单（禁止向此清单添加新文件！）
-    const LEGACY_STRATEGY_EXEMPTIONS = new Set([
-      'house-robber-strategy.ts', // 历史遗留打家劫舍全量实现 (~1000行)，待收归 LinearStepMatrixCompiler
-    ]);
+    // 历史遗留豁免清单已全部攻坚清零（ZERO EXEMPTIONS）！全库严禁添加任何新豁免！
+    const LEGACY_STRATEGY_EXEMPTIONS = new Set<string>();
 
     const bloatedStrategies: Array<{ file: string; lines: number }> = [];
 
