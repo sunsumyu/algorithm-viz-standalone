@@ -3,24 +3,11 @@ name: algo-viz-authoring
 description: Use when authoring, implementing, or auditing algorithm visualization renderers, step generators, and multi-language code linkages in this project to prevent line offset misalignments, missing entry frames, and skipped execution loops.
 ---
 
-# 算法可视化项目全栈开发与审查终极规范 (Algorithm Visualizer Master Authoring Standards)
+# 算法可视化全栈开发与审查规范 (Algorithm Visualizer Master Authoring Standards)
 
-本规范是本算法可视化沙盘系统（Algorithm Visualizer）关于**步进生成器（Step Generator）**、**代码联动高亮（Code Linkage）**、**演化阶段（Stage Evolution）**、**动画实体物理沙盘（Sandbox Entity）**、**UI 布局与空间交互（UI Layout）**及**自动化测试（Vitest Invariants）**的唯一事实标准。
+本规范是算法可视化沙盘系统（Algorithm Visualizer）关于**步进生成器**、**代码联动高亮**、**演化阶段**、**物理沙盘**及**自动化测试**的核心准则。
 
-> **核心诫律**：本项目旨在构建**教学级、高可读性、高保真**的算法推演交互系统。所有算法必须让学习者“知其然更知其所以然”。严禁粗制滥造、严禁跳步运行、严禁单一硬编码、严禁单点修改而不做全局核验。**严禁未查重盲目新建，严禁双版本粗暴二选一删除，必须综合两版本长处深度整合！**
-
----
-
-## 目录
-0. [实现前强制死门禁：四维查重与双版本长处综合整合 (Preflight De-duplication & Bi-Version Synthesis)](#0-实现前强制死门禁四维查重与双版本长处综合整合)
-1. [全项目历史七大典型故障深度复盘 (The 7 Historical Anti-Patterns)](#1-全项目历史七大典型故障深度复盘)
-2. [代码联动与执行粒度规范 (Code Linkage & Granularity Standards)](#2-代码联动与执行粒度规范)
-3. [算法“四段式”与正逆序演化规范 (4-Stage Evolution & Bidirectional Traversal)](#3-算法四段式与正逆序演化规范)
-4. [物理沙盘与实体动画交互规范 (Sandbox & Entity Dynamics)](#4-物理沙盘与实体动画交互规范)
-5. [UI 布局、层次去冗余与交互控制规范 (UI Layout & Controls)](#5-ui-布局层次去冗余与交互控制规范)
-6. [重置状态与幂等性规范 (Reset & Idempotency)](#6-重置状态与幂等性规范)
-7. [全量排查与 Vitest 自动化约束规范 (Whole-Suite Audit & TDD Invariants)](#7-全量排查与-vitest-自动化约束规范)
-8. [标准生产模板与提交前 Checklist (Standard Template & Checklist)](#8-标准生产模板与提交前-checklist)
+> **核心诫律**：本项目旨在构建**教学级、高可读性、高保真**的算法推演交互系统。所有算法必须让学习者“知其然更知其所以然”。**严禁未查重盲目新建，严禁双版本粗暴二选一删除，必须综合两版本长处深度整合！**
 
 ---
 
@@ -29,7 +16,7 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 在着手编写、接入或修改任何算法前，**必须无条件执行本门禁**：
 
 ### 0.1 强制前置四维查重（第 0 步门禁）
-严禁接到需求（如新课号/题目大纲）后直接新建文件！必须先在全库执行四维检索：
+严禁接到需求后直接新建文件！必须先在全库执行四维检索：
 1. **LeetCode / 题目权威题号**：如 `grep "102"`、`grep "236"`、`grep "105"`；
 2. **英文核心函数名 / 类名**：如 `grep "levelOrder"`、`grep "lowestCommonAncestor"`、`grep "buildTree"`；
 3. **中文核心关键词**：如 `grep "层序遍历"`、`grep "最近公共祖先"`、`grep "前序与中序构造"`；
@@ -37,492 +24,52 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 
 ### 0.2 双版本长处综合整合铁律（Bi-Version Synthesis, NOT Deletion）
 若库内已存在同题实现，或者排查出同题目的两个版本，**绝对禁止粗暴删掉其中一个版本，也绝对禁止另建平行割裂文件！必须综合两者的长处进行整合**：
-- **旧版本的不可替代长处**：
-  - 长期打磨的自定义参数输入控件（`inputs`），支持用户输入任意测试用例；
-  - 丰富的典型测试用例预设（`presets` 案例下拉选择），覆盖基础用例、极端空/单节点、单链倾斜树、对称树等；
-  - 稳定成熟的 SVG/Canvas 画布渲染、节点几何排布、连线计算与视口自适应逻辑。
-- **新版本的不可替代长处**：
-  - 体系化名师讲义解析（`problemHtml` / `explanation`），教学深度与原理剖析透彻；
-  - Java、C++、Python、JavaScript 四语言齐备的源码面板与精准 1-based 相对行号高亮联动（`codeLanguages` / `codeLine`）；
-  - 深度解构的演化阶段（Stage Evolution，如暴力递归 ➔ 记忆化 ➔ 迭代 ➔ 空间优化）。
+- **旧版本的不可替代长处**：细致打磨的参数输入控件（`inputs`）、丰富的典型测试用例预设（`presets` 案例下拉选择）、成熟稳定的 SVG/Canvas 画布渲染器与边界处理；
+- **新版本的不可替代长处**：体系化名师讲义解析（`problemHtml`）、Java/C++/Python/JS 四语言齐备的源码面板与精准 1-based 相对行号联动（`codeLanguages` / `codeLine`）、深度解构的演化阶段（Stage Evolution）；
 - **整合落地标准**：
-  1. **优势互补融合**：把旧版本的 `inputs`、`presets` 和优秀画布注入到新架构中，同时把新版本的名师讲义、四语言代码面板和高亮行号字典完整合入。
-  2. **唯一事实来源（Single Source of Truth）**：全库保留唯一主 renderer 文件与主算法 ID（如 `binary-tree-level-order`），严禁保留两个平行的 `.ts` 文件。
-  3. **别名机制统合（Aliases）**：将课号 ID（如 `tree-036-level-order`）登记进主算法的 `aliases: [...]` 数组中，确保无论用户通过课号大纲、搜索框还是直接 URL 访问，均能无缝导航至唯一的集大成版本！
+  1. **优势互补融合**：保留旧版输入/用例/画布，注入新版讲义/四语言/阶段演化；
+  2. **唯一事实来源（Single Source of Truth）**：全库保留唯一主 renderer 文件与主算法 ID（如 `binary-tree-level-order`）；
+  3. **别名机制统合（Aliases）**：将课号 ID（如 `tree-036-level-order`）登记进主算法的 `aliases: [...]` 数组中，确保索引双向畅通。
 
 ---
 
-## 1. 全项目历史七大典型故障深度复盘
+## 1. 五大核心黄金不变量 (Core Golden Invariants)
 
-历次迭代开发与用户反馈中暴露出以下七大高频严重缺陷，后续开发必须无条件避开：
+在编码时，必须时刻保持以下 5 项不变式约束：
 
-1. **代码行号基准错误（乱跳与超界）**：
-   - *故障现象*：代码高亮一直在最后几行跳动，或直接跳到空白区域（如行号 505、625）。
-   - *根本原因*：直接使用了跨语言大源文件（如 `*-stage-codes.ts`）在编辑器中的绝对物理行号，而前端 UI 面板渲染的是各个语言独立的**局部短代码片段**（通常仅 10~30 行）。
-2. **算法推演随意跳步、静默执行**：
-   - *故障现象*：推演一开始直接跳到循环体中间；关键预处理（如二进制拆分、拓扑排序、优先队列出入）在内存中默默跑完，步骤中完全看不到。
-   - *根本原因*：开发者为图省事，将多行真实执行合并成一步，或者直接漏掉 Step 0（入口帧）与边界特判帧。
-3. **“四段式”残缺或假演化**：
-   - *故障现象*：用户要求经典动规四段式，却只实现了一两个阶段；空间压缩优化阶段直接把二维表变成一维展示，但状态转移与暂存逻辑含混不清。
-   - *根本原因*：未严格贯彻“递归 ➔ 记忆化 ➔ 严格表 ➔ 空间压缩”的教学演进闭环。
-4. **动画实体突兀消失与穿模违规**：
-   - *故障现象*：行走方格的卡通小人在步进到方法头或返回语句时瞬间消失；碰触边界/障碍或触水时没有弹回动作，甚至直接穿模掉出网格。
-   - *根本原因*：实体渲染缺少常驻状态机保护，未设计“碰壁-弹回”物理状态过渡帧。
-5. **UI 嵌套“俄罗斯套娃”与冗余标签**：
-   - *故障现象*：界面嵌套 3~4 层边框，一个文字包一个卡片；中英文双语 Tag 并列（如 `记忆化搜索 (Memoization)`），极其臃肿且挤占可视空间。
-   - *根本原因*：缺乏全局 UI 布局规范，过度使用 Card 容器包装。
-6. **面板拖拽拉死与尺寸不可持久化**：
-   - *故障现象*：分栏被拖动后无法复原或把内容挤出屏幕；页面刷新后用户调节好的面板宽高全部丢失。
-   - *根本原因*：Splitter 缺少 `min-width` / `min-height` 边界约束，且未接入 LocalStorage 记忆。
-7. **“头痛医头”式单点修补与端口泄漏**：
-   - *故障现象*：用户指出某个算法的一个 Bug，AI 只改当前文件，留下数十个同类算法的同款 Bug；浏览器连接异常时死循环打开数百个空窗口。
-   - *根本原因*：缺乏全量批量检索意识与防御性进程管理。
-8. **顶栏文字/徽章被生硬截断（字被挡住）**：
-   - *故障现象*：算法标题、题目按钮、模式徽章与时空复杂度在顶栏右侧被硬切掉一半（如只露出 `O(M×N×4^L) · O(` 或 `[ 回 `）。
-   - *根本原因*：顶栏左侧容器（如 `.dsp-header-left`）写死了固定最大宽度（如 `max-width: 380px; overflow: hidden;`），未做弹性自适应与合理的响应式降级。
-9. **顶栏“应用/生成”按钮与“播放”控制混淆**：
-   - *故障现象*：顶栏右侧仅放置一个蓝色三角图标 `▶` 按钮，用户误以为是播放/暂停控制，极其困惑。
-   - *根本原因*：未将“参数应用/生成”与“时间轴播放”在语义上解耦，必须使用明确的文字（如“应用”），并与旁边的“重置”按钮在视觉规格（高度、字号、边距）上严格对称。
-10. **数据字典键名单一硬编码导致降级（Unknown 故障）**：
-    - *故障现象*：图谱边关系或实体展示中，关联关系全量显示为 `Unknown`，强度全显示为默认值 `10`。
-    - *根本原因*：数据消费端单一硬编码取值 `rel.get("relationship")`，而数据源端实际字段名为 `"type"` 或 `"relation"`，缺乏字段兼容归一化。
-11. **树组件重复造轮子与几何遮挡穿模（Redundant Tree Visualizers & Collision Overlap）**：
-    - *故障现象*：连线分支标签（Edge Label 如 `↑上`、`\ 'e'`）与父节点返回值徽章（Tag）、当前活跃游标（🐸 青蛙）及子节点边框发生严重重叠穿模，文字混在一起不可读；多个算法各自实现一份树渲染，参数与体验割裂。
-    - *根本原因*：未贯彻“能用模板的一律用模板”的深度模块复用原则，各个业务模块私自编写树渲染；且层间距写死过小（如 46px），缺少垂直净空安全避让（Safe Vertical Clearance）机制。
-12. **序列/指针状态瞬态蒸发与越界丢失（Transient Highlight & Boundary Vanishing）**：
-    - *故障现象*：双字符串/双指针对比中，匹配过的字符在步骤深入后高亮瞬间退为白色；指针一移到边界基底（如越界空串）所有高亮彻底消失，甚至界面抛出 `s1[5] ('undefined')` 脏数据。
-    - *根本原因*：仅使用单一瞬态点判断（`idx === curI`），缺乏“待访/已扫/当前焦点/路径锁定”的三态状态机；且未设置末尾 `EOF / Ø` 边界哨兵格子承接越界焦点。
-13. **视图层越权做业务裁决与初始帧作用域泄漏（Visualizer Decision Overreach & Scope Leakage）**：
-    - *故障现象*：算法停在 Step 0（主函数签名行，如 `public static int lcs1(String s1, String s2)`），尚未进入递归函数，变量看板就提前泄漏了子函数的形参 `i: 3, j: 2`；下方“双字符串比对”卡片自动给两端字符打上绿勾并生成了“✨ 字符匹配成功：纳入公共子序列 (+1)”的决策徽章。
-    - *根本原因*：
-      1. 视图呈现器（如 `SequenceAlignmentPresenter`）缺乏比对状态控制（`isComparing`），越权仅根据字符相等就自发判定匹配成功与采纳决策；
-      2. 步进生成器在 Step 0 混淆了主函数作用域与子函数作用域，提前泄漏了子函数形参 `i, j`。
-    - *严格规范*：
-      1. **视图层决策解耦（Renderer Decision Decoupling）**：视觉呈现器必须是纯状态投影，严禁未经 Step 显式授权（如 `isComparing !== false`）擅自推导业务结论；
-      2. **作用域纯洁性（Scope Purity）**：主函数入口帧（Step 0）只保留全局输入参数，游标与比对控件在未就绪时必须呈现待比对/未就绪状态（`isComparing: false` / `curI: -1, curJ: -1`），严禁泄漏未定义的形参。
-14. **函数形参错位导致底层视图抛出 `[undefined]` / `NaN`（Parameter Misalignment & Undefined Propagation）**：
-    - *故障现象*：树节点或备忘录卡片标题冒出 `🐸 ?? [undefined]`，或单元格显示 `NaN`。
-    - *根本原因*：调用通用渲染函数（如 `renderMemoGridCard`）时传参顺序错位（例如将形参 `curL, curR` 传在了 `activeI, activeJ` 之后，或者少传一个占位形参），导致字符串和数字错位填入了 `activeI`，底层解析 `nodeId`、`metric` 失败。
-    - *严格规范*：所有通用渲染器必须声明具备严格类型的 Typescript 参数对象或严格按函数签名调用，严禁盲目传参。
-15. **跨 Stage 状态与 DOM 指标残留污染（Cross-Stage Metric Leakage & DOM Pollution）**：
-    - *故障现象*：切换到阶段 2 或阶段 1 时，下方指标栏依然残留着阶段 4 专属的 `LEFTDOWN 寄存器: 3`，或者阶段 3 的旧卡片数据未被清空。
-    - *根本原因*：上层视图呈现器（`declarative-stage-presenter.ts` / `declarative-algorithm-visualizer.ts`）在切 Stage 时没有动态重构当前阶段专属的 `metricsGrid`，而是直接沿用了全局 spec 的通用指标或者留存了旧 DOM。
-    - *严格规范*：
-      1. 切 Stage 时优先读取 `ctx.curStage?.metrics`；
-      2. 每次切换 Stage 必须对非当前阶段的指标卡片进行强制重置与彻底解构，杜绝跨阶段脏数据污染。
-16. **走过的路漏掉足迹与超类自动推导铁律（Missing Footprints & Superclass Auto-Inference Invariant）**：
-    - *故障现象*：递归探索或网格遍历深入到深层（如 `f(1, 3)`）时，图例写着 `🐾 探索中`，但此前经过的父调用节点（如 `(0, 4)`）却退化为白色空单元格 `-`，完全没有足迹，SVG 探索路径安全绳也消失不见。
-    - *根本原因*：
-      1. 步进生成器虽然维护了递归调用栈，但未将路径坐标填充至 `activeTrail` / `activeStack`；
-      2. 父类适配器（`GridVisualAdapter`）此前缺乏自动推导能力，子类未显式传参时直接降级为空数组 `[]`，导致足迹丢失。
-    - *严格规范*：
-      1. **超类统一推导（Superclass Auto-Inference）**：父类/公共适配层必须内建通用足迹提取器（`GridVisualAdapter.extractActiveTrail(step)`），即便子类未传 `activeTrail`，也能自动从通用的 `callStack` / `stack`（对象数组或 `f(0, 4)` 字符串）中 100% 自动解析出足迹坐标集合；
-      2. **接口契约硬约束**：`UniversalStep` 和各 Stage 步进接口显式要求 `activeTrail` 与 `callStack`，让小人走过的调用路径始终保持 `🐾 探索中` 呼吸高亮，并在节点间绘制探索安全绳虚线与箭头；
-      3. **回溯解通变色**：只有在递归真正完成并返回落盘时，节点才出栈并从 `🐾 探索中` 转换为绿色 `⚪ 已解通`。
-17. **半三角/区间模型空间越界与下三角脏数据泄漏（Upper-Triangle Matrix Boundary Invariant）**：
-    - *故障现象*：LPS 等区间 DP 矩阵的下半部分 `r > c`（$l > r$）被当成正常未计算单元格显示为 `-`，甚至误填入数据。
-    - *根本原因*：区间 DP 的左边界不可能大于右边界，下三角属于无意义的死区空间。
-    - *严格规范*：必须通过 `isHalfTriangle` 统一约束，下三角矩阵单元格一律强制渲染为斜纹遮罩背景（`repeating-linear-gradient`）和禁止占位符 `✕`，彻底隔离有效计算区与非法死区。
-18. **循环条件不成立静默跳过与循环头判定帧丢失铁律（Loop Condition False Silent Skip Invariant）**：
-    - *故障现象*：内层 `for` 循环因初值越界不满足条件（如 $l = 4$ 时 $r = 6 < 5$ 为假，或 $l = 3$ 时 $r = 5 < 5$ 为假）时，代码光标完全不经过该 `for` 循环头，直接静默跳过。学习者根本不知道为什么代码跳过了循环体。
-    - *根本原因*：步进生成器在 `if (l + 2 < n)` 外部加了守卫，条件不满足时直接不发射步骤帧。
-    - *严格规范*：**所有循环头无论条件是否成立，光标都必须高亮跳转至循环头行进行显式求值！**
-      1. 条件成立时：高亮循环头，日志记录 `for r = ${r} (r < n) -> true` 并进入循环体；
-      2. 条件不成立时：高亮循环头，决策与日志明确显示 `for r = ${r} (r < n) -> false`，清晰告知学习者“此循环因条件不成立而跳过/退出”，绝不允许静默跳步。
-19. **复合语句与三元运算符单行压缩导致高亮粒度失效铁律（Ternary Operator & Branch Unfolding Invariant）**：
-    - *故障现象*：单行三元表达式（如 `dp[l][l + 1] = s[l] == s[l + 1] ? 2 : 1;`），执行时整行被高亮，学习者根本看不出当前到底命中了真分支（2）还是假分支（1）。
-    - *根本原因*：为了代码紧凑将多分支状态压缩在单行，而代码面板的高亮粒度是物理行级别的。
-    - *严格规范*：**教学演示代码严禁将决策分支压缩在单行三元表达式中！必须展开为显式的多行 `if-else`**：
-      1. 条件检查行：`if (l + 1 < n) {`
-      2. 匹配赋值行：`if (s[l] == s[l + 1]) dp[l][l + 1] = 2;`
-      3. 不匹配赋值行：`else dp[l][l + 1] = 1;`
-      运行时光标必须精准跳至真正被执行的具体赋值行，杜绝“一整行高亮不知道执行了哪部分”的含混现象。
-20. **四键行组在使用点四行展开（Quad-Key Expansion at Usage Sites）**：
-    - *故障现象*：一个 `codeLine` 对象里 java/cpp/python/javascript 各占一行，每行重复同一套 stage/分支三元链（如 `java: stage === 1 ? S1.java.init : stage === 2 ? S2.java.init : S3.java.intro` × 4 行 × 65 处）。
-    - *根本原因*：缺少“按锚点取整组行号”的集中接缝，把语言维度和阶段分派逻辑缠在了每个使用点。
-    - *严格规范*：多阶段算法族的行号必须经 `StageCodeRegistry`（`createStageCodeRegistry(prefix, map)` → `registry.getAnchor(stage, kind, anchor)`）单调用取得；**严禁在同一 codeLine 处按四语种各写一行访问/三元**。单算法场景也应在文件顶部集中定义 lines 字典后引用（见 2.1）。
-21. **使用点裸写行号字面量（Bare Inline Line Numbers at Usage Sites）**：
-    - *故障现象*：单面板/单语种场景在 `steps.push` 里直接写 `codeLine: 18`、`codeLine: [12, 13]`（graph 类目曾积累 205 处），行号与代码模板之间没有任何命名映射。
-    - *根本原因*：以为“只有一个语种就不需要字典”，把行号当一次性魔法数字；模板一旦改行，无人知道哪些使用点需要跟着改。
-    - *严格规范*：即便单面板/单语种，也必须在文件顶部集中定义 `const lines: Record<string, number | number[]> = { init: 2, mark: [12, 13], ... }`（纯数字场景可用 `Record<string, number>`），使用点只写 `codeLine: lines.mark`。锚点名从步骤语义字段（`action`/`status`/`mode`）派生；同一语义命中不同行用序号后缀区分（`match` / `match2`，同 `calcLca1` 的既有约定）。
-22. **使用点手写网格深拷贝（Hand-Written Grid Deep Copies at Usage Sites）**：
-    - *故障现象*：步骤快照里直接写 `grid: grid.map((row) => [...row])`、`states: JSON.parse(JSON.stringify(states))`（graph 类目曾 10 文件 15 处，一处遗漏嵌套行拷贝即步进间状态串扰）。
-    - *根本原因*：以为 `[...grid]` 或随手一行 `map` 展开就是深拷贝，忽略了二维数组外层共享内层引用；快照原语没有成为肌肉记忆。
-    - *严格规范*：网格/数组/字典快照必须调用 `GridSnapshotPrimitives`（`src/core/strategies/grid-snapshot.ts`）：二维网格 `snapshotGrid2D(grid)`、一维数组 `snapshotArray1D(arr)`、含 null 的 DP 表 `snapshotDpGrid(grid)`、字典 `snapshotDict(dict)`。dynamic-programming / grid / graph 类目文件中的手写深拷贝模式由门禁 4 直接红灯（见 CONTEXT.md「GridSnapshotPrimitives」）。
-23. **为了修错而修错、抹杀架构契约的表面修补（Surface-Level Error Suppression & Architectural Bypass）**：
-    - *故障现象*：系统抛出 `[VisualizerAppController] 算法模型 "xxx" 未在仓储中找到！禁止错误回退至其他算法` 或其他防御性门禁异常时，开发者/AI 的第一反应是“赶紧消灭报错”——通过删除注册、绕开检查、静默 try-catch 或写死回退到其它算法。
-    - *根本原因*：缺乏对高层抽象约束的敬畏，把架构的“防御性守门断言”当成了阻碍，为了解决报错而解决报错。
-    - *严格规范*：
-      1. **有错误是好事，高层抽象约束就是为了把错报出来**：严厉的报错机制是强制倒逼领域完整性的核心杠杆。
-      2. **绝对不要为了修错而修错**：严禁任何弱化报错、静默降级、绕过契约的掩耳盗铃行为。
-      3. **追溯深层原因并正面实现契约**：报错提示“模型未在仓储中找到”，唯一合法的修复方式是按照规范补齐该算法的 YAML 领域模型（`src/core/models/<id>.yaml`）、注册到 `AlgorithmModelRepository` 并完善顶层策略引擎。
-24. **未查重盲目新建与双版本粗暴二选一铁律 (De-duplication Preflight & Bi-Version Synthesis Invariant)**：
-    - *故障现象*：
-      1. 收到新任务（如课号专题 Class 036 / 037）后，未查验代码库是否已存在同题目经典算法（如 LC 102、LC 236、LC 98），直接另起炉灶新建平行文件夹和十几个重复文件，造成库内同一道题出现两套孤立实现，严重破坏单一事实来源（Single Source of Truth）。
-      2. 当发现同一道题存在新旧两个版本时，为了“省事”直接将其中一个版本粗暴删除，导致原本旧版本积累的优秀交互（如 `inputs` 输入控件、`presets` 案例下拉选择、成熟的画布布局）或新版本的高质量讲义、四语言代码行号被单向抹杀。
-    - *根本原因*：
-      1. 缺乏实现前的全库四维检索意识，把“按课号整理”误当成了“必须新建文件”；
-      2. 把“重构整合”误当成了“非此即彼的删除覆盖”，缺乏“取两者长处融合”的深度架构意识。
-    - *严格规范（死门禁）*：
-      1. **强制前置四维查重（Preflight De-duplication Gate）**：在动手写任何新算法前，必须无条件执行全库四维检索：
-         - **LeetCode / 题目权威题号**：如 `grep "102"`、`grep "236"`；
-         - **英文核心函数名 / 类名**：如 `grep "levelOrder"`、`grep "lowestCommonAncestor"`；
-         - **中文核心关键词**：如 `grep "层序遍历"`、`grep "最近公共祖先"`；
-         - **类目目录与全量元数据**：检查 `src/algorithms/categories/<类目>/` 现有文件与 `algorithm-catalog.generated.ts`。
-      2. **双版本长处综合整合（Bi-Version Synthesis, NOT Deletion）**：
-         - 库内只要已存在同题实现，**严禁另建平行文件，更严禁粗暴删除任一版本**！
-         - **必须综合两个版本的长处进行深度融合整合**：
-           - **保留旧版本长处**：保留其经过长期打磨的自定义输入控件（`inputs`）、丰富的典型预设用例（`presets` 案例下拉选择）、成熟稳定的 SVG/Canvas 画布渲染器与边界处理；
-           - **融入新版本长处**：融入体系化名师讲义（`problemHtml`）、Java/C++/Python/JS 四语言精准 1-based 行号联动（`codeLanguages` / `codeLine`）、深度解构的 Stage 演化阶段；
-           - **单一事实来源与别名统合（Aliases Mapping）**：在统一的文件中注册，主 ID 保留标准命名，同时将课号（如 `tree-036-level-order`）注入 `aliases: [...]`，确保老路由与新大纲索引双向畅通，全库维持唯一事实来源。
+1. **1-based 相对行号与四语言对齐**：代码高亮行号必须严格落在局部短代码 `[1, codeArray.length]` 范围之内，严禁绝对大文件物理行号（无 500+ 超界行），严禁单值硬编码；优先走 `@step:` 锚点路线（`CodeStepIndexer` / `StageCodeRegistry`）。
+2. **严格一行一步与零静默（Strict One-Line-One-Step）**：代码面板必须完整展示所有被调用的辅助函数。每一次状态变更都必须映射到具体代码行，杜绝高亮冻结（Zero Line Freezing）与循环静默跳步。
+3. **深模块与公共模板复用**：所有递归树/状态依赖树必须接入 `RecursionTreeAdapter`，数组快照必须调用 `GridSnapshotPrimitives`，严禁在业务 Renderer 中私建重复轮子。
+4. **视觉连续性与零 undefined 脏渲染**：双序列/双指针对比必须包含末尾 `EOF` 哨兵格子，指针越界不消失；严禁在卡片或日志中输出 `'undefined'` 或 `NaN`。
+5. **100% 硬测试断言**：每个算法必须配备包含入口帧、四语言行号合法性以及关键变量演化的单测，严禁伪绿灯。
 
 ---
 
-## 2. 代码联动与执行粒度规范
+## 2. 渐进式参考手册导航 (Progressive Disclosure References)
 
-### 2.1 相对行号与四语言映射准则
-- **基准统一**：代码高亮行号必须严格对应各个语言代码数组（`codeLanguages[lang]`）的 **1-based 相对行号**（第 1 行下标为 1）。
-  $$\forall step, \quad 1 \le \text{step.codeLine}[lang] \le \text{codeLanguages}[lang].\text{length}$$
-- **严禁单一数字硬编码**：由于 Java、C++、Python、JavaScript 语法不同，代码行数天然存在差异，**严禁使用单值数字作为行号**。取行号有两级形态，优先用锚点路线：
-  ```typescript
-  // ❌ 严禁：单一硬编码行号，非 Java 语言必定错位
-  codeLine: 7
+按需查阅细分领域的专项规范文档，严禁一次性盲目加载全部细节：
 
-  // ✅ 首选：@step: 锚点路线 —— 模板自带标签，行号由 CodeStepIndexer 编译得出，
-  //    模板改行行号自动跟随，永不漂移（多阶段算法族用 StageCodeRegistry）
-  //    模板里：'int cur = dfs(i + 1, j); // @step:branch_down // ⬇️ 向下探索'
-  import { codeStepIndexer } from '.../core/code-step-indexer';
-  const { cleanCode, anchorIndex } = codeStepIndexer.register('my-algo', {
-    java: [...], cpp: [...], python: [...], javascript: [...],
-  });
-  codeLine: codeStepIndexer.resolveHighlight('my-algo', 'branch_down', 'java') // 按锚点取行
-  // 多阶段算法族（stage × kind）：
-  // codeLine: registry.getAnchor(stage, kind, 'branch_down')  ← createStageCodeRegistry 工厂
-
-  // ✅ 退路：显式定义多语言映射字典（行号手写，改模板时必须人工同步）
-  const lines = {
-    entry:     { java: 2, cpp: 2, python: 2, javascript: 2 },
-    guard:     { java: 3, cpp: 3, python: 3, javascript: 3 },
-    initDp:    { java: 5, cpp: 4, python: 4, javascript: 4 },
-    outerLoop: { java: 6, cpp: 5, python: 5, javascript: 5 },
-    compute:   { java: 10, cpp: 9, python: 9, javascript: 9 },
-    returnAns: { java: 15, cpp: 14, python: 12, javascript: 14 },
-  };
-  ```
-  无论哪级形态，行号字典/锚点查询必须**集中在文件顶部或 stage-codes 常量文件**，使用点只引用（`codeLine: lines.entry`），严禁在使用点按四语种四行展开（见故障 20），也严禁在使用点裸写行号字面量——单面板/单语种场景同样必须集中成 lines 字典（见故障 21）。
-
-### 2.2 完整生命周期闭环不变量 (Full Lifecycle Invariant)
-每一个算法推演步进必须具备完整的生命周期，严禁直接跳到循环中：
-1. **0. 函数入口 (`entry`)**：高亮主函数签名行（如 `public int solve(...) {`），展示接收到的初始参数规模，设定沙盘起点。
-2. **1. 边界特判 (`guard`)**：高亮边界或非法条件判断行（`if (n <= 1) return ...`），校验基底。
-3. **2. 状态表分配 (`alloc`)**：高亮 `int[] dp = new int[...]`，分配沙盘表格与边界初值。
-4. **3. 核心递推递增 (`loop` / `compute`)**：循环头 ➔ 条件检验 ➔ 方程计算 ➔ 暂存与填表更新。
-5. **4. 收敛返回 (`done` / `return`)**：高亮 `return dp[...]`，明确标出全局最优解所在格并封板。
-
-### 2.3 绝对的一行一步原则与零静默铁律 (Strict One-Line-One-Step Invariant across ALL Algorithms)
-- **全局铁律：所有算法必须彻底贯彻“一行一步” (Every Single Executed Line Must Generate Exactly One Visual Step)**：
-  教学演示的灵魂是让学习者看到“每一行代码在计算机中是如何驱动状态变化的”。严禁将 5~10 行真实代码执行粗暴合并为一步，严禁在不同状态变更时让代码高亮冻结在同一行（Zero Line Freezing）。每一个状态更新（如网格标记、栈压入、表格写入、指针移动）都必须且只能归因于其对应的具体代码行。
-- **杜绝高亮冻结（Zero Line Freezing）**：
-  若在连续步骤中实体状态发生了改变（例如坐标从 `(2, 1)` 移动到 `(2, 2)`，或者字符被占位），但代码高亮行号却纹丝不动（如始终卡在外层 `for (int j = 0; ...)` 或 `dfs(...)` 这一行），这是**最高级别的渲染事故**！每一次进入递归、每一次判断边界、每一次修改网格、每一次递归调用、每一次回溯恢复，都必须切到对应的独立代码行。
-- **代码面板完整性（Code Inclusiveness，杜绝隐形函数）**：
-  若推演步进包含辅助递归函数（如 `dfs(...)`、`process(...)`、`partition(...)`），**代码面板必须完整呈现主函数及该辅助函数的全部实现代码**！绝不允许代码面板只贴了主函数，而步进在执行未贴出的辅助函数。所有 4 种语言（Java, C++, Python, JavaScript）必须完整展示并保持 1-based 行号严格对应。
-- **循环枚举绝不静默传送（No Silent Loop Teleportation）**：
-  网格或序列枚举（如 `for (int i = 0; ...)`、`for (int j = 0; ...)`）必须有显式的循环迭代步进。不能从 Step 1 瞬间瞬移到矩阵中央成功的格子，而完全不展示前面的格子是如何被考察并跳过的。学习者必须看到指针从起点依次考察到成功起点的完整过程。
-- **前置预处理与辅助计算绝不静默**：
-  词频统计、首尾比对反转、二进制拆分、单调栈预处理、前缀和等前置逻辑，必须逐行发射独立的可视化步骤帧，展示临时变量看板与数据结构的具体赋值，让学习者完全看清前置优化的每一步计算。
-- **高亮指针与执行语句语义 100% 对应**：
-  - 函数入口：高亮函数签名行（如 `public boolean exist(...) {`）。
-  - 变量声明与分配：高亮 `int[] count = new int[...]` 等分配行。
-  - 外层与内层循环：分别高亮 `for (int i...)` 与 `for (int j...)` 循环头。
-  - 条件分支与边界特判：高亮 `if (...)` 判断行。
-  - 辅助函数调用与进入：调用方高亮 `dfs(...)` 调用行，进入辅助函数后高亮辅助函数签名行。
-  - 原地标记 / 状态转移：高亮 `board[i][j] = 0` 或 `dp[i][j] = ...` 行。
-  - 现场恢复 / 回溯：高亮 `board[i][j] = tmp` 或 `vis[i][j] = false` 行。
-  - 返回语句：高亮 `return ...` 所在行。
-- **每一个步骤的 `codeLine` 必须在 Java、C++、Python、JavaScript 四种语言中精确落在语义对应的同一行上**。
-
-### 2.4 执行日志递归调用与形参显式绑定规范 (Explicit Parameter Binding in Step Logs)
-在递归推演日志中，必须严格区分**调用方分支调用**与**被调方函数入口**的双帧演化，并在日志中显式标出具体的形参变量名与代入数值：
-1. **调用方分支探索步（Caller Frame）**：高亮递归调用语句，记录执行的具体方向与实参表达式：
-   - `| ⬇️ 执行 down = dfs(nextI, nextJ)，准备深入探索`
-   - `| ➡️ 执行 right = dfs(nextI, nextJ)，准备深入探索`
-2. **被调方函数入口步（Callee Entry Frame）**：高亮辅助函数签名行，**必须显式标出形参变量名及其具体绑定数值**：
-   - `| 📥 进入 dfs(i=2, j=0) [顺推调用 #13]`
-   - 严禁只写 `dfs(2, 0)` 而遗漏参数名，学习者必须在日志中一目了然看清具体是哪个变量被赋予了什么值（如 `i=2, j=0, k=1`）。
-3. **拦截、备份与回溯步（Guard & Backtrack Frames）**：必须显式携带当前函数帧的完整形参变量：
-   - `| 🌊 【越界触水拦截】dfs(i=2, j=0) 跳入边界深水河流！立即弹回，return false`
-   - `| 💾 【现场备份】dfs(i=2, j=0) 暂存原字符 tmp = b[2][0] ('A')`
-   - `| 🔒 【原地打标】dfs(i=2, j=0) b[2][0] = 0 占位防重复踏入`
-   - `| ↩️ 【回溯恢复】dfs(i=2, j=0) 现场还原 b[2][0] = 'A'`
-   - `| ❌ 【分支失败】dfs(i=2, j=0) 四向探索均无解，return false`
-
-### 2.5 多向/多分支递归调用独立分行与分支高亮准则 (Independent Directional Branch Highlighting)
-- **严格遵循“不同路径”（Unique Paths）黄金标准**：
-  - 在“不同路径”中，向下探索与向右探索分为独立代码行：
-    `int down = dfs(i + 1, j, m, n);  // @step:branch_down // 向下探索`
-    `int right = dfs(i, j + 1, m, n); // @step:branch_right // 向右探索`
-  - 严禁将多个方向或子问题分支（如网格上下左右四向、二叉树左右子树、K叉决策分支）压缩在同一行代码中，导致连续多步探索同一行被“假高亮/冻结”。
-- **各语言独立分行与语义注释**：
-  - 每一个方向必须作为独立的一行存在，且附带方向符号与语义注释：
-    - `boolean found = dfs1(b, w, i + 1, j, k + 1, vis)   // ⬇️ 向下探索`
-    - `             || dfs1(b, w, i - 1, j, k + 1, vis)   // ⬆️ 向上探索`
-    - `             || dfs1(b, w, i, j + 1, k + 1, vis)   // ➡️ 向右探索`
-    - `             || dfs1(b, w, i, j - 1, k + 1, vis);  // ⬅️ 向左探索`
-- **四向独立映射字典**：
-  - 在 `lines` 映射字典中，显式声明 `branchDown`、`branchUp`、`branchRight`、`branchLeft` 四个独立行号。
-  - 在遍历方向列表（`dirList`）推演时，将各个方向的 `codeLine` 直接绑定到对应的分支行号。
-  - 学习者在观看步进演示时，代码面板的光标会精确跳至当前正在调用的具体方向代码行，彻底告别“不知道正在走哪个分支”的困惑。
+| 领域模块 | 对应参考文件 | 核心包含内容 |
+| :--- | :--- | :--- |
+| **避坑指南** | [anti-patterns.md](./references/anti-patterns.md) | 历史 24 大典型故障深度复盘与纠偏指引（行号超界、跳步、套娃、穿模、脏数据等） |
+| **代码联动** | [code-linkage.md](./references/code-linkage.md) | 四语言相对行号、完整生命周期闭环、递归日志形参绑定、多向分支独立分行规范 |
+| **阶段演化** | [stage-evolution.md](./references/stage-evolution.md) | 动态规划标准“四段式”体系、空间压缩寄存器透明原则、正逆序双向推演支持 |
+| **沙盘与布局** | [sandbox-and-ui.md](./references/sandbox-and-ui.md) | 卡通实体动画、递归树避让算法、双指针哨兵、UI 布局去套娃、Splitter 边界约束 |
+| **模板与清单** | [template-and-checklist.md](./references/template-and-checklist.md) | 标准 TypeScript 步进生成器骨架、Vitest 自动化防退化断言与终极提交前 Checklist |
 
 ---
 
-## 3. 算法“四段式”与正逆序演化规范
+## 3. 自动化门禁自检命令
 
-### 3.1 动态规划标准“四段式”体系
-所有经典动态规划算法必须提供标准的四阶段演化演示：
-1. **阶段 1：暴力递归 (Brute-Force Recursion)**
-   - 目标：展示问题的递归树展开与重叠子问题。
-   - 配套组件：递归树（Tree Visualizer）+ 局部栈帧调用。
-2. **阶段 2：记忆化搜索 (Memoization Search)**
-   - 目标：展示缓存表命中（Cache Hit / Prune）过程，对比剪枝效果。
-   - 配套组件：递归树（剪枝变灰/高亮）+ 缓存表变化。
-3. **阶段 3：严格表依赖 (Tabulation / 2D Grid)**
-   - 目标：将递归调用反转为自底向上的迭代填表，明确网格方向性依赖。
-   - 配套组件：二维状态网格 + 依赖单元格高亮 + 方向指示箭头。
-4. **阶段 4：空间压缩优化 (Space Compression / 1D Rolling)**
-   - 目标：展示维度消除（如 $O(M \times N) \to O(N)$），揭示状态覆盖风险。
-   - 配套组件：一维滚动条 + **对角线暂存寄存器透明展示**。
+每次编写或重构算法完成后，必须依次执行以下确定性自检命令：
 
-### 3.2 空间压缩寄存器透明原则
-当一维滚动数组存在对角线依赖（如 LCS 的 `leftUp`、LPS 的 `leftDown`）时，**必须将推演拆分为细粒度三连步**：
-1. **暂存旧值**：高亮 `int backup = dp[j];`，展示寄存器缓存。
-2. **转移计算**：高亮 `dp[j] = Math.max(...)`，使用暂存值与相邻格计算。
-3. **寄存器推移**：高亮 `leftUp = backup;`，为下一列的对角线做好准备。
-严禁把三步合并成一步而跳过暂存寄存器的变化过程！
+```bash
+# 1. 验证目标算法单测与防退化断言
+npx vitest run src/algorithms/categories/<类目>/<算法名>.test.ts
 
-### 3.3 双向推演支持 (顺推 vs 逆序)
-- **顺推（正序）**：从 `0, 0` 或第 `1` 项开始向前推演到终点。
-- **逆序（倒序）**：从终点边界倒推至起点。
-- 在涉及状态定义的算法中（如不同路径、背包），必须支持或提供切换按钮，并确保顺推逆序的初始状态与坐标系完全自洽，不可混淆。
+# 2. 验证全库目录新鲜度与元数据索引同步
+npm run meta:sync
 
----
-
-## 4. 物理沙盘与实体动画交互规范
-
-### 4.1 卡通实体“永不消失”原则
-- 沙盘上的行走角色（如小人、探针指示器）代表执行指令游标指针。
-- **任何步骤下角色都不得从 DOM 中卸载或隐藏**：
-  - 在函数入口时：停留在起始方格（`[0, 0]`）。
-  - 在遇到障碍物、边界特判或河道时：必须播放**碰壁反弹（Bounce Back）**动画，即短暂前倾后弹回上一个合法方格。
-  - 在函数返回时：原地做出庆祝或终点标定动画，严禁突然消失。
-
-### 4.2 状态依赖树与自适应视口 (Tree Visualizer)
-- 递归树/状态依赖树不得预先一次性全部画出死节点，应随着步骤推演**动态点亮或生长**。
-- **自适应缩放（Scale to Fit）**：树节点较多时，自动计算 SVG 视口比例（Zoom & Pan），确保活跃节点始终位于视口黄金中心区，不得超出边界或被顶栏遮挡。
-
-### 4.3 路径痕迹与单元格依赖高亮
-- 网格推演走过的路径应保留足迹（Footprints）与流动箭头。
-- 正在被当前单元格 `dp[i][j]` 依赖的单元格（如 `dp[i-1][j]`、`dp[i][j-1]`）必须用对比色（如黄色/琥珀色脉冲光）突出显示。
-
-### 4.4 递归调用树与依赖图统一模板复用铁律 (Mandatory Tree Template Reuse)
-- **能用模板的一律用模板，坚决消灭重复轮子**：
-  - 所有涉及**暴力递归展开树（Recursion Tree）**、**记忆化剪枝树（Memo Pruning Tree）**、**状态转移依赖图（DP Dependency Tree）**的算法沙盘，**必须统一接入并复用核心深度模块 `RecursionTreeAdapter.renderRecursionTree`（位于 `src/core/renderers/recursion-tree-adapter.ts`）**。
-  - **严禁在各个业务模块（如各个算法的 renderer）中各写一套独立的 SVG 树渲染代码**！
-  - 只有在面临完全异构的物理形态（例如三维力导向图、极坐标雷达网、粒子碰撞物理引擎等通用树完全无法支持的特殊沙盘）时，才允许单独特异化实现。
-- **几何防重叠与安全避让规范 (Collision-Free Geometry Invariant)**：
-  - **动态安全层高计算**：只要树中存在连线分支标签（`edgeLabel`，如 `↑上`、`\ 'e'`）或节点返回值徽章（`tag`），垂直层间距 `levelH` 必须自适应扩展至 **72px ~ 84px**，严禁在深层多节点时粗暴压缩至 46px 造成垂直挤爆。
-  - **垂直净空安全定位 (Safe Vertical Clearance)**：
-    连线上的分支标签胶囊 `edgeLabel` 必须计算父节点底部与子节点顶部的绝对安全中点：
-    $$\text{SafeMidY} = \frac{(Y_{\text{parent}} + \text{nodeH}/2 + \text{tagPad}) + (Y_{\text{child}} - \text{nodeH}/2 - \text{frogPad})}{2}$$
-    并且 X 坐标沿贝塞尔 S 弯曲线动态取值，确保边标签四周保留至少 $\ge 8\text{px}$ 的安全净空，绝不能与父节点的返回值徽章（Tag）或子节点头顶的当前活跃游标（🐸 青蛙）发生像素级重叠。
-  - **图层分层与不透明底衬 (Layering & Opaque Shields)**：
-    SVG 图元必须分层输出：`底图连线层 (lines) ➔ 中间分支标签层 (edgeLabels) ➔ 顶层状态节点层 (nodes)`。分支标签必须自带不透明 `#ffffff` 填充底衬与边框阴影，杜绝连线穿透文字。
-
-### 4.5 序列比对与双指针跟踪交互规范 (Sequence Alignment & Dual-Pointer Tracking Invariants)
-- **坚决杜绝单点瞬态高亮（No Ephemeral Point-in-Time Highlighting）**：
-  - 凡涉及字符串比对、双指针滑动、序列模式匹配（LCS、编辑距离、通配符、回文串）等推演，**严禁仅使用 `idx === curI` 这种单点瞬态判断**。
-  - 必须实现四态视觉连续性状态机：
-    1. **待考察（Unvisited/Pending）**：默认中性底色。
-    2. **已考察/历史轨迹（Visited/Explored）**：弱化半透明灰，展现扫描前进历史。
-    3. **当前活跃焦点（Active Focus）**：高亮亮蓝/琥珀金脉冲，指示当前正在比对的字符。
-    4. **路径有效锁定（Matched/Committed）**：当前调用链上已匹配采纳的字符，必须常驻翡翠绿高亮与标识，直至该分支回溯退栈。
-- **末尾边界哨兵不变量（EOF / Boundary Sentinel Invariant）**：
-  - 所有双序列/双指针算法，当 `i >= s.length` 或 `j >= s.length` 达到基底终止条件时，字符容器末尾必须常驻包含一个 **`EOF` 或 `Ø` 哨兵单元格**。
-  - 越界推演步的活跃光标必须精准落在该 `EOF` 哨兵格上，**严禁光标从 DOM 中凭空消失**。
-- **零 Undefined 脏渲染铁律（Zero Undefined Rendering Invariant）**：
-  - 渲染层取字符值前必须做防御性校验：`(idx >= 0 && idx < s.length) ? s[idx] : 'Ø/空'`。
-  - 严禁在任何卡片、Tooltip、日志或徽章中出现 `'undefined'`。
-- **统一复用核心深度模块**：
-  - 所有序列比对与指针跟踪必须优先调用 `SequenceAlignmentPresenter`，杜绝各个业务模块私自手写 `split('').map(...)`。
-
----
-
-## 5. UI 布局、层次去冗余与交互控制规范
-
-### 5.1 消除“俄罗斯套娃”与冗余标签
-- **单层主容器法则**：外部使用一个高质感 Card 容器即可，严禁在内部给每个文字或每一行单独套一层 Card 或 Border。
-- **去双语重复**：严禁出现如 `状态转移 (Transition State)` 这种中英冗余堆叠，统一使用清晰、精炼的单一中文专业术语。
-- **主画布优先**：核心可视化区域（网格、树、沙盘）必须占据整个视口的 **60%~70%** 面积，绝不允许被过大的上下面板挤压成“中间小框、上下长条”。
-
-### 5.2 核心变量指标看板规范
-- 动态变化的游标变量（如当前索引 $i, j$、暂存值 `backup`、当前物品容量/价值）必须以显著独立的 Badge/看板优先展示。
-- **参数排布顺序**：动态游标变量（$i, j, k$）放左侧，静态规模参数（$m, n, W$）放右侧。
-- 算式代入必须直观：不仅展示数学符号，更要展示具体代入数值（如 `dp[2][3] = dp[1][3] (5) + dp[2][2] (4) = 9`）。
-
-### 5.3 控件与输入框排布顺序
-- **顶栏左侧防遮挡（No Clipping）**：
-  - 顶栏左侧容器必须使用弹性自适应（`flex-shrink: 0; min-width: 0;`），严禁写死固定最大宽度（如 `380px`）和 `overflow: hidden` 导致标题与复杂度等徽章被截半。
-  - 算法标题设置 `text-overflow: ellipsis; white-space: nowrap;` 并提供原生 `title` 浮动全名提示。
-  - 辅以响应式断点（如 `< 1380px` 隐藏模式徽章、`< 1200px` 隐藏复杂度徽章），确保各可见元素完整。
-- **顶栏“应用”按钮明确语义文字**：
-  - 顶栏用于重新生成/应用参数的按钮必须使用文字（统一为 **“应用”**），严禁单独放置一个播放三角图标 `▶` 造成用户与底部播放控制产生混淆。
-  - 必须与旁边的“重置”按钮保持高度、圆角、字号和内边距的对称统一。
-- **输入标签标点统一与防重**：
-  - 必须对输入项 `label` 实施尾部冒号过滤 `label.replace(/[:：]\s*$/, '')`，避免拼装出 `容量::` 等重复双冒号。
-- **输入区域与重置按钮排布**：
-  - 各类预设用例、输入框从左至右依次排列。
-  - 顺序依次为：`[预设用例/下拉] ➔ [输入框组] ➔ [应用按钮] ➔ [重置按钮]`。
-  - **“重置”按钮必须位于最末尾**，严禁把输入框或应用按钮放在“重置”之后。
-- **播放控制区**：播放、暂停、单步前进、单步后退、速度滑块必须居中或贴近核心画布右下方，便于单手交互。
-- **代码面板一键复制代码规范 (One-Click Code Copy Standard)**：
-  - 代码调试面板右上角控制区（字号缩放器 `A-/A+` 左侧）必须常驻提供「一键复制当前代码」按钮（`#btn-code-copy`）。
-  - 能够一键提取当前活跃编程语言（Java / C++ / Python / JS）的纯净完整源码写入系统剪贴板（支持 `navigator.clipboard` 与 `execCommand` 双向降级）。
-  - 点击后必须提供即时、优雅的微动画视觉反馈：图标转为 `✓` 勾选，文字变为 `已复制`，按键高亮为翠绿色（`#34d399`），并在 1.8 秒后自动复位。
-- **原题信息展示**：所有算法必须在顶栏或右上角提供题目原题入口，统一弹窗标题为 `📋 算法题目描述`，展示 LeetCode / 洛谷原题编号及题面。
-
-### 5.4 面板 Splitter 拖拽持久化与安全边界
-- 调整面板宽度/高度的分割条（Resizer/Splitter）必须设置严格的安全最小尺寸：
-  - `minWidth: 320px`，`minHeight: 200px`。
-- 用户拖动后的尺寸必须存入 `localStorage`，下次进入页面时自动恢复，严禁刷新后丢失。
-
----
-
-## 6. 重置状态与幂等性规范
-
-### 6.1 状态幂等初始化
-- 用户点击“重置”或更改输入参数重新生成时，系统必须立即重置至 `Step 0`：
-  - 清空推演历史栈与日志。
-  - 恢复实体角色至起点位置。
-  - 重置 DP 表格各格为初始值（如 `0`、`inf` 或空）。
-  - **严禁出现点击重置后沙盘变成全白板（White-out）或无响应**。
-
----
-
-## 7. 全量排查与 Vitest 自动化约束规范
-
-### 7.1 严禁单点修改，贯彻全量核验原则
-- 当用户或测试报告指出某个算法存在缺陷（如某行号错位、某步跳过）时，**绝不允许仅仅修复那一个文件就宣布完工**！
-- 必须：
-  1. 使用全局检索工具（`grep_search`）扫描所有同类算法、同组模块。
-  2. 逐一比对排查同款缺陷。
-  3. 执行全量测试套件（如 `npx vitest run src/algorithms/categories/...`）。
-
-### 7.2 Vitest 自动化防退化机械约束
-每个算法的 `*.test.ts` 中必须包含三大黄金防退化断言：
-1. **入口帧验证**：`steps[0]` 必须是 `entry` 或主函数签名行。
-2. **四语言行号合法性断言**：遍历所有 step，其 `codeLine` 在 Java、C++、Python、JavaScript 中必须全部落在 `[1, codeArray.length]` 之内。
-3. **关键变量演化断言**：断言最终返回值与最终步的 `decision` / `metrics` 严格一致。
-
-```typescript
-describe('代码联动与生命周期规范核验', () => {
-  it('Step 0 必须为函数入口且行号不越界', () => {
-    const steps = buildAlgorithmSteps(testInputs);
-    expect(steps.length).toBeGreaterThan(0);
-    expect(steps[0].decision).toMatch(/(入口|初始化|开始)/);
-
-    for (const step of steps) {
-      const lineMap = step.codeLine as Record<string, number>;
-      for (const [lang, line] of Object.entries(lineMap)) {
-        const codeArray = CODE_LANGUAGES[lang];
-        expect(line, `语言 ${lang} 行号 ${line} 超界 [1, ${codeArray.length}]`).toBeGreaterThanOrEqual(1);
-        expect(line, `语言 ${lang} 行号 ${line} 超界 [1, ${codeArray.length}]`).toBeLessThanOrEqual(codeArray.length);
-      }
-    }
-  });
-});
+# 3. 验证 TypeScript 类型全库无报错
+npm run typecheck
 ```
-
----
-
-## 8. 标准生产模板与提交前 Checklist
-
-### 8.1 标准 TypeScript 步进生成器骨架
-```typescript
-export function buildStandardAlgorithmSteps(inputs: Record<string, any>): AlgoStep[] {
-  const { n, items } = parseInputs(inputs);
-  const steps: AlgoStep[] = [];
-
-  // 1. 各语言 1-based 相对行号字典
-  const lines = {
-    entry:     { java: 2, cpp: 2, python: 2, javascript: 2 },
-    guard:     { java: 3, cpp: 3, python: 3, javascript: 3 },
-    initDp:    { java: 5, cpp: 4, python: 4, javascript: 4 },
-    outerLoop: { java: 6, cpp: 5, python: 5, javascript: 5 },
-    compute:   { java: 8, cpp: 7, python: 7, javascript: 7 },
-    returnAns: { java: 11, cpp: 10, python: 9, javascript: 10 },
-  };
-
-  // 2. Step 0: 主函数入口帧
-  steps.push({
-    currentCall: `solve(n=${n})`,
-    codeLine: lines.entry,
-    decision: `主函数入口：接收参数规模 n=${n}`,
-    message: '准备初始化状态并进入推导',
-    log: `enter solve(n=${n})`,
-    metrics: { '当前状态': '函数入口', '规模': `${n}` },
-  });
-
-  // 3. 边界特判或基础表初始化
-  const dp = new Array(n + 1).fill(0);
-  dp[0] = 1;
-  steps.push({
-    currentCall: `solve(n=${n})`,
-    codeLine: lines.initDp,
-    decision: '初始化基础边界：dp[0] = 1',
-    message: '设置递归出口初始值',
-    log: 'init dp[0] = 1',
-    metrics: { '当前状态': '边界设定', 'dp[0]': '1' },
-  });
-
-  // 4. 核心递推过程（逐行步进）
-  for (let i = 1; i <= n; i++) {
-    dp[i] = dp[i - 1] + 1;
-    steps.push({
-      currentCall: `solve(i=${i})`,
-      codeLine: lines.compute,
-      decision: `状态转移：dp[${i}] = dp[${i - 1}] + 1 = ${dp[i]}`,
-      message: `由前序状态计算当前项`,
-      log: `dp[${i}] = ${dp[i]}`,
-      metrics: { '当前索引 i': `${i}`, '当前值': `${dp[i]}` },
-    });
-  }
-
-  // 5. 收敛返回
-  steps.push({
-    currentCall: `solve(n=${n})`,
-    codeLine: lines.returnAns,
-    decision: `🎉 计算完毕！最终答案 = dp[${n}] = ${dp[n]}`,
-    message: '全局最优解已收拢',
-    log: `done result=${dp[n]}`,
-    metrics: { '当前状态': '计算完毕', '最终答案': `${dp[n]}` },
-  });
-
-  return steps;
-}
-```
-
-### 8.2 终极提交前审查 Checklist (Pre-submission Checklist)
-- [ ] **强制前置查重与双版本长处整合（第 0 步门禁）**：实现前已无条件执行全库四维检索（LC题号、英文函数名、中文核心词、Catalog目录）；若库内已存在旧实现，**绝对禁止粗暴删掉任一版本，绝对禁止新建平行割裂文件**，必须综合双版本长处（保留旧版本的输入控件/预设案例下拉/成熟画布，融入新版本的名师讲义/四语言行号/阶段演化），以主 ID + `aliases` 统合为唯一事实来源。
-- [ ] **行号自查**：所有行号来自独立代码片段（1-based），杜绝外部大文件行号（无 500+ / 600+ 超界行）。
-- [ ] **四语言齐备**：Java、C++、Python、JavaScript 行号字典完备映射，无单值硬编码；优先走 `@step:` 锚点路线（`CodeStepIndexer` / `StageCodeRegistry`），手写 lines 字典仅作退路且必须集中在文件顶部；使用点无四语种四行展开。
-- [ ] **生命周期闭环**：包含 Step 0（入口行）与收敛返回行，不跳步、不突兀。
-- [ ] **预处理推演**：循环预处理有显式可视化帧，杜绝后台静默执行。
-- [ ] **演化阶段对称**：四阶段 Tab、Card 标题、代码片段与推演逻辑 100% 语义对应。
-- [ ] **实体永不消失**：小人/探针不从 DOM 卸载，遇障碍触水有弹回动画。
-- [ ] **UI 拒绝套娃**：无多层嵌套卡片，无中英双语重复标签，主画布占 60%~70%。
-- [ ] **顶栏文字不被截断**：顶栏左侧容器自适应，无固定硬编码 max-width，标题与时空复杂度徽章完整展示。
-- [ ] **顶栏按钮语义明确**：重新生成/应用按钮使用“应用”等明确汉字，禁止单独放播放三角图标 `▶`，与“重置”按钮对称。
-- [ ] **排版自洽**：“重置”按钮在输入框最后，变化变量 $i, j$ 优先显式展示，输入 label 无重复双冒号。
-- [ ] **代码一键复制**：代码面板右上角提供常驻复制按钮（#btn-code-copy），点击即时反馈「已复制」，兼容 4 语言源码提取。
-- [ ] **序列连续性与哨兵**：双序列比对具备 EOF 哨兵，焦点越界不消失，路径锁定字符常驻高亮，页面绝对无 `undefined` 脏字符。
-- [ ] **重置幂等**：点击重置回到 Step 0 初始状态，无白板、无死锁。
-- [ ] **全量测试通过**：执行全量 Vitest 测试套件，100% 绿色通过方可提交。

@@ -70,6 +70,14 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
 3. **响应式双栏核验**：确保视口宽度 $\ge 1024\text{px}$ 激活 Tailwind `lg:flex-row` 左右双栏黄金排布（左侧 50% 状态空间沙盘 + 右侧 50% 暗色代码终端），严禁以移动端退化折叠态交付。
 
 
+## 会话生命周期与上下文防腐纪律（死门禁！GEC 微循环与智能区铁律）
+为彻底对抗 LLM 的注意力坍塌（Lost in the Middle）与复合错误（$0.9^{10} \approx 35\%$），所有 Agent 与开发者必须无条件执行会话卫生纪律：
+1. **150k 智能区（Smart Zone）保鲜红线**：单次长任务严禁放任上下文无限膨胀。会话只承载当前单个聚焦任务，严禁把调研、多题连续修改、跨天讨论混在同一个会话中。
+2. **单算法单会话原子闭环（GEC 微循环：Grill ➔ Execute ➔ Clear）**：
+   - **Grill（盘问）**：第 0 步四维查重与数学规约，核验是否已存在同题实现，确定架构接缝；
+   - **Execute（执行）**：在极短的上下文内以 TDD 红绿循环编写实现，由 `npm run test:gate` / `npm run meta:sync` 作为确定性裁判；
+   - **Clear（清空）**：单个算法或重构任务完成并通过门禁后，**必须提交代码并执行 `/clear`（或开启新会话）**。严禁在同一个脏上下文窗口里跨题连续工作，防止前题的行号、变量和逻辑污染下一题。
+
 ## 纯 TypeScript 规范（死门禁！遇到 JS 改成 TS）
 全库统一使用强类型 TypeScript：
 1. **禁止新建任何 JS 脚本**：包括 `scripts/` 下的工具脚本、临时脚本或测试辅助代码，一律使用 `.ts` 扩展名，严禁创建 `.js`、`.mjs`、`.cjs`。
@@ -79,11 +87,13 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
 ## 构建与测试
 ```bash
 npm install
-npm run dev          # Vite dev server (port 3000)
-npm run build        # tsc + vite build
-npm test             # vitest run（含门禁：目录新鲜度/唯一性/完整性）
-npm run meta:sync    # 重新收获算法目录元数据
-npm run typecheck    # tsc --noEmit
+npm run dev               # Vite dev server (port 3000)
+npm run build             # tsc + test:gate + vite build
+npm test                  # vitest run（含门禁：目录新鲜度/唯一性/完整性）
+npm run test:gate         # 顶层抽象合规 + 策略身材 + 表现层契约全套门禁
+npm run test:presentation # 表现层真实渲染与 12 大红灯陷阱测试
+npm run meta:sync         # 重新收获算法目录元数据
+npm run typecheck         # tsc -b --noEmit
 ```
 
 ## 目录结构
@@ -103,6 +113,16 @@ src/
     batch-N-index.ts                # 批量索引（副作用 import 列表）
 ```
 
+## 技能总线与指针索引（Agent Skills Index）
+根据工序按需唤起 `.agents/skills/` 下的垂直技能，严禁在无技能指引下盲目操作：
+| 任务场景 | 唤起技能 | 核心职责与防腐边界 |
+| :--- | :--- | :--- |
+| **新算法编写与高亮审查** | `algo-viz-authoring` | 四维查重、双版本整合、四语言 1-based 行号绑定、严格一行一步 |
+| **动态规划类目标准化重构** | `universal-dp-refactoring` | 仅限 `dynamic-programming` 类目；遵循 YAML 黄金基准与通用四步法 |
+| **顶层抽象合规检查** | `top-level-abstraction-compliance` | 运行 L0/L1/L2 顶层抽象与防伪实现门禁，阻断违规旧方言反弹 |
+| **UI 交互与去套娃规范** | `ui-layout-design` | 黄金画布 60%~70% 占比、消灭嵌套卡片与中英冗余、Splitter 边界保护 |
+| **浏览器调试与全高清截图** | `browser-viewport-debugging` | 强制 1920×1080 视口配置，杜绝 800×600 局促缩放与大面积空白留白 |
+
 ## 关键接缝
 - **AlgorithmMetadata ↔ AlgorithmManifest**：metadata 是 9 字段目录数据；manifest = metadata + template + Visualizer
 - **IVisualRenderer**：mount/updateStep/dispose 生命周期桥接 2D/3D
@@ -119,4 +139,4 @@ PlaybackCoordinator / AlgorithmRegistry / AlgorithmCatalogIndexer / CategoryConv
 - 核心模块有 co-located `.test.ts`（playback-coordinator / algorithm-registry / model-repository 等）
 - 门禁测试 `algorithm-catalog-indexer.test.ts`：目录新鲜度 / id 唯一性 / renderer↔目录完整性
 - 批量算法测试按类目目录 co-locate（如 `categories/beginner-and-hard-interview-5.test.ts`）
-- 渲染器 `render*Canvas` 的 innerHTML/SVG 部分目前无自动化测试（手动验证）
+- 渲染器表现层契约由 `npm run test:presentation`（`presentation-contract.gate.test.ts` 与 `declarative-presentation-contract.gate.test.ts`）自动化拦截，覆盖 12 大红灯陷阱、纯净度与防重复渲染硬约束
