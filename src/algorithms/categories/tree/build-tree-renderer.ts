@@ -44,10 +44,30 @@ export interface BTStep {
   metrics?: Record<string, string | number>;
   stackState?: number[];
   inIdx?: number;
+  // 高亮不变量增强字段
+  visitedNodes?: number[];
+  highlightedNodes?: number[];
+  secondaryHighlightedNodes?: number[];
 }
 
 function cloneTree(node: TreeNode | null): TreeNode | null {
   return cloneStateDepTree(node);
+}
+
+/**
+ * 递归层序遍历收集二叉树中所有非空节点值
+ */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  if (!node) return [];
+  const res: number[] = [];
+  const queue: TreeNode[] = [node];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    res.push(cur.val);
+    if (cur.left) queue.push(cur.left);
+    if (cur.right) queue.push(cur.right);
+  }
+  return res;
 }
 
 // Stage 1 代码行号映射
@@ -195,6 +215,8 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
         '右子树长度': (iR - inRoot),
       },
       codeLine: BUILD_TREE_CODE_LINES.split,
+      highlightedNodes: [rootVal],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
     // 递归左子树
@@ -220,12 +242,15 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
       log: `built node ${rootVal}`,
       metrics: { '当前根节点': rootVal, '左孩子': node.left ? node.left.val : 'null', '右孩子': node.right ? node.right.val : 'null' },
       codeLine: BUILD_TREE_CODE_LINES.returnRoot,
+      highlightedNodes: [rootVal],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
     return node;
   }
 
   const resultTree = build(0, n - 1, 0, n - 1);
+  const allTreeNodes = collectTreeValues(resultTree);
 
   steps.push({
     tree: cloneTree(resultTree),
@@ -244,6 +269,8 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
     log: 'build finished successfully',
     metrics: { '最终根节点': resultTree ? resultTree.val : 'null', '总节点数': n },
     codeLine: BUILD_TREE_CODE_LINES.done,
+    highlightedNodes: resultTree ? [resultTree.val] : [],
+    visitedNodes: allTreeNodes,
   });
 
   return steps;
@@ -360,6 +387,8 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
         '右子树长度': inR - inRoot,
       },
       codeLine: BUILD_TREE_STAGE2_LINES.split,
+      highlightedNodes: [rootVal],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
     // 递归左子树
@@ -386,12 +415,15 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
       log: `built node ${rootVal}`,
       metrics: { '当前根节点': rootVal, '左孩子': node.left ? node.left.val : 'null', '右孩子': node.right ? node.right.val : 'null' },
       codeLine: BUILD_TREE_STAGE2_LINES.returnRoot,
+      highlightedNodes: [rootVal],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
     return node;
   }
 
   const resultTree = build(0, n - 1, 0, n - 1);
+  const allTreeNodes = collectTreeValues(resultTree);
 
   steps.push({
     tree: cloneTree(resultTree),
@@ -411,6 +443,8 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
     log: 'postorder build finished successfully',
     metrics: { '最终根节点': resultTree ? resultTree.val : 'null', '总节点数': n },
     codeLine: BUILD_TREE_STAGE2_LINES.done,
+    highlightedNodes: resultTree ? [resultTree.val] : [],
+    visitedNodes: allTreeNodes,
   });
 
   return steps;
@@ -502,6 +536,8 @@ export function buildTreeStage3StackSteps(preorder: number[], inorder: number[])
         codeLine: BUILD_TREE_STAGE3_LINES.attachLeft,
         stackState: stack.map((nd) => nd.val),
         inIdx,
+        highlightedNodes: [val],
+        visitedNodes: collectTreeValues(rootNode).filter((v) => v !== val),
       });
     } else {
       // 栈顶等于当前中序元素，说明左子树已完整遍历，出栈找到拐点
@@ -535,9 +571,13 @@ export function buildTreeStage3StackSteps(preorder: number[], inorder: number[])
         codeLine: BUILD_TREE_STAGE3_LINES.attachRight,
         stackState: stack.map((nd) => nd.val),
         inIdx,
+        highlightedNodes: [val],
+        visitedNodes: collectTreeValues(rootNode).filter((v) => v !== val),
       });
     }
   }
+
+  const allTreeNodes = collectTreeValues(rootNode);
 
   steps.push({
     tree: cloneTree(rootNode),
@@ -558,6 +598,8 @@ export function buildTreeStage3StackSteps(preorder: number[], inorder: number[])
     codeLine: BUILD_TREE_STAGE3_LINES.done,
     stackState: stack.map((nd) => nd.val),
     inIdx,
+    highlightedNodes: [rootNode.val],
+    visitedNodes: allTreeNodes,
   });
 
   return steps;
@@ -570,7 +612,13 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
   id: 'build-tree',
   name: '从前序/后序与中序遍历构造二叉树',
   category: 'tree',
-  aliases: ['tree-036-build-tree-preorder-inorder', 'build-tree-from-preorder-inorder'],
+  aliases: [
+    'tree-036-build-tree-preorder-inorder',
+    'build-tree-from-preorder-inorder',
+    'build-tree-2',
+    'leetcode-106',
+    'construct-binary-tree-from-inorder-and-postorder',
+  ],
   inputs: [
     {
       id: 'input-preorder',
@@ -603,6 +651,15 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
         'input-postorder': '9, 15, 7, 20, 3',
       },
       description: '根 3，左 9，右子树 20(15, 7)',
+    },
+    {
+      label: '完美满二叉树 (7节点)',
+      values: {
+        'input-preorder': '4, 2, 1, 3, 6, 5, 7',
+        'input-inorder': '1, 2, 3, 4, 5, 6, 7',
+        'input-postorder': '1, 3, 2, 5, 7, 6, 4',
+      },
+      description: '满二叉树：根4，左子树2(1,3)，右子树6(5,7)',
     },
     {
       label: '简单三节点树',
@@ -696,11 +753,25 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
 
 function renderBuildTreeCanvas(container: HTMLElement, step: BTStep) {
   if (step.tree) {
+    const allTreeVals = collectTreeValues(step.tree);
+    const isDone = step.action === 'done';
+    // 若完成态，全部树节点全量纳入 visitedNodes（翡翠绿常驻高亮）；推演过程中若未提供则默认将非当前焦点节点作为 visited
+    const visited = isDone
+      ? allTreeVals
+      : (step.visitedNodes ?? allTreeVals.filter((v) => v !== step.rootVal));
+
+    const primaryNodes = step.highlightedNodes && step.highlightedNodes.length > 0
+      ? step.highlightedNodes
+      : (step.rootVal != null ? [step.rootVal] : []);
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
       current: step.rootVal,
-      primaryColor: '#fbbf24',
-      secondaryColor: '#34d399',
+      highlightedNodes: primaryNodes,
+      visitedNodes: visited,
+      primaryColor: '#fbbf24', // 金黄色聚焦点
+      visitedColor: '#34d399', // 翡翠绿完工/常驻高亮
+      secondaryColor: '#60a5fa', // 天蓝色
     });
   } else {
     container.innerHTML = `

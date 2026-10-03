@@ -8,7 +8,11 @@ import { buildPSSteps } from './path-sum-renderer';
 import { buildBTLSteps, buildStaticArrayLevelOrderSteps } from './binary-tree-level-renderer';
 import { buildTreeInvertSteps } from './tree-invert-renderer';
 import { buildBSTSearchSteps } from './bst-search-renderer';
-import { buildTreeSteps } from './build-tree-renderer';
+import {
+  buildTreeSteps,
+  buildTreeStage2PostorderSteps,
+  buildTreeStage3StackSteps,
+} from './build-tree-renderer';
 import { buildLCASteps } from './lca-renderer';
 
 describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', () => {
@@ -164,8 +168,8 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
     });
   });
 
-  describe('Build Tree (前中序构造二叉树)', () => {
-    it('17. 根据 pre=[3,9,20,15,7] in=[9,3,15,20,7] 成功构造二叉树', () => {
+  describe('Build Tree (前序/后序与中序构造二叉树 · LC 105 & 106)', () => {
+    it('17.1 Stage 1: 根据 pre=[3,9,20,15,7] in=[9,3,15,20,7] 成功构造二叉树且收尾步全树翡翠绿高亮', () => {
       const pre = [3, 9, 20, 15, 7];
       const inArr = [9, 3, 15, 20, 7];
       const steps = buildTreeSteps(pre, inArr);
@@ -173,6 +177,53 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       expect(lastStep.tree?.val).toBe(3);
       expect(lastStep.tree?.left?.val).toBe(9);
       expect(lastStep.tree?.right?.val).toBe(20);
+      expect(lastStep.action).toBe('done');
+      // 收尾步高亮不变量：全树 5 个节点 100% 覆盖且常驻高亮，根节点 3 为金色聚焦点
+      expect(lastStep.highlightedNodes).toEqual([3]);
+      expect(lastStep.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('17.2 Stage 2: 根据 in=[9,3,15,20,7] post=[9,15,7,20,3] 成功构造二叉树且收尾步全树翡翠绿高亮', () => {
+      const inArr = [9, 3, 15, 20, 7];
+      const post = [9, 15, 7, 20, 3];
+      const steps = buildTreeStage2PostorderSteps(inArr, post);
+      expect(steps.length).toBeGreaterThan(5);
+
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.tree?.val).toBe(3);
+      expect(lastStep.tree?.left?.val).toBe(9);
+      expect(lastStep.tree?.right?.val).toBe(20);
+      expect(lastStep.action).toBe('done');
+      // 检验收尾步高亮不变量
+      expect(lastStep.highlightedNodes).toEqual([3]);
+      expect(lastStep.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('17.3 Stage 2: 完美满二叉树 7 节点后序+中序构造验证', () => {
+      const inArr = [1, 2, 3, 4, 5, 6, 7];
+      const post = [1, 3, 2, 5, 7, 6, 4];
+      const steps = buildTreeStage2PostorderSteps(inArr, post);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.tree?.val).toBe(4);
+      expect(lastStep.tree?.left?.val).toBe(2);
+      expect(lastStep.tree?.right?.val).toBe(6);
+      expect(lastStep.visitedNodes?.sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+      expect(lastStep.highlightedNodes).toEqual([4]);
+    });
+
+    it('17.4 Stage 3: 迭代显式栈模拟前序重构且收尾步全树翡翠绿高亮', () => {
+      const pre = [3, 9, 20, 15, 7];
+      const inArr = [9, 3, 15, 20, 7];
+      const steps = buildTreeStage3StackSteps(pre, inArr);
+      expect(steps.length).toBeGreaterThan(4);
+
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.tree?.val).toBe(3);
+      expect(lastStep.tree?.left?.val).toBe(9);
+      expect(lastStep.tree?.right?.val).toBe(20);
+      expect(lastStep.action).toBe('done');
+      expect(lastStep.highlightedNodes).toEqual([3]);
+      expect(lastStep.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
     });
   });
 

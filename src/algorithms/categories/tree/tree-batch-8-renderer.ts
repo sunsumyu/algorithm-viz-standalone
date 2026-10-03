@@ -12,6 +12,8 @@ import { TreeNode, buildTreeFromArr, renderTreeSVG, renderLog, BstStep } from '.
 // 引入左神 Class 037 综合版（单一事实来源，别名映射 bst-lca & bst-trim）
 import './tree-036-037/lowest-common-ancestor-bst-037-renderer';
 import './tree-036-037/trim-bst-037-renderer';
+// 引入从前序/后序与中序构造二叉树综合版（单一事实来源，别名映射 build-tree-2 & leetcode-106）
+import './build-tree-renderer';
 import buildTree2Template from './build-tree-2.html';
 import bstLcaTemplate from './bst-lca.html';
 import bstInsertTemplate from './bst-insert.html';
@@ -129,19 +131,9 @@ class BuildTree2Visualizer extends BSTVisualizer {
   }
 }
 
-registerAlgorithm({
-  id: 'build-tree-2',
-  name: '中序+后序构造二叉树',
-  viewId: 'algo-build-tree-2-view',
-  category: 'tree',
-  description: '从中序和后序遍历序列构造二叉树',
-  icon: '🔨',
-  template: buildTree2Template,
-  Visualizer: BuildTree2Visualizer,
-  difficulty: 2,
-  levelOrder: 19,
-  learningGoal: '理解后序遍历的特点，最后一个元素是根',
-});
+// 【双版本长处整合】已整合至 build-tree-renderer.ts (Stage 2: LC 106 后序+中序分治构造)
+// 唯一事实来源：build-tree (aliases: ['build-tree-2', 'leetcode-106'])，综合了多预设用例、左神讲义与四语言联动
+export { BuildTree2Visualizer };
 
 // ========== Level 20: BST 最近公共祖先 ==========
 class BSTLCAVisualizer extends BSTVisualizer {

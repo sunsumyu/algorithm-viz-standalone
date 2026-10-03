@@ -6928,17 +6928,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     aliases: ["class017-code01","trie-tree-017","trie-prefix-tree","leetcode-208"],
   },
   {
-    id: "build-tree-2",
-    name: "中序+后序构造二叉树",
-    viewId: "algo-build-tree-2-view",
-    category: "tree",
-    description: "从中序和后序遍历序列构造二叉树",
-    icon: "🔨",
-    difficulty: 2,
-    levelOrder: 19,
-    learningGoal: "理解后序遍历的特点，最后一个元素是根",
-  },
-  {
     id: "tree-recursion-patterns-019",
     name: "Class 019: 二叉树高频递归套路 (Tree DP)",
     viewId: "algo-tree-recursion-patterns-019-view",
@@ -7104,7 +7093,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["tree-036-build-tree-preorder-inorder","build-tree-from-preorder-inorder"],
+    aliases: ["tree-036-build-tree-preorder-inorder","build-tree-from-preorder-inorder","build-tree-2","leetcode-106","construct-binary-tree-from-inorder-and-postorder"],
   },
   {
     id: "comparator-priority-queue-039",

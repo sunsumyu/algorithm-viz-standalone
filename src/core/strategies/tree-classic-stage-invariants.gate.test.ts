@@ -1543,6 +1543,68 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildMaxTreeSteps([]).pop()?.tree).toBeNull();
     });
   });
+
+  // 17. 从前序/后序与中序构造二叉树 (LC 105 & 106)
+  describe('17. 从前序/后序与中序遍历构造二叉树 (Build Tree LC 105 & 106)', () => {
+    const pre = [3, 9, 20, 15, 7];
+    const inArr = [9, 3, 15, 20, 7];
+    const post = [9, 15, 7, 20, 3];
+
+    it('Stage 1 (LC 105): 前序+中序分治切分递归四语言行号合法且收尾步全树翡翠绿高亮', () => {
+      const steps = buildTreeSteps(pre, inArr);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE1_PRE_IN_CODE, `BuildTree Stage 1 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(3);
+      expect(last.tree?.left?.val).toBe(9);
+      expect(last.tree?.right?.val).toBe(20);
+      expect(last.highlightedNodes).toEqual([3]);
+      expect(last.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('Stage 2 (LC 106): 后序+中序分治切分递归四语言行号合法且收尾步全树翡翠绿高亮', () => {
+      const steps = buildTreeStage2PostorderSteps(inArr, post);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE2_POST_IN_CODE, `BuildTree Stage 2 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(3);
+      expect(last.tree?.left?.val).toBe(9);
+      expect(last.tree?.right?.val).toBe(20);
+      expect(last.highlightedNodes).toEqual([3]);
+      expect(last.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('Stage 3 (LC 105 迭代法): 显式栈模拟前序重构四语言行号合法且收尾步全树翡翠绿高亮', () => {
+      const steps = buildTreeStage3StackSteps(pre, inArr);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE3_STACK_CODE, `BuildTree Stage 3 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(3);
+      expect(last.highlightedNodes).toEqual([3]);
+      expect(last.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('三大 Stage 针对空数组均安全防御', () => {
+      expect(buildTreeSteps([], []).pop()?.action).toBe('done');
+      expect(buildTreeStage2PostorderSteps([], []).pop()?.action).toBe('done');
+      expect(buildTreeStage3StackSteps([], []).pop()?.action).toBe('done');
+    });
+  });
 });
 
 
