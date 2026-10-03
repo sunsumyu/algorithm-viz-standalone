@@ -46,6 +46,10 @@ export interface InvertStep extends StepBase {
   metrics?: Record<string, string | number>;
   statusBadge?: { text: string; type: 'info' | 'warning' | 'success' | 'danger' };
 
+  /** 双重不变量保障与高亮支持 */
+  visitedNodes?: number[];
+  highlightedNodes?: number[];
+
   /** Stage 2 队列专用 */
   queue?: (number | string)[];
 
@@ -61,6 +65,19 @@ export interface InvertStep extends StepBase {
 // 树快照统一委托 core/strategies/tree-clone.ts
 function cloneTree(node: TreeNode | null): TreeNode | null {
   return cloneStateDepTree(node);
+}
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
 }
 
 // ============================================================
@@ -208,13 +225,17 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
 
   invert(workingTree);
 
+  const allTreeVals = collectTreeValues(workingTree);
+
   steps.push({
     tree: cloneTree(workingTree),
-    current: workingTree.val,
+    current: workingTree ? workingTree.val : null,
     leftVal: null,
     rightVal: null,
     invertedCount,
     isSwapping: false,
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
     action: 'done',
     decision: `🎉 二叉树翻转全部完成！共执行 ${invertedCount} 次子树互换`,
     message: `🎉 二叉树翻转全部完成！共执行 ${invertedCount} 次子树互换。`,
@@ -362,13 +383,17 @@ export function buildTreeInvertBfsSteps(root: TreeNode | null): InvertStep[] {
     }
   }
 
+  const allTreeVals = collectTreeValues(workingTree);
+
   steps.push({
     tree: cloneTree(workingTree),
-    current: workingTree.val,
+    current: workingTree ? workingTree.val : null,
     leftVal: null,
     rightVal: null,
     invertedCount,
     isSwapping: false,
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
     action: 'done',
     queue: [],
     decision: `🎉 队列已清空，层序遍历翻转完成！共交换 ${invertedCount} 次`,
@@ -557,13 +582,17 @@ export function buildTreeInvertStaticArraySteps(root: TreeNode | null): InvertSt
     }
   }
 
+  const allTreeVals = collectTreeValues(workingTree);
+
   steps.push({
     tree: cloneTree(workingTree),
-    current: workingTree.val,
+    current: workingTree ? workingTree.val : null,
     leftVal: null,
     rightVal: null,
     invertedCount,
     isSwapping: false,
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
     action: 'done',
     decision: `🎉 静态数组队列 l==r 清空完毕，整树翻转完成！共交换 ${invertedCount} 次`,
     message: `🎉 静态数组零 GC 翻转全部完成！共执行 ${invertedCount} 次子树互换。`,
@@ -595,12 +624,30 @@ function parseAndBuild(inputs?: Record<string, any>): TreeNode | null {
 // 表现层渲染辅助器 (Card 1 & Card 2 Presenters)
 // ============================================================
 
-/** Card 1: 树画布渲染 */
+/** Card 1: 树画布渲染 (Double Invariant Guard) */
 function renderTreeInvertCanvasForStep(container: HTMLElement, step: InvertStep, primaryColor: string = '#0284c7'): void {
+  const isDone = step.action === 'done';
+  const allTreeVals = collectTreeValues(step.tree);
+  let current = step.current;
+  let visitedNodes = step.visitedNodes;
+
+  if (isDone && step.tree) {
+    if (current === null) {
+      current = step.tree.val;
+    }
+    if (!visitedNodes || visitedNodes.length === 0) {
+      visitedNodes = allTreeVals;
+    }
+  }
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.current,
-    primaryColor: step.isSwapping ? '#f59e0b' : primaryColor,
+    current,
+    visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+    secondaryHighlightedNodes: step.highlightedNodes && step.highlightedNodes.length > 0 ? step.highlightedNodes : undefined,
+    primaryColor: isDone ? '#fbbf24' : (step.isSwapping ? '#f59e0b' : primaryColor),
+    visitedColor: '#34d399',
+    secondaryColor: '#10b981',
   });
 }
 

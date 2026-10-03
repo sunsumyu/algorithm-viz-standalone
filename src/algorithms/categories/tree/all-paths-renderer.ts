@@ -51,6 +51,19 @@ export interface AllPathsStep extends StepBase {
   pathQueueState?: string[];
 }
 
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
+}
+
 // =========================================================================
 // Stage 1 步骤生成器: 回溯法 DFS 递归与显式路径栈 (Backtracking DFS)
 // =========================================================================
@@ -314,24 +327,29 @@ export function buildAllPathsStage1BacktrackSteps(root: TreeNode | null): AllPat
 
   dfs(root, 0);
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: 0,
-    path: [],
+    path: allTreeVals,
     allPaths: [...allPaths],
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
+    secondaryHighlightedNodes: allTreeVals,
     decision: `🎉 全树回溯完成！共收集到 ${allPaths.length} 条根到叶子路径`,
     message: `全部递归分支回溯完毕，最终路径集合: [${allPaths.map((p) => `"${p}"`).join(', ')}]。`,
     log: `done: total ${allPaths.length} paths -> [${allPaths.join(', ')}]`,
     codeLine: lines.returnPaths,
     stageId: 'stage-1',
     metrics: {
-      '当前节点': '—',
+      '当前节点': root ? `Node(${root.val})` : '—',
       '当前路径': '—',
       '所有路径': allPaths.join(' | '),
       '已收集路径数': allPaths.length,
-      cur: '-',
+      cur: root ? String(root.val) : '-',
       depth: '0',
       path: '—',
       result: String(allPaths.length),
@@ -553,19 +571,24 @@ export function buildAllPathsStage2FunctionalSteps(root: TreeNode | null): AllPa
 
   dfs(root, String(root.val), [root.val], 0);
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: 0,
-    path: [],
+    path: allTreeVals,
     allPaths: [...allPaths],
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
+    secondaryHighlightedNodes: allTreeVals,
     decision: `🎉 纯函数递归完成！共收集 ${allPaths.length} 条根到叶子路径`,
     message: `所有不可变路径参数已安全收敛，最终返回 paths: [${allPaths.map((p) => `"${p}"`).join(', ')}]。`,
     log: `Stage 2 done: [${allPaths.join(', ')}]`,
     codeLine: lines.returnPaths,
     stageId: 'stage-2',
-    metrics: { '当前节点': '—', '所有路径': allPaths.join(' | '), '已收集路径数': allPaths.length },
+    metrics: { '当前节点': root ? `Node(${root.val})` : '—', '所有路径': allPaths.join(' | '), '已收集路径数': allPaths.length },
     statusBadge: { text: `完成: ${allPaths.length} 条路径`, type: 'success' },
   });
 
@@ -788,19 +811,24 @@ export function buildAllPathsStage3BfsSteps(root: TreeNode | null): AllPathsStep
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: 0,
-    path: [],
+    path: allTreeVals,
     allPaths: [...allPaths],
+    visitedNodes: allTreeVals,
+    highlightedNodes: allTreeVals,
+    secondaryHighlightedNodes: allTreeVals,
     decision: `🎉 BFS 队列排空，遍历完成！共收获 ${allPaths.length} 条根到叶子路径`,
     message: `双队列层序遍历无递归栈消耗，顺利收获所有路径: [${allPaths.map((p) => `"${p}"`).join(', ')}]。`,
     log: `BFS done: ${allPaths.length} paths -> [${allPaths.join(', ')}]`,
     codeLine: lines.returnPaths,
     stageId: 'stage-3',
-    metrics: { '当前出队节点': '—', '所有路径': allPaths.join(' | '), '已收集路径数': allPaths.length },
+    metrics: { '当前出队节点': root ? `Node(${root.val})` : '—', '所有路径': allPaths.join(' | '), '已收集路径数': allPaths.length },
     statusBadge: { text: `完成: ${allPaths.length} 条路径`, type: 'success' },
   });
 
@@ -815,15 +843,34 @@ export function buildAllPathsSteps(root: TreeNode | null): AllPathsStep[] {
 }
 
 // =========================================================================
-// 表现层画板渲染器 (Presentation Canvas Renderer)
+// 表现层画板渲染器 (Presentation Canvas Renderer - Double Invariant Guard)
 // =========================================================================
 function renderAllPathsCanvas(container: HTMLElement, step: AllPathsStep): void {
   if (step.tree) {
+    const isDone = step.decision.includes('完成') || (step.statusBadge?.text.includes('完成') ?? false);
+    const allTreeVals = collectTreeValues(step.tree);
+    let current = step.current;
+    let visitedNodes = step.visitedNodes;
+    let highlightedNodes = step.secondaryHighlightedNodes || step.highlightedNodes || step.path;
+
+    if (isDone) {
+      if (current === null) {
+        current = step.tree.val;
+      }
+      if (!visitedNodes || visitedNodes.length === 0) {
+        visitedNodes = allTreeVals;
+      }
+      if (!highlightedNodes || highlightedNodes.length === 0) {
+        highlightedNodes = allTreeVals;
+      }
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
-      current: step.current,
-      secondaryHighlightedNodes: step.path ? step.path : [],
-      primaryColor: '#f59e0b',
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      secondaryHighlightedNodes: highlightedNodes && highlightedNodes.length > 0 ? highlightedNodes : [],
+      primaryColor: isDone ? '#fbbf24' : '#f59e0b',
       secondaryColor: '#10b981',
       visitedColor: '#34d399',
     });

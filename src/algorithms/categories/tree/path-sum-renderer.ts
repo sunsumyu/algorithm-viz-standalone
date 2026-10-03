@@ -51,12 +51,29 @@ export interface PSStep extends StepBase {
   /** Stage 3 BFS 专用 */
   nodeQueue?: (number | string)[];
   sumQueue?: number[];
+
+  /** 双重不变量保障与高亮支持 */
+  visitedNodes?: number[];
+  highlightedNodes?: number[];
 }
 
 export const PATH_SUM_CODE_LINES = PATH_SUM_STAGE1_LINES;
 
 function cloneTree(node: TreeNode | null): TreeNode | null {
   return cloneStateDepTree(node);
+}
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
 }
 
 // ============================================================
@@ -261,21 +278,26 @@ export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[]
 
   dfs(workingTree, targetSum);
 
+  const allTreeVals = collectTreeValues(workingTree);
+  const matchedPath = found ? (allPaths[0] ?? []) : [];
+
   steps.push({
     tree: cloneTree(workingTree),
-    current: null,
+    current: workingTree ? workingTree.val : null,
     targetSum,
     currentSum: found ? targetSum : 0,
     remain: 0,
-    path: found ? allPaths[0] ?? [] : [],
+    path: matchedPath,
     allPaths: allPaths.map((p) => [...p]),
+    visitedNodes: allTreeVals,
+    highlightedNodes: matchedPath,
     found,
     decision: found
-      ? `🎉 路径总和判定成功！找到满足目标和 ${targetSum} 的有效路径`
+      ? `🎉 路径总和判定成功！找到满足目标和 ${targetSum} 的有效路径 [${matchedPath.join(' ➔ ')}]`
       : `探索结束，未找到根到叶和为 ${targetSum} 的路径 (返回 false)`,
     action: 'done',
     message: found
-      ? `🎉 判定结果: true！成功找到和为 ${targetSum} 的路径。`
+      ? `🎉 判定结果: true！成功找到和为 ${targetSum} 的路径 [${matchedPath.join(' ➔ ')}]。`
       : `判定结果: false。全树探索完毕，无任何根到叶路径之和为 ${targetSum}。`,
     log: `done hasPathSum=${found}`,
     metrics: { '最终判定': found ? 'true' : 'false', '目标和': targetSum },
@@ -467,14 +489,19 @@ export function buildPathSumStage2BacktrackSteps(root: TreeNode | null, targetSu
 
   dfs(workingTree, targetSum);
 
+  const allTreeVals = collectTreeValues(workingTree);
+  const allSolutionNodes = Array.from(new Set(allPaths.flat()));
+
   steps.push({
     tree: cloneTree(workingTree),
-    current: null,
+    current: workingTree ? workingTree.val : null,
     targetSum,
     currentSum: 0,
     remain: 0,
-    path: [],
+    path: allSolutionNodes,
     allPaths: allPaths.map((p) => [...p]),
+    visitedNodes: allTreeVals,
+    highlightedNodes: allSolutionNodes,
     found: allPaths.length > 0,
     decision: `🎉 全解回溯搜索圆满完成！共收集 ${allPaths.length} 条有效路径`,
     action: 'done',
@@ -519,9 +546,12 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
 
   const nodeQ: TreeNode[] = [workingTree];
   const sumQ: number[] = [workingTree.val];
+  const nodeToPath = new Map<TreeNode, number[]>();
+  nodeToPath.set(workingTree, [workingTree.val]);
 
   const getQVals = (): (number | string)[] => nodeQ.map((n) => n.val);
   const getSumVals = (): number[] => [...sumQ];
+  const allTreeVals = collectTreeValues(workingTree);
 
   steps.push({
     tree: cloneTree(workingTree),
@@ -531,6 +561,7 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
     remain: targetSum - workingTree.val,
     path: [workingTree.val],
     allPaths: [],
+    visitedNodes: [workingTree.val],
     found: false,
     decision: `双队列初始化：根节点 ${workingTree.val} 入 nodeQ，根节点值 ${workingTree.val} 入 sumQ`,
     action: 'init',
@@ -548,6 +579,7 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
   while (nodeQ.length > 0) {
     const cur = nodeQ.shift()!;
     const curSum = sumQ.shift()!;
+    const curPath = nodeToPath.get(cur) ?? [cur.val];
 
     steps.push({
       tree: cloneTree(workingTree),
@@ -555,7 +587,7 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
       targetSum,
       currentSum: curSum,
       remain: targetSum - curSum,
-      path: [cur.val],
+      path: [...curPath],
       allPaths: [],
       found: false,
       decision: `出队考察：节点 ${cur.val} 出队，当前累计路径和 = ${curSum} (差额: ${targetSum - curSum})`,
@@ -579,8 +611,10 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
         targetSum,
         currentSum: curSum,
         remain: 0,
-        path: [cur.val],
-        allPaths: [[cur.val]],
+        path: [...curPath],
+        allPaths: [[...curPath]],
+        visitedNodes: allTreeVals,
+        highlightedNodes: [...curPath],
         found: true,
         decision: `🎉 发现叶子节点 ${cur.val} 且累计和恰好等于目标和 ${targetSum}！立刻返回 true`,
         action: 'match',
@@ -592,19 +626,42 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
         codeLine: L.match,
         statusBadge: { text: '命中目标 (true)', type: 'success' },
       });
+
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: workingTree.val,
+        targetSum,
+        currentSum: curSum,
+        remain: 0,
+        path: [...curPath],
+        allPaths: [[...curPath]],
+        visitedNodes: allTreeVals,
+        highlightedNodes: [...curPath],
+        found: true,
+        decision: `🎉 BFS 搜索成功！找到根到叶和为 ${targetSum} 的有效路径 [${curPath.join(' ➔ ')}]`,
+        action: 'done',
+        nodeQueue: [],
+        sumQueue: [],
+        message: `🎯 命中目标！叶子节点 ${cur.val} 处累计和达到 ${targetSum}，BFS 搜索圆满完成！`,
+        log: `⭐ BFS MATCH done: [${curPath.join(' ➔ ')}] = ${targetSum}`,
+        codeLine: L.match,
+        metrics: { '命中节点': cur.val, '有效路径': curPath.join(' -> '), '判定': 'true' },
+        statusBadge: { text: '命中目标 (true)', type: 'success' },
+      });
       break;
     }
 
     if (cur.left) {
       nodeQ.push(cur.left);
       sumQ.push(curSum + cur.left.val);
+      nodeToPath.set(cur.left, [...curPath, cur.left.val]);
       steps.push({
         tree: cloneTree(workingTree),
         current: cur.val,
         targetSum,
         currentSum: curSum,
         remain: targetSum - curSum,
-        path: [cur.val],
+        path: [...curPath],
         allPaths: [],
         found: false,
         decision: `左孩子 ${cur.left.val} 入队，累计和 ${curSum} + ${cur.left.val} = ${curSum + cur.left.val} 入 sumQ`,
@@ -622,13 +679,14 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
     if (cur.right) {
       nodeQ.push(cur.right);
       sumQ.push(curSum + cur.right.val);
+      nodeToPath.set(cur.right, [...curPath, cur.right.val]);
       steps.push({
         tree: cloneTree(workingTree),
         current: cur.val,
         targetSum,
         currentSum: curSum,
         remain: targetSum - curSum,
-        path: [cur.val],
+        path: [...curPath],
         allPaths: [],
         found: false,
         decision: `右孩子 ${cur.right.val} 入队，累计和 ${curSum} + ${cur.right.val} = ${curSum + cur.right.val} 入 sumQ`,
@@ -647,12 +705,13 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
   if (!found) {
     steps.push({
       tree: cloneTree(workingTree),
-      current: null,
+      current: workingTree.val,
       targetSum,
       currentSum: 0,
       remain: targetSum,
       path: [],
       allPaths: [],
+      visitedNodes: allTreeVals,
       found: false,
       decision: `队列已全部清空，未发现任何满足条件的根到叶路径，返回 false`,
       action: 'done',
@@ -673,12 +732,32 @@ export function buildPathSumStage3BfsSteps(root: TreeNode | null, targetSum: num
 // 统一表现层渲染器 (Card 1 + Card 2 领域契约)
 // ============================================================
 function renderPathSumCanvas(container: HTMLElement, step: PSStep, stageId: string): void {
+  const isDone = step.action === 'done';
+  const allTreeVals = collectTreeValues(step.tree);
+  const matchedNodes = step.highlightedNodes && step.highlightedNodes.length > 0
+    ? step.highlightedNodes
+    : step.path;
+
+  let current = step.current;
+  let visitedNodes = step.visitedNodes;
+
+  if (isDone && step.tree) {
+    if (current === null) {
+      current = step.tree.val;
+    }
+    if (!visitedNodes || visitedNodes.length === 0) {
+      visitedNodes = allTreeVals;
+    }
+  }
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.current,
-    secondaryHighlightedNodes: step.path,
-    primaryColor: step.found ? '#16a34a' : '#fbbf24',
+    current,
+    visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+    secondaryHighlightedNodes: matchedNodes && matchedNodes.length > 0 ? matchedNodes : undefined,
+    primaryColor: step.found ? '#10b981' : '#fbbf24',
     secondaryColor: '#93c5fd',
+    visitedColor: '#34d399',
   });
 
   const root = container.closest('#algo-path-sum-view') || container.parentElement;

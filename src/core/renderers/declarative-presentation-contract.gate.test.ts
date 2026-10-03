@@ -121,10 +121,10 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
     ).toEqual([]);
   });
 
-  it('声明式算法步进生成器质量守门：杜绝空步骤与严重静默跳步', () => {
+  it('声明式算法步进生成器质量守门：杜绝空步骤、行号缺失与高亮全冻结', () => {
     const registry = getDeclarativeSpecs();
     const allSpecs = Array.from(registry.values());
-    const starvationViolations: string[] = [];
+    const violations: string[] = [];
 
     for (const spec of allSpecs) {
       if (!spec.generateSteps) continue;
@@ -137,21 +137,57 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
       try {
         const steps = spec.generateSteps(defaultInputs);
         if (!steps || steps.length === 0) {
-          starvationViolations.push(
+          violations.push(
             `🚨 [STEP_EMPTY_TRAP] ${spec.id}: 默认输入下生成了 0 个步骤！`
           );
+          continue;
+        }
+
+        // 1. 检查代码行号是否存在 (codeLine 或 line 必须挂载，严禁代码联动断联)
+        const hasCodePanel =
+          Boolean(spec.codeLanguages && Object.keys(spec.codeLanguages).length > 0) ||
+          Boolean(spec.sourceCodes && Object.keys(spec.sourceCodes).length > 0);
+
+        if (hasCodePanel && steps.length >= 3) {
+          const missingCodeLineCount = steps.filter(
+            (s: any) => s.codeLine === undefined && s.line === undefined
+          ).length;
+
+          // 若超过 50% 步骤未绑定行号，判定为严重联动缺失
+          if (missingCodeLineCount > steps.length * 0.5) {
+            violations.push(
+              `🚨 [STEP_NO_CODELINE_TRAP] ${spec.id}: 拥有代码模板但在 ${steps.length} 步中有 ${missingCodeLineCount} 步未提供 codeLine/line，代码联动实质断联！`
+            );
+          }
+
+          // 2. 杜绝高亮全冻结 (Zero Line Freezing): 若步数 >= 8，但全程只亮 1 行代码
+          if (steps.length >= 8) {
+            const lineKeys = new Set(
+              steps.map((s: any) => {
+                const cl = s.codeLine ?? s.line;
+                return typeof cl === 'object' ? JSON.stringify(cl) : String(cl);
+              })
+            );
+            // 排除含有 undefined 且仅有 1 种有效行的极端冻结
+            lineKeys.delete('undefined');
+            if (lineKeys.size <= 1) {
+              violations.push(
+                `🚨 [ZERO_LINE_FREEZING_TRAP] ${spec.id}: 生成了 ${steps.length} 步，但代码高亮全程仅停留在单一物理行 [${Array.from(lineKeys).join(', ')}]，构成严重高亮冻结事故！`
+              );
+            }
+          }
         }
       } catch (e) {
-        starvationViolations.push(
+        violations.push(
           `🚨 [STEP_GEN_CRASH_TRAP] ${spec.id}: 默认输入下 generateSteps 崩溃: ${e}`
         );
       }
     }
 
     expect(
-      starvationViolations,
+      violations,
       `\n================= 算法步进生成器质量红灯 =================\n` +
-        starvationViolations.join('\n') +
+        violations.join('\n') +
         `\n=========================================================\n`
     ).toEqual([]);
   });

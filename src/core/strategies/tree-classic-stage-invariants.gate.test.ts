@@ -252,7 +252,8 @@ function assertCodeLineWithinBounds(
   codeDict: Record<string, string[] | string>,
   stepDesc: string
 ) {
-  if (codeLine === undefined || codeLine === null) return;
+  expect(codeLine, `${stepDesc}: codeLine must be defined`).toBeDefined();
+  expect(codeLine, `${stepDesc}: codeLine cannot be null`).not.toBeNull();
   if (typeof codeLine === 'number') {
     for (const [lang, code] of Object.entries(codeDict)) {
       const lineCount = Array.isArray(code) ? code.length : code.trim().split('\n').length;
@@ -504,23 +505,32 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 5. Path Sum (LC 112 & LC 113)
   describe('5. Path Sum (LeetCode 112 & 113 · 路径总和与全解收集)', () => {
-    it('Stage 1: 递归减法回溯 (LC 112) 目标和 22 存在时正确返回 found=true 且四语言行号合法', () => {
+    it('Stage 1: 递归减法回溯 (LC 112) 目标和 22 存在时正确返回 found=true，收尾帧满足高亮不变量且四语言行号合法', () => {
       const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
       const steps = buildPSSteps(root, 22);
       expect(steps.length).toBeGreaterThan(0);
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, PATH_SUM_STAGE1_CODE, `PathSum Stage 1 Step ${i}`);
       }
-      expect(steps[steps.length - 1].found).toBe(true);
+      const last = steps[steps.length - 1];
+      expect(last.found).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(5);
+      expect(last.highlightedNodes).toEqual([5, 4, 11, 2]);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([5, 4, 8, 11, 13, 4, 7, 2]));
     });
 
-    it('Stage 1: 不存在路径和时返回 found=false', () => {
+    it('Stage 1: 不存在路径和时返回 found=false 且收尾帧节点不灭', () => {
       const root = buildTreeFromArr([1, 2, 3]);
       const steps = buildPSSteps(root, 5);
-      expect(steps[steps.length - 1].found).toBe(false);
+      const last = steps[steps.length - 1];
+      expect(last.found).toBe(false);
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(1);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([1, 2, 3]));
     });
 
-    it('Stage 2: 回溯现场恢复与全解收集 (LC 113 / Class 037) 正确收集所有路径且四语言行号合法', () => {
+    it('Stage 2: 回溯现场恢复与全解收集 (LC 113 / Class 037) 正确收集所有路径，收尾帧全景高亮且四语言行号合法', () => {
       const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2, null, null, 5, 1]);
       const steps = buildPathSumStage2BacktrackSteps(root, 22);
       expect(steps.length).toBeGreaterThan(0);
@@ -529,21 +539,30 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
       const last = steps[steps.length - 1];
       expect(last.found).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(5);
       expect(last.allPaths.length).toBe(2);
       expect(last.allPaths).toEqual([
         [5, 4, 11, 2],
         [5, 8, 4, 5],
       ]);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([5, 4, 8, 11, 13, 4, 7, 2, 5, 1]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([5, 4, 11, 2, 8, 4, 5]));
     });
 
-    it('Stage 3: 迭代 BFS 双队列层序求和正确判定且四语言行号合法', () => {
+    it('Stage 3: 迭代 BFS 双队列层序求和正确判定，收尾帧常驻翡翠绿高亮且四语言行号合法', () => {
       const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
       const steps = buildPathSumStage3BfsSteps(root, 22);
       expect(steps.length).toBeGreaterThan(0);
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, PATH_SUM_STAGE3_BFS_CODE, `PathSum Stage 3 Step ${i}`);
       }
-      expect(steps[steps.length - 1].found).toBe(true);
+      const last = steps[steps.length - 1];
+      expect(last.found).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(5);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([5, 4, 8, 11, 13, 4, 7, 2]));
+      expect(last.highlightedNodes).toEqual([5, 4, 11, 2]);
     });
 
     it('空树路径求和安全退出', () => {
@@ -800,7 +819,7 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 7. Tree Invert (LC 226)
   describe('7. Tree Invert (LeetCode 226 · 翻转二叉树)', () => {
-    it('Stage 1: 前序递归翻转满二叉树后左右子节点互换且计数守恒', () => {
+    it('Stage 1: 前序递归翻转满二叉树后左右子节点互换且收尾帧 100% 节点覆盖高亮不变量', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
       const steps = buildTreeInvertSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -808,12 +827,16 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
         assertCodeLineWithinBounds(steps[i].codeLine, TREE_INVERT_STAGE1_CODE, `TreeInvert Stage 1 Step ${i}`);
       }
       const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(4);
       expect(last.invertedCount).toBe(7);
       expect(last.tree?.left?.val).toBe(7);
       expect(last.tree?.right?.val).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
     });
 
-    it('Stage 2: 队列层序遍历翻转 (Iterative Queue BFS) 结果正确且四语言行号合法', () => {
+    it('Stage 2: 队列层序遍历翻转 (Iterative Queue BFS) 结果正确且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
       const steps = buildTreeInvertBfsSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -821,12 +844,16 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
         assertCodeLineWithinBounds(steps[i].codeLine, TREE_INVERT_STAGE2_QUEUE_CODE, `TreeInvert Stage 2 Step ${i}`);
       }
       const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(4);
       expect(last.invertedCount).toBe(7);
       expect(last.tree?.left?.val).toBe(7);
       expect(last.tree?.right?.val).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
     });
 
-    it('Class 036 Stage 3: 静态连续数组模拟队列 (Static Array Queue · 左神招牌零 GC) 步骤与行号合法', () => {
+    it('Class 036 Stage 3: 静态连续数组模拟队列 (Static Array Queue · 左神招牌零 GC) 步骤与收尾全景高亮', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
       const steps = buildTreeInvertStaticArraySteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -834,9 +861,13 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
         assertCodeLineWithinBounds(steps[i].codeLine, TREE_INVERT_STAGE3_STATIC_ARRAY_CODE, `TreeInvert Stage 3 Step ${i}`);
       }
       const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.current).toBe(4);
       expect(last.invertedCount).toBe(7);
       expect(last.tree?.left?.val).toBe(7);
       expect(last.tree?.right?.val).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
       expect(last.staticQueueState).toBeDefined();
       expect(last.staticQueueState!.l).toBe(last.staticQueueState!.r);
     });
@@ -1166,17 +1197,28 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 13. Minimum Depth of Binary Tree (LC 111 / Class 036)
   describe('13. Minimum Depth of Binary Tree (LeetCode 111 / Class 036 · 二叉树的最小深度)', () => {
-    it('Stage 1: 经典树 [3, 9, 20, null, null, 15, 7] 后序递归特判返回 2 且四语言行号合法', () => {
+    it('Stage 1: 经典树 [3, 9, 20, null, null, 15, 7] 严格一行一步后序递归特判返回 2 且四语言行号合法', () => {
       const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
       const steps = buildMinDepthStage1Steps(root);
-      expect(steps.length).toBeGreaterThan(0);
+      // 严禁跳步饥饿：5 节点树完整后序展开步数必须 >= 18 步！
+      expect(steps.length).toBeGreaterThanOrEqual(18);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, MIN_DEPTH_STAGE1_CODES, `MinDepth Stage 1 Step ${i}`);
       }
 
+      // 验证生命周期与关键帧序列覆盖（严禁代码行号冻结在单行）
+      const javaLines = steps.map((s) => s.codeLine.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // baseNull
+      expect(javaLines).toContain(4); // baseLeaf
+      expect(javaLines).toContain(7); // callLeft
+      expect(javaLines).toContain(8); // callRight
+      expect(javaLines).toContain(9); // returnMin
+
       const last = steps[steps.length - 1];
       expect(last.minDepth).toBe(2);
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
     });
 
     it('Stage 1 避坑测试: 单侧斜链 [1, 2] 最小深度必须为 2 而非 1', () => {
@@ -1355,7 +1397,7 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 16. Binary Tree Paths (LC 257 · 二叉树的所有路径)
   describe('16. Binary Tree Paths (LeetCode 257 · 二叉树的所有路径)', () => {
-    it('Stage 1: 经典二叉树 [1, 2, 3, null, 5] 回溯收集路径 ["1->2->5", "1->3"] 且四语言行号合法', () => {
+    it('Stage 1: 经典二叉树 [1, 2, 3, null, 5] 回溯收集路径 ["1->2->5", "1->3"] 且收尾帧 100% 节点覆盖高亮不变量', () => {
       const root = buildTreeFromArr([1, 2, 3, null, 5]);
       const steps = buildAllPathsStage1BacktrackSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1365,8 +1407,11 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(1);
       expect(last.allPaths).toEqual(['1->2->5', '1->3']);
       expect(last.metrics?.['已收集路径数']).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
     });
 
     it('Stage 1 边界测试: 单节点树 [1] 自身为叶子，输出单一路径 ["1"]', () => {
@@ -1374,9 +1419,11 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       const steps = buildAllPathsStage1BacktrackSteps(root);
       expect(steps.length).toBeGreaterThan(0);
       expect(steps[steps.length - 1].allPaths).toEqual(['1']);
+      expect(steps[steps.length - 1].current).toBe(1);
+      expect(steps[steps.length - 1].visitedNodes).toEqual([1]);
     });
 
-    it('Stage 2: 纯函数递归不可变字符串传递收集路径 ["1->2->5", "1->3"] 且四语言行号合法', () => {
+    it('Stage 2: 纯函数递归不可变字符串传递收集路径 ["1->2->5", "1->3"] 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([1, 2, 3, null, 5]);
       const steps = buildAllPathsStage2FunctionalSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1386,11 +1433,14 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(1);
       expect(last.allPaths).toEqual(['1->2->5', '1->3']);
       expect(last.metrics?.['已收集路径数']).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
     });
 
-    it('Stage 3: BFS 双队列层序遍历收集路径 ["1->2->5", "1->3"] 且四语言行号合法', () => {
+    it('Stage 3: BFS 双队列层序遍历收集路径 ["1->2->5", "1->3"] 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([1, 2, 3, null, 5]);
       const steps = buildAllPathsStage3BfsSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1400,8 +1450,11 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(1);
       expect(last.allPaths.slice().sort()).toEqual(['1->2->5', '1->3'].sort());
       expect(last.metrics?.['已收集路径数']).toBe(2);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
+      expect(last.highlightedNodes).toEqual(expect.arrayContaining([1, 2, 3, 5]));
     });
 
     it('三大 Stage 对空树统一安全返回空列表 []', () => {
