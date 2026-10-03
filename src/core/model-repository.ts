@@ -101,6 +101,7 @@ import stockSummaryModel from './models/stock-summary.yaml';
 import editDistanceSummaryModel from './models/edit-distance-summary.yaml';
 import treeDpTheoryModel from './models/tree-dp-theory.yaml';
 import targetSumStandardModel from './models/target-sum-standard.yaml';
+import targetSumModel from './models/target-sum.yaml';
 import dungeonGameReverseDpModel from './models/dungeon-game-reverse-dp.yaml';
 import minCostTicketsModel from './models/min-cost-tickets.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
@@ -247,6 +248,7 @@ export class AlgorithmModelRepository {
     ['stock-summary', stockSummaryModel as IYamlAlgorithmModel],
     ['edit-distance-summary', editDistanceSummaryModel as IYamlAlgorithmModel],
     ['tree-dp-theory', treeDpTheoryModel as IYamlAlgorithmModel],
+    ['target-sum', targetSumModel as IYamlAlgorithmModel],
     ['target-sum-standard', targetSumStandardModel as IYamlAlgorithmModel],
   ]);
 
