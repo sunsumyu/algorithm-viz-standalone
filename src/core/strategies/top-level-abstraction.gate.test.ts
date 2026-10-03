@@ -97,7 +97,6 @@ describe('顶层抽象与架构血缘自省门禁 (Top-Level Abstraction Gates)'
     // 历史遗留待重构的单体策略豁免清单（禁止向此清单添加新文件！）
     const LEGACY_STRATEGY_EXEMPTIONS = new Set([
       'house-robber-strategy.ts', // 历史遗留打家劫舍全量实现 (~1000行)，待收归 LinearStepMatrixCompiler
-      'knapsack-combination-sum4-strategy.ts', // 历史遗留组合总和 IV，待收归 KnapsackStepMatrixCompiler
     ]);
 
     const bloatedStrategies: Array<{ file: string; lines: number }> = [];
