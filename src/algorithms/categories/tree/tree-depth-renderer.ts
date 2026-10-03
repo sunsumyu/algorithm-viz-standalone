@@ -196,16 +196,35 @@ function renderStage3BufferHtml(state?: TDStaticQueueState, depth: number = 0): 
   `;
 }
 
+/**
+ * 递归收集二叉树中所有非空节点值
+ */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  if (!node) return [];
+  const res: number[] = [];
+  const queue: TreeNode[] = [node];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    res.push(cur.val);
+    if (cur.left) queue.push(cur.left);
+    if (cur.right) queue.push(cur.right);
+  }
+  return res;
+}
+
 /** 统一画布呈现 */
 function renderTreeDepthCanvasForStep(container: HTMLElement, step: TDStep, primaryColor: string = '#fbbf24'): void {
-  const resolvedNodes = Array.from(step.depthsMap.keys());
+  const isDone = step.action === 'done';
+  const allTreeVals = collectTreeValues(step.tree);
+  const resolvedNodes = isDone ? allTreeVals : Array.from(step.depthsMap.keys());
+  const current = isDone && step.current === null && step.tree ? step.tree.val : step.current;
 
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.current,
+    current,
     secondaryHighlightedNodes: step.queue || resolvedNodes,
     visitedNodes: resolvedNodes,
-    primaryColor,
+    primaryColor: '#fbbf24',
     secondaryColor: '#60a5fa',
     visitedColor: '#34d399',
   });

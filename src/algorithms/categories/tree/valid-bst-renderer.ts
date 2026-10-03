@@ -64,6 +64,22 @@ function cloneTree(node: TreeNode | null): TreeNode | null {
   return cloneStateDepTree(node);
 }
 
+/**
+ * 递归收集二叉树中所有非空节点值
+ */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  if (!node) return [];
+  const res: number[] = [];
+  const queue: TreeNode[] = [node];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    res.push(cur.val);
+    if (cur.left) queue.push(cur.left);
+    if (cur.right) queue.push(cur.right);
+  }
+  return res;
+}
+
 // ============================================================
 // Stage 1 Step Generator: 中序递归单调性校验 (Recursive Inorder Monotonicity)
 // ============================================================
@@ -592,12 +608,28 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
 // 统一表现层渲染器 (Card 1 + Card 2 领域契约)
 // ============================================================
 function renderValidBstCanvas(container: HTMLElement, step: VBStep, stageId: string): void {
+  const isDone = step.action === 'done';
+  const allTreeNodes = collectTreeValues(step.tree);
+
+  let primaryNode = step.invalidNode !== null ? step.invalidNode : step.current;
+  let visitedNodes = step.sequence;
+
+  if (isDone && step.valid) {
+    // 成功完成态：整树全量翡翠绿常驻高亮，根节点金色聚焦点
+    visitedNodes = allTreeNodes;
+    if (primaryNode === null && step.tree) {
+      primaryNode = step.tree.val;
+    }
+  }
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.invalidNode !== null ? step.invalidNode : step.current,
+    current: primaryNode,
     secondaryHighlightedNodes: step.sequence,
+    visitedNodes: visitedNodes,
     primaryColor: step.invalidNode !== null ? '#ef4444' : '#fbbf24',
-    secondaryColor: '#34d399',
+    secondaryColor: '#60a5fa',
+    visitedColor: '#34d399',
   });
 
   const root = container.closest('#algo-valid-bst-view') || container.parentElement;

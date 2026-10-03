@@ -18,6 +18,7 @@ import {
 
 import {
   buildTSSteps,
+  buildTSRecursiveSteps,
   buildTSIterativeQueueSteps,
   buildTSStaticArraySteps,
 } from '../../algorithms/categories/tree/tree-symmetric-renderer';
@@ -1603,6 +1604,169 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildTreeSteps([], []).pop()?.action).toBe('done');
       expect(buildTreeStage2PostorderSteps([], []).pop()?.action).toBe('done');
       expect(buildTreeStage3StackSteps([], []).pop()?.action).toBe('done');
+    });
+  });
+
+  // 18. 验证二叉搜索树 (Valid BST · LC 98 / Class 037 Code05)
+  describe('18. 验证二叉搜索树 (Validate BST LC 98)', () => {
+    const validRoot = buildTreeFromArr([2, 1, 3]);
+    const invalidRoot = buildTreeFromArr([5, 1, 4, null, null, 3, 6]);
+
+    it('Stage 1: 中序递归单调性校验四语言行号合法且合法树与非法树判定准确', () => {
+      const validSteps = buildVBSteps(validRoot);
+      expect(validSteps.length).toBeGreaterThan(0);
+      for (let i = 0; i < validSteps.length; i++) {
+        assertCodeLineWithinBounds(validSteps[i].codeLine, VALID_BST_STAGE1_CODE, `ValidBST Stage 1 Valid Step ${i}`);
+      }
+      const lastValid = validSteps[validSteps.length - 1];
+      expect(lastValid.valid).toBe(true);
+      expect(lastValid.action).toBe('done');
+      expect(lastValid.sequence).toEqual([1, 2, 3]);
+
+      const invalidSteps = buildVBSteps(invalidRoot);
+      const lastInvalid = invalidSteps[invalidSteps.length - 1];
+      expect(lastInvalid.valid).toBe(false);
+      expect(lastInvalid.invalidNode).toBeDefined();
+    });
+
+    it('Stage 2: 上下界区间约束先序定界四语言行号合法且正确传递开区间', () => {
+      const steps = buildValidBstStage2RangeSteps(validRoot);
+      expect(steps.length).toBeGreaterThan(0);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, VALID_BST_STAGE2_RANGE_CODE, `ValidBST Stage 2 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.valid).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.boundary).toBeDefined();
+
+      const invalidSteps = buildValidBstStage2RangeSteps(invalidRoot);
+      expect(invalidSteps[invalidSteps.length - 1].valid).toBe(false);
+    });
+
+    it('Stage 3: 迭代显式栈模拟中序遍历四语言行号合法且出栈严格单调递增', () => {
+      const steps = buildValidBstStage3StackSteps(validRoot);
+      expect(steps.length).toBeGreaterThan(0);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, VALID_BST_STAGE3_STACK_CODE, `ValidBST Stage 3 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.valid).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.sequence).toEqual([1, 2, 3]);
+
+      const invalidSteps = buildValidBstStage3StackSteps(invalidRoot);
+      expect(invalidSteps[invalidSteps.length - 1].valid).toBe(false);
+    });
+
+    it('三大 Stage 针对空树特判防御', () => {
+      expect(buildVBSteps(null).pop()?.valid).toBe(true);
+      expect(buildValidBstStage2RangeSteps(null).pop()?.valid).toBe(true);
+      expect(buildValidBstStage3StackSteps(null).pop()?.valid).toBe(true);
+    });
+  });
+
+  // 19. 对称二叉树 (Tree Symmetric · LC 101)
+  describe('19. 对称二叉树 (Symmetric Tree LC 101)', () => {
+    const symRoot = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+    const asymRoot = buildTreeFromArr([1, 2, 2, null, 3, null, 3]);
+
+    it('Stage 1: 双指针镜像递归四语言行号合法且收尾步全树高亮不变量成立', () => {
+      const symSteps = buildTSRecursiveSteps(symRoot);
+      expect(symSteps.length).toBeGreaterThan(0);
+      for (let i = 0; i < symSteps.length; i++) {
+        assertCodeLineWithinBounds(symSteps[i].codeLine, TREE_SYMMETRIC_STAGE1_CODE, `TreeSymmetric Stage 1 Step ${i}`);
+      }
+      const lastSym = symSteps[symSteps.length - 1];
+      expect(lastSym.result).toBe(true);
+      expect(lastSym.action).toBe('done');
+      expect(lastSym.mismatchNode).toBeNull();
+
+      const asymSteps = buildTSRecursiveSteps(asymRoot);
+      const lastAsym = asymSteps[asymSteps.length - 1];
+      expect(lastAsym.result).toBe(false);
+      expect(lastAsym.action).toBe('done');
+    });
+
+    it('Stage 2: 队列成对迭代四语言行号合法且成对出入队列状态完整', () => {
+      const symSteps = buildTSIterativeQueueSteps(symRoot);
+      expect(symSteps.length).toBeGreaterThan(0);
+      for (let i = 0; i < symSteps.length; i++) {
+        assertCodeLineWithinBounds(symSteps[i].codeLine, TREE_SYMMETRIC_STAGE2_QUEUE_CODE, `TreeSymmetric Stage 2 Step ${i}`);
+      }
+      const last = symSteps[symSteps.length - 1];
+      expect(last.result).toBe(true);
+      expect(last.action).toBe('done');
+
+      const asymSteps = buildTSIterativeQueueSteps(asymRoot);
+      expect(asymSteps[asymSteps.length - 1].result).toBe(false);
+    });
+
+    it('Stage 3: 静态数组模拟队列四语言行号合法且零GC双指针收敛', () => {
+      const symSteps = buildTSStaticArraySteps(symRoot);
+      expect(symSteps.length).toBeGreaterThan(0);
+      for (let i = 0; i < symSteps.length; i++) {
+        assertCodeLineWithinBounds(symSteps[i].codeLine, TREE_SYMMETRIC_STAGE3_STATIC_ARRAY_CODE, `TreeSymmetric Stage 3 Step ${i}`);
+      }
+      const last = symSteps[symSteps.length - 1];
+      expect(last.result).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.staticQueueState).toBeDefined();
+
+      const asymSteps = buildTSStaticArraySteps(asymRoot);
+      expect(asymSteps[asymSteps.length - 1].result).toBe(false);
+    });
+
+    it('三大 Stage 针对空二叉树特判防御', () => {
+      expect(buildTSRecursiveSteps(null).pop()?.result).toBe(true);
+      expect(buildTSIterativeQueueSteps(null).pop()?.result).toBe(true);
+      expect(buildTSStaticArraySteps(null).pop()?.result).toBe(true);
+    });
+  });
+
+  // 20. 二叉树的最大深度 (Tree Depth · LC 104 / Class 036 Code04)
+  describe('20. 二叉树的最大深度 (Maximum Depth of Binary Tree LC 104)', () => {
+    const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+
+    it('Stage 1: 递归后序自底向上高度归约四语言行号合法且深度计算为 3', () => {
+      const steps = buildTDSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_DEPTH_STAGE1_CODE, `TreeDepth Stage 1 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.maxDepth).toBe(3);
+      expect(last.action).toBe('done');
+      expect(last.depthsMap.size).toBe(5);
+    });
+
+    it('Stage 2: 层次遍历 BFS 队列层数计数四语言行号合法且逐层扩展', () => {
+      const steps = buildTDBfsSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_DEPTH_STAGE2_BFS_CODE, `TreeDepth Stage 2 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.maxDepth).toBe(3);
+      expect(last.action).toBe('done');
+    });
+
+    it('Stage 3: 静态数组模拟队列四语言行号合法且连续双指针准确闭合', () => {
+      const steps = buildTDStaticArraySteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_DEPTH_STAGE3_STATIC_ARRAY_CODE, `TreeDepth Stage 3 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.maxDepth).toBe(3);
+      expect(last.action).toBe('done');
+      expect(last.staticQueueState).toBeDefined();
+    });
+
+    it('三大 Stage 针对空二叉树特判防御', () => {
+      expect(buildTDSteps(null).pop()?.maxDepth).toBe(0);
+      expect(buildTDBfsSteps(null).pop()?.maxDepth).toBe(0);
+      expect(buildTDStaticArraySteps(null).pop()?.maxDepth).toBe(0);
     });
   });
 });

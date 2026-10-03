@@ -66,6 +66,22 @@ export interface TSStep extends StepBase {
 // 兼容别名
 export const TREE_SYMMETRIC_CODE_LINES = TREE_SYMMETRIC_STAGE1_LINES;
 
+/**
+ * 递归收集二叉树中所有非空节点值
+ */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  if (!node) return [];
+  const res: number[] = [];
+  const queue: TreeNode[] = [node];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    res.push(cur.val);
+    if (cur.left) queue.push(cur.left);
+    if (cur.right) queue.push(cur.right);
+  }
+  return res;
+}
+
 // ============================================================
 // Stage 1 Step Generator: 双指针镜像递归 (Recursive Mirror DFS)
 // ============================================================
@@ -777,16 +793,36 @@ export function buildTSSteps(root: TreeNode | null): TSStep[] {
 
 /** Card 1: 树画布渲染 */
 function renderTreeSymmetricCanvasForStep(container: HTMLElement, step: TSStep, primaryColor: string = '#0284c7'): void {
+  const isDone = step.action === 'done';
+  const allTreeNodes = collectTreeValues(step.tree);
   const highlights: number[] = [];
   if (step.leftVal != null) highlights.push(step.leftVal);
   if (step.rightVal != null) highlights.push(step.rightVal);
 
+  let current = step.mismatchNode;
+  let visitedNodes: number[] = [];
+
+  if (isDone) {
+    if (step.result) {
+      // 对称成功完成态：整树全量翡翠绿常驻高亮，根节点金色焦点
+      visitedNodes = allTreeNodes;
+      if (step.tree) {
+        current = step.tree.val;
+      }
+    } else {
+      // 不对称失配态：保持 mismatchNode 为警戒红
+      current = step.mismatchNode;
+    }
+  }
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.mismatchNode,
+    current,
     highlightedNodes: highlights,
-    primaryColor: step.mismatchNode != null ? '#ef4444' : primaryColor,
+    visitedNodes,
+    primaryColor: step.mismatchNode != null ? '#ef4444' : (isDone && step.result ? '#fbbf24' : primaryColor),
     secondaryColor: '#38bdf8',
+    visitedColor: '#34d399',
   });
 }
 

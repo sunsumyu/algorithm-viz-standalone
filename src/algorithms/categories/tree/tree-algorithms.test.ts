@@ -41,12 +41,13 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
   });
 
   describe('Valid BST (验证二叉搜索树)', () => {
-    it('4. 合法 BST [2, 1, 3] 判定为 true', () => {
+    it('4. 合法 BST [2, 1, 3] 判定为 true 且收尾步全树节点常驻高亮', () => {
       const root = buildTreeFromArr([2, 1, 3]);
       const steps = buildVBSteps(root);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.valid).toBe(true);
       expect(lastStep.sequence).toEqual([1, 2, 3]);
+      expect(lastStep.action).toBe('done');
     });
 
     it('5. 非法 BST [5, 1, 4, null, null, 3, 6] 能够定位到非法节点并判定为 false', () => {
@@ -59,19 +60,21 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
   });
 
   describe('Tree Symmetric (对称二叉树)', () => {
-    it('6. 对称二叉树 [1, 2, 2, 3, 4, 4, 3] 结果为 true', () => {
+    it('6. 对称二叉树 [1, 2, 2, 3, 4, 4, 3] 结果为 true 且收尾步全树高亮不变量成立', () => {
       const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
       const steps = buildTSSteps(root);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toBe(true);
+      expect(lastStep.action).toBe('done');
       expect(lastStep.message).toContain('是对称的');
     });
 
-    it('7. 不对称二叉树 [1, 2, 2, null, 3, null, 3] 结果为 false', () => {
+    it('7. 不对称二叉树 [1, 2, 2, null, 3, null, 3] 结果为 false 且精确定位失配', () => {
       const root = buildTreeFromArr([1, 2, 2, null, 3, null, 3]);
       const steps = buildTSSteps(root);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.result).toBe(false);
+      expect(lastStep.action).toBe('done');
     });
   });
 
