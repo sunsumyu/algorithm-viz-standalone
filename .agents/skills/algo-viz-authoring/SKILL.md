@@ -11,9 +11,9 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 
 ---
 
-## 0. 实现前强制死门禁：四维查重与双版本长处综合整合
+## 0. 实现前规划与死门禁（第三章高维规划工程规范）
 
-在着手编写、接入或修改任何算法前，**必须无条件执行本门禁**：
+在着手编写、接入或修改任何算法前，**必须无条件执行本工序**：
 
 ### 0.1 强制前置四维查重（第 0 步门禁）
 严禁接到需求后直接新建文件！必须先在全库执行四维检索：
@@ -24,12 +24,24 @@ description: Use when authoring, implementing, or auditing algorithm visualizati
 
 ### 0.2 双版本长处综合整合铁律（Bi-Version Synthesis, NOT Deletion）
 若库内已存在同题实现，或者排查出同题目的两个版本，**绝对禁止粗暴删掉其中一个版本，也绝对禁止另建平行割裂文件！必须综合两者的长处进行整合**：
-- **旧版本的不可替代长处**：细致打磨的参数输入控件（`inputs`）、丰富的典型测试用例预设（`presets` 案例下拉选择）、成熟稳定的 SVG/Canvas 画布渲染器与边界处理；
-- **新版本的不可替代长处**：体系化名师讲义解析（`problemHtml`）、Java/C++/Python/JS 四语言齐备的源码面板与精准 1-based 相对行号联动（`codeLanguages` / `codeLine`）、深度解构的演化阶段（Stage Evolution）；
-- **整合落地标准**：
-  1. **优势互补融合**：保留旧版输入/用例/画布，注入新版讲义/四语言/阶段演化；
-  2. **唯一事实来源（Single Source of Truth）**：全库保留唯一主 renderer 文件与主算法 ID（如 `binary-tree-level-order`）；
-  3. **别名机制统合（Aliases）**：将课号 ID（如 `tree-036-level-order`）登记进主算法的 `aliases: [...]` 数组中，确保索引双向畅通。
+- **旧版本长处**：参数输入控件（`inputs`）、丰富预设案例（`presets` 下拉选择）、成熟稳定 Canvas/SVG 画布与边界处理；
+- **新版本长处**：体系化讲义（`problemHtml`）、Java/C++/Python/JS 四语言 1-based 行号联动（`codeLanguages` / `codeLine`）、Stage 演化；
+- **整合落地标准**：全库保留唯一主 renderer 文件与主算法 ID（如 `binary-tree-level-order`），将旧课号登记进 `aliases: [...]`。
+
+### 0.3 反向盘问与决策收敛（The Grilling Triad）
+若需求存在模糊、发现未知依赖或查出双版本整合方案，**严禁向人类抛出空泛的开放式大问题**。必须遵循结构化多选提问艺术：
+- 明确暴露技术假设（Surface Assumptions）；
+- 提供带 `(Recommended)` 的结构化选项并讲明收益与代价；
+- 拍板后将结论沉淀为单一事实，杜绝反复纠缠。
+
+### 0.4 穿甲弹工序与多阶段编排（Tracer Bullet & Multi-Phase Pipeline）
+严禁单次会话一口气写完几百行复杂业务代码！必须按阶段推进（每阶段完成立即门禁验证、Git Commit 并清空上下文）：
+- **Phase 1: 穿甲弹骨架刺穿**：构建最小 Renderer 骨架（含最简 init 帧）+ 最小单测 + batch 注册，运行 `meta:sync` 验证全链路接缝畅通；
+- **Phase 2: 状态机核心推演**：TDD 红绿循环实现步进生成器，断言状态转移与关键帧；
+- **Phase 3: 四语言相对行号联动与讲义**：使用 `@step:` 锚点确保四语言行号合法有效；
+- **Phase 4: 表现层视觉与视口核验**：确保 1920x1080 视口展开，消除套娃卡片与脏样式。
+> [!NOTE]
+> **穿甲弹 vs 原型辨析**：穿甲弹是生产代码的永久地基，必须有单测与强类型；若仅为摸索 UI 摆放手感，使用独立 scratch 原型，验证结论后立即废弃，严禁把脏原型重构成生产代码！
 
 ---
 

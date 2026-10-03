@@ -27,30 +27,23 @@ description: "使用基于「不同路径 II」黄金基准与 YAML 驱动模型
 
 ---
 
-## 1. 架构核心三层结构
+## 1. 高维规划与任务拆解工程（第三章工序编排规范）
 
-```
-┌────────────────────────────────────────────────────────┐
-│  1. 领域事实源: YAML 模型定义                          │
-│  src/core/models/<algorithm-id>.yaml                   │
-└──────────────────────────┬─────────────────────────────┘
-                           │ 解析与注册
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│  2. 顶层策略引擎: IAlgorithmStrategy                   │
-│  src/core/strategies/<domain>-strategy.ts               │
-│  - compileStage1or2 (纯递归 / 记忆化搜索)              │
-│  - compileStage3 (严格表递推)                          │
-│  - compileStage4 (空间压缩优化)                        │
-└──────────────────────────┬─────────────────────────────┘
-                           │ 生成通用 UniversalStep
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│  3. 业务薄切片: 声明式渲染器                            │
-│  src/algorithms/categories/.../*-renderer.ts           │
-│  - 仅负责 2D/3D 画布渲染挂载与视图适配                 │
-└────────────────────────────────────────────────────────┘
-```
+面对复杂 DP 算法（4 个演化阶段、顺逆推双向、四语言行号映射），**严禁单次会话一口气写完全量代码**！必须执行 **穿甲弹多阶段工序（Multi-Phase Tracer Pipeline）**：
+
+1. **反向盘问与决策收敛（Grill Before Code）**：
+   - 编码前先明确核心维度：属于哪一族统一编译器（网格/一维/背包/双序列）？
+   - 若涉及同题双版本整合，向人类提出结构化多选项并标明 `(Recommended)`，禁止抛出开放式大问题。
+2. **Phase 1: 穿甲弹刺穿（Tracer Bullet First）**：
+   - 先写 YAML 模型骨架 + Stage 3 表递推核心；
+   - 策略引擎实现 Stage 3 最小推演并挂载 `UniversalStageVisualizer`；
+   - 运行单测验证端到端接缝畅通 ➔ Git Commit ➔ `/clear`。
+3. **Phase 2: 阶段演化扩展**：
+   - 补齐 Stage 1 纯暴力递归与 Stage 2 记忆化搜索 ➔ 运行防跳步门禁 ➔ Git Commit ➔ `/clear`。
+4. **Phase 3: 空间压缩与四语言联动**：
+   - 补齐 Stage 4 一维空间优化与四语言 1-based 相对行号映射 ➔ 策略身材门禁（LOC < 120） ➔ Git Commit ➔ `/clear`。
+5. **Phase 4: 全景核查与验收**：
+   - 运行 6 大全量验证门禁，确认全库零退化。
 
 ---
 
@@ -69,7 +62,7 @@ description: "使用基于「不同路径 II」黄金基准与 YAML 驱动模型
 
 | 领域模块 | 对应参考文件 | 核心包含内容 |
 | :--- | :--- | :--- |
-| **实施流程与清单** | [step-by-step-workflow.md](./references/step-by-step-workflow.md) | YAML 模型规范、策略引擎实现、统一宿主对齐铁律及交付前“六项核验清单” |
+| **实施流程与清单** | [step-by-step-workflow.md](./references/step-by-step-workflow.md) | 穿甲弹多阶段重构工序 (Phase 1~4)、统一宿主对齐铁律及交付前“六项核验清单” |
 | **编译器抽象基类** | [compiler-invariants.md](./references/compiler-invariants.md) | 递归与填表抽象基类规约、分支展开多行规范、零跳步门禁及网格/双序列典型案例 |
 
 ---
