@@ -1,6 +1,6 @@
 ---
 name: ui-layout-design
-description: Standard guidelines and design patterns for algorithm visualizer responsive layouts, maximizing visual canvas area, eliminating panel redundancy, and ensuring robust splitter resizing.
+description: "算法可视化 UI 响应式布局、主画布面积（60%~70%）、消灭卡片套娃与拖拽分割条尺寸规范。注意：若进行浏览器端调试、视口分辨率设置或截图验收，请配合唤起 browser-viewport-debugging。"
 ---
 
 # 算法可视化 UI 布局与交互设计规范 (UI Layout & Interaction Design)
