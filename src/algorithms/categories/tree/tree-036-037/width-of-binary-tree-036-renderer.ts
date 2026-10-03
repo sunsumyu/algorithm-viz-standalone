@@ -23,6 +23,15 @@ import {
   WIDTH_STAGE3_DFS_LINES,
 } from './width-of-binary-tree-036-stage-codes';
 
+/** 递归收集整树所有节点数值集合 */
+export function collectAllTreeVals(node: TreeNode | null, out: Set<number> = new Set()): Set<number> {
+  if (!node) return out;
+  out.add(node.val);
+  if (node.left) collectAllTreeVals(node.left, out);
+  if (node.right) collectAllTreeVals(node.right, out);
+  return out;
+}
+
 // ============================================================
 // 类型契约与状态定义 (Domain Step Contract)
 // ============================================================
@@ -68,6 +77,15 @@ export interface Width036Step {
 
   /** 各层结算跨度历史 */
   levelSpans?: { level: number; leftIdx: number; rightIdx: number; span: number }[];
+
+  /** 常驻已访问节点集合 (保证最后一步全树常驻高亮，绝无暗灰) */
+  visitedNodes?: Set<number> | number[];
+
+  /** 构成全局最大宽度的该层最左、最右端点节点值 [leftVal, rightVal] */
+  maxWidthEndpoints?: [number, number];
+
+  /** 显式高亮节点清单 (用于在最后一步高亮最大宽度端点) */
+  highlightedNodes?: number[];
 
   // Legacy Tree036Step 兼容
   activeNodeId?: number | null;
@@ -252,23 +270,56 @@ function renderStage3DfsBufferHtml(step: Width036Step): string {
   `;
 }
 
-/** 统一画布呈现 */
-function renderWidthCanvasForStep(container: HTMLElement, step: Width036Step, primaryColor: string = '#0284c7'): void {
+/** 统一画布呈现 (全景高亮常驻与端点跨度标尺契约) */
+export function renderWidthCanvasForStep(
+  container: HTMLElement,
+  step: Width036Step,
+  primaryColor: string = '#0284c7'
+): void {
   const labels = new Map<number, string>();
+  const isDone = step.action === 'done';
+  const endpoints = step.maxWidthEndpoints || [];
+  const [leftEnd, rightEnd] = endpoints.length >= 2 ? endpoints : [null, null];
+
   if (step.nodeIndices) {
     step.nodeIndices.forEach((idx, val) => {
-      labels.set(val, `#${idx}`);
+      if (isDone && val === leftEnd) {
+        labels.set(val, `#${idx} [最左]`);
+      } else if (isDone && val === rightEnd) {
+        labels.set(val, `#${idx} [最右 · 跨度${step.maxWidth}]`);
+      } else {
+        labels.set(val, `#${idx}`);
+      }
     });
   }
+
+  // 计算次级活跃节点 (根据各 Stage 状态自适应)
+  let secondaryNodes: number[] = [];
+  if (step.queueItems && step.queueItems.length > 0) {
+    secondaryNodes = step.queueItems.map((q) => q.val);
+  } else if (step.staticQueueState && step.staticQueueState.nq) {
+    const { nq, l, r } = step.staticQueueState;
+    for (let i = l; i < r && i < nq.length; i++) {
+      const item = nq[i];
+      if (typeof item === 'number') secondaryNodes.push(item);
+    }
+  }
+
+  // 常驻已访问节点
+  const visitedArr = step.visitedNodes ? Array.from(step.visitedNodes) : [];
+
+  // 收尾步焦点：将产生最大宽度的左右两个端点节点标为焦点
+  const highlightedNodes = step.highlightedNodes || (isDone && endpoints.length > 0 ? endpoints : []);
 
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
     current: step.current,
-    secondaryHighlightedNodes: step.queueItems?.map((q) => q.val) || [],
-    visitedNodes: [],
-    primaryColor,
+    highlightedNodes,
+    secondaryHighlightedNodes: secondaryNodes,
+    visitedNodes: visitedArr,
+    primaryColor: isDone ? '#eab308' : primaryColor,
     secondaryColor: '#38bdf8',
-    visitedColor: '#34d399',
+    visitedColor: '#10b981',
     labels,
   });
 }
@@ -280,6 +331,10 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
   const steps: Width036Step[] = [];
   const nodeIndices = new Map<number, number>();
   const levelSpans: { level: number; leftIdx: number; rightIdx: number; span: number }[] = [];
+  const allTreeVals = collectAllTreeVals(root);
+  const visitedNodes = new Set<number>();
+  let bestEndpoints: [number, number] | undefined = undefined;
+  let bestSpan = 0;
   const L = WIDTH_STAGE1_LINES;
 
   steps.push({
@@ -291,6 +346,7 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
     nodeIndices: new Map(nodeIndices),
     queueItems: [],
     levelSpans: [...levelSpans],
+    visitedNodes: new Set(visitedNodes),
     decision: '算法启动：完全二叉树编号模型初始化',
     action: 'init',
     message: root
@@ -311,6 +367,7 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       queueItems: [],
       levelSpans: [],
+      visitedNodes: new Set(),
       decision: '特判返回：树为空',
       action: 'done',
       message: '树为空，返回最大宽度 0。',
@@ -324,6 +381,9 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
   type QueueItem = { node: TreeNode; rawIdx: number; normalizedIdx?: number };
   let queue: QueueItem[] = [{ node: root, rawIdx: 1, normalizedIdx: 0 }];
   nodeIndices.set(root.val, 1);
+  visitedNodes.add(root.val);
+  bestEndpoints = [root.val, root.val];
+  bestSpan = 1;
   let maxWidth = 0;
   let level = 0;
 
@@ -339,6 +399,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
     nodeIndices: new Map(nodeIndices),
     queueItems: getQueueView(queue),
     levelSpans: [...levelSpans],
+    visitedNodes: new Set(visitedNodes),
+    maxWidthEndpoints: bestEndpoints,
     decision: '根节点赋编号 1 入队',
     action: 'init-queue',
     message: `根节点 ${root.val} 入队，分配初始完全二叉树编号 index = 1。`,
@@ -353,6 +415,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
     const base = queue[0].rawIdx;
     let left = 0;
     let right = 0;
+    const leftNodeVal = queue[0].node.val;
+    let rightNodeVal = queue[0].node.val;
 
     steps.push({
       tree: root,
@@ -363,6 +427,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       queueItems: getQueueView(queue),
       levelSpans: [...levelSpans],
+      visitedNodes: new Set(visitedNodes),
+      maxWidthEndpoints: bestEndpoints,
       decision: `锁定第 ${level} 层基准偏移量 base = ${base} (节点数: ${size})`,
       action: 'base-offset',
       message: `开始处理第 ${level} 层：最左节点绝对编号为 ${base}。本层节点减去 base 进行归一化，彻底消除大数溢出。`,
@@ -380,8 +446,12 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       const idx = rawIdx - base;
       curItem.normalizedIdx = idx;
 
+      visitedNodes.add(cur.val);
       if (i === 0) left = idx;
-      if (i === size - 1) right = idx;
+      if (i === size - 1) {
+        right = idx;
+        rightNodeVal = cur.val;
+      }
 
       steps.push({
         tree: root,
@@ -392,6 +462,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
         nodeIndices: new Map(nodeIndices),
         queueItems: getQueueView([...queue, ...nextQueue]),
         levelSpans: [...levelSpans],
+        visitedNodes: new Set(visitedNodes),
+        maxWidthEndpoints: bestEndpoints,
         decision: `[${i + 1}/${size}] 弹出节点 ${cur.val} (相对编号: ${idx})`,
         action: 'poll',
         message: `出队节点 ${cur.val}，原始编号 #${rawIdx}，减去基准 base 得到相对编号 #${idx}。`,
@@ -403,6 +475,7 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       if (cur.left) {
         const leftRaw = idx * 2;
         nodeIndices.set(cur.left.val, leftRaw);
+        visitedNodes.add(cur.left.val);
         nextQueue.push({ node: cur.left, rawIdx: leftRaw });
 
         steps.push({
@@ -414,6 +487,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
           nodeIndices: new Map(nodeIndices),
           queueItems: getQueueView([...queue, ...nextQueue]),
           levelSpans: [...levelSpans],
+          visitedNodes: new Set(visitedNodes),
+          maxWidthEndpoints: bestEndpoints,
           decision: `左孩子 ${cur.left.val} 入队 (编号: idx*2 = ${leftRaw})`,
           action: 'push-left',
           message: `节点 ${cur.val} 的左孩子 ${cur.left.val} 入队，赋予完全二叉树编号 idx * 2 = ${leftRaw}。`,
@@ -426,6 +501,7 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       if (cur.right) {
         const rightRaw = idx * 2 + 1;
         nodeIndices.set(cur.right.val, rightRaw);
+        visitedNodes.add(cur.right.val);
         nextQueue.push({ node: cur.right, rawIdx: rightRaw });
 
         steps.push({
@@ -437,6 +513,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
           nodeIndices: new Map(nodeIndices),
           queueItems: getQueueView([...queue, ...nextQueue]),
           levelSpans: [...levelSpans],
+          visitedNodes: new Set(visitedNodes),
+          maxWidthEndpoints: bestEndpoints,
           decision: `右孩子 ${cur.right.val} 入队 (编号: idx*2+1 = ${rightRaw})`,
           action: 'push-right',
           message: `节点 ${cur.val} 的右孩子 ${cur.right.val} 入队，赋予完全二叉树编号 idx * 2 + 1 = ${rightRaw}。`,
@@ -448,6 +526,10 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
     }
 
     const currentSpan = right - left + 1;
+    if (currentSpan > bestSpan) {
+      bestSpan = currentSpan;
+      bestEndpoints = [leftNodeVal, rightNodeVal];
+    }
     maxWidth = Math.max(maxWidth, currentSpan);
     levelSpans.push({ level, leftIdx: left, rightIdx: right, span: currentSpan });
 
@@ -460,6 +542,8 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       queueItems: getQueueView(nextQueue),
       levelSpans: [...levelSpans],
+      visitedNodes: new Set(visitedNodes),
+      maxWidthEndpoints: bestEndpoints,
       decision: `第 ${level} 层跨度结算: ${right} - ${left} + 1 = ${currentSpan}`,
       action: 'calc-span',
       message: `第 ${level} 层遍历完毕！最左相对编号 ${left}，最右相对编号 ${right}，本层跨度 = ${currentSpan}。全局最大宽度更新为 ${maxWidth}。`,
@@ -476,13 +560,16 @@ export function buildWidth036QueueSteps(root: TreeNode | null): Width036Step[] {
     current: null,
     levelIndex: level,
     maxWidth,
-    currentSpan: 0,
+    currentSpan: bestSpan,
     nodeIndices: new Map(nodeIndices),
     queueItems: [],
     levelSpans: [...levelSpans],
+    visitedNodes: allTreeVals,
+    maxWidthEndpoints: bestEndpoints,
+    highlightedNodes: bestEndpoints ? [...bestEndpoints] : [],
     decision: '全树计算完成，返回最大宽度',
     action: 'done',
-    message: `🎉 所有层序遍历结束！二叉树的最大宽度为 【${maxWidth}】。`,
+    message: `🎉 所有层序遍历结束！二叉树的最大宽度为 【${maxWidth}】！最宽跨度由端点节点 [#${bestEndpoints?.[0] ?? '—'}, #${bestEndpoints?.[1] ?? '—'}] 贡献，全树节点均已点亮！`,
     log: `return maxWidth = ${maxWidth}`,
     metrics: makeWidthMetrics(null, level, 0, maxWidth),
     codeLine: L.returnAns,
@@ -498,6 +585,10 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
   const steps: Width036Step[] = [];
   const nodeIndices = new Map<number, number>();
   const levelSpans: { level: number; leftIdx: number; rightIdx: number; span: number }[] = [];
+  const allTreeVals = collectAllTreeVals(root);
+  const visitedNodes = new Set<number>();
+  let bestEndpoints: [number, number] | undefined = undefined;
+  let bestSpan = 0;
   const L = WIDTH_STAGE2_STATIC_ARRAY_LINES;
 
   steps.push({
@@ -509,6 +600,7 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
     nodeIndices: new Map(nodeIndices),
     staticQueueState: { nq: [], iq: [], l: 0, r: 0, base: 0, windowSize: 0 },
     levelSpans: [...levelSpans],
+    visitedNodes: new Set(visitedNodes),
     decision: '左神 Class 036 招牌优化：分配静态双连续数组 nq[MAXN] 与 iq[MAXN]',
     action: 'init',
     message: root
@@ -529,6 +621,7 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
       nodeIndices: new Map(nodeIndices),
       staticQueueState: { nq: [], iq: [], l: 0, r: 0, base: 0, windowSize: 0 },
       levelSpans: [],
+      visitedNodes: new Set(),
       decision: '特判返回：树为空',
       action: 'done',
       message: '树为空，直接返回最大宽度 0。',
@@ -548,6 +641,9 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
   iq[r] = 1;
   r++;
   nodeIndices.set(root.val, 1);
+  visitedNodes.add(root.val);
+  bestEndpoints = [root.val, root.val];
+  bestSpan = 1;
   let maxWidth = 0;
   let level = 0;
 
@@ -569,6 +665,8 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
     nodeIndices: new Map(nodeIndices),
     staticQueueState: getStaticState(0),
     levelSpans: [...levelSpans],
+    visitedNodes: new Set(visitedNodes),
+    maxWidthEndpoints: bestEndpoints,
     decision: '根节点装载入静态数组: nq[r]=root, iq[r++]=1',
     action: 'offer-root',
     message: `根节点 ${root.val} 入静态数组 nq[0]，编号 1 入 iq[0]，r 指针自增为 1。`,
@@ -582,6 +680,12 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
     const size = r - l;
     const base = iq[l];
     const span = iq[r - 1] - iq[l] + 1;
+    const leftVal = nq[l]!.val;
+    const rightVal = nq[r - 1]!.val;
+    if (span > bestSpan) {
+      bestSpan = span;
+      bestEndpoints = [leftVal, rightVal];
+    }
     maxWidth = Math.max(maxWidth, span);
     levelSpans.push({ level, leftIdx: iq[l], rightIdx: iq[r - 1], span });
 
@@ -594,6 +698,8 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
       nodeIndices: new Map(nodeIndices),
       staticQueueState: getStaticState(base),
       levelSpans: [...levelSpans],
+      visitedNodes: new Set(visitedNodes),
+      maxWidthEndpoints: bestEndpoints,
       decision: `区间 [l=${l}, r=${r}) 跨度直接得出: iq[${r - 1}] - iq[${l}] + 1 = ${span}`,
       action: 'calc-span',
       message: `第 ${level} 层无需出队后再次遍历，直接利用双指针首尾做差：iq[${r - 1}](${iq[r - 1]}) - iq[${l}](${iq[l]}) + 1 = ${span}！全局最大宽度更新为 ${maxWidth}。`,
@@ -605,6 +711,7 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
     for (let i = 0; i < size; i++) {
       const cur = nq[l]!;
       const idx = iq[l++] - base;
+      visitedNodes.add(cur.val);
 
       steps.push({
         tree: root,
@@ -615,6 +722,8 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
         nodeIndices: new Map(nodeIndices),
         staticQueueState: getStaticState(base),
         levelSpans: [...levelSpans],
+        visitedNodes: new Set(visitedNodes),
+        maxWidthEndpoints: bestEndpoints,
         decision: `出队 nq[l++] -> ${cur.val}，相对编号: ${idx}`,
         action: 'poll',
         message: `l 指针推进，读取节点 ${cur.val}，相对编号为 idx = ${idx}。`,
@@ -628,6 +737,7 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
         nq[r] = cur.left;
         iq[r++] = leftIdx;
         nodeIndices.set(cur.left.val, leftIdx);
+        visitedNodes.add(cur.left.val);
 
         steps.push({
           tree: root,
@@ -638,6 +748,8 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
           nodeIndices: new Map(nodeIndices),
           staticQueueState: getStaticState(base),
           levelSpans: [...levelSpans],
+          visitedNodes: new Set(visitedNodes),
+          maxWidthEndpoints: bestEndpoints,
           decision: `左孩子入静态数组: nq[r]=${cur.left.val}, iq[r++]=${leftIdx}`,
           action: 'push-left',
           message: `左孩子 ${cur.left.val} 写入 nq[${r - 1}]，编号 ${leftIdx} 写入 iq[${r - 1}]。`,
@@ -652,6 +764,7 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
         nq[r] = cur.right;
         iq[r++] = rightIdx;
         nodeIndices.set(cur.right.val, rightIdx);
+        visitedNodes.add(cur.right.val);
 
         steps.push({
           tree: root,
@@ -662,6 +775,8 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
           nodeIndices: new Map(nodeIndices),
           staticQueueState: getStaticState(base),
           levelSpans: [...levelSpans],
+          visitedNodes: new Set(visitedNodes),
+          maxWidthEndpoints: bestEndpoints,
           decision: `右孩子入静态数组: nq[r]=${cur.right.val}, iq[r++]=${rightIdx}`,
           action: 'push-right',
           message: `右孩子 ${cur.right.val} 写入 nq[${r - 1}]，编号 ${rightIdx} 写入 iq[${r - 1}]。`,
@@ -678,13 +793,16 @@ export function buildWidth036StaticArraySteps(root: TreeNode | null): Width036St
     current: null,
     levelIndex: level,
     maxWidth,
-    currentSpan: 0,
+    currentSpan: bestSpan,
     nodeIndices: new Map(nodeIndices),
     staticQueueState: getStaticState(0),
     levelSpans: [...levelSpans],
+    visitedNodes: allTreeVals,
+    maxWidthEndpoints: bestEndpoints,
+    highlightedNodes: bestEndpoints ? [...bestEndpoints] : [],
     decision: '静态数组探索完毕，返回最大宽度',
     action: 'done',
-    message: `🎉 静态数组全部消费完毕 (l == r)！二叉树的最大宽度为 【${maxWidth}】。`,
+    message: `🎉 静态数组全部消费完毕 (l == r)！二叉树的最大宽度为 【${maxWidth}】！最宽跨度由端点节点 [#${bestEndpoints?.[0] ?? '—'}, #${bestEndpoints?.[1] ?? '—'}] 贡献，全树节点均已点亮！`,
     log: `return maxWidth = ${maxWidth}`,
     metrics: makeWidthMetrics(null, level, 0, maxWidth),
     codeLine: L.returnAns,
@@ -700,7 +818,12 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
   const steps: Width036Step[] = [];
   const nodeIndices = new Map<number, number>();
   const leftMost = new Map<number, number>();
+  const depthToLeftVal = new Map<number, number>();
   const levelSpans: { level: number; leftIdx: number; rightIdx: number; span: number }[] = [];
+  const allTreeVals = collectAllTreeVals(root);
+  const visitedNodes = new Set<number>();
+  let bestEndpoints: [number, number] | undefined = undefined;
+  let bestSpan = 0;
   const callStack: string[] = [];
   const L = WIDTH_STAGE3_DFS_LINES;
 
@@ -713,6 +836,7 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     nodeIndices: new Map(nodeIndices),
     dfsState: { leftMost: new Map(leftMost), currentDepth: 0, currentIndex: 1, callStack: [] },
     levelSpans: [...levelSpans],
+    visitedNodes: new Set(visitedNodes),
     decision: 'DFS 先序遍历求最大宽度：先根再左再右',
     action: 'init',
     message: root
@@ -733,6 +857,7 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       dfsState: { leftMost: new Map(leftMost), currentDepth: 0, currentIndex: 0, callStack: [] },
       levelSpans: [],
+      visitedNodes: new Set(),
       decision: '特判返回：树为空',
       action: 'done',
       message: '树为空，返回最大宽度 0。',
@@ -743,11 +868,15 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     return steps;
   }
 
+  visitedNodes.add(root.val);
+  bestEndpoints = [root.val, root.val];
+  bestSpan = 1;
   let maxWidth = 0;
 
   function dfs(node: TreeNode | null, depth: number, index: number): void {
     if (!node) return;
 
+    visitedNodes.add(node.val);
     callStack.push(`dfs(Node ${node.val}, depth: ${depth}, idx: ${index})`);
     nodeIndices.set(node.val, index);
 
@@ -760,6 +889,8 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       dfsState: { leftMost: new Map(leftMost), currentDepth: depth, currentIndex: index, callStack: [...callStack] },
       levelSpans: [...levelSpans],
+      visitedNodes: new Set(visitedNodes),
+      maxWidthEndpoints: bestEndpoints,
       decision: `DFS 触达节点 ${node.val} (深度: ${depth}, 编号: #${index})`,
       action: 'dfs-entry',
       message: `递归到达节点 ${node.val}，所在深度为 ${depth}，虚拟编号为 #${index}。`,
@@ -770,6 +901,7 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
 
     if (!leftMost.has(depth)) {
       leftMost.set(depth, index);
+      depthToLeftVal.set(depth, node.val);
       steps.push({
         tree: root,
         current: node.val,
@@ -779,6 +911,8 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
         nodeIndices: new Map(nodeIndices),
         dfsState: { leftMost: new Map(leftMost), currentDepth: depth, currentIndex: index, callStack: [...callStack] },
         levelSpans: [...levelSpans],
+        visitedNodes: new Set(visitedNodes),
+        maxWidthEndpoints: bestEndpoints,
         decision: `深度 ${depth} 首次触达！记录最左编号: leftMost[${depth}] = ${index}`,
         action: 'record-left',
         message: `由于先序遍历先左后右，节点 ${node.val} 是深度 ${depth} 遇到的第一个节点，必为最左节点！存入表。`,
@@ -789,6 +923,11 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     }
 
     const curWidth = index - leftMost.get(depth)! + 1;
+    if (curWidth > bestSpan) {
+      bestSpan = curWidth;
+      const leftVal = depthToLeftVal.get(depth) ?? node.val;
+      bestEndpoints = [leftVal, node.val];
+    }
     maxWidth = Math.max(maxWidth, curWidth);
 
     steps.push({
@@ -800,6 +939,8 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
       nodeIndices: new Map(nodeIndices),
       dfsState: { leftMost: new Map(leftMost), currentDepth: depth, currentIndex: index, callStack: [...callStack] },
       levelSpans: [...levelSpans],
+      visitedNodes: new Set(visitedNodes),
+      maxWidthEndpoints: bestEndpoints,
       decision: `计算节点 ${node.val} 产生的跨度: ${index} - ${leftMost.get(depth)} + 1 = ${curWidth}`,
       action: 'calc-width',
       message: `当前节点与本层最左节点的编号差加 1 为 ${curWidth}。更新全局最大宽度为 ${maxWidth}。`,
@@ -809,6 +950,7 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     });
 
     if (node.left) {
+      visitedNodes.add(node.left.val);
       steps.push({
         tree: root,
         current: node.val,
@@ -818,6 +960,8 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
         nodeIndices: new Map(nodeIndices),
         dfsState: { leftMost: new Map(leftMost), currentDepth: depth, currentIndex: index, callStack: [...callStack] },
         levelSpans: [...levelSpans],
+        visitedNodes: new Set(visitedNodes),
+        maxWidthEndpoints: bestEndpoints,
         decision: `准备递归左子树: dfs(${node.left.val}, depth: ${depth + 1}, idx: ${index * 2})`,
         action: 'dfs-left',
         message: `向左子树递归，编号递推为 index * 2 = ${index * 2}。`,
@@ -829,6 +973,7 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     }
 
     if (node.right) {
+      visitedNodes.add(node.right.val);
       steps.push({
         tree: root,
         current: node.val,
@@ -838,6 +983,8 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
         nodeIndices: new Map(nodeIndices),
         dfsState: { leftMost: new Map(leftMost), currentDepth: depth, currentIndex: index, callStack: [...callStack] },
         levelSpans: [...levelSpans],
+        visitedNodes: new Set(visitedNodes),
+        maxWidthEndpoints: bestEndpoints,
         decision: `准备递归右子树: dfs(${node.right.val}, depth: ${depth + 1}, idx: ${index * 2 + 1})`,
         action: 'dfs-right',
         message: `向右子树递归，编号递推为 index * 2 + 1 = ${index * 2 + 1}。`,
@@ -858,13 +1005,16 @@ export function buildWidth036DfsSteps(root: TreeNode | null): Width036Step[] {
     current: null,
     levelIndex: 0,
     maxWidth,
-    currentSpan: 0,
+    currentSpan: bestSpan,
     nodeIndices: new Map(nodeIndices),
     dfsState: { leftMost: new Map(leftMost), currentDepth: 0, currentIndex: 0, callStack: [] },
     levelSpans: [...levelSpans],
+    visitedNodes: allTreeVals,
+    maxWidthEndpoints: bestEndpoints,
+    highlightedNodes: bestEndpoints ? [...bestEndpoints] : [],
     decision: 'DFS 全树遍历结束，返回最大宽度',
     action: 'done',
-    message: `🎉 DFS 遍历全部完成！二叉树的最大宽度为 【${maxWidth}】。`,
+    message: `🎉 DFS 遍历全部完成！二叉树的最大宽度为 【${maxWidth}】！最宽跨度由端点节点 [#${bestEndpoints?.[0] ?? '—'}, #${bestEndpoints?.[1] ?? '—'}] 贡献，全树节点均已点亮！`,
     log: `return maxWidth = ${maxWidth}`,
     metrics: makeWidthMetrics(null, 0, 0, maxWidth),
     codeLine: L.returnAns,
