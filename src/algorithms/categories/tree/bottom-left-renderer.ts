@@ -49,6 +49,19 @@ export interface BottomLeftStep extends StepBase {
   queueState?: number[];
 }
 
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
+}
+
 // =========================================================================
 // Stage 1 步骤生成器: 先序递归 DFS 与最深层先登者锁定 (Preorder DFS)
 // =========================================================================
@@ -304,13 +317,16 @@ export function buildBottomLeftStage1PreorderSteps(root: TreeNode | null): Botto
 
   dfs(root, 0);
 
+  const allTreeVals = collectTreeValues(root);
+
   // 最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: 0,
     maxDepth,
     bottomLeft,
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: bottomLeft != null ? [bottomLeft] : [],
     decision: `🎉 全树遍历结束！最底层 (深度 ${maxDepth}) 最左边节点的值为 ${bottomLeft}`,
     message: `深度优先搜索完成，全树最大深度为 ${maxDepth}，最终答案锁定为 ${bottomLeft}。`,
@@ -318,10 +334,10 @@ export function buildBottomLeftStage1PreorderSteps(root: TreeNode | null): Botto
     codeLine: lines.returnAns,
     stageId: 'stage-1',
     metrics: {
-      '当前节点': '—',
+      '当前节点': root ? `Node(${root.val})` : '—',
       '全树最大深度': maxDepth,
       '最终左下角值': bottomLeft != null ? bottomLeft : '-',
-      cur: '-',
+      cur: root ? String(root.val) : '-',
       depth: '0',
       'max-depth': String(maxDepth),
       result: bottomLeft != null ? String(bottomLeft) : '?',
@@ -515,20 +531,23 @@ export function buildBottomLeftStage2BfsSteps(root: TreeNode | null): BottomLeft
     currentLevel++;
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: currentLevel - 1,
     maxDepth: currentLevel - 1,
     bottomLeft,
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: [bottomLeft],
     decision: `🎉 BFS 队列排空，遍历完成！最后一层最左边节点为 ${bottomLeft}`,
     message: `全部 ${currentLevel} 层节点遍历完毕，最后一层的层首节点即为最终树左下角的值: ${bottomLeft}。`,
     log: `BFS done: bottomLeft = ${bottomLeft}`,
     codeLine: lines.returnAns,
     stageId: 'stage-2',
-    metrics: { '当前出队节点': '—', '全树总层数': currentLevel, '最终左下角值': bottomLeft },
+    metrics: { '当前出队节点': root ? `Node(${root.val})` : '—', '全树总层数': currentLevel, '最终左下角值': bottomLeft },
     statusBadge: { text: `答案: ${bottomLeft}`, type: 'success' },
   });
 
@@ -673,13 +692,16 @@ export function buildBottomLeftStage3ReverseBfsSteps(root: TreeNode | null): Bot
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 最终步：最后一个出队的就是答案！
   steps.push({
     tree: cloneStateDepTree(root),
-    current: null,
+    current: root ? root.val : null,
     depth: 0,
     maxDepth: 0,
     bottomLeft: cur.val,
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: [cur.val],
     decision: `🎉 队列彻底排空！最后一个从队列弹出的节点 Node(${cur.val}) 必为树左下角的值！`,
     message: `逆向 BFS 遍历结束，无需任何层深判断与复杂循环，直接返回 cur.val = ${cur.val}！`,
@@ -701,15 +723,31 @@ export function buildBottomLeftSteps(root: TreeNode | null): BottomLeftStep[] {
 }
 
 // =========================================================================
-// 表现层画板渲染器 (Presentation Canvas Renderer)
+// 表现层画板渲染器 (Presentation Canvas Renderer - Double Invariant Guard)
 // =========================================================================
 function renderBottomLeftCanvas(container: HTMLElement, step: BottomLeftStep): void {
   if (step.tree) {
+    const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.decision.includes('排空') || step.statusBadge?.type === 'success';
+    const allTreeVals = collectTreeValues(step.tree);
+    let current = step.current;
+    let visitedNodes = step.visitedNodes;
+    let secondaryHighlightedNodes = step.secondaryHighlightedNodes || (step.bottomLeft != null ? [step.bottomLeft] : []);
+
+    if (isDone) {
+      if (current === null) {
+        current = step.tree.val;
+      }
+      if (!visitedNodes || visitedNodes.length === 0) {
+        visitedNodes = allTreeVals;
+      }
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
-      current: step.current,
-      secondaryHighlightedNodes: step.bottomLeft != null ? [step.bottomLeft] : [],
-      primaryColor: '#f59e0b',
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
+      primaryColor: '#fbbf24',
       secondaryColor: '#10b981',
       visitedColor: '#34d399',
     });

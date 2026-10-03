@@ -1337,7 +1337,7 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 15. Sum of Left Leaves (LC 404 · 左叶子之和)
   describe('15. Sum of Left Leaves (LeetCode 404 · 左叶子之和)', () => {
-    it('Stage 1: 经典树 [3, 9, 20, null, null, 15, 7] 返回左叶子之和 24 且四语言行号合法', () => {
+    it('Stage 1: 经典树 [3, 9, 20, null, null, 15, 7] 返回左叶子之和 24 且收尾帧 100% 节点覆盖高亮不变量', () => {
       const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
       const steps = buildLeftLeavesStage1Steps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1347,19 +1347,25 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(3);
       expect(last.sum).toBe(24);
       expect(last.metrics?.['左叶子之和']).toBe(24);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
+      expect(last.secondaryHighlightedNodes).toEqual(expect.arrayContaining([9, 15]));
     });
 
-    it('Stage 1 避坑测试: 单节点树 [1] 根非左叶子，左叶子之和必须严格为 0', () => {
+    it('Stage 1 避坑测试: 单节点树 [1] 根非左叶子，左叶子之和必须严格为 0 且节点高亮常驻', () => {
       const root = buildTreeFromArr([1]);
       const steps = buildLeftLeavesStage1Steps(root);
       expect(steps.length).toBeGreaterThan(0);
-      expect(steps[steps.length - 1].sum).toBe(0);
-      expect(steps[steps.length - 1].metrics?.['左叶子之和']).toBe(0);
+      const last = steps[steps.length - 1];
+      expect(last.current).toBe(1);
+      expect(last.sum).toBe(0);
+      expect(last.metrics?.['左叶子之和']).toBe(0);
+      expect(last.visitedNodes).toEqual([1]);
     });
 
-    it('Stage 2: BFS 层序队列广搜返回左叶子之和 24 且四语言行号合法', () => {
+    it('Stage 2: BFS 层序队列广搜返回左叶子之和 24 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
       const steps = buildLeftLeavesStage2BfsSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1369,11 +1375,14 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(3);
       expect(last.sum).toBe(24);
       expect(last.metrics?.['左叶子之和']).toBe(24);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
+      expect(last.secondaryHighlightedNodes).toEqual(expect.arrayContaining([9, 15]));
     });
 
-    it('Stage 3: 显式迭代栈模拟前序 DFS 返回左叶子之和 24 且四语言行号合法', () => {
+    it('Stage 3: 显式迭代栈模拟前序 DFS 返回左叶子之和 24 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
       const steps = buildLeftLeavesStage3StackSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1383,8 +1392,11 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(3);
       expect(last.sum).toBe(24);
       expect(last.metrics?.['左叶子之和']).toBe(24);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([3, 9, 20, 15, 7]));
+      expect(last.secondaryHighlightedNodes).toEqual(expect.arrayContaining([9, 15]));
     });
 
     it('三大 Stage 对空树统一安全返回 0', () => {
@@ -1467,7 +1479,7 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 17. Find Bottom Left Tree Value (LC 513 · 找树左下角的值)
   describe('17. Find Bottom Left Tree Value (LeetCode 513 · 找树左下角的值)', () => {
-    it('Stage 1: 经典二叉树 [2, 1, 3] 先序 DFS 搜索返回左下角值 1 且四语言行号合法', () => {
+    it('Stage 1: 经典二叉树 [2, 1, 3] 先序 DFS 搜索返回左下角值 1 且收尾帧 100% 节点覆盖高亮不变量', () => {
       const root = buildTreeFromArr([2, 1, 3]);
       const steps = buildBottomLeftStage1PreorderSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1477,19 +1489,25 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(2);
       expect(last.bottomLeft).toBe(1);
       expect(last.maxDepth).toBe(1);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([2, 1, 3]));
+      expect(last.secondaryHighlightedNodes).toEqual([1]);
     });
 
     it('Stage 1 深度测试: 复杂树 [1, 2, 3, 4, null, 5, 6, null, null, 7] 返回最深层最左值 7', () => {
       const root = buildTreeFromArr([1, 2, 3, 4, null, 5, 6, null, null, 7]);
       const steps = buildBottomLeftStage1PreorderSteps(root);
       expect(steps.length).toBeGreaterThan(0);
-      expect(steps[steps.length - 1].bottomLeft).toBe(7);
-      expect(steps[steps.length - 1].maxDepth).toBe(3);
+      const last = steps[steps.length - 1];
+      expect(last.current).toBe(1);
+      expect(last.bottomLeft).toBe(7);
+      expect(last.maxDepth).toBe(3);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([1, 2, 3, 4, 5, 6, 7]));
     });
 
-    it('Stage 2: 标准层序 BFS 队列分层捕获返回左下角值 1 且四语言行号合法', () => {
+    it('Stage 2: 标准层序 BFS 队列分层捕获返回左下角值 1 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([2, 1, 3]);
       const steps = buildBottomLeftStage2BfsSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1499,10 +1517,13 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(2);
       expect(last.bottomLeft).toBe(1);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([2, 1, 3]));
+      expect(last.secondaryHighlightedNodes).toEqual([1]);
     });
 
-    it('Stage 3: 逆向右先层序 BFS (终节点即答案) 返回左下角值 1 且四语言行号合法', () => {
+    it('Stage 3: 逆向右先层序 BFS (终节点即答案) 返回左下角值 1 且收尾帧全景高亮', () => {
       const root = buildTreeFromArr([2, 1, 3]);
       const steps = buildBottomLeftStage3ReverseBfsSteps(root);
       expect(steps.length).toBeGreaterThan(0);
@@ -1512,7 +1533,10 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
 
       const last = steps[steps.length - 1];
+      expect(last.current).toBe(2);
       expect(last.bottomLeft).toBe(1);
+      expect(last.visitedNodes).toEqual(expect.arrayContaining([2, 1, 3]));
+      expect(last.secondaryHighlightedNodes).toEqual([1]);
     });
 
     it('Stage 3 逆向 BFS 检验深度右偏链 [1, null, 2, null, 3, null, 4] 返回 4', () => {

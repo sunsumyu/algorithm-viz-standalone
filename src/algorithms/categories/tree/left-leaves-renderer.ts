@@ -52,6 +52,19 @@ export interface LeftLeavesStep extends StepBase {
   stackState?: number[];
 }
 
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  const result: number[] = [];
+  function traverse(n: TreeNode | null) {
+    if (!n) return;
+    result.push(n.val);
+    traverse(n.left);
+    traverse(n.right);
+  }
+  traverse(node);
+  return result;
+}
+
 // =========================================================================
 // Stage 1 步骤生成器: 后序分治递归与父节点前瞻探查 (Postorder Recursive DFS)
 // =========================================================================
@@ -150,6 +163,7 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
       log: `return leftSum + rightSum = 0`,
       codeLine: lines.returnSum,
       stageId: 'stage-1',
+      visitedNodes: [root.val],
       metrics: { '当前考察节点': `Node(${root.val})`, '左叶子总数': 0, '左叶子之和': 0 },
       statusBadge: { text: '总和: 0', type: 'success' },
       leftNodes: new Set(),
@@ -261,10 +275,12 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
 
   dfs(root, 0);
 
+  const allTreeVals = collectTreeValues(root);
+
   // 收尾最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
     sum: currentSum,
     depth: 0,
     decision: `🎉 全树搜索完成！所有左叶子之和为 ${currentSum}`,
@@ -273,9 +289,10 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
     codeLine: lines.returnSum,
     stageId: 'stage-1',
     leftNodes: new Set(leftNodes),
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: Array.from(leftNodes),
     metrics: {
-      '当前考察节点': `Node(${root.val})`,
+      '当前考察节点': root ? `Node(${root.val})` : '—',
       '左叶子总数': leftNodes.size,
       '左叶子之和': currentSum,
     },
@@ -441,10 +458,12 @@ export function buildLeftLeavesStage2BfsSteps(root: TreeNode | null): LeftLeaves
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
     sum: currentSum,
     decision: `🎉 BFS 队列排空，遍历完成！左叶子之和为 ${currentSum}`,
     message: `层序遍历扫描完树中所有节点，共命中 ${leftNodes.size} 个左叶子，累加总和为 ${currentSum}。`,
@@ -452,6 +471,7 @@ export function buildLeftLeavesStage2BfsSteps(root: TreeNode | null): LeftLeaves
     codeLine: lines.returnSum,
     stageId: 'stage-2',
     leftNodes: new Set(leftNodes),
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: Array.from(leftNodes),
     metrics: { '左叶子总数': leftNodes.size, '左叶子之和': currentSum },
     statusBadge: { text: `最终总和: ${currentSum}`, type: 'success' },
@@ -617,10 +637,12 @@ export function buildLeftLeavesStage3StackSteps(root: TreeNode | null): LeftLeav
     }
   }
 
+  const allTreeVals = collectTreeValues(root);
+
   // 结算最终步
   steps.push({
     tree: cloneStateDepTree(root),
-    current: root.val,
+    current: root ? root.val : null,
     sum: currentSum,
     decision: `🎉 显式栈排空，迭代遍历完成！左叶子之和为 ${currentSum}`,
     message: `显式栈模拟前序遍历完成，零递归栈开销，最终所有左叶子之和为 ${currentSum}。`,
@@ -628,6 +650,7 @@ export function buildLeftLeavesStage3StackSteps(root: TreeNode | null): LeftLeav
     codeLine: lines.returnSum,
     stageId: 'stage-3',
     leftNodes: new Set(leftNodes),
+    visitedNodes: allTreeVals,
     secondaryHighlightedNodes: Array.from(leftNodes),
     metrics: { '左叶子总数': leftNodes.size, '左叶子之和': currentSum },
     statusBadge: { text: `最终总和: ${currentSum}`, type: 'success' },
@@ -644,15 +667,31 @@ export function buildLeftLeavesSteps(root: TreeNode | null): LeftLeavesStep[] {
 }
 
 // =========================================================================
-// 表现层画板渲染器 (Presentation Canvas Renderer)
+// 表现层画板渲染器 (Presentation Canvas Renderer - Double Invariant Guard)
 // =========================================================================
 function renderLeftLeavesCanvas(container: HTMLElement, step: LeftLeavesStep): void {
   if (step.tree) {
+    const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.decision.includes('排空') || step.statusBadge?.type === 'success';
+    const allTreeVals = collectTreeValues(step.tree);
+    let current = step.current;
+    let visitedNodes = step.visitedNodes;
+    let secondaryHighlightedNodes = step.leftNodes ? Array.from(step.leftNodes) : (step.secondaryHighlightedNodes || []);
+
+    if (isDone) {
+      if (current === null) {
+        current = step.tree.val;
+      }
+      if (!visitedNodes || visitedNodes.length === 0) {
+        visitedNodes = allTreeVals;
+      }
+    }
+
     TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
-      current: step.current,
-      secondaryHighlightedNodes: step.leftNodes ? Array.from(step.leftNodes) : [],
-      primaryColor: '#f59e0b',
+      current,
+      visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+      secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
+      primaryColor: '#fbbf24',
       secondaryColor: '#10b981',
       visitedColor: '#34d399',
     });
