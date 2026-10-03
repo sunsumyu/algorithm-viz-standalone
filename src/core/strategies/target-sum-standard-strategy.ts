@@ -71,11 +71,11 @@ export class TargetSumStandardStrategy implements IAlgorithmStrategy {
         return dfs(i + 1, nextSum, child);
       };
 
-      const ways1 = branch(1, '+', 'branch1', isMemo ? 14 : 9), ways2 = branch(-1, '−', 'branch2', isMemo ? 15 : 11);
+      const ways1 = branch(1, '+', 'branch1', isMemo ? 14 : 10), ways2 = branch(-1, '−', 'branch2', isMemo ? 15 : 13);
       const res = ways1 + ways2;
       if (isMemo) { memo.set(memoKey, res); push({ line: map?.memoStore ?? 17, tag: '写入缓存', msg: `💾 写入缓存：HashMap[${i}][${sum}] = ${res}` }, node); }
       node.status = 'visited'; node.tag = `=${res}`;
-      push({ flowPhase: 'backtrack', line: map?.returnSum ?? 16, tag: '返回', msg: `↩️ 栈帧 f(i=${i}, sum=${sum}) 返回方案数 ${res}` }, node);
+      push({ flowPhase: 'backtrack', line: map?.returnSum ?? map?.return ?? (isMemo ? 18 : 15), tag: '返回', msg: `↩️ 栈帧 f(i=${i}, sum=${sum}) 返回方案数 ${res}` }, node);
       stack.pop(); return res;
     };
 

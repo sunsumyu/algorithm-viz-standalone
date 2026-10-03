@@ -91,19 +91,23 @@ stages:
         desc: "每个数字前放 + 或 -，两种分支"
         code:
           forward: |
-            public int findTargetSumWays1(int[] nums, int target) { // @step:callRoot
-                return f1(nums, target, 0, 0);
+            public int findTargetSumWays(int[] nums, int target) { // @step:entry @step:callRoot
+                int sum = 0;
+                for (int num : nums) sum += num;
+                if (sum < Math.abs(target) || (sum + target) % 2 != 0) return 0; // @step:odd_check
+                int bag = (sum + target) / 2;
+                return dfs(nums, 0, bag); // @step:dfs_start @step:return
             }
-            // 从 i 开始，前面所有数字的累加和是 sum，返回最终能凑出 target 的方案数
-            private int f1(int[] nums, int target, int i, int sum) { // @step:fnEnter
-                if (i == nums.length) { // @step:baseCheck
-                    return sum == target ? 1 : 0;
+
+            private int dfs(int[] nums, int i, int bag) { // @step:dfs_entry @step:fnEnter
+                if (i == nums.length) return bag == 0 ? 1 : 0; // @step:base_match @step:baseCheck
+
+                int notTake = dfs(nums, i + 1, bag); // @step:branch_not_take @step:branch1
+                int take = 0;
+                if (bag >= nums[i]) { // @step:cond_take
+                    take = dfs(nums, i + 1, bag - nums[i]); // @step:branch_take @step:branch2
                 }
-                // 给 nums[i] 添加 + 号
-                int ways1 = f1(nums, target, i + 1, sum + nums[i]); // @step:branch1
-                // 给 nums[i] 添加 - 号
-                int ways2 = f1(nums, target, i + 1, sum - nums[i]); // @step:branch2
-                return ways1 + ways2; // @step:returnSum
+                return notTake + take; // @step:combine @step:returnSum
             }
 
   stage-2:
