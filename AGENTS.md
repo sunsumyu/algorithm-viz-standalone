@@ -97,7 +97,7 @@ npm run dev               # Vite dev server (port 3000)
 npm run build             # tsc + test:gate + vite build
 npm test                  # vitest run（含门禁：目录新鲜度/唯一性/完整性）
 npm run test:gate         # 顶层抽象合规 + 策略身材 + 表现层契约全套门禁
-npm run test:presentation # 表现层真实渲染与 12 大红灯陷阱测试
+npm run test:presentation # 表现层真实渲染与 14 大红灯陷阱门禁测试
 npm run meta:sync         # 重新收获算法目录元数据
 npm run typecheck         # tsc -b --noEmit
 ```
@@ -124,7 +124,7 @@ src/
 | 任务场景 | 唤起技能 | 核心职责与防腐边界 |
 | :--- | :--- | :--- |
 | **新算法编写与高亮审查** | `algo-viz-authoring` | 四维查重、双版本整合、四语言 1-based 行号绑定、严格一行一步 |
-| **动态规划类目标准化重构** | `universal-dp-refactoring` | 仅限 `dynamic-programming` 类目；遵循 YAML 黄金基准与通用四步法 |
+| **动态规划类目标准化重构** | `universal-dp-refactoring` | 仅限 `dynamic-programming` 类目；遵循 YAML 黄金基准与穿甲弹多阶段工序 (Phase 1~4) |
 | **顶层抽象合规检查** | `top-level-abstraction-compliance` | 运行 L0/L1/L2 顶层抽象与防伪实现门禁，阻断违规旧方言反弹 |
 | **UI 交互与去套娃规范** | `ui-layout-design` | 黄金画布 60%~70% 占比、消灭嵌套卡片与中英冗余、Splitter 边界保护 |
 | **浏览器调试与全高清截图** | `browser-viewport-debugging` | 强制 1920×1080 视口配置，杜绝 800×600 局促缩放与大面积空白留白 |
@@ -145,4 +145,4 @@ PlaybackCoordinator / AlgorithmRegistry / AlgorithmCatalogIndexer / CategoryConv
 - 核心模块有 co-located `.test.ts`（playback-coordinator / algorithm-registry / model-repository 等）
 - 门禁测试 `algorithm-catalog-indexer.test.ts`：目录新鲜度 / id 唯一性 / renderer↔目录完整性
 - 批量算法测试按类目目录 co-locate（如 `categories/beginner-and-hard-interview-5.test.ts`）
-- 渲染器表现层契约由 `npm run test:presentation`（`presentation-contract.gate.test.ts` 与 `declarative-presentation-contract.gate.test.ts`）自动化拦截，覆盖 12 大红灯陷阱、纯净度与防重复渲染硬约束
+- 渲染器表现层契约由 `npm run test:presentation`（`presentation-contract.gate.test.ts` 与 `declarative-presentation-contract.gate.test.ts`）自动化拦截，覆盖 14 大红灯陷阱、纯净度与防重复渲染硬约束

@@ -1,6 +1,6 @@
 ---
 name: algo-viz-authoring
-description: Use when authoring, implementing, or auditing algorithm visualization renderers, step generators, and multi-language code linkages in this project to prevent line offset misalignments, missing entry frames, and skipped execution loops.
+description: "用于算法可视化渲染器、步进生成器及四语言代码联动的编写与双轴审查。注意：若针对 dynamic-programming 类目重构请优先唤起 universal-dp-refactoring；门禁合规审计请唤起 top-level-abstraction-compliance。"
 ---
 
 # 算法可视化全栈开发与审查规范 (Algorithm Visualizer Master Authoring Standards)
