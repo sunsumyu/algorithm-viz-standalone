@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import {
   buildMergeTreesDfsSteps,
@@ -153,6 +154,63 @@ describe('Merge Trees (合并二叉树 - LeetCode 617)', () => {
       expect(parseTreeInput('[2, 1, #, 7]', [])).toEqual([2, 1, null, 7]);
       expect(parseTreeInput('', [1])).toEqual([]);
       expect(parseTreeInput(null, [1, 2])).toEqual([1, 2]);
+    });
+  });
+
+  describe('4. 核心黄金不变量：最终收尾帧全树高亮常驻与三树全景契约 (Final Step Invariant)', () => {
+    it('最终收尾步必须将树 1、树 2 和合并树的所有节点 100% 点亮高亮，严禁任何暗灰或白板退化', () => {
+      const t1 = [1, 3, 2, 5];
+      const t2 = [2, 1, 3, null, 4, null, 7];
+      const dfsSteps = buildMergeTreesDfsSteps(t1, t2);
+      const lastDfs = dfsSteps[dfsSteps.length - 1];
+
+      expect(lastDfs.opType).toBe('complete');
+      expect(lastDfs.highlightedMergedVals.size).toBeGreaterThanOrEqual(4);
+      expect(lastDfs.tree1Visited.size).toBe(4); // [1, 3, 2, 5]
+      expect(lastDfs.tree2Visited.size).toBe(5); // [2, 1, 3, 4, 7]
+
+      // BFS 同样必须保持全树点亮
+      const bfsSteps = buildMergeTreesBfsSteps(t1, t2);
+      const lastBfs = bfsSteps[bfsSteps.length - 1];
+      expect(lastBfs.opType).toBe('complete');
+      expect(lastBfs.highlightedMergedVals.size).toBeGreaterThanOrEqual(4);
+      expect(lastBfs.tree1Visited.size).toBe(4);
+      expect(lastBfs.tree2Visited.size).toBe(5);
+    });
+
+    it('Card 1 真实 DOM 渲染必须包含强制横向排布 mainRow 并完整挂载 3 棵树的 SVG', async () => {
+      const { renderMergeTreesCanvas } = await import('./merge-trees-renderer');
+      const container = document.createElement('div');
+      const steps = buildMergeTreesDfsSteps([1, 3, 2, 5], [2, 1, 3, null, 4, null, 7]);
+      const lastStep = steps[steps.length - 1];
+
+      renderMergeTreesCanvas(container, lastStep);
+
+      // 1. 验证包含 flex-direction: row 独立包装层
+      const rowWrapper = container.firstElementChild as HTMLElement;
+      expect(rowWrapper).not.toBeNull();
+      expect(rowWrapper.style.display).toContain('flex');
+      expect(rowWrapper.style.flexDirection).toContain('row');
+
+      // 2. 验证挂载了全部 3 棵树的 SVG
+      const svgs = container.querySelectorAll('svg');
+      expect(svgs.length).toBe(3);
+
+      // 3. 验证三棵树标题均完整呈现
+      expect(container.textContent).toContain('输入树 1');
+      expect(container.textContent).toContain('输入树 2');
+      expect(container.textContent).toContain('合并演进树');
+      expect(container.textContent).toContain('100% 完成');
+
+      // 4. 验证最后一步渲染出的节点圆圈必须包含翡翠绿高亮颜色，绝无全盘暗灰
+      const circles = container.querySelectorAll('circle');
+      expect(circles.length).toBeGreaterThanOrEqual(10);
+      const hasGreenHighlightedCircle = Array.from(circles).some(
+        (c) =>
+          c.getAttribute('fill')?.includes('34, 197, 94') ||
+          c.getAttribute('stroke') === '#16a34a'
+      );
+      expect(hasGreenHighlightedCircle, '最后一步必须存在翡翠绿全树完成高亮节点').toBe(true);
     });
   });
 });
