@@ -6,7 +6,7 @@
 
 ## 一、高维规划：穿甲弹多阶段重构工序 (Multi-Phase Tracer Pipeline)
 
-严禁在单个会话中试图一次性实现全部 4 个阶段和顺逆推所有分支！这会导致复合错误累乘并穿透 150k 上下文智能区。必须遵循 **Phase 1~4 增量穿甲弹流水线**，每阶段结束后执行测试、Git Commit 与上下文清空（`/clear`）：
+遵循 **Phase 1~4 增量穿甲弹流水线 (Incremental Tracer Pipeline)**，单次会话聚焦单个阶段（Kanban WIP=1），每阶段完成后执行测试断言、Git 提交并清空会话（`/clear`）：
 
 ```
 [Phase 1: 穿甲弹刺穿] 最小表递推(Stage 3)骨架打通 ──► 单测绿灯 ──► Commit ──► 🧹 /clear

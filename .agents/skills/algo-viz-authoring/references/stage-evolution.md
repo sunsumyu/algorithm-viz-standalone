@@ -15,15 +15,15 @@
    - 目标：展示维度消除（如 $O(M \times N) \to O(N)$），揭示状态覆盖风险。
    - 配套组件：一维滚动条 + **对角线暂存寄存器透明展示**。
 
-### 3.2 空间压缩寄存器透明原则
-当一维滚动数组存在对角线依赖（如 LCS 的 `leftUp`、LPS 的 `leftDown`）时，**必须将推演拆分为细粒度三连步**：
+### 3.2 空间压缩寄存器透明原则 (Space Compression Register Transparency)
+当一维滚动数组存在对角线依赖（如 LCS 的 `leftUp`、LPS 的 `leftDown`）时，推演按细粒度三连步推进：
 1. **暂存旧值**：高亮 `int backup = dp[j];`，展示寄存器缓存。
 2. **转移计算**：高亮 `dp[j] = Math.max(...)`，使用暂存值与相邻格计算。
 3. **寄存器推移**：高亮 `leftUp = backup;`，为下一列的对角线做好准备。
-严禁把三步合并成一步而跳过暂存寄存器的变化过程！
+每一个寄存器状态更新均生成独立的展示步骤。
 
-### 3.3 双向推演核心不变式 (顺推 forward vs 逆推 reverse)
-历史上 90% 的渲染 Bug 源自顺逆推定义混乱。全库必须统一遵循顺逆推底层契约：
-- **顺推 (`id: 'forward'`)**：从原点/前缀基底向最终目标推导（如网格从 `(0, 0)` 开始，线性从首项自底向上填表）。默认配置必须为 `defaultMode: 'forward'`。
+### 3.3 双向推演核心不变式 (Forward vs Reverse Traversal)
+全库统一遵循顺逆推底层契约与标识命名：
+- **顺推 (`id: 'forward'`)**：从原点/前缀基底向最终目标推导（如网格从 `(0, 0)` 开始，线性从首项自底向上填表）。默认配置统一为 `defaultMode: 'forward'`。
 - **逆推 (`id: 'reverse'`)**：从末尾目标向子问题基底反推（如网格从 `(N-1, M-1)` 开始，线性倒序填表）。
-- **🚨 命名禁忌**：严禁把逆推命名为 `backward`、`inverted` 或中文“倒序”；顶层 `declarative-stage-fragments.ts` 强制绑定了 `isForward = id === 'forward'`，ID 错误会导致 UI 按钮符号和文字颠倒，并触发红灯陷阱 13 & 14 熔断拦截！
+- **标准化模式标识 (Standard Mode Identifiers)**：顶层 `declarative-stage-fragments.ts` 严格基于 `isForward = id === 'forward'` 判定。全库模式 ID 统一为 `'forward'` 与 `'reverse'`，触发红灯陷阱 13 & 14 门禁全自动核验。

@@ -5,19 +5,19 @@
 历史开发中最严重的故障是**“算法推演随意跳步、进入 if 块体内前光标瞬移”**（如 `if (s[i] == t[j])` 判定为真后，光标未进入 if 块高亮调用语句，直接飞进子函数签名行）。为彻底杜绝此问题，所有动规重构必须贯彻**顶层编译器 Template Method 规约**：
 
 ### 3.1 阶段 1 & 阶段 2：全量继承 `AbstractSequenceRecursionCompiler`
-- **控制流完全倒置（Inversion of Control）**：业务编译器**严禁私自手写 `dfs()` 循环调度与步骤发射**，必须继承 `AbstractSequenceRecursionCompiler`；
+- **控制流完全倒置（Inversion of Control）**：业务编译器统一继承 `AbstractSequenceRecursionCompiler`，由抽象基类统一调度 `dfs()` 循环与标准步骤发射；
 - **分支调用点物理拦截（Call-Site Interception Invariant）**：
-  在触发任何子递归（如 `dfs(nextI, nextJ)`）之前，顶层抽象基类**物理强制先发射高亮本分支调用语句（如 `int useMatch = dfs(...)` / `int delWord1 = dfs(...)` / `int replace = dfs(...)`）的独立步进帧！**
-  严禁从条件检查行直接瞬移跳入子函数签名行；
+  在触发任何子递归（如 `dfs(nextI, nextJ)`）之前，顶层抽象基类先发射高亮本分支调用语句（如 `int useMatch = dfs(...)` / `int delWord1 = dfs(...)` / `int replace = dfs(...)`）的独立步进帧，使光标有序进入分支调用语句；
 - **调用-返回闭环（Call-Return Parity & Backtracking Assignment）**：
-  子递归计算完成返回父层时，基类**强制发射 `branch-return` 回溯赋值步骤帧**，焦点重新回到调用者的分支赋值行，展示该局部变量已被赋值（例如 `useMatch = 1` / `replace = 2`），完美再现 CPU 调用栈入栈与退栈回溯的物理现实，严禁子递归返回后直接飞入下一分支或 combine 语句；
+  子递归计算完成返回父层时，基类发射 `branch-return` 回溯赋值步骤帧，焦点重新回到调用者的分支赋值行，展示该局部变量已被赋值（例如 `useMatch = 1` / `replace = 2`），完整再现 CPU 调用栈入栈与退栈回溯的物理现实；
 - **分支沙盘元数据先验注入（Grid Dependency Injection）**：
   在发射 `branch-call` 时，自动注入 `targetI`, `targetJ`, `branchIndex`, `branchType`（`diag` / `top` / `left`）与 `deps` 依赖项，驱动 2D 坐标沙盘即时点亮对角线/上方/左侧决策方向箭头与高亮格；
-- **调用树与足迹生命周期**：基类统一管理 `activeStack`、`UniversalTreeNode`、`memoCache`，严禁业务层自行维护导致的跨阶段污染。
+- **调用树与足迹生命周期封装（Lifecycle Encapsulation）**：
+  由基类统一管理 `activeStack`、`UniversalTreeNode`、`memoCache`，保持跨阶段状态绝对隔离。
 
 ### 3.2 阶段 3：全量继承 `AbstractSequenceTableCompiler`
-- **未计算单元格强制防防御（Uncalculated Defense）**：
-  未计算单元格初始必须为 `null`（白底虚线框 `-`），严禁预填 `0`；
+- **未计算单元格显式状态（Uncalculated Cell Invariant）**：
+  未计算单元格初始值为 `null`（呈现白底虚线框 `-`），待状态转移方程求值后再写入具体数值；
 - **严格七步完整生命周期**：
   1. `init`：表格创建与全表 `null` 分配帧
   2. `border`：逐格初始化基底值帧
@@ -27,12 +27,11 @@
   6. `transfer`：状态转移方程求值与单元格数值落盘点亮帧
   7. `return`：最终答案汇聚与封板帧
 
-### 3.3 教学代码多分支展开与显式锚点准则 (Branch Unfolding)
-- **严禁复合语句与单行压缩**：
-  严禁将多个决策分支写在同一行（如单行三元表达式或 `res = dfs(...) + dfs(...)`）；
-- **必须展开为多物理行代码**：
+### 3.3 教学代码多分支展开与显式锚点准则 (Branch Unfolding & Explicit Anchors)
+- **多分支独立展开**：
+  将复合递归调用与多向探测展开为多物理行独立语句，使光标精准跳入各个分支：
   ```java
-  // ✅ 标准展开写法：每一行执行语句对应唯一的一个 @step 锚点
+  // 标准展开写法：每一行执行语句对应唯一的一个 @step 锚点
   if (s.charAt(i) == t.charAt(j)) { // @step:match
       int useMatch = dfs(s, t, i + 1, j + 1); // @step:branch_match // 选用匹配分支
       int skipChar = dfs(s, t, i + 1, j);     // @step:branch_skip  // 选忽略分支

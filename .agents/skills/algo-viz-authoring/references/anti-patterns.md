@@ -41,18 +41,18 @@
 13. **视图层越权做业务裁决与初始帧作用域泄漏（Visualizer Decision Overreach & Scope Leakage）**：
     - *故障现象*：算法停在 Step 0（主函数签名行，如 `public static int lcs1(String s1, String s2)`），尚未进入递归函数，变量看板就提前泄漏了子函数的形参 `i: 3, j: 2`；下方“双字符串比对”卡片自动给两端字符打上绿勾并生成了“✨ 字符匹配成功：纳入公共子序列 (+1)”的决策徽章。
     - *严格规范*：
-      1. **视图层决策解耦（Renderer Decision Decoupling）**：视觉呈现器必须是纯状态投影，严禁未经 Step 显式授权（如 `isComparing !== false`）擅自推导业务结论；
-      2. **作用域纯洁性（Scope Purity）**：主函数入口帧（Step 0）只保留全局输入参数，游标与比对控件在未就绪时必须呈现待比对/未就绪状态（`isComparing: false` / `curI: -1, curJ: -1`），严禁泄漏未定义的形参。
+      1. **视图层决策解耦（Renderer Decision Decoupling）**：视觉呈现器作为纯状态投影，仅依据 Step 显式授权字段（如 `isComparing !== false`）呈现业务结论；
+      2. **作用域纯洁性（Scope Purity）**：主函数入口帧（Step 0）仅保留全局输入参数，游标与比对控件未就绪时呈现待比对状态（`isComparing: false` / `curI: -1, curJ: -1`），形参随函数进入帧引入。
 14. **函数形参错位导致底层视图抛出 `[undefined]` / `NaN`（Parameter Misalignment & Undefined Propagation）**：
     - *故障现象*：树节点或备忘录卡片标题冒出 `🐸 ?? [undefined]`，或单元格显示 `NaN`。
     - *根本原因*：调用通用渲染函数（如 `renderMemoGridCard`）时传参顺序错位（例如将形参 `curL, curR` 传在了 `activeI, activeJ` 之后，或者少传一个占位形参），导致字符串和数字错位填入了 `activeI`，底层解析 `nodeId`、`metric` 失败。
-    - *严格规范*：所有通用渲染器必须声明具备严格类型的 Typescript 参数对象或严格按函数签名调用，严禁盲目传参。
+    - *严格规范*：所有通用渲染器必须声明强类型 Typescript 参数对象或严格按函数签名参数顺序调用。
 15. **跨 Stage 状态与 DOM 指标残留污染（Cross-Stage Metric Leakage & DOM Pollution）**：
     - *故障现象*：切换到阶段 2 或阶段 1 时，下方指标栏依然残留着阶段 4 专属的 `LEFTDOWN 寄存器: 3`，或者阶段 3 的旧卡片数据未被清空。
     - *根本原因*：上层视图呈现器（`declarative-stage-presenter.ts` / `declarative-algorithm-visualizer.ts`）在切 Stage 时没有动态重构当前阶段专属的 `metricsGrid`，而是直接沿用了全局 spec 的通用指标或者留存了旧 DOM。
     - *严格规范*：
       1. 切 Stage 时优先读取 `ctx.curStage?.metrics`；
-      2. 每次切换 Stage 必须对非当前阶段的指标卡片进行强制重置与彻底解构，杜绝跨阶段脏数据污染。
+      2. 每次切换 Stage 对非当前阶段的指标卡片进行强制重置与彻底解构，确保跨阶段状态纯净。
 16. **走过的路漏掉足迹与超类自动推导铁律（Missing Footprints & Superclass Auto-Inference Invariant）**：
     - *故障现象*：递归探索或网格遍历深入到深层（如 `f(1, 3)`）时，图例写着 `🐾 探索中`，但此前经过的父调用节点（如 `(0, 4)`）却退化为白色空单元格 `-`，完全没有足迹，SVG 探索路径安全绳也消失不见。
     - *严格规范*：
@@ -61,18 +61,18 @@
       3. **回溯解通变色**：只有在递归真正完成并返回落盘时，节点才出栈并从 `🐾 探索中` 转换为绿色 `⚪ 已解通`。
 17. **半三角/区间模型空间越界与下三角脏数据泄漏（Upper-Triangle Matrix Boundary Invariant）**：
     - *故障现象*：LPS 等区间 DP 矩阵的下半部分 `r > c`（$l > r$）被当成正常未计算单元格显示为 `-`，甚至误填入数据。
-    - *严格规范*：必须通过 `isHalfTriangle` 统一约束，下三角矩阵单元格一律强制渲染为斜纹遮罩背景（`repeating-linear-gradient`）和禁止占位符 `✕`，彻底隔离有效计算区与非法死区。
+    - *严格规范*：必须通过 `isHalfTriangle` 统一约束，下三角矩阵单元格一律强制渲染为斜纹遮罩背景（`repeating-linear-gradient`）和无效占位符 `✕`，彻底隔离有效计算区与非法死区。
 18. **循环条件不成立静默跳过与循环头判定帧丢失铁律（Loop Condition False Silent Skip Invariant）**：
     - *故障现象*：内层 `for` 循环因初值越界不满足条件时，代码光标完全不经过该 `for` 循环头，直接静默跳过。
     - *严格规范*：**所有循环头无论条件是否成立，光标都必须高亮跳转至循环头行进行显式求值！**
       1. 条件成立时：高亮循环头，日志记录 `for r = ${r} (r < n) -> true` 并进入循环体；
-      2. 条件不成立时：高亮循环头，决策与日志明确显示 `for r = ${r} (r < n) -> false`，清晰告知学习者“此循环因条件不成立而跳过/退出”，绝不允许静默跳步。
+      2. 条件不成立时：高亮循环头，决策与日志明确显示 `for r = ${r} (r < n) -> false`，清晰告知学习者“此循环因条件不成立而跳过/退出”。
 19. **复合语句与三元运算符单行压缩导致高亮粒度失效铁律（Ternary Operator & Branch Unfolding Invariant）**：
     - *故障现象*：单行三元表达式（如 `dp[l][l + 1] = s[l] == s[l + 1] ? 2 : 1;`），执行时整行被高亮，学习者根本看不出当前到底命中了真分支还是假分支。
-    - *严格规范*：**教学演示代码严禁将决策分支压缩在单行三元表达式中！必须展开为显式的多行 `if-else`**，运行时光标精准跳至真正被执行的具体赋值行。
+    - *严格规范*：**教学演示代码必须将决策分支展开为显式的多行 `if-else`**，运行时光标精准跳至真正被执行的具体赋值行。
 20. **四键行组在使用点四行展开（Quad-Key Expansion at Usage Sites）**：
     - *故障现象*：一个 `codeLine` 对象里 java/cpp/python/javascript 各占一行，每行重复同一套 stage/分支三元链。
-    - *严格规范*：多阶段算法族的行号必须经 `StageCodeRegistry` 单调用取得；**严禁在同一 codeLine 处按四语种各写一行访问/三元**。单算法场景也应在文件顶部集中定义 lines 字典后引用。
+    - *严格规范*：多阶段算法族的行号统一经 `StageCodeRegistry` 单调用取得；单算法场景在文件顶部集中定义 lines 字典后统一按键引用。
 21. **使用点裸写行号字面量（Bare Inline Line Numbers at Usage Sites）**：
     - *故障现象*：在 `steps.push` 里直接写 `codeLine: 18`、`codeLine: [12, 13]`，行号与代码模板之间没有任何命名映射。
     - *严格规范*：即便单面板/单语种，也必须在文件顶部集中定义 `const lines: Record<string, number | number[]> = { init: 2, ... }`，使用点只写 `codeLine: lines.mark`。

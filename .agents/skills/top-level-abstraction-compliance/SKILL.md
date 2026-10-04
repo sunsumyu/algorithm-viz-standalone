@@ -1,29 +1,29 @@
 ---
 name: top-level-abstraction-compliance
-description: "用于对算法演示进行顶层抽象架构合规性门禁审计与测试（YAML 模型 + 策略引擎 + UniversalStageVisualizer）。仅在架构合规检查、门禁审计、发现违规或验证重构状态时使用；切勿在普通算法编码或实现新演示时误调用（日常开发请使用 algo-viz-authoring 或 universal-dp-refactoring）。"
+description: "Audit and verify top-level abstraction compliance (YAML models + strategy engine + UniversalStageVisualizer). Use for architecture gating and compliance audits."
 ---
 
 # 顶层抽象合规检查技能 (Top-Level Abstraction Compliance)
 
-本技能定义**所有算法演示必须遵守的顶层抽象架构标准**，并通过确定性自动化门禁测试（Vitest Exit Code）强制拦截违规与架构退化。
+Top-level abstraction standards and automated gate test verification for all algorithm visualizers.
 
-> **核心原则**：
-> 1. **单一事实源**：YAML 模型是算法元数据、四阶段代码、顺逆推定义的唯一权威来源；
-> 2. **策略模式**：核心推演逻辑封装在 `IAlgorithmStrategy` 中（LOC < 120），Renderer 仅做薄切片；
-> 3. **统一宿主**：所有 DP 算法必须使用 `UniversalStageVisualizer`（iframe 隔离沙箱）；
-> 4. **强制查重与双版本长处整合（死门禁）**：实现或重构前必须全库四维查重；遇同题双版本绝对禁止粗暴二选一删除，必须综合两版本长处（旧版输入交互/预设用例/成熟画布 + 新版讲义/四语言行号/阶段演化）深度整合，主 ID 留存并用 `aliases` 统合别名。
+## Core Principles
+1. **Single Source of Truth**: YAML models are the authoritative source for metadata, 4-stage code templates, and direction definitions.
+2. **Strategy Pattern**: Core step generation logic is encapsulated in `IAlgorithmStrategy` (LOC < 120); renderers remain thin presentation adapters.
+3. **Unified Host**: DP algorithms mount inside `UniversalStageVisualizer` (iframe-isolated sandbox).
+4. **Bi-Version Synthesis**: When existing implementations conflict, merge strengths under primary ID with `aliases: [...]` (see [AGENTS.md](file:///f:/chain/algorithm-viz-standalone/AGENTS.md) §Bi-Version Synthesis).
 
 ---
 
-## 一、自动化门禁测试命令（确定性裁判）
+## 1. Automated Gate Verification Commands
 
-所有检查均以命令行退出码为准，严禁伪绿灯：
+All checks evaluate exit codes (target: `exit code 0`):
 
 ```bash
-# 1. 顶层抽象合规硬门禁（覆盖 DP & Greedy，零容忍）
+# 1. 顶层抽象合规硬门禁（覆盖 DP & Greedy）
 npx vitest run src/core/top-level-abstraction-compliance.test.ts
 
-# 2. 策略引擎身材红线与防私有编译器门禁（LOC < 120，防私有膨胀）
+# 2. 策略引擎身材红线与防私有编译器门禁（LOC < 120）
 npx vitest run src/core/strategies/top-level-abstraction.gate.test.ts
 
 # 3. 全局 YAML 模型高保真门禁测试
@@ -32,29 +32,28 @@ npx vitest run src/core/universal-model-fidelity.test.ts
 
 ---
 
-## 二、三级合规门禁契约 (Three-Level Invariants)
+## 2. Three-Level Invariants
 
 | 门禁级别 | 判定标准 | 拦截策略 |
 | :--- | :--- | :--- |
-| **L0：零退化锁死 (Zero-Regression)** | `LOCKED_TOP_LEVEL_ALGORITHMS` 锁定的算法必须 100% 具备 YAML 模型、Strategy 策略、`UniversalStageVisualizer` 宿主与四阶段双向演化 | 违规立即抛出致命错误，构建阻断 |
-| **L1：遗留燃烧白名单 (Burndown Whitelist)** | 覆盖 `dynamic-programming` 与 `greedy`。新算法必须接入顶层架构，未登记在白名单的旧方言注册一律拒绝 | 燃烧只减不增，严禁未报备算法私造方言 |
-| **L2：模型保真度 (Model Fidelity)** | 所有已注册 YAML 模型必须 100% 具备 `forward`/`reverse` 双向与 `stage-1` 到 `stage-4` 四阶段代码 | 缺失即红灯拦截 |
+| **L0：零退化锁死 (Zero-Regression)** | `LOCKED_TOP_LEVEL_ALGORITHMS` 锁定的算法必须具备 YAML 模型、Strategy 策略、`UniversalStageVisualizer` 宿主与四阶段双向演化 | 违规立即抛出致命错误，构建阻断 |
+| **L1：遗留燃烧白名单 (Burndown Whitelist)** | 覆盖 `dynamic-programming` 与 `greedy`。新算法必须接入顶层架构，未登记在白名单的旧方言注册一律拒绝 | 燃烧只减不增，阻止未报备私造方言 |
+| **L2：模型保真度 (Model Fidelity)** | 所有已注册 YAML 模型必须具备 `forward`/`reverse` 双向与 `stage-1` 到 `stage-4` 四阶段代码 | 缺失即红灯拦截 |
 
 ---
 
-## 三、合规闭环与违规处置流转（第三章决策收敛流）
+## 3. Compliance Workflow & Resolution
 
-1. **执行检查**：运行 `src/core/top-level-abstraction-compliance.test.ts`。
-2. **分析诊断**：若有报错，严格对照控制台红灯陷阱编号与违规等级（L0/L1/L2）。
-3. **结构化决策收敛（The Grilling Triad）**：
-   - 若遇到复杂的历史遗留算法处置分歧，**严禁向人类抛出空泛的开放式大问题**；
-   - 必须提供带 `(Recommended)` 的结构化选项（如：选项 1 推荐通过穿甲弹标准迁移至统一编译器；选项 2 列入白名单临时燃烧项），说明各自权衡供人类拍板。
-4. **加载重构技能**：涉及算法架构迁移时，激活 `universal-dp-refactoring` 技能进行穿甲弹多阶段重构（Phase 1~4）。
-5. **重新核验**：再次运行门禁测试，直至全套命令 Exit Code 0 通过。
+1. **Run Gates**: Execute `src/core/top-level-abstraction-compliance.test.ts`.
+2. **Diagnose**: Match console errors to failure levels (L0 / L1 / L2).
+3. **Structured Grilling**:
+   - When facing legacy algorithm resolution choices, use `ask_question` to present structured options with a marked `(Recommended)` default and explicit trade-offs.
+4. **Invoke Refactoring Skill**: For algorithm architecture migrations, activate `universal-dp-refactoring` for Tracer-Bullet pipeline execution (Phase 1–4).
+5. **Re-Verify**: Confirm all gates exit with code 0.
 
 ---
 
-## 四、渐进式详细参考库
+## 4. Disclosed Reference Documentation
 
-架构背景、详细合规与违规对比案例（如 `unique-paths` vs `target-sum-standard` / `knapsack-073`）及治理方案，详见：
+For detailed architectural background, compliance case studies, and migration strategies:
 - [合规案例与迁移参考指南](file:///f:/chain/algorithm-viz-standalone/.agents/skills/top-level-abstraction-compliance/references/compliance-cases-and-migration.md)
