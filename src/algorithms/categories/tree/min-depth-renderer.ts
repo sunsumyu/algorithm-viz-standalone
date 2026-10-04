@@ -11,6 +11,11 @@ import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorith
 import { StepBase } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr } from './tree-template';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import {
+  RecursiveCallTraceAdapter,
+  type CallTraceSnapshot,
+  type CallTraceLine,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
 import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 import {
   MIN_DEPTH_PROBLEM_HTML,
@@ -37,6 +42,7 @@ export interface MinDepthStep extends StepBase {
   queueState?: number[];
   staticQueueState?: { l: number; r: number; queue: number[] };
   highlightedNodes?: number[];
+  callTrace?: CallTraceSnapshot;
 }
 
 export const MIN_DEPTH_STAGE1_LINES = {
@@ -96,6 +102,20 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
   const lines = MIN_DEPTH_STAGE1_LINES;
 
   if (!root) {
+    const traceSnapshot: CallTraceSnapshot = {
+      lines: [
+        {
+          id: 'null-root',
+          depth: 0,
+          text: 'minDepth(null) -> 树为空 -> return 0',
+          kind: 'header',
+          comment: '<- 树为空',
+        },
+      ],
+      activeLineId: 'null-root',
+      finalResult: 0,
+    };
+
     steps.push({
       tree: null,
       current: null,
@@ -107,12 +127,30 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       codeLine: lines.baseNull,
       stageId: 'stage-1',
       metrics: { '当前节点': 'null', '当前深度': 0, '最小深度': 0 },
+      callTrace: traceSnapshot,
     });
     return steps;
   }
 
-  function dfs(node: TreeNode | null, depth: number): number {
+  const traceLines: CallTraceLine[] = [];
+
+  function makeSnapshot(activeLineId?: string, finalResult?: number): CallTraceSnapshot {
+    return {
+      lines: traceLines.map((l) => ({ ...l })),
+      activeLineId,
+      finalResult,
+    };
+  }
+
+  function dfs(node: TreeNode | null, depth: number, roleComment?: string): number {
     if (!node) {
+      const lineId = `null-${depth}-${Math.random().toString(36).slice(2, 6)}`;
+      traceLines.push({
+        id: lineId,
+        depth: depth - 1,
+        text: '遇到空节点 null -> return 0',
+        kind: 'condition-skip',
+      });
       steps.push({
         tree: cloneStateDepTree(root),
         current: null,
@@ -124,11 +162,21 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         codeLine: lines.baseNull,
         stageId: 'stage-1',
         metrics: { '当前节点': 'null', '当前深度': depth, '当前子树深度': 0 },
+        callTrace: makeSnapshot(lineId),
       });
       return 0;
     }
 
     // 1. 函数入口帧
+    const callLineId = `call-${node.val}`;
+    traceLines.push({
+      id: callLineId,
+      depth: depth - 1,
+      text: `minDepth(${node.val})`,
+      kind: 'header',
+      comment: roleComment || (depth === 1 ? '<- 最终要算这个' : undefined),
+    });
+
     steps.push({
       tree: cloneStateDepTree(root),
       current: node.val,
@@ -141,9 +189,18 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val],
       metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '执行阶段': '函数入口' },
+      callTrace: makeSnapshot(callLineId),
     });
 
     // 2. 判空检查（已确认非空）
+    const passLineId = `pass-${node.val}`;
+    traceLines.push({
+      id: passLineId,
+      depth: depth - 1,
+      text: `① root=${node.val}, 非空`,
+      kind: 'condition-pass',
+    });
+
     steps.push({
       tree: cloneStateDepTree(root),
       current: node.val,
@@ -156,10 +213,25 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val],
       metrics: { '当前节点': `Node(${node.val})`, '判空结果': '非空' },
+      callTrace: makeSnapshot(passLineId),
     });
 
     // 3. 叶节点判定
     if (!node.left && !node.right) {
+      const leafLineId = `leaf-hit-${node.val}`;
+      traceLines.push({
+        id: leafLineId,
+        depth: depth - 1,
+        text: `② left==null && right==null √ 命中!`,
+        kind: 'condition-hit',
+      });
+      traceLines.push({
+        id: `leaf-ret-${node.val}`,
+        depth: depth - 1,
+        text: `|--- 返回 1 ---`,
+        kind: 'return-leaf',
+      });
+
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
@@ -172,12 +244,51 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         stageId: 'stage-1',
         highlightedNodes: [node.val],
         metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '叶子判定': '是', '子树深度': 1 },
+        callTrace: makeSnapshot(leafLineId, 1),
       });
       return 1;
     }
 
+    // 非叶节点：输出不是叶子的说明
+    let childDesc = '';
+    if (node.left && node.right) {
+      childDesc = ' (有左右孩子)';
+    } else if (node.right) {
+      childDesc = ` (右孩子是${node.right.val})`;
+    } else if (node.left) {
+      childDesc = ` (左孩子是${node.left.val})`;
+    }
+
+    const notLeafLineId = `not-leaf-${node.val}`;
+    traceLines.push({
+      id: notLeafLineId,
+      depth: depth - 1,
+      text: `② 不是叶子${childDesc}`,
+      kind: 'condition-skip',
+    });
+
     // 4. 单侧左为空特判
     if (!node.left && node.right) {
+      const leftNullLineId = `left-null-hit-${node.val}`;
+      traceLines.push({
+        id: leftNullLineId,
+        depth: depth - 1,
+        text: `③ root.left == null √ 命中!`,
+        kind: 'condition-hit',
+      });
+      traceLines.push({
+        id: `stmt-r1-${node.val}`,
+        depth: depth - 1,
+        text: `    -> return minDepth(root.right) + 1`,
+        kind: 'recurse-prep',
+      });
+      traceLines.push({
+        id: `stmt-r2-${node.val}`,
+        depth: depth - 1,
+        text: `    -> return minDepth(${node.right.val}) + 1`,
+        kind: 'recurse-prep',
+      });
+
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
@@ -190,9 +301,26 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         stageId: 'stage-1',
         highlightedNodes: [node.val, node.right.val],
         metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索方向': '仅右子树' },
+        callTrace: makeSnapshot(leftNullLineId),
       });
-      const rDepth = dfs(node.right, depth + 1);
+
+      const rDepth = dfs(node.right, depth + 1, `<- 算${node.val}的右孩子`);
       const res = rDepth + 1;
+
+      const unwindLineId = `unwind-${node.val}`;
+      traceLines.push({
+        id: unwindLineId,
+        depth: depth - 1,
+        text: `回到 minDepth(${node.val}): return ${rDepth} + 1 = ${res}`,
+        kind: 'unwind-calc',
+      });
+      traceLines.push({
+        id: `ret-stmt-${node.val}`,
+        depth: depth - 1,
+        text: `返回 ${res} ---`,
+        kind: 'return-leaf',
+      });
+
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
@@ -205,12 +333,33 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         stageId: 'stage-1',
         highlightedNodes: [node.val],
         metrics: { '当前节点': `Node(${node.val})`, '右子树深度': rDepth, '归约结果': res },
+        callTrace: makeSnapshot(unwindLineId, res),
       });
       return res;
     }
 
     // 5. 单侧右为空特判
     if (node.left && !node.right) {
+      const rightNullLineId = `right-null-hit-${node.val}`;
+      traceLines.push({
+        id: rightNullLineId,
+        depth: depth - 1,
+        text: `③ root.right == null √ 命中!`,
+        kind: 'condition-hit',
+      });
+      traceLines.push({
+        id: `stmt-l1-${node.val}`,
+        depth: depth - 1,
+        text: `    -> return minDepth(root.left) + 1`,
+        kind: 'recurse-prep',
+      });
+      traceLines.push({
+        id: `stmt-l2-${node.val}`,
+        depth: depth - 1,
+        text: `    -> return minDepth(${node.left.val}) + 1`,
+        kind: 'recurse-prep',
+      });
+
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
@@ -223,9 +372,26 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         stageId: 'stage-1',
         highlightedNodes: [node.val, node.left.val],
         metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索方向': '仅左子树' },
+        callTrace: makeSnapshot(rightNullLineId),
       });
-      const lDepth = dfs(node.left, depth + 1);
+
+      const lDepth = dfs(node.left, depth + 1, `<- 算${node.val}的左孩子`);
       const res = lDepth + 1;
+
+      const unwindLineId = `unwind-${node.val}`;
+      traceLines.push({
+        id: unwindLineId,
+        depth: depth - 1,
+        text: `回到 minDepth(${node.val}): return ${lDepth} + 1 = ${res}`,
+        kind: 'unwind-calc',
+      });
+      traceLines.push({
+        id: `ret-stmt-${node.val}`,
+        depth: depth - 1,
+        text: `返回 ${res} ---`,
+        kind: 'return-leaf',
+      });
+
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
@@ -238,11 +404,34 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         stageId: 'stage-1',
         highlightedNodes: [node.val],
         metrics: { '当前节点': `Node(${node.val})`, '左子树深度': lDepth, '归约结果': res },
+        callTrace: makeSnapshot(unwindLineId, res),
       });
       return res;
     }
 
     // 6. 左右均非空：先准备深入左子树
+    const skipLeftId = `skip-left-${node.val}`;
+    traceLines.push({
+      id: skipLeftId,
+      depth: depth - 1,
+      text: `③ left != null (是${node.left!.val}), 跳过`,
+      kind: 'condition-skip',
+    });
+    const skipRightId = `skip-right-${node.val}`;
+    traceLines.push({
+      id: skipRightId,
+      depth: depth - 1,
+      text: `④ right != null (是${node.right!.val}), 跳过`,
+      kind: 'condition-skip',
+    });
+    const prepBothId = `prep-both-${node.val}`;
+    traceLines.push({
+      id: prepBothId,
+      depth: depth - 1,
+      text: `⑤ 走最后一行: Math.min(minDepth(左), minDepth(右)) + 1`,
+      kind: 'recurse-prep',
+    });
+
     steps.push({
       tree: cloneStateDepTree(root),
       current: node.val,
@@ -255,9 +444,10 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val, node.left!.val],
       metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索分支': '左子树' },
+      callTrace: makeSnapshot(prepBothId),
     });
 
-    const leftVal = dfs(node.left, depth + 1);
+    const leftVal = dfs(node.left, depth + 1, '<- 先算左边');
 
     // 7. 左子树就绪，接下来深入右子树
     steps.push({
@@ -272,12 +462,21 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val, node.right!.val],
       metrics: { '当前节点': `Node(${node.val})`, '左子树深度': leftVal, '探索分支': '右子树' },
+      callTrace: makeSnapshot(prepBothId),
     });
 
-    const rightVal = dfs(node.right, depth + 1);
+    const rightVal = dfs(node.right, depth + 1, '<- 再算右边');
     const res = Math.min(leftVal, rightVal) + 1;
 
     // 8. 左右齐备，后序自底向上归约
+    const unwindBothId = `unwind-both-${node.val}`;
+    traceLines.push({
+      id: unwindBothId,
+      depth: depth - 1,
+      text: `回到 minDepth(${node.val}): return Math.min(${leftVal}, ${rightVal}) + 1 = ${leftVal < rightVal ? leftVal : rightVal} + 1 = ${res}`,
+      kind: 'unwind-calc',
+    });
+
     steps.push({
       tree: cloneStateDepTree(root),
       current: node.val,
@@ -290,6 +489,7 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val],
       metrics: { '当前节点': `Node(${node.val})`, '左深': leftVal, '右深': rightVal, '归约结果': res },
+      callTrace: makeSnapshot(unwindBothId, res),
     });
 
     return res;
@@ -297,6 +497,14 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
 
   const finalMinDepth = dfs(root, 1);
   const allTreeVals = collectTreeValues(root);
+
+  const finalResultId = 'final-result';
+  traceLines.push({
+    id: finalResultId,
+    depth: 0,
+    text: `最终返回 ${finalMinDepth} ✅`,
+    kind: 'final-result',
+  });
 
   steps.push({
     tree: cloneStateDepTree(root),
@@ -310,6 +518,7 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
     stageId: 'stage-1',
     highlightedNodes: allTreeVals,
     metrics: { '最终最小深度': finalMinDepth, '遍历节点总数': allTreeVals.length },
+    callTrace: makeSnapshot(finalResultId, finalMinDepth),
   });
 
   return steps;
@@ -626,8 +835,78 @@ export function buildMinDepthSteps(root: TreeNode | null): MinDepthStep[] {
 // 表现层渲染 (Render Canvas & Metrics)
 // =========================================================================
 export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep): void {
-  if (step.tree) {
-    TreeCanvasAdapter.renderTree(container, {
+  // 仅在 Stage 1 且有调用跟踪数据时激活双重视角切换
+  const hasTrace = !!step.callTrace;
+  const currentViewMode = container.dataset.viewMode || 'tree';
+
+  // 保证容器结构：顶部切换栏 + 主渲染宿主
+  let toggleBar = container.querySelector<HTMLElement>('.min-depth-view-toggle-bar');
+  let viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
+
+  if (hasTrace) {
+    if (!toggleBar || !viewHost) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+          <div class="min-depth-view-toggle-bar" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 4px 8px; margin-bottom: 6px; background: rgba(15, 23, 42, 0.4); border: 1px solid #1e293b; border-radius: 6px;">
+            <span style="font-size: 11px; color: #64748b; margin-right: auto; font-family: 'JetBrains Mono', monospace;">Card 1 视图模式:</span>
+            <button id="btn-view-tree" type="button" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;">🌲 二叉树拓扑</button>
+            <button id="btn-view-trace" type="button" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;">📜 递归推演树</button>
+          </div>
+          <div class="min-depth-view-host" style="flex: 1; min-height: 0; width: 100%; position: relative;"></div>
+        </div>
+      `;
+      toggleBar = container.querySelector<HTMLElement>('.min-depth-view-toggle-bar');
+      viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
+
+      const btnTree = container.querySelector<HTMLButtonElement>('#btn-view-tree');
+      const btnTrace = container.querySelector<HTMLButtonElement>('#btn-view-trace');
+
+      btnTree?.addEventListener('click', () => {
+        container.dataset.viewMode = 'tree';
+        renderMinDepthCanvas(container, step);
+      });
+      btnTrace?.addEventListener('click', () => {
+        container.dataset.viewMode = 'trace';
+        renderMinDepthCanvas(container, step);
+      });
+    }
+
+    // 更新按钮样式
+    const btnTree = container.querySelector<HTMLButtonElement>('#btn-view-tree');
+    const btnTrace = container.querySelector<HTMLButtonElement>('#btn-view-trace');
+    if (btnTree && btnTrace) {
+      if (currentViewMode === 'trace') {
+        btnTrace.style.background = '#0284c7';
+        btnTrace.style.color = '#ffffff';
+        btnTrace.style.borderColor = '#38bdf8';
+        btnTree.style.background = 'transparent';
+        btnTree.style.color = '#94a3b8';
+        btnTree.style.borderColor = 'transparent';
+      } else {
+        btnTree.style.background = '#0284c7';
+        btnTree.style.color = '#ffffff';
+        btnTree.style.borderColor = '#38bdf8';
+        btnTrace.style.background = 'transparent';
+        btnTrace.style.color = '#94a3b8';
+        btnTrace.style.borderColor = 'transparent';
+      }
+    }
+  } else {
+    // Stage 2 或 Stage 3：无需切换条，直接由 viewHost 接管
+    container.innerHTML = `<div class="min-depth-view-host" style="width: 100%; height: 100%;"></div>`;
+    viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
+  }
+
+  const targetHost = viewHost || container;
+
+  // 渲染主体内容
+  if (hasTrace && currentViewMode === 'trace') {
+    RecursiveCallTraceAdapter.render(targetHost, step.callTrace || null, {
+      title: '🌳 递归调用推演跟踪树 (Call-Tree Trace)',
+      maxHeight: '340px',
+    });
+  } else if (step.tree) {
+    TreeCanvasAdapter.renderTree(targetHost, {
       tree: step.tree,
       current: step.current,
       highlightedNodes: step.highlightedNodes,
@@ -636,7 +915,7 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
       visitedColor: '#34d399',
     });
   } else {
-    container.innerHTML = `
+    targetHost.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 240px; width: 100%;">
         <svg width="240" height="120" viewBox="0 0 240 120">
           <circle cx="120" cy="50" r="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4"/>
@@ -676,6 +955,14 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
             : '队列为空 []';
       }
 
+      let activeCallAction = step.decision;
+      if (step.callTrace?.activeLineId) {
+        const curLine = step.callTrace.lines.find((l) => l.id === step.callTrace!.activeLineId);
+        if (curLine) {
+          activeCallAction = `${curLine.text} ${curLine.comment || ''}`.trim();
+        }
+      }
+
       customMetricsContainer.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #475569; padding: 6px 0;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
@@ -694,7 +981,7 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
           </div>
 
           <div style="padding: 8px 10px; background: #f1f5f9; border-radius: 6px;">
-            <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${step.decision}</div>
+            <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${activeCallAction}</div>
             <div>${step.message}</div>
           </div>
         </div>
@@ -727,6 +1014,11 @@ export const minDepthVisualizer = registerDeclarativeAlgorithm<MinDepthStep>({
     },
   ],
   presets: [
+    {
+      label: '截图推演用例: 典型四节点 [1, 2, 3, null, 4]',
+      values: { 'input-tree': '1, 2, 3, null, 4' },
+      description: '根 1，左 2(右 4)，右 3(叶子)，完整展示深入、单侧避坑与回溯归约',
+    },
     {
       label: 'LeetCode 示例 1: 经典二分叉 2',
       values: { 'input-tree': '3, 9, 20, null, null, 15, 7' },

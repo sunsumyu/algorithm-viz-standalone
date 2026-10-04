@@ -36,6 +36,50 @@ export const MIN_DEPTH_ANALYSIS_HTML = `
         • 仅当左右子树均非空时，才使用 <code style="color: #38bdf8; font-family: monospace;">min(left, right) + 1</code>。<br/>
         • 时间复杂度 $O(N)$，空间复杂度 $O(H)$。
         </p>
+
+        <div style="margin-top: 10px; background: #030712; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; line-height: 1.5; overflow-x: auto;">
+          <div style="color: #38bdf8; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📜 经典用例 [1, 2, 3, null, 4] 递归调用推演执行全景 (手抄本)</span>
+            <span style="font-size: 10px; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Call-Tree Trace</span>
+          </div>
+          <pre style="margin: 0; font-family: inherit; color: #cbd5e1;"><span style="color: #38bdf8; font-weight: 700;">minDepth(1)</span>                                    <span style="color: #64748b;">&lt;- 最终要算这个</span>
+|
+| <span style="color: #94a3b8;">① root=1, 非空</span>
+| <span style="color: #64748b;">② 不是叶子 (有左右孩子)</span>
+| <span style="color: #64748b;">③ left != null (是2), 跳过</span>
+| <span style="color: #64748b;">④ right != null (是3), 跳过</span>
+| <span style="color: #a78bfa;">⑤ 走最后一行: Math.min(minDepth(左), minDepth(右)) + 1</span>
+|
+|--- <span style="color: #38bdf8; font-weight: 700;">minDepth(2)</span>                               <span style="color: #64748b;">&lt;- 先算左边</span>
+|    |
+|    | <span style="color: #94a3b8;">① root=2, 非空</span>
+|    | <span style="color: #64748b;">② 不是叶子 (右孩子是4)</span>
+|    | <span style="color: #34d399; font-weight: 700;">③ root.left == null √ 命中!</span>
+|    |    <span style="color: #a78bfa;">-&gt; return minDepth(root.right) + 1</span>
+|    |    <span style="color: #a78bfa;">-&gt; return minDepth(4) + 1</span>
+|    |
+|    |--- <span style="color: #38bdf8; font-weight: 700;">minDepth(4)</span>                          <span style="color: #64748b;">&lt;- 算2的右孩子</span>
+|         |
+|         | <span style="color: #94a3b8;">① root=4, 非空</span>
+|         | <span style="color: #34d399; font-weight: 700;">② left==null &amp;&amp; right==null √ 命中!</span>
+|         |    <span style="color: #34d399;">-&gt; return 1</span>
+|         |
+|         |--- <span style="color: #fbbf24; font-weight: 700;">返回 1 ---</span>
+|
+|    <span style="color: #38bdf8;">回到 minDepth(2): return 1 + 1 = 2</span>
+|    <span style="color: #fbbf24; font-weight: 700;">返回 2 ---</span>
+|
+|--- <span style="color: #38bdf8; font-weight: 700;">minDepth(3)</span>                               <span style="color: #64748b;">&lt;- 再算右边</span>
+|    |
+|    | <span style="color: #94a3b8;">① root=3, 非空</span>
+|    | <span style="color: #34d399; font-weight: 700;">② left==null &amp;&amp; right==null √ 命中!</span>
+|    |    <span style="color: #34d399;">-&gt; return 1</span>
+|    |
+|    |--- <span style="color: #fbbf24; font-weight: 700;">返回 1 ---</span>
+|
+<span style="color: #38bdf8; font-weight: 700;">回到 minDepth(1): return Math.min(2, 1) + 1 = 1 + 1 = 2</span>
+<span style="color: #10b981; font-weight: 700;">最终返回 2 ✅</span></pre>
+        </div>
       </div>
 
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">

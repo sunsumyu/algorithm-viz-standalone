@@ -4,6 +4,8 @@ import {
   RecursiveCallTraceAdapter,
   CallTraceSnapshot,
 } from './recursive-call-trace-adapter';
+import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
+import { buildMinDepthStage1Steps } from '../../../algorithms/categories/tree/min-depth-renderer';
 
 describe('RecursiveCallTraceAdapter (Deep Module)', () => {
   let container: HTMLDivElement;
@@ -57,5 +59,44 @@ describe('RecursiveCallTraceAdapter (Deep Module)', () => {
     const lines = container.querySelectorAll('.rct-line');
     expect(lines.length).toBe(4);
     expect(lines[3].classList.contains('rct-active-line')).toBe(true);
+  });
+
+  it('buildMinDepthStage1Steps 应针对四节点用例 [1, 2, 3, null, 4] 准确产出截图所示的调用追踪全貌', () => {
+    const root = buildTreeFromArr([1, 2, 3, null, 4]);
+    const steps = buildMinDepthStage1Steps(root);
+
+    // 验证每一步均注入 callTrace 且具备 activeLineId
+    steps.forEach((step, idx) => {
+      expect(step.callTrace, `Step ${idx} 必须具备 callTrace`).toBeDefined();
+      expect(step.callTrace?.activeLineId, `Step ${idx} 必须具备 activeLineId`).toBeTruthy();
+    });
+
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.minDepth).toBe(2);
+
+    const traceTexts = lastStep.callTrace!.lines.map((l) => `${l.text} ${l.comment || ''}`.trim());
+
+    // 断言完整覆盖用户截图中的全部核心生命周期推演节点
+    expect(traceTexts.some((t) => t.includes('minDepth(1)') && t.includes('最终要算这个'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('① root=1, 非空'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('② 不是叶子'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('③ left != null'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('④ right != null'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('⑤ 走最后一行'))).toBe(true);
+
+    expect(traceTexts.some((t) => t.includes('minDepth(2)') && t.includes('先算左边'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('① root=2, 非空'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('③ root.left == null √ 命中!'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('minDepth(root.right) + 1'))).toBe(true);
+
+    expect(traceTexts.some((t) => t.includes('minDepth(4)') && t.includes('算2的右孩子'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('① root=4, 非空'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('left==null && right==null √ 命中!'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('|--- 返回 1 ---'))).toBe(true);
+
+    expect(traceTexts.some((t) => t.includes('回到 minDepth(2): return 1 + 1 = 2'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('minDepth(3)') && t.includes('再算右边'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('回到 minDepth(1)'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('最终返回 2'))).toBe(true);
   });
 });
