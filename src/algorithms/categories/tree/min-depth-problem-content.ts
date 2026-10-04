@@ -19,6 +19,9 @@ export const MIN_DEPTH_PROBLEM_HTML = `
       <div style="color: #f59e0b; margin-top: 4px;">⚠️ 致命陷阱案例:</div>
       <div>输入: root = [1, 2]</div>
       <div>输出: 2 (而非 1！因为根节点 1 拥有右或左子树，不是叶子节点，必须走到节点 2)</div>
+      <div style="color: #a78bfa; margin-top: 4px;">📜 典型四节点递归推演案例:</div>
+      <div>输入: root = [1, 2, 3, null, 4]</div>
+      <div>输出: 2 (节点 2 仅有右孩子 4，不是叶节点；右子树节点 3 是叶节点，故最小深度为 2)</div>
     </div>
   </div>
 `;
