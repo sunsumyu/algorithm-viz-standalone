@@ -16,6 +16,15 @@
 - [7. Matt Pocock 标准重构对比速查表（12 组对照）](#7-matt-pocock-标准重构对比速查表12-组对照)
 - [8. Skill 编写上线前自动化门禁自检（Pre-flight Checklist）](#8-skill-编写上线前自动化门禁自检pre-flight-checklist)
 - [9. 本库真实落地全景解剖：我们到底改了哪些点？（改前 vs 改后完整对照）](#9-本库真实落地全景解剖我们到底改了哪些点改前-vs-改后完整对照)
+  - [9.1 文件一：AGENTS.md（全库治理总则与唯一事实来源）](#91-文件一agentsmd全库治理总则与唯一事实来源)
+  - [9.2 文件二：algo-viz-authoring/SKILL.md（算法编写核心入口）](#92-文件二agentsskillsalgo-viz-authoringskillmd算法编写核心入口)
+  - [9.3 文件三：universal-dp-refactoring/SKILL.md（动态规划专项规范）](#93-文件三agentsskillsuniversal-dp-refactoringskillmd动态规划专项规范)
+  - [9.4 文件四：top-level-abstraction-compliance/SKILL.md（顶层抽象合规检查）](#94-文件四agentsskillstop-level-abstraction-complianceskillmd顶层抽象合规检查)
+  - [9.5 文件五：ui-layout-design/SKILL.md（画布主导权、反套娃与量化尺寸）](#95-文件五agentsskillsui-layout-designskillmd画布主导权反套娃与量化尺寸)
+  - [9.6 文件六：browser-viewport-debugging/SKILL.md（视口调试与截图）](#96-文件六agentsskillsbrowser-viewport-debuggingskillmd视口调试与截图)
+  - [9.7 全量外置参考手册（Progressive Disclosure References）深度治理对照](#97-全量外置参考手册progressive-disclosure-references深度治理对照)
+  - [9.8 AGENTS.md 终极清洗与环境自白原则落地](#98-agentsmd-终极清洗与环境自白原则落地)
+  - [9.9 全库清洗终极量化成果（The Zero-Elephant Milestone）](#99--全库清洗终极量化成果the-zero-elephant-milestone)
 - [10. 为什么推荐核心 Skill 使用英文？用英文真的更好吗？](#10-为什么推荐核心-skill-使用英文用英文真的更好吗)
 - [11. 防早泄与抗抢跑机制（Premature Completion & Completion Criteria）](#11-防早泄与抗抢跑机制premature-completion--completion-criteria)
 - [12. 三层渐进式揭示梯子与分支裁决测试（Progressive Disclosure Ladder & Branching Test）](#12-三层渐进式揭示梯子与分支裁决测试progressive-disclosure-ladder--branching-test)
@@ -658,7 +667,34 @@ description: "Standardize dynamic-programming algorithms against the YAML-driven
 
 ---
 
-### 9.5 文件五：`.agents/skills/browser-viewport-debugging/SKILL.md`（视口调试与截图）
+### 9.5 文件五：`.agents/skills/ui-layout-design/SKILL.md`（画布主导权、反套娃与量化尺寸）
+
+#### 🛠️ 改了哪些点？
+1. **剔除文学化比喻**：消除“俄罗斯套娃”、“中间小框上下长条”等高熵文学修饰，提取为可由 CSS 审查程序核验的精确数值。
+2. **确立黄金画布占比契约**：明确主可视化区域（网格、树、沙盘）占据视口总面积的 **60%~70%**。
+3. **量化 Splitter 安全边界**：面板拖拽分割条必须显式声明 `minWidth: 320px`、`minHeight: 200px`，并持久化到 `localStorage`。
+4. **统一顶栏控件排布顺序**：`[预设用例/下拉] ➔ [输入框组] ➔ [应用按钮] ➔ [重置按钮]`，重置按钮必须位于最末端，应用按钮统一使用明确汉字“应用”。
+
+#### 🔍 改前 vs 改后对照
+**❌ 改动前（Before）**：
+```markdown
+- **消除俄罗斯套娃**：严禁一层套一层，不要搞四五层边框！每个小标题外面严禁再套 Card！
+- **严禁压缩主画布**：中间的沙盘绝不允许被过大的上下面板挤压成“中间小框、上下长条”！
+- **Splitter 拖拽严禁拉死**：严禁拖动分栏时把内容挤出屏幕，严禁刷新后尺寸丢失！
+- **顶栏按钮严禁放个单纯的三角播放图标**：用户分不清是播放还是生成，必须写清楚！
+```
+
+**✅ 改动后（After）**：
+```markdown
+- **Canvas Dominance (主画布黄金占比)**：核心可视化区域（网格、树、物理沙盘）占据视口 **60%~70%** 黄金面积。
+- **Anti-Nesting (单层主容器法则)**：外部使用单个主 Card 容器，子指标直接平铺展现；消除中英双语冗余堆叠。
+- **Splitter Persistence (安全拖拽边界与持久化)**：分割条显式声明安全最小尺寸 `minWidth: 320px`、`minHeight: 200px`，尺寸变动存入 `localStorage`。
+- **Header Controls Sequence (控件顺序标准)**：控件严格按 `[预设用例] ➔ [输入框组] ➔ [应用按钮] ➔ [重置按钮]` 排布，应用按钮统一标为汉字“应用”。
+```
+
+---
+
+### 9.6 文件六：`.agents/skills/browser-viewport-debugging/SKILL.md`（视口调试与截图）
 
 #### 🛠️ 改了哪些点？
 1. **践行渐进式揭示（Progressive Disclosure）**：将占据主文件核心篇幅的 25 行历史事故根因（`Puppeteer 800x600 默认陷阱`、`Tailwind lg:flex-row 响应式断裂`等），剥离至新建的 `references/viewport-postmortem.md`。
@@ -711,16 +747,120 @@ Every `puppeteer_screenshot` call must pass explicit width and height:
 
 ---
 
-### 📊 全库清洗量化成果一览表
+### 9.7 全量外置参考手册（Progressive Disclosure References）深度治理对照
 
-| 优化维度 | 清洗前全库数据 | 清洗后全库数据 | 改善幅度 |
+按照三层揭示阶梯，外置在 `references/` 下的伴生文件同样不能藏污纳垢，必须同步消解负向词与情绪化语句。以下是本次对 8 个外置参考文件的彻底治理细节：
+
+#### 9.7.1 `algo-viz-authoring/references/code-linkage.md`（代码联动与五段式生命周期）
+- **改造重点**：彻底清除 8 处“严禁”与“绝不允许”；重构为正向的相对行号与生命周期契约。
+- **改前**：
+  - `严禁单一数字硬编码`
+  - `每一个算法推演步进必须具备完整的生命周期，严禁直接跳到循环中`
+  - `严禁将 5~10 行真实代码执行粗暴合并为一步，严禁在不同状态变更时让代码高亮冻结在同一行`
+  - `绝不允许代码面板只贴了主函数，而步进在执行未贴出的辅助函数`
+  - `严禁只写 dfs(2, 0) 而遗漏参数名`
+- **改后**：
+  - `Multi-Language Relative Line Mapping`：由于四语言代码行数天然差异，必须为每个语言映射对应的 1-based 局部行号，优先走 `@step:` 锚点。
+  - `Full Lifecycle Invariant`：算法推演按顺序经历完整的生命周期五阶段（0.入口 ➔ 1.特判 ➔ 2.分配 ➔ 3.递推 ➔ 4.收敛）。
+  - `Strict One-Line-One-Step Invariant`：每一个状态变更均归因并高亮到具体的执行代码行；状态变更伴随动态行号步进。
+  - `Code Inclusiveness`：代码面板完整呈现主函数及辅助函数的全部源码。
+  - `Explicit Parameter Binding in Step Logs`：日志明确列出绑定变量与具体值（如 `i=2, j=0, k=1`）。
+
+#### 9.7.2 `algo-viz-authoring/references/sandbox-and-ui.md`（物理沙盘四态机与画布规范）
+- **改造重点**：清除 11 处“严禁”，转化为物理沙盘常驻状态机与防御性契约。
+- **改前**：
+  - `任何步骤下角色都不得从 DOM 中卸载或隐藏...严禁突然消失`
+  - `严禁在各个业务模块中各写一套独立的 SVG 树渲染代码`
+  - `严禁仅使用 idx === curI 这种单点瞬态判断`
+  - `严禁光标从 DOM 中凭空消失`
+  - `严禁在任何卡片、Tooltip、日志或徽章中出现 'undefined'`
+- **改后**：
+  - `Entity Persistence Invariant`：角色在全部推演步骤中常驻保留在 DOM 中，碰壁播放反弹动画，返回播放庆祝动画。
+  - `Mandatory Tree Template Reuse`：统一复用核心深度模块 `RecursionTreeAdapter`，层间距自适应 72px~84px，净空 $\ge 8\text{px}$。
+  - `4-State Visual Continuity State Machine`：双指针与序列比对严格实现四态视觉连续性状态机（待考察/已考察/当前活跃焦点/路径有效锁定）。
+  - `EOF / Boundary Sentinel Invariant`：双序列末尾常驻包含 `EOF` 或 `Ø` 哨兵单元格承接越界光标。
+  - `Defensive Null Guard & Clean Rendering`：渲染层防御性校验 `(idx >= 0 && idx < s.length) ? s[idx] : 'Ø'`，由 `presentation-contract.gate.test.ts` 自动化断言验证。
+
+#### 9.7.3 `algo-viz-authoring/references/stage-evolution.md`（空间压缩三连步与双向标准模式）
+- **改造重点**：删除“严禁合并三步”、“严禁把逆推叫倒序”。
+- **改前**：
+  - `必须将推演拆分为细粒度三连步...严禁把三步合并成一步而跳过暂存寄存器的变化过程！`
+  - `严禁把逆推命名为 backward、inverted 或中文“倒序”`
+- **改后**：
+  - `Space Compression Register Transparency`：空间压缩存在对角线依赖时，按细粒度三连步推进（1.暂存旧值 `backup` ➔ 2.转移计算 `compute` ➔ 3.寄存器推移 `shift`），每个寄存器状态更新均生成独立步骤。
+  - `Forward vs Reverse Traversal`：全库模式 ID 严格统一为 `'forward'` 与 `'reverse'`，触发红灯陷阱 13 & 14 门禁全自动核验。
+
+#### 9.7.4 `algo-viz-authoring/references/template-and-checklist.md`（全量排查与双轴审查清单）
+- **改造重点**：改写单点修改禁令与双轴审查清单中的所有负向语句。
+- **改前**：
+  - `严禁单点修改...绝不允许仅仅修复那一个文件就宣布完工！`
+  - `绝对禁止粗暴删掉任一版本，绝对禁止另建平行文件`
+  - `严禁单题私造编译器`
+- **改后**：
+  - `Comprehensive Category Sweep`：定位到缺陷时，按三步闭环执行（同类扫描 ➔ 一致性审查 ➔ 回归验证）。
+  - 双轴审查清单：全面引入 Leading Words 表达（`Bi-Version Synthesis`, `Delegated Architecture & LOC < 120`, `Clean Presentation Contract`, `Immutable Test Contracts`, `Bounded Blast Radius`, `Binary Exit 0 Gates`）。
+
+#### 9.7.5 `algo-viz-authoring/references/anti-patterns.md`（24 大历史故障深度复盘）
+- **改造重点**：将原先带情绪的批斗式“死门禁！绝不允许！”改写为中立专业的【故障现象】+【根本原因】+【正向架构契约规范】，并将下三角矩阵遮罩说明中的“禁止占位符 ✕”改写为客观字面量“无效占位符 ✕ (Disabled placeholder ✕)”。
+- **成效**：使得这一份 88 行的长篇故障复盘文件，既完整保留了全项目宝贵的踩坑记忆，又没有哪怕一个词违反“不激活负向概念”的注意力法则。
+
+#### 9.7.6 `universal-dp-refactoring/references/step-by-step-workflow.md`（穿甲弹多阶段重构工序）
+- **改造重点**：去除第 9 行的大象陷阱。
+- **改前**：
+  - `严禁在单个会话中试图一次性实现全部 4 个阶段和顺逆推所有分支！这会导致复合错误累乘并穿透 150k 上下文智能区。必须遵循 Phase 1~4 增量穿甲弹流水线...`
+- **改后**：
+  - `遵循 Phase 1~4 增量穿甲弹流水线 (Incremental Tracer Pipeline)，单次会话聚焦单个阶段（Kanban WIP=1），每阶段完成后执行测试断言、Git 提交并清空会话（/clear）。`
+
+#### 9.7.7 `universal-dp-refactoring/references/compiler-invariants.md`（递归与填表顶层抽象编译器）
+- **改造重点**：去除 6 处禁令，重构为面向对象设计模式与控制反转（IoC）。
+- **改前**：
+  - `业务编译器严禁私自手写 dfs() 循环调度与步骤发射`
+  - `严禁从条件检查行直接瞬移跳入子函数签名行`
+  - `严禁子递归返回后直接飞入下一分支或 combine 语句`
+  - `严禁业务层自行维护导致的跨阶段污染`
+  - `未计算单元格初始必须为 null，严禁预填 0`
+  - `严禁复合语句与单行压缩`
+- **改后**：
+  - `Inversion of Control`：业务编译器统一继承 `AbstractSequenceRecursionCompiler`，由基类模板方法调度 `dfs()` 循环与标准步骤发射。
+  - `Call-Site Interception Invariant`：子递归触发前，基类先发射调用点高亮帧，光标有序进入分支调用语句。
+  - `Call-Return Parity & Backtracking Assignment`：子递归返回父层时发射 `branch-return` 回溯赋值步骤帧，重现调用栈退栈现实。
+  - `Lifecycle Encapsulation`：由基类统一管理 `activeStack`、`UniversalTreeNode` 与 `memoCache`。
+  - `Uncalculated Cell Invariant`：未计算单元格初始值为 `null`（白底虚线框 `-`）。
+  - `Branch Unfolding & Explicit Anchors`：将多决策分支展开为多物理行独立语句，每行对应唯一 `@step` 锚点。
+
+#### 9.7.8 `top-level-abstraction-compliance/references/compliance-cases-and-migration.md`（治理矩阵）
+- **改造重点**：去除第 50 行情绪化感叹句。
+- **改前**：`门禁立即红灯阻断构建！严禁任何形式的退化，立刻还原顶层接入`
+- **改后**：`门禁立即红灯阻断构建（Exit Code 1），立即还原被锁定的顶层接入与 YAML 声明`
+
+---
+
+### 9.8 `AGENTS.md` 终极清洗与环境自白原则落地
+
+在重构的最后收尾阶段，我们对根目录的 `AGENTS.md` 进行了二次审视与彻底净化：
+1. **剔除缓存命令（Prompt as Cache）**：删除了早期在文件中列出的详细 npm 命令列表，改为让环境自身招供（`package.json` 为单一源），仅保留 4 个核心自动化校验门禁命令；
+2. **清理生成物假注释**：删除了 `algorithm-catalog.generated.ts # 生成物：全量目录元数据（禁止手写）` 中的“禁止手写”，改写为准确客观的事实陈述：`# 生成物：由 meta:sync 自动投影生成`；
+3. **消除 Git 破坏性指令禁令**：将“禁止执行破坏性 Git 指令”改写为正向原则：`保持 Git 历史非破坏性演进`。
+
+---
+
+### 9.9 📊 全库清洗终极量化成果（The Zero-Elephant Milestone）
+
+本次重构涵盖全库全部 14 个规则与参考文档，彻底达成**“零大象陷阱”（Zero Prohibitions）**工程里程碑：
+
+| 优化维度 | 治理前全库基线 | 治理后终极状态 | 改善幅度 / 验收判据 |
 |:---|:---:|:---:|:---:|
-| **高频否定词（`严禁/绝对禁止/死门禁`）** | **77 处** | **0 处**（核心 5 文件内） | **-100%**（彻底消除概念反向激活） |
-| **跨文件整段重复段落** | **4 处**（每处约 120 字） | **0 处**（收归 AGENTS.md 唯一源） | **彻底杜绝 Doc Drift 文档漂移** |
-| **会议讨论/吵架情绪沉积物** | **140 字**（长篇口头训话） | **0 字**（提炼为架构契约机制） | **注意力与信息熵极大提纯** |
-| **主入口事故复盘冗余行** | **25 行**常驻在执行入口 | **0 行**（渐进式揭示至 references） | **削减每次调用消耗的上下文预算** |
-| **Description 常驻上下文税** | ~500 字符中文长句 | **~240 字符精炼纯指针** | **永久释放每轮交互的智能区空间** |
-| **全库自动化门禁通过率** | 100% 通过 | **100% 全部保持通过 (Green)** | **零架构退化，契约完美履约** |
+| **全库高频否定词（`严禁`）** | **38 处** | **0 处**（全库 0 匹配） | **-100%（全库彻底归零）** |
+| **全库规则负向词（`禁止`）** | **39 处** | **0 处**（全库 0 匹配） | **-100%（全库彻底归零）** |
+| **跨文件整段重复段落** | **4 处**（每处约 120 字） | **0 处**（收归 AGENTS.md 唯一权威源） | **单事实来源（SSOT）确立** |
+| **会议吵架与口头情绪沉积物** | **140 字**（会议语录） | **0 字**（全部提炼为架构契约机制） | **消除信息熵噪音** |
+| **外置渐进式揭示文件** | 0 篇 | **9 篇按需引用的参考手册** | **三层渐进揭示阶梯落地** |
+| **Leading Words 规范化词汇** | 0 组 | **12+ 组专业锚定词汇** | **借力模型预训练高维先验** |
+| **元数据自动投影门禁 (`meta:sync`)** | 通过 | **通过（693 条元数据收割，Exit 0）** | **自动化生成物同步** |
+| **TypeScript 类型检查 (`typecheck`)** | 0 报错 | **0 报错（Exit 0）** | **强类型零退化** |
+| **顶层架构合规门禁 (`test:gate`)** | 通过 | **通过（177/177 单测全绿，Exit 0）** | **架构身材与红灯拦截全绿** |
+| **表现层真实契约门禁 (`test:presentation`)** | 通过 | **通过（31/31 测试全绿，Exit 0）** | **14 大红灯陷阱全套防御生效** |
+| **Git Pre-commit Hook** | 正常执行 | **自动运行 test:gate 拦截全绿合流** | **原子提交 `41e1e7d` 归档** |
 
 ---
 
