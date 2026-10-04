@@ -63,7 +63,7 @@
   }
   ```
 
-- [ ] **Step 1: 编写失败的单元测试**
+- [x] **Step 1: 编写失败的单元测试**
 
 在 `src/core/renderers/adapters/recursive-call-trace-adapter.test.ts` 中写入生命周期测试：
 ```typescript
@@ -109,28 +109,28 @@ describe('RecursiveCallTraceAdapter', () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试验证失败**
+- [x] **Step 2: 运行测试验证失败**
 
 ```bash
 npx vitest run src/core/renderers/adapters/recursive-call-trace-adapter.test.ts
 ```
 Expected: FAIL（模块不存在）
 
-- [ ] **Step 3: 编写 `RecursiveCallTraceAdapter` 实现**
+- [x] **Step 3: 编写 `RecursiveCallTraceAdapter` 实现**
 
 在 `src/core/renderers/adapters/recursive-call-trace-adapter.ts` 中实现：
 - 数据类型定义；
 - HTML 结构拼装：等宽暗黑终端风格、左侧树干线条（根据 `depth` 绘制 `│` 与 `├──`）、条件序号着色、高亮当前 `activeLineId` 并执行平滑滚动；
 - 响应式样式与复制功能。
 
-- [ ] **Step 4: 运行测试验证通过**
+- [x] **Step 4: 运行测试验证通过**
 
 ```bash
 npx vitest run src/core/renderers/adapters/recursive-call-trace-adapter.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 5: Git 提交**
+- [x] **Step 5: Git 提交**
 
 ```bash
 git add src/core/renderers/adapters/recursive-call-trace-adapter.ts src/core/renderers/adapters/recursive-call-trace-adapter.test.ts
@@ -149,7 +149,7 @@ git commit -m "feat(core): add RecursiveCallTraceAdapter for tree execution visu
 - Consumes: `CallTraceSnapshot`, `CallTraceLine`, `CallTraceLineKind` from `recursive-call-trace-adapter`
 - Produces: `MinDepthStep.callTrace`
 
-- [ ] **Step 1: 扩展 `MinDepthStep` 契约并在 Stage 1 构造调用树追踪**
+- [x] **Step 1: 扩展 `MinDepthStep` 契约并在 Stage 1 构造调用树追踪**
 
 在 `min-depth-renderer.ts` 中：
 1. 导入 `CallTraceSnapshot`、`CallTraceLine`；
@@ -164,7 +164,7 @@ git commit -m "feat(core): add RecursiveCallTraceAdapter for tree execution visu
    - 最终结束：追加 `最终返回 ${finalMinDepth}`；
 4. 每发射一个 `step`，将当前已生成的 `traceLines` 与当前 `activeLineId` 注入到 `step.callTrace` 中。
 
-- [ ] **Step 2: 增加预设案例**
+- [x] **Step 2: 增加预设案例**
 
 在 `minDepthVisualizer.presets` 增加：
 ```typescript
@@ -175,14 +175,14 @@ git commit -m "feat(core): add RecursiveCallTraceAdapter for tree execution visu
 }
 ```
 
-- [ ] **Step 3: 运行既有测试确保零退化**
+- [x] **Step 3: 运行既有测试确保零退化**
 
 ```bash
 npx vitest run src/core/strategies/tree-classic-stage-invariants.gate.test.ts
 ```
 Expected: PASS
 
-- [ ] **Step 4: Git 提交**
+- [x] **Step 4: Git 提交**
 
 ```bash
 git add src/algorithms/categories/tree/min-depth-renderer.ts
@@ -196,7 +196,7 @@ git commit -m "feat(tree): integrate CallTrace tracking into minDepth stage 1 st
 **Files:**
 - Modify: `src/algorithms/categories/tree/min-depth-renderer.ts`
 
-- [ ] **Step 1: 在 `renderMinDepthCanvas` 实现双重视角动态渲染**
+- [x] **Step 1: 在 `renderMinDepthCanvas` 实现双重视角动态渲染**
 
 在 `renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)` 中：
 1. 检查当前是否为 Stage 1（`step.stageId === 'stage-1'` 或 `step.callTrace != null`）；
@@ -204,7 +204,7 @@ git commit -m "feat(tree): integrate CallTrace tracking into minDepth stage 1 st
 3. 渲染视图切换控制条：
    ```html
    <div class="min-depth-view-toggle flex items-center justify-end gap-2 mb-2">
-     <button class="btn-view-tree ...">🌲 树形拓扑</button>
+     <button class="btn-view-tree ...">🌲 二叉树拓扑</button>
      <button class="btn-view-trace ...">📜 递归推演树</button>
    </div>
    ```
@@ -212,14 +212,14 @@ git commit -m "feat(tree): integrate CallTrace tracking into minDepth stage 1 st
 5. 切换为 `trace` 视图时：调用 `RecursiveCallTraceAdapter.render(traceWrap, step.callTrace)`；
 6. 自动记忆用户所选模式，单步调试或拖动播放条时保持当前视图连续性。
 
-- [ ] **Step 2: 运行表现层契约门禁**
+- [x] **Step 2: 运行表现层契约门禁**
 
 ```bash
 npm run test:presentation
 ```
 Expected: PASS（无标题泄露、无套娃、Card 1 DOM 纯净）
 
-- [ ] **Step 3: Git 提交**
+- [x] **Step 3: Git 提交**
 
 ```bash
 git add src/algorithms/categories/tree/min-depth-renderer.ts
@@ -233,7 +233,7 @@ git commit -m "feat(tree): support tree and recursive call trace view switching 
 **Files:**
 - Modify: `src/algorithms/categories/tree/min-depth-problem-content.ts`
 
-- [ ] **Step 1: 在 `MIN_DEPTH_ANALYSIS_HTML` 嵌入推演手抄本**
+- [x] **Step 1: 在 `MIN_DEPTH_ANALYSIS_HTML` 嵌入推演手抄本**
 
 在 `min-depth-problem-content.ts` 中，为 Stage 1 的解析区域增加格式化代码块：
 ```html
@@ -246,11 +246,11 @@ git commit -m "feat(tree): support tree and recursive call trace view switching 
 </div>
 ```
 
-- [ ] **Step 2: 验证题目模态框解析内容**
+- [x] **Step 2: 验证题目模态框解析内容**
 
 运行单测确保 HTML 解析无误，无语法错误。
 
-- [ ] **Step 3: Git 提交**
+- [x] **Step 3: Git 提交**
 
 ```bash
 git add src/algorithms/categories/tree/min-depth-problem-content.ts
@@ -261,7 +261,7 @@ git commit -m "docs(tree): add recursive call trace transcript to minDepth probl
 
 ### Task 5: 全套门禁自检与回归验证
 
-- [ ] **Step 1: 运行所有算法与合规门禁**
+- [x] **Step 1: 运行所有算法与合规门禁**
 ```bash
 npx vitest run src/core/renderers/adapters/recursive-call-trace-adapter.test.ts
 npx vitest run src/core/strategies/tree-classic-stage-invariants.gate.test.ts
@@ -270,7 +270,7 @@ npm run test:presentation
 ```
 Expected: 全部 100% PASS
 
-- [ ] **Step 2: 同步元数据并类型检查**
+- [x] **Step 2: 同步元数据并类型检查**
 ```bash
 npm run meta:sync
 npm run typecheck
