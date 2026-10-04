@@ -11,6 +11,11 @@
 import { parseTreeArray } from '../../../core/input-primitives';
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { TreeCanvasAdapter } from '../../../core/renderers/adapters/tree-canvas-adapter';
+import {
+  RecursiveCallTraceAdapter,
+  type CallTraceSnapshot,
+  type CallTraceLine,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
 import { HighlightTarget } from '../../../core/step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from './tree-template';
 import {
@@ -56,6 +61,9 @@ export interface TDStep {
 
   /** Stage 3 专属：静态连续内存队列状态 */
   staticQueueState?: TDStaticQueueState;
+
+  /** Stage 1 专属：递归调用树跟踪快照 */
+  callTrace?: CallTraceSnapshot;
 }
 
 export const TREE_DEPTH_CODE_LINES = TREE_DEPTH_STAGE1_LINES;
@@ -212,22 +220,110 @@ export function collectTreeValues(node: TreeNode | null): number[] {
   return res;
 }
 
-/** 统一画布呈现 */
+/** 统一画布呈现（支持二叉树拓扑与递归推演树双重视角） */
+let currentViewMode: 'tree' | 'trace' = 'tree';
+
 function renderTreeDepthCanvasForStep(container: HTMLElement, step: TDStep, primaryColor: string = '#fbbf24'): void {
   const isDone = step.action === 'done';
   const allTreeVals = collectTreeValues(step.tree);
   const resolvedNodes = isDone ? allTreeVals : Array.from(step.depthsMap.keys());
   const current = isDone && step.current === null && step.tree ? step.tree.val : step.current;
 
-  TreeCanvasAdapter.renderTree(container, {
-    tree: step.tree,
-    current,
-    secondaryHighlightedNodes: step.queue || resolvedNodes,
-    visitedNodes: resolvedNodes,
-    primaryColor: '#fbbf24',
-    secondaryColor: '#60a5fa',
-    visitedColor: '#34d399',
-  });
+  const hasTrace = step.callTrace != null;
+
+  let viewHost: HTMLElement | null = null;
+
+  if (hasTrace) {
+    let toggleBar = container.querySelector<HTMLElement>('.tree-depth-view-toggle');
+    if (!toggleBar) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+          <div class="tree-depth-view-toggle" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; padding-right: 4px;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-right: 4px;">推演沙盘视角:</div>
+            <div style="display: inline-flex; border-radius: 6px; background: #0f172a; padding: 2px; border: 1px solid #1e293b;">
+              <button class="btn-view-tree" style="padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;">
+                🌲 二叉树拓扑
+              </button>
+              <button class="btn-view-trace" style="padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;">
+                📜 递归推演树
+              </button>
+            </div>
+          </div>
+          <div class="tree-depth-view-host" style="flex: 1; width: 100%; min-height: 240px; display: flex; align-items: center; justify-content: center;"></div>
+        </div>
+      `;
+      toggleBar = container.querySelector<HTMLElement>('.tree-depth-view-toggle');
+    }
+
+    viewHost = container.querySelector<HTMLElement>('.tree-depth-view-host');
+
+    const btnTree = container.querySelector<HTMLButtonElement>('.btn-view-tree');
+    const btnTrace = container.querySelector<HTMLButtonElement>('.btn-view-trace');
+
+    if (btnTree && btnTrace) {
+      btnTree.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        currentViewMode = 'tree';
+        renderTreeDepthCanvasForStep(container, step, primaryColor);
+      };
+
+      btnTrace.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        currentViewMode = 'trace';
+        renderTreeDepthCanvasForStep(container, step, primaryColor);
+      };
+
+      if (currentViewMode === 'trace') {
+        btnTrace.style.background = '#0284c7';
+        btnTrace.style.color = '#ffffff';
+        btnTrace.style.borderColor = '#38bdf8';
+        btnTree.style.background = 'transparent';
+        btnTree.style.color = '#94a3b8';
+        btnTree.style.borderColor = 'transparent';
+      } else {
+        btnTree.style.background = '#0284c7';
+        btnTree.style.color = '#ffffff';
+        btnTree.style.borderColor = '#38bdf8';
+        btnTrace.style.background = 'transparent';
+        btnTrace.style.color = '#94a3b8';
+        btnTrace.style.borderColor = 'transparent';
+      }
+    }
+  } else {
+    container.innerHTML = `<div class="tree-depth-view-host" style="width: 100%; height: 100%;"></div>`;
+    viewHost = container.querySelector<HTMLElement>('.tree-depth-view-host');
+  }
+
+  const targetHost = viewHost || container;
+
+  if (hasTrace && currentViewMode === 'trace') {
+    RecursiveCallTraceAdapter.render(targetHost, step.callTrace || null, {
+      title: '🌳 递归调用推演跟踪树 (Call-Tree Trace)',
+      maxHeight: '340px',
+    });
+  } else if (step.tree) {
+    TreeCanvasAdapter.renderTree(targetHost, {
+      tree: step.tree,
+      current,
+      secondaryHighlightedNodes: step.queue || resolvedNodes,
+      visitedNodes: resolvedNodes,
+      primaryColor: '#fbbf24',
+      secondaryColor: '#60a5fa',
+      visitedColor: '#34d399',
+    });
+  } else {
+    targetHost.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 240px; width: 100%;">
+        <svg width="240" height="120" viewBox="0 0 240 120">
+          <circle cx="120" cy="50" r="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4"/>
+          <text x="120" y="55" text-anchor="middle" font-size="11" fill="#3b82f6" font-weight="bold">空树或初始化</text>
+        </svg>
+        <span style="font-size: 11px; color: #64748b; margin-top: 8px;">准备计算二叉树最大深度...</span>
+      </div>
+    `;
+  }
 }
 
 // ============================================================
@@ -238,24 +334,21 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
   const depthsMap = new Map<number, number>();
   const L = TREE_DEPTH_STAGE1_LINES;
 
-  steps.push({
-    tree: root,
-    current: null,
-    leftDepth: 0,
-    rightDepth: 0,
-    maxDepth: 0,
-    depthsMap: new Map(depthsMap),
-    decision: '算法启动：初始化最大深度计算',
-    action: 'enter',
-    message: root
-      ? `求二叉树最大深度：从根节点 ${root.val} 开始后序自底向上高度归约。递推式: 1 + max(leftDepth, rightDepth)。`
-      : '空树，最大深度直接为 0。',
-    log: root ? `maxDepth(root: ${root.val})` : 'maxDepth(root: null) -> 0',
-    metrics: makeTDMetrics(null, 0, 0, 0),
-    codeLine: root ? L.entry : L.empty,
-  });
-
   if (!root) {
+    const traceSnapshot: CallTraceSnapshot = {
+      lines: [
+        {
+          id: 'null-root',
+          depth: 0,
+          text: 'maxDepth(null) -> 树为空 -> return 0',
+          kind: 'header',
+          comment: '<- 树为空',
+        },
+      ],
+      activeLineId: 'null-root',
+      finalResult: 0,
+    };
+
     steps.push({
       tree: null,
       current: null,
@@ -266,15 +359,86 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       decision: '特判返回：树为空',
       action: 'done',
       message: '树为空，返回深度 0。',
-      log: 'return 0',
+      log: 'root is null -> return 0',
       metrics: makeTDMetrics(null, 0, 0, 0),
       codeLine: L.empty,
+      callTrace: traceSnapshot,
     });
     return steps;
   }
 
-  function dfs(node: TreeNode | null): number {
-    if (!node) return 0;
+  const traceLines: CallTraceLine[] = [];
+
+  function makeSnapshot(activeLineId?: string, finalResult?: number): CallTraceSnapshot {
+    return {
+      lines: traceLines.map((l) => ({ ...l })),
+      activeLineId,
+      finalResult,
+    };
+  }
+
+  const rootHeaderId = `call-${root.val}`;
+  traceLines.push({
+    id: rootHeaderId,
+    depth: 0,
+    text: `maxDepth(${root.val})`,
+    kind: 'header',
+    comment: '<- 最终要算这个',
+  });
+
+  steps.push({
+    tree: root,
+    current: null,
+    leftDepth: 0,
+    rightDepth: 0,
+    maxDepth: 0,
+    depthsMap: new Map(depthsMap),
+    decision: '算法启动：初始化最大深度计算',
+    action: 'enter',
+    message: `求二叉树最大深度：从根节点 ${root.val} 开始后序自底向上高度归约。递推式: 1 + max(leftDepth, rightDepth)。`,
+    log: `maxDepth(root: ${root.val})`,
+    metrics: makeTDMetrics(null, 0, 0, 0),
+    codeLine: L.entry,
+    callTrace: makeSnapshot(rootHeaderId),
+  });
+
+  function dfs(node: TreeNode | null, depth: number, roleComment?: string): number {
+    if (!node) {
+      const lineId = `null-${depth}-${Math.random().toString(36).slice(2, 6)}`;
+      traceLines.push({
+        id: lineId,
+        depth: depth - 1,
+        text: '遇到空节点 null -> return 0',
+        kind: 'condition-skip',
+      });
+      steps.push({
+        tree: root,
+        current: null,
+        leftDepth: 0,
+        rightDepth: 0,
+        maxDepth: 0,
+        depthsMap: new Map(depthsMap),
+        decision: '空节点特判：返回深度 0',
+        action: 'empty-node',
+        message: '遇到空节点 null，返回深度 0。',
+        log: 'node is null -> return 0',
+        metrics: makeTDMetrics(null, 0, 0, 0),
+        codeLine: L.empty,
+        callTrace: makeSnapshot(lineId),
+      });
+      return 0;
+    }
+
+    const callLineId = `call-${node.val}`;
+    if (node !== root) {
+      traceLines.push({
+        id: callLineId,
+        depth: depth - 1,
+        text: `maxDepth(${node.val})`,
+        kind: 'header',
+        comment: roleComment,
+      });
+    }
 
     steps.push({
       tree: root,
@@ -289,10 +453,20 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       log: `visit node: ${node.val}`,
       metrics: makeTDMetrics(node.val, 0, 0, 0),
       codeLine: L.entry,
+      callTrace: makeSnapshot(callLineId),
     });
 
-    const l = dfs(node.left);
+    const passLineId = `pass-${node.val}`;
+    traceLines.push({
+      id: passLineId,
+      depth: depth - 1,
+      text: `① root=${node.val}, 非空`,
+      kind: 'condition-pass',
+    });
 
+    const l = dfs(node.left, depth + 1, '<- 先算左边');
+
+    const leftDoneId = `left-done-${node.val}`;
     steps.push({
       tree: root,
       current: node.val,
@@ -306,10 +480,12 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       log: `node ${node.val}: leftDepth = ${l}`,
       metrics: makeTDMetrics(node.val, l, 0, 0),
       codeLine: L.leftDone,
+      callTrace: makeSnapshot(leftDoneId),
     });
 
-    const r = dfs(node.right);
+    const r = dfs(node.right, depth + 1, '<- 再算右边');
 
+    const rightDoneId = `right-done-${node.val}`;
     steps.push({
       tree: root,
       current: node.val,
@@ -323,10 +499,21 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       log: `node ${node.val}: rightDepth = ${r}`,
       metrics: makeTDMetrics(node.val, l, r, 0),
       codeLine: L.rightDone,
+      callTrace: makeSnapshot(rightDoneId),
     });
 
     const curDepth = 1 + Math.max(l, r);
     depthsMap.set(node.val, curDepth);
+
+    const unwindLineId = `unwind-${node.val}`;
+    traceLines.push({
+      id: unwindLineId,
+      depth: depth - 1,
+      text: `回到 maxDepth(${node.val}): return 1 + max(${l}, ${r}) = ${curDepth}`,
+      kind: 'unwind-calc',
+      formula: `1 + max(${l}, ${r}) = ${curDepth}`,
+      status: 'done',
+    });
 
     steps.push({
       tree: root,
@@ -341,12 +528,22 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       log: `node ${node.val} maxDepth = 1 + max(${l}, ${r}) = ${curDepth}`,
       metrics: makeTDMetrics(node.val, l, r, curDepth),
       codeLine: L.returnDepth,
+      callTrace: makeSnapshot(unwindLineId),
     });
 
     return curDepth;
   }
 
-  const finalMax = dfs(root);
+  const finalMax = dfs(root, 1);
+
+  const finalResultId = `final-res-${root.val}`;
+  traceLines.push({
+    id: finalResultId,
+    depth: 0,
+    text: `🎉 最终结果: maxDepth(${root.val}) = ${finalMax}`,
+    kind: 'final-result',
+    status: 'done',
+  });
 
   steps.push({
     tree: root,
@@ -361,6 +558,7 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
     log: `done maxDepth=${finalMax}`,
     metrics: makeTDMetrics(root.val, 0, 0, finalMax),
     codeLine: L.done,
+    callTrace: makeSnapshot(finalResultId, finalMax),
   });
 
   return steps;

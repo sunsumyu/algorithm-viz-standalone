@@ -34,6 +34,50 @@ export const TREE_DEPTH_ANALYSIS_HTML = `
         3. <strong>递归求右子树深度：</strong> <code style="color: #fbbf24; font-family: monospace;">int rightDepth = maxDepth(root.right);</code>；<br/>
         4. <strong>当前节点高度归约：</strong> <code style="color: #34d399; font-family: monospace;">return 1 + Math.max(leftDepth, rightDepth);</code>。
         </p>
+
+        <div style="margin-top: 10px; background: #030712; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; line-height: 1.5; overflow-x: auto;">
+          <div style="color: #38bdf8; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <span>📜 经典示例 [3, 9, 20, null, null, 15, 7] 递归调用推演执行全景 (手抄本)</span>
+            <span style="font-size: 10px; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">Call-Tree Trace</span>
+          </div>
+          <pre style="margin: 0; font-family: inherit; color: #cbd5e1;"><span style="color: #38bdf8; font-weight: 700;">maxDepth(3)</span>                                    <span style="color: #64748b;">&lt;- 最终要算这个</span>
+|
+| <span style="color: #94a3b8;">① root=3, 非空</span>
+|
+|--- <span style="color: #38bdf8; font-weight: 700;">maxDepth(9)</span>                               <span style="color: #64748b;">&lt;- 先算左边</span>
+|    |
+|    | <span style="color: #94a3b8;">① root=9, 非空</span>
+|    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>           <span style="color: #64748b;">&lt;- 9的左孩子</span>
+|    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>           <span style="color: #64748b;">&lt;- 9的右孩子</span>
+|    <span style="color: #38bdf8;">回到 maxDepth(9): return 1 + max(0, 0) = 1</span>
+|    <span style="color: #fbbf24; font-weight: 700;">返回 1 ---</span>
+|
+|--- <span style="color: #38bdf8; font-weight: 700;">maxDepth(20)</span>                              <span style="color: #64748b;">&lt;- 再算右边</span>
+|    |
+|    | <span style="color: #94a3b8;">① root=20, 非空</span>
+|    |
+|    |--- <span style="color: #38bdf8; font-weight: 700;">maxDepth(15)</span>                          <span style="color: #64748b;">&lt;- 20的左孩子</span>
+|    |    |
+|    |    | <span style="color: #94a3b8;">① root=15, 非空</span>
+|    |    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>
+|    |    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>
+|    |    <span style="color: #38bdf8;">回到 maxDepth(15): return 1 + max(0, 0) = 1</span>
+|    |    <span style="color: #fbbf24; font-weight: 700;">返回 1 ---</span>
+|    |
+|    |--- <span style="color: #38bdf8; font-weight: 700;">maxDepth(7)</span>                           <span style="color: #64748b;">&lt;- 20的右孩子</span>
+|    |    |
+|    |    | <span style="color: #94a3b8;">① root=7, 非空</span>
+|    |    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>
+|    |    |--- <span style="color: #64748b;">maxDepth(null) -&gt; return 0</span>
+|    |    <span style="color: #38bdf8;">回到 maxDepth(7): return 1 + max(0, 0) = 1</span>
+|    |    <span style="color: #fbbf24; font-weight: 700;">返回 1 ---</span>
+|    |
+|    <span style="color: #38bdf8;">回到 maxDepth(20): return 1 + max(1, 1) = 2</span>
+|    <span style="color: #fbbf24; font-weight: 700;">返回 2 ---</span>
+|
+<span style="color: #38bdf8; font-weight: 700;">回到 maxDepth(3): return 1 + max(1, 2) = 3</span>
+<span style="color: #10b981; font-weight: 700;">最终返回 3 ✅</span></pre>
+        </div>
       </div>
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
         <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 复杂度分析</div>

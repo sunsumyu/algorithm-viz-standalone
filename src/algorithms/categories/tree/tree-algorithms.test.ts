@@ -86,10 +86,33 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       expect(lastStep.maxDepth).toBe(3);
     });
 
+    it('8.1 生成完整的递归调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildTDSteps(root);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.lines.length).toBeGreaterThan(5);
+      expect(lastStep.callTrace!.finalResult).toBe(3);
+
+      const stepsWithTrace = steps.filter((s) => s.callTrace != null);
+      expect(stepsWithTrace.length).toBe(steps.length);
+
+      const kinds = lastStep.callTrace!.lines.map((l) => l.kind);
+      expect(kinds).toContain('header');
+      expect(kinds).toContain('unwind-calc');
+    });
+
     it('9. 空树最大深度为 0', () => {
       const steps = buildTDSteps(null);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.maxDepth).toBe(0);
+    });
+
+    it('9.1 空树时生成正确的空快照', () => {
+      const steps = buildTDSteps(null);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.finalResult).toBe(0);
     });
   });
 

@@ -1219,14 +1219,21 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
         assertCodeLineWithinBounds(steps[i].codeLine, MIN_DEPTH_STAGE1_CODES, `MinDepth Stage 1 Step ${i}`);
       }
 
-      // 验证生命周期与关键帧序列覆盖（严禁代码行号冻结在单行）
+      // 验证生命周期与关键帧序列覆盖（严禁代码行号冻结在单行，100% 覆盖全部核心可执行行）
       const javaLines = steps.map((s) => s.codeLine.java);
       expect(javaLines).toContain(2); // entry
       expect(javaLines).toContain(3); // baseNull
       expect(javaLines).toContain(4); // baseLeaf
+      expect(javaLines).toContain(5); // leftNull
+      expect(javaLines).toContain(6); // rightNull
       expect(javaLines).toContain(7); // callLeft
       expect(javaLines).toContain(8); // callRight
       expect(javaLines).toContain(9); // returnMin
+      expect(javaLines).toContain(10); // done
+
+      // 严格一行一步不变量：Node(3) 前 6 步必须严密连续执行 [2, 3, 4, 5, 6, 7]，绝对杜绝 3 直接跳 7 的静默跳步！
+      const rootSequence = steps.slice(0, 6).map((s) => s.codeLine.java);
+      expect(rootSequence).toEqual([2, 3, 4, 5, 6, 7]);
 
       const last = steps[steps.length - 1];
       expect(last.minDepth).toBe(2);

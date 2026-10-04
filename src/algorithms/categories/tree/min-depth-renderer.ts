@@ -55,7 +55,7 @@ export const MIN_DEPTH_STAGE1_LINES = {
   callRight: { java: 8, cpp: 9, python: 12, javascript: 7 },
   returnMin: { java: 9, cpp: 10, python: 13, javascript: 8 },
   bothRecurse: { java: 9, cpp: 10, python: 13, javascript: 8 },
-  done: { java: 9, cpp: 10, python: 13, javascript: 8 },
+  done: { java: 10, cpp: 11, python: 13, javascript: 9 },
 };
 
 export const MIN_DEPTH_STAGE2_LINES = {
@@ -249,7 +249,7 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       return 1;
     }
 
-    // 非叶节点：输出不是叶子的说明
+    // 非叶节点：输出不是叶子的说明并显式高亮判定行 (Strict One-Line-One-Step)
     let childDesc = '';
     if (node.left && node.right) {
       childDesc = ' (有左右孩子)';
@@ -265,6 +265,21 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       depth: depth - 1,
       text: `② 不是叶子${childDesc}`,
       kind: 'condition-skip',
+    });
+
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      depth,
+      minDepth: null,
+      decision: `叶子判定：left == null && right == null 判定为 false${childDesc}，非叶子节点，继续向下特判`,
+      message: `Node(${node.val}) 存在孩子节点${childDesc}，继续检查单侧子树是否为空。`,
+      log: `Node(${node.val}) is not leaf${childDesc} -> continue`,
+      codeLine: lines.baseLeaf,
+      stageId: 'stage-1',
+      highlightedNodes: [node.val],
+      metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '叶子判定': '否' },
+      callTrace: makeSnapshot(notLeafLineId),
     });
 
     // 4. 单侧左为空特判
@@ -336,6 +351,29 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         callTrace: makeSnapshot(unwindLineId, res),
       });
       return res;
+    } else {
+      // 左子树非空：root.left == null 判定为 false，显式产生判定帧
+      const skipLeftId = `skip-left-${node.val}`;
+      traceLines.push({
+        id: skipLeftId,
+        depth: depth - 1,
+        text: `③ left != null (是${node.left!.val}), 跳过`,
+        kind: 'condition-skip',
+      });
+      steps.push({
+        tree: cloneStateDepTree(root),
+        current: node.val,
+        depth,
+        minDepth: null,
+        decision: `单侧检查：root.left == null 判定为 false (左孩子是 Node(${node.left!.val}))，跳过左空分支`,
+        message: `Node(${node.val}) 左子树存在，继续检查右子树是否为空。`,
+        log: `Node(${node.val}) left != null -> continue`,
+        codeLine: lines.leftNull,
+        stageId: 'stage-1',
+        highlightedNodes: [node.val, node.left!.val],
+        metrics: { '当前节点': `Node(${node.val})`, '左孩子': `Node(${node.left!.val})`, '左空特判': '未触发' },
+        callTrace: makeSnapshot(skipLeftId),
+      });
     }
 
     // 5. 单侧右为空特判
@@ -344,7 +382,7 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       traceLines.push({
         id: rightNullLineId,
         depth: depth - 1,
-        text: `③ root.right == null √ 命中!`,
+        text: `④ root.right == null √ 命中!`,
         kind: 'condition-hit',
       });
       traceLines.push({
@@ -407,23 +445,32 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
         callTrace: makeSnapshot(unwindLineId, res),
       });
       return res;
+    } else {
+      // 右子树亦非空：root.right == null 判定为 false，显式产生判定帧
+      const skipRightId = `skip-right-${node.val}`;
+      traceLines.push({
+        id: skipRightId,
+        depth: depth - 1,
+        text: `④ right != null (是${node.right!.val}), 跳过`,
+        kind: 'condition-skip',
+      });
+      steps.push({
+        tree: cloneStateDepTree(root),
+        current: node.val,
+        depth,
+        minDepth: null,
+        decision: `单侧检查：root.right == null 判定为 false (右孩子是 Node(${node.right!.val}))，两侧均非空`,
+        message: `Node(${node.val}) 两侧子树均非空，跳过单侧特判分支，准备进入双分支独立递归。`,
+        log: `Node(${node.val}) right != null -> continue`,
+        codeLine: lines.rightNull,
+        stageId: 'stage-1',
+        highlightedNodes: [node.val, node.right!.val],
+        metrics: { '当前节点': `Node(${node.val})`, '右孩子': `Node(${node.right!.val})`, '右空特判': '未触发' },
+        callTrace: makeSnapshot(skipRightId),
+      });
     }
 
     // 6. 左右均非空：先准备深入左子树
-    const skipLeftId = `skip-left-${node.val}`;
-    traceLines.push({
-      id: skipLeftId,
-      depth: depth - 1,
-      text: `③ left != null (是${node.left!.val}), 跳过`,
-      kind: 'condition-skip',
-    });
-    const skipRightId = `skip-right-${node.val}`;
-    traceLines.push({
-      id: skipRightId,
-      depth: depth - 1,
-      text: `④ right != null (是${node.right!.val}), 跳过`,
-      kind: 'condition-skip',
-    });
     const prepBothId = `prep-both-${node.val}`;
     traceLines.push({
       id: prepBothId,
@@ -437,8 +484,8 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       current: node.val,
       depth,
       minDepth: null,
-      decision: `Node(${node.val}) 左右子树均非空：首先发起左子树求解 minDepth(root.left)`,
-      message: `后序遍历顺序：先深入求解左子树，暂存 leftDepth。`,
+      decision: `Node(${node.val}) 深入左子树求解：int leftDepth = minDepth(root.left)`,
+      message: `后序遍历顺序：首先深入求解左子树 Node(${node.left!.val})。`,
       log: `Node(${node.val}): call minDepth(left=${node.left!.val})`,
       codeLine: lines.callLeft,
       stageId: 'stage-1',
@@ -449,26 +496,59 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
 
     const leftVal = dfs(node.left, depth + 1, '<- 先算左边');
 
-    // 7. 左子树就绪，接下来深入右子树
+    // 7. 左子树就绪，接收返回值帧 (Line 7 闭环赋值)
     steps.push({
       tree: cloneStateDepTree(root),
       current: node.val,
       depth,
       minDepth: null,
-      decision: `Node(${node.val}) 左子树求解完成 (leftDepth=${leftVal})，接下来发起右子树求解 minDepth(root.right)`,
-      message: `后序遍历顺序：左子树已返回 ${leftVal}，现在深入求解右子树。`,
-      log: `Node(${node.val}): leftDepth=${leftVal}, call minDepth(right=${node.right!.val})`,
+      decision: `Node(${node.val}) 左子树求解完成：leftDepth = ${leftVal}，赋值就绪`,
+      message: `后序遍历：左子树已返回最小深度 ${leftVal}，存储至 leftDepth。准备深入右子树。`,
+      log: `Node(${node.val}): leftDepth=${leftVal}`,
+      codeLine: lines.callLeft,
+      stageId: 'stage-1',
+      highlightedNodes: [node.val, node.left!.val],
+      metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, '探索分支': '左子树就绪' },
+      callTrace: makeSnapshot(prepBothId),
+    });
+
+    // 8. 接下来深入右子树 (Line 8 发起调用帧)
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      depth,
+      minDepth: null,
+      decision: `Node(${node.val}) 深入右子树求解：int rightDepth = minDepth(root.right)`,
+      message: `后序遍历顺序：接下来深入求解右子树 Node(${node.right!.val})。`,
+      log: `Node(${node.val}): call minDepth(right=${node.right!.val})`,
       codeLine: lines.callRight,
       stageId: 'stage-1',
       highlightedNodes: [node.val, node.right!.val],
-      metrics: { '当前节点': `Node(${node.val})`, '左子树深度': leftVal, '探索分支': '右子树' },
+      metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, '探索分支': '右子树' },
       callTrace: makeSnapshot(prepBothId),
     });
 
     const rightVal = dfs(node.right, depth + 1, '<- 再算右边');
+
+    // 9. 右子树就绪，接收返回值帧 (Line 8 闭环赋值)
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      depth,
+      minDepth: null,
+      decision: `Node(${node.val}) 右子树求解完成：rightDepth = ${rightVal}，赋值就绪`,
+      message: `后序遍历：右子树已返回最小深度 ${rightVal}，存储至 rightDepth。左右子树均就绪，准备后序归约。`,
+      log: `Node(${node.val}): rightDepth=${rightVal}`,
+      codeLine: lines.callRight,
+      stageId: 'stage-1',
+      highlightedNodes: [node.val, node.right!.val],
+      metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, 'rightDepth': rightVal },
+      callTrace: makeSnapshot(prepBothId),
+    });
+
     const res = Math.min(leftVal, rightVal) + 1;
 
-    // 8. 左右齐备，后序自底向上归约
+    // 10. 左右齐备，后序自底向上归约 (Line 9 计算返回帧)
     const unwindBothId = `unwind-both-${node.val}`;
     traceLines.push({
       id: unwindBothId,
@@ -482,7 +562,7 @@ export function buildMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] 
       current: node.val,
       depth,
       minDepth: res,
-      decision: `Node(${node.val}) 左右归约：min(${leftVal}, ${rightVal}) + 1 = ${res}`,
+      decision: `Node(${node.val}) 左右归约：Math.min(${leftVal}, ${rightVal}) + 1 = ${res}`,
       message: `子树合并完成：Node(${node.val}) 左深=${leftVal}, 右深=${rightVal}，最小深度收敛至 ${res}。`,
       log: `Node(${node.val}) returns min(${leftVal}, ${rightVal}) + 1 = ${res}`,
       codeLine: lines.returnMin,
