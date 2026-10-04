@@ -216,3 +216,128 @@ export class RecursiveCallTraceAdapter {
     }
   }
 }
+
+/**
+ * 递归调用树建造者 (RecursiveCallTraceBuilder - Builder Pattern)
+ * 职责：
+ * 封装递归生命周期的推演行构建、自增 ID 生成、活跃高亮行管理与快照不可变性深拷贝。
+ */
+export class RecursiveCallTraceBuilder {
+  private lines: CallTraceLine[] = [];
+  private activeLineId?: string;
+  private currentFinalResult?: number | string;
+  private counter: number = 0;
+
+  constructor(initialLines: CallTraceLine[] = []) {
+    this.lines = initialLines.map((l) => ({ ...l }));
+    if (initialLines.length > 0) {
+      this.activeLineId = initialLines[initialLines.length - 1].id;
+    }
+  }
+
+  private nextId(prefix: string): string {
+    this.counter += 1;
+    return `${prefix}-${this.counter}`;
+  }
+
+  /** 添加函数入口/调用头节点 */
+  public addHeader(text: string, depth: number, comment?: string, customId?: string): string {
+    const id = customId || this.nextId('hdr');
+    this.lines.push({ id, depth, text, kind: 'header', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加条件判定通过行 (如: root != null, left != right) */
+  public addConditionPass(text: string, depth: number, comment?: string): string {
+    const id = this.nextId('pass');
+    this.lines.push({ id, depth, text, kind: 'condition-pass', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加条件判定跳过行 */
+  public addConditionSkip(text: string, depth: number, comment?: string): string {
+    const id = this.nextId('skip');
+    this.lines.push({ id, depth, text, kind: 'condition-skip', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加条件命中基底/特判分支行 (如: null == null √ 命中) */
+  public addConditionHit(text: string, depth: number, comment?: string): string {
+    const id = this.nextId('hit');
+    this.lines.push({ id, depth, text, kind: 'condition-hit', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加递归子调用前序准备/发起行 (如: outside = check(...)) */
+  public addRecursePrep(text: string, depth: number, comment?: string): string {
+    const id = this.nextId('prep');
+    this.lines.push({ id, depth, text, kind: 'recurse-prep', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加叶子/基底返回值行 */
+  public addReturnLeaf(text: string, depth: number, comment?: string): string {
+    const id = this.nextId('ret');
+    this.lines.push({ id, depth, text, kind: 'return-leaf', comment });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加后序归约计算行 (如: return 1 + max(l, r), return outside && inside) */
+  public addUnwindCalc(text: string, depth: number, comment?: string, formula?: string): string {
+    const id = this.nextId('calc');
+    this.lines.push({ id, depth, text, kind: 'unwind-calc', comment, formula });
+    this.activeLineId = id;
+    return id;
+  }
+
+  /** 添加最终结算行 */
+  public addFinalResult(text: string, depth: number, comment?: string, finalResult?: number | string): string {
+    const id = this.nextId('final');
+    this.lines.push({ id, depth, text, kind: 'final-result', comment });
+    this.activeLineId = id;
+    if (finalResult !== undefined) {
+      this.currentFinalResult = finalResult;
+    }
+    return id;
+  }
+
+  /** 添加底层原始行 */
+  public addLine(line: CallTraceLine): string {
+    this.lines.push({ ...line });
+    this.activeLineId = line.id;
+    return line.id;
+  }
+
+  /** 设置当前活跃高亮行 ID */
+  public setActiveLineId(id?: string): this {
+    this.activeLineId = id;
+    return this;
+  }
+
+  /** 设置最终推演结果值 */
+  public setFinalResult(res?: number | string): this {
+    this.currentFinalResult = res;
+    return this;
+  }
+
+  /** 产生不可变的快照副本 (Snapshot) */
+  public snapshot(activeLineId?: string, finalResult?: number | string): CallTraceSnapshot {
+    return {
+      lines: this.lines.map((l) => ({ ...l })),
+      activeLineId: activeLineId !== undefined ? activeLineId : this.activeLineId,
+      finalResult: finalResult !== undefined ? finalResult : this.currentFinalResult,
+    };
+  }
+
+  /** 获取当前已记录的推演总行数 */
+  public get length(): number {
+    return this.lines.length;
+  }
+}
+

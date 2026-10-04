@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   RecursiveCallTraceAdapter,
+  RecursiveCallTraceBuilder,
   CallTraceSnapshot,
 } from './recursive-call-trace-adapter';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
@@ -118,4 +119,29 @@ describe('RecursiveCallTraceAdapter (Deep Module)', () => {
     expect(terminal.innerHTML).not.toContain('background: #ef4444');
     expect(terminal.innerHTML).not.toContain('background: #020617');
   });
+
+  it('RecursiveCallTraceBuilder 建造者模式应精准构建调用树快照并保证深拷贝隔离', () => {
+    const builder = new RecursiveCallTraceBuilder();
+    const h1 = builder.addHeader('isSymmetric(root)', 0, '<- 根调用');
+    expect(h1).toBe('hdr-1');
+
+    builder.addConditionPass('① root != null', 0);
+    const p1 = builder.addRecursePrep('outside = check(left.left, right.right)', 0);
+    expect(builder.length).toBe(3);
+
+    const snap1 = builder.snapshot();
+    expect(snap1.lines.length).toBe(3);
+    expect(snap1.activeLineId).toBe(p1);
+
+    // 追加子调用
+    builder.addHeader('check(2, 2)', 1, '<- 深入子节点');
+    builder.addConditionHit('① 左右均为空 -> 对称', 1);
+    builder.addReturnLeaf('return true', 1);
+
+    const snap2 = builder.snapshot();
+    expect(snap2.lines.length).toBe(6);
+    // snap1 不应被 snap2 修改（深拷贝不可变契约）
+    expect(snap1.lines.length).toBe(3);
+  });
 });
+
