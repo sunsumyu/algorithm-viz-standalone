@@ -84,41 +84,54 @@ function makeTDMetrics(curNode: number | null, lDepth: number, rDepth: number, m
   };
 }
 
-/** 缓冲器 1：Stage 1 后序左右深度比对与各节点已归约映射表 */
-function renderStage1BufferHtml(step: TDStep): string {
+/** 缓冲器 1：Stage 1 后序左右深度比对、已归约映射表与浅色递归推演树 */
+function renderStage1CustomMetrics(container: HTMLElement, step: TDStep): void {
   const depthBadges =
     step.depthsMap.size > 0
       ? Array.from(step.depthsMap.entries())
           .map(
             ([val, d]) => `
-          <div style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
-            <span style="font-weight: 700; color: #166534; font-size: 11px;">节点 ${val}:</span>
-            <span style="font-family: monospace; font-size: 11px; color: #15803d; font-weight: 700;">深度 = ${d}</span>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 2px 7px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px;">
+            <span style="font-weight: 700; color: #166534; font-size: 10.5px;">节点 ${val}:</span>
+            <span style="font-family: monospace; font-size: 10.5px; color: #15803d; font-weight: 700;">深=${d}</span>
           </div>`
           )
           .join('')
-      : '<span style="color:#94a3b8; font-size:11px; font-style:italic;">等待首个叶子节点深度归约...</span>';
+      : '<span style="color:#94a3b8; font-size: 10.5px; font-style:italic;">等待首个叶节点深度归约...</span>';
 
-  return `
-    <div style="display: flex; flex-direction: column; gap: 8px;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-        <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-          <span style="font-size: 10.5px; color: #64748b;">左子树深度 (leftDepth):</span>
-          <div style="font-weight: 700; font-size: 13px; color: #2563eb;">${step.leftDepth}</div>
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; height: 100%; gap: 6px; font-size: 11px;">
+      <div style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; color: #64748b;">左深 (leftDepth):</span>
+            <span style="font-weight: 700; font-size: 12px; color: #2563eb;">${step.leftDepth}</span>
+          </div>
+          <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; color: #64748b;">右深 (rightDepth):</span>
+            <span style="font-weight: 700; font-size: 12px; color: #0d9488;">${step.rightDepth}</span>
+          </div>
         </div>
-        <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-          <span style="font-size: 10.5px; color: #64748b;">右子树深度 (rightDepth):</span>
-          <div style="font-weight: 700; font-size: 13px; color: #0d9488;">${step.rightDepth}</div>
-        </div>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <span style="font-size: 11px; font-weight: 700; color: #334155;">各节点已归约深度 (自底向上):</span>
-        <div style="display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 6px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; align-items: center;">
+          <span style="font-size: 10px; font-weight: 700; color: #64748b; margin-right: 2px;">已归约:</span>
           ${depthBadges}
         </div>
       </div>
+      <div class="td-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
     </div>
   `;
+
+  if (step.callTrace) {
+    const traceHost = container.querySelector('.td-trace-host') as HTMLElement | null;
+    if (traceHost) {
+      RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+        title: '📜 递归调用推演与归约栈',
+        theme: 'light',
+        maxHeight: '100%',
+        showTerminalHeader: true,
+      });
+    }
+  }
 }
 
 /** 缓冲器 2：Stage 2 层次遍历 FIFO 队列监视器 */
@@ -221,100 +234,24 @@ export function collectTreeValues(node: TreeNode | null): number[] {
 }
 
 /** 统一画布呈现（支持二叉树拓扑与递归推演树双重视角） */
-let currentViewMode: 'tree' | 'trace' = 'tree';
-
 function renderTreeDepthCanvasForStep(container: HTMLElement, step: TDStep, primaryColor: string = '#fbbf24'): void {
   const isDone = step.action === 'done';
   const allTreeVals = collectTreeValues(step.tree);
   const resolvedNodes = isDone ? allTreeVals : Array.from(step.depthsMap.keys());
   const current = isDone && step.current === null && step.tree ? step.tree.val : step.current;
 
-  const hasTrace = step.callTrace != null;
-
-  let viewHost: HTMLElement | null = null;
-
-  if (hasTrace) {
-    let toggleBar = container.querySelector<HTMLElement>('.tree-depth-view-toggle');
-    if (!toggleBar) {
-      container.innerHTML = `
-        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
-          <div class="tree-depth-view-toggle" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 8px; padding-right: 4px;">
-            <div style="font-size: 11px; color: #64748b; font-weight: 500; margin-right: 4px;">推演沙盘视角:</div>
-            <div style="display: inline-flex; border-radius: 6px; background: #0f172a; padding: 2px; border: 1px solid #1e293b;">
-              <button class="btn-view-tree" style="padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;">
-                🌲 二叉树拓扑
-              </button>
-              <button class="btn-view-trace" style="padding: 2px 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;">
-                📜 递归推演树
-              </button>
-            </div>
-          </div>
-          <div class="tree-depth-view-host" style="flex: 1; width: 100%; min-height: 240px; display: flex; align-items: center; justify-content: center;"></div>
-        </div>
-      `;
-      toggleBar = container.querySelector<HTMLElement>('.tree-depth-view-toggle');
-    }
-
-    viewHost = container.querySelector<HTMLElement>('.tree-depth-view-host');
-
-    const btnTree = container.querySelector<HTMLButtonElement>('.btn-view-tree');
-    const btnTrace = container.querySelector<HTMLButtonElement>('.btn-view-trace');
-
-    if (btnTree && btnTrace) {
-      btnTree.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        currentViewMode = 'tree';
-        renderTreeDepthCanvasForStep(container, step, primaryColor);
-      };
-
-      btnTrace.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        currentViewMode = 'trace';
-        renderTreeDepthCanvasForStep(container, step, primaryColor);
-      };
-
-      if (currentViewMode === 'trace') {
-        btnTrace.style.background = '#0284c7';
-        btnTrace.style.color = '#ffffff';
-        btnTrace.style.borderColor = '#38bdf8';
-        btnTree.style.background = 'transparent';
-        btnTree.style.color = '#94a3b8';
-        btnTree.style.borderColor = 'transparent';
-      } else {
-        btnTree.style.background = '#0284c7';
-        btnTree.style.color = '#ffffff';
-        btnTree.style.borderColor = '#38bdf8';
-        btnTrace.style.background = 'transparent';
-        btnTrace.style.color = '#94a3b8';
-        btnTrace.style.borderColor = 'transparent';
-      }
-    }
-  } else {
-    container.innerHTML = `<div class="tree-depth-view-host" style="width: 100%; height: 100%;"></div>`;
-    viewHost = container.querySelector<HTMLElement>('.tree-depth-view-host');
-  }
-
-  const targetHost = viewHost || container;
-
-  if (hasTrace && currentViewMode === 'trace') {
-    RecursiveCallTraceAdapter.render(targetHost, step.callTrace || null, {
-      title: '🌳 递归调用推演跟踪树 (Call-Tree Trace)',
-      maxHeight: '340px',
-    });
-  } else if (step.tree) {
-    TreeCanvasAdapter.renderTree(targetHost, {
+  if (step.tree) {
+    TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
       current,
       secondaryHighlightedNodes: step.queue || resolvedNodes,
       visitedNodes: resolvedNodes,
-      primaryColor: '#fbbf24',
+      primaryColor,
       secondaryColor: '#60a5fa',
       visitedColor: '#34d399',
     });
   } else {
-    targetHost.innerHTML = `
+    container.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 240px; width: 100%;">
         <svg width="240" height="120" viewBox="0 0 240 120">
           <circle cx="120" cy="50" r="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4"/>
@@ -1061,7 +998,7 @@ export const treeDepthVisualizer = registerDeclarativeAlgorithm<TDStep>({
       },
       renderCanvas: (container: HTMLElement, step: TDStep) => renderTreeDepthCanvasForStep(container, step, '#fbbf24'),
       renderCustomMetrics: (container: HTMLElement, step: TDStep) => {
-        container.innerHTML = renderStage1BufferHtml(step);
+        renderStage1CustomMetrics(container, step);
       },
     },
     {

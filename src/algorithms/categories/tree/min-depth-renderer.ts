@@ -915,78 +915,9 @@ export function buildMinDepthSteps(root: TreeNode | null): MinDepthStep[] {
 // 表现层渲染 (Render Canvas & Metrics)
 // =========================================================================
 export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep): void {
-  // 仅在 Stage 1 且有调用跟踪数据时激活双重视角切换
-  const hasTrace = !!step.callTrace;
-  const currentViewMode = container.dataset.viewMode || 'tree';
-
-  // 保证容器结构：顶部切换栏 + 主渲染宿主
-  let toggleBar = container.querySelector<HTMLElement>('.min-depth-view-toggle-bar');
-  let viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
-
-  if (hasTrace) {
-    if (!toggleBar || !viewHost) {
-      container.innerHTML = `
-        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
-          <div class="min-depth-view-toggle-bar" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 4px 8px; margin-bottom: 6px; background: rgba(15, 23, 42, 0.4); border: 1px solid #1e293b; border-radius: 6px;">
-            <span style="font-size: 11px; color: #64748b; margin-right: auto; font-family: 'JetBrains Mono', monospace;">Card 1 视图模式:</span>
-            <button id="btn-view-tree" type="button" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;">🌲 二叉树拓扑</button>
-            <button id="btn-view-trace" type="button" style="padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s;">📜 递归推演树</button>
-          </div>
-          <div class="min-depth-view-host" style="flex: 1; min-height: 0; width: 100%; position: relative;"></div>
-        </div>
-      `;
-      toggleBar = container.querySelector<HTMLElement>('.min-depth-view-toggle-bar');
-      viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
-
-      const btnTree = container.querySelector<HTMLButtonElement>('#btn-view-tree');
-      const btnTrace = container.querySelector<HTMLButtonElement>('#btn-view-trace');
-
-      btnTree?.addEventListener('click', () => {
-        container.dataset.viewMode = 'tree';
-        renderMinDepthCanvas(container, step);
-      });
-      btnTrace?.addEventListener('click', () => {
-        container.dataset.viewMode = 'trace';
-        renderMinDepthCanvas(container, step);
-      });
-    }
-
-    // 更新按钮样式
-    const btnTree = container.querySelector<HTMLButtonElement>('#btn-view-tree');
-    const btnTrace = container.querySelector<HTMLButtonElement>('#btn-view-trace');
-    if (btnTree && btnTrace) {
-      if (currentViewMode === 'trace') {
-        btnTrace.style.background = '#0284c7';
-        btnTrace.style.color = '#ffffff';
-        btnTrace.style.borderColor = '#38bdf8';
-        btnTree.style.background = 'transparent';
-        btnTree.style.color = '#94a3b8';
-        btnTree.style.borderColor = 'transparent';
-      } else {
-        btnTree.style.background = '#0284c7';
-        btnTree.style.color = '#ffffff';
-        btnTree.style.borderColor = '#38bdf8';
-        btnTrace.style.background = 'transparent';
-        btnTrace.style.color = '#94a3b8';
-        btnTrace.style.borderColor = 'transparent';
-      }
-    }
-  } else {
-    // Stage 2 或 Stage 3：无需切换条，直接由 viewHost 接管
-    container.innerHTML = `<div class="min-depth-view-host" style="width: 100%; height: 100%;"></div>`;
-    viewHost = container.querySelector<HTMLElement>('.min-depth-view-host');
-  }
-
-  const targetHost = viewHost || container;
-
-  // 渲染主体内容
-  if (hasTrace && currentViewMode === 'trace') {
-    RecursiveCallTraceAdapter.render(targetHost, step.callTrace || null, {
-      title: '🌳 递归调用推演跟踪树 (Call-Tree Trace)',
-      maxHeight: '340px',
-    });
-  } else if (step.tree) {
-    TreeCanvasAdapter.renderTree(targetHost, {
+  // 1. Card 1 纯粹画布渲染 (零多余切换条、零嵌套卡片，100% 呈现二叉树拓扑沙盘)
+  if (step.tree) {
+    TreeCanvasAdapter.renderTree(container, {
       tree: step.tree,
       current: step.current,
       highlightedNodes: step.highlightedNodes,
@@ -995,7 +926,7 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
       visitedColor: '#34d399',
     });
   } else {
-    targetHost.innerHTML = `
+    container.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 240px; width: 100%;">
         <svg width="240" height="120" viewBox="0 0 240 120">
           <circle cx="120" cy="50" r="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4"/>
@@ -1006,6 +937,7 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
     `;
   }
 
+  // 2. Card 2 状态监视器与递归推演树联动
   const root = container.closest('#algo-min-depth-view') || container.parentElement;
   if (root) {
     const curEl = root.querySelector('#metric-cur');
@@ -1016,56 +948,78 @@ export function renderMinDepthCanvas(container: HTMLElement, step: MinDepthStep)
     if (depthEl) depthEl.textContent = `${step.depth}`;
     if (resultEl) resultEl.textContent = step.minDepth != null ? `${step.minDepth}` : '计算中...';
 
-    const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
+    const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container') as HTMLElement | null;
     if (customMetricsContainer) {
-      let stateLabel = '递归调用深度';
-      let stateContent = `${step.depth}`;
+      if (step.callTrace) {
+        // Stage 1 递归推演模式：上方紧凑节点深度指标，下方嵌入浅色优雅递归推演栈
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; height: 100%; gap: 6px; font-size: 11px; padding: 2px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex-shrink: 0;">
+              <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 10px; color: #64748b;">考察节点:</span>
+                <span style="font-weight: 700; font-size: 11.5px; color: #0d9488;">${step.current != null ? `Node(${step.current})` : '已收敛'}</span>
+              </div>
+              <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 10px; color: #64748b;">递归深度:</span>
+                <span style="font-weight: 700; font-size: 11.5px; color: #2563eb;">${step.depth}</span>
+              </div>
+            </div>
+            <div class="min-depth-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
+          </div>
+        `;
 
-      if (step.staticQueueState) {
-        stateLabel = `静态数组队列 [l=${step.staticQueueState.l}, r=${step.staticQueueState.r}]`;
-        stateContent =
-          step.staticQueueState.queue.length > 0
-            ? `[${step.staticQueueState.queue.join(' ➔ ')}]`
-            : '队列为空 []';
-      } else if (step.queueState) {
-        stateLabel = `BFS 队列 (${step.queueState.length})`;
-        stateContent =
-          step.queueState.length > 0
-            ? `[${step.queueState.map((id) => `Node(${id})`).join(' ➔ ')}]`
-            : '队列为空 []';
-      }
-
-      let activeCallAction = step.decision;
-      if (step.callTrace?.activeLineId) {
-        const curLine = step.callTrace.lines.find((l) => l.id === step.callTrace!.activeLineId);
-        if (curLine) {
-          activeCallAction = `${curLine.text} ${curLine.comment || ''}`.trim();
+        const traceHost = customMetricsContainer.querySelector('.min-depth-trace-host') as HTMLElement | null;
+        if (traceHost) {
+          RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+            title: '📜 递归调用推演与归约栈',
+            theme: 'light',
+            maxHeight: '100%',
+            showTerminalHeader: true,
+          });
         }
+      } else {
+        // Stage 2 或 Stage 3：层序 BFS 队列或静态数组队列监视器
+        let stateLabel = '递归调用深度';
+        let stateContent = `${step.depth}`;
+
+        if (step.staticQueueState) {
+          stateLabel = `静态数组队列 [l=${step.staticQueueState.l}, r=${step.staticQueueState.r}]`;
+          stateContent =
+            step.staticQueueState.queue.length > 0
+              ? `[${step.staticQueueState.queue.join(' ➔ ')}]`
+              : '队列为空 []';
+        } else if (step.queueState) {
+          stateLabel = `BFS 队列 (${step.queueState.length})`;
+          stateContent =
+            step.queueState.length > 0
+              ? `[${step.queueState.map((id) => `Node(${id})`).join(' ➔ ')}]`
+              : '队列为空 []';
+        }
+
+        customMetricsContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #475569; padding: 6px 0;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+              <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <span style="font-size: 10.5px; color: #64748b;">${stateLabel}:</span>
+                <div style="font-weight: 700; font-size: 11.5px; color: #2563eb; overflow-x: auto; white-space: nowrap;">
+                  ${stateContent}
+                </div>
+              </div>
+              <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <span style="font-size: 10.5px; color: #64748b;">当前考察节点:</span>
+                <div style="font-weight: 700; font-size: 12px; color: #0d9488;">
+                  ${step.current != null ? `Node(${step.current})` : '已收敛'}
+                </div>
+              </div>
+            </div>
+
+            <div style="padding: 8px 10px; background: #f1f5f9; border-radius: 6px;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${step.decision}</div>
+              <div>${step.message}</div>
+            </div>
+          </div>
+        `;
       }
-
-      customMetricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #475569; padding: 6px 0;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-              <span style="font-size: 10.5px; color: #64748b;">${stateLabel}:</span>
-              <div style="font-weight: 700; font-size: 11.5px; color: #2563eb; overflow-x: auto; white-space: nowrap;">
-                ${stateContent}
-              </div>
-            </div>
-            <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-              <span style="font-size: 10.5px; color: #64748b;">当前考察节点:</span>
-              <div style="font-weight: 700; font-size: 12px; color: #0d9488;">
-                ${step.current != null ? `Node(${step.current})` : '已收敛'}
-              </div>
-            </div>
-          </div>
-
-          <div style="padding: 8px 10px; background: #f1f5f9; border-radius: 6px;">
-            <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${activeCallAction}</div>
-            <div>${step.message}</div>
-          </div>
-        </div>
-      `;
     }
   }
 }
