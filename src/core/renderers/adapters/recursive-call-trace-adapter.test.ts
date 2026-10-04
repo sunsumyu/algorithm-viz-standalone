@@ -99,4 +99,23 @@ describe('RecursiveCallTraceAdapter (Deep Module)', () => {
     expect(traceTexts.some((t) => t.includes('回到 minDepth(1)'))).toBe(true);
     expect(traceTexts.some((t) => t.includes('最终返回 2'))).toBe(true);
   });
+
+  it('支持浅色模式 (Light Theme) 并使用符合 Card 2 风格的明亮优雅样式', () => {
+    const snapshot: CallTraceSnapshot = {
+      lines: [
+        { id: 'l1', depth: 0, text: 'maxDepth(3)', kind: 'header' },
+        { id: 'l2', depth: 1, text: 'return 1 + max(1, 2) = 3', kind: 'unwind-calc' },
+      ],
+      activeLineId: 'l2',
+    };
+
+    RecursiveCallTraceAdapter.render(container, snapshot, { theme: 'light' });
+    const terminal = container.querySelector('.rct-terminal-container') as HTMLElement;
+    expect(terminal).not.toBeNull();
+    expect(terminal.getAttribute('style')).toContain('background: #ffffff');
+    expect(terminal.getAttribute('style')).toContain('border: 1px solid #e2e8f0');
+    // 浅色模式下不应含有仿 macOS 红黄绿圆点
+    expect(terminal.innerHTML).not.toContain('background: #ef4444');
+    expect(terminal.innerHTML).not.toContain('background: #020617');
+  });
 });

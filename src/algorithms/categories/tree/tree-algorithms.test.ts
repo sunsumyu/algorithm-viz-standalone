@@ -102,6 +102,28 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       expect(kinds).toContain('unwind-calc');
     });
 
+    it('8.2 严格一行一步与五段式生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildTDSteps(root);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // nullCheck
+      expect(javaLines).toContain(4); // callLeft / leftDone
+      expect(javaLines).toContain(5); // callRight / rightDone
+      expect(javaLines).toContain(6); // returnDepth
+      expect(javaLines).toContain(7); // done
+
+      const firstLines = steps.slice(0, 4).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(firstLines).toEqual([2, 2, 3, 4]);
+
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('call-left');
+      expect(actions).toContain('left-done');
+      expect(actions).toContain('call-right');
+      expect(actions).toContain('right-done');
+    });
+
     it('9. 空树最大深度为 0', () => {
       const steps = buildTDSteps(null);
       const lastStep = steps[steps.length - 1];

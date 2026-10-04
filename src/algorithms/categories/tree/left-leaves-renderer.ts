@@ -174,10 +174,72 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
   function dfs(node: TreeNode | null, depth: number): number {
     if (!node) return 0;
 
-    let leftSum = 0;
+    // 1. 函数入口帧 (Line 2)
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      sum: currentSum,
+      depth,
+      decision: `递归进入 sumOfLeftLeaves(root = Node(${node.val}))`,
+      message: `考察节点 Node(${node.val})，当前所处深度层级为 ${depth}。`,
+      log: `Enter sumOfLeftLeaves(node=${node.val}) at depth ${depth}`,
+      codeLine: lines.entry,
+      stageId: 'stage-1',
+      leftNodes: new Set(leftNodes),
+      metrics: {
+        '当前考察节点': `Node(${node.val})`,
+        '当前深度': depth,
+        '左叶子之和': currentSum,
+      },
+      statusBadge: { text: `进入: ${node.val}`, type: 'info' },
+    });
 
-    // 前瞻判定：检查当前节点的左孩子是否恰好为叶子节点
-    if (node.left && !node.left.left && !node.left.right) {
+    // 2. 判空检查 (Line 3: root == null 判定为 false)
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      sum: currentSum,
+      depth,
+      decision: `判空检查：root == null 判定为 false，继续向下判断`,
+      message: `Node(${node.val}) 存在，继续执行前瞻条件检查。`,
+      log: `node ${node.val} != null -> continue`,
+      codeLine: lines.baseNull,
+      stageId: 'stage-1',
+      leftNodes: new Set(leftNodes),
+      metrics: {
+        '当前考察节点': `Node(${node.val})`,
+        '判空结果': '非空',
+        '左叶子之和': currentSum,
+      },
+      statusBadge: { text: '节点非空', type: 'info' },
+    });
+
+    let leftSum = 0;
+    const isLeftLeaf = !!(node.left && !node.left.left && !node.left.right);
+
+    // 3. 左叶子前瞻判定 (Line 5: if (root.left != null && root.left.left == null && root.left.right == null))
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      sum: currentSum,
+      depth,
+      decision: `左叶子前瞻判定：检查 Node(${node.val}) 的左孩子是否为叶子节点`,
+      message: `检查左孩子：${node.left ? `Node(${node.left.val})` : 'null'}，判定结果：${isLeftLeaf ? '成立！命中左叶子' : '不成立'}。`,
+      log: `check left leaf of node ${node.val} -> ${isLeftLeaf}`,
+      codeLine: lines.checkLeftLeaf,
+      stageId: 'stage-1',
+      leftNodes: new Set(leftNodes),
+      secondaryHighlightedNodes: node.left ? [node.left.val] : [],
+      metrics: {
+        '当前考察节点': `Node(${node.val})`,
+        '左叶子前瞻判定': isLeftLeaf ? '命中' : '未命中',
+        '左叶子之和': currentSum,
+      },
+      statusBadge: { text: isLeftLeaf ? '命中左叶子！' : '分支判断', type: isLeftLeaf ? 'success' : 'info' },
+    });
+
+    // 4. 左分支处理：命中累加 vs 递归下探
+    if (isLeftLeaf && node.left) {
       leftSum = node.left.val;
       currentSum += leftSum;
       leftNodes.add(node.left.val);
@@ -188,8 +250,8 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
         leftLeafVal: node.left.val,
         sum: currentSum,
         depth,
-        decision: `🎉 节点 Node(${node.val}) 的左孩子 Node(${node.left.val}) 是叶子！命中左叶子！`,
-        message: `充要条件满足：Node(${node.left.val}) 是 Node(${node.val}) 的左孩子，且左右皆空。累加 ${node.left.val} 到左叶子之和！`,
+        decision: `🎉 累加左叶子贡献：leftSum = ${node.left.val}，当前总和 = ${currentSum}`,
+        message: `Node(${node.left.val}) 为左叶子，累加其权值 ${node.left.val} 到 leftSum 与全局和！`,
         log: `hit left leaf: node ${node.val}'s left child ${node.left.val} -> sum = ${currentSum}`,
         codeLine: lines.isLeftLeaf,
         stageId: 'stage-1',
@@ -203,13 +265,13 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
         statusBadge: { text: `命中左叶子: ${node.left.val}`, type: 'success' },
       });
     } else if (node.left) {
-      // 左孩子不是叶子，继续下探探索左孩子的子树
+      // 左孩子不是叶子，递归深入左子树
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
         sum: currentSum,
         depth,
-        decision: `节点 Node(${node.val}) 的左孩子非叶子，递归深入左子树`,
+        decision: `节点 Node(${node.val}) 的左孩子非叶子，递归深入左子树：leftSum = sumOfLeftLeaves(root.left)`,
         message: `调用 sumOfLeftLeaves(node.left: Node(${node.left.val}))，向下寻找深层左叶子。`,
         log: `node ${node.val}.left (${node.left.val}) is not leaf -> recurse left`,
         codeLine: lines.recurseLeft,
@@ -223,6 +285,25 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
         statusBadge: { text: '深入左子树', type: 'info' },
       });
       leftSum = dfs(node.left, depth + 1);
+
+      steps.push({
+        tree: cloneStateDepTree(root),
+        current: node.val,
+        sum: currentSum,
+        depth,
+        decision: `Node(${node.val}) 左子树递归返回：leftSum = ${leftSum}，赋值完成`,
+        message: `左子树已返回所有深层左叶子贡献总和 ${leftSum}。`,
+        log: `node ${node.val} leftSum=${leftSum}`,
+        codeLine: lines.recurseLeft,
+        stageId: 'stage-1',
+        leftNodes: new Set(leftNodes),
+        metrics: {
+          '当前考察节点': `Node(${node.val})`,
+          '左子树贡献': leftSum,
+          '左叶子之和': currentSum,
+        },
+        statusBadge: { text: `左小计: ${leftSum}`, type: 'info' },
+      });
     }
 
     let rightSum = 0;
@@ -232,8 +313,8 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
         current: node.val,
         sum: currentSum,
         depth,
-        decision: `深入节点 Node(${node.val}) 的右子树寻找内部左叶子`,
-        message: `注意：虽然 Node(${node.right.val}) 自身是右孩子，但其子树内部完全可能包含左叶子！继续递归。`,
+        decision: `深入节点 Node(${node.val}) 的右子树：int rightSum = sumOfLeftLeaves(root.right)`,
+        message: `虽然 Node(${node.right.val}) 自身是右孩子，但其子树内部完全可能包含左叶子！继续递归。`,
         log: `node ${node.val} recurse right: Node(${node.right.val})`,
         codeLine: lines.recurseRight,
         stageId: 'stage-1',
@@ -246,29 +327,46 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
         statusBadge: { text: '深入右子树', type: 'info' },
       });
       rightSum = dfs(node.right, depth + 1);
-    }
 
-    const total = leftSum + rightSum;
-    if (node !== root) {
       steps.push({
         tree: cloneStateDepTree(root),
         current: node.val,
         sum: currentSum,
         depth,
-        decision: `节点 Node(${node.val}) 汇聚左右贡献: 左 ${leftSum}, 右 ${rightSum}`,
-        message: `以 Node(${node.val}) 为根的子树中所有左叶子之和为 ${leftSum} + ${rightSum} = ${total}。向上传递。`,
-        log: `node ${node.val} aggregated: leftSum=${leftSum}, rightSum=${rightSum} -> total=${total}`,
-        codeLine: lines.returnSum,
+        decision: `Node(${node.val}) 右子树递归返回：rightSum = ${rightSum}，赋值完成`,
+        message: `右子树已返回内部深层左叶子贡献总和 ${rightSum}。准备归约自身总贡献。`,
+        log: `node ${node.val} rightSum=${rightSum}`,
+        codeLine: lines.recurseRight,
         stageId: 'stage-1',
         leftNodes: new Set(leftNodes),
         metrics: {
           '当前考察节点': `Node(${node.val})`,
-          '本子树贡献': total,
-          '全树累计总和': currentSum,
+          '右子树贡献': rightSum,
+          '左叶子之和': currentSum,
         },
-        statusBadge: { text: `子树小计: ${total}`, type: 'info' },
+        statusBadge: { text: `右小计: ${rightSum}`, type: 'info' },
       });
     }
+
+    const total = leftSum + rightSum;
+    steps.push({
+      tree: cloneStateDepTree(root),
+      current: node.val,
+      sum: currentSum,
+      depth,
+      decision: `Node(${node.val}) 汇聚左右贡献并返回：leftSum(${leftSum}) + rightSum(${rightSum}) = ${total}`,
+      message: `以 Node(${node.val}) 为根的子树贡献 ${total}。向父节点回溯。`,
+      log: `node ${node.val} aggregated: leftSum=${leftSum}, rightSum=${rightSum} -> total=${total}`,
+      codeLine: lines.returnSum,
+      stageId: 'stage-1',
+      leftNodes: new Set(leftNodes),
+      metrics: {
+        '当前考察节点': `Node(${node.val})`,
+        '本子树贡献': total,
+        '全树累计总和': currentSum,
+      },
+      statusBadge: { text: `归约: ${total}`, type: 'info' },
+    });
 
     return total;
   }
@@ -286,7 +384,7 @@ export function buildLeftLeavesStage1Steps(root: TreeNode | null): LeftLeavesSte
     decision: `🎉 全树搜索完成！所有左叶子之和为 ${currentSum}`,
     message: `全树递归遍历完毕，共收集到 ${leftNodes.size} 个左叶子节点 [${Array.from(leftNodes).join(', ')}]，最终左叶子之和为 ${currentSum}。`,
     log: `Final result: sumOfLeftLeaves = ${currentSum}`,
-    codeLine: lines.returnSum,
+    codeLine: lines.done,
     stageId: 'stage-1',
     leftNodes: new Set(leftNodes),
     visitedNodes: allTreeVals,

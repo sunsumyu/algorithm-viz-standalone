@@ -464,8 +464,51 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       kind: 'condition-pass',
     });
 
+    // 2. 边界判空求值帧 (Line 3: if (root == null) 判定为 false)
+    steps.push({
+      tree: root,
+      current: node.val,
+      leftDepth: 0,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
+      decision: `判空检查：节点 ${node.val} 非空，跳过基准返回`,
+      action: 'check-null',
+      message: `root != null (当前节点是 ${node.val})，判空条件 root == null 不成立，继续执行左右子树求解。`,
+      log: `node ${node.val} != null -> continue`,
+      metrics: makeTDMetrics(node.val, 0, 0, 0),
+      codeLine: L.nullCheck,
+      callTrace: makeSnapshot(passLineId),
+    });
+
+    // 3. 发起深入左子树调用帧 (Line 4: int leftDepth = maxDepth(root.left))
+    const callLeftId = `call-left-${node.val}`;
+    traceLines.push({
+      id: callLeftId,
+      depth: depth - 1,
+      text: `② 发起左子树深入: int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})`,
+      kind: 'recurse-prep',
+    });
+
+    steps.push({
+      tree: root,
+      current: node.val,
+      leftDepth: 0,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
+      decision: `深入左子树：int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})`,
+      action: 'call-left',
+      message: `后序遍历：首先深入左子树求解高度，实参为 ${node.left ? `Node(${node.left.val})` : 'null'}。`,
+      log: `node ${node.val}: call maxDepth(left=${node.left ? node.left.val : 'null'})`,
+      metrics: makeTDMetrics(node.val, 0, 0, 0),
+      codeLine: L.callLeft,
+      callTrace: makeSnapshot(callLeftId),
+    });
+
     const l = dfs(node.left, depth + 1, '<- 先算左边');
 
+    // 4. 左子树就绪接收返回值帧 (Line 4: 接收 leftDepth = l)
     const leftDoneId = `left-done-${node.val}`;
     steps.push({
       tree: root,
@@ -483,8 +526,34 @@ export function buildTDSteps(root: TreeNode | null): TDStep[] {
       callTrace: makeSnapshot(leftDoneId),
     });
 
+    // 5. 发起深入右子树调用帧 (Line 5: int rightDepth = maxDepth(root.right))
+    const callRightId = `call-right-${node.val}`;
+    traceLines.push({
+      id: callRightId,
+      depth: depth - 1,
+      text: `③ 发起右子树深入: int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})`,
+      kind: 'recurse-prep',
+    });
+
+    steps.push({
+      tree: root,
+      current: node.val,
+      leftDepth: l,
+      rightDepth: 0,
+      maxDepth: 0,
+      depthsMap: new Map(depthsMap),
+      decision: `深入右子树：int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})`,
+      action: 'call-right',
+      message: `后序遍历：接下来深入右子树求解高度，实参为 ${node.right ? `Node(${node.right.val})` : 'null'}。`,
+      log: `node ${node.val}: call maxDepth(right=${node.right ? node.right.val : 'null'})`,
+      metrics: makeTDMetrics(node.val, l, 0, 0),
+      codeLine: L.callRight,
+      callTrace: makeSnapshot(callRightId),
+    });
+
     const r = dfs(node.right, depth + 1, '<- 再算右边');
 
+    // 6. 右子树就绪接收返回值帧 (Line 5: 接收 rightDepth = r)
     const rightDoneId = `right-done-${node.val}`;
     steps.push({
       tree: root,

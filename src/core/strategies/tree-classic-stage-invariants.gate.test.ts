@@ -473,6 +473,31 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(steps[steps.length - 1].maxDepth).toBe(3);
     });
 
+    it('Stage 1 递归严格一行一步与五段式生命周期覆盖 (Strict One-Line-One-Step & 5 Lifecycle Frames)', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildTDSteps(root);
+
+      // 验证生命周期关键行号覆盖 (严格遍历 2, 3, 4, 5, 6, 7)
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // nullCheck
+      expect(javaLines).toContain(4); // callLeft / leftDone
+      expect(javaLines).toContain(5); // callRight / rightDone
+      expect(javaLines).toContain(6); // returnDepth
+      expect(javaLines).toContain(7); // done
+
+      // 根节点前 4 步严格包含 entry -> nullCheck -> callLeft，杜绝 2 直接跳 4 的静默跳步
+      const firstLines = steps.slice(0, 4).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(firstLines).toEqual([2, 2, 3, 4]);
+
+      // 验证包含独立的发起调用帧与就绪接收帧
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('call-left');
+      expect(actions).toContain('left-done');
+      expect(actions).toContain('call-right');
+      expect(actions).toContain('right-done');
+    });
+
     it('Class 036 Stage 2: 层次遍历 BFS 队列层数计数步骤与四语言行号合法', () => {
       const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
       const steps = buildTDBfsSteps(root);

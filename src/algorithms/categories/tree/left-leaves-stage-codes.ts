@@ -69,10 +69,12 @@ export const LEFT_LEAVES_STAGE1_CODES = {
 export const LEFT_LEAVES_STAGE1_LINES = {
   entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
   baseNull: { java: 3, cpp: 4, python: 3, javascript: 2 },
-  isLeftLeaf: { java: 6, cpp: 7, python: 6, javascript: 4 },
-  recurseLeft: { java: 8, cpp: 9, python: 8, javascript: 6 },
-  recurseRight: { java: 10, cpp: 11, python: 9, javascript: 8 },
-  returnSum: { java: 11, cpp: 12, python: 10, javascript: 9 },
+  checkLeftLeaf: { java: 5, cpp: 6, python: 6, javascript: 4 },
+  isLeftLeaf: { java: 6, cpp: 7, python: 7, javascript: 5 },
+  recurseLeft: { java: 8, cpp: 9, python: 9, javascript: 7 },
+  recurseRight: { java: 10, cpp: 11, python: 10, javascript: 9 },
+  returnSum: { java: 11, cpp: 12, python: 11, javascript: 10 },
+  done: { java: 12, cpp: 13, python: 11, javascript: 11 },
 };
 
 // ----------------------------------------------------
