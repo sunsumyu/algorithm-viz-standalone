@@ -1314,14 +1314,29 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.totalSum).toBe(281);
     });
 
-    it('Stage 1: 经典树 [4, 9, 0, 5, 1] 前序递归累加总和收敛至 1026 且四语言行号合法', () => {
+    it('Stage 1: 经典树 [4, 9, 0, 5, 1] 前序递归累加总和收敛至 1026 且全步具备 callTrace 与四语言行号合法', () => {
       const root = buildTreeFromArr([4, 9, 0, 5, 1]);
       const steps = buildSumNumbersStage1Steps(root);
       expect(steps.length).toBeGreaterThan(0);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, SUM_NUMBERS_STAGE1_CODES, `SumNumbers Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(4);  // callDfsRoot / done
+      expect(javaLines).toContain(6);  // dfsEntry
+      expect(javaLines).toContain(7);  // dfsNullCheck
+      expect(javaLines).toContain(8);  // calcSum
+      expect(javaLines).toContain(9);  // leafCheck
+      expect(javaLines).toContain(10); // leafReturn
+      expect(javaLines).toContain(12); // callLeft
+      expect(javaLines).toContain(13); // callRight
+      expect(javaLines).toContain(14); // returnSum
 
       const last = steps[steps.length - 1];
       expect(last.totalSum).toBe(1026);
@@ -1607,14 +1622,30 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 16. Binary Tree Paths (LC 257 · 二叉树的所有路径)
   describe('16. Binary Tree Paths (LeetCode 257 · 二叉树的所有路径)', () => {
-    it('Stage 1: 经典二叉树 [1, 2, 3, null, 5] 回溯收集路径 ["1->2->5", "1->3"] 且收尾帧 100% 节点覆盖高亮不变量', () => {
+    it('Stage 1: 经典二叉树 [1, 2, 3, null, 5] 回溯收集路径 ["1->2->5", "1->3"] 且全步具备 callTrace 快照与行号合法', () => {
       const root = buildTreeFromArr([1, 2, 3, null, 5]);
       const steps = buildAllPathsStage1BacktrackSteps(root);
       expect(steps.length).toBeGreaterThan(0);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, ALL_PATHS_STAGE1_CODES, `AllPaths Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(5);  // initPath
+      expect(javaLines).toContain(6);  // callDfs
+      expect(javaLines).toContain(9);  // dfsEntry
+      expect(javaLines).toContain(10); // addNode
+      expect(javaLines).toContain(11); // checkLeaf
+      expect(javaLines).toContain(12); // harvestPath
+      expect(javaLines).toContain(14); // recurseLeft
+      expect(javaLines).toContain(15); // recurseRight
+      expect(javaLines).toContain(16); // backtrack
+      expect(javaLines).toContain(7);  // returnPaths / done
 
       const last = steps[steps.length - 1];
       expect(last.current).toBe(1);
@@ -2305,6 +2336,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
     });
   });
 });
+
+
 
 
 

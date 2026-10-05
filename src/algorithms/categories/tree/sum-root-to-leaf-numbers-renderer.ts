@@ -20,7 +20,15 @@ import {
   SUM_NUMBERS_STAGE1_CODES,
   SUM_NUMBERS_STAGE2_CODES,
   SUM_NUMBERS_STAGE3_CODES,
+  SUM_NUMBERS_STAGE1_LINES,
+  SUM_NUMBERS_STAGE2_LINES,
+  SUM_NUMBERS_STAGE3_LINES,
 } from './sum-root-to-leaf-numbers-stage-codes';
+import {
+  RecursiveCallTraceAdapter,
+  RecursiveCallTraceBuilder,
+  RecursiveCallTraceSnapshot,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
 
 export interface TreeNodeData {
   id: number;
@@ -55,6 +63,9 @@ export interface SumNumbersStep extends StepBase {
   visitedNodes?: number[];
   highlightedNodes?: number[];
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  action?: string;
+  phase?: string;
+  callTrace?: RecursiveCallTraceSnapshot;
 }
 
 /** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
@@ -70,41 +81,10 @@ export function collectTreeValues(node: TreeNode | null): number[] {
   return result;
 }
 
-export const SUM_NUMBERS_STAGE1_LINES = {
-  entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-  callDfsRoot: { java: 3, cpp: 4, python: 10, javascript: 10 },
-  dfsEntry: { java: 5, cpp: 6, python: 3, javascript: 2 },
-  baseNull: { java: 6, cpp: 7, python: 4, javascript: 3 },
-  dfsNullCheck: { java: 6, cpp: 7, python: 4, javascript: 3 },
-  calcSum: { java: 7, cpp: 8, python: 6, javascript: 4 },
-  leafCheck: { java: 8, cpp: 9, python: 7, javascript: 5 },
-  leafReturn: { java: 9, cpp: 10, python: 8, javascript: 6 },
-  recurseChildren: { java: 11, cpp: 12, python: 9, javascript: 8 },
-  done: { java: 3, cpp: 4, python: 10, javascript: 10 },
-};
-
-export const SUM_NUMBERS_STAGE2_LINES = {
-  entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-  init: { java: 5, cpp: 6, python: 6, javascript: 4 },
-  whileLoop: { java: 9, cpp: 10, python: 8, javascript: 6 },
-  pollNode: { java: 10, cpp: 11, python: 9, javascript: 7 },
-  leafCheck: { java: 12, cpp: 13, python: 11, javascript: 9 },
-  leafAdd: { java: 13, cpp: 14, python: 12, javascript: 10 },
-  pushLeft: { java: 16, cpp: 17, python: 15, javascript: 13 },
-  pushRight: { java: 20, cpp: 21, python: 18, javascript: 17 },
-  done: { java: 25, cpp: 26, python: 20, javascript: 22 },
-};
-
-export const SUM_NUMBERS_STAGE3_LINES = {
-  entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-  init: { java: 5, cpp: 6, python: 6, javascript: 4 },
-  whileLoop: { java: 9, cpp: 10, python: 8, javascript: 6 },
-  popNode: { java: 10, cpp: 11, python: 9, javascript: 7 },
-  leafCheck: { java: 12, cpp: 13, python: 11, javascript: 9 },
-  leafAdd: { java: 13, cpp: 14, python: 12, javascript: 10 },
-  pushRight: { java: 16, cpp: 17, python: 14, javascript: 13 },
-  pushLeft: { java: 20, cpp: 21, python: 17, javascript: 17 },
-  done: { java: 24, cpp: 25, python: 19, javascript: 21 },
+export {
+  SUM_NUMBERS_STAGE1_LINES,
+  SUM_NUMBERS_STAGE2_LINES,
+  SUM_NUMBERS_STAGE3_LINES,
 };
 
 export const SUM_ROOT_TO_LEAF_NUMBERS_CODES: Record<string, string> = {
@@ -140,79 +120,146 @@ function parseTreeInput(raw?: string, fallback: (number | null)[] = [4, 9, 0, 5,
 export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersStep[] {
   const steps: SumNumbersStep[] = [];
   const linesMap = SUM_NUMBERS_STAGE1_LINES;
+  const trace = new RecursiveCallTraceBuilder();
   const completedPaths: PathRecord[] = [];
   const activePath: number[] = [];
   const callStack: { nodeId: number; prevSum: number; currentSum: number; action: string }[] = [];
 
   if (!root) {
+    trace.addHeader('sumNumbers(root = null)', 0, '<- 根调用特判');
+    trace.addConditionHit('root == null -> return 0', 0);
+    trace.addReturnLeaf('return 0', 0);
+    trace.addFinalResult('最终判定: 0 (空树返回 0)', 0, undefined, 0);
+
     steps.push({
       currentNodeId: null,
       activePathNodeIds: [],
       completedPaths: [],
       totalSum: 0,
-      decision: '特判返回：树为空',
+      decision: '算法启动：空树特判',
+      action: 'entry',
+      phase: 'init',
+      metrics: { '当前节点': 'null', '当前路径值': 0, '已累加和': 0, '递归深度': 0 },
+      message: '传入二叉树根节点为空 (null)，启动递归基准条件检验。',
+      log: 'sumNumbers(root = null)',
+      codeLine: linesMap.entry,
+      tree: null,
+      stageId: 'stage-1',
+      statusBadge: { text: '空树: 0', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    steps.push({
+      currentNodeId: null,
+      activePathNodeIds: [],
+      completedPaths: [],
+      totalSum: 0,
+      decision: '空节点基准退出：if (root == null) return 0',
+      action: 'base-null',
+      phase: 'check',
       metrics: { '当前节点': 'null', '当前路径值': 0, '已累加和': 0, '递归深度': 0 },
       message: '树为空，根到叶节点路径数字之和为 0。',
-      log: 'root is null -> return 0',
+      log: 'root == null -> return 0',
       codeLine: linesMap.baseNull,
       tree: null,
       stageId: 'stage-1',
+      statusBadge: { text: '基准退出', type: 'info' },
+      callTrace: trace.snapshot(),
     });
+
+    steps.push({
+      currentNodeId: null,
+      activePathNodeIds: [],
+      completedPaths: [],
+      totalSum: 0,
+      decision: '计算完成：空树返回 0',
+      action: 'done',
+      phase: 'done',
+      metrics: { '当前节点': 'null', '当前路径值': 0, '已累加和': 0, '递归深度': 0 },
+      message: '空树计算完毕，最终结果为 0。',
+      log: 'return 0',
+      codeLine: linesMap.done,
+      tree: null,
+      stageId: 'stage-1',
+      statusBadge: { text: '完成: 0', type: 'success' },
+      callTrace: trace.snapshot(),
+    });
+
     return steps;
   }
 
   // Step 0: 入口
+  trace.addHeader(`sumNumbers(root: Node(${root.val}))`, 0, '<- 根调用开始');
   steps.push({
     currentNodeId: null,
     activePathNodeIds: [],
     completedPaths: [],
     totalSum: 0,
     decision: `求根到叶节点数字之和：启动递归 dfs(root=${root.val}, prevSum=0)`,
+    action: 'entry',
+    phase: 'init',
     metrics: { '当前节点': `Node(${root.val})`, '当前路径值': 0, '已累加和': 0, '递归深度': 0 },
     message: '初始化函数，传入根节点 root，初始上层累加和 prevSum = 0',
     log: `Init sumNumbers on root Node(${root.val})`,
     codeLine: linesMap.entry,
     tree: cloneStateDepTree(root),
     stageId: 'stage-1',
+    statusBadge: { text: '开始递归', type: 'info' },
+    callTrace: trace.snapshot(),
   });
 
   // Step 1: 调用 dfs(root, 0)
+  trace.addRecursePrep(`dfs(root=Node(${root.val}), prevSum=0)`, 0, '<- 启动 DFS 递归');
   steps.push({
     currentNodeId: root.val,
     activePathNodeIds: [root.val],
     completedPaths: [],
     totalSum: 0,
     decision: `调用 dfs(root=${root.val}, 0) 开始自顶向下累加数字`,
+    action: 'call-dfs-root',
+    phase: 'call',
     metrics: { '当前节点': `Node(${root.val})`, '当前路径值': 0, '已累加和': 0, '递归深度': 1 },
     message: `调用 dfs(root, 0)，从根节点 Node(${root.val}) 开始前序探索`,
     log: `Call dfs(root=${root.val}, 0)`,
     codeLine: linesMap.callDfsRoot,
     tree: cloneStateDepTree(root),
     stageId: 'stage-1',
+    statusBadge: { text: '进入递归', type: 'info' },
+    callTrace: trace.snapshot(),
   });
 
   let totalSum = 0;
 
-  function dfs(node: TreeNode | null, prevSum: number): number {
+  function dfs(node: TreeNode | null, prevSum: number, depth: number): number {
     if (!node) {
+      trace.addHeader(`dfs(null, prevSum=${prevSum})`, depth, '<- 空子节点');
+      trace.addConditionHit('node == null -> return 0', depth);
+      trace.addReturnLeaf('return 0', depth);
+
       steps.push({
         currentNodeId: null,
         activePathNodeIds: [...activePath],
         completedPaths: [...completedPaths],
         totalSum,
         decision: '当前节点为 null，直接返回 0',
-        metrics: { '当前节点': 'null', '当前路径值': prevSum, '已累加和': totalSum, '递归深度': callStack.length },
+        action: 'dfs-null',
+        phase: 'base',
+        metrics: { '当前节点': 'null', '当前路径值': prevSum, '已累加和': totalSum, '递归深度': depth },
         message: '递归基底：遇到空节点 null，对总和贡献为 0，返回 0',
         log: `dfs(null, ${prevSum}) -> return 0`,
-        codeLine: linesMap.baseNull,
+        codeLine: linesMap.dfsNullCheck,
         tree: cloneStateDepTree(root),
         stageId: 'stage-1',
+        statusBadge: { text: '空节点 null', type: 'warning' },
+        callTrace: trace.snapshot(),
       });
       return 0;
     }
 
     activePath.push(node.val);
     callStack.push({ nodeId: node.val, prevSum, currentSum: 0, action: `进入 Node(${node.val})` });
+    trace.addHeader(`dfs(Node(${node.val}), prevSum=${prevSum})`, depth, `<- 深入 Node(${node.val})`);
+    trace.addConditionPass(`node != null √ 进入有效节点 Node(${node.val})`, depth);
 
     steps.push({
       currentNodeId: node.val,
@@ -220,16 +267,40 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
       completedPaths: [...completedPaths],
       totalSum,
       decision: `进入节点 Node(${node.val})，上级传递的数值为 ${prevSum}`,
-      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': prevSum, '已累加和': totalSum, '递归深度': callStack.length },
-      message: `dfs 进入 Node(${node.val})，检查节点有效性`,
+      action: 'dfs-entry',
+      phase: 'entry',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': prevSum, '已累加和': totalSum, '递归深度': depth },
+      message: `dfs 进入 Node(${node.val})，准备执行边界判空检查`,
       log: `Enter dfs(node=${node.val}, prevSum=${prevSum})`,
       codeLine: linesMap.dfsEntry,
       tree: cloneStateDepTree(root),
       stageId: 'stage-1',
+      statusBadge: { text: `访问: Node(${node.val})`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    trace.addConditionPass(`node != null √ Node(${node.val}) 判空检验通过，继续累加`, depth);
+    steps.push({
+      currentNodeId: node.val,
+      activePathNodeIds: [...activePath],
+      completedPaths: [...completedPaths],
+      totalSum,
+      decision: `边界判空检验：Node(${node.val}) != null，继续自顶向下累加`,
+      action: 'dfs-null-check',
+      phase: 'check',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': prevSum, '已累加和': totalSum, '递归深度': depth },
+      message: `边界判空：node != null，节点有效，继续执行路径求和公式`,
+      log: `Node(${node.val}) != null -> continue`,
+      codeLine: linesMap.dfsNullCheck,
+      tree: cloneStateDepTree(root),
+      stageId: 'stage-1',
+      statusBadge: { text: `节点有效: Node(${node.val})`, type: 'info' },
+      callTrace: trace.snapshot(),
     });
 
     const currSum = prevSum * 10 + node.val;
     callStack[callStack.length - 1].currentSum = currSum;
+    trace.addConditionPass(`currSum = ${prevSum} * 10 + ${node.val} = ${currSum}`, depth);
 
     steps.push({
       currentNodeId: node.val,
@@ -237,51 +308,23 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
       completedPaths: [...completedPaths],
       totalSum,
       decision: `计算当前路径数值：${prevSum} × 10 + ${node.val} = ${currSum}`,
-      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': callStack.length },
+      action: 'calc-sum',
+      phase: 'calc',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
       message: `公式推导：currSum = prevSum * 10 + node.val = ${prevSum} * 10 + ${node.val} = ${currSum}`,
       log: `Node(${node.val}) 累计数值为 ${currSum}`,
       codeLine: linesMap.calcSum,
       tree: cloneStateDepTree(root),
       stageId: 'stage-1',
+      statusBadge: { text: `路径值: ${currSum}`, type: 'info' },
+      callTrace: trace.snapshot(),
     });
 
     const isLeaf = !node.left && !node.right;
-    steps.push({
-      currentNodeId: node.val,
-      activePathNodeIds: [...activePath],
-      completedPaths: [...completedPaths],
-      totalSum,
-      decision: isLeaf ? `Node(${node.val}) 是叶子节点！形成一条完整根到叶路径` : `Node(${node.val}) 不是叶子节点，继续向下分治`,
-      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': callStack.length },
-      message: isLeaf ? `叶子判定：左右孩子皆空，产生完整路径数值 ${currSum}` : `叶子判定：存在子节点，继续向下探索左右分支`,
-      log: `Check leaf: Node(${node.val}) isLeaf=${isLeaf}`,
-      codeLine: linesMap.leafCheck,
-      tree: cloneStateDepTree(root),
-      stageId: 'stage-1',
-    });
-
     if (isLeaf) {
-      totalSum += currSum;
-      const pathStr = activePath.join(' ➔ ');
-      completedPaths.push({ pathStr, value: currSum });
-
-      steps.push({
-        currentNodeId: node.val,
-        activePathNodeIds: [...activePath],
-        completedPaths: [...completedPaths],
-        totalSum,
-        decision: `到达叶子节点，返回该路径值 ${currSum}，总和累计达 ${totalSum}`,
-        metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': callStack.length },
-        message: `叶子收网：路径 [${pathStr}] 形成整数 ${currSum}，将其计入结果集`,
-        log: `Leaf return ${currSum}, totalSum=${totalSum}`,
-        codeLine: linesMap.leafReturn,
-        tree: cloneStateDepTree(root),
-        stageId: 'stage-1',
-      });
-
-      activePath.pop();
-      callStack.pop();
-      return currSum;
+      trace.addConditionHit(`node.left == null && node.right == null √ 判定为叶子节点！`, depth);
+    } else {
+      trace.addConditionPass(`非叶子节点，继续向下探索左右分支`, depth);
     }
 
     steps.push({
@@ -289,18 +332,96 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
       activePathNodeIds: [...activePath],
       completedPaths: [...completedPaths],
       totalSum,
-      decision: `分别向下递归左右子树 dfs(left, ${currSum}) 与 dfs(right, ${currSum})`,
-      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': callStack.length },
-      message: `向下探索：先访问左子树 left=${node.left?.val ?? 'null'}，再访问右子树 right=${node.right?.val ?? 'null'}`,
-      log: `Node(${node.val}) 分支递归调用`,
-      codeLine: linesMap.recurseChildren,
+      decision: isLeaf ? `Node(${node.val}) 是叶子节点！形成一条完整根到叶路径` : `Node(${node.val}) 不是叶子节点，继续向下分治`,
+      action: 'leaf-check',
+      phase: 'check',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
+      message: isLeaf ? `叶子判定：左右孩子皆空，产生完整路径数值 ${currSum}` : `叶子判定：存在子节点，继续向下探索左右分支`,
+      log: `Check leaf: Node(${node.val}) isLeaf=${isLeaf}`,
+      codeLine: linesMap.leafCheck,
       tree: cloneStateDepTree(root),
       stageId: 'stage-1',
+      statusBadge: { text: isLeaf ? '命中叶子！' : '内部节点', type: isLeaf ? 'success' : 'info' },
+      callTrace: trace.snapshot(),
     });
 
-    const leftVal = dfs(node.left, currSum);
-    const rightVal = dfs(node.right, currSum);
+    if (isLeaf) {
+      totalSum += currSum;
+      const pathStr = activePath.join(' ➔ ');
+      completedPaths.push({ pathStr, value: currSum });
+      trace.addReturnLeaf(`叶子节点路径达成: [${pathStr}] = ${currSum} -> return ${currSum}`, depth);
+
+      steps.push({
+        currentNodeId: node.val,
+        activePathNodeIds: [...activePath],
+        completedPaths: [...completedPaths],
+        totalSum,
+        decision: `到达叶子节点，返回该路径值 ${currSum}，总和累计达 ${totalSum}`,
+        action: 'leaf-return',
+        phase: 'harvest',
+        metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
+        message: `叶子收网：路径 [${pathStr}] 形成整数 ${currSum}，将其计入结果集`,
+        log: `Leaf return ${currSum}, totalSum=${totalSum}`,
+        codeLine: linesMap.leafReturn,
+        tree: cloneStateDepTree(root),
+        stageId: 'stage-1',
+        statusBadge: { text: `收获路径: ${currSum}`, type: 'success' },
+        callTrace: trace.snapshot(),
+      });
+
+      activePath.pop();
+      callStack.pop();
+      return currSum;
+    }
+
+    // 深入左子树
+    trace.addRecursePrep(`递归深入左孩子 dfs(left, currSum=${currSum})`, depth, '<- 分支探查');
+    steps.push({
+      currentNodeId: node.val,
+      activePathNodeIds: [...activePath],
+      completedPaths: [...completedPaths],
+      totalSum,
+      decision: `准备向下递归左子树 dfs(left=${node.left?.val ?? 'null'}, ${currSum})`,
+      action: 'call-left',
+      phase: 'recurse',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
+      message: `向下探索：访问左子树 left=${node.left?.val ?? 'null'}`,
+      log: `Node(${node.val}) recurse left`,
+      codeLine: linesMap.callLeft,
+      tree: cloneStateDepTree(root),
+      stageId: 'stage-1',
+      statusBadge: { text: '下探左子树', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    const leftVal = dfs(node.left, currSum, depth + 1);
+    trace.addUnwindCalc(`左分支回溯完毕，左子树和: ${leftVal}`, depth);
+
+    // 深入右子树
+    trace.addRecursePrep(`递归深入右孩子 dfs(right, currSum=${currSum})`, depth, '<- 分支探查');
+    steps.push({
+      currentNodeId: node.val,
+      activePathNodeIds: [...activePath],
+      completedPaths: [...completedPaths],
+      totalSum,
+      decision: `准备向下递归右子树 dfs(right=${node.right?.val ?? 'null'}, ${currSum})`,
+      action: 'call-right',
+      phase: 'recurse',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
+      message: `向下探索：访问右子树 right=${node.right?.val ?? 'null'}`,
+      log: `Node(${node.val}) recurse right`,
+      codeLine: linesMap.callRight,
+      tree: cloneStateDepTree(root),
+      stageId: 'stage-1',
+      statusBadge: { text: '下探右子树', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    const rightVal = dfs(node.right, currSum, depth + 1);
+    trace.addUnwindCalc(`右分支回溯完毕，右子树和: ${rightVal}`, depth);
+
     const subtotal = leftVal + rightVal;
+    trace.addUnwindCalc(`Node(${node.val}) 左右子树合并: ${leftVal} + ${rightVal} = ${subtotal}`, depth);
 
     steps.push({
       currentNodeId: node.val,
@@ -308,12 +429,16 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
       completedPaths: [...completedPaths],
       totalSum,
       decision: `Node(${node.val}) 左右子树合并：${leftVal} + ${rightVal} = ${subtotal}`,
-      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': callStack.length },
+      action: 'return-sum',
+      phase: 'unwind',
+      metrics: { '当前节点': `Node(${node.val})`, '当前路径值': currSum, '已累加和': totalSum, '递归深度': depth },
       message: `子树合并完成：Node(${node.val}) 的左右子节点路径和为 ${subtotal}，回溯向上返回`,
       log: `Node(${node.val}) return ${subtotal}`,
-      codeLine: linesMap.recurseChildren,
+      codeLine: linesMap.returnSum,
       tree: cloneStateDepTree(root),
       stageId: 'stage-1',
+      statusBadge: { text: `子树合并: ${subtotal}`, type: 'info' },
+      callTrace: trace.snapshot(),
     });
 
     activePath.pop();
@@ -321,8 +446,9 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
     return subtotal;
   }
 
-  const finalResult = dfs(root, 0);
+  const finalResult = dfs(root, 0, 0);
   const allTreeVals = collectTreeValues(root);
+  trace.addFinalResult(`全树 DFS 遍历完成！所有根到叶节点路径数字之和为 ${finalResult}`, 0, undefined, finalResult);
 
   steps.push({
     currentNodeId: root ? root.val : null,
@@ -331,12 +457,16 @@ export function buildSumNumbersStage1Steps(root: TreeNode | null): SumNumbersSte
     completedPaths: [...completedPaths],
     totalSum: finalResult,
     decision: `🎉 全树 DFS 遍历完成！所有根到叶节点路径数字之和为 ${finalResult}`,
+    action: 'done',
+    phase: 'done',
     metrics: { '当前节点': root ? `Node(${root.val})` : '完成', '当前路径值': '-', '已累加和': finalResult, '递归深度': 0 },
     message: `计算收官：全树共 ${completedPaths.length} 条有效路径，总和为 ${finalResult}`,
     log: `SumNumbers Stage 1 done. Total = ${finalResult}`,
     codeLine: linesMap.done,
     tree: cloneStateDepTree(root),
     stageId: 'stage-1',
+    statusBadge: { text: `最终总和: ${finalResult}`, type: 'success' },
+    callTrace: trace.snapshot(),
   });
 
   return steps;
@@ -717,8 +847,23 @@ export function buildSumNumbersStage3StackSteps(root: TreeNode | null): SumNumbe
 // =========================================================================
 // 向后兼容接口 (Backward-Compatible generateSumNumbersSteps)
 // =========================================================================
-export function generateSumNumbersSteps(nodesInput?: TreeNodeData[]): SumNumbersStep[] {
-  const nodes = nodesInput ?? buildDefaultTree();
+export function generateSumNumbersSteps(nodesInput?: TreeNodeData[] | null): SumNumbersStep[] {
+  if (nodesInput === null || (Array.isArray(nodesInput) && nodesInput.length === 0)) {
+    return [{
+      nodes: [],
+      currentNodeId: null,
+      callStack: [],
+      activePathNodeIds: [],
+      completedPaths: [],
+      totalSum: 0,
+      decision: '空树特判返回 0',
+      metrics: { '当前节点': '无', '当前路径值': '0', '已累加和': '0', '递归深度': '0' },
+      message: '树为空，直接返回 0',
+      log: 'root == null -> return 0',
+      codeLine: lines.entry,
+    }];
+  }
+  const nodes = nodesInput !== undefined ? nodesInput : buildDefaultTree();
   const nodeMap = new Map<number, TreeNodeData>();
   nodes.forEach((n) => nodeMap.set(n.id, n));
 
@@ -1016,91 +1161,115 @@ export function renderSumNumbersCanvas(container: HTMLElement, step: SumNumbersS
       </div>
     `;
   }
+}
 
-  // 联动 Card 2 指标与结构详情
-  const root = container.closest('#algo-sum-root-to-leaf-numbers-view') || container.parentElement;
-  if (root) {
-    const totalSumEl = root.querySelector('#metric-total-sum');
-    const activePathEl = root.querySelector('#metric-active-path');
-    const pathsCountEl = root.querySelector('#metric-paths-count');
+/**
+ * 表现层 Card 2 深度监视器 (Custom Metrics & State Monitor)
+ * 彻底消除跨容器 DOM 污染，遵循声明式算法契约
+ */
+export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumNumbersStep): void {
+  if (!container) return;
+  container.innerHTML = '';
+  container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
 
-    if (totalSumEl) totalSumEl.textContent = `${totalSum}`;
-    if (activePathEl) activePathEl.textContent = activePathNodeIds.length > 0 ? activePathNodeIds.join(' ➔ ') : '空';
-    if (pathsCountEl) pathsCountEl.textContent = `${completedPaths.length}`;
+  // 1. 顶部 4 格关键指标
+  const statsRow = document.createElement('div');
+  statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  statsRow.innerHTML = `
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
+      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">考察节点</span>
+      <span class="text-amber-300 font-mono font-bold text-sm mt-0.5 truncate">${step.currentNodeId != null ? `Node(${step.currentNodeId})` : '-'}</span>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
+      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">当前路径数值</span>
+      <span class="text-blue-300 font-mono font-bold text-sm mt-0.5 truncate">${step.metrics?.['当前路径值'] ?? '-'}</span>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
+      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">叶子路径数</span>
+      <span class="text-purple-300 font-mono font-bold text-sm mt-0.5 truncate">${step.completedPaths ? step.completedPaths.length : 0}</span>
+    </div>
+    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
+      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">累计总和</span>
+      <span class="text-emerald-300 font-mono font-bold text-sm mt-0.5 truncate">${step.totalSum}</span>
+    </div>
+  `;
+  container.appendChild(statsRow);
 
-    const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
-    if (customMetricsContainer) {
-      const pathsHtml =
-        completedPaths.length === 0
-          ? `<div style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无已完成的叶子路径</div>`
-          : completedPaths
-              .map(
-                (p) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 6px; background: rgba(52, 211, 153, 0.1); border: 1px solid rgba(52, 211, 153, 0.25);">
-                  <span style="font-family: monospace; font-size: 11px; color: #334155;">${p.pathStr}</span>
-                  <span style="font-family: monospace; font-size: 12px; font-weight: 700; color: #059669;">+${p.value}</span>
-                </div>
-              `
-              )
-              .join('');
-
-      let structureTitle = '递归调用栈';
-      let structureContent = '栈为空 []';
-
-      if (queueState) {
-        structureTitle = `BFS 节点与数值队列 (${queueState.length})`;
-        structureContent =
-          queueState.length > 0
-            ? queueState.map((q) => `[Node(${q.node}), sum=${q.sum}]`).join(' ➔ ')
-            : '队列为空 []';
-      } else if (stackState) {
-        structureTitle = `显式迭代双栈 (${stackState.length})`;
-        structureContent =
-          stackState.length > 0
-            ? stackState.map((s) => `[Node(${s.node}), sum=${s.sum}]`).join(' ➔ ')
-            : '栈为空 []';
-      } else if (step.callStack && step.callStack.length > 0) {
-        structureTitle = `递归调用栈 (${step.callStack.length})`;
-        structureContent = step.callStack
-          .slice(-3)
-          .map((cs) => `[Node(${cs.nodeId}), sum=${cs.currentSum}]`)
-          .join(' ➔ ');
-      }
-
-      customMetricsContainer.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #475569; padding: 6px 0;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-              <span style="font-size: 10.5px; color: #64748b;">${structureTitle}:</span>
-              <div style="font-weight: 700; font-size: 11.5px; color: #2563eb; overflow-x: auto; white-space: nowrap;">
-                ${structureContent}
-              </div>
-            </div>
-            <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-              <span style="font-size: 10.5px; color: #64748b;">当前考察节点:</span>
-              <div style="font-weight: 700; font-size: 12px; color: #0d9488;">
-                ${currentNodeId !== null ? `Node(${currentNodeId})` : '已收敛'}
-              </div>
-            </div>
-          </div>
-
-          <div style="padding: 8px 10px; background: #f1f5f9; border-radius: 6px;">
-            <div style="font-weight: 700; color: #1e293b; margin-bottom: 2px;">🧭 决策推演: ${step.decision}</div>
-            <div>${step.message}</div>
-          </div>
-
-          <div style="padding: 6px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-            <div style="font-size: 11px; font-weight: 700; color: #059669; margin-bottom: 4px;">
-              已达成的叶子路径 (${completedPaths.length})
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px; max-height: 80px; overflow-y: auto;">
-              ${pathsHtml}
-            </div>
-          </div>
-        </div>
-      `;
-    }
+  // 2. 核心状态展示区：Stage 1 为递归推演栈，Stage 2 为 BFS 队列，Stage 3 为显式双栈
+  if (step.stageId === 'stage-1' && step.callTrace) {
+    const traceBox = document.createElement('div');
+    traceBox.className = 'flex-1 min-h-0 bg-slate-900/60 border border-slate-800 rounded-lg p-2 overflow-y-auto';
+    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
+      title: '🌿 递归自顶向下累加推演栈 (LC 129)',
+      maxHeight: '100%',
+    });
+    container.appendChild(traceBox);
+  } else if (step.stageId === 'stage-2') {
+    const queueBox = document.createElement('div');
+    queueBox.className = 'flex-1 min-h-0 flex flex-col gap-2 bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 overflow-y-auto';
+    const queueState = step.queueState || [];
+    queueBox.innerHTML = `
+      <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+        <span>📦 BFS 节点与数值队列 (队首 ➔ 队尾)</span>
+        <span class="text-slate-500 font-mono">Size: ${queueState.length}</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5 min-h-[26px]">
+        ${queueState.length === 0 
+          ? '<span class="text-slate-500 italic text-[11px]">(队列为空)</span>' 
+          : queueState.map((q, i) => `<span class="px-2 py-1 rounded border font-mono text-xs ${i === 0 ? 'bg-amber-500/20 border-amber-400 text-amber-200 font-bold' : 'bg-slate-800/80 border-slate-700 text-slate-300'}">[Node(${q.node}), sum=${q.sum}]${i === 0 ? ' (首)' : ''}</span>`).join('')}
+      </div>
+    `;
+    container.appendChild(queueBox);
+  } else if (step.stageId === 'stage-3') {
+    const stackBox = document.createElement('div');
+    stackBox.className = 'flex-1 min-h-0 flex flex-col gap-2 bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 overflow-y-auto';
+    const stackState = step.stackState || [];
+    stackBox.innerHTML = `
+      <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+        <span>🧱 显式迭代双栈 (栈顶 ➔ 栈底)</span>
+        <span class="text-slate-500 font-mono">Depth: ${stackState.length}</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5 min-h-[26px]">
+        ${stackState.length === 0 
+          ? '<span class="text-slate-500 italic text-[11px]">(栈为空)</span>' 
+          : stackState.map((s, i) => `<span class="px-2 py-1 rounded border font-mono text-xs ${i === stackState.length - 1 ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold' : 'bg-slate-800/80 border-slate-700 text-slate-300'}">[Node(${s.node}), sum=${s.sum}]${i === stackState.length - 1 ? ' (顶)' : ''}</span>`).join('')}
+      </div>
+    `;
+    container.appendChild(stackBox);
   }
+
+  // 3. 已达成完整叶子路径列表
+  if (step.completedPaths && step.completedPaths.length > 0) {
+    const pathsBox = document.createElement('div');
+    pathsBox.className = 'flex flex-col gap-1.5 bg-slate-900/40 border border-slate-800/80 rounded-lg p-2 flex-shrink-0';
+    pathsBox.innerHTML = `
+      <div class="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
+        <span>已达成完整叶子路径</span>
+        <span class="text-emerald-400 font-mono font-bold">${step.completedPaths.length} 条</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+        ${step.completedPaths.map((p) => `
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-700/60 font-mono text-xs text-emerald-300">
+            <span>${p.pathStr}:</span>
+            <span class="font-bold text-amber-300">+${p.value}</span>
+          </span>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(pathsBox);
+  }
+
+  // 4. 当前推演决策总结
+  const isDone = step.decision.includes('完成') || step.decision.includes('结束') || (step.statusBadge?.type === 'success');
+  const summaryBox = document.createElement('div');
+  summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed flex-shrink-0 ${
+    isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
+  }`;
+  summaryBox.innerHTML = `
+    <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 当前决策: ${step.decision}</div>
+    <div class="text-slate-400">${step.message}</div>
+  `;
+  container.appendChild(summaryBox);
 }
 
 // =========================================================================
@@ -1169,6 +1338,7 @@ export const sumRootToLeafNumbersVisualizer = registerDeclarativeAlgorithm<SumNu
         return buildSumNumbersStage1Steps(root);
       },
       renderCanvas: (container, step) => renderSumNumbersCanvas(container, step),
+      renderCustomMetrics: (container, step) => renderSumNumbersCustomMetrics(container, step),
     },
     {
       id: 'stage-2',
@@ -1182,6 +1352,7 @@ export const sumRootToLeafNumbersVisualizer = registerDeclarativeAlgorithm<SumNu
         return buildSumNumbersStage2BfsSteps(root);
       },
       renderCanvas: (container, step) => renderSumNumbersCanvas(container, step),
+      renderCustomMetrics: (container, step) => renderSumNumbersCustomMetrics(container, step),
     },
     {
       id: 'stage-3',
@@ -1195,6 +1366,7 @@ export const sumRootToLeafNumbersVisualizer = registerDeclarativeAlgorithm<SumNu
         return buildSumNumbersStage3StackSteps(root);
       },
       renderCanvas: (container, step) => renderSumNumbersCanvas(container, step),
+      renderCustomMetrics: (container, step) => renderSumNumbersCustomMetrics(container, step),
     },
   ],
   generateSteps: (inputs) => {
@@ -1208,4 +1380,6 @@ export const sumRootToLeafNumbersVisualizer = registerDeclarativeAlgorithm<SumNu
     return buildSumNumbersStage1Steps(root);
   },
   renderCanvas: (container, step) => renderSumNumbersCanvas(container, step),
+  renderCustomMetrics: (container, step) => renderSumNumbersCustomMetrics(container, step),
 });
+

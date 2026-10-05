@@ -298,6 +298,11 @@ export class RecursiveCallTraceBuilder {
     return id;
   }
 
+  /** 添加回溯撤销与栈恢复行 (语义归约至 unwind-calc) */
+  public addBacktrack(text: string, depth: number, comment?: string): string {
+    return this.addUnwindCalc(text, depth, comment);
+  }
+
   /** 添加最终结算行 */
   public addFinalResult(text: string, depth: number, comment?: string, finalResult?: number | string): string {
     const id = this.nextId('final');
