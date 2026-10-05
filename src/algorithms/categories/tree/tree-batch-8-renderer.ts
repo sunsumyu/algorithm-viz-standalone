@@ -24,6 +24,33 @@ import bstTrimTemplate from './bst-trim.html';
 import sortedArrayToBstTemplate from './sorted-array-to-bst.html';
 import bstToGstTemplate from './bst-to-gst.html';
 
+// 引入二叉搜索树最小绝对差多阶段综合版 (单一事实来源，主 ID 'bst-min-diff'，别名 leetcode-530 / leetcode-783)
+import './bst-min-diff-renderer';
+export {
+  buildBstMinDiffStage1Steps,
+  buildBstMinDiffStage2Steps,
+  buildBstMinDiffStage3Steps,
+  type BstMinDiffStep,
+} from './bst-min-diff-renderer';
+
+// 引入二叉搜索树众数多阶段综合版 (单一事实来源，主 ID 'bst-modes'，别名 leetcode-501 / find-mode-in-binary-search-tree)
+import './bst-modes-renderer';
+export {
+  buildBstModesStage1Steps,
+  buildBstModesStage2Steps,
+  buildBstModesStage3Steps,
+  type BstModesStep,
+} from './bst-modes-renderer';
+
+// 引入把二叉搜索树转换为累加树多阶段综合版 (单一事实来源，主 ID 'bst-to-gst'，别名 leetcode-538 / leetcode-1038)
+import './bst-to-gst-renderer';
+export {
+  buildBstToGstStage1Steps,
+  buildBstToGstStage2Steps,
+  buildBstToGstStage3Steps,
+  type BstToGstStep,
+} from './bst-to-gst-renderer';
+
 // ========== Level 17: 最大二叉树 ==========
 // 引入最大二叉树多阶段演进版（单一事实来源，挂载主 ID 'max-tree'，别名 leetcode-654）
 import './max-tree-renderer';
@@ -248,135 +275,10 @@ registerAlgorithm({
 });
 
 // ========== Level 22: BST 最小绝对差 ==========
-class BSTMinDiffVisualizer extends BSTVisualizer {
-  protected codeLines = [
-    'int minDiff = Integer.MAX_VALUE;',
-    'int prev = -1;',
-    '',
-    'public int getMinimumDifference(TreeNode root) {',
-    '    inorder(root);',
-    '    return minDiff;',
-    '}',
-    '',
-    'private void inorder(TreeNode node) {',
-    '    if (node == null) return;',
-    '    inorder(node.left);',
-    '    if (prev != -1) minDiff = Math.min(minDiff, node.val - prev);',
-    '    prev = node.val;',
-    '    inorder(node.right);',
-    '}',
-  ];
-  protected codePanelTitle = 'Java BST最小绝对差';
-  protected prefix = 'bmd';
-
-  protected getExamples() {
-    return {
-      '1': () => { this.treeData = [4, 2, 6, 1, 3]; this.start(); },
-      '2': () => { this.treeData = [1, 0, 48, null, null, 12, 49]; this.start(); },
-      '3': () => { this.treeData = [1, 2, 3, 4, 5]; this.start(); },
-    };
-  }
-
-  protected buildSteps() {
-    const steps: BstStep[] = [];
-    const root = buildTreeFromArr(this.treeData);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '开始中序遍历' });
-    let minDiff = Infinity, prev = -1;
-    const inorder = (node: TreeNode | null, depth: number) => {
-      if (!node) return;
-      inorder(node.left, depth + 1);
-      const highlight = new Set([node.val]);
-      steps.push({ tree: root, current: node.val, depth, highlight, color: '#fab387', log: `访问 ${node.val}` });
-      if (prev !== -1) {
-        const diff = node.val - prev;
-        minDiff = Math.min(minDiff, diff);
-        steps.push({ tree: root, current: node.val, depth, highlight, color: '#89b4fa', log: `差值 ${diff}，最小 ${minDiff}` });
-      }
-      prev = node.val;
-      inorder(node.right, depth + 1);
-    };
-    inorder(root, 0);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: `最小差值: ${minDiff}`, result: minDiff });
-    return steps;
-  }
-}
-
-registerAlgorithm({
-  id: 'bst-min-diff',
-  name: 'BST最小绝对差',
-  viewId: 'algo-bst-min-diff-view',
-  category: 'tree',
-  description: 'BST中任意两节点的最小差值',
-  icon: '📏',
-  template: bstMinDiffTemplate,
-  Visualizer: BSTMinDiffVisualizer,
-  difficulty: 1,
-  levelOrder: 22,
-  learningGoal: '利用BST中序遍历的有序性',
-});
+// 已由 ./bst-min-diff-renderer.ts 统一声明式接管 (单一事实来源，涵盖 Stage 1-3 递归/迭代/Morris，支持四语言 1-based 行号联动)
 
 // ========== Level 23: BST 众数 ==========
-class BSTModesVisualizer extends BSTVisualizer {
-  protected codeLines = [
-    'public List<Integer> findMode(TreeNode root) {',
-    '    Map<Integer, Integer> map = new HashMap<>();',
-    '    int maxCount = 0;',
-    '    inorder(root, map);',
-    '    List<Integer> result = new ArrayList<>();',
-    '    for (Map.Entry<Integer, Integer> entry : map.entrySet()) {',
-    '        if (entry.getValue() == maxCount)',
-    '            result.add(entry.getKey());',
-    '    }',
-    '    return result;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java BST众数';
-  protected prefix = 'bmo';
-
-  protected getExamples() {
-    return {
-      '1': () => { this.treeData = [1, null, 2, 2]; this.start(); },
-      '2': () => { this.treeData = [0]; this.start(); },
-      '3': () => { this.treeData = [1, 1, 2, 2, 3]; this.start(); },
-    };
-  }
-
-  protected buildSteps() {
-    const steps: BstStep[] = [];
-    const root = buildTreeFromArr(this.treeData);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '开始统计频率' });
-    const map = new Map<number, number>();
-    let maxCount = 0;
-    const inorder = (node: TreeNode | null, depth: number) => {
-      if (!node) return;
-      inorder(node.left, depth + 1);
-      const count = (map.get(node.val) || 0) + 1;
-      map.set(node.val, count);
-      maxCount = Math.max(maxCount, count);
-      const highlight = new Set([node.val]);
-      steps.push({ tree: root, current: node.val, depth, highlight, color: '#fab387', log: `${node.val} 出现 ${count} 次` });
-      inorder(node.right, depth + 1);
-    };
-    inorder(root, 0);
-    const modes = [...map].filter(([_, c]) => c === maxCount).map(([v]) => v);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(modes), color: '#a6e3a1', log: `众数: ${modes.join(', ')}`, result: modes.join(',') });
-    return steps;
-  }
-}
-
-registerAlgorithm({
-  id: 'bst-modes',
-  name: 'BST中的众数',
-  viewId: 'algo-bst-modes-view',
-  category: 'tree',
-  description: '找出BST中出现次数最多的节点值',
-  icon: '📊',
-  template: bstModesTemplate,
-  Visualizer: BSTModesVisualizer,
-  difficulty: 1,
-  levelOrder: 23,
-  learningGoal: '中序遍历统计节点频率',
-});
+// 已由 ./bst-modes-renderer.ts 统一声明式接管 (单一事实来源，涵盖 Stage 1-3 递归/迭代/Morris，支持四语言 1-based 行号联动)
 
 // ========== Level 24: 删除 BST 节点 ==========
 // 【双版本长处整合】已整合至 bst-delete-renderer.ts
@@ -446,68 +348,7 @@ export { BSTTrimVisualizer };
 import './sorted-array-to-bst-renderer';
 export { buildSortedArrayToBstStage1Steps, type SortedArrayToBstStep } from './sorted-array-to-bst-renderer';
 
-// BST 转累加树
-class BSTToGSTVisualizer extends BSTVisualizer {
-  protected codeLines = [
-    'int sum = 0;',
-    '',
-    'public TreeNode convertBST(TreeNode root) {',
-    '    reverseInorder(root);',
-    '    return root;',
-    '}',
-    '',
-    'private void reverseInorder(TreeNode node) {',
-    '    if (node == null) return;',
-    '    reverseInorder(node.right);',
-    '    sum += node.val;',
-    '    node.val = sum;',
-    '    reverseInorder(node.left);',
-    '}',
-  ];
-  protected codePanelTitle = 'Java BST转累加树';
-  protected prefix = 'bg';
-
-  protected getExamples() {
-    return {
-      '1': () => { this.treeData = [4, 1, 6, 0, 2, 5, 7, null, null, null, 3, null, null, null, 8]; this.start(); },
-      '2': () => { this.treeData = [0, null, 1]; this.start(); },
-      '3': () => { this.treeData = [1, 0, 2]; this.start(); },
-    };
-  }
-
-  protected buildSteps() {
-    const steps: BstStep[] = [];
-    const root = buildTreeFromArr(this.treeData);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '开始反向中序遍历' });
-    let sum = 0;
-    const reverseInorder = (node: TreeNode | null, depth: number) => {
-      if (!node) return;
-      reverseInorder(node.right, depth + 1);
-      sum += node.val;
-      const oldVal = node.val;
-      node.val = sum;
-      const highlight = new Set([node.val]);
-      steps.push({ tree: root, current: node.val, depth, highlight, color: '#fab387', log: `${oldVal} → ${node.val} (累加和=${sum})` });
-      reverseInorder(node.left, depth + 1);
-    };
-    reverseInorder(root, 0);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '转换完成' });
-    return steps;
-  }
-}
-
-registerAlgorithm({
-  id: 'bst-to-gst',
-  name: 'BST转累加树',
-  viewId: 'algo-bst-to-gst-view',
-  category: 'tree',
-  description: '将BST转换为累加树（右根左遍历）',
-  icon: '💰',
-  template: bstToGstTemplate,
-  Visualizer: BSTToGSTVisualizer,
-  difficulty: 2,
-  levelOrder: 27,
-  learningGoal: '掌握反向中序遍历（右根左）',
-});
+// ========== Level 27: BST 转累加树 ==========
+// 已由 ./bst-to-gst-renderer.ts 统一声明式接管 (单一事实来源，涵盖 Stage 1-3 递归/迭代/Morris，支持四语言 1-based 行号联动)
 
 export {};

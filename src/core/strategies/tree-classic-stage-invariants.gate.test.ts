@@ -165,6 +165,39 @@ import {
 } from '../../algorithms/categories/tree/sorted-array-to-bst-stage-codes';
 
 import {
+  buildBstMinDiffStage1Steps,
+  buildBstMinDiffStage2Steps,
+  buildBstMinDiffStage3Steps,
+} from '../../algorithms/categories/tree/bst-min-diff-renderer';
+import {
+  BST_MIN_DIFF_STAGE1_CODES,
+  BST_MIN_DIFF_STAGE2_CODES,
+  BST_MIN_DIFF_STAGE3_CODES,
+} from '../../algorithms/categories/tree/bst-min-diff-stage-codes';
+
+import {
+  buildBstModesStage1Steps,
+  buildBstModesStage2Steps,
+  buildBstModesStage3Steps,
+} from '../../algorithms/categories/tree/bst-modes-renderer';
+import {
+  BST_MODES_STAGE1_CODES,
+  BST_MODES_STAGE2_CODES,
+  BST_MODES_STAGE3_CODES,
+} from '../../algorithms/categories/tree/bst-modes-stage-codes';
+
+import {
+  buildBstToGstStage1Steps,
+  buildBstToGstStage2Steps,
+  buildBstToGstStage3Steps,
+} from '../../algorithms/categories/tree/bst-to-gst-renderer';
+import {
+  BST_TO_GST_STAGE1_CODES,
+  BST_TO_GST_STAGE2_CODES,
+  BST_TO_GST_STAGE3_CODES,
+} from '../../algorithms/categories/tree/bst-to-gst-stage-codes';
+
+import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
@@ -2631,6 +2664,367 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildSortedArrayToBstStage1Steps([]).pop()?.tree).toBeNull();
       expect(buildSortedArrayToBstStage2Steps([]).pop()?.tree).toBeNull();
       expect(buildSortedArrayToBstStage3Steps([]).pop()?.tree).toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // LC 530 / LC 783: 二叉搜索树的最小绝对差 (bst-min-diff)
+  // =========================================================================
+  describe('LC 530 / LC 783: 二叉搜索树的最小绝对差 (bst-min-diff)', () => {
+    it('Stage 1: 经典中序双指针递归，步步具备 callTrace 与四语言有效行号，正确计算极小差', () => {
+      const root1 = buildTreeFromArr([4, 2, 6, 1, 3]);
+      const steps1 = buildBstMinDiffStage1Steps(root1);
+      expect(steps1.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MIN_DIFF_STAGE1_CODES, `BstMinDiff Stage 1 Step ${i}`);
+        expect(steps1[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps1[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.minDiff).toBe(1);
+      expect(last1.inorderSeq).toEqual([1, 2, 3, 4, 6]);
+
+      // 验证关键行号覆盖
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(6);  // entry
+      expect(javaLines).toContain(12); // inorderEnter
+      expect(javaLines).toContain(13); // checkNull
+      expect(javaLines).toContain(14); // leftRecurse
+      expect(javaLines).toContain(16); // calcDiff
+      expect(javaLines).toContain(18); // updatePrev
+      expect(javaLines).toContain(19); // rightRecurse
+      expect(javaLines).toContain(9);  // done
+
+      // 验证非对称用例 [1, 0, 48, null, null, 12, 49] (极小差为 1)
+      const root2 = buildTreeFromArr([1, 0, 48, null, null, 12, 49]);
+      const steps2 = buildBstMinDiffStage1Steps(root2);
+      expect(steps2[steps2.length - 1].minDiff).toBe(1);
+      expect(steps2[steps2.length - 1].inorderSeq).toEqual([0, 1, 12, 48, 49]);
+
+      // 验证大跨度用例 [236, 104, 701, null, 227, null, 911] (极小差为 236 - 227 = 9)
+      const root3 = buildTreeFromArr([236, 104, 701, null, 227, null, 911]);
+      const steps3 = buildBstMinDiffStage1Steps(root3);
+      expect(steps3[steps3.length - 1].minDiff).toBe(9);
+    });
+
+    it('Stage 2: 显式单调栈迭代中序，完整维护显式栈状态与四语言有效行号', () => {
+      const root1 = buildTreeFromArr([4, 2, 6, 1, 3]);
+      const steps1 = buildBstMinDiffStage2Steps(root1);
+      expect(steps1.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MIN_DIFF_STAGE2_CODES, `BstMinDiff Stage 2 Step ${i}`);
+        expect(steps1[i].stackVals).toBeDefined();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.minDiff).toBe(1);
+      expect(last1.inorderSeq).toEqual([1, 2, 3, 4, 6]);
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(8);  // whileLoop
+      expect(javaLines).toContain(10); // pushLeft
+      expect(javaLines).toContain(13); // popNode
+      expect(javaLines).toContain(15); // calcDiff
+      expect(javaLines).toContain(17); // updatePrev
+      expect(javaLines).toContain(18); // turnRight
+      expect(javaLines).toContain(20); // done
+
+      // 验证大跨度用例 [236, 104, 701, null, 227, null, 911]
+      const root3 = buildTreeFromArr([236, 104, 701, null, 227, null, 911]);
+      const steps3 = buildBstMinDiffStage2Steps(root3);
+      expect(steps3[steps3.length - 1].minDiff).toBe(9);
+    });
+
+    it('Stage 3: Morris 空间常数遍历，建立并拆除线索，四语言行号合法且恢复树结构', () => {
+      const root1 = buildTreeFromArr([4, 2, 6, 1, 3]);
+      const steps1 = buildBstMinDiffStage3Steps(root1);
+      expect(steps1.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MIN_DIFF_STAGE3_CODES, `BstMinDiff Stage 3 Step ${i}`);
+      }
+
+      // 验证 Morris 专有线索动作存在
+      const actions = steps1.map((s) => s.action);
+      expect(actions).toContain('thread-build');
+      expect(actions).toContain('thread-cut');
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.minDiff).toBe(1);
+      expect(last1.inorderSeq).toEqual([1, 2, 3, 4, 6]);
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(7);  // whileCheck
+      expect(javaLines).toContain(15); // findPredecessor
+      expect(javaLines).toContain(20); // buildThread
+      expect(javaLines).toContain(23); // cutThread
+      expect(javaLines).toContain(32); // done
+
+      // 验证大跨度用例 [236, 104, 701, null, 227, null, 911]
+      const root3 = buildTreeFromArr([236, 104, 701, null, 227, null, 911]);
+      const steps3 = buildBstMinDiffStage3Steps(root3);
+      expect(steps3[steps3.length - 1].minDiff).toBe(9);
+    });
+
+    it('空树边界防护三大阶段均安全返回 0', () => {
+      expect(buildBstMinDiffStage1Steps(null).pop()?.minDiff).toBe(0);
+      expect(buildBstMinDiffStage2Steps(null).pop()?.minDiff).toBe(0);
+      expect(buildBstMinDiffStage3Steps(null).pop()?.minDiff).toBe(0);
+    });
+  });
+
+  // =========================================================================
+  // LC 501: 二叉搜索树中的众数 (bst-modes)
+  // =========================================================================
+  describe('LC 501: 二叉搜索树中的众数 (bst-modes)', () => {
+    it('Stage 1: 经典中序双指针递归，步步具备 callTrace 与四语言有效行号，正确统计众数与频次', () => {
+      // 官方样例: [1, null, 2, 2] -> 众数 [2]
+      const root1 = buildTreeFromArr([1, null, 2, 2]);
+      const steps1 = buildBstModesStage1Steps(root1);
+      expect(steps1.length).toBeGreaterThan(8);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MODES_STAGE1_CODES, `BstModes Stage 1 Step ${i}`);
+        expect(steps1[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps1[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.modes).toEqual([2]);
+      expect(last1.maxCount).toBe(2);
+      expect(last1.inorderSeq).toEqual([1, 2, 2]);
+
+      // 验证关键行覆盖
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(8);  // entry
+      expect(javaLines).toContain(18); // inorderEnter
+      expect(javaLines).toContain(19); // checkNull
+      expect(javaLines).toContain(20); // leftRecurse
+      expect(javaLines).toContain(21); // countUpdate
+      expect(javaLines).toContain(26); // maxCountUpdate
+      expect(javaLines).toContain(33); // updatePrev
+      expect(javaLines).toContain(34); // rightRecurse
+      expect(javaLines).toContain(15); // done
+
+      // 验证并列众数用例: [2, 1, 2, 1] -> 众数 [1, 2]
+      const root2 = buildTreeFromArr([2, 1, 2, 1]);
+      const steps2 = buildBstModesStage1Steps(root2);
+      const last2 = steps2[steps2.length - 1];
+      expect(last2.modes).toEqual([1, 2]);
+      expect(last2.maxCount).toBe(2);
+
+      // 验证单节点用例: [0] -> 众数 [0]
+      const root3 = buildTreeFromArr([0]);
+      const steps3 = buildBstModesStage1Steps(root3);
+      expect(steps3[steps3.length - 1].modes).toEqual([0]);
+      expect(steps3[steps3.length - 1].maxCount).toBe(1);
+    });
+
+    it('Stage 2: 显式单调栈迭代中序，完整维护显式栈状态与四语言有效行号', () => {
+      const root1 = buildTreeFromArr([1, null, 2, 2]);
+      const steps1 = buildBstModesStage2Steps(root1);
+      expect(steps1.length).toBeGreaterThan(8);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MODES_STAGE2_CODES, `BstModes Stage 2 Step ${i}`);
+        expect(steps1[i].stackVals).toBeDefined();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.modes).toEqual([2]);
+      expect(last1.maxCount).toBe(2);
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(4);  // init
+      expect(javaLines).toContain(9);  // whileLoop
+      expect(javaLines).toContain(11); // pushLeft
+      expect(javaLines).toContain(14); // popNode
+      expect(javaLines).toContain(15); // countUpdate
+      expect(javaLines).toContain(20); // maxCountUpdate
+      expect(javaLines).toContain(27); // updatePrev
+      expect(javaLines).toContain(28); // turnRight
+      expect(javaLines).toContain(32); // done
+
+      // 验证并列众数
+      const root2 = buildTreeFromArr([2, 1, 2, 1]);
+      const steps2 = buildBstModesStage2Steps(root2);
+      expect(steps2[steps2.length - 1].modes).toEqual([1, 2]);
+    });
+
+    it('Stage 3: Morris 空间常数遍历，建立并拆除线索，四语言行号合法且恢复树结构', () => {
+      const root1 = buildTreeFromArr([1, null, 2, 2]);
+      const steps1 = buildBstModesStage3Steps(root1);
+      expect(steps1.length).toBeGreaterThan(8);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_MODES_STAGE3_CODES, `BstModes Stage 3 Step ${i}`);
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.modes).toEqual([2]);
+      expect(last1.maxCount).toBe(2);
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(4);  // init
+      expect(javaLines).toContain(8);  // whileCheck
+      expect(javaLines).toContain(10); // countNoLeft
+      expect(javaLines).toContain(12); // maxCountNoLeft
+      expect(javaLines).toContain(47); // done
+
+      // 验证并列众数与线索建立/拆除
+      const root2 = buildTreeFromArr([2, 1, 2, 1]);
+      const steps2 = buildBstModesStage3Steps(root2);
+      const actions = steps2.map((s) => s.action);
+      expect(actions).toContain('thread-build');
+      expect(actions).toContain('thread-cut');
+      expect(steps2[steps2.length - 1].modes).toEqual([1, 2]);
+    });
+
+    it('空树边界防护三大阶段均安全返回空数组 []', () => {
+      expect(buildBstModesStage1Steps(null).pop()?.modes).toEqual([]);
+      expect(buildBstModesStage2Steps(null).pop()?.modes).toEqual([]);
+      expect(buildBstModesStage3Steps(null).pop()?.modes).toEqual([]);
+    });
+  });
+
+  // =========================================================================
+  // LC 538 / LC 1038: 把二叉搜索树转换为累加树 (bst-to-gst)
+  // =========================================================================
+  describe('LC 538 / LC 1038: 把二叉搜索树转换为累加树 (bst-to-gst)', () => {
+    it('Stage 1: 反向中序递归遍历，步步具备 callTrace 与四语言有效行号，正确计算后缀累加和', () => {
+      // 官方样例: [4, 1, 6, 0, 2, 5, 7, null, null, null, 3, null, null, null, 8]
+      const root1 = buildTreeFromArr([4, 1, 6, 0, 2, 5, 7, null, null, null, 3, null, null, null, 8]);
+      const steps1 = buildBstToGstStage1Steps(root1);
+      expect(steps1.length).toBeGreaterThan(15);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_TO_GST_STAGE1_CODES, `BstToGst Stage 1 Step ${i}`);
+        expect(steps1[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps1[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.sum).toBe(36);
+      expect(last1.tree?.val).toBe(30);
+      expect(last1.tree?.left?.val).toBe(36);
+      expect(last1.tree?.right?.val).toBe(21);
+
+      // 验证关键行覆盖
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(4);  // entry
+      expect(javaLines).toContain(10); // reverseInorderEnter
+      expect(javaLines).toContain(11); // checkNull
+      expect(javaLines).toContain(12); // rightRecurse
+      expect(javaLines).toContain(13); // accumulateSum
+      expect(javaLines).toContain(14); // updateNodeVal
+      expect(javaLines).toContain(15); // leftRecurse
+      expect(javaLines).toContain(7);  // done
+
+      // 验证二节点用例: [0, null, 1]
+      const root2 = buildTreeFromArr([0, null, 1]);
+      const steps2 = buildBstToGstStage1Steps(root2);
+      const last2 = steps2[steps2.length - 1];
+      expect(last2.sum).toBe(1);
+      expect(last2.tree?.val).toBe(1);
+      expect(last2.tree?.right?.val).toBe(1);
+
+      // 验证三节点用例: [1, 0, 2] -> 根 1 变 3, 右 2 变 2, 左 0 变 3
+      const root3 = buildTreeFromArr([1, 0, 2]);
+      const steps3 = buildBstToGstStage1Steps(root3);
+      const last3 = steps3[steps3.length - 1];
+      expect(last3.sum).toBe(3);
+      expect(last3.tree?.val).toBe(3);
+      expect(last3.tree?.right?.val).toBe(2);
+      expect(last3.tree?.left?.val).toBe(3);
+    });
+
+    it('Stage 2: 显式单调栈迭代反向中序，维护显式栈状态与四语言有效行号', () => {
+      const root1 = buildTreeFromArr([4, 1, 6, 0, 2, 5, 7, null, null, null, 3, null, null, null, 8]);
+      const steps1 = buildBstToGstStage2Steps(root1);
+      expect(steps1.length).toBeGreaterThan(15);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_TO_GST_STAGE2_CODES, `BstToGst Stage 2 Step ${i}`);
+        expect(steps1[i].stackVals).toBeDefined();
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.sum).toBe(36);
+      expect(last1.tree?.val).toBe(30);
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(7);  // whileLoop
+      expect(javaLines).toContain(9);  // pushRight
+      expect(javaLines).toContain(12); // popNode
+      expect(javaLines).toContain(14); // updateNodeVal
+      expect(javaLines).toContain(15); // turnLeft
+      expect(javaLines).toContain(17); // done
+
+      // 验证三节点用例: [1, 0, 2]
+      const root3 = buildTreeFromArr([1, 0, 2]);
+      const steps3 = buildBstToGstStage2Steps(root3);
+      expect(steps3[steps3.length - 1].sum).toBe(3);
+      expect(steps3[steps3.length - 1].tree?.val).toBe(3);
+    });
+
+    it('Stage 3: Morris 反向空间常数遍历，建立并拆除反向线索，四语言行号合法且恢复树结构', () => {
+      const root1 = buildTreeFromArr([4, 1, 6, 0, 2, 5, 7, null, null, null, 3, null, null, null, 8]);
+      const steps1 = buildBstToGstStage3Steps(root1);
+      expect(steps1.length).toBeGreaterThan(15);
+
+      for (let i = 0; i < steps1.length; i++) {
+        assertCodeLineWithinBounds(steps1[i].codeLine, BST_TO_GST_STAGE3_CODES, `BstToGst Stage 3 Step ${i}`);
+      }
+
+      const last1 = steps1[steps1.length - 1];
+      expect(last1.action).toBe('done');
+      expect(last1.sum).toBe(36);
+      expect(last1.tree?.val).toBe(30);
+
+      // 验证 Morris 反向专有线索动作存在
+      const actions = steps1.map((s) => s.action);
+      expect(actions).toContain('thread-build');
+      expect(actions).toContain('thread-cut');
+
+      // 关键行覆盖验证
+      const javaLines = steps1.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(6);  // whileCheck
+      expect(javaLines).toContain(12); // findPredecessor
+      expect(javaLines).toContain(17); // buildThread
+      expect(javaLines).toContain(20); // cutThread
+      expect(javaLines).toContain(27); // done
+
+      // 验证三节点用例: [1, 0, 2]
+      const root3 = buildTreeFromArr([1, 0, 2]);
+      const steps3 = buildBstToGstStage3Steps(root3);
+      expect(steps3[steps3.length - 1].sum).toBe(3);
+      expect(steps3[steps3.length - 1].tree?.val).toBe(3);
+    });
+
+    it('空树边界防护三大阶段均安全返回 null', () => {
+      expect(buildBstToGstStage1Steps(null).pop()?.tree).toBeNull();
+      expect(buildBstToGstStage2Steps(null).pop()?.tree).toBeNull();
+      expect(buildBstToGstStage3Steps(null).pop()?.tree).toBeNull();
     });
   });
 });
