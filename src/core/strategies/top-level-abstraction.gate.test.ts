@@ -58,8 +58,8 @@ const strategyRawModules = import.meta.glob<string>('./*-strategy.ts', {
   import: 'default',
 });
 
-const treeRendererRawModules = import.meta.glob<string>(
-  '../../algorithms/categories/tree/**/*-renderer.ts',
+const rendererRawModules = import.meta.glob<string>(
+  '../../algorithms/categories/**/*-renderer.ts',
   {
     eager: true,
     query: '?raw',
@@ -174,12 +174,13 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/zigzag-level-order-036-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/width-of-binary-tree-036-renderer.ts',
       '../../algorithms/categories/tree/bottom-left-renderer.ts',
+      '../../algorithms/categories/graph/jump-point-search-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
 
     for (const filePath of benchmarkFiles) {
-      const content = (treeRendererRawModules as Record<string, string>)[filePath];
+      const content = (rendererRawModules as Record<string, string>)[filePath];
       if (!content) continue;
       const lineCount = content.split('\n').length;
       if (lineCount >= 150) {
