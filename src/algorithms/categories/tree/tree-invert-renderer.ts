@@ -19,6 +19,11 @@ import {
   TREE_INVERT_ANALYSIS_HTML,
 } from './tree-invert-problem-content';
 import {
+  RecursiveCallTraceAdapter,
+  RecursiveCallTraceBuilder,
+  RecursiveCallTraceSnapshot,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
+import {
   TREE_INVERT_STAGE1_CODE,
   TREE_INVERT_STAGE1_LINES,
   TREE_INVERT_STAGE2_QUEUE_CODE,
@@ -49,6 +54,9 @@ export interface InvertStep extends StepBase {
   /** 双重不变量保障与高亮支持 */
   visitedNodes?: number[];
   highlightedNodes?: number[];
+
+  /** Stage 1 递归推演栈专用 */
+  callTrace?: RecursiveCallTraceSnapshot;
 
   /** Stage 2 队列专用 */
   queue?: (number | string)[];
@@ -89,6 +97,11 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
   const workingTree = cloneTree(root);
   let invertedCount = 0;
 
+  const trace = new RecursiveCallTraceBuilder();
+  const rootText = workingTree ? `${workingTree.val}` : 'null';
+  trace.addHeader(`invertTree(root: ${rootText})`, 0, '<- 根调用开始');
+
+  // Step 0: 函数入口帧 (Line 2: public TreeNode invertTree(TreeNode root))
   steps.push({
     tree: cloneTree(workingTree),
     current: workingTree?.val ?? null,
@@ -99,13 +112,17 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
     action: 'enter',
     decision: workingTree ? `启动前序递归翻转：从根节点 ${workingTree.val} 开始` : '空二叉树：无需翻转',
     message: workingTree ? `初始化翻转二叉树：从根节点 ${workingTree.val} 开始递归。` : '空树，无需翻转。',
-    log: workingTree ? '开始翻转二叉树' : '空树',
+    log: workingTree ? `invertTree(root: ${workingTree.val})` : 'invertTree(null)',
     codeLine: L.entry,
     metrics: { '当前处理节点': workingTree ? `节点 ${workingTree.val}` : '—', '已互换次数': 0 },
     statusBadge: { text: '递归启动', type: 'info' },
+    callTrace: trace.snapshot(),
   });
 
   if (!workingTree) {
+    trace.addConditionHit('① root == null -> true (基底条件命中)', 0);
+    trace.addReturnLeaf('return null', 0);
+    trace.addFinalResult('最终结果: null', 0, undefined, 'null');
     steps.push({
       tree: null,
       current: null,
@@ -117,41 +134,86 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       decision: '空树翻转完成，返回 null',
       message: '✅ 翻转完成，返回 null。',
       log: '✓ 翻转完成 (null)',
-      codeLine: L.nullCheck,
+      codeLine: L.nullCheckHit,
       metrics: { '已互换次数': 0, '最终结果': 'null' },
       statusBadge: { text: '空树完成', type: 'success' },
+      callTrace: trace.snapshot(),
     });
     return steps;
   }
 
-  const invert = (node: TreeNode | null) => {
-    if (!node) return;
+  function invert(node: TreeNode | null, depth: number, role: string): TreeNode | null {
+    if (depth > 0) {
+      const label = node ? `Node(${node.val})` : 'null';
+      trace.addHeader(`invertTree(${role}: ${label})`, depth, `<- 深入 ${role}`);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: node ? node.val : null,
+        leftVal: node?.left ? node.left.val : null,
+        rightVal: node?.right ? node.right.val : null,
+        invertedCount,
+        isSwapping: false,
+        action: 'enter',
+        decision: `递归进入：invertTree(${role}: ${label})`,
+        message: `深入调用 invertTree 翻转 ${role} 子树 (${label})。`,
+        log: `enter invertTree(${role}: ${label})`,
+        codeLine: L.entry,
+        metrics: { '当前处理节点': label, '已互换次数': invertedCount },
+        statusBadge: { text: `进入 ${label}`, type: 'info' },
+        callTrace: trace.snapshot(),
+      });
+    }
 
-    const lVal = node.left ? node.left.val : null;
-    const rVal = node.right ? node.right.val : null;
+    // 判空检查 (Line 3: if (root == null) return null;)
+    if (!node) {
+      trace.addConditionHit('① root == null -> true (基底条件命中)', depth);
+      trace.addReturnLeaf('return null', depth);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: null,
+        leftVal: null,
+        rightVal: null,
+        invertedCount,
+        isSwapping: false,
+        action: 'null-base',
+        decision: `判空检查：节点为 null，触发基底条件直接返回 null`,
+        message: `子树为空，命中递归基底，向父调用返回 null。`,
+        log: `null node -> return null`,
+        codeLine: L.nullCheckHit,
+        metrics: { '当前节点': 'null', '已互换次数': invertedCount },
+        statusBadge: { text: '基底返回 null', type: 'warning' },
+        callTrace: trace.snapshot(),
+      });
+      return null;
+    }
 
+    // 节点非空判定帧 (Line 3: root != null 推进)
+    trace.addConditionPass(`① root != null (Node(${node.val}))，准备互换左右孩子`, depth);
     steps.push({
       tree: cloneTree(workingTree),
       current: node.val,
-      leftVal: lVal,
-      rightVal: rVal,
+      leftVal: node.left ? node.left.val : null,
+      rightVal: node.right ? node.right.val : null,
       invertedCount,
       isSwapping: false,
       action: 'enter',
-      decision: `进入节点 ${node.val}：准备互换其左孩子 (${lVal ?? 'null'}) 与右孩子 (${rVal ?? 'null'})`,
-      message: `进入节点 ${node.val}：准备互换其左孩子 (${lVal ?? 'null'}) 与右孩子 (${rVal ?? 'null'})。`,
-      log: `进入 ${node.val} (L=${lVal ?? 'null'}, R=${rVal ?? 'null'})`,
-      codeLine: L.swap,
-      metrics: { '当前节点': node.val, '原左孩子': lVal ?? 'null', '原右孩子': rVal ?? 'null' },
-      statusBadge: { text: `考察节点 ${node.val}`, type: 'info' },
+      decision: `判空检查：Node(${node.val}) != null，继续执行左右孩子互换`,
+      message: `节点 Node(${node.val}) 存在，准备执行左右子树互换。`,
+      log: `node ${node.val} != null -> proceed to swap`,
+      codeLine: L.nullCheckPass,
+      metrics: { '当前节点': node.val, '原左孩子': node.left?.val ?? 'null', '原右孩子': node.right?.val ?? 'null' },
+      statusBadge: { text: `节点 ${node.val} 非空`, type: 'info' },
+      callTrace: trace.snapshot(),
     });
 
-    // 交换左右子树
-    const temp = node.left;
-    node.left = node.right;
-    node.right = temp;
+    // 左右孩子互换帧 (Line 6 in Java, Line 5 in C++/Python, Line 4 in JS -> L.swap)
+    const oldLeft = node.left;
+    const oldRight = node.right;
+    node.left = oldRight;
+    node.right = oldLeft;
     invertedCount++;
 
+    trace.addUnwindCalc(`swap(${node.val}) -> left:${node.left?.val ?? 'null'}, right:${node.right?.val ?? 'null'}`, depth);
     steps.push({
       tree: cloneTree(workingTree),
       current: node.val,
@@ -166,46 +228,53 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       codeLine: L.swap,
       metrics: { '当前节点': node.val, '新左孩子': node.left ? node.left.val : 'null', '新右孩子': node.right ? node.right.val : 'null', '已互换次数': invertedCount },
       statusBadge: { text: `互换成功 (#${invertedCount})`, type: 'warning' },
+      callTrace: trace.snapshot(),
     });
 
-    if (node.left) {
-      steps.push({
-        tree: cloneTree(workingTree),
-        current: node.val,
-        leftVal: node.left.val,
-        rightVal: node.right ? node.right.val : null,
-        invertedCount,
-        isSwapping: false,
-        action: 'recurse-left',
-        decision: `向左子树递归：进入翻转后的左孩子 ${node.left.val}`,
-        message: `向左递归调用 invertTree(node.left: ${node.left.val})。`,
-        log: `recurse left: ${node.left.val}`,
-        codeLine: L.recurseLeft,
-        metrics: { '当前节点': node.val, '下一步递归': `左孩子 ${node.left.val}` },
-        statusBadge: { text: '向左递归', type: 'info' },
-      });
-      invert(node.left);
-    }
+    // 递归翻转左子树 (Line 9 in Java: invertTree(root.left);)
+    trace.addRecursePrep(`② 递归翻转左子树 invertTree(${node.left ? 'Node(' + node.left.val + ')' : 'null'})`, depth);
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: node.val,
+      leftVal: node.left ? node.left.val : null,
+      rightVal: node.right ? node.right.val : null,
+      invertedCount,
+      isSwapping: false,
+      action: 'recurse-left',
+      decision: `向左子树递归：调用 invertTree(node.left: ${node.left ? node.left.val : 'null'})`,
+      message: `向左子树递归调用 invertTree(node.left: ${node.left ? node.left.val : 'null'})。`,
+      log: `recurse left: ${node.left ? node.left.val : 'null'}`,
+      codeLine: L.recurseLeft,
+      metrics: { '当前节点': node.val, '下一步递归': `左孩子 ${node.left ? node.left.val : 'null'}` },
+      statusBadge: { text: '向左递归', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
 
-    if (node.right) {
-      steps.push({
-        tree: cloneTree(workingTree),
-        current: node.val,
-        leftVal: node.left ? node.left.val : null,
-        rightVal: node.right.val,
-        invertedCount,
-        isSwapping: false,
-        action: 'recurse-right',
-        decision: `向右子树递归：进入翻转后的右孩子 ${node.right.val}`,
-        message: `向右递归调用 invertTree(node.right: ${node.right.val})。`,
-        log: `recurse right: ${node.right.val}`,
-        codeLine: L.recurseRight,
-        metrics: { '当前节点': node.val, '下一步递归': `右孩子 ${node.right.val}` },
-        statusBadge: { text: '向右递归', type: 'info' },
-      });
-      invert(node.right);
-    }
+    invert(node.left, depth + 1, '左子树');
 
+    // 递归翻转右子树 (Line 10 in Java: invertTree(root.right);)
+    trace.addRecursePrep(`③ 递归翻转右子树 invertTree(${node.right ? 'Node(' + node.right.val + ')' : 'null'})`, depth);
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: node.val,
+      leftVal: node.left ? node.left.val : null,
+      rightVal: node.right ? node.right.val : null,
+      invertedCount,
+      isSwapping: false,
+      action: 'recurse-right',
+      decision: `向右子树递归：调用 invertTree(node.right: ${node.right ? node.right.val : 'null'})`,
+      message: `向右子树递归调用 invertTree(node.right: ${node.right ? node.right.val : 'null'})。`,
+      log: `recurse right: ${node.right ? node.right.val : 'null'}`,
+      codeLine: L.recurseRight,
+      metrics: { '当前节点': node.val, '下一步递归': `右孩子 ${node.right ? node.right.val : 'null'}` },
+      statusBadge: { text: '向右递归', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    invert(node.right, depth + 1, '右子树');
+
+    // 左右子树均已翻转完成，返回 root (Line 11 in Java: return root;)
+    trace.addFinalResult(`④ Node(${node.val}) 左右子树翻转完毕，返回 root`, depth, undefined, `Node(${node.val})`);
     steps.push({
       tree: cloneTree(workingTree),
       current: node.val,
@@ -214,16 +283,19 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       invertedCount,
       isSwapping: false,
       action: 'leave',
-      decision: `离开节点 ${node.val}：该子树左右翻转全部完成`,
-      message: `离开节点 ${node.val}：该子树左右翻转全部完成。`,
+      decision: `离开节点 ${node.val}：该子树左右翻转全部完成，向父层返回 Node(${node.val})`,
+      message: `离开节点 ${node.val}：该子树左右翻转全部完成，返回 root。`,
       log: `离开 ${node.val}`,
-      codeLine: L.leave,
+      codeLine: L.returnRoot,
       metrics: { '当前完成节点': node.val, '已互换次数': invertedCount },
       statusBadge: { text: `节点 ${node.val} 完成`, type: 'success' },
+      callTrace: trace.snapshot(),
     });
-  };
 
-  invert(workingTree);
+    return node;
+  }
+
+  invert(workingTree, 0, '根节点');
 
   const allTreeVals = collectTreeValues(workingTree);
 
@@ -243,6 +315,7 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
     codeLine: L.returnRoot,
     metrics: { '总交换次数': invertedCount, '整树状态': '完全镜像倒置', '时间复杂度': 'O(N)' },
     statusBadge: { text: `翻转完成 (${invertedCount} 次交换)`, type: 'success' },
+    callTrace: trace.snapshot(),
   });
 
   return steps;
@@ -808,7 +881,7 @@ export const treeInvertVisualizer = registerDeclarativeAlgorithm<InvertStep>({
         complexity: 'O(N) · O(H) 递归栈',
       },
       card1Title: '🌳 二叉树动态镜像翻转沙盘',
-      card2Title: '🧭 左右孩子互换状态监视器',
+      card2Title: '🧭 递归调用推演与孩子互换监视器',
       codeLanguages: TREE_INVERT_STAGE1_CODE,
       buildSteps: (inputs: Record<string, any>) => {
         const root = parseAndBuild(inputs);
@@ -816,11 +889,47 @@ export const treeInvertVisualizer = registerDeclarativeAlgorithm<InvertStep>({
       },
       renderCanvas: (container: HTMLElement, step: InvertStep) => renderTreeInvertCanvasForStep(container, step, '#10b981'),
       renderCustomMetrics: (container: HTMLElement, step: InvertStep) => {
-        container.innerHTML = renderTreeInvertMetricsShell(
-          step,
-          renderStage1SwapBufferHtml(step),
-          '经典递归：遍历到每个节点时，执行 swap(node.left, node.right)，再分别向左、右子树递归。'
-        );
+        const curVal = step.current != null ? `Node(${step.current})` : '—';
+        const isSwapping = step.isSwapping;
+        const stateColor = isSwapping ? '#d97706' : step.action === 'done' ? '#16a34a' : '#2563eb';
+        const stateText = isSwapping ? '🔄 左右互换中' : step.action === 'done' ? '✅ 全部翻转完成' : '🔍 递归遍历中';
+
+        container.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px; height: 100%; box-sizing: border-box;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px;">
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">当前考察节点</div>
+                <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 1px;">${curVal}</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">当前状态</div>
+                <div style="font-size: 12px; font-weight: 800; color: ${stateColor}; margin-top: 1px;">${stateText}</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">已互换子树次数</div>
+                <div style="font-size: 13px; font-weight: 800; color: #2563eb; margin-top: 1px;">${step.invertedCount} 次</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">时间复杂度</div>
+                <div style="font-size: 12px; font-weight: 800; color: #0d9488; margin-top: 1px;">O(N) · O(H)</div>
+              </div>
+            </div>
+
+            <div class="tree-invert-trace-host" style="flex: 1; min-height: 140px; overflow: hidden;"></div>
+          </div>
+        `;
+
+        if (step.callTrace) {
+          const traceHost = container.querySelector('.tree-invert-trace-host') as HTMLElement | null;
+          if (traceHost) {
+            RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+              title: '📜 翻转二叉树前序递归调用推演栈',
+              theme: 'light',
+              maxHeight: '100%',
+              showTerminalHeader: true,
+            });
+          }
+        }
       },
     },
     {

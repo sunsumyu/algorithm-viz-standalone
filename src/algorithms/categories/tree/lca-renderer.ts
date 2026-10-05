@@ -19,6 +19,11 @@ import {
   LCA_CODE_LANGUAGES,
 } from './lca-problem-content';
 import {
+  RecursiveCallTraceAdapter,
+  RecursiveCallTraceBuilder,
+  RecursiveCallTraceSnapshot,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
+import {
   LCA_STAGE1_CODE,
   LCA_STAGE1_LINES,
   LCA_STAGE2_PARENT_MAP_CODE,
@@ -43,6 +48,9 @@ export interface LCAStep {
   metrics?: Record<string, string | number>;
   stageId?: 'stage-1' | 'stage-2' | 'stage-3';
 
+  /** Stage 1 递归调用推演栈 */
+  callTrace?: RecursiveCallTraceSnapshot;
+
   // Stage 2 状态
   parentMap?: Record<number, number | null>;
   visitedAncestors?: number[];
@@ -62,6 +70,11 @@ export const LCA_CODE_LINES = LCA_STAGE1_LINES;
 export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number): LCAStep[] {
   const steps: LCAStep[] = [];
   let foundLCA: number | null = null;
+  const L = LCA_STAGE1_LINES;
+
+  const trace = new RecursiveCallTraceBuilder();
+  const rootText = root ? `${root.val}` : 'null';
+  trace.addHeader(`lowestCommonAncestor(root: ${rootText}, p: ${pVal}, q: ${qVal})`, 0, '<- 根调用开始');
 
   // Step 0: 入口
   steps.push({
@@ -73,17 +86,23 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
     rightReturn: null,
     lcaResult: null,
     stageId: 'stage-1',
-    decision: '算法启动：初始化 LCA 递归查找',
+    decision: root
+      ? `算法启动：lowestCommonAncestor(root: ${root.val}, p: ${pVal}, q: ${qVal})`
+      : '算法启动：空树，直接返回 null',
     action: 'enter',
     message: root
       ? `寻找节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先，从根节点 ${root.val} 开始后序递归。`
       : '空树，直接返回 null。',
     log: root ? `lowestCommonAncestor(root: ${root.val}, p: ${pVal}, q: ${qVal})` : 'root is null -> null',
-    codeLine: LCA_STAGE1_LINES.entry,
-    metrics: { '当前节点': '—', 'left 返回值': 'null', 'right 返回值': 'null', '当前捕获 LCA': '未捕获' },
+    codeLine: L.entry,
+    metrics: { '当前节点': root ? `节点 ${root.val}` : '—', 'left 返回值': 'null', 'right 返回值': 'null', '当前捕获 LCA': '未捕获' },
+    callTrace: trace.snapshot(),
   });
 
   if (!root) {
+    trace.addConditionHit('① root == null -> true 命中! 返回 null', 0);
+    trace.addReturnLeaf('return null', 0);
+    trace.addFinalResult('最终结果: null', 0, undefined, 'null');
     steps.push({
       tree: null,
       current: null,
@@ -97,40 +116,76 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'done',
       message: '树为空，无公共祖先，返回 null。',
       log: 'return null',
-      codeLine: LCA_STAGE1_LINES.baseCheck,
+      codeLine: L.baseCheckHit,
       metrics: { '当前节点': '—', 'left 返回值': 'null', 'right 返回值': 'null', '当前捕获 LCA': 'null', '最终结果': 'null' },
+      callTrace: trace.snapshot(),
     });
     return steps;
   }
 
-  function postOrder(node: TreeNode | null): number | null {
-    if (!node) return null;
+  function postOrder(node: TreeNode | null, depth: number, role: string): number | null {
+    if (depth > 0) {
+      // 递归子调用入口帧 (Line 2)
+      const label = node ? `Node(${node.val})` : 'null';
+      trace.addHeader(`lowestCommonAncestor(${role}: ${label})`, depth, `<- 深入 ${role}`);
+      steps.push({
+        tree: root,
+        current: node ? node.val : null,
+        p: pVal,
+        q: qVal,
+        leftReturn: null,
+        rightReturn: null,
+        lcaResult: foundLCA,
+        stageId: 'stage-1',
+        decision: `递归进入：lowestCommonAncestor(${role}: ${label})`,
+        action: 'enter',
+        message: `深入调用 lowestCommonAncestor 探索 ${role} (${label})。`,
+        log: `enter lowestCommonAncestor(${role}: ${label})`,
+        codeLine: L.entry,
+        metrics: {
+          '当前节点': label,
+          'left 返回值': '待计算',
+          'right 返回值': '待计算',
+          '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
+        },
+        callTrace: trace.snapshot(),
+      });
+    }
 
-    // Step: 访问当前节点
-    steps.push({
-      tree: root,
-      current: node.val,
-      p: pVal,
-      q: qVal,
-      leftReturn: null,
-      rightReturn: null,
-      lcaResult: foundLCA,
-      stageId: 'stage-1',
-      decision: `考察节点 ${node.val}`,
-      action: 'enter',
-      message: `递归到达节点 ${node.val}，检查是否为 null 或命中目标节点 p (${pVal}) / q (${qVal})。`,
-      log: `visit node: ${node.val}`,
-      codeLine: LCA_STAGE1_LINES.baseCheck,
-      metrics: {
-        '当前节点': node.val,
-        'left 返回值': '待计算',
-        'right 返回值': '待计算',
-        '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
-      },
-    });
+    // 判空基底检查 (Line 3: if (root == null || root == p || root == q) return root;)
+    if (!node) {
+      trace.addConditionHit('① root == null -> true (基底条件命中)', depth);
+      trace.addReturnLeaf('return null', depth);
+      steps.push({
+        tree: root,
+        current: null,
+        p: pVal,
+        q: qVal,
+        leftReturn: null,
+        rightReturn: null,
+        lcaResult: foundLCA,
+        stageId: 'stage-1',
+        decision: '基底判空：当前节点为 null，向父调用返回 null',
+        action: 'enter',
+        message: '空子树，命中基底条件 root == null，返回 null。',
+        log: 'node is null -> return null',
+        codeLine: L.baseCheckHit,
+        metrics: {
+          '当前节点': 'null',
+          'left 返回值': 'null',
+          'right 返回值': 'null',
+          '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
+        },
+        callTrace: trace.snapshot(),
+      });
+      return null;
+    }
 
-    // 命中目标节点 (base case)
+    // 目标命中基底检查 (Line 3: root == p || root == q)
     if (node.val === pVal || node.val === qVal) {
+      const targetName = node.val === pVal ? `p=${pVal}` : `q=${qVal}`;
+      trace.addConditionHit(`① root == ${targetName} 命中目标节点! 触发基底返回`, depth);
+      trace.addReturnLeaf(`return Node(${node.val})`, depth);
       steps.push({
         tree: root,
         current: node.val,
@@ -140,22 +195,49 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         rightReturn: null,
         lcaResult: foundLCA,
         stageId: 'stage-1',
-        decision: `命中目标节点 ${node.val}`,
+        decision: `🎯 命中目标节点 ${node.val} (${targetName})，触发基底返回`,
         action: 'hit-target',
-        message: `🎯 节点 ${node.val} 匹配目标 (${node.val === pVal ? `p=${pVal}` : `q=${qVal}`})，直接向上返回 ${node.val}。`,
+        message: `🎯 节点 ${node.val} 匹配目标 (${targetName})，无需继续下探，直接向上返回 ${node.val}。`,
         log: `hit target: ${node.val} -> return ${node.val}`,
-        codeLine: LCA_STAGE1_LINES.baseCheck,
+        codeLine: L.baseCheckHit,
         metrics: {
           '当前节点': node.val,
           'left 返回值': '无需下探',
           'right 返回值': '无需下探',
           '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
         },
+        callTrace: trace.snapshot(),
       });
       return node.val;
     }
 
-    // 深入左子树
+    // 基底条件均不满足判定帧 (Line 3 pass: 继续探索左右子树)
+    trace.addConditionPass(`① Node(${node.val}) != null 且不等于 p(${pVal}) 或 q(${qVal})，继续向下探索左右子树`, depth);
+    steps.push({
+      tree: root,
+      current: node.val,
+      p: pVal,
+      q: qVal,
+      leftReturn: null,
+      rightReturn: null,
+      lcaResult: foundLCA,
+      stageId: 'stage-1',
+      decision: `考察节点 ${node.val}：非空且非目标，准备向下探索`,
+      action: 'enter',
+      message: `节点 ${node.val} 存在且非目标节点，继续向左、右子树深入探索。`,
+      log: `node ${node.val} != null and != p/q -> proceed to explore`,
+      codeLine: L.baseCheckPass,
+      metrics: {
+        '当前节点': node.val,
+        'left 返回值': '待探索',
+        'right 返回值': '待探索',
+        '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
+      },
+      callTrace: trace.snapshot(),
+    });
+
+    // 深入左子树 (Line 4: TreeNode left = lowestCommonAncestor(root.left, p, q);)
+    trace.addRecursePrep(`② 深入左子树 lowestCommonAncestor(${node.left ? 'Node(' + node.left.val + ')' : 'null'})`, depth);
     steps.push({
       tree: root,
       current: node.val,
@@ -166,20 +248,23 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       lcaResult: foundLCA,
       stageId: 'stage-1',
       decision: `深入节点 ${node.val} 的左子树`,
-      action: 'enter',
+      action: 'explore',
       message: `向下探索节点 ${node.val} 的左子树...`,
       log: `explore left of ${node.val}`,
-      codeLine: LCA_STAGE1_LINES.leftCall,
+      codeLine: L.leftCall,
       metrics: {
         '当前节点': node.val,
         'left 返回值': '正在探索',
         'right 返回值': '待计算',
         '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
       },
+      callTrace: trace.snapshot(),
     });
 
-    const leftRet = postOrder(node.left);
+    const leftRet = postOrder(node.left, depth + 1, '左子树');
 
+    // 左子树返回帧 (Line 4: 接收 left 返回值)
+    trace.addUnwindCalc(`leftRet = ${leftRet !== null ? leftRet : 'null'}`, depth);
     steps.push({
       tree: root,
       current: node.val,
@@ -193,16 +278,18 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'left-done',
       message: `节点 ${node.val} 的左子树探测完毕，返回值为 ${leftRet !== null ? leftRet : 'null'}。`,
       log: `leftRet = ${leftRet}`,
-      codeLine: LCA_STAGE1_LINES.leftCall,
+      codeLine: L.leftCall,
       metrics: {
         '当前节点': node.val,
         'left 返回值': leftRet !== null ? leftRet : 'null',
         'right 返回值': '待探索',
         '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
       },
+      callTrace: trace.snapshot(),
     });
 
-    // 深入右子树
+    // 深入右子树 (Line 5: TreeNode right = lowestCommonAncestor(root.right, p, q);)
+    trace.addRecursePrep(`③ 深入右子树 lowestCommonAncestor(${node.right ? 'Node(' + node.right.val + ')' : 'null'})`, depth);
     steps.push({
       tree: root,
       current: node.val,
@@ -213,20 +300,23 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       lcaResult: foundLCA,
       stageId: 'stage-1',
       decision: `深入节点 ${node.val} 的右子树`,
-      action: 'enter',
+      action: 'explore',
       message: `向下探索节点 ${node.val} 的右子树...`,
       log: `explore right of ${node.val}`,
-      codeLine: LCA_STAGE1_LINES.rightCall,
+      codeLine: L.rightCall,
       metrics: {
         '当前节点': node.val,
         'left 返回值': leftRet !== null ? leftRet : 'null',
         'right 返回值': '正在探索',
         '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
       },
+      callTrace: trace.snapshot(),
     });
 
-    const rightRet = postOrder(node.right);
+    const rightRet = postOrder(node.right, depth + 1, '右子树');
 
+    // 右子树返回帧 (Line 5: 接收 right 返回值)
+    trace.addUnwindCalc(`rightRet = ${rightRet !== null ? rightRet : 'null'}`, depth);
     steps.push({
       tree: root,
       current: node.val,
@@ -240,18 +330,21 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       action: 'right-done',
       message: `节点 ${node.val} 的右子树探测完毕，返回值为 ${rightRet !== null ? rightRet : 'null'}。`,
       log: `rightRet = ${rightRet}`,
-      codeLine: LCA_STAGE1_LINES.rightCall,
+      codeLine: L.rightCall,
       metrics: {
         '当前节点': node.val,
         'left 返回值': leftRet !== null ? leftRet : 'null',
         'right 返回值': rightRet !== null ? rightRet : 'null',
         '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
       },
+      callTrace: trace.snapshot(),
     });
 
-    // 汇总左右子树结果
+    // 汇总左右子树结果 (Line 6: if (left != null && right != null) return root;)
     if (leftRet !== null && rightRet !== null) {
       foundLCA = node.val;
+      trace.addConditionHit(`④ left(${leftRet}) != null && right(${rightRet}) != null 两侧命中! 锁定 LCA: Node(${node.val})`, depth);
+      trace.addFinalResult(`最终返回 LCA: Node(${node.val})`, depth, undefined, `Node(${node.val})`);
       steps.push({
         tree: root,
         current: node.val,
@@ -265,18 +358,21 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         action: 'merge',
         message: `左右子树均返回非空（left=${leftRet}, right=${rightRet}），说明目标节点分属两侧，节点 ${node.val} 就是 LCA！`,
         log: `⭐ LCA FOUND: ${node.val}`,
-        codeLine: LCA_STAGE1_LINES.splitLCA,
+        codeLine: L.splitLCAHit,
         metrics: {
           '当前节点': node.val,
           'left 返回值': leftRet,
           'right 返回值': rightRet,
           '当前捕获 LCA': foundLCA,
         },
+        callTrace: trace.snapshot(),
       });
       return node.val;
     }
 
+    // 单侧非空向上传递 (Line 7: return left != null ? left : right;)
     const ret = leftRet !== null ? leftRet : rightRet;
+    trace.addFinalResult(`④ 单侧传递: return ${ret !== null ? 'Node(' + ret + ')' : 'null'}`, depth, undefined, ret !== null ? `Node(${ret})` : 'null');
     steps.push({
       tree: root,
       current: node.val,
@@ -286,24 +382,30 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       rightReturn: rightRet,
       lcaResult: foundLCA,
       stageId: 'stage-1',
-      decision: `单侧向上传递: ${ret !== null ? ret : 'null'}`,
+      decision: ret !== null
+        ? `单侧命中：向父节点传递找到的节点 ${ret}`
+        : `两侧均为空：节点 ${node.val} 子树中未找到目标，返回 null`,
       action: 'merge',
-      message: `节点 ${node.val} 左右汇聚：非双向交汇，将非空分支 ${ret !== null ? ret : 'null'} 向上传递。`,
+      message: ret !== null
+        ? `节点 ${node.val} 的子树中只发现单侧目标（${leftRet !== null ? `左侧 ${leftRet}` : `右侧 ${rightRet}`}），向上层传递。`
+        : `节点 ${node.val} 的子树未发现目标节点，返回 null。`,
       log: `pass up: ${ret}`,
-      codeLine: LCA_STAGE1_LINES.singlePass,
+      codeLine: L.singlePass,
       metrics: {
         '当前节点': node.val,
         'left 返回值': leftRet !== null ? leftRet : 'null',
         'right 返回值': rightRet !== null ? rightRet : 'null',
         '当前捕获 LCA': foundLCA != null ? foundLCA : '未捕获',
       },
+      callTrace: trace.snapshot(),
     });
 
     return ret;
   }
 
-  const finalLCA = postOrder(root);
+  const finalLCA = postOrder(root, 0, '根节点');
 
+  // 收尾完成帧
   steps.push({
     tree: root,
     current: finalLCA,
@@ -313,13 +415,15 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
     rightReturn: null,
     lcaResult: finalLCA,
     stageId: 'stage-1',
-    decision: 'LCA 查找全部结束',
+    decision: finalLCA !== null
+      ? `✅ 查找完成！节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先为 【${finalLCA}】。`
+      : '查找完成，未在树中找到公共祖先。',
     action: 'done',
-    message:
-      finalLCA !== null
-        ? `✅ 查找完成！节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先为 【${finalLCA}】。`
-        : '查找完成，未在树中找到公共祖先。',
+    message: finalLCA !== null
+      ? `✅ 查找完成！节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先为 【${finalLCA}】。`
+      : '查找完成，未在树中找到公共祖先。',
     log: `done lca=${finalLCA}`,
+    codeLine: L.done,
     metrics: {
       '当前节点': finalLCA !== null ? finalLCA : '—',
       'left 返回值': '—',
@@ -327,7 +431,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       '当前捕获 LCA': finalLCA !== null ? finalLCA : 'null',
       '最终结果': finalLCA !== null ? `TreeNode(${finalLCA})` : 'null',
     },
-    codeLine: LCA_STAGE1_LINES.done,
+    callTrace: trace.snapshot(),
   });
 
   return steps;
@@ -1161,6 +1265,50 @@ export const lcaVisualizer = registerDeclarativeAlgorithm<LCAStep>({
         return buildLCASteps(root, p, q);
       },
       renderCanvas: (container, step) => renderLcaCanvas(container, step, 'stage-1'),
+      renderCustomMetrics: (container, step) => {
+        const curVal = step.current != null ? `Node(${step.current})` : '—';
+        const leftVal = step.leftReturn != null ? `Node(${step.leftReturn})` : 'null';
+        const rightVal = step.rightReturn != null ? `Node(${step.rightReturn})` : 'null';
+        const lcaText = step.lcaResult != null ? `Node(${step.lcaResult})` : '未捕获';
+        const lcaColor = step.lcaResult != null ? '#16a34a' : '#64748b';
+
+        container.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px; height: 100%; box-sizing: border-box;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px;">
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">当前考察节点</div>
+                <div style="font-size: 13px; font-weight: 800; color: #0f172a; margin-top: 1px;">${curVal}</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">left 返回值</div>
+                <div style="font-size: 13px; font-weight: 800; color: #2563eb; margin-top: 1px;">${leftVal}</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">right 返回值</div>
+                <div style="font-size: 13px; font-weight: 800; color: #9333ea; margin-top: 1px;">${rightVal}</div>
+              </div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px;">
+                <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">当前捕获 LCA</div>
+                <div style="font-size: 13px; font-weight: 800; color: ${lcaColor}; margin-top: 1px;">${lcaText}</div>
+              </div>
+            </div>
+
+            <div class="lca-trace-host" style="flex: 1; min-height: 140px; overflow: hidden;"></div>
+          </div>
+        `;
+
+        if (step.callTrace) {
+          const traceHost = container.querySelector('.lca-trace-host') as HTMLElement | null;
+          if (traceHost) {
+            RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+              title: '📜 最近公共祖先 (LCA) 后序递归推演栈',
+              theme: 'light',
+              maxHeight: '100%',
+              showTerminalHeader: true,
+            });
+          }
+        }
+      },
     },
     {
       id: 'stage-2',

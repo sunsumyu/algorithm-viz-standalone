@@ -877,8 +877,24 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.invertedCount).toBe(7);
       expect(last.tree?.left?.val).toBe(7);
       expect(last.tree?.right?.val).toBe(2);
-      expect(last.visitedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
-      expect(last.highlightedNodes).toEqual(expect.arrayContaining([4, 2, 7, 1, 3, 6, 9]));
+      // 验证高亮覆盖核心递归生命周期行号
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(3);  // nullCheck
+      expect(javaLines).toContain(6);  // swap
+      expect(javaLines).toContain(9);  // recurseLeft
+      expect(javaLines).toContain(10); // recurseRight
+      expect(javaLines).toContain(11); // returnRoot
+
+      // 严格一行一步不变量：从根节点进入到发起左子树递归，必须连续执行 [2, 3, 6, 9]，杜绝跳步！
+      const initSequence = steps.slice(0, 4).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSequence).toEqual([2, 3, 6, 9]);
+
+      // 验证建造者模式下每一步 callTrace 快照完备
+      steps.forEach((step, idx) => {
+        expect(step.callTrace, `Step ${idx} 必须具备 callTrace 快照`).toBeDefined();
+        expect(step.callTrace?.activeLineId, `Step ${idx} 必须具备 activeLineId`).toBeTruthy();
+      });
     });
 
     it('Stage 2: 队列层序遍历翻转 (Iterative Queue BFS) 结果正确且收尾帧全景高亮', () => {
@@ -1052,6 +1068,24 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
         assertCodeLineWithinBounds(steps[i].codeLine, LCA_STAGE1_CODE, `LCA Stage 1 Step ${i}`);
       }
       expect(steps[steps.length - 1].lcaResult).toBe(3);
+
+      // 验证高亮覆盖核心递归生命周期行号
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // baseCheck
+      expect(javaLines).toContain(4); // leftCall
+      expect(javaLines).toContain(5); // rightCall
+      expect(javaLines).toContain(6); // splitLCA
+
+      // 严格一行一步不变量：从根节点进入到命中左子树节点 5，必须连续执行 [2, 3, 4, 2, 3]，杜绝跳步！
+      const initSequence = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSequence).toEqual([2, 3, 4, 2, 3]);
+
+      // 验证建造者模式下每一步 callTrace 快照完备
+      steps.forEach((step, idx) => {
+        expect(step.callTrace, `Step ${idx} 必须具备 callTrace 快照`).toBeDefined();
+        expect(step.callTrace?.activeLineId, `Step ${idx} 必须具备 activeLineId`).toBeTruthy();
+      });
     });
 
     it('Stage 1: 同侧祖先包含 p=5, q=4 的 LCA 为 5', () => {

@@ -284,6 +284,53 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       expect(lastStep.tree?.left?.val).toBe(7);
       expect(lastStep.tree?.right?.val).toBe(2);
     });
+
+    it('14.1 生成完整的翻转递归调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
+      const steps = buildTreeInvertSteps(root);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.lines.length).toBeGreaterThan(10);
+
+      const stepsWithTrace = steps.filter((s) => s.callTrace != null);
+      expect(stepsWithTrace.length).toBe(steps.length);
+
+      const kinds = lastStep.callTrace!.lines.map((l) => l.kind);
+      expect(kinds).toContain('header');
+      expect(kinds).toContain('unwind-calc');
+      expect(kinds).toContain('recurse-prep');
+    });
+
+    it('14.2 严格一行一步与翻转生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
+      const steps = buildTreeInvertSteps(root);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(3);  // nullCheck
+      expect(javaLines).toContain(6);  // swap
+      expect(javaLines).toContain(9);  // recurseLeft
+      expect(javaLines).toContain(10); // recurseRight
+      expect(javaLines).toContain(11); // returnRoot
+
+      const initSequence = steps.slice(0, 4).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSequence).toEqual([2, 3, 6, 9]);
+
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('enter');
+      expect(actions).toContain('swap');
+      expect(actions).toContain('recurse-left');
+      expect(actions).toContain('recurse-right');
+      expect(actions).toContain('leave');
+      expect(actions).toContain('done');
+    });
+
+    it('14.3 空树翻转生成合法快照', () => {
+      const steps = buildTreeInvertSteps(null);
+      const last = steps[steps.length - 1];
+      expect(last.callTrace).toBeDefined();
+      expect(last.callTrace!.finalResult).toBe('null');
+    });
   });
 
   describe('BST Search (BST 节点搜索)', () => {
@@ -375,6 +422,37 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       const steps = buildLCASteps(root, 5, 4);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.lcaResult).toBe(5);
+    });
+
+    it('18.1 生成完整的 LCA 递归调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]);
+      const steps = buildLCASteps(root, 5, 1);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.lines.length).toBeGreaterThan(10);
+      expect(lastStep.callTrace!.finalResult).toBe('Node(3)');
+
+      const stepsWithTrace = steps.filter((s) => s.callTrace != null);
+      expect(stepsWithTrace.length).toBe(steps.length);
+
+      const kinds = lastStep.callTrace!.lines.map((l) => l.kind);
+      expect(kinds).toContain('header');
+      expect(kinds).toContain('unwind-calc');
+    });
+
+    it('18.2 严格一行一步与 LCA 生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([3, 5, 1, 6, 2, 0, 8, null, null, 7, 4]);
+      const steps = buildLCASteps(root, 5, 1);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // baseCheck
+      expect(javaLines).toContain(4); // leftCall
+      expect(javaLines).toContain(5); // rightCall
+      expect(javaLines).toContain(6); // splitLCA
+
+      const initSequence = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSequence).toEqual([2, 3, 4, 2, 3]);
     });
   });
 });

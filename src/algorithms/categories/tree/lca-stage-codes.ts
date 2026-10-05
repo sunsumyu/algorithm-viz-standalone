@@ -58,10 +58,14 @@ export const LCA_STAGE1_CODE: Record<string, string[]> = {
 
 export const LCA_STAGE1_LINES = {
   entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-  baseCheck: { java: 3, cpp: 4, python: [3, 4], javascript: 2 },
+  baseCheck: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  baseCheckHit: { java: 3, cpp: 4, python: 4, javascript: 2 },
+  baseCheckPass: { java: 3, cpp: 4, python: 3, javascript: 2 },
   leftCall: { java: 4, cpp: 5, python: 5, javascript: 3 },
   rightCall: { java: 5, cpp: 6, python: 6, javascript: 4 },
-  splitLCA: { java: 6, cpp: 7, python: [7, 8], javascript: 5 },
+  splitLCA: { java: 6, cpp: 7, python: 8, javascript: 5 },
+  splitLCAHit: { java: 6, cpp: 7, python: 8, javascript: 5 },
+  splitLCAPass: { java: 6, cpp: 7, python: 7, javascript: 5 },
   singlePass: { java: 7, cpp: 8, python: 9, javascript: 6 },
   done: { java: 7, cpp: 8, python: 9, javascript: 6 },
 };

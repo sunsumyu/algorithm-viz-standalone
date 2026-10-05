@@ -64,6 +64,8 @@ export const TREE_INVERT_STAGE1_CODE: Record<string, string[]> = {
 export const TREE_INVERT_STAGE1_LINES = {
   entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
   nullCheck: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  nullCheckHit: { java: 3, cpp: 4, python: 4, javascript: 2 },
+  nullCheckPass: { java: 3, cpp: 4, python: 3, javascript: 2 },
   swap: { java: 6, cpp: 5, python: 5, javascript: 4 },
   recurseLeft: { java: 9, cpp: 6, python: 6, javascript: 6 },
   recurseRight: { java: 10, cpp: 7, python: 7, javascript: 7 },

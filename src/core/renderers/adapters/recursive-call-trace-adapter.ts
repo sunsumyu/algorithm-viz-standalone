@@ -31,6 +31,8 @@ export interface CallTraceSnapshot {
   finalResult?: number | string;
 }
 
+export type RecursiveCallTraceSnapshot = CallTraceSnapshot;
+
 export interface RecursiveCallTraceOptions {
   title?: string;
   maxHeight?: string;
