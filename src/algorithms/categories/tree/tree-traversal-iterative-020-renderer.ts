@@ -1,14 +1,30 @@
 /**
- * Class 020: 二叉树非递归与双栈遍历 (Iterative Tree Traversals)
- * LeetCode 144 / 94 / 145
+ * 左程云算法通关课 Class 020: 二叉树非递归与双栈遍历 (Iterative Tree Traversals)
+ * LeetCode 144 (先序) / 94 (中序) / 145 (后序)
+ * 4-Card 声明式标准化架构
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
 import { StepBase, HighlightTarget } from '../../../core/step-visualizer';
-import { renderFormulaCard } from '../string/string-100-105/string-100-105-shared';
+import { TREE_TRAVERSAL_020_PROBLEM_CONTENT } from './tree-traversal-iterative-020-problem-content';
+import {
+  TREE_TRAVERSAL_020_CODES,
+  TREE_TRAVERSAL_020_CODE_LINES,
+} from './tree-traversal-iterative-020-stage-codes';
+
+export { TREE_TRAVERSAL_020_CODES, TREE_TRAVERSAL_020_CODE_LINES };
+
+// ============================================================
+// 步骤接口定义 (保持既有测试契约不变)
+// ============================================================
+export interface TraversalNode {
+  val: number;
+  left?: number;
+  right?: number;
+}
 
 export interface Traversal020Step extends StepBase {
-  treeStructure: { val: number; left?: number; right?: number }[];
+  treeStructure: TraversalNode[];
   traversalType: 'preorder' | 'inorder' | 'postorder';
   mainStack: number[];
   collectStack?: number[];
@@ -19,169 +35,8 @@ export interface Traversal020Step extends StepBase {
   log: string;
   codeLine?: HighlightTarget;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  stageId?: 'stage1' | 'stage2' | 'stage3';
 }
-
-export const TREE_TRAVERSAL_020_CODES = {
-  java: `public class IterativeTraversals {
-    // 先序遍历 (中左右)：弹出一个打印一个，先压右再压左
-    public static List<Integer> preorder(TreeNode root) {
-        List<Integer> ans = new ArrayList<>();
-        if (root == null) return ans;
-        Stack<TreeNode> stack = new Stack<>();
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            TreeNode cur = stack.pop();
-            ans.add(cur.val);
-            if (cur.right != null) stack.push(cur.right);
-            if (cur.left != null) stack.push(cur.left);
-        }
-        return ans;
-    }
-    // 中序遍历 (左中右)：整条左边界全进栈，无法下潜时弹出并转向右子树
-    public static List<Integer> inorder(TreeNode root) {
-        List<Integer> ans = new ArrayList<>();
-        Stack<TreeNode> stack = new Stack<>();
-        TreeNode cur = root;
-        while (!stack.isEmpty() || cur != null) {
-            if (cur != null) {
-                stack.push(cur);
-                cur = cur.left;
-            } else {
-                cur = stack.pop();
-                ans.add(cur.val);
-                cur = cur.right;
-            }
-        }
-        return ans;
-    }
-    // 后序遍历 (左右中)：双栈法，先按 中右左 压入收集栈，再弹出即为 左右中
-    public static List<Integer> postorder(TreeNode root) {
-        List<Integer> ans = new ArrayList<>();
-        if (root == null) return ans;
-        Stack<TreeNode> s1 = new Stack<>(), s2 = new Stack<>();
-        s1.push(root);
-        while (!s1.isEmpty()) {
-            TreeNode cur = s1.pop();
-            s2.push(cur);
-            if (cur.left != null) s1.push(cur.left);
-            if (cur.right != null) s1.push(cur.right);
-        }
-        while (!s2.isEmpty()) ans.add(s2.pop().val);
-        return ans;
-    }
-}`,
-  cpp: `vector<int> preorder(TreeNode* root) {
-    vector<int> ans; if (!root) return ans;
-    stack<TreeNode*> st; st.push(root);
-    while (!st.empty()) {
-        TreeNode* cur = st.top(); st.pop(); ans.push_back(cur->val);
-        if (cur->right) st.push(cur->right);
-        if (cur->left) st.push(cur->left);
-    }
-    return ans;
-}
-vector<int> inorder(TreeNode* root) {
-    vector<int> ans; stack<TreeNode*> st; TreeNode* cur = root;
-    while (!st.empty() || cur) {
-        if (cur) { st.push(cur); cur = cur->left; }
-        else { cur = st.top(); st.pop(); ans.push_back(cur->val); cur = cur->right; }
-    }
-    return ans;
-}
-vector<int> postorder(TreeNode* root) {
-    vector<int> ans; if (!root) return ans;
-    stack<TreeNode*> s1, s2; s1.push(root);
-    while (!s1.empty()) {
-        TreeNode* cur = s1.top(); s1.pop(); s2.push(cur);
-        if (cur->left) s1.push(cur->left);
-        if (cur->right) s1.push(cur->right);
-    }
-    while (!s2.empty()) { ans.push_back(s2.top()->val); s2.pop(); }
-    return ans;
-}`,
-  python: `def preorder(root):
-    if not root: return []
-    ans, stack = [], [root]
-    while stack:
-        cur = stack.pop()
-        ans.append(cur.val)
-        if cur.right: stack.append(cur.right)
-        if cur.left: stack.append(cur.left)
-    return ans
-
-def inorder(root):
-    ans, stack, cur = [], [], root
-    while stack or cur:
-        if cur:
-            stack.append(cur)
-            cur = cur.left
-        else:
-            cur = stack.pop()
-            ans.append(cur.val)
-            cur = cur.right
-    return ans
-
-def postorder(root):
-    if not root: return []
-    s1, s2 = [root], []
-    while s1:
-        cur = s1.pop()
-        s2.append(cur.val)
-        if cur.left: s1.append(cur.left)
-        if cur.right: s1.append(cur.right)
-    return s2[::-1]`,
-  typescript: `export function preorder(root: any): number[] {
-    const ans: number[] = [];
-    if (!root) return ans;
-    const stack = [root];
-    while (stack.length > 0) {
-        const cur = stack.pop();
-        ans.push(cur.val);
-        if (cur.right) stack.push(cur.right);
-        if (cur.left) stack.push(cur.left);
-    }
-    return ans;
-}
-export function inorder(root: any): number[] {
-    const ans: number[] = [], stack: any[] = [];
-    let cur = root;
-    while (stack.length > 0 || cur) {
-        if (cur) { stack.push(cur); cur = cur.left; }
-        else { cur = stack.pop(); ans.push(cur.val); cur = cur.right; }
-    }
-    return ans;
-}
-export function postorder(root: any): number[] {
-    if (!root) return [];
-    const s1 = [root], s2: number[] = [];
-    while (s1.length > 0) {
-        const cur = s1.pop();
-        s2.push(cur.val);
-        if (cur.left) s1.push(cur.left);
-        if (cur.right) s1.push(cur.right);
-    }
-    return s2.reverse();
-}`
-};
-
-export const TREE_TRAVERSAL_020_CODE_LINES = {
-  preorder: {
-    entry: { java: 3, cpp: 1, python: 1, typescript: 1 },
-    popVisit: { java: 9, cpp: 5, python: 5, typescript: 6 },
-    pushRight: { java: 11, cpp: 6, python: 7, typescript: 8 },
-    pushLeft: { java: 12, cpp: 7, python: 8, typescript: 9 },
-  },
-  inorder: {
-    entry: { java: 17, cpp: 11, python: 11, typescript: 13 },
-    pushLeft: { java: 23, cpp: 14, python: 15, typescript: 17 },
-    popVisitRight: { java: 26, cpp: 15, python: 18, typescript: 18 },
-  },
-  postorder: {
-    entry: { java: 34, cpp: 19, python: 23, typescript: 22 },
-    s1PopS2Push: { java: 40, cpp: 23, python: 27, typescript: 26 },
-    s2PopAns: { java: 45, cpp: 27, python: 31, typescript: 31 },
-  },
-};
 
 interface SimNode {
   val: number;
@@ -189,17 +44,39 @@ interface SimNode {
   right?: SimNode;
 }
 
+// ============================================================
+// 样板树静态布局坐标 (经典 6 节点二叉树)
+//          1
+//        /   \
+//       2     3
+//      / \   /
+//     4   5 6
+// ============================================================
+interface TreeLayoutItem {
+  val: number;
+  x: number;
+  y: number;
+  left?: number;
+  right?: number;
+}
+
+const SAMPLE_TREE_LAYOUT: Record<number, TreeLayoutItem> = {
+  1: { val: 1, x: 380, y: 40, left: 2, right: 3 },
+  2: { val: 2, x: 230, y: 110, left: 4, right: 5 },
+  3: { val: 3, x: 530, y: 110, left: 6 },
+  4: { val: 4, x: 150, y: 180 },
+  5: { val: 5, x: 310, y: 180 },
+  6: { val: 6, x: 450, y: 180 },
+};
+
+// ============================================================
+// 步骤生成核心 (满足不可篡改测试契约)
+// ============================================================
 export function buildTraversal020Steps(
   type: 'preorder' | 'inorder' | 'postorder' = 'preorder'
 ): Traversal020Step[] {
   const steps: Traversal020Step[] = [];
 
-  // 标准样板树:
-  //         1
-  //       /   \
-  //      2     3
-  //     / \   /
-  //    4   5 6
   const n4: SimNode = { val: 4 };
   const n5: SimNode = { val: 5 };
   const n6: SimNode = { val: 6 };
@@ -207,7 +84,7 @@ export function buildTraversal020Steps(
   const n3: SimNode = { val: 3, left: n6 };
   const root: SimNode = { val: 1, left: n2, right: n3 };
 
-  const treeSnapshot = [
+  const treeSnapshot: TraversalNode[] = [
     { val: 1, left: 2, right: 3 },
     { val: 2, left: 4, right: 5 },
     { val: 3, left: 6 },
@@ -216,8 +93,14 @@ export function buildTraversal020Steps(
     { val: 6 },
   ];
 
-  const codeMap = TREE_TRAVERSAL_020_CODE_LINES[type];
+  const stageIdMap: Record<'preorder' | 'inorder' | 'postorder', 'stage1' | 'stage2' | 'stage3'> = {
+    preorder: 'stage1',
+    inorder: 'stage2',
+    postorder: 'stage3',
+  };
+  const stageId = stageIdMap[type];
 
+  // Entry step
   steps.push({
     treeStructure: treeSnapshot,
     traversalType: type,
@@ -228,8 +111,9 @@ export function buildTraversal020Steps(
     decision: `主函数入口：开始进行二叉树显式栈非递归【${type === 'preorder' ? '先序遍历' : type === 'inorder' ? '中序遍历' : '双栈后序遍历'}】`,
     message: '非递归遍历彻底剥离系统递归调用栈，使用显式堆栈控制访问时序',
     log: `enter ${type}Traversal`,
-    codeLine: codeMap.entry,
+    codeLine: TREE_TRAVERSAL_020_CODE_LINES[type].entry,
     statusBadge: { text: '准备遍历', type: 'info' },
+    stageId,
   });
 
   if (type === 'preorder') {
@@ -251,6 +135,7 @@ export function buildTraversal020Steps(
         log: `pop & visit ${cur.val}`,
         codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.popVisit,
         statusBadge: { text: `访问节点 ${cur.val}`, type: 'success' },
+        stageId,
       });
 
       if (cur.right) {
@@ -260,12 +145,13 @@ export function buildTraversal020Steps(
           traversalType: type,
           mainStack: stack.map((n) => n.val),
           visitedResult: [...visited],
-          activeNode: cur.val,
-          decision: `右孩子 [${cur.right.val}] 压入工作栈`,
-          message: '栈是后进先出，后压右孩子确保其在左孩子处理完之后弹出',
+          activeNode: cur.right.val,
+          decision: `右孩子 [${cur.right.val}] 存在，压入工作栈！栈顶现为: [${cur.right.val}]`,
+          message: '栈后进先出，因此先压右子树以保证右子树在左子树之后被处理',
           log: `push right ${cur.right.val}`,
           codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.pushRight,
-          statusBadge: { text: `压右 ${cur.right.val}`, type: 'info' },
+          statusBadge: { text: `压右 ${cur.right.val}`, type: 'warning' },
+          stageId,
         });
       }
 
@@ -276,12 +162,13 @@ export function buildTraversal020Steps(
           traversalType: type,
           mainStack: stack.map((n) => n.val),
           visitedResult: [...visited],
-          activeNode: cur.val,
-          decision: `左孩子 [${cur.left.val}] 压入工作栈（栈顶就绪）`,
-          message: '下一轮循环将优先弹出左孩子并打印',
+          activeNode: cur.left.val,
+          decision: `左孩子 [${cur.left.val}] 存在，后压入工作栈！栈顶现更新为: [${cur.left.val}]`,
+          message: '后压左子树，使得下一轮循环首选弹出左孩子，完美实现“中左右”时序',
           log: `push left ${cur.left.val}`,
           codeLine: TREE_TRAVERSAL_020_CODE_LINES.preorder.pushLeft,
-          statusBadge: { text: `压左 ${cur.left.val}`, type: 'warning' },
+          statusBadge: { text: `压左 ${cur.left.val}`, type: 'info' },
+          stageId,
         });
       }
     }
@@ -290,8 +177,8 @@ export function buildTraversal020Steps(
     const visited: number[] = [];
     let cur: SimNode | undefined = root;
 
-    while (stack.length > 0 || cur) {
-      if (cur) {
+    while (stack.length > 0 || cur !== undefined) {
+      if (cur !== undefined) {
         stack.push(cur);
         steps.push({
           treeStructure: treeSnapshot,
@@ -299,53 +186,57 @@ export function buildTraversal020Steps(
           mainStack: stack.map((n) => n.val),
           visitedResult: [...visited],
           activeNode: cur.val,
-          decision: `整条左边界进栈：节点 [${cur.val}] 压入栈中，指针继续向左子树下潜`,
-          message: '中序必须先穷尽左子树全部节点',
-          log: `push left boundary ${cur.val}`,
+          decision: `当前指针指向节点 [${cur.val}]：左边界下潜，压入栈中并继续探测 cur.left`,
+          message: '中序遍历核心：整条左边界全部依次进栈，直到走到尽头',
+          log: `inorder push left boundary ${cur.val}`,
           codeLine: TREE_TRAVERSAL_020_CODE_LINES.inorder.pushLeft,
-          statusBadge: { text: `压入 ${cur.val}`, type: 'info' },
+          statusBadge: { text: `下潜 ${cur.val}`, type: 'info' },
+          stageId,
         });
         cur = cur.left;
       } else {
-        cur = stack.pop()!;
-        visited.push(cur.val);
+        const top = stack.pop()!;
+        visited.push(top.val);
+        cur = top.right;
+
         steps.push({
           treeStructure: treeSnapshot,
           traversalType: type,
           mainStack: stack.map((n) => n.val),
           visitedResult: [...visited],
-          activeNode: cur.val,
-          decision: `左子树见底！弹出栈顶节点 [${cur.val}] 打印记录，随后指针转向其右子树`,
-          message: `当前访问序列为: [${visited.join(', ')}]`,
-          log: `pop & visit ${cur.val}`,
+          activeNode: top.val,
+          decision: `左路已到尽头，弹出栈顶节点 [${top.val}] 打印记录！指针转向其右子树: ${cur ? `[${cur.val}]` : '空(Null)'}`,
+          message: '左子树处理完毕，访问中序父节点，随后进入右子树重复左边界进栈过程',
+          log: `inorder pop & visit ${top.val}`,
           codeLine: TREE_TRAVERSAL_020_CODE_LINES.inorder.popVisitRight,
-          statusBadge: { text: `访问 ${cur.val}`, type: 'success' },
+          statusBadge: { text: `访问 ${top.val}`, type: 'success' },
+          stageId,
         });
-        cur = cur.right;
       }
     }
   } else {
-    // postorder (双栈法)
+    // Postorder (双栈法)
     const s1: SimNode[] = [root];
-    const s2: number[] = [];
+    const s2: SimNode[] = [];
     const visited: number[] = [];
 
     while (s1.length > 0) {
       const cur = s1.pop()!;
-      s2.push(cur.val);
+      s2.push(cur);
 
       steps.push({
         treeStructure: treeSnapshot,
         traversalType: type,
         mainStack: s1.map((n) => n.val),
-        collectStack: [...s2],
-        visitedResult: [],
+        collectStack: s2.map((n) => n.val),
+        visitedResult: [...visited],
         activeNode: cur.val,
-        decision: `s1 弹出节点 [${cur.val}] 并压入收集栈 s2！s1 依次压入左孩子与右孩子`,
-        message: '双栈法利用 s1 产生 中-右-左 的顺序压入 s2，s2 逆序弹出即为 左-右-中！',
-        log: `s1 pop ${cur.val} -> s2 push`,
+        decision: `主栈 s1 弹出 [${cur.val}] 并压入收集栈 s2！时序由“中右左”收集驱动`,
+        message: '双栈法巧妙之处：先按 中 ➔ 右 ➔ 左 压入收集栈，从收集栈倒序弹出即为 左右中！',
+        log: `postorder s1 pop ${cur.val} -> push s2`,
         codeLine: TREE_TRAVERSAL_020_CODE_LINES.postorder.s1PopS2Push,
-        statusBadge: { text: `s2 收集 ${cur.val}`, type: 'warning' },
+        statusBadge: { text: `收集 ${cur.val}`, type: 'warning' },
+        stageId,
       });
 
       if (cur.left) s1.push(cur.left);
@@ -353,53 +244,332 @@ export function buildTraversal020Steps(
     }
 
     while (s2.length > 0) {
-      const v = s2.pop()!;
-      visited.push(v);
+      const cur = s2.pop()!;
+      visited.push(cur.val);
+
       steps.push({
         treeStructure: treeSnapshot,
         traversalType: type,
         mainStack: [],
-        collectStack: [...s2],
+        collectStack: s2.map((n) => n.val),
         visitedResult: [...visited],
-        activeNode: v,
-        decision: `收集栈 s2 倒序弹出 [${v}] 并写入最终后序结果！`,
-        message: `当前序列: [${visited.join(', ')}]`,
-        log: `s2 pop ${v}`,
+        activeNode: cur.val,
+        decision: `收集栈 s2 依次弹出 [${cur.val}] 输出至结果序列！当前已输出: [${visited.join(', ')}]`,
+        message: '逆序弹出收集栈，最终产出合法的后序遍历序列 (左右中)',
+        log: `postorder s2 pop -> ans ${cur.val}`,
         codeLine: TREE_TRAVERSAL_020_CODE_LINES.postorder.s2PopAns,
-        statusBadge: { text: `后序输出 ${v}`, type: 'success' },
+        statusBadge: { text: `后序输出 ${cur.val}`, type: 'success' },
+        stageId,
       });
     }
   }
 
+  // Final Step
+  const lastStep = steps[steps.length - 1];
+  steps.push({
+    ...lastStep,
+    activeNode: -1,
+    decision: `🎉 遍历圆满完成！最终访问序列为: [${lastStep.visitedResult.join(', ')}]。显式栈模拟递归时序正确收敛！`,
+    message: '全部节点均已按正确时序完成弹出与输出',
+    log: `traversal complete: [${lastStep.visitedResult.join(',')}]`,
+    statusBadge: { text: '遍历收敛', type: 'success' },
+    stageId,
+  });
+
   return steps;
 }
 
+// ============================================================
+// Card 1: 纯净二叉树拓扑沙盘 (SVG Canvas)
+// 零内嵌指标卡、零子卡片套娃 (Anti-Traps 9 & 10)
+// ============================================================
+export function renderTreeTraversalCanvas(container: HTMLElement, step: Traversal020Step) {
+  const { activeNode, visitedResult, mainStack, collectStack } = step;
+  const inMainStackSet = new Set(mainStack);
+  const inCollectSet = new Set(collectStack || []);
+  const visitedSet = new Set(visitedResult);
+
+  // 连线 SVG
+  const linesHtml: string[] = [];
+  Object.values(SAMPLE_TREE_LAYOUT).forEach((node) => {
+    if (node.left && SAMPLE_TREE_LAYOUT[node.left]) {
+      const child = SAMPLE_TREE_LAYOUT[node.left];
+      const isPath = (activeNode === node.val && inMainStackSet.has(child.val)) || (visitedSet.has(node.val) && visitedSet.has(child.val));
+      linesHtml.push(`
+        <line
+          x1="${node.x}" y1="${node.y}"
+          x2="${child.x}" y2="${child.y}"
+          stroke="${isPath ? '#38bdf8' : 'rgba(148, 163, 184, 0.3)'}"
+          stroke-width="${isPath ? 2.5 : 1.5}"
+        />
+      `);
+    }
+    if (node.right && SAMPLE_TREE_LAYOUT[node.right]) {
+      const child = SAMPLE_TREE_LAYOUT[node.right];
+      const isPath = (activeNode === node.val && inMainStackSet.has(child.val)) || (visitedSet.has(node.val) && visitedSet.has(child.val));
+      linesHtml.push(`
+        <line
+          x1="${node.x}" y1="${node.y}"
+          x2="${child.x}" y2="${child.y}"
+          stroke="${isPath ? '#38bdf8' : 'rgba(148, 163, 184, 0.3)'}"
+          stroke-width="${isPath ? 2.5 : 1.5}"
+        />
+      `);
+    }
+  });
+
+  // 节点 SVG
+  const nodesHtml = Object.values(SAMPLE_TREE_LAYOUT).map((node) => {
+    const isActive = node.val === activeNode;
+    const isVisited = visitedSet.has(node.val);
+    const inMain = inMainStackSet.has(node.val);
+    const inCollect = inCollectSet.has(node.val);
+
+    let fillColor = '#1e293b';
+    let strokeColor = 'rgba(255, 255, 255, 0.2)';
+    let orderBadge = '';
+
+    if (isActive) {
+      fillColor = '#0284c7';
+      strokeColor = '#38bdf8';
+    } else if (isVisited) {
+      fillColor = 'rgba(16, 185, 129, 0.25)';
+      strokeColor = '#10b981';
+      const visitIdx = visitedResult.indexOf(node.val) + 1;
+      orderBadge = `#${visitIdx}`;
+    } else if (inMain) {
+      fillColor = 'rgba(139, 92, 246, 0.25)';
+      strokeColor = '#8b5cf6';
+    } else if (inCollect) {
+      fillColor = 'rgba(245, 158, 11, 0.25)';
+      strokeColor = '#f59e0b';
+    }
+
+    return `
+      <g transform="translate(${node.x}, ${node.y})">
+        ${isActive ? `<circle r="26" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.6" class="animate-ping" />` : ''}
+        <circle
+          r="19"
+          fill="${fillColor}"
+          stroke="${strokeColor}"
+          stroke-width="${isActive ? 3 : 2}"
+        />
+        <text
+          y="5"
+          text-anchor="middle"
+          fill="#f8fafc"
+          font-size="13"
+          font-weight="bold"
+          font-family="system-ui, sans-serif"
+        >${node.val}</text>
+        ${
+          orderBadge
+            ? `
+          <rect x="-14" y="-30" width="28" height="14" rx="4" fill="#10b981" />
+          <text y="-20" text-anchor="middle" fill="#064e3b" font-size="9" font-weight="bold" font-family="monospace">${orderBadge}</text>
+        `
+            : inMain
+            ? `
+          <text y="-23" text-anchor="middle" fill="#a78bfa" font-size="9" font-family="monospace">栈中</text>
+        `
+            : ''
+        }
+      </g>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.6); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); padding: 14px; box-sizing: border-box;">
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.4); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); overflow: hidden;">
+        <svg viewBox="0 0 760 240" style="width: 100%; height: 100%; max-height: 270px;" preserveAspectRatio="xMidYMid meet">
+          ${linesHtml.join('')}
+          ${nodesHtml}
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// Card 2: 显式堆栈状态与访问时序面板 (Custom Metrics)
+// ============================================================
+export function renderTreeTraversalCard2(container: HTMLElement, step: Traversal020Step) {
+  const { traversalType, mainStack, collectStack, visitedResult, activeNode, decision } = step;
+
+  const typeName =
+    traversalType === 'preorder'
+      ? '先序遍历 (Preorder: 根左右)'
+      : traversalType === 'inorder'
+      ? '中序遍历 (Inorder: 左根右)'
+      : '双栈后序 (Postorder: 左右根)';
+
+  const hasCollect = traversalType === 'postorder';
+
+  container.innerHTML = `
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 14px; background: rgba(15, 23, 42, 0.6); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box; height: 100%;">
+      
+      <!-- 顶部四联仪表盘 -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+        <div style="padding: 8px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.7rem; color: #94a3b8;">遍历模式</div>
+          <div style="font-size: 0.85rem; font-weight: bold; color: #38bdf8; margin-top: 2px;">
+            ${traversalType.toUpperCase()}
+          </div>
+        </div>
+        <div style="padding: 8px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.7rem; color: #94a3b8;">主栈 mainStack</div>
+          <div style="font-size: 0.95rem; font-weight: bold; color: #a78bfa; font-family: monospace; margin-top: 2px;">
+            ${mainStack.length} 项
+          </div>
+        </div>
+        <div style="padding: 8px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.7rem; color: #94a3b8;">当前聚焦</div>
+          <div style="font-size: 0.95rem; font-weight: bold; color: #34d399; font-family: monospace; margin-top: 2px;">
+            ${activeNode >= 0 ? `Node ${activeNode}` : '无'}
+          </div>
+        </div>
+        <div style="padding: 8px; background: rgba(30, 41, 59, 0.6); border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.7rem; color: #94a3b8;">输出进度</div>
+          <div style="font-size: 0.95rem; font-weight: bold; color: #facc15; font-family: monospace; margin-top: 2px;">
+            ${visitedResult.length} / 6
+          </div>
+        </div>
+      </div>
+
+      <!-- 堆栈状态视窗 (主栈 mainStack & 收集栈 collectStack) -->
+      <div style="display: grid; grid-template-columns: ${hasCollect ? '1fr 1fr' : '1fr'}; gap: 10px; flex: 1;">
+        <!-- 主工作栈 -->
+        <div style="padding: 10px; background: rgba(2, 6, 23, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column;">
+          <div style="font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>🥞 工作栈 mainStack (底 ➔ 顶)</span>
+            <span style="font-size: 0.7rem; color: #a78bfa;">LIFO</span>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 42px;">
+            ${
+              mainStack.length === 0
+                ? `<span style="font-size: 0.75rem; color: #64748b; font-style: italic;">栈为空</span>`
+                : mainStack
+                    .map(
+                      (v, i) => `
+                <div style="padding: 4px 10px; background: rgba(139, 92, 246, 0.15); border: 1px solid ${
+                  i === mainStack.length - 1 ? '#a78bfa' : 'rgba(139, 92, 246, 0.4)'
+                }; border-radius: 6px; font-size: 0.85rem; font-weight: bold; color: #f1f5f9; display: flex; align-items: center; gap: 4px;">
+                  <span>${v}</span>
+                  ${i === mainStack.length - 1 ? `<span style="font-size: 0.65rem; color: #a78bfa; font-weight: normal;">(顶)</span>` : ''}
+                </div>
+              `
+                    )
+                    .join('')
+            }
+          </div>
+        </div>
+
+        <!-- 双栈法收集栈 -->
+        ${
+          hasCollect
+            ? `
+          <div style="padding: 10px; background: rgba(2, 6, 23, 0.5); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column;">
+            <div style="font-size: 0.75rem; font-weight: 600; color: #cbd5e1; margin-bottom: 6px; display: flex; justify-content: space-between;">
+              <span>📥 收集栈 collectStack (底 ➔ 顶)</span>
+              <span style="font-size: 0.7rem; color: #f59e0b;">中右左 ➔ 左右中</span>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 42px;">
+              ${
+                !collectStack || collectStack.length === 0
+                  ? `<span style="font-size: 0.75rem; color: #64748b; font-style: italic;">收集栈为空</span>`
+                  : collectStack
+                      .map(
+                        (v, i) => `
+                  <div style="padding: 4px 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid ${
+                    i === collectStack.length - 1 ? '#fbbf24' : 'rgba(245, 158, 11, 0.4)'
+                  }; border-radius: 6px; font-size: 0.85rem; font-weight: bold; color: #f1f5f9; display: flex; align-items: center; gap: 4px;">
+                    <span>${v}</span>
+                    ${i === collectStack.length - 1 ? `<span style="font-size: 0.65rem; color: #fbbf24; font-weight: normal;">(顶)</span>` : ''}
+                  </div>
+                `
+                      )
+                      .join('')
+              }
+            </div>
+          </div>
+        `
+            : ''
+        }
+      </div>
+
+      <!-- 最终访问序列展流 (Result Stream) -->
+      <div style="padding: 10px 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+        <div style="font-size: 0.75rem; font-weight: 600; color: #34d399; margin-bottom: 6px;">
+          📜 访问输出序列 (Traversal Result)
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          ${
+            visitedResult.length === 0
+              ? `<span style="font-size: 0.75rem; color: #64748b; font-style: italic;">等待节点弹出访问...</span>`
+              : visitedResult
+                  .map(
+                    (v, idx) => `
+                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.85rem; font-weight: bold; color: #10b981; font-family: monospace;">${v}</span>
+                  ${idx < visitedResult.length - 1 ? `<span style="color: #64748b; font-size: 0.75rem;">➜</span>` : ''}
+                </div>
+              `
+                  )
+                  .join('')
+          }
+        </div>
+      </div>
+
+      <!-- 当前时序决策总结 -->
+      <div style="padding: 8px 12px; background: rgba(56, 189, 248, 0.06); border-left: 3px solid #38bdf8; border-radius: 0 6px 6px 0; font-size: 0.75rem; color: #cbd5e1; line-height: 1.4;">
+        <strong style="color: #38bdf8;">当前时序决策：</strong> ${decision}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// 顶层声明式注册 (Register Declarative Algorithm)
+// ============================================================
 export const treeTraversal020Visualizer = registerDeclarativeAlgorithm<Traversal020Step>({
   id: 'tree-traversal-iterative-020',
-  name: '二叉树非递归与双栈遍历 (Class 020)',
+  name: '二叉树迭代遍历 (Class 020)',
   category: 'tree',
   icon: '🥞',
   difficulty: 2,
   levelOrder: 20,
   aliases: ['class020-code01', 'tree-traversal-iterative-020', 'iterative-traversal', 'tree-traversal-stack'],
-  learningGoal: '掌握使用显式单栈/双栈模拟递归调用过程，深入理解先序、中序、后序在栈内的时序转换',
-  problemHtml: `
-    <div style="font-family: inherit; line-height: 1.6; color: #1e293b;">
-      <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px;">题目描述</h3>
-      <p>不使用递归，使用显式栈结构实现二叉树的先序（前序）、中序与后序遍历。</p>
-      <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 10px 14px; margin: 12px 0;">
-        <strong>样板树结构：</strong><br/>
-        &nbsp;&nbsp;&nbsp;&nbsp;1<br/>
-        &nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;\<br/>
-        &nbsp;&nbsp;2&nbsp;&nbsp;&nbsp;&nbsp;3<br/>
-        &nbsp;/&nbsp;\&nbsp;&nbsp;/<br/>
-        4&nbsp;&nbsp;&nbsp;5&nbsp;6<br/>
-        <strong>先序：</strong>[1, 2, 4, 5, 3, 6]<br/>
-        <strong>中序：</strong>[4, 2, 5, 1, 6, 3]<br/>
-        <strong>后序：</strong>[4, 5, 2, 6, 3, 1]
-      </div>
-    </div>
-  `,
+  learningGoal: '掌握使用显式单栈/双栈模拟系统递归调用过程，深入理解先序、中序、后序在栈内的时序转换',
+  stages: [
+    {
+      id: 'stage1',
+      name: 'Stage 1: 先序非递归 (Preorder: 根左右)',
+      shortName: '先序迭代',
+      card2Title: '先序显式单栈时序探针',
+      card2Desc: '弹出一个打印一个，先压右孩子再压左孩子',
+      codeLanguages: TREE_TRAVERSAL_020_CODES,
+      generateSteps: () => buildTraversal020Steps('preorder'),
+    },
+    {
+      id: 'stage2',
+      name: 'Stage 2: 中序非递归 (Inorder: 左根右)',
+      shortName: '中序迭代',
+      card2Title: '中序左边界下潜栈探针',
+      card2Desc: '整条左边界全压栈，无法下潜时出栈访问并转向右子树',
+      codeLanguages: TREE_TRAVERSAL_020_CODES,
+      generateSteps: () => buildTraversal020Steps('inorder'),
+    },
+    {
+      id: 'stage3',
+      name: 'Stage 3: 双栈后序非递归 (Postorder: 左右根)',
+      shortName: '后序双栈',
+      card2Title: '双栈逆向收集探针',
+      card2Desc: '按中右左收集，二次弹出自动反转为左右根',
+      codeLanguages: TREE_TRAVERSAL_020_CODES,
+      generateSteps: () => buildTraversal020Steps('postorder'),
+    },
+  ],
+  codeLanguages: TREE_TRAVERSAL_020_CODES,
   inputs: [
     {
       id: 'type',
@@ -407,75 +577,23 @@ export const treeTraversal020Visualizer = registerDeclarativeAlgorithm<Traversal
       type: 'select',
       defaultValue: 'preorder',
       options: [
-        { label: '先序遍历 (Preorder: 中左右)', value: 'preorder' },
-        { label: '中序遍历 (Inorder: 左中右)', value: 'inorder' },
-        { label: '双栈后序遍历 (Postorder: 左右中)', value: 'postorder' },
+        { label: '先序遍历 (Preorder: 根左右)', value: 'preorder' },
+        { label: '中序遍历 (Inorder: 左根右)', value: 'inorder' },
+        { label: '双栈后序遍历 (Postorder: 左右根)', value: 'postorder' },
       ],
     },
   ],
-  codeLanguages: TREE_TRAVERSAL_020_CODES,
+  card2Title: '显式堆栈状态与访问时序面板',
+  card2Desc: '显式控制遍历顺序，支持先序、中序与双栈后序',
+  problemHtml: TREE_TRAVERSAL_020_PROBLEM_CONTENT.description + TREE_TRAVERSAL_020_PROBLEM_CONTENT.mechanisms,
   generateSteps: (inputs) => {
-    const type = (inputs.type || 'preorder') as 'preorder' | 'inorder' | 'postorder';
+    const type = (inputs?.type || 'preorder') as 'preorder' | 'inorder' | 'postorder';
     return buildTraversal020Steps(type);
   },
   renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-        <!-- 顶部指标卡 -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;">
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">遍历模式</div>
-            <div style="font-size: 15px; font-weight: 700; color: #0284c7; margin-top: 4px;">
-              ${step.traversalType === 'preorder' ? '先序遍历' : step.traversalType === 'inorder' ? '中序遍历' : '后序遍历'}
-            </div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">主栈深度</div>
-            <div style="font-size: 18px; font-weight: 700; color: #8b5cf6; margin-top: 4px;">${step.mainStack.length} 项</div>
-          </div>
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #64748b;">当前聚焦节点</div>
-            <div style="font-size: 18px; font-weight: 700; color: #059669; margin-top: 4px;">${step.activeNode >= 0 ? `节点 [${step.activeNode}]` : '-'}</div>
-          </div>
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px; text-align: center;">
-            <div style="font-size: 11px; color: #166534;">已输出节点数</div>
-            <div style="font-size: 20px; font-weight: 800; color: #15803d; margin-top: 4px;">${step.visitedResult.length} / 6</div>
-          </div>
-        </div>
-
-        <!-- 显式堆栈展板 -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px;">
-            <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px;">🥞 工作栈 mainStack (底 -> 顶)</div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; min-height: 40px; align-items: center;">
-              ${step.mainStack.length === 0 ? '<span style="font-size: 11px; color: #94a3b8;">栈为空</span>' : step.mainStack.map((v, i) => `
-                <div style="padding: 6px 12px; background: #ffffff; border: 2px solid ${i === step.mainStack.length - 1 ? '#8b5cf6' : '#cbd5e1'}; border-radius: 6px; font-weight: 700; color: #1e293b;">
-                  ${v} ${i === step.mainStack.length - 1 ? '<span style="font-size: 9px; color: #8b5cf6;">(顶)</span>' : ''}
-                </div>
-              `).join(' ')}
-            </div>
-          </div>
-
-          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px;">
-            <div style="font-size: 12px; font-weight: 700; color: #166534; margin-bottom: 8px;">📜 最终访问序列 (Result)</div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; min-height: 40px; align-items: center;">
-              ${step.visitedResult.length === 0 ? '<span style="font-size: 11px; color: #86efac;">等待访问输出...</span>' : step.visitedResult.map((v) => `
-                <div style="padding: 6px 12px; background: #ffffff; border: 1px solid #86efac; border-radius: 6px; font-weight: 700; color: #15803d;">
-                  ${v}
-                </div>
-              `).join(' ➜ ')}
-            </div>
-          </div>
-        </div>
-
-        <!-- 决策卡片 -->
-        ${renderFormulaCard(
-          '栈遍历核心操作',
-          `当前序列: [${step.visitedResult.join(', ')}] | 遍历模式: ${step.traversalType}`,
-          step.decision,
-          step.statusBadge
-        )}
-      </div>
-    `;
+    renderTreeTraversalCanvas(container, step);
+  },
+  renderCustomMetrics: (container, step) => {
+    renderTreeTraversalCard2(container, step);
   },
 });

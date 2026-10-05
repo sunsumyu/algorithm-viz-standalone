@@ -6941,14 +6941,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "tree-traversal-iterative-020",
-    name: "二叉树非递归与双栈遍历 (Class 020)",
+    name: "二叉树迭代遍历 (Class 020)",
     viewId: "algo-tree-traversal-iterative-020-view",
     category: "tree",
-    description: "二叉树非递归与双栈遍历 (Class 020)",
+    description: "二叉树迭代遍历 (Class 020)",
     icon: "🥞",
     difficulty: 2,
     levelOrder: 20,
-    learningGoal: "掌握使用显式单栈/双栈模拟递归调用过程，深入理解先序、中序、后序在栈内的时序转换",
+    learningGoal: "掌握使用显式单栈/双栈模拟系统递归调用过程，深入理解先序、中序、后序在栈内的时序转换",
     aliases: ["class020-code01","tree-traversal-iterative-020","iterative-traversal","tree-traversal-stack"],
   },
   {
