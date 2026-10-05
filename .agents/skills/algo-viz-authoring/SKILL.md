@@ -46,8 +46,11 @@ Advance complex implementations through discrete phases. Each phase requires ver
    `codeLine` must map to `[1, codeArray.length]` for all 4 languages via `@step:` anchors (`CodeStepIndexer` / `StageCodeRegistry`).
 2. **Strict One-Line-One-Step**:
    Every state change emits an explicit step frame mapped to its active source line. Unfold compound multi-branch expressions into separate lines; include auxiliary helper functions in the code panel.
-3. **Deep Module & Primitive Reuse**:
-   Delegate recursion trees to `RecursionTreeAdapter`, array/grid snapshots to `GridSnapshotPrimitives`, and interval scheduling to core compilers.
+3. **Deep Module & Thin Adapter Invariant**:
+   - **Thin Adapter Body Limit**: Algorithm renderers (`*-renderer.ts`) are pure configuration adapters (`LOC < 120`). They declare stage manifests, 4-language code linkages, inputs, and presets only.
+   - **Zero Canvas / DOM in Renderers**: No renderer may contain coordinate layouts, raw SVG/DOM creation, or step compilation state machines.
+   - **The Two-Adapter Deepening Rule**: Visual rendering belongs behind domain adapters in `src/core/renderers/adapters/`; state progression belongs behind step compilers in `src/core/strategies/` or `src/core/compilers/`. When authoring a visualizer for a data structure archetype without an existing core adapter, or encountering the 2nd instance of any archetype (e.g. Trie after PrefixTree, Interval after Range), you MUST extract a shared `*Adapter` or `*Compiler` into `src/core/` before completing the renderer.
+   - **Adapter Catalog Pointer**: Consult [domain-adapters.md](./references/domain-adapters.md) for existing core primitives.
 4. **Visual Continuity & Clean State**:
    Sequence comparisons append an `EOF` sentinel slot. Retain active pointers at boundaries rather than unmounting them. Output sanitized values (`null` rendered as `-`, never raw `undefined` or `NaN`).
 5. **Immutable Test Contracts**:
@@ -61,6 +64,7 @@ Consult detailed domain specifications on demand via context pointers:
 
 | 领域模块 | 对应参考文件 | 核心包含内容 |
 | :--- | :--- | :--- |
+| **适配器目录** | [domain-adapters.md](./references/domain-adapters.md) | 全库核心领域视觉适配器（Tree/Trie/Grid 等）与推演编译器总览表 |
 | **避坑指南** | [anti-patterns.md](./references/anti-patterns.md) | 历史 24 大典型故障深度复盘与纠偏指引（行号超界、跳步、套娃、穿模、脏数据等） |
 | **代码联动** | [code-linkage.md](./references/code-linkage.md) | 四语言相对行号、完整生命周期闭环、递归日志形参绑定、多向分支独立分行规范 |
 | **阶段演化** | [stage-evolution.md](./references/stage-evolution.md) | 动态规划标准“四段式”体系、空间压缩寄存器透明原则、正逆序双向推演支持 |
