@@ -175,6 +175,8 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/width-of-binary-tree-036-renderer.ts',
       '../../algorithms/categories/tree/bottom-left-renderer.ts',
       '../../algorithms/categories/graph/jump-point-search-renderer.ts',
+      '../../algorithms/categories/tree/binary-tree-maximum-path-sum-renderer.ts',
+      '../../algorithms/categories/tree/sum-root-to-leaf-numbers-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
