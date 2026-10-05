@@ -58,6 +58,15 @@ const strategyRawModules = import.meta.glob<string>('./*-strategy.ts', {
   import: 'default',
 });
 
+const treeRendererRawModules = import.meta.glob<string>(
+  '../../algorithms/categories/tree/*-renderer.ts',
+  {
+    eager: true,
+    query: '?raw',
+    import: 'default',
+  }
+);
+
 describe('顶层抽象与架构血缘自省门禁 (Top-Level Abstraction Gates)', () => {
   it('门禁 1: 严禁为单一业务算法私建未经核准的私有编译器 (Anti-Private-Compiler Gate)', () => {
     const unauthorizedCompilers: string[] = [];
@@ -154,6 +163,42 @@ ${details}
 ================================================================================
 `;
       expect(usesIntervalRelay, errorMsg).toBe(true);
+    }
+  });
+
+  it('门禁 4: 领域适配器身材红线 (LOC < 150 行) 与零回弹锁死 (Anti-Regression LOC Gate)', () => {
+    const benchmarkFiles = [
+      '../../algorithms/categories/tree/binary-tree-level-renderer.ts',
+      '../../algorithms/categories/tree/trie-tree-017-renderer.ts',
+      '../../algorithms/categories/tree/trie-xor-max-107-renderer.ts',
+    ];
+
+    const violations: Array<{ file: string; lines: number }> = [];
+
+    for (const filePath of benchmarkFiles) {
+      const content = (treeRendererRawModules as Record<string, string>)[filePath];
+      if (!content) continue;
+      const lineCount = content.split('\n').length;
+      if (lineCount >= 150) {
+        violations.push({ file: filePath, lines: lineCount });
+      }
+    }
+
+    if (violations.length > 0) {
+      const details = violations.map((v) => `  - ${v.file}: ${v.lines} 行 (超出上限 ${v.lines - 150} 行)`).join('\n');
+      const errorMsg = `
+================================================================================
+❌ [TOP-LEVEL ABSTRACTION VIOLATION: RENDERER_OVERSIZED]
+【违规文件】
+${details}
+【违规原因】已重构标杆渲染器必须维持为轻量领域适配器 (Thin Domain Adapter, LOC < 150 行)，严禁发生代码反弹回退！
+【纠偏指引】
+  1. 将视觉呈现委托至 src/core/renderers/adapters/*-canvas-adapter.ts；
+  2. 将多阶段推演委托至 *-step-compiler.ts；
+  3. 精简代码使渲染器文件控制在 150 行以内！
+================================================================================
+`;
+      expect(violations, errorMsg).toEqual([]);
     }
   });
 });

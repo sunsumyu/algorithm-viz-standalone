@@ -33,21 +33,31 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
 2. 从 `batch-N-index.ts` 移除 import；
 3. 运行 `npm run meta:sync` 自动同步目录生成物。
 
-## 动态规划与贪心顶层抽象架构规范
-所有新算法接入或重构，作为领域适配器（Domain Adapter）接入统一核心编译器：
-1. **统一核心编译器分发**：避免为单题新建私有编译器，核心算法归约至统一编译器族群（详见 `CONTEXT.md`）：
+## 全库算法领域适配器与深模块架构规范 (Thin Domain Adapters & Deep Modules)
+所有新算法接入或既有算法重构，一律遵循 Matt Pocock 的深模块哲学，作为轻量领域适配器（Thin Domain Adapter）接入统一核心架构：
+
+1. **统一核心分发与深模块接缝 (Deep Modules & Seams)**：
+   - **两适配器深化法则 (Two-Adapter Deepening Rule)**：“一个适配器意味着假设的缝隙；两个适配器意味着真实的缝隙。除非跨缝隙有真正的变化，否则不要引入缝隙。” 当两个算法存在相似的拓扑绘制或状态演进时，必须在核心层抽象出真正的深模块。
+   - **零内联画布与零私有遍历器 (Zero Inline Canvas & Private Traversers)**：严禁在 `*-renderer.ts` 中内联手写复杂 SVG 坐标计算（如 `x/y/level` 拓扑排布）、大段 DOM 拼接，或私自维护 `stack = []` / `queue = []` 进行遍历推演。
+   - **分工明确**：视觉呈现委托至 `src/core/renderers/adapters/*-canvas-adapter.ts`，推演步进委托至核心族群编译器或 `*-step-compiler.ts`。
+
+2. **双重身材红线 (Dual LOC Guards)**：
+   - **策略类身材红线**：单题 `*Strategy.ts` LOC < 120 行（职责仅限入参提取、规约转换与委托调用）；
+   - **渲染器身材红线**：单题 `*-renderer.ts` LOC < 150 行（职责仅限声明式元数据配置、预设案例与委托挂载）。
+
+3. **统一编译器与视觉适配器族群分发**：
    - 线性 1D DP 族 $\rightarrow$ `LinearStepMatrixCompiler`
    - 背包族 $\rightarrow$ `KnapsackStepMatrixCompiler`
    - 双序列矩阵 DP 族 $\rightarrow$ `SequenceStepMatrixCompiler`
    - 区间接力与覆盖族 $\rightarrow$ `IntervalRelayStepCompiler`
-   - 区间调度与互斥合并族 $\rightarrow$ `IntervalSchedulingStepCompiler`
-   - 双向前后缀与邻域扫描族 $\rightarrow$ `TwoPassNeighborStepCompiler`
-   - 网格探索 DP 族 $\rightarrow$ `GridUniquePathsCompiler`
-   - 树形展开与记忆化 $\rightarrow$ `StateDependencyTreeCompiler`
-2. **策略类身材红线 (LOC < 120 行)**：单题 `*Strategy.ts` 的职责是「提取入参、规约转换与委托调用」，源码控制在 120 行以内。
-3. **强制自省门禁**：策略或算法变更后必须依次运行以下门禁：
+   - 字典树族群 $\rightarrow$ `TrieCanvasAdapter` / `GeneralTrieCanvasAdapter` + `TrieStepCompiler`
+   - 二叉树遍历与路径族 $\rightarrow$ `TreeCanvasAdapter` / `BinaryTreeCanvasAdapter` + `BinaryTreeTraversalCompiler`
+   - 网格探索与图拓扑族 $\rightarrow$ `GridUniquePathsCompiler` / `GraphTopologyCanvasAdapter`
+   - 状态依赖树展开族 $\rightarrow$ `StateDependencyTreeCompiler` / `RecursiveCallTraceAdapter`
+
+4. **强制自省门禁**：策略或算法变更后必须依次运行以下门禁：
    ```bash
-   npm run test:gate         # 顶层抽象合规 + 策略身材红线门禁
+   npm run test:gate         # 顶层抽象合规 + 策略/适配器身材红线门禁
    npm run test:presentation # 表现层真实渲染契约与 14 大红灯陷阱全套拦截
    ```
    所有自省门禁以 Exit Code 0 为唯一通过判据。若退出码非 0，必须从控制台提取【红灯陷阱编号】与【纠偏指引】自愈修复生产代码，直至全绿方可宣布完成。

@@ -7,20 +7,12 @@
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import {
-  GeneralTrieCanvasAdapter,
-  GeneralTrieNodeSnapshot,
-} from '../../../core/renderers/adapters/general-trie-canvas-adapter';
-import {
-  GeneralTrieStepCompiler,
-  GeneralTrieStep,
-} from '../../../core/renderers/adapters/general-trie-step-compiler';
+import { GeneralTrieCanvasAdapter, GeneralTrieNodeSnapshot } from '../../../core/renderers/adapters/general-trie-canvas-adapter';
+import { GeneralTrieStepCompiler, GeneralTrieStep } from '../../../core/renderers/adapters/general-trie-step-compiler';
 import { TRIE_TREE_017_PROBLEM_CONTENT } from './trie-tree-017-problem-content';
 import {
-  TRIE_017_CODES,
-  TRIE_017_CODE_LINES,
-  TRIE_STAGE2_STATIC_CODES,
-  TRIE_STAGE2_CODE_LINES,
+  TRIE_017_CODES, TRIE_017_CODE_LINES,
+  TRIE_STAGE2_STATIC_CODES, TRIE_STAGE2_CODE_LINES,
 } from './trie-tree-017-stage-codes';
 
 // 兼容既有门禁与外部引用的导出接口与委托
@@ -146,10 +138,6 @@ export const trieTree017Visualizer = registerDeclarativeAlgorithm<GeneralTrieSte
     const isPrefix = inputs?.isPrefix !== 'exact';
     return buildTrie017Steps(words.length > 0 ? words : ['apple', 'app'], query, isPrefix);
   },
-  renderCanvas: (container, step) => {
-    GeneralTrieCanvasAdapter.renderTrieCanvas(container, step);
-  },
-  renderCustomMetrics: (container, step) => {
-    GeneralTrieCanvasAdapter.renderTrieCard2(container, step);
-  },
+  renderCanvas: (c, s) => GeneralTrieCanvasAdapter.renderTrieCanvas(c, s),
+  renderCustomMetrics: (c, s) => GeneralTrieCanvasAdapter.renderTrieCard2(c, s),
 });
