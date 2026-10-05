@@ -33,7 +33,8 @@ export const MAX_PATH_SUM_STAGE1_CODES: Record<string, string[]> = {
     '        if (!node) return 0;',
     '        int leftGain = max(0, maxGain(node->left));',
     '        int rightGain = max(0, maxGain(node->right));',
-    '        maxSum = max(maxSum, node->val + leftGain + rightGain);',
+    '        int currentArch = node->val + leftGain + rightGain;',
+    '        maxSum = max(maxSum, currentArch);',
     '        return node->val + max(leftGain, rightGain);',
     '    }',
     'public:',
@@ -51,7 +52,8 @@ export const MAX_PATH_SUM_STAGE1_CODES: Record<string, string[]> = {
     '            if not node: return 0',
     '            left_gain = max(0, max_gain(node.left))',
     '            right_gain = max(0, max_gain(node.right))',
-    '            self.max_sum = max(self.max_sum, node.val + left_gain + right_gain)',
+    '            current_arch = node.val + left_gain + right_gain',
+    '            self.max_sum = max(self.max_sum, current_arch)',
     '            return node.val + max(left_gain, right_gain)',
     '        max_gain(root)',
     '        return self.max_sum',
@@ -253,3 +255,49 @@ export const MAX_PATH_SUM_STAGE3_CODES: Record<string, string[]> = {
     '}',
   ],
 };
+
+export const MAX_PATH_SUM_STAGE1_LINES = {
+  entry: { java: 3, cpp: 12, python: 2, javascript: 1 },
+  callRoot: { java: 4, cpp: 13, python: 11, javascript: 11 },
+  done: { java: 5, cpp: 14, python: 12, javascript: 12 },
+  dfsEntry: { java: 7, cpp: 3, python: 4, javascript: 3 },
+  baseNull: { java: 8, cpp: 4, python: 5, javascript: 4 },
+  calcLeft: { java: 9, cpp: 5, python: 6, javascript: 5 },
+  leftDone: { java: 9, cpp: 5, python: 6, javascript: 5 },
+  calcRight: { java: 10, cpp: 6, python: 7, javascript: 6 },
+  rightDone: { java: 10, cpp: 6, python: 7, javascript: 6 },
+  calcArch: { java: 11, cpp: 7, python: 8, javascript: 7 },
+  updateMax: { java: 12, cpp: 8, python: 9, javascript: 8 },
+  returnSingle: { java: 13, cpp: 9, python: 10, javascript: 9 },
+};
+
+export const MAX_PATH_SUM_STAGE2_LINES = {
+  entry: { java: 6, cpp: 15, python: 2, javascript: 1 },
+  baseNull: { java: 7, cpp: 15, python: 2, javascript: 1 },
+  callProcess: { java: 8, cpp: 16, python: 13, javascript: 13 },
+  done: { java: 8, cpp: 16, python: 13, javascript: 13 },
+  processEntry: { java: 10, cpp: 3, python: 3, javascript: 2 },
+  processNull: { java: 11, cpp: 4, python: 4, javascript: 3 },
+  callLeft: { java: 12, cpp: 5, python: 5, javascript: 4 },
+  callRight: { java: 13, cpp: 6, python: 6, javascript: 5 },
+  calcGains: { java: 16, cpp: 9, python: 9, javascript: 8 },
+  calcArch: { java: 17, cpp: 10, python: 10, javascript: 9 },
+  mergeMax: { java: 20, cpp: 11, python: 11, javascript: 10 },
+  returnInfo: { java: 21, cpp: 12, python: 12, javascript: 11 },
+};
+
+export const MAX_PATH_SUM_STAGE3_LINES = {
+  entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  baseNull: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 7, cpp: 8, python: 7, javascript: 6 },
+  whileLoop: { java: 8, cpp: 9, python: 8, javascript: 7 },
+  pushLeftBranch: { java: 9, cpp: 10, python: 9, javascript: 8 },
+  peekTop: { java: 10, cpp: 11, python: 10, javascript: 9 },
+  turnRight: { java: 12, cpp: 13, python: 12, javascript: 11 },
+  popNode: { java: 14, cpp: 15, python: 14, javascript: 13 },
+  calcGains: { java: 16, cpp: 17, python: 16, javascript: 15 },
+  updateMax: { java: 17, cpp: 18, python: 17, javascript: 16 },
+  saveGain: { java: 18, cpp: 19, python: 18, javascript: 17 },
+  done: { java: 22, cpp: 23, python: 20, javascript: 21 },
+};
+

@@ -1235,14 +1235,29 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 11. Binary Tree Maximum Path Sum (LC 124)
   describe('11. Binary Tree Maximum Path Sum (LeetCode 124 · 二叉树中的最大路径和)', () => {
-    it('Stage 1: 经典树 [-10, 9, 20, null, null, 15, 7] 拱形路径和收敛至 42 且四语言行号合法', () => {
+    it('Stage 1: 经典树 [-10, 9, 20, null, null, 15, 7] 拱形路径和收敛至 42 且全步具备 callTrace 快照与四语言行号合法', () => {
       const steps = generateMaxPathSumSteps();
       expect(steps.length).toBeGreaterThan(0);
       expect(steps[0].currentNode).toBe(-10);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, MAX_PATH_SUM_STAGE1_CODES, `MaxPathSum Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // entry
+      expect(javaLines).toContain(4);  // callRoot
+      expect(javaLines).toContain(7);  // dfsEntry
+      expect(javaLines).toContain(8);  // baseNull
+      expect(javaLines).toContain(9);  // calcLeft / leftDone
+      expect(javaLines).toContain(10); // calcRight / rightDone
+      expect(javaLines).toContain(11); // calcArch
+      expect(javaLines).toContain(12); // updateMax
+      expect(javaLines).toContain(13); // returnSingle
+      expect(javaLines).toContain(5);  // done
 
       const last = steps[steps.length - 1];
       expect(last.maxGlobalSum).toBe(42);
@@ -1270,6 +1285,19 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.maxGlobalSum).toBe(42);
       expect(last.currentNode).toBe(-10);
       expect(last.visitedNodes).toEqual(expect.arrayContaining([-10, 9, 20, 15, 7]));
+
+      // 验证 Stage 2 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(6);  // entry
+      expect(javaLines).toContain(8);  // callProcess / done
+      expect(javaLines).toContain(10); // processEntry
+      expect(javaLines).toContain(11); // processNull
+      expect(javaLines).toContain(12); // callLeft
+      expect(javaLines).toContain(13); // callRight
+      expect(javaLines).toContain(16); // calcGains
+      expect(javaLines).toContain(17); // calcArch
+      expect(javaLines).toContain(20); // mergeMax
+      expect(javaLines).toContain(21); // returnInfo
     });
 
     it('Stage 2: 简单树 [1, 2, 3] 返回 6', () => {
@@ -1291,6 +1319,19 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.maxGlobalSum).toBe(42);
       expect(last.currentNode).toBe(-10);
       expect(last.visitedNodes).toEqual(expect.arrayContaining([-10, 9, 20, 15, 7]));
+
+      // 验证 Stage 3 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(7);  // init
+      expect(javaLines).toContain(9);  // pushLeftBranch
+      expect(javaLines).toContain(10); // peekTop
+      expect(javaLines).toContain(12); // turnRight
+      expect(javaLines).toContain(14); // popNode
+      expect(javaLines).toContain(16); // calcGains
+      expect(javaLines).toContain(17); // updateMax
+      expect(javaLines).toContain(18); // saveGain
+      expect(javaLines).toContain(22); // done
     });
 
     it('空树情况下三大 Stage 安全退出返回 0', () => {
