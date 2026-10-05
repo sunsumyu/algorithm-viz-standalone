@@ -143,5 +143,54 @@ describe('RecursiveCallTraceAdapter (Deep Module)', () => {
     // snap1 不应被 snap2 修改（深拷贝不可变契约）
     expect(snap1.lines.length).toBe(3);
   });
+
+  it('应严格呈现图1黄金范式的树形分支连线 (├── 与 └──)、层级导轨、圆点前缀与连通空行', () => {
+    const snapshot: CallTraceSnapshot = {
+      lines: [
+        { id: 'l1', depth: 0, text: 'minDepth(1)', kind: 'header', comment: '<- 最终要算这个' },
+        { id: 'l2', depth: 0, text: '• root=1, 非空', kind: 'condition-pass' },
+        { id: 'l3', depth: 1, text: 'minDepth(2)', kind: 'header', comment: '<- 先算左边' },
+        { id: 'l4', depth: 2, text: 'minDepth(4)', kind: 'header', comment: '<- 算2的右孩子' },
+        { id: 'l5', depth: 2, text: '返回 1', kind: 'return-leaf' },
+        { id: 'l6', depth: 1, text: '回到 minDepth(2): return 1 + 1 = 2', kind: 'unwind-calc' },
+        { id: 'l7', depth: 1, text: 'minDepth(3)', kind: 'header', comment: '<- 再算右边' },
+        { id: 'l8', depth: 0, text: '最终返回 2', kind: 'final-result' },
+      ],
+      activeLineId: 'l8',
+      finalResult: 2,
+    };
+
+    RecursiveCallTraceAdapter.render(container, snapshot);
+
+    // 1. 验证左分支为 ├──，独生/末位分支为 └──
+    const l3El = container.querySelector('#rct-line-l3');
+    expect(l3El?.textContent).toContain('├──');
+    expect(l3El?.textContent).toContain('minDepth(2)');
+
+    const l4El = container.querySelector('#rct-line-l4');
+    expect(l4El?.textContent).toContain('└──');
+    expect(l4El?.textContent).toContain('minDepth(4)');
+
+    const l7El = container.querySelector('#rct-line-l7');
+    expect(l7El?.textContent).toContain('└──');
+    expect(l7El?.textContent).toContain('minDepth(3)');
+
+    // 2. 验证帧内步具包含圆点 •
+    const l2El = container.querySelector('#rct-line-l2');
+    expect(l2El?.textContent).toContain('•');
+
+    // 3. 验证叶子返回行具有 └── 分支闭合指示
+    const l5El = container.querySelector('#rct-line-l5');
+    expect(l5El?.textContent).toContain('└──');
+    expect(l5El?.textContent).toContain('返回 1');
+
+    // 4. 验证渲染了用于纵向视觉连通的 spacer 导轨
+    const spacers = container.querySelectorAll('.rct-spacer');
+    expect(spacers.length).toBeGreaterThan(0);
+
+    // 5. 验证最终结果行包含绿色对勾徽章
+    const l8El = container.querySelector('#rct-line-l8');
+    expect(l8El?.textContent).toContain('✓');
+  });
 });
 
