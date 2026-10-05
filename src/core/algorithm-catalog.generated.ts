@@ -6996,6 +6996,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 40,
     learningGoal: "理解折纸物理展开与满二叉树中序遍历的数学同构关系，掌握不建树利用递归栈完成 O(N) 空间求解的技巧",
+    aliases: ["paper-folding","zuo-class-040","fold-paper-creases"],
   },
   {
     id: "binary-tree-level",

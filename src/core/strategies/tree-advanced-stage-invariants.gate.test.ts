@@ -49,7 +49,11 @@ import {
 } from '../../algorithms/categories/tree/max-sum-bst-036-stage-codes';
 import {
   buildPaperFoldingSteps,
+  buildPaperFoldingStage2Steps,
+  buildPaperFoldingStage3Steps,
   PAPER_FOLDING_CODES,
+  PAPER_FOLDING_STAGE2_CODES,
+  PAPER_FOLDING_STAGE3_CODES,
 } from '../../algorithms/categories/tree/paper-folding-040-renderer';
 
 function assertCodeLineWithinBounds(
@@ -300,7 +304,7 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
 
   // 7. Class 040: 折纸凹凸折痕中序推演
   describe('7. Class 040: 折纸凹凸折痕中序推演 (Paper Folding)', () => {
-    it('对折 3 次生成 7 条折痕，中序遍历凹凸序列与 2^n - 1 节点完全守恒', () => {
+    it('Stage 1: 对折 3 次生成 7 条折痕，中序遍历凹凸序列与 2^n - 1 节点完全守恒', () => {
       const n = 3;
       const steps = buildPaperFoldingSteps(n);
       expect(steps.length).toBeGreaterThan(0);
@@ -318,7 +322,47 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
       expect(texts).toEqual(['凹', '凹', '凸', '凹', '凹', '凸', '凸']);
 
       steps.forEach((s, idx) => {
-        assertCodeLineWithinBounds(s.codeLine, PAPER_FOLDING_CODES, `PaperFolding Step ${idx}`);
+        assertCodeLineWithinBounds(s.codeLine, PAPER_FOLDING_CODES, `PaperFolding Stage 1 Step ${idx}`);
+      });
+    });
+
+    it('Stage 2: 显式中序遍历栈模拟消灭系统递归栈，折痕序列与行号范围 100% 守恒', () => {
+      const n = 3;
+      const steps = buildPaperFoldingStage2Steps(n);
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.creaseList).toEqual([]);
+      expect(step0.stageId).toBe('stage2');
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('finish');
+      expect(last.creaseList.length).toBe(Math.pow(2, n) - 1);
+      const texts = last.creaseList.map((c) => c.text);
+      expect(texts).toEqual(['凹', '凹', '凸', '凹', '凹', '凸', '凸']);
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, PAPER_FOLDING_STAGE2_CODES, `PaperFolding Stage 2 Step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 逐层物理裂变递推交替衍生凹凸折痕，守恒收敛至 2^n - 1 条折痕', () => {
+      const n = 3;
+      const steps = buildPaperFoldingStage3Steps(n);
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.creaseList.length).toBe(1); // 第 1 折拥有 1 条凹折痕
+      expect(step0.stageId).toBe('stage3');
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('finish');
+      expect(last.creaseList.length).toBe(Math.pow(2, n) - 1);
+      const texts = last.creaseList.map((c) => c.text);
+      expect(texts).toEqual(['凹', '凹', '凸', '凹', '凹', '凸', '凸']);
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, PAPER_FOLDING_STAGE3_CODES, `PaperFolding Stage 3 Step ${idx}`);
       });
     });
   });
