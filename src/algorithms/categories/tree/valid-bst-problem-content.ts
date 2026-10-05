@@ -46,63 +46,7 @@ export const VALID_BST_ANALYSIS_HTML = `
   </div>
 `;
 
-export const VALID_BST_CODE_LANGUAGES: Record<string, string[]> = {
-  java: [
-    'public class Solution {',
-    '    private TreeNode prev = null;',
-    '    public boolean isValidBST(TreeNode root) {',
-    '        if (root == null) return true;',
-    '        // 1. 递归验证左子树',
-    '        if (!isValidBST(root.left)) return false;',
-    '        // 2. 检查中序严格单调递增',
-    '        if (prev != null && root.val <= prev.val) {',
-    '            return false;',
-    '        }',
-    '        prev = root;',
-    '        // 3. 递归验证右子树',
-    '        return isValidBST(root.right);',
-    '    }',
-    '}',
-  ],
-  cpp: [
-    'class Solution {',
-    '    TreeNode* prev = nullptr;',
-    'public:',
-    '    bool isValidBST(TreeNode* root) {',
-    '        if (!root) return true;',
-    '        if (!isValidBST(root->left)) return false;',
-    '        if (prev && root->val <= prev->val) return false;',
-    '        prev = root;',
-    '        return isValidBST(root->right);',
-    '    }',
-    '};',
-  ],
-  python: [
-    'class Solution:',
-    '    def __init__(self):',
-    '        self.prev = None',
-    '',
-    '    def isValidBST(self, root: Optional[TreeNode]) -> bool:',
-    '        if not root:',
-    '            return True',
-    '        if not self.isValidBST(root.left):',
-    '            return False',
-    '        if self.prev is not None and root.val <= self.prev.val:',
-    '            return False',
-    '        self.prev = root',
-    '        return self.isValidBST(root.right)',
-  ],
-  javascript: [
-    'var isValidBST = function(root) {',
-    '    let prev = null;',
-    '    const inorder = (node) => {',
-    '        if (!node) return true;',
-    '        if (!inorder(node.left)) return false;',
-    '        if (prev !== null && node.val <= prev.val) return false;',
-    '        prev = node;',
-    '        return inorder(node.right);',
-    '    };',
-    '    return inorder(root);',
-    '};',
-  ],
-};
+import { VALID_BST_STAGE1_CODE } from './valid-bst-stage-codes';
+
+export const VALID_BST_CODE_LANGUAGES: Record<string, string[]> = VALID_BST_STAGE1_CODE;
+

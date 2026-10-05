@@ -33,7 +33,10 @@ import {
 } from '../../algorithms/categories/tree/tree-serialization-037-renderer';
 import {
   buildTrie017Steps,
+  buildStage2StaticSteps,
+  buildStage3MultiQuerySteps,
   TRIE_017_CODES,
+  TRIE_STAGE2_STATIC_CODES,
 } from '../../algorithms/categories/tree/trie-tree-017-renderer';
 import {
   buildTrieXorMaxSteps,
@@ -217,6 +220,31 @@ describe('Tree Final Stage Invariants Gatekeeper (最终树与字典树高阶算
       [...searchSteps, ...prefixSteps].forEach((st, idx) => {
         assertCodeLineWithinBounds(st.codeLine, TRIE_017_CODES, `Class 017 step ${idx}`);
       });
+    });
+
+    it('Stage 2: 静态连续数组竞赛版应正确生成紧凑内存映射表且行号合规', () => {
+      const words = ['code', 'coder', 'coding', 'codec'];
+      const steps = buildStage2StaticSteps(words, 'code');
+      expect(steps.length).toBeGreaterThan(6);
+
+      const s0 = steps[0];
+      expect(s0.stageId).toBe('stage-2');
+      expect(s0.staticTable).toBeDefined();
+      expect(s0.staticTable?.rows.length).toBeGreaterThanOrEqual(1);
+
+      const sLast = steps[steps.length - 1];
+      expect(sLast.resultCount).toBe(1);
+
+      steps.forEach((st, idx) => {
+        assertCodeLineWithinBounds(st.codeLine, TRIE_STAGE2_STATIC_CODES, `Class 017 Stage 2 step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 多模态检索探测推演应满足阶段规约', () => {
+      const steps = buildStage3MultiQuerySteps();
+      expect(steps.length).toBeGreaterThan(5);
+      const sLast = steps[steps.length - 1];
+      expect(sLast.resultCount).toBe(3);
     });
   });
 

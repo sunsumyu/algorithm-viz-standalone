@@ -6917,14 +6917,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "trie-tree-017",
-    name: "前缀树基础结构与频次统计 (Class 017)",
+    name: "Class 017: 前缀树基础结构与频次统计",
     viewId: "algo-trie-tree-017-view",
     category: "tree",
-    description: "前缀树基础结构与频次统计 (Class 017)",
+    description: "Class 017: 前缀树基础结构与频次统计",
     icon: "🌳",
     difficulty: 2,
     levelOrder: 17,
-    learningGoal: "深入掌握前缀树节点 pass / end 核心设计，理解多模式串共享公共前缀的快速前缀统计机制",
+    learningGoal: "深入掌握前缀树节点 pass 与 end 核心设计，理解多模式串共享公共前缀的快速统计与静态数组优化",
     aliases: ["class017-code01","trie-tree-017","trie-prefix-tree","leetcode-208"],
   },
   {
