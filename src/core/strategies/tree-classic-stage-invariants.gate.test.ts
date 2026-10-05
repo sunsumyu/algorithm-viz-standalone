@@ -1043,29 +1043,53 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       }
       expect(steps[steps.length - 1].found).toBe(true);
       expect(steps[steps.length - 1].targetSubtree?.val).toBe(2);
+
+      // 验证 Stage 1 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(4);  // whileCheck
+      expect(javaLines).toContain(5);  // match
+      expect(javaLines).toContain(7);  // goLeft
+      expect(javaLines).toContain(12); // done
     });
 
     it('Stage 1: 迭代查找不存在目标 5 返回未找到', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3]);
       const steps = buildBSTSearchSteps(root, 5);
       expect(steps[steps.length - 1].found).toBe(false);
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(9);  // goRight
+      expect(javaLines).toContain(12); // notFound
     });
 
-    it('Stage 2: 递归分支剪枝查找命中 2 且四语言行号合法', () => {
+    it('Stage 2: 递归分支剪枝查找命中 2 且全步具备 callTrace 快照与四语言行号合法', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3]);
       const steps = buildBstSearchStage2RecursiveSteps(root, 2);
       expect(steps.length).toBeGreaterThan(0);
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, BST_SEARCH_STAGE2_RECURSIVE_CODE, `BSTSearch Stage 2 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
       expect(steps[steps.length - 1].found).toBe(true);
       expect(steps[steps.length - 1].targetSubtree?.val).toBe(2);
+
+      // 验证 Stage 2 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // baseCheck / match / done
+      expect(javaLines).toContain(5); // recurseLeft
     });
 
-    it('Stage 2: 递归查找不存在目标 5 返回未找到', () => {
+    it('Stage 2: 递归查找不存在目标 5 返回未找到且具备 callTrace 快照', () => {
       const root = buildTreeFromArr([4, 2, 7, 1, 3]);
       const steps = buildBstSearchStage2RecursiveSteps(root, 5);
       expect(steps[steps.length - 1].found).toBe(false);
+      for (let i = 0; i < steps.length; i++) {
+        expect(steps[i].callTrace).toBeDefined();
+      }
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(7); // recurseRight
     });
 
     it('Stage 3: 动态插入新值 5 成功挂载为 7 的左叶子且四语言行号合法', () => {
@@ -1079,6 +1103,15 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.found).toBe(true);
       expect(last.insertedVal).toBe(5);
       expect(last.tree?.right?.left?.val).toBe(5);
+
+      // 验证 Stage 3 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(5);  // whileSearch
+      expect(javaLines).toContain(8);  // insertLeft
+      expect(javaLines).toContain(13); // checkRight
+      expect(javaLines).toContain(17); // stepRight
+      expect(javaLines).toContain(20); // done
     });
 
     it('空树情况下三大 Stage 安全退出', () => {
