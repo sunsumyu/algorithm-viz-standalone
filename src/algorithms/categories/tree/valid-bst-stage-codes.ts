@@ -15,31 +15,38 @@ export const VALID_BST_STAGE1_CODE: Record<string, string[]> = {
     'public class Solution {',                                          // 1
     '    private TreeNode prev = null;',                                // 2
     '    public boolean isValidBST(TreeNode root) {',                  // 3
-    '        if (root == null) return true;',                          // 4
-    '        // 1. 递归验证左子树',                                     // 5
-    '        if (!isValidBST(root.left)) return false;',               // 6
-    '        // 2. 检查中序严格单调递增',                             // 7
-    '        if (prev != null && root.val <= prev.val) {',             // 8
-    '            return false;',                                       // 9
-    '        }',                                                       // 10
-    '        prev = root;',                                            // 11
-    '        // 3. 递归验证右子树',                                     // 12
-    '        return isValidBST(root.right);',                          // 13
-    '    }',                                                           // 14
-    '}',                                                               // 15
+    '        if (root == null) {',                                     // 4
+    '            return true;',                                        // 5
+    '        }',                                                       // 6
+    '        if (!isValidBST(root.left)) {',                           // 7
+    '            return false;',                                       // 8
+    '        }',                                                       // 9
+    '        if (prev != null && root.val <= prev.val) {',             // 10
+    '            return false;',                                       // 11
+    '        }',                                                       // 12
+    '        prev = root;',                                            // 13
+    '        return isValidBST(root.right);',                          // 14
+    '    }',                                                           // 15
+    '}',                                                               // 16
   ],
   cpp: [
     'class Solution {',                                                // 1
     '    TreeNode* prev = nullptr;',                                   // 2
     'public:',                                                         // 3
     '    bool isValidBST(TreeNode* root) {',                           // 4
-    '        if (!root) return true;',                                 // 5
-    '        if (!isValidBST(root->left)) return false;',              // 6
-    '        if (prev && root->val <= prev->val) return false;',       // 7
-    '        prev = root;',                                            // 8
-    '        return isValidBST(root->right);',                         // 9
-    '    }',                                                           // 10
-    '};',                                                              // 11
+    '        if (!root) {',                                            // 5
+    '            return true;',                                        // 6
+    '        }',                                                       // 7
+    '        if (!isValidBST(root->left)) {',                          // 8
+    '            return false;',                                       // 9
+    '        }',                                                       // 10
+    '        if (prev && root->val <= prev->val) {',                   // 11
+    '            return false;',                                       // 12
+    '        }',                                                       // 13
+    '        prev = root;',                                            // 14
+    '        return isValidBST(root->right);',                         // 15
+    '    }',                                                           // 16
+    '};',                                                              // 17
   ],
   python: [
     'class Solution:',                                                 // 1
@@ -60,25 +67,40 @@ export const VALID_BST_STAGE1_CODE: Record<string, string[]> = {
     'var isValidBST = function(root) {',                              // 1
     '    let prev = null;',                                            // 2
     '    const inorder = (node) => {',                                 // 3
-    '        if (!node) return true;',                                 // 4
-    '        if (!inorder(node.left)) return false;',                  // 5
-    '        if (prev !== null && node.val <= prev.val) return false;',// 6
-    '        prev = node;',                                            // 7
-    '        return inorder(node.right);',                             // 8
-    '    };',                                                          // 9
-    '    return inorder(root);',                                       // 10
-    '};',                                                              // 11
+    '        if (!node) {',                                            // 4
+    '            return true;',                                        // 5
+    '        }',                                                       // 6
+    '        if (!inorder(node.left)) {',                              // 7
+    '            return false;',                                       // 8
+    '        }',                                                       // 9
+    '        if (prev !== null && node.val <= prev.val) {',            // 10
+    '            return false;',                                       // 11
+    '        }',                                                       // 12
+    '        prev = node;',                                            // 13
+    '        return inorder(node.right);',                             // 14
+    '    };',                                                          // 15
+    '    return inorder(root);',                                       // 16
+    '};',                                                              // 17
   ],
 };
 
 export const VALID_BST_STAGE1_LINES = {
-  entry: { java: 3, cpp: 4, python: 5, javascript: 1 },
+  entry: { java: 3, cpp: 4, python: 5, javascript: 3 },
+  nullCheckHit: { java: 4, cpp: 5, python: 6, javascript: 4 },
+  nullCheckPass: { java: 4, cpp: 5, python: 6, javascript: 4 },
+  nullReturn: { java: 5, cpp: 6, python: 7, javascript: 5 },
+  checkLeft: { java: 7, cpp: 8, python: 8, javascript: 7 },
+  leftReturned: { java: 7, cpp: 8, python: 8, javascript: 7 },
+  leftReturnFalse: { java: 8, cpp: 9, python: 9, javascript: 8 },
+  comparePrev: { java: 10, cpp: 11, python: 10, javascript: 10 },
+  prevViolation: { java: 11, cpp: 12, python: 11, javascript: 11 },
+  updatePrev: { java: 13, cpp: 14, python: 12, javascript: 13 },
+  checkRight: { java: 14, cpp: 15, python: 13, javascript: 14 },
+  returnRight: { java: 14, cpp: 15, python: 13, javascript: 14 },
+  doneValid: { java: 14, cpp: 15, python: 13, javascript: 16 },
+
+  // Backward compatibility alias
   emptyCheck: { java: 4, cpp: 5, python: 6, javascript: 4 },
-  checkLeft: { java: 6, cpp: 6, python: 8, javascript: 5 },
-  comparePrev: { java: 8, cpp: 7, python: 10, javascript: 6 },
-  updatePrev: { java: 11, cpp: 8, python: 12, javascript: 7 },
-  checkRight: { java: 13, cpp: 9, python: 13, javascript: 8 },
-  doneValid: { java: 13, cpp: 9, python: 13, javascript: 8 },
 };
 
 // ============================================================
@@ -147,6 +169,7 @@ export const VALID_BST_STAGE2_RANGE_LINES = {
   entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
   callRoot: { java: 3, cpp: 4, python: 10, javascript: 10 },
   nullCheck: { java: 6, cpp: 7, python: 4, javascript: 3 },
+  nullReturn: { java: 6, cpp: 7, python: 5, javascript: 3 },
   boundaryCheck: { java: 8, cpp: 8, python: 6, javascript: 4 },
   violation: { java: 9, cpp: 8, python: 7, javascript: 5 },
   recurseLeft: { java: 12, cpp: 9, python: 8, javascript: 7 },

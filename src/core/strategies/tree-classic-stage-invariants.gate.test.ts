@@ -360,7 +360,20 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, VALID_BST_STAGE1_CODE, `ValidBST Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `ValidBST Stage 1 Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `ValidBST Stage 1 Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期关键行覆盖 (Java)
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // entry
+      expect(javaLines).toContain(4);  // nullCheckHit / nullCheckPass
+      expect(javaLines).toContain(5);  // nullReturn
+      expect(javaLines).toContain(7);  // checkLeft
+      expect(javaLines).toContain(10); // comparePrev
+      expect(javaLines).toContain(13); // updatePrev
+      expect(javaLines).toContain(14); // checkRight
+
       const last = steps[steps.length - 1];
       expect(last.valid).toBe(true);
       expect(last.sequence).toEqual([1, 2, 3]);
@@ -380,6 +393,8 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(validSteps.length).toBeGreaterThan(0);
       for (let i = 0; i < validSteps.length; i++) {
         assertCodeLineWithinBounds(validSteps[i].codeLine, VALID_BST_STAGE2_RANGE_CODE, `ValidBST Stage 2 Valid Step ${i}`);
+        expect(validSteps[i].callTrace, `ValidBST Stage 2 Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(validSteps[i].callTrace?.activeLineId, `ValidBST Stage 2 Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
       expect(validSteps[validSteps.length - 1].valid).toBe(true);
 
@@ -407,6 +422,74 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       const invalidSteps = buildValidBstStage3StackSteps(invalidRoot);
       expect(invalidSteps[invalidSteps.length - 1].valid).toBe(false);
       expect(invalidSteps[invalidSteps.length - 1].invalidNode).toBe(3);
+    });
+
+    it('Stage 1: 生成完整的递归调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([2, 1, 3]);
+      const steps = buildVBSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (const step of steps) {
+        expect(step.callTrace).toBeDefined();
+        expect(step.callTrace!.lines.length).toBeGreaterThan(0);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.callTrace!.finalResult).toBe('true');
+      const kinds = new Set(last.callTrace!.lines.map((l) => l.kind));
+      expect(kinds.has('header')).toBe(true);
+      expect(kinds.has('condition-pass')).toBe(true);
+      expect(kinds.has('final-result')).toBe(true);
+    });
+
+    it('Stage 1: 严格一行一步与中序递归生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([2, 1, 3]);
+      const steps = buildVBSteps(root);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3); // entry
+      expect(javaLines).toContain(4); // nullCheckHit / nullCheckPass
+      expect(javaLines).toContain(5); // nullReturn
+      expect(javaLines).toContain(7); // checkLeft / leftReturned
+      expect(javaLines).toContain(10); // comparePrev
+      expect(javaLines).toContain(13); // updatePrev
+      expect(javaLines).toContain(14); // checkRight / returnRight / doneValid
+
+      // 根节点前 5 步严格连续执行，杜绝静默跳步
+      const firstLines = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(firstLines).toEqual([3, 3, 4, 7, 3]);
+
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('init');
+      expect(actions).toContain('entry');
+      expect(actions).toContain('null-pass');
+      expect(actions).toContain('recurse-left');
+      expect(actions).toContain('null-entry');
+      expect(actions).toContain('null-return');
+      expect(actions).toContain('left-done');
+      expect(actions).toContain('compare');
+      expect(actions).toContain('update-prev');
+      expect(actions).toContain('recurse-right');
+      expect(actions).toContain('node-success');
+      expect(actions).toContain('done');
+    });
+
+    it('Stage 2: 生成完整的先序区间定界调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([2, 1, 3]);
+      const steps = buildValidBstStage2RangeSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (const step of steps) {
+        expect(step.callTrace).toBeDefined();
+        expect(step.callTrace!.lines.length).toBeGreaterThan(0);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.callTrace!.finalResult).toBe('true');
+      const kinds = new Set(last.callTrace!.lines.map((l) => l.kind));
+      expect(kinds.has('header')).toBe(true);
+      expect(kinds.has('condition-pass')).toBe(true);
+      expect(kinds.has('final-result')).toBe(true);
     });
 
     it('空树判定为合法 BST (true)', () => {
