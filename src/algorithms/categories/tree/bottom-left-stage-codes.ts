@@ -96,12 +96,14 @@ export const BOTTOM_LEFT_STAGE1_LINES = {
   callDfs: { java: 7, cpp: 7, python: 13, javascript: 14 },
   returnAns: { java: 8, cpp: 8, python: 14, javascript: 15 },
   dfsEntry: { java: 10, cpp: 10, python: 5, javascript: 4 },
+  checkNull: { java: 11, cpp: 11, python: 6, javascript: 4 },
   checkLeaf: { java: 12, cpp: 12, python: 7, javascript: 5 },
   checkDepth: { java: 13, cpp: 13, python: 8, javascript: 6 },
   updateAns: { java: 14, cpp: 14, python: 9, javascript: 7 },
   leafReturn: { java: 16, cpp: 16, python: 10, javascript: 9 },
   recurseLeft: { java: 18, cpp: 18, python: 11, javascript: 11 },
   recurseRight: { java: 19, cpp: 19, python: 12, javascript: 12 },
+  done: { java: 8, cpp: 8, python: 14, javascript: 15 },
 };
 
 // ----------------------------------------------------

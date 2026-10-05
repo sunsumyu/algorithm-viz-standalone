@@ -1677,14 +1677,29 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
   // 17. Find Bottom Left Tree Value (LC 513 · 找树左下角的值)
   describe('17. Find Bottom Left Tree Value (LeetCode 513 · 找树左下角的值)', () => {
-    it('Stage 1: 经典二叉树 [2, 1, 3] 先序 DFS 搜索返回左下角值 1 且收尾帧 100% 节点覆盖高亮不变量', () => {
+    it('Stage 1: 经典二叉树 [2, 1, 3] 先序 DFS 搜索返回左下角值 1 且全步具备 callTrace 快照与行号合法', () => {
       const root = buildTreeFromArr([2, 1, 3]);
       const steps = buildBottomLeftStage1PreorderSteps(root);
       expect(steps.length).toBeGreaterThan(0);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, BOTTOM_LEFT_STAGE1_CODES, `BottomLeft Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(4);  // entry
+      expect(javaLines).toContain(5);  // initVars
+      expect(javaLines).toContain(7);  // callDfs
+      expect(javaLines).toContain(10); // dfsEntry
+      expect(javaLines).toContain(12); // checkLeaf
+      expect(javaLines).toContain(14); // updateAns
+      expect(javaLines).toContain(16); // leafReturn
+      expect(javaLines).toContain(18); // recurseLeft
+      expect(javaLines).toContain(19); // recurseRight
+      expect(javaLines).toContain(8);  // returnAns / done
 
       const last = steps[steps.length - 1];
       expect(last.current).toBe(2);
