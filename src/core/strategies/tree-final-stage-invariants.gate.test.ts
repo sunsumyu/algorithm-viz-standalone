@@ -40,7 +40,11 @@ import {
 } from '../../algorithms/categories/tree/trie-tree-017-renderer';
 import {
   buildTrieXorMaxSteps,
+  buildStage2StaticSteps as buildTrie107Stage2Steps,
+  buildStage3SubarrayXorSteps,
   TRIE_XOR_CODES,
+  TRIE_STAGE2_STATIC_CODES as TRIE_107_STAGE2_CODES,
+  TRIE_STAGE3_SUBARRAY_CODES,
 } from '../../algorithms/categories/tree/trie-xor-max-107-renderer';
 import {
   generateTreeRecursionSteps,
@@ -248,9 +252,9 @@ describe('Tree Final Stage Invariants Gatekeeper (最终树与字典树高阶算
     });
   });
 
-  // 5. Class 107: 01-Trie 与两数最大异或和
-  describe('5. Class 107: 01-Trie 与两数最大异或和 (Trie XOR Max 107)', () => {
-    it('贪心探索最高位对偶分支应准确求出两数最大异或值', () => {
+  // 5. Class 107: 01-Trie 与异或最大值
+  describe('5. Class 107: 01-Trie 与异或最大值 (Trie XOR Max 107)', () => {
+    it('Stage 1: 贪心探索最高位对偶分支应准确求出两数最大异或值', () => {
       const nums = [3, 10, 5, 25, 2, 8];
       const steps = buildTrieXorMaxSteps(nums, 5);
       expect(steps.length).toBeGreaterThan(6);
@@ -263,7 +267,35 @@ describe('Tree Final Stage Invariants Gatekeeper (最终树与字典树高阶算
       expect(sLast.globalMaxXor).toBe(28); // 5 XOR 25 = 28
 
       steps.forEach((st, idx) => {
-        assertCodeLineWithinBounds(st.codeLine, TRIE_XOR_CODES, `Class 107 step ${idx}`);
+        assertCodeLineWithinBounds(st.codeLine, TRIE_XOR_CODES, `Class 107 stage 1 step ${idx}`);
+      });
+    });
+
+    it('Stage 2: 竞赛静态连续数组 tree[N][2] 应生成紧凑扁平化推演', () => {
+      const nums = [3, 10, 5, 25, 2, 8];
+      const steps = buildTrie107Stage2Steps(nums, 5);
+      expect(steps.length).toBeGreaterThan(6);
+
+      const sLast = steps[steps.length - 1];
+      expect(sLast.globalMaxXor).toBe(28);
+      expect(sLast.staticTable?.rows.length).toBeGreaterThan(1);
+
+      steps.forEach((st, idx) => {
+        assertCodeLineWithinBounds(st.codeLine, TRIE_107_STAGE2_CODES, `Class 107 stage 2 step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 前缀异或自反性转化求子数组最大异或和', () => {
+      const nums = [3, 1, 4, 2, 5];
+      const steps = buildStage3SubarrayXorSteps(nums, 5);
+      expect(steps.length).toBeGreaterThan(5);
+
+      const sLast = steps[steps.length - 1];
+      expect(sLast.globalMaxXor).toBe(7); // 1 ^ 4 ^ 2 = 7
+      expect(sLast.prefixXorList?.length).toBe(6); // eor[0..5]
+
+      steps.forEach((st, idx) => {
+        assertCodeLineWithinBounds(st.codeLine, TRIE_STAGE3_SUBARRAY_CODES, `Class 107 stage 3 step ${idx}`);
       });
     });
   });
