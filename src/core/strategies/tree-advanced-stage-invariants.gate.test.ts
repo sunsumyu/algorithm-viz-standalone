@@ -39,8 +39,14 @@ import {
 } from '../../algorithms/categories/tree/find-duplicate-subtrees-stage-codes';
 import {
   buildMaxSumBstSteps,
+  buildMaxSumBstStage2Steps,
+  buildMaxSumBstStage3Steps,
   MAX_SUM_BST_CODES,
 } from '../../algorithms/categories/tree/max-sum-bst-036-renderer';
+import {
+  MAX_SUM_BST_STAGE2_CODES,
+  MAX_SUM_BST_STAGE3_CODES,
+} from '../../algorithms/categories/tree/max-sum-bst-036-stage-codes';
 import {
   buildPaperFoldingSteps,
   PAPER_FOLDING_CODES,
@@ -235,9 +241,9 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
     });
   });
 
-  // 6. LeetCode 1373: 二叉搜索子树的最大键值和
+  // 6. LeetCode 1373: 二叉搜索子树的最大键值和 (三大阶段演化全覆盖)
   describe('6. LeetCode 1373 / 333: 二叉搜索子树的最大键值和 (Max Sum BST Subtree)', () => {
-    it('自底向上收集 Info(isBST, min, max, sum)，正确识别局部BST并刷新全局最大和', () => {
+    it('Stage 1: 自底向上收集 Info(isBST, min, max, sum)，正确识别局部BST并刷新全局最大和', () => {
       const steps = buildMaxSumBstSteps('classic_lc1373');
       expect(steps.length).toBeGreaterThan(0);
 
@@ -251,7 +257,43 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
       expect(last.maxSumGlobal).toBe(20);
 
       steps.forEach((s, idx) => {
-        assertCodeLineWithinBounds(s.codeLine, MAX_SUM_BST_CODES, `MaxSumBST Step ${idx}`);
+        assertCodeLineWithinBounds(s.codeLine, MAX_SUM_BST_CODES, `MaxSumBST Stage 1 Step ${idx}`);
+      });
+    });
+
+    it('Stage 2: 快速失效剪枝向上传导极简数组 [isBst, min, max, sum] 并精准刷新全局最大和', () => {
+      const steps = buildMaxSumBstStage2Steps('classic_lc1373');
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.phase).toBe('enter');
+      expect(step0.maxSumGlobal).toBe(0);
+
+      const last = steps[steps.length - 1];
+      expect(last.phase).toBe('finish');
+      expect(last.maxSumGlobal).toBe(20);
+      expect(last.stageId).toBe('stage2');
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, MAX_SUM_BST_STAGE2_CODES, `MaxSumBST Stage 2 Step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 显式单调栈后序迭代正确模拟压栈与结算，完全消除递归栈并精准求出最大和', () => {
+      const steps = buildMaxSumBstStage3Steps('classic_lc1373');
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.phase).toBe('enter');
+      expect(step0.maxSumGlobal).toBe(0);
+
+      const last = steps[steps.length - 1];
+      expect(last.phase).toBe('finish');
+      expect(last.maxSumGlobal).toBe(20);
+      expect(last.stageId).toBe('stage3');
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, MAX_SUM_BST_STAGE3_CODES, `MaxSumBST Stage 3 Step ${idx}`);
       });
     });
   });
