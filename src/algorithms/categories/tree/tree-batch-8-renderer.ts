@@ -441,64 +441,10 @@ class BSTTrimVisualizer extends BSTVisualizer {
 export { BSTTrimVisualizer };
 
 // ========== Level 26: 有序数组转 BST ==========
-class SortedArrayToBSTVisualizer extends BSTVisualizer {
-  protected codeLines = [
-    'public TreeNode sortedArrayToBST(int[] nums) {',
-    '    if (nums.length == 0) return null;',
-    '    int mid = nums.length / 2;',
-    '    TreeNode root = new TreeNode(nums[mid]);',
-    '    root.left = sortedArrayToBST(Arrays.copyOfRange(nums, 0, mid));',
-    '    root.right = sortedArrayToBST(Arrays.copyOfRange(nums, mid + 1, nums.length));',
-    '    return root;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java 有序数组转BST';
-  protected prefix = 'sb';
-  private nums: number[] = [-10, -3, 0, 5, 9];
-
-  protected getExamples() {
-    return {
-      '1': () => { this.nums = [-10, -3, 0, 5, 9]; this.start(); },
-      '2': () => { this.nums = [1, 3]; this.start(); },
-      '3': () => { this.nums = [0, 1, 2, 3, 4, 5]; this.start(); },
-    };
-  }
-
-  protected buildSteps() {
-    const steps: BstStep[] = [];
-    steps.push({ tree: null, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: `数组: [${this.nums.join(', ')}]` });
-    const build = (nums: number[], depth: number): TreeNode | null => {
-      if (nums.length === 0) return null;
-      const mid = Math.floor(nums.length / 2);
-      const highlight = new Set([nums[mid]]);
-      steps.push({ tree: null, current: nums[mid], depth, highlight, color: '#fab387', log: `中点 ${nums[mid]} (索引${mid})` });
-      const root: TreeNode = {
-        val: nums[mid],
-        left: build(nums.slice(0, mid), depth + 1),
-        right: build(nums.slice(mid + 1), depth + 1),
-      };
-      steps.push({ tree: root, current: root.val, depth, highlight, color: '#89b4fa', log: `节点 ${root.val} 构建完成` });
-      return root;
-    };
-    const tree = build(this.nums, 0);
-    steps.push({ tree, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '构建完成' });
-    return steps;
-  }
-}
-
-registerAlgorithm({
-  id: 'sorted-array-to-bst',
-  name: '有序数组转BST',
-  viewId: 'algo-sorted-array-to-bst-view',
-  category: 'tree',
-  description: '将有序数组转换为高度平衡的BST',
-  icon: '🔄',
-  template: sortedArrayToBstTemplate,
-  Visualizer: SortedArrayToBSTVisualizer,
-  difficulty: 1,
-  levelOrder: 26,
-  learningGoal: '分治构建平衡BST',
-});
+// 【双版本长处整合】已整合至 sorted-array-to-bst-renderer.ts
+// 唯一事实来源：sorted-array-to-bst (aliases: ['leetcode-108', 'convert-sorted-array-to-binary-search-tree'])，兼具输入框/预设用例与二分分治讲义四语言联动
+import './sorted-array-to-bst-renderer';
+export { buildSortedArrayToBstStage1Steps, type SortedArrayToBstStep } from './sorted-array-to-bst-renderer';
 
 // BST 转累加树
 class BSTToGSTVisualizer extends BSTVisualizer {

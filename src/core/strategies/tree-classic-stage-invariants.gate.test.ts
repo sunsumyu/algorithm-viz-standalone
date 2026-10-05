@@ -154,6 +154,17 @@ import {
 } from '../../algorithms/categories/tree/bst-delete-stage-codes';
 
 import {
+  buildSortedArrayToBstStage1Steps,
+  buildSortedArrayToBstStage2Steps,
+  buildSortedArrayToBstStage3Steps,
+} from '../../algorithms/categories/tree/sorted-array-to-bst-renderer';
+import {
+  SORTED_ARRAY_TO_BST_STAGE1_CODES,
+  SORTED_ARRAY_TO_BST_STAGE2_CODES,
+  SORTED_ARRAY_TO_BST_STAGE3_CODES,
+} from '../../algorithms/categories/tree/sorted-array-to-bst-stage-codes';
+
+import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
@@ -2545,6 +2556,81 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       // 删除单节点树根节点
       const singleRoot = buildTreeFromArr([1]);
       expect(buildBstDeleteStage1Steps(singleRoot, 1).pop()?.tree).toBeNull();
+    });
+  });
+
+  // 18. Sorted Array to BST (LC 108)
+  describe('18. Sorted Array to BST (LeetCode 108 · 有序数组转二叉搜索树)', () => {
+    const nums = [-10, -3, 0, 5, 9];
+
+    it('Stage 1: 偏左中点经典分治递归，全步具备 callTrace 快照与合法行号', () => {
+      const steps = buildSortedArrayToBstStage1Steps(nums);
+      expect(steps.length).toBeGreaterThan(6);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, SORTED_ARRAY_TO_BST_STAGE1_CODES, `SortedArrayToBST Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(0);
+      expect(last.tree?.left?.val).toBe(-10);
+      expect(last.tree?.left?.right?.val).toBe(-3);
+      expect(last.tree?.right?.val).toBe(5);
+      expect(last.tree?.right?.right?.val).toBe(9);
+
+      // 关键行覆盖验证
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(4);  // callBuild / done
+      expect(javaLines).toContain(7);  // baseCheck
+      expect(javaLines).toContain(9);  // createNode
+      expect(javaLines).toContain(10); // leftRecurse
+      expect(javaLines).toContain(11); // rightRecurse
+      expect(javaLines).toContain(12); // returnRoot
+    });
+
+    it('Stage 2: 偏右中点分治递归，全步具备 callTrace 快照且生成平衡二叉树', () => {
+      const steps = buildSortedArrayToBstStage2Steps(nums);
+      expect(steps.length).toBeGreaterThan(6);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, SORTED_ARRAY_TO_BST_STAGE2_CODES, `SortedArrayToBST Stage 2 Step ${i}`);
+        expect(steps[i].callTrace).toBeDefined();
+      }
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(0);
+
+      // 验证偶数长度下的偏右取中差异：对于 [1, 2, 3, 4]
+      const evenSteps1 = buildSortedArrayToBstStage1Steps([1, 2, 3, 4]);
+      const evenSteps2 = buildSortedArrayToBstStage2Steps([1, 2, 3, 4]);
+      // Stage 1 (left-biased) 中点索引 1 -> 值为 2
+      expect(evenSteps1.pop()?.tree?.val).toBe(2);
+      // Stage 2 (right-biased) 中点索引 2 -> 值为 3
+      expect(evenSteps2.pop()?.tree?.val).toBe(3);
+    });
+
+    it('Stage 3: 三队列显式 BFS 迭代模拟，零递归调用栈且四语言行号合法', () => {
+      const steps = buildSortedArrayToBstStage3Steps(nums);
+      expect(steps.length).toBeGreaterThan(4);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, SORTED_ARRAY_TO_BST_STAGE3_CODES, `SortedArrayToBST Stage 3 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(0);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(9);  // initRoot
+      expect(javaLines).toContain(12); // pollNode
+      expect(javaLines).toContain(17); // attachLeft
+      expect(javaLines).toContain(22); // attachRight
+      expect(javaLines).toContain(26); // done
+    });
+
+    it('空数组边界防护三大阶段均安全返回 null', () => {
+      expect(buildSortedArrayToBstStage1Steps([]).pop()?.tree).toBeNull();
+      expect(buildSortedArrayToBstStage2Steps([]).pop()?.tree).toBeNull();
+      expect(buildSortedArrayToBstStage3Steps([]).pop()?.tree).toBeNull();
     });
   });
 });
