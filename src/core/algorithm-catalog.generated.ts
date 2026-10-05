@@ -7096,7 +7096,8 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
-    learningGoal: "掌握二叉树后序遍历序列化与哈希表查重机制，理解子树形态的唯一哈希编码表示",
+    learningGoal: "掌握二叉树自底向上后序遍历子树序列化判定图同构，深度理解三元组 (val, leftUID, rightUID) 的 O(N) 整数哈希压缩原理",
+    aliases: ["leetcode-652","find-duplicate-subtrees"],
   },
   {
     id: "heap-greater-041",

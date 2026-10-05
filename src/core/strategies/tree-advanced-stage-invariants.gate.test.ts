@@ -29,8 +29,14 @@ import {
 } from '../../algorithms/categories/tree/heap-039-042/heap-039-042-stage-codes';
 import {
   buildDuplicateSubtreesSteps,
+  buildDuplicateSubtreesStage2Steps,
+  buildDuplicateSubtreesStage3Steps,
   FIND_DUPLICATE_SUBTREES_CODES,
 } from '../../algorithms/categories/tree/find-duplicate-subtrees-renderer';
+import {
+  FIND_DUPLICATE_SUBTREES_STAGE2_CODES,
+  FIND_DUPLICATE_SUBTREES_STAGE3_CODES,
+} from '../../algorithms/categories/tree/find-duplicate-subtrees-stage-codes';
 import {
   buildMaxSumBstSteps,
   MAX_SUM_BST_CODES,
@@ -175,9 +181,9 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
     });
   });
 
-  // 5. LeetCode 652: 寻找重复子树
+  // 5. LeetCode 652: 寻找重复子树 (三大阶段演化全覆盖)
   describe('5. LeetCode 652: 寻找重复子树 (Find Duplicate Subtrees)', () => {
-    it('后序序列化正确捕获结构相同子树，并在二次出现时去重加入结果', () => {
+    it('Stage 1: 后序序列化正确捕获结构相同子树，并在二次出现时去重加入结果', () => {
       const steps = buildDuplicateSubtreesSteps();
       expect(steps.length).toBeGreaterThan(0);
 
@@ -190,7 +196,41 @@ describe('Tree Advanced Stage Invariants Gatekeeper (高级树结构、堆与树
       expect(last.duplicateRoots.length).toBeGreaterThanOrEqual(2);
 
       steps.forEach((s, idx) => {
-        assertCodeLineWithinBounds(s.codeLine, FIND_DUPLICATE_SUBTREES_CODES, `FindDuplicateSubtrees Step ${idx}`);
+        assertCodeLineWithinBounds(s.codeLine, FIND_DUPLICATE_SUBTREES_CODES, `FindDuplicateSubtrees Stage 1 Step ${idx}`);
+      });
+    });
+
+    it('Stage 2: 三元组 UID 编码极速哈希正确压缩子树签名并精准识别两组重复根', () => {
+      const steps = buildDuplicateSubtreesStage2Steps();
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.currentNodeId).toBeNull();
+      expect(step0.duplicateRoots).toEqual([]);
+
+      const last = steps[steps.length - 1];
+      expect(last.duplicateRoots.length).toBeGreaterThanOrEqual(2);
+      expect(last.stageId).toBe('stage2');
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, FIND_DUPLICATE_SUBTREES_STAGE2_CODES, `FindDuplicateSubtrees Stage 2 Step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 显式单调栈后序迭代正确模拟调用栈并精准识别重复子树', () => {
+      const steps = buildDuplicateSubtreesStage3Steps();
+      expect(steps.length).toBeGreaterThan(0);
+
+      const step0 = steps[0];
+      expect(step0.currentNodeId).toBeNull();
+      expect(step0.duplicateRoots).toEqual([]);
+
+      const last = steps[steps.length - 1];
+      expect(last.duplicateRoots.length).toBeGreaterThanOrEqual(2);
+      expect(last.stageId).toBe('stage3');
+
+      steps.forEach((s, idx) => {
+        assertCodeLineWithinBounds(s.codeLine, FIND_DUPLICATE_SUBTREES_STAGE3_CODES, `FindDuplicateSubtrees Stage 3 Step ${idx}`);
       });
     });
   });
