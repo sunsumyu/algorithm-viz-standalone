@@ -379,79 +379,10 @@ registerAlgorithm({
 });
 
 // ========== Level 24: 删除 BST 节点 ==========
-class BSTDeleteVisualizer extends BSTVisualizer {
-  protected codeLines = [
-    'public TreeNode deleteNode(TreeNode root, int key) {',
-    '    if (root == null) return null;',
-    '    if (key < root.val) root.left = deleteNode(root.left, key);',
-    '    else if (key > root.val) root.right = deleteNode(root.right, key);',
-    '    else {',
-    '        if (root.left == null) return root.right;',
-    '        if (root.right == null) return root.left;',
-    '        TreeNode min = findMin(root.right);',
-    '        root.val = min.val;',
-    '        root.right = deleteNode(root.right, min.val);',
-    '    }',
-    '    return root;',
-    '}',
-  ];
-  protected codePanelTitle = 'Java BST删除';
-  protected prefix = 'bd';
-  private key = 3;
-
-  protected getExamples() {
-    return {
-      '1': () => { this.treeData = [5, 3, 6, 2, 4, null, 7]; this.key = 3; this.start(); },
-      '2': () => { this.treeData = [5, 3, 6, 2, 4, null, 7]; this.key = 0; this.start(); },
-      '3': () => { this.treeData = [5, 3, 6, 2, 4, null, 7]; this.key = 5; this.start(); },
-    };
-  }
-
-  protected buildSteps() {
-    const steps: BstStep[] = [];
-    const root = buildTreeFromArr(this.treeData);
-    steps.push({ tree: root, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: `删除值 ${this.key}` });
-    const deleteNode = (node: TreeNode | null, key: number, depth: number): TreeNode | null => {
-      if (!node) return null;
-      const highlight = new Set([node.val]);
-      steps.push({ tree: root, current: node.val, depth, highlight, color: '#fab387', log: `访问 ${node.val}` });
-      if (key < node.val) {
-        steps.push({ tree: root, current: node.val, depth, highlight, color: '#89b4fa', log: `${key} < ${node.val}，去左子树` });
-        node.left = deleteNode(node.left, key, depth + 1);
-      } else if (key > node.val) {
-        steps.push({ tree: root, current: node.val, depth, highlight, color: '#89b4fa', log: `${key} > ${node.val}，去右子树` });
-        node.right = deleteNode(node.right, key, depth + 1);
-      } else {
-        steps.push({ tree: root, current: node.val, depth, highlight, color: '#f38ba8', log: `找到 ${key}，删除` });
-        if (!node.left) return node.right;
-        if (!node.right) return node.left;
-        let min = node.right;
-        while (min.left) min = min.left;
-        node.val = min.val;
-        steps.push({ tree: root, current: node.val, depth, highlight, color: '#a6e3a1', log: `用右子树最小值 ${min.val} 替代` });
-        node.right = deleteNode(node.right, min.val, depth + 1);
-      }
-      return node;
-    };
-    const result = deleteNode(root, this.key, 0);
-    steps.push({ tree: result, current: null, depth: 0, highlight: new Set(), color: '#a6e3a1', log: '删除完成' });
-    return steps;
-  }
-}
-
-registerAlgorithm({
-  id: 'bst-delete',
-  name: '删除BST节点',
-  viewId: 'algo-bst-delete-view',
-  category: 'tree',
-  description: '从BST中删除指定值的节点',
-  icon: '🗑️',
-  template: bstDeleteTemplate,
-  Visualizer: BSTDeleteVisualizer,
-  difficulty: 2,
-  levelOrder: 24,
-  learningGoal: '掌握BST删除的三种情况',
-});
+// 【双版本长处整合】已整合至 bst-delete-renderer.ts
+// 唯一事实来源：bst-delete (aliases: ['leetcode-450', 'delete-node-in-a-bst'])，兼具输入框/预设用例与五大场景讲义四语言联动
+import './bst-delete-renderer';
+export { buildBstDeleteStage1Steps, type BSTDeleteStep } from './bst-delete-renderer';
 
 // ========== Level 25: 修剪 BST ==========
 class BSTTrimVisualizer extends BSTVisualizer {

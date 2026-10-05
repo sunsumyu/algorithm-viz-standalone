@@ -143,6 +143,17 @@ import {
 } from '../../algorithms/categories/tree/bst-search-stage-codes';
 
 import {
+  buildBstDeleteStage1Steps,
+  buildBstDeleteStage2Steps,
+  buildBstDeleteStage3Steps,
+} from '../../algorithms/categories/tree/bst-delete-renderer';
+import {
+  BST_DELETE_STAGE1_GRAFT_CODE,
+  BST_DELETE_STAGE2_REPLACE_CODE,
+  BST_DELETE_STAGE3_ITERATIVE_CODE,
+} from '../../algorithms/categories/tree/bst-delete-stage-codes';
+
+import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
@@ -1973,7 +1984,22 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE1_PRE_IN_CODE, `BuildTree Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Stage 1 Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Stage 1 Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(3);  // entry
+      expect(javaLines).toContain(4);  // hashInorder
+      expect(javaLines).toContain(5);  // callBuild / done
+      expect(javaLines).toContain(7);  // funcHeader
+      expect(javaLines).toContain(8);  // baseCheck
+      expect(javaLines).toContain(10); // createNode
+      expect(javaLines).toContain(12); // calcLeftLen
+      expect(javaLines).toContain(13); // leftCall
+      expect(javaLines).toContain(14); // rightCall
+      expect(javaLines).toContain(15); // returnRoot
 
       const last = steps[steps.length - 1];
       expect(last.action).toBe('done');
@@ -1990,7 +2016,22 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE2_POST_IN_CODE, `BuildTree Stage 2 Step ${i}`);
+        expect(steps[i].callTrace, `Stage 2 Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Stage 2 Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证 Stage 2 生命周期关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(3);  // entry
+      expect(javaLines).toContain(4);  // hashInorder
+      expect(javaLines).toContain(5);  // callBuild / done
+      expect(javaLines).toContain(7);  // funcHeader
+      expect(javaLines).toContain(8);  // baseCheck
+      expect(javaLines).toContain(10); // createNode
+      expect(javaLines).toContain(12); // calcLeftLen
+      expect(javaLines).toContain(13); // leftCall
+      expect(javaLines).toContain(14); // rightCall
+      expect(javaLines).toContain(15); // returnRoot
 
       const last = steps[steps.length - 1];
       expect(last.action).toBe('done');
@@ -2407,6 +2448,103 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildBalancedStage1Steps(null).pop()?.statusBadge?.text).toContain('TRUE');
       expect(buildBalancedStage2PruneSteps(null).pop()?.statusBadge?.text).toContain('TRUE');
       expect(buildBalancedStage3StackSteps(null).pop()?.statusBadge?.text).toContain('TRUE');
+    });
+  });
+
+  // 17. BST Delete (LC 450)
+  describe('17. BST Delete (LeetCode 450 · 二叉搜索树中的删除)', () => {
+    it('Stage 1: 递归直接嫁接删除双子树节点 3，全步具备 callTrace 快照与合法行号', () => {
+      const root = buildTreeFromArr([5, 3, 6, 2, 4, null, 7]);
+      const steps = buildBstDeleteStage1Steps(root, 3);
+      expect(steps.length).toBeGreaterThan(6);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BST_DELETE_STAGE1_GRAFT_CODE, `BSTDelete Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(5);
+      // 原节点 3 被删，右孩子 4 晋升，原左子树 2 挂载到 4 的左边
+      expect(last.tree?.left?.val).toBe(4);
+      expect(last.tree?.left?.left?.val).toBe(2);
+
+      // 验证 Stage 1 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(5);  // searchLeft
+      expect(javaLines).toContain(8);  // foundMatch
+      expect(javaLines).toContain(13); // attachGraft
+      expect(javaLines).toContain(14); // promoteRight
+      expect(javaLines).toContain(16); // returnRoot / done
+    });
+
+    it('Stage 1: 递归直接嫁接删除叶子节点 7', () => {
+      const root = buildTreeFromArr([5, 3, 6, 2, 4, null, 7]);
+      const steps = buildBstDeleteStage1Steps(root, 7);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.right?.right).toBeNull();
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(7); // searchRight
+      expect(javaLines).toContain(9); // leftNull (叶子节点先命中左空)
+    });
+
+    it('Stage 2: 递归后继值覆盖删除双子树节点 3，全步具备 callTrace 快照与合法行号', () => {
+      const root = buildTreeFromArr([5, 3, 6, 2, 4, null, 7]);
+      const steps = buildBstDeleteStage2Steps(root, 3);
+      expect(steps.length).toBeGreaterThan(6);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BST_DELETE_STAGE2_REPLACE_CODE, `BSTDelete Stage 2 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+      const replaceStep = steps.find((s) => s.action === 'replace');
+      expect(replaceStep).toBeDefined();
+      expect(replaceStep?.successorVal).toBe(4);
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(5);
+      expect(last.tree?.left?.val).toBe(4);
+
+      // 验证 Stage 2 关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(5);  // searchLeft
+      expect(javaLines).toContain(8);  // foundMatch
+      expect(javaLines).toContain(11); // findMinCall
+      expect(javaLines).toContain(12); // replaceVal
+      expect(javaLines).toContain(13); // deleteSuccessor
+      expect(javaLines).toContain(15); // done
+    });
+
+    it('Stage 3: 双指针迭代删除目标 3，O(1) 辅助空间与行号合法', () => {
+      const root = buildTreeFromArr([5, 3, 6, 2, 4, null, 7]);
+      const steps = buildBstDeleteStage3Steps(root, 3);
+      expect(steps.length).toBeGreaterThan(3);
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BST_DELETE_STAGE3_ITERATIVE_CODE, `BSTDelete Stage 3 Step ${i}`);
+      }
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.left?.val).toBe(4);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(3);  // init
+      expect(javaLines).toContain(6);  // stepLeft
+      expect(javaLines).toContain(11); // matchLeft
+      expect(javaLines).toContain(13); // done
+    });
+
+    it('Stage 1/2/3 空树与边界用例全覆盖', () => {
+      expect(buildBstDeleteStage1Steps(null, 3).pop()?.tree).toBeNull();
+      expect(buildBstDeleteStage2Steps(null, 3).pop()?.tree).toBeNull();
+      expect(buildBstDeleteStage3Steps(null, 3).pop()?.tree).toBeNull();
+
+      // 删除单节点树根节点
+      const singleRoot = buildTreeFromArr([1]);
+      expect(buildBstDeleteStage1Steps(singleRoot, 1).pop()?.tree).toBeNull();
     });
   });
 });
