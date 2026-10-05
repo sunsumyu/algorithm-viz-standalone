@@ -59,7 +59,7 @@ const strategyRawModules = import.meta.glob<string>('./*-strategy.ts', {
 });
 
 const treeRendererRawModules = import.meta.glob<string>(
-  '../../algorithms/categories/tree/*-renderer.ts',
+  '../../algorithms/categories/tree/**/*-renderer.ts',
   {
     eager: true,
     query: '?raw',
@@ -171,6 +171,9 @@ ${details}
       '../../algorithms/categories/tree/binary-tree-level-renderer.ts',
       '../../algorithms/categories/tree/trie-tree-017-renderer.ts',
       '../../algorithms/categories/tree/trie-xor-max-107-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/zigzag-level-order-036-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/width-of-binary-tree-036-renderer.ts',
+      '../../algorithms/categories/tree/bottom-left-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
