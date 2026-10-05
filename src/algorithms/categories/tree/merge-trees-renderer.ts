@@ -21,6 +21,11 @@ import {
   MERGE_TREES_PROBLEM_HTML,
   MERGE_TREES_ANALYSIS_HTML,
 } from './merge-trees-problem-content';
+import {
+  RecursiveCallTraceAdapter,
+  RecursiveCallTraceBuilder,
+  RecursiveCallTraceSnapshot,
+} from '../../../core/renderers/adapters/recursive-call-trace-adapter';
 
 export interface MergeTreesStep {
   // 向后兼容字段
@@ -47,7 +52,8 @@ export interface MergeTreesStep {
   graftedVals?: Set<number>;
   metrics?: Record<string, string>;
   queueState?: string[];
-  opType: 'init' | 'check' | 'add' | 'graft' | 'recurse_left' | 'recurse_right' | 'complete';
+  opType: 'init' | 'enter' | 'check' | 'add' | 'graft' | 'recurse_left' | 'recurse_right' | 'complete';
+  callTrace?: RecursiveCallTraceSnapshot;
 }
 
 function cloneTree(node: TreeNode | null): TreeNode | null {
@@ -117,6 +123,11 @@ export function buildMergeTreesDfsSteps(
   if (root1) tree1Visited.add(root1.val);
   if (root2) tree2Visited.add(root2.val);
 
+  const trace = new RecursiveCallTraceBuilder();
+  const root1Label = root1 ? `Node(${root1.val})` : 'null';
+  const root2Label = root2 ? `Node(${root2.val})` : 'null';
+  trace.addHeader(`mergeTrees(root1: ${root1Label}, root2: ${root2Label})`, 0, '<- 根调用开始');
+
   // 1. 初始化入口帧
   steps.push({
     tree: null,
@@ -139,10 +150,14 @@ export function buildMergeTreesDfsSteps(
     log: '开始 DFS 递归合并两棵二叉树',
     codeLine: lines.entry,
     opType: 'init',
+    callTrace: trace.snapshot(),
   });
 
   // 边界：两树皆空
   if (!root1 && !root2) {
+    trace.addConditionHit('① root1 == null -> true, root2 == null -> true', 0);
+    trace.addReturnLeaf('return null', 0);
+    trace.addFinalResult('最终合并结果: null', 0, undefined, 'null');
     steps.push({
       tree: null,
       current: null,
@@ -164,6 +179,7 @@ export function buildMergeTreesDfsSteps(
       log: '两树均为空，直接返回 null',
       codeLine: lines.check1,
       opType: 'complete',
+      callTrace: trace.snapshot(),
     });
     return steps;
   }
@@ -177,6 +193,37 @@ export function buildMergeTreesDfsSteps(
     parent?: TreeNode,
     isLeft?: boolean
   ): TreeNode | null => {
+    const n1Label = n1 ? `Node(${n1.val})` : 'null';
+    const n2Label = n2 ? `Node(${n2.val})` : 'null';
+
+    // 递归函数深入帧 (depth > 0)
+    if (depth > 0) {
+      trace.addHeader(`mergeTrees(t1: ${n1Label}, t2: ${n2Label})`, depth, `<- 深入深度 ${depth}`);
+      steps.push({
+        tree: cloneTree(liveMergedRoot),
+        current: n1 ? n1.val : (n2 ? n2.val : null),
+        tree1: cloneTree(initialTree1),
+        tree2: cloneTree(initialTree2),
+        mergedTree: cloneTree(liveMergedRoot),
+        depth,
+        sum: null,
+        val1: n1 ? n1.val : null,
+        val2: n2 ? n2.val : null,
+        focus1: n1 ? n1.val : null,
+        focus2: n2 ? n2.val : null,
+        focusMerged: null,
+        tree1Visited: new Set(tree1Visited),
+        tree2Visited: new Set(tree2Visited),
+        highlightedMergedVals: new Set(completedVals),
+        graftedVals: new Set(graftedVals),
+        message: `深入递归调用：mergeTrees(树 1: ${n1Label}, 树 2: ${n2Label})`,
+        log: `enter mergeTrees(t1: ${n1Label}, t2: ${n2Label})`,
+        codeLine: lines.entry,
+        opType: 'enter',
+        callTrace: trace.snapshot(),
+      });
+    }
+
     // 检查树 1 是否为空
     if (!n1) {
       if (n2) tree2Visited.add(n2.val);
@@ -191,6 +238,9 @@ export function buildMergeTreesDfsSteps(
         collectAllTreeVals(grafted, completedVals);
         collectAllTreeVals(grafted, graftedVals);
       }
+
+      trace.addConditionHit(`① root1 == null -> true，单边保留/嫁接 root2 (${n2Label})`, depth);
+      trace.addReturnLeaf(`return root2 (${n2Label})`, depth);
 
       steps.push({
         tree: cloneTree(liveMergedRoot),
@@ -213,6 +263,7 @@ export function buildMergeTreesDfsSteps(
         log: `树 1 为空，单边嫁接树 2 子树 (${n2?.val ?? 'null'})`,
         codeLine: lines.check1,
         opType: 'graft',
+        callTrace: trace.snapshot(),
       });
       return grafted;
     }
@@ -231,6 +282,10 @@ export function buildMergeTreesDfsSteps(
         collectAllTreeVals(grafted, completedVals);
         collectAllTreeVals(grafted, graftedVals);
       }
+
+      trace.addConditionPass(`① root1 != null (${n1Label})`, depth);
+      trace.addConditionHit(`② root2 == null -> true，单边保留树 1 子树 (${n1Label})`, depth);
+      trace.addReturnLeaf(`return root1 (${n1Label})`, depth);
 
       steps.push({
         tree: cloneTree(liveMergedRoot),
@@ -253,6 +308,7 @@ export function buildMergeTreesDfsSteps(
         log: `树 2 为空，单边保留树 1 子树 (${n1.val})`,
         codeLine: lines.check2,
         opType: 'graft',
+        callTrace: trace.snapshot(),
       });
       return grafted;
     }
@@ -271,6 +327,10 @@ export function buildMergeTreesDfsSteps(
     }
 
     completedVals.add(sum);
+
+    trace.addConditionPass(`① root1 != null (${n1Label})`, depth);
+    trace.addConditionPass(`② root2 != null (${n2Label})`, depth);
+    trace.addUnwindCalc(`createMerged: ${n1.val} + ${n2.val} = ${sum}`, depth);
 
     steps.push({
       tree: cloneTree(liveMergedRoot),
@@ -293,11 +353,16 @@ export function buildMergeTreesDfsSteps(
       log: `重叠相加: ${n1.val} + ${n2.val} = ${sum}`,
       codeLine: lines.createMerged,
       opType: 'add',
+      callTrace: trace.snapshot(),
     });
 
     // 递归左子树
     if (n1.left) tree1Visited.add(n1.left.val);
     if (n2.left) tree2Visited.add(n2.left.val);
+    const l1Text = n1.left ? `Node(${n1.left.val})` : 'null';
+    const l2Text = n2.left ? `Node(${n2.left.val})` : 'null';
+    trace.addRecursePrep(`③ 递归合并左子树: mergeTrees(${l1Text}, ${l2Text})`, depth);
+
     steps.push({
       tree: cloneTree(liveMergedRoot),
       current: sum,
@@ -319,12 +384,17 @@ export function buildMergeTreesDfsSteps(
       log: `下潜合并节点 ${sum} 的左子树`,
       codeLine: lines.recurseLeft,
       opType: 'recurse_left',
+      callTrace: trace.snapshot(),
     });
     newNode.left = dfs(n1.left, n2.left, depth + 1, newNode, true);
 
     // 递归右子树
     if (n1.right) tree1Visited.add(n1.right.val);
     if (n2.right) tree2Visited.add(n2.right.val);
+    const r1Text = n1.right ? `Node(${n1.right.val})` : 'null';
+    const r2Text = n2.right ? `Node(${n2.right.val})` : 'null';
+    trace.addRecursePrep(`④ 递归合并右子树: mergeTrees(${r1Text}, ${r2Text})`, depth);
+
     steps.push({
       tree: cloneTree(liveMergedRoot),
       current: sum,
@@ -346,10 +416,12 @@ export function buildMergeTreesDfsSteps(
       log: `下潜合并节点 ${sum} 的右子树`,
       codeLine: lines.recurseRight,
       opType: 'recurse_right',
+      callTrace: trace.snapshot(),
     });
     newNode.right = dfs(n1.right, n2.right, depth + 1, newNode, false);
 
     // 左右合并完成，向上回溯
+    trace.addReturnLeaf(`return Node(${sum}) (左右子树合并完毕)`, depth);
     steps.push({
       tree: cloneTree(liveMergedRoot),
       current: sum,
@@ -371,6 +443,7 @@ export function buildMergeTreesDfsSteps(
       log: `节点 ${sum} 左右子树合并完毕`,
       codeLine: lines.returnMerged,
       opType: 'check',
+      callTrace: trace.snapshot(),
     });
 
     return newNode;
@@ -382,6 +455,9 @@ export function buildMergeTreesDfsSteps(
   const allFinalT1Vals = collectAllTreeVals(initialTree1);
   const allFinalT2Vals = collectAllTreeVals(initialTree2);
   const allFinalMergedVals = collectAllTreeVals(finalResult);
+
+  const resText = finalResult ? `Node(${finalResult.val})` : 'null';
+  trace.addFinalResult(`最终合并完成: 根节点 ${resText}`, 0, undefined, resText);
 
   steps.push({
     tree: cloneTree(finalResult),
@@ -404,6 +480,7 @@ export function buildMergeTreesDfsSteps(
     log: '合并成功完成 (全树点亮)',
     codeLine: lines.returnMerged,
     opType: 'complete',
+    callTrace: trace.snapshot(),
   });
 
   return steps;
@@ -1127,7 +1204,21 @@ export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesSt
     container.appendChild(qBox);
   }
 
-  // 3. 步骤决策与动态解释
+  // 3. 递归调用推演栈 (DFS)
+  if (step.callTrace) {
+    const traceHost = document.createElement('div');
+    traceHost.className = 'merge-trees-trace-host';
+    traceHost.style.cssText = 'flex: 1; min-height: 140px; overflow: hidden;';
+    container.appendChild(traceHost);
+    RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+      title: '📜 递归 DFS 同步下潜调用推演栈',
+      theme: 'light',
+      maxHeight: '100%',
+      showTerminalHeader: true,
+    });
+  }
+
+  // 4. 步骤决策与动态解释
   const summaryBox = document.createElement('div');
   summaryBox.style.background = isFinalComplete ? '#f0fdf4' : '#f8fafc';
   summaryBox.style.padding = '8px 10px';
@@ -1240,6 +1331,7 @@ registerDeclarativeAlgorithm({
         title: '节点推导与推演动态',
         render: (container: HTMLElement, step: MergeTreesStep) => renderMergeTreesCard2(container, step),
       },
+      renderCustomMetrics: (container: HTMLElement, step: MergeTreesStep) => renderMergeTreesCard2(container, step),
     },
     {
       id: 'stage-2-queue-bfs',
@@ -1266,6 +1358,7 @@ registerDeclarativeAlgorithm({
         title: '节点推导与队列状态',
         render: (container: HTMLElement, step: MergeTreesStep) => renderMergeTreesCard2(container, step),
       },
+      renderCustomMetrics: (container: HTMLElement, step: MergeTreesStep) => renderMergeTreesCard2(container, step),
     },
   ],
   problemHtml: MERGE_TREES_PROBLEM_HTML,
@@ -1284,4 +1377,5 @@ registerDeclarativeAlgorithm({
     }));
   },
   renderCanvas: (container, step) => renderMergeTreesCanvas(container, step as MergeTreesStep),
+  renderCustomMetrics: (container, step) => renderMergeTreesCard2(container, step as MergeTreesStep),
 });

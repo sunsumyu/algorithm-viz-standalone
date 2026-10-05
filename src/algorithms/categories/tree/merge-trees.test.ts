@@ -87,10 +87,22 @@ describe('Merge Trees (合并二叉树 - LeetCode 617)', () => {
       expect(sLast.mergedTree?.left?.right?.val).toBe(4);
       expect(sLast.mergedTree?.right?.right?.val).toBe(7);
 
-      // 验证四语言行号合法性
+      // 验证四语言行号合法性与 callTrace 快照契约
       steps.forEach((st, idx) => {
         assertCodeLineWithinBounds(st.codeLine, MERGE_TREES_STAGE1_CODES, `DFS step ${idx}`);
+        expect(st.callTrace, `DFS step ${idx} 必须携带 callTrace 快照`).toBeDefined();
+        expect(st.callTrace?.activeLineId, `DFS step ${idx} 必须具备 activeLineId`).toBeTruthy();
       });
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // check1
+      expect(javaLines).toContain(4); // check2
+      expect(javaLines).toContain(5); // createMerged
+      expect(javaLines).toContain(6); // recurseLeft
+      expect(javaLines).toContain(7); // recurseRight
+      expect(javaLines).toContain(8); // returnMerged
     });
 
     it('单侧空树：[1,2,3] + [] 直接继承树 1', () => {
@@ -211,6 +223,20 @@ describe('Merge Trees (合并二叉树 - LeetCode 617)', () => {
           c.getAttribute('stroke') === '#16a34a'
       );
       expect(hasGreenHighlightedCircle, '最后一步必须存在翡翠绿全树完成高亮节点').toBe(true);
+    });
+
+    it('Card 2 真实 DOM 渲染挂载 RecursiveCallTraceAdapter 且主题为 light', async () => {
+      const { renderMergeTreesCard2 } = await import('./merge-trees-renderer');
+      const container = document.createElement('div');
+      const steps = buildMergeTreesDfsSteps([1, 3, 2, 5], [2, 1, 3, null, 4, null, 7]);
+      const s1 = steps[1];
+
+      renderMergeTreesCard2(container, s1);
+
+      const traceHost = container.querySelector('.merge-trees-trace-host');
+      expect(traceHost).not.toBeNull();
+      expect(container.textContent).toContain('递归 DFS 同步下潜调用推演栈');
+      expect(container.textContent).toContain('节点合并算式推导');
     });
   });
 });

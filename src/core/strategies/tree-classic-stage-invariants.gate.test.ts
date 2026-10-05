@@ -122,6 +122,15 @@ import {
 } from '../../algorithms/categories/tree/tree-invert-stage-codes';
 
 import {
+  buildMergeTreesDfsSteps,
+  buildMergeTreesBfsSteps,
+} from '../../algorithms/categories/tree/merge-trees-renderer';
+import {
+  MERGE_TREES_STAGE1_CODES,
+  MERGE_TREES_STAGE2_CODES,
+} from '../../algorithms/categories/tree/merge-trees-stage-codes';
+
+import {
   buildBSTSearchSteps,
   buildBstSearchStage2RecursiveSteps,
   buildBstSearchStage3InsertSteps,
@@ -2048,6 +2057,59 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildTSRecursiveSteps(null).pop()?.result).toBe(true);
       expect(buildTSIterativeQueueSteps(null).pop()?.result).toBe(true);
       expect(buildTSStaticArraySteps(null).pop()?.result).toBe(true);
+    });
+  });
+
+  // 21. 合并二叉树 (Merge Two Binary Trees · LC 617)
+  describe('21. 合并二叉树 (Merge Two Binary Trees · LC 617)', () => {
+    const t1 = [1, 3, 2, 5];
+    const t2 = [2, 1, 3, null, 4, null, 7];
+
+    it('Stage 1: 递归 DFS 同步下潜四语言行号合法、生命周期覆盖完整且每步均具备 callTrace 快照', () => {
+      const steps = buildMergeTreesDfsSteps(t1, t2);
+      expect(steps.length).toBeGreaterThanOrEqual(10);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, MERGE_TREES_STAGE1_CODES, `MergeTrees Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // check1
+      expect(javaLines).toContain(4); // check2
+      expect(javaLines).toContain(5); // createMerged
+      expect(javaLines).toContain(6); // recurseLeft
+      expect(javaLines).toContain(7); // recurseRight
+      expect(javaLines).toContain(8); // returnMerged
+
+      const last = steps[steps.length - 1];
+      expect(last.opType).toBe('complete');
+      expect(last.mergedTree?.val).toBe(3);
+      expect(last.mergedTree?.left?.val).toBe(4);
+      expect(last.mergedTree?.right?.val).toBe(5);
+    });
+
+    it('Stage 2: 迭代 BFS 队列同步合并四语言行号合法且合并结果正确', () => {
+      const steps = buildMergeTreesBfsSteps(t1, t2);
+      expect(steps.length).toBeGreaterThan(6);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, MERGE_TREES_STAGE2_CODES, `MergeTrees Stage 2 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.opType).toBe('complete');
+      expect(last.mergedTree?.val).toBe(3);
+    });
+
+    it('两树皆为空或单侧为空特判防御', () => {
+      const emptySteps = buildMergeTreesDfsSteps([], []);
+      expect(emptySteps[emptySteps.length - 1]?.mergedTree).toBeNull();
+      const oneSideSteps = buildMergeTreesDfsSteps([1, 2], []);
+      expect(oneSideSteps[oneSideSteps.length - 1]?.mergedTree?.val).toBe(1);
     });
   });
 });

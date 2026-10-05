@@ -212,7 +212,7 @@ export class RecursiveCallTraceAdapter {
     // 自动平滑滚动高亮行至可见区域
     if (snapshot.activeLineId) {
       const activeEl = container.querySelector(`#rct-line-${snapshot.activeLineId}`) as HTMLElement | null;
-      if (activeEl) {
+      if (activeEl && typeof activeEl.scrollIntoView === 'function') {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
