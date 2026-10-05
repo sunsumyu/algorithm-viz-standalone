@@ -14,6 +14,10 @@ import {
   buildTreeStage3StackSteps,
 } from './build-tree-renderer';
 import { buildLCASteps } from './lca-renderer';
+import {
+  buildBalancedStage1Steps,
+  buildBalancedStage2PruneSteps,
+} from './tree-036-037/balanced-binary-tree-037-renderer';
 
 describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', () => {
   describe('Tree Traversal (前/中/后序遍历)', () => {
@@ -453,6 +457,83 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
 
       const initSequence = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
       expect(initSequence).toEqual([2, 3, 4, 2, 3]);
+    });
+  });
+
+  describe('Balanced Binary Tree (判断平衡二叉树 · LeetCode 110)', () => {
+    const balancedArr = [3, 9, 20, null, null, 15, 7];
+    const unbalancedArr = [1, 2, 2, 3, 3, null, null, 4, 4];
+
+    it('20.1 Stage 1: Info 递归套路全步具备 callTrace 快照且 Java 行号生命周期全覆盖', () => {
+      const root = buildTreeFromArr(balancedArr);
+      const steps = buildBalancedStage1Steps(root);
+      expect(steps.length).toBeGreaterThanOrEqual(15);
+
+      for (let i = 0; i < steps.length; i++) {
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(1);  // entry
+      expect(javaLines).toContain(2);  // callProcess / done
+      expect(javaLines).toContain(9);  // baseCheck (null condition)
+      expect(javaLines).toContain(10); // leftCall
+      expect(javaLines).toContain(11); // rightCall
+      expect(javaLines).toContain(13); // aggregateInfo
+      expect(javaLines).toContain(14); // returnInfo
+
+      const initSeq = steps.slice(0, 4).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSeq).toEqual([1, 2, 9, 10]);
+
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.statusBadge?.text).toContain('TRUE');
+    });
+
+    it('20.2 Stage 1: 失衡用例正确判定为 FALSE', () => {
+      const root = buildTreeFromArr(unbalancedArr);
+      const steps = buildBalancedStage1Steps(root);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.statusBadge?.text).toContain('FALSE');
+    });
+
+    it('20.3 Stage 2: -1 标记剪枝击穿全步具备 callTrace 快照且失衡树触发剪枝', () => {
+      const rootBal = buildTreeFromArr(balancedArr);
+      const stepsBal = buildBalancedStage2PruneSteps(rootBal);
+      expect(stepsBal.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < stepsBal.length; i++) {
+        expect(stepsBal[i].callTrace, `Stage 2 Step ${i} 必须具备 callTrace`).toBeDefined();
+        expect(stepsBal[i].callTrace?.activeLineId, `Stage 2 Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const javaLines = stepsBal.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(3);  // done
+      expect(javaLines).toContain(6);  // baseNull
+      expect(javaLines).toContain(7);  // checkLeft
+      expect(javaLines).toContain(9);  // checkRight
+      expect(javaLines).toContain(11); // checkDiff
+      expect(javaLines).toContain(12); // returnHeight
+
+      expect(stepsBal[stepsBal.length - 1].statusBadge?.text).toContain('TRUE');
+
+      const rootUnbal = buildTreeFromArr(unbalancedArr);
+      const stepsUnbal = buildBalancedStage2PruneSteps(rootUnbal);
+      expect(stepsUnbal.some((s) => s.pruned)).toBe(true);
+      expect(stepsUnbal[stepsUnbal.length - 1].statusBadge?.text).toContain('FALSE');
+    });
+
+    it('20.4 空树用例两阶段均返回 TRUE 且具备合法快照', () => {
+      const s1 = buildBalancedStage1Steps(null);
+      expect(s1.length).toBe(3);
+      expect(s1[s1.length - 1].statusBadge?.text).toContain('TRUE');
+      expect(s1[0].callTrace).toBeDefined();
+
+      const s2 = buildBalancedStage2PruneSteps(null);
+      expect(s2.length).toBe(3);
+      expect(s2[s2.length - 1].statusBadge?.text).toContain('TRUE');
+      expect(s2[0].callTrace).toBeDefined();
     });
   });
 });

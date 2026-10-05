@@ -960,7 +960,8 @@ export const BALANCED_TREE_037_CODES = {
     'bool isBalanced(TreeNode* root) { return process(root).isBalanced; }',
     'Info process(TreeNode* x) {',
     '    if (!x) return {true, 0};',
-    '    auto l = process(x->left), r = process(x->right);',
+    '    auto l = process(x->left);',
+    '    auto r = process(x->right);',
     '    int h = max(l.height, r.height) + 1;',
     '    bool bal = l.isBalanced && r.isBalanced && abs(l.height - r.height) <= 1;',
     '    return {bal, h};',
@@ -981,7 +982,8 @@ export const BALANCED_TREE_037_CODES = {
     'function isBalanced(root) {',
     '    function process(x) {',
     '        if (!x) return { isBalanced: true, height: 0 };',
-    '        const l = process(x.left), r = process(x.right);',
+    '        const l = process(x.left);',
+    '        const r = process(x.right);',
     '        const h = Math.max(l.height, r.height) + 1;',
     '        const bal = l.isBalanced && r.isBalanced && Math.abs(l.height - r.height) <= 1;',
     '        return { isBalanced: bal, height: h };',
@@ -993,9 +995,14 @@ export const BALANCED_TREE_037_CODES = {
 
 export const BALANCED_TREE_037_LINES = {
   entry: { java: 1, cpp: 2, python: 1, javascript: 1 },
-  baseCheck: { java: 10, cpp: 4, python: 3, javascript: 3 },
-  aggregateInfo: { java: 13, cpp: 6, python: 6, javascript: 5 },
-  returnInfo: { java: 15, cpp: 8, python: 8, javascript: 7 },
+  callProcess: { java: 2, cpp: 2, python: 9, javascript: 10 },
+  processHeader: { java: 8, cpp: 3, python: 2, javascript: 2 },
+  baseCheck: { java: 9, cpp: 4, python: 3, javascript: 3 },
+  leftCall: { java: 10, cpp: 5, python: 4, javascript: 4 },
+  rightCall: { java: 11, cpp: 6, python: 5, javascript: 5 },
+  aggregateInfo: { java: 13, cpp: 8, python: 7, javascript: 7 },
+  returnInfo: { java: 14, cpp: 9, python: 8, javascript: 8 },
+  done: { java: 2, cpp: 2, python: 9, javascript: 10 },
 };
 
 export const BALANCED_TREE_037_STAGE1_CODES = BALANCED_TREE_037_CODES;

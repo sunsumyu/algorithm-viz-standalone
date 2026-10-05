@@ -1756,13 +1756,28 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
   describe('🌲 Section 18: 最大二叉树三大阶段演化与笛卡尔树线性不变性', () => {
     const nums = [3, 2, 1, 6, 0, 5];
 
-    it('Stage 1: 递归分治与区间扫描正确构建最大二叉树且四语言行号合法', () => {
+    it('Stage 1: 递归分治与区间扫描正确构建最大二叉树且四语言行号合法、生命周期完整且具备 callTrace 快照', () => {
       const steps = buildMaxTreeStage1Steps(nums);
       expect(steps.length).toBeGreaterThan(0);
 
       for (let i = 0; i < steps.length; i++) {
         assertCodeLineWithinBounds(steps[i].codeLine, MAX_TREE_STAGE1_CODES, `MaxTree Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
       }
+
+      // 验证生命周期关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(4); // start
+      expect(javaLines).toContain(7); // buildSignature
+      expect(javaLines).toContain(8); // baseCase (hit or pass)
+      expect(javaLines).toContain(9); // initMax
+      expect(javaLines).toContain(10); // scanLoop
+      expect(javaLines).toContain(13); // createNode
+      expect(javaLines).toContain(14); // recurseLeft / leftDone
+      expect(javaLines).toContain(15); // recurseRight / rightDone
+      expect(javaLines).toContain(16); // returnRoot
 
       const last = steps[steps.length - 1];
       expect(last.tree).not.toBeNull();
@@ -2193,6 +2208,85 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(emptySteps[emptySteps.length - 1]?.mergedTree).toBeNull();
       const oneSideSteps = buildMergeTreesDfsSteps([1, 2], []);
       expect(oneSideSteps[oneSideSteps.length - 1]?.mergedTree?.val).toBe(1);
+    });
+  });
+
+  // 22. 判断平衡二叉树 (Balanced Binary Tree · LC 110 / Class 037)
+  describe('22. 判断平衡二叉树 (Balanced Binary Tree · LC 110 / Class 037)', () => {
+    const balancedArr = [3, 9, 20, null, null, 15, 7];
+    const unbalancedArr = [1, 2, 2, 3, 3, null, null, 4, 4];
+
+    it('Stage 1: Tree DP Info 递归套路四语言行号合法、生命周期覆盖完整且每步均具备 callTrace 快照', () => {
+      const root = buildTreeFromArr(balancedArr);
+      const steps = buildBalancedStage1Steps(root);
+      expect(steps.length).toBeGreaterThanOrEqual(15);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BALANCED_TREE_037_STAGE1_CODES, `BalancedTree Stage 1 Step ${i}`);
+        expect(steps[i].callTrace, `Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(steps[i].callTrace?.activeLineId, `Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      // 验证生命周期 5 段式关键行覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(1);  // entry
+      expect(javaLines).toContain(2);  // callProcess / done
+      expect(javaLines).toContain(9);  // baseCheck
+      expect(javaLines).toContain(10); // leftCall
+      expect(javaLines).toContain(11); // rightCall
+      expect(javaLines).toContain(13); // aggregateInfo
+      expect(javaLines).toContain(14); // returnInfo
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.statusBadge?.text).toContain('TRUE');
+    });
+
+    it('Stage 2: -1 剪枝返回值优化四语言行号合法、生命周期覆盖完整且失衡剪枝击穿', () => {
+      const rootBal = buildTreeFromArr(balancedArr);
+      const stepsBal = buildBalancedStage2PruneSteps(rootBal);
+      expect(stepsBal.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < stepsBal.length; i++) {
+        assertCodeLineWithinBounds(stepsBal[i].codeLine, BALANCED_TREE_037_STAGE2_CODES, `BalancedTree Stage 2 Step ${i}`);
+        expect(stepsBal[i].callTrace, `Stage 2 Step ${i} 必须具备 callTrace 快照`).toBeDefined();
+        expect(stepsBal[i].callTrace?.activeLineId, `Stage 2 Step ${i} 必须具备 activeLineId`).toBeTruthy();
+      }
+
+      const javaLines = stepsBal.map((s) => (s.codeLine as Record<string, number>)?.java).filter(Boolean);
+      expect(javaLines).toContain(2);  // entry
+      expect(javaLines).toContain(3);  // done
+      expect(javaLines).toContain(6);  // baseNull
+      expect(javaLines).toContain(7);  // checkLeft
+      expect(javaLines).toContain(9);  // checkRight
+      expect(javaLines).toContain(11); // checkDiff
+      expect(javaLines).toContain(12); // returnHeight
+
+      expect(stepsBal[stepsBal.length - 1].statusBadge?.text).toContain('TRUE');
+
+      const rootUnbal = buildTreeFromArr(unbalancedArr);
+      const stepsUnbal = buildBalancedStage2PruneSteps(rootUnbal);
+      expect(stepsUnbal.some((s) => s.pruned)).toBe(true);
+      expect(stepsUnbal[stepsUnbal.length - 1].statusBadge?.text).toContain('FALSE');
+    });
+
+    it('Stage 3: 显式后序遍历与深度表映射四语言行号合法且正确结算', () => {
+      const root = buildTreeFromArr(balancedArr);
+      const steps = buildBalancedStage3StackSteps(root);
+      expect(steps.length).toBeGreaterThan(10);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BALANCED_TREE_037_STAGE3_CODES, `BalancedTree Stage 3 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.statusBadge?.text).toContain('TRUE');
+    });
+
+    it('三大 Stage 针对空二叉树天然平衡返回 TRUE', () => {
+      expect(buildBalancedStage1Steps(null).pop()?.statusBadge?.text).toContain('TRUE');
+      expect(buildBalancedStage2PruneSteps(null).pop()?.statusBadge?.text).toContain('TRUE');
+      expect(buildBalancedStage3StackSteps(null).pop()?.statusBadge?.text).toContain('TRUE');
     });
   });
 });

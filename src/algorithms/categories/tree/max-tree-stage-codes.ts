@@ -95,13 +95,18 @@ export const MAX_TREE_STAGE1_LINES = {
   start: { java: 4, cpp: 5, python: 5, javascript: 16 },
   buildSignature: { java: 7, cpp: 9, python: 7, javascript: 4 },
   baseCase: { java: 8, cpp: 10, python: 8, javascript: 5 },
+  baseCheckHit: { java: 8, cpp: 10, python: 8, javascript: 5 },
+  baseCheckPass: { java: 8, cpp: 10, python: 8, javascript: 5 },
   initMax: { java: 9, cpp: 11, python: 10, javascript: 6 },
   scanLoop: { java: 10, cpp: 12, python: 11, javascript: 7 },
   updateMax: { java: 11, cpp: 13, python: 12, javascript: 8 },
   createNode: { java: 13, cpp: 15, python: 14, javascript: 10 },
   recurseLeft: { java: 14, cpp: 16, python: 15, javascript: 11 },
+  leftDone: { java: 14, cpp: 16, python: 15, javascript: 11 },
   recurseRight: { java: 15, cpp: 17, python: 16, javascript: 12 },
+  rightDone: { java: 15, cpp: 17, python: 16, javascript: 12 },
   returnRoot: { java: 16, cpp: 18, python: 17, javascript: 13 },
+  done: { java: 4, cpp: 5, python: 5, javascript: 16 },
 };
 
 // ----------------------------------------------------
@@ -199,7 +204,7 @@ export const MAX_TREE_STAGE2_LINES = {
   pushCurr: { java: 13, cpp: 15, python: 12, javascript: 12 },
   drainStack: { java: 15, cpp: 17, python: 13, javascript: 14 },
   findRoot: { java: 16, cpp: 17, python: 13, javascript: 14 },
-  returnRoot: { java: 18, cpp: 17, python: 13, javascript: 14 },
+  returnRoot: { java: 19, cpp: 17, python: 13, javascript: 14 },
 };
 
 // ----------------------------------------------------

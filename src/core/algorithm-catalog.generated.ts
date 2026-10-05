@@ -7777,7 +7777,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3704,
     learningGoal: "掌握左神二叉树递归套路黄金模板，构建 Info 结构体优雅自底向上汇聚高度与平衡性，并对比 -1 剪枝与显式后序栈",
-    aliases: ["balanced"],
+    aliases: ["balanced","leetcode-110","balanced-binary-tree"],
   },
   {
     id: "tree-037-trim-bst",
