@@ -6929,10 +6929,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "tree-recursion-patterns-019",
-    name: "Class 019: 二叉树高频递归套路 (Tree DP)",
+    name: "二叉树高频递归套路 (Class 019)",
     viewId: "algo-tree-recursion-patterns-019-view",
     category: "tree",
-    description: "Class 019: 二叉树高频递归套路 (Tree DP)",
+    description: "二叉树高频递归套路 (Class 019)",
     icon: "🌲",
     difficulty: 2,
     levelOrder: 19,

@@ -14,6 +14,8 @@ import './tree-036-037/lowest-common-ancestor-bst-037-renderer';
 import './tree-036-037/trim-bst-037-renderer';
 // 引入从前序/后序与中序构造二叉树综合版（单一事实来源，别名映射 build-tree-2 & leetcode-106）
 import './build-tree-renderer';
+// 引入二叉搜索树搜索与插入综合版（单一事实来源，主 ID 'bst-search'，别名映射 bst-insert & leetcode-701）
+import './bst-search-renderer';
 
 // 引入二叉搜索树最小绝对差多阶段综合版 (单一事实来源，主 ID 'bst-min-diff'，别名 leetcode-530 / leetcode-783)
 import './bst-min-diff-renderer';

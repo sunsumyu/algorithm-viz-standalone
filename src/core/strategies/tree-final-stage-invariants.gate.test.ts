@@ -41,7 +41,11 @@ import {
 } from '../../algorithms/categories/tree/trie-xor-max-107-renderer';
 import {
   generateTreeRecursionSteps,
+  generateTreeBstSteps,
+  generateTreeMaxDistSteps,
   TREE_RECURSION_019_CODES,
+  TREE_RECURSION_STAGE2_CODES,
+  TREE_RECURSION_STAGE3_CODES,
 } from '../../algorithms/categories/tree/tree-recursion-patterns-019-renderer';
 import {
   buildValueSegTreeSteps,
@@ -238,7 +242,7 @@ describe('Tree Final Stage Invariants Gatekeeper (最终树与字典树高阶算
 
   // 6. Class 019: 二叉树高频递归套路
   describe('6. Class 019: 二叉树高频递归套路 (Tree Recursion Patterns 019)', () => {
-    it('平衡二叉树递归信息收集应正确推导高度与平衡性', () => {
+    it('Stage 1: 平衡二叉树递归信息收集应正确推导高度与平衡性', () => {
       const balancedTree = [
         { id: 1, val: 1, left: 2, right: 3 },
         { id: 2, val: 2, left: 4, right: 5 },
@@ -259,7 +263,56 @@ describe('Tree Final Stage Invariants Gatekeeper (最终树与字典树高阶算
       expect(sLast.collectedInfo.height).toBe(3);
 
       steps.forEach((st, idx) => {
-        assertCodeLineWithinBounds(st.codeLine, TREE_RECURSION_019_CODES, `Class 019 step ${idx}`);
+        assertCodeLineWithinBounds(st.codeLine, TREE_RECURSION_019_CODES, `Class 019 Stage 1 step ${idx}`);
+      });
+    });
+
+    it('Stage 2: 搜索二叉树 (BST) 递归判定应正确收集极值并校验 BST 成立性', () => {
+      const bstTree = [
+        { id: 1, val: 4, left: 2, right: 3 },
+        { id: 2, val: 2, left: 4, right: 5 },
+        { id: 3, val: 6 },
+        { id: 4, val: 1 },
+        { id: 5, val: 3 },
+      ];
+      const steps = generateTreeBstSteps(bstTree);
+      expect(steps.length).toBeGreaterThan(5);
+
+      const s0 = steps[0];
+      expect(s0.stageId).toBe('stage2');
+
+      const sLast = steps[steps.length - 1];
+      expect(sLast.phase).toBe('return');
+      expect(sLast.collectedInfo.isBST).toBe(true);
+      expect(sLast.collectedInfo.minVal).toBe(1);
+      expect(sLast.collectedInfo.maxVal).toBe(6);
+
+      steps.forEach((st, idx) => {
+        assertCodeLineWithinBounds(st.codeLine, TREE_RECURSION_STAGE2_CODES, `Class 019 Stage 2 step ${idx}`);
+      });
+    });
+
+    it('Stage 3: 二叉树最大节点距离 (Max Distance) 应横向对比三种可能性并推导全局直径', () => {
+      const tree = [
+        { id: 1, val: 1, left: 2, right: 3 },
+        { id: 2, val: 2, left: 4, right: 5 },
+        { id: 3, val: 3 },
+        { id: 4, val: 4 },
+        { id: 5, val: 5 },
+      ];
+      const steps = generateTreeMaxDistSteps(tree);
+      expect(steps.length).toBeGreaterThan(5);
+
+      const s0 = steps[0];
+      expect(s0.stageId).toBe('stage3');
+
+      const sLast = steps[steps.length - 1];
+      expect(sLast.phase).toBe('return');
+      // 树形态：根 1，左 2 (下接 4 和 5)，右 3。最大距离为从 4 到 1 到 3 或 5 到 1 到 3，跨根节点为 2 + 1 + 1 = 4 节点 (或按边算)
+      expect(sLast.collectedInfo.maxDistance).toBeGreaterThanOrEqual(4);
+
+      steps.forEach((st, idx) => {
+        assertCodeLineWithinBounds(st.codeLine, TREE_RECURSION_STAGE3_CODES, `Class 019 Stage 3 step ${idx}`);
       });
     });
   });
