@@ -76,6 +76,46 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       expect(lastStep.result).toBe(false);
       expect(lastStep.action).toBe('done');
     });
+
+    it('6.1 生成完整的镜像递归调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+      const steps = buildTSSteps(root);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.lines.length).toBeGreaterThan(10);
+      expect(lastStep.callTrace!.finalResult).toBe('True');
+
+      const stepsWithTrace = steps.filter((s) => s.callTrace != null);
+      expect(stepsWithTrace.length).toBe(steps.length);
+
+      const kinds = lastStep.callTrace!.lines.map((l) => l.kind);
+      expect(kinds).toContain('header');
+      expect(kinds).toContain('condition-pass');
+      expect(kinds).toContain('unwind-calc');
+    });
+
+    it('6.2 严格一行一步与镜像递归生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+      const steps = buildTSSteps(root);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // init
+      expect(javaLines).toContain(3); // empty
+      expect(javaLines).toContain(4); // startCheck / done
+      expect(javaLines).toContain(6); // checkEntry
+      expect(javaLines).toContain(7); // bothNull
+      expect(javaLines).toContain(8); // oneNull
+      expect(javaLines).toContain(9); // valMatch
+      expect(javaLines).toContain(10); // recurseOutside / outsideDone
+      expect(javaLines).toContain(11); // recurseInside / insideDone
+      expect(javaLines).toContain(12); // combine
+
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('recurse-outside');
+      expect(actions).toContain('recurse-inside');
+      expect(actions).toContain('both-null');
+      expect(actions).toContain('val-match');
+    });
   });
 
   describe('Tree Depth (二叉树最大深度)', () => {
@@ -151,6 +191,53 @@ describe('Tree Algorithms Step Generation (二叉树核心算法推导测试)', 
       const steps = buildPSSteps(root, 5);
       const lastStep = steps[steps.length - 1];
       expect(lastStep.found).toBe(false);
+    });
+
+    it('10.1 生成完整的递归减法调用跟踪快照 (CallTraceSnapshot)', () => {
+      const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
+      const steps = buildPSSteps(root, 22);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.lines.length).toBeGreaterThan(8);
+      expect(lastStep.callTrace!.finalResult).toBe('true');
+
+      const stepsWithTrace = steps.filter((s) => s.callTrace != null);
+      expect(stepsWithTrace.length).toBe(steps.length);
+
+      const kinds = lastStep.callTrace!.lines.map((l) => l.kind);
+      expect(kinds).toContain('header');
+      expect(kinds).toContain('return-leaf');
+      expect(kinds).toContain('unwind-calc');
+    });
+
+    it('10.2 严格一行一步与减法回溯生命周期全行号覆盖 (Strict One-Line-One-Step)', () => {
+      const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
+      const steps = buildPSSteps(root, 22);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // nullCheck
+      expect(javaLines).toContain(4); // leafCheck
+      expect(javaLines).toContain(5); // match
+      expect(javaLines).toContain(7); // recurseLeft / leftDone
+      expect(javaLines).toContain(8); // recurseRight / rightDone
+      expect(javaLines).toContain(9); // combine
+      expect(javaLines).toContain(10); // done
+
+      const actions = steps.map((s) => s.action);
+      expect(actions).toContain('enter');
+      expect(actions).toContain('check-leaf');
+      expect(actions).toContain('match');
+      expect(actions).toContain('recurse-left');
+      expect(actions).toContain('leave');
+      expect(actions).toContain('done');
+    });
+
+    it('10.3 空树特判生成正确的空快照', () => {
+      const steps = buildPSSteps(null, 10);
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTrace).toBeDefined();
+      expect(lastStep.callTrace!.finalResult).toBe('false');
     });
   });
 

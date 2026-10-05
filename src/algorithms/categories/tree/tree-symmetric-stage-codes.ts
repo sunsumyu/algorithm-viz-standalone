@@ -38,9 +38,11 @@ export const TREE_SYMMETRIC_STAGE1_CODE: Record<string, string[]> = {
     '        if (!left && !right) return true;',                       // 8
     '        if (!left || !right) return false;',                      // 9
     '        if (left->val != right->val) return false;',              // 10
-    '        return check(left->left, right->right) && check(left->right, right->left);', // 11
-    '    }',                                                           // 12
-    '};',                                                              // 13
+    '        bool outside = check(left->left, right->right);',         // 11
+    '        bool inside = check(left->right, right->left);',          // 12
+    '        return outside && inside;',                               // 13
+    '    }',                                                           // 14
+    '};',                                                              // 15
   ],
   python: [
     'class Solution:',                                                 // 1
@@ -50,8 +52,10 @@ export const TREE_SYMMETRIC_STAGE1_CODE: Record<string, string[]> = {
     '            if not left and not right: return True',              // 5
     '            if not left or not right: return False',              // 6
     '            if left.val != right.val: return False',              // 7
-    '            return check(left.left, right.right) and check(left.right, right.left)', // 8
-    '        return check(root.left, root.right)',                     // 9
+    '            outside = check(left.left, right.right)',             // 8
+    '            inside = check(left.right, right.left)',              // 9
+    '            return outside and inside',                           // 10
+    '        return check(root.left, root.right)',                     // 11
   ],
   javascript: [
     'var isSymmetric = function(root) {',                              // 1
@@ -60,24 +64,31 @@ export const TREE_SYMMETRIC_STAGE1_CODE: Record<string, string[]> = {
     '        if (!left && !right) return true;',                       // 4
     '        if (!left || !right) return false;',                      // 5
     '        if (left.val !== right.val) return false;',               // 6
-    '        return check(left.left, right.right) && check(left.right, right.left);', // 7
-    '    };',                                                          // 8
-    '    return check(root.left, root.right);',                        // 9
-    '};',                                                              // 10
+    '        const outside = check(left.left, right.right);',          // 7
+    '        const inside = check(left.right, right.left);',           // 8
+    '        return outside && inside;',                               // 9
+    '    };',                                                          // 10
+    '    return check(root.left, root.right);',                        // 11
+    '};',                                                              // 12
   ],
 };
 
 export const TREE_SYMMETRIC_STAGE1_LINES = {
   init: { java: 2, cpp: 3, python: 2, javascript: 1 },
   empty: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  startCheck: { java: 4, cpp: 5, python: 11, javascript: 11 },
   checkEntry: { java: 6, cpp: 7, python: 4, javascript: 3 },
   bothNull: { java: 7, cpp: 8, python: 5, javascript: 4 },
   oneNull: { java: 8, cpp: 9, python: 6, javascript: 5 },
   valMismatch: { java: 9, cpp: 10, python: 7, javascript: 6 },
+  valMatch: { java: 9, cpp: 10, python: 7, javascript: 6 },
   recurseOutside: { java: 10, cpp: 11, python: 8, javascript: 7 },
-  recurseInside: { java: 11, cpp: 11, python: 8, javascript: 7 },
-  combine: { java: 12, cpp: 11, python: 8, javascript: 7 },
-  done: { java: 4, cpp: 5, python: 9, javascript: 9 },
+  outsideDone: { java: 10, cpp: 11, python: 8, javascript: 7 },
+  recurseInside: { java: 11, cpp: 12, python: 9, javascript: 8 },
+  insideDone: { java: 11, cpp: 12, python: 9, javascript: 8 },
+  combine: { java: 12, cpp: 13, python: 10, javascript: 9 },
+  checkDone: { java: 13, cpp: 14, python: 10, javascript: 10 },
+  done: { java: 4, cpp: 5, python: 11, javascript: 11 },
 };
 
 // ============================================================

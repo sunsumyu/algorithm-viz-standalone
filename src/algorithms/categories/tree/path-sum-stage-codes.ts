@@ -15,28 +15,28 @@ export const PATH_SUM_STAGE1_CODE: Record<string, string[]> = {
     'public class Solution {',                                          // 1
     '    public boolean hasPathSum(TreeNode root, int targetSum) {',     // 2
     '        if (root == null) return false;',                          // 3
-    '        // 如果是叶子节点且剩余和恰好等于当前节点值',             // 4
-    '        if (root.left == null && root.right == null) {',           // 5
-    '            return root.val == targetSum;',                        // 6
-    '        }',                                                        // 7
-    '        // 递归检查左右子树',                                     // 8
-    '        return hasPathSum(root.left, targetSum - root.val)',       // 9
-    '            || hasPathSum(root.right, targetSum - root.val);',     // 10
-    '    }',                                                            // 11
-    '}',                                                                // 12
+    '        if (root.left == null && root.right == null) {',           // 4
+    '            return root.val == targetSum;',                        // 5
+    '        }',                                                        // 6
+    '        boolean left = hasPathSum(root.left, targetSum - root.val);', // 7
+    '        boolean right = hasPathSum(root.right, targetSum - root.val);', // 8
+    '        return left || right;',                                    // 9
+    '    }',                                                            // 10
+    '}',                                                                // 11
   ],
   cpp: [
     'class Solution {',                                                 // 1
-    'public:',                                                          // 2
+    'public:',                                                         // 2
     '    bool hasPathSum(TreeNode* root, int targetSum) {',             // 3
     '        if (!root) return false;',                                 // 4
     '        if (!root->left && !root->right) {',                       // 5
     '            return root->val == targetSum;',                       // 6
     '        }',                                                        // 7
-    '        return hasPathSum(root->left, targetSum - root->val)',     // 8
-    '            || hasPathSum(root->right, targetSum - root->val);',   // 9
-    '    }',                                                            // 10
-    '};',                                                               // 11
+    '        bool left = hasPathSum(root->left, targetSum - root->val);', // 8
+    '        bool right = hasPathSum(root->right, targetSum - root->val);', // 9
+    '        return left || right;',                                    // 10
+    '    }',                                                            // 11
+    '};',                                                               // 12
   ],
   python: [
     'class Solution:',                                                  // 1
@@ -45,8 +45,9 @@ export const PATH_SUM_STAGE1_CODE: Record<string, string[]> = {
     '            return False',                                         // 4
     '        if not root.left and not root.right:',                     // 5
     '            return root.val == targetSum',                         // 6
-    '        return (self.hasPathSum(root.left, targetSum - root.val) or', // 7
-    '                self.hasPathSum(root.right, targetSum - root.val))', // 8
+    '        left = self.hasPathSum(root.left, targetSum - root.val)',  // 7
+    '        right = self.hasPathSum(root.right, targetSum - root.val)', // 8
+    '        return left or right',                                     // 9
   ],
   javascript: [
     'var hasPathSum = function(root, targetSum) {',                     // 1
@@ -54,21 +55,25 @@ export const PATH_SUM_STAGE1_CODE: Record<string, string[]> = {
     '    if (!root.left && !root.right) {',                             // 3
     '        return root.val === targetSum;',                           // 4
     '    }',                                                            // 5
-    '    return hasPathSum(root.left, targetSum - root.val)',           // 6
-    '        || hasPathSum(root.right, targetSum - root.val);',         // 7
-    '};',                                                               // 8
+    '    const left = hasPathSum(root.left, targetSum - root.val);',    // 6
+    '    const right = hasPathSum(root.right, targetSum - root.val);',   // 7
+    '    return left || right;',                                        // 8
+    '};',                                                               // 9
   ],
 };
 
 export const PATH_SUM_STAGE1_LINES = {
   entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
-  nullCheck: { java: 3, cpp: 4, python: 4, javascript: 2 },
-  leafCheck: { java: 5, cpp: 5, python: 5, javascript: 3 },
-  match: { java: 6, cpp: 6, python: 6, javascript: 4 },
-  recurseLeft: { java: 9, cpp: 8, python: 7, javascript: 6 },
-  recurseRight: { java: 10, cpp: 9, python: 8, javascript: 7 },
-  leave: { java: 11, cpp: 10, python: 8, javascript: 7 },
-  done: { java: 11, cpp: 10, python: 8, javascript: 7 },
+  nullCheck: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  leafCheck: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  match: { java: 5, cpp: 6, python: 6, javascript: 4 },
+  recurseLeft: { java: 7, cpp: 8, python: 7, javascript: 6 },
+  leftDone: { java: 7, cpp: 8, python: 7, javascript: 6 },
+  recurseRight: { java: 8, cpp: 9, python: 8, javascript: 7 },
+  rightDone: { java: 8, cpp: 9, python: 8, javascript: 7 },
+  combine: { java: 9, cpp: 10, python: 9, javascript: 8 },
+  leave: { java: 10, cpp: 11, python: 9, javascript: 9 },
+  done: { java: 10, cpp: 11, python: 9, javascript: 9 },
 };
 
 // ============================================================

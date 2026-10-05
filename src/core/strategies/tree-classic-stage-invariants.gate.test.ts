@@ -545,6 +545,26 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.visitedNodes).toEqual(expect.arrayContaining([5, 4, 8, 11, 13, 4, 7, 2]));
     });
 
+    it('Stage 1 递归严格一行一步与五段式生命周期覆盖 (Strict One-Line-One-Step & Call Trace Snapshot)', () => {
+      const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
+      const steps = buildPSSteps(root, 22);
+
+      // 验证生命周期关键行号覆盖 (Java lines: 2, 3, 4, 5, 7, 10)
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(3); // nullCheck
+      expect(javaLines).toContain(4); // leafCheck
+      expect(javaLines).toContain(5); // match
+      expect(javaLines).toContain(7); // recurseLeft / leftDone
+      expect(javaLines).toContain(10); // done
+
+      // 验证每一步均注入 callTrace 且具备 activeLineId (建造者模式契约)
+      steps.forEach((step, idx) => {
+        expect(step.callTrace, `Step ${idx} 必须具备 callTrace 快照`).toBeDefined();
+        expect(step.callTrace?.activeLineId, `Step ${idx} 必须具备 activeLineId`).toBeTruthy();
+      });
+    });
+
     it('Stage 1: 不存在路径和时返回 found=false 且收尾帧节点不灭', () => {
       const root = buildTreeFromArr([1, 2, 3]);
       const steps = buildPSSteps(root, 5);
@@ -1902,6 +1922,98 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(buildTDSteps(null).pop()?.maxDepth).toBe(0);
       expect(buildTDBfsSteps(null).pop()?.maxDepth).toBe(0);
       expect(buildTDStaticArraySteps(null).pop()?.maxDepth).toBe(0);
+    });
+  });
+
+  // 17. Symmetric Tree (LeetCode 101 · 对称二叉树)
+  describe('17. Symmetric Tree (LeetCode 101 · 对称二叉树)', () => {
+    it('Stage 1: 经典对称树 [1, 2, 2, 3, 4, 4, 3] 严格一行一步镜像双路递归返回 true 且四语言行号合法', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+      const steps = buildTSRecursiveSteps(root);
+      // 7 节点对称树完整展开步数必须充分充实 (>= 20 步)
+      expect(steps.length).toBeGreaterThanOrEqual(20);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_SYMMETRIC_STAGE1_CODE, `SymmetricTree Stage 1 Step ${i}`);
+      }
+
+      // 验证生命周期与关键行序列覆盖
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // init: isSymmetric(root)
+      expect(javaLines).toContain(3); // empty: if (root == null)
+      expect(javaLines).toContain(4); // startCheck / done: return check(root.left, root.right)
+      expect(javaLines).toContain(6); // checkEntry: check(left, right)
+      expect(javaLines).toContain(7); // bothNull
+      expect(javaLines).toContain(8); // oneNull
+      expect(javaLines).toContain(9); // valMatch / valMismatch
+      expect(javaLines).toContain(10); // recurseOutside / outsideDone
+      expect(javaLines).toContain(11); // recurseInside / insideDone
+      expect(javaLines).toContain(12); // combine: return outside && inside
+
+      // 严格一行一步不变量：从根进入到首对镜像节点比对，必须严密连续执行 [2, 3, 4, 6, 7, 8, 9, 10]，绝无穿透跳步！
+      const initSequence = steps.slice(0, 8).map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(initSequence).toEqual([2, 3, 4, 6, 7, 8, 9, 10]);
+
+      // 验证每一步均具备 callTrace 且 activeLineId 合法（建造者模式不可变契约）
+      steps.forEach((step, idx) => {
+        expect(step.callTrace, `Step ${idx} 必须具备 callTrace 快照`).toBeDefined();
+        expect(step.callTrace?.activeLineId, `Step ${idx} 必须具备 activeLineId`).toBeTruthy();
+      });
+
+      const last = steps[steps.length - 1];
+      expect(last.result).toBe(true);
+      expect(last.action).toBe('done');
+    });
+
+    it('Stage 1 避坑测试: 结构不对称 [1, 2, 2, null, 3, null, 3] 命中结构失配返回 false', () => {
+      const root = buildTreeFromArr([1, 2, 2, null, 3, null, 3]);
+      const steps = buildTSRecursiveSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.result).toBe(false);
+      expect(steps.some((s) => s.action === 'one-null')).toBe(true);
+    });
+
+    it('Stage 1 避坑测试: 数值不对称 [1, 2, 3] 命中数值不等返回 false', () => {
+      const root = buildTreeFromArr([1, 2, 3]);
+      const steps = buildTSRecursiveSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.result).toBe(false);
+      expect(steps.some((s) => s.action === 'val-mismatch')).toBe(true);
+    });
+
+    it('Stage 2: 队列成对迭代 (Queue BFS) 检验完全对称树返回 true 且行号合法', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+      const steps = buildTSIterativeQueueSteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_SYMMETRIC_STAGE2_QUEUE_CODE, `SymmetricTree Stage 2 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.result).toBe(true);
+    });
+
+    it('Stage 3: 静态数组模拟队列 (Static Array Queue) 检验完全对称树返回 true 且行号合法', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 4, 4, 3]);
+      const steps = buildTSStaticArraySteps(root);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, TREE_SYMMETRIC_STAGE3_STATIC_ARRAY_CODE, `SymmetricTree Stage 3 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.result).toBe(true);
+      expect(last.staticQueueState).toBeDefined();
+    });
+
+    it('三大 Stage 针对空二叉树天然对称返回 true', () => {
+      expect(buildTSRecursiveSteps(null).pop()?.result).toBe(true);
+      expect(buildTSIterativeQueueSteps(null).pop()?.result).toBe(true);
+      expect(buildTSStaticArraySteps(null).pop()?.result).toBe(true);
     });
   });
 });
