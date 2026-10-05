@@ -213,7 +213,9 @@ class BSTLCAVisualizer extends BSTVisualizer {
 export { BSTLCAVisualizer };
 
 // ========== Level 21: BST 插入操作 ==========
-class BSTInsertVisualizer extends BSTVisualizer {
+// 【双版本长处整合】已整合至 bst-search-renderer.ts (Stage 3: 搜索未命中定点动态插入 LC 701)
+// 唯一事实来源：bst-search (aliases: ['leetcode-700', 'bst-search', 'bst-insert', 'leetcode-701', 'insert-into-a-binary-search-tree'])
+export class BSTInsertVisualizer extends BSTVisualizer {
   protected codeLines = [
     'public TreeNode insertIntoBST(TreeNode root, int val) {',
     '    if (root == null) return new TreeNode(val);',
@@ -259,20 +261,6 @@ class BSTInsertVisualizer extends BSTVisualizer {
     return steps;
   }
 }
-
-registerAlgorithm({
-  id: 'bst-insert',
-  name: 'BST插入操作',
-  viewId: 'algo-bst-insert-view',
-  category: 'tree',
-  description: '向BST中插入新节点',
-  icon: '➕',
-  template: bstInsertTemplate,
-  Visualizer: BSTInsertVisualizer,
-  difficulty: 1,
-  levelOrder: 21,
-  learningGoal: '掌握BST插入的递归实现',
-});
 
 // ========== Level 22: BST 最小绝对差 ==========
 // 已由 ./bst-min-diff-renderer.ts 统一声明式接管 (单一事实来源，涵盖 Stage 1-3 递归/迭代/Morris，支持四语言 1-based 行号联动)

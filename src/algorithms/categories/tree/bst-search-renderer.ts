@@ -881,8 +881,8 @@ export function renderBstSearchCustomMetrics(container: HTMLElement, step: BSTSS
 // ============================================================
 export const bstSearchVisualizer = registerDeclarativeAlgorithm<BSTSStep>({
   id: 'bst-search',
-  aliases: ['leetcode-700', 'bst-search'],
-  name: '二叉搜索树中的搜索',
+  aliases: ['leetcode-700', 'bst-search', 'bst-insert', 'leetcode-701', 'insert-into-a-binary-search-tree'],
+  name: '二叉搜索树中的搜索与插入',
   category: 'tree',
   icon: '🔍',
   badge: {
