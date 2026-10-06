@@ -190,6 +190,7 @@ ${details}
       '../../algorithms/categories/tree/path-sum-renderer.ts',
       '../../algorithms/categories/tree/bst-delete-renderer.ts',
       '../../algorithms/categories/tree/bst-modes-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/balanced-binary-tree-037-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
