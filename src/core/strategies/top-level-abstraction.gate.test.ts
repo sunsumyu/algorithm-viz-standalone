@@ -199,6 +199,7 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/completeness-binary-tree-036-renderer.ts',
       '../../algorithms/categories/tree/left-leaves-renderer.ts',
       '../../algorithms/categories/tree/sorted-array-to-bst-renderer.ts',
+      '../../algorithms/categories/tree/bst-to-gst-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
