@@ -209,6 +209,8 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/house-robber-iii-037-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/trim-bst-037-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/lowest-common-ancestor-bst-037-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/preorder-serialize-036-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/levelorder-serialize-036-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];

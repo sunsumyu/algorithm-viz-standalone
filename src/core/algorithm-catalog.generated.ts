@@ -7722,10 +7722,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     viewId: "algo-tree-036-levelorder-serialize-view",
     category: "tree",
     description: "二叉树按层序列化与反序列化 (Class 036)",
-    icon: "🗂️",
-    difficulty: 3,
+    icon: "📦",
+    difficulty: 2,
     levelOrder: 3606,
-    learningGoal: "掌握广度优先遍历与空节点占位符相结合的按层序列化协议与还原技巧",
+    learningGoal: "掌握基于队列的层序序列化与反序列化双指针重建机制，体会自顶向下逐层消费 token 恢复子树的过程",
   },
   {
     id: "tree-036-completeness-binary-tree",
