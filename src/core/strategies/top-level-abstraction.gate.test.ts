@@ -219,6 +219,7 @@ ${details}
       '../../algorithms/categories/tree/tree-117-123/tree-diameter-renderer.ts',
       '../../algorithms/categories/tree/tree-117-123/hld-renderer.ts',
       '../../algorithms/categories/tree/tree-117-123/tree-lca-renderer.ts',
+      '../../algorithms/categories/tree/tree-117-123/tree-centroid-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
