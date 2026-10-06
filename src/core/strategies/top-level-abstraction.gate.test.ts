@@ -177,6 +177,8 @@ ${details}
       '../../algorithms/categories/graph/jump-point-search-renderer.ts',
       '../../algorithms/categories/tree/binary-tree-maximum-path-sum-renderer.ts',
       '../../algorithms/categories/tree/sum-root-to-leaf-numbers-renderer.ts',
+      '../../algorithms/categories/tree/tree-depth-renderer.ts',
+      '../../algorithms/categories/tree/min-depth-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
