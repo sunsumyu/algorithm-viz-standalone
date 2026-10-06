@@ -205,6 +205,7 @@ ${details}
       '../../algorithms/categories/tree/tree-traversal-iterative-020-renderer.ts',
       '../../algorithms/categories/tree/tree-traversal-renderer.ts',
       '../../algorithms/categories/tree/tree-serialization-037-renderer.ts',
+      '../../algorithms/categories/tree/tree-serialization-021-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
