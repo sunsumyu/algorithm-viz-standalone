@@ -206,6 +206,9 @@ ${details}
       '../../algorithms/categories/tree/tree-traversal-renderer.ts',
       '../../algorithms/categories/tree/tree-serialization-037-renderer.ts',
       '../../algorithms/categories/tree/tree-serialization-021-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/house-robber-iii-037-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/trim-bst-037-renderer.ts',
+      '../../algorithms/categories/tree/tree-036-037/lowest-common-ancestor-bst-037-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
