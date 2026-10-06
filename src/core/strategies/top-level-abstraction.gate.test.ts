@@ -203,6 +203,7 @@ ${details}
       '../../algorithms/categories/tree/tree-recursion-patterns-019-renderer.ts',
       '../../algorithms/categories/tree/paper-folding-040-renderer.ts',
       '../../algorithms/categories/tree/tree-traversal-iterative-020-renderer.ts',
+      '../../algorithms/categories/tree/tree-traversal-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
