@@ -213,6 +213,7 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/levelorder-serialize-036-renderer.ts',
       '../../algorithms/categories/tree/tree-batch-7-renderer.ts',
       '../../algorithms/categories/tree/tree-batch-8-renderer.ts',
+      '../../algorithms/categories/tree/tree-108-116/value-segment-tree-112-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
