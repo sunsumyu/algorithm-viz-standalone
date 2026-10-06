@@ -204,6 +204,7 @@ ${details}
       '../../algorithms/categories/tree/paper-folding-040-renderer.ts',
       '../../algorithms/categories/tree/tree-traversal-iterative-020-renderer.ts',
       '../../algorithms/categories/tree/tree-traversal-renderer.ts',
+      '../../algorithms/categories/tree/tree-serialization-037-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
