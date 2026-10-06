@@ -222,6 +222,7 @@ ${details}
       '../../algorithms/categories/tree/tree-117-123/tree-centroid-renderer.ts',
       '../../algorithms/categories/tree/tree-108-116/dynamic-segment-tree-renderer.ts',
       '../../algorithms/categories/tree/tree-108-116/fenwick-tree-renderer.ts',
+      '../../algorithms/categories/tree/tree-108-116/fenwick-inversion-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
