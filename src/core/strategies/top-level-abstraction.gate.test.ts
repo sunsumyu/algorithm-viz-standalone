@@ -181,6 +181,7 @@ ${details}
       '../../algorithms/categories/tree/min-depth-renderer.ts',
       '../../algorithms/categories/tree/merge-trees-renderer.ts',
       '../../algorithms/categories/tree/lca-renderer.ts',
+      '../../algorithms/categories/tree/all-paths-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
