@@ -239,7 +239,15 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
 
   let currentTreeRoot: TreeNode | null = null;
 
-  function build(pL: number, pR: number, iL: number, iR: number, depth: number): TreeNode | null {
+  function build(
+    pL: number,
+    pR: number,
+    iL: number,
+    iR: number,
+    depth: number,
+    parent?: TreeNode,
+    branch?: 'left' | 'right'
+  ): TreeNode | null {
     // 递归头
     trace.addHeader(`build(pL=${pL}..${pR}, iL=${iL}..${iR})`, depth, `进入递归层 (depth=${depth})`);
     steps.push({
@@ -261,6 +269,8 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
       codeLine: BUILD_TREE_CODE_LINES.funcHeader,
       callTrace: trace.snapshot(),
       stageId: 'stage-1',
+      highlightedNodes: parent ? [parent.val] : [],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== (parent ? parent.val : null)),
     });
 
     // 基底越界检查
@@ -286,6 +296,8 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
         codeLine: BUILD_TREE_CODE_LINES.baseCheck,
         callTrace: trace.snapshot(),
         stageId: 'stage-1',
+        highlightedNodes: parent ? [parent.val] : [],
+        visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== (parent ? parent.val : null)),
       });
       return null;
     }
@@ -299,6 +311,8 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
 
     if (!currentTreeRoot) {
       currentTreeRoot = node;
+    } else if (parent && branch) {
+      parent[branch] = node;
     }
 
     // 创建根节点
@@ -381,7 +395,7 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
-    node.left = build(pL + 1, pL + leftLen, iL, inRoot - 1, depth + 1);
+    node.left = build(pL + 1, pL + leftLen, iL, inRoot - 1, depth + 1, node, 'left');
 
     // 递归右子树
     trace.addRecursePrep(`递归右子树: build(${pL + leftLen + 1}..${pR}, ${inRoot + 1}..${iR})`, depth, `向右深入，右子树节点数 = ${iR - inRoot}`);
@@ -408,7 +422,7 @@ export function buildTreeSteps(preorder: number[], inorder: number[]): BTStep[] 
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
-    node.right = build(pL + leftLen + 1, pR, inRoot + 1, iR, depth + 1);
+    node.right = build(pL + leftLen + 1, pR, inRoot + 1, iR, depth + 1, node, 'right');
 
     // 子树组装完成并返回
     trace.addUnwindCalc(`节点 ${rootVal} 左右子树构建完成`, depth, `左: ${node.left ? node.left.val : 'null'}, 右: ${node.right ? node.right.val : 'null'}`, `TreeNode(${rootVal})`);
@@ -578,7 +592,15 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
 
   let currentTreeRoot: TreeNode | null = null;
 
-  function build(postL: number, postR: number, inL: number, inR: number, depth: number): TreeNode | null {
+  function build(
+    postL: number,
+    postR: number,
+    inL: number,
+    inR: number,
+    depth: number,
+    parent?: TreeNode,
+    branch?: 'left' | 'right'
+  ): TreeNode | null {
     trace.addHeader(`build(postL=${postL}..${postR}, inL=${inL}..${inR})`, depth, `进入递归层 (depth=${depth})`);
     steps.push({
       tree: cloneTree(currentTreeRoot),
@@ -600,6 +622,8 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
       codeLine: BUILD_TREE_STAGE2_LINES.funcHeader,
       callTrace: trace.snapshot(),
       stageId: 'stage-2',
+      highlightedNodes: parent ? [parent.val] : [],
+      visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== (parent ? parent.val : null)),
     });
 
     if (postL > postR || inL > inR) {
@@ -625,6 +649,8 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
         codeLine: BUILD_TREE_STAGE2_LINES.baseCheck,
         callTrace: trace.snapshot(),
         stageId: 'stage-2',
+        highlightedNodes: parent ? [parent.val] : [],
+        visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== (parent ? parent.val : null)),
       });
       return null;
     }
@@ -638,6 +664,8 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
 
     if (!currentTreeRoot) {
       currentTreeRoot = node;
+    } else if (parent && branch) {
+      parent[branch] = node;
     }
 
     trace.addConditionPass(`后序定根: rootVal = ${rootVal}`, depth, '后序尾元素锁定为当前子树根节点');
@@ -721,7 +749,7 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
-    node.left = build(postL, postL + leftLen - 1, inL, inRoot - 1, depth + 1);
+    node.left = build(postL, postL + leftLen - 1, inL, inRoot - 1, depth + 1, node, 'left');
 
     // 递归右子树: post[postL + leftLen .. postR - 1], in[inRoot + 1 .. inR]
     trace.addRecursePrep(`递归右子树: build(${postL + leftLen}..${postR - 1}, ${inRoot + 1}..${inR})`, depth, `向右深入，右子树节点数 = ${inR - inRoot}`);
@@ -749,7 +777,7 @@ export function buildTreeStage2PostorderSteps(inorder: number[], postorder: numb
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== rootVal),
     });
 
-    node.right = build(postL + leftLen, postR - 1, inRoot + 1, inR, depth + 1);
+    node.right = build(postL + leftLen, postR - 1, inRoot + 1, inR, depth + 1, node, 'right');
 
     trace.addUnwindCalc(`节点 ${rootVal} 左右子树构建完成`, depth, `左: ${node.left ? node.left.val : 'null'}, 右: ${node.right ? node.right.val : 'null'}`, `TreeNode(${rootVal})`);
     steps.push({

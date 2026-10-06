@@ -201,6 +201,7 @@ import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
+  collectTreeValues,
 } from '../../algorithms/categories/tree/build-tree-renderer';
 import {
   BUILD_TREE_STAGE1_PRE_IN_CODE,
@@ -2045,6 +2046,12 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(javaLines).toContain(14); // rightCall
       expect(javaLines).toContain(15); // returnRoot
 
+      // 验证递归过程中即时拓扑绑定：构建节点 7 时，树沙盘中必须可达 7 与其父节点 20
+      const step7Built = steps.find((s) => s.rootVal === 7 && s.action === 'leave');
+      expect(step7Built, '必须包含节点 7 构建完成步骤').toBeDefined();
+      expect(collectTreeValues(step7Built!.tree)).toContain(7);
+      expect(collectTreeValues(step7Built!.tree)).toContain(20);
+
       const last = steps[steps.length - 1];
       expect(last.action).toBe('done');
       expect(last.tree?.val).toBe(3);
@@ -2076,6 +2083,12 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(javaLines).toContain(13); // leftCall
       expect(javaLines).toContain(14); // rightCall
       expect(javaLines).toContain(15); // returnRoot
+
+      // 验证递归过程中即时拓扑绑定：构建节点 7 时，树沙盘中必须可达 7 与其父节点 20
+      const step7Built = steps.find((s) => s.rootVal === 7 && s.action === 'leave');
+      expect(step7Built, '必须包含节点 7 构建完成步骤').toBeDefined();
+      expect(collectTreeValues(step7Built!.tree)).toContain(7);
+      expect(collectTreeValues(step7Built!.tree)).toContain(20);
 
       const last = steps[steps.length - 1];
       expect(last.action).toBe('done');
