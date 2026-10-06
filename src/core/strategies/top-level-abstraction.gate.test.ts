@@ -183,6 +183,7 @@ ${details}
       '../../algorithms/categories/tree/lca-renderer.ts',
       '../../algorithms/categories/tree/all-paths-renderer.ts',
       '../../algorithms/categories/tree/tree-symmetric-renderer.ts',
+      '../../algorithms/categories/tree/max-tree-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
