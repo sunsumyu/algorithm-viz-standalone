@@ -186,6 +186,7 @@ ${details}
       '../../algorithms/categories/tree/max-tree-renderer.ts',
       '../../algorithms/categories/tree/valid-bst-renderer.ts',
       '../../algorithms/categories/tree/build-tree-renderer.ts',
+      '../../algorithms/categories/tree/find-duplicate-subtrees-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
