@@ -10,6 +10,7 @@ export interface VisualizerInteractionActions {
   onStage3SubView?: (view: 'matrix' | 'tree' | 'alignment') => void;
   onStage4SubView?: (view: 'memo' | 'alignment') => void;
   onCard2SubView?: (view: 'tree' | 'alignment' | 'stack') => void;
+  onCard1SubView?: (view: 'grid' | 'deduction') => void;
   onToggle3D?: () => void;
   onReset3DCam?: () => void;
   onApplyPreset?: (m: number, n: number) => void;
@@ -18,6 +19,7 @@ export interface VisualizerInteractionActions {
   onSwitchRightTab?: (tab: 'code' | 'problem' | 'analysis') => void;
   onOpenProblemModal?: () => void;
   onCloseProblemModal?: () => void;
+  onOpenSelector?: () => void;
 }
 
 /**
@@ -141,6 +143,12 @@ export class VisualizerInteractionBinder {
       });
     }
 
+    // 3.5 Card 1 复合子视图切换 (二维网格 vs 全景推演树)
+    const btnCard1Grid = document.getElementById('btn-card1-view-grid');
+    const btnCard1Deduction = document.getElementById('btn-card1-view-deduction');
+    if (btnCard1Grid) btnCard1Grid.addEventListener('click', () => actions.onCard1SubView?.('grid'));
+    if (btnCard1Deduction) btnCard1Deduction.addEventListener('click', () => actions.onCard1SubView?.('deduction'));
+
     // 4. 3D 透视切换与相机复位
     const btnToggle3D = document.getElementById('btn-toggle-3d');
     const btnReset3DCam = document.getElementById('btn-reset-3d-cam');
@@ -203,5 +211,21 @@ export class VisualizerInteractionBinder {
         actions.onCloseProblemModal?.();
       }
     });
+
+    // 10. 算法目录/选择器快速切换按钮 (#btn-open-selector-quick)
+    const btnQuickSelector = document.getElementById('btn-open-selector-quick');
+    if (btnQuickSelector) {
+      btnQuickSelector.addEventListener('click', () => {
+        if (actions.onOpenSelector) {
+          actions.onOpenSelector();
+        } else if (typeof window !== 'undefined') {
+          if ((window as any).viewMountEngine) {
+            (window as any).viewMountEngine.showSelector();
+          } else {
+            window.location.href = '/';
+          }
+        }
+      });
+    }
   }
 }

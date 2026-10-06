@@ -1,5 +1,6 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
+import { StaticDeductionTreeAdapter } from '../renderers/static-deduction-tree-adapter';
 
 export interface StageTabOptions {
   model: IYamlAlgorithmModel;
@@ -458,6 +459,36 @@ export class StageNavigationCoordinator {
         optAlign.hidden = !isStringProblem;
       }
     }
+  }
+
+  /**
+   * 同步卡片 1 复合子视图切换按钮状态 (针对支持全景静态推演的题目如 unique-paths, distinct-subsequences 等)
+   */
+  public static updateCard1SubViewTabs(
+    modelId: string,
+    card1SubView: 'grid' | 'deduction' = 'grid'
+  ): void {
+    if (typeof document === 'undefined') return;
+    const bar = document.getElementById('card1-subview-bar');
+    if (!bar) return;
+
+    if (!StaticDeductionTreeAdapter.isSupported(modelId)) {
+      bar.classList.add('hidden');
+      bar.classList.remove('inline-flex');
+      return;
+    }
+
+    bar.classList.remove('hidden');
+    bar.classList.add('inline-flex');
+
+    const btnGrid = document.getElementById('btn-card1-view-grid');
+    const btnDeduction = document.getElementById('btn-card1-view-deduction');
+
+    const activeCls = 'active px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer';
+    const inactiveCls = 'px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer';
+
+    if (btnGrid) btnGrid.className = card1SubView === 'grid' ? activeCls : inactiveCls;
+    if (btnDeduction) btnDeduction.className = card1SubView === 'deduction' ? activeCls : inactiveCls;
   }
 
   /**

@@ -55,6 +55,7 @@ export class VisualizerAppController {
   public stage3SubView: 'matrix' | 'tree' | 'alignment' = 'matrix';
   public stage4SubView: 'memo' | 'alignment' = 'memo';
   public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
+  public card1SubView: 'grid' | 'deduction' = 'grid';
   public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
   public is3DMode: boolean = false;
 
@@ -69,6 +70,8 @@ export class VisualizerAppController {
     if (savedCard2 === 'tree' || savedCard2 === 'alignment' || savedCard2 === 'stack') {
       this.card2SubView = savedCard2;
     }
+    const savedCard1 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-card1-subview') as any) : null;
+    this.card1SubView = (savedCard1 === 'deduction') ? 'deduction' : 'grid';
     this.activeRightTab = (typeof localStorage !== 'undefined' && (localStorage.getItem('algo-right-tab') as any)) || 'code';
     if (this.activeRightTab !== 'code' && this.activeRightTab !== 'problem' && this.activeRightTab !== 'analysis') {
       this.activeRightTab = 'code';
@@ -444,6 +447,7 @@ export class VisualizerAppController {
       stage3SubView: this.stage3SubView,
       stage4SubView: this.stage4SubView,
       card2SubView: this.card2SubView,
+      card1SubView: this.card1SubView,
       step,
       m: this.m,
       n: this.n,
@@ -478,6 +482,7 @@ export class VisualizerAppController {
     this.updateStage3SubViewTabs();
     this.updateStage4SubViewTabs();
     this.updateCard2SubViewTabs();
+    this.updateCard1SubViewTabs();
     this.syncCard2HeaderMeta();
   }
 
@@ -627,6 +632,31 @@ export class VisualizerAppController {
     const isStringProblem = this.checkIsStringProblem();
     const hasTree = (this.steps || []).some((s) => !!s.treeRoot);
     StageNavigationCoordinator.updateCard2SubViewTabs(this.currentStage, this.card2SubView, isStringProblem, hasTree);
+  }
+
+  /**
+   * 设置卡片 1 的子视图模式 (二维网格 vs 全景推演树)
+   */
+  public setCard1SubView(view: 'grid' | 'deduction'): void {
+    this.card1SubView = view;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('algo-card1-subview', view);
+    }
+    this.updateCard1SubViewTabs();
+    const curStep = this.timeline ? this.timeline.getCurrentStep() : 0;
+    if (this.steps[curStep]) {
+      const isReverse = this.currentDirection === 'reverse';
+      if (this.mode === 'lite') {
+        this.renderLiteVisuals(this.steps[curStep], curStep, isReverse);
+      }
+    }
+  }
+
+  /**
+   * 同步卡片 1 子视图切换按钮高亮状态
+   */
+  public updateCard1SubViewTabs(): void {
+    StageNavigationCoordinator.updateCard1SubViewTabs(this.modelId, this.card1SubView);
   }
 
   /**
@@ -853,6 +883,7 @@ export class VisualizerAppController {
       onStage3SubView: (view) => this.setStage3SubView(view),
       onStage4SubView: (view) => this.setStage4SubView(view),
       onCard2SubView: (view) => this.setCard2SubView(view),
+      onCard1SubView: (view) => this.setCard1SubView(view),
       onToggle3D: () => this.toggle3DPerspective(),
       onReset3DCam: () => StateSpacePresenter.reset3DCamera(),
       onApplyPreset: (m, n) => {
@@ -865,7 +896,16 @@ export class VisualizerAppController {
       onSwitchView: (mode) => this.handleViewSwitch(mode),
       onSwitchRightTab: (tab) => this.switchRightTab(tab),
       onOpenProblemModal: () => this.openProblemModal(),
-      onCloseProblemModal: () => this.closeProblemModal()
+      onCloseProblemModal: () => this.closeProblemModal(),
+      onOpenSelector: () => {
+        if (typeof window !== 'undefined') {
+          if ((window as any).viewMountEngine) {
+            (window as any).viewMountEngine.showSelector();
+          } else {
+            window.location.href = '/';
+          }
+        }
+      }
     });
   }
 

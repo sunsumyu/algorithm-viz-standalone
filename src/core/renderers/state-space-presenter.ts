@@ -14,6 +14,8 @@ import { LayeredVoxelStepAdapter } from './layered-voxel-step-adapter';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 import { ThreeViewControlsAdapter } from './three-view-controls-adapter';
 import { AlgorithmModelRepository } from '../model-repository';
+import { DistinctSubsequencesDeductionAdapter } from './distinct-subsequences-deduction-adapter';
+import { StaticDeductionTreeAdapter } from './static-deduction-tree-adapter';
 import { parseTreeArray, buildRawTree, toUniversalTree } from '../strategies/tree-dp-shared';
 
 export interface StateSpacePresentationOptions {
@@ -21,6 +23,7 @@ export interface StateSpacePresentationOptions {
   stage3SubView?: 'matrix' | 'tree' | 'alignment';
   stage4SubView?: 'memo' | 'alignment';
   card2SubView?: 'tree' | 'alignment' | 'stack' | 'matrix' | 'memo';
+  card1SubView?: 'grid' | 'deduction';
   step: UniversalStep;
   m: number;
   n: number;
@@ -82,6 +85,46 @@ export class StateSpacePresenter {
   ): void {
     if (!container) return;
     const { step, m, n, isReverse = false, is3DMode = false, modelId, isGridProblem = false, currentStage } = options;
+
+    const deductionContainer = this.queryScoped(container, '#grid-deduction-container') ||
+      (typeof document !== 'undefined' ? document.getElementById('grid-deduction-container') : null);
+    const boardWrapper = this.queryScoped(container, '#grid-board-wrapper');
+    const threeContainer = this.queryScoped(container, '#three-canvas-container');
+    const threeControls = this.queryScoped(container, '#three-controls-bar');
+    const arrowsSvg = this.queryScoped(container, '#grid-arrows-svg');
+    const riverBarrier = this.queryScoped(container, '#grid-river-barrier');
+
+    if (StaticDeductionTreeAdapter.isSupported(modelId) && options.card1SubView === 'deduction' && deductionContainer) {
+      if (boardWrapper) boardWrapper.classList.add('hidden');
+      if (threeContainer) threeContainer.classList.add('hidden');
+      if (threeControls) threeControls.classList.add('hidden');
+      if (arrowsSvg) arrowsSvg.style.display = 'none';
+      if (riverBarrier) riverBarrier.style.display = 'none';
+
+      deductionContainer.classList.remove('hidden');
+      deductionContainer.style.display = 'block';
+
+      StaticDeductionTreeAdapter.renderDeduction(deductionContainer, {
+        modelId,
+        m,
+        n,
+        s: (step as any).s || (step as any).s1 || (step as any).word1 || (step as any).text1,
+        t: (step as any).t || (step as any).s2 || (step as any).word2 || (step as any).text2,
+        text1: (step as any).text1 || (step as any).s1 || (step as any).s,
+        text2: (step as any).text2 || (step as any).s2 || (step as any).t,
+        word1: (step as any).word1 || (step as any).s1 || (step as any).s,
+        word2: (step as any).word2 || (step as any).s2 || (step as any).t,
+      });
+      return;
+    }
+
+    if (deductionContainer) {
+      deductionContainer.classList.add('hidden');
+      deductionContainer.style.display = 'none';
+    }
+    if (boardWrapper && !is3DMode) {
+      boardWrapper.classList.remove('hidden');
+    }
 
     const isTreeProblem = ProblemDimensionResolver.isTreeProblem(modelId, { m, n });
     if (isTreeProblem) {

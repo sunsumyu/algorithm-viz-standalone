@@ -234,18 +234,34 @@ export class GridVisualAdapter {
     const { m, n, isReverse = false } = options;
     const isGridProblem = options.isGridProblem ?? (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : true);
 
-    if (container.style) {
-      container.style.display = 'grid';
-      container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
-      container.style.width = '';
-      container.style.maxWidth = '';
-    }
-    container.className = 'grid gap-2 transition-all duration-300 relative z-0';
-
     if (options.rowLabels || options.colLabels) {
       this.renderLabeledGrid(container, step, options);
       return;
     }
+
+    const parentWrapper = container.parentElement;
+    if (parentWrapper && parentWrapper.id === 'grid-board-wrapper') {
+      parentWrapper.style.width = '';
+      parentWrapper.style.display = '';
+      parentWrapper.style.flexDirection = '';
+      parentWrapper.style.alignItems = '';
+      parentWrapper.style.justifyContent = '';
+    }
+
+    if (container.style) {
+      container.style.display = 'grid';
+      container.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+      container.style.flexDirection = '';
+      container.style.alignItems = '';
+      container.style.justifyContent = '';
+      container.style.width = '';
+      container.style.maxWidth = '';
+      container.style.background = '';
+      container.style.border = '';
+      container.style.boxShadow = '';
+      container.style.padding = '';
+    }
+    container.className = 'grid gap-2 transition-all duration-300 relative z-0';
 
     container.innerHTML = '';
 
@@ -558,6 +574,31 @@ export class GridVisualAdapter {
    */
   public static renderLabeledGrid(container: HTMLElement, step: any, options: GridRenderOptions): void {
     if (!container || !step) return;
+
+    const parentWrapper = container.parentElement;
+    if (parentWrapper && parentWrapper.id === 'grid-board-wrapper') {
+      parentWrapper.style.width = '100%';
+      parentWrapper.style.display = 'flex';
+      parentWrapper.style.flexDirection = 'column';
+      parentWrapper.style.alignItems = 'center';
+      parentWrapper.style.justifyContent = 'center';
+    }
+
+    if (container.style) {
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.alignItems = 'center';
+      container.style.justifyContent = 'center';
+      container.style.gridTemplateColumns = 'none';
+      container.style.width = '100%';
+      container.style.maxWidth = '100%';
+      container.style.background = 'transparent';
+      container.style.border = 'none';
+      container.style.boxShadow = 'none';
+      container.style.padding = '0';
+    }
+    container.className = 'w-full flex flex-col items-center justify-center transition-all duration-300 relative z-0';
+
     const { m, n, rowLabels, colLabels, isReverse = false } = options;
     const activeI = step.i ?? 0;
     const activeJ = step.j ?? 0;

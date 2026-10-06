@@ -10,9 +10,10 @@ import { renderSparseTableCanvas } from './sparse-table-canvas-adapter';
 function verify1BasedCodeLines(steps: SparseTableStep[], codes: Record<string, string[]>) {
   expect(steps.length).toBeGreaterThan(0);
   for (const step of steps) {
-    if (step.codeLine) {
+    if (step.codeLine && typeof step.codeLine === 'object') {
+      const codeLineObj = step.codeLine as Record<string, number>;
       for (const lang of ['java', 'cpp', 'python', 'javascript']) {
-        const line = step.codeLine[lang];
+        const line = codeLineObj[lang];
         expect(line, `Missing line mapping for ${lang}`).toBeDefined();
         expect(line, `Line must be >= 1 for ${lang}`).toBeGreaterThanOrEqual(1);
         expect(line, `Line ${line} exceeds code length ${codes[lang].length} for ${lang}`).toBeLessThanOrEqual(
