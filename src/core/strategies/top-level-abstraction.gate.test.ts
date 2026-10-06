@@ -185,6 +185,7 @@ ${details}
       '../../algorithms/categories/tree/tree-symmetric-renderer.ts',
       '../../algorithms/categories/tree/max-tree-renderer.ts',
       '../../algorithms/categories/tree/valid-bst-renderer.ts',
+      '../../algorithms/categories/tree/build-tree-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
