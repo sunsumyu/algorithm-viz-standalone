@@ -218,6 +218,7 @@ ${details}
       '../../algorithms/categories/tree/tree-108-116/segment-tree-renderer.ts',
       '../../algorithms/categories/tree/tree-117-123/tree-diameter-renderer.ts',
       '../../algorithms/categories/tree/tree-117-123/hld-renderer.ts',
+      '../../algorithms/categories/tree/tree-117-123/tree-lca-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
