@@ -197,6 +197,7 @@ ${details}
       '../../algorithms/categories/tree/bst-min-diff-renderer.ts',
       '../../algorithms/categories/tree/max-sum-bst-036-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/completeness-binary-tree-036-renderer.ts',
+      '../../algorithms/categories/tree/left-leaves-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
