@@ -200,6 +200,7 @@ ${details}
       '../../algorithms/categories/tree/left-leaves-renderer.ts',
       '../../algorithms/categories/tree/sorted-array-to-bst-renderer.ts',
       '../../algorithms/categories/tree/bst-to-gst-renderer.ts',
+      '../../algorithms/categories/tree/tree-recursion-patterns-019-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
