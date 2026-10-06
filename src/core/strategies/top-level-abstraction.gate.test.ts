@@ -211,6 +211,8 @@ ${details}
       '../../algorithms/categories/tree/tree-036-037/lowest-common-ancestor-bst-037-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/preorder-serialize-036-renderer.ts',
       '../../algorithms/categories/tree/tree-036-037/levelorder-serialize-036-renderer.ts',
+      '../../algorithms/categories/tree/tree-batch-7-renderer.ts',
+      '../../algorithms/categories/tree/tree-batch-8-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
