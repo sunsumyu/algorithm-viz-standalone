@@ -179,6 +179,7 @@ ${details}
       '../../algorithms/categories/tree/sum-root-to-leaf-numbers-renderer.ts',
       '../../algorithms/categories/tree/tree-depth-renderer.ts',
       '../../algorithms/categories/tree/min-depth-renderer.ts',
+      '../../algorithms/categories/tree/merge-trees-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
