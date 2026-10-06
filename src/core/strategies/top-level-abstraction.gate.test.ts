@@ -225,6 +225,7 @@ ${details}
       '../../algorithms/categories/tree/tree-108-116/fenwick-inversion-renderer.ts',
       '../../algorithms/categories/tree/tree-108-116/sweep-line-renderer.ts',
       '../../algorithms/categories/tree/tree-108-116/interval-merge-segment-tree-renderer.ts',
+      '../../algorithms/categories/tree/tree-117-123/sparse-table-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
