@@ -187,6 +187,7 @@ ${details}
       '../../algorithms/categories/tree/valid-bst-renderer.ts',
       '../../algorithms/categories/tree/build-tree-renderer.ts',
       '../../algorithms/categories/tree/find-duplicate-subtrees-renderer.ts',
+      '../../algorithms/categories/tree/path-sum-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
