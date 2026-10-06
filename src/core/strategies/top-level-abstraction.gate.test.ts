@@ -182,6 +182,7 @@ ${details}
       '../../algorithms/categories/tree/merge-trees-renderer.ts',
       '../../algorithms/categories/tree/lca-renderer.ts',
       '../../algorithms/categories/tree/all-paths-renderer.ts',
+      '../../algorithms/categories/tree/tree-symmetric-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
