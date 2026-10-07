@@ -3,6 +3,7 @@
  */
 
 export interface Math097Step {
+  line?: number;
   decision: string;
   message: string;
   log: string;

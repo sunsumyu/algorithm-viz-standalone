@@ -280,6 +280,10 @@ ${details}
       '../../algorithms/categories/game/game-096/three-stones-fibonacci-renderer.ts',
       '../../algorithms/categories/game/game-096/coin-flip-game-renderer.ts',
       '../../algorithms/categories/game/game-096/split-game-renderer.ts',
+      '../../algorithms/categories/math/math-097/small-prime-renderer.ts',
+      '../../algorithms/categories/math/math-097/large-prime-renderer.ts',
+      '../../algorithms/categories/math/math-097/prime-factors-renderer.ts',
+      '../../algorithms/categories/math/math-097/ehrlich-euler-sieve-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
