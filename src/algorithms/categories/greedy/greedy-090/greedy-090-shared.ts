@@ -10,12 +10,14 @@ import type { StepVar } from '../../../../core/interfaces';
 // 1. 通用步进基类定义
 // ==========================================
 export interface Greedy090Step extends StepBase {
+  line?: number;
   stepIndex?: number;
   decision: string;
   message: string;
   log: string;
   codeLine: Record<string, number>;
   variables?: Record<string, StepVar>;
+  [key: string]: any;
 }
 
 // ==========================================
