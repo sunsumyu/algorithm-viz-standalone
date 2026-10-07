@@ -268,6 +268,12 @@ ${details}
       '../../algorithms/categories/dynamic-programming/dp-084-088/circular-interval-dp-087-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-084-088/tree-knapsack-dp-088-renderer.ts',
       '../../algorithms/categories/dynamic-programming/unique-paths-renderer.ts',
+      '../../algorithms/categories/game/game-095/bash-game-renderer.ts',
+      '../../algorithms/categories/game/game-095/prime-power-stones-renderer.ts',
+      '../../algorithms/categories/game/game-095/nim-game-renderer.ts',
+      '../../algorithms/categories/game/game-095/anti-nim-game-renderer.ts',
+      '../../algorithms/categories/game/game-095/fibonacci-game-renderer.ts',
+      '../../algorithms/categories/game/game-095/wythoff-game-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
