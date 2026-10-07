@@ -233,6 +233,13 @@ ${details}
       '../../algorithms/categories/dynamic-programming/dp-066/decode-ways-ii-066-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-066/ugly-number-ii-066-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-066/unique-substrings-wraparound-066-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/target-sum-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/last-stone-weight-ii-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/buy-goods-discount-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/dependent-knapsack-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/knapsack-01-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/top-k-subsequence-sum-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-073/find-kth-sum-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
