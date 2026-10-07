@@ -230,6 +230,9 @@ ${details}
       '../../algorithms/categories/dynamic-programming/dp-067/tree-count-height-m-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-067/word-search-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-066/min-cost-tickets-066-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-066/decode-ways-ii-066-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-066/ugly-number-ii-066-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-066/unique-substrings-wraparound-066-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
