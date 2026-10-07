@@ -229,6 +229,7 @@ ${details}
       '../../algorithms/categories/dynamic-programming/dp-067/longest-increasing-path-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-067/tree-count-height-m-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-067/word-search-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-066/min-cost-tickets-066-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
