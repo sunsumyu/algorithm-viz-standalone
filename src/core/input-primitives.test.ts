@@ -113,3 +113,40 @@ describe('parseCommandList', () => {
     expect(parseCommandList('  ')).toEqual([]);
   });
 });
+
+describe('parseBinaryGrid', () => {
+  it('支持分号分隔的二进制网格', () => {
+    const input = '11000; 11000; 00100; 00011';
+    expect(parseBinaryGrid(input, [])).toEqual([
+      [1, 1, 0, 0, 0],
+      [1, 1, 0, 0, 0],
+      [0, 0, 1, 0, 0],
+      [0, 0, 0, 1, 1],
+    ]);
+  });
+
+  it('支持换行分隔的二进制网格', () => {
+    const input = '11000\n11000\n00100\n00011';
+    expect(parseBinaryGrid(input, [])).toEqual([
+      [1, 1, 0, 0, 0],
+      [1, 1, 0, 0, 0],
+      [0, 0, 1, 0, 0],
+      [0, 0, 0, 1, 1],
+    ]);
+  });
+
+  it('支持 JSON 二维数组', () => {
+    const input = '[[1,0],[0,1]]';
+    expect(parseBinaryGrid(input, [])).toEqual([
+      [1, 0],
+      [0, 1],
+    ]);
+  });
+
+  it('空输入与空白时回退 fallback', () => {
+    const fallback = [[1, 1], [0, 0]];
+    expect(parseBinaryGrid('', fallback)).toBe(fallback);
+    expect(parseBinaryGrid('   ', fallback)).toBe(fallback);
+    expect(parseBinaryGrid(null, fallback)).toBe(fallback);
+  });
+});

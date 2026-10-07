@@ -334,6 +334,13 @@ ${details}
       '../../algorithms/categories/greedy/greedy-089/minimum-cost-connect-sticks-renderer.ts',
       '../../algorithms/categories/greedy/greedy-089/minimum-eat-oranges-renderer.ts',
       '../../algorithms/categories/greedy/greedy-089/two-city-scheduling-renderer.ts',
+      '../../algorithms/categories/graph/islands-bfs-renderer.ts',
+      '../../algorithms/categories/graph/islands-renderer.ts',
+      '../../algorithms/categories/graph/coastline-renderer.ts',
+      '../../algorithms/categories/graph/make-largest-island-renderer.ts',
+      '../../algorithms/categories/graph/max-island-area-renderer.ts',
+      '../../algorithms/categories/graph/sink-islands-renderer.ts',
+      '../../algorithms/categories/graph/total-island-area-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
@@ -364,4 +371,32 @@ ${details}
       expect(violations, errorMsg).toEqual([]);
     }
   });
+
+  it('门禁 5: 图论网格探索算法必须委托 BinaryGridCanvasAdapter 严禁内联手写 DOM', () => {
+    const islandRenderers = [
+      '../../algorithms/categories/graph/islands-bfs-renderer.ts',
+      '../../algorithms/categories/graph/islands-renderer.ts',
+      '../../algorithms/categories/graph/coastline-renderer.ts',
+      '../../algorithms/categories/graph/make-largest-island-renderer.ts',
+      '../../algorithms/categories/graph/max-island-area-renderer.ts',
+      '../../algorithms/categories/graph/sink-islands-renderer.ts',
+      '../../algorithms/categories/graph/total-island-area-renderer.ts',
+    ];
+
+    const inlineViolations: string[] = [];
+
+    for (const filePath of islandRenderers) {
+      const content = (rendererRawModules as Record<string, string>)[filePath];
+      expect(content, `网格渲染器 ${filePath} 必须存在`).toBeDefined();
+      if (!content.includes('BinaryGridCanvasAdapter')) {
+        inlineViolations.push(`${filePath}: 未接入 BinaryGridCanvasAdapter`);
+      }
+      if (content.includes('container.innerHTML = `') || content.includes('container.innerHTML = "')) {
+        inlineViolations.push(`${filePath}: 包含内联 container.innerHTML 拼接`);
+      }
+    }
+
+    expect(inlineViolations, '所有图论网格渲染器严禁内联 DOM 拼接，必须委托 BinaryGridCanvasAdapter').toEqual([]);
+  });
 });
+

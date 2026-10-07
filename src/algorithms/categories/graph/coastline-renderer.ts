@@ -1,39 +1,23 @@
 /**
- * 岛屿的周长 (LC 463) — 声明式 4-Card 标准架构
- * 逐格扫描陆地并检查 4 邻域暴露边，实时累计海岸线周长
+ * 岛屿的周长 (LC 463) 可视化器 — 声明式 Thin Domain Adapter
+ * 严格遵循 Matt Pocock 深模块规范与 AGENTS.md 身材红线 (LOC < 120)
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
-import { parseBinaryGrid } from '../../../core/input-primitives';
 import {
   COASTLINE_PROBLEM_HTML,
   COASTLINE_ANALYSIS_HTML,
   COASTLINE_CODE_LANGUAGES,
 } from './coastline-problem-content';
-import { snapshotGrid2D, snapshotDict } from '../../../core/strategies/grid-snapshot';
-/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number | number[]> = {
-  init: [1, 2, 3],
-  counting: [8, 9, 10, 11, 12, 13],
-  done: 18,
-};
+import { parseBinaryGrid } from '../../../core/input-primitives';
+import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary-grid-canvas-adapter';
+import {
+  buildCoastlineSteps,
+  withCoastlineMetrics,
+  type CLStep,
+} from './coastline-step-compiler';
 
-export interface CLStep {
-  grid: number[][];
-  rows: number;
-  cols: number;
-  currentCell: [number, number] | null;
-  exposedEdges: Record<string, boolean[]>; // cell key -> [top, right, bottom, left]
-  perimeter: number;
-  landCount: number;
-  cellEdges: number;
-  action: 'init' | 'counting' | 'done';
-  statusText: string;
-  message?: string;
-  log: string;
-  codeLine: number | number[];
-  metrics?: Record<string, string>;
-}
+export { buildCoastlineSteps, type CLStep } from './coastline-step-compiler';
 
 const DEFAULT_GRID = [
   [0, 1, 0, 0],
@@ -42,157 +26,29 @@ const DEFAULT_GRID = [
   [1, 1, 0, 0],
 ];
 
-const DIR_NAMES = ['上', '右', '下', '左'];
-const DIRS = [
-  [-1, 0],
-  [0, 1],
-  [1, 0],
-  [0, -1],
-];
-
-export function buildCoastlineSteps(grid: number[][] = DEFAULT_GRID): CLStep[] {
-  const steps: CLStep[] = [];
-  const R = grid.length;
-  const C = grid[0].length;
-
-  let landCount = 0;
-  for (let r = 0; r < R; r++) {
-    for (let c = 0; c < C; c++) {
-      if (grid[r][c] === 1) landCount++;
-    }
-  }
-
-  steps.push({
-    grid: snapshotGrid2D(grid),
-    rows: R,
-    cols: C,
-    currentCell: null,
-    exposedEdges: {},
-    perimeter: 0,
-    landCount,
-    cellEdges: 0,
-    action: 'init',
-    statusText: `初始化 ${R}×${C} 网格，共发现 ${landCount} 个陆地格子。开始逐格检查暴露边。`,
-    log: `初始化: ${R}×${C} 网格，陆地总数 = ${landCount}`,
-    codeLine: lines.init,
-  });
-
-  const exposedEdges: Record<string, boolean[]> = {};
-  let perimeter = 0;
-
-  for (let r = 0; r < R; r++) {
-    for (let c = 0; c < C; c++) {
-      if (grid[r][c] !== 1) continue;
-
-      const edges = [false, false, false, false]; // top, right, bottom, left
-      let cellEdgeCount = 0;
-
-      for (let d = 0; d < 4; d++) {
-        const nr = r + DIRS[d][0];
-        const nc = c + DIRS[d][1];
-        if (nr < 0 || nr >= R || nc < 0 || nc >= C || grid[nr][nc] === 0) {
-          edges[d] = true;
-          cellEdgeCount++;
-          perimeter++;
-        }
-      }
-
-      const key = `${r},${c}`;
-      exposedEdges[key] = [...edges];
-
-      const dirParts: string[] = [];
-      for (let d = 0; d < 4; d++) {
-        if (edges[d]) dirParts.push(DIR_NAMES[d]);
-      }
-
-      steps.push({
-        grid: snapshotGrid2D(grid),
-        rows: R,
-        cols: C,
-        currentCell: [r, c],
-        exposedEdges: snapshotDict(exposedEdges),
-        perimeter,
-        landCount,
-        cellEdges: cellEdgeCount,
-        action: 'counting',
-        statusText: `检查陆地格子 (${r}, ${c}): 暴露边 [${dirParts.join(', ')}]，共 ${cellEdgeCount} 条。当前累计周长 = ${perimeter}。`,
-        log: `格子 (${r},${c}): +${cellEdgeCount} 边 [${dirParts.join(',')}] → 累计周长 = ${perimeter}`,
-        codeLine: lines.counting,
-      });
-    }
-  }
-
-  steps.push({
-    grid: snapshotGrid2D(grid),
-    rows: R,
-    cols: C,
-    currentCell: null,
-    exposedEdges: snapshotDict(exposedEdges),
-    perimeter,
-    landCount,
-    cellEdges: 0,
-    action: 'done',
-    statusText: `🎉 海岸线计算完成！总周长 = ${perimeter}。共扫描 ${landCount} 个陆地格子。`,
-    log: `✓ 计算完成: 岛屿总周长 = ${perimeter}`,
-    codeLine: lines.done,
-  });
-
-  return steps;
-}
-
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
-  classic: {
-    label: '经典十字岛 [4×4]',
-    grid: DEFAULT_GRID,
-  },
+  classic: { label: '经典十字连通 [4×4, P=16]', grid: DEFAULT_GRID },
   ring: {
-    label: '环形湖泊岛 [4×5]',
+    label: '中空回字形 [4×4, P=16]',
     grid: [
-      [1, 1, 1, 1, 1],
-      [1, 0, 0, 0, 1],
-      [1, 0, 0, 0, 1],
-      [1, 1, 1, 1, 1],
+      [1, 1, 1, 1],
+      [1, 0, 0, 1],
+      [1, 0, 0, 1],
+      [1, 1, 1, 1],
     ],
   },
-  single: {
-    label: '单格孤岛 [3×3]',
-    grid: [
-      [0, 0, 0],
-      [0, 1, 0],
-      [0, 0, 0],
-    ],
-  },
+  single: { label: '独立单块岛 [3×3, P=4]', grid: [[0, 0, 0], [0, 1, 0], [0, 0, 0]] },
 };
-
-/** 将网格序列化为文本输入（预设值与 inputs.grid 解析共用） */
-function gridToText(grid: number[][]): string {
-  return grid.map((row) => row.join('')).join('\n');
-}
-
-/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
-function withMetrics(steps: CLStep[]): CLStep[] {
-  return steps.map((s) => ({
-    ...s,
-    message: s.statusText,
-    metrics: {
-      'metric-cur-cell': s.currentCell ? `(${s.currentCell[0]}, ${s.currentCell[1]})` : '—',
-      'metric-cell-edges': `${s.cellEdges}`,
-      'metric-land-count': `${s.landCount}`,
-      'metric-total-perimeter': `${s.perimeter}`,
-      action:
-        s.currentCell && s.cellEdges > 0
-          ? `(${s.currentCell[0]}, ${s.currentCell[1]}) 外露边 +${s.cellEdges} -> 累计周长 = ${s.perimeter}`
-          : '若邻格越界或为水域 (0)，则周长 perimeter++',
-    },
-  }));
-}
 
 export function renderCoastlineCanvas(container: HTMLElement, step: CLStep): void {
   const { grid, rows, cols, currentCell, exposedEdges } = step;
 
-  let html = '';
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
+  BinaryGridCanvasAdapter.renderGridCanvas(container, {
+    rows,
+    cols,
+    cellSize: '1fr',
+    maxWidth: '560px',
+    getCell: (r, c) => {
       const val = grid[r][c];
       const isLand = val === 1;
       const isCurrent = currentCell && currentCell[0] === r && currentCell[1] === c;
@@ -220,28 +76,29 @@ export function renderCoastlineCanvas(container: HTMLElement, step: CLStep): voi
       let edgeDoms = '';
       if (isLand) {
         if (cellEdgesArr[0])
-          edgeDoms +=
-            '<div style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 4px 4px 0 0;"></div>';
+          edgeDoms += '<div style="position: absolute; top: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 4px 4px 0 0;"></div>';
         if (cellEdgesArr[1])
-          edgeDoms +=
-            '<div style="position: absolute; top: 0; right: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 0 4px 4px 0;"></div>';
+          edgeDoms += '<div style="position: absolute; top: 0; right: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 0 4px 4px 0;"></div>';
         if (cellEdgesArr[2])
-          edgeDoms +=
-            '<div style="position: absolute; bottom: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 0 0 4px 4px;"></div>';
+          edgeDoms += '<div style="position: absolute; bottom: 0; left: 0; right: 0; height: 3.5px; background: #e11d48; border-radius: 0 0 4px 4px;"></div>';
         if (cellEdgesArr[3])
-          edgeDoms +=
-            '<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 4px 0 0 4px;"></div>';
+          edgeDoms += '<div style="position: absolute; top: 0; left: 0; bottom: 0; width: 3.5px; background: #e11d48; border-radius: 4px 0 0 4px;"></div>';
       }
 
-      html += `<div style="aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-sizing: border-box; background: ${bg}; border: ${border}; color: ${color}; box-shadow: ${boxShadow}; transform: ${transform}; z-index: ${isCurrent ? 10 : 1};">${edgeDoms}<span>${isLand ? '1' : '0'}</span></div>`;
-    }
-  }
-
-  container.innerHTML = `
-    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; max-width: 560px; margin: 0 auto; padding: 8px; box-sizing: border-box;">
-      ${html}
-    </div>
-  `;
+      return {
+        text: isLand ? '1' : '0',
+        bg,
+        border,
+        color,
+        boxShadow,
+        transform,
+        extraHtml: edgeDoms,
+        zIndex: isCurrent ? 10 : 1,
+        fontSize: '12px',
+        fontWeight: '700',
+      };
+    },
+  });
 }
 
 registerDeclarativeAlgorithm({
@@ -256,16 +113,17 @@ registerDeclarativeAlgorithm({
   inputs: [
     {
       id: 'grid',
-      label: '网格 (每行一串 0/1)',
+      label: '网格 (分号分行 0/1)',
       type: 'text',
-      defaultValue: gridToText(DEFAULT_GRID),
-      placeholder: '每行如 0100',
+      defaultValue: BinaryGridCanvasAdapter.formatGridInput(DEFAULT_GRID),
+      placeholder: '如 0100; 1110',
+      width: '210px',
     },
   ],
   presets: [
-    { label: PRESET_CASES.classic.label, values: { grid: gridToText(PRESET_CASES.classic.grid) } },
-    { label: PRESET_CASES.ring.label, values: { grid: gridToText(PRESET_CASES.ring.grid) } },
-    { label: PRESET_CASES.single.label, values: { grid: gridToText(PRESET_CASES.single.grid) } },
+    { label: PRESET_CASES.classic.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.classic.grid) } },
+    { label: PRESET_CASES.ring.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.ring.grid) } },
+    { label: PRESET_CASES.single.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.single.grid) } },
   ],
   metrics: [
     { id: 'metric-cur-cell', label: '当前格子', color: '#3b82f6' },
@@ -283,6 +141,6 @@ registerDeclarativeAlgorithm({
   problemHtml: COASTLINE_PROBLEM_HTML,
   analysisHtml: COASTLINE_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildCoastlineSteps(parseBinaryGrid(inputs?.grid, DEFAULT_GRID))),
+    withCoastlineMetrics(buildCoastlineSteps(parseBinaryGrid(inputs?.grid, DEFAULT_GRID))),
   renderCanvas: (container, step) => renderCoastlineCanvas(container, step as CLStep),
 });

@@ -13,6 +13,7 @@
 | **`TreeCanvasAdapter`** | 二叉树纯净 SVG 拓扑画板，分层自动布局、活跃游标定位、节点连线高亮 | 普通二叉树遍历、BST、序列化、深度计算、平衡判定 | `TreeCanvasAdapter.renderTree(container, options)` |
 | **`TrieCanvasAdapter`** | 字典树（26 叉前缀树 / 01-Trie 二进制树）分层 SVG 画布、位深度标尺、对偶路径高亮、静态连续数组内存映射表 | 字符串前缀统计 (LC 208)、两数最大异或 (LC 421)、子数组最大异或 (P4551) | `TrieCanvasAdapter.renderTrieCanvas(container, step)`<br>`TrieCanvasAdapter.renderTrieCard2(container, step)` |
 | **`RecursionTreeAdapter`** | 递归调用树与自顶向下展开树，节点调用帧、后序归约返回边动态着色 | 树形 DP、分治、回溯递归推演 | `RecursionTreeAdapter.renderCallTree(container, step)` |
+| **`BinaryGridCanvasAdapter`** | 二维二进制与网格探索多态沙盘，矩阵自适应排布、单元格多态染色、输入标准序列化 | 岛屿数量 (BFS/DFS)、岛屿周长、最大人工岛、沉没孤岛、飞地总面积 | `BinaryGridCanvasAdapter.renderGridCanvas(container, options)`<br>`BinaryGridCanvasAdapter.formatGridInput(grid)` |
 | **`GridSnapshotPrimitives`** | 二维状态空间沙盘、网格依赖雷达、双序列矩阵平铺与单元格高亮 | 网格路径探索、LCS/编辑距离、矩阵链乘 | `GridSnapshotPrimitives.render2DGrid(container, step)` |
 
 ---

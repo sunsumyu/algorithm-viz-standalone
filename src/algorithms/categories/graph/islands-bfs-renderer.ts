@@ -1,6 +1,6 @@
 /**
- * 岛屿数量 (BFS 广度优先搜索) 可视化器 — 声明式 4-Card 标准架构
- * 队列波浪式扩散、入队即时沉岛染色、避免重复进队
+ * 岛屿数量 (BFS 广度优先搜索) 可视化器 — 声明式 Thin Domain Adapter
+ * 严格遵循 Matt Pocock 深模块规范与 AGENTS.md 身材红线 (LOC < 120)
  */
 
 import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
@@ -9,264 +9,51 @@ import {
   ISLANDS_BFS_ANALYSIS_HTML,
   ISLANDS_BFS_CODE_LANGUAGES,
 } from './islands-bfs-problem-content';
-import { CellState } from './islands-renderer';
 import { parseBinaryGrid } from '../../../core/input-primitives';
-import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
-import { HighlightTarget } from '../../../core/code-panel';
+import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary-grid-canvas-adapter';
+import {
+  buildIslandsBFSSteps,
+  withIslandsBFSMetrics,
+  type IslandsBFSStep,
+} from './islands-bfs-step-compiler';
 
-/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-export const ISLANDS_BFS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
-  init: { java: 3, cpp: 5, python: 3, javascript: 2 },
-  scan: { java: [6, 7], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
-  found: { java: [8, 9, 10], cpp: [9, 10, 11], python: [8, 9, 10], javascript: [7, 8, 9] },
-  poll: { java: 14, cpp: 15, python: 13, javascript: 12 },
-  enqueue: { java: [18, 19], cpp: [19, 20], python: [17, 18], javascript: [16, 17] },
-  done: { java: 26, cpp: 27, python: 19, javascript: 24 },
-};
-
-const lines = ISLANDS_BFS_CODE_LINES;
-
-export interface IslandsBFSStep {
-  grid: number[][];
-  states: CellState[][];
-  current: [number, number] | null;
-  queue: [number, number][];
-  scan: [number, number] | null;
-  count: number;
-  visitedLand: number;
-  action: 'init' | 'scan' | 'found' | 'enqueue' | 'poll' | 'done';
-  message: string;
-  log: string;
-  codeLine: HighlightTarget;
-  metrics?: Record<string, string>;
-}
-
-export function buildIslandsBFSSteps(grid: number[][]): IslandsBFSStep[] {
-  const steps: IslandsBFSStep[] = [];
-  const m = grid.length;
-  if (m === 0) return steps;
-  const n = grid[0].length;
-  const states: CellState[][] = grid.map((row) => row.map((v) => (v === 1 ? 'land' : 'water')));
-  let count = 0;
-  let visitedLand = 0;
-  const dirs = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-
-  const snapshot = (extra: Partial<IslandsBFSStep>): void => {
-    steps.push({
-      grid,
-      states: snapshotGrid2D(states),
-      current: extra.current ?? null,
-      queue: extra.queue ? [...extra.queue] : [],
-      scan: extra.scan ?? null,
-      count,
-      visitedLand,
-      action: extra.action ?? 'scan',
-      message: extra.message ?? '',
-      log: extra.log ?? '',
-      codeLine: extra.codeLine ?? lines.init,
-    });
-  };
-
-  snapshot({
-    action: 'init',
-    message: `初始化 ${m}×${n} 网格。准备双重循环扫描寻找未访问陆地 (1)。`,
-    log: `初始化网格 ${m}x${n}`,
-    codeLine: lines.init,
-  });
-
-  for (let r = 0; r < m; r++) {
-    for (let c = 0; c < n; c++) {
-      if (states[r][c] === 'land') {
-        count++;
-        states[r][c] = 'visited';
-        visitedLand++;
-        const q: [number, number][] = [[r, c]];
-
-        snapshot({
-          scan: [r, c],
-          current: [r, c],
-          queue: [...q],
-          action: 'found',
-          message: `🎯 在 (${r}, ${c}) 发现新岛屿起点！count = ${count}。起点入队并立即染色标记。`,
-          log: `[新岛屿 #${count}] 发现起点 (${r}, ${c}) 并入队`,
-          codeLine: lines.found,
-        });
-
-        while (q.length > 0) {
-          const [cr, cc] = q.shift()!;
-
-          snapshot({
-            scan: [r, c],
-            current: [cr, cc],
-            queue: [...q],
-            action: 'poll',
-            message: `出队 (${cr}, ${cc})：检查四周邻格是否存在连通陆地。`,
-            log: `  出队 (${cr}, ${cc})`,
-            codeLine: lines.poll,
-          });
-
-          for (const [dr, dc] of dirs) {
-            const nr = cr + dr;
-            const nc = cc + dc;
-            if (nr >= 0 && nr < m && nc >= 0 && nc < n && states[nr][nc] === 'land') {
-              states[nr][nc] = 'visited';
-              visitedLand++;
-              q.push([nr, nc]);
-
-              snapshot({
-                scan: [r, c],
-                current: [nr, nc],
-                queue: [...q],
-                action: 'enqueue',
-                message: `发现邻接陆地 (${nr}, ${nc})：立即染色沉没并推入队列。`,
-                log: `  发现陆地 (${nr}, ${nc}) -> 入队`,
-                codeLine: lines.enqueue,
-              });
-            }
-          }
-        }
-      } else {
-        snapshot({
-          scan: [r, c],
-          current: null,
-          action: 'scan',
-          message: `扫描格 (${r}, ${c})：${states[r][c] === 'water' ? '水域 (0)' : '已访问陆地'}，跳过。`,
-          log: `扫描 (${r}, ${c}): ${states[r][c]}`,
-          codeLine: lines.scan,
-        });
-      }
-    }
-  }
-
-  snapshot({
-    action: 'done',
-    current: null,
-    scan: null,
-    message: `🎉 全网格 BFS 扫描探索完成！共发现 ${count} 座独立岛屿，共计访问 ${visitedLand} 格陆地。`,
-    log: `✓ BFS 探索完成: 岛屿总数 = ${count}`,
-    codeLine: lines.done,
-  });
-
-  return steps;
-}
+export { buildIslandsBFSSteps, type IslandsBFSStep } from './islands-bfs-step-compiler';
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
-  classic: {
-    label: '经典 3 岛屿 [4×5]',
-    grid: [
-      [1, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 1, 0, 0],
-      [0, 0, 0, 1, 1],
-    ],
-  },
-  single: {
-    label: '单座大岛 [4×4]',
-    grid: [
-      [1, 1, 1, 0],
-      [1, 1, 0, 0],
-      [1, 0, 0, 0],
-      [0, 0, 0, 0],
-    ],
-  },
-  scattered: {
-    label: '多散点 4 岛屿 [4×5]',
-    grid: [
-      [1, 0, 1, 0, 1],
-      [0, 0, 0, 0, 0],
-      [1, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-    ],
-  },
+  classic: { label: '经典 3 岛屿 [4×5]', grid: [[1, 1, 0, 0, 0], [1, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 1]] },
+  single: { label: '单座大岛 [4×4]', grid: [[1, 1, 1, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]] },
+  scattered: { label: '多散点 4 岛屿 [4×5]', grid: [[1, 0, 1, 0, 1], [0, 0, 0, 0, 0], [1, 0, 0, 0, 0], [0, 0, 0, 0]] },
 };
-
-/** 将网格序列化为文本输入（预设值与 inputs.grid 解析共用） */
-function gridToText(grid: number[][]): string {
-  return grid.map((row) => row.join('')).join('\n');
-}
-
-/** 为每一步附加状态监视器指标（键名与 spec.metrics 的 id 一一对应） */
-function withMetrics(steps: IslandsBFSStep[]): IslandsBFSStep[] {
-  return steps.map((s) => ({
-    ...s,
-    metrics: {
-      'metric-scan': s.scan ? `(${s.scan[0]}, ${s.scan[1]})` : '—',
-      'metric-curr': s.current ? `(${s.current[0]}, ${s.current[1]})` : '—',
-      'metric-queue-size': `${s.queue.length}`,
-      'metric-island-count': `${s.count}`,
-      action:
-        s.queue.length > 0
-          ? `[ ${s.queue.map(([r, c]) => `(${r},${c})`).join(', ')} ]`
-          : '[ (空) ]',
-    },
-  }));
-}
 
 export function renderIslandsBFSCanvas(container: HTMLElement, step: IslandsBFSStep): void {
   const { states, current, queue, scan } = step;
-  const m = states.length;
-  const n = states[0]?.length || 0;
   const qSet = new Set(queue.map(([r, c]) => `${r},${c}`));
 
-  let html = '';
-  for (let r = 0; r < m; r++) {
-    for (let c = 0; c < n; c++) {
+  BinaryGridCanvasAdapter.renderGridCanvas(container, {
+    rows: states.length,
+    cols: states[0]?.length || 0,
+    getCell: (r, c) => {
       const state = states[r][c];
       const isCurr = current && current[0] === r && current[1] === c;
       const isScan = scan && scan[0] === r && scan[1] === c && !isCurr;
       const inQueue = qSet.has(`${r},${c}`);
 
-      let bg = '#f1f5f9';
-      let color = '#64748b';
-      let border = '#cbd5e1';
-      let transform = 'none';
-      let boxShadow = 'none';
-      if (state === 'water') {
-        bg = '#eff6ff';
-        color = '#93c5fd';
-        border = '#dbeafe';
-      } else if (state === 'land') {
-        bg = '#f0fdf4';
-        color = '#16a34a';
-        border = '#86efac';
-      } else if (state === 'visited') {
-        bg = '#f1f5f9';
-        color = '#94a3b8';
-        border = '#e2e8f0';
-      }
-
-      if (inQueue) {
-        bg = '#fef9c3';
-        border = '#ca8a04';
-        color = '#a16207';
-        transform = 'scale(1.06)';
-        boxShadow = '0 0 0 2px rgba(234, 179, 8, 0.35)';
-      }
-      if (isScan) {
-        bg = '#fef9c3';
-        border = '#ca8a04';
-        color = '#a16207';
-        transform = 'scale(1.06)';
-        boxShadow = '0 0 0 2px rgba(234, 179, 8, 0.35)';
-      }
-      if (isCurr) {
-        bg = '#dbeafe';
-        border = '#2563eb';
-        color = '#1d4ed8';
-        transform = 'scale(1.08)';
-        boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.4)';
-      }
+      const stateStyles: Record<string, { bg: string; color: string; border: string }> = {
+        water: { bg: '#eff6ff', color: '#93c5fd', border: '1.5px solid #dbeafe' },
+        land: { bg: '#f0fdf4', color: '#16a34a', border: '1.5px solid #86efac' },
+        visited: { bg: '#f1f5f9', color: '#94a3b8', border: '1.5px solid #e2e8f0' },
+      };
+      const base = stateStyles[state] || { bg: '#f1f5f9', color: '#64748b', border: '1.5px solid #cbd5e1' };
+      const highlight = isCurr
+        ? { bg: '#dbeafe', border: '1.5px solid #2563eb', color: '#1d4ed8', transform: 'scale(1.08)', boxShadow: '0 0 0 3px rgba(37,99,235,0.4)', zIndex: 3 }
+        : isScan || inQueue
+          ? { bg: '#fef9c3', border: '1.5px solid #ca8a04', color: '#a16207', transform: 'scale(1.06)', boxShadow: '0 0 0 2px rgba(234,179,8,0.35)', zIndex: 2 }
+          : { ...base, transform: 'none', boxShadow: 'none', zIndex: 1 };
 
       const text = state === 'water' ? '0' : state === 'land' ? '1' : '✓';
-      html += `<div style="width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1.5px solid ${border}; background: ${bg}; color: ${color}; transform: ${transform}; box-shadow: ${boxShadow}; position: relative; z-index: ${isCurr ? 3 : isScan || inQueue ? 2 : 1};">${text}</div>`;
-    }
-  }
-
-  container.innerHTML = `
-    <div style="display: grid; grid-template-columns: repeat(${n}, 44px); gap: 6px; justify-content: center; align-content: center; height: 100%; width: 100%; padding: 8px; box-sizing: border-box;">
-      ${html}
-    </div>
-  `;
+      return { text, ...base, ...highlight };
+    },
+  });
 }
 
 registerDeclarativeAlgorithm({
@@ -281,16 +68,17 @@ registerDeclarativeAlgorithm({
   inputs: [
     {
       id: 'grid',
-      label: '网格 (每行一串 0/1)',
+      label: '网格 (分号分行 0/1)',
       type: 'text',
-      defaultValue: gridToText(PRESET_CASES.classic.grid),
-      placeholder: '每行如 11000',
+      defaultValue: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.classic.grid),
+      placeholder: '如 11000; 11000',
+      width: '210px',
     },
   ],
   presets: [
-    { label: PRESET_CASES.classic.label, values: { grid: gridToText(PRESET_CASES.classic.grid) } },
-    { label: PRESET_CASES.single.label, values: { grid: gridToText(PRESET_CASES.single.grid) } },
-    { label: PRESET_CASES.scattered.label, values: { grid: gridToText(PRESET_CASES.scattered.grid) } },
+    { label: PRESET_CASES.classic.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.classic.grid) } },
+    { label: PRESET_CASES.single.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.single.grid) } },
+    { label: PRESET_CASES.scattered.label, values: { grid: BinaryGridCanvasAdapter.formatGridInput(PRESET_CASES.scattered.grid) } },
   ],
   metrics: [
     { id: 'metric-scan', label: '扫描位置', color: '#3b82f6' },
@@ -309,6 +97,6 @@ registerDeclarativeAlgorithm({
   problemHtml: ISLANDS_BFS_PROBLEM_HTML,
   analysisHtml: ISLANDS_BFS_ANALYSIS_HTML,
   generateSteps: (inputs) =>
-    withMetrics(buildIslandsBFSSteps(parseBinaryGrid(inputs?.grid, PRESET_CASES.classic.grid))),
+    withIslandsBFSMetrics(buildIslandsBFSSteps(parseBinaryGrid(inputs?.grid, PRESET_CASES.classic.grid))),
   renderCanvas: (container, step) => renderIslandsBFSCanvas(container, step as IslandsBFSStep),
 });
