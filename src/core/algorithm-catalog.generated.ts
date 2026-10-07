@@ -5648,14 +5648,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "tribonacci-matrix-power-098",
-    name: "泰波那契矩阵快速幂 (Tribonacci Matrix)",
+    name: "泰波那契数矩阵快速幂 (Tribonacci Matrix)",
     viewId: "algo-tribonacci-matrix-power-098-view",
     category: "math",
-    description: "泰波那契矩阵快速幂 (Tribonacci Matrix)",
+    description: "泰波那契数矩阵快速幂 (Tribonacci Matrix)",
     icon: "🔺",
     difficulty: 3,
     levelOrder: 984,
-    learningGoal: "掌握 3 阶常系数线性递推向 3×3 状态转移矩阵的拓展构建与快速计算",
+    learningGoal: "掌握高阶线性齐次递推数列与 3×3 状态转移矩阵快速幂构建方法",
     aliases: ["class098-code04","tribonacci-matrix","tribonacci-number-1137","leetcode-1137"],
   },
   {

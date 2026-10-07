@@ -284,6 +284,13 @@ ${details}
       '../../algorithms/categories/math/math-097/large-prime-renderer.ts',
       '../../algorithms/categories/math/math-097/prime-factors-renderer.ts',
       '../../algorithms/categories/math/math-097/ehrlich-euler-sieve-renderer.ts',
+      '../../algorithms/categories/math/math-098/quick-power-renderer.ts',
+      '../../algorithms/categories/math/math-098/fibonacci-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-098/climbing-stairs-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-098/tribonacci-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-098/domino-tromino-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-098/count-vowels-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-098/attendance-record-matrix-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];

@@ -62,6 +62,7 @@ export function matrixPower(
 }
 
 export interface Math098Step {
+  line?: number;
   decision: string;
   message: string;
   log: string;
