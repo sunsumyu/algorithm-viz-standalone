@@ -251,14 +251,20 @@ ${details}
       '../../algorithms/categories/dynamic-programming/knapsack-075/bounded-knapsack-monotonic-queue-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-075/cherry-blossom-viewing-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-075/coins-change-kinds-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-071-072/number-of-lis-071-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-071-072/stacking-cuboids-072-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-071-072/k-increasing-array-072-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/recursion-to-dp-038-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/palindrome-partitioning-ii-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/word-break-ii-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
 
     for (const filePath of benchmarkFiles) {
       const content = (rendererRawModules as Record<string, string>)[filePath];
-      if (!content) continue;
-      const lineCount = content.split('\n').length;
+      expect(content, `标杆文件 ${filePath} 必须在 rendererRawModules 中被正确加载`).toBeDefined();
+      const lineCount = content ? content.split('\n').length : 0;
       if (lineCount >= 150) {
         violations.push({ file: filePath, lines: lineCount });
       }
