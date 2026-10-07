@@ -9,6 +9,7 @@ export interface Dp079Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  line?: number;
   metrics?: Record<string, string | number>;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
 }

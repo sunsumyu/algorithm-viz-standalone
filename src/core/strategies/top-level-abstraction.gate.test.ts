@@ -257,6 +257,11 @@ ${details}
       '../../algorithms/categories/dynamic-programming/recursion-to-dp-038-renderer.ts',
       '../../algorithms/categories/dynamic-programming/palindrome-partitioning-ii-renderer.ts',
       '../../algorithms/categories/dynamic-programming/word-break-ii-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-079-083/digit-dp-basic-079-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-079-083/rerooting-tree-dp-080-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-079-083/expected-value-dp-081-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-079-083/slope-optimization-dp-082-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-079-083/knuth-quadrangle-inequality-083-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
