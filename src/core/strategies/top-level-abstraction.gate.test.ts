@@ -291,6 +291,12 @@ ${details}
       '../../algorithms/categories/math/math-098/domino-tromino-matrix-renderer.ts',
       '../../algorithms/categories/math/math-098/count-vowels-matrix-renderer.ts',
       '../../algorithms/categories/math/math-098/attendance-record-matrix-renderer.ts',
+      '../../algorithms/categories/math/math-099/inverse-single-renderer.ts',
+      '../../algorithms/categories/math/math-099/inverse-serial-renderer.ts',
+      '../../algorithms/categories/math/math-099/inverse-factorial-renderer.ts',
+      '../../algorithms/categories/math/math-099/subset-gcd-k-renderer.ts',
+      '../../algorithms/categories/math/math-099/coin-buy-ways-renderer.ts',
+      '../../algorithms/categories/math/math-099/music-playlists-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];

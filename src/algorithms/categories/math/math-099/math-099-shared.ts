@@ -5,6 +5,7 @@
 export const MOD_1E9_7 = 1000000007;
 
 export interface Math099Step {
+  line?: number;
   decision: string;
   message: string;
   log: string;
