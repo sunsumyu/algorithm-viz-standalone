@@ -310,6 +310,12 @@ ${details}
       '../../algorithms/categories/greedy/greedy-094/min-cost-hire-workers-renderer.ts',
       '../../algorithms/categories/greedy/greedy-094/cutting-tree-renderer.ts',
       '../../algorithms/categories/greedy/greedy-094/cooking-plan-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/minimize-deviation-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/rabbits-in-forest-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/min-operations-similar-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/quiz-score-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/divide-array-seq-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-092/min-refueling-stops-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
