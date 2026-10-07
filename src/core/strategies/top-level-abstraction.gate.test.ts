@@ -240,6 +240,10 @@ ${details}
       '../../algorithms/categories/dynamic-programming/knapsack-073/knapsack-01-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-073/top-k-subsequence-sum-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-073/find-kth-sum-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-074/unbounded-knapsack-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-074/buying-hay-min-cost-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-074/partitioned-knapsack-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-074/coins-from-piles-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
