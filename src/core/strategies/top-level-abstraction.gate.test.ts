@@ -262,6 +262,12 @@ ${details}
       '../../algorithms/categories/dynamic-programming/dp-079-083/expected-value-dp-081-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-079-083/slope-optimization-dp-082-renderer.ts',
       '../../algorithms/categories/dynamic-programming/dp-079-083/knuth-quadrangle-inequality-083-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-084-088/counting-dp-inclusion-exclusion-084-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-084-088/game-probability-dp-085-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-084-088/sos-profile-dp-086-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-084-088/circular-interval-dp-087-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/dp-084-088/tree-knapsack-dp-088-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/unique-paths-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
