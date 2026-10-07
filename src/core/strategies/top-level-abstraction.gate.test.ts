@@ -274,6 +274,12 @@ ${details}
       '../../algorithms/categories/game/game-095/anti-nim-game-renderer.ts',
       '../../algorithms/categories/game/game-095/fibonacci-game-renderer.ts',
       '../../algorithms/categories/game/game-095/wythoff-game-renderer.ts',
+      '../../algorithms/categories/game/game-096/bash-game-sg-renderer.ts',
+      '../../algorithms/categories/game/game-096/nim-game-sg-renderer.ts',
+      '../../algorithms/categories/game/game-096/two-stones-bash-renderer.ts',
+      '../../algorithms/categories/game/game-096/three-stones-fibonacci-renderer.ts',
+      '../../algorithms/categories/game/game-096/coin-flip-game-renderer.ts',
+      '../../algorithms/categories/game/game-096/split-game-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];

@@ -3,6 +3,7 @@
  */
 
 export interface Game096Step {
+  line?: number;
   decision: string;
   message: string;
   log: string;
