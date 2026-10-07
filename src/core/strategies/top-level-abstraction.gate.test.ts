@@ -297,6 +297,13 @@ ${details}
       '../../algorithms/categories/math/math-099/subset-gcd-k-renderer.ts',
       '../../algorithms/categories/math/math-099/coin-buy-ways-renderer.ts',
       '../../algorithms/categories/math/math-099/music-playlists-renderer.ts',
+      '../../algorithms/categories/math/max-points-on-a-line-renderer.ts',
+      '../../algorithms/categories/math/random-generator-035-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-093/jump-game-ii-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-093/min-taps-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-093/string-transforms-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-093/cross-river-renderer.ts',
+      '../../algorithms/categories/greedy/greedy-093/super-washing-machines-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
