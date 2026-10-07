@@ -1672,11 +1672,11 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "通配符匹配 (LeetCode 44)",
     viewId: "algo-wildcard-matching-view",
     category: "dynamic-programming",
-    description: "左程云算法通关课 Class 074 Code05：LeetCode 44 通配符，通配星号 * 匹配任意字符串转化为经典完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]",
+    description: "左程云算法通关课 Class 074 Code05：LeetCode 44 通配符匹配，通配符 * 可匹配任意长度序列，完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]",
     icon: "🃏",
     difficulty: 3,
     levelOrder: 88,
-    learningGoal: "掌握通配符星号任意串匹配向二分支完全背包斜率优化的推导与边界处理",
+    learningGoal: "掌握问号与星号通配状态转移、完全背包斜率优化消圈技巧与二维边界填表",
     aliases: ["class074-code05","wildcard-matching-074","wildcard-matching-problem","leetcode-44"],
   },
   {
