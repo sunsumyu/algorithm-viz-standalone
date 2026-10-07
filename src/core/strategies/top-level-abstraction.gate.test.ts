@@ -246,6 +246,11 @@ ${details}
       '../../algorithms/categories/dynamic-programming/knapsack-074/coins-from-piles-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-074/regex-matching-renderer.ts',
       '../../algorithms/categories/dynamic-programming/knapsack-074/wildcard-matching-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-075/bounded-knapsack-naive-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-075/bounded-knapsack-binary-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-075/bounded-knapsack-monotonic-queue-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-075/cherry-blossom-viewing-renderer.ts',
+      '../../algorithms/categories/dynamic-programming/knapsack-075/coins-change-kinds-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
