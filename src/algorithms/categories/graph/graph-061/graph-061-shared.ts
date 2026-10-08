@@ -10,6 +10,7 @@ export interface Graph061StepBase extends StepBase {
   message: string;
   log: string;
   codeLine?: any;
+  line?: number;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
   metrics?: Record<string, string | number>;
 }
@@ -191,6 +192,117 @@ export function renderGraph061PriorityQueue(
         <span style="font-size: 11px; font-weight: 700; color: #475569;">${title} (${items.length} 个待扩展):</span>
       </div>
       <div style="display: flex; gap: 6px; flex-wrap: wrap;">${badges}</div>
+    </div>
+  `;
+}
+
+/**
+ * 渲染 Floyd 全源最短路矩阵
+ */
+export function renderFloydMatrix(
+  dp: number[][],
+  currentK: number | null,
+  curI: number | null,
+  curJ: number | null
+): string {
+  const n = dp.length;
+  const headerCols = Array.from({ length: n }, (_, j) => `
+    <th style="padding: 4px 8px; font-size: 11px; color: ${curJ === j ? '#8b5cf6' : '#64748b'}; font-weight: 700; background: #f8fafc; border: 1px solid #e2e8f0;">
+      ➔ ${j}
+    </th>
+  `).join('');
+
+  const rows = dp.map((row, i) => {
+    const cells = row.map((val, j) => {
+      const isTarget = curI === i && curJ === j;
+      const isFromK = curI === i && currentK === j;
+      const isKTo = currentK === i && curJ === j;
+      const isDiagonal = i === j;
+
+      let bg = '#ffffff';
+      let border = '1px solid #e2e8f0';
+      let col = '#1e293b';
+
+      if (isTarget) {
+        bg = '#fef3c7';
+        border = '2px solid #f59e0b';
+        col = '#b45309';
+      } else if (isFromK || isKTo) {
+        bg = '#ede9fe';
+        border = '1px solid #8b5cf6';
+        col = '#6d28d9';
+      } else if (isDiagonal) {
+        bg = '#f1f5f9';
+        col = '#94a3b8';
+      }
+
+      return `
+        <td style="padding: 4px 8px; text-align: center; font-size: 11px; font-weight: 800; font-family: monospace; background: ${bg}; border: ${border}; color: ${col};">
+          ${val === Infinity ? '∞' : val}
+        </td>
+      `;
+    }).join('');
+
+    return `
+      <tr>
+        <th style="padding: 4px 8px; font-size: 11px; color: ${curI === i ? '#3b82f6' : '#64748b'}; font-weight: 700; background: #f8fafc; border: 1px solid #e2e8f0; text-align: right;">
+          ${i} ➔
+        </th>
+        ${cells}
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <span style="font-size: 11px; font-weight: 700; color: #475569;">全源距离矩阵 DP[i][j] (中转点 k=${currentK !== null ? currentK : '-'})</span>
+      <table style="border-collapse: collapse; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background: #ffffff;">
+        <thead>
+          <tr>
+            <th style="background: #f1f5f9; border: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; padding: 4px;">起点\\终点</th>
+            ${headerCols}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/**
+ * 渲染负权环入队计数监控卡片
+ */
+export function renderNegativeCycleGrid(
+  dist: number[],
+  count: number[],
+  n: number,
+  inQueue: boolean[],
+  curNode: number | null
+): string {
+  const cards = dist.map((d, idx) => {
+    const isCur = curNode === idx;
+    const cnt = count[idx];
+    const isDanger = cnt >= n;
+
+    const bg = isDanger ? '#fee2e2' : isCur ? '#fef3c7' : '#ffffff';
+    const border = isDanger ? '2px solid #ef4444' : isCur ? '2px solid #f59e0b' : '1px solid #cbd5e1';
+    const textCol = isDanger ? '#dc2626' : isCur ? '#b45309' : '#1e293b';
+
+    return `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 68px; padding: 4px 6px; background: ${bg}; border: ${border}; border-radius: 6px; box-sizing: border-box;">
+        <span style="font-size: 10px; color: #64748b;">Node ${idx}</span>
+        <span style="font-size: 12px; font-weight: 800; color: ${textCol}; font-family: monospace;">d: ${d === Infinity ? '∞' : d}</span>
+        <span style="font-size: 9px; font-weight: 700; color: ${isDanger ? '#ef4444' : '#6366f1'}; font-family: monospace;">边数: ${cnt} / ${n}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; max-width: 500px; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 700; color: #475569;">距离与入队边数监控 (count[v] ≥ ${n} 即判定负权环):</span>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">${cards}</div>
     </div>
   `;
 }

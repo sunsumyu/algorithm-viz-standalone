@@ -19,9 +19,9 @@ describe('Gas Station 标准声明式步骤契约', () => {
       expect(step.log).toBeTruthy();
       expect(step.decision).toBeTruthy();
       for (const [language, target] of Object.entries(step.codeLine)) {
-        const primary = typeof target === 'number' ? target : target.primary;
+        const primary = typeof target === 'number' ? target : (target as any)?.primary;
         expect(primary).toBeGreaterThanOrEqual(1);
-        expect(primary).toBeLessThanOrEqual(GAS_STATION_CODE_LANGUAGES[language].length);
+        expect(primary).toBeLessThanOrEqual((GAS_STATION_CODE_LANGUAGES as any)[language].length);
       }
     }
     expect(steps[steps.length - 1].action).toBe('failed');

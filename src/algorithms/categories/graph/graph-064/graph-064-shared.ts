@@ -10,6 +10,7 @@ export interface Graph064StepBase extends StepBase {
   message: string;
   log: string;
   codeLine?: any;
+  line?: number;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
   metrics?: Record<string, string | number>;
 }
