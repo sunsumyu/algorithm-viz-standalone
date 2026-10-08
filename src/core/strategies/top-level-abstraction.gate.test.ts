@@ -380,6 +380,10 @@ ${details}
       '../../algorithms/categories/graph/graph-064/ev-charge-dijkstra-064-renderer.ts',
       '../../algorithms/categories/graph/graph-064/state-compression-bfs-064-renderer.ts',
       '../../algorithms/categories/graph/floyd-renderer.ts',
+      '../../algorithms/categories/graph/water-flow-renderer.ts',
+      '../../algorithms/categories/graph/path-min-effort-renderer.ts',
+      '../../algorithms/categories/graph/swim-in-rising-water-renderer.ts',
+      '../../algorithms/categories/graph/a-star-renderer.ts',
       '../../algorithms/categories/search/search-058/flood-fill-058-renderer.ts',
       '../../algorithms/categories/search/search-058/making-large-island-058-renderer.ts',
     ];
@@ -422,6 +426,10 @@ ${details}
       '../../algorithms/categories/graph/max-island-area-renderer.ts',
       '../../algorithms/categories/graph/sink-islands-renderer.ts',
       '../../algorithms/categories/graph/total-island-area-renderer.ts',
+      '../../algorithms/categories/graph/water-flow-renderer.ts',
+      '../../algorithms/categories/graph/path-min-effort-renderer.ts',
+      '../../algorithms/categories/graph/swim-in-rising-water-renderer.ts',
+      '../../algorithms/categories/graph/a-star-renderer.ts',
     ];
 
     const inlineViolations: string[] = [];

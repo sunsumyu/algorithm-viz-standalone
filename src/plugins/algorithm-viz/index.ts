@@ -176,6 +176,16 @@ function updateContentHeader(): void {
 function getVisibleCards(): AlgorithmMetadata[] {
   const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
 
+  const matchesSearch = (a: AlgorithmMetadata, q: string): boolean => {
+    if (a.name.toLowerCase().includes(q)) return true;
+    if (a.id.toLowerCase().includes(q)) return true;
+    if (a.description.toLowerCase().includes(q)) return true;
+    if (a.learningGoal && a.learningGoal.toLowerCase().includes(q)) return true;
+    if (a.category && CATEGORY_CONFIG[a.category]?.name.toLowerCase().includes(q)) return true;
+    if (a.aliases && a.aliases.some(alias => alias.toLowerCase().includes(q))) return true;
+    return false;
+  };
+
   if (currentCategory === 'recent') {
     const recentIds = getRecentAlgorithmIds();
     let recentAlgos = recentIds
@@ -184,30 +194,22 @@ function getVisibleCards(): AlgorithmMetadata[] {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      recentAlgos = recentAlgos.filter(a =>
-        a.name.toLowerCase().includes(q) ||
-        a.description.toLowerCase().includes(q) ||
-        (a.category && CATEGORY_CONFIG[a.category]?.name.toLowerCase().includes(q))
-      );
+      recentAlgos = recentAlgos.filter(a => matchesSearch(a, q));
     }
     return recentAlgos;
   }
 
   let filtered = courseFiltered;
 
-  // Filter by category
-  if (currentCategory !== 'all') {
+  // Filter by category (when searching, search across all categories within the course)
+  if (currentCategory !== 'all' && !searchQuery.trim()) {
     filtered = filtered.filter(a => a.category === currentCategory);
   }
 
   // Filter by search
   if (searchQuery.trim()) {
     const q = searchQuery.toLowerCase();
-    filtered = filtered.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      a.description.toLowerCase().includes(q) ||
-      (a.category && CATEGORY_CONFIG[a.category]?.name.toLowerCase().includes(q))
-    );
+    filtered = filtered.filter(a => matchesSearch(a, q));
   }
 
   // Sort by levelOrder (primary) then by category order

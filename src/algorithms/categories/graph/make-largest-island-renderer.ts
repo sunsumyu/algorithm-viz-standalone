@@ -98,13 +98,14 @@ export function renderMakeLargestIslandCanvas(container: HTMLElement, step: MLIS
 
 registerDeclarativeAlgorithm({
   id: 'make-largest-island',
-  name: '最大人工岛 (LC 827)',
+  name: '最大人工岛 / 建造最大岛屿 (LC 827)',
+  aliases: ['making-a-large-island', 'build-largest-island', '建造最大岛屿', '827', 'leetcode-827'],
   category: 'graph',
-  description: '两遍扫描法：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积',
+  description: '两遍扫描法（建造最大岛屿）：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积',
   icon: '🏝️',
   difficulty: 3,
   levelOrder: 19,
-  learningGoal: '掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型',
+  learningGoal: '掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型（建造最大岛屿）',
   inputs: [
     {
       id: 'grid',

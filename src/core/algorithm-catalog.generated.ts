@@ -2714,14 +2714,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "make-largest-island",
-    name: "最大人工岛 (LC 827)",
+    name: "最大人工岛 / 建造最大岛屿 (LC 827)",
     viewId: "algo-make-largest-island-view",
     category: "graph",
-    description: "两遍扫描法：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积",
+    description: "两遍扫描法（建造最大岛屿）：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积",
     icon: "🏝️",
     difficulty: 3,
     levelOrder: 19,
-    learningGoal: "掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型",
+    learningGoal: "掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型（建造最大岛屿）",
+    aliases: ["making-a-large-island","build-largest-island","建造最大岛屿","827","leetcode-827"],
   },
   {
     id: "find-route",
@@ -3308,7 +3309,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🏊",
     difficulty: 3,
     levelOrder: 76,
-    learningGoal: "掌握瓶颈最短路模型转化、网格图 Dijkstra 小根堆松弛技巧与二分+BFS/并查集等价判定",
+    learningGoal: "掌握网格图瓶颈最短路变型、带优先级的动态淹没模拟及二分+BFS/Dijkstra求解",
   },
   {
     id: "tree-dominant-color",
@@ -6209,7 +6210,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 3,
     levelOrder: 99,
-    aliases: ["class058-code05","making-a-large-island-827","make-largest-island-058"],
+    aliases: ["class058-code05","making-a-large-island-827","make-largest-island-058","827","leetcode-827","建造最大岛屿"],
   },
   {
     id: "find-min-rotated-sorted-array-ii",

@@ -10,14 +10,14 @@ export type CellState = 'water' | 'land' | 'visited';
 
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
 export const ISLANDS_CODE_LINES: Record<string, Record<string, number | number[]>> = {
-  init: { java: 3, cpp: 5, python: 3, javascript: 2 },
-  scan: { java: [6, 7], cpp: [7, 8], python: [6, 7], javascript: [5, 6] },
-  found: { java: [8, 9], cpp: [9, 10], python: [8, 9], javascript: [7, 8] },
-  dfsEntry: { java: 17, cpp: 18, python: 14, javascript: 15 },
-  baseCheck: { java: [18, 19], cpp: [19, 20], python: [15, 16], javascript: [16, 17] },
-  markVisited: { java: 21, cpp: 22, python: 18, javascript: 19 },
-  dfsRecurse: { java: [22, 23, 24, 25], cpp: [23, 24, 25, 26], python: [19, 20, 21, 22], javascript: [20, 21, 22, 23] },
-  done: { java: 13, cpp: 14, python: 11, javascript: 11 },
+  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  scan: { java: [4, 5], cpp: [5, 6], python: [11, 12], javascript: [10, 11] },
+  found: { java: [6, 7], cpp: [7, 8], python: [13, 14], javascript: [12, 13] },
+  dfsEntry: { java: 14, cpp: 15, python: 5, javascript: 4 },
+  baseCheck: { java: 15, cpp: 16, python: [6, 7], javascript: 5 },
+  markVisited: { java: 16, cpp: 17, python: 8, javascript: 6 },
+  dfsRecurse: { java: [17, 18, 19, 20], cpp: [18, 19], python: [9, 10], javascript: [7, 8] },
+  done: { java: 12, cpp: 13, python: 16, javascript: 18 },
 };
 
 const lines = ISLANDS_CODE_LINES;
