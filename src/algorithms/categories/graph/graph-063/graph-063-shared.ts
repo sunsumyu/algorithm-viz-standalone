@@ -6,6 +6,7 @@ export interface Graph063StepBase {
   message: string;
   explanation?: string;
   line: number;
+  codeLine?: any;
   highlightedIndices?: number[];
   metrics?: Record<string, string | number>;
 }
@@ -163,3 +164,77 @@ export function renderMeetInTheMiddleArrayView(params: {
     </div>
   `;
 }
+
+/**
+ * 渲染选数约束分桶折半二分沙盘 (LeetCode 2035)
+ */
+export function renderPartitionMinDiffView(params: {
+  lsumCounts: number[];
+  rsumCounts: number[];
+  n: number;
+  totalSum: number;
+  activeK?: number;
+  curLeftVal?: number;
+  curTarget?: number;
+  matchedRightVal?: number;
+  currentDiff?: number;
+  bestDiff: number;
+}): string {
+  const { lsumCounts, rsumCounts, n, totalSum, activeK, curLeftVal, curTarget, matchedRightVal, currentDiff, bestDiff } = params;
+  const bucketCards = lsumCounts.map((lCount, k) => {
+    const rCount = rsumCounts[n - k] ?? 0;
+    const isActive = activeK === k;
+    return `
+      <div style="
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: ${isActive ? '#eff6ff' : '#f8fafc'};
+        border: 1px solid ${isActive ? '#3b82f6' : '#e2e8f0'};
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 11px;
+      ">
+        <div style="display:flex; justify-content:space-between; font-weight:700; color:${isActive ? '#1d4ed8' : '#334155'};">
+          <span>左选 ${k} 个数</span>
+          <span style="color:#7c3aed;">右选 ${n - k} 个数</span>
+        </div>
+        <div style="color:#64748b; font-size:10px;">
+          左侧 ${lCount} 种和 ↔ 右侧 ${rCount} 种和
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="display:flex; flex-direction:column; gap:10px; padding:12px; background:#ffffff; border-radius:8px; border:1px solid #e2e8f0;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:700; font-size:13px; color:#1e293b;">⚖️ 选数约束分桶折半二分沙盘</span>
+        <span style="font-size:11px; padding:2px 8px; border-radius:4px; background:#f1f5f9; color:#475569;">
+          理想目标半和: <strong style="color:#0f172a;">${Math.floor(totalSum / 2)}</strong> (总和 ${totalSum})
+        </span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:6px;">
+        ${bucketCards}
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px; display:flex; flex-direction:column; gap:4px; font-size:11px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>当前左侧累加和: <strong style="color:#0284c7; font-family:monospace; font-size:12px;">${curLeftVal !== undefined ? curLeftVal : '-'}</strong></span>
+          <span>二分目标 $(S/2 - a)$: <strong style="color:#db2777; font-family:monospace; font-size:12px;">${curTarget !== undefined ? curTarget : '-'}</strong></span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>右侧最接近匹配值: <strong style="color:#7c3aed; font-family:monospace; font-size:12px;">${matchedRightVal !== undefined ? matchedRightVal : '-'}</strong></span>
+          <span>本次匹配和差: <strong style="color:#059669; font-family:monospace; font-size:12px;">${currentDiff !== undefined ? currentDiff : '-'}</strong></span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; border:1px solid #a7f3d0; padding:8px 12px; border-radius:6px;">
+        <span style="font-size:11.5px; font-weight:700; color:#065f46;">🎯 全局最小数组和绝对差:</span>
+        <strong style="font-size:16px; font-family:monospace; color:#047857;">${bestDiff === Infinity ? '-' : bestDiff}</strong>
+      </div>
+    </div>
+  `;
+}
+

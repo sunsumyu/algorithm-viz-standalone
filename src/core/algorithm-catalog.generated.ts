@@ -4065,7 +4065,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 6201,
     learningGoal: "掌握多源 BFS 逆向思维：将所有陆地并发入队，通过波前扩散在 O(N²) 线性时间内求解全局最大最短距离",
-    aliases: ["as-far-from-land","map-analysis-1162"],
+    aliases: ["as-far-from-land","map-analysis-1162","leetcode-1162"],
   },
   {
     id: "stickers-to-spell-word-062",
@@ -4101,7 +4101,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 6204,
     learningGoal: "掌握网格箭头图到 0-1 BFS 边权的数学归约：顺向边权 0、改向边权 1，线性求解全局最小修改代价",
-    aliases: ["minimum-cost-valid-path","valid-path-1368"],
+    aliases: ["minimum-cost-valid-path","valid-path-1368","leetcode-1368"],
   },
   {
     id: "trapping-rain-water-ii-062",
@@ -4113,7 +4113,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 6205,
     learningGoal: "深刻理解小根堆优先队列模拟木桶短板收缩算法，水面高度只增不减的外围向内单调性证明",
-    aliases: ["trapping-rain-water-ii-class062","trap-rain-water-407-062"],
+    aliases: ["trapping-water-ii","trapping-rain-water-ii","trap-rain-water-407","trapping-rain-water-ii-class062","trap-rain-water-407-062"],
   },
   {
     id: "word-ladder-ii-062",
