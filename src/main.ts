@@ -17,6 +17,7 @@ import { shortcutController } from './core/controllers/keyboard-shortcut-control
 import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
 import { appSettingsRepo } from './core/settings/app-settings-repository';
 import { appSettingsModal } from './core/settings/app-settings-modal';
+import { setupRuntimeInspectionGuard } from './core/security/anti-devtools';
 
 if (typeof window !== 'undefined') {
   (window as any).algorithmRegistry = algorithmRegistry;
@@ -30,6 +31,9 @@ if (typeof window !== 'undefined') {
  * 应用初始化
  */
 async function main(): Promise<void> {
+  // 0. 启动运行时审查与 DevTools 拦截防线（生产环境自动拦截 F12 与右键审查）
+  setupRuntimeInspectionGuard();
+
   const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');
   console.log(`[Main] Platform: ${navigator.platform}, User Agent: ${navigator.userAgent}`);
