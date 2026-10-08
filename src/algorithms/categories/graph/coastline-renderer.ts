@@ -19,24 +19,11 @@ import {
 
 export { buildCoastlineSteps, type CLStep } from './coastline-step-compiler';
 
-const DEFAULT_GRID = [
-  [0, 1, 0, 0],
-  [1, 1, 1, 0],
-  [0, 1, 0, 0],
-  [1, 1, 0, 0],
-];
+const DEFAULT_GRID = [[0, 1, 0, 0], [1, 1, 1, 0], [0, 1, 0, 0], [1, 1, 0, 0]];
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
   classic: { label: '经典十字连通 [4×4, P=16]', grid: DEFAULT_GRID },
-  ring: {
-    label: '中空回字形 [4×4, P=16]',
-    grid: [
-      [1, 1, 1, 1],
-      [1, 0, 0, 1],
-      [1, 0, 0, 1],
-      [1, 1, 1, 1],
-    ],
-  },
+  ring: { label: '中空回字形 [4×4, P=16]', grid: [[1, 1, 1, 1], [1, 0, 0, 1], [1, 0, 0, 1], [1, 1, 1, 1]] },
   single: { label: '独立单块岛 [3×3, P=4]', grid: [[0, 0, 0], [0, 1, 0], [0, 0, 0]] },
 };
 
@@ -105,6 +92,7 @@ registerDeclarativeAlgorithm({
   id: 'coastline',
   name: '岛屿的周长 (LC 463)',
   category: 'graph',
+  hasDeductionTree: true,
   description: '逐格扫描陆地并检查 4 邻域水域与越界边，实时累计岛屿海岸线周长',
   icon: '🌊',
   difficulty: 1,

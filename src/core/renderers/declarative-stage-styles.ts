@@ -443,6 +443,53 @@ export function renderStageStyles(viewId: string): string {
     flex-direction: column;
   }
 
+  /* ===== Card 1 复合子视图切换控制栏样式规范 (彻底杜绝浏览器原生黑框) ===== */
+  #${viewId} #card1-subview-bar {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 2px !important;
+    background: #f1f5f9 !important;
+    padding: 2px !important;
+    border-radius: 8px !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin-left: 4px !important;
+    box-sizing: border-box !important;
+  }
+  #${viewId} #card1-subview-bar button {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none;
+    background: transparent;
+    cursor: pointer !important;
+    border-radius: 6px !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transition: all 0.15s ease !important;
+    user-select: none !important;
+  }
+  #${viewId} #card1-subview-bar button.active {
+    background: #ffffff !important;
+    color: #1d4ed8 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  }
+  #${viewId} #card1-subview-bar button:not(.active) {
+    color: #475569 !important;
+    font-weight: 600 !important;
+  }
+  #${viewId} #card1-subview-bar button:not(.active):hover {
+    color: #0f172a !important;
+  }
+
   /* ===== 顶层标准 UI 统合引擎：净化 Card 1 历史深色异质外壳与低对比度文本 ===== */
   #${viewId} #dsp-sandbox-container > div[style*="rgba(15, 23, 42"],
   #${viewId} #dsp-sandbox-container > div[style*="#0f172a"],

@@ -84,6 +84,7 @@ registerDeclarativeAlgorithm({
   icon: '🌊',
   difficulty: 2,
   levelOrder: 17,
+  hasDeductionTree: true,
   learningGoal: '掌握逆向多源 DFS/BFS 搜索与双矩阵交集求解技巧',
   inputs: [
     {

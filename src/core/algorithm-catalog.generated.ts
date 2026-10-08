@@ -2608,6 +2608,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 2,
     learningGoal: "掌握网格图 BFS 逐层扩散与入队即染色的内存控制技巧",
+    aliases: ["islands-bfs","number-of-islands-bfs","leetcode-200-bfs"],
   },
   {
     id: "max-island-area",
@@ -2758,6 +2759,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握 DAG 上的深度优先回溯搜索与路径压栈恢复机制",
   },
   {
+    id: "closed-islands",
+    name: "统计封闭岛屿的数目 (Closed Islands)",
+    viewId: "algo-closed-islands-view",
+    category: "graph",
+    description: "两阶段泛洪算法：第一阶段排除边界连通伪孤岛，第二阶段统计内陆真正被水域包围的封闭岛屿",
+    icon: "🏝️",
+    difficulty: 2,
+    levelOrder: 22,
+    learningGoal: "掌握网格图边界连通块定向淹没技巧与封闭连通块的逆向规约判定模型",
+    aliases: ["closed-islands","number-of-closed-islands","leetcode-1254","1254"],
+  },
+  {
     id: "limited-shortest-path",
     name: "有限最短路 (LC 787)",
     viewId: "algo-limited-shortest-path-view",
@@ -2801,6 +2814,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 23,
     learningGoal: "深刻理解全边松弛原理、早停判定机制以及负权回路的代数检测法则",
+    aliases: ["bellman-ford-061","class061-code03"],
   },
   {
     id: "hungarian-matching",
@@ -2814,6 +2828,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "深刻理解增广路定理、交错路的寻找方式以及递归协商腾位的本质机制",
   },
   {
+    id: "sub-islands",
+    name: "统计子岛屿 (Count Sub Islands)",
+    viewId: "algo-sub-islands-view",
+    category: "graph",
+    description: "双网格反向剪枝排除法：若子网格陆地触犯母网格水域则整岛排除，剩下的岛屿全为合法子岛",
+    icon: "🏝️",
+    difficulty: 2,
+    levelOrder: 23,
+    learningGoal: "掌握双网格连通分量协同判定模型与反向剪枝剔除非法连通块的优雅技巧",
+    aliases: ["sub-islands","count-sub-islands","leetcode-1905","1905"],
+  },
+  {
     id: "dinic-max-flow",
     name: "Dinic 网络最大流 (Dinic Max Flow)",
     viewId: "algo-dinic-max-flow-view",
@@ -2825,6 +2851,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握分层图构建思想、成对反向弧退流机制、当前弧指针优化以及阻塞流增广策略",
   },
   {
+    id: "distinct-islands",
+    name: "不同岛屿的数量 (Distinct Islands)",
+    viewId: "algo-distinct-islands-view",
+    category: "graph",
+    description: "平移不变性几何形状哈希化：以首个陆地为锚点原点序列化相对偏移坐标，利用哈希集合统计不同形状数量",
+    icon: "🏝️",
+    difficulty: 2,
+    levelOrder: 24,
+    learningGoal: "深刻理解几何连通分量的平移不变性、基准锚点相对坐标归一化以及形状签名序列化模型",
+    aliases: ["distinct-islands","number-of-distinct-islands","leetcode-694","694"],
+  },
+  {
     id: "spfa",
     name: "SPFA 队列优化最短路",
     viewId: "algo-spfa-view",
@@ -2834,6 +2872,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 24,
     learningGoal: "深刻理解队列驱动松弛机制、在队标记 inQueue 的作用与负环检测原理",
+    aliases: ["spfa-061","class061-code04","queue-bellman-ford"],
   },
   {
     id: "string-migration",
@@ -2867,6 +2906,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 25,
     learningGoal: "深刻理解动态规划在多源最短路中的阶段定义、空间压缩与状态转移方程",
+    aliases: ["floyd-061","class061-code05","floyd-warshall"],
   },
   {
     id: "strongly-connected",
@@ -2900,6 +2940,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 26,
     learningGoal: "掌握负权回路判定定理、第 N 轮额外松弛扫描机制以及无限递减状态识别",
+    aliases: ["negative-cycle-061","class061-code06","spfa-negative-cycle"],
   },
   {
     id: "a-star-journey",
@@ -2923,6 +2964,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 27,
     learningGoal: "掌握贪心选点、最短路锁定准则以及边松弛操作的核心本质",
+    aliases: ["dijkstra-basic-061","dijkstra","naive-dijkstra","class061-dijkstra","dijkstra-naive"],
   },
   {
     id: "mst-kruskal-prim-027",
@@ -2946,6 +2988,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 28,
     learningGoal: "深刻理解优先队列加速选点、惰性删除冗余标号与稀疏图性能优势",
+    aliases: ["dijkstra-heap-061","dijkstra-pq","dijkstra-priority-queue","class061-dijkstra-heap"],
   },
   {
     id: "state-compression-bfs",
@@ -3644,11 +3687,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "二维接雨水 II (Trapping Rain Water II)",
     viewId: "algo-trapping-water-ii-view",
     category: "graph",
-    description: "木桶原理与优先队列经典结合：外围边界构筑围栏、每次弹出最短板向内蔓延、低洼格产生积水 (LeetCode 407)",
+    description: "木桶原理与优先队列结合：边界入堆、弹最短板向内收缩、低洼格蓄水 (LeetCode 407)",
     icon: "🌊",
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "掌握小根堆模拟木桶原理、二维水线动态扩展机制及外围向内收缩单调性证明",
+    aliases: ["trapping-rain-water-ii","trap-rain-water-407"],
   },
   {
     id: "word-ladder-063",

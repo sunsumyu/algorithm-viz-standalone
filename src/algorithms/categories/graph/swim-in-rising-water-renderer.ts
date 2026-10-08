@@ -12,11 +12,12 @@ import {
   SWIM_IN_RISING_WATER_ANALYSIS_HTML,
 } from './swim-in-rising-water-problem-content';
 import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary-grid-canvas-adapter';
-export type { SwimStep } from './swim-in-rising-water-step-compiler';
+import type { SwimStep } from './swim-in-rising-water-step-compiler';
 import {
   buildSwimInRisingWaterSteps,
 } from './swim-in-rising-water-step-compiler';
 
+export type { SwimStep };
 export { buildSwimInRisingWaterSteps };
 
 export function renderSwimInRisingWaterCanvas(container: HTMLElement, step: SwimStep): void {
@@ -76,6 +77,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
   id: 'swim-in-rising-water',
   name: '水位上升的泳池中游泳',
   category: 'graph',
+  hasDeductionTree: true,
   icon: '🏊',
   codeLanguages: SWIM_IN_RISING_WATER_CODE_LANGUAGES,
   problemHtml: SWIM_IN_RISING_WATER_PROBLEM_HTML,

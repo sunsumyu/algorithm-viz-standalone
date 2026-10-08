@@ -138,6 +138,7 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   analysisHtml?: string;
   problemContent?: any;
   stages?: DeclarativeStageSpec<TStep>[];
+  hasDeductionTree?: boolean;
   defaultStage?: string;
   defaultMode?: string;
   buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];

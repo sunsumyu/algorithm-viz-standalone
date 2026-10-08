@@ -101,6 +101,7 @@ registerDeclarativeAlgorithm({
   name: '最大人工岛 / 建造最大岛屿 (LC 827)',
   aliases: ['making-a-large-island', 'build-largest-island', '建造最大岛屿', '827', 'leetcode-827'],
   category: 'graph',
+  hasDeductionTree: true,
   description: '两遍扫描法（建造最大岛屿）：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积',
   icon: '🏝️',
   difficulty: 3,

@@ -7,6 +7,8 @@
  */
 
 import { PresetCasePresenter } from './preset-case-presenter';
+import { DomainViewPresentationResolver, DomainPresentationMeta } from '../resolvers/domain-view-presentation-resolver';
+import { Card1SubViewControlsAdapter } from './card1-subview-controls-adapter';
 import {
   DeclarativeAlgorithmSpec,
   DeclarativeStageSpec,
@@ -28,6 +30,7 @@ export interface StageHeaderContext {
   card1Title: string;
   card2Title: string;
   card2Desc: string;
+  domainMeta: DomainPresentationMeta;
 }
 
 /** 解析当前阶段（含 localStorage 记忆回放）与头部徽章/标题链 */
@@ -47,13 +50,21 @@ export function resolveHeaderContext(spec: DeclarativeAlgorithmSpec): StageHeade
   const curStage = curStageId && spec.stages ? spec.stages.find((s) => s.id === curStageId) : undefined;
   const modeBadge = curStage?.badge?.mode || spec.badge?.mode || '标准模式';
   const complexityBadge = curStage?.badge?.complexity || curStage?.timeBadge || spec.badge?.complexity || 'O(n) · O(1)';
-  const card1Title =
-    curStage?.primaryVisual?.title || curStage?.card1Title || spec.primaryVisual?.title || spec.card1Title || '📊 算法执行沙盘';
+  
+  const explicitCard1Title = curStage?.primaryVisual?.title || curStage?.card1Title || spec.primaryVisual?.title || spec.card1Title;
+  const domainMeta = DomainViewPresentationResolver.resolve({
+    id: spec.id,
+    category: spec.category,
+    name: spec.name,
+    card1Title: explicitCard1Title,
+  });
+  const card1Title = domainMeta.card1TitleHtml;
+
   const card2Title =
     curStage?.auxiliaryVisual?.title || curStage?.card2Title || spec.auxiliaryVisual?.title || spec.card2Title || '🧭 状态空间与指标监视器';
   const card2Desc =
     curStage?.auxiliaryVisual?.desc || curStage?.card2Desc || spec.auxiliaryVisual?.desc || spec.card2Desc || '当前操作指令、关键指标与状态记录';
-  return { viewId, icon, curStageId, curStage, modeBadge, complexityBadge, card1Title, card2Title, card2Desc };
+  return { viewId, icon, curStageId, curStage, modeBadge, complexityBadge, card1Title, card2Title, card2Desc, domainMeta };
 }
 
 /** 1. 顶栏参数输入控件 */
@@ -197,3 +208,13 @@ export function renderStageTabsHtml(stages: DeclarativeStageSpec[] | undefined, 
         </div>
       `;
 }
+
+/** 7. Card 1 复合子视图切换栏 (主沙盘 vs 全景推演树，领域自适应与自包含防黑框) */
+export function renderCard1SubViewBarHtml(hasDeduction: boolean, meta?: DomainPresentationMeta): string {
+  return Card1SubViewControlsAdapter.renderBarHtml({
+    visible: hasDeduction,
+    activeView: 'primary',
+    meta,
+  });
+}
+

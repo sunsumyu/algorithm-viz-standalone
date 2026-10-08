@@ -20,32 +20,9 @@ import {
 export { buildMIASteps, type MIAStep } from './max-island-area-step-compiler';
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
-  classic: {
-    label: '经典 5 格大岛 [4×5]',
-    grid: [
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 0, 0],
-      [0, 1, 0, 0, 1],
-      [0, 0, 0, 1, 1],
-    ],
-  },
-  large: {
-    label: '连片 15 格大岛 [4×5]',
-    grid: [
-      [1, 1, 0, 1, 1],
-      [1, 1, 1, 1, 1],
-      [0, 1, 1, 0, 1],
-      [0, 0, 0, 0, 0],
-    ],
-  },
-  empty: {
-    label: '全域水域 [3×3]',
-    grid: [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-  },
+  classic: { label: '经典 5 格大岛 [4×5]', grid: [[0, 0, 1, 0, 0], [1, 1, 1, 0, 0], [0, 1, 0, 0, 1], [0, 0, 0, 1, 1]] },
+  large: { label: '连片 15 格大岛 [4×5]', grid: [[1, 1, 0, 1, 1], [1, 1, 1, 1, 1], [0, 1, 1, 0, 1], [0, 0, 0, 0, 0]] },
+  empty: { label: '全域水域 [3×3]', grid: [[0, 0, 0], [0, 0, 0], [0, 0, 0]] },
 };
 
 export function renderMaxIslandAreaCanvas(container: HTMLElement, step: MIAStep): void {
@@ -107,6 +84,7 @@ registerDeclarativeAlgorithm({
   aliases: ['class058-code02', 'max-area-of-island-695'],
   name: '岛屿的最大面积',
   category: 'graph',
+  hasDeductionTree: true,
   description: '使用深度优先搜索计算并返回网格中最大连通岛屿的面积',
   icon: '📐',
   difficulty: 2,

@@ -22,23 +22,8 @@ export { buildSinkSteps, type SinkStep } from './sink-islands-step-compiler';
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
   classic: { label: '经典 5×5 围岛', grid: DEFAULT_SINK_GRID },
-  open: {
-    label: '开放边缘 [4×5]',
-    grid: [
-      [1, 1, 0, 1, 1],
-      [1, 0, 1, 0, 1],
-      [0, 1, 1, 1, 0],
-      [1, 0, 1, 0, 1],
-    ],
-  },
-  allProtected: {
-    label: '全域连通 [3×4]',
-    grid: [
-      [1, 1, 1, 1],
-      [1, 1, 1, 1],
-      [1, 1, 1, 1],
-    ],
-  },
+  open: { label: '开放边缘 [4×5]', grid: [[1, 1, 0, 1, 1], [1, 0, 1, 0, 1], [0, 1, 1, 1, 0], [1, 0, 1, 0, 1]] },
+  allProtected: { label: '全域连通 [3×4]', grid: [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]] },
 };
 
 export function renderSinkIslandsCanvas(container: HTMLElement, step: SinkStep): void {
@@ -102,6 +87,7 @@ registerDeclarativeAlgorithm({
   aliases: ['class058-code03', 'surrounded-regions-130'],
   name: '沉没孤岛 (LC 130)',
   category: 'graph',
+  hasDeductionTree: true,
   description: '两阶段 DFS：从边界出发标记边缘保护区，将内部所有未相连的孤岛淹没',
   icon: '🏝️',
   difficulty: 2,

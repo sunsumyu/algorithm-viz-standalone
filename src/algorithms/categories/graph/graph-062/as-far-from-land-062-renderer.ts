@@ -71,6 +71,7 @@ export const asFarFromLand062Visualizer = registerDeclarativeAlgorithm<AsFarFrom
   aliases: ['as-far-from-land', 'map-analysis-1162', 'leetcode-1162'],
   name: '地图分析与多源广搜 (Class 062)',
   category: 'graph',
+  hasDeductionTree: true,
   icon: '🗺️',
   difficulty: 2,
   levelOrder: 6201,

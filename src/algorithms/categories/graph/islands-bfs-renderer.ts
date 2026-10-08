@@ -58,8 +58,10 @@ export function renderIslandsBFSCanvas(container: HTMLElement, step: IslandsBFSS
 
 registerDeclarativeAlgorithm({
   id: 'islands-bfs',
+  aliases: ['islands-bfs', 'number-of-islands-bfs', 'leetcode-200-bfs'],
   name: '岛屿数量 (BFS)',
   category: 'graph',
+  hasDeductionTree: true,
   description: '使用广度优先搜索队列波浪式染色计算二维网格中连通岛屿的数量',
   icon: '🌊',
   difficulty: 2,

@@ -1423,6 +1423,313 @@ button[class*="-chip"]:hover {
   color: #64748b !important;
 }
 
+/* ==========================================================================
+   8. 全景推演树统一抽象设计系统 (Unified Deduction Board Design System)
+   遵循单一事实来源，脱离 Tailwind 也能自洽呈现高质感卡片与树状导轨
+   ========================================================================== */
+
+.deduction-board-root {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 4px 6px 16px 6px !important;
+  box-sizing: border-box !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "PingFang SC", sans-serif !important;
+  color: #1e293b !important;
+}
+
+/* 顶栏 Header 卡片 */
+.deduction-header-card {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08) !important;
+}
+
+.deduction-header-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+  gap: 8px !important;
+}
+
+.deduction-header-title {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  color: #1e3a8a !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.deduction-header-badge {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  padding: 2px 8px !important;
+  border-radius: 9999px !important;
+  border: 1px solid #93c5fd !important;
+  white-space: nowrap !important;
+}
+
+.deduction-header-desc {
+  font-size: 11.5px !important;
+  color: #334155 !important;
+  line-height: 1.65 !important;
+  margin-bottom: 8px !important;
+}
+
+.deduction-header-desc code {
+  font-family: 'JetBrains Mono', monospace !important;
+  background: #dbeafe !important;
+  color: #1e40af !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+}
+
+.deduction-header-state {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  font-size: 11px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  line-height: 1.5 !important;
+  border: 1px solid #334155 !important;
+}
+
+.deduction-header-state .state-label {
+  color: #34d399 !important;
+  font-weight: 700 !important;
+}
+
+/* 阶段卡片 */
+.deduction-section-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.deduction-section-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 10px !important;
+}
+
+.deduction-section-title {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.deduction-section-subtitle {
+  font-size: 10px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  color: #64748b !important;
+}
+
+.deduction-indicator-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+}
+
+.deduction-indicator-dot.base {
+  background: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+.deduction-indicator-dot.loop {
+  background: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.deduction-indicator-dot.ret {
+  background: #8b5cf6 !important;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2) !important;
+}
+
+/* Base Case 区域 */
+.deduction-basecase-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.deduction-basecase-row {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.deduction-basecase-label {
+  color: #334155 !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.deduction-basecase-label .guide-stem {
+  color: #059669 !important;
+  font-weight: 900 !important;
+}
+
+.deduction-basecase-val {
+  padding-left: 20px !important;
+  color: #047857 !important;
+  font-weight: 800 !important;
+  font-size: 10.5px !important;
+}
+
+/* 轮次卡片与推演步骤 */
+.deduction-rounds-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.deduction-round-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background: #f8fafc !important;
+}
+
+.deduction-round-header {
+  background: #f1f5f9 !important;
+  padding: 6px 10px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.deduction-round-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  color: #1e293b !important;
+}
+
+.deduction-round-badge {
+  font-size: 10px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  color: #64748b !important;
+}
+
+.deduction-round-body {
+  padding: 8px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+
+.deduction-step-item {
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding-bottom: 6px !important;
+}
+
+.deduction-step-item:last-child {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.deduction-step-head {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+}
+
+.deduction-step-head .guide-stem {
+  color: #94a3b8 !important;
+}
+
+.deduction-step-badge {
+  font-size: 9px !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.deduction-step-details {
+  padding-left: 20px !important;
+  margin-top: 3px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  font-size: 10.5px !important;
+  color: #475569 !important;
+}
+
+.deduction-step-details .highlight-formula {
+  color: #4338ca !important;
+  font-weight: 700 !important;
+}
+
+.deduction-step-fill {
+  color: #047857 !important;
+  font-weight: 800 !important;
+  margin-top: 2px !important;
+}
+
+/* 最终返回代码卡片 */
+.deduction-return-box {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  border: 1px solid #334155 !important;
+}
+
+.deduction-return-line {
+  color: #94a3b8 !important;
+}
+
+.deduction-return-code {
+  color: #fde047 !important;
+  font-weight: 700 !important;
+}
+
+.deduction-return-desc {
+  color: #34d399 !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  padding-top: 2px !important;
+}
+
+
 
 
 

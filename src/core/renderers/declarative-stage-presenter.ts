@@ -20,6 +20,7 @@ import {
   renderLegendHtml,
   renderMetricsHtml,
   renderStageTabsHtml,
+  renderCard1SubViewBarHtml,
   resolveHeaderContext,
 } from './declarative-stage-fragments';
 import type { DeclarativeAlgorithmSpec } from './declarative-stage-spec';
@@ -51,6 +52,9 @@ export class DeclarativeStagePresenter {
     const presetSelectHtml = renderPresetSelectHtml(spec);
     const legendHtml = renderLegendHtml(ctx.curStage?.legend || spec.legend);
     const metricsHtml = renderMetricsHtml(ctx.curStage?.metrics || spec.metrics);
+
+    const hasDeduction = Boolean(spec.hasDeductionTree || spec.id === 'a-star' || spec.id === 'a-star-journey' || spec.id === 'unique-paths');
+    const card1SubViewBarHtml = renderCard1SubViewBarHtml(hasDeduction, ctx.domainMeta);
 
     return `
 ${renderStageStyles(ctx.viewId)}
@@ -103,6 +107,7 @@ ${renderStageStyles(ctx.viewId)}
           <div class="dsp-card-title flex items-center gap-2">
             <span id="dsp-card1-title-text">${ctx.card1Title}</span>
             ${ThreeViewControlsAdapter.renderToggleButtonHtml(false, !!ctx.curStage?.has3D)}
+            ${card1SubViewBarHtml}
           </div>
           <div class="dsp-legend-bar">
             ${legendHtml}
@@ -111,6 +116,7 @@ ${renderStageStyles(ctx.viewId)}
 
         <!-- 扁平纯净沙盘画板 (绝无多层白框) -->
         <div class="dsp-sandbox-wrap" id="dsp-sandbox-container"></div>
+        <div class="dsp-deduction-wrap" id="dsp-deduction-container" style="display: none; width: 100%; height: 100%; overflow-y: auto; padding: 12px 14px; box-sizing: border-box; background: #f8fafc; border-radius: 8px;"></div>
       </div>
 
       <!-- 贯穿式 Scrubber 进度条 -->

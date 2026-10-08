@@ -41,18 +41,24 @@ export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void
   BinaryGridCanvasAdapter.renderGridCanvas(container, {
     rows: m,
     cols: n,
-    cellSize: '38px',
-    maxWidth: '380px',
+    variant: 'adventurer',
+    adventurer: currentNode
+      ? {
+          r: currentNode[0],
+          c: currentNode[1],
+          state: step.action === 'reach-goal' ? 'cheering' : 'walking',
+        }
+      : null,
+    targetPos: goal,
     getCell: (r, c) => {
       const isStart = start[0] === r && start[1] === c;
       const isGoal = goal[0] === r && goal[1] === c;
       const isWall = grid[r][c] === 1;
-      const isCurrent = currentNode && currentNode[0] === r && currentNode[1] === c;
       const isPath = pathMap.has(`${r},${c}`);
       const isOpen = openMap.has(`${r},${c}`);
       const isClosed = closedMap.has(`${r},${c}`);
 
-      let bg = '#f8fafc';
+      let bg = '#ffffff';
       let border = '1.5px solid #cbd5e1';
       let color = '#64748b';
       let label = isClosed ? '·' : '';
@@ -87,11 +93,8 @@ export function renderAStarCanvas(container: HTMLElement, step: AStarStep): void
       return {
         text: label,
         bg,
-        border: isCurrent ? '2px solid #ea580c' : border,
+        border,
         color,
-        boxShadow: isCurrent ? '0 0 0 3px rgba(234, 88, 12, 0.4)' : 'none',
-        transform: isCurrent ? 'scale(1.06)' : 'none',
-        zIndex: isCurrent ? 10 : 1,
         title: `(${r},${c})${isStart ? ' 起点' : ''}${isGoal ? ' 终点' : ''}${isWall ? ' 障碍' : ''}`,
       };
     },
@@ -107,6 +110,7 @@ registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 9,
   learningGoal: '掌握评估函数 f(n)=g(n)+h(n) 的设计与 Open/Closed 优先队列管理',
+  hasDeductionTree: true,
   inputs: [],
   presets: [{ label: '默认网格 (5×6 含障碍)', values: {} }],
   metrics: [

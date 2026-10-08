@@ -17,7 +17,7 @@
     "gate": "npm run test:gate",
     "test": "npm run test:gate && vitest run --pool=threads",
     "test:watch": "vitest",
-    "test:presentation": "vitest run src/core/renderers/presentation-contract.gate.test.ts src/core/renderers/declarative-presentation-contract.gate.test.ts --pool=threads",
+    "test:presentation": "node --max-old-space-size=4096 node_modules/vitest/vitest.mjs run src/core/renderers/presentation-contract.gate.test.ts src/core/renderers/declarative-presentation-contract.gate.test.ts --pool=threads",
     "test:gate": "vitest run src/core/top-level-abstraction-compliance.test.ts src/core/strategies/top-level-abstraction.gate.test.ts src/core/renderers/presentation-contract.gate.test.ts src/core/renderers/declarative-presentation-contract.gate.test.ts src/core/strategies/tree-classic-stage-invariants.gate.test.ts --pool=threads",
     "export:standalone": "vite-node scripts/export-standalone.ts",
     "meta:sync": "vite-node scripts/catalog-sync.ts",

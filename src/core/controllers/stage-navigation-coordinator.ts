@@ -1,6 +1,7 @@
 import type { IYamlAlgorithmModel } from '../interfaces';
 import { ProblemDimensionResolver } from '../resolvers/problem-dimension-resolver';
 import { StaticDeductionTreeAdapter } from '../renderers/static-deduction-tree-adapter';
+import { Card1SubViewControlsAdapter } from '../renderers/card1-subview-controls-adapter';
 
 export interface StageTabOptions {
   model: IYamlAlgorithmModel;
@@ -481,14 +482,10 @@ export class StageNavigationCoordinator {
     bar.classList.remove('hidden');
     bar.classList.add('inline-flex');
 
-    const btnGrid = document.getElementById('btn-card1-view-grid');
-    const btnDeduction = document.getElementById('btn-card1-view-deduction');
-
-    const activeCls = 'active px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer';
-    const inactiveCls = 'px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer';
-
-    if (btnGrid) btnGrid.className = card1SubView === 'grid' ? activeCls : inactiveCls;
-    if (btnDeduction) btnDeduction.className = card1SubView === 'deduction' ? activeCls : inactiveCls;
+    Card1SubViewControlsAdapter.syncBarState(
+      document,
+      card1SubView === 'deduction' ? 'deduction' : 'primary'
+    );
   }
 
   /**

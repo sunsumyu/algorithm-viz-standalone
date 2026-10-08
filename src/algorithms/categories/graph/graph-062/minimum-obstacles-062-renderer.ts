@@ -85,6 +85,7 @@ export const minimumObstacles062Visualizer = registerDeclarativeAlgorithm<Minimu
   aliases: ['minimum-obstacles', 'obstacle-removal-2290', 'bfs-01-deque', 'class062-code03'],
   name: '0-1 BFS 到达角落移除障碍物 (Class 062)',
   category: 'graph',
+  hasDeductionTree: true,
   icon: '🧱',
   difficulty: 3,
   levelOrder: 6203,

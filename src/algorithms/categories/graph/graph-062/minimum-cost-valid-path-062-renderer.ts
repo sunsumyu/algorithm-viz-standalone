@@ -82,6 +82,7 @@ export const minimumCostValidPath062Visualizer = registerDeclarativeAlgorithm<Va
   aliases: ['minimum-cost-valid-path', 'valid-path-1368', 'leetcode-1368'],
   name: '有效路径最小代价与0-1广搜 (Class 062)',
   category: 'graph',
+  hasDeductionTree: true,
   icon: '🧭',
   difficulty: 3,
   levelOrder: 6204,

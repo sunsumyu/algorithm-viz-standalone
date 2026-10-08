@@ -23,24 +23,8 @@ export { buildTotalIslandAreaSteps, type TotalIslandAreaStep, type TotalIslandCe
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
   classic: { label: '经典 3 岛屿 [4×5]', grid: DEFAULT_GRID },
-  single: {
-    label: '单座大岛 [4×4]',
-    grid: [
-      [1, 1, 1, 0],
-      [1, 1, 0, 0],
-      [1, 0, 0, 0],
-      [0, 0, 0, 0],
-    ],
-  },
-  scattered: {
-    label: '多散点岛屿 [4×5]',
-    grid: [
-      [1, 0, 1, 0, 1],
-      [0, 0, 0, 0, 0],
-      [1, 0, 0, 0, 1],
-      [0, 1, 0, 0, 1],
-    ],
-  },
+  single: { label: '单座大岛 [4×4]', grid: [[1, 1, 1, 0], [1, 1, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]] },
+  scattered: { label: '多散点岛屿 [4×5]', grid: [[1, 0, 1, 0, 1], [0, 0, 0, 0, 0], [1, 0, 0, 0, 1], [0, 1, 0, 0, 1]] },
 };
 
 export function renderTotalIslandAreaCanvas(container: HTMLElement, step: TotalIslandAreaStep): void {
@@ -104,6 +88,7 @@ registerDeclarativeAlgorithm({
   id: 'total-island-area',
   name: '孤岛总面积',
   category: 'graph',
+  hasDeductionTree: true,
   description: '遍历网格连通分量，计算并累计所有独立岛屿的面积总和',
   icon: '🏝️',
   difficulty: 2,

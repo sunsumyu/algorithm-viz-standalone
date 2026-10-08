@@ -12,6 +12,10 @@ export interface StaticDeductionRenderOptions {
   text2?: string;
   word1?: string;
   word2?: string;
+  inputs?: Record<string, any>;
+  preset?: string;
+  step?: any;
+  extra?: any;
 }
 
 export interface IDeductionTreeRenderer {

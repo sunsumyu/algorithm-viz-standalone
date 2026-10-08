@@ -14,9 +14,16 @@ import {
 } from './renderers/declarative-stage-presenter';
 import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { ThreeViewControlsAdapter } from './renderers/three-view-controls-adapter';
+import { Card1SubViewControlsAdapter } from './renderers/card1-subview-controls-adapter';
 import { SplitterEngine, SplitterStorage } from './splitter-engine';
 import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { registerAlgorithm } from './registry';
+
+const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
+
+export function getDeclarativeSpecs(): Map<string, DeclarativeAlgorithmSpec<any>> {
+  return DECLARATIVE_SPECS;
+}
 
 /**
  * 架构级沙盘纯净化与防套娃卫士 (Card 1 DOM Purity Enforcement)
@@ -101,6 +108,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   protected leftSplitter: SplitterEngine | null = null;
   protected rightSplitter: SplitterEngine | null = null;
   public is3DMode: boolean = false;
+  public card1SubView: 'sandbox' | 'deduction' = 'sandbox';
 
   constructor(spec: DeclarativeAlgorithmSpec<TStep>) {
     super();
@@ -262,6 +270,48 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         if (this.steps[this.currentIndex]) {
           this.renderStep(this.steps[this.currentIndex]);
         }
+      });
+    }
+
+    // 绑定 Card 1 复合子视图切换 (网格沙盘 vs 全景推演树)
+    const btnCard1Grid = this.root.querySelector('#btn-card1-view-grid') as HTMLButtonElement | null;
+    const btnCard1Deduction = this.root.querySelector('#btn-card1-view-deduction') as HTMLButtonElement | null;
+    const sandboxWrap = this.root.querySelector('#dsp-sandbox-container') as HTMLElement | null;
+    const deductionWrap = this.root.querySelector('#dsp-deduction-container') as HTMLElement | null;
+
+    if (btnCard1Grid && btnCard1Deduction && sandboxWrap && deductionWrap) {
+      const updateSubView = (subView: 'sandbox' | 'deduction') => {
+        this.card1SubView = subView;
+        Card1SubViewControlsAdapter.syncBarState(this.root, subView === 'deduction' ? 'deduction' : 'primary');
+
+        if (subView === 'deduction') {
+          sandboxWrap.style.display = 'none';
+          deductionWrap.style.display = 'block';
+
+          const curStep = this.steps[this.currentIndex] as any;
+          import('./renderers/static-deduction-tree-adapter').then(({ StaticDeductionTreeAdapter }) => {
+            StaticDeductionTreeAdapter.renderDeduction(deductionWrap, {
+              modelId: this.spec.id,
+              inputs: this.getCurrentInputs(),
+              m: curStep?.grid?.length,
+              n: curStep?.grid?.[0]?.length,
+              step: curStep,
+            });
+          });
+        } else {
+          sandboxWrap.style.display = 'block';
+          deductionWrap.style.display = 'none';
+        }
+      };
+
+      btnCard1Grid.addEventListener('click', (e) => {
+        e.stopPropagation();
+        updateSubView('sandbox');
+      });
+
+      btnCard1Deduction.addEventListener('click', (e) => {
+        e.stopPropagation();
+        updateSubView('deduction');
       });
     }
 
@@ -559,9 +609,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   }
 
   /**
-   * 从 UI 控件提取参数并调用 Spec 或当前阶段的纯推导函数
+   * 获取当前顶栏所有参数输入的最新值
    */
-  protected buildSteps(): TStep[] {
+  public getCurrentInputs(): Record<string, any> {
     const inputs: Record<string, any> = {};
     (this.spec.inputs || []).forEach((input) => {
       const el = this.root?.querySelector(`#${input.id}`) as HTMLInputElement | HTMLSelectElement | null;
@@ -571,6 +621,14 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         inputs[input.id] = input.defaultValue;
       }
     });
+    return inputs;
+  }
+
+  /**
+   * 从 UI 控件提取参数并调用 Spec 或当前阶段的纯推导函数
+   */
+  protected buildSteps(): TStep[] {
+    const inputs = this.getCurrentInputs();
 
     if (this.spec.stages && this.spec.stages.length > 0 && this.currentStageId) {
       const stage = this.spec.stages.find((s) => s.id === this.currentStageId);
@@ -1148,11 +1206,6 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   };
 }
 
-const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
-
-export function getDeclarativeSpecs(): Map<string, DeclarativeAlgorithmSpec<any>> {
-  return DECLARATIVE_SPECS;
-}
 
 /**
  * 高杠杆一站式声明式算法注册入口 (Deep Module Seam)

@@ -23,6 +23,13 @@ export class StaticDeductionTreeAdapter {
   ] as const;
 
   /**
+   * 注册推演树渲染策略
+   */
+  public static registerRenderer(renderer: any): void {
+    DeductionRendererRegistry.registerRenderer(renderer);
+  }
+
+  /**
    * 判定任意算法是否支持全景推演树
    */
   public static isSupported(modelId: string): boolean {

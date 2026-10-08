@@ -342,4 +342,22 @@ describe('resolveHeaderContext', () => {
     expect(ctx.modeBadge).toBe('阶段模式');
     expect(ctx.complexityBadge).toBe('O(2ⁿ)');
   });
+
+  it('renderCard1SubViewBarHtml 应当根据 domainMeta 自适应渲染图标与文案', async () => {
+    const { renderCard1SubViewBarHtml } = await import('./declarative-stage-fragments');
+    const htmlGraph = renderCard1SubViewBarHtml(true, {
+      primaryTabLabel: '图拓扑沙盘',
+      primaryTabIcon: 'fa-circle-nodes',
+      deductionTabLabel: '全景推演树',
+      deductionTabIcon: 'fa-diagram-project',
+      card1TitleHtml: '',
+    });
+    expect(htmlGraph).toContain('fa-circle-nodes');
+    expect(htmlGraph).toContain('图拓扑沙盘');
+    expect(htmlGraph).toContain('fa-diagram-project');
+    expect(htmlGraph).toContain('全景推演树');
+
+    const htmlEmpty = renderCard1SubViewBarHtml(false);
+    expect(htmlEmpty).toBe('');
+  });
 });

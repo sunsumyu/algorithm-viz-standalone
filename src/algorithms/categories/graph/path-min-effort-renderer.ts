@@ -69,6 +69,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
   id: 'path-min-effort',
   title: '最小体力消耗路径 (Path With Minimum Effort)',
   category: 'graph',
+  hasDeductionTree: true,
   codeLanguages: PATH_MIN_EFFORT_CODE_LANGUAGES,
   problemHtml: PATH_MIN_EFFORT_PROBLEM_HTML,
   analysisHtml: PATH_MIN_EFFORT_ANALYSIS_HTML,
