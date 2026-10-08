@@ -6187,7 +6187,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 99,
     learningGoal: "透彻掌握 Flood Fill 连通性浸染核心哲学，深刻领悟同色防御特判在规避无限死循环中的关键价值。",
-    aliases: ["class058-code01","flood-fill-733","image-flood-fill"],
+    aliases: ["class058-code01","flood-fill-733","image-flood-fill","leetcode-733"],
   },
   {
     id: "koko-eating-bananas",

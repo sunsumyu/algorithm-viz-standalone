@@ -346,6 +346,12 @@ ${details}
       '../../algorithms/categories/greedy/can-jump-renderer.ts',
       '../../algorithms/categories/greedy/maximize-sum-k-renderer.ts',
       '../../algorithms/categories/greedy/partition-labels-renderer.ts',
+      '../../algorithms/categories/greedy/candy-renderer.ts',
+      '../../algorithms/categories/greedy/min-arrows-renderer.ts',
+      '../../algorithms/categories/greedy/non-overlapping-renderer.ts',
+      '../../algorithms/categories/greedy/monotone-digits-renderer.ts',
+      '../../algorithms/categories/greedy/merge-intervals-renderer.ts',
+      '../../algorithms/categories/greedy/reconstruct-queue-renderer.ts',
       '../../algorithms/categories/graph/islands-bfs-renderer.ts',
       '../../algorithms/categories/graph/islands-renderer.ts',
       '../../algorithms/categories/graph/coastline-renderer.ts',
@@ -374,6 +380,8 @@ ${details}
       '../../algorithms/categories/graph/graph-064/ev-charge-dijkstra-064-renderer.ts',
       '../../algorithms/categories/graph/graph-064/state-compression-bfs-064-renderer.ts',
       '../../algorithms/categories/graph/floyd-renderer.ts',
+      '../../algorithms/categories/search/search-058/flood-fill-058-renderer.ts',
+      '../../algorithms/categories/search/search-058/making-large-island-058-renderer.ts',
     ];
 
     const violations: Array<{ file: string; lines: number }> = [];
