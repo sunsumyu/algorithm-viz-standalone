@@ -916,4 +916,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('叶节点回溯与首条桥边割点判定');
     expect(container.innerHTML).toContain('回溯至节点 3 与根节点割点检验');
   });
+
+  it('应当能正确为 hungarian-matching (匈牙利二分图最大匹配 · 洛谷 P3386) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('hungarian-matching')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('hungarian-algorithm')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('bipartite-matching')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class069-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3386')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'hungarian-matching',
+    });
+    expect(container.innerHTML).toContain('匈牙利算法二分图最大匹配 (Hungarian Maximum Matching) · 全景推演树');
+    expect(container.innerHTML).toContain('左部节点 L0 发起增广探索');
+    expect(container.innerHTML).toContain('左部节点 L1 发起增广探索');
+    expect(container.innerHTML).toContain('左部节点 L2 发起增广探索与原配让位协商');
+    expect(container.innerHTML).toContain('全图最大匹配收敛与匹配基数确认');
+  });
 });

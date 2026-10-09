@@ -2801,11 +2801,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "二分图最大匹配 (Hungarian Algorithm)",
     viewId: "algo-hungarian-matching-view",
     category: "graph",
-    description: "左程云 Class 069 核心：二分图最大匹配、匈牙利算法、DFS 递归让位与增广路反转 (洛谷 P3386)",
+    description: "二分图最大匹配 (Hungarian Algorithm)",
     icon: "💘",
     difficulty: 3,
     levelOrder: 23,
     learningGoal: "深刻理解增广路定理、交错路的寻找方式以及递归协商腾位的本质机制",
+    aliases: ["class069-code01","hungarian-algorithm","bipartite-matching","P3386"],
   },
   {
     id: "sub-islands",
