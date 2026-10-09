@@ -13,6 +13,7 @@ export interface BFStep extends StepBase {
   action: 'init' | 'start-round' | 'relax' | 'skip' | 'round-done' | 'done';
   statusText: string;
   log: string;
+  msg?: string;
   codeLine: HighlightTarget;
   metrics?: Record<string, string | number>;
 }
@@ -87,6 +88,8 @@ export function buildBFSteps(): BFStep[] {
       action,
       statusText,
       log,
+      msg: statusText,
+      message: statusText,
       codeLine,
       metrics: {
         'metric-bf-round': `${round} / ${maxRounds}`,
@@ -98,28 +101,28 @@ export function buildBFSteps(): BFStep[] {
   }
 
   // 1. 入口与初始化
-  makeStep(lines.entry, 'init', '🚀 [算法启动] bellmanFord(n=5, edges, src=0)：启动 Bellman-Ford 最短路算法。', 'bellmanFord 入口', 0);
-  makeStep(lines.initDist, 'init', '📊 [初始化距离表] Arrays.fill(dist, INF)；除源点外所有顶点初始距离设为正无穷。', 'Arrays.fill(dist, INF)', 0);
+  makeStep(lines.entry, 'init', '🚀 [算法启动] bellmanFord(n=5, edges, src=0)：启动 Bellman-Ford 最短路算法。', '启动 Bellman-Ford 算法', 0);
+  makeStep(lines.initDist, 'init', '📊 [初始化距离表] Arrays.fill(dist, INF)；除源点外所有顶点初始距离设为正无穷。', '初始化全图距离为正无穷', 0);
 
   dist[source] = 0;
-  makeStep(lines.setSrc, 'init', '🌱 [设置源点距离] dist[0] = 0；从源点 0 出发探索全图。', 'dist[0] = 0', 0);
+  makeStep(lines.setSrc, 'init', '🌱 [设置源点距离] dist[0] = 0；从源点 0 出发探索全图。', '源点 0 初始距离设为 0', 0);
 
   // 2. V - 1 轮全边松弛
   for (let k = 1; k <= maxRounds; k++) {
     finalRound = k;
-    makeStep(lines.forRound, 'start-round', `🔁 [轮次循环] for (i = ${k}; i <= ${maxRounds}; i++)：开始第 ${k} / ${maxRounds} 轮全边遍历松弛。`, `--- 第 ${k} 轮开始 ---`, k);
+    makeStep(lines.forRound, 'start-round', `🔁 [轮次循环] for (i = ${k}; i <= ${maxRounds}; i++)：开始第 ${k} / ${maxRounds} 轮全边遍历松弛。`, `--- 第 ${k} 轮全边松弛开始 ---`, k);
 
     let updated = false;
     let roundRelaxCount = 0;
-    makeStep(lines.initUpdated, 'start-round', `🧹 [初始化标记] boolean updated = false；记录本轮是否有边成功松弛。`, 'updated = false', k);
+    makeStep(lines.initUpdated, 'start-round', `🧹 [初始化标记] boolean updated = false；记录本轮是否有边成功松弛。`, '重置松弛标记 updated = false', k);
 
     for (const edge of BF_EDGES) {
       const { from: u, to: v, w } = edge;
-      makeStep(lines.forEdge, 'skip', `🔎 [考察边] 遍历边 (${u} ➔ ${v}, 权值 w=${w})。`, `edge (${u}->${v}, w=${w})`, k, edge, roundRelaxCount);
-      makeStep(lines.unpackEdge, 'skip', `  ↳ [解构边元] u=${u}, v=${v}, w=${w}。`, `u=${u}, v=${v}, w=${w}`, k, edge, roundRelaxCount);
+      makeStep(lines.forEdge, 'skip', `🔎 [考察边] 遍历边 (${u} ➔ ${v}, 权值 w=${w})。`, `考察边 (${u} ➔ ${v}, w=${w})`, k, edge, roundRelaxCount);
+      makeStep(lines.unpackEdge, 'skip', `  ↳ [解构边元] u=${u}, v=${v}, w=${w}。`, `解构边元: u=${u}, v=${v}, w=${w}`, k, edge, roundRelaxCount);
 
       const canRelax = dist[u] !== INF && dist[u] + w < dist[v];
-      makeStep(lines.checkRelax, canRelax ? 'relax' : 'skip', `  🔎 [松弛核验] if (dist[${u}](${dist[u] === INF ? '∞' : dist[u]}) + ${w} < dist[${v}](${dist[v] === INF ? '∞' : dist[v]})) -> (${canRelax})。`, `check relax ${u}->${v}`, k, edge, roundRelaxCount);
+      makeStep(lines.checkRelax, canRelax ? 'relax' : 'skip', `  🔎 [松弛核验] if (dist[${u}](${dist[u] === INF ? '∞' : dist[u]}) + ${w} < dist[${v}](${dist[v] === INF ? '∞' : dist[v]})) -> (${canRelax})。`, `核验松弛: 边 (${u} ➔ ${v}, w=${w})`, k, edge, roundRelaxCount);
 
       if (canRelax) {
         const oldDist = dist[v];
@@ -128,20 +131,20 @@ export function buildBFSteps(): BFStep[] {
         roundRelaxCount++;
         totalRelaxCount++;
 
-        makeStep(lines.updateDist, 'relax', `  ⚡ [更新距离] 成功松弛！dist[${v}] 从 ${oldDist === INF ? '∞' : oldDist} 缩短为 ${dist[v]}！`, `dist[${v}]=${dist[v]}`, k, edge, roundRelaxCount);
-        makeStep(lines.setUpdated, 'relax', `  🏷️ [更新标记] updated = true；本轮发生松弛更新。`, 'updated = true', k, edge, roundRelaxCount);
+        makeStep(lines.updateDist, 'relax', `  ⚡ [更新距离] 成功松弛！dist[${v}] 从 ${oldDist === INF ? '∞' : oldDist} 缩短为 ${dist[v]}！`, `松弛成功: dist[${v}]=${dist[v]}`, k, edge, roundRelaxCount);
+        makeStep(lines.setUpdated, 'relax', `  🏷️ [更新标记] updated = true；本轮发生松弛更新。`, '更新标记 updated = true', k, edge, roundRelaxCount);
       } else {
-        makeStep(lines.checkRelax, 'skip', `  ⏭️ [无需松弛] 边 (${u} ➔ ${v}) 不满足三角不等式严格缩短条件，保持不变。`, `skip ${u}->${v}`, k, edge, roundRelaxCount);
+        makeStep(lines.checkRelax, 'skip', `  ⏭️ [无需松弛] 边 (${u} ➔ ${v}) 不满足三角不等式严格缩短条件，保持不变。`, `无需松弛: 边 (${u} ➔ ${v}) 保持不变`, k, edge, roundRelaxCount);
       }
     }
 
-    makeStep(lines.checkEarlyStop, 'round-done', `🔎 [检查早停优化] if (!updated) -> (!${updated})；${!updated ? '本轮无任何松弛，最短路已全局收敛，提前退出！' : '本轮发生松弛，继续下一轮检测。'}`, `check early stop (updated=${updated})`, k, null, roundRelaxCount);
+    makeStep(lines.checkEarlyStop, 'round-done', `🔎 [检查早停优化] if (!updated) -> (!${updated})；${!updated ? '本轮无任何松弛，最短路已全局收敛，提前退出！' : '本轮发生松弛，继续下一轮检测。'}`, `早停核验: 本轮松弛状态 (updated=${updated})`, k, null, roundRelaxCount);
     if (!updated) {
       break;
     }
   }
 
-  makeStep(lines.returnDist, 'done', `🎉 [Bellman-Ford 达成] return dist！全图最短路已求得，且在第 ${finalRound} 轮提前收敛，无负权回路！结果: [${dist.join(', ')}]。`, 'return dist', finalRound);
+  makeStep(lines.returnDist, 'done', `🎉 [Bellman-Ford 达成] return dist！全图最短路已求得，且在第 ${finalRound} 轮提前收敛，无负权回路！结果: [${dist.join(', ')}]。`, '算法完成: 返回最短距离表', finalRound);
 
   return steps;
 }

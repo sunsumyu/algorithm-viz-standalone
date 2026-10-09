@@ -70,7 +70,7 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
             is3DMode: false,
           });
 
-          // 执行架构级沙盘清洗
+          // 执行架构级沙盘清洗 (对齐运行时真实表现)
           sanitizeSandboxDom(container);
 
           // 1. 检查是否存在嵌入标题 h1-h6
@@ -89,7 +89,14 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
             );
           }
 
-          // 3. 检查是否塞入了类似 renderMetricsPanel 的指标药丸面板
+          // 3. 🚨 [CARD1_DUPLICATE_TABLE_TRAP] 拓扑网络沙盘中已存在 SVG 图，严禁在 Card 1 右侧同时塞入手写 <table> 造成双重镜像！
+          if (container.querySelector('svg') && container.querySelector('table')) {
+            decisionViolations.push(
+              `🚨 [CARD1_DUPLICATE_TABLE_TRAP] ${spec.id} (step #${i}): Card 1 拓扑沙盘已有 SVG 网络拓扑，但违规并列塞入了 <table> 表格！状态监控表格必须交由 Card 2 统一呈现，严禁在 Card 1 物理沙盘中手写数据表造成双重镜像！`
+            );
+          }
+
+          // 4. 检查是否塞入了类似 renderMetricsPanel 的指标药丸面板
           const divs = Array.from(container.querySelectorAll('div'));
           for (const d of divs) {
             if (d.querySelector('svg, canvas, table, pre, code') !== null) continue;
@@ -118,6 +125,32 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
       `\n================= 声明式算法表现层 DOM 契约红灯陷阱触发 =================\n` +
         allViolations.join('\n') +
         `\n=========================================================================\n`
+    ).toEqual([]);
+  });
+
+  it('🚨 红灯陷阱: 纯 2D 算法严禁渲染 3D 模式切换按钮 (杜绝 False Affordance 伪 3D 悬浮)', async () => {
+    const { DeclarativeStagePresenter } = await import('./declarative-stage-presenter');
+    const registry = getDeclarativeSpecs();
+    const allSpecs = Array.from(registry.values());
+    const violations: string[] = [];
+
+    for (const spec of allSpecs) {
+      const has3D = Boolean(spec.has3D || spec.stages?.some((s) => s.has3D));
+      if (has3D) continue;
+
+      const template = DeclarativeStagePresenter.generateTemplate(spec);
+      if (template.includes('<button id="btn-toggle-3d"')) {
+        violations.push(
+          `🚨 [FAKE_3D_AFFORDANCE_TRAP] ${spec.id}: 算法未声明 3D 视口支持 (has3D !== true)，但外壳模板依然渲染了 3D 切换胶囊按钮！`
+        );
+      }
+    }
+
+    expect(
+      violations,
+      `\n================= 伪 3D 切换胶囊红灯陷阱触发 =================\n` +
+        violations.join('\n') +
+        `\n=============================================================\n`
     ).toEqual([]);
   });
 
@@ -175,6 +208,17 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
                 `🚨 [ZERO_LINE_FREEZING_TRAP] ${spec.id}: 生成了 ${steps.length} 步，但代码高亮全程仅停留在单一物理行 [${Array.from(lineKeys).join(', ')}]，构成严重高亮冻结事故！`
               );
             }
+          }
+
+          // 3. 步骤日志中文化与质量守门：严禁全英文机器调试命令泄露 (如 check relax, return dist, skip 1->2)
+          const englishLogSteps = steps.filter((s: any) => {
+            const rawLog = (s.log || '').trim();
+            return /^(check relax|skip\s+\d|return\s+dist)/i.test(rawLog);
+          });
+          if (englishLogSteps.length > 0) {
+            violations.push(
+              `🚨 [STEP_LOG_CHINESE_QUALITY_TRAP] ${spec.id}: 含有 ${englishLogSteps.length} 处未中文化的粗糙英文日志命令 (如 "${englishLogSteps[0].log}")！所有步骤日志必须提供清晰优美的人类可读中文解说！`
+            );
           }
         }
       } catch (e) {

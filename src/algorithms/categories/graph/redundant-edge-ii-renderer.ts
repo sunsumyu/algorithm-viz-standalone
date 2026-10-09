@@ -256,42 +256,10 @@ export function renderRedundantEdgeIICanvas(container: HTMLElement, step: Redund
 
   svgHtml += `</svg>`;
 
-  const tableRows = edges
-    .map((e, idx) => {
-      const isCur = currentEdgeIndex === idx;
-      const isResult = resultEdge && resultEdge[0] === e[0] && resultEdge[1] === e[1];
-      const isConflict = conflictIndex === idx;
-      const isCycle = cycleIndex === idx;
-
-      let statusBadge = '<span style="color: #94a3b8;">常规边</span>';
-      if (isResult) statusBadge = '<span style="color: #ef4444; font-weight: 700;">🎯 最终冗余边</span>';
-      else if (isConflict) statusBadge = '<span style="color: #f59e0b; font-weight: 700;">⚠️ 双父节点冲突边</span>';
-      else if (isCycle) statusBadge = '<span style="color: #ec4899; font-weight: 700;">🔁 导致成环边</span>';
-      else if (isCur) statusBadge = '<span style="color: #2563eb; font-weight: 700;">检查中</span>';
-
-      return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
-        <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">[${e[0]}, ${e[1]}]</td>
-        <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-size: 11px;">${statusBadge}</td>
-      </tr>`;
-    })
-    .join('');
-
-  const parentStr = parent.slice(1).map((p, i) => `${i + 1}→${p}`).join('  ');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.4; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.6; min-width: 0; align-self: center; display: flex; flex-direction: column; gap: 8px;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: #f1f5f9;">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">边</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">状态</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
-        <div style="font-family: monospace; font-size: 10.5px; color: #64748b; text-align: center;">parent: ${parentStr}${action === 'done' ? ' · 判定完成' : ''}</div>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;

@@ -102,31 +102,10 @@ export function renderDijkstraBasicCanvas(container: HTMLElement, step: DJBStep)
 
   svgHtml += `</svg>`;
 
-  const tableRows = DJB_NODES.map((node) => {
-    const dVal = dist[node];
-    const isVisited = visited.has(node);
-    const isCur = currentNode === node;
-    return `<tr style="${isCur ? `background: rgba(254, 249, 195, 0.7); font-weight: 600;` : ''}">
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? unvisitedStyle.text : comparingStyle.text};">${dVal === INF ? '∞' : dVal}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: ${isVisited ? sortedStyle.text : unvisitedStyle.text};">${isVisited ? '已锁定' : '待处理'}</td>
-    </tr>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: ${idleStyle.bg}; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: ${unvisitedStyle.bg};">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">节点</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">dist</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">状态</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;
@@ -206,31 +185,10 @@ export function renderDijkstraHeapCanvas(container: HTMLElement, step: DJHStep):
 
   svgHtml += `</svg>`;
 
-  const tableRows = DJB_NODES.map((node) => {
-    const dVal = dist[node];
-    const isCur = currentNode === node;
-    const inPQ = pq.some((item) => item.u === node);
-    return `<tr style="${isCur ? `background: rgba(254, 249, 195, 0.7); font-weight: 600;` : ''}">
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? unvisitedStyle.text : comparingStyle.text};">${dVal === INF ? '∞' : dVal}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: ${inPQ ? '#2563eb' : '#94a3b8'};">${inPQ ? '在堆中' : '—'}</td>
-    </tr>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: ${idleStyle.bg}; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: ${unvisitedStyle.bg};">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">节点</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">dist</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">堆状态</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;

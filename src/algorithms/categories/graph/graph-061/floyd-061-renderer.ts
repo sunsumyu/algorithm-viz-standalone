@@ -48,12 +48,11 @@ export const floyd061Visualizer = registerDeclarativeAlgorithm<FloydStep>({
   generateSteps: (inputs) => buildFloyd061Steps(inputs?.preset),
   renderCanvas: (container, step) => {
     container.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 280px; box-sizing: border-box; padding: 12px; gap: 12px;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 250px; box-sizing: border-box; padding: 4px;">
         ${renderGraph061SvgTopology(step.nodes, step.edges, {
           currentNode: step.k,
           activeEdge: step.activePath ? { from: step.activePath.from, to: step.activePath.via } : null,
         })}
-        ${renderFloydMatrix(step.dp, step.k, step.i, step.j)}
       </div>
     `;
   },

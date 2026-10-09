@@ -106,7 +106,7 @@ ${renderStageStyles(ctx.viewId)}
         <div class="dsp-card-header">
           <div class="dsp-card-title flex items-center gap-2">
             <span id="dsp-card1-title-text">${ctx.card1Title}</span>
-            ${ThreeViewControlsAdapter.renderToggleButtonHtml(false, !!ctx.curStage?.has3D)}
+            ${ThreeViewControlsAdapter.renderToggleButtonHtml(false, Boolean(ctx.curStage?.has3D || spec.has3D))}
             ${card1SubViewBarHtml}
           </div>
           <div class="dsp-legend-bar">

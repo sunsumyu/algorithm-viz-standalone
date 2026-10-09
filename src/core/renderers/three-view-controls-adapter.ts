@@ -27,14 +27,17 @@ export class ThreeViewControlsAdapter {
     visible: boolean = true,
     config: ThreeViewControlsConfig = DEFAULT_THREE_VIEW_CONTROLS_CONFIG
   ): string {
+    if (!visible) {
+      return '';
+    }
+
     const { toggleButton } = config;
     const currentClass = `${toggleButton.baseClass} ${is3D ? toggleButton.activeClass : toggleButton.inactiveClass}`;
     const baseStyle = is3D ? toggleButton.activeStyle : toggleButton.inactiveStyle;
-    const styleAttr = visible ? baseStyle : `${baseStyle} display: none;`;
     const currentLabel = is3D ? toggleButton.label3D : toggleButton.label2D;
 
     return `
-      <button id="${toggleButton.id}" title="${toggleButton.title}" class="${currentClass}" style="${styleAttr}">
+      <button id="${toggleButton.id}" title="${toggleButton.title}" class="${currentClass}" style="${baseStyle}">
         ${toggleButton.iconHtml}
         <span id="${toggleButton.labelId}">${currentLabel}</span>
       </button>

@@ -160,7 +160,7 @@ export function buildDJBSteps(): DJBStep[] {
     }
   }
 
-  makeStep(lines.returnDist, 'done', `🎉 [Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部确定！结果: [${dist.join(', ')}]。`, 'return dist');
+  makeStep(lines.returnDist, 'done', `🎉 [Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部确定！结果: [${dist.join(', ')}]。`, '算法完成: 返回最短距离表');
 
   return steps;
 }

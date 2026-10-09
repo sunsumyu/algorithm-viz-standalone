@@ -198,35 +198,10 @@ export function renderRedundantEdgeCanvas(container: HTMLElement, step: Redundan
 
   svgHtml += `</svg>`;
 
-  const tableRows = RE_EDGES.map((e) => {
-    const isCur = currentEdge && currentEdge[0] === e[0] && currentEdge[1] === e[1];
-    const isTree = treeEdges.some((te) => (te[0] === e[0] && te[1] === e[1]) || (te[0] === e[1] && te[1] === e[0]));
-    const isRedundant = redundantEdge && redundantEdge[0] === e[0] && redundantEdge[1] === e[1];
-
-    let statusBadge = '<span style="color: #94a3b8;">待检查</span>';
-    if (isRedundant) statusBadge = '<span style="color: #ef4444; font-weight: 700;">⚠️ 冗余成环边</span>';
-    else if (isTree) statusBadge = '<span style="color: #059669; font-weight: 700;">✔ 树边 (已合并)</span>';
-    else if (isCur) statusBadge = '<span style="color: #2563eb; font-weight: 700;">检查中</span>';
-
-    return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">[${e[0]}, ${e[1]}]</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-size: 11px;">${statusBadge}</td>
-    </tr>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: #f1f5f9;">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">边</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">状态</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;

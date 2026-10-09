@@ -104,19 +104,19 @@ export function buildFloydSteps(): FloydStep[] {
         const kjStr = dist[k][j] >= INF ? '∞' : `${dist[k][j]}`;
         const ijStr = dist[i][j] >= INF ? '∞' : `${dist[i][j]}`;
 
-        makeStep(lines.checkRelax, canRelax ? 'update' : 'check', `    🔎 [状态转移方程核验] if (dist[${i}][${k}](${ikStr}) + dist[${k}][${j}](${kjStr}) < dist[${i}][${j}](${ijStr})) -> (${canRelax})。`, `check (${i}->${k}->${j})`, k, i, j);
+        makeStep(lines.checkRelax, canRelax ? 'update' : 'check', `    🔎 [状态转移方程核验] if (dist[${i}][${k}](${ikStr}) + dist[${k}][${j}](${kjStr}) < dist[${i}][${j}](${ijStr})) -> (${canRelax})。`, `核验转移: (${i} ➔ ${k} ➔ ${j})`, k, i, j);
 
         if (canRelax) {
           const oldVal = dist[i][j];
           dist[i][j] = dist[i][k] + dist[k][j];
           relaxCount++;
-          makeStep(lines.updateDist, 'update', `    ⚡ [DP矩阵松弛更新] 发现更优中转路径！dist[${i}][${j}] 从 ${oldVal >= INF ? '∞' : oldVal} 缩短为 ${dist[i][j]}！`, `dist[${i}][${j}]=${dist[i][j]}`, k, i, j);
+          makeStep(lines.updateDist, 'update', `    ⚡ [DP矩阵松弛更新] 发现更优中转路径！dist[${i}][${j}] 从 ${oldVal >= INF ? '∞' : oldVal} 缩短为 ${dist[i][j]}！`, `松弛更新: dist[${i}][${j}]=${dist[i][j]}`, k, i, j);
         }
       }
     }
   }
 
-  makeStep(lines.returnDist, 'done', `🎉 [Floyd-Warshall 算法达成] return dist！所有顶点对之间的全局最短路径全部求解完毕，总松弛次数: ${relaxCount}。`, 'return dist');
+  makeStep(lines.returnDist, 'done', `🎉 [Floyd-Warshall 算法达成] return dist！所有顶点对之间的全局最短路径全部求解完毕，总松弛次数: ${relaxCount}。`, '算法完成: 返回全源最短路矩阵');
 
   return steps;
 }

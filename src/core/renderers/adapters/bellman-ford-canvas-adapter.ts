@@ -89,28 +89,10 @@ export function renderBellmanFordCanvas(container: HTMLElement, step: BFStep): v
 
   svgHtml += `</svg>`;
 
-  const tableRows = BF_NODES.map((node) => {
-    const dVal = dist[node];
-    const isCur = currentEdge && currentEdge.to === node;
-    return `<tr style="${isCur ? 'background: rgba(239, 246, 255, 0.7); font-weight: 600;' : ''}">
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? unvisitedStyle.text : comparingStyle.text};">${dVal === INF ? '∞' : dVal}</td>
-    </tr>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: ${idleStyle.bg}; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: ${unvisitedStyle.bg};">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">节点</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: ${unvisitedStyle.text};">dist</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;
@@ -185,31 +167,10 @@ export function renderSpfaCanvas(container: HTMLElement, step: SPFAStep): void {
 
   svgHtml += `</svg>`;
 
-  const tableRows = BF_NODES.map((node) => {
-    const dVal = dist[node];
-    const isInQ = inQueue[node];
-    const isCur = currentNode === node;
-    return `<tr style="${isCur ? 'background: rgba(254, 249, 195, 0.7); font-weight: 600;' : ''}">
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: #1e293b;">${node}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 800; color: ${dVal === INF ? '#94a3b8' : '#2563eb'};">${dVal === INF ? '∞' : dVal}</td>
-      <td style="padding: 6px 12px; text-align: center; font-family: monospace; font-weight: 700; color: ${isInQ ? '#2563eb' : '#94a3b8'};">${isInQ ? 'true' : 'false'}</td>
-    </tr>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 8px; box-sizing: border-box;">
-      <div style="flex: 1.5; min-width: 0; height: 100%;">${svgHtml}</div>
-      <div style="flex: 0.5; min-width: 0; align-self: center;">
-        <table style="border-collapse: collapse; width: 100%; font-size: 12px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);">
-          <thead>
-            <tr style="background: #f1f5f9;">
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">节点</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">dist</th>
-              <th style="padding: 6px 12px; text-align: center; font-family: monospace; color: #475569;">在队</th>
-            </tr>
-          </thead>
-          <tbody>${tableRows}</tbody>
-        </table>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
       </div>
     </div>
   `;
@@ -298,22 +259,11 @@ export function renderNegativeCycleCanvas(container: HTMLElement, step: NCStep):
 
   svgHtml += `</svg>`;
 
-  const distChips = NC_NODES.map((node) => {
-    const dVal = dist[node];
-    const isTarget = currentEdge && currentEdge.v === node;
-    const chipStyle = isTarget
-      ? 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #93c5fd; background: #eff6ff;'
-      : 'display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc;';
-    return `<div style="${chipStyle}">
-      <span style="font-size: 10px; color: #64748b; font-family: monospace;">dist[${node}]</span>
-      <span style="font-size: 12px; font-family: monospace; font-weight: 700; color: ${dVal >= 999999 ? '#94a3b8' : '#2563eb'};">${dVal >= 999999 ? 'INF' : dVal}</span>
-    </div>`;
-  }).join('');
-
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 8px; box-sizing: border-box;">
-      <div style="width: 100%;">${svgHtml}</div>
-      <div style="display: flex; gap: 8px; justify-content: center; width: 100%;">${distChips}</div>
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
+      </div>
     </div>
   `;
 }

@@ -135,24 +135,24 @@ export function buildDJHSteps(): DJHStep[] {
       makeStep(lines.forAdj, canRelax ? 'relax' : 'skip', `  ↳ [遍历出边] 考察边 (${u} ➔ ${v}, 权重 w=${w})。`, `edge (${u}->${v}, w=${w})`, u, d, curEdge);
       makeStep(lines.unpackEdge, canRelax ? 'relax' : 'skip', `    ↳ [解构目标] 目标邻居 v=${v}，边权 w=${w}。`, `v=${v}, w=${w}`, u, d, curEdge);
 
-      makeStep(lines.checkRelax, canRelax ? 'relax' : 'skip', `    🔎 [松弛核验] if (dist[${u}](${dist[u]}) + ${w} < dist[${v}](${dist[v] === INF ? '∞' : dist[v]})) -> (${canRelax})。`, `check relax ${u}->${v}`, u, d, curEdge);
+      makeStep(lines.checkRelax, canRelax ? 'relax' : 'skip', `    🔎 [松弛核验] if (dist[${u}](${dist[u]}) + ${w} < dist[${v}](${dist[v] === INF ? '∞' : dist[v]})) -> (${canRelax})。`, `核验松弛: 边 (${u} ➔ ${v}, w=${w})`, u, d, curEdge);
 
       if (canRelax) {
         const oldVal = dist[v];
         dist[v] = dist[u] + w;
         relaxCount++;
-        makeStep(lines.updateDist, 'relax', `    ⚡ [更新距离] 成功松弛！dist[${v}] 从 ${oldVal === INF ? '∞' : oldVal} 缩短为 ${dist[v]}！`, `dist[${v}]=${dist[v]}`, u, d, curEdge);
+        makeStep(lines.updateDist, 'relax', `    ⚡ [更新距离] 成功松弛！dist[${v}] 从 ${oldVal === INF ? '∞' : oldVal} 缩短为 ${dist[v]}！`, `松弛成功: dist[${v}]=${dist[v]}`, u, d, curEdge);
 
         pq.push({ d: dist[v], u: v });
-        makeStep(lines.pushPQ, 'relax', `    📥 [推入优先队列] pq.offer(new int[]{${dist[v]}, ${v}})；新最优距离入堆排队。`, `offer ({d:${dist[v]}, u:${v}})`, u, d, curEdge);
+        makeStep(lines.pushPQ, 'relax', `    📥 [推入优先队列] pq.offer(new int[]{${dist[v]}, ${v}})；新最优距离入堆排队。`, `节点入堆: (${v}, dist:${dist[v]})`, u, d, curEdge);
       } else {
-        makeStep(lines.checkRelax, 'skip', `    ⏭️ [跳过边] 边 (${u} ➔ ${v}) 不满足三角不等式缩短条件。`, `skip (${u}->${v})`, u, d, curEdge);
+        makeStep(lines.checkRelax, 'skip', `    ⏭️ [跳过边] 边 (${u} ➔ ${v}) 不满足三角不等式缩短条件。`, `无需松弛: 边 (${u} ➔ ${v}) 保持不变`, u, d, curEdge);
       }
     }
   }
 
-  makeStep(lines.whilePQ, 'init', '🔁 [检查堆状态] while (!pq.isEmpty()) -> (false，堆已清空)。', 'pq empty');
-  makeStep(lines.returnDist, 'done', `🎉 [堆优化 Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部求得！结果: [${dist.join(', ')}]。`, 'return dist');
+  makeStep(lines.whilePQ, 'init', '🔁 [检查堆状态] while (!pq.isEmpty()) -> (false，堆已清空)。', '优先队列已清空');
+  makeStep(lines.returnDist, 'done', `🎉 [堆优化 Dijkstra 算法达成] return dist！全图 ${n} 个顶点的单源最短路径全部求得！结果: [${dist.join(', ')}]。`, '算法完成: 返回最短距离表');
 
   return steps;
 }
