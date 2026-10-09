@@ -403,6 +403,7 @@ ${details}
       '../../algorithms/categories/graph/topological-sort-renderer.ts',
       '../../algorithms/categories/graph/mst-kruskal-renderer.ts',
       '../../algorithms/categories/graph/mst-prim-renderer.ts',
+      '../../algorithms/categories/graph/topo-dp-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

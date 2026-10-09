@@ -716,4 +716,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerPrim.innerHTML).toContain('切边距离数组');
     expect(containerPrim.innerHTML).toContain('return totalWeight = 16;');
   });
+
+  it('应当能正确为 topo-dp (拓扑 DP · 关键路径 CPM) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('topo-dp')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('parallel-courses-iii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-2050')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class060-code03')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('topo-dp-cpm')).toBe(true);
+
+    const containerTopoDP = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerTopoDP, {
+      modelId: 'topo-dp',
+    });
+    expect(containerTopoDP.innerHTML).toContain('拓扑排序与动态规划 (Topological DP · 关键路径 CPM) · 全景推演树');
+    expect(containerTopoDP.innerHTML).toContain('关键路径回溯');
+    expect(containerTopoDP.innerHTML).toContain('工序最长耗时初始数组');
+    expect(containerTopoDP.innerHTML).toContain('return totalMax = 9;');
+  });
 });

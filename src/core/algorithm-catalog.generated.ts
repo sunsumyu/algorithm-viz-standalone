@@ -3084,6 +3084,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 60,
     learningGoal: "掌握 DAG 拓扑排序消除后效性机理、有向无环图最长路与关键路径算法 (CPM)",
+    aliases: ["parallel-courses-iii","leetcode-2050","class060-code03","topo-dp-cpm"],
   },
   {
     id: "centroid-tree",

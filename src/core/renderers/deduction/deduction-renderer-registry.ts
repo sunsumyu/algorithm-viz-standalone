@@ -43,6 +43,7 @@ import { RedundantEdgeIIDeductionRenderer } from './redundant-edge-ii-deduction-
 import { TopologicalSortDeductionRenderer } from './topological-sort-deduction-renderer';
 import { MstKruskalDeductionRenderer } from './mst-kruskal-deduction-renderer';
 import { MstPrimDeductionRenderer } from './mst-prim-deduction-renderer';
+import { TopoDPDeductionRenderer } from './topo-dp-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -88,6 +89,7 @@ export class DeductionRendererRegistry {
     new TopologicalSortDeductionRenderer(),
     new MstKruskalDeductionRenderer(),
     new MstPrimDeductionRenderer(),
+    new TopoDPDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
