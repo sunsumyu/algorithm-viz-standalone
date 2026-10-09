@@ -3416,6 +3416,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 80,
     learningGoal: "掌握严格次小生成树破圈定理、倍增同时维护最大与次大边技巧及规避等权替换陷阱",
+    aliases: ["strict-second-mst","luogu-p4180","second-best-mst"],
   },
   {
     id: "kruskal-reconstruction-tree",

@@ -733,4 +733,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerTopoDP.innerHTML).toContain('工序最长耗时初始数组');
     expect(containerTopoDP.innerHTML).toContain('return totalMax = 9;');
   });
+
+  it('应当能正确为 second-mst (严格次小生成树 / 洛谷 P4180) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('second-mst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('strict-second-mst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p4180')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('second-best-mst')).toBe(true);
+
+    const containerSMST = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerSMST, {
+      modelId: 'second-mst',
+    });
+    expect(containerSMST.innerHTML).toContain('严格次小生成树 (Strict Second-Best MST · 洛谷 P4180) · 全景推演树');
+    expect(containerSMST.innerHTML).toContain('Kruskal 主生成树');
+    expect(containerSMST.innerHTML).toContain('基础最小生成树树边集合');
+    expect(containerSMST.innerHTML).toContain('return secondMstWeight = 7;');
+  });
 });
