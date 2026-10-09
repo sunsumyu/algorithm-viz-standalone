@@ -19,6 +19,7 @@ import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
 import { appSettingsRepo } from './core/settings/app-settings-repository';
 import { appSettingsModal } from './core/settings/app-settings-modal';
 import { setupRuntimeInspectionGuard } from './core/security/anti-devtools';
+import { setupClipboardWatermarkGuard } from './core/security/clipboard-watermark-guard';
 import { clientActivationModal } from './core/security/client-activation-modal';
 
 if (typeof window !== 'undefined') {
@@ -34,8 +35,9 @@ if (typeof window !== 'undefined') {
  * 应用初始化
  */
 async function main(): Promise<void> {
-  // 0. 启动运行时审查与 DevTools 拦截防线（生产环境自动拦截 F12 与右键审查）
+  // 0. 启动运行时审查拦截防线与剪贴板数字盲水印守护器
   setupRuntimeInspectionGuard();
+  setupClipboardWatermarkGuard();
 
   const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');

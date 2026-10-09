@@ -14,6 +14,7 @@ import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinat
 import { algorithmRegistry } from './algorithm-registry';
 
 import { addRecentAlgorithm } from './recent-algorithms';
+import { releaseAlgorithmChunk } from './security/chunk-lifecycle';
 
 export interface MountRequest {
   algorithmId: string;
@@ -128,6 +129,8 @@ export class ViewMountEngine {
    * 卸载当前正在运行的算法，彻底释放 DOM 和资源
    */
   public unmountCurrent(): void {
+    const unmountingId = this.currentAlgorithmId;
+
     if (this.currentVisualizer) {
       try {
         if (typeof this.currentVisualizer.pause === 'function') {
@@ -153,6 +156,12 @@ export class ViewMountEngine {
     }
 
     this.currentAlgorithmId = null;
+
+    if (unmountingId) {
+      releaseAlgorithmChunk(unmountingId).catch((err) => {
+        console.warn(`[ViewMountEngine] Zeroize cleanup warning for ${unmountingId}:`, err);
+      });
+    }
   }
 
   /**

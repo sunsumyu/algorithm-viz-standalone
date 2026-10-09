@@ -62,7 +62,9 @@ export class ClientActivationModal {
       this.backdropEl.remove();
       this.backdropEl = null;
     }
-    document.removeEventListener('keydown', this.handleGlobalKeydown);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this.handleGlobalKeydown);
+    }
   }
 
   /**
