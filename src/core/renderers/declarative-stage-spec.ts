@@ -139,6 +139,7 @@ export interface DeclarativeAlgorithmSpec<TStep = any> {
   problemContent?: any;
   stages?: DeclarativeStageSpec<TStep>[];
   hasDeductionTree?: boolean;
+  has3D?: boolean;
   defaultStage?: string;
   defaultMode?: string;
   buildSteps?: (inputs: Record<string, any>, mode?: string) => TStep[];
