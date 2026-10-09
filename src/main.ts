@@ -8,6 +8,7 @@
 import './styles/visualizer-theme.css';
 import './styles/shortcut-modal.css';
 import './styles/settings-modal.css';
+import './styles/activation-modal.css';
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
@@ -18,6 +19,7 @@ import { shortcutManagerModal } from './core/shortcuts/shortcut-manager-modal';
 import { appSettingsRepo } from './core/settings/app-settings-repository';
 import { appSettingsModal } from './core/settings/app-settings-modal';
 import { setupRuntimeInspectionGuard } from './core/security/anti-devtools';
+import { clientActivationModal } from './core/security/client-activation-modal';
 
 if (typeof window !== 'undefined') {
   (window as any).algorithmRegistry = algorithmRegistry;
@@ -25,6 +27,7 @@ if (typeof window !== 'undefined') {
   (window as unknown as { shortcutManagerModal: typeof shortcutManagerModal }).shortcutManagerModal = shortcutManagerModal;
   (window as unknown as { appSettingsModal: typeof appSettingsModal }).appSettingsModal = appSettingsModal;
   (window as unknown as { appSettingsRepo: typeof appSettingsRepo }).appSettingsRepo = appSettingsRepo;
+  (window as any).clientActivationModal = clientActivationModal;
 }
 
 /**
@@ -51,12 +54,18 @@ async function main(): Promise<void> {
       console.warn('[Main] Window controls init warning:', err);
     });
 
-    // 3. 绑定主页全局设置与快捷键按钮点击事件
+    // 3. 绑定标题栏授权徽章、全局设置与快捷键按钮点击事件
+    const titlebarLicenseBadge = document.getElementById('titlebar-license-badge');
+    titlebarLicenseBadge?.addEventListener('click', () => clientActivationModal.open());
+
     const titlebarSettingsBtn = document.getElementById('titlebar-settings-btn');
     titlebarSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
 
     const titlebarShortcutsBtn = document.getElementById('titlebar-shortcuts-btn');
     titlebarShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
+
+    // 4. 离线授权凭证自检守护（未激活时阻断并引导激活）
+    await clientActivationModal.checkAndEnforceLicense();
 
     const totalTime = (performance.now() - startTime).toFixed(1);
     console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmRegistry.getAllMetadata().length} algorithms active)`);

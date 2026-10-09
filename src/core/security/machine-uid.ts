@@ -35,3 +35,5 @@ export async function getMachineCode(): Promise<string> {
     return '0000-0000-0000-0000';
   }
 }
+
+export { getMachineCode as fetchMachineCode };

@@ -20,6 +20,7 @@ scratch/
 .temp/
 .zcode/
 tsconfig.tsbuildinfo
+.security/
 
 # IDE & OS
 .vscode/

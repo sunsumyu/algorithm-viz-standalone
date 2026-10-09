@@ -19,6 +19,7 @@ pub fn run() {
   tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![
       security::get_machine_code,
+      security::verify_license_code,
     ])
     .setup(|app| {
       #[cfg(debug_assertions)]
