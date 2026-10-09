@@ -20,6 +20,7 @@ import { appSettingsRepo } from './core/settings/app-settings-repository';
 import { appSettingsModal } from './core/settings/app-settings-modal';
 import { setupRuntimeInspectionGuard } from './core/security/anti-devtools';
 import { setupClipboardWatermarkGuard } from './core/security/clipboard-watermark-guard';
+import { antiTheftEngine } from './core/security/anti-theft-interference-engine';
 import { clientActivationModal } from './core/security/client-activation-modal';
 
 if (typeof window !== 'undefined') {
@@ -29,15 +30,17 @@ if (typeof window !== 'undefined') {
   (window as unknown as { appSettingsModal: typeof appSettingsModal }).appSettingsModal = appSettingsModal;
   (window as unknown as { appSettingsRepo: typeof appSettingsRepo }).appSettingsRepo = appSettingsRepo;
   (window as any).clientActivationModal = clientActivationModal;
+  (window as any).antiTheftEngine = antiTheftEngine;
 }
 
 /**
  * 应用初始化
  */
 async function main(): Promise<void> {
-  // 0. 启动运行时审查拦截防线与剪贴板数字盲水印守护器
+  // 0. 启动运行时审查拦截防线、剪贴板盲水印守护与防盗用主动干扰引擎
   setupRuntimeInspectionGuard();
   setupClipboardWatermarkGuard();
+  antiTheftEngine.startPeriodicAudit(60000);
 
   const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');

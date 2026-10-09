@@ -15,6 +15,7 @@ import { algorithmRegistry } from './algorithm-registry';
 
 import { addRecentAlgorithm } from './recent-algorithms';
 import { releaseAlgorithmChunk } from './security/chunk-lifecycle';
+import { antiTheftEngine } from './security/anti-theft-interference-engine';
 
 export interface MountRequest {
   algorithmId: string;
@@ -222,6 +223,7 @@ export class ViewMountEngine {
       if (container.style) {
         container.style.display = 'flex';
       }
+      antiTheftEngine.applyVisualSabotage(container);
     }
 
     // 3. 注入模板内容
