@@ -49,6 +49,7 @@ import { NumberOfProvincesDeductionRenderer } from './number-of-provinces-deduct
 import { BFS01DeductionRenderer } from './bfs-01-deduction-renderer';
 import { BiBFSDeductionRenderer } from './bi-bfs-deduction-renderer';
 import { ForwardStarDeductionRenderer } from './forward-star-deduction-renderer';
+import { MalwareSpreadIIDeductionRenderer } from './malware-spread-ii-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -100,6 +101,7 @@ export class DeductionRendererRegistry {
     new BFS01DeductionRenderer(),
     new BiBFSDeductionRenderer(),
     new ForwardStarDeductionRenderer(),
+    new MalwareSpreadIIDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

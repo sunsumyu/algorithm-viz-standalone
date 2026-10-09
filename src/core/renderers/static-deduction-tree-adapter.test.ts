@@ -817,4 +817,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerFS.innerHTML).toContain('头插法链接');
     expect(containerFS.innerHTML).toContain('return traversed = [1, 0];');
   });
+
+  it('应当能正确为 malware-spread-ii (减少恶意软件的传播 II · LeetCode 928) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('malware-spread-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('minimize-malware-spread-ii-928')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class057-code02')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'malware-spread-ii',
+    });
+    expect(container.innerHTML).toContain('减少恶意软件的传播 II (Minimize Malware Spread II) · 全景推演树');
+    expect(container.innerHTML).toContain('排除病毒节点，合并健康连通分量');
+    expect(container.innerHTML).toContain('扫描病毒源邻边，统计健康分量感染源');
+    expect(container.innerHTML).toContain('独占拯救效益结算与最优决策');
+    expect(container.innerHTML).toContain('return ans = 0;');
+  });
 });

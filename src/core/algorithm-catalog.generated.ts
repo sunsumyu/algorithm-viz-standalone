@@ -3724,7 +3724,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "减少恶意软件的传播 II (Minimize Malware Spread II)",
     viewId: "algo-malware-spread-ii-view",
     category: "graph",
-    description: "经典并查集聚类：排除病毒点合并健康连通块、统计独占感染源拯救贡献 saved[v] += size[i] (LeetCode 928)",
+    description: "减少恶意软件的传播 II (Minimize Malware Spread II)",
     icon: "🛡️",
     difficulty: 3,
     levelOrder: 102,
