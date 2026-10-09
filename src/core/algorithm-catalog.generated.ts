@@ -2824,11 +2824,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "Dinic 网络最大流 (Dinic Max Flow)",
     viewId: "algo-dinic-max-flow-view",
     category: "graph",
-    description: "左程云 Class 071 核心：网络最大流与残量网络、BFS 层次图、当前弧优化与多路增广阻塞流 (洛谷 P3376)",
+    description: "Dinic 网络最大流 (Dinic Max Flow)",
     icon: "🌊",
     difficulty: 3,
     levelOrder: 24,
     learningGoal: "掌握分层图构建思想、成对反向弧退流机制、当前弧指针优化以及阻塞流增广策略",
+    aliases: ["class173-code01","dinic-max-flow-173","dinic","P3376"],
   },
   {
     id: "distinct-islands",

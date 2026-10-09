@@ -849,4 +849,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('矛盾检测与拓扑序反向赋值');
     expect(container.innerHTML).toContain('return assignment = [x1=0, x2=1];');
   });
+
+  it('应当能正确为 dinic-max-flow (Dinic 网络最大流 · 洛谷 P3376) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('dinic-max-flow')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dinic')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3376')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'dinic-max-flow',
+    });
+    expect(container.innerHTML).toContain('Dinic 网络最大流 (Dinic Max Flow Algorithm) · 全景推演树');
+    expect(container.innerHTML).toContain('BFS 搜索构造分层网络');
+    expect(container.innerHTML).toContain('DFS 多路增广与当前弧优化');
+    expect(container.innerHTML).toContain('残量网络收敛与最大流判定');
+    expect(container.innerHTML).toContain('return maxFlow = 20;');
+  });
 });

@@ -411,6 +411,7 @@ ${details}
       '../../algorithms/categories/graph/forward-star-renderer.ts',
       '../../algorithms/categories/graph/malware-spread-ii-renderer.ts',
       '../../algorithms/categories/graph/two-sat-renderer.ts',
+      '../../algorithms/categories/graph/dinic-max-flow-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
