@@ -397,6 +397,7 @@ ${details}
       '../../algorithms/categories/graph/ev-charge-dijkstra-renderer.ts',
       '../../algorithms/categories/graph/k-shortest-path-renderer.ts',
       '../../algorithms/categories/graph/limited-shortest-path-renderer.ts',
+      '../../algorithms/categories/graph/shortest-path-summary-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
