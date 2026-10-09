@@ -3185,11 +3185,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "Tarjan 割点与桥 (Cut Vertices & Bridges)",
     viewId: "algo-tarjan-bridge-view",
     category: "graph",
-    description: "进阶图论连通度分析：深度优先搜索求割点与割边、返祖回边维护、双连通性判定 (洛谷 P3388)",
+    description: "Tarjan 割点与桥 (Cut Vertices & Bridges)",
     icon: "🌉",
     difficulty: 3,
     levelOrder: 68,
     learningGoal: "掌握无向图 DFS 生成树性质、low/dfn 判定割点与桥定理及双连通分量思想",
+    aliases: ["class068-code01","tarjan-bridge-cut","P3388","leetcode-1192"],
   },
   {
     id: "tree-path-intersection",

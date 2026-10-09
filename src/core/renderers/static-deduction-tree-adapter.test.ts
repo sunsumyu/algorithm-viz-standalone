@@ -898,4 +898,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('强连通分量根锁定与弹栈归集');
     expect(container.innerHTML).toContain('跨分量边扫描与 DAG 缩点重构');
   });
+
+  it('应当能正确为 tarjan-bridge (Tarjan 割点与桥 · 洛谷 P3388) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tarjan-bridge')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tarjan-bridge-cut')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class068-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3388')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-1192')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tarjan-bridge',
+    });
+    expect(container.innerHTML).toContain('Tarjan 割点与桥 (Cut Vertices & Bridges) · 全景推演树');
+    expect(container.innerHTML).toContain('DFS 树枝深入与时间戳记录');
+    expect(container.innerHTML).toContain('返祖回边环路与右侧悬挂链深入');
+    expect(container.innerHTML).toContain('叶节点回溯与首条桥边割点判定');
+    expect(container.innerHTML).toContain('回溯至节点 3 与根节点割点检验');
+  });
 });
