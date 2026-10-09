@@ -28,6 +28,7 @@ import { SubIslandsDeductionRenderer } from './sub-islands-deduction-renderer';
 import { DistinctIslandsDeductionRenderer } from './distinct-islands-deduction-renderer';
 import { DijkstraBasicDeductionRenderer } from './dijkstra-basic-deduction-renderer';
 import { DijkstraHeapDeductionRenderer } from './dijkstra-heap-deduction-renderer';
+import { DijkstraIndexHeapDeductionRenderer } from './dijkstra-index-heap-deduction-renderer';
 import { BellmanFordDeductionRenderer } from './bellman-ford-deduction-renderer';
 import { SpfaDeductionRenderer } from './spfa-deduction-renderer';
 import { NegativeCycleDeductionRenderer } from './negative-cycle-deduction-renderer';
@@ -62,6 +63,7 @@ export class DeductionRendererRegistry {
     new DistinctIslandsDeductionRenderer(),
     new DijkstraBasicDeductionRenderer(),
     new DijkstraHeapDeductionRenderer(),
+    new DijkstraIndexHeapDeductionRenderer(),
     new BellmanFordDeductionRenderer(),
     new SpfaDeductionRenderer(),
     new NegativeCycleDeductionRenderer(),

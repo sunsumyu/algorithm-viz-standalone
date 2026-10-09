@@ -3552,6 +3552,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 93,
     learningGoal: "掌握反向索引堆设计、where 数组状态机 (-1/idx/-2) 及 decreaseKey 原地更新机制",
+    aliases: ["dijkstra-decrease-key","dijkstra-indexed-heap","luogu-p4779","class061-index-heap","class062-index-heap"],
   },
   {
     id: "cactus-graph-dp-200",

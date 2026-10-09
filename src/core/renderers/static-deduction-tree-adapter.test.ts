@@ -466,6 +466,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerDJH.innerHTML).toContain('return dist: [0, 3, 1, 4, 7]');
   });
 
+  it('应当能正确为 dijkstra-index-heap (反向索引堆优化 Dijkstra 最短路) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('dijkstra-index-heap')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dijkstra-decrease-key')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dijkstra-indexed-heap')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p4779')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class061-index-heap')).toBe(true);
+
+    const containerDJI = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerDJI, {
+      modelId: 'dijkstra-index-heap',
+    });
+    expect(containerDJI.innerHTML).toContain('反向索引堆优化 Dijkstra 最短路径 (Dijkstra Index-Heap · O((V+E) log V)) · 全景推演树');
+    expect(containerDJI.innerHTML).toContain('反向索引映射 where[]');
+    expect(containerDJI.innerHTML).toContain('原地 decreaseKey');
+    expect(containerDJI.innerHTML).toContain('pop() 弹出堆顶代表元 Node 1');
+    expect(containerDJI.innerHTML).toContain('return distance[1..4] = [0, 2, 1, 4];');
+  });
+
   it('应当能正确为 bellman-ford (Bellman-Ford 最短路) 渲染静态推演树 HTML', () => {
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford-061')).toBe(true);

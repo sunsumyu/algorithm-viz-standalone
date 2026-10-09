@@ -391,6 +391,7 @@ ${details}
       '../../algorithms/categories/graph/trapping-water-ii-renderer.ts',
       '../../algorithms/categories/graph/dijkstra-basic-renderer.ts',
       '../../algorithms/categories/graph/dijkstra-heap-renderer.ts',
+      '../../algorithms/categories/graph/dijkstra-index-heap-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

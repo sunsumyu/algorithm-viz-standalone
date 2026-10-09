@@ -7,6 +7,7 @@
 import { visualState } from '../visual-state-tokens';
 import type { DJBStep } from '../../../algorithms/categories/graph/dijkstra-basic-step-compiler';
 import type { DJHStep } from '../../../algorithms/categories/graph/dijkstra-heap-step-compiler';
+import type { IndexHeapStep } from '../../../algorithms/categories/graph/dijkstra-index-heap-step-compiler';
 
 export const DJB_NODES = [0, 1, 2, 3, 4];
 export const DJB_EDGES = [
@@ -194,6 +195,123 @@ export function renderDijkstraHeapCanvas(container: HTMLElement, step: DJHStep):
   `;
 }
 
+/**
+ * 渲染反向索引堆优化 Dijkstra 主视觉：有向带权图 SVG（where[] 三态着色）
+ */
+export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: IndexHeapStep): void {
+  const isTriangle = step.whereArray.length === 3;
+  const nodes = isTriangle ? [1, 2, 3] : [1, 2, 3, 4];
+
+  const nodeCoords: Record<number, { x: number; y: number }> = isTriangle
+    ? {
+        1: { x: 60, y: 90 },
+        2: { x: 260, y: 50 },
+        3: { x: 160, y: 140 },
+      }
+    : {
+        1: { x: 60, y: 90 },
+        2: { x: 160, y: 45 },
+        3: { x: 160, y: 135 },
+        4: { x: 260, y: 90 },
+      };
+
+  const edges: Array<[number, number, number]> = isTriangle
+    ? [
+        [1, 2, 4],
+        [1, 3, 1],
+        [3, 2, 1],
+      ]
+    : [
+        [1, 2, 4],
+        [1, 3, 1],
+        [3, 2, 1],
+        [2, 4, 2],
+        [3, 4, 5],
+      ];
+
+  const idleStyle = visualState('idle');
+  const comparingStyle = visualState('comparing');
+  const sortedStyle = visualState('sorted');
+  const pivotStyle = visualState('pivot');
+  const discoveredStyle = visualState('discovered');
+  const unvisitedStyle = visualState('unvisited');
+
+  let svgHtml = `<svg viewBox="0 0 320 180" style="width:100%; height:100%; max-height:240px;">
+    <defs>
+      <marker id="arrow-dj-index" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${idleStyle.border}" />
+      </marker>
+      <marker id="arrow-dj-index-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${discoveredStyle.border}" />
+      </marker>
+      <marker id="arrow-dj-index-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="${comparingStyle.border}" />
+      </marker>
+    </defs>`;
+
+  for (const [u, v, w] of edges) {
+    const p1 = nodeCoords[u];
+    const p2 = nodeCoords[v];
+    if (!p1 || !p2) continue;
+
+    const isCurrent = step.curRelaxEdge && step.curRelaxEdge.u === u && step.curRelaxEdge.v === v;
+    const isRelaxed = isCurrent && (step.status === 'relax' || step.status === 'decrease');
+
+    const strokeColor = isRelaxed ? discoveredStyle.border : isCurrent ? comparingStyle.border : idleStyle.border;
+    const strokeWidth = isCurrent ? 3.5 : 1.8;
+    const marker = isRelaxed ? 'url(#arrow-dj-index-relax)' : isCurrent ? 'url(#arrow-dj-index-active)' : 'url(#arrow-dj-index)';
+
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2 + (u === 3 && v === 2 ? -10 : 8);
+
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${idleStyle.text}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${w}</text>`;
+  }
+
+  nodes.forEach((node) => {
+    const p = nodeCoords[node];
+    if (!p) return;
+
+    const isCur = step.curPop === node;
+    const isSettled = step.settled.includes(node) || step.indexMap[node] === -2;
+    const inHeap = (step.indexMap[node] ?? -1) >= 0;
+    const isRelaxTarget = step.curRelaxEdge && step.curRelaxEdge.v === node;
+    const dVal = step.distanceArray[node - 1];
+    const dStr = dVal === 999 || dVal === undefined ? '∞' : `${dVal}`;
+
+    let fill = idleStyle.bg;
+    let stroke = idleStyle.border;
+    if (isCur) {
+      fill = pivotStyle.bg;
+      stroke = pivotStyle.border;
+    } else if (isRelaxTarget && step.status === 'decrease') {
+      fill = discoveredStyle.bg;
+      stroke = discoveredStyle.border;
+    } else if (isSettled) {
+      fill = sortedStyle.bg;
+      stroke = sortedStyle.border;
+    } else if (inHeap) {
+      fill = comparingStyle.bg;
+      stroke = comparingStyle.border;
+    }
+
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="${idleStyle.text}" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dStr === '∞' ? unvisitedStyle.text : isSettled ? sortedStyle.text : comparingStyle.text}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">d:${dStr}</text>`;
+  });
+
+  svgHtml += `</svg>`;
+
+  container.innerHTML = `
+    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 4px; box-sizing: border-box;">
+      <div style="width: 100%; max-width: 600px; height: 100%; max-height: 250px; display: flex; align-items: center; justify-content: center;">
+        ${svgHtml}
+      </div>
+    </div>
+  `;
+}
+
 export class DijkstraGraphCanvasAdapter {
   public static renderBasic(container: HTMLElement, step: DJBStep): void {
     renderDijkstraBasicCanvas(container, step);
@@ -201,5 +319,9 @@ export class DijkstraGraphCanvasAdapter {
 
   public static renderHeap(container: HTMLElement, step: DJHStep): void {
     renderDijkstraHeapCanvas(container, step);
+  }
+
+  public static renderIndexHeap(container: HTMLElement, step: IndexHeapStep): void {
+    renderDijkstraIndexHeapCanvas(container, step);
   }
 }
