@@ -29,6 +29,7 @@ export const networkDelayTime064Visualizer = registerDeclarativeAlgorithm<Networ
   learningGoal: '掌握经典堆优化 Dijkstra 模板实现、单源最短路波前广播与不可达全网检测',
   problemHtml: GRAPH_064_PROBLEMS.networkDelayTime064.html,
   codeLanguages: NETWORK_DELAY_064_CODES,
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'preset',

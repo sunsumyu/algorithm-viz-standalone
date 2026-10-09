@@ -2791,6 +2791,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 22,
     learningGoal: "掌握经典堆优化 Dijkstra 模板实现、单源最短路波前广播思想与不可达全网检测",
+    aliases: ["network-delay-time-064","leetcode-743","class064-code01","class064-network-delay"],
   },
   {
     id: "topological-sort",

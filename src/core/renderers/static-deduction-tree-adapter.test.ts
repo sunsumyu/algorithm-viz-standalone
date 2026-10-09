@@ -484,6 +484,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerDJI.innerHTML).toContain('return distance[1..4] = [0, 2, 1, 4];');
   });
 
+  it('应当能正确为 network-delay-time (网络延迟时间) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('network-delay-time')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('network-delay-time-064')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-743')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class064-code01')).toBe(true);
+
+    const containerNDT = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerNDT, {
+      modelId: 'network-delay-time',
+    });
+    expect(containerNDT.innerHTML).toContain('LeetCode 743. 网络延迟时间 (Network Delay Time · O(E log V)) · 全景推演树');
+    expect(containerNDT.innerHTML).toContain('小根堆优先队列 Dijkstra');
+    expect(containerNDT.innerHTML).toContain('全网波前广播');
+    expect(containerNDT.innerHTML).toContain('pq.poll() 弹出源点 Node 2');
+    expect(containerNDT.innerHTML).toContain('return max(dist[1..4]) = max(1, 0, 1, 2) = 2;');
+  });
+
   it('应当能正确为 bellman-ford (Bellman-Ford 最短路) 渲染静态推演树 HTML', () => {
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford-061')).toBe(true);
