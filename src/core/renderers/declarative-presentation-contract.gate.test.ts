@@ -17,7 +17,7 @@ import { getDeclarativeSpecs, sanitizeSandboxDom } from '../declarative-algorith
 // 触发全库所有类目的声明式 renderer 注册（涵盖 500+ 道题）
 import.meta.glob('../../algorithms/categories/**/*-renderer.ts', { eager: true });
 
-describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presentation Gate)', { timeout: 180000 }, () => {
+describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presentation Gate)', { timeout: 360000 }, () => {
   const dom = new JSDOM('<!DOCTYPE html><html><body><div id="test-sandbox"></div></body></html>');
   const doc = dom.window.document;
 

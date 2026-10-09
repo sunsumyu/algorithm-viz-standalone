@@ -405,6 +405,7 @@ ${details}
       '../../algorithms/categories/graph/mst-prim-renderer.ts',
       '../../algorithms/categories/graph/topo-dp-renderer.ts',
       '../../algorithms/categories/graph/second-mst-renderer.ts',
+      '../../algorithms/categories/graph/number-of-provinces-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

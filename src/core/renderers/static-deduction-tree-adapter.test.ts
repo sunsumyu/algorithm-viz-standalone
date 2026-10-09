@@ -749,4 +749,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerSMST.innerHTML).toContain('基础最小生成树树边集合');
     expect(containerSMST.innerHTML).toContain('return secondMstWeight = 7;');
   });
+
+  it('应当能正确为 number-of-provinces (省份数量 · LC 547) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('number-of-provinces')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-547')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-547')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('friend-circles')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class056-code02')).toBe(true);
+
+    const containerProvinces = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerProvinces, {
+      modelId: 'number-of-provinces',
+    });
+    expect(containerProvinces.innerHTML).toContain('省份数量 (Number of Provinces · LC 547) · 并查集推演树');
+    expect(containerProvinces.innerHTML).toContain('并查集父指针数组初始化');
+    expect(containerProvinces.innerHTML).toContain('执行 union(0, 1)');
+    expect(containerProvinces.innerHTML).toContain('return provinces = 2');
+  });
 });

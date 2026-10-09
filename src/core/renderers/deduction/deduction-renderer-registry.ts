@@ -45,6 +45,7 @@ import { MstKruskalDeductionRenderer } from './mst-kruskal-deduction-renderer';
 import { MstPrimDeductionRenderer } from './mst-prim-deduction-renderer';
 import { TopoDPDeductionRenderer } from './topo-dp-deduction-renderer';
 import { SecondMstDeductionRenderer } from './second-mst-deduction-renderer';
+import { NumberOfProvincesDeductionRenderer } from './number-of-provinces-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -92,6 +93,7 @@ export class DeductionRendererRegistry {
     new MstPrimDeductionRenderer(),
     new TopoDPDeductionRenderer(),
     new SecondMstDeductionRenderer(),
+    new NumberOfProvincesDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

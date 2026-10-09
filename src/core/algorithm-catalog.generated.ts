@@ -3638,6 +3638,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "掌握并查集（Union-Find）在连通分量与网络合并中的核心应用，理解路径压缩优化机制",
+    aliases: ["leetcode-547","lc-547","friend-circles","class056-code02"],
   },
   {
     id: "partition-minimize-difference-063",
