@@ -126,11 +126,11 @@ export function runCli() {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--hwid' && args[i + 1]) {
+    if ((arg === '--hwid' || arg === '--machine') && args[i + 1]) {
       hwid = args[++i];
     } else if (arg === '--days' && args[i + 1]) {
       days = parseInt(args[++i], 10);
-    } else if (arg === '--user' && args[i + 1]) {
+    } else if ((arg === '--user' || arg === '--buyer') && args[i + 1]) {
       user = args[++i];
     } else if (arg === '--tier' && args[i + 1]) {
       tier = parseInt(args[++i], 10);
@@ -143,11 +143,11 @@ export function runCli() {
   npm run license:gen -- --hwid <MACHINE_CODE> [options]
 
 选项:
-  --hwid <code >   目标设备机器码 (必填, 如: E804-62DB-86BA-555E)
-  --days <num>     授权有效天数 (默认: 365; 0 为永久授权)
-  --lifetime       等同于 --days 0 (永久授权)
-  --user <name>    购买者 ID / 订单号
-  --tier <1|2|3>   授权级别 (1: 基础, 2: 进阶, 3: 全量题库, 默认: 3)
+  --hwid / --machine <code >   目标设备机器码 (必填, 如: E804-62DB-86BA-555E)
+  --days <num>                 授权有效天数 (默认: 365; 0 为永久授权)
+  --lifetime                   等同于 --days 0 (永久授权)
+  --user / --buyer <name>      购买者 ID / 订单号
+  --tier <1|2|3>               授权级别 (1: 基础, 2: 进阶, 3: 全量题库, 默认: 3)
       `);
       return;
     }
@@ -177,7 +177,8 @@ export function runCli() {
   }
 }
 
-// 执行 CLI 入口（仅当作为脚本直接运行时）
-if (typeof process !== 'undefined' && process.argv && process.argv[1] && /generate-license(\.ts|\.js)?$/.test(process.argv[1])) {
+// 执行 CLI 入口（在非 Vitest 自动化测试环境下自动执行）
+if (!process.env.VITEST) {
   runCli();
 }
+
