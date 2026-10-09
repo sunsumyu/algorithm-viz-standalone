@@ -648,4 +648,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerRE.innerHTML).toContain('parent[i] = i');
     expect(containerRE.innerHTML).toContain('return [1, 4]');
   });
+
+  it('应当能正确为 redundant-edge-ii (冗余连接 II / LC 685) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-edge-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-connection-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-connection-ii-685')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-edge-2')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-685')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-685')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class057-code01')).toBe(true);
+
+    const containerRE2 = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerRE2, {
+      modelId: 'redundant-edge-ii',
+    });
+    expect(containerRE2.innerHTML).toContain('力扣 685. 冗余连接 II (Redundant Connection II · 并查集) · 全景推演树');
+    expect(containerRE2.innerHTML).toContain('入度为 2 双父节点冲突');
+    expect(containerRE2.innerHTML).toContain('inDegree[i] = 0');
+    expect(containerRE2.innerHTML).toContain('return edges[conflict] = [2, 3];');
+  });
 });

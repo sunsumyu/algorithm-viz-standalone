@@ -39,6 +39,7 @@ import { EVChargeDeductionRenderer } from './ev-charge-deduction-renderer';
 import { KShortestPathDeductionRenderer } from './k-shortest-path-deduction-renderer';
 import { LimitedShortestPathDeductionRenderer } from './limited-shortest-path-deduction-renderer';
 import { RedundantEdgeDeductionRenderer } from './redundant-edge-deduction-renderer';
+import { RedundantEdgeIIDeductionRenderer } from './redundant-edge-ii-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -80,6 +81,7 @@ export class DeductionRendererRegistry {
     new KShortestPathDeductionRenderer(),
     new LimitedShortestPathDeductionRenderer(),
     new RedundantEdgeDeductionRenderer(),
+    new RedundantEdgeIIDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
