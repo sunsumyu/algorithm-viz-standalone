@@ -3309,11 +3309,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "二分图最小点覆盖与 König 定理 (König Theorem)",
     viewId: "algo-konig-min-vertex-cover-view",
     category: "graph",
-    description: "进阶匹配理论经典：最大匹配数等于最小点覆盖数、未匹配左部点交错路 DFS 染色、构造覆盖集与最大独立集 (洛谷 P6062)",
+    description: "二分图最小点覆盖与 König 定理 (König Theorem)",
     icon: "🛡️",
     difficulty: 3,
     levelOrder: 74,
     learningGoal: "掌握 König 定理证明思想、交错路标记法构造最小点覆盖及最大独立集对偶互补关系",
+    aliases: ["konig-theorem","min-vertex-cover","class069","P6062"],
   },
   {
     id: "tree-knapsack-dp",

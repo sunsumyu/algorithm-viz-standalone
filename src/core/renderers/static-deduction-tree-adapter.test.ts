@@ -983,5 +983,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('第二轮增广：经由下路分流 S ➔ B ➔ T');
     expect(container.innerHTML).toContain('第三轮增广：中继跨越 S ➔ A ➔ B ➔ T');
   });
+
+  it('应当能正确为 konig-min-vertex-cover (二分图最小点覆盖与 König 定理 · 洛谷 P6062) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('konig-min-vertex-cover')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('konig-theorem')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('min-vertex-cover')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class069')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P6062')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'konig-min-vertex-cover',
+    });
+    expect(container.innerHTML).toContain('二分图最小点覆盖与 König 定理 (König\'s Theorem) · 全景推演树');
+    expect(container.innerHTML).toContain('匈牙利算法求解基准最大匹配');
+    expect(container.innerHTML).toContain('从未匹配左部点发起交错路 DFS 染色');
+    expect(container.innerHTML).toContain('提取最小点覆盖集合');
+    expect(container.innerHTML).toContain('互补最大独立集与对偶终局核算');
+  });
 });
 
