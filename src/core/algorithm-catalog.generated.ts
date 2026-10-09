@@ -3106,11 +3106,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC)",
     viewId: "algo-tarjan-scc-dag-view",
     category: "graph",
-    description: "进阶图论 Tarjan 算法：深度优先搜索求强连通分量、时间戳与追溯值维护、缩点重构 DAG (洛谷 P3387)",
+    description: "Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC)",
     icon: "🧬",
     difficulty: 3,
     levelOrder: 62,
     learningGoal: "掌握 Tarjan 算法求强连通分量原理、dfn/low 数组性质及缩点建 DAG 方法",
+    aliases: ["class066-code01","tarjan-scc","P3387"],
   },
   {
     id: "two-sat-problem",

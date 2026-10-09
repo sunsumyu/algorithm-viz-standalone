@@ -413,6 +413,7 @@ ${details}
       '../../algorithms/categories/graph/two-sat-renderer.ts',
       '../../algorithms/categories/graph/dinic-max-flow-renderer.ts',
       '../../algorithms/categories/graph/alien-dict-renderer.ts',
+      '../../algorithms/categories/graph/tarjan-scc-dag-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

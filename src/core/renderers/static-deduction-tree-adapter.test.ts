@@ -881,4 +881,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('成环校验与火星字母表序列输出');
     expect(container.innerHTML).toContain('return "wertf";');
   });
+
+  it('应当能正确为 tarjan-scc-dag (Tarjan 强连通缩点 · 洛谷 P3387) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tarjan-scc-dag')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tarjan-scc')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class066-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3387')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tarjan-scc-dag',
+    });
+    expect(container.innerHTML).toContain('Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC & Condensation) · 全景推演树');
+    expect(container.innerHTML).toContain('DFS 树深入遍历与时间戳分配');
+    expect(container.innerHTML).toContain('返祖边环路探测与右侧分支深入');
+    expect(container.innerHTML).toContain('强连通分量根锁定与弹栈归集');
+    expect(container.innerHTML).toContain('跨分量边扫描与 DAG 缩点重构');
+  });
 });
