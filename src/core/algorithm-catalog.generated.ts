@@ -2769,6 +2769,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 22,
     learningGoal: "掌握 Bellman-Ford 算法在有限边数约束下的状态备份与松弛过程",
+    aliases: ["cheapest-flights-within-k-stops","leetcode-787","lc-787"],
   },
   {
     id: "network-delay-time",

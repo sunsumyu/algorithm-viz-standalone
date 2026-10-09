@@ -37,6 +37,7 @@ import { NetworkDelayDeductionRenderer } from './network-delay-deduction-rendere
 import { LayeredDijkstraDeductionRenderer } from './layered-dijkstra-deduction-renderer';
 import { EVChargeDeductionRenderer } from './ev-charge-deduction-renderer';
 import { KShortestPathDeductionRenderer } from './k-shortest-path-deduction-renderer';
+import { LimitedShortestPathDeductionRenderer } from './limited-shortest-path-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -76,6 +77,7 @@ export class DeductionRendererRegistry {
     new LayeredDijkstraDeductionRenderer(),
     new EVChargeDeductionRenderer(),
     new KShortestPathDeductionRenderer(),
+    new LimitedShortestPathDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

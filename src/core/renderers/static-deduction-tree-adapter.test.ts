@@ -615,4 +615,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerKPath.innerHTML).toContain('第 K 次出堆最优性');
     expect(containerKPath.innerHTML).toContain('return cur.g = 5;');
   });
+
+  it('应当能正确为 limited-shortest-path (有限最短路 / LC 787) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('limited-shortest-path')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('cheapest-flights-within-k-stops')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-787')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-787')).toBe(true);
+
+    const containerLSP = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerLSP, {
+      modelId: 'limited-shortest-path',
+    });
+    expect(containerLSP.innerHTML).toContain('力扣 787. K 站中转内最便宜的航班 (Limited Shortest Path · Bellman-Ford) · 全景推演树');
+    expect(containerLSP.innerHTML).toContain('最多走 K+1 条边');
+    expect(containerLSP.innerHTML).toContain('clone[] 状态备份阻断串联');
+    expect(containerLSP.innerHTML).toContain('return dist[dst] = 9;');
+  });
 });
