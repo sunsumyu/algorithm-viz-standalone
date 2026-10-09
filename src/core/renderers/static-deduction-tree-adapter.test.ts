@@ -1001,5 +1001,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('提取最小点覆盖集合');
     expect(container.innerHTML).toContain('互补最大独立集与对偶终局核算');
   });
+
+  it('应当能正确为 km-algorithm (二分图最大权完美匹配与 KM 算法 · 洛谷 P6577) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('km-algorithm')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('km')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('kuhn-munkres')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class073')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P6577')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'km-algorithm',
+    });
+    expect(container.innerHTML).toContain('二分图最大权完美匹配与 KM 算法 (Kuhn-Munkres Algorithm) · 全景推演树');
+    expect(container.innerHTML).toContain('可行顶标初始化与首轮相等子图探索');
+    expect(container.innerHTML).toContain('节点 L2 冲突协商与顶标微调');
+    expect(container.innerHTML).toContain('KM 算法最佳完备匹配终局核算');
+  });
 });
 
