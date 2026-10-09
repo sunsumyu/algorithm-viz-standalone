@@ -3475,11 +3475,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "差分约束系统 (System of Difference Constraints)",
     viewId: "algo-diff-constraints-view",
     category: "graph",
-    description: "左程云算法通关课 Class 070：不等式转化为最短路、超级源点建图与 SPFA 负环判定 (洛谷 P5960)",
+    description: "差分约束系统 (System of Difference Constraints)",
     icon: "⚖️",
     difficulty: 3,
     levelOrder: 85,
     learningGoal: "掌握差分约束系统的代数不等式转最短路建图方法，以及 SPFA 负权环无解判定",
+    aliases: ["difference-constraints","system-of-difference-constraints","class070-code01","P5960"],
   },
   {
     id: "tree-centroid-decomposition",

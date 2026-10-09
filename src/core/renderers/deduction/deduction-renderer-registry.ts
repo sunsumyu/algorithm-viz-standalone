@@ -56,6 +56,7 @@ import { AlienDictDeductionRenderer } from './alien-dict-deduction-renderer';
 import { TarjanSCCDagDeductionRenderer } from './tarjan-scc-dag-deduction-renderer';
 import { TarjanBridgeDeductionRenderer } from './tarjan-bridge-deduction-renderer';
 import { HungarianMatchingDeductionRenderer } from './hungarian-matching-deduction-renderer';
+import { DiffConstraintsDeductionRenderer } from './diff-constraints-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -114,6 +115,7 @@ export class DeductionRendererRegistry {
     new TarjanSCCDagDeductionRenderer(),
     new TarjanBridgeDeductionRenderer(),
     new HungarianMatchingDeductionRenderer(),
+    new DiffConstraintsDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

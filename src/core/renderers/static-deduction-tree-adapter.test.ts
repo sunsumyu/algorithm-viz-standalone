@@ -934,4 +934,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('左部节点 L2 发起增广探索与原配让位协商');
     expect(container.innerHTML).toContain('全图最大匹配收敛与匹配基数确认');
   });
+
+  it('应当能正确为 diff-constraints (差分约束系统 · 洛谷 P5960) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('diff-constraints')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('difference-constraints')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class070-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P5960')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'diff-constraints',
+    });
+    expect(container.innerHTML).toContain('差分约束系统 (System of Difference Constraints) · 全景推演树');
+    expect(container.innerHTML).toContain('超级源点发散与变量基准初始化');
+    expect(container.innerHTML).toContain('SPFA 约束松弛与上界紧缩');
+    expect(container.innerHTML).toContain('结论判定与可行解输出');
+  });
 });
+
