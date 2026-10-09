@@ -3058,6 +3058,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 31,
     learningGoal: "掌握并查集连通性判环机制、动态合并原则与树的环路消除策略",
+    aliases: ["redundant-connection","leetcode-684","lc-684","class056-code01"],
   },
   {
     id: "redundant-edge-ii",
@@ -3069,7 +3070,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 32,
     learningGoal: "掌握有向树双父节点冲突分析、并查集有向环检验与分支回溯消除策略",
-    aliases: ["class057-code01","redundant-connection-ii-685","redundant-edge-2"],
+    aliases: ["class057-code01","redundant-connection-ii-685","redundant-edge-2","leetcode-685","lc-685"],
   },
   {
     id: "topo-dp",

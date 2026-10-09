@@ -667,4 +667,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerRE2.innerHTML).toContain('inDegree[i] = 0');
     expect(containerRE2.innerHTML).toContain('return edges[conflict] = [2, 3];');
   });
+
+  it('应当能正确为 topological-sort (拓扑排序 / LC 210) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('topological-sort')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('topo-sort-kahn')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('course-schedule-ii-210')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class059-code02')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class026-code01')).toBe(true);
+
+    const containerTopo = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerTopo, {
+      modelId: 'topological-sort',
+    });
+    expect(containerTopo.innerHTML).toContain('力扣 210. 课程表 II (Topological Sort · Kahn 拓扑排序) · 全景推演树');
+    expect(containerTopo.innerHTML).toContain('零入度 BFS 队列');
+    expect(containerTopo.innerHTML).toContain('顶点初始入度统计');
+    expect(containerTopo.innerHTML).toContain('return order = [5, 4, 2, 0, 3, 1];');
+  });
 });

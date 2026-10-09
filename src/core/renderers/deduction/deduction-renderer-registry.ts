@@ -40,6 +40,7 @@ import { KShortestPathDeductionRenderer } from './k-shortest-path-deduction-rend
 import { LimitedShortestPathDeductionRenderer } from './limited-shortest-path-deduction-renderer';
 import { RedundantEdgeDeductionRenderer } from './redundant-edge-deduction-renderer';
 import { RedundantEdgeIIDeductionRenderer } from './redundant-edge-ii-deduction-renderer';
+import { TopologicalSortDeductionRenderer } from './topological-sort-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -82,6 +83,7 @@ export class DeductionRendererRegistry {
     new LimitedShortestPathDeductionRenderer(),
     new RedundantEdgeDeductionRenderer(),
     new RedundantEdgeIIDeductionRenderer(),
+    new TopologicalSortDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
