@@ -3175,11 +3175,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "二分图博弈 (Bipartite Graph Game)",
     viewId: "algo-bipartite-game-view",
     category: "graph",
-    description: "进阶博弈论经典：两人轮流移动棋子、匈牙利最大匹配判定、交错轨搜索与先手必胜点集判定 (洛谷 P4055)",
+    description: "二分图博弈 (Bipartite Graph Game)",
     icon: "♟️",
     difficulty: 3,
     levelOrder: 67,
     learningGoal: "掌握二分图博弈判定定理（属于所有最大匹配点为必胜态）、交错轨增广搜索及算法实现",
+    aliases: ["game-on-bipartite-graph","jsoi2009-game","P4055"],
   },
   {
     id: "tarjan-bridge",

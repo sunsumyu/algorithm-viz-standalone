@@ -950,5 +950,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('SPFA 约束松弛与上界紧缩');
     expect(container.innerHTML).toContain('结论判定与可行解输出');
   });
+
+  it('应当能正确为 bipartite-game (二分图博弈 · 洛谷 P4055) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bipartite-game')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('game-on-bipartite-graph')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('jsoi2009-game')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4055')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'bipartite-game',
+    });
+    expect(container.innerHTML).toContain('二分图博弈 (Game on Bipartite Graph) · 全景推演树');
+    expect(container.innerHTML).toContain('匈牙利算法求解基准最大匹配');
+    expect(container.innerHTML).toContain('交错轨 DFS 探索非必须匹配点');
+    expect(container.innerHTML).toContain('博弈胜负态判定与先手必胜点集确立');
+  });
 });
 
