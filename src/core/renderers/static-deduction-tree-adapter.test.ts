@@ -802,4 +802,19 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerBiBFS.innerHTML).toContain('碰撞检测');
     expect(containerBiBFS.innerHTML).toContain('return len = 5;');
   });
+
+  it('应当能正确为 forward-star (链式前向星 · 左程云 Class 059) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('forward-star')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('chained-forward-star')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class059-code01')).toBe(true);
+
+    const containerFS = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerFS, {
+      modelId: 'forward-star',
+    });
+    expect(containerFS.innerHTML).toContain('链式前向星 (Chained Forward Star) · 全景推演树');
+    expect(containerFS.innerHTML).toContain('静态链表结构体内存池');
+    expect(containerFS.innerHTML).toContain('头插法链接');
+    expect(containerFS.innerHTML).toContain('return traversed = [1, 0];');
+  });
 });
