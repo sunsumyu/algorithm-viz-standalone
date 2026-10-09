@@ -766,4 +766,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerProvinces.innerHTML).toContain('执行 union(0, 1)');
     expect(containerProvinces.innerHTML).toContain('return provinces = 2');
   });
+
+  it('应当能正确为 bfs-01 (0-1 BFS 双端队列最短路 · LC 2290) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bfs-01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-2290')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-2290')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('minimum-obstacle-removal')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class062-code01')).toBe(true);
+
+    const containerBFS01 = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerBFS01, {
+      modelId: 'bfs-01',
+    });
+    expect(containerBFS01.innerHTML).toContain('0-1 BFS 双端队列最短路 (0-1 BFS Deque · LC 2290) · 全景推演树');
+    expect(containerBFS01.innerHTML).toContain('双端队列 Deque 初始队头元素');
+    expect(containerBFS01.innerHTML).toContain('0权插队头');
+    expect(containerBFS01.innerHTML).toContain('1权插队尾');
+    expect(containerBFS01.innerHTML).toContain('return dist[5] = 1;');
+  });
 });

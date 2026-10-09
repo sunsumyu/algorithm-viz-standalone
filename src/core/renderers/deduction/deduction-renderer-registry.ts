@@ -46,6 +46,7 @@ import { MstPrimDeductionRenderer } from './mst-prim-deduction-renderer';
 import { TopoDPDeductionRenderer } from './topo-dp-deduction-renderer';
 import { SecondMstDeductionRenderer } from './second-mst-deduction-renderer';
 import { NumberOfProvincesDeductionRenderer } from './number-of-provinces-deduction-renderer';
+import { BFS01DeductionRenderer } from './bfs-01-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -94,6 +95,7 @@ export class DeductionRendererRegistry {
     new TopoDPDeductionRenderer(),
     new SecondMstDeductionRenderer(),
     new NumberOfProvincesDeductionRenderer(),
+    new BFS01DeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

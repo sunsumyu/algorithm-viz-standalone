@@ -2893,11 +2893,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "0-1 BFS 双端队列最短路 (0-1 BFS Deque)",
     viewId: "algo-bfs-01-view",
     category: "graph",
-    description: "左程云 Class 062 核心：边权为 0 插队头 addFirst、边权为 1 插队尾 addLast、维护双段性单调队列、时间复杂度 O(V + E) (LeetCode 2290)",
+    description: "0-1 BFS 双端队列最短路 (0-1 BFS Deque)",
     icon: "⚡",
     difficulty: 2,
     levelOrder: 25,
     learningGoal: "掌握 0-1 BFS 相比 Dijkstra 的常数与渐进复杂度优势，理解双端队列如何天然保持单调性",
+    aliases: ["leetcode-2290","lc-2290","minimum-obstacle-removal","class062-code01"],
   },
   {
     id: "floyd",
