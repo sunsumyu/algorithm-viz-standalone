@@ -39,6 +39,13 @@ pub fn run() {
           main_window.open_devtools();
         }
       }
+
+      #[cfg(not(debug_assertions))]
+      {
+        let guard = security::AntiDebuggerGuard::start_watchdog_default();
+        Box::leak(Box::new(guard));
+      }
+
       Ok(())
     })
     .run(tauri::generate_context!())

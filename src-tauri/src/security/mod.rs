@@ -1,4 +1,5 @@
 pub mod anti_cdp;
+pub mod anti_debugger;
 pub mod code_hash;
 pub mod hkdf_deriver;
 pub mod ipc_zeroize;
@@ -9,6 +10,7 @@ pub mod stream_decrypt;
 pub mod watermark;
 
 pub use anti_cdp::AntiCdpGuard;
+pub use anti_debugger::{is_debugger_present, AntiDebuggerGuard};
 pub use watermark::{WatermarkInjector, ZeroWidthWatermark};
 pub use rate_limiter::{RateLimitError, ScrapeRateLimiter};
 pub use code_hash::{
