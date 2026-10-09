@@ -30,20 +30,35 @@ function yamlPlugin(): Plugin {
   };
 }
 
-export default defineConfig({
-  root: '.',
-  base: './',
-  plugins: [yamlPlugin()],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
+  return {
+    root: '.',
+    base: './',
+    plugins: [yamlPlugin()],
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, 'src'),
+      },
     },
-  },
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    sourcemap: false,
-  },
+    esbuild: {
+      drop: isProd ? ['console', 'debugger'] : [],
+      legalComments: 'none',
+      minifyIdentifiers: isProd,
+      minifySyntax: isProd,
+      minifyWhitespace: isProd,
+    },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      sourcemap: false,
+      minify: 'esbuild',
+      rollupOptions: {
+        output: {
+          compact: true,
+        },
+      },
+    },
   server: {
     host: '0.0.0.0',
     port: 3000,
@@ -53,10 +68,12 @@ export default defineConfig({
       ignored: ['**/src-tauri/**', '**/dist/**', '**/coverage/**', '**/.git/**'],
     },
   },
-  test: {
-    include: ['src/**/*.test.ts'],
-    pool: 'forks',
-    testTimeout: 120000,
-    teardownTimeout: 60000,
-  },
+    test: {
+      include: ['src/**/*.test.ts'],
+      pool: 'forks',
+      testTimeout: 120000,
+      teardownTimeout: 60000,
+    },
+  };
 });
+

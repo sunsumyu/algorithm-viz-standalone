@@ -22,7 +22,8 @@
     "export:standalone": "vite-node scripts/export-standalone.ts",
     "meta:sync": "vite-node scripts/catalog-sync.ts",
     "audit:candidates": "vite-node scripts/audit-candidates.ts",
-    "license:gen": "vite-node scripts/generate-license.ts"
+    "license:gen": "vite-node scripts/generate-license.ts",
+    "leak:investigate": "vite-node scripts/leak-investigator.ts"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
