@@ -41,6 +41,8 @@ import { LimitedShortestPathDeductionRenderer } from './limited-shortest-path-de
 import { RedundantEdgeDeductionRenderer } from './redundant-edge-deduction-renderer';
 import { RedundantEdgeIIDeductionRenderer } from './redundant-edge-ii-deduction-renderer';
 import { TopologicalSortDeductionRenderer } from './topological-sort-deduction-renderer';
+import { MstKruskalDeductionRenderer } from './mst-kruskal-deduction-renderer';
+import { MstPrimDeductionRenderer } from './mst-prim-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -84,6 +86,8 @@ export class DeductionRendererRegistry {
     new RedundantEdgeDeductionRenderer(),
     new RedundantEdgeIIDeductionRenderer(),
     new TopologicalSortDeductionRenderer(),
+    new MstKruskalDeductionRenderer(),
+    new MstPrimDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

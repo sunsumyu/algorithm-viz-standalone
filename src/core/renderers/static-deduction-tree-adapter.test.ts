@@ -684,4 +684,36 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerTopo.innerHTML).toContain('顶点初始入度统计');
     expect(containerTopo.innerHTML).toContain('return order = [5, 4, 2, 0, 3, 1];');
   });
+
+  it('应当能正确为 mst-kruskal (Kruskal 最小生成树) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('mst-kruskal')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('kruskal-mst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class058-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p3366-kruskal')).toBe(true);
+
+    const containerKruskal = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerKruskal, {
+      modelId: 'mst-kruskal',
+    });
+    expect(containerKruskal.innerHTML).toContain('最小生成树 (Kruskal 算法 · 加边法) · 全景推演树');
+    expect(containerKruskal.innerHTML).toContain('并查集回路检测');
+    expect(containerKruskal.innerHTML).toContain('边权升序候选队列');
+    expect(containerKruskal.innerHTML).toContain('return totalWeight = 16;');
+  });
+
+  it('应当能正确为 mst-prim (Prim 最小生成树) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('mst-prim')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('prim-mst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class058-code02')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p3366-prim')).toBe(true);
+
+    const containerPrim = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerPrim, {
+      modelId: 'mst-prim',
+    });
+    expect(containerPrim.innerHTML).toContain('最小生成树 (Prim 算法 · 加点法) · 全景推演树');
+    expect(containerPrim.innerHTML).toContain('切割性质 Cut Property');
+    expect(containerPrim.innerHTML).toContain('切边距离数组');
+    expect(containerPrim.innerHTML).toContain('return totalWeight = 16;');
+  });
 });
