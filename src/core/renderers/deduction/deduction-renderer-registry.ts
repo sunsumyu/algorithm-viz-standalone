@@ -58,6 +58,7 @@ import { TarjanBridgeDeductionRenderer } from './tarjan-bridge-deduction-rendere
 import { HungarianMatchingDeductionRenderer } from './hungarian-matching-deduction-renderer';
 import { DiffConstraintsDeductionRenderer } from './diff-constraints-deduction-renderer';
 import { BipartiteGameDeductionRenderer } from './bipartite-game-deduction-renderer';
+import { MinCostMaxFlowDeductionRenderer } from './min-cost-max-flow-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -118,6 +119,7 @@ export class DeductionRendererRegistry {
     new HungarianMatchingDeductionRenderer(),
     new DiffConstraintsDeductionRenderer(),
     new BipartiteGameDeductionRenderer(),
+    new MinCostMaxFlowDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

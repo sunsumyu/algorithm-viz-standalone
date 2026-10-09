@@ -966,5 +966,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('交错轨 DFS 探索非必须匹配点');
     expect(container.innerHTML).toContain('博弈胜负态判定与先手必胜点集确立');
   });
+
+  it('应当能正确为 min-cost-max-flow (最小费用最大流 · 洛谷 P3381) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('min-cost-max-flow')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('mcmf')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('minimum-cost-maximum-flow')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class072-code01')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3381')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'min-cost-max-flow',
+    });
+    expect(container.innerHTML).toContain('最小费用最大流 (Minimum Cost Maximum Flow) · 全景推演树');
+    expect(container.innerHTML).toContain('第一轮增广：经由主干通路 S ➔ A ➔ T');
+    expect(container.innerHTML).toContain('第二轮增广：经由下路分流 S ➔ B ➔ T');
+    expect(container.innerHTML).toContain('第三轮增广：中继跨越 S ➔ A ➔ B ➔ T');
+  });
 });
 

@@ -418,6 +418,7 @@ ${details}
       '../../algorithms/categories/graph/hungarian-matching-renderer.ts',
       '../../algorithms/categories/graph/diff-constraints-renderer.ts',
       '../../algorithms/categories/graph/bipartite-game-renderer.ts',
+      '../../algorithms/categories/graph/min-cost-max-flow-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
