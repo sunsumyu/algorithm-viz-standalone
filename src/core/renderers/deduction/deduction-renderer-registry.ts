@@ -34,6 +34,7 @@ import { SpfaDeductionRenderer } from './spfa-deduction-renderer';
 import { NegativeCycleDeductionRenderer } from './negative-cycle-deduction-renderer';
 import { FloydDeductionRenderer } from './floyd-deduction-renderer';
 import { NetworkDelayDeductionRenderer } from './network-delay-deduction-renderer';
+import { LayeredDijkstraDeductionRenderer } from './layered-dijkstra-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -70,6 +71,7 @@ export class DeductionRendererRegistry {
     new NegativeCycleDeductionRenderer(),
     new FloydDeductionRenderer(),
     new NetworkDelayDeductionRenderer(),
+    new LayeredDijkstraDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

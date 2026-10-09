@@ -393,6 +393,7 @@ ${details}
       '../../algorithms/categories/graph/dijkstra-heap-renderer.ts',
       '../../algorithms/categories/graph/dijkstra-index-heap-renderer.ts',
       '../../algorithms/categories/graph/network-delay-time-renderer.ts',
+      '../../algorithms/categories/graph/layered-dijkstra-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

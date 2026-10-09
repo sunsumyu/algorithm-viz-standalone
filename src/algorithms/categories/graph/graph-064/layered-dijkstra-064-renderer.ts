@@ -26,6 +26,7 @@ export const layeredDijkstra064Visualizer = registerDeclarativeAlgorithm<Layered
   learningGoal: '掌握分层图扩维思想、同层常规转移与跨层 0 权转移双决策建模',
   problemHtml: GRAPH_064_PROBLEMS.layeredDijkstra064.html,
   codeLanguages: LAYERED_DIJKSTRA_064_CODES,
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'preset',

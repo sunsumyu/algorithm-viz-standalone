@@ -501,6 +501,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerNDT.innerHTML).toContain('return max(dist[1..4]) = max(1, 0, 1, 2) = 2;');
   });
 
+  it('应当能正确为 layered-dijkstra (分层图最短路 / 飞行路线) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('layered-dijkstra')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('layered-dijkstra-064')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p4568')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('flight-routes')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class064-code04')).toBe(true);
+
+    const containerLD = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerLD, {
+      modelId: 'layered-dijkstra',
+    });
+    expect(containerLD.innerHTML).toContain('洛谷 P4568 飞行路线 (Layered Dijkstra · 分层图最短路) · 全景推演树');
+    expect(containerLD.innerHTML).toContain('状态升维 (u, usedK)');
+    expect(containerLD.innerHTML).toContain('跨层 0 权免票跃迁');
+    expect(containerLD.innerHTML).toContain('poll 出堆状态 (Node 0, used: 0, 花费 0元)');
+    expect(containerLD.innerHTML).toContain('return dist[t][k] = 4;');
+  });
+
   it('应当能正确为 bellman-ford (Bellman-Ford 最短路) 渲染静态推演树 HTML', () => {
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('bellman-ford-061')).toBe(true);
