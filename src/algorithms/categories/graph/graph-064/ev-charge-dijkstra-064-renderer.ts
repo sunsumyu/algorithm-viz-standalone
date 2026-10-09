@@ -26,6 +26,7 @@ export const evChargeDijkstra064Visualizer = registerDeclarativeAlgorithm<EVStep
   learningGoal: '掌握状态扩维 (city, power) 建模、原地充电与道路放电权衡的最短路求解',
   problemHtml: GRAPH_064_PROBLEMS.evChargeDijkstra064.html,
   codeLanguages: EV_CHARGE_064_CODES,
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'preset',

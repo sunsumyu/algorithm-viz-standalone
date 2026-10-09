@@ -3742,6 +3742,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 104,
     learningGoal: "掌握二维分层图建模思路、充放电状态转移双决策及多维 Dijkstra 求解技巧",
+    aliases: ["ev-charge-dijkstra-064","class064-code05","leetcode-lcp-35"],
   },
   {
     id: "people-secret",

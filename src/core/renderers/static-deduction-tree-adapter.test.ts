@@ -580,4 +580,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerFloyd.innerHTML).toContain('全源最短距离矩阵完全收敛');
     expect(containerFloyd.innerHTML).toContain('dist[0][3] = 9');
   });
+
+  it('应当能正确为 ev-charge-dijkstra (电动车充放电最短路 / LCP 35) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('ev-charge-dijkstra')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('ev-charge-dijkstra-064')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-lcp-35')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class064-code05')).toBe(true);
+
+    const containerEV = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerEV, {
+      modelId: 'ev-charge-dijkstra',
+    });
+    expect(containerEV.innerHTML).toContain('LeetCode LCP 35. 电动车充放电最短路 (EV Charging Dijkstra) · 全景推演树');
+    expect(containerEV.innerHTML).toContain('二维状态升维 (city, power)');
+    expect(containerEV.innerHTML).toContain('原地充电');
+    expect(containerEV.innerHTML).toContain('公路行驶');
+    expect(containerEV.innerHTML).toContain('return dist[end][0] = 10;');
+  });
 });
