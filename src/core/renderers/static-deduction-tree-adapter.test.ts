@@ -865,4 +865,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('残量网络收敛与最大流判定');
     expect(container.innerHTML).toContain('return maxFlow = 20;');
   });
+
+  it('应当能正确为 alien-dict (火星词典拓扑排序 · LeetCode 269) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('alien-dict')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('alien-dictionary-269')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class059-code03')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'alien-dict',
+    });
+    expect(container.innerHTML).toContain('火星词典拓扑排序 (Alien Dictionary) · 全景推演树');
+    expect(container.innerHTML).toContain('比对相邻单词首异字符，构建偏序有向图');
+    expect(container.innerHTML).toContain('0 入度字符入队与 Kahn 算法拓扑消元');
+    expect(container.innerHTML).toContain('成环校验与火星字母表序列输出');
+    expect(container.innerHTML).toContain('return "wertf";');
+  });
 });

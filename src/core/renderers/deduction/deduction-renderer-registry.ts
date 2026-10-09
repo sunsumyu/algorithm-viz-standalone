@@ -52,6 +52,7 @@ import { ForwardStarDeductionRenderer } from './forward-star-deduction-renderer'
 import { MalwareSpreadIIDeductionRenderer } from './malware-spread-ii-deduction-renderer';
 import { TwoSATDeductionRenderer } from './two-sat-deduction-renderer';
 import { DinicMaxFlowDeductionRenderer } from './dinic-max-flow-deduction-renderer';
+import { AlienDictDeductionRenderer } from './alien-dict-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -106,6 +107,7 @@ export class DeductionRendererRegistry {
     new MalwareSpreadIIDeductionRenderer(),
     new TwoSATDeductionRenderer(),
     new DinicMaxFlowDeductionRenderer(),
+    new AlienDictDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
