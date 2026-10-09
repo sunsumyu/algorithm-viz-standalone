@@ -1018,5 +1018,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('节点 L2 冲突协商与顶标微调');
     expect(container.innerHTML).toContain('KM 算法最佳完备匹配终局核算');
   });
+
+  it('应当能正确为 min-path-cover (DAG 最小路径覆盖 · 洛谷 P2764) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('min-path-cover')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dag-path-cover')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('minimum-path-cover')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class071')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2764')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'min-path-cover',
+    });
+    expect(container.innerHTML).toContain('DAG 最小路径覆盖 (DAG Minimum Path Cover) · 全景推演树');
+    expect(container.innerHTML).toContain('出点 1_out 与 2_out 增广匹配');
+    expect(container.innerHTML).toContain('出点 3_out 增广与最大匹配锁定');
+    expect(container.innerHTML).toContain('定理计算与不相交路径链还原');
+  });
 });
 

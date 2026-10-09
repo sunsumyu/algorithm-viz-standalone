@@ -61,6 +61,7 @@ import { BipartiteGameDeductionRenderer } from './bipartite-game-deduction-rende
 import { MinCostMaxFlowDeductionRenderer } from './min-cost-max-flow-deduction-renderer';
 import { KonigMinVertexCoverDeductionRenderer } from './konig-min-vertex-cover-deduction-renderer';
 import { KMAlgorithmDeductionRenderer } from './km-algorithm-deduction-renderer';
+import { MinPathCoverDeductionRenderer } from './min-path-cover-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -124,6 +125,7 @@ export class DeductionRendererRegistry {
     new MinCostMaxFlowDeductionRenderer(),
     new KonigMinVertexCoverDeductionRenderer(),
     new KMAlgorithmDeductionRenderer(),
+    new MinPathCoverDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

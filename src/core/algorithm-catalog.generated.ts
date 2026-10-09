@@ -3142,11 +3142,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "DAG 最小路径覆盖 (Min Path Cover)",
     viewId: "algo-min-path-cover-view",
     category: "graph",
-    description: "进阶网络流与二分图建模：DAG 拆点二分图最大匹配、路径数 n - 最大匹配与路径还原 (洛谷 P2764)",
+    description: "DAG 最小路径覆盖 (Min Path Cover)",
     icon: "🛣️",
     difficulty: 3,
     levelOrder: 65,
     learningGoal: "掌握 DAG 最小路径覆盖转化为二分图最大匹配的建模技巧与路径重建算法",
+    aliases: ["dag-path-cover","minimum-path-cover","class071","P2764"],
   },
   {
     id: "eulerian-circuit",
