@@ -833,4 +833,20 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('独占拯救效益结算与最优决策');
     expect(container.innerHTML).toContain('return ans = 0;');
   });
+
+  it('应当能正确为 two-sat-problem (2-SAT 问题与强连通缩点 · 洛谷 P4782) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('two-sat-problem')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('two-sat')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4782')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'two-sat-problem',
+    });
+    expect(container.innerHTML).toContain('2-SAT 问题与强连通缩点 (2-Satisfiability Problem) · 全景推演树');
+    expect(container.innerHTML).toContain('逻辑子句转化为有向蕴涵边');
+    expect(container.innerHTML).toContain('执行 Tarjan 算法求强连通分量');
+    expect(container.innerHTML).toContain('矛盾检测与拓扑序反向赋值');
+    expect(container.innerHTML).toContain('return assignment = [x1=0, x2=1];');
+  });
 });

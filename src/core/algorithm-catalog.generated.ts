@@ -3116,11 +3116,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "2-SAT 问题 (Two-Satisfiability)",
     viewId: "algo-two-sat-problem-view",
     category: "graph",
-    description: "进阶图论强连通应用：逻辑子句转蕴涵边、Tarjan 缩点判定与拓扑反序求可行解 (洛谷 P4782)",
+    description: "2-SAT 问题 (Two-Satisfiability)",
     icon: "🔀",
     difficulty: 3,
     levelOrder: 63,
     learningGoal: "掌握 2-SAT 问题转有向图建模方法、Tarjan SCC 缩点判定矛盾及解向量构造原理",
+    aliases: ["two-sat","P4782","two-sat-tarjan"],
   },
   {
     id: "chordal-graph",

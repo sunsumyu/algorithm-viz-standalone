@@ -50,6 +50,7 @@ import { BFS01DeductionRenderer } from './bfs-01-deduction-renderer';
 import { BiBFSDeductionRenderer } from './bi-bfs-deduction-renderer';
 import { ForwardStarDeductionRenderer } from './forward-star-deduction-renderer';
 import { MalwareSpreadIIDeductionRenderer } from './malware-spread-ii-deduction-renderer';
+import { TwoSATDeductionRenderer } from './two-sat-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -102,6 +103,7 @@ export class DeductionRendererRegistry {
     new BiBFSDeductionRenderer(),
     new ForwardStarDeductionRenderer(),
     new MalwareSpreadIIDeductionRenderer(),
+    new TwoSATDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
