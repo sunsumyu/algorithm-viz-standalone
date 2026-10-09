@@ -597,4 +597,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerEV.innerHTML).toContain('公路行驶');
     expect(containerEV.innerHTML).toContain('return dist[end][0] = 10;');
   });
+
+  it('应当能正确为 k-shortest-path (K 短路与 A* 搜索 / P2483) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('k-shortest-path')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('k-shortest-paths')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p2483')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('luogu-p4467')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('kth-shortest-path')).toBe(true);
+
+    const containerKPath = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerKPath, {
+      modelId: 'k-shortest-path',
+    });
+    expect(containerKPath.innerHTML).toContain('洛谷 P2483 / P4467 K 短路 (K-th Shortest Path · A* 启发式搜索) · 全景推演树');
+    expect(containerKPath.innerHTML).toContain('反向图最短路启发函数 h(u)');
+    expect(containerKPath.innerHTML).toContain('A* 综合估价');
+    expect(containerKPath.innerHTML).toContain('第 K 次出堆最优性');
+    expect(containerKPath.innerHTML).toContain('return cur.g = 5;');
+  });
 });

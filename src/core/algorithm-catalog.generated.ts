@@ -3388,6 +3388,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 78,
     learningGoal: "掌握 K 短路问题建模、反向图最短路估价函数设计以及 A* 算法第 K 次出堆最优性定理",
+    aliases: ["luogu-p2483","luogu-p4467","kth-shortest-path"],
   },
   {
     id: "prufer-sequence",
