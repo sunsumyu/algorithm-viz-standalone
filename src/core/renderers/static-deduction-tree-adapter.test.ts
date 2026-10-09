@@ -631,4 +631,21 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerLSP.innerHTML).toContain('clone[] 状态备份阻断串联');
     expect(containerLSP.innerHTML).toContain('return dist[dst] = 9;');
   });
+
+  it('应当能正确为 redundant-edge (冗余连接 / LC 684) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-edge')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('redundant-connection')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-684')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-684')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class056-code01')).toBe(true);
+
+    const containerRE = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerRE, {
+      modelId: 'redundant-edge',
+    });
+    expect(containerRE.innerHTML).toContain('力扣 684. 冗余连接 (Redundant Connection · 并查集) · 全景推演树');
+    expect(containerRE.innerHTML).toContain('无向图回路检测');
+    expect(containerRE.innerHTML).toContain('parent[i] = i');
+    expect(containerRE.innerHTML).toContain('return [1, 4]');
+  });
 });
