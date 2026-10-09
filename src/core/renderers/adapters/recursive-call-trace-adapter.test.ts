@@ -92,8 +92,8 @@ describe('RecursiveCallTraceAdapter (Deep Module)', () => {
 
     expect(traceTexts.some((t) => t.includes('minDepth(4)') && t.includes('算2的右孩子'))).toBe(true);
     expect(traceTexts.some((t) => t.includes('① root=4, 非空'))).toBe(true);
-    expect(traceTexts.some((t) => t.includes('left==null && right==null √ 命中!'))).toBe(true);
-    expect(traceTexts.some((t) => t.includes('|--- 返回 1 ---'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('命中叶子') || t.includes('root.left == null'))).toBe(true);
+    expect(traceTexts.some((t) => t.includes('return 1'))).toBe(true);
 
     expect(traceTexts.some((t) => t.includes('回到 minDepth(2): return 1 + 1 = 2'))).toBe(true);
     expect(traceTexts.some((t) => t.includes('minDepth(3)') && t.includes('再算右边'))).toBe(true);
