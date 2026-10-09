@@ -2928,11 +2928,12 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "双向广度优先搜索 (Bidirectional BFS)",
     viewId: "algo-bi-bfs-view",
     category: "graph",
-    description: "左程云 Class 063 核心：双端交替扩展、每次优选较小集合向前扩散、搜索空间由 b^d 降为 2*b^(d/2) (LeetCode 127)",
+    description: "双向广度优先搜索 (Bidirectional BFS)",
     icon: "↔️",
     difficulty: 3,
     levelOrder: 26,
     learningGoal: "深刻理解双向广搜的核心依据与优化精髓，掌握小集合优先扩散与碰撞判定的标准写法",
+    aliases: ["leetcode-127","lc-127","word-ladder","class063-code01"],
   },
   {
     id: "negative-cycle",

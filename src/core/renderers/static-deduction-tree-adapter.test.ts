@@ -784,4 +784,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(containerBFS01.innerHTML).toContain('1权插队尾');
     expect(containerBFS01.innerHTML).toContain('return dist[5] = 1;');
   });
+
+  it('应当能正确为 bi-bfs (双向广度优先搜索 · LC 127) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bi-bfs')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-127')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lc-127')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('word-ladder')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class063-code01')).toBe(true);
+
+    const containerBiBFS = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(containerBiBFS, {
+      modelId: 'bi-bfs',
+    });
+    expect(containerBiBFS.innerHTML).toContain('双向广搜单词接龙 (Bidirectional BFS · LC 127) · 全景推演树');
+    expect(containerBiBFS.innerHTML).toContain('起点与终点初始波前集合');
+    expect(containerBiBFS.innerHTML).toContain('对调集合优化');
+    expect(containerBiBFS.innerHTML).toContain('碰撞检测');
+    expect(containerBiBFS.innerHTML).toContain('return len = 5;');
+  });
 });

@@ -407,6 +407,7 @@ ${details}
       '../../algorithms/categories/graph/second-mst-renderer.ts',
       '../../algorithms/categories/graph/number-of-provinces-renderer.ts',
       '../../algorithms/categories/graph/bfs-01-renderer.ts',
+      '../../algorithms/categories/graph/bi-bfs-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
