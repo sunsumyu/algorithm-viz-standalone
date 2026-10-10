@@ -422,6 +422,7 @@ ${details}
       '../../algorithms/categories/graph/konig-min-vertex-cover-renderer.ts',
       '../../algorithms/categories/graph/km-algorithm-renderer.ts',
       '../../algorithms/categories/graph/min-path-cover-renderer.ts',
+      '../../algorithms/categories/graph/max-weight-closure-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

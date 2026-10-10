@@ -1035,5 +1035,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('出点 3_out 增广与最大匹配锁定');
     expect(container.innerHTML).toContain('定理计算与不相交路径链还原');
   });
+
+  it('应当能正确为 max-weight-closure (网络流最大权闭合子图 · 洛谷 P2762) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('max-weight-closure')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('max-weight-closure-graph')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('space-project')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class072')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2762')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'max-weight-closure',
+    });
+    expect(container.innerHTML).toContain('网络流最大权闭合子图 (Max-Weight Closure) · 全景推演树');
+    expect(container.innerHTML).toContain('正权收益边与负权成本边构建');
+    expect(container.innerHTML).toContain('分层网络与阻塞流增广');
+    expect(container.innerHTML).toContain('最大净收益核算与闭合方案还原');
+  });
 });
 
