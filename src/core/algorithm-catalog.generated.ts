@@ -3464,6 +3464,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 84,
     learningGoal: "掌握广义圆方树构建算法、low[v] >= dfn[u] 点双识别判定及圆方树树上必经割点定理",
+    aliases: ["bct","round-square-tree","P4320","P4630","P5236"],
   },
   {
     id: "diff-constraints",

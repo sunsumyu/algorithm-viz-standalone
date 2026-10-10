@@ -1106,5 +1106,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('死胡同回溯压栈');
     expect(container.innerHTML).toContain('序列逆序翻转与一笔画还原');
   });
+
+  it('应当能正确为 block-cut-tree (广义圆方树 · 洛谷 P4320 / P4630) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('block-cut-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('bct')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('round-square-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4320')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4630')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'block-cut-tree',
+    });
+    expect(container.innerHTML).toContain('广义圆方树 (Block-Cut Tree · 洛谷 P4320 / P4630) · 全景推演树');
+    expect(container.innerHTML).toContain('Tarjan 深度优先遍历与时间戳分配');
+    expect(container.innerHTML).toContain('点双连通分量识别与方点连边');
+    expect(container.innerHTML).toContain('树上必经割点定理转化与路径查询');
+  });
 });
 

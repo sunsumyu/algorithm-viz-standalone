@@ -426,6 +426,7 @@ ${details}
       '../../algorithms/categories/graph/bounded-flow-renderer.ts',
       '../../algorithms/categories/graph/dominator-tree-renderer.ts',
       '../../algorithms/categories/graph/eulerian-circuit-renderer.ts',
+      '../../algorithms/categories/graph/block-cut-tree-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
