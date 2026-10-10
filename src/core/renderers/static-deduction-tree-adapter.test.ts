@@ -1212,7 +1212,25 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('查询阶段二：二进制同步跃升');
     expect(container.innerHTML).toContain('结果锁定与树上最短距离结算');
   });
+
+  it('应当能正确为 prufer-sequence (Prufer 序列与 Cayley 公式 · 洛谷 P6086) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('prufer-sequence')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('prufer')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('cayley')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P6086')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class077')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'prufer-sequence',
+    });
+    expect(container.innerHTML).toContain('Prufer 序列与 Cayley 公式 (Prufer Sequence · 洛谷 P6086) · 全景推演树');
+    expect(container.innerHTML).toContain('度数统计与叶节点初筛');
+    expect(container.innerHTML).toContain('线性双指针贪心消除与序列编码');
+    expect(container.innerHTML).toContain('Cayley 公式与双射性质总结');
+  });
 });
+
 
 
 

@@ -3410,6 +3410,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 79,
     learningGoal: "掌握 Prufer 序列与无根树的双射关系、线性双指针构造及在完全图生成树计数中的应用",
+    aliases: ["prufer","cayley","P6086","class077"],
   },
   {
     id: "second-mst",

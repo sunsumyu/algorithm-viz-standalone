@@ -72,6 +72,7 @@ import { HeavyLightDecompositionDeductionRenderer } from './heavy-light-decompos
 import { VirtualTreeDeductionRenderer } from './virtual-tree-deduction-renderer';
 import { DSUOnTreeDeductionRenderer } from './dsu-on-tree-deduction-renderer';
 import { LCABinaryLiftingDeductionRenderer } from './lca-binary-lifting-deduction-renderer';
+import { PruferSequenceDeductionRenderer } from './prufer-sequence-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -146,6 +147,7 @@ export class DeductionRendererRegistry {
     new VirtualTreeDeductionRenderer(),
     new DSUOnTreeDeductionRenderer(),
     new LCABinaryLiftingDeductionRenderer(),
+    new PruferSequenceDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
