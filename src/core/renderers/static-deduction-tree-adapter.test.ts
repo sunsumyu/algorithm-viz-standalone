@@ -1335,6 +1335,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('二分上下界收缩转移');
     expect(container.innerHTML).toContain('收敛至零环与极值回路输出');
   });
+
+  it('应当能正确为 tree-centroid-decomposition (静态点分治 · POJ 1741 / 洛谷 P3806) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tree-centroid-decomposition')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('static-centroid')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('POJ1741')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3806')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-divide-and-conquer')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-centroid-decomposition',
+    });
+    expect(container.innerHTML).toContain('树分治与静态点分治 (Tree Centroid Decomposition · POJ 1741 / 洛谷 P3806) · 全景推演树');
+    expect(container.innerHTML).toContain('DFS 子树规模与重心定位');
+    expect(container.innerHTML).toContain('标记隔离当前重心');
+    expect(container.innerHTML).toContain('跨重心深度收集与容斥统计');
+    expect(container.innerHTML).toContain('子连通块递归分治与全局闭环');
+  });
 });
 
 
