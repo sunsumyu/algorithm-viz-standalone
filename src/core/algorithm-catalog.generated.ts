@@ -2647,14 +2647,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "union-find-theory",
-    name: "并查集理论基础",
+    name: "并查集理论基础 (Union-Find Theory)",
     viewId: "algo-union-find-theory-view",
     category: "graph",
-    description: "Union-Find 路径压缩与按秩合并可视化",
+    description: "并查集核心原理解析：树形表示、find 寻根、路径压缩与按秩合并 O(α(n))",
     icon: "🔗",
     difficulty: 1,
     levelOrder: 14,
-    learningGoal: "理解并查集的 find 和 union 操作，以及路径压缩和按秩合并优化",
+    learningGoal: "掌握并查集树形指针结构，深刻理解路径压缩与按秩合并双重优化精髓",
+    aliases: ["disjoint-set-theory","union-find-basic"],
   },
   {
     id: "coastline",
