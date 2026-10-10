@@ -104,7 +104,7 @@ export class StateSpacePresenter {
       deductionContainer.classList.remove('hidden');
       deductionContainer.style.display = 'block';
 
-      StaticDeductionTreeAdapter.renderDeduction(deductionContainer, {
+      void StaticDeductionTreeAdapter.renderDeduction(deductionContainer, {
         modelId,
         m,
         n,

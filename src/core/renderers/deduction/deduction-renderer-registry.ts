@@ -1,221 +1,144 @@
 /**
  * 全景推演树渲染策略分发中心 (DeductionRendererRegistry)
- * 采用策略模式与单一职责原则，负责匹配和调度各算法对应的推演树渲染器
+ * 遵循 Matt Pocock 深模块哲学与设计模式：
+ * 1. 享元模式 (Flyweight Pattern)：已加载实例在内存中单例缓存复用，零重复实例化开销。
+ * 2. 虚拟代理 / 惰性路由 (Virtual Proxy / Lazy Router)：切断 88+ 个专用渲染器与通用 DP 模型的静态导入级联，按需动态加载。
+ * 3. 责任链 / 优雅降级 (Chain of Responsibility / Fallback)：优先专用渲染器 -> 次选通用 DP -> 兜底。
+ * 4. 纯静态 O(1) 判定：依赖 DeductionManifest，避免启动时构建庞大依赖树。
  */
 
-import { IDeductionTreeRenderer, StaticDeductionRenderOptions } from './types';
-import { UniquePathsDeductionRenderer } from './unique-paths-deduction-renderer';
-import { LcsDeductionRenderer } from './lcs-deduction-renderer';
-import { EditDistanceDeductionRenderer } from './edit-distance-deduction-renderer';
-import { DistinctSubsequencesDeductionRenderer } from './distinct-subsequences-deduction-renderer';
-import { AStarDeductionRenderer } from './a-star-deduction-renderer';
-import { TrappingWaterIIDeductionRenderer } from './trapping-water-ii-deduction-renderer';
-import { WaterFlowDeductionRenderer } from './water-flow-deduction-renderer';
-import { PathMinEffortDeductionRenderer } from './path-min-effort-deduction-renderer';
-import { SwimInRisingWaterDeductionRenderer } from './swim-in-rising-water-deduction-renderer';
-import { IslandsDeductionRenderer } from './islands-deduction-renderer';
-import { IslandsBfsDeductionRenderer } from './islands-bfs-deduction-renderer';
-import { MaxIslandAreaDeductionRenderer } from './max-island-area-deduction-renderer';
-import { AsFarFromLandDeductionRenderer } from './as-far-from-land-deduction-renderer';
-import { MakeLargestIslandDeductionRenderer } from './make-largest-island-deduction-renderer';
-import { MinimumObstaclesDeductionRenderer } from './minimum-obstacles-deduction-renderer';
-import { MinimumCostValidPathDeductionRenderer } from './minimum-cost-valid-path-deduction-renderer';
-import { CoastlineDeductionRenderer } from './coastline-deduction-renderer';
-import { SinkIslandsDeductionRenderer } from './sink-islands-deduction-renderer';
-import { TotalIslandAreaDeductionRenderer } from './total-island-area-deduction-renderer';
-import { ClosedIslandsDeductionRenderer } from './closed-islands-deduction-renderer';
-import { SubIslandsDeductionRenderer } from './sub-islands-deduction-renderer';
-import { DistinctIslandsDeductionRenderer } from './distinct-islands-deduction-renderer';
-import { DijkstraBasicDeductionRenderer } from './dijkstra-basic-deduction-renderer';
-import { DijkstraHeapDeductionRenderer } from './dijkstra-heap-deduction-renderer';
-import { DijkstraIndexHeapDeductionRenderer } from './dijkstra-index-heap-deduction-renderer';
-import { BellmanFordDeductionRenderer } from './bellman-ford-deduction-renderer';
-import { SpfaDeductionRenderer } from './spfa-deduction-renderer';
-import { NegativeCycleDeductionRenderer } from './negative-cycle-deduction-renderer';
-import { FloydDeductionRenderer } from './floyd-deduction-renderer';
-import { NetworkDelayDeductionRenderer } from './network-delay-deduction-renderer';
-import { LayeredDijkstraDeductionRenderer } from './layered-dijkstra-deduction-renderer';
-import { EVChargeDeductionRenderer } from './ev-charge-deduction-renderer';
-import { KShortestPathDeductionRenderer } from './k-shortest-path-deduction-renderer';
-import { LimitedShortestPathDeductionRenderer } from './limited-shortest-path-deduction-renderer';
-import { RedundantEdgeDeductionRenderer } from './redundant-edge-deduction-renderer';
-import { RedundantEdgeIIDeductionRenderer } from './redundant-edge-ii-deduction-renderer';
-import { TopologicalSortDeductionRenderer } from './topological-sort-deduction-renderer';
-import { MstKruskalDeductionRenderer } from './mst-kruskal-deduction-renderer';
-import { MstPrimDeductionRenderer } from './mst-prim-deduction-renderer';
-import { TopoDPDeductionRenderer } from './topo-dp-deduction-renderer';
-import { SecondMstDeductionRenderer } from './second-mst-deduction-renderer';
-import { NumberOfProvincesDeductionRenderer } from './number-of-provinces-deduction-renderer';
-import { BFS01DeductionRenderer } from './bfs-01-deduction-renderer';
-import { BiBFSDeductionRenderer } from './bi-bfs-deduction-renderer';
-import { ForwardStarDeductionRenderer } from './forward-star-deduction-renderer';
-import { MalwareSpreadIIDeductionRenderer } from './malware-spread-ii-deduction-renderer';
-import { TwoSATDeductionRenderer } from './two-sat-deduction-renderer';
-import { DinicMaxFlowDeductionRenderer } from './dinic-max-flow-deduction-renderer';
-import { AlienDictDeductionRenderer } from './alien-dict-deduction-renderer';
-import { TarjanSCCDagDeductionRenderer } from './tarjan-scc-dag-deduction-renderer';
-import { TarjanBridgeDeductionRenderer } from './tarjan-bridge-deduction-renderer';
-import { HungarianMatchingDeductionRenderer } from './hungarian-matching-deduction-renderer';
-import { DiffConstraintsDeductionRenderer } from './diff-constraints-deduction-renderer';
-import { BipartiteGameDeductionRenderer } from './bipartite-game-deduction-renderer';
-import { MinCostMaxFlowDeductionRenderer } from './min-cost-max-flow-deduction-renderer';
-import { KonigMinVertexCoverDeductionRenderer } from './konig-min-vertex-cover-deduction-renderer';
-import { KMAlgorithmDeductionRenderer } from './km-algorithm-deduction-renderer';
-import { MinPathCoverDeductionRenderer } from './min-path-cover-deduction-renderer';
-import { MaxWeightClosureDeductionRenderer } from './max-weight-closure-deduction-renderer';
-import { BoundedFlowDeductionRenderer } from './bounded-flow-deduction-renderer';
-import { DominatorTreeDeductionRenderer } from './dominator-tree-deduction-renderer';
-import { EulerianCircuitDeductionRenderer } from './eulerian-circuit-deduction-renderer';
-import { BlockCutTreeDeductionRenderer } from './block-cut-tree-deduction-renderer';
-import { KruskalReconstructionTreeDeductionRenderer } from './kruskal-reconstruction-tree-deduction-renderer';
-import { HeavyLightDecompositionDeductionRenderer } from './heavy-light-decomposition-deduction-renderer';
-import { VirtualTreeDeductionRenderer } from './virtual-tree-deduction-renderer';
-import { DSUOnTreeDeductionRenderer } from './dsu-on-tree-deduction-renderer';
-import { LCABinaryLiftingDeductionRenderer } from './lca-binary-lifting-deduction-renderer';
-import { PruferSequenceDeductionRenderer } from './prufer-sequence-deduction-renderer';
-import { TreeDifferenceDeductionRenderer } from './tree-difference-deduction-renderer';
-import { TreeKnapsackDPDeductionRenderer } from './tree-knapsack-dp-deduction-renderer';
-import { CentroidTreeDeductionRenderer } from './centroid-tree-deduction-renderer';
-import { ChordalGraphDeductionRenderer } from './chordal-graph-deduction-renderer';
-import { PseudotreeDPDeductionRenderer } from './pseudotree-dp-deduction-renderer';
-import { MinMeanCycleDeductionRenderer } from './min-mean-cycle-deduction-renderer';
-import { TreeCentroidDecompositionDeductionRenderer } from './tree-centroid-decomposition-deduction-renderer';
-import { PlanarGraphDualDeductionRenderer } from './planar-graph-dual-deduction-renderer';
-import { StableMarriageDeductionRenderer } from './stable-marriage-deduction-renderer';
-import { CycleCountingDeductionRenderer } from './cycle-counting-deduction-renderer';
-import { GoodPathsDeductionRenderer } from './good-paths-deduction-renderer';
-import { PeopleSecretDeductionRenderer } from './people-secret-deduction-renderer';
-import { CouplesHoldingHandsDeductionRenderer } from './couples-holding-hands-deduction-renderer';
-import { CourseScheduleIVDeductionRenderer } from './course-schedule-iv-deduction-renderer';
-import { StringMigrationDeductionRenderer } from './string-migration-deduction-renderer';
-import { StronglyConnectedDeductionRenderer } from './strongly-connected-deduction-renderer';
-import { FindRouteDeductionRenderer } from './find-route-deduction-renderer';
-import { ReachablePathsDeductionRenderer } from './reachable-paths-deduction-renderer';
-import { MstKruskalPrim027DeductionRenderer } from './mst-kruskal-prim-027-deduction-renderer';
-import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
-import { AlgorithmModelRepository } from '../../model-repository';
-import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
+import type { IDeductionTreeRenderer, StaticDeductionRenderOptions } from './types';
+import {
+  DEDICATED_MODEL_FILE_MAP,
+  UNIVERSAL_DP_MODEL_IDS,
+  isDeductionSupported,
+} from './deduction-manifest';
 
 export class DeductionRendererRegistry {
-  private static readonly dedicatedRenderers: IDeductionTreeRenderer[] = [
-    new UniquePathsDeductionRenderer(),
-    new LcsDeductionRenderer(),
-    new EditDistanceDeductionRenderer(),
-    new DistinctSubsequencesDeductionRenderer(),
-    new AStarDeductionRenderer(),
-    new TrappingWaterIIDeductionRenderer(),
-    new WaterFlowDeductionRenderer(),
-    new PathMinEffortDeductionRenderer(),
-    new SwimInRisingWaterDeductionRenderer(),
-    new IslandsDeductionRenderer(),
-    new IslandsBfsDeductionRenderer(),
-    new MaxIslandAreaDeductionRenderer(),
-    new AsFarFromLandDeductionRenderer(),
-    new MakeLargestIslandDeductionRenderer(),
-    new MinimumObstaclesDeductionRenderer(),
-    new MinimumCostValidPathDeductionRenderer(),
-    new CoastlineDeductionRenderer(),
-    new SinkIslandsDeductionRenderer(),
-    new TotalIslandAreaDeductionRenderer(),
-    new ClosedIslandsDeductionRenderer(),
-    new SubIslandsDeductionRenderer(),
-    new DistinctIslandsDeductionRenderer(),
-    new DijkstraBasicDeductionRenderer(),
-    new DijkstraHeapDeductionRenderer(),
-    new DijkstraIndexHeapDeductionRenderer(),
-    new BellmanFordDeductionRenderer(),
-    new SpfaDeductionRenderer(),
-    new NegativeCycleDeductionRenderer(),
-    new FloydDeductionRenderer(),
-    new NetworkDelayDeductionRenderer(),
-    new LayeredDijkstraDeductionRenderer(),
-    new EVChargeDeductionRenderer(),
-    new KShortestPathDeductionRenderer(),
-    new LimitedShortestPathDeductionRenderer(),
-    new RedundantEdgeDeductionRenderer(),
-    new RedundantEdgeIIDeductionRenderer(),
-    new TopologicalSortDeductionRenderer(),
-    new MstKruskalDeductionRenderer(),
-    new MstPrimDeductionRenderer(),
-    new TopoDPDeductionRenderer(),
-    new SecondMstDeductionRenderer(),
-    new NumberOfProvincesDeductionRenderer(),
-    new BFS01DeductionRenderer(),
-    new BiBFSDeductionRenderer(),
-    new ForwardStarDeductionRenderer(),
-    new MalwareSpreadIIDeductionRenderer(),
-    new TwoSATDeductionRenderer(),
-    new DinicMaxFlowDeductionRenderer(),
-    new AlienDictDeductionRenderer(),
-    new TarjanSCCDagDeductionRenderer(),
-    new TarjanBridgeDeductionRenderer(),
-    new HungarianMatchingDeductionRenderer(),
-    new DiffConstraintsDeductionRenderer(),
-    new BipartiteGameDeductionRenderer(),
-    new MinCostMaxFlowDeductionRenderer(),
-    new KonigMinVertexCoverDeductionRenderer(),
-    new KMAlgorithmDeductionRenderer(),
-    new MinPathCoverDeductionRenderer(),
-    new MaxWeightClosureDeductionRenderer(),
-    new BoundedFlowDeductionRenderer(),
-    new DominatorTreeDeductionRenderer(),
-    new EulerianCircuitDeductionRenderer(),
-    new BlockCutTreeDeductionRenderer(),
-    new KruskalReconstructionTreeDeductionRenderer(),
-    new HeavyLightDecompositionDeductionRenderer(),
-    new VirtualTreeDeductionRenderer(),
-    new DSUOnTreeDeductionRenderer(),
-    new LCABinaryLiftingDeductionRenderer(),
-    new PruferSequenceDeductionRenderer(),
-    new TreeDifferenceDeductionRenderer(),
-    new TreeKnapsackDPDeductionRenderer(),
-    new CentroidTreeDeductionRenderer(),
-    new ChordalGraphDeductionRenderer(),
-    new PseudotreeDPDeductionRenderer(),
-    new MinMeanCycleDeductionRenderer(),
-    new TreeCentroidDecompositionDeductionRenderer(),
-    new PlanarGraphDualDeductionRenderer(),
-    new StableMarriageDeductionRenderer(),
-    new CycleCountingDeductionRenderer(),
-    new GoodPathsDeductionRenderer(),
-    new PeopleSecretDeductionRenderer(),
-    new CouplesHoldingHandsDeductionRenderer(),
-    new CourseScheduleIVDeductionRenderer(),
-    new StringMigrationDeductionRenderer(),
-    new StronglyConnectedDeductionRenderer(),
-    new FindRouteDeductionRenderer(),
-    new ReachablePathsDeductionRenderer(),
-    new MstKruskalPrim027DeductionRenderer(),
-  ];
-
-  private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
+  /**
+   * 手工/动态注册的高优先级渲染器
+   */
+  private static readonly customRenderers: IDeductionTreeRenderer[] = [];
 
   /**
-   * 动态注册或扩充推演树渲染策略
+   * 享元实例缓存池 (Flyweight Cache)
+   */
+  private static readonly instanceCache = new Map<string, IDeductionTreeRenderer>();
+
+  /**
+   * 通用 DP 推演渲染器惰性单例
+   */
+  private static universalDpRenderer: IDeductionTreeRenderer | null = null;
+
+  /**
+   * Vite 动态模块加载映射表 (保持轻量按需路由)
+   */
+  private static readonly moduleLoaders: Record<string, () => Promise<any>> = import.meta.glob(
+    './*-deduction-renderer.ts'
+  );
+
+  /**
+   * 动态注册推演树渲染策略 (高优先级)
    */
   public static registerRenderer(renderer: IDeductionTreeRenderer): void {
-    if (!this.dedicatedRenderers.some(r => r.id === renderer.id)) {
-      this.dedicatedRenderers.unshift(renderer);
+    if (!this.customRenderers.some(r => r.id === renderer.id)) {
+      this.customRenderers.unshift(renderer);
     }
   }
 
   /**
-   * 判定任意算法是否支持全景推演树
+   * 纯同步 O(1) 判定任意算法是否支持全景推演树
    */
   public static isSupported(modelId: string): boolean {
     if (!modelId) return false;
-    return (
-      this.dedicatedRenderers.some(r => r.canHandle(modelId)) ||
-      AlgorithmModelRepository.hasModel(modelId) ||
-      AlgorithmStrategyRegistry.has(modelId)
-    );
+    if (this.customRenderers.some(r => r.canHandle(modelId))) return true;
+    return isDeductionSupported(modelId);
   }
 
   /**
-   * 分发并执行推演树渲染
+   * 按需解析并获取目标推演树渲染策略 (Virtual Proxy Resolver)
    */
-  public static dispatch(options: StaticDeductionRenderOptions): string {
-    const handler = this.dedicatedRenderers.find(r => r.canHandle(options.modelId)) || this.fallbackRenderer;
+  public static async resolveRenderer(modelId: string): Promise<IDeductionTreeRenderer | null> {
+    if (!modelId) return null;
+
+    // 1. 优先检查自定义注册策略
+    const custom = this.customRenderers.find(r => r.canHandle(modelId));
+    if (custom) return custom;
+
+    // 2. 检查享元缓存
+    const cached = this.instanceCache.get(modelId);
+    if (cached) return cached;
+
+    // 3. 专用推演渲染器按需动态加载
+    const fileName = DEDICATED_MODEL_FILE_MAP[modelId];
+    if (fileName) {
+      const loaderKey = `./${fileName}`;
+      const loader = this.moduleLoaders[loaderKey];
+      if (loader) {
+        try {
+          const mod = await loader();
+          const renderer = this.instantiateRenderer(mod);
+          if (renderer) {
+            this.instanceCache.set(modelId, renderer);
+            if (renderer.id && renderer.id !== modelId) {
+              this.instanceCache.set(renderer.id, renderer);
+            }
+            return renderer;
+          }
+        } catch (err) {
+          console.warn(`[DeductionRendererRegistry] 加载专用推演渲染器失败: ${fileName}`, err);
+        }
+      }
+    }
+
+    // 4. 通用动态规划推演渲染器惰性降级
+    if (UNIVERSAL_DP_MODEL_IDS.has(modelId)) {
+      if (!this.universalDpRenderer) {
+        try {
+          const { UniversalDpDeductionRenderer } = await import('./universal-dp-deduction-renderer');
+          this.universalDpRenderer = new UniversalDpDeductionRenderer();
+        } catch (err) {
+          console.warn('[DeductionRendererRegistry] 加载通用 DP 推演渲染器失败:', err);
+        }
+      }
+      if (this.universalDpRenderer && this.universalDpRenderer.canHandle(modelId)) {
+        return this.universalDpRenderer;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * 分发并执行推演树异步渲染
+   */
+  public static async dispatch(options: StaticDeductionRenderOptions): Promise<string> {
+    const handler = await this.resolveRenderer(options.modelId);
+    if (!handler) {
+      return `<div class="p-4 text-amber-500 font-mono text-sm">暂未找到算法 [${options.modelId}] 的全景推演树配置</div>`;
+    }
     return handler.render(options);
+  }
+
+  /**
+   * 从动态模块导出中探测并实例化渲染器 (反射与鸭子类型适配)
+   */
+  private static instantiateRenderer(mod: any): IDeductionTreeRenderer | null {
+    if (!mod || typeof mod !== 'object') return null;
+
+    for (const key of Object.keys(mod)) {
+      const ExportedItem = mod[key];
+      if (typeof ExportedItem === 'function') {
+        try {
+          const instance = new ExportedItem();
+          if (instance && typeof instance.render === 'function' && typeof instance.canHandle === 'function') {
+            return instance as IDeductionTreeRenderer;
+          }
+        } catch {
+          // 忽略非构造函数导出
+        }
+      }
+    }
+    return null;
   }
 }
