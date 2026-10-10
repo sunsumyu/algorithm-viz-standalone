@@ -1087,5 +1087,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('确立直接支配点与倍增祖先更新');
     expect(container.innerHTML).toContain('后继入度递减与支配终局验证');
   });
+
+  it('应当能正确为 eulerian-circuit (欧拉回路 · Hierholzer · 洛谷 P7771) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('eulerian-circuit')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('eulerian-path')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('hierholzer')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P7771')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-332')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class067')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'eulerian-circuit',
+    });
+    expect(container.innerHTML).toContain('欧拉回路与欧拉路径 (Eulerian Circuit · Hierholzer) · 全景推演树');
+    expect(container.innerHTML).toContain('度数守恒校验与出边字典序排序');
+    expect(container.innerHTML).toContain('当前弧扫描与深度优先遍历');
+    expect(container.innerHTML).toContain('死胡同回溯压栈');
+    expect(container.innerHTML).toContain('序列逆序翻转与一笔画还原');
+  });
 });
 
