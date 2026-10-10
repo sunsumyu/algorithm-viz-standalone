@@ -9,8 +9,29 @@
  */
 
 import { ADVANCED_TOPICS_CATEGORY_MAP } from './advanced-topics-category-map';
+import { ALGORITHM_RENDERER_MAP } from './algorithm-route-map';
 
 const rendererModules = import.meta.glob('../algorithms/categories/**/*-renderer.ts', { eager: false });
+
+const loadedAlgorithmIds = new Set<string>();
+
+/**
+ * 细粒度单算法精准按需动态加载 (Fine-Grained Lazy Loader)
+ * 仅动态 import 目标算法对应的单个 renderer 模块，彻底消除类目级 100+ 模块并发风暴
+ */
+export async function loadAlgorithmSingle(algorithmId: string): Promise<boolean> {
+  if (loadedAlgorithmIds.has(algorithmId)) return true;
+
+  const targetPath = ALGORITHM_RENDERER_MAP[algorithmId];
+  if (!targetPath) return false;
+
+  const loader = rendererModules[targetPath];
+  if (!loader) return false;
+
+  await loader();
+  loadedAlgorithmIds.add(algorithmId);
+  return true;
+}
 
 /**
  * 惰性动态导入 dp-generated-renderers.ts

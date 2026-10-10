@@ -11,7 +11,7 @@
 import type { IVisualizer } from './interfaces';
 import type { AlgorithmMetadata, AlgorithmManifest } from './registry';
 import { ALL_ALGORITHM_METADATA } from './algorithm-catalog.generated';
-import { loadAlgorithmBatch } from './algorithm-loader';
+import { loadAlgorithmBatch, loadAlgorithmSingle } from './algorithm-loader';
 
 export interface ResolvedAlgorithmEntry extends AlgorithmMetadata {
   template: string;
@@ -24,6 +24,8 @@ export interface AlgorithmRegistryOptions {
   initialMetadata?: AlgorithmMetadata[];
   /** 动态分包加载器函数（用于按需加载专题 chunk） */
   batchLoader?: (category: string) => Promise<void>;
+  /** 细粒度单题动态加载器函数 */
+  singleLoader?: (algorithmId: string) => Promise<boolean>;
 }
 
 export class AlgorithmRegistry {
@@ -34,9 +36,11 @@ export class AlgorithmRegistry {
   private readonly templatesMap: Map<string, string> = new Map();
   private readonly aliasMap: Map<string, string> = new Map();
   private readonly batchLoader: (category: string) => Promise<void>;
+  private readonly singleLoader: (algorithmId: string) => Promise<boolean>;
 
   constructor(options: AlgorithmRegistryOptions = {}) {
     this.batchLoader = options.batchLoader ?? loadAlgorithmBatch;
+    this.singleLoader = options.singleLoader ?? loadAlgorithmSingle;
 
     const initial = options.initialMetadata ?? ALL_ALGORITHM_METADATA ?? [];
     initial.forEach((meta) => {
@@ -148,7 +152,7 @@ export class AlgorithmRegistry {
   }
 
   /**
-   * 解析并确保指定算法可用（按需动态拉取分包并返回完整条目，支持别名自动映射）
+   * 解析并确保指定算法可用（支持细粒度单题精准加载与类目级优雅降级，支持别名自动映射）
    */
   public async resolve(algorithmId: string): Promise<ResolvedAlgorithmEntry | undefined> {
     const existing = this.getManifest(algorithmId);
@@ -161,7 +165,18 @@ export class AlgorithmRegistry {
       return undefined;
     }
 
-    // 触发所属专题分包的动态加载
+    // 1. 优先尝试单题精准细粒度加载（0 网络风暴，仅加载当前 1 个 renderer 模块）
+    try {
+      const loadedSingle = await this.singleLoader(algorithmId);
+      if (loadedSingle) {
+        const loaded = this.getManifest(algorithmId);
+        if (loaded) return this.wrapEntry(loaded);
+      }
+    } catch (err) {
+      console.warn(`[AlgorithmRegistry] 精准单题加载未命中或异常，回退至类目分包加载: ${algorithmId}`, err);
+    }
+
+    // 2. 兜底回退：触发所属专题分包的动态加载
     try {
       await this.batchLoader(meta.category);
     } catch (err) {

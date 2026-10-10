@@ -128,6 +128,49 @@ describe('AlgorithmRegistry (Deep Module)', () => {
     expect(registry.hasManifest('dijkstra')).toBe(true);
   });
 
+  it('resolve(id) 应优先调用细粒度 singleLoader，命中后不触发粗粒度 batchLoader', async () => {
+    let testRegistry: AlgorithmRegistry;
+    const localBatchLoader = vi.fn();
+    const mockSingle = vi.fn().mockImplementation(async (id: string) => {
+      testRegistry.register({
+        id,
+        name: '精准加载单题',
+        category: 'graph',
+        viewId: `algo-${id}-view`,
+        description: 'Single loader test',
+        icon: '⚡',
+        difficulty: 1,
+        levelOrder: 1,
+        template: '<div id="single">Single</div>',
+        Visualizer: DummyVisualizer,
+      });
+      return true;
+    });
+
+    testRegistry = new AlgorithmRegistry({
+      initialMetadata: [
+        {
+          id: 'single-target-algo',
+          name: '单题目标',
+          category: 'graph',
+          viewId: 'algo-single-target-algo-view',
+          description: '',
+          icon: '',
+          difficulty: 1,
+          levelOrder: 1,
+        },
+      ],
+      batchLoader: localBatchLoader,
+      singleLoader: mockSingle,
+    });
+
+    const entry = await testRegistry.resolve('single-target-algo');
+    expect(mockSingle).toHaveBeenCalledWith('single-target-algo');
+    expect(localBatchLoader).not.toHaveBeenCalled();
+    expect(entry).toBeDefined();
+    expect(entry?.id).toBe('single-target-algo');
+  });
+
   it('查询未知算法 ID 应安全返回 undefined 而不抛出未捕获异常', async () => {
     const entry = await registry.resolve('unknown-algo-xyz');
     expect(entry).toBeUndefined();
