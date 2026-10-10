@@ -91,6 +91,7 @@ import { StringMigrationDeductionRenderer } from './string-migration-deduction-r
 import { StronglyConnectedDeductionRenderer } from './strongly-connected-deduction-renderer';
 import { FindRouteDeductionRenderer } from './find-route-deduction-renderer';
 import { ReachablePathsDeductionRenderer } from './reachable-paths-deduction-renderer';
+import { MstKruskalPrim027DeductionRenderer } from './mst-kruskal-prim-027-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -184,6 +185,7 @@ export class DeductionRendererRegistry {
     new StronglyConnectedDeductionRenderer(),
     new FindRouteDeductionRenderer(),
     new ReachablePathsDeductionRenderer(),
+    new MstKruskalPrim027DeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

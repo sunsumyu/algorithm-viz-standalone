@@ -453,6 +453,7 @@ ${details}
       '../../algorithms/categories/graph/strongly-connected-renderer.ts',
       '../../algorithms/categories/graph/find-route-renderer.ts',
       '../../algorithms/categories/graph/reachable-paths-renderer.ts',
+      '../../algorithms/categories/graph/mst-kruskal-prim-027-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
