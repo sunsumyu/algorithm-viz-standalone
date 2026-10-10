@@ -1209,25 +1209,33 @@ button[class*="-chip"]:hover {
   color: #f8fafc;
 }
 
-.modal-backdrop .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid #334155;
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 15px;
-  flex-shrink: 0;
+.modal-backdrop .modal-header,
+[id^="algo-"][id$="-view"] .modal-backdrop .modal-header,
+[id^="algo-"][id$="-view"] .modal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 14px 20px !important;
+  background: #1e293b !important;
+  border: none !important;
+  border-bottom: 1px solid #334155 !important;
+  border-radius: 12px 12px 0 0 !important;
+  box-shadow: none !important;
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  flex-shrink: 0 !important;
 }
 
-.modal-backdrop .modal-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #f8fafc;
+.modal-backdrop .modal-title,
+[id^="algo-"][id$="-view"] .modal-backdrop .modal-title,
+[id^="algo-"][id$="-view"] .modal-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
 }
 
 .modal-backdrop button#btn-close-problem-modal,
@@ -1387,7 +1395,7 @@ button[class*="-chip"]:hover {
 /* 5. 遗留顶栏 Hero */
 [id^="algo-"][id$="-view"] [class*="-hero"],
 [id^="algo-"][id$="-view"] [class$="-hero"],
-[id^="algo-"][id$="-view"] [class*="-header"]:not([class*="-card-header"]):not([class*="-panel-header"]):not(.terminal-auto-header):not(.dark-code-terminal-header):not(.dsp-header) {
+[id^="algo-"][id$="-view"] [class*="-header"]:not([class*="-card-header"]):not([class*="-panel-header"]):not(.terminal-auto-header):not(.dark-code-terminal-header):not(.dsp-header):not([class*="modal"]):not([class*="-modal"]) {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 10px !important;

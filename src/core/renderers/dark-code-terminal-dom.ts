@@ -370,7 +370,7 @@ export function ensureTerminalSkeleton(root: HTMLElement): void {
     const modalHeader = createSafeElement('div');
     modalHeader.className = 'modal-header';
     modalHeader.style.cssText =
-      'display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #334155; color: #f8fafc; font-weight: 600; font-size: 15px; flex-shrink: 0;';
+      'background: #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border: none; border-bottom: 1px solid #334155; border-radius: 12px 12px 0 0; box-shadow: none; color: #f8fafc; font-weight: 600; font-size: 15px; flex-shrink: 0;';
 
     const modalTitle = createSafeElement('div');
     modalTitle.className = 'modal-title';

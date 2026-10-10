@@ -193,38 +193,47 @@ export const NETWORK_DELAY_CODE_LANGUAGES: Record<string, string[]> = {
 };
 
 export const NETWORK_DELAY_PROBLEM_HTML = `
-  <div style="font-size: 13px; line-height: 1.6; color: #334155;">
-    <h3 style="margin-top: 0; color: #0f172a; font-size: 15px; font-weight: 800;">📡 网络延迟时间 (LeetCode 743 / Class 064 Code01)</h3>
-    <p>
-      有 $n$ 个网络节点，标记为 $1$ 到 $n$。给你一个列表 <code>times</code>，表示信号经过有向边的传递时间 <code>times[i] = (u_i, v_i, w_i)</code>。现在从某个节点 $k$ 发出一个信号。问需要多久才能使所有节点都收到信号？如果不能使所有节点收到信号，返回 <code>-1</code>。
+  <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700; font-size: 11px; border: 1px solid rgba(56, 189, 248, 0.3);">LeetCode 743</span>
+      <span style="padding: 2px 7px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700; font-size: 11px; border: 1px solid rgba(245, 158, 11, 0.3);">Class 064 Code01</span>
+      <span style="font-size: 13px; font-weight: 700; color: #f8fafc;">网络延迟时间 (Network Delay Time)</span>
+    </div>
+    <p style="margin: 0;">
+      有 <code style="color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px;">n</code> 个网络节点，标记为 <code style="color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px;">1</code> 到 <code style="color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px;">n</code>。给你一个列表 <code style="color: #38bdf8; font-family: monospace; background: rgba(56, 189, 248, 0.1); padding: 1px 5px; border-radius: 4px;">times</code>，表示信号经过有向边的传递时间 <code>times[i] = (u<sub>i</sub>, v<sub>i</sub>, w<sub>i</sub>)</code>。现在从某个节点 <code style="color: #fbbf24; font-family: monospace; background: rgba(245, 158, 11, 0.1); padding: 1px 5px; border-radius: 4px;">k</code> 发出一个信号。问需要多久才能使所有节点都收到信号？如果不能使所有节点收到信号，返回 <code style="color: #f87171; font-family: monospace; background: rgba(248, 113, 113, 0.1); padding: 1px 5px; border-radius: 4px;">-1</code>。
     </p>
 
-    <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 8px 12px; margin: 10px 0; border-radius: 0 6px 6px 0;">
-      <div style="font-weight: 700; color: #1e40af; margin-bottom: 4px;">👑 信号广播与 Dijkstra 最短路对应</div>
-      <div style="font-size: 11.5px; color: #334155;">
-        1. <b>单源最短路</b>：信号以光速沿各链路并行扩散，节点 $u$ 收到信号的最早时刻即为 $dist[k \to u]$；<br/>
-        2. <b>全网收齐时间</b>：所有节点均收到信号的时刻为 $\max(dist[1], dist[2], \dots, dist[n])$；<br/>
-        3. <b>连通性判别</b>：若存在任意 $dist[i] = \infty$，则说明信号无法覆盖全网，返回 $-1$！
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.3); border-left: 4px solid #38bdf8; padding: 10px 14px; border-radius: 6px;">
+      <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+        <span>👑</span> 信号广播与 Dijkstra 最短路对应
+      </div>
+      <div style="font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
+        <div>1. <b>单源最短路</b>：信号以光速沿各链路并行扩散，节点 <code style="color: #38bdf8; font-family: monospace;">u</code> 收到信号的最早时刻即为 <code style="color: #38bdf8; font-family: monospace;">dist[k → u]</code>；</div>
+        <div>2. <b>全网收齐时间</b>：所有节点均收到信号的时刻为 <code style="color: #34d399; font-family: monospace;">max(dist[1], dist[2], ..., dist[n])</code>；</div>
+        <div>3. <b>连通性判别</b>：若存在任意 <code style="color: #f87171; font-family: monospace;">dist[i] = ∞</code>，说明信号无法覆盖全网，返回 <code style="color: #f87171; font-family: monospace;">-1</code>！</div>
       </div>
     </div>
   </div>
 `;
 
 export const NETWORK_DELAY_ANALYSIS_HTML = `
-  <div style="font-size: 13px; line-height: 1.6; color: #334155;">
-    <h3 style="margin-top: 0; color: #0f172a; font-size: 15px; font-weight: 800;">💡 左程云 Class064 模板要点</h3>
+  <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="padding: 2px 7px; border-radius: 4px; background: rgba(52, 211, 153, 0.15); color: #34d399; font-weight: 700; font-size: 11px; border: 1px solid rgba(52, 211, 153, 0.3);">Dijkstra 最短路核心</span>
+      <span style="font-size: 13px; font-weight: 700; color: #f8fafc;">左程云 Class 064 标准模版精讲</span>
+    </div>
 
-    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
-      <div style="font-weight: 700; color: #1e3a8a; margin-bottom: 4px;">1. 堆优化防重复展开 (visited 数组 / 惰性删除)</div>
-      <div style="font-size: 12px; color: #1e40af;">
-        当同一个节点被多次松弛入堆时，堆顶先出的是当前距离最短的记录。一旦锁定 <code>visited[u] = true</code>，后续弹出的陈旧大距离记录直接丢弃，保证每条边仅松弛一次！
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(59, 130, 246, 0.25); border-left: 4px solid #3b82f6; border-radius: 6px; padding: 10px 14px;">
+      <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">1. 堆优化防重复展开 (visited 数组 / 惰性删除)</div>
+      <div style="font-size: 12px; color: #cbd5e1;">
+        当同一个节点被多次松弛入堆时，堆顶先出的是当前距离最短的记录。一旦锁定 <code style="color: #34d399; font-family: monospace; background: rgba(52, 211, 153, 0.1); padding: 1px 4px; border-radius: 3px;">visited[u] = true</code>，后续弹出的陈旧大距离记录直接丢弃，保证每条边仅松弛一次！
       </div>
     </div>
 
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px;">
-      <div style="font-weight: 700; color: #166534; margin-bottom: 4px;">2. 复杂度分析</div>
-      <div style="font-size: 12px; color: #15803d;">
-        时间复杂度严格为 $O(E \log E) = O(E \log V)$，空间复杂度 $O(V + E)$，在网络通信与路由广播中达到工业级最优！
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(16, 185, 129, 0.25); border-left: 4px solid #10b981; border-radius: 6px; padding: 10px 14px;">
+      <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">2. 复杂度分析</div>
+      <div style="font-size: 12px; color: #a7f3d0;">
+        时间复杂度严格为 <code style="color: #6ee7b7; font-family: monospace;">O(E log E) = O(E log V)</code>，空间复杂度 <code style="color: #6ee7b7; font-family: monospace;">O(V + E)</code>，在网络通信与路由广播中达到工业级最优！
       </div>
     </div>
   </div>

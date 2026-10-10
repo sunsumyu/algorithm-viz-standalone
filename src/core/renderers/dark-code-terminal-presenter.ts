@@ -172,13 +172,28 @@ public static mount(
       modalProblem.classList.add('hidden');
     }
   }
-  const modalBody = root.querySelector('#modal-problem-body') as HTMLElement | null;
+  const modalHeader = root.querySelector('#modal-problem .modal-header') as HTMLElement | null;
+  if (modalHeader?.style) {
+    modalHeader.style.background = '#1e293b';
+    modalHeader.style.border = 'none';
+    modalHeader.style.borderBottom = '1px solid #334155';
+    modalHeader.style.borderRadius = '12px 12px 0 0';
+    modalHeader.style.color = '#f8fafc';
+    if (typeof modalHeader.style.setProperty === 'function') {
+      modalHeader.style.setProperty('background', '#1e293b', 'important');
+      modalHeader.style.setProperty('border', 'none', 'important');
+      modalHeader.style.setProperty('border-bottom', '1px solid #334155', 'important');
+      modalHeader.style.setProperty('border-radius', '12px 12px 0 0', 'important');
+      modalHeader.style.setProperty('color', '#f8fafc', 'important');
+    }
+  }
   const modalTitle = root.querySelector(
     '#modal-problem [class*="modal-title"], [class*="-modal-title"]'
   ) as HTMLElement | null;
   if (modalTitle) {
-    modalTitle.innerHTML = '<span>📋 算法原理与题目说明</span>';
+    modalTitle.innerHTML = '<span style="color: #f8fafc !important; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; gap: 6px;">📋 算法原理与题目说明</span>';
   }
+  const modalBody = root.querySelector('#modal-problem-body') as HTMLElement | null;
   const btnOpenModals = root.querySelectorAll<HTMLElement>(
     '#btn-open-problem-modal, #btn-problem-info, .btn-problem, [class*="-btn-problem"]'
   );

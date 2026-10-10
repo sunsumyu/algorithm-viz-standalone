@@ -67,7 +67,8 @@ const TREE_ALGORITHM_IDS = new Set([
 ]);
 
 export class DomainViewPresentationResolver {
-  public static isGridProblem(id: string): boolean {
+  public static isGridProblem(id?: string): boolean {
+    if (!id) return false;
     if (GRID_ALGORITHM_IDS.has(id)) return true;
     return (
       id.includes('island') ||

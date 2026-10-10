@@ -3010,6 +3010,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 28,
     learningGoal: "掌握状态压缩 BFS 扩维思路、位运算判重与拾取机制及分层搜索最短性",
+    aliases: ["847","864","state-bfs","shortestPathLength"],
   },
   {
     id: "mst-kruskal",
