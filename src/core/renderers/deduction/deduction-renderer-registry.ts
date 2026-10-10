@@ -90,6 +90,7 @@ import { CourseScheduleIVDeductionRenderer } from './course-schedule-iv-deductio
 import { StringMigrationDeductionRenderer } from './string-migration-deduction-renderer';
 import { StronglyConnectedDeductionRenderer } from './strongly-connected-deduction-renderer';
 import { FindRouteDeductionRenderer } from './find-route-deduction-renderer';
+import { ReachablePathsDeductionRenderer } from './reachable-paths-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -182,6 +183,7 @@ export class DeductionRendererRegistry {
     new StringMigrationDeductionRenderer(),
     new StronglyConnectedDeductionRenderer(),
     new FindRouteDeductionRenderer(),
+    new ReachablePathsDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

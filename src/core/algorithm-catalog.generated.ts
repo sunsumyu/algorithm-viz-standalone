@@ -2736,6 +2736,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 21,
     learningGoal: "掌握 DAG 上的深度优先回溯搜索与路径压栈恢复机制",
+    aliases: ["797","all-paths","allPathsSourceTarget"],
   },
   {
     id: "closed-islands",

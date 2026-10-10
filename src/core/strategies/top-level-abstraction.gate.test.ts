@@ -452,6 +452,7 @@ ${details}
       '../../algorithms/categories/graph/string-migration-renderer.ts',
       '../../algorithms/categories/graph/strongly-connected-renderer.ts',
       '../../algorithms/categories/graph/find-route-renderer.ts',
+      '../../algorithms/categories/graph/reachable-paths-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

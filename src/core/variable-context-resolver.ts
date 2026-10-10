@@ -416,6 +416,14 @@ export class VariableContextResolver {
     const edgePairAliases = ['edge', 'activeEdgePair', 'channel'];
     this.syncAliasGroup(varsMap, edgePairAliases);
 
+    // 语义组 14: 当前搜索路径与路径栈 (Current Search Path / Path Stack)
+    const pathAliases = ['path', 'currentPath', 'pathNodes', 'activePath'];
+    this.syncAliasGroup(varsMap, pathAliases);
+
+    // 语义组 15: 全量解路径集合 (All Paths / Result Paths)
+    const pathsAliases = ['allPaths', 'paths', 'res', 'resultPaths', 'pathList'];
+    this.syncAliasGroup(varsMap, pathsAliases);
+
     // 别名同步后再次尝试三元推导（确保 curL/curR 映射到 l/r 之后能够立即派生出 len）
     this.deriveIntervalTriad({}, varsMap);
   }
