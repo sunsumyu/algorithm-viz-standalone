@@ -3037,14 +3037,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "graph-summary",
-    name: "图论总结篇",
+    name: "图论总结篇 (Graph Summary)",
     viewId: "algo-graph-summary-view",
     category: "graph",
-    description: "图论算法全景：遍历搜索、并查集、最小生成树、拓扑排序、最短路径",
+    description: "图论算法全景星系图谱：遍历搜索、并查集、最小生成树、拓扑排序与最短路径五大核心领域",
     icon: "🗺️",
     difficulty: 1,
     levelOrder: 30,
-    learningGoal: "掌握图论五大核心领域及其经典算法",
+    learningGoal: "掌握图论五大核心领域及其经典算法适用边界与选型决策",
+    aliases: ["graph-overview","graph-cheat-sheet"],
   },
   {
     id: "mst-prim",
