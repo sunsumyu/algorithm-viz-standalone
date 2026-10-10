@@ -16,7 +16,9 @@ export class TreeCentroidDecompositionDeductionRenderer implements IDeductionTre
       modelId === 'static-centroid' ||
       modelId === 'POJ1741' ||
       modelId === 'P3806' ||
-      modelId === 'tree-divide-and-conquer'
+      modelId === 'tree-divide-and-conquer' ||
+      modelId === 'tree-centroid-path-count' ||
+      modelId === 'tree-path-count'
     );
   }
 

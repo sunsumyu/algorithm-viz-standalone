@@ -1342,6 +1342,8 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(StaticDeductionTreeAdapter.isSupported('POJ1741')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('P3806')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('tree-divide-and-conquer')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-centroid-path-count')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-path-count')).toBe(true);
 
     const container = { innerHTML: '' } as unknown as HTMLElement;
     StaticDeductionTreeAdapter.renderDeduction(container, {
