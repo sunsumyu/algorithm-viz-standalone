@@ -438,6 +438,7 @@ ${details}
       '../../algorithms/categories/graph/centroid-tree-renderer.ts',
       '../../algorithms/categories/graph/chordal-graph-renderer.ts',
       '../../algorithms/categories/graph/pseudotree-dp-renderer.ts',
+      '../../algorithms/categories/graph/min-mean-cycle-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

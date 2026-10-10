@@ -1317,6 +1317,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('两次树形 DP 处理互斥边界');
     expect(container.innerHTML).toContain('两方案取最优与全局答案输出');
   });
+
+  it('应当能正确为 min-mean-cycle (最小均值回路 · 洛谷 P2868) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('min-mean-cycle')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('karp')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('min-mean-weight-cycle')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2868')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('fractional-programming')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'min-mean-cycle',
+    });
+    expect(container.innerHTML).toContain('最小均值回路与 0-1 分数规划 (Min Mean Cycle · Karp / 洛谷 P2868) · 全景推演树');
+    expect(container.innerHTML).toContain('二分猜测与动态边权赋权');
+    expect(container.innerHTML).toContain('SPFA 负权回路探测');
+    expect(container.innerHTML).toContain('二分上下界收缩转移');
+    expect(container.innerHTML).toContain('收敛至零环与极值回路输出');
+  });
 });
 
 
