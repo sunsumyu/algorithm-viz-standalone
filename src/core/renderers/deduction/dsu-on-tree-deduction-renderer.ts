@@ -17,7 +17,9 @@ export class DSUOnTreeDeductionRenderer implements IDeductionTreeRenderer {
       modelId === 'sack' ||
       modelId === 'CF600E' ||
       modelId === 'U41492' ||
-      modelId === 'class075'
+      modelId === 'class075' ||
+      modelId === 'tree-dominant-color' ||
+      modelId === 'dominant-color'
     );
   }
 

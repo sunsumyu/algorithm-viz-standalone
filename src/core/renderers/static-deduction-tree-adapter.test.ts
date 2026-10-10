@@ -1184,6 +1184,8 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(StaticDeductionTreeAdapter.isSupported('CF600E')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('U41492')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('class075')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-dominant-color')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dominant-color')).toBe(true);
 
     const container = { innerHTML: '' } as unknown as HTMLElement;
     StaticDeductionTreeAdapter.renderDeduction(container, {
