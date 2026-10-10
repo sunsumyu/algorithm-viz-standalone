@@ -80,6 +80,7 @@ import { ChordalGraphDeductionRenderer } from './chordal-graph-deduction-rendere
 import { PseudotreeDPDeductionRenderer } from './pseudotree-dp-deduction-renderer';
 import { MinMeanCycleDeductionRenderer } from './min-mean-cycle-deduction-renderer';
 import { TreeCentroidDecompositionDeductionRenderer } from './tree-centroid-decomposition-deduction-renderer';
+import { PlanarGraphDualDeductionRenderer } from './planar-graph-dual-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -162,6 +163,7 @@ export class DeductionRendererRegistry {
     new PseudotreeDPDeductionRenderer(),
     new MinMeanCycleDeductionRenderer(),
     new TreeCentroidDecompositionDeductionRenderer(),
+    new PlanarGraphDualDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

@@ -1357,6 +1357,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('跨重心深度收集与容斥统计');
     expect(container.innerHTML).toContain('子连通块递归分治与全局闭环');
   });
+
+  it('应当能正确为 planar-graph-dual (平面图最小割转对偶最短路 · 洛谷 P4001) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('planar-graph-dual')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('planar-dual')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4001')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('wolf-rabbit')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('planar-mincut')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'planar-graph-dual',
+    });
+    expect(container.innerHTML).toContain('平面图最小割转对偶图最短路 (Planar Graph Min-Cut · 洛谷 P4001 狼抓兔子) · 全景推演树');
+    expect(container.innerHTML).toContain('平面图转对偶图建模与源汇确立');
+    expect(container.innerHTML).toContain('Dijkstra 堆优化最短路松弛');
+    expect(container.innerHTML).toContain('到达对偶汇点与提前终止');
+    expect(container.innerHTML).toContain('对偶路径回溯与原图割割边映射');
+  });
 });
 
 
