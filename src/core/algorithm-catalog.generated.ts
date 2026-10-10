@@ -3228,6 +3228,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 70,
     learningGoal: "掌握树上点差分与边差分原理、LCA 端点标记法及自底向上还原覆盖权值全流程",
+    aliases: ["tree-diff","tree-difference-122","P3128","P3258","class122"],
   },
   {
     id: "cycle-counting",

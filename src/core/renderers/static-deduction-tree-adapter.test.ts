@@ -1229,7 +1229,26 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('线性双指针贪心消除与序列编码');
     expect(container.innerHTML).toContain('Cayley 公式与双射性质总结');
   });
+
+  it('应当能正确为 tree-difference (树上差分 · 洛谷 P3128 / P3258) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tree-difference')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-diff')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-difference-122')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3128')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3258')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class122')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-difference',
+    });
+    expect(container.innerHTML).toContain('树上差分与子树前缀和 (Tree Difference · 洛谷 P3128 / P3258) · 全景推演树');
+    expect(container.innerHTML).toContain('预处理深度与倍增 LCA');
+    expect(container.innerHTML).toContain('路径端点 LCA 判定与差分标记注入');
+    expect(container.innerHTML).toContain('后序遍历自底向上前缀和还原');
+  });
 });
+
 
 
 
