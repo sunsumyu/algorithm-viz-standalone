@@ -434,6 +434,7 @@ ${details}
       '../../algorithms/categories/graph/lca-binary-lifting-renderer.ts',
       '../../algorithms/categories/graph/prufer-sequence-renderer.ts',
       '../../algorithms/categories/graph/tree-difference-renderer.ts',
+      '../../algorithms/categories/graph/tree-knapsack-dp-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

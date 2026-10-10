@@ -3332,6 +3332,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 74,
     learningGoal: "掌握树上有依赖背包的树上泛化物品合并、超级源点技巧与子树大小上下界常数优化",
+    aliases: ["tree-knapsack","P2014","tree-dependent-knapsack","dependent-knapsack-tree"],
   },
   {
     id: "convex-hull-3d",

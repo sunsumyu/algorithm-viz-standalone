@@ -1247,6 +1247,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('路径端点 LCA 判定与差分标记注入');
     expect(container.innerHTML).toContain('后序遍历自底向上前缀和还原');
   });
+
+  it('应当能正确为 tree-knapsack-dp (树上有依赖背包 · 洛谷 P2014 选课) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tree-knapsack-dp')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-knapsack')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2014')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-dependent-knapsack')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-knapsack-dp',
+    });
+    expect(container.innerHTML).toContain('树上有依赖背包 (Tree Knapsack DP · 洛谷 P2014 选课) · 全景推演树');
+    expect(container.innerHTML).toContain('虚拟超级源点与树拓扑构建');
+    expect(container.innerHTML).toContain('后序递归遍历与节点必修装载');
+    expect(container.innerHTML).toContain('泛化物品背包卷积与上下界优化');
+    expect(container.innerHTML).toContain('超级源点全局汇总与最优解输出');
+  });
 });
 
 
