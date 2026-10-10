@@ -1281,6 +1281,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('建立点分树父子边与树高上界确立');
     expect(container.innerHTML).toContain('动态修改向上跳链与路径容斥查询');
   });
+
+  it('应当能正确为 chordal-graph (弦图判定与 MCS · 洛谷 P3199) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('chordal-graph')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('chordal')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('mcs')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('peo')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3199')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'chordal-graph',
+    });
+    expect(container.innerHTML).toContain('弦图判定与 MCS 最大势算法 (Chordal Graph & MCS · 洛谷 P3199) · 全景推演树');
+    expect(container.innerHTML).toContain('MCS 最大势逆序选点');
+    expect(container.innerHTML).toContain('候选序列 PEO 闭环与矩阵初始化');
+    expect(container.innerHTML).toContain('后继邻居团性质充要检验');
+    expect(container.innerHTML).toContain('弦图判定结论与无弦环排查');
+  });
 });
 
 

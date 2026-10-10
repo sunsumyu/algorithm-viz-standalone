@@ -3137,6 +3137,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 64,
     learningGoal: "掌握最大势搜索 MCS 算法原理、完美消除序列 PEO 检验及弦图的判定定理",
+    aliases: ["mcs","peo","P3199","chordal"],
   },
   {
     id: "min-path-cover",
