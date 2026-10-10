@@ -845,41 +845,75 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     // 规则 2：公式卡片（.dsp-formula-card）或纯指标卡片（仅包含 label+value 结构）自动转接并规范化至 Card 2
     if (this.sandboxContainer && this.customMetricsContainer && !auxRender) {
       const formulaEl = this.sandboxContainer.querySelector('.dsp-formula-card, [data-formula-card]');
+      const hasGridOrFooter = this.sandboxContainer.querySelector('div[style*="grid-template-columns"], div[style*="margin-top"]');
 
-      // 智能检测沙盘中误植的指标网格、公式卡片或算法原理/精髓辅助说明卡片
-      const isCard2Candidate = (el: Element): boolean => {
-        if (el.classList.contains('dsp-formula-card') || el.hasAttribute('data-formula-card')) return true;
+      // 快速短路：绝大多数算法不包含需转接的卡片，直接跳过昂贵的全树扫描与正则测试
+      if (!formulaEl && !hasGridOrFooter) {
+        if (anyStep.decision || anyStep.statusBadge || anyStep.message) {
+          if (this.liveTextEl) {
+            this.liveTextEl.style.display = 'none';
+          }
+          const badge = anyStep.statusBadge;
+          const badgeHtml = badge
+            ? `<span style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 999px;">${badge.text || badge}</span>`
+            : '';
+          const goal = this.spec.learningGoal;
+          const goalHtml = goal
+            ? `<div style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; font-size: 11.5px; color: #475569; line-height: 1.5; margin-top: 4px;">
+                <span style="font-size: 14px; line-height: 1;">💡</span>
+                <div><span style="font-weight: 700; color: #1e293b;">核心要领：</span>${goal}</div>
+              </div>`
+            : '';
+          this.customMetricsContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; margin: 4px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; font-weight: 700; color: #475569;">🧭 当前状态决策</span>
+                ${badgeHtml}
+              </div>
+              <div style="font-size: 12.5px; font-weight: 600; color: #1e293b; line-height: 1.6;">
+                ${anyStep.decision || anyStep.message || '观察当前状态变迁'}
+              </div>
+            </div>
+            ${goalHtml}
+          `;
+        } else {
+          if (this.liveTextEl) this.liveTextEl.style.display = '';
+        }
+      } else {
+        // 智能检测沙盘中误植的指标网格、公式卡片或算法原理/精髓辅助说明卡片
+        const isCard2Candidate = (el: Element): boolean => {
+          if (el.classList.contains('dsp-formula-card') || el.hasAttribute('data-formula-card')) return true;
 
-        const style = el.getAttribute('style') || '';
-        const isGrid = style.includes('grid-template-columns');
-        const isFooter = style.includes('margin-top: auto') || style.includes('margin-top:auto');
-        if (!isGrid && !isFooter) return false;
+          const style = el.getAttribute('style') || '';
+          const isGrid = style.includes('grid-template-columns');
+          const isFooter = style.includes('margin-top: auto') || style.includes('margin-top:auto');
+          if (!isGrid && !isFooter) return false;
 
-        // 核心排除：若包含数据结构实体（表格、SVG、数组项、节点、代码块），绝对不可移出 Card 1！
-        if (el.querySelector('table, svg, pre, code, .node, .cell, input, button') !== null) return false;
+          // 核心排除：若包含数据结构实体（表格、SVG、数组项、节点、代码块），绝对不可移出 Card 1！
+          if (el.querySelector('table, svg, pre, code, .node, .cell, input, button') !== null) return false;
 
-        const text = el.textContent || '';
-        if (text.includes('➔') || text.includes('->') || text.includes('-->')) return false;
+          const text = el.textContent || '';
+          if (text.includes('➔') || text.includes('->') || text.includes('-->')) return false;
 
-        const children = Array.from(el.children);
-        // 指标卡网格一般有 2~6 个子项
-        if (children.length < 2 || children.length > 6) return false;
+          const children = Array.from(el.children);
+          // 指标卡网格一般有 2~6 个子项
+          if (children.length < 2 || children.length > 6) return false;
 
-        // 若子项内部还有复杂树状结构或大量宽度方块，说明是多列画板，不是指标
-        const isPureMetricGrid = children.every((child) => {
-          const childText = (child.textContent || '').trim();
-          const descCount = child.querySelectorAll('*').length;
-          return childText.length > 0 && childText.length < 80 && descCount <= 6;
-        });
+          // 若子项内部还有复杂树状结构或大量宽度方块，说明是多列画板，不是指标
+          const isPureMetricGrid = children.every((child) => {
+            const childText = (child.textContent || '').trim();
+            const descCount = child.querySelectorAll('*').length;
+            return childText.length > 0 && childText.length < 80 && descCount <= 6;
+          });
 
-        const hasKeywords = /(当前|下标|阶段|状态|指针|步数|节点|计数|结果|规模|总数|长度|阈值|深度|处理|目标|拐点|交换|二分|主元|耗时|空间|精髓|原理|法则|步骤|公理|说明|倍数|展开)/.test(text);
+          const hasKeywords = /(当前|下标|阶段|状态|指针|步数|节点|计数|结果|规模|总数|长度|阈值|深度|处理|目标|拐点|交换|二分|主元|耗时|空间|精髓|原理|法则|步骤|公理|说明|倍数|展开)/.test(text);
 
-        return isPureMetricGrid && hasKeywords;
-      };
+          return isPureMetricGrid && hasKeywords;
+        };
 
-      const candidateCards = Array.from(
-        this.sandboxContainer.querySelectorAll<HTMLElement>('div[style*="grid-template-columns"], div[style*="margin-top"]')
-      ).filter(isCard2Candidate);
+        const candidateCards = Array.from(
+          this.sandboxContainer.querySelectorAll<HTMLElement>('div[style*="grid-template-columns"], div[style*="margin-top"]')
+        ).filter(isCard2Candidate);
 
       // 铁律：候选卡片的提取绝不能将 Card 1 掏空！
       const candidateSet = new Set(candidateCards);
@@ -999,6 +1033,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         if (this.liveTextEl) this.liveTextEl.style.display = '';
       }
     }
+  }
 
     // 2. 更新通用实时解说文本与指标卡片
     if (anyStep.metrics && typeof anyStep.metrics === 'object') {
