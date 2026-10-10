@@ -1052,5 +1052,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('分层网络与阻塞流增广');
     expect(container.innerHTML).toContain('最大净收益核算与闭合方案还原');
   });
+
+  it('应当能正确为 bounded-flow (上下界网络流 · LOJ 115) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bounded-flow')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('bounded-flow-circulation')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('feasible-circulation')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('LOJ115')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P5192')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'bounded-flow',
+    });
+    expect(container.innerHTML).toContain('上下界网络流与无源汇可行流 (Bounded Flow) · 全景推演树');
+    expect(container.innerHTML).toContain('强制下界底流扣减与点差额累计');
+    expect(container.innerHTML).toContain('伴随网络超级源汇连边');
+    expect(container.innerHTML).toContain('满流充要判定与真实流量还原');
+  });
 });
 

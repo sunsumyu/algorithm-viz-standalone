@@ -3271,6 +3271,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 72,
     learningGoal: "掌握上下界网络流差额建模技巧、底流扣减定理及伴随网络满流充要判定方法",
+    aliases: ["bounded-flow-circulation","feasible-circulation","LOJ115","P5192"],
   },
   {
     id: "tree-centroid-path-count",
