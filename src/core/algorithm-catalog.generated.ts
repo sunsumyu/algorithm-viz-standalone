@@ -3445,6 +3445,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 82,
     learningGoal: "掌握倍增递推原理 up[u][i]=up[up[u][i-1]][i-1]、两阶段深度对齐与二进制试跳算法",
+    aliases: ["lca","binary-lifting-lca","tree-lca","P3379","class076"],
   },
   {
     id: "heavy-light-decomposition",

@@ -1194,6 +1194,25 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('第二次 DFS 启发式合并与保留消除');
     expect(container.innerHTML).toContain('树上启发式合并结果输出');
   });
+
+  it('应当能正确为 lca-binary-lifting (最近公共祖先树上倍增 · 洛谷 P3379) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('lca-binary-lifting')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('lca')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('binary-lifting-lca')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3379')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class076')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'lca-binary-lifting',
+    });
+    expect(container.innerHTML).toContain('最近公共祖先与树上倍增 (LCA Binary Lifting · 洛谷 P3379) · 全景推演树');
+    expect(container.innerHTML).toContain('DFS 预处理深度与倍增跳转表');
+    expect(container.innerHTML).toContain('查询阶段一：深度对齐跃升');
+    expect(container.innerHTML).toContain('查询阶段二：二进制同步跃升');
+    expect(container.innerHTML).toContain('结果锁定与树上最短距离结算');
+  });
 });
+
 
 

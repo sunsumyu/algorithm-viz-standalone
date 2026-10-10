@@ -71,6 +71,7 @@ import { KruskalReconstructionTreeDeductionRenderer } from './kruskal-reconstruc
 import { HeavyLightDecompositionDeductionRenderer } from './heavy-light-decomposition-deduction-renderer';
 import { VirtualTreeDeductionRenderer } from './virtual-tree-deduction-renderer';
 import { DSUOnTreeDeductionRenderer } from './dsu-on-tree-deduction-renderer';
+import { LCABinaryLiftingDeductionRenderer } from './lca-binary-lifting-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -144,6 +145,7 @@ export class DeductionRendererRegistry {
     new HeavyLightDecompositionDeductionRenderer(),
     new VirtualTreeDeductionRenderer(),
     new DSUOnTreeDeductionRenderer(),
+    new LCABinaryLiftingDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
