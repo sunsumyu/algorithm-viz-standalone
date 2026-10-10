@@ -447,6 +447,7 @@ ${details}
       '../../algorithms/categories/graph/cycle-counting-renderer.ts',
       '../../algorithms/categories/graph/good-paths-renderer.ts',
       '../../algorithms/categories/graph/people-secret-renderer.ts',
+      '../../algorithms/categories/graph/couples-holding-hands-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

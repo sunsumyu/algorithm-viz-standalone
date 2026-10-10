@@ -85,6 +85,7 @@ import { StableMarriageDeductionRenderer } from './stable-marriage-deduction-ren
 import { CycleCountingDeductionRenderer } from './cycle-counting-deduction-renderer';
 import { GoodPathsDeductionRenderer } from './good-paths-deduction-renderer';
 import { PeopleSecretDeductionRenderer } from './people-secret-deduction-renderer';
+import { CouplesHoldingHandsDeductionRenderer } from './couples-holding-hands-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -172,6 +173,7 @@ export class DeductionRendererRegistry {
     new CycleCountingDeductionRenderer(),
     new GoodPathsDeductionRenderer(),
     new PeopleSecretDeductionRenderer(),
+    new CouplesHoldingHandsDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
