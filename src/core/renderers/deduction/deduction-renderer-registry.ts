@@ -83,6 +83,7 @@ import { TreeCentroidDecompositionDeductionRenderer } from './tree-centroid-deco
 import { PlanarGraphDualDeductionRenderer } from './planar-graph-dual-deduction-renderer';
 import { StableMarriageDeductionRenderer } from './stable-marriage-deduction-renderer';
 import { CycleCountingDeductionRenderer } from './cycle-counting-deduction-renderer';
+import { GoodPathsDeductionRenderer } from './good-paths-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -168,6 +169,7 @@ export class DeductionRendererRegistry {
     new PlanarGraphDualDeductionRenderer(),
     new StableMarriageDeductionRenderer(),
     new CycleCountingDeductionRenderer(),
+    new GoodPathsDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
