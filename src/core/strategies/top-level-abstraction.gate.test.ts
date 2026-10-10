@@ -443,6 +443,7 @@ ${details}
       '../../algorithms/categories/graph/tree-centroid-path-count-renderer.ts',
       '../../algorithms/categories/graph/tree-dominant-color-renderer.ts',
       '../../algorithms/categories/graph/planar-graph-dual-renderer.ts',
+      '../../algorithms/categories/graph/stable-marriage-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

@@ -81,6 +81,7 @@ import { PseudotreeDPDeductionRenderer } from './pseudotree-dp-deduction-rendere
 import { MinMeanCycleDeductionRenderer } from './min-mean-cycle-deduction-renderer';
 import { TreeCentroidDecompositionDeductionRenderer } from './tree-centroid-decomposition-deduction-renderer';
 import { PlanarGraphDualDeductionRenderer } from './planar-graph-dual-deduction-renderer';
+import { StableMarriageDeductionRenderer } from './stable-marriage-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -164,6 +165,7 @@ export class DeductionRendererRegistry {
     new MinMeanCycleDeductionRenderer(),
     new TreeCentroidDecompositionDeductionRenderer(),
     new PlanarGraphDualDeductionRenderer(),
+    new StableMarriageDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
