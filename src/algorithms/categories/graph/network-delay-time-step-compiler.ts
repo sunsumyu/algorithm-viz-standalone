@@ -9,12 +9,20 @@ import { AlgorithmExecutionTraceEngine } from '../../../core/algorithm-execution
 
 export interface NetworkDelayStepVars {
   curNode: number;
+  u: number;
+  k: number;
+  n: number;
+  cur?: [number, number];
+  activeEdge?: [number, number, number];
+  edge?: [number, number];
+  v?: number;
+  w?: number;
   distList: number[];
   visitedList: boolean[];
   pqSnapshot: Array<{ u: number; d: number }>;
   maxDelaySoFar: number;
+  ans?: number;
   isAllReached: boolean;
-  activeEdge?: [number, number, number];
   activeArray?: 'dist' | 'visited' | 'pq';
   activeSlot?: number;
   status: 'init' | 'emit' | 'pop' | 'relax' | 'check' | 'done';
@@ -22,6 +30,9 @@ export interface NetworkDelayStepVars {
 
 export interface NetworkDelayStep {
   curNode: number;
+  u?: number;
+  k?: number;
+  n?: number;
   distList: number[];
   visitedList: boolean[];
   pqSnapshot: Array<{ u: number; d: number }>;
@@ -188,12 +199,20 @@ export function traceNetworkDelay(isReachable: boolean = true) {
           type: status,
           vars: {
             curNode,
+            u: curNode,
+            k,
+            n,
+            cur: [curNode, distance[curNode] === Infinity ? 0 : distance[curNode]],
+            activeEdge,
+            edge: activeEdge ? [activeEdge[1], activeEdge[2]] : undefined,
+            v: activeEdge ? activeEdge[1] : undefined,
+            w: activeEdge ? activeEdge[2] : undefined,
             distList: distance,
             visitedList: visited,
             pqSnapshot: pq,
             maxDelaySoFar,
+            ans: maxDelaySoFar,
             isAllReached,
-            activeEdge,
             activeArray,
             activeSlot,
             status,
@@ -298,6 +317,9 @@ export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDela
   const traceSteps = traceNetworkDelay(isReachable);
   return traceSteps.map((step) => ({
     curNode: step.vars!.curNode,
+    u: step.vars!.u,
+    k: step.vars!.k,
+    n: step.vars!.n,
     distList: step.vars!.distList,
     visitedList: step.vars!.visitedList,
     pqSnapshot: step.vars!.pqSnapshot,

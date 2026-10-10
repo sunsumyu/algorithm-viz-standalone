@@ -23,6 +23,9 @@ describe('Network Delay Time Trace (Dijkstra Execution Engine)', () => {
     const distStep1 = traceSteps.find((s) => s.anchor === 'initSrc');
     expect(distStep1).toBeDefined();
     expect(distStep1!.vars?.distList[2]).toBe(0);
+    expect(distStep1!.vars?.k).toBe(2);
+    expect(distStep1!.vars?.n).toBe(4);
+    expect(distStep1!.vars?.u).toBe(2);
 
     // 3. 验证终态
     const doneStep = traceSteps[traceSteps.length - 1];

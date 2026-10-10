@@ -281,6 +281,24 @@ export class VariableContextResolver {
         varsMap.set('u', { name: 'u', value: String(num), type: 'number', raw: num });
       }
     }
+
+    // C. distList / visitedList -> n (全网节点数推导)
+    const distList = s.distList || s.vars?.distList || varsMap.get('dist')?.raw || varsMap.get('distList')?.raw;
+    const visitedList = s.visitedList || s.vars?.visitedList || varsMap.get('visited')?.raw || varsMap.get('visitedList')?.raw;
+    const targetArr = Array.isArray(distList) ? distList : (Array.isArray(visitedList) ? visitedList : null);
+    if (targetArr && targetArr.length > 1 && !varsMap.has('n')) {
+      const derivedN = targetArr.length - 1; // 1-based node total
+      varsMap.set('n', { name: 'n', value: String(derivedN), type: 'number', raw: derivedN });
+    }
+
+    // D. 识别源点参数 k (source/src/k)
+    const kVal = s.k ?? s.vars?.k ?? s.source ?? s.src ?? (s.status === 'emit' ? s.activeSlot : undefined);
+    if (kVal !== undefined && !varsMap.has('k')) {
+      const num = typeof kVal === 'number' ? kVal : parseInt(String(kVal), 10);
+      if (!isNaN(num)) {
+        varsMap.set('k', { name: 'k', value: String(num), type: 'number', raw: num });
+      }
+    }
   }
 
   /**
@@ -366,6 +384,16 @@ export class VariableContextResolver {
     // 语义组 10: 答案 / 统计结果 (Result / Max Delay)
     const resultAliases = ['ans', 'res', 'result', 'maxDelaySoFar', 'maxDelay', 'totalCost'];
     this.syncAliasGroup(varsMap, resultAliases);
+
+    // 语义组 11: 源点入参 / 起点 (Source Node / Start Parameter)
+    const sourceAliases = ['k', 'source', 'src', 'startNode', 'start', 'startVertex'];
+    this.syncAliasGroup(varsMap, sourceAliases);
+
+    // 语义组 12: 堆顶状态与边数组元组 (Current Heap Pair / Edge Pair)
+    const pairAliases = ['cur', 'currentPair', 'topPair'];
+    this.syncAliasGroup(varsMap, pairAliases);
+    const edgePairAliases = ['edge', 'activeEdgePair', 'channel'];
+    this.syncAliasGroup(varsMap, edgePairAliases);
 
     // 别名同步后再次尝试三元推导（确保 curL/curR 映射到 l/r 之后能够立即派生出 len）
     this.deriveIntervalTriad({}, varsMap);

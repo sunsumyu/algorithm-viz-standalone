@@ -186,5 +186,20 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(distanceU).toBeDefined();
     expect(distanceU?.value).toBe('0');
   });
+
+  it('should automatically resolve source parameter k and derive total node count n for graph algorithms', () => {
+    const step = {
+      curNode: 2,
+      k: 2,
+      distList: [Infinity, Infinity, 0, Infinity, Infinity],
+    };
+
+    const varsMap = VariableContextResolver.resolve(step);
+
+    expect(VariableContextResolver.getVariable(varsMap, 'k')?.value).toBe('2');
+    expect(VariableContextResolver.getVariable(varsMap, 'source')?.value).toBe('2');
+    expect(VariableContextResolver.getVariable(varsMap, 'src')?.value).toBe('2');
+    expect(VariableContextResolver.getVariable(varsMap, 'n')?.value).toBe('4');
+  });
 });
 
