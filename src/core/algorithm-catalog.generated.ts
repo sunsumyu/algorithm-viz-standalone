@@ -3294,6 +3294,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 73,
     learningGoal: "掌握 DAG 支配树构造原理、前驱支配交集与 LCA 等价定理及倍增查询应用",
+    aliases: ["dominator-tree-dag","dag-dominator-tree","P2597","P5180"],
   },
   {
     id: "min-mean-cycle",

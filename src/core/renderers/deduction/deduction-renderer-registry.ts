@@ -64,6 +64,7 @@ import { KMAlgorithmDeductionRenderer } from './km-algorithm-deduction-renderer'
 import { MinPathCoverDeductionRenderer } from './min-path-cover-deduction-renderer';
 import { MaxWeightClosureDeductionRenderer } from './max-weight-closure-deduction-renderer';
 import { BoundedFlowDeductionRenderer } from './bounded-flow-deduction-renderer';
+import { DominatorTreeDeductionRenderer } from './dominator-tree-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -130,6 +131,7 @@ export class DeductionRendererRegistry {
     new MinPathCoverDeductionRenderer(),
     new MaxWeightClosureDeductionRenderer(),
     new BoundedFlowDeductionRenderer(),
+    new DominatorTreeDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

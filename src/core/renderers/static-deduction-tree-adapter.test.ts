@@ -1069,5 +1069,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('伴随网络超级源汇连边');
     expect(container.innerHTML).toContain('满流充要判定与真实流量还原');
   });
+
+  it('应当能正确为 dominator-tree (DAG 支配树 · 洛谷 P2597) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('dominator-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dominator-tree-dag')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dag-dominator-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2597')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P5180')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'dominator-tree',
+    });
+    expect(container.innerHTML).toContain('DAG 支配树 (Dominator Tree) · 全景推演树');
+    expect(container.innerHTML).toContain('原图加边与入度统计');
+    expect(container.innerHTML).toContain('拓扑排序推进与前驱 LCA 汇聚');
+    expect(container.innerHTML).toContain('确立直接支配点与倍增祖先更新');
+    expect(container.innerHTML).toContain('后继入度递减与支配终局验证');
+  });
 });
 
