@@ -3521,6 +3521,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 86,
     learningGoal: "掌握基环树拓扑性质、断环为链技巧及两次树形 DP 处理相邻约束方法",
+    aliases: ["pseudotree","cycle-with-trees","P1453","P2607"],
   },
   {
     id: "max-weight-closure",

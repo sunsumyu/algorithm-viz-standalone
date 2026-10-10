@@ -1299,6 +1299,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('后继邻居团性质充要检验');
     expect(container.innerHTML).toContain('弦图判定结论与无弦环排查');
   });
+
+  it('应当能正确为 pseudotree-dp (基环树 DP · 洛谷 P1453 / P2607) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('pseudotree-dp')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('pseudotree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('cycle-with-trees')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P1453')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2607')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'pseudotree-dp',
+    });
+    expect(container.innerHTML).toContain('基环树与环套树 DP (Pseudotree DP · 洛谷 P1453 / P2607 骑士) · 全景推演树');
+    expect(container.innerHTML).toContain('DFS 寻环与断边锁定');
+    expect(container.innerHTML).toContain('外挂子树自底向上 DP 汇聚');
+    expect(container.innerHTML).toContain('两次树形 DP 处理互斥边界');
+    expect(container.innerHTML).toContain('两方案取最优与全局答案输出');
+  });
 });
 
 
