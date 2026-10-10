@@ -3385,6 +3385,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 77,
     learningGoal: "掌握虚树单调栈构建方法、O(K log N) 提取必要连通骨架及在虚树上极速树形 DP 技巧",
+    aliases: ["auxiliary-tree","vtree","P2495","SDOI2011","class073"],
   },
   {
     id: "k-shortest-path",

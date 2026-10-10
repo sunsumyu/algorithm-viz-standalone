@@ -1158,5 +1158,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('第二次 DFS：重儿子优先遍历、链头确立与连续 DFN 序编排');
     expect(container.innerHTML).toContain('树上路径跳跃与线段树连续区间映射');
   });
+
+  it('应当能正确为 virtual-tree (虚树 · 洛谷 P2495) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('virtual-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('auxiliary-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('vtree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P2495')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('SDOI2011')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class073')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'virtual-tree',
+    });
+    expect(container.innerHTML).toContain('虚树与关键点浓缩 (Virtual Tree · 洛谷 P2495) · 全景推演树');
+    expect(container.innerHTML).toContain('原树预处理与关键点 DFN 序排序');
+    expect(container.innerHTML).toContain('单调栈最右链维护与 LCA 虚树构建');
+    expect(container.innerHTML).toContain('O(K) 浓缩骨架上的极速树形 DP 求解');
+  });
 });
 
