@@ -2724,6 +2724,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 20,
     learningGoal: "掌握无向图连通性判定与前驱记录回溯最短跳步路径",
+    aliases: ["1971","valid-path","validPath","find-path"],
   },
   {
     id: "reachable-paths",

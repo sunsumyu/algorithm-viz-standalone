@@ -35,6 +35,7 @@ export class VariableContextResolver {
     // 扩展图论、树与通用算法核心状态键
     'curNode', 'to', 'w', 'edge', 'd', 'visited', 'distance', 'distList', 'visitedList',
     'pq', 'heap', 'pqSnapshot', 'maxDelay', 'maxDelaySoFar', 'totalCost',
+    'source', 'dest', 'destination', 'path', 'found',
   ]);
 
   /** 忽略的非业务属性名 */
@@ -43,6 +44,22 @@ export class VariableContextResolver {
     'type', 'index', 'stepIndex', 'snapshot', 'codeLanguages', 'modeCodeLanguages',
     'decision', 'message', 'log', 'currentCell', 'depCells', 'visitedMap', 'activeTrail', 'activeStack',
   ]);
+
+  /**
+   * 便捷实例/静态方法：将多态 step 解析为平铺键值字典（支持单测与外部快速访问）
+   */
+  public resolveVariables(step: unknown, currentLang: string = 'java'): Record<string, any> {
+    return VariableContextResolver.resolveVariables(step, currentLang);
+  }
+
+  public static resolveVariables(step: unknown, currentLang: string = 'java'): Record<string, any> {
+    const varsMap = this.resolve(step, currentLang);
+    const result: Record<string, any> = {};
+    for (const [k, v] of varsMap.entries()) {
+      result[k] = v.raw !== undefined ? v.raw : v.value;
+    }
+    return result;
+  }
 
   /**
    * 将多态 step 解析为统一变量字典
@@ -358,11 +375,11 @@ export class VariableContextResolver {
     this.syncAliasGroup(varsMap, tableAliases);
 
     // 语义组 4: 顶点 / 当前节点 / 出发点 (Graph Vertex / Current Node)
-    const vertexAliases = ['u', 'curNode', 'cur', 'node', 'curr', 'uNode', 'source', 'from'];
+    const vertexAliases = ['u', 'curNode', 'cur', 'node', 'curr', 'uNode', 'from'];
     this.syncAliasGroup(varsMap, vertexAliases);
 
     // 语义组 5: 目标节点 / 下一节点 / 邻居 (Target Node / Neighbor)
-    const neighborAliases = ['v', 'to', 'neighbor', 'nxt', 'nextNode', 'vNode', 'target'];
+    const neighborAliases = ['v', 'to', 'neighbor', 'nxt', 'nextNode', 'vNode'];
     this.syncAliasGroup(varsMap, neighborAliases);
 
     // 语义组 6: 边权 / 代价 / 延迟 (Edge Weight / Cost / Delay)
@@ -389,7 +406,11 @@ export class VariableContextResolver {
     const sourceAliases = ['k', 'source', 'src', 'startNode', 'start', 'startVertex'];
     this.syncAliasGroup(varsMap, sourceAliases);
 
-    // 语义组 12: 堆顶状态与边数组元组 (Current Heap Pair / Edge Pair)
+    // 语义组 12: 目标端点 / 终点 (Destination Node / Target Parameter)
+    const destinationAliases = ['dest', 'destination', 'target', 'targetNode', 'endNode'];
+    this.syncAliasGroup(varsMap, destinationAliases);
+
+    // 语义组 13: 堆顶状态与边数组元组 (Current Heap Pair / Edge Pair)
     const pairAliases = ['cur', 'currentPair', 'topPair'];
     this.syncAliasGroup(varsMap, pairAliases);
     const edgePairAliases = ['edge', 'activeEdgePair', 'channel'];
@@ -647,6 +668,18 @@ export class VariableContextResolver {
         name,
         value: `[${preview}${val.length > 5 ? '...' : ''}]`,
         type: 'array',
+        raw: val,
+      };
+    }
+    if (val instanceof Set) {
+      if (val.size === 0) {
+        return { name, value: '∅ (空集)', type: 'object', raw: val };
+      }
+      const preview = Array.from(val).slice(0, 5).join(', ');
+      return {
+        name,
+        value: `{${preview}${val.size > 5 ? '...' : ''}}`,
+        type: 'object',
         raw: val,
       };
     }
