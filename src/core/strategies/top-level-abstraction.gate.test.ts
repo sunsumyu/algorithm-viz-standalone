@@ -428,6 +428,7 @@ ${details}
       '../../algorithms/categories/graph/eulerian-circuit-renderer.ts',
       '../../algorithms/categories/graph/block-cut-tree-renderer.ts',
       '../../algorithms/categories/graph/kruskal-reconstruction-tree-renderer.ts',
+      '../../algorithms/categories/graph/heavy-light-decomposition-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',

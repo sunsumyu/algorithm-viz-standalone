@@ -1141,5 +1141,22 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('虚点构建与边权转点权');
     expect(container.innerHTML).toContain('大根堆单调性与 LCA 瓶颈路径极速查询');
   });
+
+  it('应当能正确为 heavy-light-decomposition (树链剖分 · 洛谷 P3384) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('heavy-light-decomposition')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('hld')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-chain-decomposition')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P3384')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class074')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'heavy-light-decomposition',
+    });
+    expect(container.innerHTML).toContain('树链剖分与重链维护 (Heavy-Light Decomposition · 洛谷 P3384) · 全景推演树');
+    expect(container.innerHTML).toContain('第一次 DFS：深度、父节点、子树大小统计与重儿子判定');
+    expect(container.innerHTML).toContain('第二次 DFS：重儿子优先遍历、链头确立与连续 DFN 序编排');
+    expect(container.innerHTML).toContain('树上路径跳跃与线段树连续区间映射');
+  });
 });
 

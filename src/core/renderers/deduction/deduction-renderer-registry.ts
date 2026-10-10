@@ -68,6 +68,7 @@ import { DominatorTreeDeductionRenderer } from './dominator-tree-deduction-rende
 import { EulerianCircuitDeductionRenderer } from './eulerian-circuit-deduction-renderer';
 import { BlockCutTreeDeductionRenderer } from './block-cut-tree-deduction-renderer';
 import { KruskalReconstructionTreeDeductionRenderer } from './kruskal-reconstruction-tree-deduction-renderer';
+import { HeavyLightDecompositionDeductionRenderer } from './heavy-light-decomposition-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -138,6 +139,7 @@ export class DeductionRendererRegistry {
     new EulerianCircuitDeductionRenderer(),
     new BlockCutTreeDeductionRenderer(),
     new KruskalReconstructionTreeDeductionRenderer(),
+    new HeavyLightDecompositionDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

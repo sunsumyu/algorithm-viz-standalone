@@ -3454,6 +3454,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 83,
     learningGoal: "掌握重儿子判定与轻重链划分原理、两遍 DFS 连续 DFN 序映射及 O(log N) 树上路径跳跃技巧",
+    aliases: ["hld","tree-chain-decomposition","P3384","class074"],
   },
   {
     id: "block-cut-tree",
