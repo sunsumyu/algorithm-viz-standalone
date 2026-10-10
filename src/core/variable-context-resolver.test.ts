@@ -127,5 +127,64 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(summary).toContain('size: 1');
     expect(summary).not.toContain('l: 1');
   });
+
+  it('should automatically unpack object-shaped step.vars and resolve graph semantic aliases', () => {
+    const graphStep = {
+      vars: {
+        curNode: 2,
+        distList: [Infinity, Infinity, 0, Infinity, Infinity],
+        visitedList: [false, false, false, false, false],
+        pqSnapshot: [{ u: 2, d: 0 }],
+        maxDelaySoFar: 0,
+      },
+    };
+
+    const varsMap = VariableContextResolver.resolve(graphStep);
+
+    // 1. 验证 curNode 自动映射到 u
+    const uVar = VariableContextResolver.getVariable(varsMap, 'u');
+    expect(uVar).toBeDefined();
+    expect(uVar?.value).toBe('2');
+
+    // 2. 验证 distList 映射到 dist 与 distance
+    const distVar = VariableContextResolver.getVariable(varsMap, 'dist');
+    const distanceVar = VariableContextResolver.getVariable(varsMap, 'distance');
+    expect(distVar).toBeDefined();
+    expect(distanceVar).toBeDefined();
+    expect(distVar?.value).toContain('∞');
+
+    // 3. 验证 visitedList 映射到 visited
+    const visVar = VariableContextResolver.getVariable(varsMap, 'visited');
+    expect(visVar).toBeDefined();
+
+    // 4. 验证 maxDelaySoFar 映射到 ans
+    const ansVar = VariableContextResolver.getVariable(varsMap, 'ans');
+    expect(ansVar).toBeDefined();
+    expect(ansVar?.value).toBe('0');
+  });
+
+  it('should destructure activeEdge tuple into u, v, w and evaluate visited[u] expressions', () => {
+    const stepWithEdge = {
+      curNode: 2,
+      activeEdge: [2, 3, 1],
+      visited: [false, false, true, false, false],
+      distance: [Infinity, Infinity, 0, Infinity, Infinity],
+    };
+
+    const varsMap = VariableContextResolver.resolve(stepWithEdge);
+
+    expect(VariableContextResolver.getVariable(varsMap, 'u')?.value).toBe('2');
+    expect(VariableContextResolver.getVariable(varsMap, 'v')?.value).toBe('3');
+    expect(VariableContextResolver.getVariable(varsMap, 'w')?.value).toBe('1');
+
+    // 复合表达式求值
+    const visitedU = VariableContextResolver.getVariable(varsMap, 'visited[u]', stepWithEdge);
+    expect(visitedU).toBeDefined();
+    expect(visitedU?.value).toBe('true');
+
+    const distanceU = VariableContextResolver.getVariable(varsMap, 'distance[u]', stepWithEdge);
+    expect(distanceU).toBeDefined();
+    expect(distanceU?.value).toBe('0');
+  });
 });
 

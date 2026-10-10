@@ -32,6 +32,9 @@ export class VariableContextResolver {
     'cur', 'prev', 'next', 'min', 'max', 'count', 'res', 'dist', 'weight', 'capacity', 'cost',
     'head', 'tail', 'slow', 'fast', 'pivot', 'low', 'high', 'top', 'leftDown', 'backup',
     's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'dp', 'memo', 'n', 'm',
+    // 扩展图论、树与通用算法核心状态键
+    'curNode', 'to', 'w', 'edge', 'd', 'visited', 'distance', 'distList', 'visitedList',
+    'pq', 'heap', 'pqSnapshot', 'maxDelay', 'maxDelaySoFar', 'totalCost',
   ]);
 
   /** 忽略的非业务属性名 */
@@ -119,16 +122,26 @@ export class VariableContextResolver {
     // ── 4. 环境上下文自动派生 (Auto-Derivation) ────────────────────
     this.deriveContextVariables(s, varsMap);
 
-    // ── 5. 解析显式 step.vars (最高优先级，覆盖启发式值) ───────────
-    if (Array.isArray(s.vars)) {
-      for (const v of s.vars as StepVar[]) {
-        if (v && v.name) {
-          varsMap.set(v.name, {
-            name: v.name,
-            value: String(v.value ?? ''),
-            type: v.type || this.deduceType(v.value),
-            raw: v.value,
-          });
+    // ── 5. 解析显式 step.vars (最高优先级，覆盖启发式值，支持数组与对象字典) ───
+    if (s.vars) {
+      if (Array.isArray(s.vars)) {
+        for (const v of s.vars as StepVar[]) {
+          if (v && v.name) {
+            varsMap.set(v.name, {
+              name: v.name,
+              value: String(v.value ?? ''),
+              type: v.type || this.deduceType(v.value),
+              raw: v.value,
+            });
+          }
+        }
+      } else if (typeof s.vars === 'object') {
+        for (const [k, val] of Object.entries(s.vars)) {
+          if (val === undefined || val === null || typeof val === 'function') continue;
+          const entry = this.formatValueEntry(k, val);
+          if (entry) {
+            varsMap.set(k, entry);
+          }
         }
       }
     }
@@ -234,6 +247,40 @@ export class VariableContextResolver {
 
     // 4. 区间与滑动窗口智能推导 (l, r, len 三元互推)
     this.deriveIntervalTriad(s, varsMap);
+
+    // 5. 图论拓扑与遍历状态智能推导 (activeEdge, curNode, distList, visitedList)
+    this.deriveGraphTopologyContext(s, varsMap);
+  }
+
+  /**
+   * 图论拓扑与遍历状态智能推导 (activeEdge: [u, v, w] 解构, curNode -> u)
+   */
+  private static deriveGraphTopologyContext(s: Record<string, any>, varsMap: Map<string, ResolvedVariable>): void {
+    // A. activeEdge: [u, v, w] 三元组解构
+    const activeEdge = s.activeEdge || s.vars?.activeEdge || varsMap.get('activeEdge')?.raw;
+    if (Array.isArray(activeEdge) && activeEdge.length >= 2) {
+      const uVal = activeEdge[0];
+      const vVal = activeEdge[1];
+      const wVal = activeEdge[2];
+      if (uVal !== undefined && !varsMap.has('u')) {
+        varsMap.set('u', { name: 'u', value: String(uVal), type: 'number', raw: uVal });
+      }
+      if (vVal !== undefined && !varsMap.has('v')) {
+        varsMap.set('v', { name: 'v', value: String(vVal), type: 'number', raw: vVal });
+      }
+      if (wVal !== undefined && !varsMap.has('w')) {
+        varsMap.set('w', { name: 'w', value: String(wVal), type: 'number', raw: wVal });
+      }
+    }
+
+    // B. curNode -> u 派生
+    const curVal = s.curNode ?? s.vars?.curNode ?? varsMap.get('curNode')?.raw;
+    if (curVal !== undefined && !varsMap.has('u')) {
+      const num = typeof curVal === 'number' ? curVal : parseInt(String(curVal), 10);
+      if (!isNaN(num)) {
+        varsMap.set('u', { name: 'u', value: String(num), type: 'number', raw: num });
+      }
+    }
   }
 
   /**
@@ -291,6 +338,34 @@ export class VariableContextResolver {
     // 语义组 3: 状态表格
     const tableAliases = ['dp', 'dpTable', 'memo', 'memoGrid', 'table'];
     this.syncAliasGroup(varsMap, tableAliases);
+
+    // 语义组 4: 顶点 / 当前节点 / 出发点 (Graph Vertex / Current Node)
+    const vertexAliases = ['u', 'curNode', 'cur', 'node', 'curr', 'uNode', 'source', 'from'];
+    this.syncAliasGroup(varsMap, vertexAliases);
+
+    // 语义组 5: 目标节点 / 下一节点 / 邻居 (Target Node / Neighbor)
+    const neighborAliases = ['v', 'to', 'neighbor', 'nxt', 'nextNode', 'vNode', 'target'];
+    this.syncAliasGroup(varsMap, neighborAliases);
+
+    // 语义组 6: 边权 / 代价 / 延迟 (Edge Weight / Cost / Delay)
+    const weightAliases = ['w', 'weight', 'cost', 'delay', 'edgeWeight'];
+    this.syncAliasGroup(varsMap, weightAliases);
+
+    // 语义组 7: 最短路 / 距离表 (Shortest Path / Distance Table)
+    const distanceAliases = ['dist', 'distance', 'distList', 'dists', 'shortestDist'];
+    this.syncAliasGroup(varsMap, distanceAliases);
+
+    // 语义组 8: 访问标记 / 集合 (Visited Set / Boolean Array)
+    const visitedAliases = ['visited', 'vis', 'visitedList', 'visitedMap', 'isVisited', 'seen'];
+    this.syncAliasGroup(varsMap, visitedAliases);
+
+    // 语义组 9: 优先队列 / 堆 (Priority Queue / Heap)
+    const heapAliases = ['pq', 'heap', 'pqSnapshot', 'priorityQueue', 'minHeap'];
+    this.syncAliasGroup(varsMap, heapAliases);
+
+    // 语义组 10: 答案 / 统计结果 (Result / Max Delay)
+    const resultAliases = ['ans', 'res', 'result', 'maxDelaySoFar', 'maxDelay', 'totalCost'];
+    this.syncAliasGroup(varsMap, resultAliases);
 
     // 别名同步后再次尝试三元推导（确保 curL/curR 映射到 l/r 之后能够立即派生出 len）
     this.deriveIntervalTriad({}, varsMap);
@@ -525,7 +600,21 @@ export class VariableContextResolver {
       if (Array.isArray(val[0])) {
         return { name, value: `[${val.length}×${val[0].length}]`, type: 'array', raw: val };
       }
-      const preview = val.slice(0, 5).join(', ');
+      const formatItem = (x: any): string => {
+        if (x === Infinity) return '∞';
+        if (x === -Infinity) return '-∞';
+        if (x && typeof x === 'object') {
+          if ('u' in x && 'd' in x) return `(${x.u},${x.d})`;
+          if ('node' in x && 'dist' in x) return `(${x.node},${x.dist})`;
+          try {
+            return JSON.stringify(x);
+          } catch {
+            return '{...}';
+          }
+        }
+        return String(x);
+      };
+      const preview = val.slice(0, 5).map(formatItem).join(', ');
       return {
         name,
         value: `[${preview}${val.length > 5 ? '...' : ''}]`,

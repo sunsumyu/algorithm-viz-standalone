@@ -57,4 +57,25 @@ describe('Network Delay Time Trace (Dijkstra Execution Engine)', () => {
     expect(last.isAllReached).toBe(true);
     expect(last.maxDelaySoFar).toBe(2);
   });
+
+  it('should enforce monotonic step line flow during linear initialization across all 4 languages', () => {
+    const traceSteps = traceNetworkDelay(true);
+    const initSteps = traceSteps.slice(0, 5);
+    const expectedAnchors = ['entry', 'initDistance', 'initVisited', 'initSrc', 'initPq'];
+    expect(initSteps.map((s) => s.anchor)).toEqual(expectedAnchors);
+
+    const languages = ['java', 'cpp', 'python', 'javascript'] as const;
+    for (const lang of languages) {
+      const lineSequence = initSteps.map((s) => {
+        const val = s.codeLinesByLang[lang];
+        return Array.isArray(val) ? val[0] : val;
+      });
+      for (let i = 1; i < lineSequence.length; i++) {
+        expect(
+          lineSequence[i],
+          `[${lang}] Initialization step #${i + 1} (${initSteps[i].anchor}) line ${lineSequence[i]} must be >= step #${i} (${initSteps[i - 1].anchor}) line ${lineSequence[i - 1]}`
+        ).toBeGreaterThanOrEqual(lineSequence[i - 1]);
+      }
+    }
+  });
 });

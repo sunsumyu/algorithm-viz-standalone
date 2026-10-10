@@ -35,6 +35,7 @@ export interface NetworkDelayStep {
   log: string;
   codeLine: HighlightTarget;
   metrics?: Record<string, string | number>;
+  vars?: NetworkDelayStepVars;
 }
 
 export const NETWORK_DELAY_ANCHOR_MAP: Record<string, Record<string, number>> = {
@@ -61,8 +62,8 @@ export const NETWORK_DELAY_ANCHOR_MAP: Record<string, Record<string, number>> = 
   java: {
     entry: 8,
     initDistance: 17,
-    initVisited: 20,
-    initSrc: 19,
+    initVisited: 19,
+    initSrc: 20,
     initPq: 22,
     whilePq: 24,
     popNode: 25,
@@ -310,5 +311,6 @@ export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDela
     log: step.log || '',
     codeLine: (step.codeLinesByLang || step.codeLine) as HighlightTarget,
     metrics: step.metrics,
+    vars: step.vars,
   }));
 }
