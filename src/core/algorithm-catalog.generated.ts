@@ -3205,6 +3205,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 69,
     learningGoal: "掌握 DSU on Tree 算法思想、重轻链剖分性质及如何在 O(N log N) 内离线求解子树问题",
+    aliases: ["dsu-tree","sack","CF600E","U41492","class075"],
   },
   {
     id: "prefix-opt-graph",

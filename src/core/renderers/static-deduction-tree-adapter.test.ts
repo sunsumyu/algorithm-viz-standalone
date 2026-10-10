@@ -1176,5 +1176,24 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('单调栈最右链维护与 LCA 虚树构建');
     expect(container.innerHTML).toContain('O(K) 浓缩骨架上的极速树形 DP 求解');
   });
+
+  it('应当能正确为 dsu-on-tree (树上启发式合并 · CF600E) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('dsu-on-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dsu-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('sack')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('CF600E')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('U41492')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class075')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'dsu-on-tree',
+    });
+    expect(container.innerHTML).toContain('树上启发式合并 (DSU on Tree · CF600E) · 全景推演树');
+    expect(container.innerHTML).toContain('第一次 DFS 预处理与重儿子划分');
+    expect(container.innerHTML).toContain('第二次 DFS 启发式合并与保留消除');
+    expect(container.innerHTML).toContain('树上启发式合并结果输出');
+  });
 });
+
 

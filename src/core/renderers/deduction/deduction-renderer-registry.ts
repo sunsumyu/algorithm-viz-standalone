@@ -70,6 +70,7 @@ import { BlockCutTreeDeductionRenderer } from './block-cut-tree-deduction-render
 import { KruskalReconstructionTreeDeductionRenderer } from './kruskal-reconstruction-tree-deduction-renderer';
 import { HeavyLightDecompositionDeductionRenderer } from './heavy-light-decomposition-deduction-renderer';
 import { VirtualTreeDeductionRenderer } from './virtual-tree-deduction-renderer';
+import { DSUOnTreeDeductionRenderer } from './dsu-on-tree-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -142,6 +143,7 @@ export class DeductionRendererRegistry {
     new KruskalReconstructionTreeDeductionRenderer(),
     new HeavyLightDecompositionDeductionRenderer(),
     new VirtualTreeDeductionRenderer(),
+    new DSUOnTreeDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();
