@@ -3101,6 +3101,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 61,
     learningGoal: "掌握动态点分树的重构方法、树高对数级性质以及跳链更新和容斥查询技巧",
+    aliases: ["dynamic-centroid-tree","P6329","SP1437","centroid-decomposition-tree"],
   },
   {
     id: "tarjan-scc-dag",

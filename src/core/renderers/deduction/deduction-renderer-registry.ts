@@ -75,6 +75,7 @@ import { LCABinaryLiftingDeductionRenderer } from './lca-binary-lifting-deductio
 import { PruferSequenceDeductionRenderer } from './prufer-sequence-deduction-renderer';
 import { TreeDifferenceDeductionRenderer } from './tree-difference-deduction-renderer';
 import { TreeKnapsackDPDeductionRenderer } from './tree-knapsack-dp-deduction-renderer';
+import { CentroidTreeDeductionRenderer } from './centroid-tree-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -152,6 +153,7 @@ export class DeductionRendererRegistry {
     new PruferSequenceDeductionRenderer(),
     new TreeDifferenceDeductionRenderer(),
     new TreeKnapsackDPDeductionRenderer(),
+    new CentroidTreeDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

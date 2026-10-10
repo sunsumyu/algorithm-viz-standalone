@@ -1264,6 +1264,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('泛化物品背包卷积与上下界优化');
     expect(container.innerHTML).toContain('超级源点全局汇总与最优解输出');
   });
+
+  it('应当能正确为 centroid-tree (动态点分树 · 洛谷 P6329 / SP1437) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('centroid-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('dynamic-centroid-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P6329')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('SP1437')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'centroid-tree',
+    });
+    expect(container.innerHTML).toContain('动态点分树与重心分治重构 (Dynamic Centroid Tree · 洛谷 P6329 / SP1437) · 全景推演树');
+    expect(container.innerHTML).toContain('连通块规模 DFS 与重心定位');
+    expect(container.innerHTML).toContain('标记当前重心并递归处理子连通块');
+    expect(container.innerHTML).toContain('建立点分树父子边与树高上界确立');
+    expect(container.innerHTML).toContain('动态修改向上跳链与路径容斥查询');
+  });
 });
 
 
