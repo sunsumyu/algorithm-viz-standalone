@@ -1123,5 +1123,23 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('点双连通分量识别与方点连边');
     expect(container.innerHTML).toContain('树上必经割点定理转化与路径查询');
   });
+
+  it('应当能正确为 kruskal-reconstruction-tree (Kruskal 重构树 · 洛谷 P4768 / P4197) 渲染静态推演树 HTML', () => {
+    expect(StaticDeductionTreeAdapter.isSupported('kruskal-reconstruction-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('kruskal-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('reconstruction-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4768')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('P4197')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class072')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'kruskal-reconstruction-tree',
+    });
+    expect(container.innerHTML).toContain('Kruskal 重构树 (Kruskal Reconstruction Tree · 洛谷 P4768 / P4197) · 全景推演树');
+    expect(container.innerHTML).toContain('边权升序排序与并查集初始化');
+    expect(container.innerHTML).toContain('虚点构建与边权转点权');
+    expect(container.innerHTML).toContain('大根堆单调性与 LCA 瓶颈路径极速查询');
+  });
 });
 

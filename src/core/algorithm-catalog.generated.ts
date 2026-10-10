@@ -3431,6 +3431,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 81,
     learningGoal: "掌握 Kruskal 重构树构造原理、大根堆单调性定理及倍增查询瓶颈边权技巧",
+    aliases: ["kruskal-tree","reconstruction-tree","P4768","P4197","class072"],
   },
   {
     id: "lca-binary-lifting",
