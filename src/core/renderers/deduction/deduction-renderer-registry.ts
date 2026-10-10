@@ -88,6 +88,7 @@ import { PeopleSecretDeductionRenderer } from './people-secret-deduction-rendere
 import { CouplesHoldingHandsDeductionRenderer } from './couples-holding-hands-deduction-renderer';
 import { CourseScheduleIVDeductionRenderer } from './course-schedule-iv-deduction-renderer';
 import { StringMigrationDeductionRenderer } from './string-migration-deduction-renderer';
+import { StronglyConnectedDeductionRenderer } from './strongly-connected-deduction-renderer';
 import { UniversalDpDeductionRenderer } from './universal-dp-deduction-renderer';
 import { AlgorithmModelRepository } from '../../model-repository';
 import { AlgorithmStrategyRegistry } from '../../strategies/algorithm-strategy-registry';
@@ -178,6 +179,7 @@ export class DeductionRendererRegistry {
     new CouplesHoldingHandsDeductionRenderer(),
     new CourseScheduleIVDeductionRenderer(),
     new StringMigrationDeductionRenderer(),
+    new StronglyConnectedDeductionRenderer(),
   ];
 
   private static readonly fallbackRenderer: IDeductionTreeRenderer = new UniversalDpDeductionRenderer();

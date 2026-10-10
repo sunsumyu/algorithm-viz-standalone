@@ -450,6 +450,7 @@ ${details}
       '../../algorithms/categories/graph/couples-holding-hands-renderer.ts',
       '../../algorithms/categories/graph/course-schedule-iv-renderer.ts',
       '../../algorithms/categories/graph/string-migration-renderer.ts',
+      '../../algorithms/categories/graph/strongly-connected-renderer.ts',
       '../../algorithms/categories/graph/bellman-ford-renderer.ts',
       '../../algorithms/categories/graph/spfa-renderer.ts',
       '../../algorithms/categories/graph/negative-cycle-renderer.ts',
