@@ -17,6 +17,7 @@ export interface GTStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics: Record<string, string | number>;
 }
 
 export const GRAPH_THEORY_NODE_POSITIONS: Record<number, { x: number; y: number }> = {
@@ -84,6 +85,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '图拓扑初始化：包含 5 个顶点、6 条边的基础无向无权图。',
     log: '初始化图: V=5, E=6',
     codeLine: GRAPH_THEORY_CODE_LINES.init,
+    metrics: {
+      'metric-gt-type': '基础无向图',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '6 条边',
+    },
   });
 
   steps.push({
@@ -100,6 +106,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '邻接矩阵表示：matrix[i][j]=1 表示两点相邻。空间复杂度 O(V²)，边查询 O(1)，适合稠密图。',
     log: '切换至邻接矩阵视图 (5x5 矩阵)',
     codeLine: GRAPH_THEORY_CODE_LINES.matrixView,
+    metrics: {
+      'metric-gt-type': '邻接矩阵 5×5',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '6 条边 (对称)',
+    },
   });
 
   steps.push({
@@ -116,6 +127,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '邻接表表示：每个顶点维护出边邻居数组。空间复杂度 O(V+E)，适合稀疏图。',
     log: '切换至邻接表视图 (空间 O(V+E))',
     codeLine: GRAPH_THEORY_CODE_LINES.listView,
+    metrics: {
+      'metric-gt-type': '邻接表 (5 链表)',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '6 条边',
+    },
   });
 
   // 动态加边 (2, 4)
@@ -136,6 +152,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '动态添加边 (2, 4)：邻接矩阵置 matrix[2][4]=matrix[4][2]=1；邻接表双向加入邻居。',
     log: '添加边 (2, 4) -> 边数增至 E=7',
     codeLine: GRAPH_THEORY_CODE_LINES.addEdge,
+    metrics: {
+      'metric-gt-type': '加边 +(2, 4)',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '7 条边 (+1)',
+    },
   });
 
   // 动态删边 (1, 3)
@@ -156,6 +177,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '动态删除边 (1, 3)：邻接矩阵置 matrix[1][3]=matrix[3][1]=0；邻接表中剔除对应邻居。',
     log: '删除边 (1, 3) -> 边数变为 E=6',
     codeLine: GRAPH_THEORY_CODE_LINES.removeEdge,
+    metrics: {
+      'metric-gt-type': '删边 -(1, 3)',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '6 条边 (-1)',
+    },
   });
 
   steps.push({
@@ -172,6 +198,11 @@ export function buildGraphTheorySteps(): GTStep[] {
     message: '图表示法总结：矩阵边查询 O(1)，空间 O(V²)；邻接表空间 O(V+E)，遍历度数 O(deg)。根据图稠密度合理选型。',
     log: '图论表示法演示总结完成',
     codeLine: GRAPH_THEORY_CODE_LINES.summary,
+    metrics: {
+      'metric-gt-type': '全景总结就绪',
+      'metric-gt-v': '5 顶点',
+      'metric-gt-e': '6 条边',
+    },
   });
 
   return steps;

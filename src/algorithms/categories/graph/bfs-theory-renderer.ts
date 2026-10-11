@@ -30,6 +30,9 @@ const { Visualizer } = registerDeclarativeAlgorithm({
   levelOrder: 4,
   learningGoal: '掌握 BFS 队列机制与层序遍历特性，深刻理解无权图最短路径不变量',
   aliases: ['bfs-basic', 'breadth-first-search-theory'],
+  card1Title: 'BFS 层序遍历与状态染色沙盘',
+  card2Title: '先进先出队列与层级演进',
+  card2Desc: '实时跟踪先进先出队列 (FIFO Queue) 与已访问序列',
   metrics: [
     { id: 'metric-bfs-action', label: '当前动作', color: '#f59e0b' },
     { id: 'metric-bfs-level', label: '当前层级', color: '#22d3ee' },

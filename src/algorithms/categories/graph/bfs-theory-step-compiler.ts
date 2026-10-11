@@ -18,6 +18,7 @@ export interface BFSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics: Record<string, string | number>;
 }
 
 export const BFS_NODE_POSITIONS: Record<number, { x: number; y: number }> = {
@@ -79,6 +80,11 @@ export function buildBFSSteps(): BFSStep[] {
     message: '初始化图拓扑：6 个顶点、5 条边。准备从根源起点 0 开始 BFS 层序扩展。',
     log: '初始化图拓扑，起点 = 0',
     codeLine: BFS_THEORY_CODE_LINES.init,
+    metrics: {
+      'metric-bfs-action': '图拓扑初始化',
+      'metric-bfs-level': '第 0 层',
+      'metric-bfs-queue': '0 个待办',
+    },
   });
 
   // 起点入队
@@ -100,6 +106,11 @@ export function buildBFSSteps(): BFSStep[] {
     message: '将源点 0 标记为已访问并入队（第 0 层）。当前队列: [0]',
     log: '源点 0 入队 (第 0 层)',
     codeLine: BFS_THEORY_CODE_LINES.enqueueStart,
+    metrics: {
+      'metric-bfs-action': '起点 0 入队',
+      'metric-bfs-level': '第 0 层',
+      'metric-bfs-queue': `${queue.length} 个待办`,
+    },
   });
 
   let currentLevel = 0;
@@ -124,6 +135,11 @@ export function buildBFSSteps(): BFSStep[] {
       message: `出队顶点 ${u}（第 ${currentLevel} 层），成为当前扩展中心，准备扫描所有邻接边。`,
       log: `出队顶点 ${u} (第 ${currentLevel} 层)`,
       codeLine: BFS_THEORY_CODE_LINES.dequeue,
+      metrics: {
+        'metric-bfs-action': `出队 Node ${u}`,
+        'metric-bfs-level': `第 ${currentLevel} 层`,
+        'metric-bfs-queue': `${queue.length} 个待办`,
+      },
     });
 
     levelSize--;
@@ -147,6 +163,11 @@ export function buildBFSSteps(): BFSStep[] {
           message: `发现未访问邻居 ${v}，标记 visited[${v}] = true 并推入队列尾部。当前队列: [${queue.join(', ')}]`,
           log: `发现邻居 ${v}，染色入队`,
           codeLine: BFS_THEORY_CODE_LINES.enqueue,
+          metrics: {
+            'metric-bfs-action': `入队 Node ${v}`,
+            'metric-bfs-level': `第 ${currentLevel} 层`,
+            'metric-bfs-queue': `${queue.length} 个待办`,
+          },
         });
       } else {
         steps.push({
@@ -164,6 +185,11 @@ export function buildBFSSteps(): BFSStep[] {
           message: `邻居 ${v} 已在 visited 集合中，跳过避免重复入队。`,
           log: `跳过已访问邻居 ${v}`,
           codeLine: BFS_THEORY_CODE_LINES.skip,
+          metrics: {
+            'metric-bfs-action': `跳过已访 ${v}`,
+            'metric-bfs-level': `第 ${currentLevel} 层`,
+            'metric-bfs-queue': `${queue.length} 个待办`,
+          },
         });
       }
     }
@@ -187,6 +213,11 @@ export function buildBFSSteps(): BFSStep[] {
         message: `第 ${currentLevel - 1} 层处理完毕，推进至第 ${currentLevel} 层。队列中包含 ${queue.length} 个待扩展节点。`,
         log: `推进至第 ${currentLevel} 层 (待处理 ${queue.length} 个)`,
         codeLine: BFS_THEORY_CODE_LINES.nextLevel,
+        metrics: {
+          'metric-bfs-action': `推进到 L${currentLevel}`,
+          'metric-bfs-level': `第 ${currentLevel} 层`,
+          'metric-bfs-queue': `${queue.length} 个待办`,
+        },
       });
     }
   }
@@ -206,6 +237,11 @@ export function buildBFSSteps(): BFSStep[] {
     message: `BFS 层序全图遍历完成！访问序列: [${traversalOrder.join(', ')}]，覆盖全部 ${visited.size} 个顶点。无权图中已获得全局最短路径。`,
     log: `BFS 遍历圆满完成，序列: [${traversalOrder.join(', ')}]`,
     codeLine: BFS_THEORY_CODE_LINES.done,
+    metrics: {
+      'metric-bfs-action': '全图遍历完成',
+      'metric-bfs-level': `共 ${currentLevel + 1} 层`,
+      'metric-bfs-queue': '0 个待办',
+    },
   });
 
   return steps;

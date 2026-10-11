@@ -30,6 +30,9 @@ const { Visualizer } = registerDeclarativeAlgorithm({
   levelOrder: 2,
   learningGoal: '掌握 DFS 递归深入与回溯机制，深刻理解递归调用栈与状态空间遍历',
   aliases: ['dfs-basic', 'depth-first-search-theory'],
+  card1Title: 'DFS 递归遍历与状态染色沙盘',
+  card2Title: '递归调用栈与访问序列',
+  card2Desc: '实时跟踪递归调用栈 (Call Stack) 与已遍历顶点',
   metrics: [
     { id: 'metric-dfs-action', label: '当前动作', color: '#f59e0b' },
     { id: 'metric-dfs-depth', label: '调用栈深度', color: '#c084fc' },

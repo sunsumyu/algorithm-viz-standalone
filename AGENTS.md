@@ -69,6 +69,7 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
    { "name": "...", "width": 1920, "height": 1080 }
    ```
 2. **响应式双栏核验**：确保视口宽度 $\ge 1024\text{px}$ 激活 Tailwind `lg:flex-row` 左右双栏排布（左侧 50% 状态空间沙盘 + 右侧 50% 暗色代码终端）。
+3. **端口冲突阻断与零孤儿标签页（Zero Orphan Tab Guard）**：严禁在 CDP/端口（9222 等）冲突时循环盲试调用 `browser_subagent` 或打开 GUI 浏览器！遇到连接失败必须立即停止。验证排查一律优先采用独立无头自动化脚本（如 `scripts/verify-ui-simulation.ts` 结合 Headless 隔离执行），杜绝向用户桌面持续弹出空白标签页。
 
 ## 会话生命周期与人在回路（HITL）协同纪律
 1. **150k 智能区与看板流（Kanban WIP=1）**：单次会话聚焦单个垂直切片，防止上下文注意力稀释。

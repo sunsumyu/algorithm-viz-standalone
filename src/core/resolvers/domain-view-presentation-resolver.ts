@@ -115,18 +115,29 @@ export class DomainViewPresentationResolver {
       };
     }
 
-    // 3. 图论网络与节点边集拓扑沙盘 (Dijkstra, Bellman-Ford, SPFA, Floyd, 拓扑排序等真实拓扑图)
+    // 3. 图论网络与节点边集拓扑沙盘 (DFS, BFS, 拓扑排序, 最短路等)
     if (
       category === 'graph' ||
       id.includes('dijkstra') ||
       id.includes('bellman') ||
       id.includes('spfa') ||
       id.includes('floyd') ||
-      id.includes('topo')
+      id.includes('topo') ||
+      id.includes('dfs') ||
+      id.includes('bfs')
     ) {
       const primaryTabLabel = '图拓扑沙盘';
       const primaryTabIcon = 'fa-circle-nodes';
-      const defaultTitle = `<i class="fa-solid fa-circle-nodes text-slate-500"></i> 图拓扑沙盘与松弛流`;
+      let defaultTitle = `<i class="fa-solid fa-circle-nodes text-sky-500"></i> 图拓扑结构与状态空间沙盘`;
+      if (id.includes('dfs')) {
+        defaultTitle = `<i class="fa-solid fa-diagram-project text-amber-500"></i> DFS 递归深入与状态染色沙盘`;
+      } else if (id.includes('bfs')) {
+        defaultTitle = `<i class="fa-solid fa-water text-cyan-500"></i> BFS 层序扩展与水波纹沙盘`;
+      } else if (id.includes('topo')) {
+        defaultTitle = `<i class="fa-solid fa-arrow-down-wide-short text-indigo-500"></i> 有向无环图与拓扑排序沙盘`;
+      } else if (id.includes('dijkstra') || id.includes('bellman') || id.includes('spfa') || id.includes('floyd')) {
+        defaultTitle = `<i class="fa-solid fa-circle-nodes text-emerald-500"></i> 图拓扑沙盘与松弛流`;
+      }
       return {
         primaryTabLabel,
         primaryTabIcon,

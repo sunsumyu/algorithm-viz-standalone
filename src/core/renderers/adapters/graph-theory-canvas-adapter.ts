@@ -102,12 +102,12 @@ export function renderGraphTheoryCanvas(container: HTMLElement, step: GTStep): v
       <g class="gt-node-group">
         ${
           isIncident
-            ? `<circle cx="${pos.x}" cy="${pos.y}" r="27" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.8">
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="30" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3 3" opacity="0.8">
                  <animateTransform attributeName="transform" type="rotate" from="0 ${pos.x} ${pos.y}" to="360 ${pos.x} ${pos.y}" dur="8s" repeatCount="indefinite" />
                </circle>`
             : ''
         }
-        <circle cx="${pos.x}" cy="${pos.y}" r="22" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2.5" />
+        <circle cx="${pos.x}" cy="${pos.y}" r="24" fill="${fillColor}" stroke="${strokeColor}" stroke-width="2.5" />
         <text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" fill="${isIncident ? '#fef08a' : '#f8fafc'}" font-size="15" font-weight="800" font-family="monospace">${u}</text>
         <text x="${pos.x}" y="${pos.y - 28}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="700" font-family="sans-serif">度数: ${degree}</text>
       </g>
@@ -136,13 +136,13 @@ export function renderGraphTheoryCanvas(container: HTMLElement, step: GTStep): v
 }
 
 export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTStep): void {
-  const { adjMatrix, adjList, vCount, eCount, graphType, highlightEdge } = step;
+  const { adjMatrix, adjList, highlightEdge } = step;
 
   // 1. 邻接矩阵 5x5 表格
   let matrixRows = `
-    <tr class="text-[9.5px] text-slate-400 font-mono">
-      <th class="p-1">#</th>
-      ${[0, 1, 2, 3, 4].map((j) => `<th class="p-1">${j}</th>`).join('')}
+    <tr style="font-size: 9px; color: #64748b; font-family: monospace;">
+      <th style="padding: 2px;">#</th>
+      ${[0, 1, 2, 3, 4].map((j) => `<th style="padding: 2px;">${j}</th>`).join('')}
     </tr>
   `;
 
@@ -154,19 +154,19 @@ export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTS
           ((highlightEdge[0] === i && highlightEdge[1] === j) ||
             (highlightEdge[0] === j && highlightEdge[1] === i));
 
-        const bg = isHlCell
-          ? 'bg-amber-500/30 text-amber-300 font-extrabold border border-amber-500/60'
+        const cellStyle = isHlCell
+          ? 'background: #fef3c7; color: #b45309; font-weight: 800; border: 1.5px solid #f59e0b; border-radius: 4px;'
           : val === 1
-          ? 'bg-sky-500/20 text-sky-300 font-bold'
-          : 'text-slate-600';
+          ? 'background: #e0f2fe; color: #0369a1; font-weight: 700; border-radius: 4px;'
+          : 'color: #94a3b8; font-weight: 400;';
 
-        return `<td class="p-1 text-center font-mono ${bg} rounded">${val}</td>`;
+        return `<td style="padding: 2px 4px; text-align: center; font-family: monospace; font-size: 10px; ${cellStyle}">${val}</td>`;
       })
       .join('');
 
     matrixRows += `
-      <tr class="text-[10px]">
-        <td class="p-1 text-slate-400 font-mono font-bold text-center">${i}</td>
+      <tr>
+        <td style="padding: 2px; color: #64748b; font-family: monospace; font-weight: 700; text-align: center; font-size: 9.5px;">${i}</td>
         ${cells}
       </tr>
     `;
@@ -178,7 +178,7 @@ export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTS
       const neighbors = adjList[u] ?? [];
       const neighborPills =
         neighbors.length === 0
-          ? '<span class="text-slate-500 text-[10px] italic">空</span>'
+          ? '<span style="color: #94a3b8; font-size: 9.5px; font-style: italic;">空</span>'
           : neighbors
               .map((v) => {
                 const isHl =
@@ -186,10 +186,10 @@ export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTS
                   ((highlightEdge[0] === u && highlightEdge[1] === v) ||
                     (highlightEdge[0] === v && highlightEdge[1] === u));
                 return `
-                  <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                  <span style="display: inline-flex; align-items: center; padding: 1px 5px; border-radius: 4px; font-size: 9.5px; font-family: monospace; font-weight: 700; ${
                     isHl
-                      ? 'bg-amber-500/30 text-amber-300 border border-amber-500/60'
-                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
+                      ? 'background: #fef3c7; color: #b45309; border: 1px solid #f59e0b;'
+                      : 'background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;'
                   }">
                     ${v}
                   </span>
@@ -198,60 +198,41 @@ export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTS
               .join('');
 
       return `
-        <div class="flex items-center gap-2 py-0.5 border-b border-slate-800/40 last:border-b-0">
-          <span class="w-7 text-right font-mono font-bold text-sky-400 text-[10px]">Node ${u}:</span>
-          <div class="flex flex-wrap items-center gap-1">${neighborPills}</div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 2px 0; border-bottom: 1px dashed #f1f5f9;">
+          <span style="width: 48px; text-align: right; font-family: monospace; font-weight: 700; color: #0284c7; font-size: 9.5px;">Node ${u}:</span>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 3px;">${neighborPills}</div>
         </div>
       `;
     })
     .join('');
 
   container.innerHTML = `
-    <div class="w-full flex flex-col gap-3 p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl text-xs">
-      <!-- 双视舱对照网格 -->
-      <div class="grid grid-cols-2 gap-3">
-        <!-- 邻接矩阵视舱 -->
-        <div class="flex flex-col gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60">
-          <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-              邻接矩阵 (O(V²))
-            </span>
-            <span class="text-[9.5px] font-mono text-sky-300">5x5 对称</span>
-          </div>
-          <table class="w-full border-collapse">
-            ${matrixRows}
-          </table>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; box-sizing: border-box;">
+      <!-- 邻接矩阵视舱 -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 5px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #0284c7;"></span>
+            邻接矩阵 (O(V²))
+          </span>
+          <span style="font-size: 9.5px; font-family: monospace; color: #0284c7; font-weight: 700;">5×5 对称</span>
         </div>
-
-        <!-- 邻接表视舱 -->
-        <div class="flex flex-col gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60">
-          <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              邻接表 (O(V+E))
-            </span>
-            <span class="text-[9.5px] font-mono text-emerald-300">各点出边链</span>
-          </div>
-          <div class="flex flex-col justify-center">
-            ${listRowsHtml}
-          </div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 2px;">
+          ${matrixRows}
+        </table>
       </div>
 
-      <!-- 核心指标状态汇总 -->
-      <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/60 text-[11px]">
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">图状态</div>
-          <div class="font-mono font-bold text-amber-400">${graphType}</div>
+      <!-- 邻接表视舱 -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 5px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
+            邻接表 (O(V+E))
+          </span>
+          <span style="font-size: 9.5px; font-family: monospace; color: #059669; font-weight: 700;">出边链表</span>
         </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">顶点总数 (V)</div>
-          <div class="font-mono font-bold text-sky-400">${vCount}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">边总数 (E)</div>
-          <div class="font-mono font-bold text-emerald-400">${eCount}</div>
+        <div style="display: flex; flex-direction: column; justify-content: center; margin-top: 2px;">
+          ${listRowsHtml}
         </div>
       </div>
     </div>

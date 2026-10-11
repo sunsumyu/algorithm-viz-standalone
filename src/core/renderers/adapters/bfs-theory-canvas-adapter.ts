@@ -84,14 +84,14 @@ export function renderBFSTheoryCanvas(container: HTMLElement, step: BFSStep): vo
       <g class="bfs-node-group">
         ${
           isCurrent
-            ? `<circle cx="${pos.x}" cy="${pos.y}" r="28" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" opacity="0.8">
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="30" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" opacity="0.8">
                  <animateTransform attributeName="transform" type="rotate" from="0 ${pos.x} ${pos.y}" to="360 ${pos.x} ${pos.y}" dur="8s" repeatCount="indefinite" />
                </circle>`
             : inQueue
-            ? `<circle cx="${pos.x}" cy="${pos.y}" r="26" fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.7" />`
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="27" fill="none" stroke="#06b6d4" stroke-width="1.8" stroke-dasharray="3 3" opacity="0.8" />`
             : ''
         }
-        <circle cx="${pos.x}" cy="${pos.y}" r="22" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+        <circle cx="${pos.x}" cy="${pos.y}" r="24" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
         <text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" fill="${isCurrent ? '#fef08a' : inQueue ? '#a5f3fc' : isVisited ? '#a7f3d0' : '#f8fafc'}" font-size="15" font-weight="800" font-family="monospace">${u}</text>
         ${
           isCurrent
@@ -130,24 +130,24 @@ export function renderBFSTheoryCanvas(container: HTMLElement, step: BFSStep): vo
 }
 
 export function renderBFSTheoryCustomMetrics(container: HTMLElement, step: BFSStep): void {
-  const { queue, traversalOrder, visited, levelMarkers, action, level } = step;
+  const { queue, traversalOrder, visited, levelMarkers } = step;
 
   // 1. FIFO 队列卡槽
   const queueItemsHtml =
     queue.length === 0
-      ? '<span class="text-xs text-slate-500 italic">（队列当前为空）</span>'
+      ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">（队列当前为空）</span>'
       : queue
           .map((node, idx) => {
             const isHead = idx === 0;
             return `
-              <div class="px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 ${
+              <div style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; ${
                 isHead
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-sm shadow-cyan-900/40'
-                  : 'bg-slate-800/80 text-slate-300 border border-slate-700/60'
+                  ? 'background: #ecfeff; color: #0e7490; border: 1.5px solid #06b6d4; box-shadow: 0 1px 3px rgba(6, 182, 212, 0.15);'
+                  : 'background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;'
               }">
-                <span class="text-[10px] text-slate-400">#${idx + 1}</span>
+                <span style="font-size: 9.5px; color: ${isHead ? '#0891b2' : '#64748b'};">#${idx + 1}</span>
                 <span>Node ${node}</span>
-                ${isHead ? '<span class="text-[9px] bg-cyan-500/30 text-cyan-200 px-1 rounded">HEAD</span>' : ''}
+                ${isHead ? '<span style="font-size: 8.5px; background: #06b6d4; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-weight: 800;">HEAD</span>' : ''}
               </div>
             `;
           })
@@ -157,70 +157,50 @@ export function renderBFSTheoryCustomMetrics(container: HTMLElement, step: BFSSt
   const levelSet = new Set(levelMarkers);
   let orderHtml = '';
   if (traversalOrder.length === 0) {
-    orderHtml = '<span class="text-xs text-slate-500 italic">（尚未遍历任何节点）</span>';
+    orderHtml = '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">（尚未遍历任何节点）</span>';
   } else {
     traversalOrder.forEach((node, idx) => {
       if (levelSet.has(idx) && idx > 0) {
         orderHtml += `
-          <span class="text-xs text-cyan-500 font-bold px-1 select-none">|</span>
+          <span style="font-size: 11px; color: #0891b2; font-weight: 800; padding: 0 2px; user-select: none;">|</span>
         `;
       }
       orderHtml += `
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30">
-          <span class="text-[9px] opacity-60">${idx + 1}.</span>
-          <span>${node}</span>
+        <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;">
+          <span style="font-size: 9.5px; color: #059669; opacity: 0.8;">${idx + 1}.</span>
+          <span>Node ${node}</span>
         </span>
       `;
     });
   }
 
   container.innerHTML = `
-    <div class="w-full flex flex-col gap-3 p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl text-xs">
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
       <!-- FIFO 队列舱 -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #06b6d4;"></span>
             先进先出队列 (FIFO Queue)
           </span>
-          <span class="text-[10px] font-mono text-cyan-300">队列长度: ${queue.length}</span>
+          <span style="font-size: 11px; font-weight: 700; color: #0891b2; font-family: monospace;">队列长度: ${queue.length}</span>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 min-h-[38px]">
+        <div style="display: flex; flex-wrap: wrap; items-center; gap: 5px; min-height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 4px 8px; box-sizing: border-box;">
           ${queueItemsHtml}
         </div>
       </div>
 
       <!-- 分层访问流水 -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
             分层遍历序列 (Layered Order)
           </span>
-          <span class="text-[10px] font-mono text-emerald-300">已遍历: ${visited.size} / 6</span>
+          <span style="font-size: 11px; font-weight: 700; color: #059669; font-family: monospace;">已遍历: ${visited.size} / 6</span>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 min-h-[38px]">
+        <div style="display: flex; flex-wrap: wrap; items-center; gap: 5px; min-height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 4px 8px; box-sizing: border-box;">
           ${orderHtml}
-        </div>
-      </div>
-
-      <!-- 指标汇总仪表板 -->
-      <div class="grid grid-cols-4 gap-2 pt-1 border-t border-slate-800/60 text-[11px]">
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">当前动作</div>
-          <div class="font-mono font-bold text-amber-400 uppercase">${action}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">当前层级</div>
-          <div class="font-mono font-bold text-cyan-400">Level ${level}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">队列待办</div>
-          <div class="font-mono font-bold text-purple-400">${queue.length}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">已染节点</div>
-          <div class="font-mono font-bold text-emerald-400">${visited.size} / 6</div>
         </div>
       </div>
     </div>

@@ -96,12 +96,12 @@ export function renderDFSTheoryCanvas(container: HTMLElement, step: DFSStep): vo
       <g class="dfs-node-group">
         ${
           isCurrent
-            ? `<circle cx="${pos.x}" cy="${pos.y}" r="28" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" opacity="0.8">
+            ? `<circle cx="${pos.x}" cy="${pos.y}" r="30" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 3" opacity="0.8">
                  <animateTransform attributeName="transform" type="rotate" from="0 ${pos.x} ${pos.y}" to="360 ${pos.x} ${pos.y}" dur="8s" repeatCount="indefinite" />
                </circle>`
             : ''
         }
-        <circle cx="${pos.x}" cy="${pos.y}" r="22" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+        <circle cx="${pos.x}" cy="${pos.y}" r="24" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
         <text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" fill="${isCurrent ? '#fef08a' : inStack ? '#e9d5ff' : '#f8fafc'}" font-size="15" font-weight="800" font-family="monospace">${u}</text>
         ${
           isCurrent
@@ -142,24 +142,24 @@ export function renderDFSTheoryCanvas(container: HTMLElement, step: DFSStep): vo
 }
 
 export function renderDFSTheoryCustomMetrics(container: HTMLElement, step: DFSStep): void {
-  const { stack, traversalOrder, visited, action, depth } = step;
+  const { stack, traversalOrder, visited, depth } = step;
 
   // 递归调用栈块
   const stackItemsHtml =
     stack.length === 0
-      ? '<span class="text-xs text-slate-500 italic">（递归栈当前为空）</span>'
+      ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">（递归栈当前为空）</span>'
       : stack
           .map((node, idx) => {
             const isTop = idx === stack.length - 1;
             return `
-              <div class="px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1.5 ${
+              <div style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; ${
                 isTop
-                  ? 'bg-purple-600/30 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-900/40'
-                  : 'bg-slate-800/80 text-slate-300 border border-slate-700/60'
+                  ? 'background: #f3e8ff; color: #6b21a8; border: 1.5px solid #a855f7; box-shadow: 0 1px 3px rgba(168, 85, 247, 0.15);'
+                  : 'background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;'
               }">
-                <span class="text-[10px] text-slate-400">#${idx + 1}</span>
+                <span style="font-size: 9.5px; color: ${isTop ? '#9333ea' : '#64748b'};">#${idx + 1}</span>
                 <span>Node ${node}</span>
-                ${isTop ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1 rounded">TOP</span>' : ''}
+                ${isTop ? '<span style="font-size: 8.5px; background: #eab308; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-weight: 800;">TOP</span>' : ''}
               </div>
             `;
           })
@@ -168,61 +168,45 @@ export function renderDFSTheoryCustomMetrics(container: HTMLElement, step: DFSSt
   // 访问顺序流水胶囊
   const orderItemsHtml =
     traversalOrder.length === 0
-      ? '<span class="text-xs text-slate-500 italic">（尚未访问任何节点）</span>'
+      ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">（尚未访问任何节点）</span>'
       : traversalOrder
           .map(
             (node, idx) => `
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
-                <span class="text-[9px] opacity-60">${idx + 1}.</span>
-                <span>${node}</span>
+              <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7;">
+                <span style="font-size: 9.5px; color: #059669; opacity: 0.8;">${idx + 1}.</span>
+                <span>Node ${node}</span>
               </span>
             `
           )
           .join('');
 
   container.innerHTML = `
-    <div class="w-full flex flex-col gap-3 p-3 bg-slate-900/70 border border-slate-800/80 rounded-xl text-xs">
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
       <!-- 递归栈监视舱 -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #9333ea;"></span>
             调用栈状态 (Recursion Stack)
           </span>
-          <span class="text-[10px] font-mono text-purple-300">当前深度: ${depth}</span>
+          <span style="font-size: 11px; font-weight: 700; color: #7c3aed; font-family: monospace;">栈深度: ${depth}</span>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 min-h-[38px]">
+        <div style="display: flex; flex-wrap: wrap; items-center; gap: 5px; min-height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 4px 8px; box-sizing: border-box;">
           ${stackItemsHtml}
         </div>
       </div>
 
       <!-- 遍历顺序流水 -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between text-slate-300 font-semibold text-[11px]">
-          <span class="flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
             访问序列 (Traversal Order)
           </span>
-          <span class="text-[10px] font-mono text-emerald-300">已访: ${visited.size} / 6</span>
+          <span style="font-size: 11px; font-weight: 700; color: #059669; font-family: monospace;">已访问: ${visited.size} / 6</span>
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-slate-950/60 border border-slate-800/60 min-h-[38px]">
+        <div style="display: flex; flex-wrap: wrap; items-center; gap: 5px; min-height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 4px 8px; box-sizing: border-box;">
           ${orderItemsHtml}
-        </div>
-      </div>
-
-      <!-- 核心指标状态汇总 -->
-      <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-800/60 text-[11px]">
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">当前动作</div>
-          <div class="font-mono font-bold text-amber-400 uppercase">${action}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">递归栈深度</div>
-          <div class="font-mono font-bold text-purple-400">${depth}</div>
-        </div>
-        <div class="p-1.5 rounded bg-slate-800/40 text-center">
-          <div class="text-slate-400 text-[10px]">已覆盖顶点</div>
-          <div class="font-mono font-bold text-emerald-400">${visited.size} / 6</div>
         </div>
       </div>
     </div>

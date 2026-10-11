@@ -30,6 +30,9 @@ const { Visualizer } = registerDeclarativeAlgorithm({
   levelOrder: 1,
   learningGoal: '掌握图的两种基本表示方法及其适用场景，理解时空效率权衡',
   aliases: ['graph-representation', 'graph-basics'],
+  card1Title: '图拓扑结构与连通分量沙盘',
+  card2Title: '邻接矩阵与邻接表双重表示看板',
+  card2Desc: '对比观察邻接矩阵与邻接表图数据结构及顶点度数',
   metrics: [
     { id: 'metric-gt-type', label: '图结构状态', color: '#38bdf8' },
     { id: 'metric-gt-v', label: '顶点总数 (V)', color: '#34d399' },

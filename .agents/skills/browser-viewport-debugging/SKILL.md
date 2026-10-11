@@ -9,7 +9,19 @@ Authoring and inspection guidelines for browser/web visualizer debugging, Puppet
 
 ---
 
-## 0. Viewport Configuration & Reference
+## 0. 端口冲突阻断与零孤儿标签页红线 (Port Conflict & Zero Orphan Tab Guard)
+
+> [!CAUTION]
+> **绝对禁止在 CDP/端口冲突时盲目重试打开 GUI 浏览器！**
+> 当系统宿主主 Chrome（或既有进程）已占用 `9222` 等调试端口或用户数据目录时，外部 `open_browser_url` / `browser_subagent` 会被主进程接管并退化为在桌面打开空白的 `新标签页 - Google Chrome`，且 CDP 会话完全无法 attach。
+> **铁律要求**：
+> 1. **遇阻即停，禁止循环盲试**：若浏览器打开或连接失败，严禁任何无意义的重复重试！必须立即停止并核查端口占用（`netstat -ano | Select-String "9222|3000"`）。
+> 2. **优先使用隔离无头仿真 (Headless First)**：验证真实渲染、多步骤模拟推演与全高清截图时，优先使用本地无头自动化脚本（如 `scripts/verify-ui-simulation.ts` 结合 Playwright/Edge/Chrome Headless），使用独立隔离数据目录与端口，零弹窗、零桌面污染、完全可控。
+> 3. **及时清理孤儿调试进程**：若发生意外残留，优先通过精准命令定位并排查，切勿让空白标签页堆叠在用户任务栏。
+
+---
+
+## 0.1 Viewport Configuration & Reference
 
 Full HD (1920×1080) ensures dual-column layouts (`lg:flex-row`, breakpoint 1024px) remain expanded with balanced state space sandbox (50%) and dark code terminal (50%).
 

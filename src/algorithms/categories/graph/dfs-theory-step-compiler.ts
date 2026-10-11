@@ -17,6 +17,7 @@ export interface DFSStep {
   message: string;
   log: string;
   codeLine: number | number[];
+  metrics: Record<string, string | number>;
 }
 
 export const DFS_NODE_POSITIONS: Record<number, { x: number; y: number }> = {
@@ -74,6 +75,11 @@ export function buildDFSSteps(): DFSStep[] {
     message: '初始化图拓扑：6 个顶点、5 条双向边。准备从根源节点 0 启动 DFS 深度递归。',
     log: '初始化图拓扑，起点 = 0',
     codeLine: DFS_THEORY_CODE_LINES.init,
+    metrics: {
+      'metric-dfs-action': '图初始化',
+      'metric-dfs-depth': 0,
+      'metric-dfs-visited': '0 / 6',
+    },
   });
 
   const dfs = (u: number, parent: number): void => {
@@ -95,6 +101,11 @@ export function buildDFSSteps(): DFSStep[] {
       message: `访问顶点 ${u}：标记 visited[${u}] = true，压入递归栈，当前栈深度 ${stack.length}。`,
       log: `DFS(${u}): 标记并压栈 [${stack.join(' -> ')}]`,
       codeLine: DFS_THEORY_CODE_LINES.visit,
+      metrics: {
+        'metric-dfs-action': `访问 Node ${u}`,
+        'metric-dfs-depth': stack.length,
+        'metric-dfs-visited': `${visited.size} / 6`,
+      },
     });
 
     for (const v of adjList[u]) {
@@ -114,6 +125,11 @@ export function buildDFSSteps(): DFSStep[] {
           message: `发现未探索邻居 ${v}，沿着边 (${u} -> ${v}) 递归深入 DFS(${v})。`,
           log: `DFS(${u}) -> DFS(${v}): 沿边推进`,
           codeLine: DFS_THEORY_CODE_LINES.explore,
+          metrics: {
+            'metric-dfs-action': `深入 (${u}➔${v})`,
+            'metric-dfs-depth': stack.length,
+            'metric-dfs-visited': `${visited.size} / 6`,
+          },
         });
         dfs(v, u);
       } else {
@@ -131,6 +147,11 @@ export function buildDFSSteps(): DFSStep[] {
           message: `邻居 ${v} 已在 visited 集合中，跳过避免重复搜索。`,
           log: `DFS(${u}): 跳过已访问邻居 ${v}`,
           codeLine: DFS_THEORY_CODE_LINES.skip,
+          metrics: {
+            'metric-dfs-action': `跳过已访 ${v}`,
+            'metric-dfs-depth': stack.length,
+            'metric-dfs-visited': `${visited.size} / 6`,
+          },
         });
       }
     }
@@ -150,6 +171,11 @@ export function buildDFSSteps(): DFSStep[] {
       message: `顶点 ${u} 所有邻接边探索完毕，弹栈回溯到 ${stack.length > 0 ? `上层顶点 ${stack[stack.length - 1]}` : '起点（栈空）'}。`,
       log: `DFS(${u}) 结束: 弹栈回溯`,
       codeLine: DFS_THEORY_CODE_LINES.backtrack,
+      metrics: {
+        'metric-dfs-action': `回溯弹栈`,
+        'metric-dfs-depth': stack.length,
+        'metric-dfs-visited': `${visited.size} / 6`,
+      },
     });
   };
 
@@ -169,6 +195,11 @@ export function buildDFSSteps(): DFSStep[] {
     message: `DFS 全图遍历完成！访问序列: [${traversalOrder.join(', ')}]，所有 ${visited.size} 个顶点均被成功覆盖。`,
     log: `DFS 遍历完成，访问序列: [${traversalOrder.join(', ')}]`,
     codeLine: DFS_THEORY_CODE_LINES.done,
+    metrics: {
+      'metric-dfs-action': '遍历完成',
+      'metric-dfs-depth': 0,
+      'metric-dfs-visited': '6 / 6',
+    },
   });
 
   return steps;
