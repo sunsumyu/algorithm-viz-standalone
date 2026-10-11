@@ -160,9 +160,59 @@ async function main() {
     });
     await page.waitForTimeout(300);
   }
-  const gtScreenshotPath = 'F:/chain/algorithm-viz-standalone/scripts/graph-theory-screenshot.png';
-  await page.screenshot({ path: gtScreenshotPath, fullPage: true });
-  console.log('[Playwright] Saved Graph Theory screenshot to', gtScreenshotPath);
+  // --- Test Tree Path Intersection ---
+  console.log('[Playwright] Calling showAlgorithm("tree-path-intersection")...');
+  await page.evaluate(async () => {
+    const vEngine = (window as any).viewMountEngine;
+    if (vEngine) await vEngine.showAlgorithm('tree-path-intersection');
+  });
+  await page.waitForTimeout(1000);
+  for (let i = 1; i <= 3; i++) {
+    await page.evaluate(() => {
+      const nextBtn = document.getElementById('btn-step-next');
+      if (nextBtn) nextBtn.click();
+    });
+    await page.waitForTimeout(300);
+  }
+  const treeScreenshotPath = 'F:/chain/algorithm-viz-standalone/scripts/tree-path-intersection-screenshot.png';
+  await page.screenshot({ path: treeScreenshotPath, fullPage: true });
+  console.log('[Playwright] Saved Tree Path Intersection screenshot to', treeScreenshotPath);
+
+  // --- Test Prefix Opt Graph ---
+  console.log('[Playwright] Calling showAlgorithm("prefix-opt-graph")...');
+  await page.evaluate(async () => {
+    const vEngine = (window as any).viewMountEngine;
+    if (vEngine) await vEngine.showAlgorithm('prefix-opt-graph');
+  });
+  await page.waitForTimeout(1000);
+  for (let i = 1; i <= 3; i++) {
+    await page.evaluate(() => {
+      const nextBtn = document.getElementById('btn-step-next');
+      if (nextBtn) nextBtn.click();
+    });
+    await page.waitForTimeout(300);
+  }
+  const prefixScreenshotPath = 'F:/chain/algorithm-viz-standalone/scripts/prefix-opt-graph-screenshot.png';
+  await page.screenshot({ path: prefixScreenshotPath, fullPage: true });
+  console.log('[Playwright] Saved Prefix Opt Graph screenshot to', prefixScreenshotPath);
+
+  // --- Test Convex Hull 3D ---
+  console.log('[Playwright] Calling showAlgorithm("convex-hull-3d")...');
+  await page.evaluate(async () => {
+    const vEngine = (window as any).viewMountEngine;
+    if (vEngine) await vEngine.showAlgorithm('convex-hull-3d');
+  });
+  await page.waitForTimeout(1000);
+  for (let i = 1; i <= 3; i++) {
+    await page.evaluate(() => {
+      const nextBtn = document.getElementById('btn-step-next');
+      if (nextBtn) nextBtn.click();
+    });
+    await page.waitForTimeout(300);
+  }
+  const hullScreenshotPath = 'F:/chain/algorithm-viz-standalone/scripts/convex-hull-3d-screenshot.png';
+  await page.screenshot({ path: hullScreenshotPath, fullPage: true });
+  console.log('[Playwright] Saved Convex Hull 3D screenshot to', hullScreenshotPath);
 
   await browser.close();
   console.log('[Playwright] All UI simulations completed successfully.');

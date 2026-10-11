@@ -3262,6 +3262,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 71,
     learningGoal: "掌握混合图欧拉回路转化为网络流最大流的建模技巧、奇偶性判别及残量网络边反转重构回路",
+    aliases: ["mixed-euler","poj-1637"],
   },
   {
     id: "bounded-flow",

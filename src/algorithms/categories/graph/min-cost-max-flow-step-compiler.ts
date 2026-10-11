@@ -101,6 +101,16 @@ export function buildMCMFSteps(preset: string = 'standard'): MCMFStep[] {
     const qArr = nodes.map((nd) => inQueue[nd]);
     const pArr = nodes.map((nd) => preNode[nd] || '-');
 
+    const resolvedCodeLine =
+      typeof codeLine === 'object' && codeLine !== null && 'java' in codeLine
+        ? {
+            cpp: (codeLine as any).cpp,
+            java: (codeLine as any).java > 82 ? (codeLine as any).java - 82 : (codeLine as any).java,
+            python: (codeLine as any).python > 146 ? (codeLine as any).python - 146 : (codeLine as any).python,
+            javascript: (codeLine as any).javascript > 208 ? (codeLine as any).javascript - 208 : (codeLine as any).javascript,
+          }
+        : codeLine;
+
     steps.push({
       curPath: edges.map((e) => ({ ...e })),
       activePath: activePath ? [...activePath] : undefined,
@@ -117,7 +127,7 @@ export function buildMCMFSteps(preset: string = 'standard'): MCMFStep[] {
       status,
       message,
       log,
-      codeLine,
+      codeLine: resolvedCodeLine,
       metrics: {
         'metric-mcmf-flow': `${totalFlow}`,
         'metric-mcmf-cost': `${totalCost}`,

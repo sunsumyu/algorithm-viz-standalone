@@ -1,7 +1,7 @@
 /**
- * 网络流最大权闭合子图 (Max-Weight Closure of Directed Graph) 步进生成器
- * 进阶网络流: 正权点连源点 S、负权点连汇点 T、依赖边容量无穷大、最大权 = 正权和 - 最小割 (洛谷 P2762 太空飞行计划 / 左程云 class072)
- * 纯 TypeScript 实现，严禁英文调试命令泄漏，支持四语言精准行号映射
+ * 最大权闭合子图 (Maximum Weight Closure of a Directed Graph) 步进推演编译器
+ * 遵循 Matt Pocock 深模块哲学与单一事实来源 (Single Source of Truth)
+ * 职责：严格推演最大权闭合子图向网络流最小割的规约证明、Dinic 阻塞流增广与残量网络方案提取 (洛谷 P2762)
  */
 
 export interface ClosureStep {
@@ -11,7 +11,6 @@ export interface ClosureStep {
   totalPositive: number;
   minCutValue: number;
   maxProfit: number;
-  activePath?: string[];
   activeEdge?: [string, string];
   levelArray?: number[];
   status: 'deps' | 'build' | 'bfs' | 'dfs' | 'cut' | 'closure' | 'done';
@@ -78,6 +77,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
                   ? '闭合依赖强约束建模'
                   : '权值源汇网络构建';
 
+    const normalizedLines = {
+      cpp: lines.cpp,
+      java: lines.java > 110 ? lines.java - 110 : lines.java,
+      python: lines.python > 228 ? lines.python - 228 : lines.python,
+      javascript: lines.javascript > 310 ? lines.javascript - 310 : lines.javascript,
+    };
+
     steps.push({
       cutEdges: cutEdges.map((e) => ({ ...e })),
       flowEdges: flowEdges.map((e) => ({ ...e })),
@@ -89,8 +95,8 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
       status,
       message,
       log,
-      codeLine: lines.java,
-      codeLines: lines,
+      codeLine: normalizedLines.java,
+      codeLines: normalizedLines,
       metrics: {
         'metric-pos-weight': `正权总和: +${totalPositive}`,
         'metric-min-cut-val': `最小割损失: ${minCutValue}`,
@@ -106,6 +112,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
     { java: 132, cpp: 27, python: 232, javascript: 313 },
     `🚀 [算法初始化] 确立超级源点 S (0) 与超级汇点 T (${nodeCount + 1})，准备将最大权闭合子图规约为最小割模型。`,
     `初始化网络流模型 (超级源点 S，超级汇点 T)`,
+    'build'
+  );
+
+  makeStep(
+    { java: 135, cpp: 30, python: 236, javascript: 318 },
+    '🎯 [数学规约定理] 最大权闭合子图等价于：所有正权和 - 伴随网络最小割。若割舍正权点损失其收益，若保留负权点支付其代价。',
+    '闭合子图转化为最小割模型理论铺垫',
     'build'
   );
 
@@ -135,6 +148,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
   }
 
   // ==================== 3. 依赖关系容量无穷大 ====================
+  makeStep(
+    { java: 158, cpp: 45, python: 254, javascript: 338 },
+    '🔗 [依赖闭合性检查] 对每一条闭合依赖关系 u ➔ v，建立由 u 到 v 容量为正无穷的不可割边。',
+    '准备注入闭合图自封闭拓扑依赖约束',
+    'deps'
+  );
+
   for (const [u, v] of dependencies) {
     flowEdges.push({ u, v, cap: 1000000000, flow: 0, isInf: true });
     makeStep(
@@ -161,6 +181,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
     'bfs'
   );
 
+  makeStep(
+    { java: 170, cpp: 58, python: 265, javascript: 346 },
+    '🔍 [当前残量检测] 检查分层网络是否存在 S 到 T 的增广路径，准备沿最短分层向前探测。',
+    '检索当前残量网络可行阻塞流',
+    'bfs'
+  );
+
   let pushedSum = 0;
   for (const e of flowEdges) {
     if (e.v === 'T' && pushedSum < targetMinCut) {
@@ -176,6 +203,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
       );
     }
   }
+
+  makeStep(
+    { java: 191, cpp: 78, python: 280, javascript: 350 },
+    '🔄 [反向边更新] 同步建立反向残量边容量，维护增广网络流量守恒。',
+    '反向残量边更新与流量平衡维护',
+    'dfs'
+  );
 
   minCutValue = targetMinCut;
   maxProfit = totalPositive - minCutValue;
@@ -211,6 +245,13 @@ export function buildMaxWeightClosureSteps(preset: string = 'space'): ClosureSte
       [...chosenNodes]
     );
   }
+
+  makeStep(
+    { java: 220, cpp: 101, python: 305, javascript: 312 },
+    '🔒 [闭合性质验证] 验证所有已选节点的所有后继依赖节点均在已选集合中，无外部向外延伸的破坏边。',
+    '闭合子图自封闭完备性验证',
+    'closure'
+  );
 
   // 终态完成
   makeStep(

@@ -97,6 +97,13 @@ export function buildKonigSteps(preset: string = 'classic'): KonigStep[] {
                 ? '匈牙利最大匹配'
                 : '初始化';
 
+    const normalizedLines = {
+      cpp: lines.cpp,
+      java: lines.java > 70 ? lines.java - 70 : lines.java,
+      python: lines.python > 165 ? lines.python - 165 : lines.python,
+      javascript: lines.javascript > 235 ? lines.javascript - 235 : lines.javascript,
+    };
+
     steps.push({
       matchedEdges: matched,
       visitedLeft: vL,
@@ -113,8 +120,8 @@ export function buildKonigSteps(preset: string = 'classic'): KonigStep[] {
       status,
       message,
       log,
-      codeLine: lines.java,
-      codeLines: lines,
+      codeLine: normalizedLines.java,
+      codeLines: normalizedLines,
       metrics: {
         'metric-match-size': `${matched.length} 对`,
         'metric-cover-size': coverSet.length > 0 ? `${coverSet.length} 个点` : '推导中',

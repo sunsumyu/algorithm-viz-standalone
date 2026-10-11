@@ -96,6 +96,13 @@ export function buildMinPathCoverSteps(preset: string = 'standard'): PathCoverSt
     const curUStr = curU ? `节点 ${curU}_out` : '——';
     const formulaStr = `${n} - ${maxMatch} = ${minPathsCount}`;
 
+    const normalizedLines = {
+      cpp: lines.cpp,
+      java: lines.java > 51 ? lines.java - 51 : lines.java,
+      python: lines.python > 106 ? lines.python - 106 : lines.python,
+      javascript: lines.javascript > 155 ? lines.javascript - 155 : lines.javascript,
+    };
+
     steps.push({
       splitMatches,
       currentMatchingCount: maxMatch,
@@ -104,8 +111,8 @@ export function buildMinPathCoverSteps(preset: string = 'standard'): PathCoverSt
       status,
       message,
       log,
-      codeLine: lines.java,
-      codeLines: lines,
+      codeLine: normalizedLines.java,
+      codeLines: normalizedLines,
       curU,
       metrics: {
         'metric-match-count': `${maxMatch} 条匹配`,

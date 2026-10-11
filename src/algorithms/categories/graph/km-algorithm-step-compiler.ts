@@ -114,6 +114,13 @@ export function buildKMSteps(preset: string = 'standard'): KMStep[] {
             ? '相等子图增广中'
             : '顶标初始化';
 
+    const normalizedLines = {
+      cpp: lines.cpp,
+      java: lines.java > 76 ? lines.java - 76 : lines.java,
+      python: lines.python > 135 ? lines.python - 135 : lines.python,
+      javascript: lines.javascript > 185 ? lines.javascript - 185 : lines.javascript,
+    };
+
     steps.push({
       lx: lxRec,
       ly: lyRec,
@@ -132,8 +139,8 @@ export function buildKMSteps(preset: string = 'standard'): KMStep[] {
       status,
       message,
       log,
-      codeLine: lines.java,
-      codeLines: lines,
+      codeLine: normalizedLines.java,
+      codeLines: normalizedLines,
       metrics: {
         'metric-km-weight': `${totalWeight}`,
         'metric-km-matched': matchedStr,
