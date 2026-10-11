@@ -138,6 +138,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
+    learningGoal: "掌握二维几何容斥原理在矩阵建表与 O(1) 瞬时区域检索中的四角端点转化法则。",
     aliases: ["class050-code01","range-sum-query-2d","leetcode-304","prefix-sum-2d"],
   },
   {
