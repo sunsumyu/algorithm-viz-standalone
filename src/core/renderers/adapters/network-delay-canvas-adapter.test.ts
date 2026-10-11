@@ -39,4 +39,30 @@ describe('NetworkDelayCanvasAdapter', () => {
     expect(container.innerHTML).toContain('<svg');
     expect(container.innerHTML).toContain('d:∞');
   });
+
+  it('应当能正确为 Card 2 渲染优先队列小根堆动态管道与入出堆动效', () => {
+    const steps = buildNetworkDelaySteps(true);
+    const container = document.createElement('div');
+
+    // 1. 入堆步骤 (initPq / pushPq)
+    const pushStep = steps.find((s) => s.pqAction === 'push');
+    expect(pushStep).toBeDefined();
+    NetworkDelayCanvasAdapter.renderMetrics(container, pushStep!);
+    expect(container.innerHTML).toContain('优先队列小根堆');
+    expect(container.innerHTML).toContain('📥 入堆');
+    expect(container.innerHTML).toContain('distance[]');
+    expect(container.innerHTML).toContain('visited[]');
+
+    // 2. 出堆步骤 (popNode)
+    const popStep = steps.find((s) => s.pqAction === 'poll');
+    expect(popStep).toBeDefined();
+    NetworkDelayCanvasAdapter.renderMetrics(container, popStep!);
+    expect(container.innerHTML).toContain('📤 出堆');
+    expect(container.innerHTML).toContain('出堆锁定');
+
+    // 3. 终态队列排空
+    const doneStep = steps[steps.length - 1];
+    NetworkDelayCanvasAdapter.renderMetrics(container, doneStep);
+    expect(container.innerHTML).toContain('广播收敛');
+  });
 });

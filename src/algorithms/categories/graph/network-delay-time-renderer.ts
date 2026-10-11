@@ -85,37 +85,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
     NetworkDelayCanvasAdapter.render(container, step);
   },
   renderCustomMetrics: (container, step) => {
-    const n = step.distList.length - 1;
-    const indices = Array.from({ length: n }, (_, i) => i + 1);
-
-    const renderRow = (name: string, arr: any[], activeName: string, color: string, formatVal: (v: any) => string) => {
-      const cells = indices.map((idx) => {
-        const val = arr[idx];
-        const isActive = step.activeArray === activeName && step.activeSlot === idx;
-        const displayVal = formatVal(val);
-        const bg = isActive ? '#fef3c7' : '#ffffff';
-        const textCol = isActive ? '#b45309' : '#0f172a';
-        const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
-        return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:32px;background:${bg};border:${border};border-radius:4px;color:${textCol};font-family:monospace;font-size:11px;font-weight:700;"><span style="font-size:8px;color:#64748b;line-height:1;">N[${idx}]</span><span style="line-height:1.1;">${displayVal}</span></div>`;
-      }).join('');
-      return `<div style="display:flex;align-items:center;gap:8px;"><span style="font-family:monospace;font-size:11px;font-weight:700;width:135px;color:${color};">${name}:</span><div style="display:flex;gap:4px;">${cells}</div></div>`;
-    };
-
-    const distRow = renderRow('distance[] (到达时间)', step.distList, 'dist', '#38bdf8', (v) => v === Infinity ? '∞' : `${v}`);
-    const visRow = renderRow('visited[] (已锁定)', step.visitedList, 'visited', '#10b981', (v) => v ? 'T' : 'F');
-    const pqStr = step.pqSnapshot.length > 0 ? step.pqSnapshot.map((x) => `(N${x.u}, ${x.d}ms)`).join(' ➔ ') : '空';
-
-    container.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:#374151;padding:4px 8px;box-sizing:border-box;">
-        <div style="display:flex;flex-direction:column;gap:6px;background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;">
-          ${distRow}${visRow}
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;border-top:1px dashed #cbd5e1;padding-top:4px;">
-            <span style="color:#a855f7;font-size:10.5px;font-weight:700;">波前小根堆:</span>
-            <strong style="color:#a855f7;font-family:monospace;font-size:11px;">[ ${pqStr} ]</strong>
-          </div>
-        </div>
-      </div>
-    `;
+    NetworkDelayCanvasAdapter.renderMetrics(container, step);
   },
 });
 

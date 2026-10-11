@@ -12,6 +12,9 @@ export interface NetworkDelayStepVars {
   u: number;
   k: number;
   n: number;
+  times?: Array<[number, number, number]>;
+  graph?: Array<Array<{ to: number; w: number }>>;
+  adj?: Array<Array<{ to: number; w: number }>>;
   cur?: [number, number];
   activeEdge?: [number, number, number];
   edge?: [number, number];
@@ -26,6 +29,8 @@ export interface NetworkDelayStepVars {
   activeArray?: 'dist' | 'visited' | 'pq';
   activeSlot?: number;
   status: 'init' | 'emit' | 'pop' | 'relax' | 'check' | 'done';
+  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle';
+  lastPqItem?: { u: number; d: number };
 }
 
 export interface NetworkDelayStep {
@@ -33,6 +38,9 @@ export interface NetworkDelayStep {
   u?: number;
   k?: number;
   n?: number;
+  times?: Array<[number, number, number]>;
+  graph?: Array<Array<{ to: number; w: number }>>;
+  adj?: Array<Array<{ to: number; w: number }>>;
   distList: number[];
   visitedList: boolean[];
   pqSnapshot: Array<{ u: number; d: number }>;
@@ -47,88 +55,90 @@ export interface NetworkDelayStep {
   codeLine: HighlightTarget;
   metrics?: Record<string, string | number>;
   vars?: NetworkDelayStepVars;
+  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle';
+  lastPqItem?: { u: number; d: number };
 }
 
 export const NETWORK_DELAY_ANCHOR_MAP: Record<string, Record<string, number>> = {
   cpp: {
-    entry: 11,
-    initDistance: 19,
-    initVisited: 20,
-    initSrc: 23,
-    initPq: 24,
-    whilePq: 26,
-    popNode: 27,
-    checkVisited: 28,
-    markVisited: 29,
-    loopNeighbors: 31,
-    checkRelax: 33,
-    applyRelax: 34,
-    pushPq: 35,
-    initAns: 41,
-    loopAns: 42,
-    checkUnreachable: 43,
-    updateMax: 44,
-    returnAns: 46,
-  },
-  java: {
-    entry: 8,
-    initDistance: 17,
-    initVisited: 19,
-    initSrc: 20,
-    initPq: 22,
-    whilePq: 24,
-    popNode: 25,
-    checkVisited: 27,
-    markVisited: 28,
-    loopNeighbors: 29,
-    checkRelax: 31,
-    applyRelax: 32,
-    pushPq: 33,
-    initAns: 38,
-    loopAns: 39,
-    checkUnreachable: 40,
-    updateMax: 41,
-    returnAns: 43,
-  },
-  python: {
     entry: 3,
     initDistance: 11,
     initVisited: 12,
-    initSrc: 15,
-    initPq: 16,
-    whilePq: 18,
-    popNode: 19,
-    checkVisited: 20,
-    markVisited: 22,
-    loopNeighbors: 25,
-    checkRelax: 27,
-    applyRelax: 28,
-    pushPq: 29,
-    initAns: 33,
-    loopAns: 34,
-    checkUnreachable: 35,
-    updateMax: 36,
+    initSrc: 14,
+    initPq: 15,
+    whilePq: 17,
+    popNode: 18,
+    checkVisited: 19,
+    markVisited: 20,
+    loopNeighbors: 22,
+    checkRelax: 24,
+    applyRelax: 25,
+    pushPq: 26,
+    initAns: 32,
+    loopAns: 33,
+    checkUnreachable: 34,
+    updateMax: 35,
     returnAns: 37,
   },
-  javascript: {
+  java: {
     entry: 2,
     initDistance: 11,
-    initVisited: 12,
-    initSrc: 15,
+    initVisited: 13,
+    initSrc: 14,
     initPq: 16,
     whilePq: 18,
     popNode: 19,
     checkVisited: 21,
     markVisited: 22,
-    loopNeighbors: 25,
-    checkRelax: 27,
-    applyRelax: 28,
-    pushPq: 29,
+    loopNeighbors: 23,
+    checkRelax: 25,
+    applyRelax: 26,
+    pushPq: 27,
     initAns: 33,
     loopAns: 34,
     checkUnreachable: 35,
     updateMax: 36,
-    returnAns: 37,
+    returnAns: 38,
+  },
+  python: {
+    entry: 2,
+    initDistance: 9,
+    initVisited: 10,
+    initSrc: 11,
+    initPq: 12,
+    whilePq: 14,
+    popNode: 15,
+    checkVisited: 16,
+    markVisited: 18,
+    loopNeighbors: 20,
+    checkRelax: 21,
+    applyRelax: 22,
+    pushPq: 23,
+    initAns: 26,
+    loopAns: 27,
+    checkUnreachable: 28,
+    updateMax: 30,
+    returnAns: 33,
+  },
+  javascript: {
+    entry: 1,
+    initDistance: 9,
+    initVisited: 10,
+    initSrc: 11,
+    initPq: 14,
+    whilePq: 16,
+    popNode: 19,
+    checkVisited: 21,
+    markVisited: 22,
+    loopNeighbors: 25,
+    checkRelax: 28,
+    applyRelax: 29,
+    pushPq: 30,
+    initAns: 36,
+    loopAns: 37,
+    checkUnreachable: 38,
+    updateMax: 39,
+    returnAns: 42,
   },
 };
 
@@ -177,7 +187,9 @@ export function traceNetworkDelay(isReachable: boolean = true) {
         log: string,
         status: 'init' | 'emit' | 'pop' | 'relax' | 'check' | 'done',
         activeArray?: 'dist' | 'visited' | 'pq',
-        activeSlot?: number
+        activeSlot?: number,
+        pqAction: 'push' | 'poll' | 'check' | 'empty' | 'idle' = 'idle',
+        lastPqItem?: { u: number; d: number }
       ): void {
         const curStr = status === 'done' ? '广播结算完毕' : `Node ${curNode}`;
         const delayStr = maxDelaySoFar === -1 ? '-1 (存在孤立点)' : `${maxDelaySoFar} ms`;
@@ -202,6 +214,9 @@ export function traceNetworkDelay(isReachable: boolean = true) {
             u: curNode,
             k,
             n,
+            times,
+            graph: adj,
+            adj,
             cur: [curNode, distance[curNode] === Infinity ? 0 : distance[curNode]],
             activeEdge,
             edge: activeEdge ? [activeEdge[1], activeEdge[2]] : undefined,
@@ -216,6 +231,8 @@ export function traceNetworkDelay(isReachable: boolean = true) {
             activeArray,
             activeSlot,
             status,
+            pqAction,
+            lastPqItem,
           },
           metrics: {
             'metric-delay-cur': curStr,
@@ -235,16 +252,16 @@ export function traceNetworkDelay(isReachable: boolean = true) {
       emit('initSrc', `📡 [设置发射源点] distance[${k}] = 0：信号在时刻 0 从源节点 ${k} 发射！`, `distance[${k}] = 0`, 'emit', 'dist', k);
 
       pushPq(k, 0);
-      emit('initPq', `📥 [源点加入波前堆] pq.add([${k}, 0])；小根堆初始化完成。`, `pq.add(${k}, 0)`, 'emit', 'pq', 0);
+      emit('initPq', `📥 [源点加入波前堆] pq.add([${k}, 0])；小根堆初始化完成。`, `pq.add(${k}, 0)`, 'emit', 'pq', 0, 'push', { u: k, d: 0 });
 
       // 2. Dijkstra 堆优化循环
       while (pq.length > 0) {
-        emit('whilePq', `🔁 [检查堆非空] while (!pq.isEmpty()) -> 当前波前队列待扩散状态数: ${pq.length}。`, `!pq.isEmpty() (len=${pq.length})`, 'pop');
+        emit('whilePq', `🔁 [检查堆非空] while (!pq.isEmpty()) -> 当前波前队列待扩散状态数: ${pq.length}。`, `!pq.isEmpty() (len=${pq.length})`, 'pop', undefined, undefined, 'check');
 
         const top = pollPq();
         curNode = top.u;
         const curD = top.d;
-        emit('popNode', `📤 [弹出堆顶最短到达点] poll() -> 节点 ${curNode} (耗时 ${curD} ms)。`, `poll Node ${curNode}`, 'pop', 'pq', 0);
+        emit('popNode', `📤 [弹出堆顶最短到达点] poll() -> 节点 ${curNode} (耗时 ${curD} ms)。`, `poll Node ${curNode}`, 'pop', 'pq', 0, 'poll', { u: top.u, d: top.d });
 
         emit('checkVisited', `🔎 [检查是否已访问] if (visited[${curNode}]) -> (${visited[curNode]})。`, `visited[${curNode}]?`, 'pop', 'visited', curNode);
         if (visited[curNode]) {
@@ -269,41 +286,41 @@ export function traceNetworkDelay(isReachable: boolean = true) {
             emit('applyRelax', `  ⚡ [更新到达时间] 发现更早抵达路径！更新 distance[${v}] = ${distance[v]} ms！`, `distance[${v}] = ${distance[v]}`, 'relax', 'dist', v);
 
             pushPq(v, distance[v]);
-            emit('pushPq', `  📥 [新信号波前入堆] pq.add([${v}, ${distance[v]}])；节点 ${v} 进入就绪波前！`, `pq.add(${v}, ${distance[v]})`, 'relax', 'pq', pq.length - 1);
+            emit('pushPq', `  📥 [新信号波前入堆] pq.add([${v}, ${distance[v]}])；节点 ${v} 进入就绪波前！`, `pq.add(${v}, ${distance[v]})`, 'relax', 'pq', pq.length - 1, 'push', { u: v, d: distance[v] });
           }
         }
         activeEdge = undefined;
       }
 
       // 3. 全网收齐统计与连通性检验
-      emit('initAns', '📊 [统计全网信号收齐时间] int ans = 0；检查所有 1..n 节点是否均已收到信号。', 'int ans = 0', 'check');
+      emit('initAns', '📊 [统计全网信号收齐时间] int ans = 0；检查所有 1..n 节点是否均已收到信号。', 'int ans = 0', 'check', undefined, undefined, 'empty');
 
       let ans = 0;
       let hasInf = false;
       for (let i = 1; i <= n; i++) {
-        emit('loopAns', `🔁 [检验节点连通] for (int i = ${i}; i <= ${n}; i++)。`, `for i=${i}`, 'check', 'dist', i);
+        emit('loopAns', `🔁 [检验节点连通] for (int i = ${i}; i <= ${n}; i++)。`, `for i=${i}`, 'check', 'dist', i, 'empty');
 
-        emit('checkUnreachable', `🔎 [孤立点核验] if (distance[${i}] == Integer.MAX_VALUE) -> (${distance[i] === Infinity})。`, `distance[${i}] == INF?`, 'check', 'dist', i);
+        emit('checkUnreachable', `🔎 [孤立点核验] if (distance[${i}] == Integer.MAX_VALUE) -> (${distance[i] === Infinity})。`, `distance[${i}] == INF?`, 'check', 'dist', i, 'empty');
 
         if (distance[i] === Infinity) {
           hasInf = true;
           maxDelaySoFar = -1;
           isAllReached = false;
-          emit('checkUnreachable', `❌ [存在孤立点] 节点 ${i} 始终无法接收到信号，全网不可达！立即 return -1！`, `return -1 (Node ${i} unreachable)`, 'check', 'dist', i);
+          emit('checkUnreachable', `❌ [存在孤立点] 节点 ${i} 始终无法接收到信号，全网不可达！立即 return -1！`, `return -1 (Node ${i} unreachable)`, 'check', 'dist', i, 'empty');
           break;
         }
 
         ans = Math.max(ans, distance[i]);
         maxDelaySoFar = ans;
-        emit('updateMax', `📈 [刷新最大延迟] ans = max(${ans}, distance[${i}]=${distance[i]}) = ${ans} ms。`, `ans = ${ans}`, 'check');
+        emit('updateMax', `📈 [刷新最大延迟] ans = max(${ans}, distance[${i}]=${distance[i]}) = ${ans} ms。`, `ans = ${ans}`, 'check', undefined, undefined, 'empty');
       }
 
       if (!hasInf) {
         isAllReached = true;
         maxDelaySoFar = ans;
-        emit('returnAns', `🎉 [全网广播成功] return ans = ${ans} ms！所有节点均收到信号，全网完全覆盖最迟时间为 ${ans} ms！`, `return ${ans}`, 'done');
+        emit('returnAns', `🎉 [全网广播成功] return ans = ${ans} ms！所有节点均收到信号，全网完全覆盖最迟时间为 ${ans} ms！`, `return ${ans}`, 'done', undefined, undefined, 'empty');
       } else {
-        emit('returnAns', '⚠️ [广播失败] return -1：网络存在孤立节点，无法实现全网信号覆盖。', 'return -1', 'done');
+        emit('returnAns', '⚠️ [广播失败] return -1：网络存在孤立节点，无法实现全网信号覆盖。', 'return -1', 'done', undefined, undefined, 'empty');
       }
     },
     {
@@ -320,6 +337,9 @@ export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDela
     u: step.vars!.u,
     k: step.vars!.k,
     n: step.vars!.n,
+    times: step.vars!.times,
+    graph: step.vars!.graph,
+    adj: step.vars!.adj,
     distList: step.vars!.distList,
     visitedList: step.vars!.visitedList,
     pqSnapshot: step.vars!.pqSnapshot,
@@ -329,6 +349,8 @@ export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDela
     activeArray: step.vars!.activeArray,
     activeSlot: step.vars!.activeSlot,
     status: step.vars!.status,
+    pqAction: step.vars!.pqAction,
+    lastPqItem: step.vars!.lastPqItem,
     message: step.message || '',
     log: step.log || '',
     codeLine: (step.codeLinesByLang || step.codeLine) as HighlightTarget,

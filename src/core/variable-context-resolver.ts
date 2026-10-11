@@ -36,14 +36,29 @@ export class VariableContextResolver {
     'curNode', 'to', 'w', 'edge', 'd', 'visited', 'distance', 'distList', 'visitedList',
     'pq', 'heap', 'pqSnapshot', 'maxDelay', 'maxDelaySoFar', 'totalCost',
     'source', 'dest', 'destination', 'path', 'found',
+    // 图论拓扑、邻接表与网格矩阵核心键
+    'graph', 'adj', 'times', 'matrix', 'grid', 'edges',
   ]);
 
   /** 忽略的非业务属性名 */
   private static readonly IGNORED_KEYS = new Set([
-    'treeRoot', 'graph', 'matrix', 'activeNodeId', 'children', 'status',
+    'treeRoot', 'activeNodeId', 'children', 'status',
     'type', 'index', 'stepIndex', 'snapshot', 'codeLanguages', 'modeCodeLanguages',
     'decision', 'message', 'log', 'currentCell', 'depCells', 'visitedMap', 'activeTrail', 'activeStack',
   ]);
+
+  /**
+   * 判断是否为 Canvas/SVG 专用图元布局对象（包含带坐标的 nodes/edges），避免图元污染变量表
+   */
+  private static isVisualLayoutObject(val: unknown): boolean {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const obj = val as Record<string, any>;
+      if (Array.isArray(obj.nodes) && Array.isArray(obj.edges)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /**
    * 便捷实例/静态方法：将多态 step 解析为平铺键值字典（支持单测与外部快速访问）
@@ -98,7 +113,7 @@ export class VariableContextResolver {
 
     // ── 1. 扫描 step 自身常见基础属性 ─────────────────────────────
     for (const [k, val] of Object.entries(s)) {
-      if (this.IGNORED_KEYS.has(k)) continue;
+      if (this.IGNORED_KEYS.has(k) || this.isVisualLayoutObject(val)) continue;
       if (val === undefined || val === null || typeof val === 'function') continue;
 
       if (this.RELEVANT_PRIMITIVE_KEYS.has(k) || (k.length <= 12 && !k.startsWith('_'))) {
@@ -155,6 +170,7 @@ export class VariableContextResolver {
       } else if (typeof s.vars === 'object') {
         for (const [k, val] of Object.entries(s.vars)) {
           if (val === undefined || val === null || typeof val === 'function') continue;
+          if (this.isVisualLayoutObject(val)) continue;
           const entry = this.formatValueEntry(k, val);
           if (entry) {
             varsMap.set(k, entry);
@@ -316,6 +332,26 @@ export class VariableContextResolver {
         varsMap.set('k', { name: 'k', value: String(num), type: 'number', raw: num });
       }
     }
+
+    // E. 邻接表与图拓扑结构智能推导 (若 step 或 step.vars 中有 graph/adj)
+    const graphData = s.graph || s.adj || s.vars?.graph || s.vars?.adj || varsMap.get('graph')?.raw || varsMap.get('adj')?.raw;
+    if (graphData !== undefined && !this.isVisualLayoutObject(graphData)) {
+      if (!varsMap.has('graph')) {
+        const entry = this.formatValueEntry('graph', graphData);
+        if (entry) varsMap.set('graph', entry);
+      }
+      if (!varsMap.has('adj')) {
+        const entry = this.formatValueEntry('adj', graphData);
+        if (entry) varsMap.set('adj', entry);
+      }
+    }
+
+    // F. 有向边集合/网络延时输入矩阵 times
+    const timesData = s.times || s.vars?.times || varsMap.get('times')?.raw;
+    if (timesData !== undefined && !varsMap.has('times')) {
+      const entry = this.formatValueEntry('times', timesData);
+      if (entry) varsMap.set('times', entry);
+    }
   }
 
   /**
@@ -424,6 +460,18 @@ export class VariableContextResolver {
     const pathsAliases = ['allPaths', 'paths', 'res', 'resultPaths', 'pathList'];
     this.syncAliasGroup(varsMap, pathsAliases);
 
+    // 语义组 16: 图拓扑邻接结构 (Adjacency List / Graph Representation)
+    const graphAliases = ['graph', 'adj', 'edges', 'adjacencyList'];
+    this.syncAliasGroup(varsMap, graphAliases);
+
+    // 语义组 17: 网格与二维矩阵 (Grid / Matrix)
+    const matrixAliases = ['matrix', 'grid', 'board'];
+    this.syncAliasGroup(varsMap, matrixAliases);
+
+    // 语义组 18: 有向边输入列表 (Edges / Times List)
+    const edgeListAliases = ['times', 'edgeList', 'flightList'];
+    this.syncAliasGroup(varsMap, edgeListAliases);
+
     // 别名同步后再次尝试三元推导（确保 curL/curR 映射到 l/r 之后能够立即派生出 len）
     this.deriveIntervalTriad({}, varsMap);
   }
@@ -491,6 +539,50 @@ export class VariableContextResolver {
           detail: `当前单元格 ${cleanExpr}[${lVal}][${rVal}] = ${valStr}`,
           raw: tableData,
         };
+      }
+    }
+
+    // 0.1 特殊处理：若查询 graph / adj 且当前存在 u / curNode，丰富出边详情
+    if (cleanExpr === 'graph' || cleanExpr === 'adj' || cleanExpr === 'adjacencyList') {
+      const uVal = varsMap.get('u')?.value || varsMap.get('curNode')?.value;
+      const graphData = stepContext?.graph || stepContext?.adj || varsMap.get('graph')?.raw || varsMap.get('adj')?.raw;
+      if (uVal != null && Array.isArray(graphData)) {
+        const uIdx = parseInt(uVal, 10);
+        const neighbors = graphData[uIdx];
+        if (Array.isArray(neighbors)) {
+          const formattedNeighbors = neighbors
+            .map((item: any) => {
+              if (item && typeof item === 'object') {
+                if ('to' in item && 'w' in item) return `(➔ N${item.to}, ${item.w}ms)`;
+                if ('to' in item) return `➔ N${item.to}`;
+              }
+              if (Array.isArray(item) && item.length >= 2) return `(➔ N${item[0]}, ${item[1]}ms)`;
+              return `➔ N${item}`;
+            })
+            .join(', ');
+          const listStr = neighbors.length > 0 ? formattedNeighbors : '无出边 (终端节点)';
+          const validRows: string[] = [];
+          graphData.forEach((row: any, nodeIdx: number) => {
+            if (Array.isArray(row) && row.length > 0) {
+              const rowPreview = row.map((x: any) => {
+                if (x && typeof x === 'object') {
+                  if ('to' in x && 'w' in x) return `[${x.to}, ${x.w}]`;
+                  if (Array.isArray(x)) return `[${x.join(', ')}]`;
+                }
+                return String(x);
+              }).join(', ');
+              validRows.push(`${nodeIdx}: [${rowPreview}]`);
+            }
+          });
+          const summary = validRows.length > 0 ? `{ ${validRows.join(', ')} }` : '[]';
+          return {
+            name: cleanExpr,
+            value: summary,
+            type: 'array',
+            detail: `${graphData.length} 节点邻接表: 节点 ${uVal} 出边: ${listStr} (全图: ${summary})`,
+            raw: graphData,
+          };
+        }
       }
     }
 
@@ -592,6 +684,30 @@ export class VariableContextResolver {
       }
     }
 
+    // 6. Java 集合下标方法调用: 如 graph.get(u), list.get(i)
+    const getMatch = cleanExpr.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\.get\(([^)]+)\)$/);
+    if (getMatch) {
+      const listName = getMatch[1];
+      const idxExpr = getMatch[2].trim();
+      const idxVal = parseInt(varsMap.get(idxExpr)?.value ?? idxExpr, 10);
+      const listData = stepContext?.[listName] || varsMap.get(listName)?.raw;
+      if (Array.isArray(listData) && !isNaN(idxVal) && idxVal >= 0 && idxVal < listData.length) {
+        const itemVal = listData[idxVal];
+        const preview = Array.isArray(itemVal)
+          ? itemVal
+              .map((x) => (x && typeof x === 'object' && 'to' in x ? `(N${x.to},${x.w})` : JSON.stringify(x)))
+              .join(', ')
+          : String(itemVal);
+        return {
+          name: `${listName}.get(${idxVal})`,
+          value: `[${preview}]`,
+          type: 'expression',
+          detail: `${cleanExpr} = [${preview}]`,
+          raw: itemVal,
+        };
+      }
+    }
+
     return undefined;
   }
 
@@ -654,6 +770,49 @@ export class VariableContextResolver {
       if (val.length === 0) {
         return { name, value: '[]', type: 'array', raw: val };
       }
+      if (name === 'graph' || name === 'adj' || name === 'adjacencyList') {
+        const validRows: string[] = [];
+        val.forEach((row: any, nodeIdx: number) => {
+          if (Array.isArray(row) && row.length > 0) {
+            const rowPreview = row.map((x: any) => {
+              if (x && typeof x === 'object') {
+                if ('to' in x && 'w' in x) return `[${x.to}, ${x.w}]`;
+                if (Array.isArray(x)) return `[${x.join(', ')}]`;
+              }
+              return String(x);
+            }).join(', ');
+            validRows.push(`${nodeIdx}: [${rowPreview}]`);
+          }
+        });
+        const summary = validRows.length > 0 ? `{ ${validRows.join(', ')} }` : '[]';
+        return {
+          name,
+          value: summary,
+          type: 'array',
+          detail: `${val.length} 节点邻接表: ${summary} (节点序号 -> [目标节点v, 耗时w])`,
+          raw: val,
+        };
+      }
+      if (name === 'times' || name === 'edges' || name === 'edgeList' || name === 'flightList') {
+        if (Array.isArray(val[0])) {
+          const preview = val.slice(0, 4).map((edge: any) => Array.isArray(edge) ? `[${edge.join(', ')}]` : String(edge)).join(', ');
+          const valueStr = `[${preview}${val.length > 4 ? ', ...' : ''}]`;
+          const detailStr = `${name} = ${valueStr} (共 ${val.length} 条边: [起点u, 终点v, 权重w])`;
+          return {
+            name,
+            value: valueStr,
+            type: 'array',
+            detail: detailStr,
+            raw: val,
+          };
+        }
+        return {
+          name,
+          value: `[${val.length} 条边]`,
+          type: 'array',
+          raw: val,
+        };
+      }
       if (Array.isArray(val[0])) {
         return { name, value: `[${val.length}×${val[0].length}]`, type: 'array', raw: val };
       }
@@ -663,6 +822,8 @@ export class VariableContextResolver {
         if (x && typeof x === 'object') {
           if ('u' in x && 'd' in x) return `(${x.u},${x.d})`;
           if ('node' in x && 'dist' in x) return `(${x.node},${x.dist})`;
+          if ('to' in x && 'w' in x) return `(N${x.to},${x.w})`;
+          if ('to' in x) return `N${x.to}`;
           try {
             return JSON.stringify(x);
           } catch {

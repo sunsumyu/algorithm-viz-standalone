@@ -201,5 +201,69 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(VariableContextResolver.getVariable(varsMap, 'src')?.value).toBe('2');
     expect(VariableContextResolver.getVariable(varsMap, 'n')?.value).toBe('4');
   });
+
+  it('should capture graph and adj adjacency lists without filtering them as ignored keys, and enrich with current node u出边', () => {
+    const graphData = [
+      [],
+      [],
+      [{ to: 1, w: 1 }, { to: 3, w: 1 }],
+      [{ to: 4, w: 1 }],
+      [],
+    ];
+
+    const graphStep = {
+      curNode: 2,
+      u: 2,
+      graph: graphData,
+      times: [[2, 1, 1], [2, 3, 1], [3, 4, 1]],
+    };
+
+    const varsMap = VariableContextResolver.resolve(graphStep);
+
+    // 1. graph 与 adj 应双向解析为真实邻接表数据
+    const graphVar = VariableContextResolver.getVariable(varsMap, 'graph', graphStep);
+    expect(graphVar).toBeDefined();
+    expect(graphVar?.type).toBe('array');
+    expect(graphVar?.value).toContain('2: [[1, 1], [3, 1]]');
+    expect(graphVar?.detail).toContain('5 节点邻接表');
+
+    const adjVar = VariableContextResolver.getVariable(varsMap, 'adj', graphStep);
+    expect(adjVar).toBeDefined();
+    expect(adjVar?.value).toContain('2: [[1, 1], [3, 1]]');
+
+    // 2. times 边集合应被解析为真实二维数组内容，而非文本概括
+    const timesVar = VariableContextResolver.getVariable(varsMap, 'times', graphStep);
+    expect(timesVar).toBeDefined();
+    expect(timesVar?.value).toBe('[[2, 1, 1], [2, 3, 1], [3, 4, 1]]');
+    expect(timesVar?.detail).toContain('[起点u, 终点v, 权重w]');
+
+    // 3. graph.get(u) 表达式求值
+    const getExpr = VariableContextResolver.getVariable(varsMap, 'graph.get(u)', graphStep);
+    expect(getExpr).toBeDefined();
+    expect(getExpr?.name).toBe('graph.get(2)');
+  });
+
+  it('should distinguish canvas layout object with nodes and edges from algorithmic graph array', () => {
+    const canvasSceneStep = {
+      graph: {
+        nodes: [{ id: 1, x: 100, y: 100 }],
+        edges: [{ from: 1, to: 2 }],
+      },
+      matrix: [
+        [1, 2],
+        [3, 4],
+      ],
+    };
+
+    const varsMap = VariableContextResolver.resolve(canvasSceneStep);
+
+    // Canvas scene graph 应该被忽略，避免 DOM/图元污染
+    expect(varsMap.has('graph')).toBe(false);
+
+    // 算法矩阵 matrix: number[][] 应当正常解析
+    const matrixVar = VariableContextResolver.getVariable(varsMap, 'matrix');
+    expect(matrixVar).toBeDefined();
+    expect(matrixVar?.value).toBe('[2×2]');
+  });
 });
 

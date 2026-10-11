@@ -14,10 +14,13 @@ describe('Network Delay Time Trace (Dijkstra Execution Engine)', () => {
     expect(initStep.stepIndex).toBe(1);
     expect(initStep.vars?.curNode).toBe(2);
     expect(initStep.vars?.status).toBe('init');
-    expect(initStep.codeLinesByLang.java).toBe(8);
-    expect(initStep.codeLinesByLang.cpp).toBe(11);
-    expect(initStep.codeLinesByLang.python).toBe(3);
-    expect(initStep.codeLinesByLang.javascript).toBe(2);
+    expect(initStep.vars?.times).toBeDefined();
+    expect(initStep.vars?.graph).toBeDefined();
+    expect(initStep.vars?.adj).toBeDefined();
+    expect(initStep.codeLinesByLang.java).toBe(2);
+    expect(initStep.codeLinesByLang.cpp).toBe(3);
+    expect(initStep.codeLinesByLang.python).toBe(2);
+    expect(initStep.codeLinesByLang.javascript).toBe(1);
 
     // 2. 验证不可变快照隔离 (每一帧引用的数组是独立的深克隆)
     const distStep1 = traceSteps.find((s) => s.anchor === 'initSrc');
