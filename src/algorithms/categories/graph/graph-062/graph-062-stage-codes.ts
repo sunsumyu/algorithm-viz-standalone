@@ -296,10 +296,14 @@ export const STICKERS_TO_SPELL_WORD_062_LINES = {
   entry: { java: 6, cpp: 8, python: 4, javascript: 2 },
   initTargetQueue: { java: 14, cpp: 14, python: 10, javascript: 8 },
   whileQueue: { java: 17, cpp: 16, python: 13, javascript: 11 },
+  outerLevelLoop: { java: 19, cpp: 18, python: 14, javascript: 13 },
   pollString: { java: 20, cpp: 19, python: 15, javascript: 14 },
+  pollAndAnchor: { java: 22, cpp: 21, python: 17, javascript: 16 },
   firstCharPrune: { java: 23, cpp: 22, python: 18, javascript: 17 },
+  applySticker: { java: 25, cpp: 23, python: 20, javascript: 19 },
   enqueueNext: { java: 27, cpp: 25, python: 22, javascript: 21 },
   returnStep: { java: 21, cpp: 20, python: 16, javascript: 15 },
+  hitEmptyTarget: { java: 21, cpp: 20, python: 16, javascript: 15 },
 };
 
 // ==========================================
