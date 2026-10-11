@@ -2556,14 +2556,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "graph-theory",
-    name: "图论理论基础",
+    name: "图论理论基础 (Graph Theory)",
     viewId: "algo-graph-theory-view",
     category: "graph",
-    description: "图的表示方法：邻接矩阵、邻接表、有向/无向、加权/无权",
+    description: "图的表示方法：邻接矩阵 vs 邻接表，空间与时间权衡，动态边操作",
     icon: "🕸️",
     difficulty: 1,
     levelOrder: 1,
-    learningGoal: "掌握图的两种基本表示方法及适用场景",
+    learningGoal: "掌握图的两种基本表示方法及其适用场景，理解时空效率权衡",
+    aliases: ["graph-representation","graph-basics"],
   },
   {
     id: "islands",
