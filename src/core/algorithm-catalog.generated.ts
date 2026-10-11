@@ -2578,14 +2578,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "dfs-theory",
-    name: "深度优先搜索理论基础",
+    name: "深度优先搜索理论基础 (DFS Theory)",
     viewId: "algo-dfs-theory-view",
     category: "graph",
-    description: "DFS 递归遍历图，递归栈与回溯过程可视化",
+    description: "DFS 核心原理解析：递归深入、栈帧维护、状态标记与回溯机制 O(V+E)",
     icon: "🔍",
     difficulty: 1,
     levelOrder: 2,
-    learningGoal: "理解 DFS 的递归深入与回溯机制",
+    learningGoal: "掌握 DFS 递归深入与回溯机制，深刻理解递归调用栈与状态空间遍历",
+    aliases: ["dfs-basic","depth-first-search-theory"],
   },
   {
     id: "islands-bfs",
