@@ -1,0 +1,277 @@
+/**
+ * Class 025: 大根堆、小根堆与堆排序 (Heap & HeapSort) - 步进编译器
+ * 左程云算法通关课入门篇 Class 025
+ */
+
+import { StepBase } from '../../../core/step-visualizer';
+
+export interface HeapSortStep extends StepBase {
+  stepIndex?: number;
+  arr: number[];
+  heapSize: number;
+  currentIndex: number;
+  targetIndex?: number;
+  operation: 'heapInsert' | 'heapify' | 'swap-max' | 'sorted';
+  decision: string;
+  message: string;
+  log: string;
+  codeLine?: number | Record<string, number>;
+  statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+}
+
+export const HEAP_AND_HEAPSORT_025_CODES = {
+  java: `public class HeapSort025 {
+    public static void heapSort(int[] arr) {
+        if (arr == null || arr.length < 2) return;
+        // 1. 从底向上建大根堆 O(N)
+        for (int i = arr.length - 1; i >= 0; i--) {
+            heapify(arr, i, arr.length);
+        }
+        // 2. 堆顶与末尾交换并下沉 O(N log N)
+        int heapSize = arr.length;
+        swap(arr, 0, --heapSize);
+        while (heapSize > 0) {
+            heapify(arr, 0, heapSize);
+            swap(arr, 0, --heapSize);
+        }
+    }
+
+    public static void heapify(int[] arr, int index, int heapSize) {
+        int left = index * 2 + 1;
+        while (left < heapSize) {
+            int largest = left + 1 < heapSize && arr[left + 1] > arr[left] ? left + 1 : left;
+            largest = arr[largest] > arr[index] ? largest : index;
+            if (largest == index) break;
+            swap(arr, largest, index);
+            index = largest;
+            left = index * 2 + 1;
+        }
+    }
+    static void swap(int[] arr, int i, int j) {
+        int tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+}`,
+  cpp: `class HeapSort025 {
+public:
+    static void heapSort(vector<int>& arr) {
+        int n = arr.size();
+        if (n < 2) return;
+        for (int i = n - 1; i >= 0; i--) {
+            heapify(arr, i, n);
+        }
+        int heapSize = n;
+        swap(arr[0], arr[--heapSize]);
+        while (heapSize > 0) {
+            heapify(arr, 0, heapSize);
+            swap(arr[0], arr[--heapSize]);
+        }
+    }
+
+    static void heapify(vector<int>& arr, int index, int heapSize) {
+        int left = index * 2 + 1;
+        while (left < heapSize) {
+            int largest = (left + 1 < heapSize && arr[left + 1] > arr[left]) ? left + 1 : left;
+            largest = arr[largest] > arr[index] ? largest : index;
+            if (largest == index) break;
+            swap(arr[largest], arr[index]);
+            index = largest;
+            left = index * 2 + 1;
+        }
+    }
+};`,
+  python: `class HeapSort025:
+    @staticmethod
+    def heap_sort(arr: list[int]):
+        n = len(arr)
+        if n < 2: return
+        for i in range(n - 1, -1, -1):
+            HeapSort025.heapify(arr, i, n)
+        heap_size = n
+        heap_size -= 1
+        arr[0], arr[heap_size] = arr[heap_size], arr[0]
+        while heap_size > 0:
+            HeapSort025.heapify(arr, 0, heap_size)
+            heap_size -= 1
+            arr[0], arr[heap_size] = arr[heap_size], arr[0]
+
+    @staticmethod
+    def heapify(arr: list[int], index: int, heap_size: int):
+        left = index * 2 + 1
+        while left < heap_size:
+            largest = left + 1 if left + 1 < heap_size and arr[left + 1] > arr[left] else left
+            largest = largest if arr[largest] > arr[index] else index
+            if largest == index: break
+            arr[largest], arr[index] = arr[index], arr[largest]
+            index = largest
+            left = index * 2 + 1`,
+  typescript: `export class HeapSort025 {
+  static heapSort(arr: number[]): void {
+    const n = arr.length;
+    if (n < 2) return;
+    for (let i = n - 1; i >= 0; i--) {
+      this.heapify(arr, i, n);
+    }
+    let heapSize = n;
+    [arr[0], arr[--heapSize]] = [arr[heapSize], arr[0]];
+    while (heapSize > 0) {
+      this.heapify(arr, 0, heapSize);
+      [arr[0], arr[--heapSize]] = [arr[heapSize], arr[0]];
+    }
+  }
+
+  static heapify(arr: number[], index: number, heapSize: number): void {
+    let left = index * 2 + 1;
+    while (left < heapSize) {
+      let largest = left + 1 < heapSize && arr[left + 1] > arr[left] ? left + 1 : left;
+      largest = arr[largest] > arr[index] ? largest : index;
+      if (largest === index) break;
+      [arr[largest], arr[index]] = [arr[index], arr[largest]];
+      index = largest;
+      left = index * 2 + 1;
+    }
+  }
+}`
+};
+
+export const HEAP_AND_HEAPSORT_025_CODE_LINES: Record<string, Record<string, number>> = {
+  buildHeapStart: { java: 5, cpp: 6, python: 6, typescript: 6 },
+  buildHeapSink: { java: 23, cpp: 23, python: 23, typescript: 22 },
+  buildHeapDone: { java: 9, cpp: 8, python: 8, typescript: 9 },
+  swapMax: { java: 11, cpp: 10, python: 10, typescript: 10 },
+  sortSink: { java: 23, cpp: 23, python: 23, typescript: 22 },
+  sorted: { java: 15, cpp: 14, python: 14, typescript: 14 },
+};
+
+export function generateHeapSortSteps(inputNums: number[]): HeapSortStep[] {
+  const arr = [...inputNums];
+  const steps: HeapSortStep[] = [];
+  const n = arr.length;
+  let stepIdx = 0;
+
+  steps.push({
+    stepIndex: stepIdx++,
+    arr: [...arr],
+    heapSize: n,
+    currentIndex: -1,
+    operation: 'heapify',
+    decision: '算法启动：首先将整个数组自底向上构建为大根堆 (Heapify 建堆法，复杂度 O(N))',
+    message: '准备建堆',
+    log: '开始堆排序',
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapStart,
+    statusBadge: { text: '建堆就绪', type: 'info' }
+  });
+
+  // 建堆
+  for (let i = Math.floor((n - 1) / 2); i >= 0; i--) {
+    let idx = i;
+    let left = idx * 2 + 1;
+    while (left < n) {
+      let largest = left + 1 < n && arr[left + 1] > arr[left] ? left + 1 : left;
+      largest = arr[largest] > arr[idx] ? largest : idx;
+      if (largest === idx) break;
+
+      const temp = arr[idx];
+      arr[idx] = arr[largest];
+      arr[largest] = temp;
+
+      steps.push({
+        stepIndex: stepIdx++,
+        arr: [...arr],
+        heapSize: n,
+        currentIndex: idx,
+        targetIndex: largest,
+        operation: 'heapify',
+        decision: `建堆下沉：节点 arr[${idx}] 与较大子节点 arr[${largest}] 交换，恢复大根堆性质`,
+        message: `arr[${idx}] 与 arr[${largest}] 交换`,
+        log: `建堆交换 (${idx}, ${largest})`,
+        codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapSink,
+        statusBadge: { text: '堆化调整', type: 'warning' }
+      });
+
+      idx = largest;
+      left = idx * 2 + 1;
+    }
+  }
+
+  steps.push({
+    stepIndex: stepIdx++,
+    arr: [...arr],
+    heapSize: n,
+    currentIndex: 0,
+    operation: 'heapify',
+    decision: `大根堆构建完成！堆顶元素 ${arr[0]} 为当前堆内最大值`,
+    message: '大根堆已就绪',
+    log: '大根堆构建成功',
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.buildHeapDone,
+    statusBadge: { text: '大根堆就绪', type: 'success' }
+  });
+
+  // 堆排序
+  let heapSize = n;
+  while (heapSize > 1) {
+    heapSize--;
+    const maxVal = arr[0];
+    const temp = arr[0];
+    arr[0] = arr[heapSize];
+    arr[heapSize] = temp;
+
+    steps.push({
+      stepIndex: stepIdx++,
+      arr: [...arr],
+      heapSize,
+      currentIndex: 0,
+      targetIndex: heapSize,
+      operation: 'swap-max',
+      decision: `将堆顶最大值 ${maxVal} 交换至当前有效堆末尾 arr[${heapSize}]，锁定最终位置，有效堆大小缩小至 ${heapSize}`,
+      message: `锁定最大值 ${maxVal}`,
+      log: `最大值 ${maxVal} 归位`,
+      codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.swapMax,
+      statusBadge: { text: '元素锁定', type: 'danger' }
+    });
+
+    // 堆顶下沉
+    let idx = 0;
+    let left = idx * 2 + 1;
+    while (left < heapSize) {
+      let largest = left + 1 < heapSize && arr[left + 1] > arr[left] ? left + 1 : left;
+      largest = arr[largest] > arr[idx] ? largest : idx;
+      if (largest === idx) break;
+
+      const swapTemp = arr[idx];
+      arr[idx] = arr[largest];
+      arr[largest] = swapTemp;
+
+      steps.push({
+        stepIndex: stepIdx++,
+        arr: [...arr],
+        heapSize,
+        currentIndex: idx,
+        targetIndex: largest,
+        operation: 'heapify',
+        decision: `堆顶下沉恢复大根堆：节点 arr[${idx}] 与较大子节点 arr[${largest}] 交换`,
+        message: `堆顶下沉至 ${largest}`,
+        log: `下沉 (${idx} <-> ${largest})`,
+        codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.sortSink,
+        statusBadge: { text: '堆顶下沉', type: 'warning' }
+      });
+
+      idx = largest;
+      left = idx * 2 + 1;
+    }
+  }
+
+  steps.push({
+    stepIndex: stepIdx++,
+    arr: [...arr],
+    heapSize: 0,
+    currentIndex: -1,
+    operation: 'sorted',
+    decision: '堆排序全流程完成，数组已达到完全升序！',
+    message: '排序完全结束',
+    log: '堆排序成功',
+    codeLine: HEAP_AND_HEAPSORT_025_CODE_LINES.sorted,
+    statusBadge: { text: '完全升序', type: 'success' }
+  });
+
+  return steps;
+}
