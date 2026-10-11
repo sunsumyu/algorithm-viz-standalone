@@ -6,123 +6,22 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
-import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   REMOVE_ADJACENT_DUPLICATES_PROBLEM_HTML,
   REMOVE_ADJACENT_DUPLICATES_ANALYSIS_HTML,
   REMOVE_ADJACENT_DUPLICATES_CODE_LANGUAGES,
 } from './remove-adjacent-duplicates-problem-content';
+import {
+  type RADStep,
+  buildRemoveAdjacentDuplicatesSteps,
+} from './remove-adjacent-duplicates-step-compiler';
+import { renderRemoveAdjacentDuplicatesCanvas } from './remove-adjacent-duplicates-canvas-adapter';
 
-export interface RADStep {
-  rawString: string;
-  currentIndex: number;
-  currentChar: string | null;
-  stack: string[];
-  eliminatedPairs: number;
-  eliminatedChar: string | null;
-  currentString: string;
-  action: 'init' | 'scan' | 'eliminate' | 'push' | 'done';
-  message: string;
-  codeLine: HighlightTarget;
-}
-
-export function buildRemoveAdjacentDuplicatesSteps(rawInput: string): RADStep[] {
-  const steps: RADStep[] = [];
-  const s = (rawInput || 'abbaca').trim();
-  const n = s.length;
-
-  const lines = {
-    init:      { java: 2,  cpp: 4,  python: 3, javascript: 2 },
-    eliminate: { java: 5,  cpp: 7,  python: 6, javascript: 5 },
-    push:      { java: 7,  cpp: 9,  python: 8, javascript: 7 },
-    done:      { java: 10, cpp: 12, python: 9, javascript: 10 },
-  };
-
-  if (n === 0) {
-    steps.push({
-      rawString: '',
-      currentIndex: -1,
-      currentChar: null,
-      stack: [],
-      eliminatedPairs: 0,
-      eliminatedChar: null,
-      currentString: '',
-      action: 'done',
-      message: '输入为空字符串，化简结果为空',
-      codeLine: lines.done,
-    });
-    return steps;
-  }
-
-  const stack: string[] = [];
-  let eliminatedPairs = 0;
-
-  steps.push({
-    rawString: s,
-    currentIndex: -1,
-    currentChar: null,
-    stack: [],
-    eliminatedPairs: 0,
-    eliminatedChar: null,
-    currentString: '',
-    action: 'init',
-    message: `初始化：输入字符串 "${s}" (长度 ${n})，准备从左向右扫描，利用栈顶作为相邻前驱对消重复项`,
-    codeLine: lines.init,
-  });
-
-  for (let i = 0; i < n; i++) {
-    const ch = s[i];
-
-    if (stack.length > 0 && stack[stack.length - 1] === ch) {
-      const popped = stack.pop()!;
-      eliminatedPairs++;
-
-      steps.push({
-        rawString: s,
-        currentIndex: i,
-        currentChar: ch,
-        stack: [...stack],
-        eliminatedPairs,
-        eliminatedChar: ch,
-        currentString: stack.join(''),
-        action: 'eliminate',
-        message: `💥 触发相邻对消！当前字符 '${ch}' 与栈顶 '${popped}' 相同，双双抵消！已消除 ${eliminatedPairs} 对，当前结果: "${stack.join('')}"`,
-        codeLine: lines.eliminate,
-      });
-    } else {
-      stack.push(ch);
-
-      steps.push({
-        rawString: s,
-        currentIndex: i,
-        currentChar: ch,
-        stack: [...stack],
-        eliminatedPairs,
-        eliminatedChar: null,
-        currentString: stack.join(''),
-        action: 'push',
-        message: `📥 字符 '${ch}' 与栈顶不重复，压入栈顶暂存。当前栈: "${stack.join('')}"`,
-        codeLine: lines.push,
-      });
-    }
-  }
-
-  const resStr = stack.join('');
-  steps.push({
-    rawString: s,
-    currentIndex: n,
-    currentChar: null,
-    stack: [...stack],
-    eliminatedPairs,
-    eliminatedChar: null,
-    currentString: resStr,
-    action: 'done',
-    message: `🎉 字符串扫描完毕！共对消 ${eliminatedPairs} 对相邻重复项，最终化简结果为: "${resStr || '(空)'}"`,
-    codeLine: lines.done,
-  });
-
-  return steps;
-}
+export {
+  type RADStep,
+  buildRemoveAdjacentDuplicatesSteps,
+  renderRemoveAdjacentDuplicatesCanvas,
+};
 
 const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
   id: 'remove-adjacent-duplicates',
@@ -167,114 +66,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
   analysisHtml: REMOVE_ADJACENT_DUPLICATES_ANALYSIS_HTML,
   buildSteps: (inputs) => buildRemoveAdjacentDuplicatesSteps(inputs['input-str']),
   renderCanvas: (container, step) => {
-    const s = step.rawString;
-    const stack = step.stack;
-    const curIdx = step.currentIndex;
-    const isDone = step.action === 'done';
-    const isEliminate = step.action === 'eliminate';
-
-    // 字符串序列展示
-    const charsHtml = s
-      .split('')
-      .map((ch, idx) => {
-        const isCurrent = idx === curIdx && !isDone;
-        const isProcessed = idx < curIdx || (isDone && idx <= curIdx);
-        let bg = '#ffffff';
-        let border = '#e2e8f0';
-        let textColor = '#0f172a';
-
-        if (isCurrent) {
-          bg = isEliminate ? '#fef2f2' : '#faf5ff';
-          border = isEliminate ? '#ef4444' : '#9333ea';
-          textColor = isEliminate ? '#ef4444' : '#7e22ce';
-        } else if (isProcessed) {
-          bg = '#f8fafc';
-          border = '#cbd5e1';
-          textColor = '#64748b';
-        }
-
-        return `
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-            <span style="font-size: 8.5px; color: ${isCurrent ? '#9333ea' : '#94a3b8'}; font-weight: 700;">[${idx}]</span>
-            <div style="width: 32px; height: 32px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: ${textColor}; font-family: 'JetBrains Mono', monospace; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
-              ${ch}
-            </div>
-          </div>
-        `;
-      })
-      .join('');
-
-    // 栈内展示 (扁平排布)
-    const stackItemsHtml =
-      stack.length === 0
-        ? '<span style="font-size: 11px; color: #94a3b8; font-style: italic;">栈空</span>'
-        : stack
-            .map(
-              (ch) => `
-              <div style="padding: 2px 8px; border-radius: 4px; background: #ffffff; border: 1.5px solid #9333ea; color: #7e22ce; font-size: 12px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">
-                ${ch}
-              </div>
-            `
-            )
-            .join('<span style="color: #cbd5e1; font-size: 10px; margin: 0 2px;">→</span>');
-
-    container.innerHTML = `
-      <div style="display: flex; flex-direction: column; width: 100%; height: 100%; justify-content: center; gap: 12px; box-sizing: border-box; padding: 4px;">
-        <!-- 待处理字符串序列 -->
-        <div style="display: flex; flex-direction: column; gap: 3px;">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #475569;">
-            <span>🔤 待处理字符串序列 (从左至右扫描):</span>
-            <span style="color: #ef4444;">已对消: ${step.eliminatedPairs} 对</span>
-          </div>
-          <div style="display: flex; gap: 4px; overflow-x: auto; padding: 2px 0;">
-            ${charsHtml}
-          </div>
-        </div>
-
-        <div style="border-top: 1px dashed #e2e8f0; margin: 1px 0;"></div>
-
-        <!-- 栈内保留字符 (扁平直排) -->
-        <div style="display: flex; flex-direction: column; gap: 3px;">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 11px; font-weight: 700; color: #475569;">🥞 栈内保留字符 (栈底 → 栈顶):</span>
-            <span style="font-size: 10.5px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #9333ea;">当前长度: ${stack.length}</span>
-          </div>
-          <div style="display: flex; gap: 4px; align-items: center; min-height: 28px; flex-wrap: wrap;">
-            ${stackItemsHtml}
-          </div>
-        </div>
-      </div>
-    `;
-
-    // 更新指标卡片
-    const root = container.closest('#algo-remove-adjacent-duplicates-view');
-    if (root) {
-      const resultEl = root.querySelector('#metric-cur-result');
-      const pairsEl = root.querySelector('#metric-eliminated-pairs');
-      const stackSizeEl = root.querySelector('#metric-stack-size');
-
-      if (resultEl) resultEl.textContent = step.currentString ? `"${step.currentString}"` : '(空)';
-      if (pairsEl) pairsEl.textContent = `${step.eliminatedPairs} 对`;
-      if (stackSizeEl) stackSizeEl.textContent = `${step.stack.length}`;
-
-      // 在 Card 2 中展示当前扫描与栈顶前驱
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
-      if (customMetricsContainer) {
-        const topCh = stack.length > 0 ? stack[stack.length - 1] : null;
-        customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: #334155; padding: 4px 0;">
-            <div style="display: flex; justify-content: space-between;">
-              <span>当前扫描字符:</span>
-              <strong style="font-family: monospace; color: #9333ea; font-size: 12px;">${step.currentChar !== null ? `'${step.currentChar}'` : '（结束）'}</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span>当前栈顶前驱:</span>
-              <strong style="font-family: monospace; color: #d97706; font-size: 12px;">${topCh !== null ? `'${topCh}'` : '（栈空）'}</strong>
-            </div>
-          </div>
-        `;
-      }
-    }
+    renderRemoveAdjacentDuplicatesCanvas(container, step);
   },
 });
 

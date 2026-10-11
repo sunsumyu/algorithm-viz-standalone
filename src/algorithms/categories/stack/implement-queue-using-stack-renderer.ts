@@ -6,199 +6,22 @@
 
 import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
-import { DualStructureVisualAdapter } from '../../../core/renderers/adapters/dual-structure-visual-adapter';
-import { HighlightTarget } from '../../../core/renderers/dark-code-terminal-presenter';
 import {
   IMPLEMENT_QUEUE_USING_STACK_PROBLEM_HTML,
   IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
   IMPLEMENT_QUEUE_USING_STACK_CODE_LANGUAGES,
 } from './implement-queue-using-stack-problem-content';
+import {
+  type MQStep,
+  buildImplementQueueUsingStackSteps,
+} from './implement-queue-using-stack-step-compiler';
+import { renderImplementQueueUsingStackCanvas } from './implement-queue-using-stack-canvas-adapter';
 
-export interface MQStep {
-  inStack: number[];
-  outStack: number[];
-  outputs: Array<{ op: string; value: number | boolean }>;
-  currentOp: string;
-  transferHappened: boolean;
-  action: 'init' | 'push' | 'transfer' | 'pop' | 'peek' | 'empty' | 'done';
-  message: string;
-  codeLine: HighlightTarget;
-}
-
-export function buildImplementQueueUsingStackSteps(rawOpsInput: string): MQStep[] {
-  const steps: MQStep[] = [];
-  const inStack: number[] = [];
-  const outStack: number[] = [];
-  const outputs: Array<{ op: string; value: number | boolean }> = [];
-
-  const lines = {
-    init:     { java: 4,  cpp: 5,  python: 2,  javascript: 1 },
-    push:     { java: 9,  cpp: 7,  python: 6,  javascript: 6 },
-    transfer: { java: 25, cpp: 12, python: 11, javascript: 11 },
-    pop:      { java: 13, cpp: 18, python: 12, javascript: 14 },
-    peek:     { java: 17, cpp: 23, python: 15, javascript: 19 },
-    empty:    { java: 20, cpp: 26, python: 18, javascript: 22 },
-    done:     { java: 28, cpp: 28, python: 18, javascript: 23 },
-  };
-
-  const rawOps = (rawOpsInput || 'push 1, push 2, peek, pop, empty')
-    .split(/[,，;\n]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  steps.push({
-    inStack: [],
-    outStack: [],
-    outputs: [],
-    currentOp: 'init',
-    transferHappened: false,
-    action: 'init',
-    message: '初始化：inStack (输入栈) 与 outStack (输出栈) 均为空',
-    codeLine: lines.init,
-  });
-
-  for (let i = 0; i < rawOps.length; i++) {
-    const opStr = rawOps[i];
-    const parts = opStr.split(/\s+/);
-    const op = parts[0].toLowerCase();
-    const val = parts.length > 1 ? parseInt(parts[1], 10) : NaN;
-
-    if (op === 'push') {
-      const num = isNaN(val) ? 1 : val;
-      inStack.push(num);
-
-      steps.push({
-        inStack: [...inStack],
-        outStack: [...outStack],
-        outputs: [...outputs],
-        currentOp: `push(${num})`,
-        transferHappened: false,
-        action: 'push',
-        message: `📥 执行 push(${num})：直接压入 inStack 栈顶`,
-        codeLine: lines.push,
-      });
-    } else if (op === 'pop') {
-      let transfer = false;
-      if (outStack.length === 0) {
-        transfer = true;
-        while (inStack.length > 0) {
-          outStack.push(inStack.pop()!);
-        }
-
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'dumpStackIn()',
-          transferHappened: true,
-          action: 'transfer',
-          message: '🔀 outStack 为空！触发倾倒转移：将 inStack 全部元素依次弹出并压入 outStack，原顺序完全逆转为队头优先！',
-          codeLine: lines.transfer,
-        });
-      }
-
-      if (outStack.length > 0) {
-        const popped = outStack.pop()!;
-        outputs.push({ op: 'pop', value: popped });
-
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'pop()',
-          transferHappened: transfer,
-          action: 'pop',
-          message: `📤 执行 pop()：从 outStack 弹出栈顶元素 ${popped}（即队列头部）并返回`,
-          codeLine: lines.pop,
-        });
-      } else {
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'pop()',
-          transferHappened: false,
-          action: 'pop',
-          message: '⚠️ 队列为空，pop() 无元素可弹出',
-          codeLine: lines.pop,
-        });
-      }
-    } else if (op === 'peek' || op === 'top') {
-      let transfer = false;
-      if (outStack.length === 0) {
-        transfer = true;
-        while (inStack.length > 0) {
-          outStack.push(inStack.pop()!);
-        }
-
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'dumpStackIn()',
-          transferHappened: true,
-          action: 'transfer',
-          message: '🔀 peek 操作检测到 outStack 为空，先执行倾倒转移',
-          codeLine: lines.transfer,
-        });
-      }
-
-      if (outStack.length > 0) {
-        const peekVal = outStack[outStack.length - 1];
-        outputs.push({ op: 'peek', value: peekVal });
-
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'peek()',
-          transferHappened: transfer,
-          action: 'peek',
-          message: `🔍 执行 peek()：查看到当前队头元素为 ${peekVal}（不弹出）`,
-          codeLine: lines.peek,
-        });
-      } else {
-        steps.push({
-          inStack: [...inStack],
-          outStack: [...outStack],
-          outputs: [...outputs],
-          currentOp: 'peek()',
-          transferHappened: false,
-          action: 'peek',
-          message: '⚠️ 队列为空，peek() 无队头元素',
-          codeLine: lines.peek,
-        });
-      }
-    } else if (op === 'empty') {
-      const isEmpty = inStack.length === 0 && outStack.length === 0;
-      outputs.push({ op: 'empty', value: isEmpty });
-
-      steps.push({
-        inStack: [...inStack],
-        outStack: [...outStack],
-        outputs: [...outputs],
-        currentOp: 'empty()',
-        transferHappened: false,
-        action: 'empty',
-        message: `⚖️ 执行 empty()：inStack 与 outStack 均${isEmpty ? '为空，返回 true' : '不全为空，返回 false'}`,
-        codeLine: lines.empty,
-      });
-    }
-  }
-
-  steps.push({
-    inStack: [...inStack],
-    outStack: [...outStack],
-    outputs: [...outputs],
-    currentOp: 'done',
-    transferHappened: false,
-    action: 'done',
-    message: '🎉 操作序列执行完毕！',
-    codeLine: lines.done,
-  });
-
-  return steps;
-}
+export {
+  type MQStep,
+  buildImplementQueueUsingStackSteps,
+  renderImplementQueueUsingStackCanvas,
+};
 
 const { template, Visualizer } = createDeclarativeVisualizer<MQStep>({
   id: 'implement-queue-using-stack',
@@ -251,46 +74,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<MQStep>({
   analysisHtml: IMPLEMENT_QUEUE_USING_STACK_ANALYSIS_HTML,
   buildSteps: (inputs) => buildImplementQueueUsingStackSteps(inputs['input-ops']),
   renderCanvas: (container, step) => {
-    // 渲染扁平双栈沙盘（绝无任何嵌套白色 card 边框）
-    DualStructureVisualAdapter.renderDualStack(container, step);
-
-    // 更新指标卡片
-    const root = container.closest('#algo-implement-queue-using-stack-view');
-    if (root) {
-      const qSizeEl = root.querySelector('#metric-queue-size');
-      const inSizeEl = root.querySelector('#metric-in-size');
-      const outSizeEl = root.querySelector('#metric-out-size');
-      const totalSize = step.inStack.length + step.outStack.length;
-
-      if (qSizeEl) qSizeEl.textContent = `${totalSize}`;
-      if (inSizeEl) inSizeEl.textContent = `${step.inStack.length}`;
-      if (outSizeEl) outSizeEl.textContent = `${step.outStack.length}`;
-
-      // 在 Card 2 中展示出队与窥探记录流
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container');
-      if (customMetricsContainer) {
-        const outputsHtml =
-          step.outputs.length === 0
-            ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">暂无出队记录</span>'
-            : step.outputs
-                .map(
-                  (out, idx) => `
-                  <span style="display: inline-flex; align-items: center; gap: 3px; background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-family: monospace;">
-                    <span style="color: #64748b;">#${idx + 1}</span>
-                    <strong style="color: ${out.op === 'pop' ? '#dc2626' : '#2563eb'};">${out.op}</strong>: ${out.value}
-                  </span>
-                `
-                )
-                .join(' ');
-
-        customMetricsContainer.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
-            <span style="font-size: 10.5px; font-weight: 700; color: #475569;">出队与窥探输出记录:</span>
-            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${outputsHtml}</div>
-          </div>
-        `;
-      }
-    }
+    renderImplementQueueUsingStackCanvas(container, step);
   },
 });
 
