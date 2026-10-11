@@ -120,14 +120,20 @@ export const PREFIX_SUM_2D_050_CODES: Record<string, string[]> = {
     '    }', // 8
     '    return sum;', // 9
     '}', // 10
+    'function sumRegion(sum, r1, c1, r2, c2) { // O(1) 瞬时查询', // 11
+    '    return sum[r2 + 1][c2 + 1] - sum[r1][c2 + 1] - sum[r2 + 1][c1] + sum[r1][c1];', // 12
+    '}', // 13
   ],
 };
 
 export const PREFIX_SUM_2D_050_LINES: Record<string, CodeMapping> = {
   entryBuild:  { java: 1, cpp: 1, python: 1, javascript: 1 },
+  initSum:     { java: 3, cpp: 3, python: 2, javascript: 3 },
+  outerLoop:   { java: 4, cpp: 4, python: 3, javascript: 4 },
+  innerLoop:   { java: 5, cpp: 5, python: 4, javascript: 5 },
   fillSum:     { java: 6, cpp: 6, python: 5, javascript: 6 },
-  entryQuery:  { java: 10, cpp: 10, python: 6, javascript: 10 },
-  calcRegion:  { java: 11, cpp: 11, python: 7, javascript: 10 },
+  entryQuery:  { java: 10, cpp: 10, python: 6, javascript: 11 },
+  calcRegion:  { java: 11, cpp: 11, python: 7, javascript: 12 },
 };
 
 // ==========================================

@@ -2614,14 +2614,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "bfs-theory",
-    name: "广度优先搜索理论基础",
+    name: "广度优先搜索理论基础 (BFS Theory)",
     viewId: "algo-bfs-theory-view",
     category: "graph",
-    description: "BFS 层序遍历图，队列驱动与逐层扩展可视化",
+    description: "BFS 核心原理解析：FIFO 队列驱动、分层水波纹扩展与无权图最短路 O(V+E)",
     icon: "🌊",
     difficulty: 1,
     levelOrder: 4,
-    learningGoal: "理解 BFS 的队列机制和层序遍历特性",
+    learningGoal: "掌握 BFS 队列机制与层序遍历特性，深刻理解无权图最短路径不变量",
+    aliases: ["bfs-basic","breadth-first-search-theory"],
   },
   {
     id: "a-star",
