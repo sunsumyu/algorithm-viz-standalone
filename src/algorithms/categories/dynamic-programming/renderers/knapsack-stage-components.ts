@@ -119,6 +119,7 @@ export function buildBeltGroup(
   curIdx: number,
   action: string
 ): SVGGElement {
+  const safeItems = items ?? [];
   const beltG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   const beltX = 330;
   const beltY = 135;
@@ -141,11 +142,11 @@ export function buildBeltGroup(
   beltLabel.setAttribute('font-size', '11');
   beltLabel.setAttribute('font-weight', '700');
   beltLabel.setAttribute('fill', '#94a3b8');
-  beltLabel.textContent = `📦 物品传送带 (共 ${items.length} 件待装载物品)`;
+  beltLabel.textContent = `📦 物品传送带 (共 ${safeItems.length} 件待装载物品)`;
   beltG.appendChild(beltLabel);
 
-  const itemGap = Math.min(80, (beltW - 20) / Math.max(1, items.length));
-  items.forEach((item, i) => {
+  const itemGap = Math.min(80, (beltW - 20) / Math.max(1, safeItems.length));
+  safeItems.forEach((item, i) => {
     const ix = beltX + 15 + i * itemGap;
     const isCurrent = i === curIdx;
     const iy = isCurrent && action === 'include' ? 70 : isCurrent && action === 'evaluate' ? 85 : 95;
