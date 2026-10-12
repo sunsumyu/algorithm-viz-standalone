@@ -115,11 +115,25 @@ export class ClientActivationModal {
   }
 
   /**
+   * 退出应用程序 (Tauri 环境关闭主窗口，浏览器环境 window.close)
+   */
+  public async exitApplication(): Promise<void> {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().close();
+    } catch {
+      if (typeof window !== 'undefined') {
+        window.close();
+      }
+    }
+  }
+
+  /**
    * 关闭激活弹窗
    */
   public close(): void {
     if (this.isBlocking && !this.currentPayload) {
-      alert('请先输入有效的激活码完成授权，方可进入系统。');
+      alert('请先输入有效的激活码完成授权，方可进入系统；或点击“退出程序”离开。');
       return;
     }
 
@@ -133,6 +147,10 @@ export class ClientActivationModal {
     if (e.key === 'Escape' && this.isOpen) {
       if (!this.isBlocking || this.currentPayload) {
         this.close();
+      } else {
+        if (confirm('尚未完成授权激活，确定退出应用程序吗？')) {
+          void this.exitApplication();
+        }
       }
     }
   }
@@ -169,15 +187,29 @@ export class ClientActivationModal {
     document.body.appendChild(backdrop);
     this.backdropEl = backdrop;
 
-    // 点击背景关闭 (非 blocking 模式)
+    // 点击背景 (非 blocking 模式关闭，blocking 模式询问是否退出程序)
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) {
+        if (this.isBlocking && !this.currentPayload) {
+          if (confirm('尚未完成授权激活，确定退出应用程序吗？')) {
+            void this.exitApplication();
+          }
+          return;
+        }
         this.close();
       }
     });
 
     const closeBtn = backdrop.querySelector('#activation-close-btn') as HTMLElement;
-    closeBtn?.addEventListener('click', () => this.close());
+    closeBtn?.addEventListener('click', () => {
+      if (this.isBlocking && !this.currentPayload) {
+        if (confirm('尚未完成授权激活，确定退出应用程序吗？')) {
+          void this.exitApplication();
+        }
+        return;
+      }
+      this.close();
+    });
   }
 
   /**
@@ -185,13 +217,7 @@ export class ClientActivationModal {
    */
   private renderState(): void {
     const body = this.backdropEl?.querySelector('#activation-modal-body');
-    const closeBtn = this.backdropEl?.querySelector('#activation-close-btn') as HTMLElement;
     if (!body) return;
-
-    // 如果处于强阻断模式且未激活，隐藏关闭按钮
-    if (closeBtn) {
-      closeBtn.style.display = this.isBlocking && !this.currentPayload ? 'none' : 'block';
-    }
 
     if (this.currentPayload && isLicenseActive(this.currentPayload)) {
       // 已激活状态视图
@@ -274,6 +300,9 @@ export class ClientActivationModal {
         <button class="activation-submit-btn" id="activation-do-activate-btn" type="button">
           <span>⚡ 立即激活</span>
         </button>
+        <button class="activation-reset-btn" id="activation-exit-app-btn" type="button">
+          <span>✕ 退出程序</span>
+        </button>
       </div>
 
       <div class="activation-help-tip">
@@ -293,6 +322,14 @@ export class ClientActivationModal {
         }, 1500);
       } catch {
         alert(`请手动复制机器码: ${this.currentMachineCode}`);
+      }
+    });
+
+    // 退出程序事件
+    const exitBtn = body.querySelector('#activation-exit-app-btn');
+    exitBtn?.addEventListener('click', () => {
+      if (confirm('尚未完成授权激活，确定退出应用程序吗？')) {
+        void this.exitApplication();
       }
     });
 

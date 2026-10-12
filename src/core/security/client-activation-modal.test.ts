@@ -145,4 +145,30 @@ describe('ClientActivationModal (Ticket 07)', () => {
     const badge = document.getElementById('titlebar-license-badge');
     expect(badge?.classList.contains('licensed')).toBe(true);
   });
+
+  it('未激活时点击退出程序按钮应当触发 exitApplication', async () => {
+    const exitSpy = vi.spyOn(modal, 'exitApplication').mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    await modal.open({ blocking: true });
+    const exitBtn = document.getElementById('activation-exit-app-btn');
+    expect(exitBtn).not.toBeNull();
+
+    exitBtn?.click();
+    expect(window.confirm).toHaveBeenCalledWith('尚未完成授权激活，确定退出应用程序吗？');
+    expect(exitSpy).toHaveBeenCalled();
+  });
+
+  it('阻断未激活时点击右上角关闭按钮应当确认退出程序', async () => {
+    const exitSpy = vi.spyOn(modal, 'exitApplication').mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    await modal.open({ blocking: true });
+    const closeBtn = document.getElementById('activation-close-btn');
+    expect(closeBtn).not.toBeNull();
+
+    closeBtn?.click();
+    expect(window.confirm).toHaveBeenCalledWith('尚未完成授权激活，确定退出应用程序吗？');
+    expect(exitSpy).toHaveBeenCalled();
+  });
 });
