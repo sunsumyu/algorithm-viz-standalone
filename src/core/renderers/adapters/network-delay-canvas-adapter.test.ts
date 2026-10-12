@@ -64,5 +64,13 @@ describe('NetworkDelayCanvasAdapter', () => {
     const doneStep = steps[steps.length - 1];
     NetworkDelayCanvasAdapter.renderMetrics(container, doneStep);
     expect(container.innerHTML).toContain('广播收敛');
+
+    // 4. 校验遍历 distance[1] 时绝不会误高亮 distance[4]
+    const checkStep1 = steps.find((s) => s.status === 'check' && s.activeArray === 'dist' && s.activeSlot === 1);
+    expect(checkStep1).toBeDefined();
+    NetworkDelayCanvasAdapter.renderMetrics(container, checkStep1!);
+    // 应当只有 1 个被高亮的黄色背景 #fef08a
+    const yellowMatches = container.innerHTML.match(/#fef08a/g);
+    expect(yellowMatches?.length).toBe(1);
   });
 });

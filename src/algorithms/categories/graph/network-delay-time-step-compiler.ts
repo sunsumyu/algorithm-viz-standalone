@@ -20,6 +20,7 @@ export interface NetworkDelayStepVars {
   edge?: [number, number];
   v?: number;
   w?: number;
+  i?: number;
   distList: number[];
   visitedList: boolean[];
   pqSnapshot: Array<{ u: number; d: number }>;
@@ -227,6 +228,7 @@ export function traceNetworkDelay(isReachable: boolean = true) {
             pqSnapshot: pq,
             maxDelaySoFar,
             ans: maxDelaySoFar,
+            i: activeSlot,
             isAllReached,
             activeArray,
             activeSlot,
@@ -312,7 +314,7 @@ export function traceNetworkDelay(isReachable: boolean = true) {
 
         ans = Math.max(ans, distance[i]);
         maxDelaySoFar = ans;
-        emit('updateMax', `📈 [刷新最大延迟] ans = max(${ans}, distance[${i}]=${distance[i]}) = ${ans} ms。`, `ans = ${ans}`, 'check', undefined, undefined, 'empty');
+        emit('updateMax', `📈 [刷新最大延迟] ans = max(${ans}, distance[${i}]=${distance[i]}) = ${ans} ms。`, `ans = ${ans}`, 'check', 'dist', i, 'empty');
       }
 
       if (!hasInf) {

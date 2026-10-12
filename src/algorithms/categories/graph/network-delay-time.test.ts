@@ -77,6 +77,17 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
     }
   });
 
+  it('should maintain activeSlot on distance[i] during updateMax scan', () => {
+    const steps = buildNetworkDelaySteps(true);
+    const updateMaxSteps = steps.filter((s) => s.status === 'check' && s.message.includes('刷新最大延迟'));
+    expect(updateMaxSteps.length).toBeGreaterThan(0);
+    for (const s of updateMaxSteps) {
+      expect(s.activeArray).toBe('dist');
+      expect(typeof s.activeSlot).toBe('number');
+      expect(s.activeSlot).toBeGreaterThan(0);
+    }
+  });
+
   it('should initialize and destroy cleanly with mock root container', async () => {
     const mockElements = new Map<string, any>();
     const mockRoot = {
