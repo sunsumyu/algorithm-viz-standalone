@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3300;
 
 function sleep(ms: number): void {
   const end = Date.now() + ms;
