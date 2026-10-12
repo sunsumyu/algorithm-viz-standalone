@@ -2838,7 +2838,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 24,
     learningGoal: "掌握分层图构建思想、成对反向弧退流机制、当前弧指针优化以及阻塞流增广策略",
-    aliases: ["class173-code01","dinic-max-flow-173","dinic","P3376"],
+    aliases: ["dinic","P3376"],
   },
   {
     id: "distinct-islands",

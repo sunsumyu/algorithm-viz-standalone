@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<DinicStep>({
   id: 'dinic-max-flow',
   name: 'Dinic 网络最大流 (Dinic Max Flow)',
   category: 'graph',
-  aliases: ['class173-code01', 'dinic-max-flow-173', 'dinic', 'P3376'],
+  aliases: ['dinic', 'P3376'],
   hasDeductionTree: true,
   icon: '🌊',
   difficulty: 3,
