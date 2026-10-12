@@ -5,19 +5,16 @@
 
 import { SegmentTreeStep } from './segment-tree-step-compiler';
 import { renderSegmentTreeVisual } from '../../../algorithms/categories/tree/tree-108-116/tree-108-116-shared';
-import { renderFormulaCard } from '../../../algorithms/categories/string/string-100-105/string-100-105-shared';
+import { composeUnifiedCanvas } from './unified-canvas-composer';
 
 export function renderSegmentTreeCanvas(container: HTMLElement, step: SegmentTreeStep): void {
-  container.innerHTML = `
-    <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-      ${renderSegmentTreeVisual(step.nodes, step.activeNodeId, step.queryL, step.queryR)}
-
-      ${renderFormulaCard(
-        '线段树 Lazy Tag 运行状态',
-        `当前处理节点: #${step.activeNodeId} | 目标区间: [${step.queryL}..${step.queryR}] (增加 +${step.addVal}) | 全树根节点总和: ${step.nodes.find(n => n.id === 1)?.val ?? 0}`,
-        step.decision,
-        step.statusBadge
-      )}
-    </div>
-  `;
+  composeUnifiedCanvas(container, {
+    mainBoardHtml: renderSegmentTreeVisual(step.nodes, step.activeNodeId, step.queryL, step.queryR),
+    formula: {
+      title: '线段树 Lazy Tag 运行状态',
+      equation: `当前处理节点: #${step.activeNodeId} | 目标区间: [${step.queryL}..${step.queryR}] (增加 +${step.addVal}) | 全树根节点总和: ${step.nodes.find(n => n.id === 1)?.val ?? 0}`,
+      explanation: step.decision,
+      statusBadge: step.statusBadge,
+    },
+  });
 }

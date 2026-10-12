@@ -5,30 +5,28 @@
 
 import { MobiusStep } from './mobius-inversion-step-compiler';
 import { renderMobiusBoard } from '../../../algorithms/categories/advanced-topics/advanced-161-166/advanced-161-166-shared';
-import { renderFormulaCard } from '../../../algorithms/categories/string/string-100-105/string-100-105-shared';
+import { composeUnifiedCanvas } from './unified-canvas-composer';
 
 export function renderMobiusInversionCanvas(container: HTMLElement, step: MobiusStep): void {
-  container.innerHTML = `
-    <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-      ${renderMobiusBoard(step.n, step.m, step.blocks, step.currentSum, step.stage)}
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
-          <div style="font-size: 11px; color: #64748b;">当前算法阶段</div>
-          <div style="font-size: 17px; font-weight: 700; color: #0369a1;">${step.stage}</div>
-        </div>
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
-          <div style="font-size: 11px; color: #64748b;">算法加速幅度</div>
-          <div style="font-size: 15px; font-weight: 700; color: #059669;">O(N&middot;M) -&gt; O(&radic;N + &radic;M)</div>
-        </div>
-      </div>
-
-      ${renderFormulaCard(
-        '莫比乌斯反演互质双曲求和引擎',
-        `核心性质: &sum;_{d|n} &mu;(d) = [n=1] | 双元整除分块: r = min(&lfloor;n/&lfloor;n/l&rfloor;&rfloor;, &lfloor;m/&lfloor;m/l&rfloor;&rfloor;) | 单次询问复杂度: O(&radic;N + &radic;M)`,
-        step.decision,
-        step.statusBadge
-      )}
-    </div>
-  `;
+  composeUnifiedCanvas(container, {
+    mainBoardHtml: renderMobiusBoard(step.n, step.m, step.blocks, step.currentSum, step.stage),
+    metrics: [
+      {
+        label: '当前算法阶段',
+        value: step.stage,
+        color: '#0369a1',
+      },
+      {
+        label: '算法加速幅度',
+        value: 'O(N\u00B7M) -> O(\u221AN + \u221AM)',
+        color: '#059669',
+      },
+    ],
+    formula: {
+      title: '莫比乌斯反演互质双曲求和引擎',
+      equation: '核心性质: \u2211_{d|n} \u03BC(d) = [n=1] | 双元整除分块: r = min(\u230An/\u230An/l\u230B\u230B, \u230Am/\u230Am/l\u230B\u230B) | 单次询问复杂度: O(\u221AN + \u221AM)',
+      explanation: step.decision,
+      statusBadge: step.statusBadge,
+    },
+  });
 }

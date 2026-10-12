@@ -4,7 +4,7 @@
  */
 
 import { renderSparseTableVisual } from '../../../algorithms/categories/tree/tree-117-123/tree-117-123-shared';
-import { renderFormulaCard } from '../../../algorithms/categories/string/string-100-105/string-100-105-shared';
+import { composeUnifiedCanvas } from './unified-canvas-composer';
 import { SparseTableStep } from './sparse-table-step-compiler';
 
 export function renderSparseTableCanvas(container: HTMLElement, step: SparseTableStep): void {
@@ -14,16 +14,13 @@ export function renderSparseTableCanvas(container: HTMLElement, step: SparseTabl
   const span = 1 << k;
   const rightStart = step.queryR - span + 1;
 
-  container.innerHTML = `
-    <div style="padding: 16px; background: #ffffff; border-radius: 12px;">
-      ${renderSparseTableVisual(step.nums, step.st, step.activeI, step.activeJ)}
-
-      ${renderFormulaCard(
-        'ST 表 O(1) 查询公式',
-        `k = log2(${len}) | max(ST[${step.queryL}][${k}], ST[${rightStart}][${k}]) = ${step.maxAns}`,
-        step.decision,
-        step.statusBadge
-      )}
-    </div>
-  `;
+  composeUnifiedCanvas(container, {
+    mainBoardHtml: renderSparseTableVisual(step.nums, step.st, step.activeI, step.activeJ),
+    formula: {
+      title: 'ST 表 O(1) 查询公式',
+      equation: `k = log2(${len}) | max(ST[${step.queryL}][${k}], ST[${rightStart}][${k}]) = ${step.maxAns}`,
+      explanation: step.decision,
+      statusBadge: step.statusBadge,
+    },
+  });
 }
