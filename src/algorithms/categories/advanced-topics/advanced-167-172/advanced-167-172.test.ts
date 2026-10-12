@@ -20,22 +20,7 @@ import {
   POLYNOMIAL_LN_EXP_CODES,
 } from './advanced-167-172-stage-codes';
 
-function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
-  expect(steps.length).toBeGreaterThan(0);
-  for (const step of steps) {
-    if (step.codeLine) {
-      for (const lang of ['java', 'cpp', 'python', 'javascript']) {
-        const line = step.codeLine[lang];
-        expect(line, `Missing line mapping for ${lang}`).toBeDefined();
-        expect(line, `Line must be >= 1 for ${lang}`).toBeGreaterThanOrEqual(1);
-        expect(
-          line,
-          `Line ${line} exceeds code length ${codes[lang].length} for ${lang}`
-        ).toBeLessThanOrEqual(codes[lang].length);
-      }
-    }
-  }
-}
+import { verify1BasedCodeLines } from '../../../../core/testing/contract-assertions';
 
 describe('左神进阶数论与高阶形式幂级数专题 (Class 167 ~ 172) 综合测试套件', () => {
   // 1. Class 167: 扩展卢卡斯定理 (EXLucas)

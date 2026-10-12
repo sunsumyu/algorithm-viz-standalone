@@ -20,32 +20,7 @@ import {
   WORD_LADDER_II_062_CODES,
 } from './graph-062-stage-codes';
 
-function verify1BasedCodeLines(
-  steps: any[],
-  codes: Record<string, string[]>,
-  algoName: string
-) {
-  expect(steps.length, `${algoName} 步骤不可为空`).toBeGreaterThanOrEqual(4);
-
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    if (step.codeLine) {
-      for (const lang of ['java', 'cpp', 'python', 'javascript']) {
-        const line = typeof step.codeLine === 'object' && step.codeLine !== null && lang in step.codeLine
-          ? step.codeLine[lang]
-          : step.codeLine;
-
-        expect(line, `${algoName} (step #${i}) 缺少 ${lang} 行号映射`).toBeDefined();
-        const lineNum = typeof line === 'number' ? line : Number(line);
-        expect(lineNum, `${algoName} (step #${i}) ${lang} 行号必须 >= 1`).toBeGreaterThanOrEqual(1);
-        expect(
-          lineNum,
-          `${algoName} (step #${i}) ${lang} 行号 ${lineNum} 超过源码总行数 ${codes[lang].length}`
-        ).toBeLessThanOrEqual(codes[lang].length);
-      }
-    }
-  }
-}
+import { verify1BasedCodeLines } from '../../../../core/testing/contract-assertions';
 
 describe('左程云算法通关课 Class 062 宽度优先遍历及其扩展 自动化测试套件', () => {
   // 1. 地图分析 (LeetCode 1162 · 多源 BFS)

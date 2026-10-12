@@ -20,22 +20,7 @@ import {
   FFT_POLYNOMIAL_CODES,
 } from './advanced-155-160-stage-codes';
 
-function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>) {
-  expect(steps.length).toBeGreaterThan(0);
-  for (const step of steps) {
-    if (step.codeLine) {
-      for (const lang of ['java', 'cpp', 'python', 'javascript']) {
-        const line = step.codeLine[lang];
-        expect(line, `Missing line mapping for ${lang}`).toBeDefined();
-        expect(line, `Line must be >= 1 for ${lang}`).toBeGreaterThanOrEqual(1);
-        expect(
-          line,
-          `Line ${line} exceeds code length ${codes[lang].length} for ${lang}`
-        ).toBeLessThanOrEqual(codes[lang].length);
-      }
-    }
-  }
-}
+import { verify1BasedCodeLines } from '../../../../core/testing/contract-assertions';
 
 describe('左神进阶数据结构与多项式专题 (Class 155 ~ 160) 综合测试套件', () => {
   // 1. Class 155: LCT

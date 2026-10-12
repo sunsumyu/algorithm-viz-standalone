@@ -12,22 +12,7 @@ import {
 } from './search-058-stage-codes';
 import { renderFloodFillBoard } from './search-058-shared';
 
-function verify1BasedCodeLines(steps: any[], codes: Record<string, string[]>, desc: string) {
-  expect(steps.length).toBeGreaterThan(0);
-  for (const step of steps) {
-    if (step.codeLine) {
-      for (const lang of ['java', 'cpp', 'python', 'javascript']) {
-        const line = step.codeLine[lang];
-        expect(line, `${desc}: Missing line mapping for ${lang}`).toBeDefined();
-        expect(line, `${desc}: Line must be >= 1 for ${lang}`).toBeGreaterThanOrEqual(1);
-        expect(
-          line,
-          `${desc}: Line ${line} exceeds code length ${codes[lang].length} for ${lang}`
-        ).toBeLessThanOrEqual(codes[lang].length);
-      }
-    }
-  }
-}
+import { verify1BasedCodeLines } from '../../../../core/testing/contract-assertions';
 
 describe('左神洪水填充高频实战 (Class 058) 综合测试套件', () => {
   describe('Code01: 图像渲染 (Flood Fill / LeetCode 733)', () => {
