@@ -42,6 +42,9 @@ export interface ForwardStarStep extends StepBase {
   message: string;
   log: string;
   codeLine: number;
+  stepSummaryBadge?: string;
+  activeCodeLineKey?: 'to' | 'next' | 'head' | 'traverse_loop' | 'traverse_visit' | 'traverse_next';
+  selectedPerspectiveNode?: number;
 }
 
 /** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
@@ -74,12 +77,10 @@ function parseEdgesInput(raw: string): RawEdge[] {
 
   if (list.length === 0) {
     return [
-      { u: 1, v: 2, w: 5 },
-      { u: 1, v: 3, w: 2 },
-      { u: 2, v: 4, w: 1 },
-      { u: 3, v: 2, w: 4 },
-      { u: 3, v: 5, w: 3 },
-      { u: 4, v: 5, w: 6 },
+      { u: 2, v: 1, w: 5 },
+      { u: 2, v: 3, w: 2 },
+      { u: 3, v: 4, w: 4 },
+      { u: 2, v: 4, w: 9 },
     ];
   }
   return list;
@@ -91,7 +92,7 @@ export function buildForwardStarSteps(
   mode: string = 'build'
 ): ForwardStarStep[] {
   const rawEdges = parseEdgesInput(rawEdgesStr);
-  const startNode = parseInt(startNodeStr, 10) || 1;
+  const startNode = parseInt(startNodeStr, 10) || (rawEdges[0] ? rawEdges[0].u : 1);
 
   // 收集所有节点 ID
   const nodeSet = new Set<number>();
@@ -101,7 +102,22 @@ export function buildForwardStarSteps(
   });
   nodeSet.add(startNode);
   const allNodes = Array.from(nodeSet).sort((a, b) => a - b);
-  const maxNode = Math.max(...allNodes, 5);
+  const maxNode = Math.max(...allNodes, 4);
+
+  // 计算出度最多的节点作为默认透视节点
+  const outDegreeMap: Record<number, number> = {};
+  allNodes.forEach((n) => (outDegreeMap[n] = 0));
+  rawEdges.forEach((e) => {
+    outDegreeMap[e.u] = (outDegreeMap[e.u] || 0) + 1;
+  });
+  let maxDegreeNode = allNodes[0] || 1;
+  let maxDeg = -1;
+  for (const n of allNodes) {
+    if ((outDegreeMap[n] || 0) > maxDeg) {
+      maxDeg = outDegreeMap[n] || 0;
+      maxDegreeNode = n;
+    }
+  }
 
   const steps: ForwardStarStep[] = [];
   const head: number[] = new Array(maxNode + 1).fill(-1);
@@ -123,9 +139,11 @@ export function buildForwardStarSteps(
     allNodes,
     allRawEdges: rawEdges,
     startNode,
-    message: `初始化：创建 head 数组（默认全为 -1，表示无出边）与空 edge[] 静态链表池`,
+    message: `初始化：创建 head 数组（默认全为 0/NULL，表示无出边）与空 edge[] 静态链表池`,
     log: `初始化: head[1..${maxNode}] = -1, cnt = 0`,
     codeLine: lines.init,
+    stepSummaryBadge: '初始化 head 数组与边池',
+    selectedPerspectiveNode: maxDegreeNode,
   });
 
   // 执行建图 (addEdge)
@@ -133,9 +151,11 @@ export function buildForwardStarSteps(
     const { u, v, w } = rawEdges[i];
     const edgeIdx = edges.length;
     const oldHead = head[u];
+    const displayE = edgeIdx + 1;
+    const displayOldHead = oldHead === -1 ? 0 : oldHead + 1;
 
     if (mode === 'build') {
-      // 步骤 1: 准备加边
+      // 步骤 1: 准备加边与存储目标点及权值
       steps.push({
         mode: 'build',
         action: 'add_start',
@@ -151,9 +171,12 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `准备加边 #${edgeIdx}：从节点 ${u} 指向节点 ${v}，权值为 ${w}`,
-        log: `加边 addEdge(${u}, ${v}, ${w}) - 分配槽位 edge[${edgeIdx}]`,
+        message: `第一步：边编号自增为 ${displayE}。记录终点 to[${displayE}] = ${v}，权重 weight[${displayE}] = ${w}`,
+        log: `加边 addEdge(${u}, ${v}, ${w}) - 分配边号 e=${displayE}`,
         codeLine: lines.buildAddstart,
+        stepSummaryBadge: `边的编号自增: to[${displayE}] = ${v}, w = ${w}`,
+        activeCodeLineKey: 'to',
+        selectedPerspectiveNode: u,
       });
 
       // 步骤 2: 绑定 next 指针 (头插法核心)
@@ -173,9 +196,12 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `【头插法】edge[${edgeIdx}].next = head[${u}] (${oldHead === -1 ? 'NULL' : `#${oldHead}`})，新边链接到原出边表头`,
+        message: `第二步：继承旧表头指针。令 next[${displayE}] = head[${u}] (${displayOldHead})。新边将原有出边链条继承至其后！`,
         log: `链接前驱 edge[${edgeIdx}].next = ${oldHead}`,
         codeLine: lines.buildLinknext,
+        stepSummaryBadge: `继承旧表头: next[${displayE}] = head[${u}] (${displayOldHead})`,
+        activeCodeLineKey: 'next',
+        selectedPerspectiveNode: u,
       });
 
       // 步骤 3: 更新 head[u] = edgeIdx
@@ -195,9 +221,12 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `【更新表头】head[${u}] = ${edgeIdx}，顶点 ${u} 的最新首条出边更新为边 #${edgeIdx}`,
+        message: `第三步：更新顶点头指针 head[${u}] = ${displayE}。边 ${displayE} 正式成为节点 ${u} 的最新出边链表头！`,
         log: `更新表头 head[${u}] = ${edgeIdx} (原 ${oldHead})`,
         codeLine: lines.buildUpdatehead,
+        stepSummaryBadge: `更新表头指针: head[${u}] = ${displayE}`,
+        activeCodeLineKey: 'head',
+        selectedPerspectiveNode: u,
       });
     } else {
       // 遍历模式下静默建图
@@ -222,9 +251,11 @@ export function buildForwardStarSteps(
       allNodes,
       allRawEdges: rawEdges,
       startNode,
-      message: `🎉 建图完成！共存入 ${edges.length} 条有向边。每个节点的 head[u] 均已指向其首条出边链。`,
+      message: `🎉 建图完成！共存入 ${edges.length} 条有向边。每个节点的 head[u] 均已指向其最新出边链表头。`,
       log: `建图成功: 总边数 ${edges.length}, 节点数 ${allNodes.length}`,
       codeLine: lines.buildBuilddone,
+      stepSummaryBadge: `建图加边完成 (共 ${edges.length} 条边)`,
+      selectedPerspectiveNode: maxDegreeNode,
     });
     return steps;
   }
@@ -248,9 +279,12 @@ export function buildForwardStarSteps(
     allNodes,
     allRawEdges: rawEdges,
     startNode,
-    message: `🔍 开始遍历顶点 ${startNode} 的所有出边：取入口指针 e = head[${startNode}] = ${ePtr === -1 ? 'NULL (-1 无出边)' : `#${ePtr}`}`,
+    message: `🔍 开始遍历顶点 ${startNode} 的所有出边：取入口指针 e = head[${startNode}] = ${ePtr === -1 ? '0 (无出边)' : `#${ePtr + 1}`}`,
     log: `开始遍历顶点 ${startNode} 的出边链`,
     codeLine: lines.traverseTraversestart,
+    stepSummaryBadge: `取入口表头: e = head[${startNode}]`,
+    activeCodeLineKey: 'traverse_loop',
+    selectedPerspectiveNode: startNode,
   });
 
   while (ePtr !== -1 && ePtr < edges.length) {
@@ -272,9 +306,12 @@ export function buildForwardStarSteps(
       allNodes,
       allRawEdges: rawEdges,
       startNode,
-      message: `访问边 #${ePtr}：${curEdge.u} ➔ ${curEdge.to} (权值 ${curEdge.weight})`,
+      message: `访问边 #${ePtr + 1}：${curEdge.u} ➔ ${curEdge.to} (权值 ${curEdge.weight})`,
       log: `访问边 #${ePtr} (${curEdge.u} ➔ ${curEdge.to})`,
       codeLine: lines.traverseVisitedge,
+      stepSummaryBadge: `访问出边: [边 ${ePtr + 1}] ${curEdge.u} ➔ ${curEdge.to} (权: ${curEdge.weight})`,
+      activeCodeLineKey: 'traverse_visit',
+      selectedPerspectiveNode: startNode,
     });
 
     const nextEdgeIdx = curEdge.next;
@@ -295,10 +332,13 @@ export function buildForwardStarSteps(
       startNode,
       message:
         nextEdgeIdx !== -1
-          ? `沿静态链表跳跃：e = edge[${ePtr}].next ➔ 跳转至上一条出边 #${nextEdgeIdx}`
-          : `edge[${ePtr}].next = -1 (NULL)，顶点 ${startNode} 的所有出边遍历完毕`,
-      log: `链表跳跃: 下一条边为 ${nextEdgeIdx === -1 ? 'NULL' : `#${nextEdgeIdx}`}`,
+          ? `沿静态链表单向跳跃：e = next[${ePtr + 1}] ➔ 跳转至更早加入的出边 #${nextEdgeIdx + 1}`
+          : `next[${ePtr + 1}] = 0 (链表尾)，顶点 ${startNode} 的所有出边遍历完毕`,
+      log: `链表跳跃: 下一条边为 ${nextEdgeIdx === -1 ? '0' : `#${nextEdgeIdx + 1}`}`,
       codeLine: lines.traverseJumpnext,
+      stepSummaryBadge: nextEdgeIdx !== -1 ? `链表跳跃: e = next[${ePtr + 1}] ➔ #${nextEdgeIdx + 1}` : '到达链表尾: next = 0',
+      activeCodeLineKey: 'traverse_next',
+      selectedPerspectiveNode: startNode,
     });
 
     ePtr = nextEdgeIdx;
@@ -319,9 +359,11 @@ export function buildForwardStarSteps(
     allNodes,
     allRawEdges: rawEdges,
     startNode,
-    message: `✅ 遍历完成！顶点 ${startNode} 共扫描了 ${traversed.length} 条出边 (访问顺序：${traversed.map((i) => `#${i}`).join(' ➔ ') || '无'})`,
+    message: `✅ 遍历完成！顶点 ${startNode} 共扫描了 ${traversed.length} 条出边 (逆序访问：${traversed.map((i) => `#${i + 1}`).join(' ➔ ') || '无'})`,
     log: `遍历结束: 访问顺序为 [${traversed.join(', ')}]`,
     codeLine: lines.traverseTraversedone,
+    stepSummaryBadge: `遍历完毕 (逆序访问 ${traversed.length} 条出边)`,
+    selectedPerspectiveNode: startNode,
   });
 
   return steps;
