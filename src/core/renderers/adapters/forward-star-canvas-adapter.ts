@@ -65,29 +65,27 @@ export class ForwardStarCanvasAdapter {
           const displayE = eIdx + 1;
           const isLatest = idx === 0;
           const isCurEdge = curEdgeIndex === eIdx;
-          const cardBorder = isCurEdge ? '#38bdf8' : isLatest ? '#0284c7' : '#334155';
-          const cardBg = isCurEdge
-            ? 'linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(15, 23, 42, 0.95))'
-            : isLatest
-            ? 'linear-gradient(135deg, rgba(14, 116, 144, 0.4), rgba(15, 23, 42, 0.8))'
-            : 'rgba(15, 23, 42, 0.7)';
+          const cardBorder = isCurEdge ? '#eab308' : isLatest ? '#3b82f6' : '#cbd5e1';
+          const cardBg = isCurEdge ? '#fefce8' : isLatest ? '#eff6ff' : '#ffffff';
+          const titleColor = isCurEdge ? '#854d0e' : isLatest ? '#1d4ed8' : '#0f172a';
+          const subColor = isCurEdge ? '#a16207' : isLatest ? '#2563eb' : '#64748b';
 
           return `
             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
               <!-- 边实体卡片 -->
-              <div style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: 8px; padding: 6px 12px; min-width: 130px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-                <div style="font-family: monospace; font-size: 12px; font-weight: 800; color: #f8fafc;">
-                  [边 ${displayE}] ${ed.u} ➔ ${ed.to} <span style="color: #fbbf24; font-size: 11px;">(权: ${ed.weight})</span>
+              <div style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: 8px; padding: 6px 12px; min-width: 135px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                <div style="font-family: monospace; font-size: 12px; font-weight: 800; color: ${titleColor};">
+                  [边 ${displayE}] ${ed.u} ➔ ${ed.to} <span style="color: #d97706; font-size: 11px; font-weight: 700;">(权: ${ed.weight})</span>
                 </div>
-                <div style="font-size: 10px; color: ${isLatest ? '#38bdf8' : '#94a3b8'}; margin-top: 2px;">
-                  ${isLatest ? '最新加入的边 (表头)' : '更早加入的边'}
+                <div style="font-size: 10.5px; color: ${subColor}; font-weight: 600; margin-top: 2px;">
+                  ${isCurEdge ? '⭐ 正在处理的边' : isLatest ? '最新加入的边 (表头)' : '更早加入的边'}
                 </div>
               </div>
 
               <!-- 连接箭头 -->
-              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #64748b; font-size: 10px; font-family: monospace; padding: 0 2px;">
-                <span style="color: #94a3b8; font-size: 9px;">next</span>
-                <span style="font-size: 14px; color: #38bdf8;">➔</span>
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-family: monospace; padding: 0 2px;">
+                <span style="color: #64748b; font-size: 9.5px; font-weight: 700;">next</span>
+                <span style="font-size: 14px; color: #3b82f6; font-weight: 700;">➔</span>
               </div>
             </div>
           `;
@@ -96,25 +94,25 @@ export class ForwardStarCanvasAdapter {
 
     const kebabPerspectiveHtml = `
       <!-- 全宽链表透视 (羊肉串模型) -->
-      <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px;">
+      <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 14px;">🍢</span>
-            <span style="font-size: 13px; font-weight: 700; color: #f1f5f9;">全宽链表透视 (羊肉串模型)</span>
-            <span style="font-size: 11px; color: #64748b; display: none; sm:inline;">—— 完整展开节点出边链，清晰呈现头插法与单向指引</span>
+            <span style="font-size: 16px;">🍢</span>
+            <span style="font-size: 13px; font-weight: 800; color: #0f172a;">全宽链表透视 (羊肉串模型)</span>
+            <span style="font-size: 11px; color: #64748b; font-weight: 500;">—— 完整展开节点出边链，清晰呈现头插法与单向指引</span>
           </div>
 
           <!-- 切换查看节点按钮组 -->
           <div style="display: flex; align-items: center; gap: 6px; font-size: 11px;">
-            <span style="color: #64748b;">切换查看节点:</span>
+            <span style="color: #64748b; font-weight: 600;">切换查看节点:</span>
             ${allNodes.map((u) => {
               const isSelected = u === perspectiveNode;
               const isMax = u === maxDegNode && (outDegrees[u] || 0) > 0;
-              const bg = isSelected ? '#2563eb' : '#1e293b';
-              const border = isSelected ? '#3b82f6' : '#334155';
-              const textCol = isSelected ? '#ffffff' : '#cbd5e1';
+              const bg = isSelected ? '#2563eb' : '#f1f5f9';
+              const border = isSelected ? '#1d4ed8' : '#cbd5e1';
+              const textCol = isSelected ? '#ffffff' : '#334155';
               return `
-                <button type="button" class="fs-node-btn" data-node="${u}" style="background: ${bg}; border: 1px solid ${border}; color: ${textCol}; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: ${isSelected ? '700' : 'normal'}; cursor: pointer; transition: all 0.2s;">
+                <button type="button" class="fs-node-btn" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; color: ${textCol}; border-radius: 6px; padding: 3px 9px; font-size: 11px; font-weight: ${isSelected ? '800' : '600'}; cursor: pointer; transition: all 0.15s; box-shadow: ${isSelected ? '0 2px 4px rgba(37,99,235,0.2)' : 'none'};">
                   节点 ${u}${isMax ? ' (出度最多)' : ''}
                 </button>
               `;
@@ -125,16 +123,16 @@ export class ForwardStarCanvasAdapter {
         <!-- 动态链表串联展示 -->
         <div style="display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 2px; scrollbar-width: thin;">
           <!-- 表头胶囊 -->
-          <div style="background: rgba(30, 58, 138, 0.4); border: 1.5px solid #2563eb; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 700; color: #60a5fa; flex-shrink: 0; box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);">
+          <div style="background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 800; color: #1d4ed8; flex-shrink: 0; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.12);">
             表头 head[${perspectiveNode}] = ${headDisplayVal}
           </div>
 
-          <div style="color: #38bdf8; font-size: 14px; flex-shrink: 0;">➔</div>
+          <div style="color: #3b82f6; font-size: 16px; font-weight: 700; flex-shrink: 0;">➔</div>
 
           ${chainItemsHtml}
 
           <!-- 终结符 0 (链表尾) -->
-          <div style="background: #1e293b; border: 1px solid #475569; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 700; color: #94a3b8; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
+          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 700; color: #475569; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
             <span style="width: 7px; height: 7px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
             <span>0 (链表尾)</span>
           </div>
@@ -174,27 +172,27 @@ export class ForwardStarCanvasAdapter {
       const isCurrent = curEdgeIndex === idx;
       const isTraversed = traversedEdges.includes(idx);
 
-      let strokeColor = 'rgba(148, 163, 184, 0.6)';
+      let strokeColor = '#94a3b8';
       let strokeWidth = 2.2;
       let markerId = 'fs-arrow-default';
-      let badgeBg = '#0b1120';
-      let badgeBorder = '#334155';
-      let badgeText = '#94a3b8';
+      let badgeBg = '#ffffff';
+      let badgeBorder = '#cbd5e1';
+      let badgeText = '#334155';
 
       if (isCurrent) {
-        strokeColor = '#38bdf8';
+        strokeColor = '#0284c7';
         strokeWidth = 3.5;
         markerId = 'fs-arrow-active';
-        badgeBg = '#0284c7';
-        badgeBorder = '#38bdf8';
-        badgeText = '#ffffff';
+        badgeBg = '#eff6ff';
+        badgeBorder = '#3b82f6';
+        badgeText = '#1d4ed8';
       } else if (isTraversed) {
         strokeColor = '#10b981';
         strokeWidth = 3;
         markerId = 'fs-arrow-traversed';
-        badgeBg = '#065f46';
-        badgeBorder = '#34d399';
-        badgeText = '#a7f3d0';
+        badgeBg = '#ecfdf5';
+        badgeBorder = '#10b981';
+        badgeText = '#047857';
       }
 
       // 控制弧度与标签位置
@@ -221,18 +219,18 @@ export class ForwardStarCanvasAdapter {
       const isPerspective = u === perspectiveNode;
       const isCur = curNode === u;
 
-      let fill = '#1e293b';
-      let stroke = '#475569';
-      let textFill = '#f8fafc';
+      let fill = '#ffffff';
+      let stroke = '#3b82f6';
+      let textFill = '#0f172a';
 
       if (isPerspective || isCur) {
-        fill = '#1d4ed8';
-        stroke = '#60a5fa';
+        fill = '#2563eb';
+        stroke = '#1d4ed8';
         textFill = '#ffffff';
       }
 
       const glow = (isPerspective || isCur)
-        ? `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3 3" opacity="0.8" />`
+        ? `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="none" stroke="#60a5fa" stroke-width="2" stroke-dasharray="3 3" opacity="0.9" />`
         : '';
 
       return `
@@ -251,13 +249,13 @@ export class ForwardStarCanvasAdapter {
       const hIdx = head[u] ?? -1;
       const hDisplay = hIdx === -1 ? 0 : hIdx + 1;
       const isPerspective = u === perspectiveNode;
-      const bg = isPerspective ? 'rgba(30, 58, 138, 0.45)' : '#0f172a';
-      const border = isPerspective ? '#3b82f6' : '#334155';
-      const numColor = isPerspective ? '#60a5fa' : hDisplay > 0 ? '#38bdf8' : '#94a3b8';
+      const bg = isPerspective ? '#eff6ff' : '#f8fafc';
+      const border = isPerspective ? '#3b82f6' : '#cbd5e1';
+      const numColor = isPerspective ? '#1d4ed8' : hDisplay > 0 ? '#0284c7' : '#94a3b8';
 
       return `
-        <div class="fs-node-box" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 8px; padding: 6px 4px; min-height: 52px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; box-shadow: ${isPerspective ? '0 0 10px rgba(59, 130, 246, 0.25)' : 'none'};">
-          <div style="font-size: 10px; color: #cbd5e1; font-weight: 600;">顶点 ${u}</div>
+        <div class="fs-node-box" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 8px; padding: 6px 4px; min-height: 52px; text-align: center; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; box-shadow: ${isPerspective ? '0 2px 6px rgba(59, 130, 246, 0.15)' : 'none'};">
+          <div style="font-size: 10.5px; color: #475569; font-weight: 700;">顶点 ${u}</div>
           <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: ${numColor}; margin-top: 2px;">
             ${hDisplay > 0 ? `e${hDisplay}` : '0 (空)'}
           </div>
@@ -270,16 +268,16 @@ export class ForwardStarCanvasAdapter {
           const displayE = idx + 1;
           const displayNext = ed.next === -1 ? 0 : ed.next + 1;
           const isCur = curEdgeIndex === idx;
-          const rowBg = isCur ? 'rgba(30, 58, 138, 0.6)' : idx % 2 === 0 ? 'rgba(15, 23, 42, 0.6)' : 'rgba(11, 19, 41, 0.6)';
-          const rowBorder = isCur ? 'border-left: 3px solid #38bdf8;' : '';
+          const rowBg = isCur ? '#fefce8' : idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+          const rowBorder = isCur ? 'border-left: 3px solid #eab308;' : '';
 
           return `
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: ${rowBg}; border-bottom: 1px solid #1e293b; text-align: center; font-family: monospace; font-size: 11px; padding: 6px 2px; align-items: center; ${rowBorder}">
-              <div style="font-weight: 700; color: ${isCur ? '#facc15' : '#f8fafc'};">${displayE}</div>
-              <div style="color: #38bdf8; font-weight: 700;">${ed.u}</div>
-              <div style="color: #34d399; font-weight: 700;">${ed.to}</div>
-              <div style="color: #a78bfa; font-weight: 700;">${displayNext > 0 ? `e${displayNext}` : '0'}</div>
-              <div style="color: #fbbf24; font-weight: 700;">${ed.weight}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: ${rowBg}; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-size: 11px; padding: 6px 2px; align-items: center; ${rowBorder}">
+              <div style="font-weight: 800; color: ${isCur ? '#a16207' : '#0f172a'};">${displayE}</div>
+              <div style="color: #0284c7; font-weight: 700;">${ed.u}</div>
+              <div style="color: #059669; font-weight: 700;">${ed.to}</div>
+              <div style="color: #7c3aed; font-weight: 700;">${displayNext > 0 ? `e${displayNext}` : '0'}</div>
+              <div style="color: #b45309; font-weight: 700;">${ed.weight}</div>
             </div>
           `;
         }).join('')
@@ -289,31 +287,31 @@ export class ForwardStarCanvasAdapter {
 
     // 组合主画布布局 (黄金比例左右双栏，杜绝过度嵌套)
     container.innerHTML = `
-      <div style="width: 100%; background: #070c18; border-radius: 12px; padding: 14px; color: #f1f5f9; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <div style="width: 100%; background: transparent; padding: 4px 2px; color: #0f172a; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         ${kebabPerspectiveHtml}
 
         <!-- 下半部左右双栏黄金布局 -->
         <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; align-items: stretch;">
           
           <!-- 左栏：图拓扑画板 (放大主导地位) -->
-          <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; display: flex; flex-direction: column;">
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #38bdf8;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #0284c7;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
                 图拓扑画板
               </div>
-              <span style="font-size: 10px; color: #64748b;">${allNodes.length} 节点带权有向图</span>
+              <span style="font-size: 11px; color: #64748b; font-weight: 600;">${allNodes.length} 节点带权有向图</span>
             </div>
 
             <!-- SVG 画板 -->
-            <div style="flex: 1; min-height: 250px; background: #060a14; border: 1px solid #131c31; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <div style="flex: 1; min-height: 250px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
               <svg width="100%" height="100%" viewBox="0 0 350 240" style="display: block;">
                 <defs>
                   <marker id="fs-arrow-default" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8" />
                   </marker>
                   <marker id="fs-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
                   </marker>
                   <marker id="fs-arrow-traversed" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
@@ -325,14 +323,14 @@ export class ForwardStarCanvasAdapter {
             </div>
 
             <!-- 底部解说条 -->
-            <div style="margin-top: 10px; background: #0b1329; border: 1px solid #1e293b; border-radius: 8px; padding: 10px;">
+            <div style="margin-top: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">当前步骤解说</span>
-                <span style="background: rgba(30, 58, 138, 0.5); border: 1px solid #2563eb; color: #60a5fa; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: monospace;">
+                <span style="font-size: 11px; color: #1e40af; font-weight: 700;">当前步骤解说</span>
+                <span style="background: #dbeafe; border: 1px solid #93c5fd; color: #1d4ed8; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; font-family: monospace;">
                   ${stepSummaryBadge || '运行中'}
                 </span>
               </div>
-              <div style="font-size: 11px; color: #cbd5e1; line-height: 1.5;">
+              <div style="font-size: 11.5px; color: #1e293b; line-height: 1.5; font-weight: 500;">
                 ${message}
               </div>
             </div>
@@ -341,13 +339,13 @@ export class ForwardStarCanvasAdapter {
           <!-- 右栏：顶点头指针 & 边池静态链表数据结构 -->
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <!-- 上：顶点头指针 -->
-            <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px;">
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #38bdf8;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #0284c7;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
                   顶点头指针: head[u]
                 </div>
-                <span style="font-size: 10px; color: #64748b;">点击顶点切换透视出边链</span>
+                <span style="font-size: 10.5px; color: #64748b; font-weight: 600;">点击顶点切换透视出边链</span>
               </div>
               <div style="display: grid; grid-template-columns: repeat(${Math.min(allNodes.length, 6)}, 1fr); gap: 6px;">
                 ${headBoxesHtml}
@@ -355,22 +353,22 @@ export class ForwardStarCanvasAdapter {
             </div>
 
             <!-- 中：边池静态链表 -->
-            <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; flex: 1; display: flex; flex-direction: column;">
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; flex: 1; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #a78bfa;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; display: inline-block;"></span>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #7c3aed;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #7c3aed; display: inline-block;"></span>
                   边池静态链表
                 </div>
-                <span style="font-size: 10px; color: #94a3b8; font-family: monospace;">当前边数 cnt: <b style="color: #facc15;">${edges.length}</b></span>
+                <span style="font-size: 11px; color: #475569; font-family: monospace; font-weight: 600;">当前边数 cnt: <b style="color: #059669; font-size: 12px;">${edges.length}</b></span>
               </div>
 
-              <div style="flex: 1; min-height: 140px; max-height: 190px; overflow-y: auto; border: 1px solid #1e293b; border-radius: 6px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: #0f172a; border-bottom: 1px solid #334155; font-size: 10px; color: #94a3b8; text-align: center; padding: 6px 2px; position: sticky; top: 0; z-index: 1;">
-                  <div>边号<br/><span style="color:#64748b;">e</span></div>
-                  <div>起点<br/><span style="color:#64748b;">u</span></div>
-                  <div>终点<br/><span style="color:#38bdf8;">to[e]</span></div>
-                  <div>下条边<br/><span style="color:#a78bfa;">next[e]</span></div>
-                  <div>权重<br/><span style="color:#fbbf24;">w[e]</span></div>
+              <div style="flex: 1; min-height: 140px; max-height: 190px; overflow-y: auto; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; font-size: 10.5px; font-weight: 700; color: #334155; text-align: center; padding: 6px 2px; position: sticky; top: 0; z-index: 1;">
+                  <div>边号<br/><span style="color:#64748b; font-weight: 500;">e</span></div>
+                  <div>起点<br/><span style="color:#64748b; font-weight: 500;">u</span></div>
+                  <div>终点<br/><span style="color:#0284c7; font-weight: 500;">to[e]</span></div>
+                  <div>下条边<br/><span style="color:#7c3aed; font-weight: 500;">next[e]</span></div>
+                  <div>权重<br/><span style="color:#b45309; font-weight: 500;">w[e]</span></div>
                 </div>
                 <div>
                   ${edgeRowsHtml}
@@ -379,12 +377,12 @@ export class ForwardStarCanvasAdapter {
             </div>
 
             <!-- 下：核心问答教学卡片 -->
-            <div style="background: linear-gradient(180deg, rgba(20, 24, 38, 0.9) 0%, rgba(26, 21, 10, 0.6) 100%); border: 1px solid #854d0e; border-radius: 12px; padding: 10px 12px;">
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #fbbf24; margin-bottom: 4px;">
+            <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #92400e; margin-bottom: 4px;">
                 <span>💡</span>
                 <span>为什么 next 永远指向更小的边?</span>
               </div>
-              <div style="font-size: 11px; color: #cbd5e1; line-height: 1.5;">
+              <div style="font-size: 11.5px; color: #78350f; line-height: 1.5; font-weight: 500;">
                 因为这是<b>头插法</b>：后加入的边（边号更大）插入在链表最前端；它的 next 永远保存着刚才的旧表头（边号必定更小）。指针永远只指向更早加入的边，绝对不会回头！
               </div>
             </div>
