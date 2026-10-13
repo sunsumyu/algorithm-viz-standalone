@@ -27,7 +27,7 @@ describe('ForwardStar (Chained Forward Star Algorithm)', () => {
     expect(lastStep.metrics).toBeDefined();
     expect(lastStep.metrics!['cur-action']).toBe('建图全部完成');
     expect(lastStep.metrics!['edge-cnt']).toBe(3);
-    expect(lastStep.codeLine).toHaveProperty('java', 30);
+    expect(lastStep.codeLine).toHaveProperty('java', 26);
     expect(lastStep.codeLine).toHaveProperty('cpp', 34);
   });
 
@@ -45,7 +45,7 @@ describe('ForwardStar (Chained Forward Star Algorithm)', () => {
 
     // 校验遍历完成帧指标
     expect(lastStep.metrics!['cur-action']).toBe('遍历完全结束');
-    expect(lastStep.codeLine).toHaveProperty('java', 39);
+    expect(lastStep.codeLine).toHaveProperty('java', 34);
   });
 
   it('should render all edges in canvas adapter even at build_done step', () => {
