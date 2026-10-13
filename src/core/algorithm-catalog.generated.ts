@@ -4226,18 +4226,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     aliases: ["word-ladder-ii","word-ladder-126"],
   },
   {
-    id: "network-delay-time-064",
-    name: "网络延迟时间与堆优化最短路 (Class 064)",
-    viewId: "algo-network-delay-time-064-view",
-    category: "graph",
-    description: "网络延迟时间与堆优化最短路 (Class 064)",
-    icon: "📡",
-    difficulty: 2,
-    levelOrder: 6401,
-    learningGoal: "掌握经典堆优化 Dijkstra 模板实现、单源最短路波前广播与不可达全网检测",
-    aliases: ["network-delay-time","class064-code01","leetcode-743"],
-  },
-  {
     id: "path-min-effort-064",
     name: "最小体力消耗路径与瓶颈最短路 (Class 064)",
     viewId: "algo-path-min-effort-064-view",

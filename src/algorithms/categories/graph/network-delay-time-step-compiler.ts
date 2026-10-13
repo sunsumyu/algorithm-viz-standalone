@@ -146,18 +146,38 @@ export const NETWORK_DELAY_ANCHOR_MAP: Record<string, Record<string, number>> = 
 /**
  * 纯函数式、无 DOM 依赖的 Dijkstra 算法执行追踪器 (借助 AlgorithmExecutionTraceEngine)
  */
-export function traceNetworkDelay(isReachable: boolean = true) {
+export function traceNetworkDelay(presetInput: boolean | string = true) {
   return AlgorithmExecutionTraceEngine.trace<NetworkDelayStepVars>(
     (recorder) => {
-      const n = isReachable ? 4 : 3;
-      const k = isReachable ? 2 : 1;
-      const times: Array<[number, number, number]> = isReachable
-        ? [
-            [2, 1, 1],
-            [2, 3, 1],
-            [3, 4, 1],
-          ]
-        : [[1, 2, 1]];
+      let n = 4;
+      let k = 2;
+      let times: Array<[number, number, number]> = [
+        [2, 1, 1],
+        [2, 3, 1],
+        [3, 4, 1],
+      ];
+
+      if (presetInput === false || presetInput === 'unreachable_3node' || presetInput === 'disconnected_nodes') {
+        n = 3;
+        k = 1;
+        times = [[1, 2, 1]];
+      } else if (presetInput === 'line_chain') {
+        n = 3;
+        k = 1;
+        times = [
+          [1, 2, 3],
+          [2, 3, 4],
+        ];
+      } else {
+        // classic_4nodes / reachable_4node / true
+        n = 4;
+        k = 2;
+        times = [
+          [2, 1, 1],
+          [2, 3, 1],
+          [3, 4, 1],
+        ];
+      }
 
       const adj: Array<Array<{ to: number; w: number }>> = Array.from({ length: n + 1 }, () => []);
       for (const [u, v, w] of times) {
@@ -332,8 +352,8 @@ export function traceNetworkDelay(isReachable: boolean = true) {
   );
 }
 
-export function buildNetworkDelaySteps(isReachable: boolean = true): NetworkDelayStep[] {
-  const traceSteps = traceNetworkDelay(isReachable);
+export function buildNetworkDelaySteps(preset: boolean | string = true): NetworkDelayStep[] {
+  const traceSteps = traceNetworkDelay(preset);
   return traceSteps.map((step) => ({
     curNode: step.vars!.curNode,
     u: step.vars!.u,

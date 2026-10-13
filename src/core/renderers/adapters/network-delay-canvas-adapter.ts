@@ -24,13 +24,15 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
         3: { x: 260, y: 90 },
       };
 
-  const edges: Array<[number, number, number]> = is4
-    ? [
-        [2, 1, 1],
-        [2, 3, 1],
-        [3, 4, 1],
-      ]
-    : [[1, 2, 1]];
+  const edges: Array<[number, number, number]> = (step.times && step.times.length > 0)
+    ? step.times
+    : (is4
+        ? [
+            [2, 1, 1],
+            [2, 3, 1],
+            [3, 4, 1],
+          ]
+        : [[1, 2, 1]]);
 
   const idleStyle = visualState('idle');
   const comparingStyle = visualState('comparing');

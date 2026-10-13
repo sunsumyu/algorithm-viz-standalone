@@ -52,14 +52,16 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
       type: 'select',
       defaultValue: 'reachable_4node',
       options: [
-        { label: '4 节点全连通广播 (源点 2，全覆盖延迟 2 ms)', value: 'reachable_4node' },
-        { label: '3 节点含孤立盲区 (源点 1，节点 3 不可达返回 -1)', value: 'unreachable_3node' },
+        { label: '4 节点经典全连通广播 (源点 2，全覆盖延迟 2 ms)', value: 'reachable_4node' },
+        { label: '3 节点链状拓扑广播 (源点 1，全覆盖延迟 7 ms)', value: 'line_chain' },
+        { label: '3 节点含孤立不可达盲区 (源点 1，返回 -1)', value: 'unreachable_3node' },
       ],
     },
   ],
   presets: [
-    { label: '4 节点全连通', values: { 'input-preset': 'reachable_4node' } },
-    { label: '3 节点孤立盲区', values: { 'input-preset': 'unreachable_3node' } },
+    { label: '4 节点经典全连通 (LeetCode 743)', values: { 'input-preset': 'reachable_4node' } },
+    { label: '3 节点链状广播', values: { 'input-preset': 'line_chain' } },
+    { label: '不可达孤立盲区特判 (-1)', values: { 'input-preset': 'unreachable_3node' } },
   ],
   metrics: [
     { id: 'metric-delay-cur', label: '当前扩散节点', color: '#f59e0b' },
@@ -79,7 +81,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<NetworkDelayStep>({
   ],
   buildSteps: (inputs) => {
     const preset = (inputs['input-preset'] || 'reachable_4node') as string;
-    return buildNetworkDelaySteps(preset === 'reachable_4node');
+    return buildNetworkDelaySteps(preset);
   },
   renderCanvas: (container, step) => {
     NetworkDelayCanvasAdapter.render(container, step);

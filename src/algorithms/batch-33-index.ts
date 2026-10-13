@@ -9,7 +9,7 @@
  * 6. Code06: 访问所有节点的最短路径 (Shortest Path Visiting All Nodes · LeetCode 847)
  */
 
-import './categories/graph/graph-064/network-delay-time-064-renderer';
+// 1. Code01: 网络延迟时间已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/network-delay-time-renderer.ts)，由 aliases: ['network-delay-time-064', 'class064-code01'] 统合分发
 import './categories/graph/graph-064/path-min-effort-064-renderer';
 import './categories/graph/graph-064/swim-in-rising-water-064-renderer';
 import './categories/graph/graph-064/layered-dijkstra-064-renderer';
