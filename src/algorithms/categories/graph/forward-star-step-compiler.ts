@@ -50,17 +50,17 @@ export interface ForwardStarStep extends StepBase {
   selectedPerspectiveNode?: number;
 }
 
-/** 代码面板高亮行号锚点（1-based，与 Java / C++ / Python / JS 源码逐行精确映射） */
+/** 代码面板高亮行号锚点（1-based，进入方法立即从首行高亮，顺序自上而下单调顺推，绝无回跳） */
 const codeLineMap: Record<string, Record<string, number>> = {
-  init: { java: 17, cpp: 24, python: 3, javascript: 3 },
-  buildAddstart: { java: 23, cpp: 30, python: 12, javascript: 13 },
-  buildLinknext: { java: 22, cpp: 32, python: 14, javascript: 15 },
-  buildUpdatehead: { java: 25, cpp: 33, python: 15, javascript: 16 },
-  buildBuilddone: { java: 26, cpp: 34, python: 16, javascript: 17 },
-  traverseTraversestart: { java: 30, cpp: 38, python: 20, javascript: 22 },
-  traverseVisitedge: { java: 31, cpp: 39, python: 22, javascript: 23 },
-  traverseJumpnext: { java: 30, cpp: 38, python: 25, javascript: 22 },
-  traverseTraversedone: { java: 34, cpp: 43, python: 25, javascript: 25 },
+  init: { java: 17, cpp: 17, python: 3, javascript: 3 },
+  buildAddstart: { java: 22, cpp: 22, python: 11, javascript: 12 },
+  buildLinknext: { java: 24, cpp: 24, python: 13, javascript: 14 },
+  buildUpdatehead: { java: 25, cpp: 25, python: 14, javascript: 15 },
+  buildBuilddone: { java: 26, cpp: 26, python: 15, javascript: 16 },
+  traverseTraversestart: { java: 30, cpp: 30, python: 19, javascript: 20 },
+  traverseVisitedge: { java: 31, cpp: 31, python: 21, javascript: 21 },
+  traverseJumpnext: { java: 30, cpp: 30, python: 23, javascript: 20 },
+  traverseTraversedone: { java: 34, cpp: 34, python: 23, javascript: 24 },
 };
 
 function parseEdgesInput(raw: string): RawEdge[] {
