@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildRedundantIISteps } from './redundant-edge-ii-renderer';
 import { REDUNDANT_EDGE_II_CODE_LANGUAGES } from './redundant-edge-ii-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('Redundant Connection II (LeftChengYun Class 057 / LC 685)', () => {
   it('should generate at least 15 granular steps for standard graph', () => {
@@ -34,12 +37,9 @@ describe('Redundant Connection II (LeftChengYun Class 057 / LC 685)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = REDUNDANT_EDGE_II_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/findredundantdirectedconnection|find_redundant_directed_connection/i);
-    }
+    assertMultiLanguageCodeContract(REDUNDANT_EDGE_II_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/findredundantdirectedconnection|find_redundant_directed_connection/i],
+    });
   });
 });

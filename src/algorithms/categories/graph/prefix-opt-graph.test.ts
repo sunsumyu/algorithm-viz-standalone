@@ -4,6 +4,11 @@ import {
   buildPrefixOptSteps,
 } from './prefix-opt-graph-renderer';
 import { PREFIX_OPT_CODE_LANGUAGES } from './prefix-opt-graph-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('PrefixOptGraph', () => {
   it('should instantiate PrefixOptGraphVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('PrefixOptGraph', () => {
     const steps = buildPrefixOptSteps('prefix');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = PREFIX_OPT_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-opt-mode']).toBeDefined();
-      expect(step.metrics?.['metric-edge-count']).toBeDefined();
-      expect(step.metrics?.['metric-cur-op']).toBeDefined();
-      expect(step.metrics?.['metric-compression-ratio']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: PREFIX_OPT_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-opt-mode', 'metric-edge-count', 'metric-cur-op', 'metric-compression-ratio'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -41,18 +34,9 @@ describe('PrefixOptGraph', () => {
     const steps = buildPrefixOptSteps('naive');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = PREFIX_OPT_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: PREFIX_OPT_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -60,33 +44,16 @@ describe('PrefixOptGraph', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = PREFIX_OPT_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(30);
-      const joined = code.join('\n');
-      expect(joined).not.toMatch(/buildAtMostOne[^{]*\{\s*\}/);
-      expect(joined).toMatch(/prefix/i);
-      expect(joined).toMatch(/chain|edge/i);
-    }
+    assertMultiLanguageCodeContract(PREFIX_OPT_CODE_LANGUAGES, {
+      minLines: 30,
+      requiredPatterns: [/prefix/i, /chain|edge/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new PrefixOptGraphVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(PrefixOptGraphVisualizer, {
       algorithmId: 'prefix-opt-graph',
       viewId: 'algo-prefix-opt-graph-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

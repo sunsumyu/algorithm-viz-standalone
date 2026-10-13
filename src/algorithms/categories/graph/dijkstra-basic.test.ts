@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildDJBSteps } from './dijkstra-basic-renderer';
 import { DIJKSTRA_BASIC_CODE_LANGUAGES } from './dijkstra-basic-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('DijkstraBasic (LeftChengYun Class 061)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
@@ -34,12 +37,9 @@ describe('DijkstraBasic (LeftChengYun Class 061)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = DIJKSTRA_BASIC_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/dijkstra/i);
-    }
+    assertMultiLanguageCodeContract(DIJKSTRA_BASIC_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/dijkstra/i],
+    });
   });
 });

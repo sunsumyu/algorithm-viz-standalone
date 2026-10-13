@@ -4,6 +4,10 @@ import {
   buildMixedEulerSteps,
 } from './mixed-eulerian-circuit-renderer';
 import { MIXED_EULER_CODE_LANGUAGES } from './mixed-eulerian-circuit-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MixedEulerianCircuit (POJ 1637)', () => {
   it('should instantiate MixedEulerianCircuitVisualizer properly', () => {
@@ -15,23 +19,10 @@ describe('MixedEulerianCircuit (POJ 1637)', () => {
     const steps = buildMixedEulerSteps(true);
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MIXED_EULER_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine ? (step.codeLine as any).java : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-flow']).toBeDefined();
-      expect(step.metrics?.['metric-deg-diff']).toBeDefined();
-      expect(step.metrics?.['metric-euler-status']).toBeDefined();
-      expect(step.metrics?.['metric-flipped-count']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MIXED_EULER_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-flow', 'metric-deg-diff', 'metric-euler-status', 'metric-flipped-count'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.isEulerian).toBe(true);
@@ -43,22 +34,10 @@ describe('MixedEulerianCircuit (POJ 1637)', () => {
     const steps = buildMixedEulerSteps(false);
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MIXED_EULER_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine ? (step.codeLine as any).java : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-flow']).toBeDefined();
-      expect(step.metrics?.['metric-deg-diff']).toBeDefined();
-      expect(step.metrics?.['metric-euler-status']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MIXED_EULER_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-flow', 'metric-deg-diff', 'metric-euler-status'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.isEulerian).toBe(false);
@@ -77,21 +56,9 @@ describe('MixedEulerianCircuit (POJ 1637)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new MixedEulerianCircuitVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(MixedEulerianCircuitVisualizer, {
       algorithmId: 'mixed-eulerian-circuit',
       viewId: 'algo-mixed-eulerian-circuit-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

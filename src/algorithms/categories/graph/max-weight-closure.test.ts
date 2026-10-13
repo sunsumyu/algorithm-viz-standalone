@@ -4,6 +4,11 @@ import {
   buildMaxWeightClosureSteps,
 } from './max-weight-closure-renderer';
 import { MAX_WEIGHT_CLOSURE_CODE_LANGUAGES } from './max-weight-closure-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MaxWeightClosure (P2762)', () => {
   it('should instantiate MaxWeightClosureVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('MaxWeightClosure (P2762)', () => {
     const steps = buildMaxWeightClosureSteps('space');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MAX_WEIGHT_CLOSURE_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-pos-weight']).toBeDefined();
-      expect(step.metrics?.['metric-min-cut-val']).toBeDefined();
-      expect(step.metrics?.['metric-max-profit']).toBeDefined();
-      expect(step.metrics?.['metric-closure-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MAX_WEIGHT_CLOSURE_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-pos-weight', 'metric-min-cut-val', 'metric-max-profit', 'metric-closure-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -43,18 +36,9 @@ describe('MaxWeightClosure (P2762)', () => {
     const steps = buildMaxWeightClosureSteps('simple');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MAX_WEIGHT_CLOSURE_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MAX_WEIGHT_CLOSURE_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -64,35 +48,16 @@ describe('MaxWeightClosure (P2762)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = MAX_WEIGHT_CLOSURE_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(40);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/addnode|add_node/i);
-      expect(joined).toMatch(/adddependency|add_dependency/i);
-      expect(joined).toMatch(/bfs/i);
-      expect(joined).toMatch(/dfs/i);
-      expect(joined).toMatch(/solve/i);
-    }
+    assertMultiLanguageCodeContract(MAX_WEIGHT_CLOSURE_CODE_LANGUAGES, {
+      minLines: 40,
+      requiredPatterns: [/addnode|add_node/i, /adddependency|add_dependency/i, /bfs/i, /dfs/i, /solve/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new MaxWeightClosureVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(MaxWeightClosureVisualizer, {
       algorithmId: 'max-weight-closure',
       viewId: 'algo-max-weight-closure-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

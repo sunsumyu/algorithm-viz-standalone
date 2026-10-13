@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildSPFASteps } from './spfa-renderer';
 import { SPFA_CODE_LANGUAGES } from './spfa-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('SPFA (LeftChengYun Class 061)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
@@ -34,12 +37,9 @@ describe('SPFA (LeftChengYun Class 061)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = SPFA_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(15);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/spfa/i);
-    }
+    assertMultiLanguageCodeContract(SPFA_CODE_LANGUAGES, {
+      minLines: 15,
+      requiredPatterns: [/spfa/i],
+    });
   });
 });

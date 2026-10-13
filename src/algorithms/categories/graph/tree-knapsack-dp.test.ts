@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { TreeKnapsackDPVisualizer, buildTreeKnapsackSteps } from './tree-knapsack-dp-renderer';
 import { TREE_KNAPSACK_CODE_LANGUAGES } from './tree-knapsack-dp-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('TreeKnapsackDP (P2014)', () => {
   it('should instantiate TreeKnapsackDPVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('TreeKnapsackDP (P2014)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new TreeKnapsackDPVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(TreeKnapsackDPVisualizer, {
       algorithmId: 'tree-knapsack-dp',
       viewId: 'algo-tree-knapsack-dp-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildTreeKnapsackSteps 必须生成精细逐语句执行流 (>= 20 步) 且行号在 Java 源码范围内', () => {

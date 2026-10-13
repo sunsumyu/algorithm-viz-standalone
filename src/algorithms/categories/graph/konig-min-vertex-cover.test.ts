@@ -4,6 +4,11 @@ import {
   buildKonigSteps,
 } from './konig-min-vertex-cover-renderer';
 import { KONIG_CODE_LANGUAGES } from './konig-min-vertex-cover-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('KonigMinVertexCover (König Theorem)', () => {
   it('should instantiate KonigMinVertexCoverVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('KonigMinVertexCover (König Theorem)', () => {
     const steps = buildKonigSteps('classic');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = KONIG_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-match-size']).toBeDefined();
-      expect(step.metrics?.['metric-cover-size']).toBeDefined();
-      expect(step.metrics?.['metric-indep-size']).toBeDefined();
-      expect(step.metrics?.['metric-konig-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: KONIG_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-match-size', 'metric-cover-size', 'metric-indep-size', 'metric-konig-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -44,18 +37,9 @@ describe('KonigMinVertexCover (König Theorem)', () => {
     const steps = buildKonigSteps('simple');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = KONIG_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: KONIG_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -65,33 +49,16 @@ describe('KonigMinVertexCover (König Theorem)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = KONIG_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/dfs/i);
-      expect(joined).toMatch(/maxmatching|max_matching/i);
-      expect(joined).toMatch(/alternatingdfs|alternating_dfs/i);
-    }
+    assertMultiLanguageCodeContract(KONIG_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/dfs/i, /maxmatching|max_matching/i, /alternatingdfs|alternating_dfs/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new KonigMinVertexCoverVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(KonigMinVertexCoverVisualizer, {
       algorithmId: 'konig-min-vertex-cover',
       viewId: 'algo-konig-min-vertex-cover-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildTopoSteps } from './topological-sort-renderer';
 import { TOPOLOGICAL_SORT_CODE_LANGUAGES } from './topological-sort-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('TopologicalSort (Kahn Algorithm LC 210)', () => {
   it('should generate at least 20 granular steps for standard DAG', () => {
@@ -41,12 +44,9 @@ describe('TopologicalSort (Kahn Algorithm LC 210)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = TOPOLOGICAL_SORT_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(15);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/findorder|find_order/i);
-    }
+    assertMultiLanguageCodeContract(TOPOLOGICAL_SORT_CODE_LANGUAGES, {
+      minLines: 15,
+      requiredPatterns: [/findorder|find_order/i],
+    });
   });
 });

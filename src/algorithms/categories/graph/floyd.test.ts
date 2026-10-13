@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildFloydSteps } from './floyd-renderer';
 import { FLOYD_CODE_LANGUAGES } from './floyd-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('FloydWarshall (LeftChengYun Class 061)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
@@ -36,12 +39,9 @@ describe('FloydWarshall (LeftChengYun Class 061)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = FLOYD_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/floydwarshall|floyd_warshall/i);
-    }
+    assertMultiLanguageCodeContract(FLOYD_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/floydwarshall|floyd_warshall/i],
+    });
   });
 });

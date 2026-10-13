@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { TreePathIntersectionVisualizer, buildTreePathIntersectSteps } from './tree-path-intersection-renderer';
 import { TREE_PATH_INTERSECT_CODE_LANGUAGES } from './tree-path-intersection-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('TreePathIntersection', () => {
   it('should instantiate TreePathIntersectionVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('TreePathIntersection', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new TreePathIntersectionVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(TreePathIntersectionVisualizer, {
       algorithmId: 'tree-path-intersection',
       viewId: 'algo-tree-path-intersection-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildTreePathIntersectSteps 必须生成精细逐语句执行流 (>= 20 步) 且行号在 Java 源码范围内', () => {

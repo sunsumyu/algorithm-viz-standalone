@@ -4,6 +4,11 @@ import {
   buildKShortestPathSteps,
 } from './k-shortest-path-renderer';
 import { K_SHORTEST_PATH_CODE_LANGUAGES } from './k-shortest-path-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('KShortestPath (A* - P2483)', () => {
   it('should instantiate KShortestPathVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('KShortestPath (A* - P2483)', () => {
     const steps = buildKShortestPathSteps('classic_4node_k2');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = K_SHORTEST_PATH_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-cur-node']).toBeDefined();
-      expect(step.metrics?.['metric-f-val']).toBeDefined();
-      expect(step.metrics?.['metric-hit-count']).toBeDefined();
-      expect(step.metrics?.['metric-kpath-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: K_SHORTEST_PATH_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-cur-node', 'metric-f-val', 'metric-hit-count', 'metric-kpath-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -42,18 +35,9 @@ describe('KShortestPath (A* - P2483)', () => {
     const steps = buildKShortestPathSteps('classic_4node_k3');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = K_SHORTEST_PATH_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: K_SHORTEST_PATH_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -62,34 +46,16 @@ describe('KShortestPath (A* - P2483)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = K_SHORTEST_PATH_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/kthshortestpath|kth_shortest_path/i);
-      expect(joined).toMatch(/dijkstra/i);
-      expect(joined).toMatch(/astar|a_star/i);
-      expect(joined).toMatch(/h/i);
-    }
+    assertMultiLanguageCodeContract(K_SHORTEST_PATH_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/kthshortestpath|kth_shortest_path/i, /dijkstra/i, /astar|a_star/i, /h/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new KShortestPathVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(KShortestPathVisualizer, {
       algorithmId: 'k-shortest-path',
       viewId: 'algo-k-shortest-path-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

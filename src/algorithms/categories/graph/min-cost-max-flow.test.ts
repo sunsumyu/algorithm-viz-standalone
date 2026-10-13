@@ -4,6 +4,11 @@ import {
   buildMCMFSteps,
 } from './min-cost-max-flow-renderer';
 import { MCMF_CODE_LANGUAGES } from './min-cost-max-flow-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MinCostMaxFlow (P3381)', () => {
   it('should instantiate MinCostMaxFlowVisualizer properly', () => {
@@ -15,25 +20,10 @@ describe('MinCostMaxFlow (P3381)', () => {
     const steps = buildMCMFSteps('standard');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MCMF_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-mcmf-flow']).toBeDefined();
-      expect(step.metrics?.['metric-mcmf-cost']).toBeDefined();
-      expect(step.metrics?.['metric-mcmf-path']).toBeDefined();
-      expect(step.metrics?.['metric-mcmf-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MCMF_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-mcmf-flow', 'metric-mcmf-cost', 'metric-mcmf-path', 'metric-mcmf-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -45,21 +35,9 @@ describe('MinCostMaxFlow (P3381)', () => {
     const steps = buildMCMFSteps('simple');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = MCMF_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: MCMF_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -68,33 +46,16 @@ describe('MinCostMaxFlow (P3381)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = MCMF_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(40);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/spfa/i);
-      expect(joined).toMatch(/cost/i);
-      expect(joined).toMatch(/getmincostmaxflow|get_min_cost_max_flow/i);
-    }
+    assertMultiLanguageCodeContract(MCMF_CODE_LANGUAGES, {
+      minLines: 40,
+      requiredPatterns: [/spfa/i, /cost/i, /getmincostmaxflow|get_min_cost_max_flow/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new MinCostMaxFlowVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(MinCostMaxFlowVisualizer, {
       algorithmId: 'min-cost-max-flow',
       viewId: 'algo-min-cost-max-flow-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

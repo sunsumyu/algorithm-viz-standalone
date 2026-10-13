@@ -4,6 +4,11 @@ import {
   buildDominatorTreeSteps,
 } from './dominator-tree-renderer';
 import { DOMINATOR_TREE_CODE_LANGUAGES } from './dominator-tree-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('DominatorTree (P2597)', () => {
   it('should instantiate DominatorTreeVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('DominatorTree (P2597)', () => {
     const steps = buildDominatorTreeSteps('classic_diamond');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = DOMINATOR_TREE_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-cur-node']).toBeDefined();
-      expect(step.metrics?.['metric-dom-lca']).toBeDefined();
-      expect(step.metrics?.['metric-dom-edges']).toBeDefined();
-      expect(step.metrics?.['metric-dom-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: DOMINATOR_TREE_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-cur-node', 'metric-dom-lca', 'metric-dom-edges', 'metric-dom-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -44,18 +37,9 @@ describe('DominatorTree (P2597)', () => {
     const steps = buildDominatorTreeSteps('linear_bypass');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = DOMINATOR_TREE_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: DOMINATOR_TREE_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -65,34 +49,16 @@ describe('DominatorTree (P2597)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = DOMINATOR_TREE_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/dominatortree|dominator_tree/i);
-      expect(joined).toMatch(/getlca|get_lca/i);
-      expect(joined).toMatch(/build/i);
-      expect(joined).toMatch(/idom/i);
-    }
+    assertMultiLanguageCodeContract(DOMINATOR_TREE_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/dominatortree|dominator_tree/i, /getlca|get_lca/i, /build/i, /idom/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new DominatorTreeVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(DominatorTreeVisualizer, {
       algorithmId: 'dominator-tree',
       viewId: 'algo-dominator-tree-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

@@ -3,6 +3,9 @@ import {
   buildPrimSteps,
 } from './mst-prim-renderer';
 import { MST_PRIM_CODE_LANGUAGES } from './mst-prim-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MST Prim (LeftChengYun Class 058)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
@@ -37,12 +40,9 @@ describe('MST Prim (LeftChengYun Class 058)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = MST_PRIM_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/prim/i);
-    }
+    assertMultiLanguageCodeContract(MST_PRIM_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/prim/i],
+    });
   });
 });

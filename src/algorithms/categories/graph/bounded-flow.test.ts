@@ -4,6 +4,11 @@ import {
   buildBoundedFlowSteps,
 } from './bounded-flow-renderer';
 import { BOUNDED_FLOW_CODE_LANGUAGES } from './bounded-flow-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('BoundedFlow (Feasible Circulation - LOJ 115)', () => {
   it('should instantiate BoundedFlowVisualizer properly', () => {
@@ -15,21 +20,10 @@ describe('BoundedFlow (Feasible Circulation - LOJ 115)', () => {
     const steps = buildBoundedFlowSteps('four-nodes');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = BOUNDED_FLOW_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['cur-phase']).toBeDefined();
-      expect(step.metrics?.['super-flow']).toBeDefined();
-      expect(step.metrics?.['feasible-status']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: BOUNDED_FLOW_CODE_LANGUAGES,
+      requiredMetricKeys: ['cur-phase', 'super-flow', 'feasible-status'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.phase).toBe('ALL_DONE');
@@ -41,18 +35,9 @@ describe('BoundedFlow (Feasible Circulation - LOJ 115)', () => {
     const steps = buildBoundedFlowSteps('triangle');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = BOUNDED_FLOW_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: BOUNDED_FLOW_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.phase).toBe('ALL_DONE');
@@ -61,33 +46,16 @@ describe('BoundedFlow (Feasible Circulation - LOJ 115)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = BOUNDED_FLOW_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(40);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/addboundededge|add_bounded_edge/i);
-      expect(joined).toMatch(/buildsupersourcesink|build_super_source_sink/i);
-      expect(joined).toMatch(/hasfeasibleflow|has_feasible_flow/i);
-    }
+    assertMultiLanguageCodeContract(BOUNDED_FLOW_CODE_LANGUAGES, {
+      minLines: 40,
+      requiredPatterns: [/addboundededge|add_bounded_edge/i, /buildsupersourcesink|build_super_source_sink/i, /hasfeasibleflow|has_feasible_flow/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new BoundedFlowVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(BoundedFlowVisualizer, {
       algorithmId: 'bounded-flow',
       viewId: 'algo-bounded-flow-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

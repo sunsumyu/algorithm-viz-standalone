@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { MinPathCoverVisualizer, buildMinPathCoverSteps } from './min-path-cover-renderer';
 import { MIN_PATH_COVER_CODE_LANGUAGES } from './min-path-cover-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MinPathCover (P2764)', () => {
   it('should instantiate MinPathCoverVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('MinPathCover (P2764)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new MinPathCoverVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(MinPathCoverVisualizer, {
       algorithmId: 'min-path-cover',
       viewId: 'algo-min-path-cover-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildMinPathCoverSteps 必须生成精细逐语句执行流 (>= 20 步) 且行号在 Java 源码范围内', () => {

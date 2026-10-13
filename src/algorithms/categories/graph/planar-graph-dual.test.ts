@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { PlanarGraphDualVisualizer, buildPlanarDualSteps } from './planar-graph-dual-renderer';
 import { PLANAR_DUAL_CODE_LANGUAGES } from './planar-graph-dual-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('PlanarGraphDual (P4001)', () => {
   it('should instantiate PlanarGraphDualVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('PlanarGraphDual (P4001)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new PlanarGraphDualVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(PlanarGraphDualVisualizer, {
       algorithmId: 'planar-graph-dual',
       viewId: 'algo-planar-graph-dual-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildPlanarDualSteps 必须生成精细逐语句执行流 (>= 20 步) 且行号在 Java 源码范围内', () => {

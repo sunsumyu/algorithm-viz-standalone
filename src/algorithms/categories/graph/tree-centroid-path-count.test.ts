@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { TreeCentroidPathCountVisualizer, buildTreeCentroidPathCountSteps } from './tree-centroid-path-count-renderer';
 import { TREE_PATH_COUNT_CODE_LANGUAGES } from './tree-centroid-path-count-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('TreeCentroidPathCount (POJ 1741 / P3806)', () => {
   it('should instantiate TreeCentroidPathCountVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('TreeCentroidPathCount (POJ 1741 / P3806)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new TreeCentroidPathCountVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(TreeCentroidPathCountVisualizer, {
       algorithmId: 'tree-centroid-path-count',
       viewId: 'algo-tree-centroid-path-count-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildTreeCentroidPathCountSteps 必须生成精细逐语句执行流 (>= 20 步) 且行号在 Java 源码范围内', () => {

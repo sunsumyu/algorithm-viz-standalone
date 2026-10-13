@@ -4,6 +4,11 @@ import {
   buildIndexHeapSteps,
 } from './dijkstra-index-heap-renderer';
 import { DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES } from './dijkstra-index-heap-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('DijkstraIndexHeap', () => {
   it('should instantiate DijkstraIndexHeapVisualizer properly', () => {
@@ -15,25 +20,10 @@ describe('DijkstraIndexHeap', () => {
     const steps = buildIndexHeapSteps('classic_4node');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-heap-size']).toBeDefined();
-      expect(step.metrics?.['metric-settled-count']).toBeDefined();
-      expect(step.metrics?.['metric-heap-cur']).toBeDefined();
-      expect(step.metrics?.['metric-heap-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-heap-size', 'metric-settled-count', 'metric-heap-cur', 'metric-heap-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -45,21 +35,9 @@ describe('DijkstraIndexHeap', () => {
     const steps = buildIndexHeapSteps('simple_triangle');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -67,33 +45,16 @@ describe('DijkstraIndexHeap', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/heap|dijkstra/i);
-      expect(joined).toMatch(/where/i);
-      expect(joined).toMatch(/swap/i);
-    }
+    assertMultiLanguageCodeContract(DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/heap|dijkstra/i, /where/i, /swap/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new DijkstraIndexHeapVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(DijkstraIndexHeapVisualizer, {
       algorithmId: 'dijkstra-index-heap',
       viewId: 'algo-dijkstra-index-heap-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

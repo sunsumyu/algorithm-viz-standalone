@@ -4,6 +4,10 @@ import {
   buildSwimInRisingWaterSteps,
 } from './swim-in-rising-water-renderer';
 import { SWIM_IN_RISING_WATER_CODE_LANGUAGES } from './swim-in-rising-water-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('SwimInRisingWater (LeetCode 778 - Class 064 Code03)', () => {
   it('should instantiate SwimInRisingWaterVisualizer properly', () => {
@@ -15,25 +19,10 @@ describe('SwimInRisingWater (LeetCode 778 - Class 064 Code03)', () => {
     const steps = buildSwimInRisingWaterSteps('leetcode5');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = SWIM_IN_RISING_WATER_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-cur-time']).toBeDefined();
-      expect(step.metrics?.['metric-cur-pos']).toBeDefined();
-      expect(step.metrics?.['metric-pq-size']).toBeDefined();
-      expect(step.metrics?.['metric-swim-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: SWIM_IN_RISING_WATER_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-cur-time', 'metric-cur-pos', 'metric-pq-size', 'metric-swim-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -45,21 +34,9 @@ describe('SwimInRisingWater (LeetCode 778 - Class 064 Code03)', () => {
     const steps = buildSwimInRisingWaterSteps('simple3');
     expect(steps.length).toBeGreaterThanOrEqual(15);
 
-    const javaLinesCount = SWIM_IN_RISING_WATER_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: SWIM_IN_RISING_WATER_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -75,21 +52,9 @@ describe('SwimInRisingWater (LeetCode 778 - Class 064 Code03)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new SwimInRisingWaterVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(SwimInRisingWaterVisualizer, {
       algorithmId: 'swim-in-rising-water',
       viewId: 'algo-swim-in-rising-water-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

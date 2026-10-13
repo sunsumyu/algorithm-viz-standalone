@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildNCSteps } from './negative-cycle-renderer';
 import { NEGATIVE_CYCLE_CODE_LANGUAGES } from './negative-cycle-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('NegativeCycle (LeftChengYun Class 061 / P3385)', () => {
   it('should generate at least 20 granular steps for cycle graph', () => {
@@ -35,12 +38,9 @@ describe('NegativeCycle (LeftChengYun Class 061 / P3385)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = NEGATIVE_CYCLE_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/hasnegativecycle|has_negative_cycle/i);
-    }
+    assertMultiLanguageCodeContract(NEGATIVE_CYCLE_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/hasnegativecycle|has_negative_cycle/i],
+    });
   });
 });

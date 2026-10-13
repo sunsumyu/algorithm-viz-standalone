@@ -4,6 +4,11 @@ import {
   buildGoodPathsSteps,
 } from './good-paths-renderer';
 import { GOOD_PATHS_CODE_LANGUAGES } from './good-paths-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('GoodPaths (LeetCode 2421)', () => {
   it('should instantiate GoodPathsVisualizer properly', () => {
@@ -15,25 +20,10 @@ describe('GoodPaths (LeetCode 2421)', () => {
     const steps = buildGoodPathsSteps('classic_4node');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = GOOD_PATHS_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-active-val']).toBeDefined();
-      expect(step.metrics?.['metric-good-paths']).toBeDefined();
-      expect(step.metrics?.['metric-active-edges']).toBeDefined();
-      expect(step.metrics?.['metric-paths-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: GOOD_PATHS_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-active-val', 'metric-good-paths', 'metric-active-edges', 'metric-paths-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -44,21 +34,9 @@ describe('GoodPaths (LeetCode 2421)', () => {
     const steps = buildGoodPathsSteps('star_5node');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = GOOD_PATHS_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: GOOD_PATHS_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -66,33 +44,16 @@ describe('GoodPaths (LeetCode 2421)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = GOOD_PATHS_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/numberofgoodpaths|number_of_good_paths/i);
-      expect(joined).toMatch(/unionfind|father|parent/i);
-      expect(joined).toMatch(/count/i);
-    }
+    assertMultiLanguageCodeContract(GOOD_PATHS_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/numberofgoodpaths|number_of_good_paths/i, /unionfind|father|parent/i, /count/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new GoodPathsVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(GoodPathsVisualizer, {
       algorithmId: 'good-paths',
       viewId: 'algo-good-paths-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

@@ -4,6 +4,11 @@ import {
   buildNetworkDelaySteps,
 } from './network-delay-time-renderer';
 import { NETWORK_DELAY_CODE_LANGUAGES } from './network-delay-time-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('NetworkDelayTime (LeetCode 743)', () => {
   it('should instantiate NetworkDelayTimeVisualizer properly', () => {
@@ -65,16 +70,10 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = NETWORK_DELAY_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/networkdelaytime|network_delay_time/i);
-      expect(joined).toMatch(/dist/i);
-      expect(joined).toMatch(/visited/i);
-      expect(joined).toMatch(/pq|priority_queue|heap/i);
-    }
+    assertMultiLanguageCodeContract(NETWORK_DELAY_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/networkdelaytime|network_delay_time/i, /dist/i, /visited/i, /pq|priority_queue|heap/i],
+    });
   });
 
   it('should maintain activeSlot on distance[i] during updateMax scan', () => {
@@ -89,21 +88,9 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new NetworkDelayTimeVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(NetworkDelayTimeVisualizer, {
       algorithmId: 'network-delay-time',
       viewId: 'algo-network-delay-time-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

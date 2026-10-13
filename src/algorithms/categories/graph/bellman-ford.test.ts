@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { buildBFSteps } from './bellman-ford-renderer';
 import { BELLMAN_FORD_CODE_LANGUAGES } from './bellman-ford-problem-content';
+import {
+  assertMultiLanguageCodeContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('BellmanFord (LeftChengYun Class 061)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
@@ -35,12 +38,9 @@ describe('BellmanFord (LeftChengYun Class 061)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = BELLMAN_FORD_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(10);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/bellmanford|bellman_ford/i);
-    }
+    assertMultiLanguageCodeContract(BELLMAN_FORD_CODE_LANGUAGES, {
+      minLines: 10,
+      requiredPatterns: [/bellmanford|bellman_ford/i],
+    });
   });
 });

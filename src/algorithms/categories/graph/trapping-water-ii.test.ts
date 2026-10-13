@@ -4,6 +4,11 @@ import {
   buildTrappingWaterIISteps,
 } from './trapping-water-ii-renderer';
 import { TRAPPING_WATER_II_CODE_LANGUAGES } from './trapping-water-ii-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('TrappingWaterII (LeetCode 407)', () => {
   it('should instantiate TrappingWaterIIVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('TrappingWaterII (LeetCode 407)', () => {
     const steps = buildTrappingWaterIISteps('classic_3x6');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = TRAPPING_WATER_II_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-trap2-total']).toBeDefined();
-      expect(step.metrics?.['metric-trap2-board']).toBeDefined();
-      expect(step.metrics?.['metric-trap2-heap']).toBeDefined();
-      expect(step.metrics?.['metric-trap2-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: TRAPPING_WATER_II_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-trap2-total', 'metric-trap2-board', 'metric-trap2-heap', 'metric-trap2-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -41,18 +34,9 @@ describe('TrappingWaterII (LeetCode 407)', () => {
     const steps = buildTrappingWaterIISteps('simple_3x3');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = TRAPPING_WATER_II_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: TRAPPING_WATER_II_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -60,33 +44,16 @@ describe('TrappingWaterII (LeetCode 407)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = TRAPPING_WATER_II_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/traprainwater|trap_rain_water/i);
-      expect(joined).toMatch(/heightmap|height_map/i);
-      expect(joined).toMatch(/heap|priority_queue/i);
-    }
+    assertMultiLanguageCodeContract(TRAPPING_WATER_II_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/traprainwater|trap_rain_water/i, /heightmap|height_map/i, /heap|priority_queue/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new TrappingWaterIIVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(TrappingWaterIIVisualizer, {
       algorithmId: 'trapping-water-ii',
       viewId: 'algo-trapping-water-ii-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

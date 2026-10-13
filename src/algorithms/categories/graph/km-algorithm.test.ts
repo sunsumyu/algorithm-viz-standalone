@@ -4,6 +4,11 @@ import {
   buildKMSteps,
 } from './km-algorithm-renderer';
 import { KM_ALGORITHM_CODE_LANGUAGES } from './km-algorithm-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('KMAlgorithm (P6577)', () => {
   it('should instantiate KMAlgorithmVisualizer properly', () => {
@@ -15,25 +20,10 @@ describe('KMAlgorithm (P6577)', () => {
     const steps = buildKMSteps('standard');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = KM_ALGORITHM_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-km-weight']).toBeDefined();
-      expect(step.metrics?.['metric-km-matched']).toBeDefined();
-      expect(step.metrics?.['metric-km-slack']).toBeDefined();
-      expect(step.metrics?.['metric-km-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: KM_ALGORITHM_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-km-weight', 'metric-km-matched', 'metric-km-slack', 'metric-km-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -45,21 +35,9 @@ describe('KMAlgorithm (P6577)', () => {
     const steps = buildKMSteps('simple');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = KM_ALGORITHM_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: KM_ALGORITHM_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -68,33 +46,16 @@ describe('KMAlgorithm (P6577)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = KM_ALGORITHM_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/dfs/i);
-      expect(joined).toMatch(/slack/i);
-      expect(joined).toMatch(/solve/i);
-    }
+    assertMultiLanguageCodeContract(KM_ALGORITHM_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/dfs/i, /slack/i, /solve/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new KMAlgorithmVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(KMAlgorithmVisualizer, {
       algorithmId: 'km-algorithm',
       viewId: 'algo-km-algorithm-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

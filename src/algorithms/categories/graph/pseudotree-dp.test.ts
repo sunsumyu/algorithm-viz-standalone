@@ -4,6 +4,11 @@ import {
   buildPseudotreeSteps,
 } from './pseudotree-dp-renderer';
 import { PSEUDOTREE_DP_CODE_LANGUAGES } from './pseudotree-dp-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertMultiLanguageCodeContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('PseudotreeDP (P1453 / P2607)', () => {
   it('should instantiate PseudotreeVisualizer properly', () => {
@@ -15,22 +20,10 @@ describe('PseudotreeDP (P1453 / P2607)', () => {
     const steps = buildPseudotreeSteps('classic_6node');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = PSEUDOTREE_DP_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-cycle-nodes']).toBeDefined();
-      expect(step.metrics?.['metric-dp-optimal']).toBeDefined();
-      expect(step.metrics?.['metric-cur-node']).toBeDefined();
-      expect(step.metrics?.['metric-pseudotree-phase']).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: PSEUDOTREE_DP_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-cycle-nodes', 'metric-dp-optimal', 'metric-cur-node', 'metric-pseudotree-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -42,18 +35,9 @@ describe('PseudotreeDP (P1453 / P2607)', () => {
     const steps = buildPseudotreeSteps('simple_5node');
     expect(steps.length).toBeGreaterThanOrEqual(20);
 
-    const javaLinesCount = PSEUDOTREE_DP_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-    }
+    assertStepStreamContract(steps, {
+      codes: PSEUDOTREE_DP_CODE_LANGUAGES
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
@@ -61,33 +45,16 @@ describe('PseudotreeDP (P1453 / P2607)', () => {
   });
 
   it('should have complete code across all languages without empty stubs', () => {
-    for (const lang of ['cpp', 'java', 'python', 'javascript']) {
-      const code = PSEUDOTREE_DP_CODE_LANGUAGES[lang];
-      expect(code).toBeDefined();
-      expect(code.length).toBeGreaterThanOrEqual(35);
-      const joined = code.join('\n');
-      expect(joined).toMatch(/findcircle|find_circle/i);
-      expect(joined).toMatch(/treedp|tree_dp/i);
-      expect(joined).toMatch(/solve/i);
-    }
+    assertMultiLanguageCodeContract(PSEUDOTREE_DP_CODE_LANGUAGES, {
+      minLines: 35,
+      requiredPatterns: [/findcircle|find_circle/i, /treedp|tree_dp/i, /solve/i],
+    });
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new PseudotreeVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(PseudotreeVisualizer, {
       algorithmId: 'pseudotree-dp',
       viewId: 'algo-pseudotree-dp-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

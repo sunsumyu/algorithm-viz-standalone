@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { MinMeanCycleVisualizer, buildMinMeanCycleSteps } from './min-mean-cycle-renderer';
 import { MIN_MEAN_CYCLE_CODE_LANGUAGES } from './min-mean-cycle-problem-content';
+import {
+  assertVisualizerLifecycleContract,
+  assertStepStreamContract,
+} from '../../../core/testing/contract-assertions';
 
 describe('MinMeanCycle (Karp / 0-1 Fractional Programming)', () => {
   it('should instantiate MinMeanCycleVisualizer properly', () => {
@@ -9,22 +13,10 @@ describe('MinMeanCycle (Karp / 0-1 Fractional Programming)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new MinMeanCycleVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(MinMeanCycleVisualizer, {
       algorithmId: 'min-mean-cycle',
       viewId: 'algo-min-mean-cycle-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 
   it('buildMinMeanCycleSteps 必须生成精细逐语句执行流 (>= 18 步) 且行号在 Java 源码范围内', () => {
