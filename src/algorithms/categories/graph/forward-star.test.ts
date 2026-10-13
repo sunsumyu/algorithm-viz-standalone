@@ -152,4 +152,20 @@ describe('ForwardStar (Chained Forward Star Algorithm)', () => {
     expect(eiVar).toBeDefined();
     expect(Number(eiVar?.value)).toBeGreaterThanOrEqual(1);
   });
+
+  it('guarantees default preset edges have strictly distinct edge index, endpoint node IDs, and distinct two-digit weights', () => {
+    const steps = buildForwardStarSteps('', '2', 'build');
+    const initStep = steps[0];
+    const rawEdges = initStep.allRawEdges;
+
+    expect(rawEdges.length).toBe(4);
+    rawEdges.forEach((e, idx) => {
+      const displayE = idx + 1;
+      // 边号绝不等于起点，也不等于终点
+      expect(displayE).not.toBe(e.u);
+      expect(displayE).not.toBe(e.v);
+      // 边权必须为两位数（>= 10），与点编号和边编号形成显著量级区分
+      expect(e.w).toBeGreaterThanOrEqual(10);
+    });
+  });
 });

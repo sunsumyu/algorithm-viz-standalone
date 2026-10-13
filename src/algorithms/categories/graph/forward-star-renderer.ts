@@ -40,7 +40,7 @@ registerDeclarativeAlgorithm<ForwardStarStep>({
       id: 'input-edges',
       label: '边集 (u v w)',
       type: 'text',
-      defaultValue: '2 1 5, 2 3 2, 3 4 4, 2 4 9',
+      defaultValue: '2 4 35, 3 4 58, 2 1 72, 2 3 96',
       placeholder: '以逗号或空格分隔每条边',
     },
     {
@@ -54,28 +54,28 @@ registerDeclarativeAlgorithm<ForwardStarStep>({
     {
       label: '头插法经典案例 (4点4边)',
       values: {
-        'input-edges': '2 1 5, 2 3 2, 3 4 4, 2 4 9',
+        'input-edges': '2 4 35, 3 4 58, 2 1 72, 2 3 96',
         'input-start-node': 2,
       },
     },
     {
       label: '经典有向图 (6边5点)',
       values: {
-        'input-edges': '1 2 5, 1 3 2, 2 4 1, 3 2 4, 3 5 3, 4 5 6',
+        'input-edges': '1 2 15, 1 3 28, 2 4 42, 3 2 56, 3 5 70, 4 5 85',
         'input-start-node': 1,
       },
     },
     {
       label: '密集单点多出边',
       values: {
-        'input-edges': '1 2 2, 1 3 4, 1 4 6, 1 5 8, 2 5 3',
+        'input-edges': '1 2 15, 1 3 30, 1 4 45, 1 5 60, 2 5 75',
         'input-start-node': 1,
       },
     },
     {
       label: '环路拓扑',
       values: {
-        'input-edges': '1 2 1, 2 3 2, 3 4 3, 4 1 4, 2 4 5',
+        'input-edges': '1 2 10, 2 3 25, 3 4 40, 4 1 65, 2 4 80',
         'input-start-node': 2,
       },
     },
@@ -94,7 +94,7 @@ registerDeclarativeAlgorithm<ForwardStarStep>({
   problemHtml: FORWARD_STAR_PROBLEM_HTML,
   analysisHtml: FORWARD_STAR_ANALYSIS_HTML,
   generateSteps: (inputs, mode) => {
-    const edgesRaw = (inputs?.['input-edges'] || '2 1 5, 2 3 2, 3 4 4, 2 4 9') as string;
+    const edgesRaw = (inputs?.['input-edges'] || '2 4 35, 3 4 58, 2 1 72, 2 3 96') as string;
     const startNodeRaw = String(inputs?.['input-start-node'] || '2');
     return buildForwardStarSteps(edgesRaw, startNodeRaw, mode || 'build');
   },

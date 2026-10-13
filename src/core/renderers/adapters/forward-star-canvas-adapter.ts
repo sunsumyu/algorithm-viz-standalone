@@ -69,23 +69,27 @@ export class ForwardStarCanvasAdapter {
           const cardBg = isCurEdge ? '#fefce8' : isLatest ? '#eff6ff' : '#ffffff';
           const titleColor = isCurEdge ? '#854d0e' : isLatest ? '#1d4ed8' : '#0f172a';
           const subColor = isCurEdge ? '#a16207' : isLatest ? '#2563eb' : '#64748b';
+          const badgeBg = isCurEdge ? '#fef08a' : isLatest ? '#dbeafe' : '#f1f5f9';
+          const badgeColor = isCurEdge ? '#854d0e' : isLatest ? '#1e40af' : '#334155';
 
           return `
             <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
               <!-- 边实体卡片 -->
-              <div style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: 8px; padding: 6px 12px; min-width: 135px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-                <div style="font-family: monospace; font-size: 12px; font-weight: 800; color: ${titleColor};">
-                  [边 ${displayE}] ${ed.u} ➔ ${ed.to} <span style="color: #d97706; font-size: 11px; font-weight: 700;">(权: ${ed.weight})</span>
+              <div style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: 8px; padding: 7px 12px; min-width: 165px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 6px; font-family: monospace; font-size: 12px; font-weight: 800; color: ${titleColor};">
+                  <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; border: 1px solid ${cardBorder}; font-size: 11px;">边 #${displayE}</span>
+                  <span>点 ${ed.u} ➔ 点 ${ed.to}</span>
+                  <span style="background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 4px; border: 1px solid #fde68a; font-size: 11px; font-weight: 800;">权 ${ed.weight}</span>
                 </div>
-                <div style="font-size: 10.5px; color: ${subColor}; font-weight: 600; margin-top: 2px;">
-                  ${isCurEdge ? '⭐ 正在处理的边' : isLatest ? '最新加入的边 (表头)' : '更早加入的边'}
+                <div style="font-size: 10.5px; color: ${subColor}; font-weight: 600; margin-top: 3px;">
+                  ${isCurEdge ? '⭐ 正在处理的边' : isLatest ? '最新加入的边 (表头指向)' : '更早加入的边'}
                 </div>
               </div>
 
               <!-- 连接箭头 -->
               <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; font-family: monospace; padding: 0 2px;">
-                <span style="color: #64748b; font-size: 9.5px; font-weight: 700;">next</span>
-                <span style="font-size: 14px; color: #3b82f6; font-weight: 700;">➔</span>
+                <span style="color: #64748b; font-size: 9px; font-weight: 700;">next 边号</span>
+                <span style="font-size: 15px; color: #2563eb; font-weight: 800;">➔</span>
               </div>
             </div>
           `;
@@ -124,7 +128,7 @@ export class ForwardStarCanvasAdapter {
         <div style="display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 6px 2px; scrollbar-width: thin;">
           <!-- 表头胶囊 -->
           <div style="background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 800; color: #1d4ed8; flex-shrink: 0; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.12);">
-            表头 head[${perspectiveNode}] = ${headDisplayVal}
+            表头 head[点 ${perspectiveNode}] = ${headDisplayVal > 0 ? `边 #${headDisplayVal}` : '0 (空)'}
           </div>
 
           <div style="color: #3b82f6; font-size: 16px; font-weight: 700; flex-shrink: 0;">➔</div>
@@ -132,9 +136,9 @@ export class ForwardStarCanvasAdapter {
           ${chainItemsHtml}
 
           <!-- 终结符 0 (链表尾) -->
-          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 12px; font-weight: 700; color: #475569; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
+          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: 11.5px; font-weight: 700; color: #475569; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
             <span style="width: 7px; height: 7px; border-radius: 50%; background: #64748b; display: inline-block;"></span>
-            <span>0 (链表尾)</span>
+            <span>next = 0 (链表尾/无出边)</span>
           </div>
         </div>
       </div>
@@ -204,9 +208,9 @@ export class ForwardStarCanvasAdapter {
           <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"
                 stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="url(#${markerId})" />
           <g transform="translate(${mx}, ${my})">
-            <rect x="-19" y="-9" width="38" height="18" rx="5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" />
+            <rect x="-24" y="-9" width="48" height="18" rx="5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" />
             <text x="0" y="3.5" font-size="9.5" font-family="monospace" font-weight="700" text-anchor="middle" fill="${badgeText}">
-              e${displayE}:w${e.w}
+              边#${displayE}:w${e.w}
             </text>
           </g>
         </g>
@@ -256,8 +260,8 @@ export class ForwardStarCanvasAdapter {
       return `
         <div class="fs-node-box" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 8px; padding: 6px 4px; min-height: 52px; text-align: center; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; justify-content: center; box-shadow: ${isPerspective ? '0 2px 6px rgba(59, 130, 246, 0.15)' : 'none'};">
           <div style="font-size: 10.5px; color: #475569; font-weight: 700;">顶点 ${u}</div>
-          <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: ${numColor}; margin-top: 2px;">
-            ${hDisplay > 0 ? `e${hDisplay}` : '0 (空)'}
+          <div style="font-family: monospace; font-size: 13.5px; font-weight: 800; color: ${numColor}; margin-top: 2px;">
+            ${hDisplay > 0 ? `边 #${hDisplay}` : '0 (空)'}
           </div>
         </div>
       `;
@@ -272,12 +276,12 @@ export class ForwardStarCanvasAdapter {
           const rowBorder = isCur ? 'border-left: 3px solid #eab308;' : '';
 
           return `
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: ${rowBg}; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-size: 11px; padding: 6px 2px; align-items: center; ${rowBorder}">
-              <div style="font-weight: 800; color: ${isCur ? '#a16207' : '#0f172a'};">${displayE}</div>
-              <div style="color: #0284c7; font-weight: 700;">${ed.u}</div>
-              <div style="color: #059669; font-weight: 700;">${ed.to}</div>
-              <div style="color: #7c3aed; font-weight: 700;">${displayNext > 0 ? `e${displayNext}` : '0'}</div>
-              <div style="color: #b45309; font-weight: 700;">${ed.weight}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr 1fr; background: ${rowBg}; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-size: 11px; padding: 6px 2px; align-items: center; ${rowBorder}">
+              <div style="font-weight: 800; color: ${isCur ? '#a16207' : '#0f172a'};">边 #${displayE}</div>
+              <div style="color: #0284c7; font-weight: 700;">点 ${ed.u}</div>
+              <div style="color: #059669; font-weight: 700;">点 ${ed.to}</div>
+              <div style="color: #7c3aed; font-weight: 700;">${displayNext > 0 ? `边 #${displayNext}` : '0 (尾)'}</div>
+              <div style="color: #b45309; font-weight: 800;">${ed.weight}</div>
             </div>
           `;
         }).join('')
@@ -310,7 +314,7 @@ export class ForwardStarCanvasAdapter {
                   <marker id="fs-arrow-default" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8" />
                   </marker>
-                  <marker id="fs-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <marker id="fs-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
                   </marker>
                   <marker id="fs-arrow-traversed" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -363,12 +367,12 @@ export class ForwardStarCanvasAdapter {
               </div>
 
               <div style="flex: 1; min-height: 140px; max-height: 190px; overflow-y: auto; border: 1.5px solid #e2e8f0; border-radius: 8px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; font-size: 10.5px; font-weight: 700; color: #334155; text-align: center; padding: 6px 2px; position: sticky; top: 0; z-index: 1;">
-                  <div>边号<br/><span style="color:#64748b; font-weight: 500;">e</span></div>
-                  <div>起点<br/><span style="color:#64748b; font-weight: 500;">u</span></div>
-                  <div>终点<br/><span style="color:#0284c7; font-weight: 500;">to[e]</span></div>
-                  <div>下条边<br/><span style="color:#7c3aed; font-weight: 500;">next[e]</span></div>
-                  <div>权重<br/><span style="color:#b45309; font-weight: 500;">w[e]</span></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr 1fr; background: #f1f5f9; border-bottom: 1px solid #cbd5e1; font-size: 10px; font-weight: 700; color: #334155; text-align: center; padding: 6px 2px; position: sticky; top: 0; z-index: 1;">
+                  <div>边号<br/><span style="color:#0f172a; font-weight: 700;">e (边号)</span></div>
+                  <div>起点<br/><span style="color:#0284c7; font-weight: 700;">u (点)</span></div>
+                  <div>终点<br/><span style="color:#059669; font-weight: 700;">to (点)</span></div>
+                  <div>下条边<br/><span style="color:#7c3aed; font-weight: 700;">next (边号)</span></div>
+                  <div>边权<br/><span style="color:#b45309; font-weight: 700;">w (权值)</span></div>
                 </div>
                 <div>
                   ${edgeRowsHtml}
@@ -380,13 +384,15 @@ export class ForwardStarCanvasAdapter {
             <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 10px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
               <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; color: #92400e; margin-bottom: 4px;">
                 <span>💡</span>
-                <span>为什么 next 永远指向更小的边?</span>
+                <span>核心要素快速分清：边号 vs 顶点 vs 边权</span>
               </div>
-              <div style="font-size: 11.5px; color: #78350f; line-height: 1.5; font-weight: 500;">
-                因为这是<b>头插法</b>：后加入的边（边号更大）插入在链表最前端；它的 next 永远保存着刚才的旧表头（边号必定更小）。指针永远只指向更早加入的边，绝对不会回头！
+              <div style="font-size: 11px; color: #78350f; line-height: 1.55; font-weight: 500;">
+                • <b>head[u] 与 next[e] 存的都是边号</b>（而非顶点号！），用来在边数组中跳转寻址。<br/>
+                • <b>to[e] 存的才是目标顶点号</b>，记录该边连向哪个点。<br/>
+                • <b>weight[e] 是边的路径权值</b>（如 35、72 等，通常是数值代价）。<br/>
+                • <b>头插法记忆口诀</b>：新边插在最前端，next 记下旧表头，head 改指新边号！
               </div>
             </div>
-
           </div>
 
         </div>
