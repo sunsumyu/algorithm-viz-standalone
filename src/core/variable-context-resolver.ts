@@ -34,6 +34,7 @@ export class VariableContextResolver {
     's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'dp', 'memo', 'n', 'm',
     // 扩展图论、树与通用算法核心状态键
     'curNode', 'to', 'w', 'edge', 'd', 'visited', 'distance', 'distList', 'visitedList',
+    'cnt', 'ei', 'curWeight',
     'pq', 'heap', 'pqSnapshot', 'maxDelay', 'maxDelaySoFar', 'totalCost',
     'source', 'dest', 'destination', 'path', 'found',
     // 图论拓扑、邻接表与网格矩阵核心键
@@ -419,8 +420,16 @@ export class VariableContextResolver {
     this.syncAliasGroup(varsMap, neighborAliases);
 
     // 语义组 6: 边权 / 代价 / 延迟 (Edge Weight / Cost / Delay)
-    const weightAliases = ['w', 'weight', 'cost', 'delay', 'edgeWeight'];
+    const weightAliases = ['w', 'weight', 'cost', 'delay', 'edgeWeight', 'curWeight'];
     this.syncAliasGroup(varsMap, weightAliases);
+
+    // 语义组: 链式前向星边计数器 (Forward Star Edge Counter)
+    const edgeCountAliases = ['cnt', 'edgeCount', 'curEdgeIndex', 'edgeIdx'];
+    this.syncAliasGroup(varsMap, edgeCountAliases);
+
+    // 语义组: 出边迭代指针 (Forward Star Edge Pointer)
+    const edgePointerAliases = ['ei', 'e', 'edgePtr', 'ePtr'];
+    this.syncAliasGroup(varsMap, edgePointerAliases);
 
     // 语义组 7: 最短路 / 距离表 (Shortest Path / Distance Table)
     const distanceAliases = ['dist', 'distance', 'distList', 'dists', 'shortestDist'];

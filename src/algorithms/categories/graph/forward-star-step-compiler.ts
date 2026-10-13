@@ -1,4 +1,5 @@
 import { StepBase } from '../../../core/step-visualizer';
+import type { StepVar } from '../../../core/interfaces';
 
 export interface RawEdge {
   u: number;
@@ -50,6 +51,13 @@ export interface ForwardStarStep extends StepBase {
   stepSummaryBadge?: string;
   activeCodeLineKey?: 'to' | 'next' | 'head' | 'traverse_loop' | 'traverse_visit' | 'traverse_next';
   selectedPerspectiveNode?: number;
+  scope?: Record<string, any>;
+  vars?: StepVar[];
+  cnt?: number;
+  u?: number;
+  v?: number;
+  w?: number;
+  ei?: number;
 }
 
 /** 代码面板高亮行号锚点（严格一行一步，连续整数自上而下单调顺推，零跳行零静默） */
@@ -157,6 +165,9 @@ export function buildForwardStarSteps(
     statusBadge: { text: '初始化', variant: 'info' },
     stepSummaryBadge: '初始化 head 数组与边池',
     selectedPerspectiveNode: maxDegreeNode,
+    cnt: 1,
+    scope: { cnt: 1 },
+    vars: [{ name: 'cnt', value: '1', type: 'number' }],
   });
 
   // 执行建图 (addEdge)
@@ -197,6 +208,24 @@ export function buildForwardStarSteps(
         stepSummaryBadge: `记录终点: to[${displayE}] = ${v}`,
         activeCodeLineKey: 'to',
         selectedPerspectiveNode: u,
+        cnt: displayE,
+        u,
+        v,
+        w,
+        scope: {
+          cnt: displayE,
+          u,
+          v,
+          w,
+          'to[cnt]': v,
+          'head[u]': displayOldHead,
+        },
+        vars: [
+          { name: 'cnt', value: String(displayE), type: 'number' },
+          { name: 'u', value: String(u), type: 'number' },
+          { name: 'v', value: String(v), type: 'number' },
+          { name: 'w', value: String(w), type: 'number' },
+        ],
       });
 
       // 步骤 2: 记录边权 weight[cnt] = w
@@ -228,6 +257,25 @@ export function buildForwardStarSteps(
         stepSummaryBadge: `记录边权: weight[${displayE}] = ${w}`,
         activeCodeLineKey: 'to',
         selectedPerspectiveNode: u,
+        cnt: displayE,
+        u,
+        v,
+        w,
+        scope: {
+          cnt: displayE,
+          u,
+          v,
+          w,
+          'weight[cnt]': w,
+          'to[cnt]': v,
+          'head[u]': displayOldHead,
+        },
+        vars: [
+          { name: 'cnt', value: String(displayE), type: 'number' },
+          { name: 'u', value: String(u), type: 'number' },
+          { name: 'v', value: String(v), type: 'number' },
+          { name: 'w', value: String(w), type: 'number' },
+        ],
       });
 
       // 步骤 3: 绑定 next 指针 (头插法核心)
@@ -260,6 +308,26 @@ export function buildForwardStarSteps(
         stepSummaryBadge: `继承旧表头: next[${displayE}] = head[${u}] (${displayOldHead})`,
         activeCodeLineKey: 'next',
         selectedPerspectiveNode: u,
+        cnt: displayE,
+        u,
+        v,
+        w,
+        scope: {
+          cnt: displayE,
+          u,
+          v,
+          w,
+          'next[cnt]': displayOldHead,
+          'head[u]': displayOldHead,
+          'to[cnt]': v,
+          'weight[cnt]': w,
+        },
+        vars: [
+          { name: 'cnt', value: String(displayE), type: 'number' },
+          { name: 'u', value: String(u), type: 'number' },
+          { name: 'v', value: String(v), type: 'number' },
+          { name: 'w', value: String(w), type: 'number' },
+        ],
       });
 
       // 步骤 4: 更新 head[u] = edgeIdx
@@ -292,6 +360,26 @@ export function buildForwardStarSteps(
         stepSummaryBadge: `更新表头指针: head[${u}] = ${displayE}`,
         activeCodeLineKey: 'head',
         selectedPerspectiveNode: u,
+        cnt: displayE,
+        u,
+        v,
+        w,
+        scope: {
+          cnt: displayE,
+          u,
+          v,
+          w,
+          'head[u]': displayE,
+          'next[cnt]': displayOldHead,
+          'to[cnt]': v,
+          'weight[cnt]': w,
+        },
+        vars: [
+          { name: 'cnt', value: String(displayE), type: 'number' },
+          { name: 'u', value: String(u), type: 'number' },
+          { name: 'v', value: String(v), type: 'number' },
+          { name: 'w', value: String(w), type: 'number' },
+        ],
       });
     } else {
       // 遍历模式下静默建图
@@ -328,6 +416,12 @@ export function buildForwardStarSteps(
       statusBadge: { text: '建图完成', variant: 'success' },
       stepSummaryBadge: `建图加边完成 (共 ${edges.length} 条边)`,
       selectedPerspectiveNode: maxDegreeNode,
+      cnt: edges.length + 1,
+      scope: {
+        cnt: edges.length + 1,
+        totalEdges: edges.length,
+      },
+      vars: [{ name: 'cnt', value: String(edges.length + 1), type: 'number' }],
     });
     return steps;
   }
@@ -364,6 +458,17 @@ export function buildForwardStarSteps(
     stepSummaryBadge: `取入口表头: e = head[${startNode}]`,
     activeCodeLineKey: 'traverse_loop',
     selectedPerspectiveNode: startNode,
+    u: startNode,
+    ei: ePtr !== -1 ? ePtr + 1 : 0,
+    scope: {
+      u: startNode,
+      ei: ePtr !== -1 ? ePtr + 1 : 0,
+      'head[u]': ePtr !== -1 ? ePtr + 1 : 0,
+    },
+    vars: [
+      { name: 'u', value: String(startNode), type: 'number' },
+      { name: 'ei', value: String(ePtr !== -1 ? ePtr + 1 : 0), type: 'number' },
+    ],
   });
 
   while (ePtr !== -1 && ePtr < edges.length) {
@@ -398,6 +503,25 @@ export function buildForwardStarSteps(
       stepSummaryBadge: `访问出边: [边 ${ePtr + 1}] ${curEdge.u} ➔ ${curEdge.to} (权: ${curEdge.weight})`,
       activeCodeLineKey: 'traverse_visit',
       selectedPerspectiveNode: startNode,
+      u: curEdge.u,
+      v: curEdge.to,
+      w: curEdge.weight,
+      ei: ePtr + 1,
+      scope: {
+        u: curEdge.u,
+        v: curEdge.to,
+        w: curEdge.weight,
+        ei: ePtr + 1,
+        'to[ei]': curEdge.to,
+        'weight[ei]': curEdge.weight,
+        'next[ei]': curEdge.next !== -1 ? curEdge.next + 1 : 0,
+      },
+      vars: [
+        { name: 'u', value: String(curEdge.u), type: 'number' },
+        { name: 'v', value: String(curEdge.to), type: 'number' },
+        { name: 'w', value: String(curEdge.weight), type: 'number' },
+        { name: 'ei', value: String(ePtr + 1), type: 'number' },
+      ],
     });
 
     const nextEdgeIdx = curEdge.next;
@@ -434,6 +558,17 @@ export function buildForwardStarSteps(
       stepSummaryBadge: nextEdgeIdx !== -1 ? `链表跳跃: e = next[${ePtr + 1}] ➔ #${nextEdgeIdx + 1}` : '到达链表尾: next = 0',
       activeCodeLineKey: 'traverse_next',
       selectedPerspectiveNode: startNode,
+      u: curEdge.u,
+      ei: ePtr + 1,
+      scope: {
+        u: curEdge.u,
+        ei: ePtr + 1,
+        'next[ei]': nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0,
+      },
+      vars: [
+        { name: 'u', value: String(curEdge.u), type: 'number' },
+        { name: 'ei', value: String(ePtr + 1), type: 'number' },
+      ],
     });
 
     ePtr = nextEdgeIdx;
@@ -466,6 +601,16 @@ export function buildForwardStarSteps(
     statusBadge: { text: '遍历结束', variant: 'success' },
     stepSummaryBadge: `遍历完毕 (逆序访问 ${traversed.length} 条出边)`,
     selectedPerspectiveNode: startNode,
+    u: startNode,
+    ei: 0,
+    scope: {
+      u: startNode,
+      ei: 0,
+    },
+    vars: [
+      { name: 'u', value: String(startNode), type: 'number' },
+      { name: 'ei', value: '0', type: 'number' },
+    ],
   });
 
   return steps;

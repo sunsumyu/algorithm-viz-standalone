@@ -115,4 +115,41 @@ describe('ForwardStar (Chained Forward Star Algorithm)', () => {
     const headBoxes = container.querySelectorAll('.fs-node-box');
     expect(headBoxes.length).toBe(4);
   });
+
+  it('guarantees accurate variable capture for cnt, u, v, w, ei in VariableContextResolver without uncaptured errors', async () => {
+    const { VariableContextResolver } = await import('../../../core/variable-context-resolver');
+    const rawEdges = '2 1 5, 2 3 2';
+    const buildSteps = buildForwardStarSteps(rawEdges, '2', 'build');
+
+    // 检查第二步 add_weight (对应用户截图中高亮 weight[cnt] = w 的步骤)
+    const addWeightStep = buildSteps.find((s) => s.action === 'add_weight');
+    expect(addWeightStep).toBeDefined();
+
+    const varsMap = VariableContextResolver.resolve(addWeightStep!);
+    const cntVar = VariableContextResolver.getVariable(varsMap, 'cnt', addWeightStep);
+    expect(cntVar).toBeDefined();
+    expect(cntVar?.value).toBe('1');
+
+    const uVar = VariableContextResolver.getVariable(varsMap, 'u', addWeightStep);
+    expect(uVar).toBeDefined();
+    expect(uVar?.value).toBe('2');
+
+    const vVar = VariableContextResolver.getVariable(varsMap, 'v', addWeightStep);
+    expect(vVar).toBeDefined();
+    expect(vVar?.value).toBe('1');
+
+    const wVar = VariableContextResolver.getVariable(varsMap, 'w', addWeightStep);
+    expect(wVar).toBeDefined();
+    expect(wVar?.value).toBe('5');
+
+    // 检查遍历阶段 ei 变量捕获
+    const traverseSteps = buildForwardStarSteps(rawEdges, '2', 'traverse');
+    const visitStep = traverseSteps.find((s) => s.action === 'visit_edge');
+    expect(visitStep).toBeDefined();
+
+    const traverseVarsMap = VariableContextResolver.resolve(visitStep!);
+    const eiVar = VariableContextResolver.getVariable(traverseVarsMap, 'ei', visitStep);
+    expect(eiVar).toBeDefined();
+    expect(Number(eiVar?.value)).toBeGreaterThanOrEqual(1);
+  });
 });
