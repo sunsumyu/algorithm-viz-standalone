@@ -353,6 +353,161 @@ export class VariableContextResolver {
       const entry = this.formatValueEntry('times', timesData);
       if (entry) varsMap.set('times', entry);
     }
+
+    // G. 链式前向星拓扑与核心数组智能推导 (head[], next[], to[], weight[], cnt, u, v, w)
+    this.deriveForwardStarContext(s, varsMap);
+  }
+
+  /**
+   * 链式前向星核心数据结构智能推导 (顶层抽象约束)
+   * 保证 head[], next[], to[], weight[] 数组与当前步动态指针在代码悬停或求值时 100% 捕获
+   */
+  private static deriveForwardStarContext(s: Record<string, any>, varsMap: Map<string, ResolvedVariable>): void {
+    const isForwardStar =
+      Array.isArray(s.edges) ||
+      Array.isArray(s.head) ||
+      s.curEdgeIndex !== undefined ||
+      varsMap.has('cnt') ||
+      varsMap.has('ei');
+
+    if (!isForwardStar) return;
+
+    const edges: any[] = Array.isArray(s.edges) ? s.edges : [];
+    const head: any[] = Array.isArray(s.head) ? s.head : [];
+
+    // 1. 提取当前顶点 u, 目标顶点 v, 边权 w, 边号 cnt
+    const uVal = s.u ?? s.curNode ?? (varsMap.get('u')?.raw ?? varsMap.get('u')?.value);
+    const vVal = s.v ?? s.targetNode ?? (varsMap.get('v')?.raw ?? varsMap.get('v')?.value);
+    const wVal = s.w ?? s.curWeight ?? (varsMap.get('w')?.raw ?? varsMap.get('w')?.value);
+    const cntVal = s.cnt ?? (s.curEdgeIndex != null ? s.curEdgeIndex + 1 : (edges.length > 0 ? edges.length : 1));
+
+    if (uVal != null && !varsMap.has('u')) {
+      varsMap.set('u', { name: 'u', value: String(uVal), type: 'number', raw: Number(uVal) });
+    }
+    if (vVal != null && !varsMap.has('v')) {
+      varsMap.set('v', { name: 'v', value: String(vVal), type: 'number', raw: Number(vVal) });
+    }
+    if (wVal != null && !varsMap.has('w')) {
+      varsMap.set('w', { name: 'w', value: String(wVal), type: 'number', raw: Number(wVal) });
+    }
+    if (cntVal != null && !varsMap.has('cnt')) {
+      varsMap.set('cnt', { name: 'cnt', value: String(cntVal), type: 'number', raw: Number(cntVal) });
+    }
+
+    // 2. 构建 1-based 链式前向星核心数组 (next[], to[], weight[], head[])
+    const maxEdges = Math.max(edges.length + 2, Number(cntVal) + 2);
+    const nextArr: number[] = new Array(maxEdges).fill(0);
+    const toArr: number[] = new Array(maxEdges).fill(0);
+    const weightArr: number[] = new Array(maxEdges).fill(0);
+
+    for (let i = 0; i < edges.length; i++) {
+      const ed = edges[i];
+      const eIdx = ed.index != null ? ed.index + 1 : i + 1;
+      toArr[eIdx] = ed.to ?? 0;
+      weightArr[eIdx] = ed.weight ?? 0;
+      nextArr[eIdx] = ed.next === -1 || ed.next == null ? 0 : ed.next + 1;
+    }
+
+    // 动态注入当前处理边的信息
+    const cNum = Number(cntVal);
+    if (!isNaN(cNum) && cNum > 0) {
+      if (vVal != null) toArr[cNum] = Number(vVal);
+      if (wVal != null) weightArr[cNum] = Number(wVal);
+      if (s.prevHeadVal != null) {
+        nextArr[cNum] = s.prevHeadVal === -1 ? 0 : s.prevHeadVal + 1;
+      }
+    }
+
+    // 1-based head 数组推导
+    const maxNodes = Math.max(head.length, 6);
+    const headArr: number[] = new Array(maxNodes).fill(0);
+    for (let node = 1; node < head.length; node++) {
+      headArr[node] = head[node] === -1 || head[node] == null ? 0 : head[node] + 1;
+    }
+    if (s.action === 'update_head' && uVal != null && cNum > 0) {
+      headArr[Number(uVal)] = cNum;
+    }
+
+    // 3. 注入 next 变量 (防止鼠标悬停代码中的 next 显示未捕获)
+    const curNextVal =
+      s.prevHeadVal != null
+        ? (s.prevHeadVal === -1 ? 0 : s.prevHeadVal + 1)
+        : (nextArr[cNum] ?? 0);
+    if (!varsMap.has('next') || varsMap.get('next')?.type === 'array') {
+      varsMap.set('next', {
+        name: 'next',
+        value: String(curNextVal),
+        type: 'number',
+        detail: `静态链表指针: next[${cNum}] = ${curNextVal} (指向旧表头边号)`,
+        raw: nextArr,
+      });
+    }
+
+    // 4. 注入 head 变量 (覆盖生硬的 [-1, -1...] 数组字符串，提供聚焦当前顶点的语义头指针)
+    const uNum = Number(uVal || 1);
+    const curHeadVal = headArr[uNum] ?? 0;
+    if (!varsMap.has('head') || varsMap.get('head')?.type === 'array') {
+      varsMap.set('head', {
+        name: 'head',
+        value: String(curHeadVal),
+        type: 'number',
+        detail: `顶点头指针: head[${uNum}] = ${curHeadVal > 0 ? `边 #${curHeadVal}` : '0 (空)'}`,
+        raw: headArr,
+      });
+    }
+
+    // 5. 注入 to 变量与 weight 变量
+    if (!varsMap.has('to') || varsMap.get('to')?.type === 'array') {
+      varsMap.set('to', {
+        name: 'to',
+        value: vVal != null ? String(vVal) : '0',
+        type: 'number',
+        detail: `目标顶点: to[${cNum}] = ${vVal ?? 0}`,
+        raw: toArr,
+      });
+    }
+    if (!varsMap.has('weight') || varsMap.get('weight')?.type === 'array') {
+      varsMap.set('weight', {
+        name: 'weight',
+        value: wVal != null ? String(wVal) : '0',
+        type: 'number',
+        detail: `边权代价: weight[${cNum}] = ${wVal ?? 0}`,
+        raw: weightArr,
+      });
+    }
+
+    // 6. 自动预置下标复合表达式映射
+    if (cNum > 0) {
+      if (!varsMap.has(`to[${cNum}]`) && vVal != null) {
+        varsMap.set(`to[${cNum}]`, { name: `to[${cNum}]`, value: String(vVal), type: 'number', raw: Number(vVal) });
+      }
+      if (!varsMap.has('to[cnt]') && vVal != null) {
+        varsMap.set('to[cnt]', { name: 'to[cnt]', value: String(vVal), type: 'number', raw: Number(vVal) });
+      }
+      if (!varsMap.has(`weight[${cNum}]`) && wVal != null) {
+        varsMap.set(`weight[${cNum}]`, { name: `weight[${cNum}]`, value: String(wVal), type: 'number', raw: Number(wVal) });
+      }
+      if (!varsMap.has('weight[cnt]') && wVal != null) {
+        varsMap.set('weight[cnt]', { name: 'weight[cnt]', value: String(wVal), type: 'number', raw: Number(wVal) });
+      }
+      const nVal = nextArr[cNum] ?? 0;
+      if (!varsMap.has(`next[${cNum}]`)) {
+        varsMap.set(`next[${cNum}]`, { name: `next[${cNum}]`, value: String(nVal), type: 'number', raw: nVal });
+      }
+      if (!varsMap.has('next[cnt]')) {
+        varsMap.set('next[cnt]', { name: 'next[cnt]', value: String(nVal), type: 'number', raw: nVal });
+      }
+    }
+    if (uVal != null) {
+      const uNum = Number(uVal);
+      const hVal = headArr[uNum] ?? 0;
+      if (!varsMap.has(`head[${uNum}]`)) {
+        varsMap.set(`head[${uNum}]`, { name: `head[${uNum}]`, value: String(hVal), type: 'number', raw: hVal });
+      }
+      if (!varsMap.has('head[u]')) {
+        varsMap.set('head[u]', { name: 'head[u]', value: String(hVal), type: 'number', raw: hVal });
+      }
+    }
   }
 
   /**
@@ -430,6 +585,14 @@ export class VariableContextResolver {
     // 语义组: 出边迭代指针 (Forward Star Edge Pointer)
     const edgePointerAliases = ['ei', 'e', 'edgePtr', 'ePtr'];
     this.syncAliasGroup(varsMap, edgePointerAliases);
+
+    // 语义组: 链式前向星下条边指针 (Forward Star Next Pointer)
+    const forwardStarNextAliases = ['next', 'nextEdge', 'pNext', 'nxtEdge'];
+    this.syncAliasGroup(varsMap, forwardStarNextAliases);
+
+    // 语义组: 顶点头指针 (Forward Star Head Pointer)
+    const headPointerAliases = ['head', 'headPtr', 'firstEdge'];
+    this.syncAliasGroup(varsMap, headPointerAliases);
 
     // 语义组 7: 最短路 / 距离表 (Shortest Path / Distance Table)
     const distanceAliases = ['dist', 'distance', 'distList', 'dists', 'shortestDist'];
@@ -630,22 +793,34 @@ export class VariableContextResolver {
       }
     }
 
-    // 4. 一维下标求值: 如 dp[r], arr[i], nums[mid], s[l]
+    // 4. 一维下标求值: 如 dp[r], arr[i], nums[mid], s[l], head[u], next[cnt]
     const index1DMatch = cleanExpr.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\[([^\]]+)\]$/);
     if (index1DMatch) {
       const arrName = index1DMatch[1];
       const idxExpr = index1DMatch[2].trim();
       const idxVal = parseInt(varsMap.get(idxExpr)?.value ?? idxExpr, 10);
-      const arrData =
-        stepContext?.[arrName] ||
-        varsMap.get(arrName)?.raw ||
-        stepContext?.s ||
-        stepContext?.str ||
-        varsMap.get('s')?.raw ||
-        varsMap.get('str')?.raw ||
-        varsMap.get('s')?.value?.replace(/^['"]|['"]$/g, '');
 
       if (!isNaN(idxVal)) {
+        // 先检查 varsMap 中是否已有推导好的精确具体项 (如 head[2], next[1])
+        const exactSub = varsMap.get(`${arrName}[${idxVal}]`);
+        if (exactSub) {
+          return {
+            name: `${arrName}[${idxVal}]`,
+            value: exactSub.value,
+            type: 'expression',
+            detail: exactSub.detail || `${cleanExpr} = ${exactSub.value}`,
+          };
+        }
+
+        const arrData =
+          varsMap.get(arrName)?.raw ||
+          stepContext?.[arrName] ||
+          stepContext?.s ||
+          stepContext?.str ||
+          varsMap.get('s')?.raw ||
+          varsMap.get('str')?.raw ||
+          varsMap.get('s')?.value?.replace(/^['"]|['"]$/g, '');
+
         if (typeof arrData === 'string' && idxVal >= 0 && idxVal < arrData.length) {
           const ch = arrData[idxVal];
           return {

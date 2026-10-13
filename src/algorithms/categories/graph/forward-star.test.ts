@@ -116,41 +116,73 @@ describe('ForwardStar (Chained Forward Star Algorithm)', () => {
     expect(headBoxes.length).toBe(4);
   });
 
-  it('guarantees accurate variable capture for cnt, u, v, w, ei in VariableContextResolver without uncaptured errors', async () => {
+  it('guarantees accurate variable capture for next, head, to, weight, cnt, u, v, w, ei, e in VariableContextResolver without uncaptured errors', async () => {
     const { VariableContextResolver } = await import('../../../core/variable-context-resolver');
     const rawEdges = '2 1 5, 2 3 2';
     const buildSteps = buildForwardStarSteps(rawEdges, '2', 'build');
 
-    // 检查第二步 add_weight (对应用户截图中高亮 weight[cnt] = w 的步骤)
-    const addWeightStep = buildSteps.find((s) => s.action === 'add_weight');
+    // 检查加边周期的 4 个阶段，确保悬停任何变量 token 均能被 100% 捕获
+    const addStartStep = buildSteps.find((s) => s.action === 'add_start')!;
+    const addWeightStep = buildSteps.find((s) => s.action === 'add_weight')!;
+    const linkNextStep = buildSteps.find((s) => s.action === 'link_next')!;
+    const updateHeadStep = buildSteps.find((s) => s.action === 'update_head')!;
+
+    expect(addStartStep).toBeDefined();
     expect(addWeightStep).toBeDefined();
+    expect(linkNextStep).toBeDefined();
+    expect(updateHeadStep).toBeDefined();
 
-    const varsMap = VariableContextResolver.resolve(addWeightStep!);
-    const cntVar = VariableContextResolver.getVariable(varsMap, 'cnt', addWeightStep);
-    expect(cntVar).toBeDefined();
-    expect(cntVar?.value).toBe('1');
+    // 1. 检验 update_head 步骤（对应用户反馈的 head[u] = cnt++ 步骤悬停 next）
+    const updateHeadVars = VariableContextResolver.resolve(updateHeadStep);
+    const nextVarOnUpdate = VariableContextResolver.getVariable(updateHeadVars, 'next', updateHeadStep);
+    expect(nextVarOnUpdate).toBeDefined();
+    expect(nextVarOnUpdate?.value).toBeDefined();
+    expect(nextVarOnUpdate?.value).not.toBe('(当前步骤未捕获)');
 
-    const uVar = VariableContextResolver.getVariable(varsMap, 'u', addWeightStep);
-    expect(uVar).toBeDefined();
-    expect(uVar?.value).toBe('2');
+    const headVarOnUpdate = VariableContextResolver.getVariable(updateHeadVars, 'head', updateHeadStep);
+    expect(headVarOnUpdate).toBeDefined();
+    expect(headVarOnUpdate?.value).toBe('1'); // 第 1 条边更新 head 为 1
 
-    const vVar = VariableContextResolver.getVariable(varsMap, 'v', addWeightStep);
-    expect(vVar).toBeDefined();
-    expect(vVar?.value).toBe('1');
+    const toVarOnUpdate = VariableContextResolver.getVariable(updateHeadVars, 'to', updateHeadStep);
+    expect(toVarOnUpdate).toBeDefined();
+    expect(toVarOnUpdate?.value).toBe('1');
 
-    const wVar = VariableContextResolver.getVariable(varsMap, 'w', addWeightStep);
-    expect(wVar).toBeDefined();
-    expect(wVar?.value).toBe('5');
+    const weightVarOnUpdate = VariableContextResolver.getVariable(updateHeadVars, 'weight', updateHeadStep);
+    expect(weightVarOnUpdate).toBeDefined();
+    expect(weightVarOnUpdate?.value).toBe('5');
 
-    // 检查遍历阶段 ei 变量捕获
+    // 2. 检验 link_next 步骤（next[cnt] = head[u] 头插阶段）
+    const linkNextVars = VariableContextResolver.resolve(linkNextStep);
+    const nextVarOnLink = VariableContextResolver.getVariable(linkNextVars, 'next', linkNextStep);
+    expect(nextVarOnLink).toBeDefined();
+    expect(nextVarOnLink?.value).toBe('0'); // 初始 head 为 0，首条边 next 继承 0
+
+    const headVarOnLink = VariableContextResolver.getVariable(linkNextVars, 'head', linkNextStep);
+    expect(headVarOnLink).toBeDefined();
+    expect(headVarOnLink?.value).toBe('0');
+
+    // 3. 检验下标表达式求值 (如 next[cnt], head[u], to[cnt], weight[cnt])
+    const exprNextCnt = VariableContextResolver.getVariable(linkNextVars, 'next[cnt]', linkNextStep);
+    expect(exprNextCnt).toBeDefined();
+
+    const exprHeadU = VariableContextResolver.getVariable(updateHeadVars, 'head[u]', updateHeadStep);
+    expect(exprHeadU).toBeDefined();
+
+    // 4. 检查遍历阶段 ei 与 e 以及 next, to, weight 变量捕获
     const traverseSteps = buildForwardStarSteps(rawEdges, '2', 'traverse');
-    const visitStep = traverseSteps.find((s) => s.action === 'visit_edge');
+    const visitStep = traverseSteps.find((s) => s.action === 'visit_edge')!;
     expect(visitStep).toBeDefined();
 
-    const traverseVarsMap = VariableContextResolver.resolve(visitStep!);
+    const traverseVarsMap = VariableContextResolver.resolve(visitStep);
     const eiVar = VariableContextResolver.getVariable(traverseVarsMap, 'ei', visitStep);
     expect(eiVar).toBeDefined();
     expect(Number(eiVar?.value)).toBeGreaterThanOrEqual(1);
+
+    const eVar = VariableContextResolver.getVariable(traverseVarsMap, 'e', visitStep);
+    expect(eVar).toBeDefined();
+
+    const nextVarOnTraverse = VariableContextResolver.getVariable(traverseVarsMap, 'next', visitStep);
+    expect(nextVarOnTraverse).toBeDefined();
   });
 
   it('guarantees default preset edges have strictly distinct edge index, endpoint node IDs, and distinct two-digit weights', () => {

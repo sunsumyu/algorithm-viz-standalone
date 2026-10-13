@@ -217,6 +217,8 @@ export function buildForwardStarSteps(
           u,
           v,
           w,
+          to: v,
+          head: displayOldHead,
           'to[cnt]': v,
           'head[u]': displayOldHead,
         },
@@ -225,6 +227,8 @@ export function buildForwardStarSteps(
           { name: 'u', value: String(u), type: 'number' },
           { name: 'v', value: String(v), type: 'number' },
           { name: 'w', value: String(w), type: 'number' },
+          { name: 'to', value: String(v), type: 'number' },
+          { name: 'head', value: String(displayOldHead), type: 'number' },
         ],
       });
 
@@ -266,6 +270,9 @@ export function buildForwardStarSteps(
           u,
           v,
           w,
+          to: v,
+          weight: w,
+          head: displayOldHead,
           'weight[cnt]': w,
           'to[cnt]': v,
           'head[u]': displayOldHead,
@@ -275,6 +282,9 @@ export function buildForwardStarSteps(
           { name: 'u', value: String(u), type: 'number' },
           { name: 'v', value: String(v), type: 'number' },
           { name: 'w', value: String(w), type: 'number' },
+          { name: 'to', value: String(v), type: 'number' },
+          { name: 'weight', value: String(w), type: 'number' },
+          { name: 'head', value: String(displayOldHead), type: 'number' },
         ],
       });
 
@@ -317,6 +327,10 @@ export function buildForwardStarSteps(
           u,
           v,
           w,
+          to: v,
+          weight: w,
+          next: displayOldHead,
+          head: displayOldHead,
           'next[cnt]': displayOldHead,
           'head[u]': displayOldHead,
           'to[cnt]': v,
@@ -327,6 +341,10 @@ export function buildForwardStarSteps(
           { name: 'u', value: String(u), type: 'number' },
           { name: 'v', value: String(v), type: 'number' },
           { name: 'w', value: String(w), type: 'number' },
+          { name: 'to', value: String(v), type: 'number' },
+          { name: 'weight', value: String(w), type: 'number' },
+          { name: 'next', value: String(displayOldHead), type: 'number' },
+          { name: 'head', value: String(displayOldHead), type: 'number' },
         ],
       });
 
@@ -369,6 +387,10 @@ export function buildForwardStarSteps(
           u,
           v,
           w,
+          to: v,
+          weight: w,
+          next: displayOldHead,
+          head: displayE,
           'head[u]': displayE,
           'next[cnt]': displayOldHead,
           'to[cnt]': v,
@@ -379,6 +401,10 @@ export function buildForwardStarSteps(
           { name: 'u', value: String(u), type: 'number' },
           { name: 'v', value: String(v), type: 'number' },
           { name: 'w', value: String(w), type: 'number' },
+          { name: 'to', value: String(v), type: 'number' },
+          { name: 'weight', value: String(w), type: 'number' },
+          { name: 'next', value: String(displayOldHead), type: 'number' },
+          { name: 'head', value: String(displayE), type: 'number' },
         ],
       });
     } else {
@@ -463,11 +489,15 @@ export function buildForwardStarSteps(
     scope: {
       u: startNode,
       ei: ePtr !== -1 ? ePtr + 1 : 0,
+      e: ePtr !== -1 ? ePtr + 1 : 0,
+      head: ePtr !== -1 ? ePtr + 1 : 0,
       'head[u]': ePtr !== -1 ? ePtr + 1 : 0,
     },
     vars: [
       { name: 'u', value: String(startNode), type: 'number' },
       { name: 'ei', value: String(ePtr !== -1 ? ePtr + 1 : 0), type: 'number' },
+      { name: 'e', value: String(ePtr !== -1 ? ePtr + 1 : 0), type: 'number' },
+      { name: 'head', value: String(ePtr !== -1 ? ePtr + 1 : 0), type: 'number' },
     ],
   });
 
@@ -512,6 +542,10 @@ export function buildForwardStarSteps(
         v: curEdge.to,
         w: curEdge.weight,
         ei: ePtr + 1,
+        e: ePtr + 1,
+        to: curEdge.to,
+        weight: curEdge.weight,
+        next: curEdge.next !== -1 ? curEdge.next + 1 : 0,
         'to[ei]': curEdge.to,
         'weight[ei]': curEdge.weight,
         'next[ei]': curEdge.next !== -1 ? curEdge.next + 1 : 0,
@@ -521,6 +555,10 @@ export function buildForwardStarSteps(
         { name: 'v', value: String(curEdge.to), type: 'number' },
         { name: 'w', value: String(curEdge.weight), type: 'number' },
         { name: 'ei', value: String(ePtr + 1), type: 'number' },
+        { name: 'e', value: String(ePtr + 1), type: 'number' },
+        { name: 'to', value: String(curEdge.to), type: 'number' },
+        { name: 'weight', value: String(curEdge.weight), type: 'number' },
+        { name: 'next', value: String(curEdge.next !== -1 ? curEdge.next + 1 : 0), type: 'number' },
       ],
     });
 
@@ -563,11 +601,15 @@ export function buildForwardStarSteps(
       scope: {
         u: curEdge.u,
         ei: ePtr + 1,
+        e: nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0,
+        next: nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0,
         'next[ei]': nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0,
       },
       vars: [
         { name: 'u', value: String(curEdge.u), type: 'number' },
         { name: 'ei', value: String(ePtr + 1), type: 'number' },
+        { name: 'e', value: String(nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0), type: 'number' },
+        { name: 'next', value: String(nextEdgeIdx !== -1 ? nextEdgeIdx + 1 : 0), type: 'number' },
       ],
     });
 

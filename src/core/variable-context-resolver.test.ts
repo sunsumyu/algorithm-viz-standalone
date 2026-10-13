@@ -265,5 +265,46 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(matrixVar).toBeDefined();
     expect(matrixVar?.value).toBe('[2×2]');
   });
+
+  it('automatically derives forward star data structures (next, head, to, weight) via top-level abstraction', () => {
+    // 即使领域适配器 step 中完全没有显式提供 vars 或 scope，顶层抽象解析器也能从 edges/head 自动派生出所有变量
+    const rawForwardStarStep = {
+      action: 'update_head',
+      u: 2,
+      v: 4,
+      w: 35,
+      cnt: 1,
+      prevHeadVal: -1,
+      edges: [{ u: 2, to: 4, weight: 35, next: -1, index: 0 }],
+      head: [-1, -1, 0, -1, -1],
+    };
+
+    const varsMap = VariableContextResolver.resolve(rawForwardStarStep);
+
+    // 1. 核心变量捕获
+    expect(VariableContextResolver.getVariable(varsMap, 'u')?.value).toBe('2');
+    expect(VariableContextResolver.getVariable(varsMap, 'v')?.value).toBe('4');
+    expect(VariableContextResolver.getVariable(varsMap, 'w')?.value).toBe('35');
+    expect(VariableContextResolver.getVariable(varsMap, 'cnt')?.value).toBe('1');
+
+    // 2. 关键链式指针捕获 (绝不出现未捕获)
+    const nextVar = VariableContextResolver.getVariable(varsMap, 'next');
+    expect(nextVar).toBeDefined();
+    expect(nextVar?.value).toBe('0'); // prevHeadVal 为 -1 (空)，对应 1-based 下标 0
+
+    const headVar = VariableContextResolver.getVariable(varsMap, 'head');
+    expect(headVar).toBeDefined();
+    expect(headVar?.value).toBe('1'); // update_head 步骤已动态更新为 cnt=1
+
+    // 3. 下标复合表达式自动解析
+    const nextExpr = VariableContextResolver.getVariable(varsMap, 'next[cnt]', rawForwardStarStep);
+    expect(nextExpr).toBeDefined();
+    expect(nextExpr?.value).toBe('0');
+
+    const headExpr = VariableContextResolver.getVariable(varsMap, 'head[u]', rawForwardStarStep);
+    expect(headExpr).toBeDefined();
+    expect(headExpr?.value).toBe('1');
+  });
 });
+
 
