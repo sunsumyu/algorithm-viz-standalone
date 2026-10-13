@@ -138,39 +138,7 @@ export function renderAuxArrayTable(
 }
 
 /**
- * 渲染状态说明面板与数学公式卡片
+ * 状态说明面板与数学公式卡片 (统一委托单一事实来源深模块)
  */
-export function renderFormulaCard(
-  title: string,
-  formula: string,
-  explanation: string,
-  statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' }
-): string {
-  const badgeColors = {
-    success: { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' },
-    warning: { bg: '#fef3c7', text: '#b45309', border: '#fde68a' },
-    danger: { bg: '#fee2e2', text: '#b91c1c', border: '#fecaca' },
-    info: { bg: '#e0e7ff', text: '#4338ca', border: '#c7d2fe' },
-  };
+export { renderFormulaCard } from '../../../../core/renderers/adapters/unified-canvas-composer';
 
-  const badge = statusBadge ? badgeColors[statusBadge.type] : badgeColors.info;
-
-  return `
-    <div class="dsp-formula-card" data-formula-card="true" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-top: 14px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-        <span style="font-size: 13px; font-weight: 700; color: #1e293b;">💡 ${title}</span>
-        ${statusBadge ? `
-          <span style="background: ${badge.bg}; color: ${badge.text}; border: 1px solid ${badge.border}; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;">
-            ${statusBadge.text}
-          </span>
-        ` : ''}
-      </div>
-      <div style="font-family: 'JetBrains Mono', Consolas, monospace; background: #ffffff; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px; color: #2563eb; font-weight: 600; margin-bottom: 6px;">
-        ${formula}
-      </div>
-      <div style="font-size: 12px; color: #475569; line-height: 1.5;">
-        ${explanation}
-      </div>
-    </div>
-  `;
-}

@@ -6,7 +6,7 @@
  */
 
 import type { Mst027Step } from '../../../algorithms/categories/graph/mst-kruskal-prim-027-step-compiler';
-import { renderFormulaCard } from '../../../algorithms/categories/string/string-100-105/string-100-105-shared';
+import { renderFormulaCard } from './unified-canvas-composer';
 
 const NODE_POSITIONS: Record<number, { x: number; y: number }> = {
   1: { x: 90, y: 80 },
