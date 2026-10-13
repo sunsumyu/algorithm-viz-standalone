@@ -19,6 +19,8 @@ export interface ForwardStarStep extends StepBase {
   action:
     | 'init'
     | 'add_start'
+    | 'add_to'
+    | 'add_weight'
     | 'link_next'
     | 'update_head'
     | 'edge_added'
@@ -50,10 +52,11 @@ export interface ForwardStarStep extends StepBase {
   selectedPerspectiveNode?: number;
 }
 
-/** 代码面板高亮行号锚点（1-based，进入方法立即从首行高亮，顺序自上而下单调顺推，绝无回跳） */
+/** 代码面板高亮行号锚点（严格一行一步，连续整数自上而下单调顺推，零跳行零静默） */
 const codeLineMap: Record<string, Record<string, number>> = {
   init: { java: 17, cpp: 17, python: 3, javascript: 3 },
-  buildAddstart: { java: 22, cpp: 22, python: 11, javascript: 12 },
+  buildAddTo: { java: 22, cpp: 22, python: 11, javascript: 12 },
+  buildAddWeight: { java: 23, cpp: 23, python: 12, javascript: 13 },
   buildLinknext: { java: 24, cpp: 24, python: 13, javascript: 14 },
   buildUpdatehead: { java: 25, cpp: 25, python: 14, javascript: 15 },
   buildBuilddone: { java: 26, cpp: 26, python: 15, javascript: 16 },
@@ -165,10 +168,41 @@ export function buildForwardStarSteps(
     const displayOldHead = oldHead === -1 ? 0 : oldHead + 1;
 
     if (mode === 'build') {
-      // 步骤 1: 准备加边与存储目标点及权值
+      // 步骤 1: 记录终点 to[cnt] = v
       steps.push({
         mode: 'build',
         action: 'add_start',
+        head: [...head],
+        edges: edges.map((e) => ({ ...e })),
+        curEdgeIndex: edgeIdx,
+        curNode: u,
+        targetNode: v,
+        curWeight: null,
+        prevHeadVal: oldHead,
+        newHeadVal: null,
+        traversedEdges: [],
+        allNodes,
+        allRawEdges: rawEdges,
+        startNode,
+        message: `第一步：分配边号 ${displayE}。记录终点 to[${displayE}] = ${v}`,
+        log: `加边 addEdge(${u}, ${v}, ${w}) - 写入 to[${displayE}] = ${v}`,
+        codeLine: codeLineMap.buildAddTo,
+        metrics: {
+          'cur-action': `写入终点 (${u} ➔ ${v})`,
+          'edge-cnt': edgeIdx,
+          'cur-pointer': `to[${displayE}] = ${v}`,
+        },
+        decision: `分配边空间 e=${displayE}，写入目标顶点 to[${displayE}] = ${v}`,
+        statusBadge: { text: `记录终点 #${displayE}`, variant: 'info' },
+        stepSummaryBadge: `记录终点: to[${displayE}] = ${v}`,
+        activeCodeLineKey: 'to',
+        selectedPerspectiveNode: u,
+      });
+
+      // 步骤 2: 记录边权 weight[cnt] = w
+      steps.push({
+        mode: 'build',
+        action: 'add_weight',
         head: [...head],
         edges: edges.map((e) => ({ ...e })),
         curEdgeIndex: edgeIdx,
@@ -181,22 +215,22 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `第一步：边编号自增为 ${displayE}。记录终点 to[${displayE}] = ${v}，权重 weight[${displayE}] = ${w}`,
-        log: `加边 addEdge(${u}, ${v}, ${w}) - 分配边号 e=${displayE}`,
-        codeLine: codeLineMap.buildAddstart,
+        message: `第二步：记录边权 weight[${displayE}] = ${w}`,
+        log: `写入 weight[${displayE}] = ${w}`,
+        codeLine: codeLineMap.buildAddWeight,
         metrics: {
-          'cur-action': `加边 (${u} ➔ ${v})`,
+          'cur-action': `写入边权 (权值 ${w})`,
           'edge-cnt': edgeIdx,
-          'cur-pointer': `e = ${displayE}`,
+          'cur-pointer': `w[${displayE}] = ${w}`,
         },
-        decision: `分配边空间 e=${displayE}，写入目标点 ${v} 与权值 ${w}`,
-        statusBadge: { text: `分配边号 #${displayE}`, variant: 'info' },
-        stepSummaryBadge: `边的编号自增: to[${displayE}] = ${v}, w = ${w}`,
+        decision: `写入边权参数 weight[${displayE}] = ${w}`,
+        statusBadge: { text: `记录边权 w=${w}`, variant: 'info' },
+        stepSummaryBadge: `记录边权: weight[${displayE}] = ${w}`,
         activeCodeLineKey: 'to',
         selectedPerspectiveNode: u,
       });
 
-      // 步骤 2: 绑定 next 指针 (头插法核心)
+      // 步骤 3: 绑定 next 指针 (头插法核心)
       edges.push({ to: v, next: oldHead, weight: w, u, index: edgeIdx });
       steps.push({
         mode: 'build',
@@ -213,7 +247,7 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `第二步：继承旧表头指针。令 next[${displayE}] = head[${u}] (${displayOldHead})。新边将原有出边链条继承至其后！`,
+        message: `第三步：继承旧表头指针。令 next[${displayE}] = head[${u}] (${displayOldHead})。新边将原有出边链条继承至其后！`,
         log: `链接前驱 edge[${edgeIdx}].next = ${oldHead}`,
         codeLine: codeLineMap.buildLinknext,
         metrics: {
@@ -228,7 +262,7 @@ export function buildForwardStarSteps(
         selectedPerspectiveNode: u,
       });
 
-      // 步骤 3: 更新 head[u] = edgeIdx
+      // 步骤 4: 更新 head[u] = edgeIdx
       head[u] = edgeIdx;
       steps.push({
         mode: 'build',
@@ -245,7 +279,7 @@ export function buildForwardStarSteps(
         allNodes,
         allRawEdges: rawEdges,
         startNode,
-        message: `第三步：更新顶点头指针 head[${u}] = ${displayE}。边 ${displayE} 正式成为节点 ${u} 的最新出边链表头！`,
+        message: `第四步：更新顶点头指针 head[${u}] = ${displayE}。边 ${displayE} 正式成为节点 ${u} 的最新出边链表头！`,
         log: `更新表头 head[${u}] = ${edgeIdx} (原 ${oldHead})`,
         codeLine: codeLineMap.buildUpdatehead,
         metrics: {
