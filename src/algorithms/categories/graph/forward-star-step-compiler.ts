@@ -41,23 +41,26 @@ export interface ForwardStarStep extends StepBase {
   startNode: number;
   message: string;
   log: string;
-  codeLine: number;
+  codeLine: any;
+  metrics?: Record<string, string | number>;
+  decision?: string;
+  statusBadge?: { text: string; variant?: string };
   stepSummaryBadge?: string;
   activeCodeLineKey?: 'to' | 'next' | 'head' | 'traverse_loop' | 'traverse_visit' | 'traverse_next';
   selectedPerspectiveNode?: number;
 }
 
-/** 代码面板高亮行号锚点（1-based，与源码逐行对应） */
-const lines: Record<string, number> = {
-  init: 18,
-  buildAddstart: 24,
-  buildLinknext: 26,
-  buildUpdatehead: 27,
-  buildBuilddone: 28,
-  traverseTraversestart: 32,
-  traverseVisitedge: 34,
-  traverseJumpnext: 32,
-  traverseTraversedone: 36,
+/** 代码面板高亮行号锚点（1-based，与 Java / C++ / Python / JS 源码逐行精确映射） */
+const codeLineMap: Record<string, Record<string, number>> = {
+  init: { java: 22, cpp: 24, python: 3, javascript: 3 },
+  buildAddstart: { java: 28, cpp: 30, python: 12, javascript: 13 },
+  buildLinknext: { java: 28, cpp: 32, python: 14, javascript: 15 },
+  buildUpdatehead: { java: 29, cpp: 33, python: 15, javascript: 16 },
+  buildBuilddone: { java: 30, cpp: 34, python: 16, javascript: 17 },
+  traverseTraversestart: { java: 34, cpp: 38, python: 20, javascript: 22 },
+  traverseVisitedge: { java: 35, cpp: 39, python: 22, javascript: 23 },
+  traverseJumpnext: { java: 34, cpp: 38, python: 25, javascript: 22 },
+  traverseTraversedone: { java: 39, cpp: 43, python: 25, javascript: 25 },
 };
 
 function parseEdgesInput(raw: string): RawEdge[] {
@@ -141,7 +144,14 @@ export function buildForwardStarSteps(
     startNode,
     message: `初始化：创建 head 数组（默认全为 0/NULL，表示无出边）与空 edge[] 静态链表池`,
     log: `初始化: head[1..${maxNode}] = -1, cnt = 0`,
-    codeLine: lines.init,
+    codeLine: codeLineMap.init,
+    metrics: {
+      'cur-action': '结构初始化',
+      'edge-cnt': 0,
+      'cur-pointer': '—',
+    },
+    decision: `重置 head 数组为 -1，清空边计数器 cnt = 0，准备接受加边请求`,
+    statusBadge: { text: '初始化', variant: 'info' },
     stepSummaryBadge: '初始化 head 数组与边池',
     selectedPerspectiveNode: maxDegreeNode,
   });
@@ -173,7 +183,14 @@ export function buildForwardStarSteps(
         startNode,
         message: `第一步：边编号自增为 ${displayE}。记录终点 to[${displayE}] = ${v}，权重 weight[${displayE}] = ${w}`,
         log: `加边 addEdge(${u}, ${v}, ${w}) - 分配边号 e=${displayE}`,
-        codeLine: lines.buildAddstart,
+        codeLine: codeLineMap.buildAddstart,
+        metrics: {
+          'cur-action': `加边 (${u} ➔ ${v})`,
+          'edge-cnt': edgeIdx,
+          'cur-pointer': `e = ${displayE}`,
+        },
+        decision: `分配边空间 e=${displayE}，写入目标点 ${v} 与权值 ${w}`,
+        statusBadge: { text: `分配边号 #${displayE}`, variant: 'info' },
         stepSummaryBadge: `边的编号自增: to[${displayE}] = ${v}, w = ${w}`,
         activeCodeLineKey: 'to',
         selectedPerspectiveNode: u,
@@ -198,7 +215,14 @@ export function buildForwardStarSteps(
         startNode,
         message: `第二步：继承旧表头指针。令 next[${displayE}] = head[${u}] (${displayOldHead})。新边将原有出边链条继承至其后！`,
         log: `链接前驱 edge[${edgeIdx}].next = ${oldHead}`,
-        codeLine: lines.buildLinknext,
+        codeLine: codeLineMap.buildLinknext,
+        metrics: {
+          'cur-action': `头插链接 (${u} ➔ ${v})`,
+          'edge-cnt': edgeIdx + 1,
+          'cur-pointer': `next = ${displayOldHead}`,
+        },
+        decision: `【头插法关键】令 next[${displayE}] 指向旧表头 head[${u}] (${displayOldHead})，实现 O(1) 挂接`,
+        statusBadge: { text: '头插继承', variant: 'warning' },
         stepSummaryBadge: `继承旧表头: next[${displayE}] = head[${u}] (${displayOldHead})`,
         activeCodeLineKey: 'next',
         selectedPerspectiveNode: u,
@@ -223,7 +247,14 @@ export function buildForwardStarSteps(
         startNode,
         message: `第三步：更新顶点头指针 head[${u}] = ${displayE}。边 ${displayE} 正式成为节点 ${u} 的最新出边链表头！`,
         log: `更新表头 head[${u}] = ${edgeIdx} (原 ${oldHead})`,
-        codeLine: lines.buildUpdatehead,
+        codeLine: codeLineMap.buildUpdatehead,
+        metrics: {
+          'cur-action': `更新表头 head[${u}]`,
+          'edge-cnt': edgeIdx + 1,
+          'cur-pointer': `head[${u}] = ${displayE}`,
+        },
+        decision: `更新顶点头指针 head[${u}] = ${displayE}，后加入的边成功变为链表新起点`,
+        statusBadge: { text: '更新表头', variant: 'success' },
         stepSummaryBadge: `更新表头指针: head[${u}] = ${displayE}`,
         activeCodeLineKey: 'head',
         selectedPerspectiveNode: u,
@@ -253,7 +284,14 @@ export function buildForwardStarSteps(
       startNode,
       message: `🎉 建图完成！共存入 ${edges.length} 条有向边。每个节点的 head[u] 均已指向其最新出边链表头。`,
       log: `建图成功: 总边数 ${edges.length}, 节点数 ${allNodes.length}`,
-      codeLine: lines.buildBuilddone,
+      codeLine: codeLineMap.buildBuilddone,
+      metrics: {
+        'cur-action': '建图全部完成',
+        'edge-cnt': edges.length,
+        'cur-pointer': '就绪',
+      },
+      decision: `全量 ${edges.length} 条有向边建立完毕，各顶点出边逆序链条构建完成，可直接开展遍历或图算法`,
+      statusBadge: { text: '建图完成', variant: 'success' },
       stepSummaryBadge: `建图加边完成 (共 ${edges.length} 条边)`,
       selectedPerspectiveNode: maxDegreeNode,
     });
@@ -281,7 +319,14 @@ export function buildForwardStarSteps(
     startNode,
     message: `🔍 开始遍历顶点 ${startNode} 的所有出边：取入口指针 e = head[${startNode}] = ${ePtr === -1 ? '0 (无出边)' : `#${ePtr + 1}`}`,
     log: `开始遍历顶点 ${startNode} 的出边链`,
-    codeLine: lines.traverseTraversestart,
+    codeLine: codeLineMap.traverseTraversestart,
+    metrics: {
+      'cur-action': `出边遍历开始(起点 ${startNode})`,
+      'edge-cnt': edges.length,
+      'cur-pointer': ePtr !== -1 ? `e = ${ePtr + 1}` : '0',
+    },
+    decision: `从顶点 ${startNode} 的表头 head[${startNode}] = ${ePtr === -1 ? 0 : ePtr + 1} 启动逆序出边遍历`,
+    statusBadge: { text: '启动遍历', variant: 'info' },
     stepSummaryBadge: `取入口表头: e = head[${startNode}]`,
     activeCodeLineKey: 'traverse_loop',
     selectedPerspectiveNode: startNode,
@@ -308,7 +353,14 @@ export function buildForwardStarSteps(
       startNode,
       message: `访问边 #${ePtr + 1}：${curEdge.u} ➔ ${curEdge.to} (权值 ${curEdge.weight})`,
       log: `访问边 #${ePtr} (${curEdge.u} ➔ ${curEdge.to})`,
-      codeLine: lines.traverseVisitedge,
+      codeLine: codeLineMap.traverseVisitedge,
+      metrics: {
+        'cur-action': `访问出边 #${ePtr + 1}`,
+        'edge-cnt': edges.length,
+        'cur-pointer': `e = ${ePtr + 1} ➔ ${curEdge.to}`,
+      },
+      decision: `到达边 #${ePtr + 1}：读取终点 ${curEdge.to} 与权值 ${curEdge.weight} 并执行业务逻辑`,
+      statusBadge: { text: `访问边 #${ePtr + 1}`, variant: 'success' },
       stepSummaryBadge: `访问出边: [边 ${ePtr + 1}] ${curEdge.u} ➔ ${curEdge.to} (权: ${curEdge.weight})`,
       activeCodeLineKey: 'traverse_visit',
       selectedPerspectiveNode: startNode,
@@ -335,7 +387,16 @@ export function buildForwardStarSteps(
           ? `沿静态链表单向跳跃：e = next[${ePtr + 1}] ➔ 跳转至更早加入的出边 #${nextEdgeIdx + 1}`
           : `next[${ePtr + 1}] = 0 (链表尾)，顶点 ${startNode} 的所有出边遍历完毕`,
       log: `链表跳跃: 下一条边为 ${nextEdgeIdx === -1 ? '0' : `#${nextEdgeIdx + 1}`}`,
-      codeLine: lines.traverseJumpnext,
+      codeLine: codeLineMap.traverseJumpnext,
+      metrics: {
+        'cur-action': nextEdgeIdx !== -1 ? '链表单向跳跃' : '抵达链表尾',
+        'edge-cnt': edges.length,
+        'cur-pointer': nextEdgeIdx !== -1 ? `e = ${nextEdgeIdx + 1}` : '0 (终止)',
+      },
+      decision: nextEdgeIdx !== -1
+        ? `沿静态链指针读取 next[${ePtr + 1}] = ${nextEdgeIdx + 1}，准备访问下一条更早插入的出边`
+        : `读取 next[${ePtr + 1}] 为 0（-1），触达链表尾部，出边遍历终止`,
+      statusBadge: { text: nextEdgeIdx !== -1 ? '指针后移' : '触尾终止', variant: 'warning' },
       stepSummaryBadge: nextEdgeIdx !== -1 ? `链表跳跃: e = next[${ePtr + 1}] ➔ #${nextEdgeIdx + 1}` : '到达链表尾: next = 0',
       activeCodeLineKey: 'traverse_next',
       selectedPerspectiveNode: startNode,
@@ -361,7 +422,14 @@ export function buildForwardStarSteps(
     startNode,
     message: `✅ 遍历完成！顶点 ${startNode} 共扫描了 ${traversed.length} 条出边 (逆序访问：${traversed.map((i) => `#${i + 1}`).join(' ➔ ') || '无'})`,
     log: `遍历结束: 访问顺序为 [${traversed.join(', ')}]`,
-    codeLine: lines.traverseTraversedone,
+    codeLine: codeLineMap.traverseTraversedone,
+    metrics: {
+      'cur-action': '遍历完全结束',
+      'edge-cnt': edges.length,
+      'cur-pointer': 'NULL (遍历终点)',
+    },
+    decision: `完成顶点 ${startNode} 所有出边遍历，逆序输出结果共计 ${traversed.length} 条边`,
+    statusBadge: { text: '遍历结束', variant: 'success' },
     stepSummaryBadge: `遍历完毕 (逆序访问 ${traversed.length} 条出边)`,
     selectedPerspectiveNode: startNode,
   });

@@ -163,14 +163,19 @@ export class ForwardStarCanvasAdapter {
       const from = getCoord(e.u);
       const to = getCoord(e.v);
       const displayE = idx + 1;
-      const isExistingInBuild = mode === 'build' ? idx <= (curEdgeIndex ?? -1) : true;
+      const isExistingInBuild =
+        mode === 'build'
+          ? step.action === 'build_done'
+            ? true
+            : curEdgeIndex !== null && idx <= curEdgeIndex
+          : true;
       if (!isExistingInBuild) return '';
 
       const isCurrent = curEdgeIndex === idx;
       const isTraversed = traversedEdges.includes(idx);
 
-      let strokeColor = 'rgba(100, 116, 139, 0.5)';
-      let strokeWidth = 2;
+      let strokeColor = 'rgba(148, 163, 184, 0.6)';
+      let strokeWidth = 2.2;
       let markerId = 'fs-arrow-default';
       let badgeBg = '#0b1120';
       let badgeBorder = '#334155';
@@ -192,9 +197,7 @@ export class ForwardStarCanvasAdapter {
         badgeText = '#a7f3d0';
       }
 
-      // 控制弧度避免双向或重合边冲突
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
+      // 控制弧度与标签位置
       const mx = (from.x + to.x) / 2;
       const my = (from.y + to.y) / 2;
 
@@ -203,8 +206,8 @@ export class ForwardStarCanvasAdapter {
           <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"
                 stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="url(#${markerId})" />
           <g transform="translate(${mx}, ${my})">
-            <rect x="-18" y="-9" width="36" height="18" rx="5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" />
-            <text x="0" y="3.5" font-size="9" font-family="monospace" font-weight="700" text-anchor="middle" fill="${badgeText}">
+            <rect x="-19" y="-9" width="38" height="18" rx="5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" />
+            <text x="0" y="3.5" font-size="9.5" font-family="monospace" font-weight="700" text-anchor="middle" fill="${badgeText}">
               e${displayE}:w${e.w}
             </text>
           </g>
@@ -243,20 +246,20 @@ export class ForwardStarCanvasAdapter {
       `;
     }).join('');
 
-    // 3. 中栏：顶点头指针网格与边池静态链表
+    // 3. 顶点头指针网格
     const headBoxesHtml = allNodes.map((u) => {
       const hIdx = head[u] ?? -1;
       const hDisplay = hIdx === -1 ? 0 : hIdx + 1;
       const isPerspective = u === perspectiveNode;
-      const bg = isPerspective ? 'rgba(30, 58, 138, 0.4)' : '#0b1329';
-      const border = isPerspective ? '#3b82f6' : '#1e293b';
-      const numColor = isPerspective ? '#60a5fa' : hDisplay > 0 ? '#38bdf8' : '#64748b';
+      const bg = isPerspective ? 'rgba(30, 58, 138, 0.45)' : '#0f172a';
+      const border = isPerspective ? '#3b82f6' : '#334155';
+      const numColor = isPerspective ? '#60a5fa' : hDisplay > 0 ? '#38bdf8' : '#94a3b8';
 
       return `
-        <div class="fs-node-box" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: all 0.2s;">
-          <div style="font-size: 10px; color: #94a3b8;">节点 ${u}</div>
-          <div style="font-family: monospace; font-size: 18px; font-weight: 800; color: ${numColor}; margin-top: 2px;">
-            ${hDisplay}
+        <div class="fs-node-box" data-node="${u}" style="background: ${bg}; border: 1.5px solid ${border}; border-radius: 8px; padding: 6px 4px; min-height: 52px; text-align: center; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; box-shadow: ${isPerspective ? '0 0 10px rgba(59, 130, 246, 0.25)' : 'none'};">
+          <div style="font-size: 10px; color: #cbd5e1; font-weight: 600;">顶点 ${u}</div>
+          <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: ${numColor}; margin-top: 2px;">
+            ${hDisplay > 0 ? `e${hDisplay}` : '0 (空)'}
           </div>
         </div>
       `;
@@ -275,7 +278,7 @@ export class ForwardStarCanvasAdapter {
               <div style="font-weight: 700; color: ${isCur ? '#facc15' : '#f8fafc'};">${displayE}</div>
               <div style="color: #38bdf8; font-weight: 700;">${ed.u}</div>
               <div style="color: #34d399; font-weight: 700;">${ed.to}</div>
-              <div style="color: #a78bfa; font-weight: 700;">${displayNext}</div>
+              <div style="color: #a78bfa; font-weight: 700;">${displayNext > 0 ? `e${displayNext}` : '0'}</div>
               <div style="color: #fbbf24; font-weight: 700;">${ed.weight}</div>
             </div>
           `;
@@ -284,50 +287,15 @@ export class ForwardStarCanvasAdapter {
         <div style="padding: 18px; text-align: center; color: #64748b; font-size: 11px;">边池暂未分配，等待加边...</div>
       `;
 
-    // 4. 右栏：执行源码步进
-    const isToLine = activeCodeLineKey === 'to';
-    const isNextLine = activeCodeLineKey === 'next';
-    const isHeadLine = activeCodeLineKey === 'head';
-    const isTraverseLoop = activeCodeLineKey === 'traverse_loop';
-    const isTraverseVisit = activeCodeLineKey === 'traverse_visit';
-    const isTraverseNext = activeCodeLineKey === 'traverse_next';
-
-    const getLineStyle = (active: boolean) =>
-      active
-        ? 'background: rgba(30, 58, 138, 0.6); color: #38bdf8; font-weight: 700; border-left: 3px solid #38bdf8; padding-left: 6px;'
-        : 'color: #94a3b8; padding-left: 9px;';
-
-    const codeSnippetHtml = mode === 'build'
-      ? `
-        <div style="font-family: monospace; font-size: 11px; line-height: 1.7; color: #cbd5e1;">
-          <div style="color: #64748b;">// 1. 边的编号自增并存储终点与权值</div>
-          <div style="${getLineStyle(isToLine)}">to[++cnt] = v;</div>
-          <div style="${getLineStyle(isToLine)}">weight[cnt] = w;</div>
-          <div style="margin-top: 4px; color: #64748b;">// 2. 继承旧表头 (头插法核心)</div>
-          <div style="${getLineStyle(isNextLine)}">next[cnt] = head[u];</div>
-          <div style="margin-top: 4px; color: #64748b;">// 3. 更新头指针</div>
-          <div style="${getLineStyle(isHeadLine)}">head[u] = cnt; // 更新头指针</div>
-        </div>
-      `
-      : `
-        <div style="font-family: monospace; font-size: 11px; line-height: 1.7; color: #cbd5e1;">
-          <div style="color: #64748b;">// 逆序遍历顶点 u 的所有出边</div>
-          <div style="${getLineStyle(isTraverseLoop)}">for (int e = head[u]; e != 0; e = next[e]) {</div>
-          <div style="${getLineStyle(isTraverseVisit)}">&nbsp;&nbsp;int v = to[e], w = weight[e];</div>
-          <div style="${getLineStyle(isTraverseVisit)}">&nbsp;&nbsp;visit(u, v, w);</div>
-          <div style="${getLineStyle(isTraverseNext)}">}</div>
-        </div>
-      `;
-
-    // 组合主画布布局 (完全对齐截图审美)
+    // 组合主画布布局 (黄金比例左右双栏，杜绝过度嵌套)
     container.innerHTML = `
       <div style="width: 100%; background: #070c18; border-radius: 12px; padding: 14px; color: #f1f5f9; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         ${kebabPerspectiveHtml}
 
-        <!-- 下半部三列网格排布 -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; align-items: stretch;">
+        <!-- 下半部左右双栏黄金布局 -->
+        <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 14px; align-items: stretch;">
           
-          <!-- 左栏：图拓扑画板 -->
+          <!-- 左栏：图拓扑画板 (放大主导地位) -->
           <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 14px; display: flex; flex-direction: column;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #38bdf8;">
@@ -338,11 +306,11 @@ export class ForwardStarCanvasAdapter {
             </div>
 
             <!-- SVG 画板 -->
-            <div style="flex: 1; min-height: 230px; background: #060a14; border: 1px solid #131c31; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <div style="flex: 1; min-height: 250px; background: #060a14; border: 1px solid #131c31; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
               <svg width="100%" height="100%" viewBox="0 0 350 240" style="display: block;">
                 <defs>
                   <marker id="fs-arrow-default" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8" />
                   </marker>
                   <marker id="fs-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                     <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38bdf8" />
@@ -356,7 +324,7 @@ export class ForwardStarCanvasAdapter {
               </svg>
             </div>
 
-            <!-- 底部解说条 (截图中左下角关键区域) -->
+            <!-- 底部解说条 -->
             <div style="margin-top: 10px; background: #0b1329; border: 1px solid #1e293b; border-radius: 8px; padding: 10px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                 <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">当前步骤解说</span>
@@ -370,7 +338,7 @@ export class ForwardStarCanvasAdapter {
             </div>
           </div>
 
-          <!-- 中栏：顶点头指针 & 边池静态链表 -->
+          <!-- 右栏：顶点头指针 & 边池静态链表数据结构 -->
           <div style="display: flex; flex-direction: column; gap: 12px;">
             <!-- 上：顶点头指针 -->
             <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px;">
@@ -379,14 +347,14 @@ export class ForwardStarCanvasAdapter {
                   <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
                   顶点头指针: head[u]
                 </div>
-                <span style="font-size: 10px; color: #64748b;">点击切换透视节点</span>
+                <span style="font-size: 10px; color: #64748b;">点击顶点切换透视出边链</span>
               </div>
               <div style="display: grid; grid-template-columns: repeat(${Math.min(allNodes.length, 6)}, 1fr); gap: 6px;">
                 ${headBoxesHtml}
               </div>
             </div>
 
-            <!-- 下：边池静态链表 -->
+            <!-- 中：边池静态链表 -->
             <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; flex: 1; display: flex; flex-direction: column;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #a78bfa;">
@@ -396,8 +364,8 @@ export class ForwardStarCanvasAdapter {
                 <span style="font-size: 10px; color: #94a3b8; font-family: monospace;">当前边数 cnt: <b style="color: #facc15;">${edges.length}</b></span>
               </div>
 
-              <div style="flex: 1; max-height: 220px; overflow-y: auto; border: 1px solid #1e293b; border-radius: 6px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: #0f172a; border-bottom: 1px solid #334155; font-size: 10px; color: #94a3b8; text-align: center; padding: 6px 2px;">
+              <div style="flex: 1; min-height: 140px; max-height: 190px; overflow-y: auto; border: 1px solid #1e293b; border-radius: 6px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr 1fr; background: #0f172a; border-bottom: 1px solid #334155; font-size: 10px; color: #94a3b8; text-align: center; padding: 6px 2px; position: sticky; top: 0; z-index: 1;">
                   <div>边号<br/><span style="color:#64748b;">e</span></div>
                   <div>起点<br/><span style="color:#64748b;">u</span></div>
                   <div>终点<br/><span style="color:#38bdf8;">to[e]</span></div>
@@ -409,36 +377,18 @@ export class ForwardStarCanvasAdapter {
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 右栏：执行源码步进 & 核心思想深度精讲 -->
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <!-- 上：源码步进 -->
-            <div style="background: #090f1d; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; flex: 1;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #38bdf8;">
-                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                  执行源码步进
-                </div>
-                <span style="background: #1e293b; color: #94a3b8; font-family: monospace; font-size: 10px; padding: 2px 6px; border-radius: 4px;">
-                  ${mode === 'build' ? 'addEdge(u, v, w)' : 'traverse(u)'}
-                </span>
-              </div>
-              <div style="background: #060a14; border: 1px solid #131c31; border-radius: 8px; padding: 10px;">
-                ${codeSnippetHtml}
-              </div>
-            </div>
-
-            <!-- 下：核心问答教学卡片 (完全对齐截图中的金色问答) -->
-            <div style="background: #090f1d; border: 1px solid #854d0e; border-radius: 12px; padding: 12px; background: linear-gradient(180deg, rgba(20, 24, 38, 0.9) 0%, rgba(26, 21, 10, 0.6) 100%);">
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #fbbf24; margin-bottom: 6px;">
+            <!-- 下：核心问答教学卡片 -->
+            <div style="background: linear-gradient(180deg, rgba(20, 24, 38, 0.9) 0%, rgba(26, 21, 10, 0.6) 100%); border: 1px solid #854d0e; border-radius: 12px; padding: 10px 12px;">
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #fbbf24; margin-bottom: 4px;">
                 <span>💡</span>
                 <span>为什么 next 永远指向更小的边?</span>
               </div>
-              <div style="font-size: 11px; color: #cbd5e1; line-height: 1.6;">
+              <div style="font-size: 11px; color: #cbd5e1; line-height: 1.5;">
                 因为这是<b>头插法</b>：后加入的边（边号更大）插入在链表最前端；它的 next 永远保存着刚才的旧表头（边号必定更小）。指针永远只指向更早加入的边，绝对不会回头！
               </div>
             </div>
+
           </div>
 
         </div>
