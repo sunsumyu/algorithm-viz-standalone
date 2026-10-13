@@ -25,6 +25,7 @@ describe('FindAllPeopleWithSecret (LeetCode 2092)', () => {
       requiredMetricKeys: ['metric-secret-time', 'metric-known-count', 'metric-cur-meeting', 'metric-secret-phase'],
     });
 
+
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
     expect(lastStep.knownExperts).toEqual([0, 1, 2, 3]);
@@ -34,22 +35,11 @@ describe('FindAllPeopleWithSecret (LeetCode 2092)', () => {
 
   it('should generate at least 20 granular steps for multitime_5expert preset', () => {
     const steps = buildSecretExpertSteps('multitime_5expert');
-    expect(steps.length).toBeGreaterThanOrEqual(20);
-
-    const javaLinesCount = PEOPLE_SECRET_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-    }
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: PEOPLE_SECRET_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-secret-time', 'metric-known-count', 'metric-cur-meeting', 'metric-secret-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');

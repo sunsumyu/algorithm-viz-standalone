@@ -1,3 +1,4 @@
+import { assertStepStreamContract } from '../../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { buildDivideArraySeqSteps, parseDivideArraySeqInputs } from './divide-array-seq-step-compiler';
 import { DIVIDE_ARRAY_SEQ_CODES } from './greedy-092-stage-codes';
@@ -9,16 +10,10 @@ describe('DivideArraySeqStepCompiler', () => {
     const steps = buildDivideArraySeqSteps(nums, k);
     expect(steps.length).toBeGreaterThan(0);
     expect(steps[0].decision).toContain('主函数入口');
-
-    for (const step of steps) {
-      expect(step.codeLine).toBeDefined();
-      for (const [lang, line] of Object.entries(step.codeLine)) {
-        const codeArray = DIVIDE_ARRAY_SEQ_CODES[lang];
-        expect(codeArray, `Code array for ${lang} must exist`).toBeDefined();
-        expect(line).toBeGreaterThanOrEqual(1);
-        expect(line).toBeLessThanOrEqual(codeArray.length);
-      }
-    }
+    assertStepStreamContract(steps, {
+      codeArrays: DIVIDE_ARRAY_SEQ_CODES,
+      requireLine: true,
+    });
 
     const last = steps[steps.length - 1];
     expect(last.canDivide).toBe(true);

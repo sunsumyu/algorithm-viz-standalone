@@ -18,25 +18,16 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
 
   it('should generate at least 20 granular steps for reachable case', () => {
     const steps = buildNetworkDelaySteps(true);
-    expect(steps.length).toBeGreaterThanOrEqual(20);
-
-    const javaLinesCount = NETWORK_DELAY_CODE_LANGUAGES.java.length;
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: NETWORK_DELAY_CODE_LANGUAGES,
+    });
     for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
       expect(step.distList).toBeDefined();
       expect(step.visitedList).toBeDefined();
       expect(step.pqSnapshot).toBeDefined();
     }
+
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');

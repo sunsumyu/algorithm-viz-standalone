@@ -29,6 +29,21 @@ export type {
   ProblemDetail,
 };
 
+/**
+ * 从多语言高亮目标 (HighlightTarget) 提取主语言行号 (单一事实来源 SSOT)
+ */
+export function extractLineFromHighlightTarget(target: HighlightTarget, fallbackLang: string = 'java'): number {
+  if (typeof target === 'number') return target;
+  if (typeof target === 'object' && target !== null && fallbackLang in target) {
+    const val = (target as any)[fallbackLang];
+    if (typeof val === 'number') return val;
+    if (val && typeof val.primary === 'number') return val.primary;
+  }
+  return 1;
+}
+
+export const getLine = extractLineFromHighlightTarget;
+
 export interface CodePanelOptions {
   /** 默认语言的代码行数组 */
   lines?: string[];

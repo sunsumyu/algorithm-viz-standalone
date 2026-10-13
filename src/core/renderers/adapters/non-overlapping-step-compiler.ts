@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export interface NonOverlappingStep extends StepBase {
@@ -36,15 +37,6 @@ export function parseIntervals(raw: string): Array<[number, number]> {
   return [[1, 2], [2, 3], [3, 4], [1, 3]];
 }
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: NonOverlappingStep[]): NonOverlappingStep[] {
   return steps.map((s) => {

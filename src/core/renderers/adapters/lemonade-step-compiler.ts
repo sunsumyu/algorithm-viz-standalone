@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export const LEMONADE_CODE_LINES: Record<string, HighlightTarget> = {
@@ -61,15 +62,6 @@ export interface LemonadeStep extends StepBase {
   metrics?: Record<string, string>;
 }
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 export function buildLemonadeSteps(rawBills: number[]): LemonadeStep[] {
   const steps: LemonadeStep[] = [];

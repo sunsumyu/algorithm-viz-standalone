@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export type AcPhase = 'init' | 'check' | 'matched' | 'skip' | 'done';
@@ -29,15 +30,6 @@ export const ASSIGN_COOKIES_CODE_LINES: Record<string, HighlightTarget> = {
   done: { java: 13, cpp: 14, python: 10, javascript: 12 },
 };
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: AssignCookiesStep[]): AssignCookiesStep[] {
   return steps.map((s) => {

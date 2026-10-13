@@ -1,3 +1,4 @@
+import { assertStepStreamContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import {
   LayeredDijkstraVisualizer,
@@ -13,27 +14,12 @@ describe('LayeredDijkstra (P4568)', () => {
 
   it('should generate at least 20 granular steps for p4568_standard preset', () => {
     const steps = buildLayeredDijkstraSteps('p4568_standard');
-    expect(steps.length).toBeGreaterThanOrEqual(20);
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: LAYERED_DIJKSTRA_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-layer-state', 'metric-layer-dist', 'metric-layer-pq', 'metric-layer-phase'],
+    });
 
-    const javaLinesCount = LAYERED_DIJKSTRA_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-layer-state']).toBeDefined();
-      expect(step.metrics?.['metric-layer-dist']).toBeDefined();
-      expect(step.metrics?.['metric-layer-pq']).toBeDefined();
-      expect(step.metrics?.['metric-layer-phase']).toBeDefined();
-    }
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');

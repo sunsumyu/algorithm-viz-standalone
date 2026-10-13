@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { SlidingSnakeVisualizer, SLIDING_SNAKE_TEMPLATE } from './sliding-snake-renderer';
 
@@ -11,20 +12,9 @@ describe('SlidingSnake (Sliding Window Snake Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new SlidingSnakeVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(SlidingSnakeVisualizer, {
       algorithmId: 'sliding-snake',
       viewId: 'algo-sliding-snake-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

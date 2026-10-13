@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { SpyDialVisualizer, SPY_DIAL_TEMPLATE } from './spy-dial-renderer';
 
@@ -11,20 +12,9 @@ describe('SpyDial (Spy Dial Phone Cipher Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new SpyDialVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(SpyDialVisualizer, {
       algorithmId: 'spy-dial',
       viewId: 'algo-spy-dial-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

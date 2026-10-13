@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { GasStationVisualizer, GAS_STATION_TEMPLATE } from './gas-station-renderer';
 
@@ -11,20 +12,9 @@ describe('GasStation (Gas Station Rally Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new GasStationVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(GasStationVisualizer, {
       algorithmId: 'gas-station-rally',
       viewId: 'algo-gas-station-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

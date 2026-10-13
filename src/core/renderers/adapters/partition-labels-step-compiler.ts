@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export interface PartitionStep extends StepBase {
@@ -27,15 +28,6 @@ export const PARTITION_LABELS_CODE_LINES: Record<string, HighlightTarget> = {
   done: { java: 18, cpp: 17, python: 12, javascript: 15 },
 };
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: PartitionStep[]): PartitionStep[] {
   return steps.map((s) => {

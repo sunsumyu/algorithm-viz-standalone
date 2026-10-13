@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export interface MAStep extends StepBase {
@@ -36,15 +37,6 @@ export function parseBalloons(raw: string): Array<[number, number]> {
   return [[10, 16], [2, 8], [1, 6], [7, 12]];
 }
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: MAStep[]): MAStep[] {
   return steps.map((s) => {

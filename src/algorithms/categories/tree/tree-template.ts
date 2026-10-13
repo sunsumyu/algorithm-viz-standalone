@@ -123,3 +123,35 @@ export function renderLog(container: HTMLElement, logs: string[], activeIdx: num
   });
   container.scrollTop = container.scrollHeight;
 }
+
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
+
+/** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 (单一事实来源 SSOT) */
+export function collectTreeValues(node: TreeNode | null): number[] {
+  if (!node) return [];
+  const res: number[] = [];
+  const queue: TreeNode[] = [node];
+  while (queue.length > 0) {
+    const cur = queue.shift()!;
+    res.push(cur.val);
+    if (cur.left) queue.push(cur.left);
+    if (cur.right) queue.push(cur.right);
+  }
+  return res;
+}
+
+/** 深度克隆二叉树拓扑状态 (单一事实来源 SSOT) */
+export function cloneTree(node: TreeNode | null): TreeNode | null {
+  return cloneStateDepTree(node);
+}
+
+/** 解析树输入字符串或数组并返回节点数组 (单一事实来源 SSOT) */
+export function parseTreeInput(raw?: any, fallback: (number | null)[] = [-10, 9, 20, null, null, 15, 7]): (number | null)[] {
+  if (Array.isArray(raw)) return raw;
+  if (!raw || typeof raw !== 'string' || !raw.trim()) return fallback;
+  return raw
+    .replace(/^\[|\]$/g, '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .map((s) => (s === 'null' || s === 'nil' || s === 'none' || s === '#' || s === '' ? null : Number(s)));
+}

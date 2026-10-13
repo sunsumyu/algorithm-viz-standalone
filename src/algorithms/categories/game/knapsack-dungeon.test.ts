@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { KnapsackDungeonVisualizer, KNAPSACK_DUNGEON_TEMPLATE } from './knapsack-dungeon-renderer';
 
@@ -11,20 +12,9 @@ describe('KnapsackDungeon (0-1 Knapsack Dungeon Crawler)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new KnapsackDungeonVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(KnapsackDungeonVisualizer, {
       algorithmId: 'knapsack-dungeon',
       viewId: 'algo-knapsack-dungeon-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

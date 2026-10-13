@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { SudokuCipherVisualizer, SUDOKU_CIPHER_TEMPLATE } from './sudoku-cipher-renderer';
 
@@ -11,20 +12,9 @@ describe('SudokuCipher (Sudoku Cipher Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new SudokuCipherVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(SudokuCipherVisualizer, {
       algorithmId: 'sudoku-cipher',
       viewId: 'algo-sudoku-cipher-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

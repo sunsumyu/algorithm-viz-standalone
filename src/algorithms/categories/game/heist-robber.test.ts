@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { HeistRobberVisualizer, HEIST_ROBBER_TEMPLATE } from './heist-robber-renderer';
 
@@ -12,21 +13,9 @@ describe('HeistRobber (House Robber Heist DP Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new HeistRobberVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(HeistRobberVisualizer, {
       algorithmId: 'heist-robber',
       viewId: 'algo-heist-robber-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

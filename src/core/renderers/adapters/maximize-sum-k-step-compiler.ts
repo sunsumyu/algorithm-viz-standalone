@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export interface MaxSumKStep extends StepBase {
@@ -25,15 +26,6 @@ export const MAXIMIZE_SUM_K_CODE_LINES: Record<string, HighlightTarget> = {
   done: { java: 17, cpp: 17, python: 11, javascript: 10 },
 };
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: MaxSumKStep[]): MaxSumKStep[] {
   return steps.map((s) => {

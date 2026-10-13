@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { ArrowBalloonVisualizer, ARROW_BALLOON_TEMPLATE } from './arrow-balloon-renderer';
 
@@ -12,21 +13,9 @@ describe('ArrowBalloon (Arrow Balloon Sniper Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-      isConnected: true,
-    } as unknown as HTMLElement;
-
-    const viz = new ArrowBalloonVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(ArrowBalloonVisualizer, {
       algorithmId: 'arrow-balloon',
       viewId: 'algo-arrow-balloon-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

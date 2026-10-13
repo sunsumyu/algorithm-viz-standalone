@@ -1,4 +1,5 @@
 import { StepBase } from '../../step-visualizer';
+import { getLine } from '../../code-panel';
 import type { HighlightTarget } from '../../step-visualizer';
 
 export interface JumpStep extends StepBase {
@@ -29,15 +30,6 @@ export const JUMP_GAME_CODE_LINES: Record<string, HighlightTarget> = {
   done: { java: 11, cpp: 11, python: 9, javascript: 11 },
 };
 
-function getLine(target: HighlightTarget): number {
-  if (typeof target === 'number') return target;
-  if (typeof target === 'object' && target !== null && 'java' in target) {
-    const j = (target as any).java;
-    if (typeof j === 'number') return j;
-    if (j && typeof j.primary === 'number') return j.primary;
-  }
-  return 1;
-}
 
 function withMetrics(steps: JumpStep[]): JumpStep[] {
   return steps.map((s) => {

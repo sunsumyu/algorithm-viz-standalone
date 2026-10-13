@@ -25,6 +25,7 @@ describe('SecondMst (P4180)', () => {
       requiredMetricKeys: ['metric-mst-w', 'metric-second-mst-w', 'metric-cur-edge', 'metric-smst-phase'],
     });
 
+
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
     expect(lastStep.mstWeight).toBe(6);
@@ -33,19 +34,11 @@ describe('SecondMst (P4180)', () => {
 
   it('should generate at least 20 granular steps for equal_weight_5node preset', () => {
     const steps = buildSecondMstSteps('equal_weight_5node');
-    expect(steps.length).toBeGreaterThanOrEqual(20);
-
-    const javaLinesCount = SECOND_MST_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.message).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const lines = Array.isArray(step.codeLine) ? step.codeLine : [step.codeLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-    }
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: SECOND_MST_CODE_LANGUAGES,
+      requiredMetricKeys: ['metric-mst-w', 'metric-second-mst-w', 'metric-cur-edge', 'metric-smst-phase'],
+    });
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');

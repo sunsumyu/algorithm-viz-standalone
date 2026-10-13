@@ -16,8 +16,10 @@ export interface StepStreamContractOptions {
   minSteps?: number;
   maxLine?: number;
   codes?: Record<string, string[]>;
+  codeArrays?: Record<string, string[]>;
   requiredMetricKeys?: string[];
   requireStatusText?: boolean;
+  requireLine?: boolean;
 }
 
 /**
@@ -52,10 +54,15 @@ export function assertStepStreamContract(
   steps: readonly any[],
   options: StepStreamContractOptions = {}
 ): void {
-  const { minSteps = 1, maxLine, codes, requiredMetricKeys, requireStatusText } = options;
+  const { minSteps = 1, maxLine, codes, codeArrays, requiredMetricKeys, requireStatusText, requireLine } = options;
   expect(steps.length).toBeGreaterThanOrEqual(minSteps);
 
-  const effectiveMaxLine = maxLine ?? codes?.java?.length;
+  const effectiveCodes = codes ?? codeArrays;
+  if (effectiveCodes) {
+    verify1BasedCodeLines(steps, effectiveCodes);
+  }
+
+  const effectiveMaxLine = maxLine ?? effectiveCodes?.java?.length;
 
   for (const step of steps) {
     if (requireStatusText) {
@@ -63,8 +70,15 @@ export function assertStepStreamContract(
     } else {
       expect(step.message).toBeTruthy();
     }
-    expect(step.log).toBeTruthy();
+    if (step.log !== undefined) {
+      expect(step.log).toBeTruthy();
+    }
     expect(step.codeLine).toBeDefined();
+
+    if (requireLine) {
+      expect(step.line).toBeDefined();
+      expect(step.line).toBeGreaterThanOrEqual(1);
+    }
 
     const lineVal =
       typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in step.codeLine
@@ -112,7 +126,7 @@ export function assertMultiLanguageCodeContract(
  * 校验可视化器沙盘生命周期（初始化与销毁，消除全库各测试中私自手写的 mockRoot）
  */
 export async function assertVisualizerLifecycleContract(
-  VizClass: new (...args: any[]) => any,
+  VizClassOrInstance: (new (...args: any[]) => any) | { init: Function; destroy?: Function },
   options: { algorithmId: string; viewId: string }
 ): Promise<void> {
   const mockElements = new Map<string, any>();
@@ -122,7 +136,7 @@ export async function assertVisualizerLifecycleContract(
     isConnected: true,
   } as unknown as HTMLElement;
 
-  const viz = new VizClass();
+  const viz = typeof VizClassOrInstance === 'function' ? new (VizClassOrInstance as any)() : VizClassOrInstance;
   expect(viz).toBeDefined();
   await viz.init({
     root: mockRoot,

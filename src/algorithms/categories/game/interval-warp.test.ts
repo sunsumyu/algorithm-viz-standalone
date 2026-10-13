@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { IntervalWarpVisualizer, INTERVAL_WARP_TEMPLATE } from './interval-warp-renderer';
 
@@ -11,20 +12,9 @@ describe('IntervalWarp (Interval Merge Fleet Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new IntervalWarpVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(IntervalWarpVisualizer, {
       algorithmId: 'interval-warp',
       viewId: 'algo-interval-warp-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });

@@ -3,33 +3,18 @@ import { buildRedundantSteps } from './redundant-edge-renderer';
 import { REDUNDANT_EDGE_CODE_LANGUAGES } from './redundant-edge-problem-content';
 import {
   assertMultiLanguageCodeContract,
-} from '../../../core/testing/contract-assertions';
+assertStepStreamContract } from '../../../core/testing/contract-assertions';
 
 describe('Redundant Connection (LeftChengYun Class 056 / LC 684)', () => {
   it('should generate at least 20 granular steps for standard graph', () => {
     const steps = buildRedundantSteps();
-    expect(steps.length).toBeGreaterThanOrEqual(15);
+    assertStepStreamContract(steps, {
+      minSteps: 15,
+      codes: REDUNDANT_EDGE_CODE_LANGUAGES,
+      requireStatusText: true,
+      requiredMetricKeys: ['metric-re-cur-edge', 'metric-re-redundant', 'metric-re-tree-edges', 'metric-re-parent'],
+    });
 
-    const javaLinesCount = REDUNDANT_EDGE_CODE_LANGUAGES.java.length;
-    for (const step of steps) {
-      expect(step.statusText).toBeTruthy();
-      expect(step.log).toBeTruthy();
-      expect(step.codeLine).toBeDefined();
-      const javaLine =
-        typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-          ? (step.codeLine as any).java
-          : step.codeLine;
-      const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
-      for (const line of lines) {
-        expect(line).toBeGreaterThan(0);
-        expect(line).toBeLessThanOrEqual(javaLinesCount);
-      }
-      expect(step.metrics).toBeDefined();
-      expect(step.metrics?.['metric-re-cur-edge']).toBeDefined();
-      expect(step.metrics?.['metric-re-redundant']).toBeDefined();
-      expect(step.metrics?.['metric-re-tree-edges']).toBeDefined();
-      expect(step.metrics?.['metric-re-parent']).toBeDefined();
-    }
 
     const lastStep = steps[steps.length - 1];
     expect(lastStep.action).toBe('done');

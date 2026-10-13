@@ -1,3 +1,4 @@
+import { assertStepStreamContract } from '../../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { buildMinimizeDeviationSteps, parseMinimizeDeviationInputs } from './minimize-deviation-step-compiler';
 import { MINIMIZE_DEVIATION_CODES } from './greedy-092-stage-codes';
@@ -8,16 +9,10 @@ describe('MinimizeDeviationStepCompiler', () => {
     const steps = buildMinimizeDeviationSteps(nums);
     expect(steps.length).toBeGreaterThan(0);
     expect(steps[0].decision).toContain('主函数入口');
-
-    for (const step of steps) {
-      expect(step.codeLine).toBeDefined();
-      for (const [lang, line] of Object.entries(step.codeLine)) {
-        const codeArray = MINIMIZE_DEVIATION_CODES[lang];
-        expect(codeArray, `Code array for ${lang} must exist`).toBeDefined();
-        expect(line).toBeGreaterThanOrEqual(1);
-        expect(line).toBeLessThanOrEqual(codeArray.length);
-      }
-    }
+    assertStepStreamContract(steps, {
+      codeArrays: MINIMIZE_DEVIATION_CODES,
+      requireLine: true,
+    });
 
     const last = steps[steps.length - 1];
     expect(last.ans).toBe(3);

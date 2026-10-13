@@ -1,3 +1,4 @@
+import { assertVisualizerLifecycleContract } from '../../../core/testing/contract-assertions';
 import { describe, it, expect } from 'vitest';
 import { JumpQuestVisualizer, JUMP_QUEST_TEMPLATE } from './jump-quest-renderer';
 
@@ -11,20 +12,9 @@ describe('JumpQuest (Spring Jump Quest Game)', () => {
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
-    const mockElements = new Map<string, any>();
-    const mockRoot = {
-      querySelector: (sel: string) => mockElements.get(sel) || null,
-      querySelectorAll: (_sel: string) => [],
-    } as unknown as HTMLElement;
-
-    const viz = new JumpQuestVisualizer();
-    await viz.init({
-      root: mockRoot,
+    await assertVisualizerLifecycleContract(JumpQuestVisualizer, {
       algorithmId: 'jump-quest',
       viewId: 'algo-jump-quest-view',
     });
-
-    expect(viz).toBeDefined();
-    viz.destroy();
   });
 });
