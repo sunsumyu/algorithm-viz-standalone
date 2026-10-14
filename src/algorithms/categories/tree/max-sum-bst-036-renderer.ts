@@ -96,18 +96,10 @@ export const maxSumBst036Visualizer = registerDeclarativeAlgorithm<MaxSumBstStep
       renderCustomMetrics: MaxSumBstCanvasAdapter.renderCustomMetrics,
     },
   ],
-  inputs: [
-    {
-      id: 'preset',
-      label: '树形测试用例',
-      type: 'select',
-      defaultValue: 'classic_lc1373',
-      options: [
-        { label: 'LC 1373 官方多层破损树', value: 'classic_lc1373' },
-        { label: '全树均为严格 BST 用例', value: 'full_bst' },
-        { label: '根节点倒错非 BST 用例', value: 'broken_bst' },
-      ],
-    },
+  presets: [
+    { label: 'LC 1373 官方多层破损树', values: { preset: 'classic_lc1373' } },
+    { label: '全树均为严格 BST 用例', values: { preset: 'full_bst' } },
+    { label: '根节点倒错非 BST 用例', values: { preset: 'broken_bst' } },
   ],
   card2Title: '树形 DP 结构体探针与决策面板',
   card2Desc: '后序遍历自底向上搜集 Info(isBST, min, max, sum)',
