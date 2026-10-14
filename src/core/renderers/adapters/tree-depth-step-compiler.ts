@@ -1327,299 +1327,273 @@ export class TreeDepthStepCompiler {
    * Stage 2: 广度优先搜索层序最短路提前终止 (BFS Level Order Early Exit)
    */
   public static compileMinDepthStage2BfsSteps(root: TreeNode | null): MinDepthStep[] {
-    const steps: MinDepthStep[] = [];
     const lines = MIN_DEPTH_STAGE2_LINES;
 
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        depth: 0,
-        minDepth: 0,
-        decision: '特判返回：树为空',
-        message: '树为空，最小深度为 0。',
-        log: 'root is null -> return 0',
-        codeLine: lines.baseNull,
-        stageId: 'stage-2',
-        metrics: { '当前层深度': 0, '最小深度': 0 },
-      });
-      return steps;
-    }
-
-    const queue: TreeNode[] = [root];
-    let depth = 1;
-
-    steps.push({
-      tree: cloneStateDepTree(root),
-      current: root.val,
-      depth: 1,
-      minDepth: null,
-      decision: `启动 BFS 层序遍历：root = Node(${root.val}) 入队，初始层深度 = 1`,
-      message: 'BFS 最短路核心：逐层波前推进，首个遇见的叶子节点所在层深度即为全树最小深度！',
-      log: `Init BFS queue with Node(${root.val})`,
-      codeLine: lines.initQueue,
+    return BinaryTreeTraversalCompiler.compileBfs<TreeNode, number>({
+      root,
       stageId: 'stage-2',
-      queueState: [root.val],
-      highlightedNodes: [root.val],
-      metrics: { '当前层深度': 1, '队列长度': 1, '当前节点': `Node(${root.val})` },
-    });
-
-    while (queue.length > 0) {
-      const size = queue.length;
-      const currentLevelNodes = queue.map((n) => n.val);
-
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: queue[0].val,
-        depth,
-        minDepth: null,
-        decision: `当前正探索第 ${depth} 层：本层共有 ${size} 个节点 [${currentLevelNodes.join(', ')}]`,
-        message: `逐个检查第 ${depth} 层的节点，若发现叶子节点即可立即提前终止！`,
-        log: `Explore Level ${depth}, size=${size}`,
-        codeLine: lines.whileLoop,
-        stageId: 'stage-2',
-        queueState: [...currentLevelNodes],
-        highlightedNodes: [...currentLevelNodes],
-        metrics: { '当前层深度': depth, '本层节点数': size },
-      });
-
-      for (let i = 0; i < size; i++) {
-        const node = queue.shift()!;
-
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: null,
-          decision: `出队考察节点 Node(${node.val})，检查是否为叶子节点`,
-          message: `node = queue.poll()，检查左右孩子指针 left=${node.left?.val ?? 'null'}, right=${node.right?.val ?? 'null'}`,
-          log: `Poll Node(${node.val}) at depth ${depth}`,
-          codeLine: lines.pollNode,
-          stageId: 'stage-2',
-          queueState: queue.map((n) => n.val),
-          highlightedNodes: [node.val],
-          metrics: { '出队节点': `Node(${node.val})`, '当前层深度': depth },
-        });
-
-        if (!node.left && !node.right) {
-          steps.push({
-            tree: cloneStateDepTree(root),
-            current: node.val,
-            depth,
-            minDepth: depth,
-            decision: `🎯 命中首个叶子节点 Node(${node.val})！触发 BFS 提前退出，最小深度 = ${depth}`,
-            message: `BFS 最优性定理：层序遍历首次遇见的叶子节点保证具有最短根到叶距离，立即返回当前深度 ${depth}！`,
-            log: `First leaf Node(${node.val}) reached! Early exit at depth ${depth}`,
-            codeLine: lines.leafExit,
-            stageId: 'stage-2',
-            highlightedNodes: [node.val],
-            metrics: { '命中叶子节点': `Node(${node.val})`, '提前终止深度': depth, '全树最小深度': depth },
-          });
-
-          steps.push({
-            tree: cloneStateDepTree(root),
+      onEmpty: () => ({
+        result: 0,
+        steps: [
+          {
+            tree: null,
             current: null,
-            depth,
-            minDepth: depth,
-            decision: `🎉 BFS 提前终止成功！二叉树最小深度 = ${depth}`,
-            message: `无需继续遍历后续深层节点，算法以最优常数时间提前结束。`,
-            log: `BFS early exit done. Result = ${depth}`,
-            codeLine: lines.done,
+            depth: 0,
+            minDepth: 0,
+            decision: '特判返回：树为空',
+            message: '树为空，最小深度为 0。',
+            log: 'root is null -> return 0',
+            codeLine: lines.baseNull,
             stageId: 'stage-2',
-            metrics: { '最终最小深度': depth },
-          });
-
-          return steps;
-        }
-
-        if (node.left) queue.push(node.left);
-        if (node.right) queue.push(node.right);
-
-        steps.push({
+            metrics: { '当前层深度': 0, '最小深度': 0 },
+          } as any,
+        ],
+      }),
+      onInit: () => ({
+        tree: cloneStateDepTree(root),
+        current: root!.val,
+        depth: 1,
+        minDepth: null,
+        decision: `启动 BFS 层序遍历：root = Node(${root!.val}) 入队，初始层深度 = 1`,
+        message: 'BFS 最短路核心：逐层波前推进，首个遇见的叶子节点所在层深度即为全树最小深度！',
+        log: `Init BFS queue with Node(${root!.val})`,
+        codeLine: lines.initQueue,
+        stageId: 'stage-2',
+        queueState: [root!.val],
+        highlightedNodes: [root!.val],
+        metrics: { '当前层深度': 1, '队列长度': 1, '当前节点': `Node(${root!.val})` },
+      } as any),
+      onLevelStart: (ctx) => {
+        const currentLevelNodes = ctx.queue.map((n) => n.val);
+        return {
           tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
+          current: ctx.queue[0]?.val ?? null,
+          depth: ctx.levelIndex,
           minDepth: null,
-          decision: `Node(${node.val}) 非叶子，将非空孩子推入下一层队列：[${[node.left?.val, node.right?.val].filter((v) => v !== undefined).join(', ')}]`,
-          message: `子节点加入队列，队列新长度为 ${queue.length}`,
-          log: `Enqueue children of Node(${node.val})`,
+          decision: `当前正探索第 ${ctx.levelIndex} 层：本层共有 ${ctx.queue.length} 个节点 [${currentLevelNodes.join(', ')}]`,
+          message: `逐个检查第 ${ctx.levelIndex} 层的节点，若发现叶子节点即可立即提前终止！`,
+          log: `Explore Level ${ctx.levelIndex}, size=${ctx.queue.length}`,
+          codeLine: lines.whileLoop,
+          stageId: 'stage-2',
+          queueState: [...currentLevelNodes],
+          highlightedNodes: [...currentLevelNodes],
+          metrics: { '当前层深度': ctx.levelIndex, '本层节点数': ctx.queue.length },
+        } as any;
+      },
+      onPollNode: (node, ctx) => ({
+        tree: cloneStateDepTree(root),
+        current: node.val,
+        depth: ctx.levelIndex,
+        minDepth: null,
+        decision: `出队考察节点 Node(${node.val})，检查是否为叶子节点`,
+        message: `node = queue.poll()，检查左右孩子指针 left=${node.left?.val ?? 'null'}, right=${node.right?.val ?? 'null'}`,
+        log: `Poll Node(${node.val}) at depth ${ctx.levelIndex}`,
+        codeLine: lines.pollNode,
+        stageId: 'stage-2',
+        queueState: ctx.queue.map((n) => n.val),
+        highlightedNodes: [node.val],
+        metrics: { '出队节点': `Node(${node.val})`, '当前层深度': ctx.levelIndex },
+      } as any),
+      onLeafHit: (node, ctx) => {
+        if (!node.left && !node.right) {
+          return {
+            earlyExit: true,
+            result: ctx.levelIndex,
+            step: {
+              tree: cloneStateDepTree(root),
+              current: node.val,
+              depth: ctx.levelIndex,
+              minDepth: ctx.levelIndex,
+              decision: `🎯 命中首个叶子节点 Node(${node.val})！触发 BFS 提前退出，最小深度 = ${ctx.levelIndex}`,
+              message: `BFS 最优性定理：层序遍历首次遇见的叶子节点保证具有最短根到叶距离，立即返回当前深度 ${ctx.levelIndex}！`,
+              log: `First leaf Node(${node.val}) reached! Early exit at depth ${ctx.levelIndex}`,
+              codeLine: lines.leafExit,
+              stageId: 'stage-2',
+              highlightedNodes: [node.val],
+              metrics: { '命中叶子节点': `Node(${node.val})`, '提前终止深度': ctx.levelIndex, '全树最小深度': ctx.levelIndex },
+            } as any,
+          };
+        }
+        return { earlyExit: false };
+      },
+      onExpandChild: (parent, child, branch, ctx) => {
+        return {
+          tree: cloneStateDepTree(root),
+          current: parent.val,
+          depth: ctx.levelIndex,
+          minDepth: null,
+          decision: `Node(${parent.val}) 非叶子，将${branch === 'left' ? '左' : '右'}孩子推入下一层队列：Node(${child.val})`,
+          message: `子节点加入队列，队列新长度为 ${ctx.queue.length}`,
+          log: `Enqueue ${branch} child of Node(${parent.val})`,
           codeLine: lines.pushChildren,
           stageId: 'stage-2',
-          queueState: queue.map((n) => n.val),
-          highlightedNodes: [node.val],
-          metrics: { '考察节点': `Node(${node.val})`, '队列新长度': queue.length },
-        });
-      }
-
-      depth++;
-      steps.push({
+          queueState: ctx.queue.map((n) => n.val),
+          highlightedNodes: [parent.val],
+          metrics: { '考察节点': `Node(${parent.val})`, '队列新长度': ctx.queue.length },
+        } as any;
+      },
+      onLevelEnd: (ctx) => ({
         tree: cloneStateDepTree(root),
         current: null,
-        depth,
+        depth: ctx.levelIndex + 1,
         minDepth: null,
-        decision: `第 ${depth - 1} 层全数完成且无叶子，层深度自增：depth ➔ ${depth}`,
-        message: `下一轮将扫描深度为 ${depth} 的节点波前。`,
-        log: `Depth increments to ${depth}`,
+        decision: `第 ${ctx.levelIndex} 层全数完成且无叶子，层深度自增：depth ➔ ${ctx.levelIndex + 1}`,
+        message: `下一轮将扫描深度为 ${ctx.levelIndex + 1} 的节点波前。`,
+        log: `Depth increments to ${ctx.levelIndex + 1}`,
         codeLine: lines.incDepth,
         stageId: 'stage-2',
-        queueState: queue.map((n) => n.val),
-        metrics: { '新层深度': depth, '队列待检节点数': queue.length },
-      });
-    }
-
-    return steps;
+        queueState: ctx.queue.map((n) => n.val),
+        metrics: { '新层深度': ctx.levelIndex + 1, '队列待检节点数': ctx.queue.length },
+      } as any),
+      onDone: (finalResult) => ({
+        tree: cloneStateDepTree(root),
+        current: null,
+        depth: finalResult,
+        minDepth: finalResult,
+        decision: `🎉 BFS 提前终止成功！二叉树最小深度 = ${finalResult}`,
+        message: '无需继续遍历后续深层节点，算法以最优常数时间提前结束。',
+        log: `BFS early exit done. Result = ${finalResult}`,
+        codeLine: lines.done,
+        stageId: 'stage-2',
+        metrics: { '最终最小深度': finalResult },
+      } as any),
+    }) as MinDepthStep[];
   }
 
   /**
    * Stage 3: 静态数组模拟队列 (Static Array Queue BFS · Zuoshen Class 036)
    */
   public static compileMinDepthStage3StaticArraySteps(root: TreeNode | null): MinDepthStep[] {
-    const steps: MinDepthStep[] = [];
     const lines = MIN_DEPTH_STAGE3_LINES;
 
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        depth: 0,
-        minDepth: 0,
-        decision: '特判返回：树为空',
-        message: '树为空，最小深度为 0。',
-        log: 'root is null -> return 0',
-        codeLine: lines.baseNull,
-        stageId: 'stage-3',
-        metrics: { '当前深度': 0, '最小深度': 0 },
-      });
-      return steps;
-    }
-
-    const queueArr: TreeNode[] = [];
-    let l = 0;
-    let r = 0;
-
-    queueArr[r++] = root;
-    let depth = 1;
-
-    steps.push({
-      tree: cloneStateDepTree(root),
-      current: root.val,
-      depth: 1,
-      minDepth: null,
-      decision: `初始化静态数组队列：queue[r++] = Node(${root.val})，指针状态 l=0, r=1`,
-      message: '左神 Class 036 风格：用连续数组与双指针 l/r 模拟队列，杜绝对象分配与 GC 抖动。',
-      log: `Init static array queue with root Node(${root.val})`,
-      codeLine: lines.initArray,
+    return BinaryTreeTraversalCompiler.compileStaticQueue<TreeNode, number>({
+      root,
       stageId: 'stage-3',
-      staticQueueState: { l, r, queue: queueArr.slice(l, r).map((n) => n.val) },
-      highlightedNodes: [root.val],
-      metrics: { '指针 l': l, '指针 r': r, '当前深度': 1, '当前节点': `Node(${root.val})` },
-    });
-
-    while (l < r) {
-      const size = r - l;
-      const currentSlice = queueArr.slice(l, r).map((n) => n.val);
-
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: queueArr[l].val,
-        depth,
-        minDepth: null,
-        decision: `当前层深度 = ${depth}，本层待扫描窗口长度 size = r - l = ${r} - ${l} = ${size}`,
-        message: `窗口内节点: [${currentSlice.join(', ')}]，开始静态数组层序弹出与叶子判定。`,
-        log: `Static array level ${depth}: l=${l}, r=${r}, size=${size}`,
-        codeLine: lines.whileLoop,
-        stageId: 'stage-3',
-        staticQueueState: { l, r, queue: currentSlice },
-        highlightedNodes: [...currentSlice],
-        metrics: { '层深度': depth, '指针 l': l, '指针 r': r, '窗口大小': size },
-      });
-
-      for (let i = 0; i < size; i++) {
-        const node = queueArr[l++];
-
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: null,
-          decision: `弹出队头 node = queue[l++] ➔ Node(${node.val})，l 增至 ${l}`,
-          message: `检查 Node(${node.val}) 是否为叶节点：left=${node.left?.val ?? 'null'}, right=${node.right?.val ?? 'null'}`,
-          log: `Poll queueArr[${l - 1}] = Node(${node.val})`,
-          codeLine: lines.pollNode,
-          stageId: 'stage-3',
-          staticQueueState: { l, r, queue: queueArr.slice(l, r).map((n) => n.val) },
-          highlightedNodes: [node.val],
-          metrics: { '出队节点': `Node(${node.val})`, '指针 l': l, '指针 r': r },
-        });
-
-        if (!node.left && !node.right) {
-          steps.push({
-            tree: cloneStateDepTree(root),
-            current: node.val,
-            depth,
-            minDepth: depth,
-            decision: `🎯 静态数组首现叶子 Node(${node.val})！触发提前终止，直接返回深度 ${depth}`,
-            message: `静态数组模拟队列同样具备 BFS 最优性，首个叶节点即确定最小深度为 ${depth}！`,
-            log: `Static array early exit at leaf Node(${node.val}), depth=${depth}`,
-            codeLine: lines.leafExit,
-            stageId: 'stage-3',
-            staticQueueState: { l, r, queue: queueArr.slice(l, r).map((n) => n.val) },
-            highlightedNodes: [node.val],
-            metrics: { '命中叶节点': `Node(${node.val})`, '最终最小深度': depth },
-          });
-
-          steps.push({
-            tree: cloneStateDepTree(root),
+      onEmpty: () => ({
+        result: 0,
+        steps: [
+          {
+            tree: null,
             current: null,
-            depth,
-            minDepth: depth,
-            decision: `🎉 静态数组模拟队列算法完成！二叉树最小深度 = ${depth}`,
-            message: `算法以极高常数性能与零动态分配提前终止返回 ${depth}。`,
-            log: `Static array BFS done. Result = ${depth}`,
-            codeLine: lines.done,
+            depth: 0,
+            minDepth: 0,
+            decision: '特判返回：树为空',
+            message: '树为空，最小深度为 0。',
+            log: 'root is null -> return 0',
+            codeLine: lines.baseNull,
             stageId: 'stage-3',
-            staticQueueState: { l, r, queue: [] },
-            metrics: { '最终最小深度': depth },
-          });
-
-          return steps;
-        }
-
-        if (node.left) queueArr[r++] = node.left;
-        if (node.right) queueArr[r++] = node.right;
-
-        steps.push({
+            metrics: { '当前深度': 0, '最小深度': 0 },
+          } as any,
+        ],
+      }),
+      onInit: (l, r, arr) => ({
+        tree: cloneStateDepTree(root),
+        current: root!.val,
+        depth: 1,
+        minDepth: null,
+        decision: `初始化静态数组队列：queue[r++] = Node(${root!.val})，指针状态 l=0, r=1`,
+        message: '左神 Class 036 风格：用连续数组与双指针 l/r 模拟队列，杜绝对象分配与 GC 抖动。',
+        log: `Init static array queue with root Node(${root!.val})`,
+        codeLine: lines.initArray,
+        stageId: 'stage-3',
+        staticQueueState: { l, r, queue: arr.slice(l, r).filter((v): v is number => v !== null) },
+        highlightedNodes: [root!.val],
+        metrics: { '指针 l': l, '指针 r': r, '当前深度': 1, '当前节点': `Node(${root!.val})` },
+      } as any),
+      onLevelStart: (level, levelSize, l, r, arr) => {
+        const currentSlice = arr.slice(l, r).filter((v): v is number => v !== null);
+        return {
           tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
+          current: arr[l] ?? null,
+          depth: level,
           minDepth: null,
-          decision: `将 Node(${node.val}) 子树压入静态数组右端，r 增至 ${r}`,
-          message: `孩子入队后静态队列区间为 [l=${l}, r=${r})`,
-          log: `Push children of Node(${node.val}), r=${r}`,
-          codeLine: lines.pushChildren,
+          decision: `当前层深度 = ${level}，本层待扫描窗口长度 size = r - l = ${r} - ${l} = ${levelSize}`,
+          message: `窗口内节点: [${currentSlice.join(', ')}]，开始静态数组层序弹出与叶子判定。`,
+          log: `Static array level ${level}: l=${l}, r=${r}, size=${levelSize}`,
+          codeLine: lines.whileLoop,
           stageId: 'stage-3',
-          staticQueueState: { l, r, queue: queueArr.slice(l, r).map((n) => n.val) },
-          highlightedNodes: [node.val],
-          metrics: { '指针 l': l, '指针 r': r, '未处理元素数': r - l },
-        });
-      }
-
-      depth++;
-      steps.push({
+          staticQueueState: { l, r, queue: currentSlice },
+          highlightedNodes: [...currentSlice],
+          metrics: { '层深度': level, '指针 l': l, '指针 r': r, '窗口大小': levelSize },
+        } as any;
+      },
+      onPollNode: (node, l, r, arr, level) => ({
+        tree: cloneStateDepTree(root),
+        current: node.val,
+        depth: level,
+        minDepth: null,
+        decision: `弹出队头 node = queue[l++] ➔ Node(${node.val})，l 增至 ${l}`,
+        message: `检查 Node(${node.val}) 是否为叶节点：left=${node.left?.val ?? 'null'}, right=${node.right?.val ?? 'null'}`,
+        log: `Poll queueArr[${l - 1}] = Node(${node.val})`,
+        codeLine: lines.pollNode,
+        stageId: 'stage-3',
+        staticQueueState: { l, r, queue: arr.slice(l, r).filter((v): v is number => v !== null) },
+        highlightedNodes: [node.val],
+        metrics: { '出队节点': `Node(${node.val})`, '指针 l': l, '指针 r': r },
+      } as any),
+      onLeafHit: (node, l, r, level) => {
+        if (!node.left && !node.right) {
+          return {
+            earlyExit: true,
+            result: level,
+            step: {
+              tree: cloneStateDepTree(root),
+              current: node.val,
+              depth: level,
+              minDepth: level,
+              decision: `🎯 静态数组首现叶子 Node(${node.val})！触发提前终止，直接返回深度 ${level}`,
+              message: `静态数组模拟队列同样具备 BFS 最优性，首个叶节点即确定最小深度为 ${level}！`,
+              log: `Static array early exit at leaf Node(${node.val}), depth=${level}`,
+              codeLine: lines.leafExit,
+              stageId: 'stage-3',
+              staticQueueState: { l, r, queue: [node.val] },
+              highlightedNodes: [node.val],
+              metrics: { '命中叶节点': `Node(${node.val})`, '最终最小深度': level },
+            } as any,
+          };
+        }
+        return { earlyExit: false };
+      },
+      onPushChild: (child, branch, l, r, arr, parent) => ({
+        tree: cloneStateDepTree(root),
+        current: parent?.val ?? null,
+        depth: 0,
+        minDepth: null,
+        decision: `将 Node(${child.val}) 子树压入静态数组右端，r 增至 ${r}`,
+        message: `孩子入队后静态队列区间为 [l=${l}, r=${r})`,
+        log: `Push child Node(${child.val}), r=${r}`,
+        codeLine: lines.pushChildren,
+        stageId: 'stage-3',
+        staticQueueState: { l, r, queue: arr.slice(l, r).filter((v): v is number => v !== null) },
+        highlightedNodes: [child.val],
+        metrics: { '指针 l': l, '指针 r': r, '未处理元素数': r - l },
+      } as any),
+      onLevelEnd: (level, l, r, arr) => ({
         tree: cloneStateDepTree(root),
         current: null,
-        depth,
+        depth: level + 1,
         minDepth: null,
-        decision: `第 ${depth - 1} 层扫描完毕，层深度自增：depth ➔ ${depth}`,
-        message: `下一轮将扫描静态数组 [${l}, ${r}) 区间中的第 ${depth} 层节点。`,
-        log: `Depth increments to ${depth}`,
+        decision: `第 ${level} 层扫描完毕，层深度自增：depth ➔ ${level + 1}`,
+        message: `下一轮将扫描静态数组 [${l}, ${r}) 区间中的第 ${level + 1} 层节点。`,
+        log: `Depth increments to ${level + 1}`,
         codeLine: lines.incDepth,
         stageId: 'stage-3',
-        staticQueueState: { l, r, queue: queueArr.slice(l, r).map((n) => n.val) },
-        metrics: { '新层深度': depth, '待处理元素数': r - l },
-      });
-    }
-
-    return steps;
+        staticQueueState: { l, r, queue: arr.slice(l, r).filter((v): v is number => v !== null) },
+        metrics: { '新层深度': level + 1, '待处理元素数': r - l },
+      } as any),
+      onDone: (finalResult, l, r) => ({
+        tree: cloneStateDepTree(root),
+        current: null,
+        depth: finalResult,
+        minDepth: finalResult,
+        decision: `🎉 静态数组模拟队列算法完成！二叉树最小深度 = ${finalResult}`,
+        message: `算法以极高常数性能与零动态分配提前终止返回 ${finalResult}。`,
+        log: `Static array BFS done. Result = ${finalResult}`,
+        codeLine: lines.done,
+        stageId: 'stage-3',
+        staticQueueState: { l, r, queue: [] },
+        metrics: { '最终最小深度': finalResult },
+      } as any),
+    }) as MinDepthStep[];
   }
 }
