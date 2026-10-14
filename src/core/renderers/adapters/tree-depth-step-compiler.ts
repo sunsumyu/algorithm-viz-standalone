@@ -23,6 +23,7 @@ import {
 import {
   MIN_DEPTH_STAGE1_CODES,
 } from '../../../algorithms/categories/tree/min-depth-stage-codes';
+import { BinaryTreeTraversalCompiler } from './binary-tree-traversal-compiler';
 
 // ============================================================
 // 契约类型定义
@@ -152,320 +153,289 @@ export class TreeDepthStepCompiler {
    * Stage 1: 递归后序自底向上高度归约 (Post-order DFS)
    */
   public static compileMaxDepthStage1Steps(root: TreeNode | null): TDStep[] {
-    const steps: TDStep[] = [];
     const depthsMap = new Map<number, number>();
     const L = TREE_DEPTH_STAGE1_LINES;
 
-    if (!root) {
-      const traceSnapshot: CallTraceSnapshot = {
-        lines: [
+    return BinaryTreeTraversalCompiler.compileDfs<TreeNode, number>({
+      root,
+      stageId: 'stage-1',
+      funcName: 'maxDepth',
+      onEmpty: (ctx) => {
+        const traceSnapshot: CallTraceSnapshot = {
+          lines: [
+            {
+              id: 'null-root',
+              depth: 0,
+              text: 'maxDepth(null) -> 树为空 -> return 0',
+              kind: 'header',
+              comment: '<- 树为空',
+            },
+          ],
+          activeLineId: 'null-root',
+          finalResult: 0,
+        };
+
+        return [
           {
-            id: 'null-root',
-            depth: 0,
-            text: 'maxDepth(null) -> 树为空 -> return 0',
-            kind: 'header',
-            comment: '<- 树为空',
-          },
-        ],
-        activeLineId: 'null-root',
-        finalResult: 0,
-      };
-
-      steps.push({
-        tree: null,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: '特判返回：树为空',
-        action: 'done',
-        message: '树为空，返回深度 0。',
-        log: 'root is null -> return 0',
-        metrics: makeTDMetrics(null, 0, 0, 0),
-        codeLine: L.empty,
-        callTrace: traceSnapshot,
-      });
-      return steps;
-    }
-
-    const traceLines: CallTraceLine[] = [];
-
-    function makeSnapshot(activeLineId?: string, finalResult?: number): CallTraceSnapshot {
-      return {
-        lines: traceLines.map((l) => ({ ...l })),
-        activeLineId,
-        finalResult,
-      };
-    }
-
-    const rootHeaderId = `call-${root.val}`;
-    traceLines.push({
-      id: rootHeaderId,
-      depth: 0,
-      text: `maxDepth(${root.val})`,
-      kind: 'header',
-      comment: '<- 最终要算这个',
-    });
-
-    steps.push({
-      tree: root,
-      current: null,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: 0,
-      depthsMap: new Map(depthsMap),
-      decision: '算法启动：初始化最大深度计算',
-      action: 'enter',
-      message: `求二叉树最大深度：从根节点 ${root.val} 开始后序自底向上高度归约。递推式: 1 + max(leftDepth, rightDepth)。`,
-      log: `maxDepth(root: ${root.val})`,
-      metrics: makeTDMetrics(null, 0, 0, 0),
-      codeLine: L.entry,
-      callTrace: makeSnapshot(rootHeaderId),
-    });
-
-    function dfs(node: TreeNode | null, depth: number, roleComment?: string): number {
-      if (!node) {
-        const lineId = `null-${depth}-${Math.random().toString(36).slice(2, 6)}`;
-        traceLines.push({
+            tree: null,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(),
+            decision: '特判返回：树为空',
+            action: 'done',
+            message: '树为空，返回深度 0。',
+            log: 'root is null -> return 0',
+            metrics: makeTDMetrics(null, 0, 0, 0),
+            codeLine: L.empty,
+            callTrace: traceSnapshot,
+          } as any,
+        ];
+      },
+      onInitSteps: (r, ctx) => {
+        const rootHeaderId = `call-${r.val}`;
+        ctx.trace.addHeader(`maxDepth(${r.val})`, 0, '<- 最终要算这个', rootHeaderId);
+        return [
+          {
+            tree: r,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            decision: '算法启动：初始化最大深度计算',
+            action: 'enter',
+            message: `求二叉树最大深度：从根节点 ${r.val} 开始后序自底向上高度归约。递推式: 1 + max(leftDepth, rightDepth)。`,
+            log: `maxDepth(root: ${r.val})`,
+            metrics: makeTDMetrics(null, 0, 0, 0),
+            codeLine: L.entry,
+            callTrace: ctx.trace.snapshot(),
+          } as any,
+        ];
+      },
+      onBaseNull: (ctx) => {
+        const lineId = `null-${ctx.depth}-${Math.random().toString(36).slice(2, 6)}`;
+        ctx.trace.addLine({
           id: lineId,
-          depth: depth - 1,
+          depth: Math.max(0, ctx.depth - 1),
           text: '遇到空节点 null -> return 0',
           kind: 'condition-skip',
         });
-        steps.push({
+        return {
+          result: 0,
+          decision: '空节点特判：返回深度 0',
+          message: '遇到空节点 null，返回深度 0。',
+          log: 'node is null -> return 0',
+          codeLine: L.empty,
+          metrics: makeTDMetrics(null, 0, 0, 0),
+          customFields: {
+            tree: root,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            action: 'empty-node',
+          },
+        };
+      },
+      onEnter: (node, ctx) => {
+        const callLineId = `call-${node.val}`;
+        if (node !== root) {
+          ctx.trace.addHeader(`maxDepth(${node.val})`, Math.max(0, ctx.depth - 1), undefined, callLineId);
+        }
+
+        const passLineId = `pass-${node.val}`;
+        ctx.trace.addLine({
+          id: passLineId,
+          depth: Math.max(0, ctx.depth - 1),
+          text: `① root=${node.val}, 非空`,
+          kind: 'condition-pass',
+        });
+
+        const stepNonEmpty: TDStep = {
           tree: root,
-          current: null,
+          current: node.val,
           leftDepth: 0,
           rightDepth: 0,
           maxDepth: 0,
           depthsMap: new Map(depthsMap),
-          decision: '空节点特判：返回深度 0',
-          action: 'empty-node',
-          message: '遇到空节点 null，返回深度 0。',
-          log: 'node is null -> return 0',
-          metrics: makeTDMetrics(null, 0, 0, 0),
+          decision: `节点 ${node.val} 非空检查通过`,
+          action: 'check-non-empty',
+          message: `节点 ${node.val} 非空，跳过 root == null 特判，准备深入左子树。`,
+          log: `node ${node.val} != null`,
+          metrics: makeTDMetrics(node.val, 0, 0, 0),
           codeLine: L.empty,
-          callTrace: makeSnapshot(lineId),
+          callTrace: ctx.trace.snapshot(),
+        };
+
+        return {
+          action: 'enter',
+          decision: `考察节点 ${node.val}`,
+          message: `递归到达节点 ${node.val}，准备分别计算其左右子树深度。`,
+          log: `visit node: ${node.val}`,
+          codeLine: L.entry,
+          metrics: makeTDMetrics(node.val, 0, 0, 0),
+          customFields: {
+            tree: root,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+          },
+          extraSteps: [stepNonEmpty as any],
+        };
+      },
+      beforeLeft: (node, ctx) => {
+        const leftPrepId = `left-prep-${node.val}`;
+        ctx.trace.addLine({
+          id: leftPrepId,
+          depth: Math.max(0, ctx.depth - 1),
+          text: `② int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})`,
+          kind: 'recurse-prep',
         });
-        return 0;
-      }
 
-      const callLineId = `call-${node.val}`;
-      if (node !== root) {
-        traceLines.push({
-          id: callLineId,
-          depth: depth - 1,
-          text: `maxDepth(${node.val})`,
-          kind: 'header',
-          comment: roleComment,
+        return {
+          decision: `准备深入节点 ${node.val} 的左子树`,
+          message: `发起左递归调用：int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})。`,
+          log: `recurse left: ${node.left ? node.left.val : 'null'}`,
+          codeLine: L.callLeft,
+          metrics: makeTDMetrics(node.val, 0, 0, 0),
+          customFields: {
+            tree: root,
+            action: 'call-left',
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+      afterLeft: (node, l, ctx) => {
+        ctx.trace.addUnwindCalc(`左子树就绪: leftDepth = ${l}`, Math.max(0, ctx.depth - 1));
+
+        return {
+          action: 'left-done',
+          decision: `节点 ${node.val} 左子树深度就绪: ${l}`,
+          message: `节点 ${node.val} 的左子树深度计算完成: leftDepth = ${l}。接下来深入右子树。`,
+          log: `node ${node.val}: leftDepth = ${l}`,
+          codeLine: L.leftDone,
+          metrics: makeTDMetrics(node.val, l, 0, 0),
+          customFields: {
+            tree: root,
+            leftDepth: l,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+      beforeRight: (node, l, ctx) => {
+        const rightPrepId = `right-prep-${node.val}`;
+        ctx.trace.addLine({
+          id: rightPrepId,
+          depth: Math.max(0, ctx.depth - 1),
+          text: `③ int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})`,
+          kind: 'recurse-prep',
         });
-      }
 
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `考察节点 ${node.val}`,
-        action: 'enter',
-        message: `递归到达节点 ${node.val}，准备分别计算其左右子树深度。`,
-        log: `visit node: ${node.val}`,
-        metrics: makeTDMetrics(node.val, 0, 0, 0),
-        codeLine: L.entry,
-        callTrace: makeSnapshot(callLineId),
-      });
+        return {
+          decision: `准备深入节点 ${node.val} 的右子树`,
+          message: `发起右递归调用：int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})。`,
+          log: `recurse right: ${node.right ? node.right.val : 'null'}`,
+          codeLine: L.callRight,
+          metrics: makeTDMetrics(node.val, l, 0, 0),
+          customFields: {
+            tree: root,
+            action: 'call-right',
+            leftDepth: l,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+      afterRight: (node, r, ctx) => {
+        const l = depthsMap.get(node.left?.val ?? -9999) ?? 0;
+        ctx.trace.addUnwindCalc(`右子树就绪: rightDepth = ${r}`, Math.max(0, ctx.depth - 1));
 
-      const passLineId = `pass-${node.val}`;
-      traceLines.push({
-        id: passLineId,
-        depth: depth - 1,
-        text: `① root=${node.val}, 非空`,
-        kind: 'condition-pass',
-      });
+        return {
+          action: 'right-done',
+          decision: `节点 ${node.val} 右子树深度就绪: ${r}`,
+          message: `节点 ${node.val} 的右子树深度计算完成: rightDepth = ${r}。左右子树高度齐备，准备归约自身深度。`,
+          log: `node ${node.val}: rightDepth = ${r}`,
+          codeLine: L.rightDone,
+          metrics: makeTDMetrics(node.val, l, r, 0),
+          customFields: {
+            tree: root,
+            leftDepth: l,
+            rightDepth: r,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+      onCombine: (node, l, r, ctx) => {
+        const curDepth = 1 + Math.max(l, r);
+        depthsMap.set(node.val, curDepth);
 
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `节点 ${node.val} 非空检查通过`,
-        action: 'check-non-empty',
-        message: `节点 ${node.val} 非空，跳过 root == null 特判，准备深入左子树。`,
-        log: `node ${node.val} != null`,
-        metrics: makeTDMetrics(node.val, 0, 0, 0),
-        codeLine: L.empty,
-        callTrace: makeSnapshot(passLineId),
-      });
+        const unwindLineId = `unwind-${node.val}`;
+        ctx.trace.addLine({
+          id: unwindLineId,
+          depth: Math.max(0, ctx.depth - 1),
+          text: `回到 maxDepth(${node.val}): return 1 + max(${l}, ${r}) = ${curDepth}`,
+          kind: 'unwind-calc',
+          formula: `1 + max(${l}, ${r}) = ${curDepth}`,
+          status: 'done',
+        });
 
-      // 深入左子树
-      const leftPrepId = `left-prep-${node.val}`;
-      traceLines.push({
-        id: leftPrepId,
-        depth: depth - 1,
-        text: `② int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})`,
-        kind: 'recurse-prep',
-      });
+        return {
+          result: curDepth,
+          action: 'return-depth',
+          decision: `归约节点 ${node.val} 深度: 1 + max(${l}, ${r}) = ${curDepth}`,
+          message: `节点 ${node.val} 高度归约完成：1 + max(${l}, ${r}) = ${curDepth}。向父节点回溯该值。`,
+          log: `node ${node.val} maxDepth = 1 + max(${l}, ${r}) = ${curDepth}`,
+          codeLine: L.returnDepth,
+          metrics: makeTDMetrics(node.val, l, r, curDepth),
+          customFields: {
+            tree: root,
+            leftDepth: l,
+            rightDepth: r,
+            maxDepth: curDepth,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+      onDone: (finalMax, ctx) => {
+        const rootVal = root ? root.val : 'null';
+        const finalResultId = `final-res-${rootVal}`;
+        ctx.trace.addLine({
+          id: finalResultId,
+          depth: 0,
+          text: `🎉 最终结果: maxDepth(${rootVal}) = ${finalMax}`,
+          kind: 'final-result',
+          status: 'done',
+        });
+        ctx.trace.addFinalResult(`最终结果: ${finalMax}`, 0, undefined, finalMax);
 
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `准备深入节点 ${node.val} 的左子树`,
-        action: 'call-left',
-        message: `发起左递归调用：int leftDepth = maxDepth(${node.left ? node.left.val : 'null'})。`,
-        log: `recurse left: ${node.left ? node.left.val : 'null'}`,
-        metrics: makeTDMetrics(node.val, 0, 0, 0),
-        codeLine: L.callLeft,
-        callTrace: makeSnapshot(leftPrepId),
-      });
-
-      const l = dfs(node.left, depth + 1, `<- 算${node.val}的左子树`);
-
-      // 左子树就绪
-      const leftDoneId = `left-done-${node.val}`;
-      traceLines.push({
-        id: leftDoneId,
-        depth: depth - 1,
-        text: `左子树就绪: leftDepth = ${l}`,
-        kind: 'unwind-calc',
-      });
-
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: l,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `节点 ${node.val} 左子树深度就绪: ${l}`,
-        action: 'left-done',
-        message: `节点 ${node.val} 的左子树深度计算完成: leftDepth = ${l}。接下来深入右子树。`,
-        log: `node ${node.val}: leftDepth = ${l}`,
-        metrics: makeTDMetrics(node.val, l, 0, 0),
-        codeLine: L.leftDone,
-        callTrace: makeSnapshot(leftDoneId),
-      });
-
-      // 深入右子树
-      const rightPrepId = `right-prep-${node.val}`;
-      traceLines.push({
-        id: rightPrepId,
-        depth: depth - 1,
-        text: `③ int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})`,
-        kind: 'recurse-prep',
-      });
-
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: l,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `准备深入节点 ${node.val} 的右子树`,
-        action: 'call-right',
-        message: `发起右递归调用：int rightDepth = maxDepth(${node.right ? node.right.val : 'null'})。`,
-        log: `recurse right: ${node.right ? node.right.val : 'null'}`,
-        metrics: makeTDMetrics(node.val, l, 0, 0),
-        codeLine: L.callRight,
-        callTrace: makeSnapshot(rightPrepId),
-      });
-
-      const r = dfs(node.right, depth + 1, `<- 算${node.val}的右子树`);
-
-      // 右子树就绪
-      const rightDoneId = `right-done-${node.val}`;
-      traceLines.push({
-        id: rightDoneId,
-        depth: depth - 1,
-        text: `右子树就绪: rightDepth = ${r}`,
-        kind: 'unwind-calc',
-      });
-
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: l,
-        rightDepth: r,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        decision: `节点 ${node.val} 右子树深度就绪: ${r}`,
-        action: 'right-done',
-        message: `节点 ${node.val} 的右子树深度计算完成: rightDepth = ${r}。左右子树高度齐备，准备归约自身深度。`,
-        log: `node ${node.val}: rightDepth = ${r}`,
-        metrics: makeTDMetrics(node.val, l, r, 0),
-        codeLine: L.rightDone,
-        callTrace: makeSnapshot(rightDoneId),
-      });
-
-      const curDepth = 1 + Math.max(l, r);
-      depthsMap.set(node.val, curDepth);
-
-      const unwindLineId = `unwind-${node.val}`;
-      traceLines.push({
-        id: unwindLineId,
-        depth: depth - 1,
-        text: `回到 maxDepth(${node.val}): return 1 + max(${l}, ${r}) = ${curDepth}`,
-        kind: 'unwind-calc',
-        formula: `1 + max(${l}, ${r}) = ${curDepth}`,
-        status: 'done',
-      });
-
-      steps.push({
-        tree: root,
-        current: node.val,
-        leftDepth: l,
-        rightDepth: r,
-        maxDepth: curDepth,
-        depthsMap: new Map(depthsMap),
-        decision: `归约节点 ${node.val} 深度: 1 + max(${l}, ${r}) = ${curDepth}`,
-        action: 'return-depth',
-        message: `节点 ${node.val} 高度归约完成：1 + max(${l}, ${r}) = ${curDepth}。向父节点回溯该值。`,
-        log: `node ${node.val} maxDepth = 1 + max(${l}, ${r}) = ${curDepth}`,
-        metrics: makeTDMetrics(node.val, l, r, curDepth),
-        codeLine: L.returnDepth,
-        callTrace: makeSnapshot(unwindLineId),
-      });
-
-      return curDepth;
-    }
-
-    const finalMax = dfs(root, 1);
-
-    const finalResultId = `final-res-${root.val}`;
-    traceLines.push({
-      id: finalResultId,
-      depth: 0,
-      text: `🎉 最终结果: maxDepth(${root.val}) = ${finalMax}`,
-      kind: 'final-result',
-      status: 'done',
-    });
-
-    steps.push({
-      tree: root,
-      current: root.val,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: finalMax,
-      depthsMap: new Map(depthsMap),
-      decision: '最大深度计算完成',
-      action: 'done',
-      message: `🎉 深度计算完毕！整棵二叉树的最大深度为 【${finalMax}】。`,
-      log: `done maxDepth=${finalMax}`,
-      metrics: makeTDMetrics(root.val, 0, 0, finalMax),
-      codeLine: L.done,
-      callTrace: makeSnapshot(finalResultId, finalMax),
-    });
-
-    return steps;
+        return {
+          decision: '最大深度计算完成',
+          message: `🎉 深度计算完毕！整棵二叉树的最大深度为 【${finalMax}】。`,
+          log: `done maxDepth=${finalMax}`,
+          codeLine: L.done,
+          metrics: makeTDMetrics(root ? root.val : null, 0, 0, finalMax),
+          customFields: {
+            tree: root,
+            current: root ? root.val : null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: finalMax,
+            depthsMap: new Map(depthsMap),
+          },
+        };
+      },
+    }) as TDStep[];
   }
 
   /**

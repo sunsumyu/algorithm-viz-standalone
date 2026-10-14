@@ -108,6 +108,7 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
 
   /** 2. 节点入口帧 (Entry) */
   onEnter?: (node: TNode, ctx: TreeDfsContext<TNode, TResult>) => {
+    action?: string;
     decision?: string;
     message?: string;
     log?: string;
@@ -115,6 +116,7 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     metrics?: Record<string, any>;
     statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
+    extraSteps?: BinaryTreeStep<TResult>[];
   };
 
   /** 3. 叶节点特判帧 (Leaf Check) - 可选，触发时跳过子树深入并直接返回 */
@@ -485,7 +487,7 @@ export class BinaryTreeTraversalCompiler {
       steps.push({
         tree: cloneTree(spec.root as any),
         current: val,
-        action: 'entry',
+        action: enterMeta?.action || 'entry',
         decision: enterMeta?.decision || `进入 ${label}，开始探索`,
         message: enterMeta?.message || `执行调用帧 ${frameLabel}，准备向下推演。`,
         log: enterMeta?.log || `-> ${frameLabel}`,
@@ -497,6 +499,10 @@ export class BinaryTreeTraversalCompiler {
         visitedNodes: [...visitedNodes],
         ...enterMeta?.customFields,
       });
+
+      if (enterMeta?.extraSteps && enterMeta.extraSteps.length > 0) {
+        steps.push(...enterMeta.extraSteps);
+      }
 
       // 叶节点特判帧
       if (spec.onBaseLeaf) {
