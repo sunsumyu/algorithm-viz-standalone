@@ -38,23 +38,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
     { label: '🛋️ 当前考察沙发连边', color: '#f59e0b' },
     { label: '🟢 置换环连边 / 已成对', state: 'discovered' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设座位排布',
-      type: 'select',
-      defaultValue: 'two_cycles',
-      options: [
-        { label: '4 对情侣双置换环 (2 次交换)', value: 'two_cycles' },
-        { label: '4 对情侣大置换环 (3 次交换)', value: 'big_cycle' },
-        { label: '4 对情侣完美归位 (0 次交换)', value: 'perfect' },
-      ],
-    },
-  ],
   presets: [
-    { label: '双环排布', values: { 'input-preset': 'two_cycles' } },
-    { label: '大环排布', values: { 'input-preset': 'big_cycle' } },
-    { label: '完美排布', values: { 'input-preset': 'perfect' } },
+    { label: '双环排布 (2次交换)', values: { preset: 'two_cycles' } },
+    { label: '大环排布 (3次交换)', values: { preset: 'big_cycle' } },
+    { label: '完美排布 (0次交换)', values: { preset: 'perfect' } },
   ],
   metrics: [
     { id: 'metric-disjoint-sets', label: '并查集连通分量', color: '#10b981' },
@@ -66,7 +53,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
   problemHtml: COUPLES_PROBLEM_HTML,
   analysisHtml: COUPLES_ANALYSIS_HTML,
   buildSteps: (inputs) => {
-    const preset = (inputs['input-preset'] || 'two_cycles') as string;
+    const preset = (inputs.preset || inputs['input-preset'] || 'two_cycles') as string;
     return buildCouplesSteps(preset);
   },
   renderCanvas: renderCouplesHoldingHandsCanvas,

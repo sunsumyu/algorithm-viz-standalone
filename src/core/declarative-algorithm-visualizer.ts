@@ -609,7 +609,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   }
 
   /**
-   * 获取当前顶栏所有参数输入的最新值
+   * 获取当前顶栏所有参数输入的最新值 (原生融合表单控件与预设案例下拉选框)
    */
   public getCurrentInputs(): Record<string, any> {
     const inputs: Record<string, any> = {};
@@ -621,6 +621,22 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         inputs[input.id] = input.defaultValue;
       }
     });
+
+    // 预设案例一等公民规约：若存在案例下拉选框，自动同步当前激活案例的键值字典
+    const presetSelect = this.root?.querySelector('.dsp-preset-select, #dsp-preset-select') as HTMLSelectElement | null;
+    const presets = PresetCasePresenter.resolvePresets(this.spec.presets, this.spec.inputs);
+    if (presetSelect && presets.length > 0) {
+      const idx = parseInt(presetSelect.value, 10);
+      const chosen = !isNaN(idx) && presets[idx] ? presets[idx] : presets[0];
+      if (chosen && chosen.values) {
+        for (const [k, v] of Object.entries(chosen.values)) {
+          if (inputs[k] === undefined || inputs[k] === '') {
+            inputs[k] = v;
+          }
+        }
+      }
+    }
+
     return inputs;
   }
 
