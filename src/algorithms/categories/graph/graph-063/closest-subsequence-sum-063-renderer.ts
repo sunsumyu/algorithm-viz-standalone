@@ -25,19 +25,6 @@ export const closestSubsequenceSum063Visualizer = registerDeclarativeAlgorithm<C
   problemHtml: GRAPH_063_PROBLEMS['closest-subsequence-sum-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['closest-subsequence-sum-063'].complexityHtml,
   codeLanguages: CLOSEST_SUBSEQUENCE_SUM_063_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'leetcode_example_1',
-      options: [
-        { label: '例题一 ([5, -7, 3, 5], 目标 6)', value: 'leetcode_example_1' },
-        { label: '例题二 ([7, -9, 15, -2], 目标 -5)', value: 'leetcode_example_2' },
-        { label: '全正数用例 ([1, 2, 4, 8], 目标 11)', value: 'positive_only' },
-      ],
-    },
-  ],
   presets: [
     { label: '例题一 ([5, -7, 3, 5], 目标 6)', values: { preset: 'leetcode_example_1' } },
     { label: '例题二 ([7, -9, 15, -2], 目标 -5)', values: { preset: 'leetcode_example_2' } },

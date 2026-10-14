@@ -25,19 +25,6 @@ export const snacksWaysBuyTickets063Visualizer = registerDeclarativeAlgorithm<Sn
   problemHtml: GRAPH_063_PROBLEMS['snacks-ways-buy-tickets-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['snacks-ways-buy-tickets-063'].complexityHtml,
   codeLanguages: SNACKS_WAYS_063_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'standard_3_snacks',
-      options: [
-        { label: '标准用例 (3袋零食, 容量10)', value: 'standard_3_snacks' },
-        { label: '进阶用例 (6袋零食, 容量12)', value: 'medium_6_snacks' },
-        { label: '紧缩容量 (4袋零食, 容量5)', value: 'tight_capacity' },
-      ],
-    },
-  ],
   presets: [
     { label: '标准用例 (3袋零食, 容量10)', values: { preset: 'standard_3_snacks' } },
     { label: '进阶用例 (6袋零食, 容量12)', values: { preset: 'medium_6_snacks' } },

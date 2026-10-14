@@ -25,19 +25,6 @@ export const partitionMinimizeDifference063Visualizer = registerDeclarativeAlgor
   problemHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].complexityHtml,
   codeLanguages: PARTITION_MIN_DIFF_063_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'leetcode_example_1',
-      options: [
-        { label: '经典用例 ([3, 9, 7, 3], 最小差 2)', value: 'leetcode_example_1' },
-        { label: '对偶负数 ([-36, 36], 最小差 72)', value: 'leetcode_example_2' },
-        { label: '6元素用例 ([2, -1, 0, 4, -2, -9])', value: 'medium_6_elements' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典用例 ([3, 9, 7, 3], 最小差 2)', values: { preset: 'leetcode_example_1' } },
     { label: '对偶负数 ([-36, 36], 最小差 72)', values: { preset: 'leetcode_example_2' } },

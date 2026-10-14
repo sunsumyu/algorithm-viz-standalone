@@ -25,19 +25,6 @@ export const wordLadder063Visualizer = registerDeclarativeAlgorithm<WordLadder06
   problemHtml: GRAPH_063_PROBLEMS['word-ladder-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['word-ladder-063'].complexityHtml,
   codeLanguages: WORD_LADDER_063_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'hit_to_cog',
-      options: [
-        { label: '经典接龙 (hit -> cog, 5步)', value: 'hit_to_cog' },
-        { label: '精炼接龙 (bat -> cog, 4步)', value: 'bat_to_cog' },
-        { label: '无解阻断 (hit -x-> cog, 0步)', value: 'unreachable' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典接龙 (hit -> cog, 5步)', values: { preset: 'hit_to_cog' } },
     { label: '精炼接龙 (bat -> cog, 4步)', values: { preset: 'bat_to_cog' } },
