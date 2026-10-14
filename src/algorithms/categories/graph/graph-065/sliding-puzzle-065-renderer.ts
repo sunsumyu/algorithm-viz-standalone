@@ -24,20 +24,6 @@ registerDeclarativeAlgorithm({
   problemHtml: GRAPH_065_PROBLEMS['sliding-puzzle-065'].problemHtml,
   analysisHtml: GRAPH_065_PROBLEMS['sliding-puzzle-065'].complexityHtml,
   codeLanguages: SLIDING_PUZZLE_065_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'standard_5_steps',
-      options: [
-        { label: '标准 5 步用例 "412503"', value: 'standard_5_steps' },
-        { label: '单步解开用例 "123405"', value: 'one_step' },
-        { label: '三步解开用例 "123045"', value: 'three_steps' },
-        { label: '无解反例用例 "123540"', value: 'unsolvable' },
-      ],
-    },
-  ],
   presets: [
     { label: '标准 5 步用例 "412503"', values: { preset: 'standard_5_steps' } },
     { label: '单步解开用例 "123405"', values: { preset: 'one_step' } },

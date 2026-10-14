@@ -29,19 +29,6 @@ export const pathMinEffort064Visualizer = registerDeclarativeAlgorithm<PathMinEf
   learningGoal: '深刻理解瓶颈最短路模型转化、网格图 Dijkstra 堆优化松弛与 MiniMax 问题求解',
   problemHtml: GRAPH_064_PROBLEMS.pathMinEffort064.html,
   codeLanguages: PATH_MIN_EFFORT_064_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '地形用例选择',
-      type: 'select',
-      defaultValue: 'classic_mountain_3x3',
-      options: [
-        { label: '3x3 经典山脉地图 (右侧绕行, 体力=2)', value: 'classic_mountain_3x3' },
-        { label: '3x3 险峻山谷地图 (体力=1)', value: 'valley_3x3' },
-        { label: '2x2 平坦地形特判 (体力=0)', value: 'flat_2x2' },
-      ],
-    },
-  ],
   presets: [
     { label: '3x3 经典山脉 (LeetCode 1631)', values: { preset: 'classic_mountain_3x3' } },
     { label: '3x3 险峻山谷', values: { preset: 'valley_3x3' } },

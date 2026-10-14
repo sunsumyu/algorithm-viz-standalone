@@ -24,20 +24,6 @@ registerDeclarativeAlgorithm({
   problemHtml: GRAPH_065_PROBLEMS['eight-puzzle-065'].problemHtml,
   analysisHtml: GRAPH_065_PROBLEMS['eight-puzzle-065'].complexityHtml,
   codeLanguages: EIGHT_PUZZLE_065_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'two_steps',
-      options: [
-        { label: '单步解开用例 "123084765"', value: 'one_step' },
-        { label: '两步解开用例 "123840765"', value: 'two_steps' },
-        { label: '洛谷经典用例 "283104765"', value: 'luogu_sample' },
-        { label: '逆序对奇偶无解剪枝 "123804756"', value: 'unsolvable_parity' },
-      ],
-    },
-  ],
   presets: [
     { label: '单步解开用例 "123084765"', values: { preset: 'one_step' } },
     { label: '两步解开用例 "123840765"', values: { preset: 'two_steps' } },

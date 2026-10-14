@@ -27,18 +27,6 @@ export const evChargeDijkstra064Visualizer = registerDeclarativeAlgorithm<EVStep
   problemHtml: GRAPH_064_PROBLEMS.evChargeDijkstra064.html,
   codeLanguages: EV_CHARGE_064_CODES,
   hasDeductionTree: true,
-  inputs: [
-    {
-      id: 'preset',
-      label: '游历用例选择',
-      type: 'select',
-      defaultValue: 'lcp35_3cities',
-      options: [
-        { label: '3 城市标准充电网 (最优用时=10)', value: 'lcp35_3cities' },
-        { label: '3 城市捷径低费权衡 (最优用时=11)', value: 'lcp35_shortcut' },
-      ],
-    },
-  ],
   presets: [
     { label: '3 城市标准图 (LeetCode LCP 35)', values: { preset: 'lcp35_3cities' } },
     { label: '捷径电价权衡用例', values: { preset: 'lcp35_shortcut' } },

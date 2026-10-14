@@ -26,19 +26,6 @@ export const stateCompressionBfs064Visualizer = registerDeclarativeAlgorithm<Sta
   learningGoal: '掌握状态空间扩维 (u, mask) 建模、位掩码状态压缩与多源并发广搜',
   problemHtml: GRAPH_064_PROBLEMS.stateCompressionBfs064.html,
   codeLanguages: STATE_COMP_064_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '图结构用例选择',
-      type: 'select',
-      defaultValue: 'star_4nodes',
-      options: [
-        { label: '4 节点星形拓扑 (中心辐射, 最短路=4)', value: 'star_4nodes' },
-        { label: '3 节点三角形连通图 (最短路=2)', value: 'triangle_3nodes' },
-        { label: '4 节点线性链状图 (最短路=3)', value: 'chain_4nodes' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点星形拓扑 (LeetCode 847)', values: { preset: 'star_4nodes' } },
     { label: '3 节点三角形', values: { preset: 'triangle_3nodes' } },

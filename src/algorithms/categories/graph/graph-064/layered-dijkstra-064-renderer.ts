@@ -27,18 +27,6 @@ export const layeredDijkstra064Visualizer = registerDeclarativeAlgorithm<Layered
   problemHtml: GRAPH_064_PROBLEMS.layeredDijkstra064.html,
   codeLanguages: LAYERED_DIJKSTRA_064_CODES,
   hasDeductionTree: true,
-  inputs: [
-    {
-      id: 'preset',
-      label: '航线用例选择',
-      type: 'select',
-      defaultValue: 'p4568_standard',
-      options: [
-        { label: '5 城市标准分层图 (1 次免票, 最优花费=4)', value: 'p4568_standard' },
-        { label: '3 城市入门双层图 (1 次免票, 免票直达花费=0)', value: 'simple_3node' },
-      ],
-    },
-  ],
   presets: [
     { label: '洛谷 P4568 标准 5 城市', values: { preset: 'p4568_standard' } },
     { label: '3 城市入门双层图', values: { preset: 'simple_3node' } },
