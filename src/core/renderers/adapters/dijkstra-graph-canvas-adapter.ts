@@ -312,6 +312,42 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
   `;
 }
 
+export function renderDijkstraIndexHeapMetrics(container: HTMLElement, step: IndexHeapStep): void {
+  const isTriangle = step.whereArray.length === 3;
+  const n = isTriangle ? 3 : 4;
+  const indices = Array.from({ length: n }, (_, i) => i);
+
+  const renderRow = (name: string, arr: any[], activeName: string, color: string, prefix: string) => {
+    const cells = indices
+      .map((idx) => {
+        const val = arr[idx] ?? 0;
+        const isActive = step.activeArray === activeName && step.activeSlot === idx;
+        const displayVal = val === 999 ? '∞' : `${val}`;
+        const bg = isActive ? '#fef3c7' : '#ffffff';
+        const textCol = isActive ? '#b45309' : '#0f172a';
+        const border = isActive ? '2px solid #f59e0b' : '1px solid #cbd5e1';
+        return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:34px;height:32px;background:${bg};border:${border};border-radius:4px;color:${textCol};font-family:monospace;font-size:11px;font-weight:700;"><span style="font-size:8px;color:#64748b;line-height:1;">${prefix}[${idx + 1}]</span><span style="line-height:1.1;">${displayVal}</span></div>`;
+      })
+      .join('');
+    return `<div style="display:flex;align-items:center;gap:8px;"><span style="font-family:monospace;font-size:11px;font-weight:700;width:135px;color:${color};">${name}:</span><div style="display:flex;gap:4px;">${cells}</div></div>`;
+  };
+
+  const wRow = renderRow('where[] (堆下标)', step.whereArray, 'where', '#38bdf8', 'N');
+  const dRow = renderRow('distance[] (距离)', step.distanceArray, 'distance', '#f59e0b', 'N');
+
+  container.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:11px;color:#374151;padding:4px 8px;box-sizing:border-box;">
+      <div style="display:flex;flex-direction:column;gap:6px;background:#f8fafc;padding:10px;border-radius:6px;border:1px solid #e2e8f0;">
+        ${wRow}${dRow}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;border-top:1px dashed #cbd5e1;padding-top:4px;">
+          <span style="color:#10b981;font-size:10px;font-weight:700;">反向索引状态机:</span>
+          <strong style="color:#64748b;font-family:monospace;font-size:10px;">-1: 未入堆 | >=0: 堆中位置 | -2: 已结算锁定</strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export class DijkstraGraphCanvasAdapter {
   public static renderBasic(container: HTMLElement, step: DJBStep): void {
     renderDijkstraBasicCanvas(container, step);
@@ -323,5 +359,9 @@ export class DijkstraGraphCanvasAdapter {
 
   public static renderIndexHeap(container: HTMLElement, step: IndexHeapStep): void {
     renderDijkstraIndexHeapCanvas(container, step);
+  }
+
+  public static renderIndexHeapMetrics(container: HTMLElement, step: IndexHeapStep): void {
+    renderDijkstraIndexHeapMetrics(container, step);
   }
 }

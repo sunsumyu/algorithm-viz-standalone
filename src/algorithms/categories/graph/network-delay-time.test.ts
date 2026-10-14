@@ -4,6 +4,8 @@ import {
   buildNetworkDelaySteps,
 } from './network-delay-time-renderer';
 import { NETWORK_DELAY_CODE_LANGUAGES } from './network-delay-time-problem-content';
+import { DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES } from './dijkstra-index-heap-problem-content';
+import { buildIndexHeapSteps } from './dijkstra-index-heap-step-compiler';
 import {
   assertVisualizerLifecycleContract,
   assertMultiLanguageCodeContract,
@@ -28,7 +30,6 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
       expect(step.pqSnapshot).toBeDefined();
     }
 
-
     const lastStep = steps[steps.length - 1];
     expect(lastStep.status).toBe('done');
     expect(lastStep.isAllReached).toBe(true);
@@ -44,9 +45,10 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
       expect(step.message).toBeTruthy();
       expect(step.log).toBeTruthy();
       expect(step.codeLine).toBeDefined();
-      const javaLine = typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
-        ? (step.codeLine as any).java
-        : step.codeLine;
+      const javaLine =
+        typeof step.codeLine === 'object' && step.codeLine !== null && 'java' in (step.codeLine as any)
+          ? (step.codeLine as any).java
+          : step.codeLine;
       const lines = Array.isArray(javaLine) ? javaLine : [javaLine];
       for (const line of lines) {
         expect(line).toBeGreaterThan(0);
@@ -76,6 +78,21 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
       expect(typeof s.activeSlot).toBe('number');
       expect(s.activeSlot).toBeGreaterThan(0);
     }
+  });
+
+  it('should generate at least 20 granular steps for Stage 2 index heap', () => {
+    const steps = buildIndexHeapSteps('classic_4node');
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES,
+    });
+    for (const step of steps) {
+      expect(step.whereArray).toBeDefined();
+      expect(step.distanceArray).toBeDefined();
+      expect(step.heapArray).toBeDefined();
+    }
+    const decreaseSteps = steps.filter((s) => s.status === 'decrease');
+    expect(decreaseSteps.length).toBeGreaterThan(0);
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
