@@ -24,17 +24,9 @@ export const polynomialInverseVisualizer = registerDeclarativeAlgorithm<PolyInvS
   learningGoal: '掌握牛顿迭代法推导多项式倍增逆元公式，理解二次收敛性质与高阶项清零截断技巧',
   problemHtml: ADVANCED_161_166_PROBLEMS.polynomialInverse.html,
   analysisHtml: ADVANCED_161_166_PROBLEMS.polynomialInverse.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入多项式与截断项数',
-      type: 'select',
-      defaultValue: 'deg_4',
-      options: [
-        { label: 'A=[1, 2, 3, 4], deg=4 (标准 4 次界求逆)', value: 'deg_4' },
-        { label: 'A=[1, 1, 1], deg=3 (1/(1-x) 展开逆元)', value: 'deg_3' },
-      ],
-    },
+  presets: [
+    { label: 'A=[1, 2, 3, 4], deg=4 (标准 4 次界求逆)', values: { preset: 'deg_4' } },
+    { label: 'A=[1, 1, 1], deg=3 (1/(1-x) 展开逆元)', values: { preset: 'deg_3' } },
   ],
   codeLanguages: POLYNOMIAL_INVERSE_CODES,
   generateSteps: (input) => {

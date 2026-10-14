@@ -24,18 +24,10 @@ export const nttTransformVisualizer = registerDeclarativeAlgorithm<NTTStep>({
   learningGoal: '掌握原根同构复数单位根性质，理解位逆序置换与模运算蝶形网络结构，掌握 INTT 逆变换归一化流程',
   problemHtml: ADVANCED_161_166_PROBLEMS.nttTransform.html,
   analysisHtml: ADVANCED_161_166_PROBLEMS.nttTransform.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '多项式系数预设',
-      type: 'select',
-      defaultValue: 'poly_3x2',
-      options: [
-        { label: 'A=[1, 2, 3], B=[2, 1] (结果: [2, 5, 8, 3])', value: 'poly_3x2' },
-        { label: 'A=[1, 1], B=[1, 1] (结果: [1, 2, 1])', value: 'poly_simple' },
-        { label: 'A=[3, 4], B=[1, 2] (结果: [3, 10, 8])', value: 'poly_sample2' },
-      ],
-    },
+  presets: [
+    { label: 'A=[1, 2, 3], B=[2, 1] (结果: [2, 5, 8, 3])', values: { preset: 'poly_3x2' } },
+    { label: 'A=[1, 1], B=[1, 1] (结果: [1, 2, 1])', values: { preset: 'poly_simple' } },
+    { label: 'A=[3, 4], B=[1, 2] (结果: [3, 10, 8])', values: { preset: 'poly_sample2' } },
   ],
   codeLanguages: NTT_CODES,
   generateSteps: (input) => {

@@ -24,17 +24,9 @@ export const persistentSegmentTreeVisualizer = registerDeclarativeAlgorithm<Pers
   learningGoal: '深刻理解主席树版本共享指针复用机制与利用前缀权值线段树差分求区间第 K 小的数学模型',
   problemHtml: ADVANCED_155_160_PROBLEMS.persistentSegmentTree.html,
   analysisHtml: ADVANCED_155_160_PROBLEMS.persistentSegmentTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入序列与查询预设',
-      type: 'select',
-      defaultValue: 'arr_25143',
-      options: [
-        { label: '[2, 5, 1, 4, 3] (查区间 [2..4] 第 2 小)', value: 'arr_25143' },
-        { label: '[1, 5, 2, 6, 3, 7, 4] (查区间 [2..6] 第 3 小)', value: 'arr_longer' },
-      ],
-    },
+  presets: [
+    { label: '[2, 5, 1, 4, 3] (查区间 [2..4] 第 2 小)', values: { preset: 'arr_25143' } },
+    { label: '[1, 5, 2, 6, 3, 7, 4] (查区间 [2..6] 第 3 小)', values: { preset: 'arr_longer' } },
   ],
   codeLanguages: PERSISTENT_SEGMENT_CODES,
   generateSteps: (input) => {

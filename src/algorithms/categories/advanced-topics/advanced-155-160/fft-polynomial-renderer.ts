@@ -24,17 +24,9 @@ export const fftPolynomialVisualizer = registerDeclarativeAlgorithm<FFTStep>({
   learningGoal: '掌握复数单位根性质与雷德位逆序置换，深刻理解蝶形运算点值加速与 IDFT 逆变换还原原理',
   problemHtml: ADVANCED_155_160_PROBLEMS.fftPolynomial.html,
   analysisHtml: ADVANCED_155_160_PROBLEMS.fftPolynomial.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '多项式系数预设',
-      type: 'select',
-      defaultValue: 'poly_3x2',
-      options: [
-        { label: 'A=[1, 2, 3], B=[2, 1] (结果: [2, 5, 8, 3])', value: 'poly_3x2' },
-        { label: 'A=[1, 1], B=[1, 1] (结果: [1, 2, 1])', value: 'poly_simple' },
-      ],
-    },
+  presets: [
+    { label: 'A=[1, 2, 3], B=[2, 1] (结果: [2, 5, 8, 3])', values: { preset: 'poly_3x2' } },
+    { label: 'A=[1, 1], B=[1, 1] (结果: [1, 2, 1])', values: { preset: 'poly_simple' } },
   ],
   codeLanguages: FFT_POLYNOMIAL_CODES,
   generateSteps: (input) => {

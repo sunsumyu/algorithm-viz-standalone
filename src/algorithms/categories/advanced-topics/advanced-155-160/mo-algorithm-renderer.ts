@@ -24,16 +24,8 @@ export const moAlgorithmVisualizer = registerDeclarativeAlgorithm<MoStep>({
   learningGoal: '深刻理解莫队算法的分块划分原理与奇偶排序优化，掌握双指针 [L, R] 的四向伸缩转移机制',
   problemHtml: ADVANCED_155_160_PROBLEMS.moAlgorithm.html,
   analysisHtml: ADVANCED_155_160_PROBLEMS.moAlgorithm.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入序列与询问配置',
-      type: 'select',
-      defaultValue: 'mo_standard',
-      options: [
-        { label: '8 元素 4 询问测试 ([1, 2, 1, 1, 1, 2, 3, 2])', value: 'mo_standard' },
-      ],
-    },
+  presets: [
+    { label: '8 元素 4 询问测试 ([1, 2, 1, 1, 1, 2, 3, 2])', values: { preset: 'mo_standard' } },
   ],
   codeLanguages: MO_ALGORITHM_CODES,
   generateSteps: () => {

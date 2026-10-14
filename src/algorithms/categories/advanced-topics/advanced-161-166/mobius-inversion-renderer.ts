@@ -24,18 +24,10 @@ export const mobiusInversionVisualizer = registerDeclarativeAlgorithm<MobiusStep
   learningGoal: '掌握莫比乌斯函数因数容斥本质，理解整除分块在二维双曲区域内的公共跳跃区间划分技巧',
   problemHtml: ADVANCED_161_166_PROBLEMS.mobiusInversion.html,
   analysisHtml: ADVANCED_161_166_PROBLEMS.mobiusInversion.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '矩形区域 N 与 M 规模',
-      type: 'select',
-      defaultValue: 'rect_6x8',
-      options: [
-        { label: 'N = 6, M = 8 (标准互质 32 对测试)', value: 'rect_6x8' },
-        { label: 'N = 10, M = 10 (方阵互质 63 对测试)', value: 'rect_10x10' },
-        { label: 'N = 5, M = 5 (小规模方阵互质 19 对)', value: 'rect_5x5' },
-      ],
-    },
+  presets: [
+    { label: 'N = 6, M = 8 (标准互质 32 对测试)', values: { preset: 'rect_6x8' } },
+    { label: 'N = 10, M = 10 (方阵互质 63 对测试)', values: { preset: 'rect_10x10' } },
+    { label: 'N = 5, M = 5 (小规模方阵互质 19 对)', values: { preset: 'rect_5x5' } },
   ],
   codeLanguages: MOBIUS_INVERSION_CODES,
   generateSteps: (input) => {

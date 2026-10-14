@@ -24,18 +24,10 @@ export const lucasTheoremVisualizer = registerDeclarativeAlgorithm<LucasStep>({
   learningGoal: '掌握组合数在 p 进制下各数位小组合数的乘积同余性质，理解阶乘逆元与递归展开流程',
   problemHtml: ADVANCED_161_166_PROBLEMS.lucasTheorem.html,
   analysisHtml: ADVANCED_161_166_PROBLEMS.lucasTheorem.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '大组合数与模素数参数',
-      type: 'select',
-      defaultValue: 'lucas_23_11_5',
-      options: [
-        { label: 'n=23, m=11, p=5 (结果: 3)', value: 'lucas_23_11_5' },
-        { label: 'n=12, m=5, p=7 (结果: 1)', value: 'lucas_12_5_7' },
-        { label: 'n=10, m=3, p=5 (结果: 0)', value: 'lucas_10_3_5' },
-      ],
-    },
+  presets: [
+    { label: 'n=23, m=11, p=5 (结果: 3)', values: { preset: 'lucas_23_11_5' } },
+    { label: 'n=12, m=5, p=7 (结果: 1)', values: { preset: 'lucas_12_5_7' } },
+    { label: 'n=10, m=3, p=5 (结果: 0)', values: { preset: 'lucas_10_3_5' } },
   ],
   codeLanguages: LUCAS_THEOREM_CODES,
   generateSteps: (input) => {

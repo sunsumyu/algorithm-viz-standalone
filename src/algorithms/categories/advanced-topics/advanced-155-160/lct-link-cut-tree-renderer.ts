@@ -24,16 +24,8 @@ export const lctVisualizer = registerDeclarativeAlgorithm<LCTStep>({
   learningGoal: '深刻理解 LCT 实链剖分 Preferred Path 与辅助 Splay 树的对应关系，掌握 access, makeroot, link, cut 核心四操作',
   problemHtml: ADVANCED_155_160_PROBLEMS.lct.html,
   analysisHtml: ADVANCED_155_160_PROBLEMS.lct.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '动态树初始图规模',
-      type: 'select',
-      defaultValue: 'tree_5_nodes',
-      options: [
-        { label: '5 节点标准树 (边: 1-2, 1-3, 2-4, 2-5)', value: 'tree_5_nodes' },
-      ],
-    },
+  presets: [
+    { label: '5 节点标准树 (边: 1-2, 1-3, 2-4, 2-5)', values: { preset: 'tree_5_nodes' } },
   ],
   codeLanguages: LCT_CODES,
   generateSteps: () => {

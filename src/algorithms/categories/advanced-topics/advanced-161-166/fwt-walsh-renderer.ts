@@ -36,16 +36,10 @@ export const fwtWalshVisualizer = registerDeclarativeAlgorithm<FWTStep>({
         { label: '按位与 AND 卷积 (C_k = sum_{i&j=k} A_i*B_j)', value: 'AND' },
       ],
     },
-    {
-      id: 'preset',
-      label: '输入向量规模',
-      type: 'select',
-      defaultValue: 'vec_4',
-      options: [
-        { label: 'A=[1, 2, 3, 4], B=[1, 1, 1, 1] (4 维全 1 测试)', value: 'vec_4' },
-        { label: 'A=[1, 2, 0, 0], B=[3, 4, 0, 0] (4 维低位测试)', value: 'vec_low' },
-      ],
-    },
+  ],
+  presets: [
+    { label: '4 维全 1 测试 (A=[1,2,3,4], B=[1,1,1,1])', values: { preset: 'vec_4' } },
+    { label: '4 维低位测试 (A=[1,2,0,0], B=[3,4,0,0])', values: { preset: 'vec_low' } },
   ],
   codeLanguages: FWT_WALSH_CODES,
   generateSteps: (input) => {
