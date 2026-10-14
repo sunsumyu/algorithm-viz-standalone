@@ -254,7 +254,7 @@ export interface TreeBfsSpec<TNode = TreeNode, TResult = any> {
     steps: BinaryTreeStep<TResult>[];
   };
 
-  onInit?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
+  onInit?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onLevelStart?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
   onPollNode?: (node: TNode, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
   onLeafHit?: (node: TNode, ctx: TreeBfsContext<TNode, TResult>) => {
@@ -291,7 +291,7 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     steps: BinaryTreeStep<TResult>[];
   };
 
-  onInit?: (l: number, r: number, arr: (number | null)[]) => BinaryTreeStep<TResult>;
+  onInit?: (l: number, r: number, arr: (number | null)[]) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onLevelStart?: (
     level: number,
     levelSize: number,
@@ -317,7 +317,8 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     branch: 'left' | 'right',
     l: number,
     r: number,
-    arr: (number | null)[]
+    arr: (number | null)[],
+    parent?: TNode
   ) => BinaryTreeStep<TResult> | null;
   onLevelEnd?: (
     level: number,
@@ -786,7 +787,12 @@ export class BinaryTreeTraversalCompiler {
     };
 
     if (spec.onInit) {
-      steps.push(spec.onInit(ctx));
+      const initRes = spec.onInit(ctx);
+      if (Array.isArray(initRes)) {
+        steps.push(...initRes);
+      } else if (initRes) {
+        steps.push(initRes);
+      }
     }
 
     let earlyExited = false;
@@ -887,7 +893,12 @@ export class BinaryTreeTraversalCompiler {
     const toVals = (arr: (TNode | null)[]) => arr.map((n) => (n ? getNodeVal(n) : null));
 
     if (spec.onInit) {
-      steps.push(spec.onInit(l, r, toVals(staticArr)));
+      const initRes = spec.onInit(l, r, toVals(staticArr));
+      if (Array.isArray(initRes)) {
+        steps.push(...initRes);
+      } else if (initRes) {
+        steps.push(initRes);
+      }
     }
 
     let level = 0;
@@ -923,7 +934,7 @@ export class BinaryTreeTraversalCompiler {
         if (left) {
           staticArr[r++] = left;
           if (spec.onPushChild) {
-            const s = spec.onPushChild(left, 'left', l, r, toVals(staticArr));
+            const s = spec.onPushChild(left, 'left', l, r, toVals(staticArr), cur);
             if (s) steps.push(s);
           }
         }
@@ -931,7 +942,7 @@ export class BinaryTreeTraversalCompiler {
         if (right) {
           staticArr[r++] = right;
           if (spec.onPushChild) {
-            const s = spec.onPushChild(right, 'right', l, r, toVals(staticArr));
+            const s = spec.onPushChild(right, 'right', l, r, toVals(staticArr), cur);
             if (s) steps.push(s);
           }
         }

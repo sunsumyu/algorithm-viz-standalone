@@ -442,101 +442,118 @@ export class TreeDepthStepCompiler {
    * Stage 2: 层次遍历 BFS 队列层数计数 (Level Order BFS Queue)
    */
   public static compileMaxDepthStage2BfsSteps(root: TreeNode | null): TDStep[] {
-    const steps: TDStep[] = [];
     const depthsMap = new Map<number, number>();
     const L = TREE_DEPTH_STAGE2_BFS_LINES;
 
-    steps.push({
-      tree: root,
-      current: null,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: 0,
-      depthsMap: new Map(depthsMap),
-      queue: [],
-      levelIndex: 0,
-      decision: 'BFS 层次遍历启动：初始化队列与深度计数器',
-      action: 'init',
-      message: root
-        ? `层次遍历求最大深度：每将一层的全部节点出队并加入其左右孩子后，深度计数器 depth++。`
-        : '空树特判，直接返回深度 0。',
-      log: root ? `bfs(root: ${root.val}), depth = 0` : 'bfs(root: null) -> 0',
-      metrics: makeTDMetrics(null, 0, 0, 0),
-      codeLine: root ? L.entry : L.entry,
-    });
-
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        queue: [],
-        levelIndex: 0,
-        decision: '特判返回：树为空',
-        action: 'done',
-        message: '树为空，直接返回深度 0。',
-        log: 'root == null -> 0',
-        metrics: makeTDMetrics(null, 0, 0, 0),
-        codeLine: L.entry,
-      });
-      return steps;
-    }
-
-    const queue: TreeNode[] = [root];
-    let depth = 0;
-
-    steps.push({
-      tree: root,
-      current: root.val,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: 0,
-      depthsMap: new Map(depthsMap),
-      queue: [root.val],
-      levelIndex: 0,
-      decision: `根节点 ${root.val} 入队，准备开始逐层遍历`,
-      action: 'enqueue-root',
-      message: `将根节点 ${root.val} 放入队列，此时队列长度为 1。`,
-      log: `enqueue root ${root.val}`,
-      metrics: makeTDMetrics(root.val, 0, 0, 0),
-      codeLine: L.initQueue,
-    });
-
-    while (queue.length > 0) {
-      const size = queue.length;
-
-      steps.push({
-        tree: root,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: depth,
-        depthsMap: new Map(depthsMap),
-        queue: queue.map((n) => n.val),
-        levelIndex: depth,
-        decision: `准备遍历第 ${depth + 1} 层：本层包含 ${size} 个节点`,
-        action: 'level-start',
-        message: `当前层节点总数 size = ${size}。将在一次循环中全部出队并扩展下一层节点。`,
-        log: `level ${depth + 1} size = ${size}`,
-        metrics: makeTDMetrics(null, 0, 0, depth),
-        codeLine: L.loopLevel,
-      });
-
-      for (let i = 0; i < size; i++) {
-        const cur = queue.shift()!;
+    return BinaryTreeTraversalCompiler.compileBfs<TreeNode, number>({
+      root,
+      stageId: 'stage-2',
+      onEmpty: () => {
+        return {
+          result: 0,
+          steps: [
+            {
+              tree: null,
+              current: null,
+              leftDepth: 0,
+              rightDepth: 0,
+              maxDepth: 0,
+              depthsMap: new Map(depthsMap),
+              queue: [],
+              levelIndex: 0,
+              decision: 'BFS 层次遍历启动：初始化队列与深度计数器',
+              action: 'init',
+              message: '空树特判，直接返回深度 0。',
+              log: 'bfs(root: null) -> 0',
+              metrics: makeTDMetrics(null, 0, 0, 0),
+              codeLine: L.entry,
+            },
+            {
+              tree: null,
+              current: null,
+              leftDepth: 0,
+              rightDepth: 0,
+              maxDepth: 0,
+              depthsMap: new Map(depthsMap),
+              queue: [],
+              levelIndex: 0,
+              decision: '特判返回：树为空',
+              action: 'done',
+              message: '树为空，直接返回深度 0。',
+              log: 'root == null -> 0',
+              metrics: makeTDMetrics(null, 0, 0, 0),
+              codeLine: L.entry,
+            },
+          ] as any,
+        };
+      },
+      onInit: () => {
+        return [
+          {
+            tree: root,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            queue: [],
+            levelIndex: 0,
+            decision: 'BFS 层次遍历启动：初始化队列与深度计数器',
+            action: 'init',
+            message: '层次遍历求最大深度：每将一层的全部节点出队并加入其左右孩子后，深度计数器 depth++。',
+            log: `bfs(root: ${root!.val}), depth = 0`,
+            metrics: makeTDMetrics(null, 0, 0, 0),
+            codeLine: L.entry,
+          },
+          {
+            tree: root,
+            current: root!.val,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            queue: [root!.val],
+            levelIndex: 0,
+            decision: `根节点 ${root!.val} 入队，准备开始逐层遍历`,
+            action: 'enqueue-root',
+            message: `将根节点 ${root!.val} 放入队列，此时队列长度为 1。`,
+            log: `enqueue root ${root!.val}`,
+            metrics: makeTDMetrics(root!.val, 0, 0, 0),
+            codeLine: L.initQueue,
+          },
+        ] as any;
+      },
+      onLevelStart: (ctx) => {
+        const depth = ctx.levelIndex - 1;
+        const size = ctx.queue.length;
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth,
+          depthsMap: new Map(depthsMap),
+          queue: ctx.queue.map((n) => n.val),
+          levelIndex: depth,
+          decision: `准备遍历第 ${depth + 1} 层：本层包含 ${size} 个节点`,
+          action: 'level-start',
+          message: `当前层节点总数 size = ${size}。将在一次循环中全部出队并扩展下一层节点。`,
+          log: `level ${depth + 1} size = ${size}`,
+          metrics: makeTDMetrics(null, 0, 0, depth),
+          codeLine: L.loopLevel,
+        } as any;
+      },
+      onPollNode: (cur, ctx) => {
+        const depth = ctx.levelIndex - 1;
         depthsMap.set(cur.val, depth + 1);
-
-        steps.push({
+        return {
           tree: root,
           current: cur.val,
           leftDepth: 0,
           rightDepth: 0,
           maxDepth: depth,
           depthsMap: new Map(depthsMap),
-          queue: queue.map((n) => n.val),
+          queue: ctx.queue.map((n) => n.val),
           levelIndex: depth,
           decision: `节点 ${cur.val} 出队，并探查其孩子节点`,
           action: 'poll-node',
@@ -544,270 +561,240 @@ export class TreeDepthStepCompiler {
           log: `poll ${cur.val}`,
           metrics: makeTDMetrics(cur.val, 0, 0, depth),
           codeLine: L.popNode,
-        });
-
-        if (cur.left) {
-          queue.push(cur.left);
-          steps.push({
-            tree: root,
-            current: cur.val,
-            leftDepth: 0,
-            rightDepth: 0,
-            maxDepth: depth,
-            depthsMap: new Map(depthsMap),
-            queue: queue.map((n) => n.val),
-            levelIndex: depth,
-            decision: `节点 ${cur.val} 的左孩子 ${cur.left.val} 入队`,
-            action: 'enqueue-child',
-            message: `发现左孩子 ${cur.left.val}，推入下一层队列等待扫描。`,
-            log: `enqueue left child ${cur.left.val}`,
-            metrics: makeTDMetrics(cur.val, 0, 0, depth),
-            codeLine: L.pushChildren,
-          });
-        }
-
-        if (cur.right) {
-          queue.push(cur.right);
-          steps.push({
-            tree: root,
-            current: cur.val,
-            leftDepth: 0,
-            rightDepth: 0,
-            maxDepth: depth,
-            depthsMap: new Map(depthsMap),
-            queue: queue.map((n) => n.val),
-            levelIndex: depth,
-            decision: `节点 ${cur.val} 的右孩子 ${cur.right.val} 入队`,
-            action: 'enqueue-child',
-            message: `发现右孩子 ${cur.right.val}，推入下一层队列等待扫描。`,
-            log: `enqueue right child ${cur.right.val}`,
-            metrics: makeTDMetrics(cur.val, 0, 0, depth),
-            codeLine: L.pushChildren,
-          });
-        }
-      }
-
-      depth++;
-
-      steps.push({
-        tree: root,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: depth,
-        depthsMap: new Map(depthsMap),
-        queue: queue.map((n) => n.val),
-        levelIndex: depth,
-        decision: `第 ${depth} 层处理完毕，depth++ 累加为 ${depth}`,
-        action: 'level-done',
-        message: `整层节点遍历完毕，深度计数器自增：depth++ 达到 ${depth}。`,
-        log: `depth++ -> ${depth}`,
-        metrics: makeTDMetrics(null, 0, 0, depth),
-        codeLine: L.levelDone,
-      });
-    }
-
-    steps.push({
-      tree: root,
-      current: null,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: depth,
-      depthsMap: new Map(depthsMap),
-      queue: [],
-      levelIndex: depth,
-      decision: '层次遍历完成，返回最大深度',
-      action: 'done',
-      message: `🎉 队列为空，层次遍历全部结束！二叉树的最大深度为 【${depth}】。`,
-      log: `return depth = ${depth}`,
-      metrics: makeTDMetrics(null, 0, 0, depth),
-      codeLine: L.returnDepth,
-    });
-
-    return steps;
-  }
-
-  /**
-   * Stage 3: 静态数组模拟队列 (Static Array Queue BFS · Class 036 招牌)
-   */
-  public static compileMaxDepthStage3StaticArraySteps(root: TreeNode | null): TDStep[] {
-    const steps: TDStep[] = [];
-    const depthsMap = new Map<number, number>();
-    const L = TREE_DEPTH_STAGE3_STATIC_ARRAY_LINES;
-
-    steps.push({
-      tree: root,
-      current: null,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: 0,
-      depthsMap: new Map(depthsMap),
-      staticQueueState: { array: [], l: 0, r: 0, windowSize: 0 },
-      decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
-      action: 'init',
-      message: root
-        ? `左神 Class 036 极致优化：使用连续内存 queue[MAXN] 与双指针 l=0, r=0。每扩展完一个区间 [l, r) 时 depth++！`
-        : '空树特判，直接返回深度 0。',
-      log: root ? `staticQueue: l=0, r=0, MAXN=2001, depth=0` : 'root == null -> 0',
-      metrics: makeTDMetrics(null, 0, 0, 0),
-      codeLine: root ? L.entry : L.entry,
-    });
-
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: 0,
-        depthsMap: new Map(depthsMap),
-        staticQueueState: { array: [], l: 0, r: 0, windowSize: 0 },
-        decision: '特判返回：树为空',
-        action: 'done',
-        message: '树为空，直接返回深度 0。',
-        log: 'root == null -> return 0',
-        metrics: makeTDMetrics(null, 0, 0, 0),
-        codeLine: L.entry,
-      });
-      return steps;
-    }
-
-    const staticArray: TreeNode[] = [];
-    let l = 0;
-    let r = 0;
-    staticArray[r++] = root;
-    let depth = 0;
-
-    steps.push({
-      tree: root,
-      current: root.val,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: 0,
-      depthsMap: new Map(depthsMap),
-      staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
-      decision: `根节点 ${root.val} 写入 queue[0]，指针前进至 r=1`,
-      action: 'enqueue-root',
-      message: `静态数组压入根节点：queue[r++] = root。双指针状态: l=${l}, r=${r}。`,
-      log: `queue[0] = ${root.val}, r=1`,
-      metrics: makeTDMetrics(root.val, 0, 0, 0),
-      codeLine: L.initPointers,
-    });
-
-    while (l < r) {
-      const n = r; // 本层右边界
-
-      steps.push({
-        tree: root,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: depth,
-        depthsMap: new Map(depthsMap),
-        staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
-        decision: `本层扫描窗口确立：区间 [l=${l}, r=${n})，共 ${n - l} 个节点`,
-        action: 'level-boundary',
-        message: `捕获本层静态边界 n = ${n}。循环条件：while (l < n)，无需任何动态队列开销！`,
-        log: `level boundary n = ${n}, window size = ${n - l}`,
-        metrics: makeTDMetrics(null, 0, 0, depth),
-        codeLine: L.loopLevel,
-      });
-
-      while (l < n) {
-        const cur = staticArray[l++];
-        depthsMap.set(cur.val, depth + 1);
-
-        steps.push({
+        } as any;
+      },
+      onExpandChild: (cur, child, branch, ctx) => {
+        const depth = ctx.levelIndex - 1;
+        const isLeft = branch === 'left';
+        return {
           tree: root,
           current: cur.val,
           leftDepth: 0,
           rightDepth: 0,
           maxDepth: depth,
           depthsMap: new Map(depthsMap),
-          staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
+          queue: ctx.queue.map((n) => n.val),
+          levelIndex: depth,
+          decision: `节点 ${cur.val} 的${isLeft ? '左' : '右'}孩子 ${child.val} 入队`,
+          action: 'enqueue-child',
+          message: `发现${isLeft ? '左' : '右'}孩子 ${child.val}，推入下一层队列等待扫描。`,
+          log: `enqueue ${isLeft ? 'left' : 'right'} child ${child.val}`,
+          metrics: makeTDMetrics(cur.val, 0, 0, depth),
+          codeLine: L.pushChildren,
+        } as any;
+      },
+      onLevelEnd: (ctx) => {
+        const depth = ctx.levelIndex;
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth,
+          depthsMap: new Map(depthsMap),
+          queue: ctx.queue.map((n) => n.val),
+          levelIndex: depth,
+          decision: `第 ${depth} 层处理完毕，depth++ 累加为 ${depth}`,
+          action: 'level-done',
+          message: `整层节点遍历完毕，深度计数器自增：depth++ 达到 ${depth}。`,
+          log: `depth++ -> ${depth}`,
+          metrics: makeTDMetrics(null, 0, 0, depth),
+          codeLine: L.levelDone,
+        } as any;
+      },
+      onDone: (finalResult) => {
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: finalResult,
+          depthsMap: new Map(depthsMap),
+          queue: [],
+          levelIndex: finalResult,
+          decision: '层次遍历完成，返回最大深度',
+          action: 'done',
+          message: `🎉 队列为空，层次遍历全部结束！二叉树的最大深度为 【${finalResult}】。`,
+          log: `return depth = ${finalResult}`,
+          metrics: makeTDMetrics(null, 0, 0, finalResult),
+          codeLine: L.returnDepth,
+        } as any;
+      },
+    }) as TDStep[];
+  }
+
+  /**
+   * Stage 3: 静态数组模拟队列 (Static Array Queue BFS · Class 036 招牌)
+   */
+  public static compileMaxDepthStage3StaticArraySteps(root: TreeNode | null): TDStep[] {
+    const depthsMap = new Map<number, number>();
+    const L = TREE_DEPTH_STAGE3_STATIC_ARRAY_LINES;
+
+    return BinaryTreeTraversalCompiler.compileStaticQueue<TreeNode, number>({
+      root,
+      stageId: 'stage-3',
+      onEmpty: () => ({
+        result: 0,
+        steps: [
+          {
+            tree: null,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            staticQueueState: { array: [], l: 0, r: 0, windowSize: 0 },
+            decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
+            action: 'init',
+            message: '空树特判，直接返回深度 0。',
+            log: 'root == null -> 0',
+            metrics: makeTDMetrics(null, 0, 0, 0),
+            codeLine: L.entry,
+          },
+          {
+            tree: null,
+            current: null,
+            leftDepth: 0,
+            rightDepth: 0,
+            maxDepth: 0,
+            depthsMap: new Map(depthsMap),
+            staticQueueState: { array: [], l: 0, r: 0, windowSize: 0 },
+            decision: '特判返回：树为空',
+            action: 'done',
+            message: '树为空，直接返回深度 0。',
+            log: 'root == null -> return 0',
+            metrics: makeTDMetrics(null, 0, 0, 0),
+            codeLine: L.entry,
+          },
+        ] as any,
+      }),
+      onInit: (l, r, arr) => [
+        {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: 0,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: [], l: 0, r: 0, windowSize: 0 },
+          decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
+          action: 'init',
+          message: root
+            ? `左神 Class 036 极致优化：使用连续内存 queue[MAXN] 与双指针 l=0, r=0。每扩展完一个区间 [l, r) 时 depth++！`
+            : '空树特判，直接返回深度 0。',
+          log: root ? `staticQueue: l=0, r=0, MAXN=2001, depth=0` : 'root == null -> 0',
+          metrics: makeTDMetrics(null, 0, 0, 0),
+          codeLine: L.entry,
+        } as any,
+        {
+          tree: root,
+          current: root!.val,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: 0,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: r - l },
+          decision: `根节点 ${root!.val} 写入 queue[0]，指针前进至 r=1`,
+          action: 'enqueue-root',
+          message: `静态数组压入根节点：queue[r++] = root。双指针状态: l=${l}, r=${r}。`,
+          log: `queue[0] = ${root!.val}, r=1`,
+          metrics: makeTDMetrics(root!.val, 0, 0, 0),
+          codeLine: L.initPointers,
+        } as any,
+      ],
+      onLevelStart: (level, _levelSize, l, r, arr) => {
+        const depth = level - 1;
+        const n = r;
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: r - l },
+          decision: `本层扫描窗口确立：区间 [l=${l}, r=${n})，共 ${n - l} 个节点`,
+          action: 'level-boundary',
+          message: `捕获本层静态边界 n = ${n}。循环条件：while (l < n)，无需任何动态队列开销！`,
+          log: `level boundary n = ${n}, window size = ${n - l}`,
+          metrics: makeTDMetrics(null, 0, 0, depth),
+          codeLine: L.loopLevel,
+        } as any;
+      },
+      onPollNode: (cur, l, r, arr, level) => {
+        const depth = level - 1;
+        depthsMap.set(cur.val, depth + 1);
+        return {
+          tree: root,
+          current: cur.val,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: r - l },
           decision: `从连续内存读取节点 queue[l++] ➔ ${cur.val}，指针 l 推进至 ${l}`,
           action: 'poll-static',
           message: `节点 ${cur.val} 读取完成。指针自增 l=${l}。继续检查左右子节点并追加至 r 指针处。`,
           log: `read cur = queue[${l - 1}] (${cur.val}), l=${l}`,
           metrics: makeTDMetrics(cur.val, 0, 0, depth),
           codeLine: L.popNode,
-        });
-
-        if (cur.left) {
-          staticArray[r++] = cur.left;
-          steps.push({
-            tree: root,
-            current: cur.val,
-            leftDepth: 0,
-            rightDepth: 0,
-            maxDepth: depth,
-            depthsMap: new Map(depthsMap),
-            staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
-            decision: `左孩子 ${cur.left.val} 写入连续内存 queue[r++]，r 推进至 ${r}`,
-            action: 'push-left',
-            message: `将左孩子放入连续内存：queue[${r - 1}] = ${cur.left.val}。`,
-            log: `queue[${r - 1}] = ${cur.left.val}, r=${r}`,
-            metrics: makeTDMetrics(cur.val, 0, 0, depth),
-            codeLine: L.pushChildren,
-          });
-        }
-
-        if (cur.right) {
-          staticArray[r++] = cur.right;
-          steps.push({
-            tree: root,
-            current: cur.val,
-            leftDepth: 0,
-            rightDepth: 0,
-            maxDepth: depth,
-            depthsMap: new Map(depthsMap),
-            staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
-            decision: `右孩子 ${cur.right.val} 写入连续内存 queue[r++]，r 推进至 ${r}`,
-            action: 'push-right',
-            message: `将右孩子放入连续内存：queue[${r - 1}] = ${cur.right.val}。`,
-            log: `queue[${r - 1}] = ${cur.right.val}, r=${r}`,
-            metrics: makeTDMetrics(cur.val, 0, 0, depth),
-            codeLine: L.pushChildren,
-          });
-        }
-      }
-
-      depth++;
-
-      steps.push({
-        tree: root,
-        current: null,
-        leftDepth: 0,
-        rightDepth: 0,
-        maxDepth: depth,
-        depthsMap: new Map(depthsMap),
-        staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l },
-        decision: `当前层窗口扫描完毕，depth++ 累加为 ${depth}`,
-        action: 'level-done',
-        message: `本层节点全部移出窗口，深度计数器自增：depth++ 达到 ${depth}。`,
-        log: `depth++ -> ${depth}`,
-        metrics: makeTDMetrics(null, 0, 0, depth),
-        codeLine: L.levelDone,
-      });
-    }
-
-    steps.push({
-      tree: root,
-      current: null,
-      leftDepth: 0,
-      rightDepth: 0,
-      maxDepth: depth,
-      depthsMap: new Map(depthsMap),
-      staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: 0 },
-      decision: '静态数组层次遍历完成，返回最大深度',
-      action: 'done',
-      message: `🎉 双指针完全闭合 (l=${l}, r=${r})，二叉树最大深度为 【${depth}】。`,
-      log: `return depth = ${depth}`,
-      metrics: makeTDMetrics(null, 0, 0, depth),
-      codeLine: L.returnDepth,
-    });
-
-    return steps;
+        } as any;
+      },
+      onPushChild: (child, branch, l, r, arr, parent) => {
+        const depth = depthsMap.get(parent?.val ?? -9999) ?? 1;
+        const isLeft = branch === 'left';
+        return {
+          tree: root,
+          current: parent?.val ?? null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth - 1,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: r - l },
+          decision: `${isLeft ? '左' : '右'}孩子 ${child.val} 写入连续内存 queue[r++]，r 推进至 ${r}`,
+          action: isLeft ? 'push-left' : 'push-right',
+          message: `将${isLeft ? '左' : '右'}孩子放入连续内存：queue[${r - 1}] = ${child.val}。`,
+          log: `queue[${r - 1}] = ${child.val}, r=${r}`,
+          metrics: makeTDMetrics(parent?.val ?? null, 0, 0, depth - 1),
+          codeLine: L.pushChildren,
+        } as any;
+      },
+      onLevelEnd: (level, l, r, arr) => {
+        const depth = level;
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: depth,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: r - l },
+          decision: `当前层窗口扫描完毕，depth++ 累加为 ${depth}`,
+          action: 'level-done',
+          message: `本层节点全部移出窗口，深度计数器自增：depth++ 达到 ${depth}。`,
+          log: `depth++ -> ${depth}`,
+          metrics: makeTDMetrics(null, 0, 0, depth),
+          codeLine: L.levelDone,
+        } as any;
+      },
+      onDone: (finalResult, l, r, arr) => {
+        return {
+          tree: root,
+          current: null,
+          leftDepth: 0,
+          rightDepth: 0,
+          maxDepth: finalResult,
+          depthsMap: new Map(depthsMap),
+          staticQueueState: { array: arr.slice(0, r), l, r, windowSize: 0 },
+          decision: '静态数组层次遍历完成，返回最大深度',
+          action: 'done',
+          message: `🎉 双指针完全闭合 (l=${l}, r=${r})，二叉树最大深度为 【${finalResult}】。`,
+          log: `return depth = ${finalResult}`,
+          metrics: makeTDMetrics(null, 0, 0, finalResult),
+          codeLine: L.returnDepth,
+        } as any;
+      },
+    }) as TDStep[];
   }
 
   // ============================================================
