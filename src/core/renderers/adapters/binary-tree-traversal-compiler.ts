@@ -37,13 +37,13 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   current: number | null;
   secondaryCurrent?: number | null;
   stageId?: string;
-  action: string;
+  action?: string;
   decision: string;
   message: string;
   log: string;
   codeLine?: HighlightTarget;
-  metrics?: Record<string, string | number>;
-  statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+  metrics?: Record<string, any>;
+  statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
   callTrace?: CallTraceSnapshot;
   visitedNodes?: number[];
 
@@ -53,7 +53,7 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   rightResult?: TResult;
 
   // BFS 队列字段
-  queue?: number[];
+  queue?: (number | string)[];
   levelIndex?: number;
 
   // 静态数组队列状态
@@ -88,6 +88,12 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
   /** 获取节点显示标签 */
   getNodeLabel?: (node: TNode) => string;
 
+  /** 空树特判自定义步骤（若不提供则走标准 3 步基准序列） */
+  onEmpty?: (ctx: TreeDfsContext<TNode, TResult>) => BinaryTreeStep<TResult>[];
+
+  /** 算法初始包装帧 (Init Steps)，如从顶层函数准备进入辅助递归前产生入口步骤 */
+  onInitSteps?: (root: TNode, ctx: TreeDfsContext<TNode, TResult>) => BinaryTreeStep<TResult>[];
+
   /** 1. 递归判空基底求值 (Base Case Null) */
   onBaseNull: (ctx: TreeDfsContext<TNode, TResult>) => {
     result: TResult;
@@ -95,8 +101,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -106,8 +112,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -119,8 +125,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -137,8 +143,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -148,8 +154,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -160,8 +166,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -171,8 +177,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -183,8 +189,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -196,13 +202,15 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     ctx: TreeDfsContext<TNode, TResult>
   ) => {
     result: TResult;
+    action?: string;
     decision: string;
     message: string;
     log: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
+    extraSteps?: BinaryTreeStep<TResult>[];
   };
 
   /** 8. 算法收尾帧 (Done) */
@@ -211,8 +219,8 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     message?: string;
     log?: string;
     codeLine?: HighlightTarget;
-    metrics?: Record<string, string | number>;
-    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' };
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
   };
 
@@ -362,6 +370,11 @@ export class BinaryTreeTraversalCompiler {
 
     // 1. 空树入口守卫
     if (!spec.root) {
+      if (spec.onEmpty) {
+        const raw = spec.onEmpty(ctx);
+        return spec.stepTransformer ? raw.map(spec.stepTransformer) : raw;
+      }
+
       trace.addHeader(`${funcName}(null)`, 0, '<- 根调用空树特判');
       trace.addConditionHit('① root == null √ 命中基准', 0);
       const nullMeta = spec.onBaseNull(ctx);
@@ -419,6 +432,12 @@ export class BinaryTreeTraversalCompiler {
 
       const raw = [s1, s2, s3];
       return spec.stepTransformer ? raw.map(spec.stepTransformer) : raw;
+    }
+
+    // 1.1 若算法声明了初始入口包装步骤 (如 public wrapper 调用辅助递归函数)
+    if (spec.onInitSteps) {
+      const initSteps = spec.onInitSteps(spec.root, ctx);
+      steps.push(...initSteps);
     }
 
     // 2. 递归主推演引擎
@@ -675,7 +694,7 @@ export class BinaryTreeTraversalCompiler {
       steps.push({
         tree: cloneTree(spec.root as any),
         current: val,
-        action: 'combine',
+        action: combineMeta.action || 'combine',
         decision: combineMeta.decision,
         message: combineMeta.message,
         log: combineMeta.log,
@@ -690,6 +709,10 @@ export class BinaryTreeTraversalCompiler {
         visitedNodes: [...visitedNodes],
         ...combineMeta.customFields,
       });
+
+      if (combineMeta.extraSteps && combineMeta.extraSteps.length > 0) {
+        steps.push(...combineMeta.extraSteps);
+      }
 
       resultMap.set(val, combineMeta.result);
       callStack.pop();
