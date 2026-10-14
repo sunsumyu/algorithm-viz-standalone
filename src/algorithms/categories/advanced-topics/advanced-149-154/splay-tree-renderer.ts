@@ -24,17 +24,9 @@ export const splayTreeVisualizer = registerDeclarativeAlgorithm<SplayStep>({
   learningGoal: '深刻理解 Splay 树的 Zig-Zig 与 Zig-Zag 双旋势能平衡证明，掌握将区间 [L, R] 夹在子树下的提取机制',
   problemHtml: ADVANCED_149_154_PROBLEMS.splayTree.html,
   analysisHtml: ADVANCED_149_154_PROBLEMS.splayTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: 'Splay 演示场景预设',
-      type: 'select',
-      defaultValue: 'zig_zig_demo',
-      options: [
-        { label: '一字形同向双旋 (链式 [5, 4, 3, 2, 1], Splay 1)', value: 'zig_zig_demo' },
-        { label: '之字形异向双旋 ([10, 5, 20, 7], Splay 7)', value: 'zig_zag_demo' },
-      ],
-    },
+  presets: [
+    { label: '一字形同向双旋 (链式 [5, 4, 3, 2, 1], Splay 1)', values: { preset: 'zig_zig_demo' } },
+    { label: '之字形异向双旋 ([10, 5, 20, 7], Splay 7)', values: { preset: 'zig_zag_demo' } },
   ],
   codeLanguages: SPLAY_TREE_CODES,
   generateSteps: (input) => {

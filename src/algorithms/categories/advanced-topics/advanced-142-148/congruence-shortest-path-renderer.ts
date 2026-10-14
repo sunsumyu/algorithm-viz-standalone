@@ -27,17 +27,9 @@ export const congruenceShortestPathVisualizer = registerDeclarativeAlgorithm<Con
   learningGoal: '掌握同余最短路建模思想，利用基准模数降维大范围线性组合可行解统计',
   problemHtml: ADVANCED_142_148_PROBLEMS.congruenceShortestPath.html,
   analysisHtml: ADVANCED_142_148_PROBLEMS.congruenceShortestPath.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '跳跃步长与楼高配置',
-      type: 'select',
-      defaultValue: 'elevator_small',
-      options: [
-        { label: '标准跳楼机 (x=3, y=4, z=5, H=15)', value: 'elevator_small' },
-        { label: '扩展测试例 (x=4, y=6, z=7, H=30)', value: 'elevator_medium' },
-      ],
-    },
+  presets: [
+    { label: '标准跳楼机 (x=3, y=4, z=5, H=15)', values: { preset: 'elevator_small' } },
+    { label: '扩展测试例 (x=4, y=6, z=7, H=30)', values: { preset: 'elevator_medium' } },
   ],
   codeLanguages: CONGRUENCE_PATH_CODES,
   generateSteps: (input) => {

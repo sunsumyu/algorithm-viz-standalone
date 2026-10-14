@@ -27,17 +27,9 @@ export const avlTreeVisualizer = registerDeclarativeAlgorithm<AVLStep>({
   learningGoal: '深刻掌握 AVL 树平衡因子动态维护与 LL, RR, LR, RL 四种自平衡旋转操作',
   problemHtml: ADVANCED_142_148_PROBLEMS.avlTree.html,
   analysisHtml: ADVANCED_142_148_PROBLEMS.avlTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '键值插入序列预设',
-      type: 'select',
-      defaultValue: 'keys_10_20_30_40_50_25',
-      options: [
-        { label: '[10, 20, 30, 40, 50, 25] (触发 RR 与 RL 旋转)', value: 'keys_10_20_30_40_50_25' },
-        { label: '[30, 20, 10, 5, 25] (触发 LL 旋转)', value: 'keys_30_20_10_5_25' },
-      ],
-    },
+  presets: [
+    { label: '[10, 20, 30, 40, 50, 25] (触发 RR 与 RL 旋转)', values: { preset: 'keys_10_20_30_40_50_25' } },
+    { label: '[30, 20, 10, 5, 25] (触发 LL 旋转)', values: { preset: 'keys_30_20_10_5_25' } },
   ],
   codeLanguages: AVL_TREE_CODES,
   generateSteps: (input) => {

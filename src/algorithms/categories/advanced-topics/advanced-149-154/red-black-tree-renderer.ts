@@ -24,17 +24,9 @@ export const redBlackTreeVisualizer = registerDeclarativeAlgorithm<RBStep>({
   learningGoal: '掌握红黑树五大公理与插入修复的三种经典 Case 处理逻辑及黑高平衡原理',
   problemHtml: ADVANCED_149_154_PROBLEMS.redBlackTree.html,
   analysisHtml: ADVANCED_149_154_PROBLEMS.redBlackTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '键值插入序列预设',
-      type: 'select',
-      defaultValue: 'keys_10_20_30_15_25',
-      options: [
-        { label: '[10, 20, 30, 15, 25] (触发变色与旋转)', value: 'keys_10_20_30_15_25' },
-        { label: '[12, 1, 9, 2, 0, 11] (经典多 Case 演示)', value: 'keys_multi_case' },
-      ],
-    },
+  presets: [
+    { label: '[10, 20, 30, 15, 25] (触发变色与旋转)', values: { preset: 'keys_10_20_30_15_25' } },
+    { label: '[12, 1, 9, 2, 0, 11] (经典多 Case 演示)', values: { preset: 'keys_multi_case' } },
   ],
   codeLanguages: RED_BLACK_CODES,
   generateSteps: (input) => {

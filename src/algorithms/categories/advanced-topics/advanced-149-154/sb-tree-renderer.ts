@@ -24,17 +24,9 @@ export const sbTreeVisualizer = registerDeclarativeAlgorithm<SBStep>({
   learningGoal: '深刻理解 Size Balanced 平衡准则与 Maintain 修复机制，掌握其删除不旋转的工程优势',
   problemHtml: ADVANCED_149_154_PROBLEMS.sbTree.html,
   analysisHtml: ADVANCED_149_154_PROBLEMS.sbTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '键值插入序列预设',
-      type: 'select',
-      defaultValue: 'keys_10_20_30_40_50_25',
-      options: [
-        { label: '[10, 20, 30, 40, 50, 25] (典型平衡测试)', value: 'keys_10_20_30_40_50_25' },
-        { label: '[5, 4, 3, 2, 1] (单调降序触发 LL 维护)', value: 'keys_54321' },
-      ],
-    },
+  presets: [
+    { label: '[10, 20, 30, 40, 50, 25] (典型平衡测试)', values: { preset: 'keys_10_20_30_40_50_25' } },
+    { label: '[5, 4, 3, 2, 1] (单调降序触发 LL 维护)', values: { preset: 'keys_54321' } },
   ],
   codeLanguages: SB_TREE_CODES,
   generateSteps: (input) => {

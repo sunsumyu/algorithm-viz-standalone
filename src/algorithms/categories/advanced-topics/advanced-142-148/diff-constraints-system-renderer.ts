@@ -28,17 +28,9 @@ export const diffConstraintsVisualizer = registerDeclarativeAlgorithm<DiffConstr
   learningGoal: '深刻理解差分约束系统与最短路松弛不等式的双射转化，掌握 SPFA 负环检测判别机制',
   problemHtml: ADVANCED_142_148_PROBLEMS.diffConstraints.html,
   analysisHtml: ADVANCED_142_148_PROBLEMS.diffConstraints.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '约束方程预设用例',
-      type: 'select',
-      defaultValue: 'solvable_system',
-      options: [
-        { label: '有解系统 (3变量, 正权无负环)', value: 'solvable_system' },
-        { label: '矛盾无解系统 (3变量, 存在负权环)', value: 'negative_cycle_system' },
-      ],
-    },
+  presets: [
+    { label: '有解系统 (3变量, 正权无负环)', values: { preset: 'solvable_system' } },
+    { label: '矛盾无解系统 (3变量, 存在负权环)', values: { preset: 'negative_cycle_system' } },
   ],
   codeLanguages: DIFF_CONSTRAINTS_CODES,
   generateSteps: (input) => {

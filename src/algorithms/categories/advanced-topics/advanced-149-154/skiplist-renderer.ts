@@ -24,17 +24,9 @@ export const skiplistVisualizer = registerDeclarativeAlgorithm<SkipListStep>({
   learningGoal: '理解跳表基于几何分布的概率升层机制，掌握自顶向下前驱探测与 O(log N) 期望检索原理',
   problemHtml: ADVANCED_149_154_PROBLEMS.skiplist.html,
   analysisHtml: ADVANCED_149_154_PROBLEMS.skiplist.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '数值插入序列预设',
-      type: 'select',
-      defaultValue: 'vals_standard',
-      options: [
-        { label: '[3, 7, 9, 12, 19, 21, 26] (经典稀疏跳跃演示)', value: 'vals_standard' },
-        { label: '[5, 15, 25, 35, 45] (均匀升序用例)', value: 'vals_sparse' },
-      ],
-    },
+  presets: [
+    { label: '[3, 7, 9, 12, 19, 21, 26] (经典稀疏跳跃演示)', values: { preset: 'vals_standard' } },
+    { label: '[5, 15, 25, 35, 45] (均匀升序用例)', values: { preset: 'vals_sparse' } },
   ],
   codeLanguages: SKIPLIST_CODES,
   generateSteps: (input) => {

@@ -24,17 +24,9 @@ export const scapegoatTreeVisualizer = registerDeclarativeAlgorithm<ScapegoatSte
   learningGoal: '深刻掌握替罪羊树基于 alpha 倾斜阈值的失衡判定、中序拍扁与分治重构的均摊 O(log N) 势能机制',
   problemHtml: ADVANCED_149_154_PROBLEMS.scapegoatTree.html,
   analysisHtml: ADVANCED_149_154_PROBLEMS.scapegoatTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '键值插入序列预设',
-      type: 'select',
-      defaultValue: 'keys_increasing',
-      options: [
-        { label: '[10, 20, 30, 40, 50, 60] (连续单调插入触发暴力拍扁)', value: 'keys_increasing' },
-        { label: '[30, 20, 10, 5, 25] (降序偏斜重构)', value: 'keys_decreasing' },
-      ],
-    },
+  presets: [
+    { label: '[10, 20, 30, 40, 50, 60] (连续单调插入触发暴力拍扁)', values: { preset: 'keys_increasing' } },
+    { label: '[30, 20, 10, 5, 25] (降序偏斜重构)', values: { preset: 'keys_decreasing' } },
   ],
   codeLanguages: SCAPEGOAT_CODES,
   generateSteps: (input) => {

@@ -27,18 +27,10 @@ export const cantorExpansionVisualizer = registerDeclarativeAlgorithm<CantorStep
   learningGoal: '掌握康托展开与逆展开在变进制阶乘数系统中的双射映射与字典序排名算法',
   problemHtml: ADVANCED_142_148_PROBLEMS.cantorExpansion.html,
   analysisHtml: ADVANCED_142_148_PROBLEMS.cantorExpansion.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入全排列预设',
-      type: 'select',
-      defaultValue: 'perm_34152',
-      options: [
-        { label: '[3, 4, 1, 5, 2] (5元素典型用例)', value: 'perm_34152' },
-        { label: '[2, 4, 1, 3] (4元素用例)', value: 'perm_2413' },
-        { label: '[1, 2, 3, 4] (最小初始全排列)', value: 'perm_1234' },
-      ],
-    },
+  presets: [
+    { label: '[3, 4, 1, 5, 2] (5元素典型用例)', values: { preset: 'perm_34152' } },
+    { label: '[2, 4, 1, 3] (4元素用例)', values: { preset: 'perm_2413' } },
+    { label: '[1, 2, 3, 4] (最小初始全排列)', values: { preset: 'perm_1234' } },
   ],
   codeLanguages: CANTOR_EXPANSION_CODES,
   generateSteps: (input) => {
