@@ -26,16 +26,8 @@ export const twoSatAdvancedVisualizer = registerDeclarativeAlgorithm<TwoSatAdvan
   learningGoal: '掌握前缀优化 2-SAT 解决“至多/恰好选一个”的建模套路以及全局对称赋值的高阶技巧',
   problemHtml: ADVANCED_191_195_PROBLEMS.twoSatAdvanced.html,
   analysisHtml: ADVANCED_191_195_PROBLEMS.twoSatAdvanced.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '高阶约束系统预设',
-      type: 'select',
-      defaultValue: 'at_most_one_set',
-      options: [
-        { label: '4 变量，{X1, X2, X3} 至多选一个 (解: X2=1, 其它=0)', value: 'at_most_one_set' },
-      ],
-    },
+  presets: [
+    { label: '4 变量，{X1, X2, X3} 至多选一个 (解: X2=1, 其它=0)', values: { preset: 'at_most_one_set' } },
   ],
   codeLanguages: TWO_SAT_ADVANCED_CODES,
   generateSteps: () => buildTwoSatAdvancedSteps(),

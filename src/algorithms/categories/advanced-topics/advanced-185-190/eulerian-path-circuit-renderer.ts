@@ -26,16 +26,8 @@ export const eulerianPathVisualizer = registerDeclarativeAlgorithm<EulerianStep>
   learningGoal: '掌握有向图欧拉路径充要条件、Hierholzer 圈套圈递归回溯压栈与当前弧删边防退化',
   problemHtml: ADVANCED_185_190_PROBLEMS.eulerianPathCircuit.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.eulerianPathCircuit.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '有向图拓扑预设',
-      type: 'select',
-      defaultValue: 'euler_4node',
-      options: [
-        { label: '4 点 4 边有向欧拉图 (起点 1, 终点 2)', value: 'euler_4node' },
-      ],
-    },
+  presets: [
+    { label: '4 点 4 边有向欧拉图 (起点 1, 终点 2)', values: { preset: 'euler_4node' } },
   ],
   codeLanguages: EULERIAN_PATH_CODES,
   generateSteps: () => buildEulerianSteps(),

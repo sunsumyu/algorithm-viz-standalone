@@ -101,16 +101,8 @@ export const prefixSuffixGraphVisualizer = registerDeclarativeAlgorithm<PrefixSu
   learningGoal: '掌握前缀虚点定义、前缀链单向传递逻辑以及区间排他向点传递边转化的深层设计',
   problemHtml: ADVANCED_191_195_PROBLEMS.prefixSuffixGraph.html,
   analysisHtml: ADVANCED_191_195_PROBLEMS.prefixSuffixGraph.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '前缀链长度预设',
-      type: 'select',
-      defaultValue: 'chain_4',
-      options: [
-        { label: '4 点前缀传递链 (7 条边线性构建)', value: 'chain_4' },
-      ],
-    },
+  presets: [
+    { label: '4 点前缀传递链 (7 条边线性构建)', values: { preset: 'chain_4' } },
   ],
   codeLanguages: PREFIX_SUFFIX_GRAPH_CODES,
   generateSteps: () => buildPrefixSuffixSteps(),

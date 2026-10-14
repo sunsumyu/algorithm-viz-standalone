@@ -26,16 +26,8 @@ export const edgeDecompositionVisualizer = registerDeclarativeAlgorithm<EdgeDeco
   learningGoal: '掌握多叉树虚点三度化技巧、重心边选择策略以及边分治严格二叉合并的高效性',
   problemHtml: ADVANCED_185_190_PROBLEMS.edgeDecomposition.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.edgeDecomposition.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '树拓扑预设',
-      type: 'select',
-      defaultValue: 'tree_4node_chain',
-      options: [
-        { label: '4 节点三度化链 (重心边: 2-3, 左右对半分)', value: 'tree_4node_chain' },
-      ],
-    },
+  presets: [
+    { label: '4 节点三度化链 (重心边: 2-3, 左右对半分)', values: { preset: 'tree_4node_chain' } },
   ],
   codeLanguages: EDGE_DECOMPOSITION_CODES,
   generateSteps: () => buildEdgeDecompSteps(),

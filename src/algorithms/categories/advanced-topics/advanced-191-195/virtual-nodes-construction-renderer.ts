@@ -26,16 +26,8 @@ export const virtualNodesConstructionVisualizer = registerDeclarativeAlgorithm<V
   learningGoal: '深刻理解中转虚点解耦两集合全连接的机制，掌握虚拟源汇在拓扑排序、网络流与最短路中的应用',
   problemHtml: ADVANCED_191_195_PROBLEMS.virtualNodesConstruction.html,
   analysisHtml: ADVANCED_191_195_PROBLEMS.virtualNodesConstruction.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '集合规模预设',
-      type: 'select',
-      defaultValue: 'set_3_4',
-      options: [
-        { label: 'Set A (3点) -> Set B (4点): 12边降至7边', value: 'set_3_4' },
-      ],
-    },
+  presets: [
+    { label: 'Set A (3点) -> Set B (4点): 12边降至7边', values: { preset: 'set_3_4' } },
   ],
   codeLanguages: VIRTUAL_NODES_CODES,
   generateSteps: () => buildVirtualNodesSteps(),

@@ -26,16 +26,8 @@ export const ebccConstructionVisualizer = registerDeclarativeAlgorithm<EBCCConst
   learningGoal: '掌握无向图边双缩点成树的性质、叶子度数判定与 ceil(L/2) 最优连边数学证明',
   problemHtml: ADVANCED_191_195_PROBLEMS.ebccConstruction.html,
   analysisHtml: ADVANCED_191_195_PROBLEMS.ebccConstruction.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '缩点树结构预设',
-      type: 'select',
-      defaultValue: 'tree_3leaves',
-      options: [
-        { label: '3 叶子星形树 (最少加边: 2 条)', value: 'tree_3leaves' },
-      ],
-    },
+  presets: [
+    { label: '3 叶子星形树 (最少加边: 2 条)', values: { preset: 'tree_3leaves' } },
   ],
   codeLanguages: EBCC_CONSTRUCTION_CODES,
   generateSteps: () => buildEBCCConstructionSteps(),

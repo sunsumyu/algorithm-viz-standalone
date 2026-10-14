@@ -26,16 +26,8 @@ export const tarjanSCCVisualizer = registerDeclarativeAlgorithm<TarjanSCCStep>({
   learningGoal: '掌握 DFN 与 LOW 的精确定义、返祖边更新准则与出栈缩点消除有向环的数学原理',
   problemHtml: ADVANCED_185_190_PROBLEMS.tarjanSCC.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.tarjanSCC.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '有向图拓扑预设',
-      type: 'select',
-      defaultValue: 'cycle_with_tail',
-      options: [
-        { label: '4 点经典环带尾图 (环: 1-2-3, 尾: 3->4)', value: 'cycle_with_tail' },
-      ],
-    },
+  presets: [
+    { label: '4 点经典环带尾图 (环: 1-2-3, 尾: 3->4)', values: { preset: 'cycle_with_tail' } },
   ],
   codeLanguages: TARJAN_SCC_CODES,
   generateSteps: () => buildTarjanSCCSteps(),

@@ -26,16 +26,8 @@ export const vertexBCCVisualizer = registerDeclarativeAlgorithm<VertexBCCStep>({
   learningGoal: '掌握割点非根与根的两种判定准则、割点可属于多个点双的核心特性以及栈维护极大点双的机制',
   problemHtml: ADVANCED_185_190_PROBLEMS.vertexBCC.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.vertexBCC.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '无向图拓扑预设',
-      type: 'select',
-      defaultValue: 'figure_8',
-      options: [
-        { label: '8 字形双环相交图 (割点: 3, 点双: {1,2,3}, {3,4,5})', value: 'figure_8' },
-      ],
-    },
+  presets: [
+    { label: '8 字形双环相交图 (割点: 3, 点双: {1,2,3}, {3,4,5})', values: { preset: 'figure_8' } },
   ],
   codeLanguages: VERTEX_BCC_CODES,
   generateSteps: () => buildVertexBCCSteps(),

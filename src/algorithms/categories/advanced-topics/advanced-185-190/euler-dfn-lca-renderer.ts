@@ -26,16 +26,8 @@ export const eulerDfnLcaVisualizer = registerDeclarativeAlgorithm<EulerDfnStep>(
   learningGoal: '掌握欧拉序展开机制、树上深度序列的区间极小值映射以及 O(1) 常数时间 LCA 检索',
   problemHtml: ADVANCED_185_190_PROBLEMS.eulerDfnLca.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.eulerDfnLca.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: 'LCA 查询点对',
-      type: 'select',
-      defaultValue: 'lca_4_5',
-      options: [
-        { label: '查询 LCA(4, 5) -> 节点 2', value: 'lca_4_5' },
-      ],
-    },
+  presets: [
+    { label: '查询 LCA(4, 5) -> 节点 2', values: { preset: 'lca_4_5' } },
   ],
   codeLanguages: EULER_DFN_LCA_CODES,
   generateSteps: () => buildEulerDfnSteps(),

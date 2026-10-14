@@ -26,16 +26,8 @@ export const centroidDecompositionVisualizer = registerDeclarativeAlgorithm<Cent
   learningGoal: '掌握树上点分治重心求解、子树路径统计、容斥去重与全局递归分治',
   problemHtml: ADVANCED_179_184_PROBLEMS.centroidDecomposition.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.centroidDecomposition.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '树拓扑与目标距离',
-      type: 'select',
-      defaultValue: 'tree_5node_target3',
-      options: [
-        { label: '5 节点树，目标距离 K=3 (求得 3 条路径)', value: 'tree_5node_target3' },
-      ],
-    },
+  presets: [
+    { label: '5 节点树，目标距离 K=3 (求得 3 条路径)', values: { preset: 'tree_5node_target3' } },
   ],
   codeLanguages: CENTROID_DECOMPOSITION_CODES,
   generateSteps: () => buildCentroidSteps(),

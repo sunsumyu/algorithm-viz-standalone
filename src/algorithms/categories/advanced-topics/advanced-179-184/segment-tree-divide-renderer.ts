@@ -26,16 +26,8 @@ export const segmentTreeDivideVisualizer = registerDeclarativeAlgorithm<SegmentT
   learningGoal: '掌握时间轴线段树打标记、可撤销并查集 DFS 前序遍历与回溯历史栈快照一键回退',
   problemHtml: ADVANCED_179_184_PROBLEMS.segmentTreeDivide.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.segmentTreeDivide.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '边生命周期时段配置',
-      type: 'select',
-      defaultValue: 'timeline_3_cycle',
-      options: [
-        { label: '3 时刻加删边 (T=1:YES, T=2:NO[奇环], T=3:YES)', value: 'timeline_3_cycle' },
-      ],
-    },
+  presets: [
+    { label: '3 时刻加删边 (T=1:YES, T=2:NO[奇环], T=3:YES)', values: { preset: 'timeline_3_cycle' } },
   ],
   codeLanguages: SEGMENT_TREE_DIVIDE_CODES,
   generateSteps: () => buildSegmentTreeDivideSteps(),

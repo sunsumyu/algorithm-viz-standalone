@@ -26,16 +26,8 @@ export const cdqDivideVisualizer = registerDeclarativeAlgorithm<CDQDivideStep>({
   learningGoal: '掌握 CDQ 分治计算左区间对右区间贡献的思想、双指针归并排序与树状数组动态维护',
   problemHtml: ADVANCED_179_184_PROBLEMS.cdqDivide.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.cdqDivide.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '三维点集预设',
-      type: 'select',
-      defaultValue: 'points_4',
-      options: [
-        { label: '4 点三维偏序测试集', value: 'points_4' },
-      ],
-    },
+  presets: [
+    { label: '4 点三维偏序测试集', values: { preset: 'points_4' } },
   ],
   codeLanguages: CDQ_DIVIDE_CODES,
   generateSteps: () => buildCDQDivideSteps(),

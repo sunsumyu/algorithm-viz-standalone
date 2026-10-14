@@ -26,16 +26,8 @@ export const dynamicCentroidTreeVisualizer = registerDeclarativeAlgorithm<Dynami
   learningGoal: '掌握点分树父子拓扑维护、两层动态数据结构容斥抵消与 O(log^2 N) 向上逐层上跳',
   problemHtml: ADVANCED_179_184_PROBLEMS.dynamicCentroidTree.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.dynamicCentroidTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '点分树操作序列',
-      type: 'select',
-      defaultValue: 'update3_query5',
-      options: [
-        { label: '单点修改 update(3, +10) -> 邻域查询 query(5, k=2)', value: 'update3_query5' },
-      ],
-    },
+  presets: [
+    { label: '单点修改 update(3, +10) -> 邻域查询 query(5, k=2)', values: { preset: 'update3_query5' } },
   ],
   codeLanguages: DYNAMIC_CENTROID_TREE_CODES,
   generateSteps: () => buildDynamicCentroidSteps(),

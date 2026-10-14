@@ -26,16 +26,8 @@ export const rollbackDSUVisualizer = registerDeclarativeAlgorithm<RollbackDSUSte
   learningGoal: '掌握可撤销并查集按秩合并原理、禁用路径压缩的深层原因以及 O(1) 历史栈精准回退',
   problemHtml: ADVANCED_179_184_PROBLEMS.rollbackDSU.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.rollbackDSU.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '操作序列预设',
-      type: 'select',
-      defaultValue: 'union3_rollback1',
-      options: [
-        { label: '连续合并 3 次 -> 回退 1 次', value: 'union3_rollback1' },
-      ],
-    },
+  presets: [
+    { label: '连续合并 3 次 -> 回退 1 次', values: { preset: 'union3_rollback1' } },
   ],
   codeLanguages: ROLLBACK_DSU_CODES,
   generateSteps: () => buildRollbackDSUSteps(),

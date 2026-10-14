@@ -26,16 +26,8 @@ export const twoSatAlgorithmVisualizer = registerDeclarativeAlgorithm<TwoSatStep
   learningGoal: '掌握 2-SAT 对称拆点建图原理、无解充要条件以及利用 SCC 编号逆序拓扑构造可行解',
   problemHtml: ADVANCED_191_195_PROBLEMS.twoSatAlgorithm.html,
   analysisHtml: ADVANCED_191_195_PROBLEMS.twoSatAlgorithm.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '析取子句组配置',
-      type: 'select',
-      defaultValue: 'satisfiable_3',
-      options: [
-        { label: '3 变量 3 子句可满足系统 (解: [0, 1, 0])', value: 'satisfiable_3' },
-      ],
-    },
+  presets: [
+    { label: '3 变量 3 子句可满足系统 (解: [0, 1, 0])', values: { preset: 'satisfiable_3' } },
   ],
   codeLanguages: TWO_SAT_ALGORITHM_CODES,
   generateSteps: () => buildTwoSatSteps(),

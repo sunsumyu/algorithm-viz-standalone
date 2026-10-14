@@ -26,16 +26,8 @@ export const parallelBinarySearchVisualizer = registerDeclarativeAlgorithm<Paral
   learningGoal: '掌握批量询问值域分流、操作批量生效与精准撤销、单次分治解决整体询问的精髓',
   problemHtml: ADVANCED_179_184_PROBLEMS.parallelBinarySearch.html,
   analysisHtml: ADVANCED_179_184_PROBLEMS.parallelBinarySearch.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '流星雨与国家需求',
-      type: 'select',
-      defaultValue: 'queries_2',
-      options: [
-        { label: '2 国家陨石雨阈值判定', value: 'queries_2' },
-      ],
-    },
+  presets: [
+    { label: '2 国家陨石雨阈值判定', values: { preset: 'queries_2' } },
   ],
   codeLanguages: PARALLEL_BINARY_SEARCH_CODES,
   generateSteps: () => buildParallelBSSteps(),

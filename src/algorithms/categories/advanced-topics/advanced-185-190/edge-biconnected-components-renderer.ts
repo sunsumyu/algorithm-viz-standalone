@@ -26,16 +26,8 @@ export const edgeBCCVisualizer = registerDeclarativeAlgorithm<EdgeBCCStep>({
   learningGoal: '深刻理解桥与边双连通的定义、成对存储反向边技巧以及无向图缩点成树的结构特性',
   problemHtml: ADVANCED_185_190_PROBLEMS.edgeBCC.html,
   analysisHtml: ADVANCED_185_190_PROBLEMS.edgeBCC.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '无向图拓扑预设',
-      type: 'select',
-      defaultValue: 'bridge_dumbbell',
-      options: [
-        { label: '哑铃图 (环 1-2-3 -- 桥 3-4 -- 边 4-5)', value: 'bridge_dumbbell' },
-      ],
-    },
+  presets: [
+    { label: '哑铃图 (环 1-2-3 -- 桥 3-4 -- 边 4-5)', values: { preset: 'bridge_dumbbell' } },
   ],
   codeLanguages: EDGE_BCC_CODES,
   generateSteps: () => buildEdgeBCCSteps(),
