@@ -23,18 +23,6 @@ export const spfa061Visualizer = registerDeclarativeAlgorithm<SpfaStep>({
   learningGoal: '掌握队列维护活跃松弛顶点机制、inQueue 标志位管理与平均 O(k·E) 运行效率',
   problemHtml: GRAPH_061_PROBLEMS.spfa061.html,
   codeLanguages: SPFA_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '拓扑预设选择',
-      type: 'select',
-      defaultValue: 'negative_chain',
-      options: [
-        { label: '负权链式图 (5 节点 · 负权边传播)', value: 'negative_chain' },
-        { label: '稠密正权图 (4 节点 · 队列去重测试)', value: 'dense_positive' },
-      ],
-    },
-  ],
   presets: [
     { label: '负权链式图', values: { preset: 'negative_chain' } },
     { label: '稠密正权图', values: { preset: 'dense_positive' } },

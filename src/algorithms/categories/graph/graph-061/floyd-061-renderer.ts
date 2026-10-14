@@ -29,18 +29,6 @@ export const floyd061Visualizer = registerDeclarativeAlgorithm<FloydStep>({
   learningGoal: '掌握中转跳板 k 枚举外层准则、动态规划多阶段决策与 O(V³) 全源最短路求解',
   problemHtml: GRAPH_061_PROBLEMS.floyd061.html,
   codeLanguages: FLOYD_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '拓扑预设选择',
-      type: 'select',
-      defaultValue: 'default_4nodes',
-      options: [
-        { label: '4 节点交叉拓扑 (非对称权值)', value: 'default_4nodes' },
-        { label: '4 节点有向环拓扑 (环形连通闭包)', value: 'directed_cycle' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点交叉图', values: { preset: 'default_4nodes' } },
     { label: '4 节点有向环', values: { preset: 'directed_cycle' } },

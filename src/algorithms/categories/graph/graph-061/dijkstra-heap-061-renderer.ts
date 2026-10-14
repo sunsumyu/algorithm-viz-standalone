@@ -30,18 +30,6 @@ export const dijkstraHeap061Visualizer = registerDeclarativeAlgorithm<DijkstraHe
   learningGoal: '掌握优先队列小根堆维护波前、惰性删除策略与稀疏图高效求解',
   problemHtml: GRAPH_061_PROBLEMS.dijkstraHeap061.html,
   codeLanguages: DIJKSTRA_HEAP_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '拓扑预设选择',
-      type: 'select',
-      defaultValue: 'sparse_5nodes',
-      options: [
-        { label: '5 节点稀疏拓扑图 (典型稀疏网)', value: 'sparse_5nodes' },
-        { label: '6 节点双分支网络 (双通道寻优)', value: 'branch_6nodes' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点稀疏图', values: { preset: 'sparse_5nodes' } },
     { label: '6 节点双分支图', values: { preset: 'branch_6nodes' } },

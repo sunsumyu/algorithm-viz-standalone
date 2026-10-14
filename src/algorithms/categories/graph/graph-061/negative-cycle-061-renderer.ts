@@ -29,18 +29,6 @@ export const negativeCycle061Visualizer = registerDeclarativeAlgorithm<NegativeC
   learningGoal: '掌握超级源点入队机制、最短路径抽屉原理与 count[v] >= n 负环判定准则',
   problemHtml: GRAPH_061_PROBLEMS.negativeCycle061.html,
   codeLanguages: NEGATIVE_CYCLE_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '图拓扑预设',
-      type: 'select',
-      defaultValue: 'has_cycle',
-      options: [
-        { label: '含负权回路图 (1➔2➔3➔1 权重为 -3)', value: 'has_cycle' },
-        { label: '安全无负环图 (回路权重和为正数 +4)', value: 'no_cycle' },
-      ],
-    },
-  ],
   presets: [
     { label: '含负权环图', values: { preset: 'has_cycle' } },
     { label: '无负环安全图', values: { preset: 'no_cycle' } },

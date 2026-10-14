@@ -26,18 +26,6 @@ export const dijkstraBasic061Visualizer = registerDeclarativeAlgorithm<DijkstraB
   learningGoal: '掌握贪心选点、最短路锁定准则以及边松弛操作的核心本质与 O(V²) 稠密图优势',
   problemHtml: GRAPH_061_PROBLEMS.dijkstraBasic061.html,
   codeLanguages: DIJKSTRA_BASIC_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '拓扑预设选择',
-      type: 'select',
-      defaultValue: 'default_5nodes',
-      options: [
-        { label: '5 节点经典拓扑图 (带交叉连通)', value: 'default_5nodes' },
-        { label: '4 节点稠密测试图 (多路径松弛)', value: 'dense_4nodes' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点经典图', values: { preset: 'default_5nodes' } },
     { label: '4 节点稠密图', values: { preset: 'dense_4nodes' } },

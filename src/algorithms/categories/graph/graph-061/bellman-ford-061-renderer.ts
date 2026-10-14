@@ -26,18 +26,6 @@ export const bellmanFord061Visualizer = registerDeclarativeAlgorithm<BellmanFord
   learningGoal: '掌握负权边处理能力、V-1 轮全边暴力松弛与提前收敛早停优化机制',
   problemHtml: GRAPH_061_PROBLEMS.bellmanFord061.html,
   codeLanguages: BELLMAN_FORD_061_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '拓扑预设选择',
-      type: 'select',
-      defaultValue: 'negative_weight',
-      options: [
-        { label: '含负权边经典图 (5 节点 · 负权松弛)', value: 'negative_weight' },
-        { label: '正权标准图 (4 节点 · 快速早停)', value: 'positive_simple' },
-      ],
-    },
-  ],
   presets: [
     { label: '含负权边图', values: { preset: 'negative_weight' } },
     { label: '正权标准图', values: { preset: 'positive_simple' } },
