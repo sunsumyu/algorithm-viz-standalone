@@ -25,20 +25,6 @@ registerDeclarativeAlgorithm({
   problemHtml: DP_066_PROBLEMS['unique-substrings-wraparound-066'].problemHtml,
   analysisHtml: DP_066_PROBLEMS['unique-substrings-wraparound-066'].complexityHtml,
   codeLanguages: UNIQUE_SUBSTRINGS_WRAPAROUND_066_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'preset_zab',
-      options: [
-        { label: '环绕跨越用例 "zab" (6个)', value: 'preset_zab' },
-        { label: '交替重复用例 "cac" (2个)', value: 'preset_cac' },
-        { label: '混合跨越 "zaba" (6个)', value: 'preset_zaba' },
-        { label: '单字符边界 "a" (1个)', value: 'preset_a' },
-      ],
-    },
-  ],
   presets: [
     { label: '环绕跨越用例 "zab" (6个)', values: { preset: 'preset_zab' } },
     { label: '交替重复用例 "cac" (2个)', values: { preset: 'preset_cac' } },

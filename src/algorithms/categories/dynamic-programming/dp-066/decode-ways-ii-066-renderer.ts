@@ -29,20 +29,6 @@ registerDeclarativeAlgorithm({
   problemHtml: DP_066_PROBLEMS['decode-ways-ii-066'].problemHtml,
   analysisHtml: DP_066_PROBLEMS['decode-ways-ii-066'].complexityHtml,
   codeLanguages: DECODE_WAYS_II_066_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'two_star',
-      options: [
-        { label: '双字符通配符 "2*" (15种)', value: 'two_star' },
-        { label: '单通配符 "*" (9种)', value: 'single_star' },
-        { label: '连续通配符 "**" (96种)', value: 'star_star' },
-        { label: '复杂多通配符 "*1*2*"', value: 'complex_sample' },
-      ],
-    },
-  ],
   presets: [
     { label: '双字符通配符 "2*" (15种)', values: { preset: 'two_star' } },
     { label: '单通配符 "*" (9种)', values: { preset: 'single_star' } },

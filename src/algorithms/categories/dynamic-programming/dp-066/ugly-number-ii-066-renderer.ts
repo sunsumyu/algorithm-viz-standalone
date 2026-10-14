@@ -28,20 +28,6 @@ registerDeclarativeAlgorithm({
   problemHtml: DP_066_PROBLEMS['ugly-number-ii-066'].problemHtml,
   analysisHtml: DP_066_PROBLEMS['ugly-number-ii-066'].complexityHtml,
   codeLanguages: UGLY_NUMBER_II_066_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'n_10',
-      options: [
-        { label: '第 10 个丑数 (值: 12)', value: 'n_10' },
-        { label: '第 15 个丑数 (值: 24)', value: 'n_15' },
-        { label: '第 20 个丑数 (值: 36)', value: 'n_20' },
-        { label: '第 1 个丑数 (边界: 1)', value: 'n_1' },
-      ],
-    },
-  ],
   presets: [
     { label: '第 10 个丑数 (值: 12)', values: { preset: 'n_10' } },
     { label: '第 15 个丑数 (值: 24)', values: { preset: 'n_15' } },
