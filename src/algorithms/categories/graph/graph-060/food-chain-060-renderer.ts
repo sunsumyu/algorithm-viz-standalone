@@ -31,18 +31,6 @@ export const foodChain060Visualizer = registerDeclarativeAlgorithm<FoodChainStep
   learningGoal: '掌握 DAG 拓扑排序消除后效性机理、路径条数累加转移方程与出度为 0 终端结算',
   problemHtml: GRAPH_060_PROBLEMS.foodChain060.html,
   codeLanguages: FOOD_CHAIN_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '生态网拓扑选择',
-      type: 'select',
-      defaultValue: 'classic_ecosystem',
-      options: [
-        { label: '5 生物经典陆地生态网 (水稻/田鼠/蝗虫/蛇/老鹰)', value: 'classic_ecosystem' },
-        { label: '5 生物双生产者水生网 (浮游植物/水草/大鱼)', value: 'multi_producer' },
-      ],
-    },
-  ],
   presets: [
     { label: '陆地生态网', values: { preset: 'classic_ecosystem' } },
     { label: '水生生态网', values: { preset: 'multi_producer' } },

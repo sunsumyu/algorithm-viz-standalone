@@ -53,18 +53,6 @@ export const parallelCourses060Visualizer = registerDeclarativeAlgorithm<Paralle
   learningGoal: '掌握 DAG 关键路径最长路动态规划方程、并行化前驱瓶颈分析与拓扑更新准则',
   problemHtml: GRAPH_060_PROBLEMS.parallelCourses060.html,
   codeLanguages: PARALLEL_COURSES_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '课程拓扑图选择',
-      type: 'select',
-      defaultValue: 'classic_5courses',
-      options: [
-        { label: '5 门课程经典依赖图 (带汇聚关键瓶颈路径)', value: 'classic_5courses' },
-        { label: '4 门课程菱形并行图 (双路并行对比)', value: 'diamond_4courses' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 门课程依赖图', values: { preset: 'classic_5courses' } },
     { label: '4 门课程菱形图', values: { preset: 'diamond_4courses' } },

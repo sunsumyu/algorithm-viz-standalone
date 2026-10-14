@@ -66,18 +66,6 @@ export const largestColorValue060Visualizer = registerDeclarativeAlgorithm<Large
   learningGoal: '掌握拓扑排序出队计数判环机制、26 维颜色频次状态转移方程以及全局最值维护',
   problemHtml: GRAPH_060_PROBLEMS.largestColorValue060.html,
   codeLanguages: LARGEST_COLOR_VALUE_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '图结构用例选择',
-      type: 'select',
-      defaultValue: 'dag_colors',
-      options: [
-        { label: '5 节点标准 DAG (colors="abaca", 最大颜色 a=3)', value: 'dag_colors' },
-        { label: '4 节点含有向环图 (colors="abab", 拓扑中断触发环警报)', value: 'cycle_colors' },
-      ],
-    },
-  ],
   presets: [
     { label: '标准颜色 DAG', values: { preset: 'dag_colors' } },
     { label: '含有向环测试', values: { preset: 'cycle_colors' } },

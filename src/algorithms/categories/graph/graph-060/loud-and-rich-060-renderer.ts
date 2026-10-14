@@ -51,18 +51,6 @@ export const loudAndRich060Visualizer = registerDeclarativeAlgorithm<LoudAndRich
   learningGoal: '掌握有向图偏序关系建模、拓扑排序最值动态传播与安静值贪心更新机制',
   problemHtml: GRAPH_060_PROBLEMS.loudAndRich060.html,
   codeLanguages: LOUD_AND_RICH_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '人员财富网络选择',
-      type: 'select',
-      defaultValue: 'classic_5people',
-      options: [
-        { label: '5 人经典富裕图 (多前驱财富汇流)', value: 'classic_5people' },
-        { label: '4 人单向链式富裕图 (线性单调递推)', value: 'linear_chain' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 人财富图', values: { preset: 'classic_5people' } },
     { label: '4 人链式图', values: { preset: 'linear_chain' } },

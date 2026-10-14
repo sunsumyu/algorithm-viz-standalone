@@ -30,18 +30,6 @@ export const maxEmployees060Visualizer = registerDeclarativeAlgorithm<MaxEmploye
   learningGoal: '掌握内向基环树拓扑剥离树枝方法、环路大小分类讨论与二元互偶链全量拼接机理',
   problemHtml: GRAPH_060_PROBLEMS.maxEmployees060.html,
   codeLanguages: MAX_EMPLOYEES_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '基环树形态选择',
-      type: 'select',
-      defaultValue: 'mixed_rings',
-      options: [
-        { label: '6 员工双二元环带外挂长链 (二元环拼接胜出)', value: 'mixed_rings' },
-        { label: '4 员工 3 节点大环带外挂叶子 (独立大环胜出)', value: 'big_ring_3' },
-      ],
-    },
-  ],
   presets: [
     { label: '二元环链拼接', values: { preset: 'mixed_rings' } },
     { label: '3 节点大环', values: { preset: 'big_ring_3' } },

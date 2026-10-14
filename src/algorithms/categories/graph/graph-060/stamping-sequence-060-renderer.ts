@@ -27,18 +27,6 @@ export const stampingSequence060Visualizer = registerDeclarativeAlgorithm<Stampi
   learningGoal: '掌握逆向思维倒放电影建模、通配符扩散机制与滑动窗口入度削减拓扑驱动',
   problemHtml: GRAPH_060_PROBLEMS.stampingSequence060.html,
   codeLanguages: STAMPING_SEQUENCE_060_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '目标串用例选择',
-      type: 'select',
-      defaultValue: 'classic_ababc',
-      options: [
-        { label: 'stamp="abc", target="ababc" (经典双盖印)', value: 'classic_ababc' },
-        { label: 'stamp="abca", target="aabcaca" (三重嵌套重叠)', value: 'nested_aabc' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典双盖印', values: { preset: 'classic_ababc' } },
     { label: '三重嵌套重叠', values: { preset: 'nested_aabc' } },
