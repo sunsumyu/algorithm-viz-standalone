@@ -78,19 +78,6 @@ export const asFarFromLand062Visualizer = registerDeclarativeAlgorithm<AsFarFrom
   learningGoal: '掌握多源 BFS 逆向思维：将所有陆地并发入队，通过波前扩散在 O(N²) 线性时间内求解全局最大最短距离',
   problemHtml: GRAPH_062_PROBLEMS.asFarFromLand062.html,
   codeLanguages: AS_FAR_FROM_LAND_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '地形用例选择',
-      type: 'select',
-      defaultValue: 'classic_3x3',
-      options: [
-        { label: '3x3 四角陆地中心水域 (距离=2)', value: 'classic_3x3' },
-        { label: '3x3 左上角单点陆地 (距离=4)', value: 'corner_land' },
-        { label: '2x2 全海洋特判用例 (-1)', value: 'all_sea' },
-      ],
-    },
-  ],
   presets: [
     { label: '3x3 四角陆地中心水域 (经典)', values: { preset: 'classic_3x3' } },
     { label: '3x3 单角陆地扩散', values: { preset: 'corner_land' } },

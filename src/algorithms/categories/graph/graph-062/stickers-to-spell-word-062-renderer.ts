@@ -24,18 +24,6 @@ export const stickersToSpellWord062Visualizer = registerDeclarativeAlgorithm<Sti
   learningGoal: '掌握 BFS 结合贪心首字符剪枝的高效状态空间搜索，杜绝同集合贴纸的不同排列导致的指数爆炸',
   problemHtml: GRAPH_062_PROBLEMS.stickersToSpellWord062.html,
   codeLanguages: STICKERS_TO_SPELL_WORD_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '用例选择',
-      type: 'select',
-      defaultValue: 'classic_thehat',
-      options: [
-        { label: '经典可拼：["with", "example", "science"] -> "thehat" (需3张)', value: 'classic_thehat' },
-        { label: '缺少字母：["notice", "possible"] -> "basicbasic" (-1)', value: 'impossible' },
-      ],
-    },
-  ],
   presets: [
     { label: 'thehat 经典用例 (需3张)', values: { preset: 'classic_thehat' } },
     { label: '缺字母不可行用例 (-1)', values: { preset: 'impossible' } },

@@ -92,19 +92,6 @@ export const minimumObstacles062Visualizer = registerDeclarativeAlgorithm<Minimu
   learningGoal: '深刻理解 0-1 BFS 双端队列如何通过 0权插队头/1权插队尾 天然保持单调性并规避 Dijkstra 堆排开销',
   problemHtml: GRAPH_062_PROBLEMS.minimumObstacles062.html,
   codeLanguages: MINIMUM_OBSTACLES_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '网格障碍地形',
-      type: 'select',
-      defaultValue: 'classic_3x3',
-      options: [
-        { label: '3x3 经典全通 (绕道0障碍可达)', value: 'classic_3x3' },
-        { label: '3x3 纵向直立障碍墙 (必破1障碍)', value: 'straight_wall' },
-        { label: '3x3 终点障碍围栏 (必破1障碍)', value: 'corner_blocked' },
-      ],
-    },
-  ],
   presets: [
     { label: '3x3 经典可绕用例 (0障碍)', values: { preset: 'classic_3x3' } },
     { label: '3x3 必穿障碍墙用例 (1障碍)', values: { preset: 'straight_wall' } },

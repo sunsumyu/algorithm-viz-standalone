@@ -24,18 +24,6 @@ export const wordLadderII062Visualizer = registerDeclarativeAlgorithm<WordLadder
   learningGoal: '掌握经典大厂压轴两阶段解法：BFS分层最短路构建前驱DAG图 + DFS无损回溯输出所有最短全路径',
   problemHtml: GRAPH_062_PROBLEMS.wordLadderII062.html,
   codeLanguages: WORD_LADDER_II_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '词表预设用例',
-      type: 'select',
-      defaultValue: 'classic_hit_cog',
-      options: [
-        { label: '经典用例：hit -> cog (存在 2 条最短路)', value: 'classic_hit_cog' },
-        { label: '缺少终点词：hit -> cog (0 条路径)', value: 'impossible' },
-      ],
-    },
-  ],
   presets: [
     { label: 'hit -> cog 经典双最短路', values: { preset: 'classic_hit_cog' } },
     { label: '缺少终点词不可达用例', values: { preset: 'impossible' } },

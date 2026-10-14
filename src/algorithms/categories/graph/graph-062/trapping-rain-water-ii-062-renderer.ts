@@ -99,18 +99,6 @@ export const trappingRainWaterII062Visualizer = registerDeclarativeAlgorithm<Tra
   learningGoal: '深刻理解小根堆优先队列模拟木桶短板收缩算法，水面高度只增不减的外围向内单调性证明',
   problemHtml: GRAPH_062_PROBLEMS.trappingRainWaterII062.html,
   codeLanguages: TRAPPING_RAIN_WATER_II_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '地形用例选择',
-      type: 'select',
-      defaultValue: 'classic_3x6',
-      options: [
-        { label: '3x6 经典地形 (总积水量 4)', value: 'classic_3x6' },
-        { label: '3x3 中心凹陷盆地 (总积水量 2)', value: 'simple_3x3' },
-      ],
-    },
-  ],
   presets: [
     { label: '3x6 经典凹陷盆地 (积水 4)', values: { preset: 'classic_3x6' } },
     { label: '3x3 单心凹陷低洼 (积水 2)', values: { preset: 'simple_3x3' } },

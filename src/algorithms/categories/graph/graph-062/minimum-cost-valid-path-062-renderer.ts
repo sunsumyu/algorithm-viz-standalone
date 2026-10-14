@@ -89,18 +89,6 @@ export const minimumCostValidPath062Visualizer = registerDeclarativeAlgorithm<Va
   learningGoal: '掌握网格箭头图到 0-1 BFS 边权的数学归约：顺向边权 0、改向边权 1，线性求解全局最小修改代价',
   problemHtml: GRAPH_062_PROBLEMS.minimumCostValidPath062.html,
   codeLanguages: MINIMUM_COST_VALID_PATH_062_CODES,
-  inputs: [
-    {
-      id: 'preset',
-      label: '网格箭头用例',
-      type: 'select',
-      defaultValue: 'classic_3x3',
-      options: [
-        { label: '3x3 经典用例 (需改 1 次箭头)', value: 'classic_3x3' },
-        { label: '3x3 天然直通 (需改 0 次箭头)', value: 'zero_cost' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典需改 1 处箭头用例', values: { preset: 'classic_3x3' } },
     { label: '天然直通 0 代价用例', values: { preset: 'zero_cost' } },
