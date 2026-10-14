@@ -23,16 +23,8 @@ export const mcmfCostFlowVisualizer = registerDeclarativeAlgorithm<MCMFStep>({
   learningGoal: '掌握费用最短路增广机制与反向边负权反悔模型，深刻理解费用流在二分图带权匹配与运输问题中的建模',
   problemHtml: ADVANCED_173_178_PROBLEMS.mcmfCostFlow.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.mcmfCostFlow.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '费用流网络拓扑',
-      type: 'select',
-      defaultValue: 'standard_cost_network',
-      options: [
-        { label: '标准 4 节点费用流 (S=1, T=4, 最大流: 3, 最小费用: 10)', value: 'standard_cost_network' },
-      ],
-    },
+  presets: [
+    { label: '标准 4 节点费用流 (S=1, T=4, 最大流: 3, 最小费用: 10)', values: { preset: 'standard_cost_network' } },
   ],
   codeLanguages: MCMF_COST_FLOW_CODES,
   generateSteps: () => buildMCMFSteps(),

@@ -23,16 +23,8 @@ export const dinicMaxFlowVisualizer = registerDeclarativeAlgorithm<DinicStep>({
   learningGoal: '深刻理解残量网络与反向弧退流机制，掌握 BFS 层次图定向与当前弧优化避免冗余搜索',
   problemHtml: ADVANCED_173_178_PROBLEMS.dinicMaxFlow.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.dinicMaxFlow.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '网络拓扑预设',
-      type: 'select',
-      defaultValue: 'standard_4node',
-      options: [
-        { label: '标准 4 节点网络流 (S=1, T=4, 最大流: 4)', value: 'standard_4node' },
-      ],
-    },
+  presets: [
+    { label: '标准 4 节点网络流 (S=1, T=4, 最大流: 4)', values: { preset: 'standard_4node' } },
   ],
   codeLanguages: DINIC_MAX_FLOW_CODES,
   generateSteps: () => buildDinicSteps(),

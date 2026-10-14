@@ -23,16 +23,8 @@ export const blockCutTreeVisualizer = registerDeclarativeAlgorithm<BlockCutStep>
   learningGoal: '掌握极大点双连通分量判定准则与栈内节点弹出机制，深刻理解圆方树将图上路径交集转化为树上路径的代数映射',
   problemHtml: ADVANCED_173_178_PROBLEMS.blockCutTree.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.blockCutTree.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '图拓扑预设',
-      type: 'select',
-      defaultValue: 'cactus_two_rings',
-      options: [
-        { label: '双环仙人掌图 (2 个 BCC 环交于割点 V3)', value: 'cactus_two_rings' },
-      ],
-    },
+  presets: [
+    { label: '双环仙人掌图 (2 个 BCC 环交于割点 V3)', values: { preset: 'cactus_two_rings' } },
   ],
   codeLanguages: BLOCK_CUT_TREE_CODES,
   generateSteps: () => buildBlockCutSteps(),

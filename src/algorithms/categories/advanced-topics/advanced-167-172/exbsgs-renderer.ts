@@ -23,18 +23,10 @@ export const exbsgsVisualizer = registerDeclarativeAlgorithm<EXBSGSStep>({
   learningGoal: '掌握同余公因子消除与方程可解性判定准则，理解常数因子前缀折半与标准大步小步法衔接',
   problemHtml: ADVANCED_167_172_PROBLEMS.exbsgs.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.exbsgs.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '离散对数方程参数',
-      type: 'select',
-      defaultValue: 'exbsgs_2_4_12',
-      options: [
-        { label: '2^x = 4 (mod 12) (不互质，结果: 2)', value: 'exbsgs_2_4_12' },
-        { label: '2^x = 2 (mod 4) (不互质，结果: 1)', value: 'exbsgs_2_2_4' },
-        { label: '2^x = 3 (mod 4) (公因子无法整除，无解: -1)', value: 'exbsgs_2_3_4' },
-      ],
-    },
+  presets: [
+    { label: '2^x = 4 (mod 12) (不互质，结果: 2)', values: { preset: 'exbsgs_2_4_12' } },
+    { label: '2^x = 2 (mod 4) (不互质，结果: 1)', values: { preset: 'exbsgs_2_2_4' } },
+    { label: '2^x = 3 (mod 4) (公因子无法整除，无解: -1)', values: { preset: 'exbsgs_2_3_4' } },
   ],
   codeLanguages: EXBSGS_CODES,
   generateSteps: (input) => {

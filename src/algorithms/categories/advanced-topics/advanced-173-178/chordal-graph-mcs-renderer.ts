@@ -23,16 +23,8 @@ export const chordalGraphMCSVisualizer = registerDeclarativeAlgorithm<ChordalMCS
   learningGoal: '掌握弦图无弦环定义与完美消除序列 PEO 充要条件，深刻理解 MCS 最大势势能贪心与线性图着色',
   problemHtml: ADVANCED_173_178_PROBLEMS.chordalGraphMCS.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.chordalGraphMCS.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '图结构预设',
-      type: 'select',
-      defaultValue: 'chordal_5node',
-      options: [
-        { label: '5 节点标准弦图 (PEO: [4, 3, 2, 1, 0], 最大团: 3)', value: 'chordal_5node' },
-      ],
-    },
+  presets: [
+    { label: '5 节点标准弦图 (PEO: [4, 3, 2, 1, 0], 最大团: 3)', values: { preset: 'chordal_5node' } },
   ],
   codeLanguages: CHORDAL_GRAPH_MCS_CODES,
   generateSteps: () => buildChordalMCSSteps(),

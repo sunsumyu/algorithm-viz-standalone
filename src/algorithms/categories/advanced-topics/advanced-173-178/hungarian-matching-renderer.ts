@@ -23,16 +23,8 @@ export const hungarianMatchingVisualizer = registerDeclarativeAlgorithm<Hungaria
   learningGoal: '掌握增广路交替轨核心性质，深刻理解已匹配顶点的递归让位机制与最大匹配与最小割的等价性',
   problemHtml: ADVANCED_173_178_PROBLEMS.hungarianMatching.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.hungarianMatching.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '二分图关系预设',
-      type: 'select',
-      defaultValue: 'bipartite_3x3',
-      options: [
-        { label: '3x3 二分图全链交替示例 (最大匹配: 3)', value: 'bipartite_3x3' },
-      ],
-    },
+  presets: [
+    { label: '3x3 二分图全链交替示例 (最大匹配: 3)', values: { preset: 'bipartite_3x3' } },
   ],
   codeLanguages: HUNGARIAN_MATCHING_CODES,
   generateSteps: () => buildHungarianSteps(),

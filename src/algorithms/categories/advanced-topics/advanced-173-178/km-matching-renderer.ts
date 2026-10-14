@@ -23,16 +23,8 @@ export const kmMatchingVisualizer = registerDeclarativeAlgorithm<KMStep>({
   learningGoal: '掌握顶标可行性准则与相等子图增广机制，深刻理解最小松弛量 slack 调整顶标打破僵局的对偶优化思想',
   problemHtml: ADVANCED_173_178_PROBLEMS.kmMatching.html,
   analysisHtml: ADVANCED_173_178_PROBLEMS.kmMatching.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '带权完全二分图矩阵',
-      type: 'select',
-      defaultValue: 'matrix_3x3',
-      options: [
-        { label: '3x3 带权完全二分图 (最优权值: 15)', value: 'matrix_3x3' },
-      ],
-    },
+  presets: [
+    { label: '3x3 带权完全二分图 (最优权值: 15)', values: { preset: 'matrix_3x3' } },
   ],
   codeLanguages: KM_MATCHING_CODES,
   generateSteps: () => buildKMSteps(),

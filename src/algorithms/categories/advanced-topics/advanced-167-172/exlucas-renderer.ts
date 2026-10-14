@@ -23,18 +23,10 @@ export const exLucasVisualizer = registerDeclarativeAlgorithm<EXLucasStep>({
   learningGoal: '掌握任意合数质因数分解、阶乘中提取素因子循环节递归求逆与 CRT 唯一合并大架构',
   problemHtml: ADVANCED_167_172_PROBLEMS.exLucas.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.exLucas.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '大组合数与合数模数',
-      type: 'select',
-      defaultValue: 'lucas_7_3_10',
-      options: [
-        { label: 'n=7, m=3, P=10 (合数 2*5, 结果: 5)', value: 'lucas_7_3_10' },
-        { label: 'n=6, m=2, P=9 (含重质因子 3^2, 结果: 6)', value: 'lucas_6_2_9' },
-        { label: 'n=10, m=3, P=12 (合数 2^2*3, 结果: 0)', value: 'lucas_10_3_12' },
-      ],
-    },
+  presets: [
+    { label: 'n=7, m=3, P=10 (合数 2*5, 结果: 5)', values: { preset: 'lucas_7_3_10' } },
+    { label: 'n=6, m=2, P=9 (含重质因子 3^2, 结果: 6)', values: { preset: 'lucas_6_2_9' } },
+    { label: 'n=10, m=3, P=12 (合数 2^2*3, 结果: 0)', values: { preset: 'lucas_10_3_12' } },
   ],
   codeLanguages: EXLUCAS_CODES,
   generateSteps: (input) => {

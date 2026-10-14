@@ -23,17 +23,9 @@ export const polynomialLnExpVisualizer = registerDeclarativeAlgorithm<PolyLnExpS
   learningGoal: '掌握微积分在形式幂级数上的映射规则，深刻理解 ln/exp 在无向连通图计数与有标号集合划分中的代数威力',
   problemHtml: ADVANCED_167_172_PROBLEMS.polynomialLnExp.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.polynomialLnExp.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入多项式与阶数界',
-      type: 'select',
-      defaultValue: 'ln_exp_linear',
-      options: [
-        { label: 'A=[1, 1, 0, 0] (1+x, Taylor 展开 ln(1+x))', value: 'ln_exp_linear' },
-        { label: 'A=[1, 2, 1, 0] ((1+x)^2, 2*ln(1+x))', value: 'ln_exp_quad' },
-      ],
-    },
+  presets: [
+    { label: 'A=[1, 1, 0, 0] (1+x, Taylor 展开 ln(1+x))', values: { preset: 'ln_exp_linear' } },
+    { label: 'A=[1, 2, 1, 0] ((1+x)^2, 2*ln(1+x))', values: { preset: 'ln_exp_quad' } },
   ],
   codeLanguages: POLYNOMIAL_LN_EXP_CODES,
   generateSteps: (input) => {

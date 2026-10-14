@@ -23,18 +23,10 @@ export const polynomialSqrtVisualizer = registerDeclarativeAlgorithm<PolySqrtSte
   learningGoal: '掌握牛顿迭代法在多项式二次开方方程 F(B) = B^2 - A = 0 上的展开应用，深刻理解精度倍增机制',
   problemHtml: ADVANCED_167_172_PROBLEMS.polynomialSqrt.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.polynomialSqrt.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '输入多项式与截断界',
-      type: 'select',
-      defaultValue: 'sqrt_quad',
-      options: [
-        { label: 'A=[1, 2, 1], deg=3 ((1+x)^2 完美开方为 [1, 1, 0])', value: 'sqrt_quad' },
-        { label: 'A=[1, 4, 4], deg=3 ((1+2x)^2 完美开方为 [1, 2, 0])', value: 'sqrt_quad2' },
-        { label: 'A=[1, 1, 1], deg=4 (1/(1-x) 展开开方示例)', value: 'sqrt_geom' },
-      ],
-    },
+  presets: [
+    { label: 'A=[1, 2, 1], deg=3 ((1+x)^2 完美开方为 [1, 1, 0])', values: { preset: 'sqrt_quad' } },
+    { label: 'A=[1, 4, 4], deg=3 ((1+2x)^2 完美开方为 [1, 2, 0])', values: { preset: 'sqrt_quad2' } },
+    { label: 'A=[1, 1, 1], deg=4 (1/(1-x) 展开开方示例)', values: { preset: 'sqrt_geom' } },
   ],
   codeLanguages: POLYNOMIAL_SQRT_CODES,
   generateSteps: (input) => {

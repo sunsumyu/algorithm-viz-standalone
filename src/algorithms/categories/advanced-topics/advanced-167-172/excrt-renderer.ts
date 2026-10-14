@@ -23,17 +23,9 @@ export const excrtVisualizer = registerDeclarativeAlgorithm<EXCRTStep>({
   learningGoal: '掌握双方程合并代数构造模型，理解差值被公约数整除性判定无解与模数最小公倍数扩展',
   problemHtml: ADVANCED_167_172_PROBLEMS.excrt.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.excrt.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '同余方程组预设',
-      type: 'select',
-      defaultValue: 'eq_4_6_5',
-      options: [
-        { label: 'x=2(mod 4), x=4(mod 6), x=1(mod 5) (结果: 46, 不互质)', value: 'eq_4_6_5' },
-        { label: 'x=2(mod 3), x=3(mod 5), x=2(mod 7) (结果: 23, 互质测试)', value: 'eq_coprime' },
-      ],
-    },
+  presets: [
+    { label: 'x=2(mod 4), x=4(mod 6), x=1(mod 5) (结果: 46, 不互质)', values: { preset: 'eq_4_6_5' } },
+    { label: 'x=2(mod 3), x=3(mod 5), x=2(mod 7) (结果: 23, 互质测试)', values: { preset: 'eq_coprime' } },
   ],
   codeLanguages: EXCRT_CODES,
   generateSteps: (input) => {

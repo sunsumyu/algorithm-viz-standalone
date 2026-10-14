@@ -23,17 +23,9 @@ export const polynomialDivisionVisualizer = registerDeclarativeAlgorithm<PolyDiv
   learningGoal: '掌握反转系数消去未定余式项的核心代数手法，理解多项式求逆与回代相消求余全流程',
   problemHtml: ADVANCED_167_172_PROBLEMS.polynomialDivision.html,
   analysisHtml: ADVANCED_167_172_PROBLEMS.polynomialDivision.html,
-  inputs: [
-    {
-      id: 'preset',
-      label: '被除式与除式参数',
-      type: 'select',
-      defaultValue: 'div_cubic_linear',
-      options: [
-        { label: 'A=[4, 3, 2, 1] (x^3+2x^2+3x+4), B=[1, 1] (x+1) (商: x^2+x+2, 余: 2)', value: 'div_cubic_linear' },
-        { label: 'A=[1, 2, 1], B=[1, 1] ((x+1)^2 / (x+1) 整除示例)', value: 'div_exact' },
-      ],
-    },
+  presets: [
+    { label: 'A=[4, 3, 2, 1] (x^3+2x^2+3x+4), B=[1, 1] (x+1) (商: x^2+x+2, 余: 2)', values: { preset: 'div_cubic_linear' } },
+    { label: 'A=[1, 2, 1], B=[1, 1] ((x+1)^2 / (x+1) 整除示例)', values: { preset: 'div_exact' } },
   ],
   codeLanguages: POLYNOMIAL_DIVISION_CODES,
   generateSteps: (input) => {
