@@ -91,19 +91,6 @@ registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 23,
   learningGoal: '掌握双网格连通分量协同判定模型与反向剪枝剔除非法连通块的优雅技巧',
-  inputs: [
-    {
-      id: 'preset',
-      label: '测试用例选择',
-      type: 'select',
-      defaultValue: 'classic',
-      options: [
-        { label: PRESET_CASES.classic.label, value: 'classic' },
-        { label: PRESET_CASES.example2.label, value: 'example2' },
-      ],
-      width: '210px',
-    },
-  ],
   presets: [
     { label: PRESET_CASES.classic.label, values: { preset: 'classic' } },
     { label: PRESET_CASES.example2.label, values: { preset: 'example2' } },

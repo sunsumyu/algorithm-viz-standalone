@@ -74,15 +74,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
   problemHtml: PATH_MIN_EFFORT_PROBLEM_HTML,
   analysisHtml: PATH_MIN_EFFORT_ANALYSIS_HTML,
   generateSteps: (inputs) => buildPathMinEffortSteps(String(inputs?.preset || 'classic_mountain_3x3')),
-  inputs: [
-    {
-      id: 'preset',
-      label: '地形预设',
-      type: 'select',
-      defaultValue: 'classic_mountain_3x3',
-      options: Object.entries(PRESET_EFFORT_GRIDS).map(([value, { label }]) => ({ value, label })),
-    },
-  ],
+  presets: Object.entries(PRESET_EFFORT_GRIDS).map(([value, { label }]) => ({ label, values: { preset: value } })),
   metrics: [
     { id: 'metric-cur-coord', label: '当前探索格', color: '#f59e0b' },
     { id: 'metric-min-effort', label: '最小瓶颈体力', color: '#10b981' },

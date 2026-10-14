@@ -83,18 +83,10 @@ const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
   problemHtml: SWIM_IN_RISING_WATER_PROBLEM_HTML,
   analysisHtml: SWIM_IN_RISING_WATER_ANALYSIS_HTML,
   generateSteps: (inputs) => buildSwimInRisingWaterSteps(String(inputs?.preset || 'leetcode5')),
-  inputs: [
-    {
-      id: 'preset',
-      label: '地形预设',
-      type: 'select',
-      defaultValue: 'leetcode5',
-      options: [
-        { label: '经典 5x5 (LeetCode 778)', value: 'leetcode5' },
-        { label: '紧凑 3x3 地图', value: 'simple3' },
-        { label: '险崖 4x4 地图', value: 'cliff4' },
-      ],
-    },
+  presets: [
+    { label: '经典 5x5 (LeetCode 778)', values: { preset: 'leetcode5' } },
+    { label: '紧凑 3x3 地图', values: { preset: 'simple3' } },
+    { label: '险崖 4x4 地图', values: { preset: 'cliff4' } },
   ],
   metrics: [
     { id: 'metric-cur-time', label: '当前水位时间 t', color: '#0284c7' },

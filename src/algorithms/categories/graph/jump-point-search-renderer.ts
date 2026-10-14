@@ -98,20 +98,6 @@ registerDeclarativeAlgorithm({
       renderCanvas, renderCustomMetrics: renderCard2,
     },
   ],
-  inputs: [
-    {
-      id: 'preset',
-      label: '地图预设',
-      type: 'select',
-      defaultValue: 'diagonal',
-      options: [
-        { label: '对角线侦察原理 (8×8 经典)', value: 'diagonal' },
-        { label: '经典拐角 (8×10)', value: 'corner' },
-        { label: '开阔平原 (10×14)', value: 'plain' },
-        { label: '迷宫障碍 (12×16)', value: 'maze' },
-      ],
-    },
-  ],
   presets: [
     { label: '对角线侦察原理 (8×8 经典)', values: { preset: 'diagonal' } },
     { label: '经典拐角 (8×10 地图)', values: { preset: 'corner' } },
