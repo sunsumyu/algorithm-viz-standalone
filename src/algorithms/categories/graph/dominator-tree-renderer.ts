@@ -40,18 +40,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<DominatorStep>({
     { label: '🟣 支配树边 (紫色)', color: '#8b5cf6' },
     { label: '⚪ 原图边 (灰线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_diamond',
-      options: [
-        { label: '经典菱形图 (汇聚点 4 支配点为 1)', value: 'classic_diamond' },
-        { label: '旁路控制流 (节点 4 支配点为 1)', value: 'linear_bypass' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典菱形图', values: { 'input-preset': 'classic_diamond' } },
     { label: '旁路控制流', values: { 'input-preset': 'linear_bypass' } },

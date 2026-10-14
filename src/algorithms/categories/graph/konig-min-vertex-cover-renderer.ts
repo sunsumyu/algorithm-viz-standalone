@@ -40,18 +40,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<KonigStep>({
     { label: '🟢 匹配边 (实线)', state: 'discovered' },
     { label: '⚪ 非匹配边 (虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '图预设拓扑',
-      type: 'select',
-      defaultValue: 'classic',
-      options: [
-        { label: '经典用例 (左4右3，覆盖集: L4, R1, R2)', value: 'classic' },
-        { label: '简单用例 (左3右2，覆盖集大小 2)', value: 'simple' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典用例 (左4右3)', values: { 'input-preset': 'classic' } },
     { label: '简单用例 (左3右2)', values: { 'input-preset': 'simple' } },

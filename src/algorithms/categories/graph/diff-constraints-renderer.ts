@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<DiffConstraintStep>({
     { label: '⚡ 当前松弛考察边', color: '#f59e0b' },
     { label: '❌ 负权回路报警边', color: '#ef4444' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设约束系统',
-      type: 'select',
-      defaultValue: 'feasible',
-      options: [
-        { label: '存在可行解 (收敛于一组最大解 [0, 0, 0])', value: 'feasible' },
-        { label: '存在负环无解 (x1-x2<=-3 且 x2-x1<=2 矛盾)', value: 'cycle' },
-      ],
-    },
-  ],
   presets: [
     { label: '可行解约束组', values: { 'input-preset': 'feasible' } },
     { label: '负环矛盾无解', values: { 'input-preset': 'cycle' } },

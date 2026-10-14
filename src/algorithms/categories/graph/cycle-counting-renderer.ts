@@ -43,18 +43,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<CycleStep>({
     { label: '🟣 终点 w', state: 'secondary' },
     { label: '➡️ 定向边', state: 'scanning' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_diamond_triangles',
-      options: [
-        { label: '经典菱形图 (2个三元环, 1个四元环)', value: 'classic_diamond_triangles' },
-        { label: '4 阶完全图 K4 (4个三元环, 3个四元环)', value: 'complete_k4' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典菱形图', values: { 'input-preset': 'classic_diamond_triangles' } },
     { label: '4 阶完全图 K4', values: { 'input-preset': 'complete_k4' } },

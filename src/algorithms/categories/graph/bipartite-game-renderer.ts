@@ -40,18 +40,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<BipartiteGameStep>({
     { label: '🔴 匹配边 (红实线)', color: '#f43f5e' },
     { label: '⚪ 非匹配边 (灰虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '图预设模型',
-      type: 'select',
-      defaultValue: 'five_nodes',
-      options: [
-        { label: '5 节点模型 (先手必胜点: 2)', value: 'five_nodes' },
-        { label: '6 节点模型 (先手必胜点: 3)', value: 'six_nodes' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点模型', values: { 'input-preset': 'five_nodes' } },
     { label: '6 节点模型', values: { 'input-preset': 'six_nodes' } },

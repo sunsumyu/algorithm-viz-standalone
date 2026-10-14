@@ -40,18 +40,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<MCMFStep>({
     { label: '🧱 满流饱和弧', color: '#ef4444' },
     { label: '⚡ 未饱和可行弧', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设网络结构',
-      type: 'select',
-      defaultValue: 'standard',
-      options: [
-        { label: '经典 4 点 5 边网络 (最大流 5, 最小费 17)', value: 'standard' },
-        { label: '极简 3 边入门网络 (最大流 2, 最小费 6)', value: 'simple' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典 4 点网络 (流5, 费17)', values: { 'input-preset': 'standard' } },
     { label: '极简入门网络 (流2, 费6)', values: { 'input-preset': 'simple' } },

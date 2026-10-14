@@ -40,18 +40,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeDiffStep>({
     { label: '🟢 路径端点', state: 'discovered' },
     { label: '🔴 覆盖边/点', state: 'swapping' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '差分模式预设',
-      type: 'select',
-      defaultValue: 'node_diff_5node',
-      options: [
-        { label: '点差分 (路径 4 ➔ 5 点权 +1)', value: 'node_diff_5node' },
-        { label: '边差分 (路径 4 ➔ 5 边权 +1)', value: 'edge_diff_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: '点差分 (路径 4➔5)', values: { 'input-preset': 'node_diff_5node' } },
     { label: '边差分 (路径 4➔5)', values: { 'input-preset': 'edge_diff_5node' } },

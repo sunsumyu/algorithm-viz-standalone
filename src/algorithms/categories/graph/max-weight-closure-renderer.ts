@@ -41,18 +41,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<ClosureStep>({
     { label: '⚡ 强依赖边 (cap=∞)', color: '#38bdf8' },
     { label: '✂️ 最小割割边', color: '#ef4444' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '问题预设拓扑',
-      type: 'select',
-      defaultValue: 'space',
-      options: [
-        { label: '太空飞行计划经典案例 (收益 25, 最小割 20, 净收益 5)', value: 'space' },
-        { label: '极简闭合子图拓扑 (收益 12, 最小割 9, 净收益 3)', value: 'simple' },
-      ],
-    },
-  ],
   presets: [
     { label: '太空飞行计划 (净收益 5)', values: { 'input-preset': 'space' } },
     { label: '极简闭合子图 (净收益 3)', values: { 'input-preset': 'simple' } },

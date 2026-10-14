@@ -42,18 +42,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<StaticCentroidStep>
     { label: '⚪ 普通树边', state: 'scanning' },
     { label: '❌ 隔离切断边 (虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树拓扑',
-      type: 'select',
-      defaultValue: 'classic_7node',
-      options: [
-        { label: '7 节点经典平衡树 (重心为 1, 2, 3)', value: 'classic_7node' },
-        { label: '5 节点单链树 (首层重心为 3)', value: 'line_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: '7 节点经典平衡树', values: { 'input-preset': 'classic_7node' } },
     { label: '5 节点单链树', values: { 'input-preset': 'line_5node' } },

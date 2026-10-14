@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<TwoSATStep>({
     { label: '⭐ 当前活跃节点', color: '#f59e0b' },
     { label: '🔴 蕴涵有向边', color: '#64748b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '子句系统模式',
-      type: 'select',
-      defaultValue: 'satisfiable',
-      options: [
-        { label: '可满足子句集 (SAT 解: x1=0, x2=1)', value: 'satisfiable' },
-        { label: '全约束矛盾子句集 (UNSAT 强连通环路冲突)', value: 'unsatisfiable' },
-      ],
-    },
-  ],
   presets: [
     { label: '可满足子句集', values: { 'input-preset': 'satisfiable' } },
     { label: '全约束矛盾子句集', values: { 'input-preset': 'unsatisfiable' } },

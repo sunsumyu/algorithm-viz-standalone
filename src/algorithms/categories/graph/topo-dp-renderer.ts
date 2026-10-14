@@ -33,18 +33,6 @@ const { template, Visualizer } = registerDeclarativeAlgorithm<TopoDPStep>({
   hasDeductionTree: true,
   description: '经典 DAG 动态规划：拓扑排序保证无后效性、dp[v] = max(dp[v], dp[u] + w) 递推最长路 (洛谷 P4017 / LeetCode 2050)',
   learningGoal: '掌握 DAG 拓扑排序消除后效性机理、有向无环图最长路与关键路径算法 (CPM)',
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设 DAG 网络结构',
-      type: 'select',
-      defaultValue: 'classic_5node',
-      options: [
-        { label: '5 节点工程网络 (关键路径 1->2->4->5，长度 9)', value: 'classic_5node' },
-        { label: '4 节点经典网络 (关键路径 1->2->4，长度 7)', value: 'simple_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点工程网络', values: { 'input-preset': 'classic_5node' } },
     { label: '4 节点经典网络', values: { 'input-preset': 'simple_4node' } },

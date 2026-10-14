@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<BlockCutStep>({
     { label: '🟢 圆方树边 (实线)', state: 'discovered' },
     { label: '⚪ 原图边 (虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图拓扑',
-      type: 'select',
-      defaultValue: 'classic_6node',
-      options: [
-        { label: '6 节点经典哑铃双环 (割点 3, 4，方点 S1, S2, S3)', value: 'classic_6node' },
-        { label: '4 节点简单仙人掌 (割点 3，方点 S1, S2)', value: 'simple_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '6 节点经典图', values: { 'input-preset': 'classic_6node' } },
     { label: '4 节点简单图', values: { 'input-preset': 'simple_4node' } },

@@ -29,18 +29,6 @@ const { Visualizer: BFS01Visualizer } = registerDeclarativeAlgorithm<BFS01Step>(
   difficulty: 2,
   levelOrder: 25,
   learningGoal: '掌握 0-1 BFS 相比 Dijkstra 的常数与渐进复杂度优势，理解双端队列如何天然保持单调性',
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_5node',
-      options: [
-        { label: '5 节点经典 0-1 网络 (含 0/1 混合路径，最短代价 1)', value: 'classic_5node' },
-        { label: '4 节点入门 0-1 网络 (含直连与折射对比，最短代价 1)', value: 'simple_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点经典网络', values: { 'input-preset': 'classic_5node' } },
     { label: '4 节点入门网络', values: { 'input-preset': 'simple_4node' } },

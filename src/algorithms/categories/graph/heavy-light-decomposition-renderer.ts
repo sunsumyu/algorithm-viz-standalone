@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<HLDStep>({
     { label: '🟡 重边 (实线)', color: '#facc15' },
     { label: '⚪ 轻边 (虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树拓扑',
-      type: 'select',
-      defaultValue: 'classic_6node',
-      options: [
-        { label: '6 节点经典树 (top[4]=1, top[6]=3)', value: 'classic_6node' },
-        { label: '4 节点单链 (整树单链 top[4]=1)', value: 'line_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '6 节点经典树', values: { 'input-preset': 'classic_6node' } },
     { label: '4 节点单链', values: { 'input-preset': 'line_4node' } },

@@ -40,18 +40,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<KMStep>({
     { label: '⚡ 当前探查边', color: '#f59e0b' },
     { label: '⚪ 相等子图备选边', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设权值矩阵',
-      type: 'select',
-      defaultValue: 'standard',
-      options: [
-        { label: '标准 3x3 权值网络 (最大权 12, 3 对完备匹配)', value: 'standard' },
-        { label: '简单 2x2 权值网络 (最大权 18, 2 对完备匹配)', value: 'simple' },
-      ],
-    },
-  ],
   presets: [
     { label: '标准 3x3 (ans=12)', values: { 'input-preset': 'standard' } },
     { label: '简单 2x2 (ans=18)', values: { 'input-preset': 'simple' } },

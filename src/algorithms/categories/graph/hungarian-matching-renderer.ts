@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<HungarianStep>({
     { label: '🚨 腾位冲突原配', color: '#f43f5e' },
     { label: '⚪ 未配意向边', color: '#334155' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'four_nodes',
-      options: [
-        { label: '4 节点经典二分图 (L0-L3 ➔ R0-R3，多重增广腾位)', value: 'four_nodes' },
-        { label: '3 节点轻量二分图 (L0-L2 ➔ R0-R2，单次交错让位)', value: 'three_nodes' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典图', values: { 'input-preset': 'four_nodes' } },
     { label: '3 节点轻量图', values: { 'input-preset': 'three_nodes' } },

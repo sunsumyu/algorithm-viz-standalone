@@ -29,18 +29,6 @@ const { Visualizer: BiBFSVisualizer } = registerDeclarativeAlgorithm<BiBFSStep>(
   difficulty: 3,
   levelOrder: 26,
   learningGoal: '深刻理解双向广搜的核心依据与优化精髓，掌握小集合优先扩散与碰撞判定的标准写法',
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设单词网络',
-      type: 'select',
-      defaultValue: 'classic_word',
-      options: [
-        { label: '经典 6 词网络 (hit ➔ cog，相遇于 dot，最短步数 5)', value: 'classic_word' },
-        { label: '4 词入门网络 (bat ➔ cog，相遇于 cat/cot，最短步数 4)', value: 'line_4word' },
-      ],
-    },
-  ],
   presets: [
     { label: '经典 6 词接龙', values: { 'input-preset': 'classic_word' } },
     { label: '4 词入门接龙', values: { 'input-preset': 'line_4word' } },

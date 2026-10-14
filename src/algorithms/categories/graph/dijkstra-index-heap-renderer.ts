@@ -38,18 +38,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
     { label: '📥 处于小根堆中 (where>=0)', state: 'scanning' },
     { label: '⚪ 未入堆节点 (where=-1)', color: '#1e293b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_4node',
-      options: [
-        { label: '4 节点经典网络 (含多重松弛路径)', value: 'classic_4node' },
-        { label: '3 节点三角网络 (含单次松弛更优)', value: 'simple_triangle' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典网络', values: { 'input-preset': 'classic_4node' } },
     { label: '3 节点三角网络', values: { 'input-preset': 'simple_triangle' } },

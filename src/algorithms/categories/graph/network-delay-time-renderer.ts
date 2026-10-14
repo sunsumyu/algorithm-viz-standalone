@@ -42,19 +42,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
     mode: '单源最短路 Dijkstra · 波前广播模型',
     complexity: 'O(E log V) · O(V + E)',
   },
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设网络连通模式',
-      type: 'select',
-      defaultValue: 'reachable_4node',
-      options: [
-        { label: '4 节点经典全连通广播 (源点 2，全覆盖延迟 2 ms)', value: 'reachable_4node' },
-        { label: '3 节点链状拓扑广播 (源点 1，全覆盖延迟 7 ms)', value: 'line_chain' },
-        { label: '3 节点含孤立不可达盲区 (源点 1，返回 -1)', value: 'unreachable_3node' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典全连通 (LeetCode 743)', values: { 'input-preset': 'reachable_4node' } },
     { label: '3 节点链状广播', values: { 'input-preset': 'line_chain' } },

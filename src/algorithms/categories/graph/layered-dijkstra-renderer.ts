@@ -45,18 +45,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<LayeredStep>({
     { label: '⚡ 当前出堆考察状态', color: '#f59e0b' },
     { label: '🟢 最优分层最短路', state: 'discovered' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设飞行网络',
-      type: 'select',
-      defaultValue: 'p4568_standard',
-      options: [
-        { label: '洛谷 P4568 经典 5 城市 (1 次免票)', value: 'p4568_standard' },
-        { label: '3 城市入门双层图 (1 次免票)', value: 'simple_3node' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 城市经典 (P4568)', values: { 'input-preset': 'p4568_standard' } },
     { label: '3 城市简易', values: { 'input-preset': 'simple_3node' } },

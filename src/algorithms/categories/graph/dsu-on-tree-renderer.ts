@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<DSUTreeStep>({
     { label: '🟡 重边 (实线)', color: '#facc15' },
     { label: '⚪ 轻边 (虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树结构',
-      type: 'select',
-      defaultValue: 'classic_4node',
-      options: [
-        { label: '4 节点经典树 (1-2轻, 1-3重, 3-4重)', value: 'classic_4node' },
-        { label: '3 节点星形树 (1-2重, 1-3轻)', value: 'simple_star' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典树', values: { 'input-preset': 'classic_4node' } },
     { label: '3 节点星形树', values: { 'input-preset': 'simple_star' } },

@@ -39,19 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<AlienStep>({
     { label: '⚡ 当前提取/考察边', color: '#f59e0b' },
     { label: '🚨 异常冲突字符', state: 'swapping' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设单词列表',
-      type: 'select',
-      defaultValue: 'valid',
-      options: [
-        { label: '合法字典序 (wrt, wrf, er, ett, rftt -> wertf)', value: 'valid' },
-        { label: '非法前缀异常 (abc, ab -> 较长单词排在前面)', value: 'prefix_error' },
-        { label: '环状逻辑冲突 (z, x, z -> 存在依赖回环)', value: 'cycle' },
-      ],
-    },
-  ],
   presets: [
     { label: '合法字典序', values: { 'input-preset': 'valid' } },
     { label: '非法前缀陷阱', values: { 'input-preset': 'prefix_error' } },

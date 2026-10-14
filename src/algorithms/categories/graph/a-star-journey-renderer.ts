@@ -97,15 +97,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<AStarJourneyStep>({
   codeLanguages: A_STAR_JOURNEY_CODE_LANGUAGES,
   problemHtml: A_STAR_JOURNEY_PROBLEM_HTML,
   analysisHtml: A_STAR_JOURNEY_ANALYSIS_HTML,
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设网格地图',
-      type: 'select',
-      defaultValue: 'classic_3x4',
-      options: Object.entries(PRESET_JOURNEY_MAPS).map(([value, { label }]) => ({ value, label })),
-    },
-  ],
   presets: [
     { label: '3x4 经典障碍', values: { 'input-preset': 'classic_3x4' } },
     { label: '3x3 对称绕行', values: { 'input-preset': 'line_3x3' } },

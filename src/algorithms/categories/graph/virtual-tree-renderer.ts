@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<VirtualTreeStep>({
     { label: '🟢 虚树边 (粗绿线)', state: 'discovered' },
     { label: '⚪ 原树边 (灰虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设拓扑',
-      type: 'select',
-      defaultValue: 'classic_7node',
-      options: [
-        { label: '7 节点经典树 (关键点: 4, 5, 7)', value: 'classic_7node' },
-        { label: '4 节点单链 (关键点: 2, 4)', value: 'simple_chain' },
-      ],
-    },
-  ],
   presets: [
     { label: '7 节点经典树', values: { 'input-preset': 'classic_7node' } },
     { label: '4 节点单链', values: { 'input-preset': 'simple_chain' } },

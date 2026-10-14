@@ -42,18 +42,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeDominantStep>({
     { label: '👑 重边 (Heavy Edge)', color: '#facc15' },
     { label: '轻边 (Light Edge)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设拓扑',
-      type: 'select',
-      defaultValue: 'cf600e_5node',
-      options: [
-        { label: 'CF600E 样例 (多色混合树)', value: 'cf600e_5node' },
-        { label: '双色偏斜树 (众数显著)', value: 'bicolor_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: 'CF600E 样例', values: { 'input-preset': 'cf600e_5node' } },
     { label: '双色偏斜树', values: { 'input-preset': 'bicolor_5node' } },

@@ -38,18 +38,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<PathCoverStep>({
     { label: '入点集合 (V_in)', color: '#f59e0b' },
     { label: '🟢 匹配边 / 路径段', state: 'discovered' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: 'DAG 结构预设',
-      type: 'select',
-      defaultValue: 'standard',
-      options: [
-        { label: '4 节点经典 DAG (覆盖数: 1)', value: 'standard' },
-        { label: '5 节点分支 DAG (覆盖数: 2)', value: 'branching' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典 DAG (覆盖数: 1)', values: { 'input-preset': 'standard' } },
     { label: '5 节点分支 DAG (覆盖数: 2)', values: { 'input-preset': 'branching' } },

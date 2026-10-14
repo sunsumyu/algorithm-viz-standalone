@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<LCAStep>({
     { label: '🟢 试跳路径边', state: 'discovered' },
     { label: '⚪ 普通树边', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树拓扑',
-      type: 'select',
-      defaultValue: 'classic_7node',
-      options: [
-        { label: '7 节点经典树 (查询 6 与 5，LCA 为 2)', value: 'classic_7node' },
-        { label: '5 节点分叉树 (查询 4 与 5，LCA 为 1)', value: 'fork_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: '7 节点经典树', values: { 'input-preset': 'classic_7node' } },
     { label: '5 节点分叉树', values: { 'input-preset': 'fork_5node' } },

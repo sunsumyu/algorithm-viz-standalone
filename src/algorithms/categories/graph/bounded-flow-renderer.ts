@@ -39,18 +39,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<BoundedFlowStep>({
     { label: '🟢 满足下界流量边', state: 'discovered' },
     { label: '🟣 超级补流边', color: '#8b5cf6' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设网络拓扑',
-      type: 'select',
-      defaultValue: 'four-nodes',
-      options: [
-        { label: '4 节点经典上下界环路 (满流目标: 2)', value: 'four-nodes' },
-        { label: '3 节点简单三角形网络 (满流目标: 1)', value: 'triangle' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点环路', values: { 'input-preset': 'four-nodes' } },
     { label: '3 节点三角形', values: { 'input-preset': 'triangle' } },

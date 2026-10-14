@@ -79,18 +79,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<Trap2Step>({
   card1Title: '🌊 3D 网格地形、木桶短板与水面蔓延沙盘',
   card2Title: '📊 水位状态监视器 (waterLevel, visited, 小根堆)',
   card2Desc: '逐行对齐四周边界入堆、木桶最短板出堆、低洼格蓄水 ans += w - h 与水线推移',
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设地形高度',
-      type: 'select',
-      defaultValue: 'classic_3x6',
-      options: [
-        { label: '3x6 经典地形 (总蓄水 4 滴)', value: 'classic_3x6' },
-        { label: '3x3 中心洼地 (总蓄水 2 滴)', value: 'simple_3x3' },
-      ],
-    },
-  ],
   presets: [
     { label: '3x6 经典地形', values: { 'input-preset': 'classic_3x6' } },
     { label: '3x3 中心洼地', values: { 'input-preset': 'simple_3x3' } },

@@ -40,18 +40,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<GoodPathsStep>({
     { label: '已激活加边 (绿实线)', state: 'discovered' },
     { label: '当前连接边 (金色)', color: '#facc15' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树形结构',
-      type: 'select',
-      defaultValue: 'classic_4node',
-      options: [
-        { label: '4 节点经典树 (好路径 5 条)', value: 'classic_4node' },
-        { label: '5 节点星形树 (好路径 6 条)', value: 'star_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典树', values: { 'input-preset': 'classic_4node' } },
     { label: '5 节点星形树', values: { 'input-preset': 'star_5node' } },
