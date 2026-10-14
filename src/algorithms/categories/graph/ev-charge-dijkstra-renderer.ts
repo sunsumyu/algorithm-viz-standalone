@@ -39,18 +39,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<EVStep>({
     { label: '🚗 公路行驶 (耗电/耗时 w)', state: 'comparing' },
     { label: '⚡ 当前出堆最优状态', color: '#f59e0b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设城市网络',
-      type: 'select',
-      defaultValue: 'lcp35_3cities',
-      options: [
-        { label: '3 城市标准接力充电路网 (最小花费 10)', value: 'lcp35_3cities' },
-        { label: '3 城市快捷直达对比路网 (最小花费 11)', value: 'lcp35_shortcut' },
-      ],
-    },
-  ],
   presets: [
     { label: '标准充电路网', values: { 'input-preset': 'lcp35_3cities' } },
     { label: '快捷对比路网', values: { 'input-preset': 'lcp35_shortcut' } },

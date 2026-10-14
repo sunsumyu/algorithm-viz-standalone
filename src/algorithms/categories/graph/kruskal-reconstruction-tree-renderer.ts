@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<KruskalTreeStep>({
     { label: '🟢 重构树边 (实线)', state: 'discovered' },
     { label: '⚪ 原图边 (灰虚线)', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图拓扑',
-      type: 'select',
-      defaultValue: 'classic_4node',
-      options: [
-        { label: '4 节点经典图 (虚点 5, 6, 7，树边 6 条)', value: 'classic_4node' },
-        { label: '3 节点简单图 (虚点 4, 5，树边 4 条)', value: 'star_3node' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点经典图', values: { 'input-preset': 'classic_4node' } },
     { label: '3 节点简单图', values: { 'input-preset': 'star_3node' } },

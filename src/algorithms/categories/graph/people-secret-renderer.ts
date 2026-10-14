@@ -42,18 +42,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<SecretExpertStep>({
     { label: '⚡ 当前正在开会', color: '#f59e0b' },
     { label: '⏪ 撤销重置节点', state: 'swapping' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设专家会议记录',
-      type: 'select',
-      defaultValue: 'classic_6expert',
-      options: [
-        { label: '6 专家含无效开会撤销 (最终知密 [0,1,2,3])', value: 'classic_6expert' },
-        { label: '5 专家多时间步级联 (最终全员知密 [0,1,2,3,4])', value: 'multitime_5expert' },
-      ],
-    },
-  ],
   presets: [
     { label: '6 专家撤销', values: { 'input-preset': 'classic_6expert' } },
     { label: '5 专家级联', values: { 'input-preset': 'multitime_5expert' } },

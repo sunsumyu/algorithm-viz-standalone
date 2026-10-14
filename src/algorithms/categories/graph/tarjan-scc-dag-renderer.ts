@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<TarjanSCCStep>({
     { label: '⚡ 当前递归节点', color: '#f59e0b' },
     { label: '📥 处于辅助栈中', color: '#38bdf8' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图拓扑结构',
-      type: 'select',
-      defaultValue: 'classic_5node',
-      options: [
-        { label: '5 节点双环拓扑 (1-2-3-1 与 4-5-4，缩点为 2 个 SCC)', value: 'classic_5node' },
-        { label: '4 节点单环拓扑 (1-2-3-1 与出度点 4，缩点为 2 个 SCC)', value: 'simple_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点经典双环', values: { 'input-preset': 'classic_5node' } },
     { label: '4 节点单环出度', values: { 'input-preset': 'simple_4node' } },

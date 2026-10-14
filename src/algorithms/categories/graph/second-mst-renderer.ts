@@ -37,18 +37,6 @@ const { template, Visualizer } = registerDeclarativeAlgorithm<SecondMstStep>({
   hasDeductionTree: true,
   description: '进阶图论经典：Kruskal 求解主最小生成树、倍增维护环上严格最大与严格次大边、破圈严格大于换边 (洛谷 P4180)',
   learningGoal: '掌握严格次小生成树破圈定理、倍增同时维护最大与次大边技巧及规避等权替换陷阱',
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_4node_p4180',
-      options: [
-        { label: 'P4180 经典 4 节点 (MST: 6, 次小: 7)', value: 'classic_4node_p4180' },
-        { label: '含等权边 5 节点 (强制替换 max2, 次小: 10)', value: 'equal_weight_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: 'P4180 经典 4 节点', values: { 'input-preset': 'classic_4node_p4180' } },
     { label: '含等权边 5 节点', values: { 'input-preset': 'equal_weight_5node' } },

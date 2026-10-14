@@ -40,18 +40,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<KPathStep>({
     { label: '🟢 活跃路径边', state: 'comparing' },
     { label: '⚪ 普通有向边', color: '#475569' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设查询',
-      type: 'select',
-      defaultValue: 'classic_4node_k2',
-      options: [
-        { label: '4 节点经典图 - 第 2 短路 (K=2, ans: 5)', value: 'classic_4node_k2' },
-        { label: '4 节点经典图 - 第 3 短路 (K=3, ans: 6)', value: 'classic_4node_k3' },
-      ],
-    },
-  ],
   presets: [
     { label: '第 2 短路 (K=2)', values: { 'input-preset': 'classic_4node_k2' } },
     { label: '第 3 短路 (K=3)', values: { 'input-preset': 'classic_4node_k3' } },

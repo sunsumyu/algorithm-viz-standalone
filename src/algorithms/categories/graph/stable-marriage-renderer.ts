@@ -43,18 +43,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<MarriageStep>({
     { label: '🟡 正在求婚 (金色)', color: '#facc15' },
     { label: '🔴 婉拒求婚 (红色)', state: 'swapping' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设偏好网络',
-      type: 'select',
-      defaultValue: 'classic_3pair',
-      options: [
-        { label: '3 对经典偏好 (W1:M2, W2:M1, W3:M3)', value: 'classic_3pair' },
-        { label: '4 对循环偏好 (4 对完全匹配)', value: 'cyclic_4pair' },
-      ],
-    },
-  ],
   presets: [
     { label: '3 对偏好', values: { 'input-preset': 'classic_3pair' } },
     { label: '4 对偏好', values: { 'input-preset': 'cyclic_4pair' } },

@@ -41,18 +41,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<PruferStep>({
     { label: '⚪ 树边', state: 'scanning' },
     { label: '❌ 已删除边 (红虚线)', state: 'swapping' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设树结构',
-      type: 'select',
-      defaultValue: 'star_4node',
-      options: [
-        { label: '4 节点星型图 (Prufer: [1, 1])', value: 'star_4node' },
-        { label: '4 节点单链 (Prufer: [2, 3])', value: 'line_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点星型图', values: { 'input-preset': 'star_4node' } },
     { label: '4 节点单链', values: { 'input-preset': 'line_4node' } },

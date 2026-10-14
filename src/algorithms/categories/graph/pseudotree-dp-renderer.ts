@@ -42,18 +42,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<PseudotreeStep>({
     { label: '❌ 破环断边 (红虚线)', state: 'swapping' },
     { label: '🟢 树形边 (实线)', state: 'scanning' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图拓扑',
-      type: 'select',
-      defaultValue: 'classic_6node',
-      options: [
-        { label: '6 节点经典基环树 (最优解 35, 选点 [4, 3, 5])', value: 'classic_6node' },
-        { label: '5 节点简单基环树 (最优解 24)', value: 'simple_5node' },
-      ],
-    },
-  ],
   presets: [
     { label: '6 节点经典基环树', values: { 'input-preset': 'classic_6node' } },
     { label: '5 节点简单基环树', values: { 'input-preset': 'simple_5node' } },

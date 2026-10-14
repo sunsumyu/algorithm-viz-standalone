@@ -39,18 +39,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
     { label: '✔ 已完整走过的有向边', state: 'discovered' },
     { label: '⚪ 待访问边', color: '#64748b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_4node',
-      options: [
-        { label: '4 节点经典回路 (1->2->3->4->1 一笔画)', value: 'classic_4node' },
-        { label: '3 节点环形回路 (1->2->3->1 一笔画)', value: 'simple_triangle' },
-      ],
-    },
-  ],
   presets: [
     { label: '4 节点环路', values: { 'input-preset': 'classic_4node' } },
     { label: '3 节点环路', values: { 'input-preset': 'simple_triangle' } },

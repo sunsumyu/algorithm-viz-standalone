@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<DinicStep>({
     { label: '⚪ 零流量空载边', color: '#64748b' },
     { label: '⚡ 当前增广路径阻塞流', color: '#f59e0b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设流网络结构',
-      type: 'select',
-      defaultValue: 'diamond',
-      options: [
-        { label: '经典菱形网络 (S➔A/B➔T，最大流 20)', value: 'diamond' },
-        { label: '交叉桥接网络 (含跨层边 A➔B，最大流 18)', value: 'cross' },
-      ],
-    },
-  ],
   presets: [
     { label: '菱形网络 (最大流 20)', values: { 'input-preset': 'diamond' } },
     { label: '交叉网络 (最大流 18)', values: { 'input-preset': 'cross' } },

@@ -39,18 +39,6 @@ const { Visualizer } = registerDeclarativeAlgorithm<BridgeStep>({
     { label: '⚡ 当前 DFS 访问节点', color: '#facc15' },
     { label: '⚪ 普通连通节点', color: '#1e293b' },
   ],
-  inputs: [
-    {
-      id: 'input-preset',
-      label: '预设图结构',
-      type: 'select',
-      defaultValue: 'classic_5node',
-      options: [
-        { label: '5 节点含环与双桥 (割点 3, 4 | 桥 (3,4), (4,5))', value: 'classic_5node' },
-        { label: '4 节点含环与单桥 (割点 3 | 桥 (3,4))', value: 'simple_4node' },
-      ],
-    },
-  ],
   presets: [
     { label: '5 节点环桥图', values: { 'input-preset': 'classic_5node' } },
     { label: '4 节点环桥图', values: { 'input-preset': 'simple_4node' } },
