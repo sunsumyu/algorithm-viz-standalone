@@ -14,7 +14,7 @@ export type { PresetCaseDef };
 export interface InputControlDef {
   id: string;
   label: string;
-  type: 'text' | 'number' | 'select';
+  type: 'text' | 'number' | 'select' | 'hidden';
   defaultValue: any;
   width?: string;
   placeholder?: string;

@@ -71,6 +71,12 @@ export function resolveHeaderContext(spec: DeclarativeAlgorithmSpec): StageHeade
 export function renderInputsHtml(inputs: InputControlDef[] | undefined): string {
   return (inputs || [])
     .map((input) => {
+      // 防冗余卫士 (Anti-Duplicate Preset Guard):
+      // 若控件显式声明为 hidden 或为仅用于存储案例选项的 input-preset (已被全局 [案例:] 下拉选框接管)，
+      // 则渲染为 hidden input 保持 DOM 属性与数据绑定，彻底杜绝顶栏出现两个一模一样的重复下拉选框
+      if (input.type === 'hidden' || input.id === 'input-preset') {
+        return `<input type="hidden" id="${input.id}" value="${input.defaultValue}" />`;
+      }
       const widthStyle = input.width ? `style="width: ${input.width};"` : 'style="width: 110px;"';
       const cleanLabel = input.label.replace(/[:：]\s*$/, '');
       if (input.type === 'select') {
