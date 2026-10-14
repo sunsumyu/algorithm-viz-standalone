@@ -70,6 +70,9 @@ const { template, Visualizer } = createDeclarativeVisualizer<IndexHeapStep>({
     'luogu-p4779',
     'class061-index-heap',
     'class062-index-heap',
+    'class064-index-heap',
+    'class064-indexed-dijkstra',
+    'network-delay-time-index-heap',
   ],
   buildSteps: (inputs) => {
     const preset = (inputs['input-preset'] || 'classic_4node') as string;
@@ -118,7 +121,7 @@ registerAlgorithm({
   name: '反向索引堆优化 Dijkstra (Dijkstra Index Heap)',
   viewId: 'algo-dijkstra-index-heap-view',
   category: 'graph',
-  description: '左程云图论核心：反向索引表 where[] 支持 O(log V) 原地 decreaseKey 上浮、消除冗余节点压堆、严格 O((V+E)log V)',
+  description: '左程云图论核心：反向索引表 where[] 支持 O(log V) 原地 decreaseKey 上浮、消除冗余节点压堆、严格 O((V+E)log V) (Class 061/064)',
   icon: '🏔️',
   template,
   Visualizer,
@@ -131,6 +134,9 @@ registerAlgorithm({
     'luogu-p4779',
     'class061-index-heap',
     'class062-index-heap',
+    'class064-index-heap',
+    'class064-indexed-dijkstra',
+    'network-delay-time-index-heap',
   ],
 });
 

@@ -215,5 +215,12 @@ export const NETWORK_DELAY_ANALYSIS_HTML = `
         时间复杂度严格为 <code style="color: #6ee7b7; font-family: monospace;">O(E log E) = O(E log V)</code>，空间复杂度 <code style="color: #6ee7b7; font-family: monospace;">O(V + E)</code>，在网络通信与路由广播中达到工业级最优！
       </div>
     </div>
+
+    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(168, 85, 247, 0.25); border-left: 4px solid #a855f7; border-radius: 6px; padding: 10px 14px;">
+      <div style="font-weight: 700; color: #c084fc; margin-bottom: 4px;">3. 进阶版本：反向索引堆实现 (Dijkstra with Index Heap)</div>
+      <div style="font-size: 12px; color: #e9d5ff;">
+        左程云在 Class 064 另外详细讲授了进阶解法二：<b>反向索引堆优化 Dijkstra（加强堆 / 改写堆）</b>。通过引入 <code>where[u]</code> 数组三态映射（-1 未入堆、>=0 堆中下标、-2 已结算锁定），在松弛发现更短距离时调用 <code>heapInsert(where[v])</code> 执行 <b>O(log V) 原地 decreaseKey</b> 上浮更新，堆内节点数严格不超过 V 个，彻底消除冗余死节点压堆！该解法已在应用中独立实现为算法卡片 <b style="color: #38bdf8;">反向索引堆优化 Dijkstra (Dijkstra Index Heap)</b>。
+      </div>
+    </div>
   </div>
 `;
