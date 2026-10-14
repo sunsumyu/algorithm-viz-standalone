@@ -41,16 +41,19 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
   const discoveredStyle = visualState('discovered');
   const unvisitedStyle = visualState('unvisited');
 
-  let svgHtml = `<svg viewBox="0 0 320 180" style="width:100%; height:100%; max-height:240px;">
+  let svgHtml = `<svg viewBox="0 0 340 190" style="width:100%; height:100%; max-height:240px; overflow:visible;">
     <defs>
-      <marker id="delay-arrow-base" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${idleStyle.border}" />
+      <filter id="delay-shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#0f172a" flood-opacity="0.08" />
+      </filter>
+      <marker id="delay-arrow-base" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${idleStyle.border}" />
       </marker>
-      <marker id="delay-arrow-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${comparingStyle.border}" />
+      <marker id="delay-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${comparingStyle.border}" />
       </marker>
-      <marker id="delay-arrow-relaxed" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${discoveredStyle.border}" />
+      <marker id="delay-arrow-relaxed" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${discoveredStyle.border}" />
       </marker>
     </defs>`;
 
@@ -63,15 +66,15 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
     const isRelaxed = isAct && step.status === 'relax';
 
     const strokeColor = isRelaxed ? discoveredStyle.border : isAct ? comparingStyle.border : idleStyle.border;
-    const strokeWidth = isAct ? 3.5 : 1.8;
+    const strokeWidth = isAct ? 3.2 : 1.8;
     const marker = isRelaxed ? 'url(#delay-arrow-relaxed)' : isAct ? 'url(#delay-arrow-active)' : 'url(#delay-arrow-base)';
 
     const mx = (p1.x + p2.x) / 2;
-    const my = (p1.y + p2.y) / 2 + (is4 && u === 2 && v === 3 ? 8 : -4);
+    const my = (p1.y + p2.y) / 2 + (is4 && u === 2 && v === 3 ? 9 : is4 && u === 2 && v === 1 ? -9 : -4);
 
-    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-    svgHtml += `<rect x="${mx - 12}" y="${my - 8}" width="24" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-    svgHtml += `<text x="${mx}" y="${my + 3}" fill="${idleStyle.text}" font-size="9" font-weight="800" font-family="monospace" text-anchor="middle">${w}ms</text>`;
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${mx - 14}" y="${my - 8}" width="28" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" filter="url(#delay-shadow)" />`;
+    svgHtml += `<text x="${mx}" y="${my + 3.5}" fill="${idleStyle.text}" font-size="9" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}ms</text>`;
   }
 
   const nodes = is4 ? [1, 2, 3, 4] : [1, 2, 3];
@@ -88,32 +91,57 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
 
     let fill = idleStyle.bg;
     let stroke = idleStyle.border;
+    let badgeBg = '#f8fafc';
+    let badgeBorder = '#cbd5e1';
+    let badgeText = '#64748b';
+
     if (isCur) {
-      fill = pivotStyle.bg;
-      stroke = pivotStyle.border;
+      fill = '#fffbeb';
+      stroke = '#f59e0b';
+      badgeBg = '#fef3c7';
+      badgeBorder = '#f59e0b';
+      badgeText = '#b45309';
     } else if (isInf && step.status === 'done') {
       fill = '#fee2e2';
       stroke = '#ef4444';
+      badgeBg = '#fee2e2';
+      badgeBorder = '#ef4444';
+      badgeText = '#b91c1c';
     } else if (isVis) {
-      fill = sortedStyle.bg;
-      stroke = sortedStyle.border;
+      fill = '#ecfdf5';
+      stroke = '#10b981';
+      badgeBg = '#d1fae5';
+      badgeBorder = '#10b981';
+      badgeText = '#047857';
     } else if (!isInf) {
-      fill = comparingStyle.bg;
-      stroke = comparingStyle.border;
+      fill = '#f0f9ff';
+      stroke = '#38bdf8';
+      badgeBg = '#e0f2fe';
+      badgeBorder = '#38bdf8';
+      badgeText = '#0284c7';
     }
 
-    // 若当前节点正在优先队列中排队，叠加高亮光晕
+    // 若当前节点正在优先队列中排队，叠加高亮光晕与徽章
     if (inPq && !isCur) {
-      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="25" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3,3" opacity="0.9" />`;
-      svgHtml += `<rect x="${p.x + 8}" y="${p.y - 23}" width="20" height="12" rx="3" fill="#0284c7" />`;
-      svgHtml += `<text x="${p.x + 18}" y="${p.y - 14}" fill="#ffffff" font-size="7.5" font-weight="800" text-anchor="middle">PQ</text>`;
+      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3,3" opacity="0.9" />`;
+      svgHtml += `<rect x="${p.x + 8}" y="${p.y - 25}" width="20" height="12" rx="3" fill="#0284c7" />`;
+      svgHtml += `<text x="${p.x + 18}" y="${p.y - 16}" fill="#ffffff" font-size="7.5" font-weight="800" text-anchor="middle">PQ</text>`;
     } else if (isCur) {
-      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="25" fill="none" stroke="#f59e0b" stroke-width="2.5" opacity="0.9" />`;
+      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" opacity="0.9" />`;
     }
 
-    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="${idleStyle.text}" font-size="12" font-weight="800" text-anchor="middle">${u}</text>`;
-    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${isInf && step.status === 'done' ? '#ef4444' : isInf ? unvisitedStyle.text : isVis ? sortedStyle.text : comparingStyle.text}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">d:${dStr}</text>`;
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" filter="url(#delay-shadow)" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4.5}" fill="#0f172a" font-size="13" font-weight="800" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle">${u}</text>`;
+
+    // 顶部节点 1 置于上方 y-36，其余节点置于下方 y+24，彻底规避重合
+    const isTopNode = is4 && u === 1;
+    const badgeW = isInf ? 40 : 48;
+    const badgeH = 17;
+    const badgeX = p.x - badgeW / 2;
+    const badgeY = isTopNode ? p.y - 36 : p.y + 24;
+
+    svgHtml += `<rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="8.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" filter="url(#delay-shadow)" />`;
+    svgHtml += `<text x="${p.x}" y="${badgeY + 11.5}" fill="${badgeText}" font-size="9.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="700" text-anchor="middle">d:${dStr}</text>`;
   });
 
   svgHtml += `</svg>`;

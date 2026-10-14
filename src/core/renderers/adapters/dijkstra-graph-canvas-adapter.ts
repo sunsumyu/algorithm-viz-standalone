@@ -202,17 +202,18 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
   const isTriangle = step.whereArray.length === 3;
   const nodes = isTriangle ? [1, 2, 3] : [1, 2, 3, 4];
 
+  // 拓扑节点坐标规范化：给予顶部/底部充裕纵深，规避箭头与标签碰撞
   const nodeCoords: Record<number, { x: number; y: number }> = isTriangle
     ? {
-        1: { x: 60, y: 90 },
-        2: { x: 260, y: 50 },
-        3: { x: 160, y: 140 },
+        1: { x: 60, y: 95 },
+        2: { x: 275, y: 55 },
+        3: { x: 170, y: 145 },
       }
     : {
-        1: { x: 60, y: 90 },
-        2: { x: 160, y: 45 },
-        3: { x: 160, y: 135 },
-        4: { x: 260, y: 90 },
+        1: { x: 55, y: 95 },
+        2: { x: 170, y: 52 },
+        3: { x: 170, y: 142 },
+        4: { x: 285, y: 95 },
       };
 
   const edges: Array<[number, number, number]> = isTriangle
@@ -236,19 +237,23 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
   const discoveredStyle = visualState('discovered');
   const unvisitedStyle = visualState('unvisited');
 
-  let svgHtml = `<svg viewBox="0 0 320 180" style="width:100%; height:100%; max-height:240px;">
+  let svgHtml = `<svg viewBox="0 0 340 190" style="width:100%; height:100%; max-height:240px; overflow:visible;">
     <defs>
-      <marker id="arrow-dj-index" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${idleStyle.border}" />
+      <filter id="dj-shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#0f172a" flood-opacity="0.08" />
+      </filter>
+      <marker id="arrow-dj-index" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${idleStyle.border}" />
       </marker>
-      <marker id="arrow-dj-index-relax" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${discoveredStyle.border}" />
+      <marker id="arrow-dj-index-relax" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${discoveredStyle.border}" />
       </marker>
-      <marker id="arrow-dj-index-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="${comparingStyle.border}" />
+      <marker id="arrow-dj-index-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${comparingStyle.border}" />
       </marker>
     </defs>`;
 
+  // 1. 渲染有向边与权重胶囊 (智能侧向避让，规避与竖直轴或节点距离标签重叠)
   for (const [u, v, w] of edges) {
     const p1 = nodeCoords[u];
     const p2 = nodeCoords[v];
@@ -258,17 +263,20 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
     const isRelaxed = isCurrent && (step.status === 'relax' || step.status === 'decrease');
 
     const strokeColor = isRelaxed ? discoveredStyle.border : isCurrent ? comparingStyle.border : idleStyle.border;
-    const strokeWidth = isCurrent ? 3.5 : 1.8;
+    const strokeWidth = isCurrent ? 3.2 : 1.8;
     const marker = isRelaxed ? 'url(#arrow-dj-index-relax)' : isCurrent ? 'url(#arrow-dj-index-active)' : 'url(#arrow-dj-index)';
 
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2 + (u === 3 && v === 2 ? -10 : 8);
+    // 垂直边 (3 -> 2) 权重胶囊向左水平偏移 20px，彻底释放垂直箭头走廊
+    const isVertical = u === 3 && v === 2;
+    const midX = (p1.x + p2.x) / 2 + (isVertical ? -20 : 0);
+    const midY = (p1.y + p2.y) / 2 + (isVertical ? 0 : u === 1 && v === 2 ? -9 : u === 1 && v === 3 ? 9 : u === 2 && v === 4 ? -9 : 9);
 
-    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" marker-end="${marker}" />`;
-    svgHtml += `<rect x="${midX - 10}" y="${midY - 8}" width="20" height="15" rx="3" fill="#ffffff" stroke="${strokeColor}" stroke-width="1" />`;
-    svgHtml += `<text x="${midX}" y="${midY + 3}" fill="${idleStyle.text}" font-size="10" font-weight="800" font-family="monospace" text-anchor="middle">${w}</text>`;
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 11}" y="${midY - 8}" width="22" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" filter="url(#dj-shadow)" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3.5}" fill="#334155" font-size="10" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}</text>`;
   }
 
+  // 2. 渲染节点与状态胶囊 (顶部节点 2 的距离标签置于节点上方，其余置于下方，彻底防碰撞)
   nodes.forEach((node) => {
     const p = nodeCoords[node];
     if (!p) return;
@@ -282,23 +290,56 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
 
     let fill = idleStyle.bg;
     let stroke = idleStyle.border;
+    let badgeBg = '#f8fafc';
+    let badgeBorder = '#cbd5e1';
+    let badgeText = '#64748b';
+
     if (isCur) {
-      fill = pivotStyle.bg;
-      stroke = pivotStyle.border;
+      fill = '#fffbeb';
+      stroke = '#f59e0b';
+      badgeBg = '#fef3c7';
+      badgeBorder = '#f59e0b';
+      badgeText = '#b45309';
     } else if (isRelaxTarget && step.status === 'decrease') {
-      fill = discoveredStyle.bg;
-      stroke = discoveredStyle.border;
+      fill = '#e0f2fe';
+      stroke = '#0284c7';
+      badgeBg = '#bae6fd';
+      badgeBorder = '#0284c7';
+      badgeText = '#0369a1';
     } else if (isSettled) {
-      fill = sortedStyle.bg;
-      stroke = sortedStyle.border;
+      fill = '#ecfdf5';
+      stroke = '#10b981';
+      badgeBg = '#d1fae5';
+      badgeBorder = '#10b981';
+      badgeText = '#047857';
     } else if (inHeap) {
-      fill = comparingStyle.bg;
-      stroke = comparingStyle.border;
+      fill = '#f0f9ff';
+      stroke = '#38bdf8';
+      badgeBg = '#e0f2fe';
+      badgeBorder = '#38bdf8';
+      badgeText = '#0284c7';
     }
 
-    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />`;
-    svgHtml += `<text x="${p.x}" y="${p.y + 4}" fill="${idleStyle.text}" font-size="12" font-weight="800" text-anchor="middle">${node}</text>`;
-    svgHtml += `<text x="${p.x}" y="${p.y + 32}" fill="${dStr === '∞' ? unvisitedStyle.text : isSettled ? sortedStyle.text : comparingStyle.text}" font-size="11" font-family="monospace" font-weight="800" text-anchor="middle">d:${dStr}</text>`;
+    // 活跃代表元外侧脉冲光环
+    if (isCur) {
+      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" opacity="0.9" />`;
+    } else if (isSettled) {
+      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="25" fill="none" stroke="#10b981" stroke-width="1.5" opacity="0.4" />`;
+    }
+
+    // 节点主圆盘
+    svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2.5" filter="url(#dj-shadow)" />`;
+    svgHtml += `<text x="${p.x}" y="${p.y + 4.5}" fill="#0f172a" font-size="13" font-weight="800" font-family="system-ui, -apple-system, sans-serif" text-anchor="middle">${node}</text>`;
+
+    // 距离标签胶囊 (顶部节点置于上方 y-36，底部节点置于下方 y+24，彻底避免重叠)
+    const isTopNode = node === 2;
+    const badgeW = 44;
+    const badgeH = 17;
+    const badgeX = p.x - badgeW / 2;
+    const badgeY = isTopNode ? p.y - 36 : p.y + 24;
+
+    svgHtml += `<rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="8.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" filter="url(#dj-shadow)" />`;
+    svgHtml += `<text x="${p.x}" y="${badgeY + 11.5}" fill="${badgeText}" font-size="9.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="700" text-anchor="middle">d:${dStr}</text>`;
   });
 
   svgHtml += `</svg>`;
