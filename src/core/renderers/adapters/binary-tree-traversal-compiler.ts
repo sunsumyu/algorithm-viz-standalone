@@ -295,7 +295,7 @@ export interface TreeBfsSpec<TNode = TreeNode, TResult = any> {
   };
 
   onInit?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
-  onLevelStart?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
+  onLevelStart?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onPollNode?: (
     node: TNode,
     ctx: TreeBfsContext<TNode, TResult>
@@ -345,7 +345,7 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     l: number,
     r: number,
     arr: (number | null)[]
-  ) => BinaryTreeStep<TResult>;
+  ) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onPollNode?: (
     node: TNode,
     l: number,
@@ -969,7 +969,12 @@ export class BinaryTreeTraversalCompiler {
       ctx.queueVals = queue.map(getNodeVal);
 
       if (spec.onLevelStart) {
-        steps.push(spec.onLevelStart(ctx));
+        const lvlRes = spec.onLevelStart(ctx);
+        if (Array.isArray(lvlRes)) {
+          steps.push(...lvlRes);
+        } else if (lvlRes) {
+          steps.push(lvlRes);
+        }
       }
 
       for (let i = 0; i < levelSize; i++) {
@@ -1091,7 +1096,12 @@ export class BinaryTreeTraversalCompiler {
       const levelSize = r - l;
 
       if (spec.onLevelStart) {
-        steps.push(spec.onLevelStart(level, levelSize, l, r, toVals(staticArr)));
+        const lvlRes = spec.onLevelStart(level, levelSize, l, r, toVals(staticArr));
+        if (Array.isArray(lvlRes)) {
+          steps.push(...lvlRes);
+        } else if (lvlRes) {
+          steps.push(lvlRes);
+        }
       }
 
       for (let i = 0; i < levelSize; i++) {

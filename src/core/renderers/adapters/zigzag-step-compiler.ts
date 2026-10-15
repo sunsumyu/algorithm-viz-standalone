@@ -1,8 +1,7 @@
 /**
  * 二叉树锯齿形层序遍历通用步进编译器 (ZigzagStepCompiler)
- * 深度模块 (Deep Module): 封装锯齿形 BFS 双端队列、静态连续内存双向读指针、
- * 以及递归 DFS 深度奇偶映射等三阶段演进推演
- * 遵循 Matt Pocock 深模块规范与 Strict One-Line-One-Step 步进契约
+ * 遵循 Matt Pocock 深模块哲学，作为轻量领域适配器全面委托收敛至 BinaryTreeTraversalCompiler
+ * 封装锯齿形 BFS 双端队列、静态连续内存双向读指针与递归 DFS 深度奇偶映射
  */
 
 import { TreeNode, buildTreeFromArr as buildTree } from '../../../algorithms/categories/tree/tree-template';
@@ -21,6 +20,7 @@ import {
   TreeNode036,
   Tree036Step,
 } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
+import { BinaryTreeTraversalCompiler } from './binary-tree-traversal-compiler';
 
 export interface ZigzagStep {
   tree: TreeNode | null;
@@ -65,406 +65,429 @@ const DEFAULT_TREE_NODES: TreeNode036[] = [
 
 export class ZigzagStepCompiler {
   /**
-   * Stage 1: 标准双端队列 / isReverse 标志法 (Queue + Deque BFS)
+   * Stage 1: 标准双端队列 / isReverse 标志法 (委托至 BinaryTreeTraversalCompiler.compileBfs)
    */
   public static compileQueueSteps(root: TreeNode | null): ZigzagStep[] {
-    const steps: ZigzagStep[] = [];
     const result: number[][] = [];
     const L = ZIGZAG_STAGE1_LINES;
-
-    steps.push({
-      tree: root,
-      current: null,
-      levelIndex: 0,
-      levelSize: 0,
-      isReverse: false,
-      queue: [],
-      currentLevel: [],
-      result: [],
-      metrics: ZigzagCanvasAdapter.makeMetrics(0, root ? 1 : 0, 0, false),
-      decision: '算法启动：检查根节点状态',
-      action: 'init',
-      message: root
-        ? `接收到二叉树，根节点为 ${root.val}。初始化 Queue 并设置方向标志 isReverse = false (首层从左到右)。`
-        : '空树，直接返回空结果 []。',
-      log: root ? `zigzagLevelOrder(root: ${root.val}), isReverse = false` : 'zigzagLevelOrder(root: null) -> []',
-      codeLine: root ? L.entry : L.entry,
-    });
-
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        levelIndex: 0,
-        levelSize: 0,
-        isReverse: false,
-        queue: [],
-        currentLevel: [],
-        result: [],
-        metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
-        decision: '特判返回：树为空',
-        action: 'done',
-        message: '✅ 树为空，直接收敛返回 []。',
-        log: 'if (root == null) return []',
-        codeLine: L.entry,
-      });
-      return steps;
-    }
-
-    const queue: TreeNode[] = [root];
     let isReverse = false;
-    let levelIdx = 0;
+    let currentLevel: number[] = [];
+    let curLevelIndex = 0;
+    let curLevelSize = 0;
 
-    steps.push({
-      tree: root,
-      current: root.val,
-      levelIndex: 0,
-      levelSize: 1,
-      isReverse: false,
-      queue: [root.val],
-      currentLevel: [],
-      result: [],
-      metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
-      decision: '根节点入队',
-      action: 'offer',
-      message: `根节点 ${root.val} 入队，初始方向为从左至右 (isReverse = false)。`,
-      log: `queue.offer(${root.val})`,
-      codeLine: L.initQueue,
-    });
+    return BinaryTreeTraversalCompiler.compileBfs<TreeNode, number[][]>({
+      root,
+      stageId: 'stage-1',
+      onEmpty: () => ({
+        result: [],
+        steps: [
+          {
+            tree: null,
+            current: null,
+            levelIndex: 0,
+            levelSize: 0,
+            isReverse: false,
+            queue: [],
+            currentLevel: [],
+            result: [],
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
+            decision: '算法启动：检查根节点状态',
+            action: 'init',
+            message: '空树，直接返回空结果 []。',
+            log: 'zigzagLevelOrder(root: null) -> []',
+            codeLine: L.entry,
+          },
+          {
+            tree: null,
+            current: null,
+            levelIndex: 0,
+            levelSize: 0,
+            isReverse: false,
+            queue: [],
+            currentLevel: [],
+            result: [],
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
+            decision: '特判返回：树为空',
+            action: 'done',
+            message: '✅ 树为空，直接收敛返回 []。',
+            log: 'if (root == null) return []',
+            codeLine: L.entry,
+          },
+        ],
+      }),
+      onInit: (ctx) => [
+        {
+          tree: root,
+          current: null,
+          levelIndex: 0,
+          levelSize: 0,
+          isReverse: false,
+          queue: [],
+          currentLevel: [],
+          result: [],
+          metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
+          decision: '算法启动：检查根节点状态',
+          action: 'init',
+          message: `接收到二叉树，根节点为 ${root!.val}。初始化 Queue 并设置方向标志 isReverse = false (首层从左到右)。`,
+          log: `zigzagLevelOrder(root: ${root!.val}), isReverse = false`,
+          codeLine: L.entry,
+        },
+        {
+          tree: root,
+          current: root!.val,
+          levelIndex: 0,
+          levelSize: 1,
+          isReverse: false,
+          queue: [root!.val],
+          currentLevel: [],
+          result: [],
+          metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
+          decision: '根节点入队',
+          action: 'offer',
+          message: `根节点 ${root!.val} 入队，初始方向为从左至右 (isReverse = false)。`,
+          log: `queue.offer(${root!.val})`,
+          codeLine: L.initQueue,
+        },
+      ],
+      onLevelStart: (ctx) => {
+        curLevelIndex = ctx.levelIndex;
+        curLevelSize = ctx.queue.length;
+        currentLevel = [];
 
-    while (queue.length > 0) {
-      const size = queue.length;
-      const currentLevel: number[] = [];
-      levelIdx++;
-
-      steps.push({
-        tree: root,
-        current: null,
-        levelIndex: levelIdx,
-        levelSize: size,
-        isReverse,
-        queue: queue.map((n) => n.val),
-        currentLevel: [],
-        result: result.map((r) => [...r]),
-        metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
-        decision: `锁定第 ${levelIdx - 1} 层 (大小: ${size})，方向: ${isReverse ? '从右向左 ⬅️' : '从左向右 ➡️'}`,
-        action: 'snapshot',
-        message: `第 ${levelIdx - 1} 层固定含有 ${size} 个节点，收集方向: ${isReverse ? '【从右向左 (addFirst)】' : '【从左向右 (addLast)】'}。`,
-        log: `while(!queue.isEmpty()): level=${levelIdx - 1}, size=${size}, isReverse=${isReverse}`,
-        codeLine: L.loopLevel,
-      });
-
-      for (let i = 0; i < size; i++) {
-        const cur = queue.shift()!;
-
+        return {
+          tree: root,
+          current: null,
+          levelIndex: curLevelIndex,
+          levelSize: curLevelSize,
+          isReverse,
+          queue: ctx.queue.map((n) => n.val),
+          currentLevel: [],
+          result: result.map((r) => [...r]),
+          metrics: ZigzagCanvasAdapter.makeMetrics(curLevelIndex, curLevelSize, result.length, isReverse),
+          decision: `锁定第 ${curLevelIndex - 1} 层 (大小: ${curLevelSize})，方向: ${isReverse ? '从右向左 ⬅️' : '从左向右 ➡️'}`,
+          action: 'snapshot',
+          message: `第 ${curLevelIndex - 1} 层固定含有 ${curLevelSize} 个节点，收集方向: ${isReverse ? '【从右向左 (addFirst)】' : '【从左向右 (addLast)】'}。`,
+          log: `while(!queue.isEmpty()): level=${curLevelIndex - 1}, size=${curLevelSize}, isReverse=${isReverse}`,
+          codeLine: L.loopLevel,
+        };
+      },
+      onPollNode: (cur, ctx) => {
         if (!isReverse) {
           currentLevel.push(cur.val);
         } else {
           currentLevel.unshift(cur.val);
         }
 
-        steps.push({
+        return {
           tree: root,
           current: cur.val,
-          levelIndex: levelIdx,
-          levelSize: size,
+          levelIndex: curLevelIndex,
+          levelSize: curLevelSize,
           isReverse,
-          queue: queue.map((n) => n.val),
+          queue: ctx.queue.map((n) => n.val),
           currentLevel: [...currentLevel],
           result: result.map((r) => [...r]),
-          metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, queue.length, result.length, isReverse),
+          metrics: ZigzagCanvasAdapter.makeMetrics(curLevelIndex, ctx.queue.length, result.length, isReverse),
           decision: `弹出节点 ${cur.val} 并${isReverse ? '头插' : '尾插'}收集`,
           action: 'poll-collect',
           message: `从队列头部弹出节点 ${cur.val}，根据方向执行 ${isReverse ? 'addFirst(头插)' : 'addLast(尾插)'}，当前层内容: [${currentLevel.join(', ')}]。`,
           log: `${isReverse ? 'level.addFirst' : 'level.addLast'}(${cur.val})`,
           codeLine: isReverse ? L.collectAddFirst : L.collectAddLast,
-        });
-
-        if (cur.left) {
-          queue.push(cur.left);
-        }
-        if (cur.right) {
-          queue.push(cur.right);
-        }
-
+        };
+      },
+      onNodePostExpand: (cur, ctx) => {
         if (cur.left || cur.right) {
-          steps.push({
+          return {
             tree: root,
             current: cur.val,
-            levelIndex: levelIdx,
-            levelSize: size,
+            levelIndex: curLevelIndex,
+            levelSize: curLevelSize,
             isReverse,
-            queue: queue.map((n) => n.val),
+            queue: ctx.queue.map((n) => n.val),
             currentLevel: [...currentLevel],
             result: result.map((r) => [...r]),
-            metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, queue.length, result.length, isReverse),
+            metrics: ZigzagCanvasAdapter.makeMetrics(curLevelIndex, ctx.queue.length, result.length, isReverse),
             decision: `节点 ${cur.val} 左右子节点正常入队`,
             action: 'push-children',
             message: `节点 ${cur.val} 的子节点${cur.left ? ` 左(${cur.left.val})` : ''}${cur.right ? ` 右(${cur.right.val})` : ''} 依然严格保持从左到右入队，下一层拓扑结构不受当前收集方向影响。`,
             log: `queue.offer children of ${cur.val}`,
             codeLine: L.pushChildren,
-          });
+          };
         }
-      }
+        return undefined;
+      },
+      onLevelEnd: (ctx) => {
+        result.push([...currentLevel]);
+        isReverse = !isReverse;
 
-      result.push([...currentLevel]);
-      isReverse = !isReverse;
-
-      steps.push({
+        return {
+          tree: root,
+          current: null,
+          levelIndex: curLevelIndex,
+          levelSize: 0,
+          isReverse,
+          queue: ctx.queue.map((n) => n.val),
+          currentLevel: [],
+          result: result.map((r) => [...r]),
+          metrics: ZigzagCanvasAdapter.makeMetrics(curLevelIndex, ctx.queue.length, result.length, isReverse),
+          decision: `第 ${curLevelIndex - 1} 层收集完成，反转方向`,
+          action: 'toggle-reverse',
+          message: `第 ${curLevelIndex - 1} 层完成: [${currentLevel.join(', ')}] 入账！翻转方向标志 isReverse 切换为 ${isReverse} (下一层为 ${isReverse ? '从右向左 ⬅️' : '从左向右 ➡️'})。`,
+          log: `ans.add(level); isReverse = !isReverse -> ${isReverse}`,
+          codeLine: L.reverseToggle,
+        };
+      },
+      onDone: () => ({
         tree: root,
         current: null,
-        levelIndex: levelIdx,
+        levelIndex: curLevelIndex,
         levelSize: 0,
         isReverse,
-        queue: queue.map((n) => n.val),
+        queue: [],
         currentLevel: [],
         result: result.map((r) => [...r]),
-        metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, queue.length, result.length, isReverse),
-        decision: `第 ${levelIdx - 1} 层收集完成，反转方向`,
-        action: 'toggle-reverse',
-        message: `第 ${levelIdx - 1} 层完成: [${currentLevel.join(', ')}] 入账！翻转方向标志 isReverse 切换为 ${isReverse} (下一层为 ${isReverse ? '从右向左 ⬅️' : '从左向右 ➡️'})。`,
-        log: `ans.add(level); isReverse = !isReverse -> ${isReverse}`,
-        codeLine: L.reverseToggle,
-      });
-    }
-
-    steps.push({
-      tree: root,
-      current: null,
-      levelIndex: levelIdx,
-      levelSize: 0,
-      isReverse,
-      queue: [],
-      currentLevel: [],
-      result: result.map((r) => [...r]),
-      metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, 0, result.length, isReverse),
-      decision: '锯齿形层序遍历完成',
-      action: 'done',
-      message: `🎉 锯齿形层序遍历圆满完成！共收集 ${result.length} 层之字形结果: ${JSON.stringify(result)}。`,
-      log: `return ans: ${JSON.stringify(result)}`,
-      codeLine: L.returnAns,
-    });
-
-    return steps;
+        metrics: ZigzagCanvasAdapter.makeMetrics(curLevelIndex, 0, result.length, isReverse),
+        decision: '锯齿形层序遍历完成',
+        action: 'done',
+        message: `🎉 锯齿形层序遍历圆满完成！共收集 ${result.length} 层之字形结果: ${JSON.stringify(result)}。`,
+        log: `return ans: ${JSON.stringify(result)}`,
+        codeLine: L.returnAns,
+      }),
+    }) as ZigzagStep[];
   }
 
   /**
-   * Stage 2: 静态数组模拟队列 (Class 036 招牌双向读指针极致优化)
+   * Stage 2: 静态数组模拟队列 (委托至 BinaryTreeTraversalCompiler.compileStaticQueue)
    */
   public static compileStaticArraySteps(root: TreeNode | null): ZigzagStep[] {
-    const steps: ZigzagStep[] = [];
     const result: number[][] = [];
-    const L = ZIGZAG_STAGE2_STATIC_ARRAY_LINES;
-
-    steps.push({
-      tree: root,
-      current: null,
-      levelIndex: 0,
-      levelSize: 0,
-      isReverse: false,
-      queue: [],
-      currentLevel: [],
-      result: [],
-      staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, isReverse: false },
-      metrics: ZigzagCanvasAdapter.makeMetrics(0, root ? 1 : 0, 0, false),
-      decision: '静态数组初始化：分配连续内存',
-      action: 'init',
-      message: root
-        ? `左神 Class 036 极致优化：使用连续内存 queue[MAXN] 与双指针 l=0, r=0。直接在连续内存上根据方向双向读取！`
-        : '空树特判，直接返回 []。',
-      log: root ? `staticQueue: l=0, r=0, MAXN=2001` : 'root == null -> []',
-      codeLine: L.entry,
-    });
-
-    if (!root) {
-      steps.push({
-        tree: null,
-        current: null,
-        levelIndex: 0,
-        levelSize: 0,
-        isReverse: false,
-        queue: [],
-        currentLevel: [],
-        result: [],
-        staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, isReverse: false },
-        metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
-        decision: '特判返回：树为空',
-        action: 'done',
-        message: '✅ 树为空，直接收敛返回 []。',
-        log: 'if (root == null) return []',
-        codeLine: L.entry,
-      });
-      return steps;
-    }
-
     const staticArray: TreeNode[] = [];
-    let l = 0;
-    let r = 0;
-    staticArray[r++] = root;
+    const L = ZIGZAG_STAGE2_STATIC_ARRAY_LINES;
     let isReverse = false;
     let levelIdx = 0;
+    let currentLevel: number[] = [];
 
-    steps.push({
-      tree: root,
-      current: root.val,
-      levelIndex: 0,
-      levelSize: 1,
-      isReverse: false,
-      queue: [root.val],
-      currentLevel: [],
-      result: [],
-      staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: 1, isReverse: false },
-      metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
-      decision: '根节点写入连续内存 queue[0]',
-      action: 'push-static',
-      message: `根节点 ${root.val} 写入 queue[r++] (l=0, r=1)，零 GC 分配！`,
-      log: `queue[r++] = root(val: ${root.val}), l=0, r=1`,
-      codeLine: L.initPointers,
-    });
-
-    while (l < r) {
-      const size = r - l;
-      const currentLevel: number[] = [];
-      levelIdx++;
-
-      steps.push({
-        tree: root,
-        current: null,
-        levelIndex: levelIdx,
-        levelSize: size,
-        isReverse,
-        queue: staticArray.slice(l, r).map((n) => n.val),
-        currentLevel: [],
-        result: result.map((arr) => [...arr]),
-        staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse },
-        metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
-        decision: `第 ${levelIdx - 1} 层窗口锁定 [l=${l}, r=${r})，大小 ${size}`,
-        action: 'lock-window',
-        message: `连续内存窗口锁定 [${l}, ${r})，包含 ${size} 个节点。读取策略: ${isReverse ? '【逆序读取 i: r-1 ➔ l】' : '【顺序读取 i: l ➔ r-1】'}，无需额外 Deque！`,
-        log: `while(l < r): l=${l}, r=${r}, size=${size}, isReverse=${isReverse}`,
-        codeLine: L.loopLevel,
-      });
-
-      if (!isReverse) {
-        for (let i = l; i < l + size; i++) {
-          const val = staticArray[i].val;
-          currentLevel.push(val);
-          steps.push({
+    return BinaryTreeTraversalCompiler.compileStaticQueue<TreeNode, number[][]>({
+      root,
+      stageId: 'stage-2',
+      onEmpty: () => ({
+        result: [],
+        steps: [
+          {
+            tree: null,
+            current: null,
+            levelIndex: 0,
+            levelSize: 0,
+            isReverse: false,
+            queue: [],
+            currentLevel: [],
+            result: [],
+            staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, isReverse: false },
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
+            decision: '静态数组初始化：分配连续内存',
+            action: 'init',
+            message: '空树特判，直接返回 []。',
+            log: 'staticQueue: root == null -> []',
+            codeLine: L.entry,
+          },
+          {
+            tree: null,
+            current: null,
+            levelIndex: 0,
+            levelSize: 0,
+            isReverse: false,
+            queue: [],
+            currentLevel: [],
+            result: [],
+            staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, isReverse: false },
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 0, 0, false),
+            decision: '特判返回：树为空',
+            action: 'done',
+            message: '✅ 树为空，直接收敛返回 []。',
+            log: 'if (root == null) return []',
+            codeLine: L.entry,
+          },
+        ],
+      }),
+      onInit: (l, r) => {
+        staticArray[0] = root!;
+        return [
+          {
             tree: root,
-            current: val,
-            levelIndex: levelIdx,
-            levelSize: size,
-            isReverse,
-            queue: staticArray.slice(l, r).map((n) => n.val),
-            currentLevel: [...currentLevel],
-            result: result.map((arr) => [...arr]),
-            staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse, readingIndex: i },
-            metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
-            decision: `顺向读取 queue[${i}] = ${val}`,
-            action: 'forward-read',
-            message: `isReverse = false: 顺向指针移动到 index=${i}，直接读取数值 ${val} 加入当前层。`,
-            log: `for(i=l..l+size): queue[${i}]=${val}`,
-            codeLine: L.forwardCollect,
-          });
-        }
-      } else {
-        for (let i = l + size - 1; i >= l; i--) {
-          const val = staticArray[i].val;
-          currentLevel.push(val);
-          steps.push({
+            current: null,
+            levelIndex: 0,
+            levelSize: 0,
+            isReverse: false,
+            queue: [],
+            currentLevel: [],
+            result: [],
+            staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, isReverse: false },
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
+            decision: '静态数组初始化：分配连续内存',
+            action: 'init',
+            message: `左神 Class 036 极致优化：使用连续内存 queue[MAXN] 与双指针 l=0, r=0。直接在连续内存上根据方向双向读取！`,
+            log: 'staticQueue: l=0, r=0, MAXN=2001',
+            codeLine: L.entry,
+          },
+          {
             tree: root,
-            current: val,
-            levelIndex: levelIdx,
-            levelSize: size,
-            isReverse,
-            queue: staticArray.slice(l, r).map((n) => n.val),
-            currentLevel: [...currentLevel],
-            result: result.map((arr) => [...arr]),
-            staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse, readingIndex: i },
-            metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
-            decision: `逆向读取 queue[${i}] = ${val}`,
-            action: 'backward-read',
-            message: `isReverse = true: 逆向指针从末尾倒扫到 index=${i}，直接读取数值 ${val} 加入当前层（完全消除 Deque.addFirst 的数组搬移）！`,
-            log: `for(i=l+size-1..l): queue[${i}]=${val}`,
-            codeLine: L.backwardCollect,
-          });
-        }
-      }
+            current: root!.val,
+            levelIndex: 0,
+            levelSize: 1,
+            isReverse: false,
+            queue: [root!.val],
+            currentLevel: [],
+            result: [],
+            staticQueueState: { array: [root!.val], l: 0, r: 1, windowSize: 1, isReverse: false },
+            metrics: ZigzagCanvasAdapter.makeMetrics(0, 1, 0, false),
+            decision: '根节点写入连续内存 queue[0]',
+            action: 'push-static',
+            message: `根节点 ${root!.val} 写入 queue[r++] (l=0, r=1)，零 GC 分配！`,
+            log: `queue[r++] = root(val: ${root!.val}), l=0, r=1`,
+            codeLine: L.initPointers,
+          },
+        ];
+      },
+      onLevelStart: (level, size, l, r) => {
+        levelIdx = level;
+        currentLevel = [];
+        const steps: ZigzagStep[] = [];
 
-      for (let i = 0; i < size; i++) {
-        const node = staticArray[l++];
-        const pushLeft = node.left;
-        const pushRight = node.right;
+        steps.push({
+          tree: root,
+          current: null,
+          levelIndex: levelIdx,
+          levelSize: size,
+          isReverse,
+          queue: staticArray.slice(l, r).map((n) => n.val),
+          currentLevel: [],
+          result: result.map((arr) => [...arr]),
+          staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse },
+          metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
+          decision: `第 ${levelIdx - 1} 层窗口锁定 [l=${l}, r=${r})，大小 ${size}`,
+          action: 'lock-window',
+          message: `连续内存窗口锁定 [${l}, ${r})，包含 ${size} 个节点。读取策略: ${isReverse ? '【逆序读取 i: r-1 ➔ l】' : '【顺序读取 i: l ➔ r-1】'}，无需额外 Deque！`,
+          log: `while(l < r): l=${l}, r=${r}, size=${size}, isReverse=${isReverse}`,
+          codeLine: L.loopLevel,
+        });
 
-        if (pushLeft) {
-          staticArray[r++] = pushLeft;
+        if (!isReverse) {
+          for (let i = l; i < l + size; i++) {
+            const val = staticArray[i].val;
+            currentLevel.push(val);
+            steps.push({
+              tree: root,
+              current: val,
+              levelIndex: levelIdx,
+              levelSize: size,
+              isReverse,
+              queue: staticArray.slice(l, r).map((n) => n.val),
+              currentLevel: [...currentLevel],
+              result: result.map((arr) => [...arr]),
+              staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse, readingIndex: i },
+              metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
+              decision: `顺向读取 queue[${i}] = ${val}`,
+              action: 'forward-read',
+              message: `isReverse = false: 顺向指针移动到 index=${i}，直接读取数值 ${val} 加入当前层。`,
+              log: `for(i=l..l+size): queue[${i}]=${val}`,
+              codeLine: L.forwardCollect,
+            });
+          }
+        } else {
+          for (let i = l + size - 1; i >= l; i--) {
+            const val = staticArray[i].val;
+            currentLevel.push(val);
+            steps.push({
+              tree: root,
+              current: val,
+              levelIndex: levelIdx,
+              levelSize: size,
+              isReverse,
+              queue: staticArray.slice(l, r).map((n) => n.val),
+              currentLevel: [...currentLevel],
+              result: result.map((arr) => [...arr]),
+              staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: size, isReverse, readingIndex: i },
+              metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, size, result.length, isReverse),
+              decision: `逆向读取 queue[${i}] = ${val}`,
+              action: 'backward-read',
+              message: `isReverse = true: 逆向指针从末尾倒扫到 index=${i}，直接读取数值 ${val} 加入当前层（完全消除 Deque.addFirst 的数组搬移）！`,
+              log: `for(i=l+size-1..l): queue[${i}]=${val}`,
+              codeLine: L.backwardCollect,
+            });
+          }
         }
-        if (pushRight) {
-          staticArray[r++] = pushRight;
-        }
+
+        return steps;
+      },
+      onPushChild: (child, branch, l, r) => {
+        staticArray[r - 1] = child;
+        return null;
+      },
+      onNodePostExpand: (cur, l, r) => {
+        const pushLeft = cur.left;
+        const pushRight = cur.right;
 
         if (pushLeft || pushRight) {
-          steps.push({
+          return {
             tree: root,
-            current: node.val,
+            current: cur.val,
             levelIndex: levelIdx,
-            levelSize: size,
+            levelSize: r - l,
             isReverse,
             queue: staticArray.slice(l, r).map((n) => n.val),
             currentLevel: [...currentLevel],
             result: result.map((arr) => [...arr]),
             staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l, isReverse },
             metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, r - l, result.length, isReverse),
-            decision: `节点 ${node.val} 出窗 (l++), 子节点入连续内存 (r++)`,
+            decision: `节点 ${cur.val} 出窗 (l++), 子节点入连续内存 (r++)`,
             action: 'advance-pointers',
-            message: `node = queue[l++] (${node.val}) 弹出窗口。子节点${pushLeft ? ` 左(${pushLeft.val})` : ''}${pushRight ? ` 右(${pushRight.val})` : ''} 写入末尾 queue[r++]，更新后 l=${l}, r=${r}。`,
+            message: `node = queue[l++] (${cur.val}) 弹出窗口。子节点${pushLeft ? ` 左(${pushLeft.val})` : ''}${pushRight ? ` 右(${pushRight.val})` : ''} 写入末尾 queue[r++]，更新后 l=${l}, r=${r}。`,
             log: `l++ -> ${l}, r updated to ${r}`,
             codeLine: L.pushChildren,
-          });
+          };
         }
-      }
+        return undefined;
+      },
+      onLevelEnd: (_level, l, r) => {
+        result.push([...currentLevel]);
+        isReverse = !isReverse;
 
-      result.push([...currentLevel]);
-      isReverse = !isReverse;
-
-      steps.push({
+        return {
+          tree: root,
+          current: null,
+          levelIndex: levelIdx,
+          levelSize: 0,
+          isReverse,
+          queue: staticArray.slice(l, r).map((n) => n.val),
+          currentLevel: [],
+          result: result.map((arr) => [...arr]),
+          staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l, isReverse },
+          metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, r - l, result.length, isReverse),
+          decision: `第 ${levelIdx - 1} 层收集完成，反转方向`,
+          action: 'toggle-reverse',
+          message: `第 ${levelIdx - 1} 层收集完成！翻转方向标志 isReverse = ${isReverse}。下一层窗口为 [${l}, ${r})。`,
+          log: `ans.add(level); isReverse = !isReverse -> ${isReverse}`,
+          codeLine: L.reverseToggle,
+        };
+      },
+      onDone: (_res, l, r) => ({
         tree: root,
         current: null,
         levelIndex: levelIdx,
         levelSize: 0,
         isReverse,
-        queue: staticArray.slice(l, r).map((n) => n.val),
+        queue: [],
         currentLevel: [],
         result: result.map((arr) => [...arr]),
-        staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: r - l, isReverse },
-        metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, r - l, result.length, isReverse),
-        decision: `第 ${levelIdx - 1} 层收集完成，反转方向`,
-        action: 'toggle-reverse',
-        message: `第 ${levelIdx - 1} 层收集完成！翻转方向标志 isReverse = ${isReverse}。下一层窗口为 [${l}, ${r})。`,
-        log: `ans.add(level); isReverse = !isReverse -> ${isReverse}`,
-        codeLine: L.reverseToggle,
-      });
-    }
-
-    steps.push({
-      tree: root,
-      current: null,
-      levelIndex: levelIdx,
-      levelSize: 0,
-      isReverse,
-      queue: [],
-      currentLevel: [],
-      result: result.map((arr) => [...arr]),
-      staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: 0, isReverse },
-      metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, 0, result.length, isReverse),
-      decision: '静态数组锯齿形层序遍历完成',
-      action: 'done',
-      message: `🎉 静态数组模拟队列遍历完成！l=${l}, r=${r}，双指针完全闭合，共收集 ${result.length} 层: ${JSON.stringify(result)}。`,
-      log: `return ans: ${JSON.stringify(result)}`,
-      codeLine: L.returnAns,
-    });
-
-    return steps;
+        staticQueueState: { array: staticArray.map((n) => n?.val ?? null), l, r, windowSize: 0, isReverse },
+        metrics: ZigzagCanvasAdapter.makeMetrics(levelIdx, 0, result.length, isReverse),
+        decision: '静态数组锯齿形层序遍历完成',
+        action: 'done',
+        message: `🎉 静态数组模拟队列遍历完成！l=${l}, r=${r}，双指针完全闭合，共收集 ${result.length} 层: ${JSON.stringify(result)}。`,
+        log: `return ans: ${JSON.stringify(result)}`,
+        codeLine: L.returnAns,
+      }),
+    }) as ZigzagStep[];
   }
 
   /**
@@ -530,9 +553,9 @@ export class ZigzagStepCompiler {
           result: result.map((r) => [...r]),
           callStack: [...callStack, `dfs(null, ${level})`],
           metrics: ZigzagCanvasAdapter.makeMetrics(level, 0, result.length, level % 2 === 1),
-          decision: `到达空节点 null，直接返回`,
+          decision: '到达空节点 null，直接返回',
           action: 'base-case',
-          message: `node 为 null，触发递归基（Base Case），返回上一层调用栈。`,
+          message: 'node 为 null，触发递归基（Base Case），返回上一层调用栈。',
           log: `dfs(null, ${level}) -> return`,
           codeLine: L.dfsBase,
         });
