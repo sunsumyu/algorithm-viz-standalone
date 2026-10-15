@@ -94,6 +94,9 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
   /** 算法初始包装帧 (Init Steps)，如从顶层函数准备进入辅助递归前产生入口步骤 */
   onInitSteps?: (root: TNode, ctx: TreeDfsContext<TNode, TResult>) => BinaryTreeStep<TResult>[];
 
+  /** 获取调用头注释 (如: '<- 最终要算这个', '<- 先算左边') */
+  getHeaderComment?: (node: TNode, ctx: TreeDfsContext<TNode, TResult>) => string | undefined;
+
   /** 1. 递归判空基底求值 (Base Case Null) */
   onBaseNull: (ctx: TreeDfsContext<TNode, TResult>) => {
     result: TResult;
@@ -119,7 +122,7 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     extraSteps?: BinaryTreeStep<TResult>[];
   };
 
-  /** 3. 叶节点特判帧 (Leaf Check) - 可选，触发时跳过子树深入并直接返回 */
+  /** 3. 叶节点特判帧 (Leaf Check) - 可选，触发时跳过子树深入并直接返回；未命中时可发射非叶特判步骤 */
   onBaseLeaf?: (node: TNode, ctx: TreeDfsContext<TNode, TResult>) => {
     hit: boolean;
     result?: TResult;
@@ -130,9 +133,44 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
     metrics?: Record<string, any>;
     statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
     customFields?: Record<string, any>;
+    step?: BinaryTreeStep<TResult>;
+    extraSteps?: BinaryTreeStep<TResult>[];
   };
 
-  /** 4. 剪枝特判 (Prune Check) - 可选，如平衡二叉树 -1 剪枝 */
+  /** 4. 分支路由调度 (Branch Dispatch) - 可选，决定走双侧、左侧、右侧或跳过 */
+  onBranchDispatch?: (node: TNode, ctx: TreeDfsContext<TNode, TResult>) => {
+    mode: 'both' | 'left-only' | 'right-only' | 'skip';
+    result?: TResult;
+    decision?: string;
+    message?: string;
+    log?: string;
+    codeLine?: HighlightTarget;
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
+    customFields?: Record<string, any>;
+    extraSteps?: BinaryTreeStep<TResult>[];
+  };
+
+  /** 4.1 单侧分支后序合并 (Combine Single) - 当 onBranchDispatch 为 left-only 或 right-only 时触发 */
+  onCombineSingle?: (
+    node: TNode,
+    branch: 'left' | 'right',
+    branchResult: TResult,
+    ctx: TreeDfsContext<TNode, TResult>
+  ) => {
+    result: TResult;
+    action?: string;
+    decision: string;
+    message: string;
+    log: string;
+    codeLine?: HighlightTarget;
+    metrics?: Record<string, any>;
+    statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
+    customFields?: Record<string, any>;
+    extraSteps?: BinaryTreeStep<TResult>[];
+  };
+
+  /** 4.2 剪枝特判 (Prune Check) - 可选，如平衡二叉树 -1 剪枝 */
   onPruneCheck?: (
     node: TNode,
     branch: 'left' | 'right',
@@ -484,7 +522,11 @@ export class BinaryTreeTraversalCompiler {
 
       const frameLabel = `${funcName}(${val})`;
       callStack.push(frameLabel);
-      trace.addHeader(frameLabel, currentDepth, `<- 进入 ${label}`);
+      const roleComment = spec.getHeaderComment
+        ? spec.getHeaderComment(node, ctx)
+        : ((ctx as any).nextRoleComment ?? `<- 进入 ${label}`);
+      (ctx as any).nextRoleComment = undefined;
+      trace.addHeader(frameLabel, currentDepth, roleComment, `call-${val}`);
 
       // 入口帧
       const enterMeta = spec.onEnter ? spec.onEnter(node, ctx) : undefined;
@@ -511,195 +553,300 @@ export class BinaryTreeTraversalCompiler {
       // 叶节点特判帧
       if (spec.onBaseLeaf) {
         const leafMeta = spec.onBaseLeaf(node, ctx);
-        if (leafMeta && leafMeta.hit && leafMeta.result !== undefined) {
-          trace.addConditionHit(`🎯 ${label} 为叶节点，提前返回`, currentDepth);
-          trace.addReturnLeaf(`return ${JSON.stringify(leafMeta.result)}`, currentDepth);
+        if (leafMeta) {
+          if (leafMeta.hit && leafMeta.result !== undefined) {
+            trace.addConditionHit(`🎯 ${label} 为叶节点，提前返回`, currentDepth);
+            trace.addReturnLeaf(`return ${JSON.stringify(leafMeta.result)}`, currentDepth);
 
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: 'base-leaf',
-            decision: leafMeta.decision || `叶节点特判命中：${label}`,
-            message: leafMeta.message || `${label} 无左右子树，返回叶子结果。`,
-            log: leafMeta.log || `叶子返回: ${JSON.stringify(leafMeta.result)}`,
-            stageId,
-            codeLine: leafMeta.codeLine,
-            metrics: leafMeta.metrics,
-            statusBadge: leafMeta.statusBadge || { text: '叶子退出', type: 'success' },
-            callTrace: trace.snapshot(),
-            result: leafMeta.result,
-            visitedNodes: [...visitedNodes],
-            ...leafMeta.customFields,
-          });
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: 'base-leaf',
+              decision: leafMeta.decision || `叶节点特判命中：${label}`,
+              message: leafMeta.message || `${label} 无左右子树，返回叶子结果。`,
+              log: leafMeta.log || `叶子返回: ${JSON.stringify(leafMeta.result)}`,
+              stageId,
+              codeLine: leafMeta.codeLine,
+              metrics: leafMeta.metrics,
+              statusBadge: leafMeta.statusBadge || { text: '叶子退出', type: 'success' },
+              callTrace: trace.snapshot(),
+              result: leafMeta.result,
+              visitedNodes: [...visitedNodes],
+              ...leafMeta.customFields,
+            });
 
-          resultMap.set(val, leafMeta.result);
-          callStack.pop();
-          return leafMeta.result;
+            if (leafMeta.extraSteps && leafMeta.extraSteps.length > 0) {
+              steps.push(...leafMeta.extraSteps);
+            }
+
+            resultMap.set(val, leafMeta.result);
+            callStack.pop();
+            return leafMeta.result;
+          } else {
+            // 未命中叶子特判：如果声明了 step 或 decision/codeLine 则发射内部节点步骤
+            if (leafMeta.step) {
+              steps.push(leafMeta.step);
+            } else if (leafMeta.decision || leafMeta.codeLine) {
+              steps.push({
+                tree: cloneTree(spec.root as any),
+                current: val,
+                action: 'not-leaf',
+                decision: leafMeta.decision || `非叶节点：${label}`,
+                message: leafMeta.message || `${label} 具有子节点，继续分支判定。`,
+                log: leafMeta.log || `${label} not a leaf`,
+                stageId,
+                codeLine: leafMeta.codeLine,
+                metrics: leafMeta.metrics,
+                statusBadge: leafMeta.statusBadge || { text: '内部节点', type: 'info' },
+                callTrace: trace.snapshot(),
+                visitedNodes: [...visitedNodes],
+                ...leafMeta.customFields,
+              });
+            }
+            if (leafMeta.extraSteps && leafMeta.extraSteps.length > 0) {
+              steps.push(...leafMeta.extraSteps);
+            }
+          }
         }
       }
 
       const { left, right } = getChildren(node);
 
-      // 深入左子树前
-      if (spec.beforeLeft) {
-        const bl = spec.beforeLeft(node, ctx);
-        if (bl) {
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: 'call-left',
-            decision: bl.decision || `准备进入 ${label} 的左子树`,
-            message: bl.message || `即将调用左分支 ${left ? getNodeLabel(left) : 'null'}`,
-            log: bl.log || `-> 深入左子树`,
-            stageId,
-            codeLine: bl.codeLine,
-            metrics: bl.metrics,
-            statusBadge: bl.statusBadge,
-            callTrace: trace.snapshot(),
-            visitedNodes: [...visitedNodes],
-            ...bl.customFields,
-          });
+      // 分支路由调度 (Branch Dispatch)
+      let branchMode: 'both' | 'left-only' | 'right-only' | 'skip' = 'both';
+      if (spec.onBranchDispatch) {
+        const dispatchMeta = spec.onBranchDispatch(node, ctx);
+        if (dispatchMeta) {
+          branchMode = dispatchMeta.mode;
+          if (dispatchMeta.decision || dispatchMeta.codeLine) {
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: 'branch-dispatch',
+              decision: dispatchMeta.decision || '分支调度决策',
+              message: dispatchMeta.message || '根据子树状态进行单侧或双侧分支调度',
+              log: dispatchMeta.log || `branch dispatch: ${branchMode}`,
+              stageId,
+              codeLine: dispatchMeta.codeLine,
+              metrics: dispatchMeta.metrics,
+              statusBadge: dispatchMeta.statusBadge || { text: '分支决策', type: 'info' },
+              callTrace: trace.snapshot(),
+              visitedNodes: [...visitedNodes],
+              ...dispatchMeta.customFields,
+            });
+          }
+          if (dispatchMeta.extraSteps && dispatchMeta.extraSteps.length > 0) {
+            steps.push(...dispatchMeta.extraSteps);
+          }
+          if (branchMode === 'skip') {
+            resultMap.set(val, dispatchMeta.result!);
+            callStack.pop();
+            return dispatchMeta.result!;
+          }
         }
       }
 
-      trace.addRecursePrep(`进入左子树调用`, currentDepth);
-      const leftRes = dfs(left, currentDepth + 1);
+      let leftRes: TResult | undefined = undefined;
+      let rightRes: TResult | undefined = undefined;
 
-      // 左子树就绪步骤
-      if (spec.afterLeft) {
-        const al = spec.afterLeft(node, leftRes, ctx);
-        if (al) {
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: al.action || 'left-done',
-            decision: al.decision || `左子树调用就绪，返回结果 = ${leftRes}`,
-            message: al.message || `从左子树归约返回至 ${label}`,
-            log: al.log || `<- 左子树返回 ${leftRes}`,
-            stageId,
-            codeLine: al.codeLine,
-            metrics: al.metrics,
-            statusBadge: al.statusBadge,
-            callTrace: trace.snapshot(),
-            visitedNodes: [...visitedNodes],
-            leftResult: leftRes,
-            ...al.customFields,
-          });
+      // 深入左子树
+      if (branchMode === 'both' || branchMode === 'left-only') {
+        if (branchMode === 'both') {
+          if (spec.beforeLeft) {
+            const bl = spec.beforeLeft(node, ctx);
+            if (bl) {
+              steps.push({
+                tree: cloneTree(spec.root as any),
+                current: val,
+                action: 'call-left',
+                decision: bl.decision || `准备进入 ${label} 的左子树`,
+                message: bl.message || `即将调用左分支 ${left ? getNodeLabel(left) : 'null'}`,
+                log: bl.log || `-> 深入左子树`,
+                stageId,
+                codeLine: bl.codeLine,
+                metrics: bl.metrics,
+                statusBadge: bl.statusBadge,
+                callTrace: trace.snapshot(),
+                visitedNodes: [...visitedNodes],
+                ...bl.customFields,
+              });
+            }
+          } else {
+            trace.addRecursePrep(`进入左子树调用`, currentDepth);
+          }
+        }
+
+        leftRes = dfs(left, currentDepth + 1);
+
+        // 左子树就绪步骤
+        if (branchMode === 'both' && spec.afterLeft) {
+          const al = spec.afterLeft(node, leftRes, ctx);
+          if (al) {
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: al.action || 'left-done',
+              decision: al.decision || `左子树调用就绪，返回结果 = ${leftRes}`,
+              message: al.message || `从左子树归约返回至 ${label}`,
+              log: al.log || `<- 左子树返回 ${leftRes}`,
+              stageId,
+              codeLine: al.codeLine,
+              metrics: al.metrics,
+              statusBadge: al.statusBadge,
+              callTrace: trace.snapshot(),
+              visitedNodes: [...visitedNodes],
+              leftResult: leftRes,
+              ...al.customFields,
+            });
+          }
+        }
+
+        // 左分支剪枝特判 (仅在 both 模式下可能提前退出)
+        if (branchMode === 'both' && spec.onPruneCheck) {
+          const pruneMeta = spec.onPruneCheck(node, 'left', leftRes, ctx);
+          if (pruneMeta.shouldPrune) {
+            trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: 'prune',
+              decision: pruneMeta.decision || `触发剪枝：提前返回`,
+              message: pruneMeta.message || `左子树计算满足剪枝条件，停止探索右子树。`,
+              log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
+              stageId,
+              codeLine: pruneMeta.codeLine,
+              metrics: pruneMeta.metrics,
+              statusBadge: pruneMeta.statusBadge || { text: '提前剪枝', type: 'warning' },
+              callTrace: trace.snapshot(),
+              result: pruneMeta.result,
+              visitedNodes: [...visitedNodes],
+              pruned: true,
+              ...pruneMeta.customFields,
+            });
+            resultMap.set(val, pruneMeta.result);
+            callStack.pop();
+            return pruneMeta.result;
+          }
         }
       }
 
-      // 左分支剪枝特判
-      if (spec.onPruneCheck) {
-        const pruneMeta = spec.onPruneCheck(node, 'left', leftRes, ctx);
-        if (pruneMeta.shouldPrune) {
-          trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: 'prune',
-            decision: pruneMeta.decision || `触发剪枝：提前返回`,
-            message: pruneMeta.message || `左子树计算满足剪枝条件，停止探索右子树。`,
-            log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
-            stageId,
-            codeLine: pruneMeta.codeLine,
-            metrics: pruneMeta.metrics,
-            statusBadge: pruneMeta.statusBadge || { text: '提前剪枝', type: 'warning' },
-            callTrace: trace.snapshot(),
-            result: pruneMeta.result,
-            visitedNodes: [...visitedNodes],
-            pruned: true,
-            ...pruneMeta.customFields,
-          });
-          resultMap.set(val, pruneMeta.result);
-          callStack.pop();
-          return pruneMeta.result;
+      // 深入右子树
+      if (branchMode === 'both' || branchMode === 'right-only') {
+        if (branchMode === 'both') {
+          if (spec.beforeRight) {
+            const br = spec.beforeRight(node, leftRes as any, ctx);
+            if (br) {
+              steps.push({
+                tree: cloneTree(spec.root as any),
+                current: val,
+                action: 'call-right',
+                decision: br.decision || `准备进入 ${label} 的右子树`,
+                message: br.message || `左子树已就绪，即将调用右分支`,
+                log: br.log || `-> 深入右子树`,
+                stageId,
+                codeLine: br.codeLine,
+                metrics: br.metrics,
+                statusBadge: br.statusBadge,
+                callTrace: trace.snapshot(),
+                visitedNodes: [...visitedNodes],
+                leftResult: leftRes,
+                ...br.customFields,
+              });
+            }
+          } else {
+            trace.addRecursePrep(`进入右子树调用`, currentDepth);
+          }
+        }
+
+        rightRes = dfs(right, currentDepth + 1);
+
+        // 右子树就绪步骤
+        if (branchMode === 'both' && spec.afterRight) {
+          const ar = spec.afterRight(node, rightRes, ctx);
+          if (ar) {
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: ar.action || 'right-done',
+              decision: ar.decision || `右子树调用就绪，返回结果 = ${rightRes}`,
+              message: ar.message || `从右子树归约返回至 ${label}`,
+              log: ar.log || `<- 右子树返回 ${rightRes}`,
+              stageId,
+              codeLine: ar.codeLine,
+              metrics: ar.metrics,
+              statusBadge: ar.statusBadge,
+              callTrace: trace.snapshot(),
+              visitedNodes: [...visitedNodes],
+              leftResult: leftRes,
+              rightResult: rightRes,
+              ...ar.customFields,
+            });
+          }
+        }
+
+        // 右分支剪枝特判
+        if (branchMode === 'both' && spec.onPruneCheck) {
+          const pruneMeta = spec.onPruneCheck(node, 'right', rightRes, ctx);
+          if (pruneMeta.shouldPrune) {
+            trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
+            steps.push({
+              tree: cloneTree(spec.root as any),
+              current: val,
+              action: 'prune',
+              decision: pruneMeta.decision || `触发剪枝：提前返回`,
+              message: pruneMeta.message || `右子树计算满足剪枝条件。`,
+              log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
+              stageId,
+              codeLine: pruneMeta.codeLine,
+              metrics: pruneMeta.metrics,
+              statusBadge: pruneMeta.statusBadge || { text: '提前剪枝', type: 'warning' },
+              callTrace: trace.snapshot(),
+              result: pruneMeta.result,
+              visitedNodes: [...visitedNodes],
+              pruned: true,
+              ...pruneMeta.customFields,
+            });
+            resultMap.set(val, pruneMeta.result);
+            callStack.pop();
+            return pruneMeta.result;
+          }
         }
       }
 
-      // 深入右子树前
-      if (spec.beforeRight) {
-        const br = spec.beforeRight(node, leftRes, ctx);
-        if (br) {
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: 'call-right',
-            decision: br.decision || `准备进入 ${label} 的右子树`,
-            message: br.message || `左子树已就绪，即将调用右分支`,
-            log: br.log || `-> 深入右子树`,
-            stageId,
-            codeLine: br.codeLine,
-            metrics: br.metrics,
-            statusBadge: br.statusBadge,
-            callTrace: trace.snapshot(),
-            visitedNodes: [...visitedNodes],
-            leftResult: leftRes,
-            ...br.customFields,
-          });
+      // 后序合并与归约
+      let combineMeta: any;
+      if (branchMode === 'left-only') {
+        if (spec.onCombineSingle) {
+          combineMeta = spec.onCombineSingle(node, 'left', leftRes!, ctx);
+        } else {
+          combineMeta = spec.onCombine(node, leftRes!, undefined as any, ctx);
         }
+      } else if (branchMode === 'right-only') {
+        if (spec.onCombineSingle) {
+          combineMeta = spec.onCombineSingle(node, 'right', rightRes!, ctx);
+        } else {
+          combineMeta = spec.onCombine(node, undefined as any, rightRes!, ctx);
+        }
+      } else {
+        combineMeta = spec.onCombine(node, leftRes!, rightRes!, ctx);
       }
 
-      trace.addRecursePrep(`进入右子树调用`, currentDepth);
-      const rightRes = dfs(right, currentDepth + 1);
-
-      // 右子树就绪步骤
-      if (spec.afterRight) {
-        const ar = spec.afterRight(node, rightRes, ctx);
-        if (ar) {
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: ar.action || 'right-done',
-            decision: ar.decision || `右子树调用就绪，返回结果 = ${rightRes}`,
-            message: ar.message || `从右子树归约返回至 ${label}`,
-            log: ar.log || `<- 右子树返回 ${rightRes}`,
-            stageId,
-            codeLine: ar.codeLine,
-            metrics: ar.metrics,
-            statusBadge: ar.statusBadge,
-            callTrace: trace.snapshot(),
-            visitedNodes: [...visitedNodes],
-            leftResult: leftRes,
-            rightResult: rightRes,
-            ...ar.customFields,
-          });
-        }
+      if (branchMode === 'left-only') {
+        trace.addUnwindCalc(
+          `单侧归约 [${val}]: 左=${JSON.stringify(leftRes)} -> ${JSON.stringify(combineMeta.result)}`,
+          currentDepth
+        );
+      } else if (branchMode === 'right-only') {
+        trace.addUnwindCalc(
+          `单侧归约 [${val}]: 右=${JSON.stringify(rightRes)} -> ${JSON.stringify(combineMeta.result)}`,
+          currentDepth
+        );
+      } else {
+        trace.addUnwindCalc(
+          `合并 [${val}]: 左=${JSON.stringify(leftRes)}, 右=${JSON.stringify(rightRes)} -> ${JSON.stringify(combineMeta.result)}`,
+          currentDepth
+        );
       }
-
-      // 右分支剪枝特判
-      if (spec.onPruneCheck) {
-        const pruneMeta = spec.onPruneCheck(node, 'right', rightRes, ctx);
-        if (pruneMeta.shouldPrune) {
-          trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
-          steps.push({
-            tree: cloneTree(spec.root as any),
-            current: val,
-            action: 'prune',
-            decision: pruneMeta.decision || `触发剪枝：提前返回`,
-            message: pruneMeta.message || `右子树计算满足剪枝条件。`,
-            log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
-            stageId,
-            codeLine: pruneMeta.codeLine,
-            metrics: pruneMeta.metrics,
-            statusBadge: pruneMeta.statusBadge || { text: '提前剪枝', type: 'warning' },
-            callTrace: trace.snapshot(),
-            result: pruneMeta.result,
-            visitedNodes: [...visitedNodes],
-            pruned: true,
-            ...pruneMeta.customFields,
-          });
-          resultMap.set(val, pruneMeta.result);
-          callStack.pop();
-          return pruneMeta.result;
-        }
-      }
-
-      // 后序合并
-      const combineMeta = spec.onCombine(node, leftRes, rightRes, ctx);
-      trace.addUnwindCalc(
-        `合并 [${val}]: 左=${JSON.stringify(leftRes)}, 右=${JSON.stringify(rightRes)} -> ${JSON.stringify(combineMeta.result)}`,
-        currentDepth
-      );
 
       steps.push({
         tree: cloneTree(spec.root as any),

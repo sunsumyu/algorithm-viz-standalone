@@ -805,285 +805,235 @@ export class TreeDepthStepCompiler {
    * Stage 1: 后序递归分治与叶节点特判 (Recursive DFS)
    */
   public static compileMinDepthStage1Steps(root: TreeNode | null): MinDepthStep[] {
-    const steps: MinDepthStep[] = [];
     const lines = MIN_DEPTH_STAGE1_LINES;
+    const allTreeVals = collectTreeValues(root);
 
-    if (!root) {
-      const traceSnapshot: CallTraceSnapshot = {
-        lines: [
-          {
-            id: 'null-root',
-            depth: 0,
-            text: 'minDepth(null) -> 树为空 -> return 0',
-            kind: 'header',
-            comment: '<- 树为空',
-          },
-        ],
-        activeLineId: 'null-root',
-        finalResult: 0,
-      };
-
-      steps.push({
-        tree: null,
-        current: null,
-        depth: 0,
-        minDepth: 0,
-        decision: '特判返回：树为空',
-        message: '树为空，最小深度为 0。',
-        log: 'root is null -> return 0',
-        codeLine: lines.baseNull,
-        stageId: 'stage-1',
-        metrics: { '当前节点': 'null', '当前深度': 0, '最小深度': 0 },
-        callTrace: traceSnapshot,
-      });
-      return steps;
-    }
-
-    const traceLines: CallTraceLine[] = [];
-
-    function makeSnapshot(activeLineId?: string, finalResult?: number): CallTraceSnapshot {
-      return {
-        lines: traceLines.map((l) => ({ ...l })),
-        activeLineId,
-        finalResult,
-      };
-    }
-
-    const rootHeaderId = `call-${root.val}`;
-    traceLines.push({
-      id: rootHeaderId,
-      depth: 0,
-      text: `minDepth(${root.val})`,
-      kind: 'header',
-      comment: '<- 最终要算这个',
-    });
-
-    steps.push({
-      tree: cloneStateDepTree(root),
-      current: root.val,
-      depth: 1,
-      minDepth: null,
-      decision: `递归入口：minDepth(Node(${root.val}))，当前递归层深度 = 1`,
-      message: `开始求解以 ${root.val} 为根的二叉树最小深度。注意：当某一子树为空时，不能直接取 min(0, ...)！`,
-      log: `Enter minDepth(root=${root.val})`,
-      codeLine: lines.entry,
+    return BinaryTreeTraversalCompiler.compileDfs<TreeNode, number>({
+      root,
       stageId: 'stage-1',
-      highlightedNodes: [root.val],
-      metrics: { '当前节点': `Node(${root.val})`, '当前深度': 1, '最小深度': '计算中' },
-      callTrace: makeSnapshot(rootHeaderId),
-    });
-
-    function dfs(node: TreeNode | null, depth: number, roleComment?: string): number {
-      // 1. 基底判空
-      if (!node) {
-        const nullLineId = `null-${depth}-${Math.random().toString(36).slice(2, 6)}`;
-        traceLines.push({
+      funcName: 'minDepth',
+      onEmpty: () => [
+        {
+          tree: null,
+          current: null,
+          depth: 0,
+          minDepth: 0,
+          decision: '特判返回：树为空',
+          message: '树为空，最小深度为 0。',
+          log: 'root is null -> return 0',
+          codeLine: lines.baseNull,
+          stageId: 'stage-1',
+          metrics: { '当前节点': 'null', '当前深度': 0, '最小深度': 0 },
+          callTrace: {
+            lines: [
+              {
+                id: 'null-root',
+                depth: 0,
+                text: 'minDepth(null) -> 树为空 -> return 0',
+                kind: 'header',
+                comment: '<- 树为空',
+              },
+            ],
+            activeLineId: 'null-root',
+            finalResult: 0,
+          },
+        } as any,
+      ],
+      onBaseNull: (ctx) => {
+        const nullLineId = `null-${ctx.depth}-${Math.random().toString(36).slice(2, 6)}`;
+        ctx.trace.addLine({
           id: nullLineId,
-          depth: depth - 1,
+          depth: Math.max(0, ctx.depth - 1),
           text: 'root == null -> return 0',
           kind: 'condition-skip',
         });
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: null,
-          depth,
-          minDepth: 0,
+        return {
+          result: 0,
           decision: '遇到空节点，触发基底返回：return 0',
           message: '递归探查到空指针 null，返回深度 0。',
           log: 'node is null -> return 0',
           codeLine: lines.baseNull,
-          stageId: 'stage-1',
-          metrics: { '当前节点': 'null', '当前深度': depth, '返回值': 0 },
-          callTrace: makeSnapshot(nullLineId),
+          metrics: { '当前节点': 'null', '当前深度': ctx.depth, '返回值': 0 },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: ctx.depth,
+            minDepth: 0,
+          },
+        };
+      },
+      getHeaderComment: (node, ctx) => (node === root ? '<- 最终要算这个' : (ctx as any).nextRoleComment),
+      onEnter: (node, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        const passLineId = `pass-${node.val}`;
+        ctx.trace.addLine({
+          id: passLineId,
+          depth: Math.max(0, ctx.depth),
+          text: `① root=${node.val}, 非空`,
+          kind: 'condition-pass',
         });
-        return 0;
-      }
 
-      const callLineId = `call-${node.val}`;
-      if (node !== root) {
-        traceLines.push({
-          id: callLineId,
-          depth: depth - 1,
-          text: `minDepth(${node.val})`,
-          kind: 'header',
-          comment: roleComment,
-        });
-
-        steps.push({
+        const passStep: MinDepthStep = {
           tree: cloneStateDepTree(root),
           current: node.val,
-          depth,
+          depth: currentDepth,
           minDepth: null,
-          decision: `递归进入子节点 Node(${node.val})，深度为 ${depth}`,
-          message: `深入递归栈，当前探查节点为 Node(${node.val})。`,
-          log: `Enter minDepth(${node.val}) at depth ${depth}`,
+          decision: `非空判别通过：Node(${node.val}) != null，继续检查是否为叶子节点`,
+          message: `节点 Node(${node.val}) 存在，跳过基底判空，进入后续叶子与分支判断。`,
+          log: `Node(${node.val}) is not null`,
+          codeLine: lines.baseNull,
+          stageId: 'stage-1',
+          highlightedNodes: [node.val],
+          metrics: { '当前节点': `Node(${node.val})`, '非空检查': '通过' },
+          callTrace: ctx.trace.snapshot(),
+        };
+
+        const isRoot = node === root;
+        return {
+          decision: isRoot
+            ? `递归入口：minDepth(Node(${root.val}))，当前递归层深度 = 1`
+            : `递归进入子节点 Node(${node.val})，深度为 ${currentDepth}`,
+          message: isRoot
+            ? `开始求解以 ${root.val} 为根的二叉树最小深度。注意：当某一子树为空时，不能直接取 min(0, ...)！`
+            : `深入递归栈，当前探查节点为 Node(${node.val})。`,
+          log: isRoot ? `Enter minDepth(root=${root.val})` : `Enter minDepth(${node.val}) at depth ${currentDepth}`,
           codeLine: lines.entry,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val],
-          metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth },
-          callTrace: makeSnapshot(callLineId),
-        });
-      }
+          metrics: isRoot
+            ? { '当前节点': `Node(${root.val})`, '当前深度': 1, '最小深度': '计算中' }
+            : { '当前节点': `Node(${node.val})`, '当前深度': currentDepth },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val],
+          },
+          extraSteps: [passStep as any],
+        };
+      },
+      onBaseLeaf: (node, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        if (!node.left && !node.right) {
+          const leafLineId = `leaf-hit-${node.val}`;
+          ctx.trace.addConditionHit(`② root.left == null && root.right == null √ 命中叶子!`, Math.max(0, ctx.depth));
+          ctx.trace.addReturnLeaf('    -> return 1', Math.max(0, ctx.depth));
 
-      // 2. 非空通过判定
-      const passLineId = `pass-${node.val}`;
-      traceLines.push({
-        id: passLineId,
-        depth: depth - 1,
-        text: `① root=${node.val}, 非空`,
-        kind: 'condition-pass',
-      });
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: null,
-        decision: `非空判别通过：Node(${node.val}) != null，继续检查是否为叶子节点`,
-        message: `节点 Node(${node.val}) 存在，跳过基底判空，进入后续叶子与分支判断。`,
-        log: `Node(${node.val}) is not null`,
-        codeLine: lines.baseNull,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val],
-        metrics: { '当前节点': `Node(${node.val})`, '非空检查': '通过' },
-        callTrace: makeSnapshot(passLineId),
-      });
+          return {
+            hit: true,
+            result: 1,
+            decision: `🎯 命中叶节点：Node(${node.val}) 左右均为空，直接返回深度 1 (return 1)`,
+            message: `叶子节点定义达成：Node(${node.val}) 没有左右孩子，其自身子树最小深度即为 1。`,
+            log: `Node(${node.val}) is leaf -> return 1`,
+            codeLine: lines.baseLeaf,
+            metrics: { '当前节点': `Node(${node.val})`, '节点类型': '叶子节点', '子树最小深度': 1 },
+            customFields: {
+              tree: cloneStateDepTree(root),
+              depth: currentDepth,
+              minDepth: 1,
+              highlightedNodes: [node.val],
+            },
+          };
+        }
 
-      // 3. 叶子节点特判 (核心定义：左右孩子皆为空)
-      if (!node.left && !node.right) {
-        const leafLineId = `leaf-hit-${node.val}`;
-        traceLines.push({
-          id: leafLineId,
-          depth: depth - 1,
-          text: `② root.left == null && root.right == null √ 命中叶子!`,
-          kind: 'condition-hit',
-        });
-        traceLines.push({
-          id: `ret-leaf-${node.val}`,
-          depth: depth - 1,
-          text: '    -> return 1',
-          kind: 'return-leaf',
-        });
-
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: 1,
-          decision: `🎯 命中叶节点：Node(${node.val}) 左右均为空，直接返回深度 1 (return 1)`,
-          message: `叶子节点定义达成：Node(${node.val}) 没有左右孩子，其自身子树最小深度即为 1。`,
-          log: `Node(${node.val}) is leaf -> return 1`,
-          codeLine: lines.baseLeaf,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val],
-          metrics: { '当前节点': `Node(${node.val})`, '节点类型': '叶子节点', '子树最小深度': 1 },
-          callTrace: makeSnapshot(leafLineId, 1),
-        });
-        return 1;
-      } else {
         const skipLeafId = `skip-leaf-${node.val}`;
-        traceLines.push({
-          id: skipLeafId,
-          depth: depth - 1,
-          text: `② 不是叶子 (left=${node.left ? node.left.val : 'null'}, right=${node.right ? node.right.val : 'null'}), 跳过`,
-          kind: 'condition-skip',
-        });
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: null,
+        ctx.trace.addConditionSkip(
+          `② 不是叶子 (left=${node.left ? node.left.val : 'null'}, right=${node.right ? node.right.val : 'null'}), 跳过`,
+          Math.max(0, ctx.depth)
+        );
+
+        return {
+          hit: false,
           decision: `Node(${node.val}) 并非叶子节点 (left=${node.left?.val ?? 'null'}, right=${node.right?.val ?? 'null'})，继续检查单侧空情况`,
           message: `节点具有子节点，不能直接当作叶子返回 1，继续下一步单侧子树避坑检查。`,
           log: `Node(${node.val}) not a leaf`,
           codeLine: lines.baseLeaf,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val],
           metrics: { '当前节点': `Node(${node.val})`, '节点类型': '内部节点' },
-          callTrace: makeSnapshot(skipLeafId),
-        });
-      }
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val],
+          },
+        };
+      },
+      onBranchDispatch: (node, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        // 单侧左为空特判 (!node.left && node.right)
+        if (!node.left && node.right) {
+          (ctx as any).nextRoleComment = `<- 算${node.val}的右孩子`;
+          const leftNullLineId = `left-null-hit-${node.val}`;
+          ctx.trace.addConditionHit(`③ root.left == null √ 命中!`, Math.max(0, ctx.depth));
+          ctx.trace.addRecursePrep(`    -> return minDepth(root.right) + 1`, Math.max(0, ctx.depth));
+          ctx.trace.addRecursePrep(`    -> return minDepth(${node.right.val}) + 1`, Math.max(0, ctx.depth));
 
-      // 4. 单侧左为空特判
-      if (!node.left && node.right) {
-        const leftNullLineId = `left-null-hit-${node.val}`;
-        traceLines.push({
-          id: leftNullLineId,
-          depth: depth - 1,
-          text: `③ root.left == null √ 命中!`,
-          kind: 'condition-hit',
-        });
-        traceLines.push({
-          id: `stmt-r1-${node.val}`,
-          depth: depth - 1,
-          text: `    -> return minDepth(root.right) + 1`,
-          kind: 'recurse-prep',
-        });
-        traceLines.push({
-          id: `stmt-r2-${node.val}`,
-          depth: depth - 1,
-          text: `    -> return minDepth(${node.right.val}) + 1`,
-          kind: 'recurse-prep',
-        });
+          return {
+            mode: 'right-only',
+            decision: `Node(${node.val}) 左子树为空但右子树非空，必须只探索右子树 minDepth(right) + 1`,
+            message: `避坑：Node(${node.val}) 不是叶子节点，不能将左侧深度 0 计入取 min！必须转向右子树探索。`,
+            log: `Node(${node.val}) left is null -> recurse right`,
+            codeLine: lines.leftNull,
+            metrics: { '当前节点': `Node(${node.val})`, '当前深度': currentDepth, '探索方向': '仅右子树' },
+            customFields: {
+              tree: cloneStateDepTree(root),
+              depth: currentDepth,
+              minDepth: null,
+              highlightedNodes: [node.val, node.right.val],
+            },
+          };
+        }
 
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: null,
-          decision: `Node(${node.val}) 左子树为空但右子树非空，必须只探索右子树 minDepth(right) + 1`,
-          message: `避坑：Node(${node.val}) 不是叶子节点，不能将左侧深度 0 计入取 min！必须转向右子树探索。`,
-          log: `Node(${node.val}) left is null -> recurse right`,
-          codeLine: lines.leftNull,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val, node.right.val],
-          metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索方向': '仅右子树' },
-          callTrace: makeSnapshot(leftNullLineId),
-        });
+        // 单侧右为空特判 (node.left && !node.right)
+        if (node.left && !node.right) {
+          (ctx as any).nextRoleComment = `<- 算${node.val}的左孩子`;
+          const skipLeftId = `skip-left-${node.val}`;
+          ctx.trace.addConditionSkip(`③ left != null (是${node.left.val}), 跳过`, Math.max(0, ctx.depth));
 
-        const rDepth = dfs(node.right, depth + 1, `<- 算${node.val}的右孩子`);
-        const res = rDepth + 1;
+          const skipLeftStep: MinDepthStep = {
+            tree: cloneStateDepTree(root),
+            current: node.val,
+            depth: currentDepth,
+            minDepth: null,
+            decision: `单侧检查：root.left == null 判定为 false (左孩子是 Node(${node.left.val}))，跳过左空分支`,
+            message: `Node(${node.val}) 左子树存在，继续检查右子树是否为空。`,
+            log: `Node(${node.val}) left != null -> continue`,
+            codeLine: lines.leftNull,
+            stageId: 'stage-1',
+            highlightedNodes: [node.val, node.left.val],
+            metrics: { '当前节点': `Node(${node.val})`, '左孩子': `Node(${node.left.val})`, '左空特判': '未触发' },
+            callTrace: ctx.trace.snapshot(),
+          };
 
-        const unwindLineId = `unwind-${node.val}`;
-        traceLines.push({
-          id: unwindLineId,
-          depth: depth - 1,
-          text: `回到 minDepth(${node.val}): return ${rDepth} + 1 = ${res}`,
-          kind: 'unwind-calc',
-        });
-        traceLines.push({
-          id: `ret-stmt-${node.val}`,
-          depth: depth - 1,
-          text: `返回 ${res} ---`,
-          kind: 'return-leaf',
-        });
+          const rightNullLineId = `right-null-hit-${node.val}`;
+          ctx.trace.addConditionHit(`④ root.right == null √ 命中!`, Math.max(0, ctx.depth));
+          ctx.trace.addRecursePrep(`    -> return minDepth(root.left) + 1`, Math.max(0, ctx.depth));
+          ctx.trace.addRecursePrep(`    -> return minDepth(${node.left.val}) + 1`, Math.max(0, ctx.depth));
 
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: res,
-          decision: `Node(${node.val}) 右子树返回深度 ${rDepth}，归约结果: ${rDepth} + 1 = ${res}`,
-          message: `单侧右子树结算完成，Node(${node.val}) 子树最小深度为 ${res}。`,
-          log: `Node(${node.val}) returns rightDepth + 1 = ${res}`,
-          codeLine: lines.leftNull,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val],
-          metrics: { '当前节点': `Node(${node.val})`, '右子树深度': rDepth, '归约结果': res },
-          callTrace: makeSnapshot(unwindLineId, res),
-        });
-        return res;
-      } else {
+          const rightHitStep: MinDepthStep = {
+            tree: cloneStateDepTree(root),
+            current: node.val,
+            depth: currentDepth,
+            minDepth: null,
+            decision: `Node(${node.val}) 右子树为空但左子树非空，必须只探索左子树 minDepth(left) + 1`,
+            message: `避坑：Node(${node.val}) 不是叶子节点，不能将右侧深度 0 计入取 min！必须转向左子树探索。`,
+            log: `Node(${node.val}) right is null -> recurse left`,
+            codeLine: lines.rightNull,
+            stageId: 'stage-1',
+            highlightedNodes: [node.val, node.left.val],
+            metrics: { '当前节点': `Node(${node.val})`, '当前深度': currentDepth, '探索方向': '仅左子树' },
+            callTrace: ctx.trace.snapshot(),
+          };
+
+          return {
+            mode: 'left-only',
+            extraSteps: [skipLeftStep as any, rightHitStep as any],
+          };
+        }
+
+        // 双侧均非空 (node.left && node.right)
         const skipLeftId = `skip-left-${node.val}`;
-        traceLines.push({
-          id: skipLeftId,
-          depth: depth - 1,
-          text: `③ left != null (是${node.left!.val}), 跳过`,
-          kind: 'condition-skip',
-        });
-        steps.push({
+        ctx.trace.addConditionSkip(`③ left != null (是${node.left!.val}), 跳过`, Math.max(0, ctx.depth));
+        const skipLeftStep: MinDepthStep = {
           tree: cloneStateDepTree(root),
           current: node.val,
-          depth,
+          depth: currentDepth,
           minDepth: null,
           decision: `单侧检查：root.left == null 判定为 false (左孩子是 Node(${node.left!.val}))，跳过左空分支`,
           message: `Node(${node.val}) 左子树存在，继续检查右子树是否为空。`,
@@ -1092,91 +1042,15 @@ export class TreeDepthStepCompiler {
           stageId: 'stage-1',
           highlightedNodes: [node.val, node.left!.val],
           metrics: { '当前节点': `Node(${node.val})`, '左孩子': `Node(${node.left!.val})`, '左空特判': '未触发' },
-          callTrace: makeSnapshot(skipLeftId),
-        });
-      }
+          callTrace: ctx.trace.snapshot(),
+        };
 
-      // 5. 单侧右为空特判
-      if (node.left && !node.right) {
-        const rightNullLineId = `right-null-hit-${node.val}`;
-        traceLines.push({
-          id: rightNullLineId,
-          depth: depth - 1,
-          text: `④ root.right == null √ 命中!`,
-          kind: 'condition-hit',
-        });
-        traceLines.push({
-          id: `stmt-l1-${node.val}`,
-          depth: depth - 1,
-          text: `    -> return minDepth(root.left) + 1`,
-          kind: 'recurse-prep',
-        });
-        traceLines.push({
-          id: `stmt-l2-${node.val}`,
-          depth: depth - 1,
-          text: `    -> return minDepth(${node.left.val}) + 1`,
-          kind: 'recurse-prep',
-        });
-
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: null,
-          decision: `Node(${node.val}) 右子树为空但左子树非空，必须只探索左子树 minDepth(left) + 1`,
-          message: `避坑：Node(${node.val}) 不是叶子节点，不能将右侧深度 0 计入取 min！必须转向左子树探索。`,
-          log: `Node(${node.val}) right is null -> recurse left`,
-          codeLine: lines.rightNull,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val, node.left.val],
-          metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索方向': '仅左子树' },
-          callTrace: makeSnapshot(rightNullLineId),
-        });
-
-        const lDepth = dfs(node.left, depth + 1, `<- 算${node.val}的左孩子`);
-        const res = lDepth + 1;
-
-        const unwindLineId = `unwind-${node.val}`;
-        traceLines.push({
-          id: unwindLineId,
-          depth: depth - 1,
-          text: `回到 minDepth(${node.val}): return ${lDepth} + 1 = ${res}`,
-          kind: 'unwind-calc',
-        });
-        traceLines.push({
-          id: `ret-stmt-${node.val}`,
-          depth: depth - 1,
-          text: `返回 ${res} ---`,
-          kind: 'return-leaf',
-        });
-
-        steps.push({
-          tree: cloneStateDepTree(root),
-          current: node.val,
-          depth,
-          minDepth: res,
-          decision: `Node(${node.val}) 左子树返回深度 ${lDepth}，归约结果: ${lDepth} + 1 = ${res}`,
-          message: `单侧左子树结算完成，Node(${node.val}) 子树最小深度为 ${res}。`,
-          log: `Node(${node.val}) returns leftDepth + 1 = ${res}`,
-          codeLine: lines.rightNull,
-          stageId: 'stage-1',
-          highlightedNodes: [node.val],
-          metrics: { '当前节点': `Node(${node.val})`, '左子树深度': lDepth, '归约结果': res },
-          callTrace: makeSnapshot(unwindLineId, res),
-        });
-        return res;
-      } else {
         const skipRightId = `skip-right-${node.val}`;
-        traceLines.push({
-          id: skipRightId,
-          depth: depth - 1,
-          text: `④ right != null (是${node.right!.val}), 跳过`,
-          kind: 'condition-skip',
-        });
-        steps.push({
+        ctx.trace.addConditionSkip(`④ right != null (是${node.right!.val}), 跳过`, Math.max(0, ctx.depth));
+        const skipRightStep: MinDepthStep = {
           tree: cloneStateDepTree(root),
           current: node.val,
-          depth,
+          depth: currentDepth,
           minDepth: null,
           decision: `单侧检查：root.right == null 判定为 false (右孩子是 Node(${node.right!.val}))，两侧均非空`,
           message: `Node(${node.val}) 两侧子树均非空，跳过单侧特判分支，准备进入双分支独立递归。`,
@@ -1185,142 +1059,150 @@ export class TreeDepthStepCompiler {
           stageId: 'stage-1',
           highlightedNodes: [node.val, node.right!.val],
           metrics: { '当前节点': `Node(${node.val})`, '右孩子': `Node(${node.right!.val})`, '右空特判': '未触发' },
-          callTrace: makeSnapshot(skipRightId),
-        });
-      }
+          callTrace: ctx.trace.snapshot(),
+        };
 
-      // 6. 左右均非空：先准备深入左子树
-      const prepBothId = `prep-both-${node.val}`;
-      traceLines.push({
-        id: prepBothId,
-        depth: depth - 1,
-        text: `⑤ 走最后一行: Math.min(minDepth(左), minDepth(右)) + 1`,
-        kind: 'recurse-prep',
-      });
+        return {
+          mode: 'both',
+          extraSteps: [skipLeftStep as any, skipRightStep as any],
+        };
+      },
+      beforeLeft: (node, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        (ctx as any).nextRoleComment = '<- 先算左边';
+        ctx.trace.addRecursePrep(`⑤ 走最后一行: Math.min(minDepth(左), minDepth(右)) + 1`, Math.max(0, ctx.depth));
 
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: null,
-        decision: `Node(${node.val}) 深入左子树求解：int leftDepth = minDepth(root.left)`,
-        message: `后序遍历顺序：首先深入求解左子树 Node(${node.left!.val})。`,
-        log: `Node(${node.val}): call minDepth(left=${node.left!.val})`,
-        codeLine: lines.callLeft,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val, node.left!.val],
-        metrics: { '当前节点': `Node(${node.val})`, '当前深度': depth, '探索分支': '左子树' },
-        callTrace: makeSnapshot(prepBothId),
-      });
+        return {
+          decision: `Node(${node.val}) 深入左子树求解：int leftDepth = minDepth(root.left)`,
+          message: `后序遍历顺序：首先深入求解左子树 Node(${node.left!.val})。`,
+          log: `Node(${node.val}): call minDepth(left=${node.left!.val})`,
+          codeLine: lines.callLeft,
+          metrics: { '当前节点': `Node(${node.val})`, '当前深度': currentDepth, '探索分支': '左子树' },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val, node.left!.val],
+          },
+        };
+      },
+      afterLeft: (node, leftRes, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        return {
+          decision: `Node(${node.val}) 左子树求解完成：leftDepth = ${leftRes}，赋值就绪`,
+          message: `后序遍历：左子树已返回最小深度 ${leftRes}，存储至 leftDepth。准备深入右子树。`,
+          log: `Node(${node.val}): leftDepth=${leftRes}`,
+          codeLine: lines.callLeft,
+          metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftRes, '探索分支': '左子树就绪' },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val, node.left!.val],
+          },
+        };
+      },
+      beforeRight: (node, leftRes, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        (ctx as any).nextRoleComment = '<- 再算右边';
+        return {
+          decision: `Node(${node.val}) 深入右子树求解：int rightDepth = minDepth(root.right)`,
+          message: `后序遍历顺序：接下来深入求解右子树 Node(${node.right!.val})。`,
+          log: `Node(${node.val}): call minDepth(right=${node.right!.val})`,
+          codeLine: lines.callRight,
+          metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftRes, '探索分支': '右子树' },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val, node.right!.val],
+          },
+        };
+      },
+      afterRight: (node, rightRes, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        return {
+          decision: `Node(${node.val}) 右子树求解完成：rightDepth = ${rightRes}，赋值就绪`,
+          message: `后序遍历：右子树已返回最小深度 ${rightRes}，存储至 rightDepth。左右子树均就绪，准备后序归约。`,
+          log: `Node(${node.val}): rightDepth=${rightRes}`,
+          codeLine: lines.callRight,
+          metrics: { '当前节点': `Node(${node.val})`, 'rightDepth': rightRes },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: null,
+            highlightedNodes: [node.val, node.right!.val],
+          },
+        };
+      },
+      onCombineSingle: (node, branch, branchRes, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        const res = branchRes + 1;
+        const line = branch === 'right' ? lines.leftNull : lines.rightNull;
+        const branchName = branch === 'right' ? '右' : '左';
 
-      const leftVal = dfs(node.left, depth + 1, '<- 先算左边');
+        ctx.trace.addUnwindCalc(`回到 minDepth(${node.val}): return ${branchRes} + 1 = ${res}`, Math.max(0, ctx.depth));
+        ctx.trace.addReturnLeaf(`返回 ${res} ---`, Math.max(0, ctx.depth));
 
-      // 7. 左子树就绪，接收返回值帧 (Line 7 闭环赋值)
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: null,
-        decision: `Node(${node.val}) 左子树求解完成：leftDepth = ${leftVal}，赋值就绪`,
-        message: `后序遍历：左子树已返回最小深度 ${leftVal}，存储至 leftDepth。准备深入右子树。`,
-        log: `Node(${node.val}): leftDepth=${leftVal}`,
-        codeLine: lines.callLeft,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val, node.left!.val],
-        metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, '探索分支': '左子树就绪' },
-        callTrace: makeSnapshot(prepBothId),
-      });
+        return {
+          result: res,
+          decision: `Node(${node.val}) ${branchName}子树返回深度 ${branchRes}，归约结果: ${branchRes} + 1 = ${res}`,
+          message: `单侧${branchName}子树结算完成，Node(${node.val}) 子树最小深度为 ${res}。`,
+          log: `Node(${node.val}) returns ${branch}Depth + 1 = ${res}`,
+          codeLine: line,
+          metrics: { '当前节点': `Node(${node.val})`, [`${branchName}子树深度`]: branchRes, '归约结果': res },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: res,
+            highlightedNodes: [node.val],
+          },
+        };
+      },
+      onCombine: (node, leftRes, rightRes, ctx) => {
+        const currentDepth = ctx.depth + 1;
+        const res = Math.min(leftRes, rightRes) + 1;
 
-      // 8. 接下来深入右子树 (Line 8 发起调用帧)
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: null,
-        decision: `Node(${node.val}) 深入右子树求解：int rightDepth = minDepth(root.right)`,
-        message: `后序遍历顺序：接下来深入求解右子树 Node(${node.right!.val})。`,
-        log: `Node(${node.val}): call minDepth(right=${node.right!.val})`,
-        codeLine: lines.callRight,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val, node.right!.val],
-        metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, '探索分支': '右子树' },
-        callTrace: makeSnapshot(prepBothId),
-      });
+        ctx.trace.addUnwindCalc(
+          `回到 minDepth(${node.val}): return Math.min(${leftRes}, ${rightRes}) + 1 = ${leftRes < rightRes ? leftRes : rightRes} + 1 = ${res}`,
+          Math.max(0, ctx.depth)
+        );
 
-      const rightVal = dfs(node.right, depth + 1, '<- 再算右边');
+        return {
+          result: res,
+          decision: `Node(${node.val}) 左右归约：Math.min(${leftRes}, ${rightRes}) + 1 = ${res}`,
+          message: `子树合并完成：Node(${node.val}) 左深=${leftRes}, 右深=${rightRes}，最小深度收敛至 ${res}。`,
+          log: `Node(${node.val}) returns min(${leftRes}, ${rightRes}) + 1 = ${res}`,
+          codeLine: lines.returnMin,
+          metrics: { '当前节点': `Node(${node.val})`, '左深': leftRes, '右深': rightRes, '归约结果': res },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            depth: currentDepth,
+            minDepth: res,
+            highlightedNodes: [node.val],
+          },
+        };
+      },
+      onDone: (finalResult, ctx) => {
+        ctx.trace.addFinalResult(`最终返回 ${finalResult} ✅`, 0, undefined, String(finalResult));
 
-      // 9. 右子树就绪，接收返回值帧 (Line 8 闭环赋值)
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: null,
-        decision: `Node(${node.val}) 右子树求解完成：rightDepth = ${rightVal}，赋值就绪`,
-        message: `后序遍历：右子树已返回最小深度 ${rightVal}，存储至 rightDepth。左右子树均就绪，准备后序归约。`,
-        log: `Node(${node.val}): rightDepth=${rightVal}`,
-        codeLine: lines.callRight,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val, node.right!.val],
-        metrics: { '当前节点': `Node(${node.val})`, 'leftDepth': leftVal, 'rightDepth': rightVal },
-        callTrace: makeSnapshot(prepBothId),
-      });
-
-      const res = Math.min(leftVal, rightVal) + 1;
-
-      // 10. 左右齐备，后序自底向上归约 (Line 9 计算返回帧)
-      const unwindBothId = `unwind-both-${node.val}`;
-      traceLines.push({
-        id: unwindBothId,
-        depth: depth - 1,
-        text: `回到 minDepth(${node.val}): return Math.min(${leftVal}, ${rightVal}) + 1 = ${leftVal < rightVal ? leftVal : rightVal} + 1 = ${res}`,
-        kind: 'unwind-calc',
-      });
-
-      steps.push({
-        tree: cloneStateDepTree(root),
-        current: node.val,
-        depth,
-        minDepth: res,
-        decision: `Node(${node.val}) 左右归约：Math.min(${leftVal}, ${rightVal}) + 1 = ${res}`,
-        message: `子树合并完成：Node(${node.val}) 左深=${leftVal}, 右深=${rightVal}，最小深度收敛至 ${res}。`,
-        log: `Node(${node.val}) returns min(${leftVal}, ${rightVal}) + 1 = ${res}`,
-        codeLine: lines.returnMin,
-        stageId: 'stage-1',
-        highlightedNodes: [node.val],
-        metrics: { '当前节点': `Node(${node.val})`, '左深': leftVal, '右深': rightVal, '归约结果': res },
-        callTrace: makeSnapshot(unwindBothId, res),
-      });
-
-      return res;
-    }
-
-    const finalMinDepth = dfs(root, 1);
-    const allTreeVals = collectTreeValues(root);
-
-    const finalResultId = 'final-result';
-    traceLines.push({
-      id: finalResultId,
-      depth: 0,
-      text: `最终返回 ${finalMinDepth} ✅`,
-      kind: 'final-result',
-    });
-
-    steps.push({
-      tree: cloneStateDepTree(root),
-      current: root.val,
-      depth: 1,
-      minDepth: finalMinDepth,
-      decision: `🎉 递归完成！二叉树最小深度收敛至 ${finalMinDepth}`,
-      message: `全树递归后序分治完成，最短根到叶路径深度为 ${finalMinDepth}。`,
-      log: `MinDepth DFS done. Result = ${finalMinDepth}`,
-      codeLine: lines.done,
-      stageId: 'stage-1',
-      highlightedNodes: allTreeVals,
-      metrics: { '最终最小深度': finalMinDepth, '遍历节点总数': allTreeVals.length },
-      callTrace: makeSnapshot(finalResultId, finalMinDepth),
-    });
-
-    return steps;
+        return {
+          decision: `🎉 递归完成！二叉树最小深度收敛至 ${finalResult}`,
+          message: `全树递归后序分治完成，最短根到叶路径深度为 ${finalResult}。`,
+          log: `MinDepth DFS done. Result = ${finalResult}`,
+          codeLine: lines.done,
+          metrics: { '最终最小深度': finalResult, '遍历节点总数': allTreeVals.length },
+          customFields: {
+            tree: cloneStateDepTree(root),
+            current: root!.val,
+            depth: 1,
+            minDepth: finalResult,
+            highlightedNodes: allTreeVals,
+            stageId: 'stage-1',
+          },
+        };
+      },
+    }) as MinDepthStep[];
   }
 
   /**

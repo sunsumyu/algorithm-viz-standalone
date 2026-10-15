@@ -122,6 +122,53 @@ describe('BinaryTreeTraversalCompiler (Deep Module Core Verification)', () => {
       expect(steps.some((s) => s.action === 'prune')).toBe(true);
       expect(steps[steps.length - 1].result).toBe(-1);
     });
+
+    it('supports onBranchDispatch and onCombineSingle for asymmetric single-branch exploration', () => {
+      // 树：1 -> 右孩子 2 (左孩子为空)
+      const root = buildTreeFromArr([1, null, 2]);
+      const steps = BinaryTreeTraversalCompiler.compileDfs<TreeNode, number>({
+        root,
+        funcName: 'minDepth',
+        onBaseNull: () => ({ result: 0 }),
+        onBaseLeaf: (node) => ({
+          hit: !node.left && !node.right,
+          result: 1,
+          decision: `叶子 ${node.val} 返回 1`,
+        }),
+        onBranchDispatch: (node) => {
+          if (!node.left && node.right) {
+            return {
+              mode: 'right-only',
+              decision: `节点 ${node.val} 仅有右孩子，单侧调度右子树`,
+            };
+          }
+          if (node.left && !node.right) {
+            return {
+              mode: 'left-only',
+              decision: `节点 ${node.val} 仅有左孩子，单侧调度左子树`,
+            };
+          }
+          return { mode: 'both' };
+        },
+        onCombineSingle: (node, branch, branchRes) => ({
+          result: branchRes + 1,
+          action: 'combine-single',
+          decision: `节点 ${node.val} 单侧 ${branch} 归约：${branchRes} + 1 = ${branchRes + 1}`,
+          message: 'single combine',
+          log: 'single combine',
+        }),
+        onCombine: (node, l, r) => ({
+          result: Math.min(l, r) + 1,
+          decision: 'both combine',
+          message: 'both combine',
+          log: 'both combine',
+        }),
+      });
+
+      expect(steps.some((s) => s.action === 'branch-dispatch')).toBe(true);
+      expect(steps.some((s) => s.action === 'combine-single')).toBe(true);
+      expect(steps[steps.length - 1].result).toBe(2);
+    });
   });
 
   describe('BFS Level Order Traversal Engine', () => {
