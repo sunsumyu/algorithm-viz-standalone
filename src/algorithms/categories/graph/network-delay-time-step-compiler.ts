@@ -459,15 +459,16 @@ export const NETWORK_DELAY_PRUNED_ANCHOR_MAP: Record<string, Record<string, numb
     whilePq: 23,
     pollNode: 24,
     checkPruning: 28,
-    loopNeighbors: 30,
-    checkRelax: 32,
-    applyRelax: 34,
-    pushPq: 35,
-    initAns: 41,
-    loopAns: 42,
-    checkUnreachable: 43,
-    updateMax: 45,
-    returnAns: 47,
+    pruneContinue: 29,
+    loopNeighbors: 32,
+    checkRelax: 34,
+    applyRelax: 36,
+    pushPq: 37,
+    initAns: 43,
+    loopAns: 44,
+    checkUnreachable: 45,
+    updateMax: 47,
+    returnAns: 49,
   },
   cpp: {
     entry: 3,
@@ -477,15 +478,16 @@ export const NETWORK_DELAY_PRUNED_ANCHOR_MAP: Record<string, Record<string, numb
     whilePq: 16,
     pollNode: 17,
     checkPruning: 18,
-    loopNeighbors: 20,
-    checkRelax: 21,
-    applyRelax: 22,
-    pushPq: 23,
-    initAns: 29,
-    loopAns: 30,
-    checkUnreachable: 31,
-    updateMax: 32,
-    returnAns: 34,
+    pruneContinue: 19,
+    loopNeighbors: 22,
+    checkRelax: 23,
+    applyRelax: 24,
+    pushPq: 25,
+    initAns: 31,
+    loopAns: 32,
+    checkUnreachable: 33,
+    updateMax: 34,
+    returnAns: 36,
   },
   python: {
     entry: 4,
@@ -495,6 +497,7 @@ export const NETWORK_DELAY_PRUNED_ANCHOR_MAP: Record<string, Record<string, numb
     whilePq: 15,
     pollNode: 16,
     checkPruning: 17,
+    pruneContinue: 18,
     loopNeighbors: 20,
     checkRelax: 21,
     applyRelax: 22,
@@ -513,15 +516,16 @@ export const NETWORK_DELAY_PRUNED_ANCHOR_MAP: Record<string, Record<string, numb
     whilePq: 13,
     pollNode: 15,
     checkPruning: 16,
-    loopNeighbors: 18,
-    checkRelax: 19,
-    applyRelax: 20,
-    pushPq: 21,
-    initAns: 27,
-    loopAns: 28,
-    checkUnreachable: 29,
-    updateMax: 30,
-    returnAns: 32,
+    pruneContinue: 17,
+    loopNeighbors: 20,
+    checkRelax: 21,
+    applyRelax: 22,
+    pushPq: 23,
+    initAns: 29,
+    loopAns: 30,
+    checkUnreachable: 31,
+    updateMax: 32,
+    returnAns: 34,
   },
 };
 
@@ -679,12 +683,13 @@ export function traceNetworkDelayPruned(presetInput: boolean | string = true) {
         emit('pollNode', `📤 [弹出堆顶最短到达点] poll() -> 节点 ${curNode} (延迟 d=${curD} ms)。`, `poll Node ${curNode} (d=${curD})`, 'pop', 'pq', 0, 'poll', { u: top.u, d: top.d });
 
         if (curD > distance[curNode]) {
-          emit('checkPruning', `⏭️ [距离剪枝跳过] if (d > distance[u]) -> (${curD} > ${distance[curNode]})：此记录为陈旧失效记录，直接 continue 剪枝！`, `skip stale Node ${curNode}`, 'pop');
+          emit('checkPruning', `🔎 [检查距离剪枝] if (d > distance[u]) -> (${curD} > ${distance[curNode]})：延迟 ${curD} ms 大于当前已知最短延迟 ${distance[curNode]} ms，判定为失效记录！`, `check prune: ${curD} > ${distance[curNode]} (true)`, 'pop');
+          emit('pruneContinue', `⏭️ [执行 continue 剪枝] 此波前记录为陈旧失效记录，执行 continue 跳过，继续下一轮循环！`, `continue -> skip stale Node ${curNode}`, 'pop');
           continue;
         }
 
         settled[curNode] = true;
-        emit('checkPruning', `🔒 [最短路确认锁定] if (d > distance[u]) -> (${curD} <= ${distance[curNode]})：节点 ${curNode} 最短延迟正式锁定为 ${distance[curNode]} ms！`, `settled Node ${curNode}`, 'pop');
+        emit('checkPruning', `🔒 [最短路确认锁定] if (d > distance[u]) -> (${curD} <= ${distance[curNode]})：无需剪枝！节点 ${curNode} 最短延迟正式锁定为 ${distance[curNode]} ms！`, `settled Node ${curNode} (d=${curD})`, 'pop');
 
         for (const e of adj[curNode]) {
           const v = e.to;

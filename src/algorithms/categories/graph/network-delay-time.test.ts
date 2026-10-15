@@ -173,15 +173,16 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
 
   it('should explicitly trigger d > distance[u] continue pruning branch in shortcut_prune case', () => {
     const steps = buildNetworkDelayPrunedSteps('shortcut_prune');
-    const skippedSteps = steps.filter((s) => s.message.includes('距离剪枝跳过') || s.log.includes('skip stale'));
-    expect(skippedSteps.length).toBeGreaterThan(0);
+    const continueSteps = steps.filter((s) => s.message.includes('执行 continue 剪枝') || s.log.includes('continue -> skip stale'));
+    expect(continueSteps.length).toBeGreaterThan(0);
 
-    const pruneStep = skippedSteps[0];
+    const pruneStep = continueSteps[0];
     expect(pruneStep.d).toBeDefined();
     expect(pruneStep.curNode).toBeDefined();
     // d > distance[u] 严格成立
     expect(pruneStep.d!).toBeGreaterThan(pruneStep.distList[pruneStep.curNode]);
-    expect((pruneStep.codeLine as any).java).toBe(28); // if (d > distance[u]) continue;
+    // 明确跳入独立成行的 continue; 语句行 (Java 第 29 行)
+    expect((pruneStep.codeLine as any).java).toBe(29);
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
