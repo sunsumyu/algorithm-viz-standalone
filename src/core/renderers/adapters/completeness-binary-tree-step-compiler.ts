@@ -1,7 +1,7 @@
 /**
  * 完全二叉树检验核心步进编译器 (Completeness of Binary Tree Step Compiler)
  * LeetCode 958 / Class 036 Code05
- * 遵循 Matt Pocock 深模块哲学与纯领域逻辑分层架构
+ * 遵循 Matt Pocock 深模块哲学，作为轻量领域适配器全面委托收敛至 BinaryTreeTraversalCompiler
  */
 
 import { parseTreeArray } from '../../input-primitives';
@@ -12,6 +12,7 @@ import {
   COMPLETENESS_STAGE2_STATIC_ARRAY_LINES,
   COMPLETENESS_STAGE3_SENTINEL_LINES,
 } from '../../../algorithms/categories/tree/tree-036-037/completeness-binary-tree-036-stage-codes';
+import { BinaryTreeTraversalCompiler } from './binary-tree-traversal-compiler';
 
 // ============================================================
 // 类型契约与状态定义 (Domain Step Contract)
@@ -82,157 +83,171 @@ export function parseAndBuildCompletenessTree(inputs?: Record<string, any>): Tre
 }
 
 // ============================================================
-// Stage 1 步骤生成器: 标准 Queue + 左神两大铁律 (Queue BFS + Leaf Flag)
+// Stage 1 步骤生成器: 委托至 BinaryTreeTraversalCompiler.compileBfs
 // ============================================================
 export function buildCompletenessQueueSteps(root: TreeNode | null): Completeness036Step[] {
-  const steps: Completeness036Step[] = [];
   const L = COMPLETENESS_STAGE1_LINES;
-
-  steps.push({
-    tree: root,
-    current: null,
-    queue: [],
-    leaf: false,
-    isValid: null,
-    decision: '开启完全二叉树 (CBT) 校验',
-    action: 'init',
-    message: root
-      ? `完全二叉树两大铁律：1. 任何节点有右无左直接判错；2. 一旦遇到孩子不双全，后续必须全为叶子！`
-      : '空树特判，空树是合法的完全二叉树，直接返回 true。',
-    log: root ? `isCompleteTree(root = ${root.val}), leaf = false` : 'root == null -> true',
-    metrics: makeCompletenessMetrics(null, false, root ? null : true),
-    codeLine: root ? L.entry : L.entry,
-  });
-
-  if (!root) {
-    steps.push({
-      tree: null,
-      current: null,
-      queue: [],
-      leaf: false,
-      isValid: true,
-      decision: '特判返回：空树为合法完全二叉树',
-      action: 'done',
-      message: '树为空，返回 true。',
-      log: 'root == null -> return true',
-      metrics: makeCompletenessMetrics(null, false, true),
-      codeLine: L.entry,
-    });
-    return steps;
-  }
-
-  const queue: TreeNode[] = [root];
   let leaf = false;
 
-  steps.push({
-    tree: root,
-    current: root.val,
-    queue: [root.val],
-    leaf: false,
-    isValid: null,
-    decision: `根节点 ${root.val} 入队，初始 leaf = false`,
-    action: 'init-queue',
-    message: `根节点 ${root.val} 入队，准备开启层序遍历。`,
-    log: `queue.offer(${root.val}), leaf = false`,
-    metrics: makeCompletenessMetrics(root.val, false, null),
-    codeLine: L.initQueue,
-  });
-
-  while (queue.length > 0) {
-    const cur = queue.shift()!;
-    const l = cur.left;
-    const r = cur.right;
-
-    steps.push({
-      tree: root,
-      current: cur.val,
-      queue: queue.map((n) => n.val),
-      leaf,
-      isValid: null,
-      childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
-      decision: `出队节点 ${cur.val} 并核验左右孩子`,
-      action: 'poll',
-      message: `弹出节点 ${cur.val}，左孩子: ${l ? l.val : 'null'}，右孩子: ${r ? r.val : 'null'}。`,
-      log: `cur = ${cur.val}, left = ${l?.val ?? 'null'}, right = ${r?.val ?? 'null'}, leaf = ${leaf}`,
-      metrics: makeCompletenessMetrics(cur.val, leaf, null),
-      codeLine: L.pollNode,
-    });
-
-    // 铁律 2 检验: 如果 leaf 已触发，但当前节点含有孩子，直接判错
-    if (leaf && (l != null || r != null)) {
-      const err = `节点 ${cur.val} 含有孩子节点，违反【断点后全部必须为叶子】铁律！`;
-      steps.push({
+  return BinaryTreeTraversalCompiler.compileBfs<TreeNode, boolean>({
+    root,
+    stageId: 'stage-1',
+    onEmpty: () => ({
+      result: true,
+      steps: [
+        {
+          tree: null,
+          current: null,
+          queue: [],
+          leaf: false,
+          isValid: null,
+          decision: '开启完全二叉树 (CBT) 校验',
+          action: 'init',
+          message: '空树特判，空树是合法的完全二叉树，直接返回 true。',
+          log: 'root == null -> true',
+          metrics: makeCompletenessMetrics(null, false, true),
+          codeLine: L.entry,
+        },
+        {
+          tree: null,
+          current: null,
+          queue: [],
+          leaf: false,
+          isValid: true,
+          decision: '特判返回：空树为合法完全二叉树',
+          action: 'done',
+          message: '树为空，返回 true。',
+          log: 'root == null -> return true',
+          metrics: makeCompletenessMetrics(null, false, true),
+          codeLine: L.entry,
+        },
+      ],
+    }),
+    onInit: () => [
+      {
+        tree: root,
+        current: null,
+        queue: [],
+        leaf: false,
+        isValid: null,
+        decision: '开启完全二叉树 (CBT) 校验',
+        action: 'init',
+        message: '完全二叉树两大铁律：1. 任何节点有右无左直接判错；2. 一旦遇到孩子不双全，后续必须全为叶子！',
+        log: `isCompleteTree(root = ${root!.val}), leaf = false`,
+        metrics: makeCompletenessMetrics(null, false, null),
+        codeLine: L.entry,
+      },
+      {
+        tree: root,
+        current: root!.val,
+        queue: [root!.val],
+        leaf: false,
+        isValid: null,
+        decision: `根节点 ${root!.val} 入队，初始 leaf = false`,
+        action: 'init-queue',
+        message: `根节点 ${root!.val} 入队，准备开启层序遍历。`,
+        log: `queue.offer(${root!.val}), leaf = false`,
+        metrics: makeCompletenessMetrics(root!.val, false, null),
+        codeLine: L.initQueue,
+      },
+    ],
+    onPollNode: (cur, ctx) => {
+      const l = cur.left;
+      const r = cur.right;
+      return {
         tree: root,
         current: cur.val,
-        queue: queue.map((n) => n.val),
-        leaf,
-        isValid: false,
-        violationReason: '断点后出现非叶子节点',
-        childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
-        decision: `❌ 违规判定：${err}`,
-        action: 'error-leaf',
-        message: `🚨 ${err} 判定失败，立即返回 false！`,
-        log: `violation: leaf=true but node ${cur.val} has children -> return false`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, false, '断点后出现非叶子节点'),
-        codeLine: L.checkLeafViolate,
-      });
-      return steps;
-    }
-
-    // 铁律 1 检验: 有右无左直接判错
-    if (l == null && r != null) {
-      const err = `节点 ${cur.val} 缺失左孩子却有右孩子 ${r.val}，违反【有右无左直接判伪】铁律！`;
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.map((n) => n.val),
-        leaf,
-        isValid: false,
-        violationReason: '有右无左违规',
-        childrenCheck: { left: null, right: r.val },
-        decision: `❌ 违规判定：${err}`,
-        action: 'error-right-without-left',
-        message: `🚨 ${err} 判定失败，立即返回 false！`,
-        log: `violation: node ${cur.val} has right ${r.val} but no left -> return false`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, false, '有右无左违规'),
-        codeLine: L.checkNoLeftHasRight,
-      });
-      return steps;
-    }
-
-    // 孩子入队
-    if (l != null) queue.push(l);
-    if (r != null) queue.push(r);
-
-    if (l != null || r != null) {
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.map((n) => n.val),
+        queue: ctx.queue.map((n) => n.val),
         leaf,
         isValid: null,
         childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
-        decision: `合规子节点入队: ${[l?.val, r?.val].filter((x) => x !== undefined).join(', ')}`,
-        action: 'push-children',
-        message: `节点 ${cur.val} 的有效孩子入队等待后续层次校验。`,
-        log: `push: ${[l?.val, r?.val].filter((x) => x !== undefined).join(', ')}`,
+        decision: `出队节点 ${cur.val} 并核验左右孩子`,
+        action: 'poll',
+        message: `弹出节点 ${cur.val}，左孩子: ${l ? l.val : 'null'}，右孩子: ${r ? r.val : 'null'}。`,
+        log: `cur = ${cur.val}, left = ${l?.val ?? 'null'}, right = ${r?.val ?? 'null'}, leaf = ${leaf}`,
         metrics: makeCompletenessMetrics(cur.val, leaf, null),
-        codeLine: L.pushChildren,
-      });
-    }
-
-    // 铁律 2 触发点: 遇到首个孩子不双全节点
-    if (l == null || r == null) {
-      if (!leaf) {
-        leaf = true;
-        steps.push({
+        codeLine: L.pollNode,
+      };
+    },
+    onLeafHit: (cur, ctx) => {
+      const l = cur.left;
+      const r = cur.right;
+      if (leaf && (l != null || r != null)) {
+        const err = `节点 ${cur.val} 含有孩子节点，违反【断点后全部必须为叶子】铁律！`;
+        return {
+          earlyExit: true,
+          result: false,
+          step: {
+            tree: root,
+            current: cur.val,
+            queue: ctx.queue.map((n) => n.val),
+            leaf,
+            isValid: false,
+            violationReason: '断点后出现非叶子节点',
+            childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
+            decision: `❌ 违规判定：${err}`,
+            action: 'error-leaf',
+            message: `🚨 ${err} 判定失败，立即返回 false！`,
+            log: `violation: leaf=true but node ${cur.val} has children -> return false`,
+            metrics: makeCompletenessMetrics(cur.val, leaf, false, '断点后出现非叶子节点'),
+            codeLine: L.checkLeafViolate,
+          },
+        };
+      }
+      if (l == null && r != null) {
+        const err = `节点 ${cur.val} 缺失左孩子却有右孩子 ${r.val}，违反【有右无左直接判伪】铁律！`;
+        return {
+          earlyExit: true,
+          result: false,
+          step: {
+            tree: root,
+            current: cur.val,
+            queue: ctx.queue.map((n) => n.val),
+            leaf,
+            isValid: false,
+            violationReason: '有右无左违规',
+            childrenCheck: { left: null, right: r.val },
+            decision: `❌ 违规判定：${err}`,
+            action: 'error-right-without-left',
+            message: `🚨 ${err} 判定失败，立即返回 false！`,
+            log: `violation: node ${cur.val} has right ${r.val} but no left -> return false`,
+            metrics: makeCompletenessMetrics(cur.val, leaf, false, '有右无左违规'),
+            codeLine: L.checkNoLeftHasRight,
+          },
+        };
+      }
+      return { earlyExit: false };
+    },
+    onNodePostExpand: (cur, ctx) => {
+      const l = cur.left;
+      const r = cur.right;
+      const subSteps: Completeness036Step[] = [];
+      if (l != null || r != null) {
+        subSteps.push({
           tree: root,
           current: cur.val,
-          queue: queue.map((n) => n.val),
+          queue: ctx.queue.map((n) => n.val),
+          leaf,
+          isValid: null,
+          childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
+          decision: `合规子节点入队: ${[l?.val, r?.val].filter((x) => x !== undefined).join(', ')}`,
+          action: 'push-children',
+          message: `节点 ${cur.val} 的有效孩子入队等待后续层次校验。`,
+          log: `push: ${[l?.val, r?.val].filter((x) => x !== undefined).join(', ')}`,
+          metrics: makeCompletenessMetrics(cur.val, leaf, null),
+          codeLine: L.pushChildren,
+        });
+      }
+      if ((l == null || r == null) && !leaf) {
+        leaf = true;
+        subSteps.push({
+          tree: root,
+          current: cur.val,
+          queue: ctx.queue.map((n) => n.val),
           leaf: true,
           isValid: null,
           childrenCheck: { left: l?.val ?? null, right: r?.val ?? null },
-          decision: `⚡ 触发叶子状态警戒 (leaf = true)`,
+          decision: '⚡ 触发叶子状态警戒 (leaf = true)',
           action: 'leaf-trigger',
           message: `节点 ${cur.val} 孩子不双全！完全二叉树紧凑边界已到达，后续队列中所有节点必须全部为叶子节点！`,
           log: `leaf triggered at node ${cur.val} (left: ${l?.val ?? 'null'}, right: ${r?.val ?? 'null'})`,
@@ -240,231 +255,234 @@ export function buildCompletenessQueueSteps(root: TreeNode | null): Completeness
           codeLine: L.leafTrigger,
         });
       }
-    }
-  }
-
-  steps.push({
-    tree: root,
-    current: null,
-    queue: [],
-    leaf,
-    isValid: true,
-    decision: '完全二叉树校验通过，返回 true',
-    action: 'done',
-    message: '🎉 整棵树完全满足左神两大铁律，判定为合法的完全二叉树！返回 true。',
-    log: 'return true (Valid Complete Binary Tree)',
-    metrics: makeCompletenessMetrics(null, leaf, true),
-    codeLine: L.returnTrue,
-  });
-
-  return steps;
+      return subSteps;
+    },
+    onDone: (finalResult) => {
+      if (finalResult === false) return undefined;
+      return {
+        tree: root,
+        current: null,
+        queue: [],
+        leaf,
+        isValid: true,
+        decision: '完全二叉树校验通过，返回 true',
+        action: 'done',
+        message: '🎉 整棵树完全满足左神两大铁律，判定为合法的完全二叉树！返回 true。',
+        log: 'return true (Valid Complete Binary Tree)',
+        metrics: makeCompletenessMetrics(null, leaf, true),
+        codeLine: L.returnTrue,
+      };
+    },
+  }) as Completeness036Step[];
 }
 
 // ============================================================
-// Stage 2 步骤生成器: 静态数组模拟队列 (Static Array Queue · Class 036 招牌零 GC)
+// Stage 2 步骤生成器: 委托至 BinaryTreeTraversalCompiler.compileStaticQueue
 // ============================================================
 export function buildCompletenessStaticArraySteps(root: TreeNode | null): Completeness036Step[] {
-  const steps: Completeness036Step[] = [];
   const L = COMPLETENESS_STAGE2_STATIC_ARRAY_LINES;
-
-  steps.push({
-    tree: root,
-    current: null,
-    queue: [],
-    leaf: false,
-    isValid: null,
-    staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, leaf: false },
-    decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
-    action: 'init',
-    message: root
-      ? `左神 Class 036 招牌零 GC 连续内存队列：使用 queue[MAXN] 与双指针 l=0, r=0。配合两大铁律极速检验！`
-      : '空树特判，直接返回 true。',
-    log: root ? 'staticQueue: l=0, r=0, MAXN=2001, leaf=false' : 'root == null -> true',
-    metrics: makeCompletenessMetrics(null, false, root ? null : true),
-    codeLine: root ? L.entry : L.entry,
-  });
-
-  if (!root) {
-    steps.push({
-      tree: null,
-      current: null,
-      queue: [],
-      leaf: false,
-      isValid: true,
-      staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, leaf: false },
-      decision: '特判返回：空树为合法完全二叉树',
-      action: 'done',
-      message: '树为空，直接返回 true。',
-      log: 'root == null -> return true',
-      metrics: makeCompletenessMetrics(null, false, true),
-      codeLine: L.entry,
-    });
-    return steps;
-  }
-
-  const queue: (TreeNode | null)[] = [];
-  let l = 0;
-  let r = 0;
-  queue[r++] = root;
   let leaf = false;
 
-  const getStaticState = (): Completeness036StaticQueueState => ({
-    array: queue.map((n) => (n ? n.val : '—')),
+  const makeStaticState = (
+    l: number,
+    r: number,
+    arr: (number | null)[]
+  ): Completeness036StaticQueueState => ({
+    array: arr.slice(0, r).map((n) => (n !== null ? n : '—')),
     l,
     r,
     windowSize: Math.max(0, r - l),
     leaf,
   });
 
-  steps.push({
-    tree: root,
-    current: root.val,
-    queue: [root.val],
-    leaf: false,
-    isValid: null,
-    staticQueueState: getStaticState(),
-    decision: '根节点入静态数组: queue[r++] = root',
-    action: 'offer-root',
-    message: `根节点 ${root.val} 写入静态槽位 queue[0]，r 指针增至 1。`,
-    log: `queue[0]=${root.val}, r=1, leaf=false`,
-    metrics: makeCompletenessMetrics(root.val, false, null),
-    codeLine: L.offerRoot,
-  });
-
-  while (l < r) {
-    const cur = queue[l++]!;
-    const left = cur.left;
-    const right = cur.right;
-
-    steps.push({
+  return BinaryTreeTraversalCompiler.compileStaticQueue<TreeNode, boolean>({
+    root,
+    stageId: 'stage-2',
+    onEmpty: () => ({
+      result: true,
+      steps: [
+        {
+          tree: null,
+          current: null,
+          queue: [],
+          leaf: false,
+          isValid: null,
+          staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, leaf: false },
+          decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
+          action: 'init',
+          message: '空树特判，直接返回 true。',
+          log: 'root == null -> true',
+          metrics: makeCompletenessMetrics(null, false, true),
+          codeLine: L.entry,
+        },
+        {
+          tree: null,
+          current: null,
+          queue: [],
+          leaf: false,
+          isValid: true,
+          staticQueueState: { array: [], l: 0, r: 0, windowSize: 0, leaf: false },
+          decision: '特判返回：空树为合法完全二叉树',
+          action: 'done',
+          message: '树为空，直接返回 true。',
+          log: 'root == null -> return true',
+          metrics: makeCompletenessMetrics(null, false, true),
+          codeLine: L.entry,
+        },
+      ],
+    }),
+    onInit: (l, r, arr) => [
+      {
+        tree: root,
+        current: null,
+        queue: [],
+        leaf: false,
+        isValid: null,
+        staticQueueState: makeStaticState(0, 0, []),
+        decision: '左神 Class 036 招牌优化：分配静态连续内存 queue[MAXN]',
+        action: 'init',
+        message: '左神 Class 036 招牌零 GC 连续内存队列：使用 queue[MAXN] 与双指针 l=0, r=0。配合两大铁律极速检验！',
+        log: 'staticQueue: l=0, r=0, MAXN=2001, leaf=false',
+        metrics: makeCompletenessMetrics(null, false, null),
+        codeLine: L.entry,
+      },
+      {
+        tree: root,
+        current: root!.val,
+        queue: [root!.val],
+        leaf: false,
+        isValid: null,
+        staticQueueState: makeStaticState(l, r, arr),
+        decision: '根节点入静态数组: queue[r++] = root',
+        action: 'offer-root',
+        message: `根节点 ${root!.val} 写入静态槽位 queue[0]，r 指针增至 1。`,
+        log: `queue[0]=${root!.val}, r=1, leaf=false`,
+        metrics: makeCompletenessMetrics(root!.val, false, null),
+        codeLine: L.offerRoot,
+      },
+    ],
+    onPollNode: (cur, l, r, arr) => {
+      const left = cur.left;
+      const right = cur.right;
+      return {
+        tree: root,
+        current: cur.val,
+        queue: arr.slice(l, r).filter((v): v is number => v !== null),
+        leaf,
+        isValid: null,
+        childrenCheck: { left: left?.val ?? null, right: right?.val ?? null },
+        staticQueueState: makeStaticState(l, r, arr),
+        decision: `读取 queue[l++] -> ${cur.val} 并校验孩子`,
+        action: 'poll',
+        message: `l 游标推进读取节点 ${cur.val}，考察其左孩子 (${left?.val ?? 'null'}) 与右孩子 (${right?.val ?? 'null'})。`,
+        log: `cur = queue[${l - 1}](${cur.val}), l=${l}`,
+        metrics: makeCompletenessMetrics(cur.val, leaf, null),
+        codeLine: L.pollNode,
+      };
+    },
+    onLeafHit: (cur, l, r, _level, arr) => {
+      const left = cur.left;
+      const right = cur.right;
+      if (leaf && (left != null || right != null)) {
+        return {
+          earlyExit: true,
+          result: false,
+          step: {
+            tree: root,
+            current: cur.val,
+            queue: arr.slice(l, r).filter((v): v is number => v !== null),
+            leaf,
+            isValid: false,
+            violationReason: '断点后出现非叶子节点',
+            childrenCheck: { left: left?.val ?? null, right: right?.val ?? null },
+            staticQueueState: makeStaticState(l, r, arr),
+            decision: `❌ 违规：leaf 状态下节点 ${cur.val} 仍含有孩子！`,
+            action: 'error-leaf',
+            message: `🚨 节点 ${cur.val} 含有子节点，违反断点后必须全为叶子铁律！返回 false。`,
+            log: `violation: leaf=true and node ${cur.val} has children -> return false`,
+            metrics: makeCompletenessMetrics(cur.val, leaf, false, '断点后出现非叶子节点'),
+            codeLine: L.checkLeafViolate,
+          },
+        };
+      }
+      if (left == null && right != null) {
+        return {
+          earlyExit: true,
+          result: false,
+          step: {
+            tree: root,
+            current: cur.val,
+            queue: arr.slice(l, r).filter((v): v is number => v !== null),
+            leaf,
+            isValid: false,
+            violationReason: '有右无左违规',
+            childrenCheck: { left: null, right: right.val },
+            staticQueueState: makeStaticState(l, r, arr),
+            decision: `❌ 违规：节点 ${cur.val} 有右无左！`,
+            action: 'error-right-without-left',
+            message: `🚨 节点 ${cur.val} 缺失左孩子却存在右孩子 ${right.val}，直接判定 false！`,
+            log: `violation: node ${cur.val} has right ${right.val} but no left -> return false`,
+            metrics: makeCompletenessMetrics(cur.val, leaf, false, '有右无左违规'),
+            codeLine: L.checkNoLeftHasRight,
+          },
+        };
+      }
+      return { earlyExit: false };
+    },
+    onPushChild: (child, branch, l, r, arr, parent) => ({
       tree: root,
-      current: cur.val,
-      queue: queue.slice(l, r).map((n) => n!.val),
+      current: parent?.val ?? null,
+      queue: arr.slice(l, r).filter((v): v is number => v !== null),
       leaf,
       isValid: null,
-      childrenCheck: { left: left?.val ?? null, right: right?.val ?? null },
-      staticQueueState: getStaticState(),
-      decision: `读取 queue[l++] -> ${cur.val} 并校验孩子`,
-      action: 'poll',
-      message: `l 游标推进读取节点 ${cur.val}，考察其左孩子 (${left?.val ?? 'null'}) 与右孩子 (${right?.val ?? 'null'})。`,
-      log: `cur = queue[${l - 1}](${cur.val}), l=${l}`,
-      metrics: makeCompletenessMetrics(cur.val, leaf, null),
-      codeLine: L.pollNode,
-    });
-
-    if (leaf && (left != null || right != null)) {
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.slice(l, r).map((n) => n!.val),
-        leaf,
-        isValid: false,
-        violationReason: '断点后出现非叶子节点',
-        childrenCheck: { left: left?.val ?? null, right: right?.val ?? null },
-        staticQueueState: getStaticState(),
-        decision: `❌ 违规：leaf 状态下节点 ${cur.val} 仍含有孩子！`,
-        action: 'error-leaf',
-        message: `🚨 节点 ${cur.val} 含有子节点，违反断点后必须全为叶子铁律！返回 false。`,
-        log: `violation: leaf=true and node ${cur.val} has children -> return false`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, false, '断点后出现非叶子节点'),
-        codeLine: L.checkLeafViolate,
-      });
-      return steps;
-    }
-
-    if (left == null && right != null) {
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.slice(l, r).map((n) => n!.val),
-        leaf,
-        isValid: false,
-        violationReason: '有右无左违规',
-        childrenCheck: { left: null, right: right.val },
-        staticQueueState: getStaticState(),
-        decision: `❌ 违规：节点 ${cur.val} 有右无左！`,
-        action: 'error-right-without-left',
-        message: `🚨 节点 ${cur.val} 缺失左孩子却存在右孩子 ${right.val}，直接判定 false！`,
-        log: `violation: node ${cur.val} has right ${right.val} but no left -> return false`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, false, '有右无左违规'),
-        codeLine: L.checkNoLeftHasRight,
-      });
-      return steps;
-    }
-
-    if (left != null) {
-      queue[r++] = left;
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.slice(l, r).map((n) => n!.val),
-        leaf,
-        isValid: null,
-        staticQueueState: getStaticState(),
-        decision: `左孩子入静态数组: queue[r++] = ${left.val}`,
-        action: 'push-left',
-        message: `左孩子 ${left.val} 写入槽位 queue[${r - 1}]，r 增至 ${r}。`,
-        log: `queue[${r - 1}]=${left.val}, r=${r}`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, null),
-        codeLine: L.pushLeft,
-      });
-    }
-
-    if (right != null) {
-      queue[r++] = right;
-      steps.push({
-        tree: root,
-        current: cur.val,
-        queue: queue.slice(l, r).map((n) => n!.val),
-        leaf,
-        isValid: null,
-        staticQueueState: getStaticState(),
-        decision: `右孩子入静态数组: queue[r++] = ${right.val}`,
-        action: 'push-right',
-        message: `右孩子 ${right.val} 写入槽位 queue[${r - 1}]，r 增至 ${r}。`,
-        log: `queue[${r - 1}]=${right.val}, r=${r}`,
-        metrics: makeCompletenessMetrics(cur.val, leaf, null),
-        codeLine: L.pushRight,
-      });
-    }
-
-    if (left == null || right == null) {
-      if (!leaf) {
+      staticQueueState: makeStaticState(l, r, arr),
+      decision: `${branch === 'left' ? '左' : '右'}孩子入静态数组: queue[r++] = ${child.val}`,
+      action: branch === 'left' ? 'push-left' : 'push-right',
+      message: `${branch === 'left' ? '左' : '右'}孩子 ${child.val} 写入槽位 queue[${r - 1}]，r 增至 ${r}。`,
+      log: `queue[${r - 1}]=${child.val}, r=${r}`,
+      metrics: makeCompletenessMetrics(parent?.val ?? null, leaf, null),
+      codeLine: branch === 'left' ? L.pushLeft : L.pushRight,
+    }),
+    onNodePostExpand: (cur, l, r, arr) => {
+      const left = cur.left;
+      const right = cur.right;
+      if ((left == null || right == null) && !leaf) {
         leaf = true;
-        steps.push({
+        return {
           tree: root,
           current: cur.val,
-          queue: queue.slice(l, r).map((n) => n!.val),
+          queue: arr.slice(l, r).filter((v): v is number => v !== null),
           leaf: true,
           isValid: null,
-          staticQueueState: getStaticState(),
+          staticQueueState: makeStaticState(l, r, arr),
           decision: '⚡ 静态数组队列触发 leaf = true 警戒',
           action: 'leaf-trigger',
           message: `节点 ${cur.val} 不双全，开启 leaf 警戒，后续静态数组中的所有待检节点必须全为叶子！`,
           log: `leaf triggered at node ${cur.val}`,
           metrics: makeCompletenessMetrics(cur.val, true, null),
           codeLine: L.leafTrigger,
-        });
+        };
       }
-    }
-  }
-
-  steps.push({
-    tree: root,
-    current: null,
-    queue: [],
-    leaf,
-    isValid: true,
-    staticQueueState: getStaticState(),
-    decision: '静态数组全部检验完毕，返回 true',
-    action: 'done',
-    message: '🎉 静态数组模拟队列全部通过检验 (l == r)！判定为合法的完全二叉树。',
-    log: 'return true (Valid CBT)',
-    metrics: makeCompletenessMetrics(null, leaf, true),
-    codeLine: L.returnTrue,
-  });
-
-  return steps;
+      return undefined;
+    },
+    onDone: (finalResult, l, r, arr) => {
+      if (finalResult === false) return undefined;
+      return {
+        tree: root,
+        current: null,
+        queue: [],
+        leaf,
+        isValid: true,
+        staticQueueState: makeStaticState(l, r, arr),
+        decision: '静态数组全部检验完毕，返回 true',
+        action: 'done',
+        message: '🎉 静态数组模拟队列全部通过检验 (l == r)！判定为合法的完全二叉树。',
+        log: 'return true (Valid CBT)',
+        metrics: makeCompletenessMetrics(null, leaf, true),
+        codeLine: L.returnTrue,
+      };
+    },
+  }) as Completeness036Step[];
 }
 
 // ============================================================
@@ -484,11 +502,11 @@ export function buildCompletenessSentinelSteps(root: TreeNode | null): Completen
     decision: '空节点哨兵层序单调性校验',
     action: 'init',
     message: root
-      ? `单调性原理：将 null 同样作为占位符入队。完全二叉树的层序遍历序列中，一旦遇到第一个 null，后续绝对不能再出现任何非空节点！`
+      ? '单调性原理：将 null 同样作为占位符入队。完全二叉树的层序遍历序列中，一旦遇到第一个 null，后续绝对不能再出现任何非空节点！'
       : '空树特判，直接返回 true。',
     log: root ? `sentinelQueue(root = ${root.val}), reachedNull = false` : 'root == null -> true',
     metrics: makeCompletenessMetrics(null, false, root ? null : true),
-    codeLine: root ? L.entry : L.entry,
+    codeLine: L.entry,
   });
 
   if (!root) {
@@ -511,7 +529,6 @@ export function buildCompletenessSentinelSteps(root: TreeNode | null): Completen
 
   const queue: (TreeNode | null)[] = [root];
   let reachedNull = false;
-
   const getSentinelView = () => queue.map((n) => (n ? n.val : 'null'));
 
   steps.push({

@@ -73,6 +73,11 @@
 - **设计模式**：模板方法模式（Template Method Pattern）+ 策略模式（Strategy Pattern）。
 - **职责**：统一封装算法入口帧、边界基底特判、状态转移矩阵构建、二进制幂位权扫描累乘（`p & 1`）与底数平方自乘翻倍、以及结果向量规约标量投影的全生命周期骨架。具体算法作为轻量策略对象（`IMatrixRecurrenceStrategy`）仅注入维度 $K$、转移矩阵 $M$、指数偏移法则与提取函数，实现 100% 消除矩阵快速幂样板代码与私有遍历循环。
 
+### BinaryTreeTraversalCompiler (二叉树遍历与推演统一编译深模块)
+- **定义**：统合全库二叉树递归回溯（DFS）、标准层次遍历队列（BFS Queue）与静态连续内存双指针队列（Static Array Queue）的顶层推演深模块（`src/core/renderers/adapters/binary-tree-traversal-compiler.ts`）。
+- **设计模式**：模板方法模式（Template Method Pattern）+ 策略回调模式（Strategy Hooks）。
+- **职责**：统一收拢与调度遍历骨架循环，杜绝各题手写 `while (queue.length > 0)`、`while (l < r)` 及递归栈追踪。对外暴露 `compileDfs`、`compileBfs`、`compileStaticQueue` 三大核心编译接缝，支持节点入队出队、层级波前推进、前驱/后继事件钩子（`onNodePostExpand`、`onLeafHit`）以及提前退出（`earlyExit`），实现各二叉树经典算法（如 `completeness-binary-tree`, `tree-depth`, `symmetric` 等）以轻量领域适配器形态高内聚接入。
+
 ### StateDependencyTreeCompiler (状态依赖树编译深模块)
 - **定义**：全库唯一实现 DAG→树展开策略的纯函数深模块（`src/core/strategies/dependency-tree-compiler.ts`），对外暴露 `compileStateDependencyTree(rootState, rule, options)`。
 - **职责**：独占三条顶层强制约束——最优依赖链（胜者链）无条件追溯到边界基底、落选分支按 `maxExpandDepth` 预算截断、全局节点上限保险丝。各算法仅注入纯数据领域规则（`StateDependencyRule`：key / coord / label / isBase / dependencies），禁止在渲染器内自写展开策略（由 `dependency-tree-compiler.gate.test.ts` 门禁红灯拦截）。

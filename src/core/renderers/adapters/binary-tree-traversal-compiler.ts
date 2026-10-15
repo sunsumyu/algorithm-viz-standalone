@@ -25,11 +25,13 @@ import {
 // =========================================================================
 
 export interface StaticQueueSnapshot {
-  array?: (number | null)[];
+  array?: (number | null | string)[];
   queue?: number[];
   l: number;
   r: number;
   windowSize?: number;
+  leaf?: boolean;
+  [key: string]: any;
 }
 
 export interface BinaryTreeStep<TResult = any> extends StepBase {
@@ -309,8 +311,12 @@ export interface TreeBfsSpec<TNode = TreeNode, TResult = any> {
     branch: 'left' | 'right',
     ctx: TreeBfsContext<TNode, TResult>
   ) => BinaryTreeStep<TResult> | null;
+  onNodePostExpand?: (
+    node: TNode,
+    ctx: TreeBfsContext<TNode, TResult>
+  ) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[] | null | undefined;
   onLevelEnd?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
-  onDone?: (finalResult: TResult, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
+  onDone?: (finalResult: TResult, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult> | null | undefined;
 
   stepTransformer?: (step: BinaryTreeStep<TResult>) => BinaryTreeStep<TResult>;
 }
@@ -351,7 +357,8 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     node: TNode,
     l: number,
     r: number,
-    level: number
+    level: number,
+    arr: (number | null)[]
   ) => { earlyExit: boolean; result?: TResult; step?: BinaryTreeStep<TResult> };
   onPushChild?: (
     child: TNode,
@@ -361,6 +368,13 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     arr: (number | null)[],
     parent?: TNode
   ) => BinaryTreeStep<TResult> | null;
+  onNodePostExpand?: (
+    node: TNode,
+    l: number,
+    r: number,
+    arr: (number | null)[],
+    level: number
+  ) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[] | null | undefined;
   onLevelEnd?: (
     level: number,
     l: number,
@@ -372,7 +386,7 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     l: number,
     r: number,
     arr: (number | null)[]
-  ) => BinaryTreeStep<TResult>;
+  ) => BinaryTreeStep<TResult> | null | undefined;
 
   stepTransformer?: (step: BinaryTreeStep<TResult>) => BinaryTreeStep<TResult>;
 }
@@ -1003,6 +1017,15 @@ export class BinaryTreeTraversalCompiler {
             if (s) steps.push(s);
           }
         }
+
+        if (!earlyExited && spec.onNodePostExpand) {
+          const postRes = spec.onNodePostExpand(cur, ctx);
+          if (Array.isArray(postRes)) {
+            steps.push(...postRes);
+          } else if (postRes) {
+            steps.push(postRes);
+          }
+        }
       }
 
       if (spec.onLevelEnd && !earlyExited) {
@@ -1015,7 +1038,8 @@ export class BinaryTreeTraversalCompiler {
     }
 
     if (spec.onDone) {
-      steps.push(spec.onDone(finalResult, ctx));
+      const doneStep = spec.onDone(finalResult, ctx);
+      if (doneStep) steps.push(doneStep);
     }
     return spec.stepTransformer ? steps.map(spec.stepTransformer) : steps;
   }
@@ -1083,7 +1107,7 @@ export class BinaryTreeTraversalCompiler {
         }
 
         if (spec.onLeafHit) {
-          const hit = spec.onLeafHit(cur, l, r, level);
+          const hit = spec.onLeafHit(cur, l, r, level, toVals(staticArr));
           if (hit.step) steps.push(hit.step);
           if (hit.earlyExit) {
             earlyExited = true;
@@ -1108,6 +1132,15 @@ export class BinaryTreeTraversalCompiler {
             if (s) steps.push(s);
           }
         }
+
+        if (!earlyExited && spec.onNodePostExpand) {
+          const postRes = spec.onNodePostExpand(cur, l, r, toVals(staticArr), level);
+          if (Array.isArray(postRes)) {
+            steps.push(...postRes);
+          } else if (postRes) {
+            steps.push(postRes);
+          }
+        }
       }
 
       if (spec.onLevelEnd && !earlyExited) {
@@ -1120,7 +1153,8 @@ export class BinaryTreeTraversalCompiler {
     }
 
     if (spec.onDone) {
-      steps.push(spec.onDone(finalResult, l, r, toVals(staticArr)));
+      const doneStep = spec.onDone(finalResult, l, r, toVals(staticArr));
+      if (doneStep) steps.push(doneStep);
     }
     return spec.stepTransformer ? steps.map(spec.stepTransformer) : steps;
   }
