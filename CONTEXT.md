@@ -68,6 +68,11 @@
 - **定义**：提供网格深克隆、标准 2D 状态转移步、一维滚动槽位压缩步与收尾返回步骤构造的纯函数原语深模块。
 - **职责**：将零散在策略层各处的样板代码统一规范化，保证单步契约严格一致。
 
+### MatrixFastPowerStepCompiler (矩阵快速幂通用编译深模块)
+- **定义**：统合全库常系数齐次线性递推数列与有限自动机状态转移矩阵快速幂推演的深模块（`src/core/renderers/adapters/matrix-fast-power-step-compiler.ts`）。
+- **设计模式**：模板方法模式（Template Method Pattern）+ 策略模式（Strategy Pattern）。
+- **职责**：统一封装算法入口帧、边界基底特判、状态转移矩阵构建、二进制幂位权扫描累乘（`p & 1`）与底数平方自乘翻倍、以及结果向量规约标量投影的全生命周期骨架。具体算法作为轻量策略对象（`IMatrixRecurrenceStrategy`）仅注入维度 $K$、转移矩阵 $M$、指数偏移法则与提取函数，实现 100% 消除矩阵快速幂样板代码与私有遍历循环。
+
 ### StateDependencyTreeCompiler (状态依赖树编译深模块)
 - **定义**：全库唯一实现 DAG→树展开策略的纯函数深模块（`src/core/strategies/dependency-tree-compiler.ts`），对外暴露 `compileStateDependencyTree(rootState, rule, options)`。
 - **职责**：独占三条顶层强制约束——最优依赖链（胜者链）无条件追溯到边界基底、落选分支按 `maxExpandDepth` 预算截断、全局节点上限保险丝。各算法仅注入纯数据领域规则（`StateDependencyRule`：key / coord / label / isBase / dependencies），禁止在渲染器内自写展开策略（由 `dependency-tree-compiler.gate.test.ts` 门禁红灯拦截）。
