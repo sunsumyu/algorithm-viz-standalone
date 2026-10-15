@@ -230,6 +230,36 @@ describe('BinaryTreeTraversalCompiler (Deep Module Core Verification)', () => {
       expect(leafStep?.current).toBe(9); // 节点 9 是第一个叶子
       expect(steps[steps.length - 1].result).toBe(2);
     });
+
+    it('supports onPollNode returning multiple steps (array of steps)', () => {
+      const root = buildTreeFromArr([1, 2]);
+      const steps = BinaryTreeTraversalCompiler.compileBfs<TreeNode, number>({
+        root,
+        onPollNode: (node) => [
+          {
+            tree: root,
+            current: node.val,
+            action: 'poll-enter',
+            decision: `出队考察: ${node.val}`,
+            message: 'enter',
+            log: 'enter',
+          },
+          {
+            tree: root,
+            current: node.val,
+            action: 'poll-check',
+            decision: `子节点检查: ${node.val}`,
+            message: 'check',
+            log: 'check',
+          },
+        ],
+      });
+
+      const enterStep = steps.find((s) => s.action === 'poll-enter');
+      const checkStep = steps.find((s) => s.action === 'poll-check');
+      expect(enterStep).toBeDefined();
+      expect(checkStep).toBeDefined();
+    });
   });
 
   describe('Static Array Queue Simulation Engine', () => {
@@ -260,5 +290,36 @@ describe('BinaryTreeTraversalCompiler (Deep Module Core Verification)', () => {
       const done = steps[steps.length - 1];
       expect(done.result).toBe(2);
     });
+
+    it('supports onPollNode returning multiple steps in static queue', () => {
+      const root = buildTreeFromArr([1, 2]);
+      const steps = BinaryTreeTraversalCompiler.compileStaticQueue<TreeNode, number>({
+        root,
+        onPollNode: (node, l, r) => [
+          {
+            tree: root,
+            current: node.val,
+            action: 'static-poll-1',
+            decision: `静态出队 1: ${node.val}, l=${l}, r=${r}`,
+            message: 'step 1',
+            log: 'step 1',
+          },
+          {
+            tree: root,
+            current: node.val,
+            action: 'static-poll-2',
+            decision: `静态出队 2: ${node.val}, l=${l}, r=${r}`,
+            message: 'step 2',
+            log: 'step 2',
+          },
+        ],
+      });
+
+      const step1 = steps.find((s) => s.action === 'static-poll-1');
+      const step2 = steps.find((s) => s.action === 'static-poll-2');
+      expect(step1).toBeDefined();
+      expect(step2).toBeDefined();
+    });
   });
 });
+

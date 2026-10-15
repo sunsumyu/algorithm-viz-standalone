@@ -256,7 +256,10 @@ export interface TreeBfsSpec<TNode = TreeNode, TResult = any> {
 
   onInit?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onLevelStart?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
-  onPollNode?: (node: TNode, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
+  onPollNode?: (
+    node: TNode,
+    ctx: TreeBfsContext<TNode, TResult>
+  ) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onLeafHit?: (node: TNode, ctx: TreeBfsContext<TNode, TResult>) => {
     earlyExit: boolean;
     result?: TResult;
@@ -269,7 +272,7 @@ export interface TreeBfsSpec<TNode = TreeNode, TResult = any> {
     ctx: TreeBfsContext<TNode, TResult>
   ) => BinaryTreeStep<TResult> | null;
   onLevelEnd?: (ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
-  onDone: (finalResult: TResult, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
+  onDone?: (finalResult: TResult, ctx: TreeBfsContext<TNode, TResult>) => BinaryTreeStep<TResult>;
 
   stepTransformer?: (step: BinaryTreeStep<TResult>) => BinaryTreeStep<TResult>;
 }
@@ -305,7 +308,7 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     r: number,
     arr: (number | null)[],
     level: number
-  ) => BinaryTreeStep<TResult>;
+  ) => BinaryTreeStep<TResult> | BinaryTreeStep<TResult>[];
   onLeafHit?: (
     node: TNode,
     l: number,
@@ -326,7 +329,7 @@ export interface TreeStaticQueueSpec<TNode = TreeNode, TResult = any> {
     r: number,
     arr: (number | null)[]
   ) => BinaryTreeStep<TResult>;
-  onDone: (
+  onDone?: (
     finalResult: TResult,
     l: number,
     r: number,
@@ -816,7 +819,12 @@ export class BinaryTreeTraversalCompiler {
         ctx.queueVals = queue.map(getNodeVal);
 
         if (spec.onPollNode) {
-          steps.push(spec.onPollNode(cur, ctx));
+          const pollRes = spec.onPollNode(cur, ctx);
+          if (Array.isArray(pollRes)) {
+            steps.push(...pollRes);
+          } else if (pollRes) {
+            steps.push(pollRes);
+          }
         }
 
         // 叶子特判
@@ -859,7 +867,9 @@ export class BinaryTreeTraversalCompiler {
       finalResult = levelIndex;
     }
 
-    steps.push(spec.onDone(finalResult, ctx));
+    if (spec.onDone) {
+      steps.push(spec.onDone(finalResult, ctx));
+    }
     return spec.stepTransformer ? steps.map(spec.stepTransformer) : steps;
   }
 
@@ -917,7 +927,12 @@ export class BinaryTreeTraversalCompiler {
         const cur = staticArr[l++]!;
 
         if (spec.onPollNode) {
-          steps.push(spec.onPollNode(cur, l, r, toVals(staticArr), level));
+          const pollRes = spec.onPollNode(cur, l, r, toVals(staticArr), level);
+          if (Array.isArray(pollRes)) {
+            steps.push(...pollRes);
+          } else if (pollRes) {
+            steps.push(pollRes);
+          }
         }
 
         if (spec.onLeafHit) {
@@ -957,7 +972,9 @@ export class BinaryTreeTraversalCompiler {
       finalResult = level;
     }
 
-    steps.push(spec.onDone(finalResult, l, r, toVals(staticArr)));
+    if (spec.onDone) {
+      steps.push(spec.onDone(finalResult, l, r, toVals(staticArr)));
+    }
     return spec.stepTransformer ? steps.map(spec.stepTransformer) : steps;
   }
 }
