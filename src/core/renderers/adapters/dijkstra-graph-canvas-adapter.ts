@@ -242,38 +242,112 @@ export function renderDijkstraIndexHeapCanvas(container: HTMLElement, step: Inde
       <filter id="dj-shadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#0f172a" flood-opacity="0.08" />
       </filter>
+      <!-- 1. 未走过的未探索边 (灰色) -->
       <marker id="arrow-dj-index" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${idleStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#cbd5e1" />
       </marker>
+      <!-- 2. 走过的最短路径树边 (科技蓝) -->
+      <marker id="arrow-dj-tree" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
+      </marker>
+      <!-- 3. 走过且双端已锁定的最优最短路 (深翡翠绿) -->
+      <marker id="arrow-dj-tree-settled" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#059669" />
+      </marker>
+      <!-- 4. 走过但已被更优路径替代的试探边 (淡紫蓝) -->
+      <marker id="arrow-dj-history" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#818cf8" />
+      </marker>
+      <!-- 5. 当前活跃正在松弛生效的边 (亮祖母绿) -->
       <marker id="arrow-dj-index-relax" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${discoveredStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
       </marker>
+      <!-- 6. 当前活跃正在选择考察的边 (暖金橙) -->
       <marker id="arrow-dj-index-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${comparingStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
       </marker>
     </defs>`;
 
-  // 1. 渲染有向边与权重胶囊 (智能侧向避让，规避与竖直轴或节点距离标签重叠)
+  // 1. 渲染有向边与权重胶囊 (当前活跃路径、走过的最短路、试探路径与未探索路径高对比分层着色)
   for (const [u, v, w] of edges) {
     const p1 = nodeCoords[u];
     const p2 = nodeCoords[v];
     if (!p1 || !p2) continue;
 
-    const isCurrent = step.curRelaxEdge && step.curRelaxEdge.u === u && step.curRelaxEdge.v === v;
+    const isCurrent = Boolean(step.curRelaxEdge && step.curRelaxEdge.u === u && step.curRelaxEdge.v === v);
     const isRelaxed = isCurrent && (step.status === 'relax' || step.status === 'decrease');
 
-    const strokeColor = isRelaxed ? discoveredStyle.border : isCurrent ? comparingStyle.border : idleStyle.border;
-    const strokeWidth = isCurrent ? 3.2 : 1.8;
-    const marker = isRelaxed ? 'url(#arrow-dj-index-relax)' : isCurrent ? 'url(#arrow-dj-index-active)' : 'url(#arrow-dj-index)';
+    const distU = step.distanceArray[u - 1];
+    const distV = step.distanceArray[v - 1];
+    const isSettledV = step.settled.includes(v) || step.indexMap[v] === -2;
+
+    const isTreeEdge = Boolean(
+      (step.parentMap && step.parentMap[v] === u) ||
+      (!step.parentMap && distU !== 999 && distV !== 999 && distU !== undefined && distV !== undefined && distU + w === distV && distV > 0)
+    );
+
+    const isTraversedAlt = Boolean(
+      step.traversedEdges?.some((e) => e.u === u && e.v === v) && !isTreeEdge
+    );
+
+    let strokeColor = '#cbd5e1';
+    let strokeWidth = 1.6;
+    let strokeDash = '';
+    let marker = 'url(#arrow-dj-index)';
+    let badgeBg = '#ffffff';
+    let badgeBorder = '#cbd5e1';
+    let badgeText = '#64748b';
+
+    if (isCurrent) {
+      if (isRelaxed) {
+        strokeColor = '#10b981';
+        strokeWidth = 3.6;
+        marker = 'url(#arrow-dj-index-relax)';
+        badgeBg = '#ecfdf5';
+        badgeBorder = '#10b981';
+        badgeText = '#047857';
+      } else {
+        strokeColor = '#f59e0b';
+        strokeWidth = 3.4;
+        marker = 'url(#arrow-dj-index-active)';
+        badgeBg = '#fffbeb';
+        badgeBorder = '#f59e0b';
+        badgeText = '#b45309';
+      }
+    } else if (isTreeEdge) {
+      if (isSettledV) {
+        strokeColor = '#059669';
+        strokeWidth = 2.6;
+        marker = 'url(#arrow-dj-tree-settled)';
+        badgeBg = '#ecfdf5';
+        badgeBorder = '#059669';
+        badgeText = '#047857';
+      } else {
+        strokeColor = '#0284c7';
+        strokeWidth = 2.6;
+        marker = 'url(#arrow-dj-tree)';
+        badgeBg = '#f0f9ff';
+        badgeBorder = '#0284c7';
+        badgeText = '#0369a1';
+      }
+    } else if (isTraversedAlt) {
+      strokeColor = '#818cf8';
+      strokeWidth = 1.8;
+      strokeDash = 'stroke-dasharray="4,3"';
+      marker = 'url(#arrow-dj-history)';
+      badgeBg = '#f5f3ff';
+      badgeBorder = '#a5b4fc';
+      badgeText = '#6366f1';
+    }
 
     // 垂直边 (3 -> 2) 权重胶囊向左水平偏移 20px，彻底释放垂直箭头走廊
     const isVertical = u === 3 && v === 2;
     const midX = (p1.x + p2.x) / 2 + (isVertical ? -20 : 0);
     const midY = (p1.y + p2.y) / 2 + (isVertical ? 0 : u === 1 && v === 2 ? -9 : u === 1 && v === 3 ? 9 : u === 2 && v === 4 ? -9 : 9);
 
-    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" marker-end="${marker}" />`;
-    svgHtml += `<rect x="${midX - 11}" y="${midY - 8}" width="22" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" filter="url(#dj-shadow)" />`;
-    svgHtml += `<text x="${midX}" y="${midY + 3.5}" fill="#334155" font-size="10" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}</text>`;
+    svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" ${strokeDash} stroke-linecap="round" marker-end="${marker}" />`;
+    svgHtml += `<rect x="${midX - 11}" y="${midY - 8}" width="22" height="16" rx="4" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" filter="url(#dj-shadow)" />`;
+    svgHtml += `<text x="${midX}" y="${midY + 3.5}" fill="${badgeText}" font-size="10" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}</text>`;
   }
 
   // 2. 渲染节点与状态胶囊 (顶部节点 2 的距离标签置于节点上方，其余置于下方，彻底防碰撞)

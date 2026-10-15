@@ -46,14 +46,25 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
       <filter id="delay-shadow" x="-30%" y="-30%" width="160%" height="160%">
         <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#0f172a" flood-opacity="0.08" />
       </filter>
+      <!-- 1. 未走过的未探索边 (灰色) -->
       <marker id="delay-arrow-base" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${idleStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#cbd5e1" />
       </marker>
+      <!-- 2. 走过的最短路径树边 (科技蓝) -->
+      <marker id="delay-arrow-tree" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
+      </marker>
+      <!-- 3. 走过且节点已接收锁定的最优路径 (深翡翠绿) -->
+      <marker id="delay-arrow-tree-locked" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#059669" />
+      </marker>
+      <!-- 4. 当前活跃正在考察的信道 (暖金橙) -->
       <marker id="delay-arrow-active" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${comparingStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
       </marker>
+      <!-- 5. 当前活跃正在松弛生效的信道 (亮祖母绿) -->
       <marker id="delay-arrow-relaxed" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${discoveredStyle.border}" />
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
       </marker>
     </defs>`;
 
@@ -62,19 +73,62 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
     const p2 = nodeCoords[v];
     if (!p1 || !p2) continue;
 
-    const isAct = step.activeEdge && step.activeEdge[0] === u && step.activeEdge[1] === v;
+    const isAct = Boolean(step.activeEdge && step.activeEdge[0] === u && step.activeEdge[1] === v);
     const isRelaxed = isAct && step.status === 'relax';
 
-    const strokeColor = isRelaxed ? discoveredStyle.border : isAct ? comparingStyle.border : idleStyle.border;
-    const strokeWidth = isAct ? 3.2 : 1.8;
-    const marker = isRelaxed ? 'url(#delay-arrow-relaxed)' : isAct ? 'url(#delay-arrow-active)' : 'url(#delay-arrow-base)';
+    const distU = step.distList[u];
+    const distV = step.distList[v];
+    const isVisV = Boolean(step.visitedList && step.visitedList[v]);
+
+    const isTreeEdge = distU !== Infinity && distV !== Infinity && distU + w === distV && distV > 0;
+
+    let strokeColor = '#cbd5e1';
+    let strokeWidth = 1.6;
+    let marker = 'url(#delay-arrow-base)';
+    let badgeBg = '#ffffff';
+    let badgeBorder = '#cbd5e1';
+    let badgeText = '#64748b';
+
+    if (isAct) {
+      if (isRelaxed) {
+        strokeColor = '#10b981';
+        strokeWidth = 3.6;
+        marker = 'url(#delay-arrow-relaxed)';
+        badgeBg = '#ecfdf5';
+        badgeBorder = '#10b981';
+        badgeText = '#047857';
+      } else {
+        strokeColor = '#f59e0b';
+        strokeWidth = 3.4;
+        marker = 'url(#delay-arrow-active)';
+        badgeBg = '#fffbeb';
+        badgeBorder = '#f59e0b';
+        badgeText = '#b45309';
+      }
+    } else if (isTreeEdge) {
+      if (isVisV) {
+        strokeColor = '#059669';
+        strokeWidth = 2.6;
+        marker = 'url(#delay-arrow-tree-locked)';
+        badgeBg = '#ecfdf5';
+        badgeBorder = '#059669';
+        badgeText = '#047857';
+      } else {
+        strokeColor = '#0284c7';
+        strokeWidth = 2.6;
+        marker = 'url(#delay-arrow-tree)';
+        badgeBg = '#f0f9ff';
+        badgeBorder = '#0284c7';
+        badgeText = '#0369a1';
+      }
+    }
 
     const mx = (p1.x + p2.x) / 2;
     const my = (p1.y + p2.y) / 2 + (is4 && u === 2 && v === 3 ? 9 : is4 && u === 2 && v === 1 ? -9 : -4);
 
     svgHtml += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round" marker-end="${marker}" />`;
-    svgHtml += `<rect x="${mx - 14}" y="${my - 8}" width="28" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" filter="url(#delay-shadow)" />`;
-    svgHtml += `<text x="${mx}" y="${my + 3.5}" fill="${idleStyle.text}" font-size="9" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}ms</text>`;
+    svgHtml += `<rect x="${mx - 14}" y="${my - 8}" width="28" height="16" rx="4" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" filter="url(#delay-shadow)" />`;
+    svgHtml += `<text x="${mx}" y="${my + 3.5}" fill="${badgeText}" font-size="9" font-weight="800" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">${w}ms</text>`;
   }
 
   const nodes = is4 ? [1, 2, 3, 4] : [1, 2, 3];

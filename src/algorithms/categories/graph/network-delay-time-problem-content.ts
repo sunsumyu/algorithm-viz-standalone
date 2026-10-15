@@ -387,7 +387,8 @@ export const DELAY_LEGEND = [
   { label: '📡 广播发射源点 (k)', state: 'secondary' as const },
   { label: '✔ 信号已接收锁定', state: 'discovered' as const },
   { label: '⚡ 当前波前扩散点', color: '#f59e0b' },
-  { label: '❌ 信号不可达孤立点', state: 'swapping' as const },
+  { label: '🔵 最短路径 (走过的路)', color: '#0284c7' },
+  { label: '🟢/⚡ 当前活跃选择路径', color: '#10b981' },
 ];
 
 export const DELAY_METRICS = [
@@ -401,7 +402,8 @@ export const INDEX_HEAP_LEGEND = [
   { label: '⚡ 当前堆顶出堆节点', color: '#f59e0b' },
   { label: '✔ 已锁定最短路节点 (where=-2)', state: 'discovered' as const },
   { label: '📥 处于小根堆中 (where>=0)', state: 'scanning' as const },
-  { label: '⚪ 未入堆节点 (where=-1)', color: '#1e293b' },
+  { label: '🔵 最短路径 (走过的路)', color: '#0284c7' },
+  { label: '🟢/⚡ 当前活跃选择路径', color: '#10b981' },
 ];
 
 export const INDEX_HEAP_METRICS = [

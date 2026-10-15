@@ -15,6 +15,8 @@ export interface IndexHeapStep {
   heapArray: number[];
   whereArray: number[];
   distanceArray: number[];
+  parentMap?: Record<number, number>;
+  traversedEdges?: Array<{ u: number; v: number }>;
   activeArray?: 'heap' | 'where' | 'distance';
   activeSlot?: number;
   status: 'init' | 'pop' | 'relax' | 'decrease' | 'done';
@@ -52,6 +54,8 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
   const heap: number[] = new Array(n + 1).fill(0);
   const where: number[] = new Array(n + 1).fill(-1);
   const distance: number[] = new Array(n + 1).fill(Infinity);
+  const parent: number[] = new Array(n + 1).fill(0);
+  const traversedSet = new Set<string>();
   let heapSize = 0;
 
   const settled: number[] = [];
@@ -143,6 +147,16 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
               ? '堆顶出堆结算'
               : '堆初始化';
 
+    const parentMap: Record<number, number> = {};
+    for (let i = 1; i <= n; i++) {
+      if (parent[i] > 0) parentMap[i] = parent[i];
+    }
+
+    const traversedEdges = Array.from(traversedSet).map((edgeStr) => {
+      const [fromU, toV] = edgeStr.split('->').map(Number);
+      return { u: fromU, v: toV };
+    });
+
     steps.push({
       heapNodes,
       indexMap,
@@ -152,6 +166,8 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
       heapArray: heapSlice,
       whereArray: whereSlice,
       distanceArray: distSlice,
+      parentMap,
+      traversedEdges,
       activeArray,
       activeSlot,
       status,
@@ -210,6 +226,7 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
       const v = e.to;
       const w = e.w;
       curRelaxEdge = { u, v, w };
+      traversedSet.add(`${u}->${v}`);
 
       makeStep(lines.addOrUpdate, `  ↳ [边松弛考察] 考察边 (${u} ➔ ${v}, 权重 ${w})：尝试以 d = distance[${u}]+${w} = ${distance[u] + w} 松弛 Node ${v}。`, `relax edge (${u}, ${v})`, 'relax');
 
@@ -219,6 +236,7 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
         makeStep(lines.whereFirstCheck, `  🔎 [未曾入堆判定] if (where[${v}] == -1) -> (${where[v]} == -1: 首次触达)。`, `where[${v}] == -1`, 'relax');
 
         distance[v] = newDist;
+        parent[v] = u;
         heap[heapSize] = v;
         where[v] = heapSize;
         heapSize++;
@@ -229,6 +247,7 @@ export function buildIndexHeapSteps(preset: string = 'classic_4node'): IndexHeap
 
         if (newDist < distance[v]) {
           distance[v] = newDist;
+          parent[v] = u;
           makeStep(lines.whereDecreaseKey, `  ⚡ [原地 decreaseKey] 发现更优路径！原地更新 distance[${v}] = ${newDist}，调用 heapInsert(where[${v}]=${where[v]}) 向上调整！`, `decreaseKey(${v})`, 'decrease', 'distance', v - 1);
           heapInsert(where[v]);
           makeStep(lines.whereDecreaseKey, `  📈 [上浮调整就绪] 节点 ${v} 在堆中位置更新为 where[${v}] = ${where[v]}，消除冗余死节点压堆！`, `heapInsert 完成`, 'decrease', 'where', v - 1);
