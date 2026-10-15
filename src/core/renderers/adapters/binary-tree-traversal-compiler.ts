@@ -47,7 +47,7 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   metrics?: Record<string, any>;
   statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
   callTrace?: CallTraceSnapshot;
-  visitedNodes?: number[];
+  visitedNodes?: number[] | Set<number>;
 
   // 推演计算值
   result?: TResult;
