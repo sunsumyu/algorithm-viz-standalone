@@ -181,8 +181,8 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
     expect(pruneStep.curNode).toBeDefined();
     // d > distance[u] 严格成立
     expect(pruneStep.d!).toBeGreaterThan(pruneStep.distList[pruneStep.curNode]);
-    // 明确跳入独立成行的 continue; 语句行 (Java 第 29 行)
-    expect((pruneStep.codeLine as any).java).toBe(29);
+    // 明确跳入独立成行的 continue; 语句行 (Java 第 23 行)
+    expect((pruneStep.codeLine as any).java).toBe(23);
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {
