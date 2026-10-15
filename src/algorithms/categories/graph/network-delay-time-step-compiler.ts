@@ -35,7 +35,7 @@ export interface NetworkDelayStepVars {
   activeArray?: 'dist' | 'visited' | 'pq';
   activeSlot?: number;
   status: 'init' | 'emit' | 'pop' | 'relax' | 'check' | 'done';
-  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle';
+  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle' | 'prune';
   lastPqItem?: { u: number; d: number };
   varDetails?: Record<string, string>;
 }
@@ -95,7 +95,7 @@ export interface NetworkDelayStep {
   metrics?: Record<string, string | number>;
   vars?: NetworkDelayStepVars;
   varDetails?: Record<string, string>;
-  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle';
+  pqAction?: 'push' | 'poll' | 'check' | 'empty' | 'idle' | 'prune';
   lastPqItem?: { u: number; d: number };
 }
 
@@ -212,9 +212,9 @@ export function traceNetworkDelay(presetInput: boolean | string = true) {
         k = 2;
         times = [
           [2, 1, 1],
-          [2, 3, 5],
+          [2, 3, 4],
           [1, 3, 1],
-          [3, 4, 1],
+          [3, 4, 3],
         ];
       } else {
         // classic_4nodes / reachable_4node / true
@@ -556,9 +556,9 @@ export function traceNetworkDelayPruned(presetInput: boolean | string = true) {
         k = 2;
         times = [
           [2, 1, 1],
-          [2, 3, 5],
+          [2, 3, 4],
           [1, 3, 1],
-          [3, 4, 1],
+          [3, 4, 3],
         ];
       } else {
         n = 4;
@@ -602,13 +602,19 @@ export function traceNetworkDelayPruned(presetInput: boolean | string = true) {
         status: 'init' | 'emit' | 'pop' | 'relax' | 'check' | 'done',
         activeArray?: 'dist' | 'visited' | 'pq',
         activeSlot?: number,
-        pqAction: 'push' | 'poll' | 'check' | 'empty' | 'idle' = 'idle',
+        pqAction: 'push' | 'poll' | 'check' | 'empty' | 'idle' | 'prune' = 'idle',
         lastPqItem?: { u: number; d: number }
       ): void {
-        const curStr = status === 'done' ? '广播结算完毕' : `Node ${curNode}`;
+        const isPruning = pqAction === 'prune';
+        const curStr = isPruning
+          ? `Node ${curNode} (⚠️ ${lastPqItem?.d}ms > ${distance[curNode]}ms 剪枝丢弃)`
+          : status === 'done'
+            ? '广播结算完毕'
+            : `Node ${curNode}`;
         const delayStr = maxDelaySoFar === -1 ? '-1 (存在孤立点)' : `${maxDelaySoFar} ms`;
-        const phaseStr =
-          status === 'done'
+        const phaseStr = isPruning
+          ? '🚫 距离剪枝拦截 (continue)'
+          : status === 'done'
             ? '延迟计算完成'
             : status === 'check'
               ? '全网连通性检验'
@@ -683,8 +689,26 @@ export function traceNetworkDelayPruned(presetInput: boolean | string = true) {
         emit('pollNode', `📤 [弹出堆顶最短到达点] poll() -> 节点 ${curNode} (延迟 d=${curD} ms)。`, `poll Node ${curNode} (d=${curD})`, 'pop', 'pq', 0, 'poll', { u: top.u, d: top.d });
 
         if (curD > distance[curNode]) {
-          emit('checkPruning', `🔎 [检查距离剪枝] if (d > distance[u]) -> (${curD} > ${distance[curNode]})：延迟 ${curD} ms 大于当前已知最短延迟 ${distance[curNode]} ms，判定为失效记录！`, `check prune: ${curD} > ${distance[curNode]} (true)`, 'pop');
-          emit('pruneContinue', `⏭️ [执行 continue 剪枝] 此波前记录为陈旧失效记录，执行 continue 跳过，继续下一轮循环！`, `continue -> skip stale Node ${curNode}`, 'pop');
+          emit(
+            'checkPruning',
+            `🔎 [检查距离剪枝] if (d > distance[u]) -> (${curD} > ${distance[curNode]})：延迟 ${curD} ms 大于当前已知最短延迟 ${distance[curNode]} ms，判定为失效记录！`,
+            `check prune: ${curD} > ${distance[curNode]} (true)`,
+            'pop',
+            'dist',
+            curNode,
+            'prune',
+            { u: curNode, d: curD }
+          );
+          emit(
+            'pruneContinue',
+            `✂️ [执行 continue 剪枝] 丢弃陈旧波前 (${curD}ms > ${distance[curNode]}ms)！成功阻断对节点 ${curNode} 出边的二次无效探索！`,
+            `continue -> skip stale Node ${curNode}`,
+            'pop',
+            'dist',
+            curNode,
+            'prune',
+            { u: curNode, d: curD }
+          );
           continue;
         }
 

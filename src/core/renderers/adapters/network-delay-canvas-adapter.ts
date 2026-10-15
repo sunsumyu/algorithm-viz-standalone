@@ -95,7 +95,15 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
     let badgeBorder = '#cbd5e1';
     let badgeText = '#64748b';
 
-    if (isCur) {
+    const isPruneNode = isCur && step.pqAction === 'prune';
+
+    if (isPruneNode) {
+      fill = '#fef2f2';
+      stroke = '#ef4444';
+      badgeBg = '#fee2e2';
+      badgeBorder = '#ef4444';
+      badgeText = '#b91c1c';
+    } else if (isCur) {
       fill = '#fffbeb';
       stroke = '#f59e0b';
       badgeBg = '#fef3c7';
@@ -126,6 +134,8 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
       svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#38bdf8" stroke-width="2" stroke-dasharray="3,3" opacity="0.9" />`;
       svgHtml += `<rect x="${p.x + 8}" y="${p.y - 25}" width="20" height="12" rx="3" fill="#0284c7" />`;
       svgHtml += `<text x="${p.x + 18}" y="${p.y - 16}" fill="#ffffff" font-size="7.5" font-weight="800" text-anchor="middle">PQ</text>`;
+    } else if (isPruneNode) {
+      svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-dasharray="4 2" opacity="0.9" />`;
     } else if (isCur) {
       svgHtml += `<circle cx="${p.x}" cy="${p.y}" r="27" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 2" opacity="0.9" />`;
     }
@@ -142,6 +152,17 @@ export function renderNetworkDelayCanvas(container: HTMLElement, step: NetworkDe
 
     svgHtml += `<rect x="${badgeX}" y="${badgeY}" width="${badgeW}" height="${badgeH}" rx="8.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1.2" filter="url(#delay-shadow)" />`;
     svgHtml += `<text x="${p.x}" y="${badgeY + 11.5}" fill="${badgeText}" font-size="9.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="700" text-anchor="middle">d:${dStr}</text>`;
+
+    if (isPruneNode && step.lastPqItem) {
+      const pruneBadgeW = 118;
+      const pruneBadgeH = 17;
+      const px = p.x - pruneBadgeW / 2;
+      const py = isTopNode ? p.y + 24 : p.y - 42;
+      svgHtml += `<g>
+        <rect x="${px}" y="${py}" width="${pruneBadgeW}" height="${pruneBadgeH}" rx="4" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" filter="url(#delay-shadow)" />
+        <text x="${p.x}" y="${py + 11.5}" fill="#dc2626" font-size="8.5" font-weight="900" font-family="'JetBrains Mono', Consolas, monospace" text-anchor="middle">🚫 剪枝拦截: ${step.lastPqItem.d}ms &gt; ${dVal}ms</text>
+      </g>`;
+    }
   });
 
   svgHtml += `</svg>`;
@@ -161,7 +182,9 @@ export function renderNetworkDelayMetrics(container: HTMLElement, step: NetworkD
 
   // 1. 优先队列动作状态指示
   let actionBadge = `<span style="font-size:10px; color:#64748b; font-family:monospace; font-weight:600;">排队中: ${step.pqSnapshot.length}</span>`;
-  if (step.pqAction === 'push' && step.lastPqItem) {
+  if (step.pqAction === 'prune' && step.lastPqItem) {
+    actionBadge = `<div style="display:inline-flex; align-items:center; gap:4px; padding:1px 7px; background:#fef2f2; border:1px solid #ef4444; border-radius:10px; font-size:10px; font-weight:800; color:#b91c1c;">✂️ 距离剪枝拦截: 丢弃 Node ${step.lastPqItem.u} (${step.lastPqItem.d}ms > ${step.distList[step.lastPqItem.u]}ms)</div>`;
+  } else if (step.pqAction === 'push' && step.lastPqItem) {
     actionBadge = `<div style="display:inline-flex; align-items:center; gap:4px; padding:1px 7px; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; font-size:10px; font-weight:800; color:#b45309;">📥 入堆 (入队): Node ${step.lastPqItem.u} (${step.lastPqItem.d}ms)</div>`;
   } else if (step.pqAction === 'poll' && step.lastPqItem) {
     actionBadge = `<div style="display:inline-flex; align-items:center; gap:4px; padding:1px 7px; background:#fee2e2; border:1px solid #ef4444; border-radius:10px; font-size:10px; font-weight:800; color:#b91c1c;">📤 出堆 (出队): Node ${step.lastPqItem.u} (${step.lastPqItem.d}ms)</div>`;
@@ -175,7 +198,16 @@ export function renderNetworkDelayMetrics(container: HTMLElement, step: NetworkD
   const tubeItems: string[] = [];
 
   // 出堆口（OUT）外面展示刚被弹出的元素
-  if (step.pqAction === 'poll' && step.lastPqItem) {
+  if (step.pqAction === 'prune' && step.lastPqItem) {
+    tubeItems.push(`
+      <div style="display:inline-flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 6px; background:#fef2f2; border:1.5px solid #ef4444; border-radius:4px; font-family:monospace; min-width:48px; box-shadow:0 0 8px rgba(239,68,68,0.25);">
+        <span style="font-size:8px; color:#ef4444; font-weight:800; line-height:1;">🚫 剪枝丢弃</span>
+        <span style="font-size:10.5px; font-weight:800; color:#991b1b; line-height:1.2;">N${step.lastPqItem.u}</span>
+        <span style="font-size:8.5px; color:#dc2626; text-decoration:line-through; font-weight:700; line-height:1;">${step.lastPqItem.d}ms</span>
+      </div>
+      <span style="color:#ef4444; font-size:10.5px; font-weight:900;">➔ 丢弃</span>
+    `);
+  } else if (step.pqAction === 'poll' && step.lastPqItem) {
     tubeItems.push(`
       <div style="display:inline-flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 6px; background:#fef2f2; border:1.5px dashed #ef4444; border-radius:4px; font-family:monospace; min-width:44px;">
         <span style="font-size:8px; color:#ef4444; font-weight:800; line-height:1;">📤 出堆锁定</span>
