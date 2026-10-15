@@ -98,7 +98,7 @@ export function createHoverTooltipManager(
       const resolved = VariableContextResolver.getVariable(state.currentVarsMap, varName, state.currentStep);
       if (resolved) {
         const detailHtml = resolved.detail
-          ? `<div style="font-size: 10px; color: #a5b4fc; margin-top: 3px; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 3px;">${escapeHtml(resolved.detail)}</div>`
+          ? `<div style="font-size: 10px; color: #a5b4fc; margin-top: 4px; border-top: 1px dashed rgba(255,255,255,0.14); padding-top: 4px; display: flex; align-items: center; gap: 4px;"><span style="color: #818cf8; font-size: 10px;">💡</span><span>${escapeHtml(resolved.detail)}</span></div>`
           : '';
         hoverTooltip.innerHTML = `
           <div style="display: flex; align-items: center; gap: 6px;">

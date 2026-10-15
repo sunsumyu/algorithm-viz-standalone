@@ -2,8 +2,12 @@ import { describe, it, expect } from 'vitest';
 import {
   NetworkDelayTimeVisualizer,
   buildNetworkDelaySteps,
+  buildNetworkDelayPrunedSteps,
 } from './network-delay-time-renderer';
-import { NETWORK_DELAY_CODE_LANGUAGES } from './network-delay-time-problem-content';
+import {
+  NETWORK_DELAY_CODE_LANGUAGES,
+  NETWORK_DELAY_PRUNED_CODE_LANGUAGES,
+} from './network-delay-time-problem-content';
 import { DIJKSTRA_INDEX_HEAP_CODE_LANGUAGES } from './dijkstra-index-heap-problem-content';
 import { buildIndexHeapSteps } from './dijkstra-index-heap-step-compiler';
 import {
@@ -11,6 +15,7 @@ import {
   assertMultiLanguageCodeContract,
   assertStepStreamContract,
 } from '../../../core/testing/contract-assertions';
+import { VariableContextResolver } from '../../../core/variable-context-resolver';
 
 describe('NetworkDelayTime (LeetCode 743)', () => {
   it('should instantiate NetworkDelayTimeVisualizer properly', () => {
@@ -80,7 +85,42 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
     }
   });
 
-  it('should generate at least 20 granular steps for Stage 2 index heap', () => {
+  it('should generate at least 20 granular steps for Stage 2 distance pruning (reachable)', () => {
+    const steps = buildNetworkDelayPrunedSteps(true);
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: NETWORK_DELAY_PRUNED_CODE_LANGUAGES,
+    });
+    for (const step of steps) {
+      expect(step.distList).toBeDefined();
+      expect(step.pqSnapshot).toBeDefined();
+    }
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.status).toBe('done');
+    expect(lastStep.isAllReached).toBe(true);
+    expect(lastStep.maxDelaySoFar).toBe(2);
+  });
+
+  it('should generate at least 20 granular steps for Stage 2 distance pruning (unreachable)', () => {
+    const steps = buildNetworkDelayPrunedSteps(false);
+    assertStepStreamContract(steps, {
+      minSteps: 20,
+      codes: NETWORK_DELAY_PRUNED_CODE_LANGUAGES,
+    });
+    const lastStep = steps[steps.length - 1];
+    expect(lastStep.status).toBe('done');
+    expect(lastStep.isAllReached).toBe(false);
+    expect(lastStep.maxDelaySoFar).toBe(-1);
+  });
+
+  it('should have complete code across all languages for Stage 2 distance pruning', () => {
+    assertMultiLanguageCodeContract(NETWORK_DELAY_PRUNED_CODE_LANGUAGES, {
+      minLines: 30,
+      requiredPatterns: [/networkdelaytime|network_delay_time/i, /distance/i, /pq|priority_queue|heap/i],
+    });
+  });
+
+  it('should generate at least 20 granular steps for Stage 3 index heap', () => {
     const steps = buildIndexHeapSteps('classic_4node');
     assertStepStreamContract(steps, {
       minSteps: 20,
@@ -93,6 +133,55 @@ describe('NetworkDelayTime (LeetCode 743)', () => {
     }
     const decreaseSteps = steps.filter((s) => s.status === 'decrease');
     expect(decreaseSteps.length).toBeGreaterThan(0);
+  });
+
+  it('should capture d and distance correctly during pruning and relaxation steps', () => {
+    const steps = buildNetworkDelayPrunedSteps(true);
+    const pruningSteps = steps.filter((s) => s.message.includes('距离剪枝') || s.message.includes('最短路确认锁定'));
+    expect(pruningSteps.length).toBeGreaterThan(0);
+
+    for (const step of pruningSteps) {
+      expect(step.d).toBeDefined();
+      expect(typeof step.d).toBe('number');
+      const varsMap = VariableContextResolver.resolve(step, 'java');
+      const resolvedD = VariableContextResolver.getVariable(varsMap, 'd', step);
+      expect(resolvedD).toBeDefined();
+      expect(resolvedD?.value).toBe(String(step.d));
+      expect(resolvedD?.detail).toBeDefined();
+      expect(resolvedD?.detail).toContain('延迟');
+    }
+  });
+
+  it('should provide clear business semantic descriptions (detail) for core variables', () => {
+    const steps = buildNetworkDelayPrunedSteps(true);
+    const step = steps[2]; // after initSrc, distance[k] = 0
+    const varsMap = VariableContextResolver.resolve(step, 'java');
+
+    const resolvedK = VariableContextResolver.getVariable(varsMap, 'k', step);
+    expect(resolvedK).toBeDefined();
+    expect(resolvedK?.value).toBe('2');
+    expect(resolvedK?.detail).toBe('信号广播源点 (起始发射节点)');
+
+    const resolvedDistance = VariableContextResolver.getVariable(varsMap, 'distance', step);
+    expect(resolvedDistance).toBeDefined();
+    expect(resolvedDistance?.detail).toContain('最短');
+
+    const resolvedN = VariableContextResolver.getVariable(varsMap, 'n', step);
+    expect(resolvedN).toBeDefined();
+    expect(resolvedN?.detail).toContain('网络节点总数');
+  });
+
+  it('should explicitly trigger d > distance[u] continue pruning branch in shortcut_prune case', () => {
+    const steps = buildNetworkDelayPrunedSteps('shortcut_prune');
+    const skippedSteps = steps.filter((s) => s.message.includes('距离剪枝跳过') || s.log.includes('skip stale'));
+    expect(skippedSteps.length).toBeGreaterThan(0);
+
+    const pruneStep = skippedSteps[0];
+    expect(pruneStep.d).toBeDefined();
+    expect(pruneStep.curNode).toBeDefined();
+    // d > distance[u] 严格成立
+    expect(pruneStep.d!).toBeGreaterThan(pruneStep.distList[pruneStep.curNode]);
+    expect((pruneStep.codeLine as any).java).toBe(28); // if (d > distance[u]) continue;
   });
 
   it('should initialize and destroy cleanly with mock root container', async () => {

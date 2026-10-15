@@ -41,12 +41,111 @@ export class VariableContextResolver {
     'graph', 'adj', 'times', 'matrix', 'grid', 'edges',
   ]);
 
+  /** 全局常见算法核心变量业务语义词典（用于代码悬停气泡精准显示变量作用） */
+  private static readonly DEFAULT_VARIABLE_DESCRIPTIONS: Record<string, string> = {
+    // ── 图论与最短路核心 ──
+    k: '信号广播源点 (起始发射节点)',
+    n: '网络节点总数 (标记为 1 到 n)',
+    m: '网络边总数 / 矩阵列数',
+    times: '有向网络链路传输时间列表 [u, v, w]',
+    edges: '有向边集合列表',
+    graph: '全网节点出边邻接表结构',
+    adj: '全网节点出边邻接表结构',
+    distance: '源点 k 到各节点的最短时间表 (到达延迟)',
+    dist: '源点 k 到各节点的最短时间表 (到达延迟)',
+    distlist: '源点 k 到各节点的最短时间表 (到达延迟)',
+    visited: '节点信号锁定状态 (已收到且为最优时间)',
+    visitedlist: '节点信号锁定状态 (已收到且为最优时间)',
+    pq: '波前优先队列小根堆 (按到达耗时升序排队)',
+    heap: '小根堆数据结构',
+    pqsnapshot: '优先队列就绪波前节点镜像',
+    cur: '堆顶弹出的当前波前元组 [节点 u, 耗时 d]',
+    u: '当前出堆并向外扩散信号的源头节点',
+    v: '当前正在考察的链路下跳目标节点',
+    w: '链路传输延迟时间 (ms)',
+    d: '当前波前到达耗时 / 最短延迟 (ms)',
+    edge: '当前正在传播信号的有向链路 [v, w]',
+    ans: '全网所有节点都收到信号的最迟时刻 max(dist[1..n])',
+    maxdelay: '全网所有节点都收到信号的最迟时刻',
+    maxdelaysofar: '当前收齐的最迟时间',
+    where: '反向索引堆节点映射 (-1 未入堆, >=0 堆位置, -2 已锁定)',
+
+    // ── 双指针与滑动窗口 ──
+    i: '当前遍历循环指针 (索引)',
+    j: '二重循环指针 / 列指针',
+    l: '滑动窗口 / 区间左边界指针',
+    r: '滑动窗口 / 区间右边界指针',
+    left: '区间左边界指针',
+    right: '区间右边界指针',
+    mid: '折半二分中点位置',
+    len: '当前有效区间 / 窗口长度',
+    size: '当前窗口尺寸 / 堆有效大小',
+    slow: '快慢双指针 - 慢指针',
+    fast: '快慢双指针 - 快指针',
+    target: '检索目标值 / 匹配目标',
+
+    // ── 动态规划与缓存 ──
+    dp: '动态规划最优子结构状态备忘表',
+    memo: '记忆化递归搜索缓存表',
+
+    // ── 链式前向星 ──
+    head: '链式前向星顶点出边表头指针',
+    next: '链式前向星同起点下一条边指针',
+    to: '链式前向星边所指向的目标顶点',
+    weight: '链式前向星边的权值 (耗时/代价)',
+    cnt: '链式前向星边计数器 (1-based)',
+    ei: '链式前向星当前遍历边索引',
+
+    // ── 树与递归 ──
+    root: '二叉树根节点',
+    node: '当前访问树节点',
+    depth: '当前递归深度 / 树高度',
+    val: '当前节点数值 / 元素值',
+    sum: '当前路径或区间累加和',
+  };
+
   /** 忽略的非业务属性名 */
   private static readonly IGNORED_KEYS = new Set([
     'treeRoot', 'activeNodeId', 'children', 'status',
     'type', 'index', 'stepIndex', 'snapshot', 'codeLanguages', 'modeCodeLanguages',
     'decision', 'message', 'log', 'currentCell', 'depCells', 'visitedMap', 'activeTrail', 'activeStack',
   ]);
+
+  /**
+   * 赋予变量业务语义解释 (detail)
+   */
+  private static enrichDetail(
+    entry: ResolvedVariable,
+    varName: string,
+    stepContext?: any
+  ): ResolvedVariable {
+    if (entry.detail) return entry;
+
+    const clean = varName.trim();
+    const cleanLower = clean.toLowerCase();
+
+    // 1. 优先使用步骤上下文中针对本题定制的描述 (varDetails)
+    const customDesc =
+      stepContext?.varDetails?.[clean] ||
+      stepContext?.vars?.varDetails?.[clean] ||
+      stepContext?.varDetails?.[cleanLower] ||
+      stepContext?.vars?.varDetails?.[cleanLower];
+
+    if (customDesc) {
+      return { ...entry, detail: customDesc };
+    }
+
+    // 2. 回退至全局常见算法语义词典
+    const defaultDesc =
+      this.DEFAULT_VARIABLE_DESCRIPTIONS[clean] ||
+      this.DEFAULT_VARIABLE_DESCRIPTIONS[cleanLower];
+
+    if (defaultDesc) {
+      return { ...entry, detail: defaultDesc };
+    }
+
+    return entry;
+  }
 
   /**
    * 判断是否为 Canvas/SVG 专用图元布局对象（包含带坐标的 nodes/edges），避免图元污染变量表
@@ -760,14 +859,14 @@ export class VariableContextResolver {
 
     // 1. 精确匹配
     if (varsMap.has(cleanExpr)) {
-      return varsMap.get(cleanExpr);
+      return this.enrichDetail(varsMap.get(cleanExpr)!, cleanExpr, stepContext);
     }
 
     // 2. 忽略大小写匹配
     const lower = cleanExpr.toLowerCase();
     for (const [k, v] of varsMap.entries()) {
       if (k.toLowerCase() === lower) {
-        return v;
+        return this.enrichDetail(v, cleanExpr, stepContext);
       }
     }
 

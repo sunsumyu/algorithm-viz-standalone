@@ -2773,11 +2773,11 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "网络延迟时间 (Network Delay Time)",
     viewId: "algo-network-delay-time-view",
     category: "graph",
-    description: "左程云 Class 064 最短路模版：阶段 1 系统堆 Dijkstra 与阶段 2 反向索引堆 decreaseKey 演化对比 (LeetCode 743)",
+    description: "左程云 Class 064 最短路模版：阶段 1 系统堆基础版、阶段 2 距离剪枝优化版与阶段 3 反向索引堆演化 (LeetCode 743)",
     icon: "📡",
     difficulty: 2,
     levelOrder: 22,
-    learningGoal: "掌握经典系统堆与反向索引堆 (IndexMinHeap) 两种 Dijkstra 模板演化、where 数组状态机与波前广播全网覆盖检测",
+    learningGoal: "掌握经典系统堆、距离剪枝 (d > dist[u]) 与反向索引堆 (IndexMinHeap) 三种 Dijkstra 演化、状态机与全网波前广播",
     aliases: ["network-delay-time-064","leetcode-743","class064-code01","class064-code02","class064-network-delay"],
   },
   {
