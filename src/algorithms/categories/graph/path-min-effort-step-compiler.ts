@@ -212,19 +212,43 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   const move = [-1, 0, 1, 0, -1];
 
   while (pq.length > 0) {
-    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!heap.isEmpty()) -> 待探索状态数: ${pq.length}。`, '!heap.isEmpty()', 'explore');
+    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!heap.isEmpty()) -> 待探索状态数: ${pq.length}。`, `检查小根堆前沿待选元素`, 'explore');
 
     const top = pollPq();
-    curR = top.r;
-    curC = top.c;
-    minEffortSoFar = top.effort;
+    const nextR = top.r;
+    const nextC = top.c;
+    const nextEffort = top.effort;
+
+    // 若小人即将移动到新平台，先生成【水流漫平平台】过渡步骤（水流先上涨100%漫平，小人再跳过去）：
+    if ((nextR !== curR || nextC !== curC) && (nextR !== 0 || nextC !== 0)) {
+      minEffortSoFar = Math.max(minEffortSoFar, nextEffort);
+      makeStep(
+        lines.pollCur,
+        `🌊 [第 ${minEffortSoFar} 秒水流漫平] 水流持续注入！在第 ${minEffortSoFar} 秒，水面已与平台 (${nextR}, ${nextC}) 完全漫平 (高度 ${grid[nextR][nextC]}m)！两地落差彻底抹平，开通通航水道！`,
+        `第 ${minEffortSoFar} 秒水流漫平 (${nextR},${nextC})`,
+        'relax',
+        'pq',
+        [nextR, nextC]
+      );
+    }
+
+    curR = nextR;
+    curC = nextC;
+    minEffortSoFar = nextEffort;
 
     const activeNode = nodeMap.get(`${curR},${curC}`);
     if (activeNode) {
       activeNode.status = 'active';
     }
 
-    makeStep(lines.pollCur, `📤 [弹出体力最小格] int[] record = heap.poll() -> x=${curR}, y=${curC}, c=${minEffortSoFar} (高度 ${grid[curR][curC]}m)！水流在第 ${minEffortSoFar} 秒与该平台完全漫平！`, `poll (x=${curR},y=${curC},c=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
+    makeStep(
+      lines.pollCur,
+      `🦘 [小人跃上平台] 平台 (${curR}, ${curC}) 水流在第 ${minEffortSoFar} 秒已完全漫平，探险家踩着齐平水面轻松跳跃跨入！`,
+      `小人跃上平台 (${curR},${curC})`,
+      'explore',
+      'pq',
+      [curR, curC]
+    );
 
     makeStep(lines.checkVisited, `🔎 [检查是否已锁定] if (visited[${curR}][${curC}]) -> (${visited[curR][curC]})。`, `visited[${curR}][${curC}]?`, 'explore');
     if (visited[curR][curC]) {
