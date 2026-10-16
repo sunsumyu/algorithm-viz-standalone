@@ -31,7 +31,11 @@ const GRID_ALGORITHM_IDS = new Set([
   'trapping-water-ii',
   'water-flow',
   'swim-in-rising-water',
+  'swim-in-rising-water-064',
+  'path-min-effort',
+  'path-min-effort-064',
   'path-with-minimum-effort',
+  'minimum-effort-path',
   'island-perimeter',
   'islands',
   'island-count',
@@ -76,7 +80,9 @@ export class DomainViewPresentationResolver {
       id.includes('grid') ||
       id.includes('maze') ||
       id.includes('obstacle') ||
-      id.includes('coastline')
+      id.includes('coastline') ||
+      id.includes('effort') ||
+      id.includes('swim')
     );
   }
 

@@ -82,26 +82,26 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   let reachedTarget = false;
 
   const lines = {
-    entry: { cpp: 18, java: 12, python: 4, javascript: 2 },
-    initDist: { cpp: 20, java: 14, python: 6, javascript: 4 },
-    initDistSrc: { cpp: 24, java: 18, python: 9, javascript: 9 },
-    initVisited: { cpp: 21, java: 20, python: 7, javascript: 5 },
-    initHeap: { cpp: 22, java: 22, python: 10, javascript: 8 },
-    pushSrc: { cpp: 25, java: 23, python: 10, javascript: 8 },
-    whileHeap: { cpp: 29, java: 28, python: 13, javascript: 12 },
-    pollCur: { cpp: 30, java: 29, python: 14, javascript: 14 },
-    checkVisited: { cpp: 32, java: 32, python: 15, javascript: 15 },
-    continueVisited: { cpp: 32, java: 32, python: 16, javascript: 15 },
-    markVisited: { cpp: 33, java: 33, python: 17, javascript: 16 },
-    checkTarget: { cpp: 34, java: 36, python: 18, javascript: 17 },
-    returnCost: { cpp: 34, java: 37, python: 19, javascript: 17 },
-    forDirs: { cpp: 36, java: 40, python: 21, javascript: 19 },
-    checkValidNeighbor: { cpp: 38, java: 42, python: 23, javascript: 21 },
-    calcBottleneck: { cpp: 40, java: 44, python: 24, javascript: 22 },
-    checkRelax: { cpp: 41, java: 45, python: 25, javascript: 23 },
-    updateDist: { cpp: 42, java: 46, python: 26, javascript: 24 },
-    pushHeap: { cpp: 43, java: 47, python: 27, javascript: 25 },
-    returnFail: { cpp: 48, java: 52, python: 28, javascript: 30 },
+    entry: { cpp: 13, java: 12, python: 13, javascript: 9 },
+    initDist: { cpp: 15, java: 14, python: 15, javascript: 11 },
+    initDistSrc: { cpp: 16, java: 18, python: 16, javascript: 12 },
+    initVisited: { cpp: 17, java: 19, python: 17, javascript: 13 },
+    initHeap: { cpp: 19, java: 21, python: 19, javascript: 15 },
+    pushSrc: { cpp: 20, java: 22, python: 19, javascript: 15 },
+    whileHeap: { cpp: 21, java: 23, python: 20, javascript: 16 },
+    pollCur: { cpp: 22, java: 24, python: 21, javascript: 18 },
+    checkVisited: { cpp: 24, java: 26, python: 22, javascript: 19 },
+    continueVisited: { cpp: 24, java: 27, python: 23, javascript: 20 },
+    markVisited: { cpp: 26, java: 32, python: 27, javascript: 26 },
+    checkTarget: { cpp: 25, java: 29, python: 24, javascript: 22 },
+    returnCost: { cpp: 25, java: 30, python: 26, javascript: 24 },
+    forDirs: { cpp: 27, java: 33, python: 28, javascript: 27 },
+    checkValidNeighbor: { cpp: 28, java: 34, python: 30, javascript: 29 },
+    calcBottleneck: { cpp: 30, java: 36, python: 34, javascript: 32 },
+    checkRelax: { cpp: 31, java: 37, python: 35, javascript: 33 },
+    updateDist: { cpp: 32, java: 38, python: 36, javascript: 34 },
+    pushHeap: { cpp: 33, java: 39, python: 37, javascript: 35 },
+    returnFail: { cpp: 38, java: 44, python: 38, javascript: 40 },
   };
 
   function makeStep(
@@ -113,7 +113,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     activeSlot?: [number, number]
   ): void {
     const curH = grid[curR][curC];
-    const coordStr = `(${curR}, ${curC})`;
+    const coordStr = `(x=${curR}, y=${curC})`;
     const effortStr = `${minEffortSoFar}`;
     const heightStr = `${curH} m`;
 
@@ -163,72 +163,72 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   }
 
   // 1. 初始化
-  makeStep(lines.entry, `🚀 [算法初始化] minimumEffortPath(heights ${rows}x${cols})：开启最小体力消耗瓶颈路径搜索。`, 'minimumEffortPath 入口', 'start');
-  makeStep(lines.initDist, `📊 [初始化体力矩阵] distance[${rows}][${cols}] 全部填充 ∞；记录到达各格子所需最小高度落差。`, 'init distance[][]', 'start', 'dist');
+  makeStep(lines.entry, `🚀 [算法入口] minimumEffortPath(heights n=${rows}, m=${cols})：开启左神网格图最小体力消耗搜索。`, 'minimumEffortPath 入口', 'start');
+  makeStep(lines.initDist, `📊 [初始化体力矩阵] distance[${rows}][${cols}] 全部填充 MAX_VALUE；记录到达各格子 (x, y) 所需最小瓶颈。`, 'init distance[][]', 'start', 'dist');
 
   distance[0][0] = 0;
-  makeStep(lines.initDistSrc, '🌱 [起点体力初始化] distance[0][0] = 0；自身移动体力消耗为 0。', 'distance[0][0] = 0', 'start', 'dist', [0, 0]);
-  makeStep(lines.initVisited, `🏷️ [初始化锁定矩阵] visited[${rows}][${cols}] = false；记录已出堆锁定的终局格子。`, 'init visited[][]', 'start', 'visited');
-  makeStep(lines.initHeap, '📦 [初始化小根堆] PriorityQueue 按体力消耗 effort 升序排序。', 'init PriorityQueue', 'start', 'pq');
+  makeStep(lines.initDistSrc, '🌱 [起点体力初始化] distance[0][0] = 0；起点自身代价为 0。', 'distance[0][0] = 0', 'start', 'dist', [0, 0]);
+  makeStep(lines.initVisited, `🏷️ [初始化锁定矩阵] visited[${rows}][${cols}] = false；标记各 (x, y) 是否已结算。`, 'init visited[][]', 'start', 'visited');
+  makeStep(lines.initHeap, '📦 [初始化小根堆] PriorityQueue<int[]> heap 按代价 c 升序排序。', 'init heap', 'start', 'pq');
 
   pushPq(0, 0, 0);
-  makeStep(lines.pushSrc, '📥 [起点入堆] pq.add([0, 0, effort=0])；起点加入 Dijkstra 搜索前沿！', 'push (0,0,0)', 'start', 'pq', [0, 0]);
+  makeStep(lines.pushSrc, '📥 [起点入堆] heap.add([x=0, y=0, c=0])；起点加入 Dijkstra 堆！', 'heap.add(0,0,0)', 'start', 'pq', [0, 0]);
 
-  const dr = [-1, 1, 0, 0];
-  const dc = [0, 0, -1, 1];
+  // 左神标志性移动数组: 0:上, 1:右, 2:下, 3:左
+  const move = [-1, 0, 1, 0, -1];
 
   while (pq.length > 0) {
-    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!pq.isEmpty()) -> 小根堆待选格子数: ${pq.length}。`, '!pq.isEmpty()', 'explore');
+    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!heap.isEmpty()) -> 待探索状态数: ${pq.length}。`, '!heap.isEmpty()', 'explore');
 
     const top = pollPq();
     curR = top.r;
     curC = top.c;
     minEffortSoFar = top.effort;
 
-    makeStep(lines.pollCur, `📤 [弹出体力最小格] poll() -> (${curR}, ${curC}) [高度 ${grid[curR][curC]}, 累计瓶颈体力 effort=${minEffortSoFar}]！`, `poll (${curR},${curC},effort=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
+    makeStep(lines.pollCur, `📤 [弹出体力最小格] int[] record = heap.poll() -> x=${curR}, y=${curC}, c=${minEffortSoFar} (高度 ${grid[curR][curC]}m)！`, `poll (x=${curR},y=${curC},c=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
 
-    makeStep(lines.checkVisited, `🔎 [检查是否已探索] if (visited[${curR}][${curC}]) -> (${visited[curR][curC]})。`, `visited[${curR}][${curC}]?`, 'explore');
+    makeStep(lines.checkVisited, `🔎 [检查是否已锁定] if (visited[${curR}][${curC}]) -> (${visited[curR][curC]})。`, `visited[${curR}][${curC}]?`, 'explore');
     if (visited[curR][curC]) {
-      makeStep(lines.continueVisited, `⏭️ [跳过冗余格子] 格子 (${curR}, ${curC}) 之前已被更小体力锁定，跳过。`, `skip visited (${curR},${curC})`, 'explore');
+      makeStep(lines.continueVisited, `⏭️ [跳过已结算格] 格子 (x=${curR}, y=${curC}) 之前已以更小体力出堆，continue。`, `continue visited (x=${curR},y=${curC})`, 'explore');
       continue;
     }
 
-    visited[curR][curC] = true;
-    makeStep(lines.markVisited, `🔒 [锁定体力状态] visited[${curR}][${curC}] = true；锁定到达 (${curR}, ${curC}) 的全局最小体力 = ${minEffortSoFar}！`, `visited[${curR}][${curC}]=true`, 'explore', 'visited', [curR, curC]);
-
-    makeStep(lines.checkTarget, `🎯 [终点核验] if (r == ${rows - 1} && c == ${cols - 1}) -> (${curR === rows - 1 && curC === cols - 1})。`, 'check target', 'explore');
+    makeStep(lines.checkTarget, `🎯 [终点剪枝检查] if (x == n - 1 && y == m - 1) -> (${curR === rows - 1 && curC === cols - 1})。`, 'check target', 'explore');
     if (curR === rows - 1 && curC === cols - 1) {
       reachedTarget = true;
-      makeStep(lines.returnCost, `🏆 [抵达终点目标] return d = ${minEffortSoFar}！首次弹出右下角，最小体力消耗路径锁定为 ${minEffortSoFar}！`, `return ${minEffortSoFar}`, 'done', 'dist', [curR, curC]);
+      makeStep(lines.returnCost, `🏆 [终点出堆即最优] return c = ${minEffortSoFar}！首次弹出终点，最小体力消耗路径锁定为 ${minEffortSoFar}！`, `return c=${minEffortSoFar}`, 'done', 'dist', [curR, curC]);
       break;
     }
 
+    visited[curR][curC] = true;
+    makeStep(lines.markVisited, `🔒 [锁定最优状态] visited[${curR}][${curC}] = true；锁定到达 (x=${curR}, y=${curC}) 的全局最小体力 = ${minEffortSoFar}！`, `visited[${curR}][${curC}]=true`, 'explore', 'visited', [curR, curC]);
+
     for (let i = 0; i < 4; i++) {
-      const nr = curR + dr[i];
-      const nc = curC + dc[i];
+      const nx = curR + move[i];
+      const ny = curC + move[i + 1];
 
-      makeStep(lines.forDirs, `  ↳ [考察出边] 方向 ${i} -> 邻接格 (${nr}, ${nc})。`, `dir ${i} -> (${nr},${nc})`, 'relax');
+      makeStep(lines.forDirs, `  ↳ [遍历4向邻居] 方向 ${i}: nx = x + move[${i}], ny = y + move[${i + 1}] -> (nx=${nx}, ny=${ny})。`, `dir ${i} -> (${nx},${ny})`, 'relax');
 
-      const inBound = nr >= 0 && nr < rows && nc >= 0 && nc < cols;
-      const notVis = inBound && !visited[nr][nc];
+      const inBound = nx >= 0 && nx < rows && ny >= 0 && ny < cols;
+      const notVis = inBound && !visited[nx][ny];
 
-      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未访问核验] 界内(${inBound})、未访问(${notVis})。`, `valid (${nr},${nc})?`, 'relax');
+      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未锁定检查] nx,ny界内(${inBound})、未访问(!visited[${nx}][${ny}]=${notVis})。`, `valid (${nx},${ny})?`, 'relax');
 
       if (inBound && notVis) {
-        const stepEffort = Math.abs(grid[nr][nc] - grid[curR][curC]);
+        const stepEffort = Math.abs(grid[nx][ny] - grid[curR][curC]);
         const nextEffort = Math.max(minEffortSoFar, stepEffort);
 
-        makeStep(lines.calcBottleneck, `  🧗 [落差松弛计算] stepEffort=|${grid[nr][nc]} - ${grid[curR][curC]}|=${stepEffort}, nextEffort=max(${minEffortSoFar}, ${stepEffort})=${nextEffort}。`, `max(${minEffortSoFar},${stepEffort})=${nextEffort}`, 'relax');
+        makeStep(lines.calcBottleneck, `  🧗 [计算瓶颈体力] nc = max(c, |h[x][y] - h[nx][ny]|) = max(${minEffortSoFar}, |${grid[curR][curC]} - ${grid[nx][ny]}|) = ${nextEffort}。`, `nc=max(${minEffortSoFar},${stepEffort})=${nextEffort}`, 'relax');
 
-        makeStep(lines.checkRelax, `  🔎 [松弛检验] if (${nextEffort} < distance[${nr}][${nc}]=${distance[nr][nc] === Infinity ? '∞' : distance[nr][nc]})。`, `check relax (${nr},${nc})`, 'relax');
+        makeStep(lines.checkRelax, `  🔎 [松弛比较] if (nc < distance[nx][ny]) -> (${nextEffort} < ${distance[nx][ny] === Infinity ? '∞' : distance[nx][ny]})。`, `check nc < dist[${nx}][${ny}]`, 'relax');
 
-        if (nextEffort < distance[nr][nc]) {
-          distance[nr][nc] = nextEffort;
-          pre[`${nr},${nc}`] = [curR, curC];
-          pushPq(nr, nc, nextEffort);
+        if (nextEffort < distance[nx][ny]) {
+          distance[nx][ny] = nextEffort;
+          pre[`${nx},${ny}`] = [curR, curC];
+          pushPq(nx, ny, nextEffort);
 
-          makeStep(lines.updateDist, `  ⚡ [更新最短体力] distance[${nr}][${nc}] = ${nextEffort}。`, `dist[${nr}][${nc}]=${nextEffort}`, 'relax', 'dist', [nr, nc]);
-          makeStep(lines.pushHeap, `  📥 [候选入堆] pq.add([${nr}, ${nc}, ${nextEffort}])；加入小根堆！`, `push (${nr},${nc},${nextEffort})`, 'relax', 'pq', [nr, nc]);
+          makeStep(lines.updateDist, `  ⚡ [更新最优距离] distance[${nx}][${ny}] = ${nextEffort}。`, `distance[${nx}][${ny}]=${nextEffort}`, 'relax', 'dist', [nx, ny]);
+          makeStep(lines.pushHeap, `  📥 [新状态入堆] heap.add(new int[] { ${nx}, ${ny}, ${nextEffort} })。`, `heap.add(${nx},${ny},${nextEffort})`, 'relax', 'pq', [nx, ny]);
         }
       }
     }
@@ -237,7 +237,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   if (reachedTarget) {
     makeStep(lines.returnCost, `🎉 [寻路完成] 成功构建最小体力消耗路径！全程最大落差仅为 ${minEffortSoFar}！`, `完成: effort=${minEffortSoFar}`, 'done');
   } else {
-    makeStep(lines.returnFail, '❌ [无路可达] return 0：无法连通终点。', 'return 0', 'done');
+    makeStep(lines.returnFail, '❌ [无路可达] return -1：无法连通终点。', 'return -1', 'done');
   }
 
   return steps;

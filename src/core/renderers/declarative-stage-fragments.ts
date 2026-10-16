@@ -55,7 +55,7 @@ export function resolveHeaderContext(spec: DeclarativeAlgorithmSpec): StageHeade
   const domainMeta = DomainViewPresentationResolver.resolve({
     id: spec.id,
     category: spec.category,
-    name: spec.name,
+    name: spec.name || spec.title || spec.id,
     card1Title: explicitCard1Title,
   });
   const card1Title = domainMeta.card1TitleHtml;

@@ -2708,7 +2708,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 19,
     learningGoal: "掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型（建造最大岛屿）",
-    aliases: ["making-a-large-island","build-largest-island","建造最大岛屿","827","leetcode-827","making-large-island-058","class058-code05","making-a-large-island-827","make-largest-island-058"],
+    aliases: ["making-a-large-island","build-largest-island","建造最大岛屿","827","leetcode-827","making-large-island-058","class058-code05"],
   },
   {
     id: "find-route",

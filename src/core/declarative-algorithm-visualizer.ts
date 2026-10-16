@@ -1241,6 +1241,12 @@ export function createDeclarativeVisualizer<TStep extends StepBase = any>(
   template: string;
   Visualizer: new () => DeclarativeAlgorithmVisualizer<TStep>;
 } {
+  if (!spec.name && spec.title) {
+    spec.name = spec.title;
+  }
+  if (!spec.title && spec.name) {
+    spec.title = spec.name;
+  }
   const template = DeclarativeStagePresenter.generateTemplate(spec);
 
   class GeneratedVisualizer extends DeclarativeAlgorithmVisualizer<TStep> {

@@ -56,6 +56,8 @@ export class DeclarativeStagePresenter {
     const hasDeduction = Boolean(spec.hasDeductionTree || spec.id === 'a-star' || spec.id === 'a-star-journey' || spec.id === 'unique-paths');
     const card1SubViewBarHtml = renderCard1SubViewBarHtml(hasDeduction, ctx.domainMeta);
 
+    const algorithmName = spec.name || spec.title || spec.id;
+
     return `
 ${renderStageStyles(ctx.viewId)}
 
@@ -66,7 +68,7 @@ ${renderStageStyles(ctx.viewId)}
     <div class="dsp-header-left-zone">
       <div class="dsp-header-left">
         <div class="dsp-icon-btn">${ctx.icon}</div>
-        <h1 class="dsp-main-title" id="dsp-main-title" title="${spec.name}">${spec.name}</h1>
+        <h1 class="dsp-main-title" id="dsp-main-title" title="${algorithmName}">${algorithmName}</h1>
         <button id="btn-open-problem-modal" class="dsp-btn-problem">📋 题目</button>
         <span class="dsp-badge-mode" id="dsp-badge-mode">${ctx.modeBadge}</span>
         <span class="dsp-badge-complexity" id="dsp-badge-complexity">${ctx.complexityBadge}</span>
