@@ -18,12 +18,25 @@ export class PathMinEffortCanvasAdapter {
     const isHopping = isExploring;
     const pathSet = new Set(pathNodes.map(([r, c]) => `${r},${c}`));
 
+    // 空间流动连线与探测箭头 (Flow Arrows)
+    const flowArrows: Array<{ from: [number, number]; to: [number, number]; color?: string; dashed?: boolean; animated?: boolean }> = [];
+    if (pathNodes && pathNodes.length > 1) {
+      for (let i = 0; i < pathNodes.length - 1; i++) {
+        flowArrows.push({ from: pathNodes[i], to: pathNodes[i + 1], color: isDone ? '#10b981' : '#0284c7', dashed: true, animated: true });
+      }
+    }
+    if (status === 'relax' && step.activeSlot && (curR !== step.activeSlot[0] || curC !== step.activeSlot[1])) {
+      flowArrows.push({ from: [curR, curC], to: step.activeSlot, color: '#f59e0b', dashed: true, animated: true });
+    }
+
     BinaryGridCanvasAdapter.renderGridCanvas(container, {
       rows,
       cols,
       variant: 'adventurer',
       showCoords: true,
       targetPos: [rows - 1, cols - 1],
+      riverBarrierText: '🌊 水位漫延防线 · MiniMax 瓶颈流转 🚫',
+      flowArrows,
       adventurer: {
         r: curR,
         c: curC,
@@ -66,11 +79,23 @@ export class PathMinEffortCanvasAdapter {
           border = h >= 8 ? '1.5px solid #94a3b8' : '1.5px solid #cbd5e1';
         }
 
+        // 动态水位/体力流灌注淹没层 (Water Flooding Layer)
+        const isReached = d !== Infinity;
+        const fillPercent = Math.min(80, Math.max(28, (h / 8) * 60 + 20));
+        const waterGrad = isDone && isPath
+          ? 'linear-gradient(180deg, rgba(52,211,153,0.35) 0%, rgba(16,185,129,0.5) 100%)'
+          : isCur
+            ? 'linear-gradient(180deg, rgba(251,191,36,0.38) 0%, rgba(245,158,11,0.52) 100%)'
+            : 'linear-gradient(180deg, rgba(56,189,248,0.3) 0%, rgba(2,132,199,0.45) 100%)';
+        const waveStroke = isDone && isPath ? '#a7f3d0' : isCur ? '#fde68a' : '#bae6fd';
+        const borderTopColor = isDone && isPath ? '#10b981' : isCur ? '#f59e0b' : '#38bdf8';
+        const waterFloodHtml = isReached ? `<div style="position: absolute; bottom: 0; left: 0; right: 0; height: ${fillPercent}%; background: ${waterGrad}; border-top: 1.5px solid ${borderTopColor}; transition: height 0.3s ease; border-radius: 0 0 10px 10px; pointer-events: none; overflow: hidden; z-index: 2;"><svg class="dp-river-waves-1" style="position: absolute; top: -3px; left: 0; width: 200%; height: 6px; opacity: 0.9;" preserveAspectRatio="none"><path d="M 0 3 Q 15 0, 30 3 T 60 3 T 90 3 T 120 3 T 150 3 T 180 3" fill="none" stroke="${waveStroke}" stroke-width="1.3" /></svg></div>` : '';
+
         let effLabel = d !== Infinity
-          ? `<div style="font-size: 9.5px; font-weight: 700; opacity: 0.85; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;">落差: ${d}</div>`
+          ? `<div style="font-size: 9.5px; font-weight: 700; opacity: 0.85; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none; z-index: 5;">落差: ${d}</div>`
           : '';
         if (isProbing) {
-          effLabel = `<div style="font-size: 9.5px; font-weight: 700; color: #2563eb; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;">🔍 探测中</div>`;
+          effLabel = `<div style="font-size: 9.5px; font-weight: 700; color: #2563eb; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none; z-index: 5;">🔍 探测中</div>`;
         }
 
         const boxShadow = isCur
@@ -85,7 +110,7 @@ export class PathMinEffortCanvasAdapter {
 
         return {
           text: `${h}m`,
-          extraHtml: effLabel,
+          extraHtml: `${waterFloodHtml}${effLabel}`,
           bg,
           border,
           color,

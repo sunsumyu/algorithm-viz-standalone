@@ -34,6 +34,7 @@ export interface EffortStep {
   metrics?: Record<string, string | number>;
   treeRoot?: EffortTreeNode;
   activeNodeId?: string;
+  parentMap?: Record<string, [number, number]>;
 }
 
 export const PRESET_EFFORT_GRIDS: Record<string, { label: string; grid: number[][] }> = {
@@ -160,15 +161,11 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
             : '算法初始化';
 
     let pathNodes: Array<[number, number]> = [];
-    if (status === 'done') {
-      let curr: [number, number] | undefined = [rows - 1, cols - 1];
-      while (curr) {
-        pathNodes.unshift(curr);
-        if (curr[0] === 0 && curr[1] === 0) break;
-        curr = pre[`${curr[0]},${curr[1]}`];
-      }
-    } else {
-      pathNodes = [[curR, curC]];
+    let curr: [number, number] | undefined = status === 'done' ? [rows - 1, cols - 1] : [curR, curC];
+    while (curr) {
+      pathNodes.unshift(curr);
+      if (curr[0] === 0 && curr[1] === 0) break;
+      curr = pre[`${curr[0]},${curr[1]}`];
     }
 
     steps.push({
@@ -179,6 +176,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
       curC,
       minEffortSoFar,
       pathNodes,
+      parentMap: { ...pre },
       pqList: pq.map((item) => ({ ...item })),
       activeArray,
       activeSlot,

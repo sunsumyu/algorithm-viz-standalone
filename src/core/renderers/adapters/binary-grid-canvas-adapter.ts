@@ -49,6 +49,14 @@ export interface BinaryGridCellConfig {
   title?: string;
 }
 
+export interface BinaryGridFlowArrow {
+  from: [number, number];
+  to: [number, number];
+  color?: string;
+  dashed?: boolean;
+  animated?: boolean;
+}
+
 export interface BinaryGridRenderOptions {
   rows: number;
   cols: number;
@@ -68,6 +76,8 @@ export interface BinaryGridRenderOptions {
   targetPos?: [number, number] | null;
   /** 底部水流边界防线提示语（如传入或 true 则渲染波浪河流栏） */
   riverBarrierText?: string | boolean;
+  /** 单元格之间的流向连接箭头集合 */
+  flowArrows?: BinaryGridFlowArrow[];
   /** 单个单元格的配置工厂函数 */
   getCell: (r: number, c: number) => BinaryGridCellConfig;
 }
@@ -212,10 +222,71 @@ export class BinaryGridCanvasAdapter {
       `;
     }
 
+    // 空间流动箭头层 (Flow Arrows Overlay)
+    let flowOverlayHtml = '';
+    if (options.flowArrows && options.flowArrows.length > 0) {
+      const cellPx = parseFloat(finalCellSize) || 48;
+      const gapPx = parseFloat(finalGap) || 8;
+      const totalW = cols * cellPx + (cols - 1) * gapPx;
+      const totalH = rows * cellPx + (rows - 1) * gapPx;
+
+      let arrowLines = '';
+      for (const arrow of options.flowArrows) {
+        const [r1, c1] = arrow.from;
+        const [r2, c2] = arrow.to;
+        if (r1 < 0 || r1 >= rows || c1 < 0 || c1 >= cols || r2 < 0 || r2 >= rows || c2 < 0 || c2 >= cols) continue;
+
+        const x1 = c1 * (cellPx + gapPx) + cellPx / 2;
+        const y1 = r1 * (cellPx + gapPx) + cellPx / 2;
+        const x2 = c2 * (cellPx + gapPx) + cellPx / 2;
+        const y2 = r2 * (cellPx + gapPx) + cellPx / 2;
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+
+        const sx = x1 + ux * (cellPx * 0.28);
+        const sy = y1 + uy * (cellPx * 0.28);
+        const ex = x2 - ux * (cellPx * 0.3);
+        const ey = y2 - uy * (cellPx * 0.3);
+
+        const color = arrow.color || '#0284c7';
+        const isDashed = arrow.dashed ?? true;
+        const isAnim = arrow.animated ?? true;
+        const dashAttr = isDashed ? 'stroke-dasharray="4 2"' : '';
+        const animClass = isAnim ? 'dp-trail-arrow' : '';
+        const marker = color === '#10b981' ? 'bga-arrow-emerald' : color === '#f59e0b' ? 'bga-arrow-amber' : 'bga-arrow-blue';
+
+        arrowLines += `<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${color}" stroke-width="2.5" ${dashAttr} marker-end="url(#${marker})" class="${animClass}" opacity="0.9" />`;
+      }
+
+      if (arrowLines) {
+        flowOverlayHtml = `
+          <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 25;" viewBox="0 0 ${totalW} ${totalH}">
+            <defs>
+              <marker id="bga-arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#0284c7" />
+              </marker>
+              <marker id="bga-arrow-amber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+              </marker>
+              <marker id="bga-arrow-emerald" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+              </marker>
+            </defs>
+            ${arrowLines}
+          </svg>
+        `;
+      }
+    }
+
     container.innerHTML = `
       <div class="bga-grid-wrapper" style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box;">
-        <div class="bga-grid-container" style="display: grid; grid-template-columns: repeat(${cols}, ${finalCellSize}); gap: ${finalGap}; justify-content: center; align-content: center; max-width: ${maxWidth}; margin: 0 auto; box-sizing: border-box;">
+        <div class="bga-grid-container" style="position: relative; display: grid; grid-template-columns: repeat(${cols}, ${finalCellSize}); gap: ${finalGap}; justify-content: center; align-content: center; max-width: ${maxWidth}; margin: 0 auto; box-sizing: border-box;">
           ${cellsHtml}
+          ${flowOverlayHtml}
         </div>
         ${riverBarHtml}
       </div>
