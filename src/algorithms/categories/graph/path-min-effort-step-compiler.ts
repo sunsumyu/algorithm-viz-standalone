@@ -148,21 +148,22 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   ): void {
     const curH = grid[curR][curC];
     const coordStr = `(x=${curR}, y=${curC})`;
-    const effortStr = `${minEffortSoFar}`;
+    const effortStr = `${minEffortSoFar} m (第 ${minEffortSoFar} 秒漫平)`;
     const heightStr = `${curH} m`;
 
     const phaseStr =
       status === 'done'
         ? '最小体力路径达成'
         : status === 'relax'
-          ? '松弛瓶颈体力值'
+          ? '松弛探测水流'
           : status === 'explore'
-            ? '弹出最小体力格'
+            ? `第 ${minEffortSoFar} 秒水流漫平`
             : '算法初始化';
 
     let pathNodes: Array<[number, number]> = [];
     let curr: [number, number] | undefined = status === 'done' ? [rows - 1, cols - 1] : [curR, curC];
-    while (curr) {
+    let guard = 0;
+    while (curr && guard++ < rows * cols) {
       pathNodes.unshift(curr);
       if (curr[0] === 0 && curr[1] === 0) break;
       curr = pre[`${curr[0]},${curr[1]}`];
@@ -223,7 +224,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
       activeNode.status = 'active';
     }
 
-    makeStep(lines.pollCur, `📤 [弹出体力最小格] int[] record = heap.poll() -> x=${curR}, y=${curC}, c=${minEffortSoFar} (高度 ${grid[curR][curC]}m)！`, `poll (x=${curR},y=${curC},c=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
+    makeStep(lines.pollCur, `📤 [弹出体力最小格] int[] record = heap.poll() -> x=${curR}, y=${curC}, c=${minEffortSoFar} (高度 ${grid[curR][curC]}m)！水流在第 ${minEffortSoFar} 秒与该平台完全漫平！`, `poll (x=${curR},y=${curC},c=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
 
     makeStep(lines.checkVisited, `🔎 [检查是否已锁定] if (visited[${curR}][${curC}]) -> (${visited[curR][curC]})。`, `visited[${curR}][${curC}]?`, 'explore');
     if (visited[curR][curC]) {
@@ -234,7 +235,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     makeStep(lines.checkTarget, `🎯 [终点剪枝检查] if (x == n - 1 && y == m - 1) -> (${curR === rows - 1 && curC === cols - 1})。`, 'check target', 'explore');
     if (curR === rows - 1 && curC === cols - 1) {
       reachedTarget = true;
-      makeStep(lines.returnCost, `🏆 [终点出堆即最优] return c = ${minEffortSoFar}！首次弹出终点，最小体力消耗路径锁定为 ${minEffortSoFar}！`, `return c=${minEffortSoFar}`, 'done', 'dist', [curR, curC]);
+      makeStep(lines.returnCost, `🏆 [终点出堆即最优] return c = ${minEffortSoFar}！终点在第 ${minEffortSoFar} 秒完成水流漫平连通，全程最小体力消耗为 ${minEffortSoFar}！`, `return c=${minEffortSoFar}`, 'done', 'dist', [curR, curC]);
       break;
     }
 
@@ -243,7 +244,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     if (curVisitedNode && curVisitedNode.id !== 'node-0-0') {
       curVisitedNode.status = 'visited';
     }
-    makeStep(lines.markVisited, `🔒 [锁定最优状态] visited[${curR}][${curC}] = true；锁定到达 (x=${curR}, y=${curC}) 的全局最小体力 = ${minEffortSoFar}！`, `visited[${curR}][${curC}]=true`, 'explore', 'visited', [curR, curC]);
+    makeStep(lines.markVisited, `🔒 [锁定最优状态] visited[${curR}][${curC}] = true；在第 ${minEffortSoFar} 秒锁定到达 (x=${curR}, y=${curC}) 的全局最小体力 = ${minEffortSoFar}！`, `visited[${curR}][${curC}]=true`, 'explore', 'visited', [curR, curC]);
 
     for (let i = 0; i < 4; i++) {
       const nx = curR + move[i];
@@ -288,7 +289,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
             childNode.edgeLabel = `落差:${stepEffort}`;
           }
 
-          makeStep(lines.updateDist, `  ⚡ [更新最优距离] distance[${nx}][${ny}] = ${nextEffort}。`, `distance[${nx}][${ny}]=${nextEffort}`, 'relax', 'dist', [nx, ny]);
+          makeStep(lines.updateDist, `  ⚡ [更新漫平时间] distance[${nx}][${ny}] = ${nextEffort}；到达 (${nx},${ny}) 需待第 ${nextEffort} 秒水流漫平。`, `distance[${nx}][${ny}]=${nextEffort}`, 'relax', 'dist', [nx, ny]);
           makeStep(lines.pushHeap, `  📥 [新状态入堆] heap.add(new int[] { ${nx}, ${ny}, ${nextEffort} })。`, `heap.add(${nx},${ny},${nextEffort})`, 'relax', 'pq', [nx, ny]);
         }
       }

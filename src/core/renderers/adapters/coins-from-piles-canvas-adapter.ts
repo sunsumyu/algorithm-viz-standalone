@@ -32,7 +32,7 @@ export function renderCoinsFromPilesSandbox(container: HTMLElement, step: CoinsF
   const totalCoinsVal = selected.reduce((s, it) => s + it.sumVal, 0);
   const ratio = Math.min(100, Math.round((usedK / Math.max(1, step.kTarget)) * 100));
 
-  const pilesHtml = step.piles
+  const pilesHtml = (step.piles || [])
     .map((pile, pIdx) => {
       const isCurPile = step.pileIndex === pIdx;
       const takenPlan = selected.find((it) => it.pileIdx === pIdx + 1);
@@ -137,7 +137,8 @@ export function renderCoinsFromPilesSandbox(container: HTMLElement, step: CoinsF
 }
 
 export function renderCoinsFromPilesVectorMatrix(container: HTMLElement, step: CoinsFromPilesStep): void {
-  const cells = step.dp.map((val, idx) => {
+  const dpArr = step.dp || [];
+  const cells = dpArr.map((val, idx) => {
     const isCur = step.j === idx;
     const bg = isCur ? '#0284c7' : '#1e293b';
     const border = isCur ? '#38bdf8' : '#334155';
@@ -152,7 +153,7 @@ export function renderCoinsFromPilesVectorMatrix(container: HTMLElement, step: C
 
   container.innerHTML = `
     <div style="width:100%; height:100%; display:flex; flex-direction:column; padding:2px 4px; box-sizing:border-box; flex:1; min-height:0; overflow:hidden;">
-      <div style="font-size:11px; color:#64748b; margin-bottom:4px; font-weight:700; flex-shrink:0;">操作次数容量收益向量 dp[0..${step.dp.length - 1}]</div>
+      <div style="font-size:11px; color:#64748b; margin-bottom:4px; font-weight:700; flex-shrink:0;">操作次数容量收益向量 dp[0..${dpArr.length > 0 ? dpArr.length - 1 : 0}]</div>
       <div style="display:flex; flex-wrap:wrap; align-content:flex-start; flex:1; min-height:0; overflow-y:auto; gap:2px; background:#f1f5f9; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">
         ${cells.join('')}
       </div>
@@ -182,13 +183,19 @@ export function createCoinsFromPilesStages(): any[] {
       },
       card1Title: '🪙 硬币栈阵列与递归调用栈',
       card2Title: '📊 组内互斥分支尝试开销监控',
+      metrics: [
+        { id: 'metric-cur-state', label: '当前递归状态', color: '#38bdf8' },
+        { id: 'metric-stack-depth', label: '递归深度', color: '#818cf8' },
+        { id: 'metric-cur-pile', label: '当前硬币栈', color: '#f59e0b' },
+        { id: 'metric-rem-k', label: '还需拿取数', color: '#10b981' },
+      ],
       codeLanguages: COINS_FROM_PILES_STAGE1_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { k, piles } = parseCoinsFromPilesInputs(inputs);
         return buildCoinsFromPilesRecursionSteps(piles, k);
       },
       renderCanvas: (container: HTMLElement, step: any) => {
-        const pilesHtml = step.piles
+        const pilesHtml = (step.piles || [])
           .map(
             (pile: number[], idx: number) => `
           <div style="background:${step.i === idx ? 'rgba(59, 130, 246, 0.3)' : 'rgba(241, 245, 249, 0.9)'}; border:1px solid ${step.i === idx ? '#3b82f6' : '#334155'}; border-radius:6px; padding:6px 10px; font-family:'JetBrains Mono', monospace; font-size:11px;">
@@ -239,6 +246,12 @@ export function createCoinsFromPilesStages(): any[] {
       },
       card1Title: '💾 备忘录剪枝探查追踪 (Cache Hit/Miss)',
       card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][remK]',
+      metrics: [
+        { id: 'metric-cur-state', label: '探查状态', color: '#38bdf8' },
+        { id: 'metric-hit-rate', label: '缓存命中率', color: '#10b981' },
+        { id: 'metric-cache-hits', label: '缓存命中', color: '#22c55e' },
+        { id: 'metric-cache-miss', label: '未命中求解', color: '#ef4444' },
+      ],
       codeLanguages: COINS_FROM_PILES_STAGE2_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { k, piles } = parseCoinsFromPilesInputs(inputs);
@@ -255,11 +268,12 @@ export function createCoinsFromPilesStages(): any[] {
         });
       },
       renderCustomMetrics: (container: HTMLElement, step: any) => {
+        const pileCount = step.piles?.length ?? (step.memo?.length || 0);
         renderSpecialMemoCard2(container, {
-          title: `备忘录矩阵 memo[${step.piles.length}][${step.k + 1}]`,
+          title: `备忘录矩阵 memo[${pileCount}][${step.k + 1}]`,
           memo: step.memo,
-          curI: step.i,
-          curJ: step.remK,
+          curI: step.curI ?? step.i,
+          curJ: step.curJ ?? step.remK,
           isHit: step.cacheHit,
         });
       },
@@ -277,26 +291,36 @@ export function createCoinsFromPilesStages(): any[] {
       },
       card1Title: '🔗 前缀和与组内互斥转移依赖',
       card2Title: '📐 二维动态规划状态表 dp[i][j]',
+      metrics: [
+        { id: 'metric-cur-cell', label: '当前递推单元格', color: '#38bdf8' },
+        { id: 'metric-cell-val', label: '单元格赋值结果', color: '#10b981' },
+        { id: 'metric-target-k', label: '总拿取限制 K', color: '#f59e0b' },
+      ],
       codeLanguages: COINS_FROM_PILES_STAGE3_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { k, piles } = parseCoinsFromPilesInputs(inputs);
         return buildCoinsFromPiles2DSteps(piles, k);
       },
       renderCanvas: (container: HTMLElement, step: any) => {
+        const curI = step.curI ?? step.i;
+        const curJ = step.curJ ?? step.j;
         renderSpecial2DCard1(container, {
-          cellName: `dp[${step.i >= 0 ? step.i : '—'}][${step.j >= 0 ? step.j : '—'}]`,
-          cellValStr: step.i >= 0 && step.j >= 0 ? `${step.dp[step.i]?.[step.j]}` : '—',
+          cellName: `dp[${curI >= 0 ? curI : '—'}][${curJ >= 0 ? curJ : '—'}]`,
+          cellValStr: curI >= 0 && curJ >= 0 ? `${step.dp?.[curI]?.[curJ] ?? '—'}` : '—',
           depCells: step.depCells,
           decision: step.decision,
           message: step.message,
         });
       },
       renderCustomMetrics: (container: HTMLElement, step: any) => {
+        const curI = step.curI ?? step.i;
+        const curJ = step.curJ ?? step.j;
+        const pileCount = step.piles?.length ?? (step.dp?.length ? step.dp.length - 1 : 0);
         renderSpecial2DCard2(container, {
-          title: `二维 DP 状态表 dp[0..${step.piles.length}][0..${step.k}]`,
+          title: `二维 DP 状态表 dp[0..${pileCount}][0..${step.k}]`,
           dp: step.dp,
-          curI: step.i,
-          curJ: step.j,
+          curI,
+          curJ,
           depCells: step.depCells,
         });
       },
@@ -314,6 +338,12 @@ export function createCoinsFromPilesStages(): any[] {
       },
       card1Title: '🪙 硬币栈阵列与实时拾取沙盘',
       card2Title: '📊 抽取次数容量收益向量 dp[j] 监视器',
+      metrics: [
+        { id: 'metric-cur-pile', label: '当前硬币栈', color: '#f59e0b' },
+        { id: 'metric-cur-j', label: '当前总步数 j', color: '#38bdf8' },
+        { id: 'metric-cur-c', label: '当前拿取枚数 c', color: '#8b5cf6' },
+        { id: 'metric-max-coins', label: '当前最大面值', color: '#10b981' },
+      ],
       codeLanguages: COINS_FROM_PILES_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { k, piles } = parseCoinsFromPilesInputs(inputs);

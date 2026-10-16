@@ -197,19 +197,25 @@ export function createBuyingHayStages(): any[] {
       },
       card1Title: '🌾 供货商列表与递归调用栈',
       card2Title: '📊 递归分支探索开销监控',
+      metrics: [
+        { id: 'metric-cur-state', label: '递归状态', color: '#38bdf8' },
+        { id: 'metric-stack-depth', label: '递归深度', color: '#818cf8' },
+        { id: 'metric-cur-supplier', label: '当前供货商', color: '#f59e0b' },
+        { id: 'metric-rem-h', label: '剩余需求', color: '#10b981' },
+      ],
       codeLanguages: BUYING_HAY_STAGE1_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { h, cost, val } = parseBuyingHayInputs(inputs);
         return buildBuyingHayRecursionSteps(h, cost, val);
       },
       renderCanvas: (container: HTMLElement, step: any) => {
-        const suppliersHtml = step.cost
+        const suppliersHtml = (step.cost || [])
           .map(
             (c: number, idx: number) => `
           <div style="background:${
             step.i === idx ? 'rgba(59, 130, 246, 0.3)' : 'rgba(15, 23, 42, 0.6)'
           }; border:1px solid ${step.i === idx ? '#3b82f6' : '#334155'}; border-radius:6px; padding:6px 10px; font-family:'JetBrains Mono', monospace; font-size:11px;">
-            供货商 #${idx + 1}: ${c}元 / ${step.val[idx]}磅
+            供货商 #${idx + 1}: ${c}元 / ${step.val?.[idx]}磅
           </div>
         `
           )
@@ -256,6 +262,12 @@ export function createBuyingHayStages(): any[] {
       },
       card1Title: '💾 备忘录剪枝探查追踪 (Cache Hit/Miss)',
       card2Title: '🎯 2D 备忘录缓存热力矩阵 memo[i][remH]',
+      metrics: [
+        { id: 'metric-cur-state', label: '探查状态', color: '#38bdf8' },
+        { id: 'metric-hit-rate', label: '缓存命中率', color: '#10b981' },
+        { id: 'metric-cache-hits', label: '命中次数', color: '#22c55e' },
+        { id: 'metric-cache-miss', label: '未命中次数', color: '#ef4444' },
+      ],
       codeLanguages: BUYING_HAY_STAGE2_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { h, cost, val } = parseBuyingHayInputs(inputs);
@@ -272,11 +284,12 @@ export function createBuyingHayStages(): any[] {
         });
       },
       renderCustomMetrics: (container: HTMLElement, step: any) => {
+        const costCount = step.cost?.length ?? (step.memo?.length || 0);
         renderSpecialMemoCard2(container, {
-          title: `备忘录矩阵 memo[${step.cost.length}][${step.h + 1}]`,
+          title: `备忘录矩阵 memo[${costCount}][${step.h + 1}]`,
           memo: step.memo,
-          curI: step.i,
-          curJ: step.remH,
+          curI: step.curI ?? step.i,
+          curJ: step.curJ ?? step.remH,
           isHit: step.cacheHit,
         });
       },
@@ -294,19 +307,26 @@ export function createBuyingHayStages(): any[] {
       },
       card1Title: '🔗 供货商对比与转移依赖格展示',
       card2Title: '📐 二维动态规划状态表 dp[i][j]',
+      metrics: [
+        { id: 'metric-cur-cell', label: '当前递推单元格', color: '#38bdf8' },
+        { id: 'metric-cell-val', label: '单元格赋值结果', color: '#10b981' },
+        { id: 'metric-target-h', label: '目标重量 H', color: '#f59e0b' },
+      ],
       codeLanguages: BUYING_HAY_STAGE3_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { h, cost, val } = parseBuyingHayInputs(inputs);
         return buildBuyingHay2DSteps(h, cost, val);
       },
       renderCanvas: (container: HTMLElement, step: any) => {
+        const curI = step.curI ?? step.i;
+        const curJ = step.curJ ?? step.j;
         renderSpecial2DCard1(container, {
-          cellName: `dp[${step.i >= 0 ? step.i : '—'}][${step.j >= 0 ? step.j : '—'}]`,
+          cellName: `dp[${curI >= 0 ? curI : '—'}][${curJ >= 0 ? curJ : '—'}]`,
           cellValStr:
-            step.i >= 0 && step.j >= 0
-              ? step.dp[step.i]?.[step.j] >= 1_000_000_000
+            curI >= 0 && curJ >= 0
+              ? step.dp?.[curI]?.[curJ] >= 1_000_000_000
                 ? 'INF'
-                : `${step.dp[step.i]?.[step.j]} 元`
+                : `${step.dp?.[curI]?.[curJ]} 元`
               : '—',
           depCells: step.depCells,
           decision: step.decision,
@@ -314,11 +334,14 @@ export function createBuyingHayStages(): any[] {
         });
       },
       renderCustomMetrics: (container: HTMLElement, step: any) => {
+        const curI = step.curI ?? step.i;
+        const curJ = step.curJ ?? step.j;
+        const costCount = step.cost?.length ?? (step.dp?.length ? step.dp.length - 1 : 0);
         renderSpecial2DCard2(container, {
-          title: `二维 DP 状态表 dp[0..${step.cost.length}][0..${step.m}]`,
+          title: `二维 DP 状态表 dp[0..${costCount}][0..${step.m}]`,
           dp: step.dp,
-          curI: step.i,
-          curJ: step.j,
+          curI,
+          curJ,
           depCells: step.depCells,
         });
       },
@@ -336,6 +359,12 @@ export function createBuyingHayStages(): any[] {
       },
       card1Title: '🌾 干草供销市场与实时采购载荷舱',
       card2Title: '📊 滚动状态向量 dp[0..m] 监视器',
+      metrics: [
+        { id: 'metric-cur-supplier', label: '当前供货商', color: '#f59e0b' },
+        { id: 'metric-cur-j', label: '当前重量 j', color: '#38bdf8' },
+        { id: 'metric-expanded-m', label: '扩充容量上限 m', color: '#8b5cf6' },
+        { id: 'metric-min-cost', label: '最低采购总花费', color: '#10b981' },
+      ],
       codeLanguages: BUYING_HAY_MIN_COST_CODE_LANGUAGES,
       buildSteps: (inputs: Record<string, any>) => {
         const { h, cost, val } = parseBuyingHayInputs(inputs);

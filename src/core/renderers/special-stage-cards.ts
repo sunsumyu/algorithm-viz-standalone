@@ -203,7 +203,7 @@ export function renderSpecial2DCard1(
 ): void {
   const { cellName, cellValStr, depCells, decision, message } = opts;
   const depsHtml =
-    depCells.length === 0
+    (!depCells || depCells.length === 0)
       ? '<div style="color:#94a3b8; font-size:11px;">无前驱依赖（基底直接赋值）</div>'
       : depCells
           .map(

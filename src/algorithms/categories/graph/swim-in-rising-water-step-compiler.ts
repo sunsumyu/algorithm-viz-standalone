@@ -130,23 +130,23 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
   }
 
   // 1. 初始化
-  makeStep(lines.entry, `🚀 [算法初始化] swimInWater(grid ${n}x${m})：开启水位上升瓶颈最短路寻路。`, 'swimInWater 入口', 'init');
-  makeStep(lines.initDist, `📊 [初始化距离矩阵] 分配 distance[${n}][${m}] 填充 ∞；记录到达各格子所需最小水位。`, 'init distance[][]', 'init');
+  makeStep(lines.entry, `🚀 [算法初始化] swimInWater(grid ${n}x${m})：开启水位上升瓶颈最短路寻路。`, '开启泳池最短路寻路', 'init');
+  makeStep(lines.initDist, `📊 [初始化距离矩阵] 分配 distance[${n}][${m}] 填充 ∞；记录到达各格子所需最小水位。`, '初始化距离矩阵为无穷大', 'init');
 
   dist[0][0] = grid[0][0];
-  makeStep(lines.initDistSrc, `🌱 [起点水位初始化] distance[0][0] = grid[0][0] = ${grid[0][0]}；从起点平台高度开始起算。`, `dist[0][0]=${grid[0][0]}`, 'init');
-  makeStep(lines.initVisited, `🏷️ [初始化访问标记] boolean[][] visited 记录已最终确定水位的锁定方格。`, 'init visited[][]', 'init');
-  makeStep(lines.initHeap, '📦 [初始化小根堆] PriorityQueue 按到达所需最少水位 t 升序排序。', 'init PriorityQueue', 'init');
+  makeStep(lines.initDistSrc, `🌱 [起点水位初始化] distance[0][0] = grid[0][0] = ${grid[0][0]}；从起点平台高度开始起算。`, `起点初值水位设定为 ${grid[0][0]}`, 'init');
+  makeStep(lines.initVisited, `🏷️ [初始化访问标记] boolean[][] visited 记录已最终确定水位的锁定方格。`, '初始化访问锁定标记表', 'init');
+  makeStep(lines.initHeap, '📦 [初始化小根堆] PriorityQueue 按到达所需最少水位 t 升序排序。', '初始化小根堆优先队列', 'init');
 
   pq.push({ r: 0, c: 0, t: grid[0][0] });
-  makeStep(lines.pushSrc, `📥 [起点入堆] heap.add([0, 0, ${grid[0][0]}])；起点加入 Dijkstra 前沿！`, `push (0,0,${grid[0][0]})`, 'init', 0, 0, grid[0][0]);
+  makeStep(lines.pushSrc, `📥 [起点入堆] heap.add([0, 0, ${grid[0][0]}])；起点加入 Dijkstra 前沿！`, `起点平台加入小根堆`, 'init', 0, 0, grid[0][0]);
 
   const dr = [-1, 0, 1, 0];
   const dc = [0, 1, 0, -1];
   let foundTarget = false;
 
   while (pq.length > 0) {
-    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!heap.isEmpty()) -> 小根堆待选候选数: ${pq.length}。`, '!heap.isEmpty()', 'pop');
+    makeStep(lines.whileHeap, `🔁 [检查堆非空] while (!heap.isEmpty()) -> 小根堆待选候选数: ${pq.length}。`, `检查小根堆前沿待处理元素`, 'pop');
 
     pq.sort((a, b) => a.t - b.t);
     const top = pq.shift()!;
@@ -155,18 +155,18 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
     curC = c;
     curWaterLevel = t;
 
-    makeStep(lines.pollRecord, `📤 [弹出最少水位平台] poll() -> (${r}, ${c}) [平台高度 ${grid[r][c]}, 所需最少水位 t=${t}]！`, `poll (${r},${c},t=${t})`, 'pop', r, c, t);
+    makeStep(lines.pollRecord, `📤 [弹出最少水位平台] poll() -> (${r}, ${c}) [平台高度 ${grid[r][c]}, 所需最少水位 t=${t}]！`, `弹出最小水位平台 (${r},${c}) 水位 t=${t}`, 'pop', r, c, t);
 
-    makeStep(lines.checkVisited, `🔎 [检查是否已探索] if (visited[${r}][${c}]) -> (${visited[r][c]})。`, `visited[${r}][${c}]?`, 'pop', r, c, t);
+    makeStep(lines.checkVisited, `🔎 [检查是否已探索] if (visited[${r}][${c}]) -> (${visited[r][c]})。`, `检查平台 (${r},${c}) 是否已锁定`, 'pop', r, c, t);
     if (visited[r][c]) {
-      makeStep(lines.continueVisited, `⏭️ [跳过冗余平台] 平台 (${r}, ${c}) 之前已被更低水位锁定，跳过。`, `skip visited (${r},${c})`, 'pop', r, c, t);
+      makeStep(lines.continueVisited, `⏭️ [跳过冗余平台] 平台 (${r}, ${c}) 之前已被更低水位锁定，跳过。`, `跳过已结算平台 (${r},${c})`, 'pop', r, c, t);
       continue;
     }
 
     visited[r][c] = true;
-    makeStep(lines.markVisited, `🔒 [锁定水位状态] visited[${r}][${c}] = true；到达 (${r}, ${c}) 瓶颈水位固定为 ${t}！`, `visited[${r}][${c}]=true`, 'pop', r, c, t);
+    makeStep(lines.markVisited, `🔒 [锁定水位状态] visited[${r}][${c}] = true；到达 (${r}, ${c}) 瓶颈水位固定为 ${t}！`, `锁定到达平台 (${r},${c}) 的最终水位`, 'pop', r, c, t);
 
-    makeStep(lines.checkTarget, `🎯 [终点核验] if (r == ${n - 1} && c == ${m - 1}) -> (${r === n - 1 && c === m - 1})。`, 'check target', 'pop', r, c, t);
+    makeStep(lines.checkTarget, `🎯 [终点核验] if (r == ${n - 1} && c == ${m - 1}) -> (${r === n - 1 && c === m - 1})。`, '核验是否已抵达终点平台', 'pop', r, c, t);
     if (r === n - 1 && c === m - 1) {
       foundTarget = true;
       const bestPath: Array<{ r: number; c: number }> = [];
@@ -179,7 +179,7 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
       bestPath.reverse();
       finalPath = bestPath;
 
-      makeStep(lines.returnCost, `🏆 [抵达终点目标] return cost = ${t}！首次弹出右下角，全局瓶颈最小等待时间锁定为 ${t}！`, `return ${t}`, 'reach', r, c, t);
+      makeStep(lines.returnCost, `🏆 [抵达终点目标] return cost = ${t}！首次弹出右下角，全局瓶颈最小等待时间锁定为 ${t}！`, `终点出堆达成全局最优解`, 'reach', r, c, t);
       break;
     }
 
@@ -188,35 +188,35 @@ export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): Swi
       const nr = r + dr[i];
       const nc = c + dc[i];
 
-      makeStep(lines.forDirs, `  ↳ [考察出边] 考察方向 ${i} -> 邻接平台 (${nr}, ${nc})。`, `dir ${i} -> (${nr},${nc})`, 'relax', r, c, t);
+      makeStep(lines.forDirs, `  ↳ [考察出边] 考察方向 ${i} -> 邻接平台 (${nr}, ${nc})。`, `遍历考察相邻平台 (${nr},${nc})`, 'relax', r, c, t);
 
       const inBound = nr >= 0 && nr < n && nc >= 0 && nc < m;
       const notVis = inBound && !visited[nr][nc];
 
-      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未访问核验] 界内(${inBound})、未访问(${notVis})。`, `valid (${nr},${nc})?`, 'relax', r, c, t);
+      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未访问核验] 界内(${inBound})、未访问(${notVis})。`, `核验邻格 (${nr},${nc}) 是否界内未访问`, 'relax', r, c, t);
 
       if (inBound && notVis) {
         const nextTime = Math.max(t, grid[nr][nc]);
-        makeStep(lines.calcBottleneck, `  🌊 [瓶颈方程计算] ncCost = Math.max(${t}, grid[${nr}][${nc}]=${grid[nr][nc]}) = ${nextTime}。`, `max(${t},${grid[nr][nc]})=${nextTime}`, 'relax', r, c, t);
+        makeStep(lines.calcBottleneck, `  🌊 [瓶颈方程计算] ncCost = Math.max(${t}, grid[${nr}][${nc}]=${grid[nr][nc]}) = ${nextTime}。`, `计算漫延至 (${nr},${nc}) 的瓶颈水位`, 'relax', r, c, t);
 
-        makeStep(lines.checkRelax, `  🔎 [松弛检验] if (${nextTime} < distance[${nr}][${nc}]=${dist[nr][nc] === Infinity ? '∞' : dist[nr][nc]})。`, `check relax (${nr},${nc})`, 'relax', r, c, t);
+        makeStep(lines.checkRelax, `  🔎 [松弛检验] if (${nextTime} < distance[${nr}][${nc}]=${dist[nr][nc] === Infinity ? '∞' : dist[nr][nc]})。`, `松弛核验邻接平台 (${nr},${nc})`, 'relax', r, c, t);
 
         if (nextTime < dist[nr][nc]) {
           dist[nr][nc] = nextTime;
           parent[`${nr},${nc}`] = { r, c };
           pq.push({ r: nr, c: nc, t: nextTime });
 
-          makeStep(lines.updateDist, `  ⚡ [更新最短水位] distance[${nr}][${nc}] = ${nextTime}。`, `dist[${nr}][${nc}]=${nextTime}`, 'relax', nr, nc, nextTime);
-          makeStep(lines.pushHeap, `  📥 [候选入堆] heap.add([${nr}, ${nc}, ${nextTime}])；加入优先队列！`, `push (${nr},${nc},${nextTime})`, 'relax', nr, nc, nextTime);
+          makeStep(lines.updateDist, `  ⚡ [更新最短水位] distance[${nr}][${nc}] = ${nextTime}。`, `更新平台 (${nr},${nc}) 的最短漫延水位`, 'relax', nr, nc, nextTime);
+          makeStep(lines.pushHeap, `  📥 [候选入堆] heap.add([${nr}, ${nc}, ${nextTime}])；加入优先队列！`, `邻接平台 (${nr},${nc}) 加入小根堆`, 'relax', nr, nc, nextTime);
         }
       }
     }
   }
 
   if (foundTarget) {
-    makeStep(lines.returnCost, `🎉 [寻路完成] 成功构建瓶颈最短路！最少等待时间 t = ${curWaterLevel}，路径长度 ${finalPath?.length} 步！`, `完成: t=${curWaterLevel}`, 'done');
+    makeStep(lines.returnCost, `🎉 [寻路完成] 成功构建瓶颈最短路！最少等待时间 t = ${curWaterLevel}，路径长度 ${finalPath?.length} 步！`, `寻路达成最小等待时间锁定`, 'done');
   } else {
-    makeStep(lines.returnFail, '❌ [无路可达] return -1：无法连通终点。', 'return -1', 'done');
+    makeStep(lines.returnFail, '❌ [无路可达] return -1：无法连通终点。', '终点不可达返回异常', 'done');
   }
 
   return steps;

@@ -204,6 +204,10 @@ export interface BuyingHay2DStep {
   codeLine: HighlightTarget;
   curI: number;
   curJ: number;
+  i: number;
+  j: number;
+  cost: number[];
+  val: number[];
   h: number;
   m: number;
   dp: number[][];
@@ -240,6 +244,10 @@ export function buildBuyingHay2DSteps(
     tracker.pushStep(action, lineKey, {
       curI: i,
       curJ: j,
+      i,
+      j,
+      cost,
+      val,
       h,
       m,
       dp: snapshotGrid2D(dp),
@@ -505,7 +513,10 @@ export interface CoinsFromPiles2DStep {
   codeLine: HighlightTarget;
   curI: number;
   curJ: number;
+  i: number;
+  j: number;
   k: number;
+  piles: number[][];
   dp: number[][];
   preSum: number[];
   depCells: Array<{ r: number; c: number; label: string; val: number }>;
@@ -538,7 +549,10 @@ export function buildCoinsFromPiles2DSteps(
     tracker.pushStep(action, lineKey, {
       curI: i,
       curJ: j,
+      i,
+      j,
       k,
+      piles,
       dp: snapshotGrid2D(dp),
       preSum: [...preSum],
       depCells,

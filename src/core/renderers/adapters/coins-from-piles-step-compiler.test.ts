@@ -65,5 +65,26 @@ describe('CoinsFromPiles Step Compiler & Canvas Adapter', () => {
 
     const stages = createCoinsFromPilesStages();
     expect(stages.length).toBe(4);
+
+    // 重点验证所有 4 个阶段在每一步（尤其是出现过崩溃的 Stage 3 Step #2）的 Card 1 与 Card 2 挂载均无异常
+    const testInputs = { 'input-k': 2, 'input-piles-json': '[[1,100,3],[7,8,9]]' };
+    for (const st of stages) {
+      expect(st.metrics).toBeDefined();
+      expect(st.metrics.length).toBeGreaterThan(0);
+
+      const stSteps = st.buildSteps(testInputs);
+      expect(stSteps.length).toBeGreaterThan(0);
+
+      for (let idx = 0; idx < stSteps.length; idx++) {
+        const step = stSteps[idx];
+        const card1Box = document.createElement('div');
+        const card2Box = document.createElement('div');
+        expect(() => st.renderCanvas(card1Box, step)).not.toThrow();
+        expect(() => st.renderCustomMetrics(card2Box, step)).not.toThrow();
+        expect(card1Box.innerHTML).not.toContain('Cannot read properties of undefined');
+        expect(card2Box.innerHTML).not.toContain('Cannot read properties of undefined');
+      }
+    }
   });
 });
+
