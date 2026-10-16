@@ -23,7 +23,7 @@ const { Visualizer: BFS01Visualizer } = registerDeclarativeAlgorithm<BFS01Step>(
   id: 'bfs-01',
   name: '0-1 BFS 双端队列最短路 (0-1 BFS Deque)',
   category: 'graph',
-  aliases: ['leetcode-2290', 'lc-2290', 'minimum-obstacle-removal', 'class062-code01'],
+  aliases: ['0-1-bfs', 'deque-shortest-path', 'bfs-deque-network'],
   hasDeductionTree: true,
   icon: '⚡',
   difficulty: 2,

@@ -2708,7 +2708,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 19,
     learningGoal: "掌握岛屿独立编号染色算法与基于邻接集合的 O(N^2) 填海合并模型（建造最大岛屿）",
-    aliases: ["making-a-large-island","build-largest-island","建造最大岛屿","827","leetcode-827"],
+    aliases: ["making-a-large-island","build-largest-island","建造最大岛屿","827","leetcode-827","making-large-island-058","class058-code05","making-a-large-island-827","make-largest-island-058"],
   },
   {
     id: "find-route",
@@ -2887,7 +2887,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 25,
     learningGoal: "掌握 0-1 BFS 相比 Dijkstra 的常数与渐进复杂度优势，理解双端队列如何天然保持单调性",
-    aliases: ["leetcode-2290","lc-2290","minimum-obstacle-removal","class062-code01"],
+    aliases: ["0-1-bfs","deque-shortest-path","bfs-deque-network"],
   },
   {
     id: "floyd",
@@ -5771,18 +5771,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     aliases: ["big-fish-eat-small-fish","大鱼吃小鱼","class053-code02"],
   },
   {
-    id: "count-submatrices-all-ones-053",
-    name: "统计全 1 子矩形数量 (Class 053 Code01)",
-    viewId: "algo-count-submatrices-all-ones-053-view",
-    category: "monotonic-stack",
-    description: "统计全 1 子矩形数量 (Class 053 Code01)",
-    icon: "📊",
-    difficulty: 3,
-    levelOrder: 99,
-    learningGoal: "掌握二维矩阵行压缩与单调栈阶梯容斥计数公式，理解底边对齐且高差区间的无重复累计精髓。",
-    aliases: ["count-submatrices-all-ones-053","class053-code01"],
-  },
-  {
     id: "largest-rectangle-histogram-053",
     name: "柱状图最大矩形 (Class 053)",
     viewId: "algo-largest-rectangle-histogram-053-view",
@@ -5919,6 +5907,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 1504,
     learningGoal: "掌握二维矩阵压缩高度后运用单调递增栈快速统计子矩形数量的组合数学公式与 O(M * N) 算法实现",
+    aliases: ["count-submatrices-all-ones-053","class053-code01","1504","leetcode-1504","count-submatrices-all-ones"],
   },
   {
     id: "circular-deque-007",
@@ -5997,17 +5986,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 875: 二分答案法母题。利用耗时关于速度的单调不增性质，在 O(N log(max)) 时间内求解最小可行吃速。",
-  },
-  {
-    id: "making-large-island-058",
-    name: "洪水填充与最大人工岛 (Class 058)",
-    viewId: "algo-making-large-island-058-view",
-    category: "search",
-    description: "洪水填充与最大人工岛 (Class 058)",
-    icon: "📊",
-    difficulty: 3,
-    levelOrder: 99,
-    aliases: ["class058-code05","making-a-large-island-827","make-largest-island-058","827","leetcode-827","建造最大岛屿"],
   },
   {
     id: "find-min-rotated-sorted-array-ii",

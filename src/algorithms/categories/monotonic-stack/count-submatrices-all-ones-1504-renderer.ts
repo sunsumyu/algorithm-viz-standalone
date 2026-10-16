@@ -21,6 +21,13 @@ export {
 export const countSubmatricesAllOnes1504Visualizer = registerDeclarativeAlgorithm<SubmatrixStep>({
   id: 'count-submatrices-all-ones-1504',
   name: 'Hard 26: 统计全 1 子矩形 (LeetCode 1504)',
+  aliases: [
+    'count-submatrices-all-ones-053',
+    'class053-code01',
+    '1504',
+    'leetcode-1504',
+    'count-submatrices-all-ones',
+  ],
   category: 'monotonic-stack',
   icon: '🧱',
   difficulty: 3,

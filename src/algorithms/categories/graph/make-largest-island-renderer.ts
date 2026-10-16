@@ -21,22 +21,13 @@ import {
 export { buildMakeLargestIslandSteps, type MLIStep } from './make-largest-island-step-compiler';
 
 const ISLAND_COLORS: Record<number, { bg: string; border: string; color: string }> = {
-  2: { bg: '#dcfce7', border: '#86efac', color: '#15803d' },
-  3: { bg: '#eff6ff', border: '#93c5fd', color: '#1d4ed8' },
-  4: { bg: '#faf5ff', border: '#d8b4fe', color: '#7e22ce' },
-  5: { bg: '#fff7ed', border: '#fdba74', color: '#c2410c' },
+  2: { bg: '#dcfce7', border: '#86efac', color: '#15803d' }, 3: { bg: '#eff6ff', border: '#93c5fd', color: '#1d4ed8' },
+  4: { bg: '#faf5ff', border: '#d8b4fe', color: '#7e22ce' }, 5: { bg: '#fff7ed', border: '#fdba74', color: '#c2410c' },
 };
 
 const PRESET_CASES: Record<string, { label: string; grid: number[][] }> = {
   classic: { label: '经典对角岛 [3×3]', grid: DEFAULT_GRID },
-  bigMerge: {
-    label: '一桥三岛 [3×5]',
-    grid: [
-      [1, 0, 1, 0, 1],
-      [1, 1, 0, 1, 1],
-      [1, 0, 1, 0, 1],
-    ],
-  },
+  bigMerge: { label: '一桥三岛 [3×5]', grid: [[1, 0, 1, 0, 1], [1, 1, 0, 1, 1], [1, 0, 1, 0, 1]] },
   allWater: { label: '全域水域 [3×3]', grid: [[0, 0, 0], [0, 0, 0], [0, 0, 0]] },
 };
 
@@ -96,10 +87,10 @@ export function renderMakeLargestIslandCanvas(container: HTMLElement, step: MLIS
   });
 }
 
-registerDeclarativeAlgorithm({
+export const makeLargestIslandVisualizer = registerDeclarativeAlgorithm({
   id: 'make-largest-island',
   name: '最大人工岛 / 建造最大岛屿 (LC 827)',
-  aliases: ['making-a-large-island', 'build-largest-island', '建造最大岛屿', '827', 'leetcode-827'],
+  aliases: ['making-a-large-island', 'build-largest-island', '建造最大岛屿', '827', 'leetcode-827', 'making-large-island-058', 'class058-code05'],
   category: 'graph',
   hasDeductionTree: true,
   description: '两遍扫描法（建造最大岛屿）：先对各个独立岛屿染色并缓存面积，再遍历水域桥接相邻岛屿寻找最大合并面积',

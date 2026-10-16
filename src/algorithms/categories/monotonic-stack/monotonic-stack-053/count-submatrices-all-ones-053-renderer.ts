@@ -94,32 +94,6 @@ const DEFAULT_MAT = [
   [1, 1, 0],
 ];
 
-export const countSubmatrices053Visualizer = registerDeclarativeAlgorithm<CountSubmatricesStep>({
-  id: 'count-submatrices-all-ones-053',
-  name: '统计全 1 子矩形数量 (Class 053 Code01)',
-  category: 'monotonic-stack',
-  aliases: ['count-submatrices-all-ones-053', 'class053-code01'],
-  difficulty: 'hard',
-  learningGoal: '掌握二维矩阵行压缩与单调栈阶梯容斥计数公式，理解底边对齐且高差区间的无重复累计精髓。',
-  problemContent: STACK_053_PROBLEMS.countSubmatrices053,
-  codeLanguages: COUNT_SUBMATRICES_CODES,
-  inputs: [
-    {
-      id: 'matrix',
-      label: '二维 0/1 矩阵',
-      type: 'text',
-      defaultValue: '1,0,1; 1,1,0; 1,1,0',
-      placeholder: '分号或换行分隔各行，逗号分隔 0 和 1',
-    },
-  ],
-  presets: [
-    { label: '示例 1: 官方 3×3 矩阵 (13个)', values: { matrix: '1,0,1; 1,1,0; 1,1,0' } },
-    { label: '示例 2: 全 1 矩阵 2×3 (18个)', values: { matrix: '1,1,1; 1,1,1' } },
-    { label: '示例 3: 对角线矩阵 3×3 (3个)', values: { matrix: '1,0,0; 0,1,0; 0,0,1' } },
-  ],
-  generateSteps: (inputs) => {
-    const raw = parseMatrixInput(inputs.matrix, DEFAULT_MAT);
-    return buildCountSubmatrices053Steps(raw);
-  },
-  renderCanvas: (container, step) => renderCountSubmatricesCanvas(container, step),
-});
+import { countSubmatricesAllOnes1504Visualizer } from '../count-submatrices-all-ones-1504-renderer';
+
+export const countSubmatrices053Visualizer = countSubmatricesAllOnes1504Visualizer;

@@ -68,14 +68,6 @@ export function renderMakingLargeIslandCanvas(container: HTMLElement, step: Larg
   });
 }
 
-export const makingLargeIsland058Visualizer = registerDeclarativeAlgorithm<LargeIsland058Step>({
-  id: 'making-large-island-058',
-  aliases: ['class058-code05', 'making-a-large-island-827', 'make-largest-island-058', '827', 'leetcode-827', '建造最大岛屿'],
-  name: '洪水填充与最大人工岛 (Class 058)',
-  category: 'search',
-  difficulty: 'hard',
-  problemContent: SEARCH_058_PROBLEMS.makingLargeIsland058,
-  codeLanguages: MAKING_LARGE_ISLAND_058_CODES,
-  generateSteps: buildLargeIsland058Steps,
-  renderCanvas: (container, step) => renderMakingLargeIslandCanvas(container, step),
-});
+import { makeLargestIslandVisualizer } from '../../graph/make-largest-island-renderer';
+
+export const makingLargeIsland058Visualizer = makeLargestIslandVisualizer;
