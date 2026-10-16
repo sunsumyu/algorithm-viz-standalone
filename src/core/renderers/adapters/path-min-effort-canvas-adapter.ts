@@ -14,6 +14,8 @@ export class PathMinEffortCanvasAdapter {
     const rows = grid.length;
     const cols = grid[0].length;
     const isDone = status === 'done';
+    const isExploring = status === 'explore' || (status === 'start' && curR === 0 && curC === 0);
+    const isHopping = isExploring;
     const pathSet = new Set(pathNodes.map(([r, c]) => `${r},${c}`));
 
     BinaryGridCanvasAdapter.renderGridCanvas(container, {
@@ -25,8 +27,9 @@ export class PathMinEffortCanvasAdapter {
       adventurer: {
         r: curR,
         c: curC,
-        state: isDone ? 'cheering' : 'walking',
+        state: isDone ? 'cheering' : (isHopping ? 'jumping' : 'walking'),
         isFinish: isDone,
+        isHopping,
       },
       getCell: (r, c) => {
         const isCur = r === curR && c === curC;
@@ -36,6 +39,7 @@ export class PathMinEffortCanvasAdapter {
         const h = grid[r][c];
         const d = dist[r][c];
         const isVis = visited[r][c];
+        const isProbing = Boolean(step.activeSlot && step.activeSlot[0] === r && step.activeSlot[1] === c && !isCur);
 
         let bg = '#ffffff';
         let border = '1.5px solid #cbd5e1';
@@ -49,13 +53,30 @@ export class PathMinEffortCanvasAdapter {
           bg = '#fef3c7';
           border = '2px solid #f59e0b';
           color = '#92400e';
+        } else if (isProbing) {
+          bg = '#eff6ff';
+          border = '2px dashed #3b82f6';
+          color = '#1d4ed8';
         } else if (isVis) {
           bg = '#f8fafc';
           border = '1.5px solid #94a3b8';
           color = '#475569';
         }
 
-        const effLabel = d !== Infinity ? `<div style="font-size: 10px; font-weight: 600; opacity: 0.75; margin-top: 2px;">落差: ${d}</div>` : '';
+        let effLabel = d !== Infinity ? `<div style="font-size: 10px; font-weight: 600; opacity: 0.75; margin-top: 2px;">落差: ${d}</div>` : '';
+        if (isProbing) {
+          effLabel = `<div style="font-size: 10px; font-weight: 700; color: #2563eb; margin-top: 2px;">🔍 探测中</div>`;
+        }
+
+        const boxShadow = isCur
+          ? '0 0 0 3px rgba(245, 158, 11, 0.35)'
+          : isProbing
+            ? '0 0 0 3px rgba(59, 130, 246, 0.35)'
+            : (isPath && isDone)
+              ? '0 0 0 2px rgba(16, 185, 129, 0.3)'
+              : 'none';
+        const transform = isCur ? 'scale(1.06)' : isProbing ? 'scale(1.04)' : 'none';
+        const zIndex = isCur ? 20 : isProbing ? 15 : isPath ? 10 : 1;
 
         return {
           text: `${h}m`,
@@ -63,10 +84,10 @@ export class PathMinEffortCanvasAdapter {
           bg,
           border,
           color,
-          boxShadow: isCur ? '0 0 0 3px rgba(245, 158, 11, 0.35)' : (isPath && isDone) ? '0 0 0 2px rgba(16, 185, 129, 0.3)' : 'none',
-          transform: isCur ? 'scale(1.06)' : 'none',
-          zIndex: isCur ? 20 : isPath ? 10 : 1,
-          title: `${isStart ? '起点 ' : ''}${isTarget ? '终点 ' : ''}${isCur ? '探索 ' : ''}${isPath && isDone ? '最优 ' : ''}(${r},${c}) 高度: ${h}m · 落差: ${d === Infinity ? '∞' : d}`,
+          boxShadow,
+          transform,
+          zIndex,
+          title: `${isStart ? '起点 ' : ''}${isTarget ? '终点 ' : ''}${isCur ? '探索 ' : ''}${isProbing ? '探测 ' : ''}${isPath && isDone ? '最优 ' : ''}(${r},${c}) 高度: ${h}m · 落差: ${d === Infinity ? '∞' : d}`,
         };
       },
     });

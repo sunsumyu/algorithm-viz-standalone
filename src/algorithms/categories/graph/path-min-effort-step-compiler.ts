@@ -256,15 +256,15 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
       const inBound = nx >= 0 && nx < rows && ny >= 0 && ny < cols;
       const notVis = inBound && !visited[nx][ny];
 
-      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未锁定检查] nx,ny界内(${inBound})、未访问(!visited[${nx}][${ny}]=${notVis})。`, `valid (${nx},${ny})?`, 'relax');
+      makeStep(lines.checkValidNeighbor, `  🔎 [界内与未锁定检查] nx,ny界内(${inBound})、未访问(!visited[${nx}][${ny}]=${notVis})。`, `valid (${nx},${ny})?`, 'relax', undefined, inBound ? [nx, ny] : undefined);
 
       if (inBound && notVis) {
         const stepEffort = Math.abs(grid[nx][ny] - grid[curR][curC]);
         const nextEffort = Math.max(minEffortSoFar, stepEffort);
 
-        makeStep(lines.calcBottleneck, `  🧗 [计算瓶颈体力] nc = max(c, |h[x][y] - h[nx][ny]|) = max(${minEffortSoFar}, |${grid[curR][curC]} - ${grid[nx][ny]}|) = ${nextEffort}。`, `nc=max(${minEffortSoFar},${stepEffort})=${nextEffort}`, 'relax');
+        makeStep(lines.calcBottleneck, `  🧗 [计算瓶颈体力] nc = max(c, |h[x][y] - h[nx][ny]|) = max(${minEffortSoFar}, |${grid[curR][curC]} - ${grid[nx][ny]}|) = ${nextEffort}。`, `nc=max(${minEffortSoFar},${stepEffort})=${nextEffort}`, 'relax', undefined, [nx, ny]);
 
-        makeStep(lines.checkRelax, `  🔎 [松弛比较] if (nc < distance[nx][ny]) -> (${nextEffort} < ${distance[nx][ny] === Infinity ? '∞' : distance[nx][ny]})。`, `check nc < dist[${nx}][${ny}]`, 'relax');
+        makeStep(lines.checkRelax, `  🔎 [松弛比较] if (nc < distance[nx][ny]) -> (${nextEffort} < ${distance[nx][ny] === Infinity ? '∞' : distance[nx][ny]})。`, `check nc < dist[${nx}][${ny}]`, 'relax', 'dist', [nx, ny]);
 
         if (nextEffort < distance[nx][ny]) {
           distance[nx][ny] = nextEffort;

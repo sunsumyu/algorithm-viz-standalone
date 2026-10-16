@@ -21,6 +21,7 @@ export interface BinaryGridAdventurerConfig {
   c: number;
   state?: 'walking' | 'cheering' | 'jumping' | 'blocked';
   isFinish?: boolean;
+  isHopping?: boolean;
 }
 
 export interface BinaryGridCellConfig {
@@ -155,11 +156,13 @@ export class BinaryGridCanvasAdapter {
         // 探险家小人装载
         let adventurerOverlay = '';
         if (adventurer && adventurer.r === r && adventurer.c === c) {
+          const isHopping = adventurer.isHopping || adventurer.state === 'jumping';
           const advSvg = GridVisualAdapter.getAdventurerSvgHtml({
-            state: adventurer.state || 'walking',
+            state: adventurer.state || (isHopping ? 'jumping' : 'walking'),
             isFinish: adventurer.isFinish || false,
           });
-          adventurerOverlay = `<div class="adventurer-char-holder" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 30;">${advSvg}</div>`;
+          const hoppingClass = isHopping ? ' is-hopping' : '';
+          adventurerOverlay = `<div class="adventurer-char-holder${hoppingClass}" style="position: absolute; top: -24px; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 30;">${advSvg}</div>`;
         }
 
         // 终点旗帜
