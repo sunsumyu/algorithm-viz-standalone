@@ -23,7 +23,7 @@ export {
 
 registerAlgorithm({
   id: 'max-subarray',
-  name: '最大子数组和',
+  name: '最大子数组和 (贪心 / Kadane)',
   viewId: 'max-subarray',
   category: 'greedy',
   icon: '📊',

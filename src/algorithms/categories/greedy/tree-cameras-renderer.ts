@@ -30,7 +30,7 @@ export {
 
 registerAlgorithm({
   id: 'tree-cameras',
-  name: '监控二叉树',
+  name: '监控二叉树 (贪心解法)',
   viewId: 'tree-cameras',
   category: 'greedy',
   icon: '📷',

@@ -8,7 +8,7 @@ import template from './greedy-week-summary.html?raw';
 
 registerAlgorithm({
   id: 'greedy-week-summary',
-  name: '贪心周总结',
+  name: '贪心周总结（一）',
   viewId: 'algo-greedy-week-summary-view',
   category: 'greedy',
   description: '按分配、序列、覆盖、区间、树形贪心整理专题套路',

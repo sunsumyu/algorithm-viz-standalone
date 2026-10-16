@@ -23,7 +23,7 @@ export {
 
 registerAlgorithm({
   id: 'best-time-stock',
-  name: '买卖股票的最佳时机 II',
+  name: '买卖股票的最佳时机 II (贪心)',
   viewId: 'best-time-stock',
   category: 'greedy',
   icon: '📈',

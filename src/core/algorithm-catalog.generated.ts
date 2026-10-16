@@ -4085,7 +4085,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "max-subarray",
-    name: "最大子数组和",
+    name: "最大子数组和 (贪心 / Kadane)",
     viewId: "max-subarray",
     category: "greedy",
     description: "Kadane 贪心算法，连续累加和小于 0 时立即清零重新统计",
@@ -4097,7 +4097,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "best-time-stock",
-    name: "买卖股票的最佳时机 II",
+    name: "买卖股票的最佳时机 II (贪心)",
     viewId: "best-time-stock",
     category: "greedy",
     description: "跨天利润贪心分解为每天相邻价差，只收集所有正向收益",
@@ -4239,7 +4239,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "tree-cameras",
-    name: "监控二叉树",
+    name: "监控二叉树 (贪心解法)",
     viewId: "tree-cameras",
     category: "greedy",
     description: "后序自底向上贪心遍历，0=无覆盖/1=装摄像头/2=已覆盖，叶子父节点安装摄像头覆盖率最高",
@@ -4250,7 +4250,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "greedy-week-summary",
-    name: "贪心周总结",
+    name: "贪心周总结（一）",
     viewId: "algo-greedy-week-summary-view",
     category: "greedy",
     description: "按分配、序列、覆盖、区间、树形贪心整理专题套路",
@@ -4260,7 +4260,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "greedy-week-summary-2",
-    name: "贪心周总结",
+    name: "贪心周总结（二）",
     viewId: "algo-greedy-week-summary-2-view",
     category: "greedy",
     description: "贪心覆盖类题目阶段总结：股票、跳跃游戏、K 次取反与加油站",
@@ -4270,7 +4270,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "greedy-week-summary-3",
-    name: "贪心周总结",
+    name: "贪心周总结（三）",
     viewId: "algo-greedy-week-summary-3-view",
     category: "greedy",
     description: "贪心区间类题目阶段总结：队列重建、射箭、无重叠区间、划分字母与合并区间",
@@ -4280,7 +4280,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "greedy-week-summary-4",
-    name: "贪心周总结",
+    name: "贪心周总结（四）",
     viewId: "algo-greedy-week-summary-4-view",
     category: "greedy",
     description: "贪心收尾阶段总结：合并区间、单调递增数字与二叉树摄像头",
