@@ -20,7 +20,7 @@ export { renderDijkstraHeapCanvas };
 
 export const dijkstraHeapVisualizer = registerDeclarativeAlgorithm({
   id: 'dijkstra-heap',
-  aliases: ['dijkstra-heap-061', 'dijkstra-pq', 'dijkstra-priority-queue', 'class061-dijkstra-heap'],
+  aliases: ['dijkstra-heap-061', 'class061-code02', 'dijkstra-pq', 'dijkstra-priority-queue', 'class061-dijkstra-heap'],
   name: 'Dijkstra 堆优化最短路',
   category: 'graph',
   icon: '⚡',

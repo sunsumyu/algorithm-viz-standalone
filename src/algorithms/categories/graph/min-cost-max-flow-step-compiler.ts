@@ -104,7 +104,7 @@ export function buildMCMFSteps(preset: string = 'standard'): MCMFStep[] {
     const resolvedCodeLine =
       typeof codeLine === 'object' && codeLine !== null && 'java' in codeLine
         ? {
-            cpp: (codeLine as any).cpp,
+            cpp: (codeLine as any).cpp > 7 ? (codeLine as any).cpp - 7 : (codeLine as any).cpp,
             java: (codeLine as any).java > 82 ? (codeLine as any).java - 82 : (codeLine as any).java,
             python: (codeLine as any).python > 146 ? (codeLine as any).python - 146 : (codeLine as any).python,
             javascript: (codeLine as any).javascript > 208 ? (codeLine as any).javascript - 208 : (codeLine as any).javascript,

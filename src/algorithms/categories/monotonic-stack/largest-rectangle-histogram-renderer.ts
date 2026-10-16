@@ -24,7 +24,7 @@ export {
   type LRHStep,
 };
 
-registerDeclarativeAlgorithm({
+const { Visualizer } = registerDeclarativeAlgorithm({
   id: 'largest-rectangle-histogram',
   name: '柱状图中最大的矩形',
   category: 'monotonic-stack',
@@ -33,6 +33,7 @@ registerDeclarativeAlgorithm({
   difficulty: 3,
   levelOrder: 5,
   learningGoal: '掌握单调递增栈在直方图最大矩形中的双向边界扩展技巧，深刻理解首尾哨兵 0 消除边界特判的精妙设计',
+  aliases: ['largest-rectangle-histogram-052', 'class052-code05', 'leetcode-84', '84'],
   inputs: [
     {
       id: 'heights',
@@ -70,3 +71,5 @@ registerDeclarativeAlgorithm({
   renderCanvas: (container, step) =>
     renderLargestRectangleHistogramCanvas(container, step as LRHStep),
 });
+
+export { Visualizer as LargestRectangleHistogramVisualizer };

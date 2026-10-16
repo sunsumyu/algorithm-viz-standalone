@@ -494,7 +494,7 @@ const demos: DemoDef[] = [
   bagDef('knapsack-01-1d', '0-1背包问题（一维）', '滚动数组空间压缩：容量 j 必须从大到小倒序遍历，避免同件物品被重复选入。', '🎒', '01-knapsack'),
   numsDef('partition-equal-subset-sum', '分割等和子集', '判断是否能将数组划分为两个和相等的子集（转化为容量为 sum/2 的 0/1 背包）。', '⚖️', 'partition-subset', '1,5,11,5'),
   {
-    ...numsDef('last-stone-weight-ii', '最后一块石头的重量 II', '两两粉碎等价于将石头分成总重最接近的两堆（0/1 背包）。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
+    ...numsDef('last-stone-weight-ii', '最后一块石头的重量 II', '两两粉碎等价于将石头分成总重最接近的两堆（0/1 背包），两堆差值极小化 (LeetCode 1049)。', '🪨', 'last-stone-weight-ii', '2,7,4,1,8,1'),
     aliases: ['class073-code04', 'last-stone-weight-ii-073', 'leetcode-1049'],
   },
   {
@@ -502,7 +502,7 @@ const demos: DemoDef[] = [
     aliases: ['class073-code04-std', 'last-stone-weight-ii-standard-073'],
   },
   {
-    ...numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数）。', '🎯', 'target-sum', '1,1,1,1,1'),
+    ...numsDef('target-sum', '目标和', '添加正负号凑出 target（转化为 0/1 背包求解装满容量为 (sum+target)/2 的方案数，LeetCode 494）。', '🎯', 'target-sum', '1,1,1,1,1'),
     aliases: ['class073-code03', 'target-sum-073', 'leetcode-494'],
   },
   {
@@ -562,7 +562,7 @@ const demos: DemoDef[] = [
     examples: [{ label: '示例1', values: { s: 'leetcode', wordDict: 'leet,code' } }, { label: '示例2', values: { s: 'applepenapple', wordDict: 'apple,pen' } }],
     build: makeEngineBuilder('word-break'),
   },
-  bagDef('multiple-knapsack', '多重背包理论基础', '每种物品有有限数量上限，可展开为 0-1 背包或二进制拆分。', '📦', '01-knapsack'),
+  bagDef('multiple-knapsack', '多重背包问题', '每种物品有有限数量上限，可展开为 0-1 背包或二进制拆分。', '📦', '01-knapsack'),
   {
     id: 'profitable-schemes',
     name: '盈利计划',

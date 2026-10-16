@@ -1,10 +1,10 @@
 /**
- * 二分图最大权完美匹配与 KM 算法 (Kuhn-Munkres Algorithm) 声明式可视化器
- * 进阶匹配理论: 顶标可行性 lx[u] + ly[v] >= w(u,v)、相等子图增广、松弛变量 slack[v] 顶标调整、O(N³) 严格时间 (洛谷 P6577 / 左程云 class073)
- * 架构：遵循 Matt Pocock 深模块哲学，薄领域适配器 (LOC < 120 行)，委托 step-compiler 与 canvas-adapter
+ * 二分图最大权完美匹配与 KM 算法 (Kuhn-Munkres Algorithm)
+ * 统一收敛至单一事实来源：src/algorithms/categories/advanced-topics/advanced-173-178/km-matching-renderer
+ * 本文件保留 Visualizer 构造类与步骤编译器供伴生单测使用，注销重复 catalog 注册
  */
 
-import { registerDeclarativeAlgorithm } from '../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import { type KMStep, buildKMSteps } from './km-algorithm-step-compiler';
 import { renderKMAlgorithmCanvas } from '../../../core/renderers/adapters/km-algorithm-canvas-adapter';
 import {
@@ -14,9 +14,9 @@ import {
 } from './km-algorithm-problem-content';
 
 export type { KMStep };
-export { buildKMSteps };
+export { buildKMSteps, renderKMAlgorithmCanvas };
 
-const { Visualizer } = registerDeclarativeAlgorithm<KMStep>({
+const { template, Visualizer } = createDeclarativeVisualizer<KMStep>({
   id: 'km-algorithm',
   name: 'KM 算法 (Kuhn-Munkres Algorithm)',
   category: 'graph',
@@ -53,55 +53,12 @@ const { Visualizer } = registerDeclarativeAlgorithm<KMStep>({
   codeLanguages: KM_ALGORITHM_CODE_LANGUAGES,
   problemHtml: KM_ALGORITHM_PROBLEM_HTML,
   analysisHtml: KM_ALGORITHM_ANALYSIS_HTML,
-  generateSteps: (inputs) => {
+  buildSteps: (inputs) => {
     const preset = (inputs?.['input-preset'] || 'standard') as string;
     return buildKMSteps(preset);
   },
   renderCanvas: (container, step) => {
-    renderKMAlgorithmCanvas(container, step as KMStep);
-  },
-  renderCustomMetrics: (container, rawStep) => {
-    const step = rawStep as KMStep;
-    const isSimple = Object.keys(step.lx).length === 2;
-    const n = isSimple ? 2 : 3;
-
-    const slackItems = Array.from({ length: n }, (_, i) => i + 1).map((i) => {
-      const s = step.slack[`R${i}`];
-      const sStr = s === undefined || s >= 999 ? '∞' : `${s}`;
-      return `
-        <div class="flex flex-col items-center justify-center min-w-[34px] h-7 bg-slate-900 border border-slate-700 rounded text-slate-200 font-mono text-[10px] font-bold">
-          <span class="text-[7.5px] text-pink-400 leading-none">R${i}</span>
-          <span class="leading-tight">${sStr}</span>
-        </div>
-      `;
-    }).join('');
-
-    const matchedStr = step.matchedEdges.length > 0
-      ? step.matchedEdges.map(([u, v]) => `<span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono font-bold text-[10px]">${u}➔${v}</span>`).join(' ')
-      : '<span class="text-slate-500 text-[10.5px]">尚未形成匹配</span>';
-
-    container.innerHTML = `
-      <div class="flex flex-col gap-2 p-2 text-xs text-slate-300">
-        <div class="flex flex-col gap-2 bg-slate-950/90 p-2.5 rounded-md border border-slate-800">
-          <div class="flex items-center justify-between">
-            <span class="font-mono text-[11px] font-bold text-pink-400">右部松弛量 slack[]:</span>
-            <div class="flex gap-1">${slackItems}</div>
-          </div>
-          <div class="flex items-center justify-between pt-1 border-t border-dashed border-slate-800 text-[11px]">
-            <span class="text-emerald-400 font-bold">当前匹配对:</span>
-            <div class="flex items-center gap-1">${matchedStr}</div>
-          </div>
-          <div class="flex items-center justify-between text-[11px]">
-            <span class="text-slate-400 font-bold">顶标微调量 d:</span>
-            <span class="font-mono font-bold text-amber-400">${step.deltaAdj !== undefined ? `d = ${step.deltaAdj}` : '—'}</span>
-          </div>
-        </div>
-        <div class="flex justify-between items-center bg-slate-900 border border-slate-800 rounded px-2.5 py-1 text-[11px]">
-          <span class="text-slate-400">执行指令:</span>
-          <strong class="font-mono text-sky-400">行 ${Array.isArray(step.codeLine) ? step.codeLine.join('-') : step.codeLine}: ${step.log}</strong>
-        </div>
-      </div>
-    `;
+    renderKMAlgorithmCanvas(container, step);
   },
 });
 

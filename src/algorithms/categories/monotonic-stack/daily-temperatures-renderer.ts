@@ -24,7 +24,7 @@ export {
   type DailyTempStep,
 };
 
-registerDeclarativeAlgorithm({
+const { Visualizer } = registerDeclarativeAlgorithm({
   id: 'daily-temperatures',
   name: '每日温度',
   category: 'monotonic-stack',
@@ -33,6 +33,7 @@ registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 1,
   learningGoal: '掌握单调栈核心原理，理解栈内维护下标以及遇大元素循环出栈结算天数差的经典模式',
+  aliases: ['daily-temperatures-052', 'class052-code03', 'leetcode-739', '739'],
   inputs: [
     {
       id: 'temperatures',
@@ -68,3 +69,5 @@ registerDeclarativeAlgorithm({
   },
   renderCanvas: (container, step) => renderDailyTemperaturesCanvas(container, step as DailyTempStep),
 });
+
+export { Visualizer as DailyTemperaturesVisualizer };

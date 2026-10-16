@@ -88,3 +88,5 @@ export const longestSubarrayLimit054Renderer = registerDeclarativeAlgorithm<Step
     container.innerHTML = renderLongestSubarrayLimitBoard(step);
   },
 });
+
+export const longestSubarrayLimit054Visualizer = longestSubarrayLimit054Renderer;

@@ -29,7 +29,7 @@ const { Visualizer } = registerDeclarativeAlgorithm({
   difficulty: 3,
   levelOrder: 28,
   learningGoal: '掌握状态压缩 BFS 扩维思路、位运算判重与拾取机制及分层搜索最短性',
-  aliases: ['847', '864', 'state-bfs', 'shortestPathLength'],
+  aliases: ['state-compression-bfs-064', 'class064-code06', '847', '864', 'state-bfs', 'shortestPathLength'],
   presets: [
     { label: '经典 3x3 钥匙收集迷宫', values: { preset: 'classic_3x3' } },
     { label: '线性网格走廊 (快速演示)', values: { preset: 'simple_line' } },

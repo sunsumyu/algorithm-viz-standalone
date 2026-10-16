@@ -11,9 +11,11 @@
 
 import './categories/monotonic-stack/monotonic-stack-052/monotonic-stack-no-repeat-052-renderer';
 import './categories/monotonic-stack/monotonic-stack-052/monotonic-stack-with-repeat-052-renderer';
-import './categories/monotonic-stack/monotonic-stack-052/daily-temperatures-052-renderer';
+// Code03: 每日温度已与通用版深度融为单一事实来源 (src/algorithms/categories/monotonic-stack/daily-temperatures-renderer.ts)，由 aliases: ['daily-temperatures-052', 'class052-code03'] 统合分发
+// import './categories/monotonic-stack/monotonic-stack-052/daily-temperatures-052-renderer';
 import './categories/monotonic-stack/monotonic-stack-052/sum-subarray-minimums-052-renderer';
-import './categories/monotonic-stack/monotonic-stack-052/largest-rectangle-histogram-052-renderer';
+// Code05: 柱状图中最大的矩形已与通用版深度融为单一事实来源 (src/algorithms/categories/monotonic-stack/largest-rectangle-histogram-renderer.ts)，由 aliases: ['largest-rectangle-histogram-052', 'class052-code05'] 统合分发
+// import './categories/monotonic-stack/monotonic-stack-052/largest-rectangle-histogram-052-renderer';
 import './categories/monotonic-stack/monotonic-stack-052/maximal-rectangle-052-renderer';
 
 export {};

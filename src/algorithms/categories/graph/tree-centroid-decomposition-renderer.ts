@@ -1,10 +1,9 @@
 /**
- * 树分治与点分治 (Tree Centroid Decomposition - 静态点分治 · POJ 1741 / 洛谷 P3806)
- * 进阶树论: 递归寻找子树重心、最大子树不超过 size/2、路径经过重心与子树容斥
- * 遵循 Matt Pocock 深模块规范，委托 StepCompiler、CanvasAdapter 与 DeductionTree
+ * 树分治与点分治 (Tree Centroid Decomposition)
+ * 统一收敛至单一事实来源：src/algorithms/categories/advanced-topics/advanced-179-184/centroid-decomposition-renderer
+ * 本文件保留 Visualizer 构造类与步骤编译器供伴生单测使用，注销重复 catalog 注册
  */
 
-import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   TREE_CENTROID_CODE_LANGUAGES,
@@ -59,26 +58,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<StaticCentroidStep>
     const preset = (inputs['input-preset'] || 'classic_7node') as string;
     return buildStaticCentroidSteps(preset);
   },
-  renderCanvas: (container, step) => {
-    renderTreeCentroidCanvas(container, step);
-  },
-  renderCustomMetrics: (container, step) => {
-    renderTreeCentroidCustomMetrics(container, step);
-  },
-});
-
-registerAlgorithm({
-  id: 'tree-centroid-decomposition',
-  name: '树分治与点分治 (Tree Centroid Decomposition)',
-  viewId: 'algo-tree-centroid-decomposition-view',
-  category: 'graph',
-  description: '进阶树论经典：寻找树重心使最大子树不超过一半、树高压缩至 O(log N)、跨重心路径容斥统计 (POJ 1741)',
-  icon: '⚖️',
-  template,
-  Visualizer,
-  difficulty: 3,
-  levelOrder: 85,
-  learningGoal: '掌握树重心判定与计算方法、点分治递归层数证明及跨重心路径统计容斥技巧',
+  renderCanvas: renderTreeCentroidCanvas,
+  renderCustomMetrics: renderTreeCentroidCustomMetrics,
 });
 
 export { Visualizer as TreeCentroidDecompositionVisualizer };

@@ -10,10 +10,10 @@
  */
 
 // 1. Code01: 网络延迟时间已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/network-delay-time-renderer.ts)，由 aliases: ['network-delay-time-064', 'class064-code01'] 统合分发
-import './categories/graph/graph-064/path-min-effort-064-renderer';
-import './categories/graph/graph-064/swim-in-rising-water-064-renderer';
-import './categories/graph/graph-064/layered-dijkstra-064-renderer';
-import './categories/graph/graph-064/ev-charge-dijkstra-064-renderer';
-import './categories/graph/graph-064/state-compression-bfs-064-renderer';
+// 2. Code02: 最小体力消耗路径已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/path-min-effort-renderer.ts)，由 aliases: ['path-min-effort-064', 'class064-code02', 'leetcode-1631'] 统合分发
+// 3. Code03: 水位上升泳池中游泳已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/swim-in-rising-water-renderer.ts)，由 aliases: ['swim-in-rising-water-064', 'class064-code03', 'leetcode-778'] 统合分发
+// 4. Code04: 飞行路线分层图已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/layered-dijkstra-renderer.ts)，由 aliases: ['layered-dijkstra-064', 'class064-code04', 'luogu-p4568'] 统合分发
+// 5. Code05: 电动车游历城市最小费用已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/ev-charge-dijkstra-renderer.ts)，由 aliases: ['ev-charge-dijkstra-064', 'class064-code05', 'leetcode-lcp-35'] 统合分发
+// 6. Code06: 访问所有节点最短路已与通用图论版深度融为单一事实来源 (src/algorithms/categories/graph/state-compression-bfs-renderer.ts)，由 aliases: ['state-compression-bfs-064', 'class064-code06', 'leetcode-847'] 统合分发
 
 export {};

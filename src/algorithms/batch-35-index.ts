@@ -11,7 +11,7 @@
 
 import './categories/graph/graph-060/food-chain-060-renderer';
 import './categories/graph/graph-060/loud-and-rich-060-renderer';
-import './categories/graph/graph-060/parallel-courses-iii-060-renderer';
+// Code03: 并行课程 III 已双版本综合收拢至 topo-dp (拓扑排序与动态规划 · 关键路径 CPM)，单一事实来源
 import './categories/graph/graph-060/max-employees-meeting-060-renderer';
 import './categories/graph/graph-060/stamping-sequence-060-renderer';
 import './categories/graph/graph-060/largest-color-value-060-renderer';

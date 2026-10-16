@@ -26,7 +26,7 @@ export function renderFloydCanvas(container: HTMLElement, step: FloydStep): void
   FloydCanvasAdapter.render(container, step);
 }
 
-registerDeclarativeAlgorithm({
+export const floydVisualizer = registerDeclarativeAlgorithm({
   id: 'floyd',
   name: 'Floyd 全源最短路',
   category: 'graph',

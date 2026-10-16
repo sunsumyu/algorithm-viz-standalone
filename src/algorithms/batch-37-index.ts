@@ -11,7 +11,8 @@
 
 import './categories/monotonic-stack/monotonic-stack-053/count-submatrices-all-ones-053-renderer';
 import './categories/monotonic-stack/monotonic-stack-053/big-fish-eat-small-fish-053-renderer';
-import './categories/monotonic-stack/monotonic-stack-053/remove-k-digits-053-renderer';
+// Code03: 移掉 K 位数字已与通用版深度融为单一事实来源 (src/algorithms/categories/monotonic-stack/remove-k-digits-renderer.ts)，由 aliases: ['remove-k-digits-053', 'class053-code03'] 统合分发
+// import './categories/monotonic-stack/monotonic-stack-053/remove-k-digits-053-renderer';
 import './categories/monotonic-stack/monotonic-stack-053/remove-duplicate-letters-053-renderer';
 import './categories/monotonic-stack/monotonic-stack-053/longest-well-performing-interval-053-renderer';
 import './categories/monotonic-stack/monotonic-stack-053/maximum-subarray-min-product-053-renderer';

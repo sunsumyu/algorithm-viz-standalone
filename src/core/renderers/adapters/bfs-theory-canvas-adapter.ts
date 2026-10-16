@@ -162,7 +162,7 @@ export function renderBFSTheoryCustomMetrics(container: HTMLElement, step: BFSSt
     traversalOrder.forEach((node, idx) => {
       if (levelSet.has(idx) && idx > 0) {
         orderHtml += `
-          <span style="font-size: 11px; color: #0891b2; font-weight: 800; padding: 0 2px; user-select: none;">|</span>
+          <span style="font-size: 9px; color: #0891b2; font-weight: 800; padding: 1px 4px; background: #e0f2fe; border-radius: 4px; user-select: none;">Level</span>
         `;
       }
       orderHtml += `
@@ -195,7 +195,7 @@ export function renderBFSTheoryCustomMetrics(container: HTMLElement, step: BFSSt
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
           <span style="font-size: 11.5px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
             <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
-            分层遍历序列 (Layered Order)
+            分层遍历序列 (Layered Order) · Level ${step.level}
           </span>
           <span style="font-size: 11px; font-weight: 700; color: #059669; font-family: monospace;">已遍历: ${visited.size} / 6</span>
         </div>

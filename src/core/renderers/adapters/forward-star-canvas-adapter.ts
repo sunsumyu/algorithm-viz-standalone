@@ -238,7 +238,7 @@ export class ForwardStarCanvasAdapter {
         : '';
 
       return `
-        <g class="fs-svg-node" data-node="${u}" style="cursor: pointer;">
+        <g class="fs-svg-node graph-node" data-node="${u}" style="cursor: pointer;">
           ${glow}
           <circle cx="${pos.x}" cy="${pos.y}" r="15" fill="${fill}" stroke="${stroke}" stroke-width="2.5" />
           <text x="${pos.x}" y="${pos.y + 4.5}" font-size="12" font-weight="800" font-family="monospace" text-anchor="middle" fill="${textFill}">
@@ -304,7 +304,7 @@ export class ForwardStarCanvasAdapter {
                 <span style="width: 8px; height: 8px; border-radius: 50%; background: #0284c7; display: inline-block;"></span>
                 图拓扑画板
               </div>
-              <span style="font-size: 11px; color: #64748b; font-weight: 600;">${allNodes.length} 节点带权有向图</span>
+              <span style="font-size: 11px; color: #64748b; font-weight: 600;">模式: ${mode === 'build' ? '⚡ 头插建图' : '🔍 出边遍历'} | 已录入边数: ${edges.length}</span>
             </div>
 
             <!-- SVG 画板 -->

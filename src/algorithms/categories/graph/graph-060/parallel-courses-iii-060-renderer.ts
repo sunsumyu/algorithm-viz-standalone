@@ -5,7 +5,7 @@
  * 🏆 架构收拢与单一事实来源 (Single Source of Truth & Bi-Version Synthesis)
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { GRAPH_060_PROBLEMS } from './graph-060-problem-content';
 import { PARALLEL_COURSES_060_CODES } from './graph-060-stage-codes';
 import {
@@ -42,7 +42,7 @@ function renderCourseCostGrid(cost: number[], time: number[], curNode: number | 
   `;
 }
 
-export const parallelCourses060Visualizer = registerDeclarativeAlgorithm<ParallelCoursesStep>({
+export const { Visualizer: ParallelCourses060Visualizer } = createDeclarativeVisualizer<ParallelCoursesStep>({
   id: 'parallel-courses-iii-060',
   aliases: ['parallel-courses-iii', 'leetcode-2050', 'class060-code03', 'topo-dp-cpm'],
   name: '并行课程 III (LeetCode 2050 · DAG 关键路径 CPM) (Class 060)',

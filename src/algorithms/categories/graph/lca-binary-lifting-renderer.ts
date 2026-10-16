@@ -85,7 +85,7 @@ registerAlgorithm({
   category: 'graph',
   description: '进阶树论经典：树上倍增跳转表 up[u][i]、深度对齐、二进制试跳求 LCA 及两点最短距离 (洛谷 P3379)',
   icon: '🌳',
-  aliases: ['lca', 'binary-lifting-lca', 'tree-lca', 'P3379', 'class076'],
+  aliases: ['binary-lifting-lca', 'tree-lca', 'P3379', 'class076'],
   template,
   Visualizer,
   difficulty: 3,

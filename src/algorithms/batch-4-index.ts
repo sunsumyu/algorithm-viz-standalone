@@ -5,21 +5,26 @@
 import './categories/search/binary-search-renderer';
 import './categories/sort/bubble-sort-renderer';
 import './categories/sort/insertion-sort-renderer';
-import './categories/sort/merge-sort-renderer';
-import './categories/sort/quick-sort-renderer';
+// 归并排序与快速排序已收敛至 batch-24-index (Class 043/045) 单一事实来源
+// import './categories/sort/merge-sort-renderer';
+// import './categories/sort/quick-sort-renderer';
 import './categories/sort/selection-sort-renderer';
-import './categories/sort/heap-sort-renderer';
+// 堆排序已收敛至 batch-23-index (Class 040) 单一事实来源
+// import './categories/sort/heap-sort-renderer';
 import './categories/sort/shell-sort-renderer';
-import './categories/sort/radix-sort-renderer';
+// 基数排序已收敛至 radix-sort-028 (Class 028) 单一事实来源
+// import './categories/sort/radix-sort-renderer';
 import './categories/sort/counting-sort-renderer';
 import './categories/sort/bucket-sort-renderer';
 import './categories/sort/sort-basics-004-renderer';
 import './categories/search/binary-search-005-renderer';
-import './categories/advanced-topics/hard-interview/trapping-rain-water-ii-renderer';
+// 接雨水 II 已收敛至 batch-30-index (Class 062) 单一事实来源
+// import './categories/advanced-topics/hard-interview/trapping-rain-water-ii-renderer';
 import './categories/sort/netherlands-flag-024-renderer';
 import './categories/heap/heap-and-heapsort-025-renderer';
 import './categories/bit-manipulation/bitwise-arithmetic-032-renderer';
-import './categories/sort/merge-sort-small-sum-022-renderer';
+// 小和问题已收敛至 batch-24-index (Class 044) 单一事实来源
+// import './categories/sort/merge-sort-small-sum-022-renderer';
 import './categories/heap/heap-greater-026-renderer';
 import './categories/sort/radix-sort-028-renderer';
 import './categories/advanced-topics/hard-interview/the-skyline-problem-renderer';

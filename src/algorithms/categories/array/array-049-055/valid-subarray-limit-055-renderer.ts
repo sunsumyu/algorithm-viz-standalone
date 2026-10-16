@@ -97,32 +97,9 @@ export function buildValidSubarray055Steps(): ValidSubarray055Step[] {
   return steps;
 }
 
-export const validSubarrayLimit055Visualizer = registerDeclarativeAlgorithm<ValidSubarray055Step>({
-  id: 'valid-subarray-limit-055',
-  name: '双单调队列与绝对差限制 (Class 055)',
-  category: 'array',
-  difficulty: 'medium',
-  problemContent: ARRAY_049_055_PROBLEMS.validSubarrayLimit055,
-  sourceCodes: VALID_SUBARRAY_LIMIT_055_CODES,
-  generateSteps: buildValidSubarray055Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderValidSubarrayBoard(
-          step.nums,
-          step.left,
-          step.right,
-          step.maxVal,
-          step.minVal,
-          step.limit,
-          step.ansLen
-        )}
-        ${renderFormulaCard(
-          '双单调队列动态极差维持准则',
-          '\\Delta = \\text{nums}[\\text{maxQ.first}] - \\text{nums}[\\text{minQ.first}] \\le \\text{limit}',
-          '通过同时运行一个递减队列维护最大值和一个递增队列维护最小值，滑动窗口内部的绝对极差无需遍历任何中间元素即可在 $O(1)$ 判定，使整体算法复杂度严格收敛于 $O(N)$。'
-        )}
-      </div>
-    `;
-  },
-});
+import { longestSubarrayLimit054Visualizer } from '../../monotonic-queue/monotonic-queue-054/longest-subarray-limit-054-renderer';
+
+/**
+ * 桥接导出已统合的唯一事实来源 Visualizer (Class 055 双单调队列)
+ */
+export const validSubarrayLimit055Visualizer = longestSubarrayLimit054Visualizer;

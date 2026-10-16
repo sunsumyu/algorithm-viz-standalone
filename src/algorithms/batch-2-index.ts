@@ -123,7 +123,8 @@ import './categories/graph/bfs-01-renderer';
 import './categories/graph/bi-bfs-renderer';
 import './categories/graph/topo-dp-renderer';
 import './categories/graph/alien-dict-renderer';
-import './categories/graph/trapping-water-ii-renderer';
+// 接雨水 II 已收敛至 batch-30-index (Class 062) 单一事实来源
+// import './categories/graph/trapping-water-ii-renderer';
 // 左程云 Class 059: 拓扑排序与 Kahn 算法 专题 (Batch 41)
 import './batch-41-index';
 // 左程云 Class 056: 并查集·上 专题 (Batch 40)
@@ -163,16 +164,20 @@ import './categories/graph/dijkstra-index-heap-renderer';
 import './categories/graph/dinic-max-flow-renderer';
 import './categories/graph/kruskal-reconstruction-tree-renderer';
 import './categories/graph/min-cost-max-flow-renderer';
-import './categories/graph/km-algorithm-renderer';
-import './categories/graph/heavy-light-decomposition-renderer';
-import './categories/graph/tree-centroid-decomposition-renderer';
+// KM 最佳二分匹配已收敛至 batch-20-index (Class 176) 单一事实来源
+// import './categories/graph/km-algorithm-renderer';
+// 树链剖分已收敛至 batch-9-index (Class 121) 单一事实来源
+// import './categories/graph/heavy-light-decomposition-renderer';
+// 树点分治已收敛至 batch-21-index (Class 179) 单一事实来源
+// import './categories/graph/tree-centroid-decomposition-renderer';
 import './categories/graph/konig-min-vertex-cover-renderer';
 import './categories/graph/lca-binary-lifting-renderer';
 import './categories/graph/pseudotree-dp-renderer';
 import './categories/graph/two-sat-renderer';
 import './categories/graph/stable-marriage-renderer';
 import './categories/graph/block-cut-tree-renderer';
-import './categories/graph/tree-difference-renderer';
+// 树上差分已收敛至 batch-9-index (Class 122) 单一事实来源
+// import './categories/graph/tree-difference-renderer';
 import './categories/graph/second-mst-renderer';
 import './categories/graph/k-shortest-path-renderer';
 import './categories/graph/cycle-counting-renderer';
@@ -188,7 +193,8 @@ import './categories/graph/ev-charge-dijkstra-renderer';
 import './categories/graph/dsu-on-tree-renderer';
 import './categories/graph/planar-graph-dual-renderer';
 import './categories/graph/min-path-cover-renderer';
-import './categories/graph/chordal-graph-renderer';
+// 弦图 MCS 已收敛至 batch-20-index (Class 177) 单一事实来源
+// import './categories/graph/chordal-graph-renderer';
 import './categories/graph/network-delay-time-renderer';
 import './categories/graph/tree-path-intersection-renderer';
 import './categories/graph/prefix-opt-graph-renderer';
@@ -196,7 +202,8 @@ import './categories/graph/tree-dominant-color-renderer';
 import './categories/graph/mixed-eulerian-circuit-renderer';
 import './categories/graph/tree-centroid-path-count-renderer';
 import './categories/graph/min-mean-cycle-renderer';
-import './categories/graph/tree-knapsack-dp-renderer';
+// 树上有依赖背包已收敛至 batch-18-index (Class 088) 单一事实来源
+// import './categories/graph/tree-knapsack-dp-renderer';
 import './categories/graph/convex-hull-3d-renderer';
 import './categories/graph/swim-in-rising-water-renderer';
 import './categories/graph/mst-kruskal-prim-027-renderer';

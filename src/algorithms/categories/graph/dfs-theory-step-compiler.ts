@@ -3,6 +3,8 @@
  * 纯状态机推演：图遍历状态、递归调用栈、回溯路径与 1-based 代码行同步
  */
 
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+
 export interface DFSStep {
   nodes: number[];
   edges: [number, number][];
@@ -64,7 +66,7 @@ export function buildDFSSteps(): DFSStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjList: adjList.map((r) => [...r]),
+    adjList: snapshotGrid2D(adjList),
     visited: new Set(visited),
     currentNode: null,
     currentEdge: null,
@@ -90,7 +92,7 @@ export function buildDFSSteps(): DFSStep[] {
     steps.push({
       nodes: [...nodes],
       edges: [...edges],
-      adjList: adjList.map((r) => [...r]),
+      adjList: snapshotGrid2D(adjList),
       visited: new Set(visited),
       currentNode: u,
       currentEdge: null,
@@ -114,7 +116,7 @@ export function buildDFSSteps(): DFSStep[] {
         steps.push({
           nodes: [...nodes],
           edges: [...edges],
-          adjList: adjList.map((r) => [...r]),
+          adjList: snapshotGrid2D(adjList),
           visited: new Set(visited),
           currentNode: u,
           currentEdge: [u, v],
@@ -136,7 +138,7 @@ export function buildDFSSteps(): DFSStep[] {
         steps.push({
           nodes: [...nodes],
           edges: [...edges],
-          adjList: adjList.map((r) => [...r]),
+          adjList: snapshotGrid2D(adjList),
           visited: new Set(visited),
           currentNode: u,
           currentEdge: [u, v],
@@ -160,7 +162,7 @@ export function buildDFSSteps(): DFSStep[] {
     steps.push({
       nodes: [...nodes],
       edges: [...edges],
-      adjList: adjList.map((r) => [...r]),
+      adjList: snapshotGrid2D(adjList),
       visited: new Set(visited),
       currentNode: stack.length > 0 ? stack[stack.length - 1] : null,
       currentEdge: null,
@@ -184,7 +186,7 @@ export function buildDFSSteps(): DFSStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjList: adjList.map((r) => [...r]),
+    adjList: snapshotGrid2D(adjList),
     visited: new Set(visited),
     currentNode: null,
     currentEdge: null,

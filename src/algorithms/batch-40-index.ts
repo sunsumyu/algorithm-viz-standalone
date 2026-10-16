@@ -7,6 +7,6 @@
  */
 
 import './categories/union-find/union-find-056/union-find-luogu-056-renderer';
-import './categories/union-find/union-find-056/couples-holding-hands-056-renderer';
+// Code03: 情侣牵手与置换环定理 已收拢整合至 couples-holding-hands 单一事实来源
 import './categories/union-find/union-find-056/similar-string-groups-056-renderer';
 import './categories/union-find/union-find-056/number-of-islands-056-renderer';

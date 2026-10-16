@@ -3,6 +3,8 @@
  * 纯状态机推演：邻接矩阵、邻接表、动态加边/删边与 1-based 代码行同步
  */
 
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+
 export interface GTStep {
   nodes: number[];
   edges: [number, number][];
@@ -74,8 +76,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjMatrix: adjMatrix.map((r) => [...r]),
-    adjList: adjList.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix),
+    adjList: snapshotGrid2D(adjList),
     view: 'graph',
     highlightEdge: null,
     highlightAction: null,
@@ -95,8 +97,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjMatrix: adjMatrix.map((r) => [...r]),
-    adjList: adjList.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix),
+    adjList: snapshotGrid2D(adjList),
     view: 'matrix',
     highlightEdge: null,
     highlightAction: null,
@@ -116,8 +118,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjMatrix: adjMatrix.map((r) => [...r]),
-    adjList: adjList.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix),
+    adjList: snapshotGrid2D(adjList),
     view: 'list',
     highlightEdge: null,
     highlightAction: null,
@@ -141,8 +143,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: edges2.map((e) => [...e] as [number, number]),
-    adjMatrix: adjMatrix2.map((r) => [...r]),
-    adjList: adjList2.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix2),
+    adjList: snapshotGrid2D(adjList2),
     view: 'graph',
     highlightEdge: [2, 4],
     highlightAction: 'add',
@@ -166,8 +168,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: edges3.map((e) => [...e] as [number, number]),
-    adjMatrix: adjMatrix3.map((r) => [...r]),
-    adjList: adjList3.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix3),
+    adjList: snapshotGrid2D(adjList3),
     view: 'graph',
     highlightEdge: [1, 3],
     highlightAction: 'remove',
@@ -187,8 +189,8 @@ export function buildGraphTheorySteps(): GTStep[] {
   steps.push({
     nodes: [...nodes],
     edges: edges3.map((e) => [...e] as [number, number]),
-    adjMatrix: adjMatrix3.map((r) => [...r]),
-    adjList: adjList3.map((r) => [...r]),
+    adjMatrix: snapshotGrid2D(adjMatrix3),
+    adjList: snapshotGrid2D(adjList3),
     view: 'graph',
     highlightEdge: null,
     highlightAction: null,

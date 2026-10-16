@@ -93,3 +93,5 @@ export const slidingWindowMax054Renderer = registerDeclarativeAlgorithm<Step054>
     container.innerHTML = renderSlidingWindowBoard(step);
   },
 });
+
+export const slidingWindowMax054Visualizer = slidingWindowMax054Renderer;

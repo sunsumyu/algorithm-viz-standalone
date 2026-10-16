@@ -3,6 +3,8 @@
  * 纯状态机推演：队列先进先出、分层波纹扩张、标记判重与 1-based 代码行同步
  */
 
+import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+
 export interface BFSStep {
   nodes: number[];
   edges: [number, number][];
@@ -68,7 +70,7 @@ export function buildBFSSteps(): BFSStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjList: adjList.map((r) => [...r]),
+    adjList: snapshotGrid2D(adjList),
     visited: new Set(visited),
     currentNode: null,
     currentEdge: null,
@@ -94,7 +96,7 @@ export function buildBFSSteps(): BFSStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjList: adjList.map((r) => [...r]),
+    adjList: snapshotGrid2D(adjList),
     visited: new Set(visited),
     currentNode: 0,
     currentEdge: null,
@@ -123,7 +125,7 @@ export function buildBFSSteps(): BFSStep[] {
     steps.push({
       nodes: [...nodes],
       edges: [...edges],
-      adjList: adjList.map((r) => [...r]),
+      adjList: snapshotGrid2D(adjList),
       visited: new Set(visited),
       currentNode: u,
       currentEdge: null,
@@ -151,7 +153,7 @@ export function buildBFSSteps(): BFSStep[] {
         steps.push({
           nodes: [...nodes],
           edges: [...edges],
-          adjList: adjList.map((r) => [...r]),
+          adjList: snapshotGrid2D(adjList),
           visited: new Set(visited),
           currentNode: u,
           currentEdge: [u, v],
@@ -173,7 +175,7 @@ export function buildBFSSteps(): BFSStep[] {
         steps.push({
           nodes: [...nodes],
           edges: [...edges],
-          adjList: adjList.map((r) => [...r]),
+          adjList: snapshotGrid2D(adjList),
           visited: new Set(visited),
           currentNode: u,
           currentEdge: [u, v],
@@ -201,7 +203,7 @@ export function buildBFSSteps(): BFSStep[] {
       steps.push({
         nodes: [...nodes],
         edges: [...edges],
-        adjList: adjList.map((r) => [...r]),
+        adjList: snapshotGrid2D(adjList),
         visited: new Set(visited),
         currentNode: queue[0],
         currentEdge: null,
@@ -225,7 +227,7 @@ export function buildBFSSteps(): BFSStep[] {
   steps.push({
     nodes: [...nodes],
     edges: [...edges],
-    adjList: adjList.map((r) => [...r]),
+    adjList: snapshotGrid2D(adjList),
     visited: new Set(visited),
     currentNode: null,
     currentEdge: null,

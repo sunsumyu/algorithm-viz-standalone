@@ -62,6 +62,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<CouplesStep>({
 
 registerAlgorithm({
   id: 'couples-holding-hands',
+  aliases: ['couples-holding-hands-056', 'class056-code03', 'couples-holding-hands-765', 'leetcode-765'],
   name: '情侣牵手 (Couples Holding Hands)',
   viewId: 'algo-couples-holding-hands-view',
   category: 'graph',

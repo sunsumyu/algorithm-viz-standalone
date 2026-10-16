@@ -128,7 +128,7 @@ export function buildVerifyPreorderBstSteps(preorder: number[]): VerifyPreorderB
         lowerBound,
         isValidSoFar: false,
         poppedValues: [],
-        decision: `❌ 违背二叉搜索树性质！val = ${val} 小于已确立的右子树下界水位线 lowerBound = ${lowerBound}，直接判定非法 return false`,
+        decision: `❌ 违规！违背二叉搜索树性质！val = ${val} 小于已确立的右子树下界水位线 lowerBound = ${lowerBound}，直接判定非法 return false`,
         message: `出现倒流！既然此前已经拐入 ${lowerBound} 的右子树，后续所有节点必须大于 ${lowerBound}，而 ${val} 却小于 ${lowerBound}`,
         log: `violation detected: val ${val} < lowerBound ${lowerBound}, return false`,
         codeLine: CODE_LINES.returnFalse,

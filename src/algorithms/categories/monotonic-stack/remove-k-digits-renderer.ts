@@ -20,12 +20,13 @@ export {
   renderRemoveKDigitsCanvas,
 };
 
-registerDeclarativeAlgorithm({
+const { Visualizer } = registerDeclarativeAlgorithm({
   id: 'remove-k-digits',
   name: '移掉 K 位数字',
   category: 'monotonic-stack',
   difficulty: 2,
   learningGoal: 'LeetCode 402: 移掉 k 位数字使得剩下的数字最小。利用单调递增栈在 O(N) 时间内贪心剔除逆序高位，并剥离前导零。',
+  aliases: ['remove-k-digits-053', 'class053-code03', 'leetcode-402', '402'],
   codeLanguages: REMOVE_K_DIGITS_CODES,
   generateSteps: (inputs) => {
     const rawNum = inputs?.num as string | undefined;
@@ -54,3 +55,5 @@ registerDeclarativeAlgorithm({
     },
   ],
 });
+
+export { Visualizer as RemoveKDigitsVisualizer };

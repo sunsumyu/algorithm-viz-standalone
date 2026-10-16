@@ -136,7 +136,7 @@ export function renderGraphTheoryCanvas(container: HTMLElement, step: GTStep): v
 }
 
 export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTStep): void {
-  const { adjMatrix, adjList, highlightEdge } = step;
+  const { adjMatrix, adjList, highlightEdge, vCount, eCount } = step;
 
   // 1. 邻接矩阵 5x5 表格
   let matrixRows = `
@@ -207,6 +207,10 @@ export function renderGraphTheoryCustomMetrics(container: HTMLElement, step: GTS
     .join('');
 
   container.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 8px 6px 8px; font-size: 11px; font-weight: 700; color: #475569;">
+      <span>顶点总数 (V): ${vCount ?? 5}</span>
+      <span>边总数 (E): ${eCount ?? 6}</span>
+    </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; box-sizing: border-box;">
       <!-- 邻接矩阵视舱 -->
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 5px;">

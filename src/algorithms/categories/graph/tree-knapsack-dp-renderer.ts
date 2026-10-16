@@ -1,10 +1,9 @@
 /**
- * 树上有依赖背包 (Tree-Dependent Knapsack DP · 洛谷 P2014 选课) 声明式可视化器
- * 进阶树论 + DP: 泛化物品树上合并、子树大小上下界优化 O(N * V)
- * 遵循 Matt Pocock 深模块规范，Thin Domain Adapter 控制在 120 行以内
+ * 树上有依赖背包 (Tree-Dependent Knapsack DP · 洛谷 P2014 选课)
+ * 统一收敛至单一事实来源：src/algorithms/categories/dynamic-programming/dp-084-088/tree-knapsack-dp-088-renderer
+ * 本文件保留 Visualizer 构造类与步骤编译器供伴生单测使用，注销重复 catalog 注册
  */
 
-import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   TREE_KNAPSACK_CODE_LANGUAGES,
@@ -63,37 +62,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeKnapStep>({
   problemHtml: TREE_KNAPSACK_PROBLEM_HTML,
   analysisHtml: TREE_KNAPSACK_ANALYSIS_HTML,
   buildSteps: (inputs) => {
-    const v = parseInt(inputs['input-capacity'] || '3', 10);
+    const v = parseInt(String(inputs?.['input-capacity'] || 3), 10);
     return buildTreeKnapsackSteps(v);
   },
-  renderCanvas: (container, step) => {
-    renderGraphTreeKnapCanvas(container, step);
-    const root = container.closest('#algo-tree-knapsack-dp-view');
-    if (root) {
-      const customMetricsContainer = root.querySelector('#dsp-custom-metrics-container') as HTMLElement;
-      if (customMetricsContainer) {
-        renderGraphTreeKnapCustomMetrics(customMetricsContainer, step);
-      }
-    }
-  },
-  renderCustomMetrics: (container, step) => {
-    renderGraphTreeKnapCustomMetrics(container, step);
-  },
-});
-
-registerAlgorithm({
-  id: 'tree-knapsack-dp',
-  name: '树上有依赖背包 (Tree Knapsack DP)',
-  viewId: 'algo-tree-knapsack-dp-view',
-  category: 'graph',
-  description: '进阶树论与 DP 融合：泛化物品树形合并、子树大小上下界优化 O(N*V)、选修课依赖拓扑 (洛谷 P2014 选课)',
-  icon: '🎒',
-  template,
-  Visualizer,
-  difficulty: 3,
-  levelOrder: 74,
-  learningGoal: '掌握树上有依赖背包的树上泛化物品合并、超级源点技巧与子树大小上下界常数优化',
-  aliases: ['tree-knapsack', 'P2014', 'tree-dependent-knapsack', 'dependent-knapsack-tree'],
+  renderCanvas: renderGraphTreeKnapCanvas,
+  renderCustomMetrics: renderGraphTreeKnapCustomMetrics,
 });
 
 export { Visualizer as TreeKnapsackDPVisualizer };

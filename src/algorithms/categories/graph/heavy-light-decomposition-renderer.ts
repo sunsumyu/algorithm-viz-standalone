@@ -1,10 +1,9 @@
 /**
  * 树链剖分与线段树维护 (Heavy-Light Decomposition - 树剖 HLD) 领域适配器
- * 进阶树论: 重儿子 size[v] 最大、重链顶点 top[u]、两遍 DFS 连续 DFN 序映射、树上路径转化为 O(log N) 个线段树连续区间 (洛谷 P3384)
- * 遵循 Matt Pocock 深模块架构 (LOC < 120)，委托 step-compiler、canvas-adapter 与 deduction-tree
+ * 统一收敛至单一事实来源：src/algorithms/categories/tree/tree-117-123/hld-renderer
+ * 本文件保留 Visualizer 构造类与步骤编译器供伴生单测使用，注销重复 catalog 注册
  */
 
-import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   HLD_CODE_LANGUAGES,
@@ -19,6 +18,13 @@ import {
   renderHLDCanvas,
   renderHLDCustomMetrics,
 } from '../../../core/renderers/adapters/heavy-light-decomposition-canvas-adapter';
+
+export {
+  buildHLDSteps,
+  type HLDStep,
+  renderHLDCanvas,
+  renderHLDCustomMetrics,
+};
 
 const { template, Visualizer } = createDeclarativeVisualizer<HLDStep>({
   id: 'heavy-light-decomposition',
@@ -58,40 +64,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<HLDStep>({
     const preset = (inputs['input-preset'] || 'classic_6node') as string;
     return buildHLDSteps(preset);
   },
-  renderCanvas: (container, step) => {
-    renderHLDCanvas(container, step);
-
-    const rootEl =
-      container.closest('#algo-heavy-light-decomposition-view') ||
-      container.parentElement ||
-      container.ownerDocument;
-    if (rootEl) {
-      for (const [id, val] of Object.entries(step.metrics ?? {})) {
-        const el = rootEl.querySelector(`#${id}`);
-        if (el) el.textContent = String(val);
-      }
-      const customMetricsContainer = rootEl.querySelector('#dsp-custom-metrics-container') as HTMLElement | null;
-      if (customMetricsContainer) {
-        renderHLDCustomMetrics(customMetricsContainer, step);
-      }
-    }
-  },
+  renderCanvas: renderHLDCanvas,
+  renderCustomMetrics: renderHLDCustomMetrics,
 });
 
-registerAlgorithm({
-  id: 'heavy-light-decomposition',
-  name: '树链剖分 (Heavy-Light Decomposition)',
-  viewId: 'algo-heavy-light-decomposition-view',
-  category: 'graph',
-  description: '进阶树论经典：两遍 DFS 划分重链、重儿子优先连续 DFN 序编排、树上路径转化为连续线段树区间 (洛谷 P3384)',
-  icon: '🪓',
-  aliases: ['hld', 'tree-chain-decomposition', 'P3384', 'class074'],
-  template,
-  Visualizer,
-  difficulty: 3,
-  levelOrder: 83,
-  learningGoal: '掌握重儿子判定与轻重链划分原理、两遍 DFS 连续 DFN 序映射及 O(log N) 树上路径跳跃技巧',
-});
-
-export { buildHLDSteps, type HLDStep };
 export { Visualizer as HeavyLightDecompositionVisualizer };

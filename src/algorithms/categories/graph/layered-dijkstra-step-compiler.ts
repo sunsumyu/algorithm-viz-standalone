@@ -136,21 +136,21 @@ export function buildLayeredDijkstraSteps(presetKey: string = 'p4568_standard'):
   }
 
   const lines = {
-    initDist: { cpp: 18, java: 18, python: 13, javascript: 14 },
-    initSrc: { cpp: 23, java: 23, python: 17, javascript: 18 },
-    pushSrc: { cpp: 24, java: 24, python: 18, javascript: 19 },
-    whilePq: { cpp: 26, java: 26, python: 20, javascript: 21 },
-    poll: { cpp: 27, java: 27, python: 21, javascript: 22 },
-    checkVisited: { cpp: 31, java: 31, python: 25, javascript: 26 },
-    markVisited: { cpp: 32, java: 32, python: 26, javascript: 27 },
-    checkTarget: { cpp: 34, java: 34, python: 28, javascript: 29 },
-    loopEdges: { cpp: 36, java: 36, python: 30, javascript: 31 },
-    sameLayerRelax: { cpp: 38, java: 38, python: 32, javascript: 33 },
-    pushSame: { cpp: 40, java: 40, python: 34, javascript: 35 },
-    crossLayerCheck: { cpp: 43, java: 43, python: 37, javascript: 38 },
-    crossLayerRelax: { cpp: 44, java: 44, python: 38, javascript: 39 },
-    pushCross: { cpp: 46, java: 46, python: 40, javascript: 41 },
-    returnAns: { cpp: 50, java: 50, python: 43, javascript: 44 },
+    initDist: { cpp: 18, java: 18, python: 13, javascript: 10 },
+    initSrc: { cpp: 23, java: 23, python: 17, javascript: 14 },
+    pushSrc: { cpp: 24, java: 24, python: 18, javascript: 15 },
+    whilePq: { cpp: 26, java: 26, python: 19, javascript: 17 },
+    poll: { cpp: 27, java: 27, python: 20, javascript: 18 },
+    checkVisited: { cpp: 31, java: 31, python: 22, javascript: 20 },
+    markVisited: { cpp: 32, java: 32, python: 23, javascript: 21 },
+    checkTarget: { cpp: 34, java: 34, python: 24, javascript: 22 },
+    loopEdges: { cpp: 36, java: 36, python: 27, javascript: 24 },
+    sameLayerRelax: { cpp: 38, java: 38, python: 29, javascript: 26 },
+    pushSame: { cpp: 40, java: 40, python: 31, javascript: 28 },
+    crossLayerCheck: { cpp: 43, java: 43, python: 33, javascript: 30 },
+    crossLayerRelax: { cpp: 44, java: 44, python: 34, javascript: 32 },
+    pushCross: { cpp: 46, java: 46, python: 35, javascript: 33 },
+    returnAns: { cpp: 50, java: 50, python: 38, javascript: 40 },
   };
 
   let optimalFinalState: { u: number; used: number } | null = null;

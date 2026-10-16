@@ -1,10 +1,9 @@
 /**
- * 二维接雨水 II (Trapping Rain Water II - LeetCode 407) 声明式可视化器
- * 核心：外围木桶最短板出堆、小根堆贪心收缩、大根水面蔓延 max(water, height)
- * Thin Domain Adapter (LOC < 115) 委托推演至 step-compiler，委托画布至 BinaryGridCanvasAdapter
+ * 二维接雨水 II (Trapping Rain Water II - LeetCode 407)
+ * 统一收敛至单一事实来源：src/algorithms/categories/graph/graph-062/trapping-rain-water-ii-062-renderer
+ * 本文件保留 Visualizer 类与步骤生成器供已有单测使用，注销重复 catalog 注册
  */
 
-import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   TRAPPING_WATER_II_CODE_LANGUAGES,
@@ -20,7 +19,7 @@ import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary
 export type { Trap2Step };
 export { buildTrappingWaterIISteps };
 
-function renderTrappingWaterIICanvas(container: HTMLElement, step: Trap2Step): void {
+export function renderTrappingWaterIICanvas(container: HTMLElement, step: Trap2Step): void {
   BinaryGridCanvasAdapter.renderGridCanvas(container, {
     rows: step.grid.length,
     cols: step.grid[0].length,
@@ -94,21 +93,6 @@ const { template, Visualizer } = createDeclarativeVisualizer<Trap2Step>({
   analysisHtml: TRAPPING_WATER_II_ANALYSIS_HTML,
   buildSteps: (inputs) => buildTrappingWaterIISteps(String(inputs?.['input-preset'] || 'classic_3x6')),
   renderCanvas: renderTrappingWaterIICanvas,
-});
-
-registerAlgorithm({
-  id: 'trapping-water-ii',
-  aliases: ['trapping-rain-water-ii', 'trap-rain-water-407'],
-  name: '二维接雨水 II (Trapping Rain Water II)',
-  viewId: 'algo-trapping-water-ii-view',
-  category: 'graph',
-  description: '木桶原理与优先队列结合：边界入堆、弹最短板向内收缩、低洼格蓄水 (LeetCode 407)',
-  icon: '🌊',
-  template,
-  Visualizer,
-  difficulty: 3,
-  levelOrder: 99,
-  learningGoal: '掌握小根堆模拟木桶原理、二维水线动态扩展机制及外围向内收缩单调性证明',
 });
 
 export { Visualizer as TrappingWaterIIVisualizer };

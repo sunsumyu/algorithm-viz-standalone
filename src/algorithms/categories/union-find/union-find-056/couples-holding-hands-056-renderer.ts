@@ -8,7 +8,7 @@
  * - 保留库内既有 couples-holding-hands 独立性，通过别名与主 ID 精准区分
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
+import { createDeclarativeVisualizer } from '../../../../core/declarative-algorithm-visualizer';
 import { UNION_FIND_056_PROBLEMS } from './union-find-056-problem-content';
 import { CODE03_COUPLES_CODES } from './union-find-056-stage-codes';
 import { Step056, renderCouplesHandsBoard } from './union-find-056-shared';
@@ -16,7 +16,7 @@ import { buildCouplesHandsSteps } from './couples-holding-hands-056-step-compile
 
 export { buildCouplesHandsSteps };
 
-export const couplesHoldingHands056Renderer = registerDeclarativeAlgorithm<Step056>({
+export const { Visualizer: CouplesHoldingHands056Visualizer } = createDeclarativeVisualizer<Step056>({
   id: 'couples-holding-hands-056',
   aliases: ['class056-code03', 'couples-holding-hands-765'],
   name: '情侣牵手与置换环定理 (Class 056)',

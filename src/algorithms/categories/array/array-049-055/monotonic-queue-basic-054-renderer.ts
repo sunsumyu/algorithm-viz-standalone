@@ -101,30 +101,9 @@ export function buildMonotonicQueue054Steps(): MonotonicQueue054Step[] {
   return steps;
 }
 
-export const monotonicQueue054Visualizer = registerDeclarativeAlgorithm<MonotonicQueue054Step>({
-  id: 'monotonic-queue-basic-054',
-  name: '单调队列与滑动窗口最大值 (Class 054)',
-  category: 'monotonic-stack',
-  difficulty: 'medium',
-  problemContent: ARRAY_049_055_PROBLEMS.monotonicQueueBasic054,
-  sourceCodes: MONOTONIC_QUEUE_054_CODES,
-  generateSteps: buildMonotonicQueue054Steps,
-  renderCanvas: (container, step) => {
-    container.innerHTML = `
-      <div style="padding: 16px; font-family: system-ui, -apple-system, sans-serif;">
-        ${renderMonotonicQueueBoard(
-          step.nums,
-          step.k,
-          step.curIdx,
-          step.queueIndices,
-          step.maxVals
-        )}
-        ${renderFormulaCard(
-          '单调队列双端维序准则',
-          '\\text{pollLast while } nums[q.last] \\le nums[i], \\quad \\text{pollFirst if } q.first \\le i - k',
-          '队尾维系严格单调性（淘汰劣解），队头维系窗口有效性（过期移出）。两端操作均摊常数级，将单调极值检索从 $O(K)$ 降低到均摊 $O(1)$。'
-        )}
-      </div>
-    `;
-  },
-});
+import { slidingWindowMax054Visualizer } from '../../monotonic-queue/monotonic-queue-054/sliding-window-max-054-renderer';
+
+/**
+ * 桥接导出已统合的唯一事实来源 Visualizer (Class 054 单调队列)
+ */
+export const monotonicQueue054Visualizer = slidingWindowMax054Visualizer;

@@ -1,7 +1,6 @@
 /**
- * 水位上升的泳池中游泳 (Swim In Rising Water - LeetCode 778) 声明式可视化器
- * 左程云《算法通关课》Class 064 Code03
- * 核心：网格图瓶颈最短路、max(dis, grid[nx][ny]) 松弛、Dijkstra 小根堆定向淹没
+ * 水位上升的泳池中游泳 (Swim in Rising Water - LeetCode 778) 声明式可视化器
+ * 核心：网格图瓶颈最短路、max(t, grid[nr][nc]) 松弛、Dijkstra 小根堆
  */
 
 import { registerAlgorithm } from '../../../core/registry';
@@ -13,9 +12,7 @@ import {
 } from './swim-in-rising-water-problem-content';
 import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary-grid-canvas-adapter';
 import type { SwimStep } from './swim-in-rising-water-step-compiler';
-import {
-  buildSwimInRisingWaterSteps,
-} from './swim-in-rising-water-step-compiler';
+import { buildSwimInRisingWaterSteps } from './swim-in-rising-water-step-compiler';
 
 export type { SwimStep };
 export { buildSwimInRisingWaterSteps };
@@ -34,31 +31,35 @@ export function renderSwimInRisingWaterCanvas(container: HTMLElement, step: Swim
     getCell: (r, c) => {
       const isCur = r === curR && c === curC;
       const isPath = pathSet.has(`${r},${c}`);
-      const isVisited = visitedGrid[r][c];
-      const isTarget = r === n - 1 && c === m - 1;
       const isStart = r === 0 && c === 0;
+      const isTarget = r === n - 1 && c === m - 1;
       const h = grid[r][c];
       const isSubmerged = curWaterLevel >= h;
+      const isVis = visitedGrid?.[r]?.[c];
+      const d = distGrid?.[r]?.[c] ?? Infinity;
 
       let bg = '#ffffff';
-      let border = '1.5px solid #cbd5e1';
+      let border = '1px solid #cbd5e1';
       let color = '#334155';
 
-      if (isPath) {
+      if (isCur) {
+        bg = '#fef3c7';
+        border = '2px solid #f59e0b';
+        color = '#b45309';
+      } else if (isPath) {
         bg = '#ecfdf5';
         border = '2px solid #10b981';
         color = '#065f46';
-      } else if (isVisited) {
+      } else if (isVis) {
         bg = '#e0f2fe';
         border = '1.5px solid #38bdf8';
-        color = '#0369a1';
+        color = '#0284c7';
       } else if (isSubmerged) {
-        bg = '#f1f5f9';
-        border = '1.5px dashed #94a3b8';
-        color = '#64748b';
+        bg = '#f0f9ff';
+        border = '1px dashed #7dd3fc';
+        color = '#0369a1';
       }
 
-      const d = distGrid[r][c];
       return {
         text: `${h}m (t:${d === Infinity ? '∞' : d})`,
         bg,
@@ -76,6 +77,7 @@ export function renderSwimInRisingWaterCanvas(container: HTMLElement, step: Swim
 const { template, Visualizer } = createDeclarativeVisualizer<SwimStep>({
   id: 'swim-in-rising-water',
   name: '水位上升的泳池中游泳',
+  aliases: ['swim-in-rising-water-064', 'class064-code03', 'leetcode-778'],
   category: 'graph',
   hasDeductionTree: true,
   icon: '🏊',
@@ -109,6 +111,7 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 76,
   learningGoal: '掌握网格图瓶颈最短路变型、带优先级的动态淹没模拟及二分+BFS/Dijkstra求解',
+  aliases: ['swim-in-rising-water-064', 'class064-code03', 'leetcode-778'],
 });
 
 export { Visualizer as SwimInRisingWaterVisualizer };

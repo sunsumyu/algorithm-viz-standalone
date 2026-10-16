@@ -26,7 +26,7 @@ export { buildDJBSteps, type DJBStep };
 
 export const dijkstraBasicVisualizer = registerDeclarativeAlgorithm({
   id: 'dijkstra-basic',
-  aliases: ['dijkstra-basic-061', 'dijkstra', 'naive-dijkstra', 'class061-dijkstra', 'dijkstra-naive'],
+  aliases: ['dijkstra-basic-061', 'class061-code01', 'dijkstra', 'naive-dijkstra', 'class061-dijkstra', 'dijkstra-naive'],
   name: 'Dijkstra 朴素最短路',
   category: 'graph',
   icon: '📍',

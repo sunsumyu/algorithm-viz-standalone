@@ -203,7 +203,7 @@ export function renderDFSTheoryCustomMetrics(container: HTMLElement, step: DFSSt
             <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #059669;"></span>
             访问序列 (Traversal Order)
           </span>
-          <span style="font-size: 11px; font-weight: 700; color: #059669; font-family: monospace;">已访问: ${visited.size} / 6</span>
+          <span style="font-size: 11px; font-weight: 700; color: #059669; font-family: monospace;">已覆盖顶点: ${visited.size} / 6</span>
         </div>
         <div style="display: flex; flex-wrap: wrap; items-center; gap: 5px; min-height: 32px; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 6px; padding: 4px 8px; box-sizing: border-box;">
           ${orderItemsHtml}

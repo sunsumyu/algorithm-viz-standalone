@@ -10,7 +10,8 @@ import './categories/greedy/max-subarray-renderer';
 import './categories/greedy/greedy-week-summary-renderer';
 import './categories/greedy/best-time-stock-renderer';
 import './categories/greedy/can-jump-renderer';
-import './categories/greedy/jump-game-renderer';
+// 跳跃游戏 II 已收敛至 batch-19-index (Class 093) 单一事实来源
+// import './categories/greedy/jump-game-renderer';
 import './categories/greedy/maximize-sum-k-renderer';
 import './categories/greedy/greedy-week-summary-2-renderer';
 import './categories/greedy/gas-station-renderer';

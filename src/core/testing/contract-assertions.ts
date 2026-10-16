@@ -32,7 +32,7 @@ export function verify1BasedCodeLines(
 ): void {
   expect(steps.length).toBeGreaterThan(0);
   for (const step of steps) {
-    if (step.codeLine && typeof step.codeLine === 'object') {
+    if (step.codeLine && typeof step.codeLine === 'object' && !Array.isArray(step.codeLine)) {
       const lineMap = step.codeLine as Record<string, number>;
       for (const lang of ['java', 'cpp', 'python', 'javascript']) {
         const line = lineMap[lang];

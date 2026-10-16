@@ -1,10 +1,9 @@
 /**
  * 树上差分 (Tree Difference - 点差分与边差分 · 洛谷 P3128 / P3258) 领域适配器
- * 进阶树论: 点差分 (diff[u]++, diff[v]++, diff[lca]--, diff[fa[lca]]--) 与 边差分 (diff[u]++, diff[v]++, diff[lca]-=2)
- * 遵循 Matt Pocock 深模块架构 (LOC < 120)，委托 step-compiler、canvas-adapter 与 deduction-tree
+ * 统一收敛至单一事实来源：src/algorithms/categories/tree/tree-117-123/tree-difference-renderer
+ * 本文件保留 Visualizer 构造类与步骤编译器供伴生单测使用，注销重复 catalog 注册
  */
 
-import { registerAlgorithm } from '../../../core/registry';
 import { createDeclarativeVisualizer } from '../../../core/declarative-algorithm-visualizer';
 import {
   TREE_DIFF_CODE_LANGUAGES,
@@ -19,6 +18,13 @@ import {
   renderGraphTreeDiffCanvas,
   renderGraphTreeDiffCustomMetrics,
 } from '../../../core/renderers/adapters/graph-tree-difference-canvas-adapter';
+
+export {
+  buildTreeDifferenceSteps,
+  type TreeDiffStep,
+  renderGraphTreeDiffCanvas,
+  renderGraphTreeDiffCustomMetrics,
+};
 
 const { template, Visualizer } = createDeclarativeVisualizer<TreeDiffStep>({
   id: 'tree-difference',
@@ -57,40 +63,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<TreeDiffStep>({
     const preset = (inputs['input-preset'] || 'node_diff_5node') as string;
     return buildTreeDifferenceSteps(preset);
   },
-  renderCanvas: (container, step) => {
-    renderGraphTreeDiffCanvas(container, step);
-
-    const rootEl =
-      container.closest('#algo-tree-difference-view') ||
-      container.parentElement ||
-      container.ownerDocument;
-    if (rootEl) {
-      for (const [id, val] of Object.entries(step.metrics ?? {})) {
-        const el = rootEl.querySelector(`#${id}`);
-        if (el) el.textContent = String(val);
-      }
-      const customMetricsContainer = rootEl.querySelector('#dsp-custom-metrics-container') as HTMLElement | null;
-      if (customMetricsContainer) {
-        renderGraphTreeDiffCustomMetrics(customMetricsContainer, step);
-      }
-    }
-  },
+  renderCanvas: renderGraphTreeDiffCanvas,
+  renderCustomMetrics: renderGraphTreeDiffCustomMetrics,
 });
 
-registerAlgorithm({
-  id: 'tree-difference',
-  name: '树上差分 (Tree Difference)',
-  viewId: 'algo-tree-difference-view',
-  category: 'graph',
-  description: '进阶树论经典：树上点差分与边差分标记、倍增 LCA 快速定位、自底向上后序子树和还原 (洛谷 P3128)',
-  icon: '🌴',
-  aliases: ['tree-diff', 'tree-difference-122', 'P3128', 'P3258', 'class122'],
-  template,
-  Visualizer,
-  difficulty: 3,
-  levelOrder: 70,
-  learningGoal: '掌握树上点差分与边差分原理、LCA 端点标记法及自底向上还原覆盖权值全流程',
-});
-
-export { buildTreeDifferenceSteps, type TreeDiffStep };
 export { Visualizer as TreeDifferenceVisualizer };

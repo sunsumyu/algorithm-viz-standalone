@@ -8,7 +8,8 @@ import './categories/stack/implement-queue-using-stack-renderer';
 import './categories/stack/implement-stack-using-queue-renderer';
 import './categories/stack/remove-adjacent-duplicates-renderer';
 import './categories/stack/eval-rpn-renderer';
-import './categories/stack/sliding-window-max-renderer';
+// 滑动窗口最大值已深度融为单一事实来源 (src/algorithms/categories/monotonic-queue/monotonic-queue-054/sliding-window-max-054-renderer.ts)
+// import './categories/stack/sliding-window-max-renderer';
 import './categories/stack/top-k-frequent-renderer';
 import './categories/advanced-topics/hard-interview/basic-calculator-full-renderer';
 import './categories/stack/reverse-stack-using-recursive-036-renderer';

@@ -21,7 +21,7 @@ export type { EffortStep };
 export { buildPathMinEffortSteps };
 
 export function renderPathMinEffortCanvas(container: HTMLElement, step: EffortStep): void {
-  const { grid, dist, visited, curR, curC, pathNodes, pqList } = step;
+  const { grid, dist, visited, curR, curC, pathNodes } = step;
   const rows = grid.length;
   const cols = grid[0].length;
   const pathSet = new Set(pathNodes.map(([r, c]) => `${r},${c}`));
@@ -39,9 +39,14 @@ export function renderPathMinEffortCanvas(container: HTMLElement, step: EffortSt
       const d = dist[r][c];
 
       let bg = '#ffffff';
-      let border = '1.5px solid #cbd5e1';
+      let border = '1px solid #cbd5e1';
       let color = '#334155';
-      if (isPath) {
+
+      if (isCur) {
+        bg = '#fef3c7';
+        border = '2px solid #f59e0b';
+        color = '#b45309';
+      } else if (isPath) {
         bg = '#ecfdf5';
         border = '2px solid #10b981';
         color = '#065f46';
@@ -68,6 +73,7 @@ export function renderPathMinEffortCanvas(container: HTMLElement, step: EffortSt
 const { template, Visualizer } = createDeclarativeVisualizer<EffortStep>({
   id: 'path-min-effort',
   title: '最小体力消耗路径 (Path With Minimum Effort)',
+  aliases: ['path-min-effort-064', 'class064-code02', 'leetcode-1631', 'minimum-effort-path'],
   category: 'graph',
   hasDeductionTree: true,
   codeLanguages: PATH_MIN_EFFORT_CODE_LANGUAGES,
@@ -96,6 +102,7 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 75,
   learningGoal: '深刻理解瓶颈最短路模型转化、网格图 Dijkstra 堆优化松弛与 MiniMax 问题求解',
+  aliases: ['path-min-effort-064', 'class064-code02', 'leetcode-1631', 'minimum-effort-path'],
 });
 
 export { Visualizer as PathMinEffortVisualizer };
