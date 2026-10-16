@@ -5,6 +5,7 @@
  */
 
 import { BinaryGridCanvasAdapter } from './binary-grid-canvas-adapter';
+import { RecursionTreeAdapter } from '../recursion-tree-adapter';
 import type { EffortStep } from '../../../algorithms/categories/graph/path-min-effort-step-compiler';
 
 export class PathMinEffortCanvasAdapter {
@@ -14,7 +15,6 @@ export class PathMinEffortCanvasAdapter {
     const cols = grid[0].length;
     const pathSet = new Set(pathNodes.map(([r, c]) => `${r},${c}`));
 
-    // 计算当前网格海拔范围，构建高程等高线阶梯色
     let minH = Infinity;
     let maxH = -Infinity;
     for (let r = 0; r < rows; r++) {
@@ -43,11 +43,10 @@ export class PathMinEffortCanvasAdapter {
         const d = dist[r][c];
         const isVis = visited[r][c];
 
-        // 地形高程热力底色
         const ratio = maxH > minH ? (h - minH) / (maxH - minH) : 0;
-        let bg = '#ffffff';
-        let border = '1.5px solid #e2e8f0';
-        let color = '#334155';
+        let bg = ratio > 0.7 ? '#fef2f2' : ratio > 0.4 ? '#fff7ed' : '#f0fdf4';
+        let border = ratio > 0.7 ? '1.5px solid #fecaca' : ratio > 0.4 ? '1.5px solid #fed7aa' : '1.5px solid #bbf7d0';
+        let color = ratio > 0.7 ? '#991b1b' : ratio > 0.4 ? '#9a3412' : '#166534';
 
         if (isDone && isPath) {
           bg = 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)';
@@ -61,51 +60,25 @@ export class PathMinEffortCanvasAdapter {
           bg = '#f1f5f9';
           border = '1.5px solid #cbd5e1';
           color = '#475569';
-        } else {
-          // 根据地形等高比拟温暖渐变
-          if (ratio > 0.7) {
-            bg = '#fef2f2';
-            border = '1.5px solid #fecaca';
-            color = '#991b1b';
-          } else if (ratio > 0.4) {
-            bg = '#fff7ed';
-            border = '1.5px solid #fed7aa';
-            color = '#9a3412';
-          } else {
-            bg = '#f0fdf4';
-            border = '1.5px solid #bbf7d0';
-            color = '#166534';
-          }
         }
 
-        // 角色标记徽章
-        let badgeHtml = '';
-        if (isStart) {
-          badgeHtml = '<span style="font-size: 9px; font-weight: 800; background: #3b82f6; color: #ffffff; padding: 1px 5px; border-radius: 4px;">起点</span>';
-        } else if (isTarget) {
-          badgeHtml = '<span style="font-size: 9px; font-weight: 800; background: #10b981; color: #ffffff; padding: 1px 5px; border-radius: 4px;">终点</span>';
-        } else if (isCur) {
-          badgeHtml = '<span style="font-size: 9px; font-weight: 800; background: #f59e0b; color: #ffffff; padding: 1px 5px; border-radius: 4px;">探索</span>';
-        } else if (isPath && isDone) {
-          badgeHtml = '<span style="font-size: 9px; font-weight: 800; background: #059669; color: #ffffff; padding: 1px 5px; border-radius: 4px;">最优</span>';
-        } else if (isVis) {
-          badgeHtml = '<span style="font-size: 9px; font-weight: 700; color: #94a3b8;">已确认</span>';
-        }
+        const badgeHtml = isStart
+          ? '<span style="font-size: 9px; font-weight: 800; background: #3b82f6; color: #fff; padding: 1px 5px; border-radius: 4px;">起点</span>'
+          : isTarget
+          ? '<span style="font-size: 9px; font-weight: 800; background: #10b981; color: #fff; padding: 1px 5px; border-radius: 4px;">终点</span>'
+          : isCur
+          ? '<span style="font-size: 9px; font-weight: 800; background: #f59e0b; color: #fff; padding: 1px 5px; border-radius: 4px;">探索</span>'
+          : isPath && isDone
+          ? '<span style="font-size: 9px; font-weight: 800; background: #059669; color: #fff; padding: 1px 5px; border-radius: 4px;">最优</span>'
+          : isVis
+          ? '<span style="font-size: 9px; font-weight: 700; color: #94a3b8;">已确认</span>'
+          : '';
 
-        // 瓶颈体力差胶囊底色
         let diffBadgeBg = '#f1f5f9';
         let diffBadgeColor = '#64748b';
         if (d !== Infinity) {
-          if (isCur) {
-            diffBadgeBg = '#fef3c7';
-            diffBadgeColor = '#b45309';
-          } else if (isPath && isDone) {
-            diffBadgeBg = '#d1fae5';
-            diffBadgeColor = '#047857';
-          } else if (isVis) {
-            diffBadgeBg = '#e2e8f0';
-            diffBadgeColor = '#334155';
-          }
+          diffBadgeBg = isCur ? '#fef3c7' : (isPath && isDone) ? '#d1fae5' : isVis ? '#e2e8f0' : '#f1f5f9';
+          diffBadgeColor = isCur ? '#b45309' : (isPath && isDone) ? '#047857' : isVis ? '#334155' : '#64748b';
         }
 
         return {
@@ -130,11 +103,7 @@ export class PathMinEffortCanvasAdapter {
           bg,
           border,
           color,
-          boxShadow: isCur
-            ? '0 0 0 4px rgba(245, 158, 11, 0.4), 0 6px 16px rgba(245, 158, 11, 0.25)'
-            : isPath
-            ? '0 0 0 3px rgba(16, 185, 129, 0.35), 0 4px 12px rgba(16, 185, 129, 0.15)'
-            : '0 1px 3px rgba(0, 0, 0, 0.04)',
+          boxShadow: isCur ? '0 0 0 4px rgba(245, 158, 11, 0.4), 0 6px 16px rgba(245, 158, 11, 0.25)' : isPath ? '0 0 0 3px rgba(16, 185, 129, 0.35)' : '0 1px 3px rgba(0, 0, 0, 0.04)',
           transform: isCur ? 'scale(1.06)' : 'none',
           zIndex: isCur ? 25 : isPath ? 15 : 2,
           title: `${isStart ? '🚩 起点 ' : ''}${isTarget ? '🏁 终点 ' : ''}(${r},${c}) 海拔高度: ${h}m · 最小落差瓶颈: ${d === Infinity ? '∞' : d}`,
@@ -142,8 +111,20 @@ export class PathMinEffortCanvasAdapter {
       },
     });
   }
+
+  static renderCustomMetrics(container: HTMLElement, step: EffortStep): void {
+    if (!container || !step.treeRoot) return;
+    container.style.height = '100%';
+    container.style.minHeight = '180px';
+    container.style.overflow = 'hidden';
+    RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId);
+  }
 }
 
 export function renderPathMinEffortCanvas(container: HTMLElement, step: EffortStep): void {
   PathMinEffortCanvasAdapter.render(container, step);
+}
+
+export function renderPathMinEffortCustomMetrics(container: HTMLElement, step: EffortStep): void {
+  PathMinEffortCanvasAdapter.renderCustomMetrics(container, step);
 }

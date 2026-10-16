@@ -28,4 +28,20 @@ describe('PathMinEffortCanvasAdapter', () => {
     expect(container.innerHTML).toContain('最优');
     expect(container.innerHTML).toContain('落差: 2');
   });
+
+  it('应当能正确为最小体力消耗路径渲染 Card 2 动态搜索推演树', () => {
+    const steps = buildPathMinEffortSteps('classic_mountain_3x3');
+    const container = document.createElement('div');
+    Object.defineProperty(container, 'clientWidth', { value: 600 });
+    Object.defineProperty(container, 'clientHeight', { value: 300 });
+
+    const step = steps[steps.length - 1];
+    expect(step.treeRoot).toBeDefined();
+    expect(step.activeNodeId).toBeDefined();
+
+    PathMinEffortCanvasAdapter.renderCustomMetrics(container, step);
+    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.innerHTML).toContain('(0,0) eff:0');
+    expect(container.innerHTML).toContain('🚩 起点');
+  });
 });

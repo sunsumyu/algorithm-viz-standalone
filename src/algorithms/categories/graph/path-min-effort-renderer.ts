@@ -34,6 +34,9 @@ export const { Visualizer: PathMinEffortVisualizer } = registerDeclarativeAlgori
   difficulty: 3,
   levelOrder: 75,
   hasDeductionTree: true,
+  card1Title: '⛰️ 二维网格拓扑高程沙盘',
+  card2Title: '🌲 Dijkstra 最短路径生成树 (Shortest Path Tree)',
+  card2Desc: '展示小根堆贪心搜索向外扩张的状态树，实时高亮父子松弛转移与波前节点',
   learningGoal: '深刻理解瓶颈最短路模型转化、网格图 Dijkstra 堆优化松弛与 MiniMax 问题求解',
   codeLanguages: PATH_MIN_EFFORT_CODE_LANGUAGES,
   problemHtml: PATH_MIN_EFFORT_PROBLEM_HTML,
@@ -47,4 +50,5 @@ export const { Visualizer: PathMinEffortVisualizer } = registerDeclarativeAlgori
   ],
   generateSteps: (inputs) => buildPathMinEffortSteps(String(inputs?.preset || 'classic_mountain_3x3')),
   renderCanvas: (container, step) => PathMinEffortCanvasAdapter.render(container, step),
+  renderCustomMetrics: (container, step) => PathMinEffortCanvasAdapter.renderCustomMetrics(container, step),
 });

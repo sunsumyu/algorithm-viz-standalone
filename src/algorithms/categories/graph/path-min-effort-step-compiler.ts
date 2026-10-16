@@ -6,6 +6,16 @@
 import { HighlightTarget } from '../../../core/code-panel';
 import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
 
+export interface EffortTreeNode {
+  id: string;
+  name?: string;
+  val: string | number;
+  edgeLabel?: string;
+  status?: 'active' | 'visited' | 'pruned' | 'base' | 'normal';
+  tag?: string;
+  children?: EffortTreeNode[];
+}
+
 export interface EffortStep {
   grid: number[][];
   dist: number[][];
@@ -22,6 +32,8 @@ export interface EffortStep {
   log: string;
   codeLine: HighlightTarget;
   metrics?: Record<string, string | number>;
+  treeRoot?: EffortTreeNode;
+  activeNodeId?: string;
 }
 
 export const PRESET_EFFORT_GRIDS: Record<string, { label: string; grid: number[][] }> = {
@@ -80,6 +92,27 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   let curC = 0;
   let minEffortSoFar = 0;
   let reachedTarget = false;
+
+  const treeRoot: EffortTreeNode = {
+    id: 'node-0-0',
+    val: `(0,0) eff:0`,
+    status: 'active',
+    tag: '🚩 起点',
+    children: [],
+  };
+  const nodeMap = new Map<string, EffortTreeNode>();
+  nodeMap.set('0,0', treeRoot);
+
+  function cloneTree(n: EffortTreeNode): EffortTreeNode {
+    return {
+      id: n.id,
+      val: n.val,
+      edgeLabel: n.edgeLabel,
+      status: n.status,
+      tag: n.tag,
+      children: n.children ? n.children.map(cloneTree) : [],
+    };
+  }
 
   const lines = {
     entry: { cpp: 13, java: 12, python: 13, javascript: 9 },
@@ -153,6 +186,8 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
       message,
       log,
       codeLine,
+      treeRoot: cloneTree(treeRoot),
+      activeNodeId: nodeMap.get(`${curR},${curC}`)?.id || 'node-0-0',
       metrics: {
         'metric-cur-coord': coordStr,
         'metric-min-effort': effortStr,
@@ -185,6 +220,11 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     curC = top.c;
     minEffortSoFar = top.effort;
 
+    const activeNode = nodeMap.get(`${curR},${curC}`);
+    if (activeNode) {
+      activeNode.status = 'active';
+    }
+
     makeStep(lines.pollCur, `📤 [弹出体力最小格] int[] record = heap.poll() -> x=${curR}, y=${curC}, c=${minEffortSoFar} (高度 ${grid[curR][curC]}m)！`, `poll (x=${curR},y=${curC},c=${minEffortSoFar})`, 'explore', 'pq', [curR, curC]);
 
     makeStep(lines.checkVisited, `🔎 [检查是否已锁定] if (visited[${curR}][${curC}]) -> (${visited[curR][curC]})。`, `visited[${curR}][${curC}]?`, 'explore');
@@ -201,6 +241,10 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
     }
 
     visited[curR][curC] = true;
+    const curVisitedNode = nodeMap.get(`${curR},${curC}`);
+    if (curVisitedNode && curVisitedNode.id !== 'node-0-0') {
+      curVisitedNode.status = 'visited';
+    }
     makeStep(lines.markVisited, `🔒 [锁定最优状态] visited[${curR}][${curC}] = true；锁定到达 (x=${curR}, y=${curC}) 的全局最小体力 = ${minEffortSoFar}！`, `visited[${curR}][${curC}]=true`, 'explore', 'visited', [curR, curC]);
 
     for (let i = 0; i < 4; i++) {
@@ -227,6 +271,25 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
           pre[`${nx},${ny}`] = [curR, curC];
           pushPq(nx, ny, nextEffort);
 
+          const parentNode = nodeMap.get(`${curR},${curC}`) || treeRoot;
+          let childNode = nodeMap.get(`${nx},${ny}`);
+          if (!childNode) {
+            childNode = {
+              id: `node-${nx}-${ny}`,
+              val: `(${nx},${ny}) eff:${nextEffort}`,
+              edgeLabel: `落差:${stepEffort}`,
+              status: 'normal',
+              tag: nx === rows - 1 && ny === cols - 1 ? '🏁 终点' : undefined,
+              children: [],
+            };
+            parentNode.children = parentNode.children || [];
+            parentNode.children.push(childNode);
+            nodeMap.set(`${nx},${ny}`, childNode);
+          } else {
+            childNode.val = `(${nx},${ny}) eff:${nextEffort}`;
+            childNode.edgeLabel = `落差:${stepEffort}`;
+          }
+
           makeStep(lines.updateDist, `  ⚡ [更新最优距离] distance[${nx}][${ny}] = ${nextEffort}。`, `distance[${nx}][${ny}]=${nextEffort}`, 'relax', 'dist', [nx, ny]);
           makeStep(lines.pushHeap, `  📥 [新状态入堆] heap.add(new int[] { ${nx}, ${ny}, ${nextEffort} })。`, `heap.add(${nx},${ny},${nextEffort})`, 'relax', 'pq', [nx, ny]);
         }
@@ -235,6 +298,19 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   }
 
   if (reachedTarget) {
+    let curr: [number, number] | undefined = [rows - 1, cols - 1];
+    while (curr) {
+      const key: string = `${curr[0]},${curr[1]}`;
+      const node = nodeMap.get(key);
+      if (node) {
+        node.status = 'visited';
+        if (curr[0] !== 0 || curr[1] !== 0) {
+          node.tag = (curr[0] === rows - 1 && curr[1] === cols - 1) ? '🏁 最优解' : '⭐ 最优路径';
+        }
+      }
+      if (curr[0] === 0 && curr[1] === 0) break;
+      curr = pre[key];
+    }
     makeStep(lines.returnCost, `🎉 [寻路完成] 成功构建最小体力消耗路径！全程最大落差仅为 ${minEffortSoFar}！`, `完成: effort=${minEffortSoFar}`, 'done');
   } else {
     makeStep(lines.returnFail, '❌ [无路可达] return -1：无法连通终点。', 'return -1', 'done');
