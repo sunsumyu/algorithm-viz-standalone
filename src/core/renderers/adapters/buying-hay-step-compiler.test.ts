@@ -61,5 +61,25 @@ describe('BuyingHay Step Compiler & Canvas Adapter', () => {
 
     const stages = createBuyingHayStages();
     expect(stages.length).toBe(4);
+
+    const testInputs = { 'input-h': 15, 'input-costs': '10, 12', 'input-vals': '8, 16' };
+    for (const st of stages) {
+      expect(st.metrics).toBeDefined();
+      expect(st.metrics.length).toBeGreaterThan(0);
+
+      const stSteps = st.buildSteps(testInputs);
+      expect(stSteps.length).toBeGreaterThan(0);
+
+      for (let idx = 0; idx < stSteps.length; idx++) {
+        const step = stSteps[idx];
+        const card1Box = document.createElement('div');
+        const card2Box = document.createElement('div');
+        expect(() => st.renderCanvas(card1Box, step)).not.toThrow();
+        expect(() => st.renderCustomMetrics(card2Box, step)).not.toThrow();
+        expect(card1Box.innerHTML).not.toContain('Cannot read properties of undefined');
+        expect(card2Box.innerHTML).not.toContain('Cannot read properties of undefined');
+      }
+    }
   });
 });
+
