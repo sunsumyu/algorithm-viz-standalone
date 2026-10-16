@@ -1363,7 +1363,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🏔️",
     difficulty: 1,
     levelOrder: 68,
-    aliases: ["class078-code02","binary-tree-maximum-path-sum","leetcode-124"],
+    aliases: ["class078-code02","leetcode-124"],
   },
   {
     id: "largest-bst-subtree",
@@ -1440,7 +1440,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🎭",
     difficulty: 1,
     levelOrder: 75,
-    aliases: ["class079-code01","house-robber-iii","luogu-p1352"],
+    aliases: ["class079-code01","luogu-p1352"],
   },
   {
     id: "height-removal-queries",
@@ -1644,7 +1644,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 86,
     learningGoal: "深刻理解完全背包与 01 背包空间压缩的本质区别：正序从小到大枚举容量使得物品可同轮无限次自叠加",
-    aliases: ["class074-code03","unbounded-knapsack-074","unbounded-knapsack","complete-knapsack","luogu-p1616"],
+    aliases: ["class074-code03","unbounded-knapsack-074","unbounded-knapsack","luogu-p1616"],
   },
   {
     id: "regex-matching",
@@ -2922,7 +2922,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 26,
     learningGoal: "深刻理解双向广搜的核心依据与优化精髓，掌握小集合优先扩散与碰撞判定的标准写法",
-    aliases: ["leetcode-127","lc-127","word-ladder","class063-code01"],
+    aliases: ["bidirectional-bfs","bi-bfs-general","word-ladder-bibfs"],
   },
   {
     id: "negative-cycle",
@@ -7075,7 +7075,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 123,
     learningGoal: "深刻理解两遍 BFS 求解无权/非负权树直径的数学证明与线性复杂度实现",
-    aliases: ["class123-code01","tree-diameter","tree-diameter-123"],
+    aliases: ["class123-code01","tree-diameter-123"],
   },
   {
     id: "binary-tree-maximum-path-sum",

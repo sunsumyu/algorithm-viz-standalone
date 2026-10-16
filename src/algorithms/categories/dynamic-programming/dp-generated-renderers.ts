@@ -790,7 +790,7 @@ const demos: DemoDef[] = [
     name: '二叉树最大路径和',
     description: '树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。',
     icon: '🏔️',
-    aliases: ['class078-code02', 'binary-tree-maximum-path-sum', 'leetcode-124'],
+    aliases: ['class078-code02', 'leetcode-124'],
     inputs: [{ id: 'root', label: '树节点(层序)', value: '-10,9,20,null,null,15,7', width: 220 }],
     examples: [
       { label: '[-10,9,20,null,null,15,7]', values: { root: '-10,9,20,null,null,15,7' } },
@@ -889,7 +889,7 @@ const demos: DemoDef[] = [
     name: '没有上司的舞会',
     description: '树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。',
     icon: '🎭',
-    aliases: ['class079-code01', 'house-robber-iii', 'luogu-p1352'],
+    aliases: ['class079-code01', 'luogu-p1352'],
     inputs: [
       { id: 'n', label: '员工数 n', value: '7', width: 80 },
     ],

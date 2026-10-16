@@ -23,7 +23,7 @@ const { Visualizer: BiBFSVisualizer } = registerDeclarativeAlgorithm<BiBFSStep>(
   id: 'bi-bfs',
   name: '双向广度优先搜索 (Bidirectional BFS)',
   category: 'graph',
-  aliases: ['leetcode-127', 'lc-127', 'word-ladder', 'class063-code01'],
+  aliases: ['bidirectional-bfs', 'bi-bfs-general', 'word-ladder-bibfs'],
   hasDeductionTree: true,
   icon: '↔️',
   difficulty: 3,
