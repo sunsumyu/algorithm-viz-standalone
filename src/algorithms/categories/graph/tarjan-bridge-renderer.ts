@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<BridgeStep>({
   id: 'tarjan-bridge',
   name: 'Tarjan 割点与桥 (Cut Vertices & Bridges)',
   category: 'graph',
-  aliases: ['class068-code01', 'tarjan-bridge-cut', 'P3388', 'leetcode-1192'],
+  aliases: ['tarjan-bridge-cut', 'P3388', 'luogu-p3388', 'leetcode-1192'],
   hasDeductionTree: true,
   icon: '🌉',
   difficulty: 3,

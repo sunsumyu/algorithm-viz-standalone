@@ -22,7 +22,7 @@ export {
 
 export const reverseStackVisualizer = registerDeclarativeAlgorithm<ReverseStackStep>({
   id: 'reverse-stack-using-recursive-036',
-  aliases: ['class036-code01', 'reverse-stack', 'reverse-stack-recursive', 'reverse-stack-using-recursive'],
+  aliases: ['reverse-stack', 'reverse-stack-recursive', 'reverse-stack-using-recursive', 'reverse-stack-036'],
   name: 'Class 036: 不申请额外数据结构逆序一个栈 (Reverse Stack)',
   category: 'stack',
   icon: '🔄',

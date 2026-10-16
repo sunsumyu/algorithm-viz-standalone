@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<DiffConstraintStep>({
   id: 'diff-constraints',
   name: '差分约束系统 (System of Difference Constraints)',
   category: 'graph',
-  aliases: ['difference-constraints', 'system-of-difference-constraints', 'class070-code01', 'P5960'],
+  aliases: ['difference-constraints', 'system-of-difference-constraints', 'P5960', 'luogu-p5960'],
   hasDeductionTree: true,
   icon: '⚖️',
   difficulty: 3,

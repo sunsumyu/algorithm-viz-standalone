@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<TarjanSCCStep>({
   id: 'tarjan-scc-dag',
   name: 'Tarjan 强连通分量与 DAG 缩点 (Tarjan SCC)',
   category: 'graph',
-  aliases: ['class066-code01', 'tarjan-scc', 'P3387'],
+  aliases: ['tarjan-scc-dag', 'tarjan-condensation-dag', 'P3387', 'luogu-p3387'],
   hasDeductionTree: true,
   icon: '🧬',
   difficulty: 3,

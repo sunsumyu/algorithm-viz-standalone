@@ -18,7 +18,7 @@ export { RUSSIAN_DOLL_CODES, generateRussianDollSteps, renderRussianDollCanvas }
 
 export const russianDollVisualizer = registerDeclarativeAlgorithm<EnvelopeStep>({
   id: 'hard-russian-doll-envelopes',
-  aliases: ['class071-code03', 'class072-code01', 'russian-doll-envelopes-354', 'leetcode-354', 'russian-doll-envelopes'],
+  aliases: ['class071-code03', 'russian-doll-envelopes-354', 'leetcode-354', 'russian-doll-envelopes'],
   name: '大厂高频真题: 俄罗斯套娃信封问题 (Russian Doll Envelopes)',
   category: 'dynamic-programming',
   icon: '🪆',

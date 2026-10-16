@@ -39,7 +39,7 @@ export {
 
 const Visualizer = registerDeclarativeAlgorithm({
   id: 'mst-kruskal',
-  aliases: ['class058-code01', 'kruskal-mst', 'luogu-p3366-kruskal', 'class027-code01'],
+  aliases: ['class027-code01', 'kruskal-mst', 'luogu-p3366-kruskal'],
   name: 'Kruskal 最小生成树',
   category: 'graph',
   icon: '🌲',

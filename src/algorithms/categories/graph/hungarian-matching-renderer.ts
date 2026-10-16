@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<HungarianStep>({
   id: 'hungarian-matching',
   name: '二分图最大匹配 (Hungarian Algorithm)',
   category: 'graph',
-  aliases: ['class069-code01', 'hungarian-algorithm', 'bipartite-matching', 'P3386'],
+  aliases: ['hungarian-algorithm', 'bipartite-matching', 'P3386', 'luogu-p3386'],
   hasDeductionTree: true,
   icon: '💘',
   difficulty: 3,

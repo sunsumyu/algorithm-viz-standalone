@@ -45,7 +45,7 @@ const { template, Visualizer } = registerDeclarativeAlgorithm<RedundantStep>({
     'redundant-connection',
     'leetcode-684',
     'lc-684',
-    'class056-code01',
+    'class056-redundant-edge',
   ],
   inputs: [],
   presets: [

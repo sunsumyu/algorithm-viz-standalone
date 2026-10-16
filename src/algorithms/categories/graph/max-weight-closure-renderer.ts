@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<ClosureStep>({
   id: 'max-weight-closure',
   name: '最大权闭合子图 (Max-Weight Closure)',
   category: 'graph',
-  aliases: ['max-weight-closure-graph', 'space-project', 'class072', 'P2762'],
+  aliases: ['max-weight-closure-graph', 'space-project', 'P2762', 'luogu-p2762'],
   hasDeductionTree: true,
   icon: '⚖️',
   difficulty: 3,

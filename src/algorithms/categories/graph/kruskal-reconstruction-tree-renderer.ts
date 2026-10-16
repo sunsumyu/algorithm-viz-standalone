@@ -85,7 +85,7 @@ registerAlgorithm({
   category: 'graph',
   description: '进阶图论经典：边权转化为重构树虚点点权、点权满足大根堆性质、路径瓶颈边权等价于 LCA 点权 (洛谷 P4768)',
   icon: '🌲',
-  aliases: ['kruskal-tree', 'reconstruction-tree', 'P4768', 'P4197', 'class072'],
+  aliases: ['kruskal-tree', 'reconstruction-tree', 'P4768', 'luogu-p4768', 'P4197'],
   template,
   Visualizer,
   difficulty: 3,

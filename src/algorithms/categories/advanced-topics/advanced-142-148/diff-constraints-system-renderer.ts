@@ -19,7 +19,7 @@ export { buildDiffConstraintsSteps };
 export const diffConstraintsVisualizer = registerDeclarativeAlgorithm<DiffConstraintsStep>({
   id: 'diff-constraints-system-142',
   name: '差分约束系统与负环判定 (Class 142)',
-  aliases: ['class142-code01', 'diff-constraints-system', 'diff-constraints-system-142', 'difference-constraints'],
+  aliases: ['class142-code01', 'diff-constraints-system', 'diff-constraints-system-142'],
   category: 'graph',
   icon: '🌐',
   difficulty: 3,

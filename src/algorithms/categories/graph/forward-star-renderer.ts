@@ -25,7 +25,7 @@ registerDeclarativeAlgorithm<ForwardStarStep>({
   id: 'forward-star',
   name: '链式前向星 (Chained Forward Star)',
   category: 'graph',
-  aliases: ['chained-forward-star', 'class059-code01'],
+  aliases: ['chained-forward-star', 'forward-star-graph'],
   hasDeductionTree: true,
   icon: '🕸️',
   difficulty: 2,

@@ -462,11 +462,11 @@ const articles: ArticleDef[] = dpArticles;
 const demos: DemoDef[] = [
   {
     ...oneDDef('fibonacci', '斐波那契数', 'dp[i] = dp[i-1] + dp[i-2]，动态规划经典入门。', '🔢', 'fibonacci', '8'),
-    aliases: ['class066-code01', 'fibonacci-066', 'fibonacci-class066', 'leetcode-509'],
+    aliases: ['class066-code01', 'fibonacci-066', 'fibonacci-class066', 'leetcode-509-dp'],
   },
   {
     ...oneDDef('climb-stairs', '爬楼梯', '每次爬 1 或 2 阶，方案数来自前两阶。', '🪜', 'climb-stairs', '6'),
-    aliases: ['class066-code01-alt', 'climbing-stairs', 'climb-stairs', 'leetcode-70'],
+    aliases: ['class066-code01-alt', 'climbing-stairs', 'climb-stairs', 'leetcode-70-dp'],
   },
   {
     ...numsDef('min-cost-climbing-stairs', '使用最小花费爬楼梯', '到达当前台阶的最小花费来自前一阶或前两阶。', '💰', 'min-cost', '10,15,20'),
@@ -583,7 +583,7 @@ const demos: DemoDef[] = [
     name: '骑士在棋盘上的概率',
     description: '三维概率 DP：求国际象棋骑士走 k 步后仍留在 n x n 棋盘上的概率 (LeetCode 688)。',
     icon: '♞',
-    aliases: ['class069-code01', 'knight-probability-069', 'knight-probability-class069', 'leetcode-688'],
+    aliases: ['class069-code01', 'knight-probability-069', 'knight-probability-class069', 'leetcode-688-knight'],
     inputs: [
       { id: 'n', label: '棋盘大小 n', value: '3', width: 90 },
       { id: 'k', label: '步数 k', value: '2', width: 80 },

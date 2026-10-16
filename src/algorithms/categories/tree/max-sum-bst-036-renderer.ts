@@ -51,7 +51,7 @@ export const maxSumBst036Visualizer = registerDeclarativeAlgorithm<MaxSumBstStep
   difficulty: 2,
   levelOrder: 36,
   learningGoal: '掌握二叉树树形 DP 递归套路与 Info 结构体设计，自底向上搜集子树信息判定二叉搜索树并动态刷新最大键值和',
-  aliases: ['leetcode-1373', 'leetcode-333', 'max-sum-bst', 'maximum-sum-bst-in-binary-tree'],
+  aliases: ['leetcode-1373', 'max-sum-bst', 'maximum-sum-bst-in-binary-tree'],
   stages: [
     {
       id: 'stage1',

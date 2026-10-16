@@ -43,7 +43,7 @@ const INF = Infinity;
 
 const Visualizer = registerDeclarativeAlgorithm({
   id: 'mst-prim',
-  aliases: ['class058-code02', 'prim-mst', 'luogu-p3366-prim', 'class027-code02'],
+  aliases: ['class027-code02', 'prim-mst', 'luogu-p3366-prim'],
   name: 'Prim 最小生成树',
   category: 'graph',
   icon: '🌲',

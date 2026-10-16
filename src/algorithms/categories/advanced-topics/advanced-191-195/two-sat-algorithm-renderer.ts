@@ -17,7 +17,7 @@ export { buildTwoSatSteps, type TwoSatStep };
 export const twoSatAlgorithmVisualizer = registerDeclarativeAlgorithm<TwoSatStep>({
   id: 'two-sat-algorithm-194',
   name: '2-SAT 算法基础 (Class 194)',
-  aliases: ['class194-code01', 'two-sat-algorithm-194', 'two-sat'],
+  aliases: ['class194-code01', 'two-sat-algorithm-194', 'two-sat-194'],
   category: 'graph',
   icon: '⚖️',
   difficulty: 3,

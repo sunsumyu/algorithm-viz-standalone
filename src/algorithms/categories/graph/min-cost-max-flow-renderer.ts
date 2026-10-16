@@ -20,7 +20,7 @@ const { Visualizer } = registerDeclarativeAlgorithm<MCMFStep>({
   id: 'min-cost-max-flow',
   name: '最小费用最大流 (Minimum Cost Maximum Flow)',
   category: 'graph',
-  aliases: ['mcmf', 'minimum-cost-maximum-flow', 'class072-code01', 'P3381'],
+  aliases: ['mcmf', 'minimum-cost-maximum-flow', 'P3381', 'luogu-p3381'],
   hasDeductionTree: true,
   icon: '🌊',
   difficulty: 3,

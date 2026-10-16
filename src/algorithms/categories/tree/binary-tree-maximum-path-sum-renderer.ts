@@ -47,7 +47,7 @@ export const binaryTreeMaximumPathSumVisualizer = registerDeclarativeAlgorithm<P
   icon: '🏔️',
   difficulty: 3,
   levelOrder: 124,
-  aliases: ['leetcode-124', 'max-path-sum-tree'],
+  aliases: ['max-path-sum-tree', 'leetcode-124-tree'],
   learningGoal: '透彻掌握树形 DP 经典模型：单边向上贡献收益与跨根拱形全路径和分离计算的精妙架构',
   timeComplexity: 'O(N)',
   spaceComplexity: 'O(H)',

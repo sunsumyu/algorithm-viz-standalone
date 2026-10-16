@@ -642,7 +642,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🔢",
     difficulty: 1,
     levelOrder: 2,
-    aliases: ["class066-code01","fibonacci-066","fibonacci-class066","leetcode-509"],
+    aliases: ["class066-code01","fibonacci-066","fibonacci-class066","leetcode-509-dp"],
   },
   {
     id: "climb-stairs",
@@ -653,7 +653,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🪜",
     difficulty: 1,
     levelOrder: 3,
-    aliases: ["class066-code01-alt","climbing-stairs","climb-stairs","leetcode-70"],
+    aliases: ["class066-code01-alt","climbing-stairs","climb-stairs","leetcode-70-dp"],
   },
   {
     id: "min-cost-climbing-stairs",
@@ -993,7 +993,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "♞",
     difficulty: 1,
     levelOrder: 34,
-    aliases: ["class069-code01","knight-probability-069","knight-probability-class069","leetcode-688"],
+    aliases: ["class069-code01","knight-probability-069","knight-probability-class069","leetcode-688-knight"],
   },
   {
     id: "out-of-boundary-paths",
@@ -1728,7 +1728,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 92,
     learningGoal: "掌握混合背包的判定边界、完全背包向上界多重背包的数学转化与统一二进制拆分",
-    aliases: ["class075-code04","class075-code03","cherry-blossom-viewing-075","mixed-knapsack","luogu-p1833"],
+    aliases: ["class075-code04","cherry-blossom-viewing-075","mixed-knapsack","luogu-p1833"],
   },
   {
     id: "coins-change-kinds",
@@ -2095,7 +2095,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 354,
     learningGoal: "掌握二维偏序问题通过[宽升序+高降序]巧妙消解冲突并降维至一维 O(N log N) LIS 贪心二分的顶级算法思维",
-    aliases: ["class071-code03","class072-code01","russian-doll-envelopes-354","leetcode-354","russian-doll-envelopes"],
+    aliases: ["class071-code03","russian-doll-envelopes-354","leetcode-354","russian-doll-envelopes"],
   },
   {
     id: "predict-the-winner",
@@ -2768,7 +2768,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 22,
     learningGoal: "掌握经典系统堆、距离剪枝 (d > dist[u]) 与反向索引堆 (IndexMinHeap) 三种 Dijkstra 演化、状态机与全网波前广播",
-    aliases: ["network-delay-time-064","leetcode-743","class064-code01","class064-code02","class064-network-delay"],
+    aliases: ["network-delay-time-064","leetcode-743","class064-code01","class064-network-delay"],
   },
   {
     id: "topological-sort",
@@ -2804,7 +2804,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 23,
     learningGoal: "深刻理解增广路定理、交错路的寻找方式以及递归协商腾位的本质机制",
-    aliases: ["class069-code01","hungarian-algorithm","bipartite-matching","P3386"],
+    aliases: ["hungarian-algorithm","bipartite-matching","P3386","luogu-p3386"],
   },
   {
     id: "sub-islands",
@@ -2970,7 +2970,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 27,
     learningGoal: "掌握静态链表思想，深刻理解 head[] 与 edge[] 的头插法 O(1) 加边及出边逆序遍历机制",
-    aliases: ["chained-forward-star","class059-code01"],
+    aliases: ["chained-forward-star","forward-star-graph"],
   },
   {
     id: "mst-kruskal-prim-027",
@@ -2982,7 +2982,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 27,
     learningGoal: "掌握 Kruskal 贪心加边与并查集防环机制，理解 Prim 节点集割边扩展定理与最小生成树应用",
-    aliases: ["class027-code01","class027-code02","mst-kruskal-prim-027","mst-kruskal-prim","luogu-p3366"],
+    aliases: ["class027","mst-kruskal-prim-027","mst-kruskal-prim","luogu-p3366"],
   },
   {
     id: "dijkstra-heap",
@@ -3018,7 +3018,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 29,
     learningGoal: "掌握加边法全局贪心思想、并查集回路检测与连通分量合并机制",
-    aliases: ["class058-code01","kruskal-mst","luogu-p3366-kruskal","class027-code01"],
+    aliases: ["class027-code01","kruskal-mst","luogu-p3366-kruskal"],
   },
   {
     id: "shortest-path-summary",
@@ -3053,7 +3053,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 30,
     learningGoal: "掌握加点法贪心生长思想、切割性质（Cut Property）与 minDist 切边维护机制",
-    aliases: ["class058-code02","prim-mst","luogu-p3366-prim","class027-code02"],
+    aliases: ["class027-code02","prim-mst","luogu-p3366-prim"],
   },
   {
     id: "redundant-edge",
@@ -3065,7 +3065,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 31,
     learningGoal: "掌握并查集连通性判环机制、动态合并原则与树的环路消除策略",
-    aliases: ["redundant-connection","leetcode-684","lc-684","class056-code01"],
+    aliases: ["redundant-connection","leetcode-684","lc-684","class056-redundant-edge"],
   },
   {
     id: "redundant-edge-ii",
@@ -3113,7 +3113,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 62,
     learningGoal: "掌握 Tarjan 算法求强连通分量原理、dfn/low 数组性质及缩点建 DAG 方法",
-    aliases: ["class066-code01","tarjan-scc","P3387"],
+    aliases: ["tarjan-scc-dag","tarjan-condensation-dag","P3387","luogu-p3387"],
   },
   {
     id: "two-sat-problem",
@@ -3172,7 +3172,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 68,
     learningGoal: "掌握无向图 DFS 生成树性质、low/dfn 判定割点与桥定理及双连通分量思想",
-    aliases: ["class068-code01","tarjan-bridge-cut","P3388","leetcode-1192"],
+    aliases: ["tarjan-bridge-cut","P3388","luogu-p3388","leetcode-1192"],
   },
   {
     id: "tree-path-intersection",
@@ -3405,7 +3405,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 81,
     learningGoal: "掌握 Kruskal 重构树构造原理、大根堆单调性定理及倍增查询瓶颈边权技巧",
-    aliases: ["kruskal-tree","reconstruction-tree","P4768","P4197","class072"],
+    aliases: ["kruskal-tree","reconstruction-tree","P4768","luogu-p4768","P4197"],
   },
   {
     id: "lca-binary-lifting",
@@ -3417,7 +3417,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 82,
     learningGoal: "掌握倍增递推原理 up[u][i]=up[up[u][i-1]][i-1]、两阶段深度对齐与二进制试跳算法",
-    aliases: ["binary-lifting-lca","tree-lca","P3379","class076"],
+    aliases: ["binary-lifting-lca","tree-lca","P3379","luogu-p3379"],
   },
   {
     id: "block-cut-tree",
@@ -3441,7 +3441,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 85,
     learningGoal: "掌握差分约束系统的代数不等式转最短路建图方法，以及 SPFA 负权环无解判定",
-    aliases: ["difference-constraints","system-of-difference-constraints","class070-code01","P5960"],
+    aliases: ["difference-constraints","system-of-difference-constraints","P5960","luogu-p5960"],
   },
   {
     id: "pseudotree-dp",
@@ -3465,7 +3465,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 87,
     learningGoal: "掌握最大权闭合子图转化为最小割的建图方法、Dinic 阻塞流增广与残量网络方案提取",
-    aliases: ["max-weight-closure-graph","space-project","class072","P2762"],
+    aliases: ["max-weight-closure-graph","space-project","P2762","luogu-p2762"],
   },
   {
     id: "min-cost-max-flow",
@@ -3477,7 +3477,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 88,
     learningGoal: "掌握费用流连续最短路算法设计、残量网络成对反向弧流量更新与负费用退流机制",
-    aliases: ["mcmf","minimum-cost-maximum-flow","class072-code01","P3381"],
+    aliases: ["mcmf","minimum-cost-maximum-flow","P3381","luogu-p3381"],
   },
   {
     id: "alien-dict",
@@ -3725,7 +3725,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 142,
     learningGoal: "深刻理解差分约束系统与最短路松弛不等式的双射转化，掌握 SPFA 负环检测判别机制",
-    aliases: ["class142-code01","diff-constraints-system","diff-constraints-system-142","difference-constraints"],
+    aliases: ["class142-code01","diff-constraints-system","diff-constraints-system-142"],
   },
   {
     id: "congruence-shortest-path-143",
@@ -3749,7 +3749,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 173,
     learningGoal: "深刻理解残量网络与反向弧退流机制，掌握 BFS 层次图定向与当前弧优化避免冗余搜索",
-    aliases: ["class173-code01","dinic-max-flow-173","dinic"],
+    aliases: ["class173-code01","dinic-max-flow-173","dinic-173"],
   },
   {
     id: "mcmf-cost-flow-174",
@@ -3761,7 +3761,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 174,
     learningGoal: "掌握费用最短路增广机制与反向边负权反悔模型，深刻理解费用流在二分图带权匹配与运输问题中的建模",
-    aliases: ["class174-code01","mcmf-cost-flow-174","mcmf"],
+    aliases: ["class174-code01","mcmf-cost-flow-174","mcmf-174"],
   },
   {
     id: "hungarian-matching-175",
@@ -3905,7 +3905,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 194,
     learningGoal: "掌握 2-SAT 对称拆点建图原理、无解充要条件以及利用 SCC 编号逆序拓扑构造可行解",
-    aliases: ["class194-code01","two-sat-algorithm-194","two-sat"],
+    aliases: ["class194-code01","two-sat-algorithm-194","two-sat-194"],
   },
   {
     id: "two-sat-advanced-195",
@@ -5068,7 +5068,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 234,
     learningGoal: "掌握快慢指针找中点、局部链表原地反转与 O(1) 空间无副作用复原链表的面试母题",
-    aliases: ["class034-code01","palindrome-linked-list","palindrome-list","leetcode-234"],
+    aliases: ["class034-code02","palindrome-linked-list","palindrome-list","leetcode-234"],
   },
   {
     id: "lfu-cache",
@@ -6268,7 +6268,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 36,
     learningGoal: "深刻理解递归的嵌套调用与系统调用栈天然暂存状态的能力，掌握 bottomOut 与 reverse 组合原语",
-    aliases: ["class036-code01","reverse-stack","reverse-stack-recursive","reverse-stack-using-recursive"],
+    aliases: ["reverse-stack","reverse-stack-recursive","reverse-stack-using-recursive","reverse-stack-036"],
   },
   {
     id: "min-stack",
@@ -6669,7 +6669,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 36,
     learningGoal: "掌握二叉树树形 DP 递归套路与 Info 结构体设计，自底向上搜集子树信息判定二叉搜索树并动态刷新最大键值和",
-    aliases: ["leetcode-1373","leetcode-333","max-sum-bst","maximum-sum-bst-in-binary-tree"],
+    aliases: ["leetcode-1373","max-sum-bst","maximum-sum-bst-in-binary-tree"],
   },
   {
     id: "tree-serialization-037",
@@ -6681,7 +6681,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 37,
     learningGoal: "掌握二叉树后序遍历左右中序列化与自右向左逆向建树公理，彻底理解中序不可反序列化歧义本质",
-    aliases: ["class037-code01","tree-serialization-037","postorder-serialize","serialize-deserialize-postorder"],
+    aliases: ["tree-serialization-037","postorder-serialize","serialize-deserialize-postorder","tree-serialize-037"],
   },
   {
     id: "paper-folding-040",
@@ -7027,7 +7027,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 118,
     learningGoal: "深刻理解树上倍增深度二进制对齐与同步倍增逼近 LCA 的核心原理与 O(log N) 复杂度证明",
-    aliases: ["class118-code01","tree-lca","tree-lca-binary-lifting-118","lowest-common-ancestor-binary-lifting"],
+    aliases: ["class118-code01","tree-lca-118","lowest-common-ancestor-binary-lifting"],
   },
   {
     id: "tree-centroid-120",
@@ -7087,7 +7087,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 124,
     learningGoal: "透彻掌握树形 DP 经典模型：单边向上贡献收益与跨根拱形全路径和分离计算的精妙架构",
-    aliases: ["leetcode-124","max-path-sum-tree"],
+    aliases: ["max-path-sum-tree","leetcode-124-tree"],
   },
   {
     id: "morris-traversal-124",

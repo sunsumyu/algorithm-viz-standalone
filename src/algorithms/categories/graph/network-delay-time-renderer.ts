@@ -58,7 +58,7 @@ const { template, Visualizer } = createDeclarativeVisualizer<any>({
   problemHtml: NETWORK_DELAY_PROBLEM_HTML,
   analysisHtml: NETWORK_DELAY_ANALYSIS_HTML,
   hasDeductionTree: true,
-  aliases: ['network-delay-time-064', 'leetcode-743', 'class064-code01', 'class064-code02', 'class064-network-delay'],
+  aliases: ['network-delay-time-064', 'leetcode-743', 'class064-code01', 'class064-network-delay'],
   defaultStage: 'stage-1',
   stages: [
     {
@@ -128,7 +128,7 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 22,
   learningGoal: '掌握经典系统堆、距离剪枝 (d > dist[u]) 与反向索引堆 (IndexMinHeap) 三种 Dijkstra 演化、状态机与全网波前广播',
-  aliases: ['network-delay-time-064', 'leetcode-743', 'class064-code01', 'class064-code02', 'class064-network-delay'],
+  aliases: ['network-delay-time-064', 'leetcode-743', 'class064-code01', 'class064-network-delay'],
 });
 
 export { Visualizer as NetworkDelayTimeVisualizer };

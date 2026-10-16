@@ -28,7 +28,7 @@ export {
 
 export const palindromeLinkedListVisualizer = registerDeclarativeAlgorithm<PalindromeStep>({
   id: 'palindrome-linked-list-034',
-  aliases: ['class034-code01', 'palindrome-linked-list', 'palindrome-list', 'leetcode-234'],
+  aliases: ['class034-code02', 'palindrome-linked-list', 'palindrome-list', 'leetcode-234'],
   name: 'Class 034: 判断链表是否为回文结构 (Palindrome Linked List)',
   category: 'linked-list',
   icon: '🪞',
