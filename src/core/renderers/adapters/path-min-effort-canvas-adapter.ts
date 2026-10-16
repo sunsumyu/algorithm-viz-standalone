@@ -61,11 +61,16 @@ export class PathMinEffortCanvasAdapter {
           bg = '#f8fafc';
           border = '1.5px solid #94a3b8';
           color = '#475569';
+        } else {
+          bg = h >= 8 ? '#f1f5f9' : h >= 4 ? '#f8fafc' : '#ffffff';
+          border = h >= 8 ? '1.5px solid #94a3b8' : '1.5px solid #cbd5e1';
         }
 
-        let effLabel = d !== Infinity ? `<div style="font-size: 10px; font-weight: 600; opacity: 0.75; margin-top: 2px;">落差: ${d}</div>` : '';
+        let effLabel = d !== Infinity
+          ? `<div style="font-size: 9.5px; font-weight: 700; opacity: 0.85; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;">落差: ${d}</div>`
+          : '';
         if (isProbing) {
-          effLabel = `<div style="font-size: 10px; font-weight: 700; color: #2563eb; margin-top: 2px;">🔍 探测中</div>`;
+          effLabel = `<div style="font-size: 9.5px; font-weight: 700; color: #2563eb; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none;">🔍 探测中</div>`;
         }
 
         const boxShadow = isCur
