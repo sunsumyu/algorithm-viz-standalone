@@ -26,7 +26,8 @@ export class PathMinEffortCanvasAdapter {
       }
     }
     if (status === 'relax' && step.activeSlot && (curR !== step.activeSlot[0] || curC !== step.activeSlot[1])) {
-      flowArrows.push({ from: [curR, curC], to: step.activeSlot, color: '#f59e0b', dashed: true, animated: true });
+      const isWaterFlood = step.message.includes('水流漫平');
+      flowArrows.push({ from: [curR, curC], to: step.activeSlot, color: isWaterFlood ? '#0284c7' : '#f59e0b', dashed: true, animated: true });
     }
 
     const riverBarrierText = isDone

@@ -99,7 +99,7 @@ export function renderSwimInRisingWaterCanvas(container: HTMLElement, step: Swim
       }
 
       const effLabel = d !== Infinity
-        ? `<div style="font-size: 8.5px; font-weight: 700; color: #0369a1; background: rgba(255, 255, 255, 0.92); padding: 1.5px 5px; border-radius: 4px; border: 1px solid rgba(125, 211, 252, 0.5); box-shadow: 0 1px 3px rgba(0,0,0,0.08); position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none; z-index: 5;">${d === 0 ? '⏱️ 0s 起点' : `⏱️ 第 ${d} 秒漫平`}</div>`
+        ? `<div style="font-size: 7.5px; font-weight: 700; color: #0369a1; background: rgba(255, 255, 255, 0.94); padding: 1px 3px; border-radius: 3px; border: 1px solid rgba(125, 211, 252, 0.5); box-shadow: 0 1px 2px rgba(0,0,0,0.06); position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); white-space: nowrap; pointer-events: none; z-index: 5; text-align: center;">${d === 0 ? '⏱️ 0s 起点' : `⏱️ t=${d}s`}</div>`
         : '';
 
       return {
