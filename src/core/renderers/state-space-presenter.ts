@@ -810,7 +810,7 @@ export class StateSpacePresenter {
     if (!container) return;
 
     let s1 = (step as any).s1 || (step as any).s || (step as any).word1 || (step as any).text1 || '';
-    let s2 = (step as any).s2 || (step as any).t || (step as any).word2 || (step as any).text2 || '';
+    let s2 = (step as any).s2 || (step as any).t || (step as any).p || (step as any).pat || (step as any).word2 || (step as any).text2 || '';
 
     if ((!s1 || !s2) && options?.modelId && AlgorithmModelRepository.hasModel(options.modelId)) {
       const model = AlgorithmModelRepository.getModel(options.modelId);
@@ -820,7 +820,11 @@ export class StateSpacePresenter {
           s1 = typeof params.s === 'string' ? params.s : (params.s1 || params.word1 || params.text1 || '');
         }
         if (!s2) {
-          s2 = typeof params.t === 'string' ? params.t : (params.s2 || params.word2 || params.text2 || '');
+          s2 = typeof params.t === 'string'
+            ? params.t
+            : (typeof params.p === 'string'
+                ? params.p
+                : (params.pat || params.s2 || params.word2 || params.text2 || ''));
         }
       }
     }
