@@ -781,21 +781,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'height-removal-queries',
-    name: '移除子树后的二叉树高度',
-    description: '树型DP与DFN序打平技巧：先序遍历映射连续区间，前后缀极值 O(1) 回答移除子树后的树高度 (LeetCode 2458)。',
-    icon: '✂️',
-    aliases: ['class079-code05', 'height-removal-queries-2458', 'leetcode-2458'],
-    inputs: [
-      { id: 'queries', label: '查询节点 queries', value: '4', width: 120 },
-    ],
-    examples: [
-      { label: 'queries=[4]', values: { queries: '4' } },
-      { label: 'queries=[3,2]', values: { queries: '3,2' } },
-    ],
-    build: makeEngineBuilder('height-removal-queries'),
-  },
+
   {
     id: 'minimum-score-after-removals',
     name: '从树中删除边的最小分数',
@@ -1016,7 +1002,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'height-removal-queries' },
   { type: 'demo', id: 'minimum-score-after-removals' },
   // 状压DP 专题（第080讲：状压dp-上）
   { type: 'demo', id: 'can-i-win' },

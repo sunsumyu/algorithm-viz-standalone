@@ -68,7 +68,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'party-without-boss':
         return compilePartyWithoutBoss(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'height-removal-queries':
-        return compileHeightRemovalQueries(model, stage, anchorMap);
+        return compileHeightRemovalQueries(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'minimum-score-after-removals':
         return compileMinimumScoreAfterRemovals(model, stage, anchorMap);
       default:

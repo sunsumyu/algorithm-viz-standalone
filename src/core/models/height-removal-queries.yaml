@@ -1,0 +1,224 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 移除子树后的二叉树高度 顶层领域模型
+# 对应：LeetCode 2458 / 左程云算法讲解 079 Code05
+# 包含：DFN 序区间打平、子树连续映射 [dfn, dfn+size-1]、前后缀极值 O(1) 查询
+# ==============================================================================
+
+id: height-removal-queries
+name: 移除子树后的二叉树高度 (LeetCode 2458)
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 树型 DP
+  - 动态规划
+  - 树
+  - 深度优先搜索
+  - DFN序
+  - 前后缀极值
+
+description: |
+  LeetCode 2458 · 左程云算法通关课第 079 讲 树型 DP（下）Code05：移除子树后的二叉树高度。
+  给你一棵包含 n 个节点的二叉树，节点编号 1..n，互不相同。
+  另给你一个长度为 m 的数组 queries，每次查询独立移除以 queries[i] 为根的子树后整棵树的最大高度。
+  
+  核心 DFN 序打平与前后缀极值模型 (DFN Flattening with Prefix-Suffix Max):
+  1. DFN 序连续性定理：以节点 u 为根的子树，在二叉树先序遍历时间戳（DFN 序）中必定占据一段连续区间：
+     [dfn[u], dfn[u] + size[u] - 1]。
+  2. 剔除子树后的剩余空间：剔除该区间后，整棵树剩余的所有节点恰好被分割为两段：
+     左侧前缀区间 [1, dfn[u] - 1] 和 右侧后缀区间 [dfn[u] + size[u], dfnCnt]。
+  3. 前后缀极值预处理：
+     - maxLeft[i] = max(maxLeft[i - 1], deep[i])
+     - maxRight[i] = max(maxRight[i + 1], deep[i])
+  4. O(1) 极速查询响应：
+     ans[k] = max(maxLeft[dfn[u] - 1], maxRight[dfn[u] + size[u]])。
+
+defaultParams:
+  n: 6
+  queries: [4]
+  root: [1, 3, 4, 2, null, 6, 5]
+
+constraints:
+  - 2 <= n <= 10^5（教学演示推荐 6~10）
+  - 1 <= Node.val <= n
+  - 1 <= queries.length <= min(n, 10^4)
+  - queries[i] != root.val
+
+directions:
+  forward:
+    name: DFN 序打平与前后缀极值 (DFN Flattening with Pre/Suffix Max)
+    description: 先序遍历记录 DFN 序与子树大小，预处理前后缀最大深度，O(1) 回答单次子树移除询问
+  reverse:
+    name: 暴力排除重测对比 (Brute-Force Exclusion Verification)
+    description: 每次询问临时断开子树边并重新遍历树高度，对比验证 DFN 区间打平与前后缀极值的 O(1) 优越性
+
+stages:
+  stage-1:
+    name: 先序 DFN 序构建与前后缀极值预处理
+    description: 先序遍历获取每个节点的 dfn、深度 deep 与子树大小 size，预处理 maxLeft 与 maxRight 极值数组
+    complexity:
+      time: O(N + M)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int dfnCnt = 0;
+              private int[] dfn = new int[100005];
+              private int[] deep = new int[100005];
+              private int[] size = new int[100005];
+              private int[] maxLeft = new int[100005];
+              private int[] maxRight = new int[100005];
+              public int[] treeQueries(TreeNode root, int[] queries) { // @step:entry
+                  dfs(root, 0); // @step:call_dfs
+                  maxLeft[1] = deep[1]; // @step:init_maxleft
+                  for (int i = 2; i <= dfnCnt; i++) maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]); // @step:calc_maxleft
+                  maxRight[dfnCnt] = deep[dfnCnt]; // @step:init_maxright
+                  for (int i = dfnCnt - 1; i >= 1; i--) maxRight[i] = Math.max(maxRight[i + 1], deep[i]); // @step:calc_maxright
+                  int[] ans = new int[queries.length]; // @step:init_ans
+                  for (int k = 0; k < queries.length; k++) { // @step:loop_queries
+                      int i = dfn[queries[k]]; // @step:get_dfn
+                      ans[k] = Math.max(maxLeft[i - 1], maxRight[i + size[i]]); // @step:calc_ans
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(TreeNode node, int d) { // @step:dfs_entry
+                  if (node == null) return; // @step:dfs_null
+                  int i = ++dfnCnt; // @step:dfn_inc
+                  dfn[node.val] = i; deep[i] = d; size[i] = 1; // @step:record_dfn
+                  if (node.left != null) { dfs(node.left, d + 1); size[i] += size[dfn[node.left.val]]; } // @step:dfs_left
+                  if (node.right != null) { dfs(node.right, d + 1); size[i] += size[dfn[node.right.val]]; } // @step:dfs_right
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int[] treeQueriesReverse(TreeNode root, int[] queries) { // @step:entry
+                  int[] ans = new int[queries.length]; // @step:call_dfs
+                  for (int k = 0; k < queries.length; k++) { // @step:init_ans
+                      ans[k] = calcHeightExcluding(root, queries[k], 0); // @step:calc_ans
+                  }
+                  return ans; // @step:return
+              }
+              private int calcHeightExcluding(TreeNode node, int removed, int d) { // @step:dfs_entry
+                  if (node == null || node.val == removed) return d - 1; // @step:dfs_null
+                  return Math.max(calcHeightExcluding(node.left, removed, d + 1), // @step:dfs_left
+                                  calcHeightExcluding(node.right, removed, d + 1)); // @step:dfs_right
+              }
+          }
+
+  stage-2:
+    name: 二叉树结构与 DFN 时间戳依赖树展开
+    description: 显式展开二叉树节点层次与 DFN 时间戳访问轨迹，直观展示子树在时间戳上的连续区间
+    complexity:
+      time: O(N + M)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 二叉树结构与 DFN 时间戳依赖树展开
+          // @step:entry 1. 进入 treeQueries 求解主流程
+          // @step:call_dfs 2. 启动二叉树先序深度优先遍历
+          // @step:dfs_entry 3. 访问二叉树节点 node 并标记深度
+          // @step:dfs_null 4. 空节点回溯
+          // @step:dfn_inc 5. 递增全局时间戳计数器 dfnCnt
+          // @step:record_dfn 6. 记录 DFN 映射与初始大小 size=1
+          // @step:dfs_left 7. 递归左子树并累加左子树规模
+          // @step:dfs_right 8. 递归右子树并累加右子树规模
+          // @step:init_maxleft 9. 前缀数组首元素初始化
+          // @step:calc_maxleft 10. 递推计算前缀最大深度 maxLeft
+          // @step:init_maxright 11. 后缀数组尾元素初始化
+          // @step:calc_maxright 12. 逆序递推计算后缀最大深度 maxRight
+          // @step:init_ans 13. 创建答案收集数组
+          // @step:loop_queries 14. 遍历查询数组
+          // @step:get_dfn 15. 读取目标节点 DFN 区间
+          // @step:calc_ans 16. O(1) 前后缀拼接计算移除后高度
+          // @step:return 17. 依赖展开推导收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向暴力排除重测对比
+          // @step:entry 1. 启动暴力重测对比推导
+          // @step:call_dfs 2. 依次遍历每个独立询问
+          // @step:init_ans 3. 标记被移除子树根节点
+          // @step:calc_ans 4. 重新遍历剩余树节点
+          // @step:dfs_entry 5. 深入单侧分支
+          // @step:dfs_null 6. 命中剔除节点立即剪枝
+          // @step:dfs_left 7. 递归重算左子树高度
+          // @step:dfs_right 8. 递归重算右子树高度
+          // @step:return 9. 暴力重测答案收敛
+
+  stage-3:
+    name: DFN 区间打平与前后缀最大深度状态表
+    description: 映射为标准状态表，直观呈现节点深度 deep[]、子树规模 size[]、前缀 maxLeft[] 与后缀 maxRight[]
+    complexity:
+      time: O(N + M)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // DFN 区间打平与前后缀最大深度状态表
+          // @step:entry 1. 初始化 DFN 向量与前后缀状态表
+          // @step:call_dfs 2. 启动先序扫描填充深度表
+          // @step:dfs_entry 3. 写入 deep[i] 与 size[i]
+          // @step:dfn_inc 4. 时间戳序列推进
+          // @step:record_dfn 5. 登记节点与 DFN 对应关系
+          // @step:dfs_left 6. 汇总左子树连续区间
+          // @step:dfs_right 7. 汇总右子树连续区间
+          // @step:init_maxleft 8. 填入前缀基底：maxLeft[1] = deep[1]
+          // @step:calc_maxleft 9. 前缀递推：maxLeft[i] = max(maxLeft[i-1], deep[i])
+          // @step:init_maxright 10. 填入后缀基底：maxRight[n] = deep[n]
+          // @step:calc_maxright 11. 后缀递推：maxRight[i] = max(maxRight[i+1], deep[i])
+          // @step:loop_queries 12. 查询区间匹配：定位 [dfn, dfn+size-1]
+          // @step:calc_ans 13. 前后缀极值查表：max(maxLeft[l], maxRight[r])
+          // @step:return 14. 状态表转移完成
+      reverse:
+        language: java
+        source: |
+          // 逆向暴力量测状态表
+          // @step:entry 1. 逆向测量状态初始化
+          // @step:call_dfs 2. 依次读取单次询问
+          // @step:init_ans 3. 动态掩码标记删除子树
+          // @step:calc_ans 4. 实时重算树高
+          // @step:dfs_entry 5. 逐层统计深度
+          // @step:dfs_null 6. 遇到标记阻断
+          // @step:return 7. 逆向矩阵收敛
+
+  stage-4:
+    name: 前后缀极值原地复用与常数空间压缩
+    description: 优化数组申请，原地利用系统缓存行加速前缀与后缀最大值扫描，单次查询常数级最少指令
+    complexity:
+      time: O(N + M)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 前后缀极值原地复用与常数空间压缩
+          // @step:entry 1. 寄存器初始化
+          // @step:call_dfs 2. 先序轻量流转
+          // @step:dfs_entry 3. 单变量深度流转
+          // @step:dfn_inc 4. 计数器原地累加
+          // @step:record_dfn 5. 紧凑时间戳记录
+          // @step:dfs_left 6. 极速递归左分支
+          // @step:dfs_right 7. 极速递归右分支
+          // @step:init_maxleft 8. 前缀极值流转
+          // @step:calc_maxleft 9. 前缀原地更新
+          // @step:init_maxright 10. 后缀极值流转
+          // @step:calc_maxright 11. 后缀原地更新
+          // @step:loop_queries 12. 极速响应询问
+          // @step:calc_ans 13. O(1) 查表返回
+          // @step:return 14. 极速返回全局查询结果
+      reverse:
+        language: java
+        source: |
+          // 逆向极速推演
+          // @step:entry 1. 逆向寄存器初始化
+          // @step:call_dfs 2. 询问轻量循环
+          // @step:init_ans 3. 掩码设置
+          // @step:calc_ans 4. 递归计算
+          // @step:dfs_entry 5. 极速遍历
+          // @step:return 6. 极速返回

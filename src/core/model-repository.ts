@@ -123,6 +123,7 @@ import partyWithoutBossModel from './models/party-without-boss.yaml';
 import courseSelectionModel from './models/course-selection.yaml';
 import minimumFuelCostModel from './models/minimum-fuel-cost.yaml';
 import longestPathDifferentCharactersModel from './models/longest-path-different-characters.yaml';
+import heightRemovalQueriesModel from './models/height-removal-queries.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -274,6 +275,10 @@ export class AlgorithmModelRepository {
     ['class079-code04', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
     ['longest-path-diff-chars', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
     ['leetcode-2246', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
+    ['height-removal-queries', heightRemovalQueriesModel as IYamlAlgorithmModel],
+    ['class079-code05', heightRemovalQueriesModel as IYamlAlgorithmModel],
+    ['height-removal-queries-2458', heightRemovalQueriesModel as IYamlAlgorithmModel],
+    ['leetcode-2458', heightRemovalQueriesModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

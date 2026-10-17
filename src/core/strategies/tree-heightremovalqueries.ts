@@ -4,11 +4,28 @@ import type { StageExecutionParams } from './algorithm-strategy';
 import { cloneTree } from './strategy-helpers';
 
 export function compileHeightRemovalQueries(
-    _model: IYamlAlgorithmModel,
-    _stage: number,
-    _anchorMap?: Record<string, number>
+    model: IYamlAlgorithmModel,
+    _stage: number = 1,
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
-    const steps: UniversalStep[] = [];
+    const params = (model?.defaultParams as any) || {};
+    const queries: number[] = Array.isArray(params.queries) && params.queries.length > 0 ? params.queries : [4];
+
+    interface SimpleNode {
+      id: string;
+      val: number;
+      left?: SimpleNode;
+      right?: SimpleNode;
+    }
+
+    const n2: SimpleNode = { id: 'node-2', val: 2 };
+    const n6: SimpleNode = { id: 'node-6', val: 6 };
+    const n5: SimpleNode = { id: 'node-5', val: 5 };
+    const n3: SimpleNode = { id: 'node-3', val: 3, left: n2 };
+    const n4: SimpleNode = { id: 'node-4', val: 4, left: n6, right: n5 };
+    const n1: SimpleNode = { id: 'node-1', val: 1, left: n3, right: n4 };
+
     const treeState: UniversalTreeNode = {
       id: 'node-1',
       r: 0,
@@ -43,29 +60,227 @@ export function compileHeightRemovalQueries(
       ],
     };
 
+    // 逆向暴力排除重测推导分支 (Reverse Exclusion Simulation)
+    if (direction === 'reverse') {
+      const revSteps: UniversalStep[] = [];
+      const revAns = new Array(queries.length).fill(0);
+      const lineRevEntry = anchorMap?.entry ?? 2;
+      const lineRevInitAns = anchorMap?.call_dfs ?? 3;
+      const lineRevLoop = anchorMap?.init_ans ?? 4;
+      const lineRevCallEx = anchorMap?.calc_ans ?? 5;
+      const lineRevReturn = anchorMap?.return ?? 7;
+      const lineRevDfsEntry = anchorMap?.dfs_entry ?? 9;
+      const lineRevDfsNull = anchorMap?.dfs_null ?? 10;
+      const lineRevDfsLeft = anchorMap?.dfs_left ?? 11;
+      const lineRevDfsRight = anchorMap?.dfs_right ?? 12;
+
+      const revTree = cloneTree(treeState);
+      function getRevStateArrays(targetQ?: number, ansVal?: number): StateArrayItem[] {
+        return [
+          {
+            id: 'arr-queries',
+            name: 'queries[]',
+            label: '目标询问节点',
+            indices: queries.map((_, idx) => `q[${idx}]`),
+            values: [...queries],
+            activeIdx: targetQ !== undefined ? queries.indexOf(targetQ) : undefined,
+            color: 'rose',
+          },
+          {
+            id: 'arr-rev-ans',
+            name: 'ans[]',
+            label: '暴力排除测高',
+            indices: queries.map((_, idx) => `ans[${idx}]`),
+            values: [...revAns],
+            activeIdx: ansVal !== undefined ? 0 : undefined,
+            color: 'emerald',
+          },
+        ];
+      }
+
+      function addRevStep(data: Partial<UniversalStep> & { targetQ?: number; ansVal?: number }) {
+        const { targetQ, ansVal, ...rest } = data;
+        revSteps.push({
+          type: rest.type || 'step',
+          line: rest.line || lineRevEntry,
+          codeLine: rest.codeLine || rest.line || lineRevEntry,
+          i: rest.i ?? 0,
+          j: rest.j ?? 0,
+          dp1d: [...revAns],
+          memo: [...revAns],
+          activeSlot: rest.activeSlot ?? 0,
+          tag: rest.tag || '',
+          log: rest.log || '',
+          msg: rest.msg || '',
+          activeNodeId: rest.activeNodeId,
+          treeRoot: rest.treeRoot || cloneTree(revTree),
+          stateArrays: getRevStateArrays(targetQ, ansVal),
+        });
+      }
+
+      addRevStep({
+        type: 'entry',
+        line: lineRevEntry,
+        tag: 'treeQueriesReverse 入口',
+        log: '🚀 启动逆向暴力排除对比：依次剔除子树并重测全树高度',
+        msg: '启动 <code>treeQueriesReverse</code>：对每个独立询问，动态排除目标子树并重新深度优先遍历。',
+        activeNodeId: 'node-1',
+      });
+
+      addRevStep({
+        type: 'init',
+        line: lineRevInitAns,
+        tag: '分配 ans 数组',
+        log: `| int[] ans = new int[${queries.length}];`,
+        msg: `创建查询结果数组 <code>ans</code>，长度为 ${queries.length}。`,
+        activeNodeId: 'node-1',
+      });
+
+      for (let k = 0; k < queries.length; k++) {
+        const q = queries[k];
+        addRevStep({
+          type: 'loop',
+          line: lineRevLoop,
+          targetQ: q,
+          tag: `处理询问 queries[${k}]=${q}`,
+          log: `| 正在处理第 ${k} 个询问：临时断开以 #${q} 为根的完整子树`,
+          msg: `处理询问 <code>queries[${k}] = ${q}</code>：将节点 <strong>#${q}</strong> 及其所有后代从树中动态剔除。`,
+          activeNodeId: `node-${q}`,
+        });
+
+        function calcHeight(node: SimpleNode | undefined, d: number): number {
+          if (!node) {
+            addRevStep({
+              type: 'boundary',
+              line: lineRevDfsNull,
+              targetQ: q,
+              tag: `node=null (d=${d})`,
+              log: `| node == null，返回深度 ${d - 1}`,
+              msg: `遇到空节点，返回当前上层深度 <code>${d - 1}</code>。`,
+            });
+            return d - 1;
+          }
+
+          addRevStep({
+            type: 'entry',
+            line: lineRevDfsEntry,
+            targetQ: q,
+            activeNodeId: node.id,
+            tag: `探测 node=#${node.val} (d=${d})`,
+            log: `| 递归访问节点 #${node.val}，当前深度 d=${d}`,
+            msg: `探测节点 <strong>#${node.val}</strong>（深度 <code>${d}</code>）。`,
+          });
+
+          if (node.val === q) {
+            addRevStep({
+              type: 'boundary',
+              line: lineRevDfsNull,
+              targetQ: q,
+              activeNodeId: node.id,
+              tag: `命中排除节点 #${q}！立即剪枝`,
+              log: `| 💥 node.val == ${q} 命中目标剔除子树，直接阻断递归并剪枝！`,
+              msg: `<strong>动态剪枝</strong>：节点 <strong>#${q}</strong> 属于被删除子树，整枝剪除，返回 <code>${d - 1}</code>！`,
+            });
+            return d - 1;
+          }
+
+          addRevStep({
+            type: 'call',
+            line: lineRevDfsLeft,
+            targetQ: q,
+            activeNodeId: node.id,
+            tag: `向左探测 #${node.val}->left`,
+            log: `| 向左子树递归探测深度 d=${d + 1}`,
+            msg: `深入节点 <strong>#${node.val}</strong> 的左子树。`,
+          });
+          const leftH = calcHeight(node.left, d + 1);
+
+          addRevStep({
+            type: 'call',
+            line: lineRevDfsRight,
+            targetQ: q,
+            activeNodeId: node.id,
+            tag: `向右探测 #${node.val}->right`,
+            log: `| 向右子树递归探测深度 d=${d + 1}`,
+            msg: `深入节点 <strong>#${node.val}</strong> 的右子树。`,
+          });
+          const rightH = calcHeight(node.right, d + 1);
+
+          const curH = Math.max(leftH, rightH);
+          addRevStep({
+            type: 'update',
+            line: lineRevDfsRight,
+            targetQ: q,
+            activeNodeId: node.id,
+            tag: `节点 #${node.val} 最大分支高度: ${curH}`,
+            log: `| 节点 #${node.val} 左右支最大高度 = max(${leftH}, ${rightH}) = ${curH}`,
+            msg: `节点 <strong>#${node.val}</strong> 归约结果：左右支最大高度为 <code>max(${leftH}, ${rightH}) = <strong>${curH}</strong></code>。`,
+          });
+          return curH;
+        }
+
+        addRevStep({
+          type: 'call',
+          line: lineRevCallEx,
+          targetQ: q,
+          tag: `调用 calcHeightExcluding(root, ${q}, 0)`,
+          log: `| 调用 calcHeightExcluding(root, ${q}, 0) 暴力重测全树剩余高度`,
+          msg: `开始执行全树排除重测：以根节点 <strong>#1</strong> 为入口，排除子树 <strong>#${q}</strong>。`,
+          activeNodeId: 'node-1',
+        });
+
+        const res = calcHeight(n1, 0);
+        revAns[k] = res;
+
+        addRevStep({
+          type: 'update',
+          line: lineRevCallEx,
+          targetQ: q,
+          ansVal: res,
+          tag: `ans[${k}] = ${res}`,
+          log: `| ✅ 暴力重测计算得到：剔除子树 #${q} 后整树最大高度为 ${res}`,
+          msg: `暴力重测完成：剔除节点 <strong>#${q}</strong> 及其子树后，剩余树的最大高度为 <strong>${res}</strong>！`,
+          activeNodeId: 'node-1',
+        });
+      }
+
+      addRevStep({
+        type: 'return',
+        line: lineRevReturn,
+        ansVal: revAns[0],
+        tag: `返回 ans=[${revAns.join(', ')}]`,
+        log: `| 🏆 return ans = [${revAns.join(', ')}]`,
+        msg: `🏆 逆向对比完成！验证得到答案 <strong>[${revAns.join(', ')}]</strong>，与 DFN 序前后缀极值 O(1) 求解完全一致！`,
+        activeNodeId: 'node-1',
+      });
+
+      return revSteps.map((s, idx) => ({
+        ...s,
+        stepIndex: idx,
+        stage: _stage || 1,
+        line: s.line || 1,
+        codeLine: s.codeLine || s.line || 1,
+        decision: s.decision || s.log || s.tag || '移除子树后的二叉树高度逆向暴力排除重测',
+        message: s.message || s.msg || s.log || '',
+        metrics: {
+          '当前询问节点': String(queries[0] ?? 4),
+          '剩余树高': String(revAns[0] ?? 2),
+          '整树节点数': '6',
+          '模式': '逆向暴力排除对比',
+        },
+      }));
+    }
+
+    // 正向 DFN 序打平与前后缀极值求解 (Forward DFN Flattening)
+    const steps: UniversalStep[] = [];
     let dfnCnt = 0;
     const dfn: Record<number, number> = {};
     const deep: number[] = new Array(7).fill(0);
     const size: number[] = new Array(7).fill(0);
     const maxLeft: number[] = new Array(7).fill(0);
     const maxRight: number[] = new Array(7).fill(0);
-    const queries = [4];
     const ans: number[] = new Array(queries.length).fill(0);
     const dp1dDisplay: number[] = [0, 0, 0, 0, 0, 0];
-
-    interface SimpleNode {
-      id: string;
-      val: number;
-      left?: SimpleNode;
-      right?: SimpleNode;
-    }
-
-    const n2: SimpleNode = { id: 'node-2', val: 2 };
-    const n6: SimpleNode = { id: 'node-6', val: 6 };
-    const n5: SimpleNode = { id: 'node-5', val: 5 };
-    const n3: SimpleNode = { id: 'node-3', val: 3, left: n2 };
-    const n4: SimpleNode = { id: 'node-4', val: 4, left: n6, right: n5 };
-    const n1: SimpleNode = { id: 'node-1', val: 1, left: n3, right: n4 };
 
     function setNodeStatus(id: string, status: any, tag?: string) {
       function traverse(n: UniversalTreeNode) {
@@ -661,5 +876,26 @@ export function compileHeightRemovalQueries(
       activeArrSlot: 0,
     });
 
-    return steps;
+    const stageLines = _stage === 2 ? 15 : _stage === 3 ? 12 : _stage === 4 ? 12 : 28;
+    return steps.map((s, idx) => {
+      let line = s.line || 1;
+      if (_stage > 1 && !anchorMap) {
+        line = Math.min(line, stageLines);
+      }
+      return {
+        ...s,
+        stepIndex: idx,
+        stage: _stage || 1,
+        line,
+        codeLine: line,
+        decision: s.decision || s.log || s.tag || '移除子树后的二叉树高度状态转移',
+        message: s.message || s.msg || s.log || '',
+        metrics: s.metrics || {
+          '当前询问节点': String(queries[0] ?? 4),
+          '整树移除后最大高度': String(ans[0] ?? 2),
+          '整树节点数': '6',
+          'DFN打平跨度': '6',
+        },
+      };
+    });
 }

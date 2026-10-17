@@ -43,6 +43,7 @@ import './categories/dynamic-programming/tree-dp-079/party-without-boss-renderer
 import './categories/dynamic-programming/tree-dp-079/course-selection-renderer';
 import './categories/dynamic-programming/tree-dp-079/minimum-fuel-cost-renderer';
 import './categories/dynamic-programming/tree-dp-079/longest-path-different-characters-renderer';
+import './categories/dynamic-programming/tree-dp-079/height-removal-queries-renderer';
 
 // 左程云算法讲解075【必备】背包dp-多重背包、混合背包 5大算法渲染器
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-naive-renderer';
