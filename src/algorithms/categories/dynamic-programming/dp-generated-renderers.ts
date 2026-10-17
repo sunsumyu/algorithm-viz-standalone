@@ -775,19 +775,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'tree-diameter',
-    name: '二叉树的直径',
-    description: '树型DP路径类经典：每个节点向父汇报最大深度，以当前节点为拐点的直径=左深度+右深度，全局取最大。',
-    icon: '📐',
-    aliases: ['class078-code04', 'diameter-of-binary-tree', 'leetcode-543'],
-    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
-    examples: [
-      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
-      { label: '[1,2]', values: { root: '1,2' } },
-    ],
-    build: makeEngineBuilder('tree-diameter'),
-  },
+
   {
     id: 'binary-tree-cameras',
     name: '监控二叉树',
@@ -1096,7 +1084,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'tree-diameter' },
   { type: 'demo', id: 'binary-tree-cameras' },
   { type: 'demo', id: 'course-selection' },
   { type: 'demo', id: 'minimum-fuel-cost' },

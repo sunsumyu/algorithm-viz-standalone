@@ -117,6 +117,7 @@ import mergeStonesModel from './models/merge-stones.yaml';
 import maxDistanceInTreeModel from './models/max-distance-in-tree.yaml';
 import maxPathSumModel from './models/max-path-sum.yaml';
 import largestBstSubtreeModel from './models/largest-bst-subtree.yaml';
+import treeDiameterModel from './models/tree-diameter.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -244,6 +245,10 @@ export class AlgorithmModelRepository {
     ['class078-code03', largestBstSubtreeModel as IYamlAlgorithmModel],
     ['leetcode-333', largestBstSubtreeModel as IYamlAlgorithmModel],
     ['largest-bst-subtree-333', largestBstSubtreeModel as IYamlAlgorithmModel],
+    ['tree-diameter', treeDiameterModel as IYamlAlgorithmModel],
+    ['class078-code04', treeDiameterModel as IYamlAlgorithmModel],
+    ['diameter-of-binary-tree', treeDiameterModel as IYamlAlgorithmModel],
+    ['leetcode-543', treeDiameterModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

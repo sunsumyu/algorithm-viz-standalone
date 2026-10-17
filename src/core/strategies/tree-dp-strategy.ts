@@ -56,7 +56,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'max-path-sum':
         return compileMaxPathSum(model, parseTreeArray(rawRoot || '-10,9,20,null,null,15,7'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'tree-diameter':
-        return compileTreeDiameter(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap);
+        return compileTreeDiameter(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'binary-tree-cameras':
         return compileBinaryTreeCameras(model, parseTreeArray(rawRoot || '0,0,null,0,0'), stage, anchorMap);
       case 'course-selection':
