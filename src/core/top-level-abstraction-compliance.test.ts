@@ -114,6 +114,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'partitioned-knapsack-standard',
   'unbounded-knapsack-standard',
   'regex-matching',
+  'wildcard-matching',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

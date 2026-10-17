@@ -1661,7 +1661,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "wildcard-matching",
     name: "通配符匹配 (LeetCode 44)",
-    viewId: "algo-wildcard-matching-view",
+    viewId: "wildcard-matching",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code05：LeetCode 44 通配符匹配，通配符 * 可匹配任意长度序列，完全背包斜率优化 dp[i][j] = dp[i+1][j] || dp[i][j+1]",
     icon: "🃏",

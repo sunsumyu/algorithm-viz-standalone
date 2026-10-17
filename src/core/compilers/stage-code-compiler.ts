@@ -132,6 +132,12 @@ export class StageCodeCompiler {
       case 'regular-expression-matching':
       case 'leetcode-10':
         return this.getRegexMatchingTemplate(stage);
+      case 'wildcard-matching':
+      case 'class074-code05':
+      case 'wildcard-matching-074':
+      case 'wildcard-matching-problem':
+      case 'leetcode-44':
+        return this.getWildcardMatchingTemplate(stage);
       default:
         return null;
     }
@@ -2022,5 +2028,94 @@ export class StageCodeCompiler {
     }
 }`;
   }
+
+  private static getWildcardMatchingTemplate(stage: string): string {
+    if (stage === 'stage-1') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+    }
+    private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+        if (j == p.length) return i == s.length; // @step:boundary
+        if (p[j] != '*') { // @step:check_char
+            boolean first = i < s.length && (s[i] == p[j] || p[j] == '?'); // @step:first_match
+            return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+        }
+        return dfs(s, p, i, j + 1) // @step:branch_empty
+            || (i < s.length && dfs(s, p, i + 1, j)); // @step:branch_take
+    }
+}`;
+    }
+    if (stage === 'stage-2') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        char[] sArr = s.toCharArray(), pArr = p.toCharArray();
+        int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
+        return dfs(sArr, pArr, 0, 0, memo);
+    }
+    private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+        if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
+        if (j == p.length) { // @step:boundary
+            memo[i][j] = (i == s.length) ? 2 : 1;
+            return memo[i][j] == 2;
+        }
+        boolean ans;
+        if (p[j] != '*') { // @step:check_char
+            boolean first = i < s.length && (s[i] == p[j] || p[j] == '?'); // @step:first_match
+            ans = first && dfs(s, p, i + 1, j + 1, memo); // @step:single_eval
+        } else {
+            ans = dfs(s, p, i, j + 1, memo) || (i < s.length && dfs(s, p, i + 1, j, memo)); // @step:star_eval
+        }
+        memo[i][j] = ans ? 2 : 1; // @step:memo_store
+        return ans;
+    }
+}`;
+    }
+    if (stage === 'stage-3') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        int n = s.length(), m = p.length();
+        boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
+        dp[n][m] = true; // @step:base
+        for (int j = m - 1; j >= 0 && p.charAt(j) == '*'; j--) { // @step:base_row
+            dp[n][j] = true;
+        }
+        for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+            for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                if (p.charAt(j) != '*') { // @step:check_char
+                    dp[i][j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '?') && dp[i + 1][j + 1]; // @step:single_match
+                } else {
+                    dp[i][j] = dp[i + 1][j] || dp[i][j + 1]; // @step:star_slope
+                }
+            }
+        }
+        return dp[0][0]; // @step:return
+    }
+}`;
+    }
+    return `class Solution {
+    public boolean isMatch(String s, String p) {
+        int n = s.length(), m = p.length();
+        boolean[] next = new boolean[m + 1]; // @step:init
+        next[m] = true; // @step:base
+        for (int j = m - 1; j >= 0 && p.charAt(j) == '*'; j--) { // @step:base_row
+            next[j] = true;
+        }
+        for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+            boolean[] cur = new boolean[m + 1];
+            for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                if (p.charAt(j) != '*') { // @step:check_char
+                    cur[j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '?') && next[j + 1]; // @step:single_match
+                } else {
+                    cur[j] = next[j] || cur[j + 1]; // @step:star_slope
+                }
+            }
+            next = cur; // @step:roll
+        }
+        return next[0]; // @step:return
+    }
+}`;
+  }
 }
+
 

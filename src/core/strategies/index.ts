@@ -13,6 +13,7 @@ import { SequenceDeleteDistanceStrategy } from './sequence-delete-distance-strat
 import { SequenceLongestPalindromicSubsequenceStrategy } from './sequence-longest-palindromic-subsequence-strategy';
 import { SequencePalindromicSubstringsStrategy } from './sequence-palindromic-substrings-strategy';
 import { SequenceRegexMatchingStrategy } from './sequence-regex-matching-strategy';
+import { SequenceWildcardMatchingStrategy } from './sequence-wildcard-matching-strategy';
 import { Linear1DStrategy } from './linear-1d-strategy';
 import { LinearStepMatrixCompiler } from './linear-step-matrix-compiler';
 import { PartitionDPStrategy, PartitionIntegerBreakStrategy } from './partition-integer-break-strategy';
@@ -165,6 +166,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new SequenceLongestPalindromicSubsequenceStrategy());
   AlgorithmStrategyRegistry.register(new SequencePalindromicSubstringsStrategy());
   AlgorithmStrategyRegistry.register(new SequenceRegexMatchingStrategy('regex-matching'));
+  AlgorithmStrategyRegistry.register(new SequenceWildcardMatchingStrategy('wildcard-matching'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-increasing-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-continuous-increasing-subsequence'));
   AlgorithmStrategyRegistry.register(new SequenceAdvancedStrategy('longest-repeated-subarray'));
@@ -255,6 +257,7 @@ export {
   SequenceLongestPalindromicSubsequenceStrategy,
   SequencePalindromicSubstringsStrategy,
   SequenceRegexMatchingStrategy,
+  SequenceWildcardMatchingStrategy,
   Linear1DStrategy,
   LinearStepMatrixCompiler,
   PartitionDPStrategy,

@@ -107,6 +107,7 @@ import minCostTicketsModel from './models/min-cost-tickets.yaml';
 import coinsFromPilesModel from './models/coins-from-piles.yaml';
 import partitionedKnapsackModel from './models/partitioned-knapsack-standard.yaml';
 import regexMatchingModel from './models/regex-matching.yaml';
+import wildcardMatchingModel from './models/wildcard-matching.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -191,6 +192,11 @@ export class AlgorithmModelRepository {
     ['regex-matching-074', regexMatchingModel as IYamlAlgorithmModel],
     ['regular-expression-matching', regexMatchingModel as IYamlAlgorithmModel],
     ['leetcode-10', regexMatchingModel as IYamlAlgorithmModel],
+    ['wildcard-matching', wildcardMatchingModel as IYamlAlgorithmModel],
+    ['class074-code05', wildcardMatchingModel as IYamlAlgorithmModel],
+    ['wildcard-matching-074', wildcardMatchingModel as IYamlAlgorithmModel],
+    ['wildcard-matching-problem', wildcardMatchingModel as IYamlAlgorithmModel],
+    ['leetcode-44', wildcardMatchingModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],
