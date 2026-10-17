@@ -315,6 +315,14 @@ export class StateSpacePresenter {
           colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
           cornerLabel = '物品组(g) \\ 容量(j)';
         }
+      } else if (params && (params.h !== undefined || modelId.includes('buying-hay'))) {
+        const costArr = Array.isArray(params.cost) ? params.cost : (Array.isArray(params.costs) ? params.costs : [10, 12]);
+        const valArr = Array.isArray(params.val) ? params.val : (Array.isArray(params.vals) ? params.vals : [8, 16]);
+        if (effectiveM === costArr.length + 1) {
+          rowLabels = ['Ø(空)', ...costArr.map((c: any, idx: number) => `商${idx + 1}(${valArr[idx] ?? '?'}磅/${c}元)`)];
+          colLabels = Array.from({ length: effectiveN }, (_, col) => `${col}磅`);
+          cornerLabel = '供货商(i) \\ 目标重量(j)';
+        }
       }
     }
 
@@ -416,6 +424,14 @@ export class StateSpacePresenter {
               rowLabels = piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
               colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
               cornerLabel = '硬币栈(i) \\ 容量(j)';
+            }
+          } else if (params && (params.h !== undefined || options.modelId.includes('buying-hay'))) {
+            const costArr = Array.isArray(params.cost) ? params.cost : (Array.isArray(params.costs) ? params.costs : [10, 12]);
+            const valArr = Array.isArray(params.val) ? params.val : (Array.isArray(params.vals) ? params.vals : [8, 16]);
+            if (effectiveM === costArr.length + 1) {
+              rowLabels = ['Ø(空)', ...costArr.map((c: any, idx: number) => `商${idx + 1}(${valArr[idx] ?? '?'}磅/${c}元)`)];
+              colLabels = Array.from({ length: effectiveN }, (_, col) => `${col}磅`);
+              cornerLabel = '供货商(i) \\ 目标重量(j)';
             }
           }
         }
@@ -1033,6 +1049,16 @@ export class StateSpacePresenter {
           group: it[2]
         }));
         capacity = params.m ?? params.capacity ?? capacity;
+      } else if (params.h !== undefined && (params.cost || params.costs)) {
+        const costArr = Array.isArray(params.cost) ? params.cost : (Array.isArray(params.costs) ? params.costs : [10, 12]);
+        const valArr = Array.isArray(params.val) ? params.val : (Array.isArray(params.vals) ? params.vals : [8, 16]);
+        items = costArr.map((c: number, idx: number) => ({
+          index: idx,
+          weight: valArr[idx] ?? 1,
+          value: c,
+          label: `商${idx + 1}(${valArr[idx] ?? '?'}磅/${c}元)`
+        }));
+        capacity = params.h ?? capacity;
       }
     }
 
