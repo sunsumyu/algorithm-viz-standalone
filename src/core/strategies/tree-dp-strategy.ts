@@ -52,7 +52,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'max-distance-in-tree':
         return compileMaxDistance(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'largest-bst-subtree':
-        return compileLargestBST(model, parseTreeArray(rawRoot || '10,5,15,1,8,null,7'), stage, anchorMap);
+        return compileLargestBST(model, parseTreeArray(rawRoot || '10,5,15,1,8,null,7'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'max-path-sum':
         return compileMaxPathSum(model, parseTreeArray(rawRoot || '-10,9,20,null,null,15,7'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'tree-diameter':

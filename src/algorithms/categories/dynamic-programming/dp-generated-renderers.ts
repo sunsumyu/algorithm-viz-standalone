@@ -774,19 +774,7 @@ const demos: DemoDef[] = [
   // ---------------------------------------------------------------------------
 
 
-  {
-    id: 'largest-bst-subtree',
-    name: '最大BST子树',
-    description: '树型DP四元组汇报：[isBST, min, max, size]，后序遍历融合判断BST条件，找节点数最多的BST子树。',
-    icon: '🔍',
-    aliases: ['class078-code03', 'largest-bst-subtree-333', 'leetcode-333'],
-    inputs: [{ id: 'root', label: '树节点(层序)', value: '10,5,15,1,8,null,7', width: 220 }],
-    examples: [
-      { label: '[10,5,15,1,8,null,7]', values: { root: '10,5,15,1,8,null,7' } },
-      { label: '[3,1,5,0,2,4,6]', values: { root: '3,1,5,0,2,4,6' } },
-    ],
-    build: makeEngineBuilder('largest-bst-subtree'),
-  },
+
   {
     id: 'tree-diameter',
     name: '二叉树的直径',
@@ -1108,7 +1096,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'largest-bst-subtree' },
   { type: 'demo', id: 'tree-diameter' },
   { type: 'demo', id: 'binary-tree-cameras' },
   { type: 'demo', id: 'course-selection' },

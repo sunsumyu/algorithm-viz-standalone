@@ -1,0 +1,214 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 最大 BST 子树 顶层领域模型
+# 对应：LeetCode 333 / 左程云算法讲解 078 Code03
+# 包含：树型 DP 四元组汇报 [maxBSTSize, size, min, max]、BST 条件判定与状态依赖树
+# ==============================================================================
+
+id: largest-bst-subtree
+name: 最大 BST 子树
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 树型 DP
+  - 二叉搜索树
+  - 动态规划
+  - 深度优先搜索
+  - 二叉树
+
+description: |
+  LeetCode 333 · 左程云算法通关课第 078 讲 树型 DP（上）Code03：最大 BST 子树。
+  给定一个二叉树，找到其中最大的二叉搜索树（BST）子树，并返回该子树的大小（即节点总数）。
+  核心树型 DP 四元组汇报模型 (Tree DP Info Tuple)：
+  每个节点向父节点汇报 [maxBSTSize, size, min, max]：
+  1. 当前子树规模 size = 1 + left.size + right.size
+  2. 极值范围 min = min(node.val, left.min, right.min), max = max(node.val, left.max, right.max)
+  3. BST 充要条件：左子树是 BST 且 left.max < node.val，右子树是 BST 且 right.min > node.val
+  4. 状态转移：若满足 BST 条件，maxBSTSize = size；若不满足，maxBSTSize = max(left.maxBSTSize, right.maxBSTSize)。
+
+defaultParams:
+  root: '10,5,15,1,8,null,7'
+
+constraints:
+  - 树中节点数目范围是 [1, 10^4]（演示建议 <= 15）
+  - -10^4 <= Node.val <= 10^4
+
+directions:
+  forward:
+    name: 自底向上后序四元汇报 (Bottom-Up Post-Order BST Info)
+    description: 后序遍历自底向上汇集左右子树 [maxBSTSize, size, min, max] 四元组，严格判定 BST 性质并汇聚最大节点数
+  reverse:
+    name: 自顶向下先序验证对比探查 (Top-Down Pre-Order BST Exploration)
+    description: 从根节点先序向下检验各子树是否为有效二叉搜索树，对比验证自底向上后序四元组汇聚的高效性
+
+stages:
+  stage-1:
+    name: 后序遍历自底向上四元汇报
+    description: 递归后序遍历二叉树，每个节点汇报 [maxBSTSize, size, min, max] 四元组，判定并汇聚最大 BST 子树
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public static class Info {
+                  public int maxBSTSize;
+                  public int size;
+                  public int min;
+                  public int max;
+                  public Info(int m, int s, int mi, int ma) {
+                      maxBSTSize = m;
+                      size = s;
+                      min = mi;
+                      max = ma;
+                  }
+              }
+              public int largestBSTSubtree(TreeNode root) { // @step:entry
+                  Info info = process(root); // @step:init
+                  return info != null ? info.maxBSTSize : 0; // @step:return
+              }
+              private Info process(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return null; // @step:boundary
+                  Info left = process(node.left); // @step:branch_left
+                  Info right = process(node.right); // @step:branch_right
+                  int min = node.val, max = node.val, size = 1; // @step:init_node
+                  if (left != null) {
+                      min = Math.min(min, left.min);
+                      max = Math.max(max, left.max);
+                      size += left.size;
+                  }
+                  if (right != null) {
+                      min = Math.min(min, right.min);
+                      max = Math.max(max, right.max);
+                      size += right.size;
+                  }
+                  boolean leftBST = left == null || (left.maxBSTSize == left.size && left.max < node.val); // @step:cond_bst
+                  boolean rightBST = right == null || (right.maxBSTSize == right.size && right.min > node.val);
+                  int maxBSTSize = 0;
+                  if (leftBST && rightBST) {
+                      maxBSTSize = (left == null ? 0 : left.size) + (right == null ? 0 : right.size) + 1; // @step:transfer_bst
+                  } else {
+                      maxBSTSize = Math.max(left == null ? 0 : left.maxBSTSize, right == null ? 0 : right.maxBSTSize); // @step:transfer_not_bst
+                  }
+                  return new Info(maxBSTSize, size, min, max); // @step:combine
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int largestBSTSubtreeReverse(TreeNode root) { // @step:entry
+                  if (root == null) return 0; // @step:boundary
+                  return explorePreOrder(root); // @step:return
+              }
+              private int explorePreOrder(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return 0; // @step:boundary
+                  if (isValidBST(node, Long.MIN_VALUE, Long.MAX_VALUE)) { // @step:cond_bst
+                      return countNodes(node); // @step:transfer_bst
+                  }
+                  int lMax = explorePreOrder(node.left); // @step:branch_left
+                  int rMax = explorePreOrder(node.right); // @step:branch_right
+                  return Math.max(lMax, rMax); // @step:transfer_not_bst
+              }
+              private boolean isValidBST(TreeNode node, long min, long max) {
+                  if (node == null) return true;
+                  if (node.val <= min || node.val >= max) return false;
+                  return isValidBST(node.left, min, node.val) && isValidBST(node.right, node.val, max);
+              }
+              private int countNodes(TreeNode node) {
+                  if (node == null) return 0;
+                  return 1 + countNodes(node.left) + countNodes(node.right);
+              }
+          }
+
+  stage-2:
+    name: 递归调用与状态依赖树展开
+    description: 显式构建后序递归的完整状态依赖树，展示每一个节点深入、子调用与回溯落盘的完整路径
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态依赖展开树遍历
+          // @step:entry 1. 展开依赖树根节点 process(root)
+          // @step:dfs_entry 2. 深入当前子树节点
+          // @step:branch_left 3. 深入左子树依赖节点
+          // @step:branch_right 4. 深入右子树依赖节点
+          // @step:cond_bst 5. 回溯判定左右子树与当前节点是否构成合法 BST
+          // @step:transfer_bst 6. 状态转移：若合法则累加子树节点总数
+          // @step:transfer_not_bst 7. 状态转移：若不合法则继承左右最优 BST
+          // @step:combine 8. 状态落盘并向父节点汇报四元组
+          // @step:return 9. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向依赖对比树
+          // @step:entry 1. 根节点自顶向下依赖展开
+          // @step:dfs_entry 2. 深入先序节点检验
+          // @step:branch_left 3. 左子树广度探查
+          // @step:branch_right 4. 右子树广度探查
+          // @step:cond_bst 5. BST 合法性验证
+          // @step:transfer_bst 6. 状态转移：BST 规模对比更新
+          // @step:combine 7. 差异回溯
+          // @step:return 8. 逆向推演完成
+
+  stage-3:
+    name: 树型 DP 状态表推导与四元组汇聚
+    description: 映射为标准树型 DP 状态表，每个节点维护 [maxBSTSize, size, min, max] 状态转移向量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树型 DP 状态转移矩阵：dp[u][0..3]
+          // @step:entry 1. 初始化节点状态向量表 dp[N][4]
+          // @step:dfs_entry 2. 树形自底向上逐节点访问
+          // @step:cond_bst 3. BST 性质校验
+          // @step:transfer_bst 4. 状态转移：BST 规模累加
+          // @step:transfer_not_bst 5. 状态转移：继承子树最优
+          // @step:combine 6. 状态落盘并向父节点提交
+          // @step:return 7. 矩阵填表完成
+      reverse:
+        language: java
+        source: |
+          // 逆向状态表推导
+          // @step:entry 1. 逆向状态矩阵初始化
+          // @step:dfs_entry 2. 自顶向下反向回代
+          // @step:cond_bst 3. 约束校验
+          // @step:transfer_bst 4. 规模对比
+          // @step:combine 5. 逆向状态登记
+          // @step:return 6. 逆向收敛
+
+  stage-4:
+    name: O(h) 递归栈空间压缩与极速结算
+    description: 舍弃额外树结构构建，原地复用递归栈 O(h) 空间，四元组极速流转返回最大 BST 大小
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 极速单趟原地状态流转
+          // @step:entry 1. 寄存器初始化：maxSize = 0
+          // @step:dfs_entry 2. 原地后序状态快速流转
+          // @step:cond_bst 3. 原地常数判定
+          // @step:transfer_bst 4. 规模极速更新
+          // @step:transfer_not_bst 5. 继承最优极速流转
+          // @step:combine 6. 四元组极速返回
+          // @step:return 7. 极速返回最大 BST 大小
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:entry 1. 寄存器初始化
+          // @step:dfs_entry 2. 逆向常数遍历
+          // @step:cond_bst 3. 终态判定
+          // @step:transfer_bst 4. 常数极速更新
+          // @step:combine 5. 极速返回登记
+          // @step:return 6. 极速返回
