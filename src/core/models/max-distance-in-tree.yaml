@@ -1,0 +1,175 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 树的最大距离 顶层领域模型
+# 对应：左程云算法讲解 078 Code01 / 树型 DP（上）经典模板
+# 包含：自底向上二元组汇报 [maxDistance, height]、拐点路径计算、状态依赖树与常数空间压缩
+# ==============================================================================
+
+id: max-distance-in-tree
+name: 树的最大距离
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 树型 DP
+  - 动态规划
+  - 深度优先搜索
+  - 二叉树
+  - 树的直径
+
+description: |
+  左程云算法通关课第 078 讲 树型 DP（上）Code01：树的最大距离（二叉树中任意两节点间最长路径的边数）。
+  核心二元组汇报模型 (Tree DP Info Tuple Pattern)：
+  每个节点向父节点汇报 [maxDistance, height]：
+  1. 当前子树高度 height = max(left.height, right.height) + 1
+  2. 经过当前节点的拐点跨度 crossDist = left.height + right.height
+  3. 当前子树内部最大距离 maxDistance = max(crossDist, left.maxDistance, right.maxDistance)
+  自底向上后序遍历完成全局最长路径汇聚。
+
+defaultParams:
+  root: '1,2,3,4,5'
+
+constraints:
+  - 树中节点数的范围是 [1, 10000] 内（教学演示建议 <= 15）
+  - -100 <= Node.val <= 100
+
+directions:
+  forward:
+    name: 自底向上后序二元汇报 (Bottom-Up Post-Order Info Tuple)
+    description: 后序遍历自底向上汇集左右子树 [maxDistance, height] 二元组，以当前节点为拐点结算最大路径
+  reverse:
+    name: 自顶向下先序路径对比探查 (Top-Down Pre-Order Exploration)
+    description: 从根节点先序向下探查单链深度与分支拐点，对比证明后序二元汇报自底向上的最优性与完整性
+
+stages:
+  stage-1:
+    name: 后序遍历自底向上二元汇报
+    description: 递归后序遍历二叉树，每个节点汇报 [子树最大距离, 子树高度] 二元组，求解任意两节点间最大距离
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public static class Info {
+                  public int maxDistance;
+                  public int height;
+                  public Info(int dis, int h) {
+                      maxDistance = dis;
+                      height = h;
+                  }
+              }
+              public int maxDistance(TreeNode root) { // @step:entry
+                  Info info = process(root); // @step:init
+                  return info.maxDistance; // @step:return
+              }
+              private Info process(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return new Info(0, 0); // @step:boundary
+                  Info left = process(node.left); // @step:branch_left
+                  Info right = process(node.right); // @step:branch_right
+                  int height = Math.max(left.height, right.height) + 1; // @step:calc_height
+                  int crossDist = left.height + right.height; // @step:calc_cross
+                  int maxDist = Math.max(crossDist, Math.max(left.maxDistance, right.maxDistance)); // @step:transfer
+                  return new Info(maxDist, height); // @step:combine
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int maxDistanceReverse(TreeNode root) { // @step:entry
+                  if (root == null) return 0; // @step:boundary
+                  return explorePreOrder(root); // @step:return
+              }
+              private int explorePreOrder(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return 0; // @step:boundary
+                  int lDepth = getDepth(node.left); // @step:branch_left
+                  int rDepth = getDepth(node.right); // @step:branch_right
+                  int cross = lDepth + rDepth; // @step:calc_cross
+                  int lMax = explorePreOrder(node.left); // @step:calc_height
+                  int rMax = explorePreOrder(node.right); // @step:combine
+                  return Math.max(cross, Math.max(lMax, rMax)); // @step:transfer
+              }
+              private int getDepth(TreeNode node) {
+                  if (node == null) return 0;
+                  return 1 + Math.max(getDepth(node.left), getDepth(node.right));
+              }
+          }
+
+  stage-2:
+    name: 递归调用与状态依赖树展开
+    description: 显式构建后序递归的完整状态依赖树，展示每一个节点深入、子调用与回溯落盘的完整路径
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态依赖展开树遍历
+          // @step:entry 1. 展开依赖树根节点 process(root)
+          // @step:branch_left 2. 深入左子树依赖节点
+          // @step:branch_right 3. 深入右子树依赖节点
+          // @step:state_check 4. 回溯汇集二元组 (maxDist, height)
+          // @step:backtrack 5. 状态落盘并向父节点汇报
+          // @step:done 6. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向依赖对比树
+          // @step:entry 1. 根节点自顶向下依赖展开
+          // @step:branch_left 2. 左子树广度探查
+          // @step:branch_right 3. 右子树广度探查
+          // @step:state_check 4. 路径深度比较
+          // @step:backtrack 5. 差异回溯
+          // @step:done 6. 逆向推演完成
+
+  stage-3:
+    name: 树型 DP 二元状态表推导
+    description: 映射为标准树型 DP 状态表，每个节点维护 [最大高度 height, 最大跨距 maxDist] 二元状态转移向量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树型 DP 状态转移矩阵：dp[u][0..1]
+          // @step:dp_init 1. 初始化节点状态向量表 dp[N][2]
+          // @step:dp_visit 2. 树形自底向上逐节点访问
+          // @step:dp_trans 3. 状态转移：height 与 crossDist 计算
+          // @step:dp_root 4. 根节点状态最终收敛
+          // @step:dp_done 5. 矩阵填表完成
+      reverse:
+        language: java
+        source: |
+          // 逆向状态表推导
+          // @step:dp_init 1. 逆向状态矩阵初始化
+          // @step:dp_visit 2. 自顶向下反向回代
+          // @step:dp_trans 3. 约束校验
+          // @step:dp_root 4. 根状态对齐
+          // @step:dp_done 5. 逆向收敛
+
+  stage-4:
+    name: O(h) 递归栈空间压缩与极速结算
+    description: 舍弃额外树结构构建，原地复用递归栈 O(h) 空间，二元组极速推演返回整树最大距离
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 极速单趟原地状态流转
+          // @step:reg_init 1. 寄存器初始化：maxDist=0
+          // @step:reg_dfs 2. 原地后序状态快速流转
+          // @step:reg_root 3. 根节点二元信息最终汇总
+          // @step:reg_done 4. 极速返回整树最大距离
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:reg_init 1. 寄存器初始化
+          // @step:reg_dfs 2. 逆向常数遍历
+          // @step:reg_root 3. 终态判定
+          // @step:reg_done 4. 极速返回

@@ -50,7 +50,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
 
     switch (model.id) {
       case 'max-distance-in-tree':
-        return compileMaxDistance(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap);
+        return compileMaxDistance(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'largest-bst-subtree':
         return compileLargestBST(model, parseTreeArray(rawRoot || '10,5,15,1,8,null,7'), stage, anchorMap);
       case 'max-path-sum':

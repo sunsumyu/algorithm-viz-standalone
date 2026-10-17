@@ -772,19 +772,7 @@ const demos: DemoDef[] = [
 
   // 树型DP 演示 (Tree DP Demos — 第078讲)
   // ---------------------------------------------------------------------------
-  {
-    id: 'max-distance-in-tree',
-    name: '树的最大距离',
-    description: '树型DP二元组汇报：[maxDepth, maxDist]，穿越当前节点路径=左深度+右深度，子树内最大距离=三方向取max。',
-    icon: '📏',
-    aliases: ['class078-code01', 'tree-max-distance'],
-    inputs: [{ id: 'root', label: '树节点(层序)', value: '1,2,3,4,5', width: 180 }],
-    examples: [
-      { label: '[1,2,3,4,5]', values: { root: '1,2,3,4,5' } },
-      { label: '[1,2,3,4,null,null,null,5]', values: { root: '1,2,3,4,null,null,null,5' } },
-    ],
-    build: makeEngineBuilder('max-distance-in-tree'),
-  },
+
   {
     id: 'max-path-sum',
     name: '二叉树最大路径和',
@@ -1133,7 +1121,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'max-distance-in-tree' },
   { type: 'demo', id: 'max-path-sum' },
   { type: 'demo', id: 'largest-bst-subtree' },
   { type: 'demo', id: 'tree-diameter' },

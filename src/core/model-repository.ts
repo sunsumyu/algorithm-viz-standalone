@@ -114,6 +114,7 @@ import predictTheWinnerModel from './models/predict-the-winner.yaml';
 import minScoreTriangulationModel from './models/min-score-triangulation.yaml';
 import strangePrinterModel from './models/strange-printer.yaml';
 import mergeStonesModel from './models/merge-stones.yaml';
+import maxDistanceInTreeModel from './models/max-distance-in-tree.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -229,6 +230,9 @@ export class AlgorithmModelRepository {
     ['class077-code01', mergeStonesModel as IYamlAlgorithmModel],
     ['merge-stones-1000', mergeStonesModel as IYamlAlgorithmModel],
     ['leetcode-1000', mergeStonesModel as IYamlAlgorithmModel],
+    ['max-distance-in-tree', maxDistanceInTreeModel as IYamlAlgorithmModel],
+    ['class078-code01', maxDistanceInTreeModel as IYamlAlgorithmModel],
+    ['tree-max-distance', maxDistanceInTreeModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

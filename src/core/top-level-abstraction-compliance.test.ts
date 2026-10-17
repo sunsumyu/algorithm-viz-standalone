@@ -121,6 +121,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'min-score-triangulation',
   'strange-printer',
   'merge-stones',
+  'max-distance-in-tree',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {
