@@ -1,0 +1,344 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 购买足量干草的最小花费 (洛谷 P2918 [USACO08NOV] Buying Hay S) - 左程云 Class 074 Code06
+# 容量上界安全扩充证明 (H + maxVal) 与完全背包求全局极小值
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: buying-hay-min-cost
+name: "购买足量干草的最小花费"
+nameEn: "Buying Hay Minimum Cost"
+defaultStage: "stage-4"
+category: "dynamic-programming"
+icon: "🌾"
+difficulty: 2
+levelOrder: 89
+learningGoal: "掌握允许超额时的容量上界安全扩充证明（H + maxVal）与求最小花费完全背包的状态转移"
+description: "左程云算法通关课 Class 074 Code06：洛谷 P2918 购买干草，至少 H 磅允许超额，容量上界扩充至 H + maxVal 的完全背包求极小值"
+defaultParams:
+  h: 15
+  cost: [10, 12]
+  val: [8, 16]
+
+problem:
+  leetcodeId: 0
+  title: "购买足量干草的最小花费 (洛谷 P2918 [USACO08NOV] Buying Hay S)"
+  difficulty: "中等"
+  tags: ["动态规划", "完全背包", "容量上界扩充", "贪心优化"]
+  description: "约翰想买<strong>至少 <code>H</code> 磅干草</strong>给奶牛。市场上有 <code>n</code> 个供应商，每个供应商的产品都可以无限次购买。购买第 <code>i</code> 家的产品 1 次需要花 <code>cost[i]</code> 元，可以获得 <code>val[i]</code> 磅干草。<br/>求满足干草需求总量<strong>不少于 <code>H</code> 磅</strong>的前提下，约翰需要花费的<strong>最少金额</strong>（允许购买超过 <code>H</code> 磅干草，只要更划算）。"
+  examples:
+    - input: "H = 15, cost = [10, 12], val = [8, 16]"
+      output: "12"
+      explanation: "买供应商 2 的产品 1 次获得 16 磅，耗费 12 元，既满足至少 15 磅的要求，又比买两次供应商 1（16 磅 20 元）更省钱！"
+    - input: "H = 60, cost = [5, 100], val = [10, 100]"
+      output: "30"
+      explanation: "买供应商 1 的产品 6 次获得恰好 60 磅，花费 6 * 5 = 30 元。"
+  constraints:
+    - "1 <= n <= 100"
+    - "1 <= H <= 50000"
+    - "1 <= cost[i], val[i] <= 5000"
+  leetcodeUrl: "https://www.luogu.com.cn/problem/P2918"
+
+directions:
+  forward:
+    label: "完全背包容量正推 (从容量 0 推至 H + maxVal)"
+    branches:
+      - name: "not_take"
+        label: "不选当前供货商"
+        formula: "dp[i - 1][j]"
+      - name: "take_reuse"
+        label: "复用当前供货商"
+        formula: "dp[i][j - val[i]] + cost[i]"
+    combineFormula: "min(dp[i - 1][j], dp[i][j - val[i]] + cost[i])"
+  reverse:
+    label: "逆推倒序寻源 (终点逆向推导)"
+    description: "从目标解空间 [H, m] 向子问题基底反推"
+    startFormula: "min_{j in [H, m]} dp[n][j]"
+    target: "dp[0][0]"
+    branches:
+      - name: "trace_back"
+        label: "同层或上一层溯源"
+        formula: "dp[i][j - val[i]]"
+    combineFormula: "逆向状态依赖"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归分支展开 (剩余需求向下递减决策树)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "定义 dfs(i, remH)：考虑从第 i 家供货商开始，满足剩余 remH 磅干草所需的最低花费。分支 1 为跳过当前供货商，分支 2 为采购当前供货商 1 件并继续保留该供货商选项。"
+      reverse: "从终点目标状态向前倒推，展示朴素递归中出现的严重重叠子问题与指数级爆炸分支。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "BuyingHay_Recursive.java"
+          reverse: "BuyingHay_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "BuyingHay_Recursive.java"
+            source: |
+              class Solution {
+                  private static final int INF = 1_000_000_000;
+                  public int minCost(int h, int[] cost, int[] val) {
+                      return dfs(0, h, cost, val); // @step:entry
+                  }
+                  private int dfs(int i, int remH, int[] cost, int[] val) { // @step:dfs_entry
+                      if (remH <= 0) return 0; // @step:base_satisfied
+                      if (i == cost.length) return INF; // @step:base_exhausted
+                      int notTake = dfs(i + 1, remH, cost, val); // @step:branch_not_take
+                      int take = dfs(i, remH - val[i], cost, val) + cost[i]; // @step:branch_take
+                      return Math.min(notTake, take); // @step:combine
+                  }
+              }
+          reverse:
+            title: "BuyingHay_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  private static final int INF = 1_000_000_000;
+                  public int minCost(int h, int[] cost, int[] val) {
+                      return dfs(0, h, cost, val); // @step:entry
+                  }
+                  private int dfs(int i, int remH, int[] cost, int[] val) { // @step:dfs_entry
+                      if (remH <= 0) return 0; // @step:base_satisfied
+                      if (i == cost.length) return INF; // @step:base_exhausted
+                      int notTake = dfs(i + 1, remH, cost, val); // @step:branch_not_take
+                      int take = dfs(i, remH - val[i], cost, val) + cost[i]; // @step:branch_take
+                      return Math.min(notTake, take); // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(N×H)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (二维备忘录剪枝)"
+      reverse: "阶段 2: 记忆化倒序剪枝 (自顶向下按需缓存)"
+    desc:
+      forward: "状态仅由供货商索引 i 与剩余需求 remH 唯一确定。使用 memo[i][remH] 缓存已计算结果，消灭重叠子树。"
+      reverse: "采用倒序递归备忘录，缓存 memo[i][remH] 消除重叠搜索计算。"
+    variants:
+      array_memo:
+        variantLabel: "二维矩阵缓存版"
+        title:
+          forward: "BuyingHay_Memo.java"
+          reverse: "BuyingHay_Memo_Reverse.java"
+        code:
+          forward:
+            title: "BuyingHay_Memo.java"
+            source: |
+              class Solution {
+                  private static final int INF = 1_000_000_000;
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int[][] memo = new int[cost.length][h + 1]; // @step:entry
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(0, h, cost, val, memo);
+                  }
+                  private int dfs(int i, int remH, int[] cost, int[] val, int[][] memo) { // @step:dfs_entry
+                      if (remH <= 0) return 0; // @step:base_satisfied
+                      if (i == cost.length) return INF; // @step:base_exhausted
+                      if (memo[i][remH] != -1) return memo[i][remH]; // @step:cache_hit
+                      int notTake = dfs(i + 1, remH, cost, val, memo); // @step:branch_not_take
+                      int take = dfs(i, remH - val[i], cost, val, memo) + cost[i]; // @step:branch_take
+                      int ans = Math.min(notTake, take); // @step:combine
+                      memo[i][remH] = ans; // @step:memo_store
+                      return ans;
+                  }
+              }
+          reverse:
+            title: "BuyingHay_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  private static final int INF = 1_000_000_000;
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int[][] memo = new int[cost.length][h + 1]; // @step:entry
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(0, h, cost, val, memo);
+                  }
+                  private int dfs(int i, int remH, int[] cost, int[] val, int[][] memo) { // @step:dfs_entry
+                      if (remH <= 0) return 0; // @step:base_satisfied
+                      if (i == cost.length) return INF; // @step:base_exhausted
+                      if (memo[i][remH] != -1) return memo[i][remH]; // @step:cache_hit
+                      int notTake = dfs(i + 1, remH, cost, val, memo); // @step:branch_not_take
+                      int take = dfs(i, remH - val[i], cost, val, memo) + cost[i]; // @step:branch_take
+                      int ans = Math.min(notTake, take); // @step:combine
+                      memo[i][remH] = ans; // @step:memo_store
+                      return ans;
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(N×(H+maxV))"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格二维动态规划 (容量上界扩充填表)"
+      reverse: "阶段 3: 二维 DP 状态空间逆推填表"
+    desc:
+      forward: "将完全背包容量安全扩充至 m = H + maxVal。dp[i][j] 表示前 i 个供货商凑出恰好 j 磅干草的最低花费。在 [H, m] 区间取全局极小值。"
+      reverse: "利用二维表格明确状态依赖关系，展示从终态基底反推状态演进。"
+    variants:
+      standard:
+        variantLabel: "二维 DP 状态表"
+        title:
+          forward: "BuyingHay_2D.java"
+          reverse: "BuyingHay_2D_Reverse.java"
+        code:
+          forward:
+            title: "BuyingHay_2D.java"
+            source: |
+              class Solution {
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int maxv = 0;
+                      for (int v : val) maxv = Math.max(maxv, v);
+                      int m = h + maxv; // @step:calc_bound
+                      int n = cost.length;
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init
+                      for (int[] r : dp) Arrays.fill(r, 1_000_000_000);
+                      dp[0][0] = 0; // @step:base
+                      for (int i = 1; i <= n; i++) { // @step:loop_i
+                          int c = cost[i - 1], v = val[i - 1];
+                          for (int j = 0; j <= m; j++) { // @step:loop_j
+                              dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                              if (j >= v && dp[i][j - v] != 1_000_000_000) {
+                                  dp[i][j] = Math.min(dp[i][j], dp[i][j - v] + c); // @step:transfer_take
+                              }
+                          }
+                      }
+                      int ans = 1_000_000_000;
+                      for (int j = h; j <= m; j++) ans = Math.min(ans, dp[n][j]); // @step:search_min
+                      return ans; // @step:return
+                  }
+              }
+          reverse:
+            title: "BuyingHay_2D_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int maxv = 0;
+                      for (int v : val) maxv = Math.max(maxv, v);
+                      int m = h + maxv; // @step:calc_bound
+                      int n = cost.length;
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init
+                      for (int[] r : dp) Arrays.fill(r, 1_000_000_000);
+                      dp[0][0] = 0; // @step:base
+                      for (int i = 1; i <= n; i++) { // @step:loop_i
+                          int c = cost[i - 1], v = val[i - 1];
+                          for (int j = 0; j <= m; j++) { // @step:loop_j
+                              dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                              if (j >= v && dp[i][j - v] != 1_000_000_000) {
+                                  dp[i][j] = Math.min(dp[i][j], dp[i][j - v] + c); // @step:transfer_take
+                              }
+                          }
+                      }
+                      int ans = 1_000_000_000;
+                      for (int j = h; j <= m; j++) ans = Math.min(ans, dp[n][j]); // @step:search_min
+                      return ans; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "space-optimized-1d"
+    timeBadge: "O(H+maxV) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 一维完全背包空间压缩 (O(H+maxV) 空间优化)"
+      reverse: "阶段 4: 一维完全背包空间压缩"
+    desc:
+      forward: "dp[j] 表示凑出恰好 j 磅干草的最低花费。容量正序枚举允许同一供货商无限次选购，最终在 [H, m] 区间取最小值。"
+      reverse: "空间压缩消除供货商维度，正序滚动更新。"
+    variants:
+      rolling:
+        variantLabel: "一维空间压缩版"
+        title:
+          forward: "BuyingHay_1D.java"
+          reverse: "BuyingHay_1D_Reverse.java"
+        code:
+          forward:
+            title: "BuyingHay_1D.java"
+            source: |
+              class Solution {
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int maxv = 0;
+                      for (int v : val) maxv = Math.max(maxv, v);
+                      int m = h + maxv; // @step:calc_bound
+                      int[] dp = new int[m + 1]; // @step:init
+                      Arrays.fill(dp, 1, m + 1, 1_000_000_000);
+                      for (int i = 0; i < cost.length; i++) { // @step:loop_i
+                          int c = cost[i], v = val[i];
+                          for (int j = v; j <= m; j++) { // @step:loop_j
+                              if (dp[j - v] != 1_000_000_000) {
+                                  dp[j] = Math.min(dp[j], dp[j - v] + c); // @step:transfer
+                              }
+                          }
+                      }
+                      int ans = 1_000_000_000;
+                      for (int j = h; j <= m; j++) ans = Math.min(ans, dp[j]); // @step:search_min
+                      return ans; // @step:return
+                  }
+              }
+          reverse:
+            title: "BuyingHay_1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int minCost(int h, int[] cost, int[] val) {
+                      int maxv = 0;
+                      for (int v : val) maxv = Math.max(maxv, v);
+                      int m = h + maxv; // @step:calc_bound
+                      int[] dp = new int[m + 1]; // @step:init
+                      Arrays.fill(dp, 1, m + 1, 1_000_000_000);
+                      for (int i = 0; i < cost.length; i++) { // @step:loop_i
+                          int c = cost[i], v = val[i];
+                          for (int j = v; j <= m; j++) { // @step:loop_j
+                              if (dp[j - v] != 1_000_000_000) {
+                                  dp[j] = Math.min(dp[j], dp[j - v] + c); // @step:transfer
+                              }
+                          }
+                      }
+                      int ans = 1_000_000_000;
+                      for (int j = h; j <= m; j++) ans = Math.min(ans, dp[j]); // @step:search_min
+                      return ans; // @step:return
+                  }
+              }
+
+keyPoints:
+  title: "🎯 购买足量干草 5 步法系统精讲"
+  summary: "经典允许超额的完全背包变形题。核心在于证明容量上界只需安全扩充至 H + maxVal，并在 [H, H + maxVal] 目标区间内寻找全局最小花费。"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i][j]</code>：前 <code>i</code> 个供应商凑出<strong>恰好 <code>j</code> 磅干草</strong>的最低花费。"
+      icon: "🎯"
+      badge: "恰好满足状态"
+    - label: "二、容量上界安全扩充证明"
+      desc: "设 <code>maxVal = max(val)</code>。在达到 <code>H</code> 磅前，最多在 <code>H - 1</code> 时再买一次单件最大商品达到 <code>H - 1 + maxVal</code>。因此容量只需扩充至 <code>m = H + maxVal</code> 即可涵盖所有最优解！"
+      icon: "📐"
+      badge: "m = H + maxVal"
+    - label: "三、状态转移"
+      desc: "初值置无穷大 <code>dp[0] = 0, dp[1..m] = INF</code>。正序转移 <code>dp[j] = min(dp[j], dp[j - val[i]] + cost[i])</code>。"
+      icon: "⚡"
+      badge: "求极小值"
+    - label: "四、全局答案提取"
+      desc: "遍历达标区间 <code>[H, m]</code>，提取最小值：<code>ans = min_{j in [H, m]} dp[j]</code>。"
+      icon: "🏆"
+      badge: "区间取最优"
+    - label: "五、空间压缩"
+      desc: "利用一维数组正序滚动推进，空间复杂度由 <code>O(N * (H + maxVal))</code> 骤降至 <code>O(H + maxVal)</code>。"
+      icon: "💾"
+      badge: "一维完全背包"
+
+faqList:
+  - question: "为什么不能只将背包容量设为 H，而必须扩充到 H + maxVal？"
+    answer: "因为题目要求『至少 H 磅』，超额购买不仅合法，而且经常因为大包装单价极低而比恰好凑出 H 磅更便宜！例如需求 15 磅，有 10元/8磅 和 12元/16磅，买 16 磅只需 12 元，比买两次 8 磅（20 元）省 8 元！"
+    tag: "超额更省原理"
+  - question: "为什么最终答案要在 [H, H + maxVal] 之间取最小值，而不是直接取 dp[m]？"
+    answer: "因为 dp[j] 表示的是『恰好凑出 j 磅』的最低花费。满足题意『至少 H 磅』的合法重量有许多种（H, H+1, ..., m），最优解可能落在该区间内的任何一个重量上，因此必须在达标区间内全面检索最小值。"
+    tag: "解空间区间检索"

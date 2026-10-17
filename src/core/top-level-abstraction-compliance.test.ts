@@ -115,6 +115,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'unbounded-knapsack-standard',
   'regex-matching',
   'wildcard-matching',
+  'buying-hay-min-cost',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

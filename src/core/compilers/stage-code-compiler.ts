@@ -138,6 +138,12 @@ export class StageCodeCompiler {
       case 'wildcard-matching-problem':
       case 'leetcode-44':
         return this.getWildcardMatchingTemplate(stage);
+      case 'buying-hay-min-cost':
+      case 'class074-code06':
+      case 'buying-hay-min-cost-074':
+      case 'buying-hay':
+      case 'luogu-p2918':
+        return this.getBuyingHayMinCostTemplate(stage);
       default:
         return null;
     }
@@ -2113,6 +2119,89 @@ export class StageCodeCompiler {
             next = cur; // @step:roll
         }
         return next[0]; // @step:return
+    }
+}`;
+  }
+
+  private static getBuyingHayMinCostTemplate(stage: string): string {
+    if (stage === 'stage-1') {
+      return `class Solution {
+    private static final int INF = 1_000_000_000;
+    public int minCost(int h, int[] cost, int[] val) {
+        return dfs(0, h, cost, val); // @step:entry
+    }
+    private int dfs(int i, int remH, int[] cost, int[] val) { // @step:dfs_entry
+        if (remH <= 0) return 0; // @step:base_satisfied
+        if (i == cost.length) return INF; // @step:base_exhausted
+        int notTake = dfs(i + 1, remH, cost, val); // @step:branch_not_take
+        int take = dfs(i, remH - val[i], cost, val) + cost[i]; // @step:branch_take
+        return Math.min(notTake, take); // @step:combine
+    }
+}`;
+    }
+    if (stage === 'stage-2') {
+      return `class Solution {
+    private static final int INF = 1_000_000_000;
+    public int minCost(int h, int[] cost, int[] val) {
+        int[][] memo = new int[cost.length][h + 1]; // @step:entry
+        for (int[] row : memo) Arrays.fill(row, -1);
+        return dfs(0, h, cost, val, memo);
+    }
+    private int dfs(int i, int remH, int[] cost, int[] val, int[][] memo) { // @step:dfs_entry
+        if (remH <= 0) return 0; // @step:base_satisfied
+        if (i == cost.length) return INF; // @step:base_exhausted
+        if (memo[i][remH] != -1) return memo[i][remH]; // @step:cache_hit
+        int notTake = dfs(i + 1, remH, cost, val, memo); // @step:branch_not_take
+        int take = dfs(i, remH - val[i], cost, val, memo) + cost[i]; // @step:branch_take
+        int ans = Math.min(notTake, take); // @step:combine
+        memo[i][remH] = ans; // @step:memo_store
+        return ans;
+    }
+}`;
+    }
+    if (stage === 'stage-3') {
+      return `class Solution {
+    public int minCost(int h, int[] cost, int[] val) {
+        int maxv = 0;
+        for (int v : val) maxv = Math.max(maxv, v);
+        int m = h + maxv; // @step:calc_bound
+        int n = cost.length;
+        int[][] dp = new int[n + 1][m + 1]; // @step:init
+        for (int[] r : dp) Arrays.fill(r, 1_000_000_000);
+        dp[0][0] = 0; // @step:base
+        for (int i = 1; i <= n; i++) { // @step:loop_i
+            int c = cost[i - 1], v = val[i - 1];
+            for (int j = 0; j <= m; j++) { // @step:loop_j
+                dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                if (j >= v && dp[i][j - v] != 1_000_000_000) {
+                    dp[i][j] = Math.min(dp[i][j], dp[i][j - v] + c); // @step:transfer_take
+                }
+            }
+        }
+        int ans = 1_000_000_000;
+        for (int j = h; j <= m; j++) ans = Math.min(ans, dp[n][j]); // @step:search_min
+        return ans; // @step:return
+    }
+}`;
+    }
+    return `class Solution {
+    public int minCost(int h, int[] cost, int[] val) {
+        int maxv = 0;
+        for (int v : val) maxv = Math.max(maxv, v);
+        int m = h + maxv; // @step:calc_bound
+        int[] dp = new int[m + 1]; // @step:init
+        Arrays.fill(dp, 1, m + 1, 1_000_000_000);
+        for (int i = 0; i < cost.length; i++) { // @step:loop_i
+            int c = cost[i], v = val[i];
+            for (int j = v; j <= m; j++) { // @step:loop_j
+                if (dp[j - v] != 1_000_000_000) {
+                    dp[j] = Math.min(dp[j], dp[j - v] + c); // @step:transfer
+                }
+            }
+        }
+        int ans = 1_000_000_000;
+        for (int j = h; j <= m; j++) ans = Math.min(ans, dp[j]); // @step:search_min
+        return ans; // @step:return
     }
 }`;
   }

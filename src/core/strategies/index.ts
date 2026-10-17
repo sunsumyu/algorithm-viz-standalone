@@ -19,6 +19,7 @@ import { LinearStepMatrixCompiler } from './linear-step-matrix-compiler';
 import { PartitionDPStrategy, PartitionIntegerBreakStrategy } from './partition-integer-break-strategy';
 
 import { KnapsackFamilyStrategy } from './knapsack-family-strategy';
+import { KnapsackBuyingHayStrategy } from './knapsack-buying-hay-strategy';
 import { HouseRobberFamilyStrategy, HouseRobberStrategy } from './house-robber-family-strategy';
 import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
@@ -143,6 +144,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('coins-from-piles'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('partitioned-knapsack-standard'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('unbounded-knapsack-standard'));
+  AlgorithmStrategyRegistry.register(new KnapsackBuyingHayStrategy('buying-hay-min-cost'));
 
   // House Robber Family
   AlgorithmStrategyRegistry.register(new HouseRobberStrategy('house-robber'));
@@ -244,6 +246,7 @@ export {
   KnapsackTargetSumStrategy,
   KnapsackCombinationSum4Strategy,
   KnapsackFamilyStrategy,
+  KnapsackBuyingHayStrategy,
   HouseRobberFamilyStrategy,
   HouseRobberStrategy,
   StockStrategy,

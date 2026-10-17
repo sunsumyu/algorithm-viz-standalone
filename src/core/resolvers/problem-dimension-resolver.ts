@@ -53,6 +53,11 @@ export class ProblemDimensionResolver {
     'unbounded-knapsack-074',
     'class074-code03',
     'luogu-p1616',
+    'buying-hay-min-cost',
+    'buying-hay',
+    'buying-hay-min-cost-074',
+    'class074-code06',
+    'luogu-p2918',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -274,7 +279,28 @@ export class ProblemDimensionResolver {
     }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
-    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined)) {
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {
+      const isBuyingHay =
+        modelId === 'buying-hay-min-cost' ||
+        modelId === 'class074-code06' ||
+        modelId === 'buying-hay-min-cost-074' ||
+        modelId === 'buying-hay' ||
+        modelId === 'luogu-p2918' ||
+        (params.h !== undefined && (params.cost !== undefined || params.costs !== undefined));
+
+      if (isBuyingHay) {
+        const h = Number(params['input-h'] ?? params.h ?? 15);
+        const costArr = params.costs ? this.toArray(params.costs) : (params.cost ? this.toArray(params.cost) : [10, 12]);
+        const valArr = params.vals ? this.toArray(params.vals) : (params.val ? this.toArray(params.val) : [8, 16]);
+        const maxVal = valArr.length > 0 ? Math.max(...valArr) : 0;
+        const mCap = h + maxVal;
+        const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
+        m = isStage4 ? 1 : costArr.length + 1;
+        n = mCap + 1;
+        category = 'knapsack';
+        return { m, n, is1D: isStage4, category };
+      }
+
       if (modelId.includes('partitioned') && params.items !== undefined) {
         const rawItems = typeof params.items === 'string' ? JSON.parse(params.items) : params.items;
         const groups = new Set((Array.isArray(rawItems) ? rawItems : []).map((it: any) => it[2]));

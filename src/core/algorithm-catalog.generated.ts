@@ -1673,7 +1673,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "buying-hay-min-cost",
     name: "购买足量干草的最小花费 (洛谷 P2918)",
-    viewId: "algo-buying-hay-min-cost-view",
+    viewId: "buying-hay-min-cost",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code06：洛谷 P2918 购买干草，至少 H 磅允许超额，容量上界扩充至 H + maxVal 的完全背包求极小值",
     icon: "🌾",
