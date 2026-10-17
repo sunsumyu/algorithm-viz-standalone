@@ -126,6 +126,12 @@ export class StageCodeCompiler {
         return this.getCountDigitOneTemplate(stage);
       case 'non-negative-consecutive-ones':
         return this.getNonNegativeConsecutiveOnesTemplate(stage);
+      case 'regex-matching':
+      case 'class074-code04':
+      case 'regex-matching-074':
+      case 'regular-expression-matching':
+      case 'leetcode-10':
+        return this.getRegexMatchingTemplate(stage);
       default:
         return null;
     }
@@ -1925,6 +1931,94 @@ export class StageCodeCompiler {
         }
         if (!isLimit) memo[idx][pre] = ans; // @step:memo_save
         return ans; // @step:return
+    }
+}`;
+  }
+
+  private static getRegexMatchingTemplate(stage: string): string {
+    if (stage === 'stage-1') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+    }
+    private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+        if (j == p.length) return i == s.length; // @step:boundary
+        boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+        if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+            return dfs(s, p, i, j + 2) // @step:branch_zero
+                || (first && dfs(s, p, i + 1, j)); // @step:branch_take
+        }
+        return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+    }
+}`;
+    }
+    if (stage === 'stage-2') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        char[] sArr = s.toCharArray(), pArr = p.toCharArray();
+        int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
+        return dfs(sArr, pArr, 0, 0, memo);
+    }
+    private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+        if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
+        if (j == p.length) { // @step:boundary
+            memo[i][j] = (i == s.length) ? 2 : 1;
+            return memo[i][j] == 2;
+        }
+        boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+        boolean ans;
+        if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+            ans = dfs(s, p, i, j + 2, memo) || (first && dfs(s, p, i + 1, j, memo)); // @step:star_eval
+        } else {
+            ans = first && dfs(s, p, i + 1, j + 1, memo); // @step:single_eval
+        }
+        memo[i][j] = ans ? 2 : 1; // @step:memo_store
+        return ans;
+    }
+}`;
+    }
+    if (stage === 'stage-3') {
+      return `class Solution {
+    public boolean isMatch(String s, String p) {
+        int n = s.length(), m = p.length();
+        boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
+        dp[n][m] = true; // @step:base
+        for (int j = m - 1; j >= 0; j--) { // @step:base_row
+            dp[n][j] = j + 1 < m && p.charAt(j + 1) == '*' && dp[n][j + 2];
+        }
+        for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+            for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                    dp[i][j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j + 1]; // @step:single_match
+                } else {
+                    dp[i][j] = dp[i][j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j]); // @step:star_slope
+                }
+            }
+        }
+        return dp[0][0]; // @step:return
+    }
+}`;
+    }
+    return `class Solution {
+    public boolean isMatch(String s, String p) {
+        int n = s.length(), m = p.length();
+        boolean[] next = new boolean[m + 1]; // @step:init
+        next[m] = true; // @step:base
+        for (int j = m - 1; j >= 0; j--) { // @step:base_row
+            next[j] = j + 1 < m && p.charAt(j + 1) == '*' && next[j + 2];
+        }
+        for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+            boolean[] cur = new boolean[m + 1];
+            for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                    cur[j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j + 1]; // @step:single_match
+                } else {
+                    cur[j] = cur[j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j]); // @step:star_slope
+                }
+            }
+            next = cur; // @step:roll
+        }
+        return next[0]; // @step:return
     }
 }`;
   }

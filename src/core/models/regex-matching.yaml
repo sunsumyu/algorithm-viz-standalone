@@ -1,0 +1,364 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 正则表达式匹配 (LeetCode 10) - 左程云算法通关课 Class 074 Code04
+# 通配星号向完全背包模型的代数恒等变形与斜率优化
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: regex-matching
+name: "正则表达式匹配"
+nameEn: "Regular Expression Matching"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🔤"
+difficulty: 3
+levelOrder: 87
+learningGoal: "深刻掌握通配星号向完全背包模型的代数恒等变形、自底向上填表与斜率优化消除循环"
+description: "左程云算法通关课 Class 074 Code04：LeetCode 10 正则匹配，星号 * 任意次匹配转化为完全背包斜率优化 dp[i][j] = dp[i][j+2] || (match && dp[i+1][j])"
+defaultParams:
+  s: "aab"
+  p: "c*a*b"
+
+problem:
+  leetcodeId: 10
+  title: "正则表达式匹配 (LeetCode 10 / Class 074 Code04)"
+  difficulty: "困难"
+  tags: ["动态规划", "双序列DP", "完全背包", "斜率优化"]
+  description: "给你字符串 <code>s</code> 和字符规律 <code>p</code>。请你实现一个支持 <code>'.'</code> 和 <code>'*'</code> 的正则表达式匹配：<br/><ul><li><code>'.'</code> 匹配任意单个字符；</li><li><code>'*'</code> 匹配零个或多个前面的那一个元素。</li></ul>所谓匹配，是要涵盖<strong>整个字符串 <code>s</code></strong> 的，而不是部分字符串。"
+  examples:
+    - input: 's = "aab", p = "c*a*b"'
+      output: "true"
+      explanation: "c* 可以匹配 0 次 'c'（消去），a* 匹配两次 'a'，b 匹配 'b'，最终完全匹配成功。"
+    - input: 's = "ab", p = ".*"'
+      output: "true"
+      explanation: ".* 表示可以匹配零个或任意多个任意字符，能匹配 'ab'。"
+    - input: 's = "mississippi", p = "mis*is*p*."'
+      output: "false"
+      explanation: "无法完全涵盖匹配所有字符。"
+  constraints:
+    - "1 <= s.length <= 20"
+    - "1 <= p.length <= 20"
+    - "s 只包含小写英文字母"
+    - "p 只包含小写英文字母，以及字符 . 和 *"
+    - "保证每次出现字符 * 时，前面都匹配到有效的字符"
+  leetcodeUrl: "https://leetcode.cn/problems/regular-expression-matching/"
+
+directions:
+  forward:
+    label: "后缀依赖正推 (从 (0,0) 向后匹配)"
+    branches:
+      - name: "star_zero"
+        label: "* 匹配 0 次"
+        formula: "dp[i][j+2]"
+      - name: "star_take"
+        label: "* 匹配 1 次并保留 *"
+        formula: "first && dp[i+1][j]"
+      - name: "single_match"
+        label: "单字符精确/通配点匹配"
+        formula: "first && dp[i+1][j+1]"
+    combineFormula: "dp[i][j+2] || (first && dp[i+1][j])"
+  reverse:
+    label: "逆推倒序寻源 (终点逆向推导)"
+    description: "从目标匹配状态向子问题基底反推"
+    startFormula: "dp[0][0]"
+    target: "dp[n][m]"
+    branches:
+      - name: "trace_star"
+        label: "* 规则逆向溯源"
+        formula: "dp[i][j+2] || (first && dp[i+1][j])"
+      - name: "trace_single"
+        label: "单字符逆向溯源"
+        formula: "first && dp[i+1][j+1]"
+    combineFormula: "逆向状态依赖"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ⁺ᵐ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归分支展开 (星号完全背包决策树)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "对于模式串中的每个字符，若下一字符为 '*'，则枚举匹配 0 次或消耗首字符后继续保持星号规则，展开为深层决策树。"
+      reverse: "从终点目标状态向前倒推，展示朴素递归中出现的严重重叠子问题与指数级爆炸分支。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "RegexMatching_Recursive.java"
+          reverse: "RegexMatching_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "RegexMatching_Recursive.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+                  }
+                  private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                      if (j == p.length) return i == s.length; // @step:boundary
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          return dfs(s, p, i, j + 2) // @step:branch_zero
+                              || (first && dfs(s, p, i + 1, j)); // @step:branch_take
+                      }
+                      return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+                  }
+              }
+          reverse:
+            title: "RegexMatching_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+                  }
+                  private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                      if (j == p.length) return i == s.length; // @step:boundary
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          return dfs(s, p, i, j + 2) // @step:branch_zero
+                              || (first && dfs(s, p, i + 1, j)); // @step:branch_take
+                      }
+                      return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(N×M)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索 (二维备忘录剪枝)"
+      reverse: "阶段 2: 记忆化倒序剪枝 (自顶向下按需缓存)"
+    desc:
+      forward: "状态仅由文本串指针 i 与模式串指针 j 唯一确定。使用 memo[i][j] 缓存已计算结果，消灭重叠子树。"
+      reverse: "采用倒序递归备忘录，缓存 memo[i][j] 消除重叠搜索计算。"
+    variants:
+      array_memo:
+        variantLabel: "二维矩阵缓存版"
+        title:
+          forward: "RegexMatching_Memo.java"
+          reverse: "RegexMatching_Memo_Reverse.java"
+        code:
+          forward:
+            title: "RegexMatching_Memo.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      char[] sArr = s.toCharArray(), pArr = p.toCharArray();
+                      int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
+                      return dfs(sArr, pArr, 0, 0, memo);
+                  }
+                  private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+                      if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
+                      if (j == p.length) { // @step:boundary
+                          memo[i][j] = (i == s.length) ? 2 : 1;
+                          return memo[i][j] == 2;
+                      }
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+                      boolean ans;
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          ans = dfs(s, p, i, j + 2, memo) || (first && dfs(s, p, i + 1, j, memo)); // @step:star_eval
+                      } else {
+                          ans = first && dfs(s, p, i + 1, j + 1, memo); // @step:single_eval
+                      }
+                      memo[i][j] = ans ? 2 : 1; // @step:memo_store
+                      return ans;
+                  }
+              }
+          reverse:
+            title: "RegexMatching_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      char[] sArr = s.toCharArray(), pArr = p.toCharArray();
+                      int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
+                      return dfs(sArr, pArr, 0, 0, memo);
+                  }
+                  private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+                      if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
+                      if (j == p.length) { // @step:boundary
+                          memo[i][j] = (i == s.length) ? 2 : 1;
+                          return memo[i][j] == 2;
+                      }
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+                      boolean ans;
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          ans = dfs(s, p, i, j + 2, memo) || (first && dfs(s, p, i + 1, j, memo)); // @step:star_eval
+                      } else {
+                          ans = first && dfs(s, p, i + 1, j + 1, memo); // @step:single_eval
+                      }
+                      memo[i][j] = ans ? 2 : 1; // @step:memo_store
+                      return ans;
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(N×M)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格位置依赖二维 DP (自底向上填表)"
+      reverse: "阶段 3: 二维 DP 状态空间逆推填表"
+    desc:
+      forward: "dp[i][j] 表示 s[i...] 与 p[j...] 是否匹配。从边界 dp[n][m] 逆序自底向上推导至答案 dp[0][0]。"
+      reverse: "利用二维表格明确状态依赖关系，展示从终态基底反推状态演进。"
+    variants:
+      standard:
+        variantLabel: "二维 DP 状态表"
+        title:
+          forward: "RegexMatching_2D.java"
+          reverse: "RegexMatching_2D_Reverse.java"
+        code:
+          forward:
+            title: "RegexMatching_2D.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      int n = s.length(), m = p.length();
+                      boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
+                      dp[n][m] = true; // @step:base
+                      for (int j = m - 1; j >= 0; j--) { // @step:base_row
+                          dp[n][j] = j + 1 < m && p.charAt(j + 1) == '*' && dp[n][j + 2];
+                      }
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                                  dp[i][j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j + 1]; // @step:single_match
+                              } else {
+                                  dp[i][j] = dp[i][j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j]); // @step:star_slope
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+          reverse:
+            title: "RegexMatching_2D_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      int n = s.length(), m = p.length();
+                      boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
+                      dp[n][m] = true; // @step:base
+                      for (int j = m - 1; j >= 0; j--) { // @step:base_row
+                          dp[n][j] = j + 1 < m && p.charAt(j + 1) == '*' && dp[n][j + 2];
+                      }
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                                  dp[i][j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j + 1]; // @step:single_match
+                              } else {
+                                  dp[i][j] = dp[i][j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && dp[i + 1][j]); // @step:star_slope
+                              }
+                          }
+                      }
+                      return dp[0][0]; // @step:return
+                  }
+              }
+
+  stage-4:
+    shortName: "滚动优化"
+    type: "space-optimized-1d"
+    timeBadge: "O(M) ★"
+    badgeBg: "bg-amber-100 text-amber-700"
+    name:
+      forward: "阶段 4: 两行滚动数组空间压缩 (O(M) 空间优化)"
+      reverse: "阶段 4: 两行滚动数组空间压缩"
+    desc:
+      forward: "dp[i][j] 仅依赖当前行 i 与下一行 i+1，使用 cur 和 next 两个一维向量滚动更新，空间从 O(NM) 骤降至 O(M)。"
+      reverse: "空间压缩消除额外行维度，只维护当前行与后继行。"
+    variants:
+      rolling:
+        variantLabel: "两行滚动优化版"
+        title:
+          forward: "RegexMatching_Rolling.java"
+          reverse: "RegexMatching_Rolling_Reverse.java"
+        code:
+          forward:
+            title: "RegexMatching_Rolling.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      int n = s.length(), m = p.length();
+                      boolean[] next = new boolean[m + 1]; // @step:init
+                      next[m] = true; // @step:base
+                      for (int j = m - 1; j >= 0; j--) { // @step:base_row
+                          next[j] = j + 1 < m && p.charAt(j + 1) == '*' && next[j + 2];
+                      }
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          boolean[] cur = new boolean[m + 1];
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                                  cur[j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j + 1]; // @step:single_match
+                              } else {
+                                  cur[j] = cur[j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j]); // @step:star_slope
+                              }
+                          }
+                          next = cur; // @step:roll
+                      }
+                      return next[0]; // @step:return
+                  }
+              }
+          reverse:
+            title: "RegexMatching_Rolling_Reverse.java"
+            source: |
+              class Solution {
+                  public boolean isMatch(String s, String p) {
+                      int n = s.length(), m = p.length();
+                      boolean[] next = new boolean[m + 1]; // @step:init
+                      next[m] = true; // @step:base
+                      for (int j = m - 1; j >= 0; j--) { // @step:base_row
+                          next[j] = j + 1 < m && p.charAt(j + 1) == '*' && next[j + 2];
+                      }
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_i
+                          boolean[] cur = new boolean[m + 1];
+                          for (int j = m - 1; j >= 0; j--) { // @step:loop_j
+                              if (j + 1 == m || p.charAt(j + 1) != '*') { // @step:check_star
+                                  cur[j] = (s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j + 1]; // @step:single_match
+                              } else {
+                                  cur[j] = cur[j + 2] || ((s.charAt(i) == p.charAt(j) || p.charAt(j) == '.') && next[j]); // @step:star_slope
+                              }
+                          }
+                          next = cur; // @step:roll
+                      }
+                      return next[0]; // @step:return
+                  }
+              }
+
+keyPoints:
+  title: "🎯 正则表达式匹配 5 步法系统精讲"
+  summary: "经典困难级字符串 DP。核心在于识别模式串中的星号 '*' 具有完全背包的无限复用性质，并通过斜率优化将 O(N) 的穷举化简为 O(1) 的邻近转移。"
+  steps:
+    - label: "一、状态定义"
+      desc: "<code>dp[i][j]</code>：文本串后缀 <code>s[i...]</code> 是否能够被模式串后缀 <code>p[j...]</code> 完全匹配。"
+      icon: "🎯"
+      badge: "后缀匹配状态"
+    - label: "二、分类讨论"
+      desc: "考察 <code>p[j+1]</code> 是否为 <code>'*'</code>：若非星号，则必须单个匹配且转移至 <code>dp[i+1][j+1]</code>；若为星号，则进入完全背包分支。"
+      icon: "🔀"
+      badge: "星号分界"
+    - label: "三、星号完全背包斜率优化"
+      desc: "<code>dp[i][j] = dp[i][j+2] || (firstMatch && dp[i+1][j])</code>。第一项让 * 匹配 0 次，第二项让 * 匹配至少 1 次且保留星号规则！"
+      icon: "⚡"
+      badge: "O(1) 转移"
+    - label: "四、边界基底"
+      desc: "双空串匹配成功 <code>dp[n][m] = true</code>；文本串为空但模式串为 <code>x*y*z*</code> 时可通过星号取 0 次消解为空。"
+      icon: "🎬"
+      badge: "星号消解空串"
+    - label: "五、空间压缩"
+      desc: "由于状态只依赖当前行与下一行，可利用两个长为 <code>M+1</code> 的向量进行滚动压缩，空间复杂度优化为 <code>O(M)</code>。"
+      icon: "💾"
+      badge: "两行滚动"
+
+faqList:
+  - question: "为什么通配星号 '*' 的转移是 dp[i+1][j] 而不是 dp[i+1][j+2]？"
+    answer: "如果转移至 dp[i+1][j+2]，意味着星号只匹配了恰好 1 次便结束了；而转移至 dp[i+1][j]，文本串虽然消耗了 1 个字符（到 i+1），但模式串仍然停留在 j 处，意味着星号规则继续存在，后续还可以继续匹配更多次相同的字符，这正是完全背包同层累加的本质！"
+    tag: "完全背包复用机制"
+  - question: "为什么本题推荐从后向前（自底向上）而不是从前向后匹配？"
+    answer: "因为模式串中的 '*' 是后置修饰符（修饰其前一个字符），从前往后看字符时还不知道下一个是不是 '*'，处理起来较为繁琐；而从后向前看，或者以后缀作为子问题，能够清晰地先检查 j+1 是否为 '*'，逻辑更加对称自然。"
+    tag: "遍历次序选择"

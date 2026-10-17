@@ -240,7 +240,9 @@ export class StateSpacePresenter {
       : ((step as any).s1 || (step as any).word1 || (step as any).text1);
     let tStr: string | undefined = typeof (step as any).t === 'string'
       ? (step as any).t
-      : ((step as any).s2 || (step as any).word2 || (step as any).text2);
+      : (typeof (step as any).p === 'string'
+          ? (step as any).p
+          : ((step as any).s2 || (step as any).word2 || (step as any).text2));
 
     if (!sStr || !tStr) {
       if (AlgorithmModelRepository.hasModel(modelId)) {
@@ -256,11 +258,13 @@ export class StateSpacePresenter {
                     : params.text1));
           tStr = typeof params.t === 'string'
             ? params.t
-            : (typeof params.s2 === 'string'
-                ? params.s2
-                : (typeof params.word2 === 'string'
-                    ? params.word2
-                    : params.text2));
+            : (typeof params.p === 'string'
+                ? params.p
+                : (typeof params.s2 === 'string'
+                    ? params.s2
+                    : (typeof params.word2 === 'string'
+                        ? params.word2
+                        : params.text2)));
         }
       }
     }

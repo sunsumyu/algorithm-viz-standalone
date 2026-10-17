@@ -185,6 +185,7 @@ export class ProblemDimensionResolver {
       (params.text1 !== undefined && params.text2 !== undefined) ||
       (params.word1 !== undefined && params.word2 !== undefined) ||
       (params.s !== undefined && params.t !== undefined) ||
+      (params.s !== undefined && params.p !== undefined) ||
       (params.s1 !== undefined && params.s2 !== undefined) ||
       (params.g !== undefined && params.s !== undefined)
     );
@@ -197,7 +198,7 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: false, category };
     }
 
-    // 2. 双序列匹配类型 (nums1/nums2, text1/text2, word1/word2, s/t, s1/s2, g/s)
+    // 2. 双序列匹配类型 (nums1/nums2, text1/text2, word1/word2, s/t, s/p, s1/s2, g/s)
     if (params.nums1 !== undefined && params.nums2 !== undefined) {
       const n1 = this.toArray(params.nums1);
       const n2 = this.toArray(params.nums2);
@@ -224,6 +225,13 @@ export class ProblemDimensionResolver {
     if (params.s !== undefined && params.t !== undefined) {
       m = String(params.s).length + 1;
       n = String(params.t).length + 1;
+      category = '2d-sequence';
+      return { m, n, is1D: false, category };
+    }
+
+    if (params.s !== undefined && params.p !== undefined) {
+      m = String(params.s).length + 1;
+      n = String(params.p).length + 1;
       category = '2d-sequence';
       return { m, n, is1D: false, category };
     }

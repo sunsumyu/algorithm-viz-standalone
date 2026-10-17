@@ -1649,7 +1649,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "regex-matching",
     name: "正则表达式匹配 (LeetCode 10)",
-    viewId: "algo-regex-matching-view",
+    viewId: "regex-matching",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code04：LeetCode 10 正则匹配，星号 * 任意次匹配转化为完全背包斜率优化 dp[i][j] = dp[i][j+2] || (match && dp[i+1][j])",
     icon: "🔤",

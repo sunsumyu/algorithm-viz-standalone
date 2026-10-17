@@ -106,6 +106,7 @@ import dungeonGameReverseDpModel from './models/dungeon-game-reverse-dp.yaml';
 import minCostTicketsModel from './models/min-cost-tickets.yaml';
 import coinsFromPilesModel from './models/coins-from-piles.yaml';
 import partitionedKnapsackModel from './models/partitioned-knapsack-standard.yaml';
+import regexMatchingModel from './models/regex-matching.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -185,6 +186,11 @@ export class AlgorithmModelRepository {
     ['partitioned-knapsack-074', partitionedKnapsackModel as IYamlAlgorithmModel],
     ['class074-code01', partitionedKnapsackModel as IYamlAlgorithmModel],
     ['luogu-p1757', partitionedKnapsackModel as IYamlAlgorithmModel],
+    ['regex-matching', regexMatchingModel as IYamlAlgorithmModel],
+    ['class074-code04', regexMatchingModel as IYamlAlgorithmModel],
+    ['regex-matching-074', regexMatchingModel as IYamlAlgorithmModel],
+    ['regular-expression-matching', regexMatchingModel as IYamlAlgorithmModel],
+    ['leetcode-10', regexMatchingModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],
