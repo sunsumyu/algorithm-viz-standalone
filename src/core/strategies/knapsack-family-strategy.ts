@@ -14,7 +14,8 @@ export type KnapsackFamilyModelId =
   | 'ones-and-zeroes'
   | 'word-break'
   | 'multiple-knapsack'
-  | 'profitable-schemes';
+  | 'profitable-schemes'
+  | 'coins-from-piles';
 
 /**
  * 背包 DP 扩展家族多态策略 (KnapsackFamilyStrategy)
@@ -33,7 +34,14 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
       (this.modelId === 'perfect-squares' && (modelId === 'num-squares' || modelId === 'perfect_squares')) ||
       (this.modelId === 'ones-and-zeroes' && modelId === 'ones-zeros') ||
       (this.modelId === 'word-break' && modelId === 'word_break') ||
-      (this.modelId === 'multiple-knapsack' && modelId === 'bounded-knapsack')
+      (this.modelId === 'multiple-knapsack' && modelId === 'bounded-knapsack') ||
+      (this.modelId === 'coins-from-piles' && (
+        modelId === 'coins-from-piles' ||
+        modelId === 'coins-from-piles-074' ||
+        modelId === 'class074-code02' ||
+        modelId === 'maximum-value-of-k-coins-from-piles' ||
+        modelId === 'leetcode-2218'
+      ))
     );
   }
 
@@ -59,6 +67,8 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
         return this.compileMultipleKnapsack(model, stage, Boolean(isMemo), anchorMap);
       case 'profitable-schemes':
         return this.compileProfitableSchemes(model, stage, Boolean(isMemo), anchorMap);
+      case 'coins-from-piles':
+        return this.compileCoinsFromPiles(model, params);
       default:
         return [];
     }
@@ -2018,4 +2028,806 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
 
     return steps;
   }
+  // =========================================================================
+  // 10. 从栈中取出K个硬币的最大面值和 (Maximum Value of K Coins From Piles, LC 2218)
+  // =========================================================================
+  private compileCoinsFromPiles(
+    model: IYamlAlgorithmModel,
+    params: StageExecutionParams
+  ): UniversalStep[] {
+    const defaultParams = model.defaultParams as any;
+    let piles: number[][] = [[1, 100, 3], [7, 8, 9]];
+    const rawPiles = (params as any)?.piles ?? defaultParams?.piles;
+    if (Array.isArray(rawPiles)) {
+      piles = rawPiles;
+    } else if (typeof rawPiles === 'string') {
+      try {
+        piles = JSON.parse(rawPiles);
+      } catch {
+        piles = [[1, 100, 3], [7, 8, 9]];
+      }
+    }
+
+    const rawK = (params as any)?.k ?? defaultParams?.k ?? 2;
+    const k = Math.max(0, Number(rawK));
+
+    return compileCoinsFromPilesSteps(
+      piles,
+      k,
+      params.stage,
+      Boolean(params.isMemo),
+      params.anchorMap,
+      params.direction === 'reverse' ? 'reverse' : 'forward'
+    );
+  }
+}
+
+
+/**
+ * 从栈中取出K个硬币的最大面值和 (LeetCode 2218 / Class 074 Code02)
+ * 核心状态推演编译器 (CoinsFromPilesCompiler)
+ * 职责：编译生成四阶段全生命周期 UniversalStep 序列，杜绝伪绿灯与跳步。
+ */
+export function compileCoinsFromPilesSteps(
+  piles: number[][],
+  k: number,
+  stage: number = 3,
+  isMemo: boolean = false,
+  anchorMap?: Record<string, number>,
+  direction?: 'forward' | 'reverse' | string
+): UniversalStep[] {
+  const isReverse = direction === 'reverse';
+  const stageNum = typeof stage === 'number' ? stage : 3;
+
+  if (stageNum === 1) {
+    return compileStage1Steps(piles, k, anchorMap, isReverse);
+  } else if (stageNum === 2) {
+    return compileStage2Steps(piles, k, anchorMap, isReverse);
+  } else if (stageNum === 3) {
+    return compileStage3Steps(piles, k, anchorMap, isReverse);
+  } else {
+    return compileStage4Steps(piles, k, anchorMap, isReverse);
+  }
+}
+
+// ============================================================================
+// 阶段 1: 暴力递归
+// ============================================================================
+function compileStage1Steps(
+  piles: number[][],
+  k: number,
+  anchors?: Record<string, number>,
+  isReverse: boolean = false
+): UniversalStep[] {
+  const steps: UniversalStep[] = [];
+  const n = piles.length;
+  const lineEntry = anchors?.entry || 3;
+  const lineDfsEntry = anchors?.dfs_entry || 5;
+  const lineBoundary = anchors?.boundary || 6;
+  const lineBranch0 = anchors?.branch_not_take || 7;
+  const lineLoopCoins = anchors?.loop_coins || 10;
+  const lineBranchTake = anchors?.branch_take || 12;
+  const lineCombine = anchors?.combine || 14;
+
+  let nodeCounter = 1;
+  const rootNode: UniversalTreeNode = {
+    id: `node-${nodeCounter}`,
+    r: isReverse ? n - 1 : 0,
+    c: k,
+    val: isReverse ? `dfs(${n - 1},${k})` : `dfs(0,${k})`,
+    status: 'current',
+    children: []
+  };
+
+  const emptyGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(k + 1).fill(null));
+  const activeStack: string[] = [];
+
+  function pushStep(data: Partial<UniversalStep>) {
+    steps.push({
+      stage: 1,
+      grid: JSON.parse(JSON.stringify(emptyGrid)),
+      activeStack: [...activeStack],
+      treeRoot: cloneTree(rootNode),
+      decision: data.decision || '递归分支探索',
+      log: data.log || '| 探索',
+      msg: data.msg || data.log || '',
+      line: data.line || lineDfsEntry,
+      ...data
+    });
+  }
+
+  pushStep({
+    type: 'entry',
+    line: lineEntry,
+    activeNodeId: rootNode.id,
+    tag: `启动递归 dfs(${isReverse ? n - 1 : 0}, ${k})`,
+    log: `| 🚀 启动暴力递归：总容量 K=${k}，硬币栈总数 N=${n}，方向=${isReverse ? '倒序' : '正序'}`,
+    msg: `启动硬币栈挑选递归：从 ${isReverse ? '末尾栈' : '首栈'} 开始探索，总容量限制 <code>K = ${k}</code>。`,
+    decision: '启动主函数'
+  });
+
+  function dfs(i: number, remK: number, parentNode: UniversalTreeNode, depth: number): number {
+    if (steps.length > 300) return 0;
+    const callLabel = `dfs(${i},${remK})`;
+    activeStack.push(callLabel);
+
+    pushStep({
+      type: 'dfs-entry',
+      line: lineDfsEntry,
+      i: Math.min(Math.max(0, i), n - 1),
+      j: remK,
+      activeNodeId: parentNode.id,
+      tag: `进入帧 ${callLabel}`,
+      log: `| 📥 进入递归帧 ${callLabel}，剩余容量 remK=${remK}`,
+      msg: `进入递归函数帧：当前考察硬币栈 <code>#${i}</code>，剩余待提取容量 <code>remK = ${remK}</code>。`,
+      decision: `考察栈 #${i}`
+    });
+
+    const isBase = isReverse ? (i < 0 || remK === 0) : (i === n || remK === 0);
+    if (isBase) {
+      parentNode.status = 'base';
+      parentNode.tag = '基底: 0';
+      pushStep({
+        type: 'boundary',
+        line: lineBoundary,
+        i: Math.min(Math.max(0, i), n - 1),
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: '命中基底返回 0',
+        log: `| 🎯 边界命中: ${remK === 0 ? '容量扣减完毕' : '栈已考察完毕'}，return 0`,
+        msg: `边界条件命中：${remK === 0 ? '剩余容量已精确扣减为 0' : '所有硬币栈已遍历完毕'}，不可再抽取硬币，返回 <strong>0</strong>。`,
+        decision: '基底返回 0'
+      });
+      activeStack.pop();
+      return 0;
+    }
+
+    // 分支 0: 拿 0 枚
+    const nextI = isReverse ? i - 1 : i + 1;
+    const child0: UniversalTreeNode = {
+      id: `node-${++nodeCounter}`,
+      r: Math.min(Math.max(0, nextI), n - 1),
+      c: remK,
+      val: `dfs(${nextI},${remK})`,
+      edgeLabel: '拿0枚',
+      status: 'current',
+      children: []
+    };
+    parentNode.children.push(child0);
+
+    pushStep({
+      type: 'branch-call',
+      line: lineBranch0,
+      i,
+      j: remK,
+      activeNodeId: parentNode.id,
+      tag: `栈#${i} 拿 0 枚`,
+      log: `| 🌿 分支 0: 栈 #${i} 拿 0 枚，转向下层 dfs(${nextI}, ${remK})`,
+      msg: `组内互斥分支 0：当前栈 <code>#${i}</code> <strong>拿 0 枚</strong>硬币，进入下一层 <code>dfs(${nextI}, ${remK})</code>。`,
+      decision: `栈 #${i} 选拿 0 枚`
+    });
+
+    let maxVal = dfs(nextI, remK, child0, depth + 1);
+
+    // 分支 c: 拿 c 枚
+    const pile = piles[i];
+    const t = Math.min(pile.length, remK);
+    let sum = 0;
+    for (let c = 1; c <= t; c++) {
+      sum += pile[c - 1];
+      const childC: UniversalTreeNode = {
+        id: `node-${++nodeCounter}`,
+        r: Math.min(Math.max(0, nextI), n - 1),
+        c: remK - c,
+        val: `dfs(${nextI},${remK - c})`,
+        edgeLabel: `拿${c}枚(+${sum})`,
+        status: 'current',
+        children: []
+      };
+      parentNode.children.push(childC);
+
+      pushStep({
+        type: 'branch-call',
+        line: lineLoopCoins,
+        i,
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: `栈#${i} 拿 ${c} 枚 (和=${sum})`,
+        log: `| 🪙 分支 ${c}: 栈 #${i} 拿 ${c} 枚，累计前缀和 ${sum}，深入 dfs(${nextI}, ${remK - c})`,
+        msg: `组内互斥分支 ${c}：连续拿取 <code>${c}</code> 枚硬币（面值和 <code>${sum}</code>），进入 <code>dfs(${nextI}, ${remK - c})</code>。`,
+        decision: `栈 #${i} 试算拿 ${c} 枚`
+      });
+
+      const sub = dfs(nextI, remK - c, childC, depth + 1) + sum;
+      if (sub > maxVal) {
+        maxVal = sub;
+      }
+
+      pushStep({
+        type: 'branch-eval',
+        line: lineBranchTake,
+        i,
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: `试算分支收益=${sub}`,
+        log: `| ⚖️ 分支收益比较: 拿 ${c} 枚得 ${sub}，当前最高 maxVal=${maxVal}`,
+        msg: `分支收益结算：拿取 ${c} 枚总收益为 <code>${sub}</code>，当前最优面值更新为 <strong>${maxVal}</strong>。`,
+        decision: `更新最优面值=${maxVal}`
+      });
+    }
+
+    parentNode.status = 'visited';
+    parentNode.tag = `= ${maxVal}`;
+    pushStep({
+      type: 'combine',
+      line: lineCombine,
+      i,
+      j: remK,
+      activeNodeId: parentNode.id,
+      tag: `汇聚返回 ${maxVal}`,
+      log: `| 🔄 栈 #${i} 决策完毕，汇总返回 maxVal=${maxVal}`,
+      msg: `硬币栈 #${i} 组内各互斥分支比较完毕，向父调用返回最大面值 <strong>${maxVal}</strong>。`,
+      decision: `返回结果 ${maxVal}`
+    });
+
+    activeStack.pop();
+    return maxVal;
+  }
+
+  const startI = isReverse ? n - 1 : 0;
+  dfs(startI, k, rootNode, 0);
+
+  return steps;
+}
+
+// ============================================================================
+// 阶段 2: 记忆化搜索
+// ============================================================================
+function compileStage2Steps(
+  piles: number[][],
+  k: number,
+  anchors?: Record<string, number>,
+  isReverse: boolean = false
+): UniversalStep[] {
+  const steps: UniversalStep[] = [];
+  const n = piles.length;
+  const lineInitMemo = anchors?.init_memo || 4;
+  const lineEntry = anchors?.entry || 6;
+  const lineDfsEntry = anchors?.dfs_entry || 8;
+  const lineBoundary = anchors?.boundary || 9;
+  const lineCacheHit = anchors?.cache_hit || 10;
+  const lineBranch0 = anchors?.branch_not_take || 11;
+  const lineLoopCoins = anchors?.loop_coins || 14;
+  const lineBranchTake = anchors?.branch_take || 16;
+  const lineCombine = anchors?.combine || 18;
+
+  const memoGrid: (number | null)[][] = Array.from({ length: n }, () => new Array(k + 1).fill(null));
+  const activeStack: string[] = [];
+  let nodeCounter = 1;
+
+  const rootNode: UniversalTreeNode = {
+    id: `node-${nodeCounter}`,
+    r: isReverse ? n - 1 : 0,
+    c: k,
+    val: isReverse ? `dfsMemo(${n - 1},${k})` : `dfsMemo(0,${k})`,
+    status: 'current',
+    children: []
+  };
+
+  function pushStep(data: Partial<UniversalStep>) {
+    steps.push({
+      stage: 2,
+      grid: JSON.parse(JSON.stringify(memoGrid)),
+      activeStack: [...activeStack],
+      treeRoot: cloneTree(rootNode),
+      decision: data.decision || '记忆化探查',
+      log: data.log || '| 记忆化搜索',
+      msg: data.msg || data.log || '',
+      line: data.line || lineDfsEntry,
+      ...data
+    });
+  }
+
+  pushStep({
+    type: 'init-memo',
+    line: lineInitMemo,
+    i: 0,
+    j: 0,
+    activeNodeId: rootNode.id,
+    tag: `初始化备忘录 memo[${n}][${k + 1}]`,
+    log: `| 📋 初始化二维备忘录 memo[${n}][${k + 1}] 全为 null (-1)`,
+    msg: `创建规格为 <code>${n} × ${k + 1}</code> 的二维备忘录矩阵，初始状态全部填充为空。`,
+    decision: '建立备忘录'
+  });
+
+  pushStep({
+    type: 'entry',
+    line: lineEntry,
+    activeNodeId: rootNode.id,
+    tag: `启动记忆化 dfsMemo(${isReverse ? n - 1 : 0}, ${k})`,
+    log: `| 🚀 启动记忆化搜索：dfsMemo(${isReverse ? n - 1 : 0}, ${k})`,
+    msg: `启动带备忘录的深度优先搜索，遇到重叠子状态立即 O(1) 查表剪枝。`,
+    decision: '启动记忆化搜索'
+  });
+
+  function dfsMemo(i: number, remK: number, parentNode: UniversalTreeNode): number {
+    if (steps.length > 350) return 0;
+    const callLabel = `dfsMemo(${i},${remK})`;
+    activeStack.push(callLabel);
+
+    const safeI = Math.min(Math.max(0, i), n - 1);
+    pushStep({
+      type: 'dfs-entry',
+      line: lineDfsEntry,
+      i: safeI,
+      j: remK,
+      activeNodeId: parentNode.id,
+      tag: `进入帧 ${callLabel}`,
+      log: `| 📥 进入帧 ${callLabel}，探查备忘录缓存`,
+      msg: `探查状态 <code>memo[${i}][${remK}]</code>：检查是否曾被计算缓存。`,
+      decision: `探查 memo[${i}][${remK}]`
+    });
+
+    const isBase = isReverse ? (i < 0 || remK === 0) : (i === n || remK === 0);
+    if (isBase) {
+      parentNode.status = 'base';
+      parentNode.tag = '基底: 0';
+      pushStep({
+        type: 'boundary',
+        line: lineBoundary,
+        i: safeI,
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: '命中基底 0',
+        log: `| 🎯 边界命中: 剩余容量为 0 或栈已耗尽，return 0`,
+        msg: `边界条件命中：不可再提取硬币，直接返回基底值 <strong>0</strong>。`,
+        decision: '基底返回 0'
+      });
+      activeStack.pop();
+      return 0;
+    }
+
+    if (memoGrid[i][remK] !== null) {
+      const cached = memoGrid[i][remK]!;
+      parentNode.status = 'pruned';
+      parentNode.tag = `⚡剪枝: ${cached}`;
+      pushStep({
+        type: 'cache-hit',
+        line: lineCacheHit,
+        i,
+        j: remK,
+        activeNodeId: parentNode.id,
+        gridHighlight: { i, j: remK },
+        tag: `⚡ 备忘录命中 memo[${i}][${remK}] = ${cached}`,
+        log: `| ⚡ 备忘录命中: memo[${i}][${remK}] = ${cached}，立即剪枝返回！`,
+        msg: `⚡ <strong>备忘录命中</strong>：状态 <code>memo[${i}][${remK}]</code> 先前已被计算，直接返回缓存值 <strong>${cached}</strong>，成功剪除庞大子树！`,
+        decision: `Cache Hit: 直接返回 ${cached}`
+      });
+      activeStack.pop();
+      return cached;
+    }
+
+    const nextI = isReverse ? i - 1 : i + 1;
+    const child0: UniversalTreeNode = {
+      id: `node-${++nodeCounter}`,
+      r: Math.min(Math.max(0, nextI), n - 1),
+      c: remK,
+      val: `dfsMemo(${nextI},${remK})`,
+      edgeLabel: '拿0枚',
+      status: 'current',
+      children: []
+    };
+    parentNode.children.push(child0);
+
+    pushStep({
+      type: 'branch-call',
+      line: lineBranch0,
+      i,
+      j: remK,
+      activeNodeId: parentNode.id,
+      tag: `栈#${i} 选拿 0 枚`,
+      log: `| 🌿 缓存未命中，展开分支 0：栈 #${i} 拿 0 枚`,
+      msg: `缓存未命中：尝试分支 0（不拿当前栈硬币），深入 <code>dfsMemo(${nextI}, ${remK})</code>。`,
+      decision: `展开分支 0`
+    });
+
+    let maxVal = dfsMemo(nextI, remK, child0);
+
+    const pile = piles[i];
+    const t = Math.min(pile.length, remK);
+    let sum = 0;
+    for (let c = 1; c <= t; c++) {
+      sum += pile[c - 1];
+      const childC: UniversalTreeNode = {
+        id: `node-${++nodeCounter}`,
+        r: Math.min(Math.max(0, nextI), n - 1),
+        c: remK - c,
+        val: `dfsMemo(${nextI},${remK - c})`,
+        edgeLabel: `拿${c}枚(+${sum})`,
+        status: 'current',
+        children: []
+      };
+      parentNode.children.push(childC);
+
+      pushStep({
+        type: 'branch-call',
+        line: lineLoopCoins,
+        i,
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: `栈#${i} 拿 ${c} 枚`,
+        log: `| 🪙 分支 ${c}: 栈 #${i} 连续拿 ${c} 枚 (和=${sum})`,
+        msg: `尝试分支 ${c}：连续抽取 <code>${c}</code> 枚硬币（前缀和 <code>${sum}</code>）。`,
+        decision: `试算拿 ${c} 枚`
+      });
+
+      const sub = dfsMemo(nextI, remK - c, childC) + sum;
+      if (sub > maxVal) {
+        maxVal = sub;
+      }
+
+      pushStep({
+        type: 'branch-eval',
+        line: lineBranchTake,
+        i,
+        j: remK,
+        activeNodeId: parentNode.id,
+        tag: `试算结果=${sub}`,
+        log: `| ⚖️ 分支收益比较: 拿 ${c} 枚收益 ${sub}，当前 maxVal=${maxVal}`,
+        msg: `比较分支收益：拿取 ${c} 枚收益为 <code>${sub}</code>，当前最优面值 <strong>${maxVal}</strong>。`,
+        decision: `更新最优面值=${maxVal}`
+      });
+    }
+
+    memoGrid[i][remK] = maxVal;
+    parentNode.status = 'visited';
+    parentNode.tag = `= ${maxVal}`;
+
+    pushStep({
+      type: 'memo-store',
+      line: lineCombine,
+      i,
+      j: remK,
+      activeNodeId: parentNode.id,
+      gridHighlight: { i, j: remK },
+      tag: `💾 写入 memo[${i}][${remK}] = ${maxVal}`,
+      log: `| 💾 写入备忘录: memo[${i}][${remK}] = ${maxVal}，落盘回溯`,
+      msg: `💾 <strong>写入备忘录</strong>：将状态 <code>memo[${i}][${remK}] = <strong>${maxVal}</strong></code> 存入表格，供后续剪枝使用。`,
+      decision: `缓存落盘 memo[${i}][${remK}] = ${maxVal}`
+    });
+
+    activeStack.pop();
+    return maxVal;
+  }
+
+  const startI = isReverse ? n - 1 : 0;
+  dfsMemo(startI, k, rootNode);
+
+  return steps;
+}
+
+// ============================================================================
+// 阶段 3: 严格二维动态规划
+// ============================================================================
+function compileStage3Steps(
+  piles: number[][],
+  k: number,
+  anchors?: Record<string, number>,
+  isReverse: boolean = false
+): UniversalStep[] {
+  const steps: UniversalStep[] = [];
+  const n = piles.length;
+  const lineInitDp = anchors?.init_dp || 4;
+  const lineOuterLoop = anchors?.outer_loop || 5;
+  const linePresumCalc = anchors?.presum_calc || 8;
+  const lineInnerCap = anchors?.inner_cap || 10;
+  const lineBranch0 = anchors?.branch_not_take || 11;
+  const lineLoopCoins = anchors?.loop_coins || 12;
+  const lineTransition = anchors?.transition || 13;
+  const lineReturnAns = anchors?.return_ans || 17;
+
+  // dp 矩阵为 n x (k + 1)，行代表硬币栈 0..n-1，列代表容量 0..k
+  const dp: number[][] = Array.from({ length: n }, () => new Array(k + 1).fill(0));
+
+  function pushStep(data: Partial<UniversalStep>) {
+    steps.push({
+      stage: 3,
+      grid: JSON.parse(JSON.stringify(dp)),
+      decision: data.decision || '二维动态规划状态转移',
+      log: data.log || '| DP填表',
+      msg: data.msg || data.log || '',
+      line: data.line || lineTransition,
+      ...data
+    });
+  }
+
+  pushStep({
+    type: 'init-dp',
+    line: lineInitDp,
+    i: 0,
+    j: 0,
+    tag: `创建二维 DP 矩阵 dp[${n}][${k + 1}]`,
+    log: `| 📋 创建规格为 ${n} × ${k + 1} 的二维动态规划状态表`,
+    msg: `初始化 <code>${n} × ${k + 1}</code> 的二维 DP 状态表，行表示硬币栈，列表示抽取容量上限。`,
+    decision: '初始化 DP 表'
+  });
+
+  if (!isReverse) {
+    // 正序推导：从栈 0 到 栈 n-1
+    for (let i = 0; i < n; i++) {
+      const pile = piles[i];
+      const t = Math.min(pile.length, k);
+      const preSum = new Array(t + 1).fill(0);
+      for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
+
+      pushStep({
+        type: 'outer-loop',
+        line: lineOuterLoop,
+        i,
+        j: 0,
+        gridHighlight: { i, j: 0 },
+        tag: `考察硬币栈 #${i} (前缀和预处理)`,
+        log: `| 🔁 外层循环: 考察硬币栈 #${i}，前缀和预处理完成 preSum=[${preSum.join(',')}]`,
+        msg: `外层循环：考察硬币栈 <code>#${i}</code>，计算连续抽取 1..${t} 枚硬币的前缀和。`,
+        decision: `考察硬币栈 #${i}`
+      });
+
+      for (let j = 0; j <= k; j++) {
+        pushStep({
+          type: 'inner-cap',
+          line: lineInnerCap,
+          i,
+          j,
+          gridHighlight: { i, j },
+          tag: `考察容量 j=${j}`,
+          log: `| ➡️ 内层循环: 考察容量上限 j = ${j}/${k}`,
+          msg: `内层循环：当前总抽取容量限制为 <code>j = ${j}</code>。`,
+          decision: `考察容量 j = ${j}`
+        });
+
+        // 分支 0: 拿 0 枚
+        const valNotTake = i > 0 ? dp[i - 1][j] : 0;
+        let bestVal = valNotTake;
+        let bestC = 0;
+
+        const candidateDeps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [];
+        if (i > 0) {
+          candidateDeps.push({ r: i - 1, c: j, type: 'top', label: `拿0枚(dp[${i - 1}][${j}])` });
+        }
+
+        // 组内互斥枚举拿 1..t 枚
+        for (let c = 1; c <= Math.min(t, j); c++) {
+          const prevVal = i > 0 ? dp[i - 1][j - c] : 0;
+          const cand = prevVal + preSum[c];
+          if (i > 0) {
+            candidateDeps.push({
+              r: i - 1,
+              c: j - c,
+              type: 'diag',
+              label: `拿${c}枚(dp[${i - 1}][${j - c}]+${preSum[c]})`
+            });
+          }
+          if (cand > bestVal) {
+            bestVal = cand;
+            bestC = c;
+          }
+        }
+
+        dp[i][j] = bestVal;
+
+        pushStep({
+          type: 'transition',
+          line: lineTransition,
+          i,
+          j,
+          val: bestVal,
+          topI: i > 0 ? i - 1 : undefined,
+          topJ: j,
+          leftI: i > 0 && bestC > 0 ? i - 1 : undefined,
+          leftJ: i > 0 && bestC > 0 ? j - bestC : undefined,
+          deps: candidateDeps.length > 0 ? candidateDeps : [{ r: i, c: j, type: 'top', label: `基底: ${bestVal}` }],
+          gridHighlight: { i, j },
+          tag: `转移落盘 dp[${i}][${j}] = ${bestVal}`,
+          log: `| ⚖️ 组内互斥转移: dp[${i}][${j}] = ${bestVal} (优选拿${bestC}枚)`,
+          msg: `组内互斥决策：比较拿 0..${Math.min(t, j)} 枚硬币，最优选择为<strong>拿 ${bestC} 枚</strong>，<code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
+          decision: `dp[${i}][${j}] = ${bestVal}`
+        });
+      }
+    }
+
+    pushStep({
+      type: 'return-ans',
+      line: lineReturnAns,
+      i: n - 1,
+      j: k,
+      val: dp[n - 1][k],
+      gridHighlight: { i: n - 1, j: k },
+      tag: `全局最优解 = ${dp[n - 1][k]}`,
+      log: `| 🎉 二维填表完成！全部 ${n} 个栈在容量 ${k} 下最大面值为 dp[${n - 1}][${k}] = ${dp[n - 1][k]}`,
+      msg: `🎉 <strong>二维填表推导完成</strong>！在容量为 <code>${k}</code> 下，最大可得面值为 <strong>${dp[n - 1][k]}</strong>。`,
+      decision: `最终最大面值 = ${dp[n - 1][k]}`
+    });
+  } else {
+    // 逆向推导：从栈 n-1 倒推至 栈 0，容量从 k 倒推至 0
+    for (let i = n - 1; i >= 0; i--) {
+      const pile = piles[i];
+      const t = Math.min(pile.length, k);
+      const preSum = new Array(t + 1).fill(0);
+      for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
+
+      pushStep({
+        type: 'outer-loop',
+        line: lineOuterLoop,
+        i,
+        j: k,
+        gridHighlight: { i, j: k },
+        tag: `逆向考察硬币栈 #${i}`,
+        log: `| 🔁 逆向外层循环: 考察硬币栈 #${i}`,
+        msg: `逆向外层循环：从后向前逆序寻源硬币栈 <code>#${i}</code>。`,
+        decision: `逆向考察栈 #${i}`
+      });
+
+      for (let j = k; j >= 0; j--) {
+        const valNotTake = i < n - 1 ? dp[i + 1][j] : 0;
+        let bestVal = valNotTake;
+        let bestC = 0;
+
+        const candidateDeps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [];
+        if (i < n - 1) {
+          candidateDeps.push({ r: i + 1, c: j, type: 'top', label: `拿0枚` });
+        }
+
+        for (let c = 1; c <= Math.min(t, j); c++) {
+          const prevVal = i < n - 1 ? dp[i + 1][j - c] : 0;
+          const cand = prevVal + preSum[c];
+          if (i < n - 1) {
+            candidateDeps.push({ r: i + 1, c: j - c, type: 'diag', label: `拿${c}枚` });
+          }
+          if (cand > bestVal) {
+            bestVal = cand;
+            bestC = c;
+          }
+        }
+
+        dp[i][j] = bestVal;
+
+        pushStep({
+          type: 'transition',
+          line: lineTransition,
+          i,
+          j,
+          val: bestVal,
+          deps: candidateDeps.length > 0 ? candidateDeps : [{ r: i, c: j, type: 'top', label: `基底: ${bestVal}` }],
+          gridHighlight: { i, j },
+          tag: `逆向转移 dp[${i}][${j}] = ${bestVal}`,
+          log: `| ⚖️ 逆向转移: dp[${i}][${j}] = ${bestVal}`,
+          msg: `逆向依赖回溯：状态 <code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
+          decision: `逆向更新 dp[${i}][${j}] = ${bestVal}`
+        });
+      }
+    }
+
+    pushStep({
+      type: 'return-ans',
+      line: lineReturnAns,
+      i: 0,
+      j: k,
+      val: dp[0][k],
+      gridHighlight: { i: 0, j: k },
+      tag: `逆向收敛最优解 = ${dp[0][k]}`,
+      log: `| 🎉 逆向推演收敛完成！最大面值为 ${dp[0][k]}`,
+      msg: `🎉 <strong>逆向推演收敛完成</strong>！最优收益为 <strong>${dp[0][k]}</strong>。`,
+      decision: `逆向收敛 = ${dp[0][k]}`
+    });
+  }
+
+  return steps;
+}
+
+// ============================================================================
+// 阶段 4: 一维空间压缩
+// ============================================================================
+function compileStage4Steps(
+  piles: number[][],
+  k: number,
+  anchors?: Record<string, number>,
+  isReverse: boolean = false
+): UniversalStep[] {
+  const steps: UniversalStep[] = [];
+  const n = piles.length;
+  const lineInitDp = anchors?.init_dp || 3;
+  const lineOuterLoop = anchors?.outer_loop || 4;
+  const lineInnerCap = anchors?.inner_cap || 8;
+  const lineTransition = anchors?.transition || 10;
+  const lineReturnAns = anchors?.return_ans || 14;
+
+  const dp = new Array(k + 1).fill(0);
+
+  function pushStep(data: Partial<UniversalStep>) {
+    steps.push({
+      stage: 4,
+      dp1d: [...dp],
+      metrics: { space: 'O(K)' },
+      decision: data.decision || '空间压缩状态流转',
+      log: data.log || '| 一维压缩流转',
+      msg: data.msg || data.log || '',
+      line: data.line || lineTransition,
+      ...data
+    });
+  }
+
+  pushStep({
+    type: 'init-dp',
+    line: lineInitDp,
+    activeSlot: 0,
+    tag: `初始化一维数组 dp[0..${k}] 全为 0`,
+    log: `| 📋 初始化一维滚动数组 dp[0..${k}] 全为 0`,
+    msg: `初始化长度为 <code>${k + 1}</code> 的一维滚动数组，辅助空间由 O(N×K) 大幅降至 <strong>O(K)</strong>。`,
+    decision: '初始化一维数组'
+  });
+
+  const pileIndices = isReverse
+    ? Array.from({ length: n }, (_, idx) => n - 1 - idx)
+    : Array.from({ length: n }, (_, idx) => idx);
+
+  for (const i of pileIndices) {
+    const pile = piles[i];
+    const t = Math.min(pile.length, k);
+    const preSum = new Array(t + 1).fill(0);
+    for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
+
+    pushStep({
+      type: 'outer-loop',
+      line: lineOuterLoop,
+      activeSlot: 0,
+      tag: `考察硬币栈 #${i}`,
+      log: `| 🔁 空间压缩外层: 考察硬币栈 #${i}，前缀和 preSum=[${preSum.join(',')}]`,
+      msg: `外层遍历硬币栈 <code>#${i}</code>。注意：分组背包中<strong>容量必须在外层倒序遍历</strong>，以防同组重复拿取！`,
+      decision: `考察硬币栈 #${i}`
+    });
+
+    // 容量从 k 倒序遍历至 1
+    for (let j = k; j > 0; j--) {
+      pushStep({
+        type: 'inner-cap',
+        line: lineInnerCap,
+        activeSlot: j,
+        tag: `容量倒序 j = ${j}`,
+        log: `| ⬅️ 容量倒序: j = ${j}，防止同组多选`,
+        msg: `容量倒序考察 <code>j = ${j}</code>：枚举拿取 1..${Math.min(t, j)} 枚硬币。`,
+        decision: `倒序考察容量 j=${j}`
+      });
+
+      for (let c = 1; c <= Math.min(t, j); c++) {
+        const candidate = dp[j - c] + preSum[c];
+        const isUpdate = candidate > dp[j];
+        if (isUpdate) {
+          dp[j] = candidate;
+        }
+
+        pushStep({
+          type: 'transition',
+          line: lineTransition,
+          activeSlot: j,
+          highlightSlots: [j - c],
+          tag: `转移 dp[${j}] = max(dp[${j}], dp[${j - c}] + ${preSum[c]}) = ${dp[j]}`,
+          log: `| 🪙 拿取 ${c} 枚: 试算 dp[${j - c}] + ${preSum[c]} = ${candidate} -> dp[${j}] = ${dp[j]}`,
+          msg: `组内互斥比较：尝试拿 <code>${c}</code> 枚硬币，从历史状态 <code>dp[${j - c}]</code> 转移，更新 <code>dp[${j}] = <strong>${dp[j]}</strong></code>。`,
+          decision: isUpdate ? `更新 dp[${j}] = ${dp[j]}` : `保持当前最优 dp[${j}]`
+        });
+      }
+    }
+  }
+
+  pushStep({
+    type: 'return-ans',
+    line: lineReturnAns,
+    activeSlot: k,
+    tag: `一维压缩完成！最大收益 = ${dp[k]}`,
+    log: `| 🎉 一维空间压缩完成！dp[${k}] = ${dp[k]}`,
+    msg: `🎉 <strong>空间压缩演化完成</strong>！在 O(K) 辅助空间下，求得全局最大收益为 <strong>${dp[k]}</strong>。`,
+    decision: `完成 O(K) 压缩推导`
+  });
+
+  return steps;
 }

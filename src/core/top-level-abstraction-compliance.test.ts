@@ -110,6 +110,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'profitable-schemes',
   'target-sum',
   'max-product-subarray',
+  'coins-from-piles',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

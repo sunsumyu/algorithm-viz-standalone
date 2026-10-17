@@ -104,6 +104,7 @@ import targetSumStandardModel from './models/target-sum-standard.yaml';
 import targetSumModel from './models/target-sum.yaml';
 import dungeonGameReverseDpModel from './models/dungeon-game-reverse-dp.yaml';
 import minCostTicketsModel from './models/min-cost-tickets.yaml';
+import coinsFromPilesModel from './models/coins-from-piles.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -169,6 +170,11 @@ export class AlgorithmModelRepository {
     ['ones-and-zeros', onesAndZeroesModel as IYamlAlgorithmModel],
     ['multiple-knapsack', multipleKnapsackModel as IYamlAlgorithmModel],
     ['profitable-schemes', profitableSchemesModel as IYamlAlgorithmModel],
+    ['coins-from-piles', coinsFromPilesModel as IYamlAlgorithmModel],
+    ['coins-from-piles-074', coinsFromPilesModel as IYamlAlgorithmModel],
+    ['class074-code02', coinsFromPilesModel as IYamlAlgorithmModel],
+    ['maximum-value-of-k-coins-from-piles', coinsFromPilesModel as IYamlAlgorithmModel],
+    ['leetcode-2218', coinsFromPilesModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

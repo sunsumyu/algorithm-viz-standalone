@@ -296,6 +296,13 @@ export class StateSpacePresenter {
           colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
           cornerLabel = '物品(i) \\ 容量(j)';
         }
+      } else if (params && params.piles) {
+        const piles = Array.isArray(params.piles) ? params.piles : [];
+        if (piles.length > 0 && effectiveM === piles.length) {
+          rowLabels = piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
+          colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+          cornerLabel = '硬币栈(i) \\ 容量(j)';
+        }
       }
     }
 
@@ -390,6 +397,13 @@ export class StateSpacePresenter {
               rowLabels = weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
               colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
               cornerLabel = '物品(i) \\ 容量(j)';
+            }
+          } else if (params && params.piles) {
+            const piles = Array.isArray(params.piles) ? params.piles : [];
+            if (piles.length > 0 && effectiveM === piles.length) {
+              rowLabels = piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
+              colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+              cornerLabel = '硬币栈(i) \\ 容量(j)';
             }
           }
         }
@@ -992,6 +1006,13 @@ export class StateSpacePresenter {
           value: values[idx] ?? w
         }));
         capacity = params.bagWeight ?? params.target ?? capacity;
+      } else if (params.piles && Array.isArray(params.piles)) {
+        items = params.piles.map((p: number[], idx: number) => ({
+          index: idx,
+          weight: Array.isArray(p) ? p.length : 1,
+          value: Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : 0
+        }));
+        capacity = params.k ?? capacity;
       }
     }
 

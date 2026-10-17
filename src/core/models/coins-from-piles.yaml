@@ -1,0 +1,303 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 从栈中取出K个硬币的最大面值和 (Maximum Value of K Coins From Piles) - LeetCode 2218
+# 左程云算法通关课 Class 074 Code02: 自顶向下连续前缀和预处理转分组背包互斥选择
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: coins-from-piles
+name: "从栈中取出K个硬币的最大面值和"
+nameEn: "Maximum Value of K Coins From Piles"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🪙"
+difficulty: 3
+levelOrder: 85
+learningGoal: "掌握硬币栈连续操作向互斥物品组的转化、前缀和预处理加速与步数容量分组背包"
+description: "左程云算法通关课 Class 074 Code02：LeetCode 2218 取硬币，自顶向下连续拿取的前缀和预处理转分组背包互斥选择"
+defaultParams:
+  k: 2
+  piles: [[1, 100, 3], [7, 8, 9]]
+
+problem:
+  leetcodeId: 2218
+  title: "从栈中取出 K 个硬币的最大面值和"
+  difficulty: "困难"
+  tags: ["数组", "动态规划", "前缀和", "分组背包"]
+  description: "桌子上总共有 <code>n</code> 个硬币栈。每个栈包含若干个带面值的硬币。在每一次操作中，你可以从<strong>任意一个栈的顶部</strong>取出 1 个硬币并放入钱包中。<br/><br/>给你一个二维列表 <code>piles</code>，其中 <code>piles[i]</code> 是一个整数数组，从左到右分别表示第 <code>i</code> 个栈从栈顶到栈底的硬币面值。同时给你一个正整数 <code>k</code>。<br/><br/>请返回在<strong>恰好进行 <code>k</code> 次操作</strong>的前提下，钱包里硬币面值之和的<strong>最大值</strong>。"
+  examples:
+    - input: "piles = [[1,100,3],[7,8,9]], k = 2"
+      output: "101"
+      explanation: "从栈 0 中取出 2 个硬币（1 + 100 = 101），获得最大面值 101。"
+    - input: "piles = [[100],[100],[100],[100],[100],[100],[1,1,1,1,1,1,700]], k = 7"
+      output: "706"
+      explanation: "如果从前面的栈各自取 1 个硬币，最多获得 600 面值。但如果从最后一个栈连续取 7 个硬币（1*6 + 700 = 706），可以获得最大面值 706。"
+  constraints:
+    - "n == piles.length"
+    - "1 <= n <= 1000"
+    - "1 <= piles[i][j] <= 10^5"
+    - "1 <= k <= sum(piles[i].length) <= 2000"
+  leetcodeUrl: "https://leetcode.cn/problems/maximum-value-of-k-coins-from-piles/"
+
+directions:
+  forward:
+    label: "自底向上正序填表 (外层硬币栈，内层容量)"
+    branches:
+      - name: "take_c"
+        label: "从栈顶连续拿取 c 枚硬币"
+        formula: "dp[i - 1][j - c] + preSum[c]"
+    combineFormula: "max(dp[i - 1][j - c] + preSum[c])"
+  reverse:
+    label: "逆推倒序寻源 (容量倒序寻界)"
+    description: "从目标容量向子问题基底反推"
+    startFormula: "dp[n][k]"
+    target: "dp[0][0]"
+    branches:
+      - name: "trace_back"
+        label: "向上一阶段溯源"
+        formula: "dp[i - 1][j - c]"
+    combineFormula: "逆向聚合"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(N · K^len)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归分支展开 (硬币栈互斥决策树)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "对于第 i 个硬币栈，枚举拿取 0..c 枚硬币（1 <= c <= min(len, remK)），将当前栈获得的连续前缀和与剩余栈 dfs(i+1, remK-c) 的收益累加，取各互斥分支的最大值。"
+      reverse: "从终点总容量与硬币栈倒序向前分解子问题，展示朴素递归中出现的严重重叠子问题与指数级爆炸分支。"
+    variants:
+      standard:
+        variantLabel: "标准多分支递归"
+        title:
+          forward: "CoinsFromPiles_Recursive.java"
+          reverse: "CoinsFromPiles_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "CoinsFromPiles_Recursive.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      return dfs(0, k, piles); // @step:entry
+                  }
+                  private int dfs(int i, int remK, List<List<Integer>> piles) { // @step:dfs_entry
+                      if (i == piles.size() || remK == 0) return 0; // @step:boundary
+                      int maxVal = dfs(i + 1, remK, piles); // @step:branch_not_take
+                      int sum = 0;
+                      int t = Math.min(piles.get(i).size(), remK);
+                      for (int c = 1; c <= t; c++) { // @step:loop_coins
+                          sum += piles.get(i).get(c - 1);
+                          maxVal = Math.max(maxVal, dfs(i + 1, remK - c, piles) + sum); // @step:branch_take
+                      }
+                      return maxVal; // @step:combine
+                  }
+              }
+          reverse:
+            title: "CoinsFromPiles_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      return dfs(piles.size() - 1, k, piles); // @step:entry
+                  }
+                  private int dfs(int i, int remK, List<List<Integer>> piles) { // @step:dfs_entry
+                      if (i < 0 || remK == 0) return 0; // @step:boundary
+                      int maxVal = dfs(i - 1, remK, piles); // @step:branch_not_take
+                      int sum = 0;
+                      int t = Math.min(piles.get(i).size(), remK);
+                      for (int c = 1; c <= t; c++) { // @step:loop_coins
+                          sum += piles.get(i).get(c - 1);
+                          maxVal = Math.max(maxVal, dfs(i - 1, remK - c, piles) + sum); // @step:branch_take
+                      }
+                      return maxVal; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(N · K · min(len, K))"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (消除重叠子状态)"
+      reverse: "阶段 2: 倒序备忘录剪枝 (自顶向下按需缓存)"
+    desc:
+      forward: "引入二维备忘录 memo[i][remK]，在首次计算状态 (i, remK) 时缓存其最大收益，后续遇到相同状态直接 O(1) 查表返回，剪除庞大冗余搜索子树。"
+      reverse: "采用倒序递归自顶向下备忘，缓存 memo[i][remK] 消除倒序搜索过程中的重叠计算。"
+    variants:
+      standard:
+        variantLabel: "二维备忘录剪枝版"
+        title:
+          forward: "CoinsFromPiles_Memo.java"
+          reverse: "CoinsFromPiles_Memo_Reverse.java"
+        code:
+          forward:
+            title: "CoinsFromPiles_Memo.java"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      memo = new int[piles.size()][k + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(0, k, piles); // @step:entry
+                  }
+                  private int dfs(int i, int remK, List<List<Integer>> piles) { // @step:dfs_entry
+                      if (i == piles.size() || remK == 0) return 0; // @step:boundary
+                      if (memo[i][remK] != -1) return memo[i][remK]; // @step:cache_hit
+                      int maxVal = dfs(i + 1, remK, piles); // @step:branch_not_take
+                      int sum = 0;
+                      int t = Math.min(piles.get(i).size(), remK);
+                      for (int c = 1; c <= t; c++) { // @step:loop_coins
+                          sum += piles.get(i).get(c - 1);
+                          maxVal = Math.max(maxVal, dfs(i + 1, remK - c, piles) + sum); // @step:branch_take
+                      }
+                      return memo[i][remK] = maxVal; // @step:combine
+                  }
+              }
+          reverse:
+            title: "CoinsFromPiles_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      memo = new int[piles.size()][k + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(piles.size() - 1, k, piles); // @step:entry
+                  }
+                  private int dfs(int i, int remK, List<List<Integer>> piles) { // @step:dfs_entry
+                      if (i < 0 || remK == 0) return 0; // @step:boundary
+                      if (memo[i][remK] != -1) return memo[i][remK]; // @step:cache_hit
+                      int maxVal = dfs(i - 1, remK, piles); // @step:branch_not_take
+                      int sum = 0;
+                      int t = Math.min(piles.get(i).size(), remK);
+                      for (int c = 1; c <= t; c++) { // @step:loop_coins
+                          sum += piles.get(i).get(c - 1);
+                          maxVal = Math.max(maxVal, dfs(i - 1, remK - c, piles) + sum); // @step:branch_take
+                      }
+                      return memo[i][remK] = maxVal; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(N · K · min(len, K))"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 二维分组背包动态规划 (前缀和互斥决策填表)"
+      reverse: "阶段 3: 逆向依赖二维填表 (倒序边界推导)"
+    desc:
+      forward: "建立状态表 dp[i][j]，表示前 i 个硬币栈在总提取容量 j 限制下的最大面值。每个栈预处理前缀和转为互斥物品组：dp[i][j] = max(dp[i-1][j], max_c(dp[i-1][j-c] + preSum[c]))。"
+      reverse: "自右下角终点状态向基底反推依赖关系，高亮展示多路组内候选依赖来源。"
+    variants:
+      standard:
+        variantLabel: "二维矩阵填表版"
+        title:
+          forward: "CoinsFromPiles_DP2D.java"
+          reverse: "CoinsFromPiles_DP2D_Reverse.java"
+        code:
+          forward:
+            title: "CoinsFromPiles_DP2D.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      int n = piles.size();
+                      int[][] dp = new int[n + 1][k + 1]; // @step:init_dp
+                      for (int i = 1; i <= n; i++) { // @step:outer_loop
+                          List<Integer> pile = piles.get(i - 1);
+                          int t = Math.min(pile.size(), k);
+                          int[] preSum = new int[t + 1]; // @step:presum_calc
+                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
+                          for (int j = 0; j <= k; j++) { // @step:inner_cap
+                              dp[i][j] = dp[i - 1][j]; // @step:branch_not_take
+                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
+                                  dp[i][j] = Math.max(dp[i][j], dp[i - 1][j - c] + preSum[c]); // @step:transition
+                              }
+                          }
+                      }
+                      return dp[n][k]; // @step:return_ans
+                  }
+              }
+          reverse:
+            title: "CoinsFromPiles_DP2D_Reverse.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      int n = piles.size();
+                      int[][] dp = new int[n + 1][k + 1]; // @step:init_dp
+                      for (int i = n; i >= 1; i--) { // @step:outer_loop
+                          List<Integer> pile = piles.get(i - 1);
+                          int t = Math.min(pile.size(), k);
+                          int[] preSum = new int[t + 1]; // @step:presum_calc
+                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
+                          for (int j = k; j >= 0; j--) { // @step:inner_cap
+                              dp[i][j] = (i == n) ? 0 : dp[i + 1][j]; // @step:branch_not_take
+                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
+                                  dp[i][j] = Math.max(dp[i][j], dp[i + 1][j - c] + preSum[c]); // @step:transition
+                              }
+                          }
+                      }
+                      return dp[1][k]; // @step:return_ans
+                  }
+              }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "tabulation-1d"
+    timeBadge: "O(N · K · min(len, K)) · 空间 O(K)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 一维滚动空间压缩 (容量倒序防串组)"
+      reverse: "阶段 4: 空间压缩极简倒序流转 (O(K) 辅助空间)"
+    desc:
+      forward: "由于当前行 dp[i][j] 仅依赖上一行更小容量 dp[i-1][j-c]，将二维矩阵压缩为一维数组 dp[j]。关键：容量 j 必须从 k 倒序遍历至 1，彻底防止同一硬币栈内多种拿取方案被重复累加！"
+      reverse: "严格维护一维滚动数组，展示容量从 k 倒序至 0 的单层流转过程与互斥性保护。"
+    variants:
+      standard:
+        variantLabel: "一维空间压缩版"
+        title:
+          forward: "CoinsFromPiles_DP1D.java"
+          reverse: "CoinsFromPiles_DP1D_Reverse.java"
+        code:
+          forward:
+            title: "CoinsFromPiles_DP1D.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      int[] dp = new int[k + 1]; // @step:init_dp
+                      for (List<Integer> pile : piles) { // @step:outer_loop
+                          int t = Math.min(pile.size(), k);
+                          int[] preSum = new int[t + 1]; // @step:presum_calc
+                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
+                          for (int j = k; j > 0; j--) { // @step:inner_cap
+                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
+                                  dp[j] = Math.max(dp[j], dp[j - c] + preSum[c]); // @step:transition
+                              }
+                          }
+                      }
+                      return dp[k]; // @step:return_ans
+                  }
+              }
+          reverse:
+            title: "CoinsFromPiles_DP1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                      int[] dp = new int[k + 1]; // @step:init_dp
+                      for (int pIdx = piles.size() - 1; pIdx >= 0; pIdx--) { // @step:outer_loop
+                          List<Integer> pile = piles.get(pIdx);
+                          int t = Math.min(pile.size(), k);
+                          int[] preSum = new int[t + 1]; // @step:presum_calc
+                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
+                          for (int j = k; j > 0; j--) { // @step:inner_cap
+                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
+                                  dp[j] = Math.max(dp[j], dp[j - c] + preSum[c]); // @step:transition
+                              }
+                          }
+                      }
+                      return dp[k]; // @step:return_ans
+                  }
+              }

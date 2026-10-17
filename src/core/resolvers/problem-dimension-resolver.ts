@@ -42,6 +42,7 @@ export class ProblemDimensionResolver {
     'ones-and-zeroes',
     'multiple-knapsack',
     'combination-sum-iv',
+    'coins-from-piles',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -255,16 +256,18 @@ export class ProblemDimensionResolver {
     }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
-    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined) {
-      const wArr = params.weights
-        ? this.toArray(params.weights)
-        : (params.coins
-          ? this.toArray(params.coins)
-          : (params.stones
-            ? this.toArray(params.stones)
-            : (params.nums ? this.toArray(params.nums) : [])));
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined) {
+      const wArr = params.piles !== undefined
+        ? (typeof params.piles === 'string' ? JSON.parse(params.piles) : params.piles)
+        : (params.weights
+          ? this.toArray(params.weights)
+          : (params.coins
+            ? this.toArray(params.coins)
+            : (params.stones
+              ? this.toArray(params.stones)
+              : (params.nums ? this.toArray(params.nums) : []))));
 
-      let bag = Number(params.bagWeight ?? params.target ?? params.amount ?? 0);
+      let bag = Number(params.k ?? params.bagWeight ?? params.target ?? params.amount ?? 0);
 
       // 特殊背包容量数学归约：
       if (modelId === 'partition-equal-subset-sum' && wArr.length > 0) {

@@ -138,6 +138,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new PartitionDPStrategy('word-break'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('multiple-knapsack'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('profitable-schemes'));
+  AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('coins-from-piles'));
 
   // House Robber Family
   AlgorithmStrategyRegistry.register(new HouseRobberStrategy('house-robber'));
