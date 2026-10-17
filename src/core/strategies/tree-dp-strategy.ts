@@ -58,7 +58,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'tree-diameter':
         return compileTreeDiameter(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'binary-tree-cameras':
-        return compileBinaryTreeCameras(model, parseTreeArray(rawRoot || '0,0,null,0,0'), stage, anchorMap);
+        return compileBinaryTreeCameras(model, parseTreeArray(rawRoot || '0,0,null,0,0'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'course-selection':
         return compileCourseSelection(model, stage, anchorMap);
       case 'minimum-fuel-cost':

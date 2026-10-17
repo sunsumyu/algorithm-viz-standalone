@@ -776,19 +776,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'binary-tree-cameras',
-    name: '监控二叉树',
-    description: '树型DP状态机：每个节点三种状态（不覆盖/被覆盖/安摄像头），后序遍历贪心最优化摄像头总数。',
-    icon: '📷',
-    aliases: ['class078-code05', 'binary-tree-cameras-968', 'leetcode-968'],
-    inputs: [{ id: 'root', label: '树节点(层序)', value: '0,0,null,0,0', width: 200 }],
-    examples: [
-      { label: '[0,0,null,0,0]', values: { root: '0,0,null,0,0' } },
-      { label: '[0,0,null,0,null,0,null,null,0]', values: { root: '0,0,null,0,null,0,null,null,0' } },
-    ],
-    build: makeEngineBuilder('binary-tree-cameras'),
-  },
+
   {
     id: 'course-selection',
     name: '选课（树上背包DP）',
@@ -1084,7 +1072,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'binary-tree-cameras' },
   { type: 'demo', id: 'course-selection' },
   { type: 'demo', id: 'minimum-fuel-cost' },
   { type: 'demo', id: 'longest-path-different-characters' },
