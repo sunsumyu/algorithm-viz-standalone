@@ -127,6 +127,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'tree-diameter',
   'binary-tree-cameras',
   'party-without-boss',
+  'course-selection',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

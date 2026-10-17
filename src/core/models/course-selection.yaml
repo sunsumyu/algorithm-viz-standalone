@@ -1,0 +1,223 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 选课（树上背包 DP）顶层领域模型
+# 对应：洛谷 P2014 / 左程云算法讲解 079 Code02
+# 包含：虚拟超级根节点 0、树上分组背包逆序转移、状态依赖展开与二维矩阵流转
+# ==============================================================================
+
+id: course-selection
+name: 选课（树上背包 DP）
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 树型 DP
+  - 动态规划
+  - 树上背包
+  - 分组背包
+  - 森林转单根树
+
+description: |
+  洛谷 P2014 · 左程云算法通关课第 079 讲 树型 DP（下）Code02：选课（树上背包 DP）。
+  学校有 n 门课程，编号 1..n。每门课有直接先修课要求，若选某门课，必须先选修其先修课。
+  每门课消耗 1 个名额并带来对应的学分 score[i]。
+  某些课程无先修课（先修课编号为 0）。所有课程与先修关系构成森林。
+  为统一求解结构，引入学分为 0 的【虚拟超级根节点 0】，将森林合并为一棵标准多叉树。
+  你最多只能选修 m 门课，求能获得的最大学分。
+  
+  核心树上背包模型 (Tree Knapsack DP)：
+  1. 状态定义：dp[u][j] 表示在以 u 为根的子树中，总共选修 j 门课（包含 u 自身）获得的最大学分。
+  2. 容量拓展：因虚拟根节点 0 占 1 个名额，总容量上限设为 m + 1。
+  3. 初始基底：dp[u][1] = score[u]（只要选了根节点 u，消耗 1 额度直接获得其固有学分）。
+  4. 分组背包逆序转移：遍历每个子节点 v，将子树 v 视为一个互斥物品组：
+     for j = maxCap down to 1:
+         for k = 0 to j - 1:
+             dp[u][j] = max(dp[u][j], dp[u][j - k] + dp[v][k])
+  5. 最终答案返回 dp[0][m + 1]。
+
+defaultParams:
+  n: 4
+  m: 3
+  courses:
+    - [1, 2, 0]
+    - [2, 3, 1]
+    - [3, 4, 0]
+    - [4, 2, 2]
+
+constraints:
+  - 1 <= n <= 300（教学演示建议 4~8）
+  - 1 <= m <= n
+  - 0 <= score[i] <= 100
+
+directions:
+  forward:
+    name: 自底向上树上分组背包 (Bottom-Up Tree Knapsack DP)
+    description: 后序遍历自底向上汇集各子树背包收益，逆序枚举配额进行多叉树分组背包转移
+  reverse:
+    name: 自顶向下预算试探对比 (Top-Down Pre-Order Budget Exploration)
+    description: 从虚拟根节点 0 出发自顶向下试探性分配课程预算，对比验证后序树上分组背包全局最优性
+
+stages:
+  stage-1:
+    name: 后序树上分组背包标准推导
+    description: 建立虚拟根节点 0，后序遍历递归子树，以经典分组背包逆序转移合并子树学分
+    complexity:
+      time: O(N * M^2)
+      space: O(N * M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int maxCourseScore(int n, int m, int[][] courses) { // @step:entry
+                  List<Integer>[] tree = new ArrayList[n + 1];
+                  for (int i = 0; i <= n; i++) tree[i] = new ArrayList<>();
+                  int[] score = new int[n + 1];
+                  for (int[] c : courses) {
+                      tree[c[2]].add(c[0]);
+                      score[c[0]] = c[1];
+                  } // @step:build_tree
+                  int[][] dp = new int[n + 1][m + 2]; // @step:init_dp
+                  dfs(0, m + 1, tree, score, dp); // @step:dfs_call
+                  return dp[0][m + 1]; // @step:return
+              }
+              private void dfs(int u, int maxCap, List<Integer>[] tree, int[] score, int[][] dp) { // @step:dfs_entry
+                  dp[u][1] = score[u]; // @step:init_root
+                  for (int v : tree[u]) { // @step:loop_child
+                      dfs(v, maxCap, tree, score, dp); // @step:sub_call
+                      for (int j = maxCap; j >= 1; j--) { // @step:knapsack_cap
+                          for (int k = 0; k < j; k++) { // @step:alloc_quota
+                              dp[u][j] = Math.max(dp[u][j], dp[u][j - k] + dp[v][k]); // @step:transfer
+                          }
+                      }
+                  }
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int maxCourseScoreReverse(int n, int m, int[][] courses) { // @step:entry
+                  List<Integer>[] tree = new ArrayList[n + 1];
+                  for (int i = 0; i <= n; i++) tree[i] = new ArrayList<>();
+                  int[] score = new int[n + 1];
+                  for (int[] c : courses) {
+                      tree[c[2]].add(c[0]);
+                      score[c[0]] = c[1];
+                  } // @step:build_tree
+                  return explorePreOrderBudget(0, m + 1, tree, score); // @step:return
+              }
+              private int explorePreOrderBudget(int u, int budget, List<Integer>[] tree, int[] score) { // @step:dfs_entry
+                  if (budget <= 0) return 0; // @step:init_root
+                  int maxVal = score[u]; // @step:loop_child
+                  for (int v : tree[u]) { // @step:sub_call
+                      maxVal += explorePreOrderBudget(v, budget - 1, tree, score); // @step:transfer
+                  }
+                  return maxVal; // @step:alloc_quota
+              }
+          }
+
+  stage-2:
+    name: 树上背包状态依赖树展开
+    description: 显式展开虚拟根 0 之下各先修课程的树形分支，跟踪子树递归进入、配额试探与回溯状态合并
+    complexity:
+      time: O(N * M^2)
+      space: O(N * M)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树上背包状态依赖展开
+          // @step:entry 1. 启动选课树上背包状态依赖展开
+          // @step:build_tree 2. 建立虚拟超级根节点 0 与先修课依赖图
+          // @step:init_dp 3. 初始化二维状态表与配额约束
+          // @step:dfs_call 4. 深入虚拟超级根节点 0
+          // @step:dfs_entry 5. 访问当前课程节点 u
+          // @step:init_root 6. 必选根节点，消耗 1 额度获得初始学分
+          // @step:loop_child 7. 遍历子节点先修组
+          // @step:sub_call 8. 递归子树背包方案
+          // @step:knapsack_cap 9. 逆序枚举子树总容量配额 j
+          // @step:alloc_quota 10. 枚举分配给子树的课程数 k
+          // @step:transfer 11. 分组背包状态转移聚合
+          // @step:return 12. 依赖展开推导完成
+      reverse:
+        language: java
+        source: |
+          // 逆向自顶向下配额试探树
+          // @step:entry 1. 启动自顶向下预算试探展开
+          // @step:build_tree 2. 建立依赖关系
+          // @step:dfs_entry 3. 根节点分配预算
+          // @step:init_root 4. 边界截断检测
+          // @step:loop_child 5. 遍历下级先修课
+          // @step:sub_call 6. 深入分配预算
+          // @step:alloc_quota 7. 贪心比较汇总
+          // @step:transfer 8. 试探性配额落盘
+          // @step:return 9. 逆向推导收敛
+
+  stage-3:
+    name: 树上分组背包二维状态矩阵 dp[u][j]
+    description: 映射为标准二维动态规划状态矩阵，行索引为课程 u，列索引为选课配额 j，实时呈现单元格更新
+    complexity:
+      time: O(N * M^2)
+      space: O(N * M)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树上分组背包二维状态表 dp[u][j]
+          // @step:entry 1. 初始化二维表格 dp[n+1][m+2]
+          // @step:build_tree 2. 拓扑邻接矩阵建立
+          // @step:init_dp 3. 树上背包基底就绪
+          // @step:dfs_call 4. 启动后序填表
+          // @step:dfs_entry 5. 访问行 u
+          // @step:init_root 6. 基底填入：dp[u][1] = score[u]
+          // @step:loop_child 7. 分组子树归约
+          // @step:knapsack_cap 8. 容量 j 逆序回填
+          // @step:alloc_quota 9. 配额列 k 遍历
+          // @step:transfer 10. 表格单元格值更新：dp[u][j] = max(dp[u][j], dp[u][j-k] + dp[v][k])
+          // @step:return 11. 读取最终答案 dp[0][m+1]
+      reverse:
+        language: java
+        source: |
+          // 逆向配额状态表
+          // @step:entry 1. 逆向预算矩阵初始化
+          // @step:build_tree 2. 拓扑校验
+          // @step:dfs_entry 3. 自顶向下反向推算
+          // @step:init_root 4. 边界处理
+          // @step:sub_call 5. 下级配额试探
+          // @step:alloc_quota 6. 收益对比
+          // @step:transfer 7. 矩阵登记
+          // @step:return 8. 逆向状态收敛
+
+  stage-4:
+    name: O(M) 递归栈与空间极速压缩
+    description: 利用 DFS 递归调用栈空间，原地滚动复用状态，省去冗余矩阵，极速求得最优学分
+    complexity:
+      time: O(N * M^2)
+      space: O(M)
+    code:
+      forward:
+        language: java
+        source: |
+          // O(M) 递归栈与空间极速压缩
+          // @step:entry 1. 极速状态初始化
+          // @step:build_tree 2. 邻接表压缩
+          // @step:init_dp 3. 原地复用空间
+          // @step:dfs_call 4. 启动轻量后序流转
+          // @step:dfs_entry 5. 节点流转
+          // @step:init_root 6. 原地基底赋分
+          // @step:loop_child 7. 子树并入
+          // @step:knapsack_cap 8. 逆序原地滚动
+          // @step:alloc_quota 9. 配额极速计算
+          // @step:transfer 10. 原地流转更新
+          // @step:return 11. 极速返回最大学分
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:entry 1. 逆向寄存器初始化
+          // @step:build_tree 2. 依赖链轻量化
+          // @step:dfs_entry 3. 自顶向下轻量递归
+          // @step:init_root 4. 边界检测
+          // @step:sub_call 5. 下属分配
+          // @step:alloc_quota 6. 快速贪心比较
+          // @step:transfer 7. 极速结果落盘
+          // @step:return 8. 极速返回

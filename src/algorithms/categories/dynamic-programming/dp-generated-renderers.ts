@@ -777,22 +777,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'course-selection',
-    name: '选课（树上背包DP）',
-    description: '树上背包DP：以虚拟节点0为根，dp[u][j]表示以u为根选j门课的最大学分，分组背包合并子树。',
-    icon: '🎓',
-    aliases: ['class079-code02', 'course-schedule-tree', 'luogu-p2014'],
-    inputs: [
-      { id: 'n', label: '课程数 n', value: '4', width: 80 },
-      { id: 'm', label: '最多选 m 门', value: '3', width: 80 },
-    ],
-    examples: [
-      { label: 'n=4, m=3', values: { n: '4', m: '3' } },
-      { label: 'n=6, m=4', values: { n: '6', m: '4' } },
-    ],
-    build: makeEngineBuilder('course-selection'),
-  },
+
   {
     id: 'minimum-fuel-cost',
     name: '到达首都的最少油耗',
@@ -1059,7 +1044,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'course-selection' },
   { type: 'demo', id: 'minimum-fuel-cost' },
   { type: 'demo', id: 'longest-path-different-characters' },
   { type: 'demo', id: 'height-removal-queries' },

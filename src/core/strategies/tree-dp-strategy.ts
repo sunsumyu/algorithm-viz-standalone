@@ -60,7 +60,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'binary-tree-cameras':
         return compileBinaryTreeCameras(model, parseTreeArray(rawRoot || '0,0,null,0,0'), stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'course-selection':
-        return compileCourseSelection(model, stage, anchorMap);
+        return compileCourseSelection(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'minimum-fuel-cost':
         return compileMinimumFuelCost(model, stage, anchorMap);
       case 'longest-path-different-characters':
