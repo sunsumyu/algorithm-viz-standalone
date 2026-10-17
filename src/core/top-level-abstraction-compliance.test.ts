@@ -111,6 +111,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'target-sum',
   'max-product-subarray',
   'coins-from-piles',
+  'partitioned-knapsack-standard',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

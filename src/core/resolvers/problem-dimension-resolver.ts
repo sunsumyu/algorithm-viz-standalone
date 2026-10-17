@@ -43,6 +43,11 @@ export class ProblemDimensionResolver {
     'multiple-knapsack',
     'combination-sum-iv',
     'coins-from-piles',
+    'partitioned-knapsack-standard',
+    'partitioned-knapsack',
+    'partitioned-knapsack-074',
+    'class074-code01',
+    'luogu-p1757',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -256,7 +261,19 @@ export class ProblemDimensionResolver {
     }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
-    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined) {
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined)) {
+      if (modelId.includes('partitioned') && params.items !== undefined) {
+        const rawItems = typeof params.items === 'string' ? JSON.parse(params.items) : params.items;
+        const groups = new Set((Array.isArray(rawItems) ? rawItems : []).map((it: any) => it[2]));
+        const numGroups = groups.size > 0 ? groups.size : 2;
+        const bag = Number(params.m ?? params.capacity ?? 45);
+        const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
+        m = isStage4 ? 1 : numGroups + 1;
+        n = bag + 1;
+        category = 'knapsack';
+        return { m, n, is1D: isStage4, category };
+      }
+
       const wArr = params.piles !== undefined
         ? (typeof params.piles === 'string' ? JSON.parse(params.piles) : params.piles)
         : (params.weights

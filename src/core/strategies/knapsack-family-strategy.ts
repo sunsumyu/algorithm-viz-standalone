@@ -4,6 +4,7 @@ import type { UniversalStep, UniversalTreeNode } from '../universal-stage-engine
 import { KnapsackStepMatrixCompiler, type KnapsackDomainConfig } from './knapsack-step-matrix-compiler';
 import { cloneTree } from './strategy-helpers';
 import { snapshotGrid2D } from './grid-snapshot';
+import { compilePartitionedKnapsackSteps } from '../renderers/adapters/partitioned-knapsack-step-compiler';
 
 export type KnapsackFamilyModelId =
   | 'last-stone-weight-ii'
@@ -15,7 +16,8 @@ export type KnapsackFamilyModelId =
   | 'word-break'
   | 'multiple-knapsack'
   | 'profitable-schemes'
-  | 'coins-from-piles';
+  | 'coins-from-piles'
+  | 'partitioned-knapsack-standard';
 
 /**
  * 背包 DP 扩展家族多态策略 (KnapsackFamilyStrategy)
@@ -41,6 +43,13 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
         modelId === 'class074-code02' ||
         modelId === 'maximum-value-of-k-coins-from-piles' ||
         modelId === 'leetcode-2218'
+      )) ||
+      (this.modelId === 'partitioned-knapsack-standard' && (
+        modelId === 'partitioned-knapsack-standard' ||
+        modelId === 'partitioned-knapsack' ||
+        modelId === 'partitioned-knapsack-074' ||
+        modelId === 'class074-code01' ||
+        modelId === 'luogu-p1757'
       ))
     );
   }
@@ -69,6 +78,8 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
         return this.compileProfitableSchemes(model, stage, Boolean(isMemo), anchorMap);
       case 'coins-from-piles':
         return this.compileCoinsFromPiles(model, params);
+      case 'partitioned-knapsack-standard':
+        return this.compilePartitionedKnapsack(model, params);
       default:
         return [];
     }
@@ -2054,6 +2065,48 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
     return compileCoinsFromPilesSteps(
       piles,
       k,
+      params.stage,
+      Boolean(params.isMemo),
+      params.anchorMap,
+      params.direction === 'reverse' ? 'reverse' : 'forward'
+    );
+  }
+
+  // =========================================================================
+  // 11. 分组背包模版 (Partitioned Knapsack, 洛谷 P1757 / Class 074 Code01)
+  // =========================================================================
+  private compilePartitionedKnapsack(
+    model: IYamlAlgorithmModel,
+    params: StageExecutionParams
+  ): UniversalStep[] {
+    const defaultParams = model.defaultParams as any;
+    const rawItems = (params as any)?.items ?? defaultParams?.items ?? [[10, 10, 1], [10, 20, 1], [20, 20, 2]];
+
+    let capacity = 45;
+    if ((params as any)?.capacity !== undefined) {
+      capacity = Math.max(0, Number((params as any).capacity));
+    } else if ((params as any)?.n !== undefined) {
+      capacity = Math.max(0, Number((params as any).n) - 1);
+    } else if ((params as any)?.m !== undefined) {
+      capacity = Math.max(0, Number((params as any).m));
+    } else {
+      capacity = Math.max(0, Number(defaultParams?.capacity ?? defaultParams?.m ?? 45));
+    }
+
+    let items: any[] = [];
+    if (Array.isArray(rawItems)) {
+      items = rawItems;
+    } else if (typeof rawItems === 'string') {
+      try {
+        items = JSON.parse(rawItems);
+      } catch {
+        items = [[10, 10, 1], [10, 20, 1], [20, 20, 2]];
+      }
+    }
+
+    return compilePartitionedKnapsackSteps(
+      items,
+      capacity,
       params.stage,
       Boolean(params.isMemo),
       params.anchorMap,

@@ -105,6 +105,7 @@ import targetSumModel from './models/target-sum.yaml';
 import dungeonGameReverseDpModel from './models/dungeon-game-reverse-dp.yaml';
 import minCostTicketsModel from './models/min-cost-tickets.yaml';
 import coinsFromPilesModel from './models/coins-from-piles.yaml';
+import partitionedKnapsackModel from './models/partitioned-knapsack-standard.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -175,6 +176,11 @@ export class AlgorithmModelRepository {
     ['class074-code02', coinsFromPilesModel as IYamlAlgorithmModel],
     ['maximum-value-of-k-coins-from-piles', coinsFromPilesModel as IYamlAlgorithmModel],
     ['leetcode-2218', coinsFromPilesModel as IYamlAlgorithmModel],
+    ['partitioned-knapsack-standard', partitionedKnapsackModel as IYamlAlgorithmModel],
+    ['partitioned-knapsack', partitionedKnapsackModel as IYamlAlgorithmModel],
+    ['partitioned-knapsack-074', partitionedKnapsackModel as IYamlAlgorithmModel],
+    ['class074-code01', partitionedKnapsackModel as IYamlAlgorithmModel],
+    ['luogu-p1757', partitionedKnapsackModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

@@ -1,0 +1,304 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 分组背包模版 (洛谷 P1757 通天之分组背包) - 左程云算法通关课 Class 074 Code01
+# 组内物品互斥决策（至多选 1 件），外层容量倒序内层枚举组内候选
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: partitioned-knapsack-standard
+name: "分组背包模版 (通天之分组背包)"
+nameEn: "Partitioned Knapsack Standard"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🗂️"
+difficulty: 2
+levelOrder: 84
+learningGoal: "掌握分组背包组内互斥决策建模、外层容量倒序内层枚举组内物品的核心循环顺序"
+description: "左程云算法通关课 Class 074 Code01：洛谷 P1757 通天之分组背包，组内物品至多选 1 件，容量倒序外层枚举防止组内多选"
+defaultParams:
+  m: 45
+  items: [[10, 10, 1], [10, 20, 1], [20, 20, 2]]
+
+problem:
+  leetcodeId: 1757
+  title: "通天之分组背包 (洛谷 P1757)"
+  difficulty: "普及+/提高"
+  tags: ["动态规划", "背包问题", "分组背包"]
+  description: "自 01 背包问世之后，小 A 对此深感兴趣。他发现有 <code>n</code> 个物品和一个容量为 <code>m</code> 的背包。每个物品有自己的体积 <code>c_i</code>、价值 <code>v_i</code>，并且属于某一个组 <code>g_i</code>。<br/><br/><strong>限制规则：同一个组内的物品最多只能选择一件！</strong>所有选择的物品体积之和不得超过背包总容量 <code>m</code>。求怎么挑选物品才能使得总价值最大。"
+  examples:
+    - input: "m = 45, items = [[10, 10, 1], [10, 20, 1], [20, 20, 2]]"
+      output: "40"
+      explanation: "组 1 选择物品 2 (体积 10, 价值 20)；组 2 选择物品 3 (体积 20, 价值 20)。总占用体积 30 <= 45，最大总价值为 40。"
+    - input: "m = 50, items = [[15, 25, 1], [10, 15, 1], [20, 30, 2], [15, 20, 2], [10, 20, 3]]"
+      output: "75"
+      explanation: "组 1 选 (15, 25)，组 2 选 (20, 30)，组 3 选 (10, 20)，总容量 45 <= 50，总价值 25 + 30 + 20 = 75。"
+  constraints:
+    - "1 <= m, n <= 1000"
+    - "g_i <= 100"
+    - "c_i, v_i 为正整数且 <= 1000"
+  leetcodeUrl: "https://www.luogu.com.cn/problem/P1757"
+
+directions:
+  forward:
+    label: "自底向上正序填表 (外层组号，内层容量)"
+    branches:
+      - name: "not_take"
+        label: "本组全都不选"
+        formula: "dp[g - 1][j]"
+      - name: "take_k"
+        label: "在第 g 组中挑选一件物品 k"
+        formula: "dp[g - 1][j - cost[k]] + val[k]"
+    combineFormula: "max(dp[g - 1][j], max_k(dp[g - 1][j - cost[k]] + val[k]))"
+  reverse:
+    label: "逆推倒序寻源 (终点逆向推导)"
+    description: "从目标容量向子问题基底反推"
+    startFormula: "dp[numGroups][m]"
+    target: "dp[0][0]"
+    branches:
+      - name: "trace_back"
+        label: "向上一组溯源"
+        formula: "dp[g - 1][j - cost[k]]"
+    combineFormula: "逆向聚合"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(Π |group_i|)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归分支展开 (组内互斥决策树)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "对于第 g 个物品组，枚举本组不选，或从本组候选物品中选且仅选 1 件，递归推进至下一组 g + 1，取各互斥分支的最大值。"
+      reverse: "从终点总容量与物品组倒序向前分解子问题，展示朴素递归中出现的严重重叠子问题与指数级爆炸分支。"
+    variants:
+      standard:
+        variantLabel: "标准多分支递归"
+        title:
+          forward: "PartitionedKnapsack_Recursive.java"
+          reverse: "PartitionedKnapsack_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "PartitionedKnapsack_Recursive.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      return dfs(0, m, numGroups, groups); // @step:entry
+                  }
+                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+                      if (g >= numGroups || remCap <= 0) return 0; // @step:boundary
+                      int maxVal = dfs(g + 1, remCap, numGroups, groups); // @step:branch_not_take
+                      for (int[] item : groups.get(g)) { // @step:loop_items
+                          int cost = item[0], val = item[1];
+                          if (remCap >= cost) {
+                              maxVal = Math.max(maxVal, dfs(g + 1, remCap - cost, numGroups, groups) + val); // @step:branch_take
+                          }
+                      }
+                      return maxVal; // @step:combine
+                  }
+              }
+          reverse:
+            title: "PartitionedKnapsack_Recursive_Reverse.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      return dfs(numGroups - 1, m, numGroups, groups); // @step:entry
+                  }
+                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+                      if (g < 0 || remCap <= 0) return 0; // @step:boundary
+                      int maxVal = dfs(g - 1, remCap, numGroups, groups); // @step:branch_not_take
+                      for (int[] item : groups.get(g)) { // @step:loop_items
+                          int cost = item[0], val = item[1];
+                          if (remCap >= cost) {
+                              maxVal = Math.max(maxVal, dfs(g - 1, remCap - cost, numGroups, groups) + val); // @step:branch_take
+                          }
+                      }
+                      return maxVal; // @step:combine
+                  }
+              }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(numGroups · M · |group|)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (消除重叠子状态)"
+      reverse: "阶段 2: 倒序备忘录剪枝 (自顶向下按需缓存)"
+    desc:
+      forward: "引入二维备忘录 memo[g][remCap]，在首次计算状态 (g, remCap) 时缓存其最大收益，后续遇到相同状态直接 O(1) 查表返回，剪除庞大冗余搜索子树。"
+      reverse: "采用倒序递归自顶向下备忘，缓存 memo[g][remCap] 消除倒序搜索过程中的重叠计算。"
+    variants:
+      standard:
+        variantLabel: "二维备忘录剪枝版"
+        title:
+          forward: "PartitionedKnapsack_Memo.java"
+          reverse: "PartitionedKnapsack_Memo_Reverse.java"
+        code:
+          forward:
+            title: "PartitionedKnapsack_Memo.java"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      memo = new int[numGroups][m + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(0, m, numGroups, groups); // @step:entry
+                  }
+                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+                      if (g >= numGroups || remCap <= 0) return 0; // @step:boundary
+                      if (memo[g][remCap] != -1) return memo[g][remCap]; // @step:cache_hit
+                      int maxVal = dfs(g + 1, remCap, numGroups, groups); // @step:branch_not_take
+                      for (int[] item : groups.get(g)) { // @step:loop_items
+                          int cost = item[0], val = item[1];
+                          if (remCap >= cost) {
+                              maxVal = Math.max(maxVal, dfs(g + 1, remCap - cost, numGroups, groups) + val); // @step:branch_take
+                          }
+                      }
+                      return memo[g][remCap] = maxVal; // @step:combine
+                  }
+              }
+          reverse:
+            title: "PartitionedKnapsack_Memo_Reverse.java"
+            source: |
+              class Solution {
+                  private int[][] memo;
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      memo = new int[numGroups][m + 1]; // @step:init_memo
+                      for (int[] row : memo) Arrays.fill(row, -1);
+                      return dfs(numGroups - 1, m, numGroups, groups); // @step:entry
+                  }
+                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+                      if (g < 0 || remCap <= 0) return 0; // @step:boundary
+                      if (memo[g][remCap] != -1) return memo[g][remCap]; // @step:cache_hit
+                      int maxVal = dfs(g - 1, remCap, numGroups, groups); // @step:branch_not_take
+                      for (int[] item : groups.get(g)) { // @step:loop_items
+                          int cost = item[0], val = item[1];
+                          if (remCap >= cost) {
+                              maxVal = Math.max(maxVal, dfs(g - 1, remCap - cost, numGroups, groups) + val); // @step:branch_take
+                          }
+                      }
+                      return memo[g][remCap] = maxVal; // @step:combine
+                  }
+              }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation-2d"
+    timeBadge: "O(numGroups · M · |group|)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 3: 严格二维分组背包动态规划 (组间决策与组内互斥填表)"
+      reverse: "阶段 3: 逆向依赖二维填表 (倒序边界推导)"
+    desc:
+      forward: "建立状态表 dp[g][j]，表示考察完前 g 组后在容量限制为 j 下的最大收益：dp[g][j] = max(dp[g-1][j], max_k(dp[g-1][j - cost[k]] + val[k]))。"
+      reverse: "自右下角终点状态向基底反推依赖关系，高亮展示组内候选与上一组的依赖来源。"
+    variants:
+      standard:
+        variantLabel: "二维矩阵填表版"
+        title:
+          forward: "PartitionedKnapsack_DP2D.java"
+          reverse: "PartitionedKnapsack_DP2D_Reverse.java"
+        code:
+          forward:
+            title: "PartitionedKnapsack_DP2D.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      int[][] dp = new int[numGroups + 1][m + 1]; // @step:init_dp
+                      for (int g = 1; g <= numGroups; g++) { // @step:outer_loop
+                          for (int j = 0; j <= m; j++) { // @step:inner_cap
+                              dp[g][j] = dp[g - 1][j]; // @step:branch_not_take
+                              for (int[] item : groups.get(g - 1)) { // @step:loop_items
+                                  int cost = item[0], val = item[1];
+                                  if (j >= cost) {
+                                      dp[g][j] = Math.max(dp[g][j], dp[g - 1][j - cost] + val); // @step:transition
+                                  }
+                              }
+                          }
+                      }
+                      return dp[numGroups][m]; // @step:return_ans
+                  }
+              }
+          reverse:
+            title: "PartitionedKnapsack_DP2D_Reverse.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+                      int[][] dp = new int[numGroups + 1][m + 1]; // @step:init_dp
+                      for (int g = numGroups; g >= 1; g--) { // @step:outer_loop
+                          for (int j = m; j >= 0; j--) { // @step:inner_cap
+                              dp[g][j] = (g == numGroups) ? 0 : dp[g + 1][j]; // @step:branch_not_take
+                              for (int[] item : groups.get(g - 1)) { // @step:loop_items
+                                  int cost = item[0], val = item[1];
+                                  if (j >= cost) {
+                                      dp[g][j] = Math.max(dp[g][j], dp[g + 1][j - cost] + val); // @step:transition
+                                  }
+                              }
+                          }
+                      }
+                      return dp[1][m]; // @step:return_ans
+                  }
+              }
+
+  stage-4:
+    shortName: "空间优化"
+    type: "tabulation-1d"
+    timeBadge: "O(numGroups · M · |group|) · 空间 O(M)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 4: 一维滚动空间压缩 (容量倒序防组内多选)"
+      reverse: "阶段 4: 空间压缩极简倒序流转 (O(M) 辅助空间)"
+    desc:
+      forward: "使用一维数组 dp[j] 时，容量循环与组内物品枚举的内外层顺序绝对不能颠倒：容量 j 必须在外层从 m 倒序遍历至 0，内层枚举组内候选物品，杜绝组内连锁累加！"
+      reverse: "严格维护一维滚动数组，展示容量从 m 倒序至 0 的单层流转过程与组内互斥性保护。"
+    variants:
+      standard:
+        variantLabel: "一维空间压缩版"
+        title:
+          forward: "PartitionedKnapsack_DP1D.java"
+          reverse: "PartitionedKnapsack_DP1D_Reverse.java"
+        code:
+          forward:
+            title: "PartitionedKnapsack_DP1D.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int n, int[][] arr) {
+                      Arrays.sort(arr, 0, n, (a, b) -> a[2] - b[2]); // @step:sort_items
+                      int[] dp = new int[m + 1]; // @step:init_dp
+                      for (int start = 0, end = 1; start < n;) { // @step:outer_group
+                          while (end < n && arr[end][2] == arr[start][2]) end++; // @step:group_end
+                          for (int j = m; j >= 0; j--) { // @step:cap_loop
+                              for (int k = start; k < end; k++) { // @step:item_loop
+                                  if (j >= arr[k][0]) {
+                                      dp[j] = Math.max(dp[j], dp[j - arr[k][0]] + arr[k][1]); // @step:transition
+                                  }
+                              }
+                          }
+                          start = end++; // @step:advance_group
+                      }
+                      return dp[m]; // @step:return_ans
+                  }
+              }
+          reverse:
+            title: "PartitionedKnapsack_DP1D_Reverse.java"
+            source: |
+              class Solution {
+                  public int compute(int m, int n, int[][] arr) {
+                      Arrays.sort(arr, 0, n, (a, b) -> b[2] - a[2]); // @step:sort_items
+                      int[] dp = new int[m + 1]; // @step:init_dp
+                      for (int start = 0, end = 1; start < n;) { // @step:outer_group
+                          while (end < n && arr[end][2] == arr[start][2]) end++; // @step:group_end
+                          for (int j = m; j >= 0; j--) { // @step:cap_loop
+                              for (int k = start; k < end; k++) { // @step:item_loop
+                                  if (j >= arr[k][0]) {
+                                      dp[j] = Math.max(dp[j], dp[j - arr[k][0]] + arr[k][1]); // @step:transition
+                                  }
+                              }
+                          }
+                          start = end++; // @step:advance_group
+                      }
+                      return dp[m]; // @step:return_ans
+                  }
+              }

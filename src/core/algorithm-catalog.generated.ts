@@ -1592,7 +1592,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "partitioned-knapsack-standard",
     name: "分组背包模版 (通天之分组背包)",
-    viewId: "algo-partitioned-knapsack-standard-view",
+    viewId: "partitioned-knapsack-standard",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code01：洛谷 P1757 通天之分组背包，组内物品至多选 1 件，容量倒序外层枚举防止组内多选",
     icon: "🗂️",

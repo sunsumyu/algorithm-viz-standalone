@@ -303,6 +303,14 @@ export class StateSpacePresenter {
           colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
           cornerLabel = '硬币栈(i) \\ 容量(j)';
         }
+      } else if (params && params.items && modelId.includes('partitioned')) {
+        const rawItems = Array.isArray(params.items) ? params.items : [];
+        const groupSet = Array.from(new Set(rawItems.map((it: any) => it[2])));
+        if (effectiveM === groupSet.length + 1) {
+          rowLabels = ['Ø(空)', ...groupSet.map((g: any) => `组${g}`)];
+          colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+          cornerLabel = '物品组(g) \\ 容量(j)';
+        }
       }
     }
 
@@ -1013,6 +1021,14 @@ export class StateSpacePresenter {
           value: Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : 0
         }));
         capacity = params.k ?? capacity;
+      } else if (params.items && Array.isArray(params.items)) {
+        items = params.items.map((it: number[], idx: number) => ({
+          index: idx,
+          weight: it[0],
+          value: it[1],
+          group: it[2]
+        }));
+        capacity = params.m ?? params.capacity ?? capacity;
       }
     }
 
