@@ -778,21 +778,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'minimum-fuel-cost',
-    name: '到达首都的最少油耗',
-    description: '树型DP子树人数汇聚：每条边所需车辆与油耗 = ⌈子树代表总人数 / 车辆座位数⌉ (LeetCode 2477)。',
-    icon: '⛽',
-    aliases: ['class079-code03', 'minimum-fuel-cost-2477', 'leetcode-2477'],
-    inputs: [
-      { id: 'seats', label: '车座 seats', value: '2', width: 80 },
-    ],
-    examples: [
-      { label: 'seats=2', values: { seats: '2' } },
-      { label: 'seats=5', values: { seats: '5' } },
-    ],
-    build: makeEngineBuilder('minimum-fuel-cost'),
-  },
+
   {
     id: 'longest-path-different-characters',
     name: '相邻字符不同的最长路径',
@@ -1044,7 +1030,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'minimum-fuel-cost' },
   { type: 'demo', id: 'longest-path-different-characters' },
   { type: 'demo', id: 'height-removal-queries' },
   { type: 'demo', id: 'minimum-score-after-removals' },

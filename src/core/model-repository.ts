@@ -121,6 +121,7 @@ import treeDiameterModel from './models/tree-diameter.yaml';
 import binaryTreeCamerasModel from './models/binary-tree-cameras.yaml';
 import partyWithoutBossModel from './models/party-without-boss.yaml';
 import courseSelectionModel from './models/course-selection.yaml';
+import minimumFuelCostModel from './models/minimum-fuel-cost.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -264,6 +265,10 @@ export class AlgorithmModelRepository {
     ['class079-code02', courseSelectionModel as IYamlAlgorithmModel],
     ['luogu-p2014', courseSelectionModel as IYamlAlgorithmModel],
     ['course-schedule-tree', courseSelectionModel as IYamlAlgorithmModel],
+    ['minimum-fuel-cost', minimumFuelCostModel as IYamlAlgorithmModel],
+    ['class079-code03', minimumFuelCostModel as IYamlAlgorithmModel],
+    ['leetcode-2477', minimumFuelCostModel as IYamlAlgorithmModel],
+    ['minimum-fuel-cost-2477', minimumFuelCostModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

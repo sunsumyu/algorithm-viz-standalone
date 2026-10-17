@@ -62,7 +62,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'course-selection':
         return compileCourseSelection(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'minimum-fuel-cost':
-        return compileMinimumFuelCost(model, stage, anchorMap);
+        return compileMinimumFuelCost(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'longest-path-different-characters':
         return compileLongestPathDifferentCharacters(model, stage, anchorMap);
       case 'party-without-boss':

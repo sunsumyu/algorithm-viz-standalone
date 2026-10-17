@@ -1,0 +1,222 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 到达首都的最少油耗 顶层领域模型
+# 对应：LeetCode 2477 / 左程云算法讲解 079 Code03
+# 包含：子树代表人数自底向上汇聚、跨边油耗 ⌈size / seats⌉ 向上取整、状态机展开
+# ==============================================================================
+
+id: minimum-fuel-cost
+name: 到达首都的最少油耗 (LeetCode 2477)
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 树型 DP
+  - 动态规划
+  - 贪心
+  - 树
+  - 深度优先搜索
+
+description: |
+  LeetCode 2477 · 左程云算法通关课第 079 讲 树型 DP（下）Code03：到达首都的最少油耗。
+  给你一棵 n 个节点的树（城市编号 0 到 n - 1），以 0 号城市（首都）为根。
+  每个城市恰有 1 名代表要前往首都。每辆车最多可坐 seats 个人。
+  
+  核心树型 DP 汇聚模型 (Tree People Gathering Model)：
+  1. 状态定义：以节点 u 为根的子树总人数为 people(u)。每个节点自身贡献 1 人。
+  2. 人数汇聚：people(u) = 1 + ∑ people(v)（v 为 u 的所有子节点）。
+  3. 跨边油耗计算：除首都（根节点 0）以外，节点 u 子树中的所有人驶向 u 的父节点，
+     至少需要 ⌈people(u) / seats⌉ 辆车。由于每辆车跨越一条公路消耗 1 升油，
+     故该边产生的油耗等于车辆数：
+     fuel(u) = ⌈people(u) / seats⌉ = (people(u) + seats - 1) / seats。
+  4. 全局最少油耗等于所有非根节点跨边油耗之和：totalFuel = ∑_{u != 0} fuel(u)。
+
+defaultParams:
+  n: 7
+  seats: 2
+  roads:
+    - [0, 1]
+    - [0, 4]
+    - [0, 5]
+    - [1, 2]
+    - [1, 3]
+    - [4, 6]
+
+constraints:
+  - 1 <= n <= 10^5（教学演示推荐 5~10）
+  - 1 <= seats <= 10^5
+  - roads 构成一棵无向树
+
+directions:
+  forward:
+    name: 自底向上子树人数汇聚 (Bottom-Up Subtree People Gathering)
+    description: 后序遍历自底向上汇聚每个子树的总代表人数，精确计算每条边所需拼车数与汽油消耗
+  reverse:
+    name: 自顶向下发车调度对比 (Top-Down Pre-Order Vehicle Dispatching)
+    description: 从首都 0 号城市出发自顶向下派送空车调度，对比验证后序子树汇聚拼车的极佳油耗优化
+
+stages:
+  stage-1:
+    name: 后序子树人数汇聚与拼车推导
+    description: 递归后序遍历多叉树，汇总各子树代表人数，按 ⌈size / seats⌉ 累加各公路段耗油量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private long totalFuel = 0; // @step:entry
+              public long minimumFuelCost(int[][] roads, int seats) {
+                  int n = roads.length + 1; // @step:build_tree
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] r : roads) { tree[r[0]].add(r[1]); tree[r[1]].add(r[0]); } // @step:init_graph
+                  dfs(0, -1, tree, seats); // @step:dfs_call
+                  return totalFuel; // @step:return
+              }
+              private int dfs(int u, int p, List<Integer>[] tree, int seats) { // @step:dfs_entry
+                  int people = 1; // @step:init_people
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) people += dfs(v, u, tree, seats); // @step:branch_call
+                  }
+                  if (u != 0) { // @step:check_root
+                      totalFuel += (people + seats - 1) / seats; // @step:calc_fuel
+                  }
+                  return people; // @step:return_people
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public long minimumFuelCostReverse(int[][] roads, int seats) { // @step:entry
+                  int n = roads.length + 1; // @step:build_tree
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] r : roads) { tree[r[0]].add(r[1]); tree[r[1]].add(r[0]); } // @step:init_graph
+                  return dispatchFromCapital(0, -1, tree, seats); // @step:return
+              }
+              private long dispatchFromCapital(int u, int p, List<Integer>[] tree, int seats) { // @step:dfs_entry
+                  long fuel = 0; // @step:init_people
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) { // @step:branch_call
+                          fuel += 1 + dispatchFromCapital(v, u, tree, seats); // @step:calc_fuel
+                      }
+                  }
+                  return fuel; // @step:return_people
+              }
+          }
+
+  stage-2:
+    name: 子树人数汇聚与状态依赖树展开
+    description: 显式展开各城市先修与相邻分支，跟踪子树递归进入、代表人数合并与跨边油耗登记
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 子树人数汇聚与状态依赖树展开
+          // @step:entry 1. 展开首都根节点 minimumFuelCost(0)
+          // @step:build_tree 2. 城市公路双向依赖拓扑建立
+          // @step:init_graph 3. 初始化全局油耗计数器
+          // @step:dfs_call 4. 深入首都 0 号城市
+          // @step:dfs_entry 5. 访问当前城市 u
+          // @step:init_people 6. 初始化本城代表 1 人
+          // @step:loop_child 7. 遍历连接公路
+          // @step:branch_call 8. 递归子树汇聚代表人数
+          // @step:check_root 9. 校验是否为非首都跨边节点
+          // @step:calc_fuel 10. 计算跨边所需车辆：ceil(people / seats)
+          // @step:return_people 11. 向父级城市返回子树总人数
+          // @step:return 12. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向自顶向下发车调度对比
+          // @step:entry 1. 启动自顶向下发车调度探查
+          // @step:build_tree 2. 建立公路网络
+          // @step:init_graph 3. 首都空车调度初始化
+          // @step:dfs_entry 4. 根城市派出车辆
+          // @step:init_people 5. 边界检测
+          // @step:loop_child 6. 沿公路向下派送
+          // @step:branch_call 7. 深入远端城市
+          // @step:calc_fuel 8. 空车前行油耗落盘
+          // @step:return_people 9. 差异比较
+          // @step:return 10. 逆向推演完成
+
+  stage-3:
+    name: 城市油耗与子树人数向量转移
+    description: 映射为标准状态表向量，实时呈现各城市子树人数 people[u]、跨边车数与累计总油耗
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 城市油耗与子树人数向量转移
+          // @step:entry 1. 状态表初始化 people[n], fuel[n]
+          // @step:build_tree 2. 拓扑邻接矩阵建立
+          // @step:init_graph 3. 初始基底就绪
+          // @step:dfs_call 4. 启动后序填表
+          // @step:dfs_entry 5. 访问城市 u
+          // @step:init_people 6. 基底填入：people[u] = 1
+          // @step:loop_child 7. 子树人数归约
+          // @step:branch_call 8. 递归读取子树人数
+          // @step:check_root 9. 跨边判断
+          // @step:calc_fuel 10. 转移油耗：fuel += ceil(people[u] / seats)
+          // @step:return_people 11. 状态落盘并向父城返回
+          // @step:return 12. 读取全国最少总油耗
+      reverse:
+        language: java
+        source: |
+          // 逆向调度状态表
+          // @step:entry 1. 逆向矩阵初始化
+          // @step:build_tree 2. 拓扑校验
+          // @step:init_graph 3. 调度初始状态
+          // @step:dfs_entry 4. 逆向发车扫描
+          // @step:init_people 5. 边界校验
+          // @step:loop_child 6. 下属城市遍历
+          // @step:branch_call 7. 派送油耗登记
+          // @step:calc_fuel 8. 累积空驶油耗
+          // @step:return_people 9. 逆向收敛
+          // @step:return 10. 逆向推演完成
+
+  stage-4:
+    name: O(H) 递归栈空间流转与常数空间压缩
+    description: 舍弃额外树结构构建，复用系统递归调用栈，原地轻量流转人数与计算油耗
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // O(H) 递归栈空间流转与常数空间压缩
+          // @step:entry 1. 极速状态初始化：totalFuel = 0
+          // @step:build_tree 2. 紧凑邻接表
+          // @step:init_graph 3. 原地复用空间
+          // @step:dfs_call 4. 启动极速 DFS 流转
+          // @step:dfs_entry 5. 单变量后序流转
+          // @step:init_people 6. 原地代表计数
+          // @step:loop_child 7. 链式遍历子节点
+          // @step:branch_call 8. 极速递归子树
+          // @step:check_root 9. 非根特判
+          // @step:calc_fuel 10. 累加全局油耗
+          // @step:return_people 11. 极速返回子树人数
+          // @step:return 12. 极速返回全局最少油耗
+      reverse:
+        language: java
+        source: |
+          // 逆向极速推演
+          // @step:entry 1. 逆向寄存器初始化
+          // @step:build_tree 2. 依赖链轻量化
+          // @step:init_graph 3. 初始就绪
+          // @step:dfs_entry 4. 自顶向下轻量递归
+          // @step:init_people 5. 边界检测
+          // @step:loop_child 6. 沿途扫描
+          // @step:branch_call 7. 下属分配
+          // @step:calc_fuel 8. 快速累加
+          // @step:return_people 9. 极速登记
+          // @step:return 10. 极速返回
