@@ -48,6 +48,11 @@ export class ProblemDimensionResolver {
     'partitioned-knapsack-074',
     'class074-code01',
     'luogu-p1757',
+    'unbounded-knapsack-standard',
+    'unbounded-knapsack',
+    'unbounded-knapsack-074',
+    'class074-code03',
+    'luogu-p1616',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -278,13 +283,17 @@ export class ProblemDimensionResolver {
         ? (typeof params.piles === 'string' ? JSON.parse(params.piles) : params.piles)
         : (params.weights
           ? this.toArray(params.weights)
-          : (params.coins
-            ? this.toArray(params.coins)
-            : (params.stones
-              ? this.toArray(params.stones)
-              : (params.nums ? this.toArray(params.nums) : []))));
+          : (params.costs
+            ? this.toArray(params.costs)
+            : (params.cost
+              ? this.toArray(params.cost)
+              : (params.coins
+                ? this.toArray(params.coins)
+                : (params.stones
+                  ? this.toArray(params.stones)
+                  : (params.nums ? this.toArray(params.nums) : []))))));
 
-      let bag = Number(params.k ?? params.bagWeight ?? params.target ?? params.amount ?? 0);
+      let bag = Number(params.k ?? params.bagWeight ?? params.target ?? params.amount ?? params.t ?? 0);
 
       // 特殊背包容量数学归约：
       if (modelId === 'partition-equal-subset-sum' && wArr.length > 0) {

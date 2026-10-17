@@ -1637,14 +1637,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "unbounded-knapsack-standard",
     name: "完全背包模版 (疯狂的采药)",
-    viewId: "algo-unbounded-knapsack-standard-view",
+    viewId: "unbounded-knapsack-standard",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code03：洛谷 P1616 疯狂的采药，每件物品可选任意次，空间压缩后正序枚举容量 j",
     icon: "🌿",
     difficulty: 1,
     levelOrder: 86,
     learningGoal: "深刻理解完全背包与 01 背包空间压缩的本质区别：正序从小到大枚举容量使得物品可同轮无限次自叠加",
-    aliases: ["class074-code03","unbounded-knapsack-074","unbounded-knapsack","luogu-p1616"],
+    aliases: ["class074-code03","unbounded-knapsack-074","unbounded-knapsack","luogu-p1616","complete-knapsack"],
   },
   {
     id: "regex-matching",

@@ -66,6 +66,7 @@ export class StageCodeCompiler {
       case 'last-stone-weight-ii':
         return this.getLastStoneWeightIITemplate(stage);
       case 'complete-knapsack':
+      case 'unbounded-knapsack-standard':
         return this.getCompleteKnapsackTemplate(stage);
       case 'coin-change-ii':
         return this.getCoinChangeIITemplate(stage);

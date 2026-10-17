@@ -20,20 +20,26 @@ defaultParams:
   values: [15, 20, 30]
 
 problem:
-  leetcodeId: "完全背包"
-  title: "完全背包问题"
+  leetcodeId: 1616
+  title: "完全背包模版 (疯狂的采药 洛谷 P1616 / 完全背包)"
   difficulty: "中等"
-  tags: ["动态规划", "背包问题", "正序滚动"]
-  description: "有 <code>N</code> 种物品和一个容量为 <code>V</code> 的背包。每种物品都有 <strong>无限件</strong> 可用。第 <code>i</code> 种物品的重量是 <code>weight[i]</code>，得到的价值是 <code>value[i]</code> 。<br/><br/>求解将哪些物品装入背包可使这些物品的费用总和不超过背包容量，且 <strong>价值总和最大</strong>。"
+  tags: ["动态规划", "背包问题", "完全背包", "正序滚动"]
+  description: "有 <code>N</code> 种物品和一个容量为 <code>V</code> 的背包（或有 <code>M</code> 种草药和采药总时间 <code>T</code>）。每种物品/草药都有 <strong>无限件</strong> 可用。第 <code>i</code> 种物品的重量/耗时是 <code>weight[i]</code>，得到的价值是 <code>value[i]</code>。<br/><br/>求解将哪些物品装入背包可使费用总和不超过背包容量，且 <strong>价值总和最大</strong>。"
   examples:
     - input: "bagWeight = 4, weights = [1, 3, 4], values = [15, 20, 30]"
       output: "60"
       explanation: "选择 4 件物品 0 (每件重 1, 价值 15)，总重量 1 × 4 = 4 <= 4，获得最大价值 15 × 4 = 60。"
+    - input: "t = 70, costs = [71, 23], values = [100, 10]"
+      output: "30"
+      explanation: "洛谷 P1616 经典用例：草药 2 耗时 23 价值 10，在 70 时间内采摘 3 次（23 × 3 = 69 <= 70），获得最大收益 10 × 3 = 30。"
+    - input: "t = 10, costs = [2, 3, 5], values = [5, 8, 14]"
+      output: "26"
+      explanation: "多草药多重选择：草药 0 (2, 5)、草药 1 (3, 8)、草药 2 (5, 14)，规划采摘使得总时间不超过 10，获得最大总价值。"
   constraints:
-    - "1 <= N <= 1000"
-    - "1 <= V <= 1000"
-    - "1 <= weight[i], value[i] <= 1000"
-  leetcodeUrl: "https://programmercarl.com/背包问题理论基础完全背包.html"
+    - "1 <= N, M <= 10000"
+    - "1 <= V, T <= 10000000"
+    - "1 <= weight[i], value[i] <= 100000"
+  leetcodeUrl: "https://www.luogu.com.cn/problem/P1616"
 
 directions:
   forward:

@@ -17,7 +17,8 @@ export type KnapsackFamilyModelId =
   | 'multiple-knapsack'
   | 'profitable-schemes'
   | 'coins-from-piles'
-  | 'partitioned-knapsack-standard';
+  | 'partitioned-knapsack-standard'
+  | 'unbounded-knapsack-standard';
 
 /**
  * 背包 DP 扩展家族多态策略 (KnapsackFamilyStrategy)
@@ -30,7 +31,15 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
     return (
       modelId === this.modelId ||
       (this.modelId === 'last-stone-weight-ii' && (modelId === 'last-stone-weight-2' || modelId === 'last_stone_weight_ii' || modelId === 'last-stone-weight-ii-standard')) ||
-      (this.modelId === 'complete-knapsack' && (modelId === 'unbounded-knapsack' || modelId === 'complete_knapsack')) ||
+      ((this.modelId === 'complete-knapsack' || this.modelId === 'unbounded-knapsack-standard') && (
+        modelId === 'complete-knapsack' ||
+        modelId === 'unbounded-knapsack' ||
+        modelId === 'unbounded-knapsack-standard' ||
+        modelId === 'unbounded-knapsack-074' ||
+        modelId === 'class074-code03' ||
+        modelId === 'luogu-p1616' ||
+        modelId === 'complete_knapsack'
+      )) ||
       (this.modelId === 'coin-change-ii' && (modelId === 'coin-change-2' || modelId === 'coin2')) ||
       (this.modelId === 'coin-change' && modelId === 'coin1') ||
       (this.modelId === 'perfect-squares' && (modelId === 'num-squares' || modelId === 'perfect_squares')) ||
@@ -61,7 +70,8 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
       case 'last-stone-weight-ii':
         return this.compileLastStoneWeightII(model, stage, Boolean(isMemo), anchorMap);
       case 'complete-knapsack':
-        return this.compileCompleteKnapsack(model, stage, Boolean(isMemo), anchorMap);
+      case 'unbounded-knapsack-standard':
+        return this.compileCompleteKnapsack(model, stage, Boolean(isMemo), anchorMap, params);
       case 'coin-change-ii':
         return this.compileCoinChangeII(model, stage, Boolean(isMemo), anchorMap);
       case 'coin-change':
@@ -127,13 +137,27 @@ export class KnapsackFamilyStrategy implements IAlgorithmStrategy {
     model: IYamlAlgorithmModel,
     stage: number,
     isMemo: boolean,
-    anchorMap?: Record<string, number>
+    anchorMap?: Record<string, number>,
+    params?: StageExecutionParams
   ): UniversalStep[] {
-    const rawWeights = (model.defaultParams as any)?.weights || [1, 3, 4];
-    const rawValues = (model.defaultParams as any)?.values || [15, 20, 30];
+    const defaultParams = model.defaultParams as any;
+    const rawWeights = (params as any)?.weights ?? (params as any)?.costs ?? (params as any)?.cost ?? defaultParams?.weights ?? [1, 3, 4];
+    const rawValues = (params as any)?.values ?? (params as any)?.vals ?? (params as any)?.val ?? defaultParams?.values ?? [15, 20, 30];
     const weights: number[] = Array.isArray(rawWeights) ? rawWeights.map(Number) : String(rawWeights).split(',').map(Number);
     const values: number[] = Array.isArray(rawValues) ? rawValues.map(Number) : String(rawValues).split(',').map(Number);
-    const capacity = Number((model.defaultParams as any)?.bagWeight ?? (model.defaultParams as any)?.n ?? 4);
+
+    let capacity = 4;
+    if ((params as any)?.bagWeight !== undefined) {
+      capacity = Math.max(0, Number((params as any).bagWeight));
+    } else if ((params as any)?.capacity !== undefined) {
+      capacity = Math.max(0, Number((params as any).capacity));
+    } else if ((params as any)?.t !== undefined) {
+      capacity = Math.max(0, Number((params as any).t));
+    } else if ((params as any)?.n !== undefined) {
+      capacity = Math.max(0, Number((params as any).n) - 1);
+    } else {
+      capacity = Number(defaultParams?.bagWeight ?? defaultParams?.t ?? defaultParams?.n ?? 4);
+    }
 
     const domainConfig: KnapsackDomainConfig = {
       modelId: 'complete-knapsack',
