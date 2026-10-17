@@ -110,6 +110,7 @@ import regexMatchingModel from './models/regex-matching.yaml';
 import wildcardMatchingModel from './models/wildcard-matching.yaml';
 import buyingHayMinCostModel from './models/buying-hay-min-cost.yaml';
 import burstBalloonsModel from './models/burst-balloons.yaml';
+import predictTheWinnerModel from './models/predict-the-winner.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -208,6 +209,11 @@ export class AlgorithmModelRepository {
     ['class076-code03', burstBalloonsModel as IYamlAlgorithmModel],
     ['burst-balloons-312', burstBalloonsModel as IYamlAlgorithmModel],
     ['leetcode-312', burstBalloonsModel as IYamlAlgorithmModel],
+    ['predict-the-winner', predictTheWinnerModel as IYamlAlgorithmModel],
+    ['class076-code02', predictTheWinnerModel as IYamlAlgorithmModel],
+    ['predict-the-winner-486', predictTheWinnerModel as IYamlAlgorithmModel],
+    ['leetcode-486', predictTheWinnerModel as IYamlAlgorithmModel],
+    ['cards-in-line', predictTheWinnerModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

@@ -289,6 +289,17 @@ export class ProblemDimensionResolver {
       const mSize = nums.length + 2;
       return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
     }
+    if (
+      modelId === 'predict-the-winner' ||
+      modelId === 'class076-code02' ||
+      modelId === 'predict-the-winner-486' ||
+      modelId === 'leetcode-486' ||
+      modelId === 'cards-in-line'
+    ) {
+      const nums = params.nums ? this.toArray(params.nums) : [1, 5, 2];
+      const mSize = nums.length;
+      return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
+    }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
     if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {

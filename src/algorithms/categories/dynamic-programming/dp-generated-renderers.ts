@@ -1242,22 +1242,6 @@ registerDemo({
   ],
 });
 
-registerDemo({
-  id: 'predict-the-winner',
-  name: '预测赢家 (Predict the Winner / 纸牌博弈)',
-  description: '左程云算法讲解076 Code02：LeetCode 486 预测赢家/纸牌博弈，博弈论极小化极大区间动态规划。',
-  icon: '🃏',
-  inputs: [{ id: 'nums', label: 'nums (逗号分隔)', value: '1,5,2', width: 150 }],
-  build: makeEngineBuilder('predict-the-winner'),
-  difficulty: 2,
-  levelOrder: 486,
-  learningGoal: '掌握博弈论双人轮流博弈的区间 DP 状态建模，理解 dp[i][j] 表示当前玩家在 [i, j] 区间能够获得的最大净胜分',
-  aliases: ['class076-code02', 'predict-the-winner-486', 'leetcode-486', 'cards-in-line'],
-  examples: [
-    { label: '先手必输 [1, 5, 2] False', values: { nums: '1,5,2' } },
-    { label: '先手必胜 [1, 5, 233, 7] True', values: { nums: '1,5,233,7' } },
-  ],
-});
 
 registerDemo({
   id: 'strange-printer',

@@ -1,0 +1,456 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 预测赢家 (Predict the Winner / LeetCode 486 / 左程云 Class 076 Code02)
+# 核心：博弈论零和对抗与区间 DP——相对净胜分建模 dp[i][j] = max(nums[i]-dp[i+1][j], nums[j]-dp[i][j-1])
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: predict-the-winner
+name: "预测赢家"
+nameEn: "Predict the Winner"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🃏"
+difficulty: 2
+levelOrder: 486
+learningGoal: "深刻掌握极小化极大零和博弈思维，通过相对净胜分对称建模将博弈对抗转化为标准区间 DP 上三角递推"
+description: "左程云算法通关课 Class 076 Code02：LeetCode 486 预测赢家，零和博弈区间 DP 经典。dp[i][j] 表示面对区间 [i, j] 纸牌时当前行动者相对于对手的最大净胜分。"
+defaultParams:
+  nums: [1, 5, 2]
+
+problem:
+  leetcodeId: 486
+  title: "预测赢家 (LeetCode 486 / Class 076 Code02)"
+  difficulty: "中等"
+  tags: ["动态规划", "区间 DP", "博弈论", "极小化极大"]
+  description: "给你一个整数数组 <code>nums</code> 。玩家 1 和玩家 2 基于这个数组设计了一个游戏。<br/><br/>玩家 1 和玩家 2 轮流进行，玩家 1 先手。开始时，两个玩家的得分均为 0 。每个回合，玩家只能从数组的开头或结尾拿走一个数，并将该数的值加到自己的得分中。这一过程持续到没有数字可选。<br/><br/>如果玩家 1 的最终得分大于或等于玩家 2 的总得分，则玩家 1 获胜。判断在双方均采取最优策略的情况下，玩家 1 是否能成为赢家。"
+  examples:
+    - input: "nums = [1, 5, 2]"
+      output: "false"
+      explanation: "玩家 1 只能选 1 或 2。<br/>若玩家 1 选 1，数组剩 [5, 2]，玩家 2 选 5 得 5 分，玩家 1 再选 2 得 2 分，最终玩家 1 得 3 分，玩家 2 得 5 分，玩家 1 输。<br/>若玩家 1 选 2，数组剩 [1, 5]，玩家 2 选 5 得 5 分，玩家 1 再选 1 得 1 分，最终玩家 1 得 3 分，玩家 2 得 5 分，玩家 1 输。因此返回 false。"
+    - input: "nums = [1, 5, 233, 7]"
+      output: "true"
+      explanation: "玩家 1 一开始选择 1。玩家 2 只能从 5 和 7 中选。无论选哪个，玩家 1 随后都能拿到 233，稳操胜券。"
+  constraints:
+    - "1 <= nums.length <= 20"
+    - "0 <= nums[i] <= 10^7"
+  leetcodeUrl: "https://leetcode.cn/problems/predict-the-winner/"
+
+directions:
+  forward:
+    label: "区间跨度顺推 (len=2..n 上三角自底向上递推)"
+    branches:
+      - name: "choose_left"
+        label: "取左端牌 nums[i]"
+        formula: "nums[i] - dp[i + 1][j]"
+      - name: "choose_right"
+        label: "取右端牌 nums[j]"
+        formula: "nums[j] - dp[i][j - 1]"
+    combineFormula: "max(nums[i] - dp[i + 1][j], nums[j] - dp[i][j - 1])"
+  reverse:
+    label: "全局区间逆推分解 (从全局 [0, n-1] 逆向寻源)"
+    description: "从完整区间 [0, n-1] 出发，逆向展示双方博弈分支与子区间净胜分依赖"
+    startFormula: "dp[0][n - 1]"
+    target: "dp[i][i] = nums[i]"
+    branches:
+      - name: "trace_branches"
+        label: "逆向博弈分支追溯"
+        formula: "nums[i] - dp[i+1][j] vs nums[j] - dp[i][j-1]"
+    combineFormula: "逆向博弈最优分支追溯"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力博弈树展开 (极小化极大相对净胜分)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (博弈决策树逆向展开)"
+    desc:
+      forward: "相对净胜分建模：每次行动者选择左端或右端牌，获得当前牌面值，并减去对手在剩余区间的最优相对净胜分。递归树展示指数级分支展开与重叠子问题。"
+      reverse: "从全局区间 [0, n-1] 逆向推导，展示博弈决策树的分支演变。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "PredictTheWinner_Recursive.java"
+          reverse: "PredictTheWinner_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "PredictTheWinner_Recursive.java"
+            source: |
+              class Solution {
+                  public boolean predictTheWinner(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      if (n % 2 == 0) return true; // @step:guard_even
+                      return dfs(nums, 0, n - 1) >= 0; // @step:return
+                  }
+                  private int dfs(int[] nums, int i, int j) { // @step:dfs_entry
+                      if (i == j) return nums[i]; // @step:boundary
+                      int chooseLeft = nums[i] - dfs(nums, i + 1, j); // @step:branch_left
+                      int chooseRight = nums[j] - dfs(nums, i, j - 1); // @step:branch_right
+                      return Math.max(chooseLeft, chooseRight); // @step:transfer
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public boolean predictTheWinner(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        return dfs(nums, 0, n - 1) >= 0; // @step:return
+                    }
+                    private int dfs(int[] nums, int i, int j) { // @step:dfs_entry
+                        if (i == j) return nums[i]; // @step:boundary
+                        int chooseLeft = nums[i] - dfs(nums, i + 1, j); // @step:branch_left
+                        int chooseRight = nums[j] - dfs(nums, i, j - 1); // @step:branch_right
+                        return Math.max(chooseLeft, chooseRight); // @step:transfer
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    bool predictTheWinner(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        return dfs(nums, 0, n - 1) >= 0; // @step:return
+                    }
+                    int dfs(vector<int>& nums, int i, int j) { // @step:dfs_entry
+                        if (i == j) return nums[i]; // @step:boundary
+                        int chooseLeft = nums[i] - dfs(nums, i + 1, j); // @step:branch_left
+                        int chooseRight = nums[j] - dfs(nums, i, j - 1); // @step:branch_right
+                        return max(chooseLeft, chooseRight); // @step:transfer
+                    }
+                };
+              python: |
+                class Solution:
+                    def predictTheWinner(self, nums: List[int]) -> bool: # @step:entry
+                        n = len(nums) # @step:init_n
+                        if n % 2 == 0: return True # @step:guard_even
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i == j: return nums[i] # @step:boundary
+                            choose_left = nums[i] - dfs(i + 1, j) # @step:branch_left
+                            choose_right = nums[j] - dfs(i, j - 1) # @step:branch_right
+                            return max(choose_left, choose_right) # @step:transfer
+                        return dfs(0, n - 1) >= 0 # @step:return
+              javascript: |
+                function predictTheWinner(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    if (n % 2 === 0) return true; // @step:guard_even
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i === j) return nums[i]; // @step:boundary
+                        const chooseLeft = nums[i] - dfs(i + 1, j); // @step:branch_left
+                        const chooseRight = nums[j] - dfs(i, j - 1); // @step:branch_right
+                        return Math.max(chooseLeft, chooseRight); // @step:transfer
+                    }
+                    return dfs(0, n - 1) >= 0; // @step:return
+                }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (备忘录消除重叠子问题)"
+      reverse: "阶段 2: 记忆化逆向回溯 (带缓存的寻源推演)"
+    desc:
+      forward: "引入 memo[i][j] 备忘录缓存区间 [i, j] 的净胜分。先查表，若已计算则直接 O(1) 返回，未计算则递归求解并存入缓存，时间复杂度从指数级下降至 O(n²)。"
+      reverse: "逆向推演记忆化树剪枝过程与命中缓存的高效返回。"
+    variants:
+      standard:
+        variantLabel: "备忘录搜索实现"
+        title:
+          forward: "PredictTheWinner_Memo.java"
+          reverse: "PredictTheWinner_Memo_Reverse.java"
+        code:
+          forward:
+            title: "PredictTheWinner_Memo.java"
+            source: |
+              class Solution {
+                  public boolean predictTheWinner(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      if (n % 2 == 0) return true; // @step:guard_even
+                      Integer[][] memo = new Integer[n][n]; // @step:init_dp
+                      return dfs(nums, memo, 0, n - 1) >= 0; // @step:call_dfs
+                  }
+                  private int dfs(int[] nums, Integer[][] memo, int i, int j) { // @step:dfs_entry
+                      if (i == j) return nums[i]; // @step:boundary
+                      if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                      int chooseLeft = nums[i] - dfs(nums, memo, i + 1, j); // @step:branch_left
+                      int chooseRight = nums[j] - dfs(nums, memo, i, j - 1); // @step:branch_right
+                      memo[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                      return memo[i][j]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public boolean predictTheWinner(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        Integer[][] memo = new Integer[n][n]; // @step:init_dp
+                        return dfs(nums, memo, 0, n - 1) >= 0; // @step:call_dfs
+                    }
+                    private int dfs(int[] nums, Integer[][] memo, int i, int j) { // @step:dfs_entry
+                        if (i == j) return nums[i]; // @step:boundary
+                        if (memo[i][j] != null) return memo[i][j]; // @step:cache_hit
+                        int chooseLeft = nums[i] - dfs(nums, memo, i + 1, j); // @step:branch_left
+                        int chooseRight = nums[j] - dfs(nums, memo, i, j - 1); // @step:branch_right
+                        memo[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                        return memo[i][j]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    bool predictTheWinner(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        vector<vector<int>> memo(n, vector<int>(n, -1)); // @step:init_dp
+                        return dfs(nums, memo, 0, n - 1) >= 0; // @step:call_dfs
+                    }
+                    int dfs(vector<int>& nums, vector<vector<int>>& memo, int i, int j) { // @step:dfs_entry
+                        if (i == j) return nums[i]; // @step:boundary
+                        if (memo[i][j] != -1) return memo[i][j]; // @step:cache_hit
+                        int chooseLeft = nums[i] - dfs(nums, memo, i + 1, j); // @step:branch_left
+                        int chooseRight = nums[j] - dfs(nums, memo, i, j - 1); // @step:branch_right
+                        return memo[i][j] = max(chooseLeft, chooseRight); // @step:transfer
+                    }
+                };
+              python: |
+                class Solution:
+                    def predictTheWinner(self, nums: List[int]) -> bool: # @step:entry
+                        n = len(nums) # @step:init_n
+                        if n % 2 == 0: return True # @step:guard_even
+                        memo = {} # @step:init_dp
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i == j: return nums[i] # @step:boundary
+                            if (i, j) in memo: return memo[(i, j)] # @step:cache_hit
+                            choose_left = nums[i] - dfs(i + 1, j) # @step:branch_left
+                            choose_right = nums[j] - dfs(i, j - 1) # @step:branch_right
+                            memo[(i, j)] = max(choose_left, choose_right) # @step:transfer
+                            return memo[(i, j)] # @step:return
+                        return dfs(0, n - 1) >= 0 # @step:call_dfs
+              javascript: |
+                function predictTheWinner(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    if (n % 2 === 0) return true; // @step:guard_even
+                    const memo = Array.from({ length: n }, () => new Array(n).fill(null)); // @step:init_dp
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i === j) return nums[i]; // @step:boundary
+                        if (memo[i][j] !== null) return memo[i][j]; // @step:cache_hit
+                        const chooseLeft = nums[i] - dfs(i + 1, j); // @step:branch_left
+                        const chooseRight = nums[j] - dfs(i, j - 1); // @step:branch_right
+                        memo[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                        return memo[i][j]; // @step:return
+                    }
+                    return dfs(0, n - 1) >= 0; // @step:call_dfs
+                }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n²)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格二维表递推 (上三角区间跨度自底向上填表)"
+      reverse: "阶段 3: 逆向依赖寻源填表 (从全区间逆向校验博弈边界)"
+    desc:
+      forward: "初始化主对角线 dp[i][i] = nums[i]。外层按区间跨度 len 从 2 到 n 递增，内层枚举起点 i 计算终点 j = i + len - 1。dp[i][j] 严格依赖左方单元格 dp[i][j-1] 与下方单元格 dp[i+1][j]。"
+      reverse: "从最终全局区间 dp[0][n-1] 逆向追溯上三角矩阵的依赖关系与博弈决策链。"
+    variants:
+      standard:
+        variantLabel: "标准区间DP填表"
+        title:
+          forward: "PredictTheWinner_Tabulation.java"
+          reverse: "PredictTheWinner_Tabulation_Reverse.java"
+        code:
+          forward:
+            title: "PredictTheWinner_Tabulation.java"
+            source: |
+              class Solution {
+                  public boolean predictTheWinner(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      if (n % 2 == 0) return true; // @step:guard_even
+                      int[][] dp = new int[n][n]; // @step:init_dp
+                      for (int i = 0; i < n; i++) dp[i][i] = nums[i]; // @step:init_base
+                      for (int len = 2; len <= n; len++) { // @step:loop_len
+                          for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                              int j = i + len - 1; // @step:calc_j
+                              int chooseLeft = nums[i] - dp[i + 1][j]; // @step:branch_left
+                              int chooseRight = nums[j] - dp[i][j - 1]; // @step:branch_right
+                              dp[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                          }
+                      }
+                      return dp[0][n - 1] >= 0; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public boolean predictTheWinner(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        int[][] dp = new int[n][n]; // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = nums[i]; // @step:init_base
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                int chooseLeft = nums[i] - dp[i + 1][j]; // @step:branch_left
+                                int chooseRight = nums[j] - dp[i][j - 1]; // @step:branch_right
+                                dp[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1] >= 0; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    bool predictTheWinner(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        vector<vector<int>> dp(n, vector<int>(n, 0)); // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = nums[i]; // @step:init_base
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                int chooseLeft = nums[i] - dp[i + 1][j]; // @step:branch_left
+                                int chooseRight = nums[j] - dp[i][j - 1]; // @step:branch_right
+                                dp[i][j] = max(chooseLeft, chooseRight); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1] >= 0; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def predictTheWinner(self, nums: List[int]) -> bool: # @step:entry
+                        n = len(nums) # @step:init_n
+                        if n % 2 == 0: return True # @step:guard_even
+                        dp = [[0] * n for _ in range(n)] # @step:init_dp
+                        for i in range(n): dp[i][i] = nums[i] # @step:init_base
+                        for length in range(2, n + 1): # @step:loop_len
+                            for i in range(n - length + 1): # @step:loop_i
+                                j = i + length - 1 # @step:calc_j
+                                choose_left = nums[i] - dp[i + 1][j] # @step:branch_left
+                                choose_right = nums[j] - dp[i][j - 1] # @step:branch_right
+                                dp[i][j] = max(choose_left, choose_right) # @step:transfer
+                        return dp[0][n - 1] >= 0 # @step:return
+              javascript: |
+                function predictTheWinner(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    if (n % 2 === 0) return true; // @step:guard_even
+                    const dp = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    for (let i = 0; i < n; i++) dp[i][i] = nums[i]; // @step:init_base
+                    for (let len = 2; len <= n; len++) { // @step:loop_len
+                        for (let i = 0; i <= n - len; i++) { // @step:loop_i
+                            const j = i + len - 1; // @step:calc_j
+                            const chooseLeft = nums[i] - dp[i + 1][j]; // @step:branch_left
+                            const chooseRight = nums[j] - dp[i][j - 1]; // @step:branch_right
+                            dp[i][j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                        }
+                    }
+                    return dp[0][n - 1] >= 0; // @step:return
+                }
+
+  stage-4:
+    shortName: "空间压缩"
+    type: "optimization"
+    timeBadge: "O(n)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 4: 一维滚动数组空间压缩 (O(n) 空间复杂度极致优化)"
+      reverse: "阶段 4: 空间压缩逆向推演"
+    desc:
+      forward: "观察状态转移方程，dp[i][j] 只依赖同一行的前一状态 dp[i][j-1] 与下一行的状态 dp[i+1][j]。外层逆序从 i = n - 2 到 0，内层正序 j 从 i + 1 到 n - 1，即可在一维数组 dp[j] 上原地更新，空间从 O(n²) 压缩至 O(n)。"
+      reverse: "逆向分析一维滚动数组的覆盖时序与空间压缩等价性。"
+    variants:
+      standard:
+        variantLabel: "一维空间压缩实现"
+        title:
+          forward: "PredictTheWinner_SpaceOptimized.java"
+          reverse: "PredictTheWinner_SpaceOptimized_Reverse.java"
+        code:
+          forward:
+            title: "PredictTheWinner_SpaceOptimized.java"
+            source: |
+              class Solution {
+                  public boolean predictTheWinner(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      if (n % 2 == 0) return true; // @step:guard_even
+                      int[] dp = new int[n]; // @step:init_dp
+                      for (int i = 0; i < n; i++) dp[i] = nums[i]; // @step:init_base
+                      for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                          for (int j = i + 1; j < n; j++) { // @step:calc_j
+                              int chooseLeft = nums[i] - dp[j]; // @step:branch_left
+                              int chooseRight = nums[j] - dp[j - 1]; // @step:branch_right
+                              dp[j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                          }
+                      }
+                      return dp[n - 1] >= 0; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public boolean predictTheWinner(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        int[] dp = new int[n]; // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i] = nums[i]; // @step:init_base
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                int chooseLeft = nums[i] - dp[j]; // @step:branch_left
+                                int chooseRight = nums[j] - dp[j - 1]; // @step:branch_right
+                                dp[j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                            }
+                        }
+                        return dp[n - 1] >= 0; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    bool predictTheWinner(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        if (n % 2 == 0) return true; // @step:guard_even
+                        vector<int> dp(nums); // @step:init_dp
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                int chooseLeft = nums[i] - dp[j]; // @step:branch_left
+                                int chooseRight = nums[j] - dp[j - 1]; // @step:branch_right
+                                dp[j] = max(chooseLeft, chooseRight); // @step:transfer
+                            }
+                        }
+                        return dp[n - 1] >= 0; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def predictTheWinner(self, nums: List[int]) -> bool: # @step:entry
+                        n = len(nums) # @step:init_n
+                        if n % 2 == 0: return True # @step:guard_even
+                        dp = list(nums) # @step:init_dp
+                        for i in range(n - 2, -1, -1): # @step:loop_i
+                            for j in range(i + 1, n): # @step:calc_j
+                                choose_left = nums[i] - dp[j] # @step:branch_left
+                                choose_right = nums[j] - dp[j - 1] # @step:branch_right
+                                dp[j] = max(choose_left, choose_right) # @step:transfer
+                        return dp[n - 1] >= 0 # @step:return
+              javascript: |
+                function predictTheWinner(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    if (n % 2 === 0) return true; // @step:guard_even
+                    const dp = [...nums]; // @step:init_dp
+                    for (let i = n - 2; i >= 0; i--) { // @step:loop_i
+                        for (let j = i + 1; j < n; j++) { // @step:calc_j
+                            const chooseLeft = nums[i] - dp[j]; // @step:branch_left
+                            const chooseRight = nums[j] - dp[j - 1]; // @step:branch_right
+                            dp[j] = Math.max(chooseLeft, chooseRight); // @step:transfer
+                        }
+                    }
+                    return dp[n - 1] >= 0; // @step:return
+                }

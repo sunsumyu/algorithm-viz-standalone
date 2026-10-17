@@ -329,6 +329,16 @@ export class StateSpacePresenter {
         rowLabels = valArr.map((v: any, idx: number) => `#${idx}(${v})`);
         colLabels = valArr.map((v: any, idx: number) => `#${idx}(${v})`);
         cornerLabel = '左开端(i) \\ 右开端(j)';
+      } else if (
+        modelId === 'predict-the-winner' ||
+        modelId === 'class076-code02' ||
+        modelId === 'predict-the-winner-486' ||
+        modelId === 'cards-in-line'
+      ) {
+        const nums = params && params.nums ? (Array.isArray(params.nums) ? params.nums : [1, 5, 2]) : [1, 5, 2];
+        rowLabels = nums.map((v: any, idx: number) => `#${idx}(${v})`);
+        colLabels = nums.map((v: any, idx: number) => `#${idx}(${v})`);
+        cornerLabel = '左端点(i) \\ 右端点(j)';
       }
     }
 
