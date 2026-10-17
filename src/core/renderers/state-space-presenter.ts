@@ -339,6 +339,16 @@ export class StateSpacePresenter {
         rowLabels = nums.map((v: any, idx: number) => `#${idx}(${v})`);
         colLabels = nums.map((v: any, idx: number) => `#${idx}(${v})`);
         cornerLabel = '左端点(i) \\ 右端点(j)';
+      } else if (
+        modelId === 'min-score-triangulation' ||
+        modelId === 'class076-code01' ||
+        modelId === 'min-score-triangulation-1039' ||
+        modelId === 'leetcode-1039'
+      ) {
+        const values = params && params.values ? (Array.isArray(params.values) ? params.values : [3, 7, 4, 5]) : [3, 7, 4, 5];
+        rowLabels = values.map((v: any, idx: number) => `#${idx}(${v})`);
+        colLabels = values.map((v: any, idx: number) => `#${idx}(${v})`);
+        cornerLabel = '底边起点(i) \\ 底边终点(j)';
       }
     }
 

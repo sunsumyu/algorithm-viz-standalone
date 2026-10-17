@@ -2158,14 +2158,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "min-score-triangulation",
-    name: "多边形三角剖分的最低得分 (Min Score Triangulation)",
+    name: "多边形三角剖分的最低得分 (LeetCode 1039)",
     viewId: "min-score-triangulation",
     category: "dynamic-programming",
-    description: "左程云算法讲解076 Code01：LeetCode 1039 多边形三角剖分，基准边分割点的区间 DP 经典模型。",
+    description: "左程云算法讲解076 Code01：LeetCode 1039 多边形三角剖分的最低得分，凸多边形区间 DP 经典。",
     icon: "📐",
     difficulty: 2,
     levelOrder: 1039,
-    learningGoal: "掌握凸多边形三角剖分模型，固定底边 (i, j) 枚举第三个顶点 k 划分两半独立子多边形的区间 DP 最优分割思想",
+    learningGoal: "深刻掌握凸多边形几何划分与区间 DP 的对应关系，理解固定底边 (i, j) 枚举中间顶点 k 消除子问题依赖的建模方法",
     aliases: ["class076-code01","min-score-triangulation-1039","leetcode-1039"],
   },
   {

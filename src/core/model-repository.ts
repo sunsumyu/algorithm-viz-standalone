@@ -111,6 +111,7 @@ import wildcardMatchingModel from './models/wildcard-matching.yaml';
 import buyingHayMinCostModel from './models/buying-hay-min-cost.yaml';
 import burstBalloonsModel from './models/burst-balloons.yaml';
 import predictTheWinnerModel from './models/predict-the-winner.yaml';
+import minScoreTriangulationModel from './models/min-score-triangulation.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -214,6 +215,10 @@ export class AlgorithmModelRepository {
     ['predict-the-winner-486', predictTheWinnerModel as IYamlAlgorithmModel],
     ['leetcode-486', predictTheWinnerModel as IYamlAlgorithmModel],
     ['cards-in-line', predictTheWinnerModel as IYamlAlgorithmModel],
+    ['min-score-triangulation', minScoreTriangulationModel as IYamlAlgorithmModel],
+    ['class076-code01', minScoreTriangulationModel as IYamlAlgorithmModel],
+    ['min-score-triangulation-1039', minScoreTriangulationModel as IYamlAlgorithmModel],
+    ['leetcode-1039', minScoreTriangulationModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

@@ -1224,23 +1224,6 @@ registerDemo({
   learningGoal: '理解区间DP的定义、自底向上填表顺序的必然性以及 leftDown 暂存器在对角线压缩中的关键作用',
 });
 
-registerDemo({
-  id: 'min-score-triangulation',
-  name: '多边形三角剖分的最低得分 (Min Score Triangulation)',
-  description: '左程云算法讲解076 Code01：LeetCode 1039 多边形三角剖分，基准边分割点的区间 DP 经典模型。',
-  icon: '📐',
-  inputs: [{ id: 'values', label: '顶点权值 values', value: '1,2,3', width: 150 }],
-  build: makeEngineBuilder('min-score-triangulation'),
-  difficulty: 2,
-  levelOrder: 1039,
-  learningGoal: '掌握凸多边形三角剖分模型，固定底边 (i, j) 枚举第三个顶点 k 划分两半独立子多边形的区间 DP 最优分割思想',
-  aliases: ['class076-code01', 'min-score-triangulation-1039', 'leetcode-1039'],
-  examples: [
-    { label: '三角基础 [1, 2, 3] Ans=6', values: { values: '1,2,3' } },
-    { label: '四边形 [3, 7, 4, 5] Ans=144', values: { values: '3,7,4,5' } },
-    { label: '五边形 [1, 3, 1, 4, 1, 5] Ans=13', values: { values: '1,3,1,4,1,5' } },
-  ],
-});
 
 
 registerDemo({

@@ -300,6 +300,16 @@ export class ProblemDimensionResolver {
       const mSize = nums.length;
       return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
     }
+    if (
+      modelId === 'min-score-triangulation' ||
+      modelId === 'class076-code01' ||
+      modelId === 'min-score-triangulation-1039' ||
+      modelId === 'leetcode-1039'
+    ) {
+      const values = params.values ? this.toArray(params.values) : [3, 7, 4, 5];
+      const mSize = values.length;
+      return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
+    }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
     if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {

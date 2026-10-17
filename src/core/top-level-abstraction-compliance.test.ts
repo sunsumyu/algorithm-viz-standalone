@@ -118,6 +118,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'buying-hay-min-cost',
   'burst-balloons',
   'predict-the-winner',
+  'min-score-triangulation',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {
@@ -356,6 +357,15 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
           const numsLen = Array.isArray(rawNums) ? rawNums.length : (typeof rawNums === 'string' ? rawNums.split(',').length : 3);
           if (resolved.m !== numsLen || resolved.n !== numsLen) {
             dimensionMismatches.push(`${id} (博弈区间矩阵规格期望 m=${numsLen}, n=${numsLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          }
+          continue;
+        }
+
+        if (id === 'min-score-triangulation') {
+          const rawValues = params.values;
+          const valsLen = Array.isArray(rawValues) ? rawValues.length : (typeof rawValues === 'string' ? rawValues.split(',').length : 3);
+          if (resolved.m !== valsLen || resolved.n !== valsLen) {
+            dimensionMismatches.push(`${id} (多边形矩阵规格期望 m=${valsLen}, n=${valsLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
           }
           continue;
         }
