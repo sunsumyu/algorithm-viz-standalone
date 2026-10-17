@@ -115,6 +115,7 @@ import minScoreTriangulationModel from './models/min-score-triangulation.yaml';
 import strangePrinterModel from './models/strange-printer.yaml';
 import mergeStonesModel from './models/merge-stones.yaml';
 import maxDistanceInTreeModel from './models/max-distance-in-tree.yaml';
+import maxPathSumModel from './models/max-path-sum.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -233,6 +234,11 @@ export class AlgorithmModelRepository {
     ['max-distance-in-tree', maxDistanceInTreeModel as IYamlAlgorithmModel],
     ['class078-code01', maxDistanceInTreeModel as IYamlAlgorithmModel],
     ['tree-max-distance', maxDistanceInTreeModel as IYamlAlgorithmModel],
+    ['max-path-sum', maxPathSumModel as IYamlAlgorithmModel],
+    ['class078-code02', maxPathSumModel as IYamlAlgorithmModel],
+    ['leetcode-124', maxPathSumModel as IYamlAlgorithmModel],
+    ['max-path-sum-tree', maxPathSumModel as IYamlAlgorithmModel],
+    ['binary-tree-maximum-path-sum', maxPathSumModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

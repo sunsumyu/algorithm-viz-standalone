@@ -1,0 +1,167 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 二叉树最大路径和 顶层领域模型
+# 对应：LeetCode 124 / 左程云算法讲解 078 Code02
+# 包含：单边增益 maxGain 汇报、拱顶全路径结算、状态依赖树与常数空间压缩
+# ==============================================================================
+
+id: max-path-sum
+name: 二叉树最大路径和
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 树型 DP
+  - 动态规划
+  - 深度优先搜索
+  - 二叉树
+  - 路径求和
+
+description: |
+  LeetCode 124 · 左程云算法通关课第 078 讲 树型 DP（上）Code02：二叉树中的最大路径和。
+  路径被定义为一条从树中任意节点出发，沿父节点-子节点连接到达任意节点的序列。同一个节点在一条路径序列中至多出现一次。
+  核心树型 DP 增益模型：
+  每个节点向父节点汇报单边最大贡献值 gain(node) = node.val + max(0, max(gain(L), gain(R)))。
+  同时以当前节点作为拱顶（最高分叉折返点），结算跨根全路径和：
+  currentPathSum = node.val + max(0, gain(L)) + max(0, gain(R))，全局维护最大值 maxSum。
+
+defaultParams:
+  root: '-10,9,20,null,null,15,7'
+
+constraints:
+  - 树中节点数目范围是 [1, 3 * 10^4]（演示建议 <= 15）
+  - -1000 <= Node.val <= 1000
+
+directions:
+  forward:
+    name: 自底向上后序单边增益汇报 (Bottom-Up Post-Order Max Gain)
+    description: 后序遍历自底向上汇集左右子树非负最大单边增益，以当前节点为最高折返拱顶更新全局最大路径和
+  reverse:
+    name: 自顶向下先序拱顶对比探查 (Top-Down Pre-Order Arch Exploration)
+    description: 从根节点先序向下探查各个节点作为路径拱顶时的两翼分支深度延伸，对比验证后序增益汇总的最优性
+
+stages:
+  stage-1:
+    name: 后序遍历自底向上单边增益汇报
+    description: 递归后序遍历二叉树，每个节点汇报单边最大增益，以当前节点为拱顶结算全路径和
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int maxSum = Integer.MIN_VALUE;
+              public int maxPathSum(TreeNode root) { // @step:entry
+                  maxGain(root); // @step:init
+                  return maxSum; // @step:return
+              }
+              private int maxGain(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return 0; // @step:boundary
+                  int leftGain = Math.max(maxGain(node.left), 0); // @step:branch_left
+                  int rightGain = Math.max(maxGain(node.right), 0); // @step:branch_right
+                  int currentPathSum = node.val + leftGain + rightGain; // @step:transfer
+                  maxSum = Math.max(maxSum, currentPathSum); // @step:update_max
+                  return node.val + Math.max(leftGain, rightGain); // @step:combine
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int maxPathSumReverse(TreeNode root) { // @step:entry
+                  if (root == null) return 0; // @step:boundary
+                  return explorePreOrder(root); // @step:return
+              }
+              private int explorePreOrder(TreeNode node) { // @step:dfs_entry
+                  if (node == null) return Integer.MIN_VALUE; // @step:boundary
+                  int lGain = Math.max(getBranchGain(node.left), 0); // @step:branch_left
+                  int rGain = Math.max(getBranchGain(node.right), 0); // @step:branch_right
+                  int currentSum = node.val + lGain + rGain; // @step:transfer
+                  int lMax = explorePreOrder(node.left); // @step:update_max
+                  int rMax = explorePreOrder(node.right); // @step:combine
+                  return Math.max(currentSum, Math.max(lMax, rMax)); // @step:return
+              }
+              private int getBranchGain(TreeNode node) {
+                  if (node == null) return 0;
+                  return node.val + Math.max(0, Math.max(getBranchGain(node.left), getBranchGain(node.right)));
+              }
+          }
+
+  stage-2:
+    name: 递归调用与状态依赖树展开
+    description: 显式构建后序递归的完整状态依赖树，展示每一个节点深入、子调用与回溯落盘的完整路径
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态依赖展开树遍历
+          // @step:entry 1. 展开依赖树根节点 maxGain(root)
+          // @step:branch_left 2. 深入左子树依赖节点
+          // @step:branch_right 3. 深入右子树依赖节点
+          // @step:transfer 4. 回溯计算当前拱形全路径和 currentPathSum
+          // @step:combine 5. 状态落盘并向父节点汇报单边最大增益
+          // @step:return 6. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向依赖对比树
+          // @step:entry 1. 根节点自顶向下依赖展开
+          // @step:branch_left 2. 左子树广度探查
+          // @step:branch_right 3. 右子树广度探查
+          // @step:transfer 4. 路径权值比较
+          // @step:combine 5. 差异回溯
+          // @step:return 6. 逆向推演完成
+
+  stage-3:
+    name: 树型 DP 状态表推导与拱顶汇聚
+    description: 映射为标准树型 DP 状态表，每个节点维护 [单边最大增益 gain, 跨根全路径和 pathSum] 状态转移向量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树型 DP 状态转移矩阵：dp[u][0..1]
+          // @step:entry 1. 初始化节点状态向量表 dp[N][2]
+          // @step:dfs_entry 2. 树形自底向上逐节点访问
+          // @step:transfer 3. 状态转移：计算 leftGain 与 rightGain
+          // @step:update_max 4. 根节点状态最终收敛
+          // @step:return 5. 矩阵填表完成
+      reverse:
+        language: java
+        source: |
+          // 逆向状态表推导
+          // @step:entry 1. 逆向状态矩阵初始化
+          // @step:dfs_entry 2. 自顶向下反向回代
+          // @step:transfer 3. 约束校验
+          // @step:update_max 4. 根状态对齐
+          // @step:return 5. 逆向收敛
+
+  stage-4:
+    name: O(h) 递归栈空间压缩与极速结算
+    description: 舍弃额外树结构构建，原地复用递归栈 O(h) 空间，单变量极速流转返回全局最大路径和
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 极速单趟原地状态流转
+          // @step:entry 1. 寄存器初始化：maxSum = MIN_VALUE
+          // @step:dfs_entry 2. 原地后序状态快速流转
+          // @step:transfer 3. 拱顶全路径极速更新
+          // @step:combine 4. 单边增益返回
+          // @step:return 5. 极速返回全局最大路径和
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:entry 1. 寄存器初始化
+          // @step:dfs_entry 2. 逆向常数遍历
+          // @step:transfer 3. 终态判定
+          // @step:return 4. 极速返回

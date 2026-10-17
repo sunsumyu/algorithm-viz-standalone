@@ -773,20 +773,7 @@ const demos: DemoDef[] = [
   // 树型DP 演示 (Tree DP Demos — 第078讲)
   // ---------------------------------------------------------------------------
 
-  {
-    id: 'max-path-sum',
-    name: '二叉树最大路径和',
-    description: '树型DP路径和模型：gain(u)=val+max(0,gain(L))+max(0,gain(R))，以每个节点为拱顶结算最大路径和。',
-    icon: '🏔️',
-    aliases: ['class078-code02', 'leetcode-124'],
-    inputs: [{ id: 'root', label: '树节点(层序)', value: '-10,9,20,null,null,15,7', width: 220 }],
-    examples: [
-      { label: '[-10,9,20,null,null,15,7]', values: { root: '-10,9,20,null,null,15,7' } },
-      { label: '[1,2,3]', values: { root: '1,2,3' } },
-      { label: '[-3]', values: { root: '-3' } },
-    ],
-    build: makeEngineBuilder('max-path-sum'),
-  },
+
   {
     id: 'largest-bst-subtree',
     name: '最大BST子树',
@@ -1121,7 +1108,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'max-path-sum' },
   { type: 'demo', id: 'largest-bst-subtree' },
   { type: 'demo', id: 'tree-diameter' },
   { type: 'demo', id: 'binary-tree-cameras' },
