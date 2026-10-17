@@ -359,6 +359,16 @@ export class StateSpacePresenter {
         rowLabels = s.split('').map((ch: string, idx: number) => `#${idx}('${ch}')`);
         colLabels = s.split('').map((ch: string, idx: number) => `#${idx}('${ch}')`);
         cornerLabel = '左端点(i) \\ 右端点(j)';
+      } else if (
+        modelId === 'merge-stones' ||
+        modelId === 'class077-code01' ||
+        modelId === 'merge-stones-1000' ||
+        modelId === 'leetcode-1000'
+      ) {
+        const stones = params && params.stones ? (Array.isArray(params.stones) ? params.stones : [3, 2, 4, 1]) : [3, 2, 4, 1];
+        rowLabels = stones.map((v: any, idx: number) => `#${idx}(${v})`);
+        colLabels = stones.map((v: any, idx: number) => `#${idx}(${v})`);
+        cornerLabel = '左端点(i) \\ 右端点(j)';
       }
     }
 

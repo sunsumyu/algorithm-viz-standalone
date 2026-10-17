@@ -1226,23 +1226,3 @@ registerDemo({
 
 
 
-
-registerDemo({
-  id: 'merge-stones',
-  name: '合并石头的最低成本 (Minimum Cost to Merge Stones)',
-  description: '左程云算法讲解077 Code01：LeetCode 1000 K堆石头合并，可达性模条件与多堆合并区间 DP。',
-  icon: '🪨',
-  inputs: [
-    { id: 'stones', label: '石头堆 stones (逗号分隔)', value: '3,2,4,1', width: 140 },
-    { id: 'k', label: '单次合并堆数 k', value: '2', width: 100 },
-  ],
-  build: makeEngineBuilder('merge-stones'),
-  difficulty: 3,
-  levelOrder: 1000,
-  learningGoal: '掌握扩展区间 DP 状态维度以记录合并堆数，深刻理解 (n-1) % (k-1) === 0 可行性判定与前缀和代价累加',
-  aliases: ['class077-code01', 'merge-stones-1000', 'leetcode-1000'],
-  examples: [
-    { label: '相邻两堆合并 [3,2,4,1] k=2 Ans=20', values: { stones: '3,2,4,1', k: '2' } },
-    { label: '三堆合并 [3,5,1,2,6] k=3 Ans=25', values: { stones: '3,5,1,2,6', k: '3' } },
-  ],
-});

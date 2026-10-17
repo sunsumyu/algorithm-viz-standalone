@@ -1,0 +1,533 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 合并石头的最低成本 (Minimum Cost to Merge Stones / LeetCode 1000 / 左程云 Class 077 Code01)
+# 核心：区间 DP 经典——相邻石子合并累加区间总重量
+# 转移方程：dp[i][j] = min_{k}(dp[i][k] + dp[k+1][j]) + sum[i..j]
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: merge-stones
+name: "合并石头的最低成本"
+nameEn: "Minimum Cost to Merge Stones"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🪨"
+difficulty: 2
+levelOrder: 1000
+learningGoal: "深刻掌握区间 DP 的经典石子合并模型，理解区间前缀和 $O(1)$ 快速查询与枚举中间分割点 $k$ 消除子问题依赖的动态规划推导"
+description: "左程云算法通关课 Class 077 Code01：LeetCode 1000 合并石头的最低成本，经典区间动态规划。每次合并相邻石子堆，合并成本为两堆重量之和，求将所有石子合并为一堆的最低总成本。"
+defaultParams:
+  stones: [3, 2, 4, 1]
+
+problem:
+  leetcodeId: 1000
+  title: "合并石头的最低成本 (LeetCode 1000 / Class 077 Code01)"
+  difficulty: "中等"
+  tags: ["动态规划", "区间 DP", "前缀和", "贪心与分治"]
+  description: "有 <code>n</code> 堆连续排开的石子，每堆石子的重量记录在数组 <code>stones</code> 中。<br/><br/>每次操作可以选择相邻的 <code>2</code> 堆石子合并为一堆，合并的成本为这两堆石子的重量和。求将所有石子合并成一堆的最低总成本。"
+  examples:
+    - input: "stones = [3, 2, 4, 1]"
+      output: "20"
+      explanation: "合并步骤：<br/>1. 合并 [3, 2] -> 5，成本 5，剩余 [5, 4, 1]<br/>2. 合并 [4, 1] -> 5，成本 5，剩余 [5, 5]<br/>3. 合并 [5, 5] -> 10，成本 10，总成本 = 5 + 5 + 10 = 20。"
+    - input: "stones = [3, 5, 1, 2, 6]"
+      output: "38"
+      explanation: "最优合并策略得到最低合并总成本为 38。"
+  constraints:
+    - "1 <= stones.length <= 30 (演示推荐 <= 8)"
+    - "1 <= stones[i] <= 100"
+  leetcodeUrl: "https://leetcode.cn/problems/minimum-cost-to-merge-stones/"
+
+directions:
+  forward:
+    label: "区间长度顺推 (len=2..n 上三角自底向上填表)"
+    branches:
+      - name: "split_merge"
+        label: "分割点 k 左右子堆合并并累加区间总重量"
+        formula: "min_{k}(dp[i][k] + dp[k+1][j]) + sum(stones[i..j])"
+    combineFormula: "dp[i][j] = min_{k}(dp[i][k] + dp[k+1][j]) + (sum[j+1] - sum[i])"
+  reverse:
+    label: "全局区间逆推寻源 (从最终合并一堆逆向分解)"
+    description: "从整体石子区间 [0..n-1] 逆向寻源最优切分点与子区间合并路径"
+    startFormula: "dp[0][n - 1]"
+    target: "dp[i][i] = 0"
+    branches:
+      - name: "trace_branches"
+        label: "逆向最优切分决策"
+        formula: "dp[i][k] + dp[k+1][j] + sum[i..j]"
+    combineFormula: "逆向最优石子切分分解"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力分治递归树展开 (石子切分合并)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "分治策略：任意区间 [i, j] 的最后一次合并，必然由某个分割点 k 将其分为左半段 [i, k] 与右半段 [k+1, j]，再加上合并两堆所需消耗的该区间总重量 sum[i..j]。"
+      reverse: "从最终目标区间 [0..n-1] 出发，逆向展示递归切分合并决策。"
+    variants:
+      standard:
+        variantLabel: "标准分治递归实现"
+        title:
+          forward: "MergeStones_Recursive.java"
+          reverse: "MergeStones_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "MergeStones_Recursive.java"
+            source: |
+              class Solution {
+                  public int mergeStones(int[] stones) { // @step:entry
+                      int n = stones.length; // @step:init_n
+                      if (n <= 1) return 0; // @step:guard_less
+                      int[] sum = new int[n + 1]; // @step:init_sum
+                      for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                      return dfs(stones, sum, 0, n - 1); // @step:return
+                  }
+                  private int dfs(int[] stones, int[] sum, int i, int j) { // @step:dfs_entry
+                      if (i >= j) return 0; // @step:boundary
+                      int minCost = Integer.MAX_VALUE; // @step:init_min
+                      for (int k = i; k < j; k++) { // @step:loop_k
+                          int cost = dfs(stones, sum, i, k) + dfs(stones, sum, k + 1, j); // @step:calc_cost
+                          minCost = Math.min(minCost, cost); // @step:update_min
+                      }
+                      return minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int mergeStones(int[] stones) { // @step:entry
+                        int n = stones.length; // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        int[] sum = new int[n + 1]; // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        return dfs(stones, sum, 0, n - 1); // @step:return
+                    }
+                    private int dfs(int[] stones, int[] sum, int i, int j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        int minCost = Integer.MAX_VALUE; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int cost = dfs(stones, sum, i, k) + dfs(stones, sum, k + 1, j); // @step:calc_cost
+                            minCost = Math.min(minCost, cost); // @step:update_min
+                        }
+                        return minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int mergeStones(vector<int>& stones) { // @step:entry
+                        int n = stones.size(); // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        vector<int> sum(n + 1, 0); // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        return dfs(stones, sum, 0, n - 1); // @step:return
+                    }
+                    int dfs(const vector<int>& stones, const vector<int>& sum, int i, int j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        int minCost = INT_MAX; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int cost = dfs(stones, sum, i, k) + dfs(stones, sum, k + 1, j); // @step:calc_cost
+                            minCost = min(minCost, cost); // @step:update_min
+                        }
+                        return minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                    }
+                };
+              python: |
+                class Solution:
+                    def mergeStones(self, stones: List[int]) -> int: # @step:entry
+                        n = len(stones) # @step:init_n
+                        if n <= 1: return 0 # @step:guard_less
+                        prefix = [0] * (n + 1) # @step:init_sum
+                        for i in range(n): prefix[i + 1] = prefix[i] + stones[i] # @step:fill_sum
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i >= j: return 0 # @step:boundary
+                            min_cost = float('inf') # @step:init_min
+                            for k in range(i, j): # @step:loop_k
+                                cost = dfs(i, k) + dfs(k + 1, j) # @step:calc_cost
+                                min_cost = min(min_cost, cost) # @step:update_min
+                            return min_cost + (prefix[j + 1] - prefix[i]) # @step:transfer
+                        return dfs(0, n - 1) # @step:return
+              javascript: |
+                function mergeStones(stones) { // @step:entry
+                    const n = stones.length; // @step:init_n
+                    if (n <= 1) return 0; // @step:guard_less
+                    const sum = new Array(n + 1).fill(0); // @step:init_sum
+                    for (let i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        let minCost = Infinity; // @step:init_min
+                        for (let k = i; k < j; k++) { // @step:loop_k
+                            const cost = dfs(i, k) + dfs(k + 1, j); // @step:calc_cost
+                            minCost = Math.min(minCost, cost); // @step:update_min
+                        }
+                        return minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                    }
+                    return dfs(0, n - 1); // @step:return
+                }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (备忘录消除重叠子区间合并)"
+      reverse: "阶段 2: 记忆化逆向回溯 (带缓存的合并寻源)"
+    desc:
+      forward: "引入 memo[i][j] 备忘录缓存区间 [i..j] 的最低合并成本。查表若已计算则直接 O(1) 返回，消除重叠子区间的重复计算。"
+      reverse: "逆向展示记忆化树的剪枝效果与缓存复用。"
+    variants:
+      standard:
+        variantLabel: "备忘录搜索实现"
+        title:
+          forward: "MergeStones_Memo.java"
+          reverse: "MergeStones_Memo_Reverse.java"
+        code:
+          forward:
+            title: "MergeStones_Memo.java"
+            source: |
+              class Solution {
+                  public int mergeStones(int[] stones) { // @step:entry
+                      int n = stones.length; // @step:init_n
+                      if (n <= 1) return 0; // @step:guard_less
+                      int[] sum = new int[n + 1]; // @step:init_sum
+                      for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                      int[][] memo = new int[n][n]; // @step:init_dp
+                      return dfs(stones, sum, memo, 0, n - 1); // @step:call_dfs
+                  }
+                  private int dfs(int[] stones, int[] sum, int[][] memo, int i, int j) { // @step:dfs_entry
+                      if (i >= j) return 0; // @step:boundary
+                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                      int minCost = Integer.MAX_VALUE; // @step:init_min
+                      for (int k = i; k < j; k++) { // @step:loop_k
+                          int cost = dfs(stones, sum, memo, i, k) + dfs(stones, sum, memo, k + 1, j); // @step:calc_cost
+                          minCost = Math.min(minCost, cost); // @step:update_min
+                      }
+                      memo[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                      return memo[i][j]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int mergeStones(int[] stones) { // @step:entry
+                        int n = stones.length; // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        int[] sum = new int[n + 1]; // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        int[][] memo = new int[n][n]; // @step:init_dp
+                        return dfs(stones, sum, memo, 0, n - 1); // @step:call_dfs
+                    }
+                    private int dfs(int[] stones, int[] sum, int[][] memo, int i, int j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        int minCost = Integer.MAX_VALUE; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int cost = dfs(stones, sum, memo, i, k) + dfs(stones, sum, memo, k + 1, j); // @step:calc_cost
+                            minCost = Math.min(minCost, cost); // @step:update_min
+                        }
+                        memo[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                        return memo[i][j]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int mergeStones(vector<int>& stones) { // @step:entry
+                        int n = stones.size(); // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        vector<int> sum(n + 1, 0); // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        vector<vector<int>> memo(n, vector<int>(n, 0)); // @step:init_dp
+                        return dfs(stones, sum, memo, 0, n - 1); // @step:call_dfs
+                    }
+                    int dfs(const vector<int>& stones, const vector<int>& sum, vector<vector<int>>& memo, int i, int j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        int minCost = INT_MAX; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int cost = dfs(stones, sum, memo, i, k) + dfs(stones, sum, memo, k + 1, j); // @step:calc_cost
+                            minCost = min(minCost, cost); // @step:update_min
+                        }
+                        return memo[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                    }
+                };
+              python: |
+                class Solution:
+                    def mergeStones(self, stones: List[int]) -> int: # @step:entry
+                        n = len(stones) # @step:init_n
+                        if n <= 1: return 0 # @step:guard_less
+                        prefix = [0] * (n + 1) # @step:init_sum
+                        for i in range(n): prefix[i + 1] = prefix[i] + stones[i] # @step:fill_sum
+                        memo = {} # @step:init_dp
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i >= j: return 0 # @step:boundary
+                            if (i, j) in memo: return memo[(i, j)] # @step:cache_hit
+                            min_cost = float('inf') # @step:init_min
+                            for k in range(i, j): # @step:loop_k
+                                cost = dfs(i, k) + dfs(k + 1, j) # @step:calc_cost
+                                min_cost = min(min_cost, cost) # @step:update_min
+                            memo[(i, j)] = min_cost + (prefix[j + 1] - prefix[i]) # @step:transfer
+                            return memo[(i, j)] # @step:return
+                        return dfs(0, n - 1) # @step:call_dfs
+              javascript: |
+                function mergeStones(stones) { // @step:entry
+                    const n = stones.length; // @step:init_n
+                    if (n <= 1) return 0; // @step:guard_less
+                    const sum = new Array(n + 1).fill(0); // @step:init_sum
+                    for (let i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                    const memo = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i >= j) return 0; // @step:boundary
+                        if (memo[i][j] !== 0) return memo[i][j]; // @step:cache_hit
+                        let minCost = Infinity; // @step:init_min
+                        for (let k = i; k < j; k++) { // @step:loop_k
+                            const cost = dfs(i, k) + dfs(k + 1, j); // @step:calc_cost
+                            minCost = Math.min(minCost, cost); // @step:update_min
+                        }
+                        memo[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                        return memo[i][j]; // @step:return
+                    }
+                    return dfs(0, n - 1); // @step:call_dfs
+                }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格二维表递推 (自底向上按区间跨度填表)"
+      reverse: "阶段 3: 逆向依赖寻源填表 (从全区间逆向推演)"
+    desc:
+      forward: "主对角线 dp[i][i] = 0。外层按区间长度 len 从 2 递增至 n，内层枚举左端点 i 与分割点 k，利用前缀和 O(1) 获取区间总重量，完成自底向上填表。"
+      reverse: "从最终全局合并目标 dp[0][n-1] 逆向回溯最优切分点与子区间划分。"
+    variants:
+      standard:
+        variantLabel: "标准区间DP填表"
+        title:
+          forward: "MergeStones_Tabulation.java"
+          reverse: "MergeStones_Tabulation_Reverse.java"
+        code:
+          forward:
+            title: "MergeStones_Tabulation.java"
+            source: |
+              class Solution {
+                  public int mergeStones(int[] stones) { // @step:entry
+                      int n = stones.length; // @step:init_n
+                      if (n <= 1) return 0; // @step:guard_less
+                      int[] sum = new int[n + 1]; // @step:init_sum
+                      for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                      int[][] dp = new int[n][n]; // @step:init_dp
+                      for (int len = 2; len <= n; len++) { // @step:loop_len
+                          for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                              int j = i + len - 1; // @step:calc_j
+                              int minCost = Integer.MAX_VALUE; // @step:init_min
+                              for (int k = i; k < j; k++) { // @step:loop_k
+                                  int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                  minCost = Math.min(minCost, cost); // @step:update_min
+                              }
+                              dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                          }
+                      }
+                      return dp[0][n - 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int mergeStones(int[] stones) { // @step:entry
+                        int n = stones.length; // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        int[] sum = new int[n + 1]; // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        int[][] dp = new int[n][n]; // @step:init_dp
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                int minCost = Integer.MAX_VALUE; // @step:init_min
+                                for (int k = i; k < j; k++) { // @step:loop_k
+                                    int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                    minCost = Math.min(minCost, cost); // @step:update_min
+                                }
+                                dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int mergeStones(vector<int>& stones) { // @step:entry
+                        int n = stones.size(); // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        vector<int> sum(n + 1, 0); // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        vector<vector<int>> dp(n, vector<int>(n, 0)); // @step:init_dp
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                int minCost = INT_MAX; // @step:init_min
+                                for (int k = i; k < j; k++) { // @step:loop_k
+                                    int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                    minCost = min(minCost, cost); // @step:update_min
+                                }
+                                dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def mergeStones(self, stones: List[int]) -> int: # @step:entry
+                        n = len(stones) # @step:init_n
+                        if n <= 1: return 0 # @step:guard_less
+                        prefix = [0] * (n + 1) # @step:init_sum
+                        for i in range(n): prefix[i + 1] = prefix[i] + stones[i] # @step:fill_sum
+                        dp = [[0] * n for _ in range(n)] # @step:init_dp
+                        for length in range(2, n + 1): # @step:loop_len
+                            for i in range(n - length + 1): # @step:loop_i
+                                j = i + length - 1 # @step:calc_j
+                                dp[i][j] = min(dp[i][k] + dp[k + 1][j] for k in range(i, j)) + (prefix[j + 1] - prefix[i]) # @step:transfer
+                        return dp[0][n - 1] # @step:return
+              javascript: |
+                function mergeStones(stones) { // @step:entry
+                    const n = stones.length; // @step:init_n
+                    if (n <= 1) return 0; // @step:guard_less
+                    const sum = new Array(n + 1).fill(0); // @step:init_sum
+                    for (let i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                    const dp = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    for (let len = 2; len <= n; len++) { // @step:loop_len
+                        for (let i = 0; i <= n - len; i++) { // @step:loop_i
+                            const j = i + len - 1; // @step:calc_j
+                            let minCost = Infinity; // @step:init_min
+                            for (let k = i; k < j; k++) { // @step:loop_k
+                                minCost = Math.min(minCost, dp[i][k] + dp[k + 1][j]); // @step:calc_cost
+                            }
+                            dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                        }
+                    }
+                    return dp[0][n - 1]; // @step:return
+                }
+
+  stage-4:
+    shortName: "拓扑优化"
+    type: "optimization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 4: 对角线倒序填表拓扑演化"
+      reverse: "阶段 4: 拓扑演化逆向推演"
+    desc:
+      forward: "外层倒序固定起点 i 从 n - 2 到 0，内层正序终点 j 从 i + 1 到 n - 1，严格沿对角线拓扑推进，极大提升 CPU 缓存局部性与执行效率。"
+      reverse: "逆向分析上三角合并矩阵的依赖收敛。"
+    variants:
+      standard:
+        variantLabel: "对角线倒序填表实现"
+        title:
+          forward: "MergeStones_Optimized.java"
+          reverse: "MergeStones_Optimized_Reverse.java"
+        code:
+          forward:
+            title: "MergeStones_Optimized.java"
+            source: |
+              class Solution {
+                  public int mergeStones(int[] stones) { // @step:entry
+                      int n = stones.length; // @step:init_n
+                      if (n <= 1) return 0; // @step:guard_less
+                      int[] sum = new int[n + 1]; // @step:init_sum
+                      for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                      int[][] dp = new int[n][n]; // @step:init_dp
+                      for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                          for (int j = i + 1; j < n; j++) { // @step:calc_j
+                              int minCost = Integer.MAX_VALUE; // @step:init_min
+                              for (int k = i; k < j; k++) { // @step:loop_k
+                                  int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                  minCost = Math.min(minCost, cost); // @step:update_min
+                              }
+                              dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                          }
+                      }
+                      return dp[0][n - 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int mergeStones(int[] stones) { // @step:entry
+                        int n = stones.length; // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        int[] sum = new int[n + 1]; // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        int[][] dp = new int[n][n]; // @step:init_dp
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                int minCost = Integer.MAX_VALUE; // @step:init_min
+                                for (int k = i; k < j; k++) { // @step:loop_k
+                                    int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                    minCost = Math.min(minCost, cost); // @step:update_min
+                                }
+                                dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int mergeStones(vector<int>& stones) { // @step:entry
+                        int n = stones.size(); // @step:init_n
+                        if (n <= 1) return 0; // @step:guard_less
+                        vector<int> sum(n + 1, 0); // @step:init_sum
+                        for (int i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                        vector<vector<int>> dp(n, vector<int>(n, 0)); // @step:init_dp
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                int minCost = INT_MAX; // @step:init_min
+                                for (int k = i; k < j; k++) { // @step:loop_k
+                                    int cost = dp[i][k] + dp[k + 1][j]; // @step:calc_cost
+                                    minCost = min(minCost, cost); // @step:update_min
+                                }
+                                dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def mergeStones(self, stones: List[int]) -> int: # @step:entry
+                        n = len(stones) # @step:init_n
+                        if n <= 1: return 0 # @step:guard_less
+                        prefix = [0] * (n + 1) # @step:init_sum
+                        for i in range(n): prefix[i + 1] = prefix[i] + stones[i] # @step:fill_sum
+                        dp = [[0] * n for _ in range(n)] # @step:init_dp
+                        for i in range(n - 2, -1, -1): # @step:loop_i
+                            for j in range(i + 1, n): # @step:calc_j
+                                dp[i][j] = min(dp[i][k] + dp[k + 1][j] for k in range(i, j)) + (prefix[j + 1] - prefix[i]) # @step:transfer
+                        return dp[0][n - 1] # @step:return
+              javascript: |
+                function mergeStones(stones) { // @step:entry
+                    const n = stones.length; // @step:init_n
+                    if (n <= 1) return 0; // @step:guard_less
+                    const sum = new Array(n + 1).fill(0); // @step:init_sum
+                    for (let i = 0; i < n; i++) sum[i + 1] = sum[i] + stones[i]; // @step:fill_sum
+                    const dp = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    for (let i = n - 2; i >= 0; i--) { // @step:loop_i
+                        for (let j = i + 1; j < n; j++) { // @step:calc_j
+                            let minCost = Infinity; // @step:init_min
+                            for (let k = i; k < j; k++) { // @step:loop_k
+                                minCost = Math.min(minCost, dp[i][k] + dp[k + 1][j]); // @step:calc_cost
+                            }
+                            dp[i][j] = minCost + (sum[j + 1] - sum[i]); // @step:transfer
+                        }
+                    }
+                    return dp[0][n - 1]; // @step:return
+                }

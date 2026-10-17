@@ -120,6 +120,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'predict-the-winner',
   'min-score-triangulation',
   'strange-printer',
+  'merge-stones',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {
@@ -376,6 +377,15 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
           const sLen = s.length;
           if (resolved.m !== sLen || resolved.n !== sLen) {
             dimensionMismatches.push(`${id} (字符串染色矩阵规格期望 m=${sLen}, n=${sLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          }
+          continue;
+        }
+
+        if (id === 'merge-stones') {
+          const rawStones = params.stones;
+          const stonesLen = Array.isArray(rawStones) ? rawStones.length : (typeof rawStones === 'string' ? rawStones.split(',').length : 4);
+          if (resolved.m !== stonesLen || resolved.n !== stonesLen) {
+            dimensionMismatches.push(`${id} (石子合并矩阵规格期望 m=${stonesLen}, n=${stonesLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
           }
           continue;
         }

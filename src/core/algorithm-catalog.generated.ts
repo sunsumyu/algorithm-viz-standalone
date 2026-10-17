@@ -2146,14 +2146,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "merge-stones",
-    name: "合并石头的最低成本 (Minimum Cost to Merge Stones)",
+    name: "合并石头的最低成本 (LeetCode 1000)",
     viewId: "merge-stones",
     category: "dynamic-programming",
-    description: "左程云算法讲解077 Code01：LeetCode 1000 K堆石头合并，可达性模条件与多堆合并区间 DP。",
+    description: "左程云算法讲解077 Code01：LeetCode 1000 合并石头的最低成本，经典相邻石子合并区间 DP。",
     icon: "🪨",
-    difficulty: 3,
+    difficulty: 2,
     levelOrder: 1000,
-    learningGoal: "掌握扩展区间 DP 状态维度以记录合并堆数，深刻理解 (n-1) % (k-1) === 0 可行性判定与前缀和代价累加",
+    learningGoal: "深刻掌握相邻石子合并与区间 DP 的对应关系，理解前缀和快速查询与枚举中间分割点 k 消除子问题依赖的建模方法",
     aliases: ["class077-code01","merge-stones-1000","leetcode-1000"],
   },
   {

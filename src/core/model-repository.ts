@@ -113,6 +113,7 @@ import burstBalloonsModel from './models/burst-balloons.yaml';
 import predictTheWinnerModel from './models/predict-the-winner.yaml';
 import minScoreTriangulationModel from './models/min-score-triangulation.yaml';
 import strangePrinterModel from './models/strange-printer.yaml';
+import mergeStonesModel from './models/merge-stones.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -224,6 +225,10 @@ export class AlgorithmModelRepository {
     ['class076-code04', strangePrinterModel as IYamlAlgorithmModel],
     ['strange-printer-664', strangePrinterModel as IYamlAlgorithmModel],
     ['leetcode-664', strangePrinterModel as IYamlAlgorithmModel],
+    ['merge-stones', mergeStonesModel as IYamlAlgorithmModel],
+    ['class077-code01', mergeStonesModel as IYamlAlgorithmModel],
+    ['merge-stones-1000', mergeStonesModel as IYamlAlgorithmModel],
+    ['leetcode-1000', mergeStonesModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

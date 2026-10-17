@@ -28,6 +28,9 @@ import './categories/dynamic-programming/interval-076/predict-the-winner-rendere
 import './categories/dynamic-programming/interval-076/min-score-triangulation-renderer';
 import './categories/dynamic-programming/interval-076/strange-printer-renderer';
 
+// 左程云算法讲解077【必备】区间dp-合并石头的最低成本
+import './categories/dynamic-programming/interval-077/merge-stones-renderer';
+
 // 左程云算法讲解075【必备】背包dp-多重背包、混合背包 5大算法渲染器
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-naive-renderer';
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-binary-renderer';
