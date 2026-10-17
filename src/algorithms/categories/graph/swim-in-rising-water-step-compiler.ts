@@ -23,26 +23,56 @@ export interface SwimStep {
   metrics?: Record<string, string | number>;
 }
 
-export const PRESET_GRIDS: Record<string, number[][]> = {
-  leetcode5: [
-    [0, 2, 1, 3, 4],
-    [10, 11, 14, 12, 5],
-    [23, 22, 21, 15, 16],
-    [18, 17, 19, 20, 24],
-    [9, 8, 7, 6, 13],
-  ],
-  simple3: [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-  ],
-  cliff4: [
-    [0, 3, 2, 1],
-    [12, 13, 14, 4],
-    [11, 15, 10, 5],
-    [9, 8, 7, 6],
-  ],
+export const PRESET_SWIM_GRIDS: Record<string, { label: string; grid: number[][] }> = {
+  leetcode5: {
+    label: '5x5 经典泳池 (LeetCode 778, t=16)',
+    grid: [
+      [0, 2, 1, 3, 4],
+      [10, 11, 14, 12, 5],
+      [23, 22, 21, 15, 16],
+      [18, 17, 19, 20, 24],
+      [9, 8, 7, 6, 13],
+    ],
+  },
+  minimal2: {
+    label: '2x2 极简泳池 (官方示例 1, t=3)',
+    grid: [
+      [0, 2],
+      [1, 3],
+    ],
+  },
+  simple3: {
+    label: '3x3 递增阶梯 (t=8)',
+    grid: [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+    ],
+  },
+  cliff4: {
+    label: '4x4 险崖断层 (t=6)',
+    grid: [
+      [0, 3, 2, 1],
+      [12, 13, 14, 4],
+      [11, 15, 10, 5],
+      [9, 8, 7, 6],
+    ],
+  },
+  spiral5: {
+    label: '5x5 螺旋回廊 (外圈水流注入, t=8)',
+    grid: [
+      [0, 1, 2, 3, 4],
+      [15, 16, 17, 18, 5],
+      [14, 23, 24, 19, 6],
+      [13, 22, 21, 20, 7],
+      [12, 11, 10, 9, 8],
+    ],
+  },
 };
+
+export const PRESET_GRIDS: Record<string, number[][]> = Object.fromEntries(
+  Object.entries(PRESET_SWIM_GRIDS).map(([k, v]) => [k, v.grid])
+);
 
 export function buildSwimInRisingWaterSteps(gridType: string = 'leetcode5'): SwimStep[] {
   const grid = PRESET_GRIDS[gridType] || PRESET_GRIDS.leetcode5;

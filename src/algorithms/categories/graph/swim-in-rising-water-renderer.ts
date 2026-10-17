@@ -10,18 +10,21 @@ import {
   SWIM_IN_RISING_WATER_ANALYSIS_HTML,
 } from './swim-in-rising-water-problem-content';
 import { BinaryGridCanvasAdapter } from '../../../core/renderers/adapters/binary-grid-canvas-adapter';
+import {
+  buildSwimInRisingWaterSteps,
+  PRESET_SWIM_GRIDS,
+} from './swim-in-rising-water-step-compiler';
 import type { SwimStep } from './swim-in-rising-water-step-compiler';
-import { buildSwimInRisingWaterSteps } from './swim-in-rising-water-step-compiler';
 
 export type { SwimStep };
-export { buildSwimInRisingWaterSteps };
+export { buildSwimInRisingWaterSteps, PRESET_SWIM_GRIDS };
 
 export function renderSwimInRisingWaterCanvas(container: HTMLElement, step: SwimStep): void {
   const { grid, r: curR, c: curC, distGrid, visitedGrid, curWaterLevel, bestPath } = step;
   const n = grid.length;
   const m = grid[0].length;
   const isDone = step.status === 'done';
-  const pathSet = new Set(bestPath?.map((p) => `${p.r},${p.c}`) ?? []);
+  const pathSet = new Set(bestPath?.map((p: any) => `${p.r},${p.c}`) ?? []);
 
   const flowArrows: Array<{ from: [number, number]; to: [number, number]; color?: string; dashed?: boolean; animated?: boolean }> = [];
   if (bestPath && bestPath.length > 1) {
@@ -132,11 +135,7 @@ export const { Visualizer: SwimInRisingWaterVisualizer } = registerDeclarativeAl
   problemHtml: SWIM_IN_RISING_WATER_PROBLEM_HTML,
   analysisHtml: SWIM_IN_RISING_WATER_ANALYSIS_HTML,
   generateSteps: (inputs) => buildSwimInRisingWaterSteps(String(inputs?.preset || 'leetcode5')),
-  presets: [
-    { label: '经典 5x5 (LeetCode 778)', values: { preset: 'leetcode5' } },
-    { label: '紧凑 3x3 地图', values: { preset: 'simple3' } },
-    { label: '险崖 4x4 地图', values: { preset: 'cliff4' } },
-  ],
+  presets: Object.entries(PRESET_SWIM_GRIDS).map(([value, { label }]) => ({ label, values: { preset: value } })),
   metrics: [
     { id: 'metric-cur-time', label: '当前水位时间 t', color: '#0284c7' },
     { id: 'metric-cur-pos', label: '当前探索坐标', color: '#f59e0b' },

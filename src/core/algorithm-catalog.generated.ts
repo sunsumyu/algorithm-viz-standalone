@@ -1604,7 +1604,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "coins-from-piles",
     name: "从栈中取出K个硬币的最大面值和",
-    viewId: "algo-coins-from-piles-view",
+    viewId: "coins-from-piles",
     category: "dynamic-programming",
     description: "左程云算法通关课 Class 074 Code02：LeetCode 2218 取硬币，自顶向下连续拿取的前缀和预处理转分组背包互斥选择",
     icon: "🪙",

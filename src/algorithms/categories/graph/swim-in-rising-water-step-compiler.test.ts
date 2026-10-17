@@ -34,4 +34,20 @@ describe('swim-in-rising-water-step-compiler', () => {
     expect(last.status).toBe('done');
     expect(last.curWaterLevel).toBe(6);
   });
+
+  it('should compile valid steps for minimal2 preset', () => {
+    const steps = buildSwimInRisingWaterSteps('minimal2');
+    expect(steps.length).toBeGreaterThan(1);
+    const last = steps[steps.length - 1];
+    expect(last.status).toBe('done');
+    expect(last.curWaterLevel).toBe(3);
+  });
+
+  it('should compile valid steps for spiral5 preset', () => {
+    const steps = buildSwimInRisingWaterSteps('spiral5');
+    expect(steps.length).toBeGreaterThanOrEqual(20);
+    const last = steps[steps.length - 1];
+    expect(last.status).toBe('done');
+    expect(last.curWaterLevel).toBe(8);
+  });
 });

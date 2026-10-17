@@ -33,4 +33,20 @@ describe('path-min-effort-step-compiler', () => {
     expect(last.status).toBe('done');
     expect(last.minEffortSoFar).toBe(0);
   });
+
+  it('should compile valid steps for detour_3x3 with effort 1', () => {
+    const steps = buildPathMinEffortSteps('detour_3x3');
+    expect(steps.length).toBeGreaterThanOrEqual(15);
+    const last = steps[steps.length - 1];
+    expect(last.status).toBe('done');
+    expect(last.minEffortSoFar).toBe(1);
+  });
+
+  it('should compile valid steps for snake_5x5 with 0 effort detour', () => {
+    const steps = buildPathMinEffortSteps('snake_5x5');
+    expect(steps.length).toBeGreaterThanOrEqual(20);
+    const last = steps[steps.length - 1];
+    expect(last.status).toBe('done');
+    expect(last.minEffortSoFar).toBe(0);
+  });
 });
