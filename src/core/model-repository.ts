@@ -119,6 +119,7 @@ import maxPathSumModel from './models/max-path-sum.yaml';
 import largestBstSubtreeModel from './models/largest-bst-subtree.yaml';
 import treeDiameterModel from './models/tree-diameter.yaml';
 import binaryTreeCamerasModel from './models/binary-tree-cameras.yaml';
+import partyWithoutBossModel from './models/party-without-boss.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -254,6 +255,10 @@ export class AlgorithmModelRepository {
     ['class078-code05', binaryTreeCamerasModel as IYamlAlgorithmModel],
     ['binary-tree-cameras-968', binaryTreeCamerasModel as IYamlAlgorithmModel],
     ['leetcode-968', binaryTreeCamerasModel as IYamlAlgorithmModel],
+    ['party-without-boss', partyWithoutBossModel as IYamlAlgorithmModel],
+    ['class079-code01', partyWithoutBossModel as IYamlAlgorithmModel],
+    ['luogu-p1352', partyWithoutBossModel as IYamlAlgorithmModel],
+    ['tree-max-independent-set', partyWithoutBossModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

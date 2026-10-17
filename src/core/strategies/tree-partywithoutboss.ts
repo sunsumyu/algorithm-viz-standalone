@@ -10,11 +10,13 @@ import type { UniversalStep, UniversalTreeNode, StateArrayItem } from '../univer
  *    - dp[u][0] = ∑ max(dp[v][0], dp[v][1]) （u 不来，下属自由选择）
  *    - dp[u][1] = happy[u] + ∑ dp[v][0]   （u 参加，下属一律不能来）
  * 4. 三状态数组联动：happy[], dp[u][0], dp[u][1] 实时切片渲染
+ * 5. 双向推导支持（Forward 自底向上后序二元汇报 / Reverse 自顶向下先序邀请对比探查）
  */
 export function compilePartyWithoutBoss(
   model: IYamlAlgorithmModel,
-  _stage: number,
-  anchorMap?: Record<string, number>
+  _stage: number = 1,
+  anchorMap?: Record<string, number>,
+  direction: 'forward' | 'reverse' = 'forward'
 ): UniversalStep[] {
   const steps: UniversalStep[] = [];
   const params = (model.defaultParams as any) || {};
@@ -28,19 +30,6 @@ export function compilePartyWithoutBoss(
     [6, 3],
     [7, 3],
   ]; // [sub, boss]
-
-  const lineEntry = anchorMap?.entry || 2;
-  const lineFindRoot = anchorMap?.find_root || 3;
-  const lineInit = anchorMap?.init || 4;
-  const lineReturn = anchorMap?.return || 5;
-  const lineDfsEntry = anchorMap?.dfs_entry || 8;
-  const lineInitNotCome = anchorMap?.init_not_come || 9;
-  const lineInitCome = anchorMap?.init_come || 10;
-  const lineLoopChild = anchorMap?.loop_child || 11;
-  const lineBranchCall = anchorMap?.branch_call || 12;
-  const lineAccumNotCome = anchorMap?.accum_not_come || 13;
-  const lineAccumCome = anchorMap?.accum_come || 14;
-  const lineCombine = anchorMap?.combine || 16;
 
   // 1. 构建邻接表与入度
   const adj: number[][] = Array.from({ length: n + 1 }, () => []);
@@ -157,16 +146,133 @@ export function compilePartyWithoutBoss(
     const activeNodeId = activeEmp !== undefined ? `emp-${activeEmp}` : undefined;
     steps.push({
       ...rest,
+      line: rest.line || 1,
+      codeLine: rest.codeLine || rest.line || 1,
       activeNodeId,
       treeRoot: getTreeSnapshot(activeNodeId),
       stateArrays: getPartyStateArrays(activeArrName, activeArrSlot),
     });
   }
 
+  // 逆向模式：自顶向下先序邀请对比探查 (Top-Down Pre-Order Exploration)
+  if (direction === 'reverse') {
+    const isHigherStage = _stage > 1 && !anchorMap;
+    const lineEntryR = anchorMap?.entry ?? 1;
+    const lineFindRootR = anchorMap?.find_root ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 2 : 2));
+    const lineDfsEntryR = anchorMap?.dfs_entry ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 3 : 6));
+    const lineReturnR = anchorMap?.return ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 7 : 4));
+
+    addPartyStep({
+      type: 'entry',
+      line: lineEntryR,
+      codeLine: lineEntryR,
+      i: 0,
+      j: 0,
+      dp1d: [0, 0],
+      memo: [0, 0],
+      activeSlot: 0,
+      tag: '逆向自顶向下邀请探查',
+      log: '🔍 【逆向对比】启动自顶向下先序邀请探查：从最高上司根节点向下试探邀请决策',
+      msg: '启动自顶向下先序探查：逐层对比上司出席与缺席时的下属快乐值，验证自底向上后序二元汇报的高效性。',
+      activeEmp: root,
+    });
+
+    addPartyStep({
+      type: 'init',
+      line: lineFindRootR,
+      codeLine: lineFindRootR,
+      i: root,
+      j: 0,
+      dp1d: [happy[root] || 0, 0],
+      memo: [happy[root] || 0, 0],
+      activeSlot: 0,
+      tag: `根节点最高上司: #${root}`,
+      log: `| 👑 考察最高上司 #${root} (固有快乐值: ${happy[root] || 0})`,
+      msg: `最高上司 <strong>#${root}</strong>：固有快乐值 <code>${happy[root] || 0}</code>。`,
+      activeEmp: root,
+    });
+
+    let topDownTotal = 0;
+    const queue: { u: number; canInvite: boolean }[] = [{ u: root, canInvite: true }];
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      const u = curr.u;
+      statuses.set(u, 'current');
+
+      const shouldInvite = curr.canInvite && (happy[u] || 0) > 0;
+      if (shouldInvite) {
+        topDownTotal += (happy[u] || 0);
+      }
+      tags.set(u, shouldInvite ? `✅出席(+${happy[u]})` : '❌不出席(0)');
+      statuses.set(u, shouldInvite ? 'visited' : 'base');
+
+      addPartyStep({
+        type: 'update',
+        line: lineDfsEntryR,
+        codeLine: lineDfsEntryR,
+        i: u,
+        j: 0,
+        dp1d: [topDownTotal, shouldInvite ? 1 : 0],
+        memo: [topDownTotal, happy[u] || 0],
+        activeSlot: shouldInvite ? 1 : 0,
+        tag: shouldInvite ? `职员#${u} 出席(+${happy[u]})` : `职员#${u} 缺席`,
+        log: `| ⚡ 【先序决策】职员 #${u}: ${shouldInvite ? `出席舞会 (+${happy[u]})` : '不出席'} -> 当前累计快乐值: ${topDownTotal}`,
+        msg: `自顶向下贪心考察职员 <strong>#${u}</strong>：${shouldInvite ? `决定邀请出席，增加快乐值 <code>+${happy[u]}</code>` : '因上司出席或收益非正，决定不出席'}。当前累计快乐值 <strong>${topDownTotal}</strong>。`,
+        activeEmp: u,
+      });
+
+      for (const v of adj[u] || []) {
+        queue.push({ u: v, canInvite: !shouldInvite });
+      }
+    }
+
+    addPartyStep({
+      type: 'return',
+      line: lineReturnR,
+      codeLine: lineReturnR,
+      i: root,
+      j: 0,
+      dp1d: [topDownTotal],
+      memo: [topDownTotal],
+      activeSlot: 0,
+      tag: `逆向探查完成: ${topDownTotal}`,
+      log: `| 🏆 逆向推导完成！先序贪心邀请快乐总和为: ${topDownTotal}`,
+      msg: `🏆 逆向推导完成！先序自顶向下邀请总快乐值为 <strong>${topDownTotal}</strong>。`,
+      activeEmp: root,
+    });
+
+    return steps.map((s, idx) => ({
+      ...s,
+      stepIndex: idx,
+      stage: _stage || 1,
+      line: s.line || 1,
+      codeLine: s.codeLine || s.line || 1,
+      decision: s.decision || s.log || s.tag || '逆向探查状态转移',
+      message: s.message || s.msg || s.log || '',
+      metrics: s.metrics || { '累计快乐值': String(topDownTotal), '推导方向': '逆向先序对比' },
+    }));
+  }
+
+  // 正向模式：自底向上后序二元汇报
+  const isHigherStage = _stage > 1 && !anchorMap;
+  const lineEntry = anchorMap?.entry ?? 1;
+  const lineFindRoot = anchorMap?.find_root ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 2 : 2));
+  const lineInit = anchorMap?.init ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 2 : 3));
+  const lineReturn = anchorMap?.return ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 7 : 4));
+  const lineDfsEntry = anchorMap?.dfs_entry ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 3 : 6));
+  const lineInitNotCome = anchorMap?.init_not_come ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 3 : 7));
+  const lineInitCome = anchorMap?.init_come ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 3 : 8));
+  const lineLoopChild = anchorMap?.loop_child ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 4 : 9));
+  const lineBranchCall = anchorMap?.branch_call ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 4 : 10));
+  const lineAccumNotCome = anchorMap?.accum_not_come ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 5 : 11));
+  const lineAccumCome = anchorMap?.accum_come ?? (anchorMap ? anchorMap.entry ?? 1 : (isHigherStage ? 5 : 12));
+  const lineCombine = anchorMap?.combine ?? (anchorMap ? anchorMap.return ?? anchorMap.entry ?? 1 : (isHigherStage ? 6 : 13));
+
   // Step 0: 主入口
   addPartyStep({
     type: 'entry',
     line: lineEntry,
+    codeLine: lineEntry,
     i: 0,
     j: 0,
     dp1d: [0, 0],
@@ -182,6 +288,7 @@ export function compilePartyWithoutBoss(
   addPartyStep({
     type: 'init',
     line: lineFindRoot,
+    codeLine: lineFindRoot,
     i: root,
     j: 0,
     dp1d: [0, 0],
@@ -197,42 +304,45 @@ export function compilePartyWithoutBoss(
   addPartyStep({
     type: 'init',
     line: lineInit,
+    codeLine: lineInit,
     i: root,
     j: 0,
     dp1d: [0, 0],
     memo: [0, 0],
     activeSlot: 0,
-    tag: `调用 dfs(root=${root})`,
-    log: `🌲 调用 dfs(u=${root})：深入后序遍历，递归各级主管与员工汇报决策`,
-    msg: `调用 <code>dfs(root=${root})</code>，向子部门递归，收集子树汇报。`,
+    tag: `启动递归: dfs(#${root})`,
+    log: `| 🚀 启动多叉树后序遍历：调用 dfs(员工 #${root})`,
+    msg: `准备自底向上汇集员工汇报：<code>dfs(#${root})</code>。`,
     activeEmp: root,
   });
 
-  // 递归函数 dfs(u): 返回 [notCome, come]
+  // 递归求解函数
   function dfs(u: number): [number, number] {
     statuses.set(u, 'current');
 
-    // a. 进入递归帧
+    // a. 递归入栈帧 (dfs_entry)
     addPartyStep({
       type: 'entry',
       line: lineDfsEntry,
+      codeLine: lineDfsEntry,
       i: u,
       j: 0,
       dp1d: [0, happy[u] || 0],
       memo: [0, happy[u] || 0],
       activeSlot: 0,
       tag: `进入员工 #${u}`,
-      log: `| 📥 进入递归帧：dfs(u=${u})，考察员工 #${u} 的参会决策`,
-      msg: `进入递归函数：考察员工 <strong>#${u}</strong>（固有快乐值: <code>${happy[u] || 0}</code>）。`,
+      log: `| 📥 进入递归帧：dfs(员工 #${u})，其自身快乐值为 ${happy[u] || 0}`,
+      msg: `进入员工 <strong>#${u}</strong> 的决策帧，其固有快乐值为 <code>happy[${u}] = ${happy[u] || 0}</code>。`,
       activeEmp: u,
     });
 
-    // b. 初始化 notCome = 0
+    // b. 初始化不来收益 notCome = 0
     let notCome = 0;
-    dp0[u] = 0;
+    dp0[u] = notCome;
     addPartyStep({
-      type: 'update',
+      type: 'init',
       line: lineInitNotCome,
+      codeLine: lineInitNotCome,
       i: u,
       j: 0,
       dp1d: [notCome, 0],
@@ -240,18 +350,19 @@ export function compilePartyWithoutBoss(
       activeSlot: 0,
       activeArrName: 'dp0',
       activeArrSlot: u - 1,
-      tag: `员工#${u} notCome = 0`,
-      log: `| 📍 员工 #${u} 初始化不参加收益: notCome = 0`,
-      msg: `若员工 <strong>#${u}</strong> 不参加舞会，基础收益初始化为 <code>0</code>。`,
+      tag: `dp[${u}][0] = 0`,
+      log: `| ◽ 初始化不来快乐值：notCome = 0`,
+      msg: `初始化不出席基础收益：<code>notCome = 0</code>。`,
       activeEmp: u,
     });
 
-    // c. 初始化 come = happy[u]
+    // c. 初始化参加收益 come = happy[u]
     let come = happy[u] || 0;
     dp1[u] = come;
     addPartyStep({
-      type: 'update',
+      type: 'init',
       line: lineInitCome,
+      codeLine: lineInitCome,
       i: u,
       j: 0,
       dp1d: [notCome, come],
@@ -259,43 +370,48 @@ export function compilePartyWithoutBoss(
       activeSlot: 1,
       activeArrName: 'dp1',
       activeArrSlot: u - 1,
-      tag: `员工#${u} come = ${come}`,
-      log: `| 📍 员工 #${u} 初始化参加收益: come = happy[${u}] = ${come}`,
-      msg: `若员工 <strong>#${u}</strong> 参加舞会，可立即获得自身固有快乐值 <code>come = ${come}</code>。`,
+      tag: `dp[${u}][1] = ${come}`,
+      log: `| ◽ 初始化参加快乐值：come = happy[${u}] = ${come}`,
+      msg: `初始化出席基础收益：<code>come = happy[${u}] = <strong>${come}</strong></code>。`,
       activeEmp: u,
     });
 
-    // d. 遍历每一个直接下属
-    for (const next of adj[u] || []) {
-      // loop 帧
+    // d. 遍历下属分支
+    const children = adj[u] || [];
+    for (let idx = 0; idx < children.length; idx++) {
+      const next = children[idx];
+
+      // for 循环探测头
       addPartyStep({
         type: 'loop',
         line: lineLoopChild,
+        codeLine: lineLoopChild,
         i: u,
         j: next,
         dp1d: [notCome, come],
         memo: [notCome, come],
         activeSlot: 0,
-        tag: `考察下属 #${next}`,
-        log: `| 🔄 员工 #${u} 遍历直接下属 #${next}`,
-        msg: `员工 <strong>#${u}</strong> 准备深入考察直接下属 <strong>#${next}</strong> 的参会汇报。`,
+        tag: `考察下属分支 [${idx + 1}/${children.length}]: #${next}`,
+        log: `| 🔍 遍历下属 [${idx + 1}/${children.length}]：考察直接下属 #${next}`,
+        msg: `遍历下属：考察员工 #${u} 的第 ${idx + 1} 个直接下属 <strong>#${next}</strong>。`,
         activeEmp: u,
       });
 
-      // Zero Step Skipping 拦截帧 (branch-call)
+      // 子递归前拦截帧 (branch-call)
       addPartyStep({
         type: 'branch-call',
         line: lineBranchCall,
+        codeLine: lineBranchCall,
         branchType: 'bottom',
-        varName: 'sub',
+        varName: `sub_${next}`,
         i: u,
         j: next,
         dp1d: [notCome, come],
         memo: [notCome, come],
         activeSlot: 0,
-        tag: `调用 dfs(next=${next})`,
-        log: `| 🌿 【分支调用】员工 #${u} 调用 dfs(${next}) 收集下属 #${next} 决策`,
-        msg: `深入下属子树：调用 <code>dfs(${next})</code> 求解下属 <strong>#${next}</strong> 汇报二元组。`,
+        tag: `递归下属: dfs(#${next})`,
+        log: `| 🌿 【分支深入】员工 #${u} 准备递归深入直接下属 dfs(#${next})`,
+        msg: `向下深入：调用 <code>dfs(#${next})</code>，探查下属汇报收益。`,
         activeEmp: u,
       });
 
@@ -305,6 +421,7 @@ export function compilePartyWithoutBoss(
       addPartyStep({
         type: 'branch-return',
         line: lineBranchCall,
+        codeLine: lineBranchCall,
         branchType: 'bottom',
         subResult: sub,
         i: u,
@@ -325,6 +442,7 @@ export function compilePartyWithoutBoss(
       addPartyStep({
         type: 'update',
         line: lineAccumNotCome,
+        codeLine: lineAccumNotCome,
         i: u,
         j: next,
         dp1d: [notCome, come],
@@ -344,6 +462,7 @@ export function compilePartyWithoutBoss(
       addPartyStep({
         type: 'update',
         line: lineAccumCome,
+        codeLine: lineAccumCome,
         i: u,
         j: next,
         dp1d: [notCome, come],
@@ -366,6 +485,7 @@ export function compilePartyWithoutBoss(
     addPartyStep({
       type: 'combine',
       line: lineCombine,
+      codeLine: lineCombine,
       i: u,
       j: 0,
       dp1d: [notCome, come],
@@ -387,6 +507,7 @@ export function compilePartyWithoutBoss(
   addPartyStep({
     type: 'return',
     line: lineReturn,
+    codeLine: lineReturn,
     i: root,
     j: 0,
     dp1d: [finalAns],
@@ -398,6 +519,14 @@ export function compilePartyWithoutBoss(
     activeEmp: root,
   });
 
-  return steps;
+  return steps.map((s, idx) => ({
+    ...s,
+    stepIndex: idx,
+    stage: _stage || 1,
+    line: s.line || 1,
+    codeLine: s.codeLine || s.line || 1,
+    decision: s.decision || s.log || s.tag || '没有上司的舞会状态转移',
+    message: s.message || s.msg || s.log || '',
+    metrics: s.metrics || { '最大快乐值': String(finalAns), '最高上司': `#${root}` },
+  }));
 }
-

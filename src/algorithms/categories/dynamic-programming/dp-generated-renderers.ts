@@ -823,20 +823,7 @@ const demos: DemoDef[] = [
     ],
     build: makeEngineBuilder('longest-path-different-characters'),
   },
-  {
-    id: 'party-without-boss',
-    name: '没有上司的舞会',
-    description: '树型DP最大权独立集：每个节点汇报 [不出席, 出席] 状态二元组，上司与下属互斥 (洛谷 P1352)。',
-    icon: '🎭',
-    aliases: ['class079-code01', 'luogu-p1352'],
-    inputs: [
-      { id: 'n', label: '员工数 n', value: '7', width: 80 },
-    ],
-    examples: [
-      { label: 'n=7, 全乐4/1/2/3', values: { n: '7' } },
-    ],
-    build: makeEngineBuilder('party-without-boss'),
-  },
+
   {
     id: 'height-removal-queries',
     name: '移除子树后的二叉树高度',
@@ -1075,7 +1062,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'course-selection' },
   { type: 'demo', id: 'minimum-fuel-cost' },
   { type: 'demo', id: 'longest-path-different-characters' },
-  { type: 'demo', id: 'party-without-boss' },
   { type: 'demo', id: 'height-removal-queries' },
   { type: 'demo', id: 'minimum-score-after-removals' },
   // 状压DP 专题（第080讲：状压dp-上）

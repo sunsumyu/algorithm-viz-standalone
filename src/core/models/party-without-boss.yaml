@@ -1,0 +1,197 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 没有上司的舞会 顶层领域模型
+# 对应：洛谷 P1352 / 左程云算法讲解 079 Code01
+# 包含：自底向上二元组汇报 [notCome, come]、最大权独立集、状态依赖树与常数空间压缩
+# ==============================================================================
+
+id: party-without-boss
+name: 没有上司的舞会
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 树型 DP
+  - 动态规划
+  - 最大权独立集
+  - 多叉树
+  - 深度优先搜索
+
+description: |
+  洛谷 P1352 · 左程云算法通关课第 079 讲 树型 DP（下）Code01：没有上司的舞会。
+  某大学有 n 个职员，编号为 1..n。每位职员有快乐指数 happy[i]。
+  直接上司与直接下属不能同时参加舞会。求出席员工的快乐指数总和的最大值。
+  核心树型 DP 互斥二元组汇报模型 (Tree DP Independent Set Info)：
+  每个节点向直接上级汇报二元组 [notCome, come]：
+  1. 当前职员不参加舞会：直接下属来不来皆可，贪心取最大收益累加：
+     notCome = ∑ max(sub.notCome, sub.come)
+  2. 当前职员参加舞会：直接下属绝对不能参加（只能贡献 notCome）：
+     come = happy[u] + ∑ sub.notCome
+  自底向上后序遍历多叉树，最高上司根节点最终返回 max(root.notCome, root.come)。
+
+defaultParams:
+  n: 7
+  happy: [0, 4, 1, 2, 3, 2, 5, 1]
+  relations:
+    - [2, 1]
+    - [3, 1]
+    - [4, 2]
+    - [5, 2]
+    - [6, 3]
+    - [7, 3]
+
+constraints:
+  - 1 <= n <= 6000（教学演示建议 5~10 节点）
+  - -128 <= happy[i] <= 127
+
+directions:
+  forward:
+    name: 自底向上后序二元汇报 (Bottom-Up Post-Order Info Tuple)
+    description: 多叉树后序遍历自底向上汇集 [不参加, 参加] 二元组，以上司下属互斥原则聚合最优快乐指数
+  reverse:
+    name: 自顶向下先序邀请对比探查 (Top-Down Pre-Order Exploration)
+    description: 从最高上司根节点出发向下自顶向下先序试探性邀请，对比验证自底向上后序状态机的高效性
+
+stages:
+  stage-1:
+    name: 后序遍历自底向上二元汇报
+    description: 递归后序遍历多叉树，每个节点汇报 [不来最大快乐值, 参加最大快乐值] 二元组，求解最大权独立集
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int maxHappy(int n, int[] happy, int[][] relations) { // @step:entry
+                  List<Integer>[] tree = new ArrayList[n + 1];
+                  for (int i = 0; i <= n; i++) tree[i] = new ArrayList<>();
+                  boolean[] hasBoss = new boolean[n + 1];
+                  for (int[] r : relations) { tree[r[1]].add(r[0]); hasBoss[r[0]] = true; }
+                  int root = 1;
+                  while (hasBoss[root]) root++; // @step:find_root
+                  int[] res = dfs(root, tree, happy); // @step:init
+                  return Math.max(res[0], res[1]); // @step:return
+              }
+              private int[] dfs(int u, List<Integer>[] tree, int[] happy) { // @step:dfs_entry
+                  int notCome = 0; // @step:init_not_come
+                  int come = happy[u]; // @step:init_come
+                  for (int v : tree[u]) { // @step:loop_child
+                      int[] sub = dfs(v, tree, happy); // @step:branch_call
+                      notCome += Math.max(sub[0], sub[1]); // @step:accum_not_come
+                      come += sub[0]; // @step:accum_come
+                  }
+                  return new int[]{ notCome, come }; // @step:combine
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int maxHappyReverse(int n, int[] happy, int[][] relations) { // @step:entry
+                  List<Integer>[] tree = new ArrayList[n + 1];
+                  for (int i = 0; i <= n; i++) tree[i] = new ArrayList<>();
+                  boolean[] hasBoss = new boolean[n + 1];
+                  for (int[] r : relations) { tree[r[1]].add(r[0]); hasBoss[r[0]] = true; }
+                  int root = 1;
+                  while (hasBoss[root]) root++; // @step:find_root
+                  return explorePreOrder(root, tree, happy, false); // @step:return
+              }
+              private int explorePreOrder(int u, List<Integer>[] tree, int[] happy, boolean bossCame) { // @step:dfs_entry
+                  int come = bossCame ? 0 : happy[u]; // @step:init_come
+                  int notCome = 0; // @step:init_not_come
+                  for (int v : tree[u]) { // @step:loop_child
+                      notCome += explorePreOrder(v, tree, happy, false); // @step:branch_call
+                      if (!bossCame) come += explorePreOrder(v, tree, happy, true); // @step:accum_come
+                  }
+                  return Math.max(come, notCome); // @step:combine
+              }
+          }
+
+  stage-2:
+    name: 递归调用与状态依赖树展开
+    description: 显式构建后序递归的完整状态依赖树，展示每一个节点深入、子调用与回溯落盘的完整路径
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态依赖展开树遍历
+          // @step:entry 1. 展开多叉树根节点 maxHappy(root)
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 深入当前员工节点
+          // @step:loop_child 4. 遍历下属分支
+          // @step:branch_call 5. 递归下属子树
+          // @step:accum_not_come 6. 累加不参加收益
+          // @step:accum_come 7. 累加参加收益
+          // @step:combine 8. 状态落盘并向直接上级汇报
+          // @step:return 9. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向依赖对比树
+          // @step:entry 1. 根节点自顶向下依赖展开
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 先序探查员工
+          // @step:loop_child 4. 遍历下属分支
+          // @step:branch_call 5. 下属邀请判定
+          // @step:combine 6. 差异回溯
+          // @step:return 7. 逆向推演完成
+
+  stage-3:
+    name: 树型 DP 状态表推导：dp[u][0..1]
+    description: 映射为标准树型 DP 状态表，每个节点维护 [0:不来最大快乐值, 1:参加最大快乐值] 状态转移向量
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 树型 DP 状态表推导：dp[u][0..1]
+          // @step:entry 1. 初始化职员状态向量表 dp[N][2]
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 自底向上逐节点访问
+          // @step:accum_not_come 4. 状态转移：计算 dp[u][0] 不来收益
+          // @step:accum_come 5. 状态转移：计算 dp[u][1] 参加收益
+          // @step:combine 6. 状态落盘并向父级提交
+          // @step:return 7. 矩阵填表完成
+      reverse:
+        language: java
+        source: |
+          // 逆向状态表推导
+          // @step:entry 1. 逆向状态矩阵初始化
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 自顶向下反向回代
+          // @step:branch_call 4. 约束校验
+          // @step:combine 5. 逆向状态登记
+          // @step:return 6. 逆向收敛
+
+  stage-4:
+    name: O(h) 递归栈空间压缩与极速流转
+    description: 舍弃额外树结构构建，原地复用递归栈 O(h) 空间，单变量极速流转返回全局最大快乐值
+    complexity:
+      time: O(N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // O(h) 递归栈空间压缩与极速流转
+          // @step:entry 1. 寄存器初始化：maxHappy = 0
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 原地后序状态快速流转
+          // @step:accum_not_come 4. 累加不来收益
+          // @step:accum_come 5. 累加参加收益
+          // @step:combine 6. 二元组极速返回
+          // @step:return 7. 极速返回全局最大快乐值
+      reverse:
+        language: java
+        source: |
+          // 逆向极速常数推演
+          // @step:entry 1. 寄存器初始化
+          // @step:find_root 2. 定位最高上司
+          // @step:dfs_entry 3. 逆向常数遍历
+          // @step:combine 4. 极速返回登记
+          // @step:return 5. 极速返回

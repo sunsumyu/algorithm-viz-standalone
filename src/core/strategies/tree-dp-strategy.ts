@@ -66,7 +66,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'longest-path-different-characters':
         return compileLongestPathDifferentCharacters(model, stage, anchorMap);
       case 'party-without-boss':
-        return compilePartyWithoutBoss(model, stage, anchorMap);
+        return compilePartyWithoutBoss(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'height-removal-queries':
         return compileHeightRemovalQueries(model, stage, anchorMap);
       case 'minimum-score-after-removals':
