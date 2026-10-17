@@ -1260,23 +1260,6 @@ registerDemo({
 });
 
 registerDemo({
-  id: 'burst-balloons',
-  name: '大厂高频真题: 戳气球 (Burst Balloons)',
-  description: '左程云算法讲解076 Code03：LeetCode 312 戳气球，区间 DP 逆向思维之最后戳破气球模型。',
-  icon: '🎈',
-  inputs: [{ id: 'nums', label: 'nums (逗号分隔)', value: '3,1,5,8', width: 150 }],
-  build: makeEngineBuilder('burst-balloons'),
-  difficulty: 3,
-  levelOrder: 312,
-  learningGoal: '深刻理解区间 DP 逆向思维，通过枚举最后戳破的气球消解子问题边界依赖',
-  aliases: ['class076-code03', 'burst-balloons-312', 'leetcode-312'],
-  examples: [
-    { label: '经典四气球 [3, 1, 5, 8] Ans=167', values: { nums: '3,1,5,8' } },
-    { label: '双气球 [1, 5] Ans=10', values: { nums: '1,5' } },
-  ],
-});
-
-registerDemo({
   id: 'strange-printer',
   name: '奇怪的打印机 (Strange Printer)',
   description: '左程云算法讲解076 Code04：LeetCode 664 奇怪的打印机，字符涂色刷漆贪心抵消的区间 DP。',

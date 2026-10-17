@@ -116,6 +116,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'regex-matching',
   'wildcard-matching',
   'buying-hay-min-cost',
+  'burst-balloons',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {
@@ -335,6 +336,16 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
           }
           if (resolved.m !== gLen + 1 || resolved.n !== sLen + 1) {
             dimensionMismatches.push(`${id} (双序列期望矩阵规格 m=${gLen + 1}, n=${sLen + 1}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          }
+          continue;
+        }
+
+        if (id === 'burst-balloons') {
+          const rawNums = params.nums;
+          const numsLen = Array.isArray(rawNums) ? rawNums.length : (typeof rawNums === 'string' ? rawNums.split(',').length : 4);
+          const expected = numsLen + 2;
+          if (resolved.m !== expected || resolved.n !== expected) {
+            dimensionMismatches.push(`${id} (开区间首尾哨兵矩阵规格期望 m=${expected}, n=${expected}，但解析出 m=${resolved.m}, n=${resolved.n})`);
           }
           continue;
         }

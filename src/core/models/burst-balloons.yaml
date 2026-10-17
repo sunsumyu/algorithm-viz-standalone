@@ -1,0 +1,545 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 戳气球 (LeetCode 312 / 左程云 Class 076 Code03)
+# 核心：区间 DP 经典逆向思维——枚举开区间 (i, j) 中最后一个被戳破的气球 k
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: burst-balloons
+name: "戳气球"
+nameEn: "Burst Balloons"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🎈"
+difficulty: 3
+levelOrder: 312
+learningGoal: "深刻理解区间 DP 逆向思维，通过枚举最后戳破的气球消解子问题边界依赖"
+description: "左程云算法通关课 Class 076 Code03：LeetCode 312 戳气球，区间 DP 逆向思维之最后戳破气球模型，dp[i][j] = max(dp[i][k] + dp[k][j] + val[i]*val[k]*val[j])"
+defaultParams:
+  nums: [3, 1, 5, 8]
+
+problem:
+  leetcodeId: 312
+  title: "戳气球 (LeetCode 312 / Class 076 Code03)"
+  difficulty: "困难"
+  tags: ["动态规划", "区间 DP", "分治", "逆向思维"]
+  description: "有 <code>n</code> 个气球，编号为 <code>0</code> 到 <code>n - 1</code>，每个气球上都标有一个数字，这些数字存在数组 <code>nums</code> 中。<br/><br/>现在要求你戳破所有的气球。戳破第 <code>i</code> 个气球，你可以获得 <code>nums[i - 1] * nums[i] * nums[i + 1]</code> 枚硬币。这里的 <code>i - 1</code> 和 <code>i + 1</code> 代表和 <code>i</code> 相邻的两个气球的序号。如果 <code>i - 1</code> 或 <code>i + 1</code> 超出了数组的边界，那么就当它是一个数字为 <code>1</code> 的气球。<br/><br/>求所能获得硬币的最大数量。"
+  examples:
+    - input: "nums = [3, 1, 5, 8]"
+      output: "167"
+      explanation: "nums = [3,1,5,8] --> [3,5,8] --> [3,8] --> [8] --> []<br/>coins = 3*1*5 + 3*5*8 + 1*3*8 + 1*8*1 = 15 + 120 + 24 + 8 = 167"
+    - input: "nums = [1, 5]"
+      output: "10"
+      explanation: "1*5*1 + 1*1*1 = 5 + 5 = 10"
+  constraints:
+    - "n == nums.length"
+    - "1 <= n <= 300 (演示推荐 <= 6)"
+    - "0 <= nums[i] <= 100"
+  leetcodeUrl: "https://leetcode.cn/problems/burst-balloons/"
+
+directions:
+  forward:
+    label: "开区间跨度顺推 (len=2..n+1 自短到长)"
+    branches:
+      - name: "sub_left"
+        label: "左子开区间 (i, k)"
+        formula: "dp[i][k]"
+      - name: "sub_right"
+        label: "右子开区间 (k, j)"
+        formula: "dp[k][j]"
+      - name: "burst_gain"
+        label: "最后戳破气球 k 获得硬币"
+        formula: "val[i] * val[k] * val[j]"
+    combineFormula: "max_{k}(dp[i][k] + dp[k][j] + val[i] * val[k] * val[j])"
+  reverse:
+    label: "全局区间逆推分解 (从 (0, n+1) 逆向寻源)"
+    description: "从完整开区间 (0, n+1) 出发，逆向枚举分割点 k 递归分解子区间"
+    startFormula: "dp[0][n + 1]"
+    target: "dp[i][i + 1] = 0"
+    branches:
+      - name: "trace_k"
+        label: "逆向溯源最优气球 k"
+        formula: "dp[i][k] + dp[k][j] + val[i]*val[k]*val[j]"
+    combineFormula: "逆向状态依赖"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(n!)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力递归分支展开 (开区间枚举最后戳破气球)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "首尾添加虚拟气球 1，构造开区间 (i, j)。逆向枚举区间内最后一个被戳破的气球 k，将问题分解为完全互不影响的独立子问题 (i, k) 与 (k, j)。"
+      reverse: "从顶层完整区间 (0, n+1) 开始递归展开，展示指数级爆炸的子问题分支与庞大的重复计算。"
+    variants:
+      standard:
+        variantLabel: "标准递归实现"
+        title:
+          forward: "BurstBalloons_Recursive.java"
+          reverse: "BurstBalloons_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "BurstBalloons_Recursive.java"
+            source: |
+              class Solution {
+                  public int maxCoins(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      int[] val = new int[n + 2]; // @step:init_val
+                      val[0] = 1; val[n + 1] = 1; // @step:set_border
+                      for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                      return dfs(val, 0, n + 1); // @step:init_dp
+                  }
+                  private int dfs(int[] val, int i, int j) { // @step:dfs_entry
+                      if (i + 1 >= j) return 0; // @step:boundary
+                      int best = 0; // @step:init_best
+                      for (int k = i + 1; k < j; k++) { // @step:loop_k
+                          int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                          int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
+                          best = Math.max(best, coins); // @step:update_best
+                      }
+                      return best; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int maxCoins(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        int[] val = new int[n + 2]; // @step:init_val
+                        val[0] = 1; val[n + 1] = 1; // @step:set_border
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        return dfs(val, 0, n + 1); // @step:init_dp
+                    }
+                    private int dfs(int[] val, int i, int j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        int best = 0; // @step:init_best
+                        for (int k = i + 1; k < j; k++) { // @step:loop_k
+                            int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
+                            best = Math.max(best, coins); // @step:update_best
+                        }
+                        return best; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int maxCoins(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        vector<int> val(n + 2, 1); // @step:init_val
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        return dfs(val, 0, n + 1); // @step:init_dp
+                    }
+                    int dfs(vector<int>& val, int i, int j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        int best = 0; // @step:init_best
+                        for (int k = i + 1; k < j; k++) { // @step:loop_k
+                            int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
+                            best = max(best, coins); // @step:update_best
+                        }
+                        return best; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def maxCoins(self, nums: List[int]) -> int: # @step:entry
+                        val = [1] + nums + [1] # @step:init_val
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i + 1 >= j: return 0 # @step:boundary
+                            best = 0 # @step:init_best
+                            for k in range(i + 1, j): # @step:loop_k
+                                gain = val[i] * val[k] * val[j] # @step:calc_gain
+                                coins = dfs(i, k) + dfs(k, j) + gain # @step:calc_coins
+                                best = max(best, coins) # @step:update_best
+                            return best # @step:return
+                        return dfs(0, len(nums) + 1) # @step:init_dp
+              javascript: |
+                function maxCoins(nums) { // @step:entry
+                    const val = [1, ...nums, 1]; // @step:init_val
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        let best = 0; // @step:init_best
+                        for (let k = i + 1; k < j; k++) { // @step:loop_k
+                            const gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            const coins = dfs(i, k) + dfs(k, j) + gain; // @step:calc_coins
+                            best = Math.max(best, coins); // @step:update_best
+                        }
+                        return best; // @step:return
+                    }
+                    return dfs(0, nums.length + 1); // @step:init_dp
+                }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (上三角备忘录缓存)"
+      reverse: "阶段 2: 逆向记忆化状态空间探查"
+    desc:
+      forward: "引入 memo[n+2][n+2] 上三角备忘录，记录各开区间 (i, j) 戳破全部气球的最优解，重叠子问题直接 O(1) 查表返回。"
+      reverse: "自顶向下记忆化搜索，命中已计算子区间时直接剪枝。"
+    variants:
+      standard:
+        variantLabel: "标准记忆化实现"
+        title:
+          forward: "BurstBalloons_Memo.java"
+          reverse: "BurstBalloons_Memo_Reverse.java"
+        code:
+          forward:
+            title: "BurstBalloons_Memo.java"
+            source: |
+              class Solution {
+                  public int maxCoins(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      int[] val = new int[n + 2]; // @step:init_val
+                      val[0] = 1; val[n + 1] = 1; // @step:set_border
+                      for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                      int[][] memo = new int[n + 2][n + 2]; // @step:init_dp
+                      return dfs(val, memo, 0, n + 1); // @step:call_dfs
+                  }
+                  private int dfs(int[] val, int[][] memo, int i, int j) { // @step:dfs_entry
+                      if (i + 1 >= j) return 0; // @step:boundary
+                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                      int best = 0; // @step:init_best
+                      for (int k = i + 1; k < j; k++) { // @step:loop_k
+                          int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                          int coins = dfs(val, memo, i, k) + dfs(val, memo, k, j) + gain; // @step:calc_coins
+                          best = Math.max(best, coins); // @step:update_best
+                      }
+                      memo[i][j] = best; // @step:transfer
+                      return best; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int maxCoins(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        int[] val = new int[n + 2]; // @step:init_val
+                        val[0] = 1; val[n + 1] = 1; // @step:set_border
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        int[][] memo = new int[n + 2][n + 2]; // @step:init_dp
+                        return dfs(val, memo, 0, n + 1); // @step:call_dfs
+                    }
+                    private int dfs(int[] val, int[][] memo, int i, int j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        int best = 0; // @step:init_best
+                        for (int k = i + 1; k < j; k++) { // @step:loop_k
+                            int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            int coins = dfs(val, memo, i, k) + dfs(val, memo, k, j) + gain; // @step:calc_coins
+                            best = Math.max(best, coins); // @step:update_best
+                        }
+                        memo[i][j] = best; // @step:transfer
+                        return best; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int maxCoins(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        vector<int> val(n + 2, 1); // @step:init_val
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        vector<vector<int>> memo(n + 2, vector<int>(n + 2, 0)); // @step:init_dp
+                        return dfs(val, memo, 0, n + 1); // @step:call_dfs
+                    }
+                    int dfs(vector<int>& val, vector<vector<int>>& memo, int i, int j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        int best = 0; // @step:init_best
+                        for (int k = i + 1; k < j; k++) { // @step:loop_k
+                            int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            int coins = dfs(val, memo, i, k) + dfs(val, memo, k, j) + gain; // @step:calc_coins
+                            best = max(best, coins); // @step:update_best
+                        }
+                        return memo[i][j] = best; // @step:transfer
+                    }
+                };
+              python: |
+                class Solution:
+                    def maxCoins(self, nums: List[int]) -> int: # @step:entry
+                        val = [1] + nums + [1] # @step:init_val
+                        memo = {} # @step:init_dp
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i + 1 >= j: return 0 # @step:boundary
+                            if (i, j) in memo: return memo[(i, j)] # @step:cache_hit
+                            best = 0 # @step:init_best
+                            for k in range(i + 1, j): # @step:loop_k
+                                gain = val[i] * val[k] * val[j] # @step:calc_gain
+                                coins = dfs(i, k) + dfs(k, j) + gain # @step:calc_coins
+                                best = max(best, coins) # @step:update_best
+                            memo[(i, j)] = best # @step:transfer
+                            return best # @step:return
+                        return dfs(0, len(nums) + 1) # @step:call_dfs
+              javascript: |
+                function maxCoins(nums) { // @step:entry
+                    const val = [1, ...nums, 1]; // @step:init_val
+                    const memo = Array.from({ length: val.length }, () => new Array(val.length).fill(0)); // @step:init_dp
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i + 1 >= j) return 0; // @step:boundary
+                        if (memo[i][j] !== 0) return memo[i][j]; // @step:cache_hit
+                        let best = 0; // @step:init_best
+                        for (let k = i + 1; k < j; k++) { // @step:loop_k
+                            const gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                            const coins = dfs(i, k) + dfs(k, j) + gain; // @step:calc_coins
+                            best = Math.max(best, coins); // @step:update_best
+                        }
+                        memo[i][j] = best; // @step:transfer
+                        return best; // @step:return
+                    }
+                    return dfs(0, nums.length + 1); // @step:call_dfs
+                }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格二维表递推 (按区间跨度自底向上填表)"
+      reverse: "阶段 3: 逆向依赖寻源填表 (从全开区间逆向校验)"
+    desc:
+      forward: "严格按开区间长度 len 从 2 到 n + 1 递增循环，内层枚举左端点 i 计算右端点 j = i + len，确保枚举 k 时所依赖的 dp[i][k] 和 dp[k][j] 均已填妥。"
+      reverse: "逆向展示上三角网格拓扑顺序与状态转移依赖。"
+    variants:
+      standard:
+        variantLabel: "标准区间DP填表"
+        title:
+          forward: "BurstBalloons_Tabulation.java"
+          reverse: "BurstBalloons_Tabulation_Reverse.java"
+        code:
+          forward:
+            title: "BurstBalloons_Tabulation.java"
+            source: |
+              class Solution {
+                  public int maxCoins(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      int[] val = new int[n + 2]; // @step:init_val
+                      val[0] = 1; val[n + 1] = 1; // @step:set_border
+                      for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                      int[][] dp = new int[n + 2][n + 2]; // @step:init_dp
+                      for (int len = 2; len <= n + 1; len++) { // @step:loop_len
+                          for (int i = 0; i <= n + 1 - len; i++) { // @step:loop_i
+                              int j = i + len; // @step:calc_j
+                              int best = 0; // @step:init_best
+                              for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                  int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                  int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                  best = Math.max(best, coins); // @step:update_best
+                              }
+                              dp[i][j] = best; // @step:transfer
+                          }
+                      }
+                      return dp[0][n + 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int maxCoins(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        int[] val = new int[n + 2]; // @step:init_val
+                        val[0] = 1; val[n + 1] = 1; // @step:set_border
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        int[][] dp = new int[n + 2][n + 2]; // @step:init_dp
+                        for (int len = 2; len <= n + 1; len++) { // @step:loop_len
+                            for (int i = 0; i <= n + 1 - len; i++) { // @step:loop_i
+                                int j = i + len; // @step:calc_j
+                                int best = 0; // @step:init_best
+                                for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                    int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                    int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                    best = Math.max(best, coins); // @step:update_best
+                                }
+                                dp[i][j] = best; // @step:transfer
+                            }
+                        }
+                        return dp[0][n + 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int maxCoins(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        vector<int> val(n + 2, 1); // @step:init_val
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        vector<vector<int>> dp(n + 2, vector<int>(n + 2, 0)); // @step:init_dp
+                        for (int len = 2; len <= n + 1; len++) { // @step:loop_len
+                            for (int i = 0; i <= n + 1 - len; i++) { // @step:loop_i
+                                int j = i + len; // @step:calc_j
+                                int best = 0; // @step:init_best
+                                for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                    int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                    int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                    best = max(best, coins); // @step:update_best
+                                }
+                                dp[i][j] = best; // @step:transfer
+                            }
+                        }
+                        return dp[0][n + 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def maxCoins(self, nums: List[int]) -> int: # @step:entry
+                        n = len(nums) # @step:init_n
+                        val = [1] + nums + [1] # @step:init_val
+                        dp = [[0] * (n + 2) for _ in range(n + 2)] # @step:init_dp
+                        for length in range(2, n + 2): # @step:loop_len
+                            for i in range(n + 2 - length): # @step:loop_i
+                                j = i + length # @step:calc_j
+                                best = 0 # @step:init_best
+                                for k in range(i + 1, j): # @step:loop_k
+                                    gain = val[i] * val[k] * val[j] # @step:calc_gain
+                                    coins = dp[i][k] + dp[k][j] + gain # @step:calc_coins
+                                    best = max(best, coins) # @step:update_best
+                                dp[i][j] = best # @step:transfer
+                        return dp[0][n + 1] # @step:return
+              javascript: |
+                function maxCoins(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    const val = [1, ...nums, 1]; // @step:init_val
+                    const dp = Array.from({ length: n + 2 }, () => new Array(n + 2).fill(0)); // @step:init_dp
+                    for (let len = 2; len <= n + 1; len++) { // @step:loop_len
+                        for (let i = 0; i <= n + 1 - len; i++) { // @step:loop_i
+                            const j = i + len; // @step:calc_j
+                            let best = 0; // @step:init_best
+                            for (let k = i + 1; k < j; k++) { // @step:loop_k
+                                const gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                const coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                best = Math.max(best, coins); // @step:update_best
+                            }
+                            dp[i][j] = best; // @step:transfer
+                        }
+                    }
+                    return dp[0][n + 1]; // @step:return
+                }
+
+  stage-4:
+    shortName: "空间对偶"
+    type: "optimization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 4: 对角线拓扑演进与常数优化"
+      reverse: "阶段 4: 空间对偶逆向演化"
+    desc:
+      forward: "区间 DP 的核心特征是上三角对角线拓扑依赖。Stage 4 深入展示沿对角线推进的拓扑结构与剪枝常数优化。"
+      reverse: "逆向分析区间 DP 空间拓扑结构与计算复杂度收敛。"
+    variants:
+      standard:
+        variantLabel: "对角线拓扑优化实现"
+        title:
+          forward: "BurstBalloons_Optimized.java"
+          reverse: "BurstBalloons_Optimized_Reverse.java"
+        code:
+          forward:
+            title: "BurstBalloons_Optimized.java"
+            source: |
+              class Solution {
+                  public int maxCoins(int[] nums) { // @step:entry
+                      int n = nums.length; // @step:init_n
+                      int[] val = new int[n + 2]; // @step:init_val
+                      val[0] = 1; val[n + 1] = 1; // @step:set_border
+                      for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                      int[][] dp = new int[n + 2][n + 2]; // @step:init_dp
+                      for (int i = n; i >= 0; i--) { // @step:loop_i
+                          for (int j = i + 2; j <= n + 1; j++) { // @step:calc_j
+                              int best = 0; // @step:init_best
+                              for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                  int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                  int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                  best = Math.max(best, coins); // @step:update_best
+                              }
+                              dp[i][j] = best; // @step:transfer
+                          }
+                      }
+                      return dp[0][n + 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int maxCoins(int[] nums) { // @step:entry
+                        int n = nums.length; // @step:init_n
+                        int[] val = new int[n + 2]; // @step:init_val
+                        val[0] = 1; val[n + 1] = 1; // @step:set_border
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        int[][] dp = new int[n + 2][n + 2]; // @step:init_dp
+                        for (int i = n; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 2; j <= n + 1; j++) { // @step:calc_j
+                                int best = 0; // @step:init_best
+                                for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                    int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                    int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                    best = Math.max(best, coins); // @step:update_best
+                                }
+                                dp[i][j] = best; // @step:transfer
+                            }
+                        }
+                        return dp[0][n + 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int maxCoins(vector<int>& nums) { // @step:entry
+                        int n = nums.size(); // @step:init_n
+                        vector<int> val(n + 2, 1); // @step:init_val
+                        for (int i = 0; i < n; i++) val[i + 1] = nums[i]; // @step:fill_val
+                        vector<vector<int>> dp(n + 2, vector<int>(n + 2, 0)); // @step:init_dp
+                        for (int i = n; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 2; j <= n + 1; j++) { // @step:calc_j
+                                int best = 0; // @step:init_best
+                                for (int k = i + 1; k < j; k++) { // @step:loop_k
+                                    int gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                    int coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                    best = max(best, coins); // @step:update_best
+                                }
+                                dp[i][j] = best; // @step:transfer
+                            }
+                        }
+                        return dp[0][n + 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def maxCoins(self, nums: List[int]) -> int: # @step:entry
+                        n = len(nums) # @step:init_n
+                        val = [1] + nums + [1] # @step:init_val
+                        dp = [[0] * (n + 2) for _ in range(n + 2)] # @step:init_dp
+                        for i in range(n, -1, -1): # @step:loop_i
+                            for j in range(i + 2, n + 2): # @step:calc_j
+                                best = 0 # @step:init_best
+                                for k in range(i + 1, j): # @step:loop_k
+                                    gain = val[i] * val[k] * val[j] # @step:calc_gain
+                                    coins = dp[i][k] + dp[k][j] + gain # @step:calc_coins
+                                    best = max(best, coins) # @step:update_best
+                                dp[i][j] = best # @step:transfer
+                        return dp[0][n + 1] # @step:return
+              javascript: |
+                function maxCoins(nums) { // @step:entry
+                    const n = nums.length; // @step:init_n
+                    const val = [1, ...nums, 1]; // @step:init_val
+                    const dp = Array.from({ length: n + 2 }, () => new Array(n + 2).fill(0)); // @step:init_dp
+                    for (let i = n; i >= 0; i--) { // @step:loop_i
+                        for (let j = i + 2; j <= n + 1; j++) { // @step:calc_j
+                            let best = 0; // @step:init_best
+                            for (let k = i + 1; k < j; k++) { // @step:loop_k
+                                const gain = val[i] * val[k] * val[j]; // @step:calc_gain
+                                const coins = dp[i][k] + dp[k][j] + gain; // @step:calc_coins
+                                best = Math.max(best, coins); // @step:update_best
+                            }
+                            dp[i][j] = best; // @step:transfer
+                        }
+                    }
+                    return dp[0][n + 1]; // @step:return
+                }

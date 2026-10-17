@@ -2075,7 +2075,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "burst-balloons",
-    name: "大厂高频真题: 戳气球 (Burst Balloons)",
+    name: "戳气球 (LeetCode 312)",
     viewId: "burst-balloons",
     category: "dynamic-programming",
     description: "左程云算法讲解076 Code03：LeetCode 312 戳气球，区间 DP 逆向思维之最后戳破气球模型。",

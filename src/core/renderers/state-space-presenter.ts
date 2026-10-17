@@ -323,6 +323,12 @@ export class StateSpacePresenter {
           colLabels = Array.from({ length: effectiveN }, (_, col) => `${col}磅`);
           cornerLabel = '供货商(i) \\ 目标重量(j)';
         }
+      } else if (modelId === 'burst-balloons' || modelId === 'class076-code03' || modelId === 'burst-balloons-312') {
+        const nums = params && params.nums ? (Array.isArray(params.nums) ? params.nums : [3, 1, 5, 8]) : [3, 1, 5, 8];
+        const valArr = [1, ...nums, 1];
+        rowLabels = valArr.map((v: any, idx: number) => `#${idx}(${v})`);
+        colLabels = valArr.map((v: any, idx: number) => `#${idx}(${v})`);
+        cornerLabel = '左开端(i) \\ 右开端(j)';
       }
     }
 

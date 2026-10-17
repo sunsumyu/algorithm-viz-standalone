@@ -278,6 +278,18 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: true, category };
     }
 
+    // 3.5 区间 DP 族群特殊维度解析 (Interval DP Domain Problems)
+    if (
+      modelId === 'burst-balloons' ||
+      modelId === 'class076-code03' ||
+      modelId === 'burst-balloons-312' ||
+      modelId === 'leetcode-312'
+    ) {
+      const nums = params.nums ? this.toArray(params.nums) : [3, 1, 5, 8];
+      const mSize = nums.length + 2;
+      return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
+    }
+
     // 4. 背包类问题族群 (Knapsack Domain Problems)
     if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {
       const isBuyingHay =
