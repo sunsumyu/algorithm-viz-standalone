@@ -1,0 +1,228 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 相邻字符不同的最长路径 顶层领域模型
+# 对应：LeetCode 2246 / 左程云算法讲解 079 Code04
+# 包含：树型 DP 拐点模型、贪心收集最长与次长合法子链 max1/max2、拱顶融合 1+max1+max2
+# ==============================================================================
+
+id: longest-path-different-characters
+name: 相邻字符不同的最长路径 (LeetCode 2246)
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 树型 DP
+  - 动态规划
+  - 贪心
+  - 树
+  - 深度优先搜索
+
+description: |
+  LeetCode 2246 · 左程云算法通关课第 079 讲 树型 DP（下）Code04：相邻字符不同的最长路径。
+  给你一棵树，根节点为 0。每个节点分配一个字符 s[i]。
+  求一条路径，路径上任意相邻节点字符均不相同，求满足条件的最长路径包含的节点数目。
+  
+  核心树型 DP 拐点模型 (Tree Longest Path with Pivot):
+  1. 状态定义：以节点 u 为根的子树中，向父节点汇报【以 u 为起点的单侧合法最长单链节点数】。
+  2. 字符约束校验：遍历 u 的每个子节点 v，只有当 s[u] != s[v] 时，(u, v) 这条边才合法可连通。
+  3. 贪心收集最长与次长子链：
+     在所有字符不同的合法子节点汇报中，贪心维护最大值 max1 与次大值 max2。
+  4. 拐点路径结算 (Pivot Path Fusion)：
+     穿过当前节点 u 拼接两条最长子链，形成以 u 为拱顶的折线路径：
+     pathLen = 1 + max1 + max2。
+     全局最大路径即为所有节点作为拐点时的最大值：maxPath = max(maxPath, pathLen)。
+  5. 向直接父节点汇报单侧最长链：return 1 + max1。
+
+defaultParams:
+  n: 6
+  parent: [-1, 0, 0, 1, 1, 2]
+  s: "abacbe"
+
+constraints:
+  - n == parent.length == s.length
+  - 1 <= n <= 10^5（教学演示推荐 5~10）
+  - parent[0] == -1
+  - s 仅包含小写英文字母
+
+directions:
+  forward:
+    name: 自底向上多叉树拐点归约 (Bottom-Up Tree Pivot Fusion)
+    description: 后序遍历自底向上汇聚单侧合法最长单链，并在每个节点贪心合并最长与次长互异分支
+  reverse:
+    name: 自顶向下根向单链试探对比 (Top-Down Root-Path Exploration)
+    description: 从根节点 0 出发自顶向下贪心试探单向互异链，对比验证自底向上双向拐点融合的完备性
+
+stages:
+  stage-1:
+    name: 后序遍历单链汇报与拐点结算
+    description: 后序遍历多叉树，校验相邻字符互异约束，贪心维护最长与次长子链并刷新全局最长路径
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int maxPath = 1; // @step:entry
+              public int longestPath(int[] parent, String s) {
+                  int n = parent.length; // @step:build_tree
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int i = 1; i < n; i++) tree[parent[i]].add(i); // @step:init_graph
+                  dfs(0, tree, s); // @step:dfs_call
+                  return maxPath; // @step:return
+              }
+              private int dfs(int u, List<Integer>[] tree, String s) { // @step:dfs_entry
+                  int max1 = 0, max2 = 0; // @step:init_chains
+                  for (int v : tree[u]) { // @step:loop_child
+                      int len = dfs(v, tree, s); // @step:branch_call
+                      if (s.charAt(u) != s.charAt(v)) { // @step:check_char
+                          if (len > max1) { max2 = max1; max1 = len; } // @step:update_max1
+                          else if (len > max2) { max2 = len; } // @step:update_max2
+                      }
+                  }
+                  maxPath = Math.max(maxPath, 1 + max1 + max2); // @step:combine_pivot
+                  return 1 + max1; // @step:return_chain
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionTopDown {
+              public int longestPathReverse(int[] parent, String s) { // @step:entry
+                  int n = parent.length; // @step:build_tree
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int i = 1; i < n; i++) tree[parent[i]].add(i); // @step:init_graph
+                  return exploreFromRoot(0, tree, s, ' '); // @step:return
+              }
+              private int exploreFromRoot(int u, List<Integer>[] tree, String s, char prev) { // @step:dfs_entry
+                  int len = (s.charAt(u) != prev) ? 1 : 0; // @step:init_chains
+                  int maxSub = 0; // @step:loop_child
+                  for (int v : tree[u]) { // @step:branch_call
+                      if (s.charAt(u) != s.charAt(v)) { // @step:check_char
+                          maxSub = Math.max(maxSub, exploreFromRoot(v, tree, s, s.charAt(u))); // @step:update_max1
+                      }
+                  }
+                  return len + maxSub; // @step:return_chain
+              }
+          }
+
+  stage-2:
+    name: 字符互异约束与状态依赖树展开
+    description: 显式展开节点字符依赖树，跟踪子树递归进入、相邻字符合法性校验与双侧子链拐点融合
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 字符互异约束与状态依赖树展开
+          // @step:entry 1. 启动全局最长互异路径推导
+          // @step:build_tree 2. 建立树形父子依赖关系
+          // @step:init_graph 3. 全局最优解 maxPath 初始化为 1
+          // @step:dfs_call 4. 深入根节点 0 启动后序递归
+          // @step:dfs_entry 5. 访问节点 u，初始化候选链 max1=0, max2=0
+          // @step:init_chains 6. 准备收集子节点单侧链长
+          // @step:loop_child 7. 遍历子节点公路
+          // @step:branch_call 8. 递归子树求解合法单链
+          // @step:check_char 9. 校验相邻字符 s[u] != s[v]
+          // @step:update_max1 10. 贪心维护最长与次长合法分支
+          // @step:combine_pivot 11. 拐点路径结算：maxPath = max(maxPath, 1 + max1 + max2)
+          // @step:return_chain 12. 向父节点返回单侧最长链 1 + max1
+          // @step:return 13. 依赖树全遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向自顶向下根向单链对比
+          // @step:entry 1. 启动自顶向下试探探查
+          // @step:build_tree 2. 建立依赖网络
+          // @step:init_graph 3. 初始单链基底
+          // @step:dfs_entry 4. 根节点向下派生
+          // @step:init_chains 5. 字符有效性校验
+          // @step:loop_child 6. 下属分支试探
+          // @step:branch_call 7. 深入单向路径
+          // @step:check_char 8. 字符互异约束
+          // @step:update_max1 9. 贪心更新单链
+          // @step:return_chain 10. 逆向对比结果登记
+          // @step:return 11. 逆向推演完成
+
+  stage-3:
+    name: 单链长度与全局最优状态表转移
+    description: 映射为标准状态表向量，实时呈现各节点字符 chars[u]、汇报单链长 chain[u] 与全局最长路径
+    complexity:
+      time: O(N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 单链长度与全局最优状态表转移
+          // @step:entry 1. 状态表初始化 chars[n], chain[n], maxPath
+          // @step:build_tree 2. 拓扑邻接矩阵建立
+          // @step:init_graph 3. 初始基底就绪
+          // @step:dfs_call 4. 启动后序填表
+          // @step:dfs_entry 5. 访问行 u
+          // @step:init_chains 6. 候选链基底置零
+          // @step:loop_child 7. 子节点链长归约
+          // @step:branch_call 8. 递归读取子树链长
+          // @step:check_char 9. 字符约束判定
+          // @step:update_max1 10. 更新状态向量 chain[u]
+          // @step:combine_pivot 11. 拐点结算并刷新全局最长路径
+          // @step:return_chain 12. 状态落盘并向父节点提交
+          // @step:return 13. 读取全局最优解
+      reverse:
+        language: java
+        source: |
+          // 逆向单向状态表
+          // @step:entry 1. 逆向矩阵初始化
+          // @step:build_tree 2. 拓扑校验
+          // @step:init_graph 3. 初始就绪
+          // @step:dfs_entry 4. 逆向自顶向下单链扫描
+          // @step:init_chains 5. 字符判定
+          // @step:loop_child 6. 下属遍历
+          // @step:branch_call 7. 深入单链
+          // @step:check_char 8. 约束校验
+          // @step:update_max1 9. 矩阵登记
+          // @step:return_chain 10. 逆向收敛
+          // @step:return 11. 逆向推演完成
+
+  stage-4:
+    name: O(H) 递归栈与空间极速压缩
+    description: 原地复用递归调用栈，单变量快速流转最长链，空间复杂度降至 O(H)
+    complexity:
+      time: O(N)
+      space: O(H)
+    code:
+      forward:
+        language: java
+        source: |
+          // O(H) 递归栈与空间极速压缩
+          // @step:entry 1. 极速状态初始化：maxPath = 1
+          // @step:build_tree 2. 紧凑邻接表
+          // @step:init_graph 3. 原地复用空间
+          // @step:dfs_call 4. 启动轻量后序流转
+          // @step:dfs_entry 5. 单变量后序流转
+          // @step:init_chains 6. 双变量 max1/max2 寄存器
+          // @step:loop_child 7. 链式遍历子节点
+          // @step:branch_call 8. 极速递归子树
+          // @step:check_char 9. 字符异同极速判断
+          // @step:update_max1 10. 原地更新最大子链
+          // @step:combine_pivot 11. 极速计算拐点长度
+          // @step:return_chain 12. 极速返回单侧链长
+          // @step:return 13. 极速返回全局最长互异路径
+      reverse:
+        language: java
+        source: |
+          // 逆向极速推演
+          // @step:entry 1. 逆向寄存器初始化
+          // @step:build_tree 2. 依赖链轻量化
+          // @step:init_graph 3. 初始就绪
+          // @step:dfs_entry 4. 自顶向下轻量递归
+          // @step:init_chains 5. 字符判定
+          // @step:loop_child 6. 沿途扫描
+          // @step:branch_call 7. 约束深入
+          // @step:check_char 8. 字符比对
+          // @step:update_max1 9. 快速累加
+          // @step:return_chain 10. 极速登记
+          // @step:return 11. 极速返回

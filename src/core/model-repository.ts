@@ -122,6 +122,7 @@ import binaryTreeCamerasModel from './models/binary-tree-cameras.yaml';
 import partyWithoutBossModel from './models/party-without-boss.yaml';
 import courseSelectionModel from './models/course-selection.yaml';
 import minimumFuelCostModel from './models/minimum-fuel-cost.yaml';
+import longestPathDifferentCharactersModel from './models/longest-path-different-characters.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -269,6 +270,10 @@ export class AlgorithmModelRepository {
     ['class079-code03', minimumFuelCostModel as IYamlAlgorithmModel],
     ['leetcode-2477', minimumFuelCostModel as IYamlAlgorithmModel],
     ['minimum-fuel-cost-2477', minimumFuelCostModel as IYamlAlgorithmModel],
+    ['longest-path-different-characters', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
+    ['class079-code04', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
+    ['longest-path-diff-chars', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
+    ['leetcode-2246', longestPathDifferentCharactersModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

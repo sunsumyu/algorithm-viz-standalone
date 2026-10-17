@@ -129,6 +129,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'party-without-boss',
   'course-selection',
   'minimum-fuel-cost',
+  'longest-path-different-characters',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

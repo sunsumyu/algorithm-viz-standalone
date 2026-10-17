@@ -779,21 +779,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'longest-path-different-characters',
-    name: '相邻字符不同的最长路径',
-    description: '树型DP多叉树拐点模型：贪心维护最长与次长有效子链 max1/max2，拐点路径 = 1+max1+max2 (LeetCode 2246)。',
-    icon: '🔤',
-    aliases: ['class079-code04', 'longest-path-diff-chars', 'leetcode-2246'],
-    inputs: [
-      { id: 's', label: '字符分配 s', value: 'abacbe', width: 140 },
-    ],
-    examples: [
-      { label: 's="abacbe"', values: { s: 'abacbe' } },
-      { label: 's="aabc"', values: { s: 'aabc' } },
-    ],
-    build: makeEngineBuilder('longest-path-different-characters'),
-  },
+
 
   {
     id: 'height-removal-queries',
@@ -1030,7 +1016,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'longest-path-different-characters' },
   { type: 'demo', id: 'height-removal-queries' },
   { type: 'demo', id: 'minimum-score-after-removals' },
   // 状压DP 专题（第080讲：状压dp-上）
