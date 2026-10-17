@@ -349,6 +349,16 @@ export class StateSpacePresenter {
         rowLabels = values.map((v: any, idx: number) => `#${idx}(${v})`);
         colLabels = values.map((v: any, idx: number) => `#${idx}(${v})`);
         cornerLabel = '底边起点(i) \\ 底边终点(j)';
+      } else if (
+        modelId === 'strange-printer' ||
+        modelId === 'class076-code04' ||
+        modelId === 'strange-printer-664' ||
+        modelId === 'leetcode-664'
+      ) {
+        const s = params && params.s ? String(params.s) : 'aaabbb';
+        rowLabels = s.split('').map((ch: string, idx: number) => `#${idx}('${ch}')`);
+        colLabels = s.split('').map((ch: string, idx: number) => `#${idx}('${ch}')`);
+        cornerLabel = '左端点(i) \\ 右端点(j)';
       }
     }
 

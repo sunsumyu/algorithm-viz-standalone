@@ -112,6 +112,7 @@ import buyingHayMinCostModel from './models/buying-hay-min-cost.yaml';
 import burstBalloonsModel from './models/burst-balloons.yaml';
 import predictTheWinnerModel from './models/predict-the-winner.yaml';
 import minScoreTriangulationModel from './models/min-score-triangulation.yaml';
+import strangePrinterModel from './models/strange-printer.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -219,6 +220,10 @@ export class AlgorithmModelRepository {
     ['class076-code01', minScoreTriangulationModel as IYamlAlgorithmModel],
     ['min-score-triangulation-1039', minScoreTriangulationModel as IYamlAlgorithmModel],
     ['leetcode-1039', minScoreTriangulationModel as IYamlAlgorithmModel],
+    ['strange-printer', strangePrinterModel as IYamlAlgorithmModel],
+    ['class076-code04', strangePrinterModel as IYamlAlgorithmModel],
+    ['strange-printer-664', strangePrinterModel as IYamlAlgorithmModel],
+    ['leetcode-664', strangePrinterModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

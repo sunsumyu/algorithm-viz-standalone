@@ -1,0 +1,583 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
+# 奇怪的打印机 (Strange Printer / LeetCode 664 / 左程云 Class 076 Code04)
+# 核心：字符染色区间 DP——若 s[i]==s[j] 顺带覆盖 dp[i][j]=dp[i][j-1]，否则枚举分割点 k 取 min(dp[i][k]+dp[k+1][j])
+# 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
+# ==============================================================================
+
+id: strange-printer
+name: "奇怪的打印机"
+nameEn: "Strange Printer"
+defaultStage: "stage-3"
+category: "dynamic-programming"
+icon: "🖨️"
+difficulty: 3
+levelOrder: 664
+learningGoal: "深刻掌握区间 DP 中的字符染色覆盖消除策略，理解首尾相同字符直接顺带覆盖与最优子串拼接分割的思想"
+description: "左程云算法通关课 Class 076 Code04：LeetCode 664 奇怪的打印机，字符涂色刷漆贪心抵消的区间 DP。dp[i][j] 表示打印子串 s[i..j] 所需的最少操作次数。"
+defaultParams:
+  s: "aaabbb"
+
+problem:
+  leetcodeId: 664
+  title: "奇怪的打印机 (LeetCode 664 / Class 076 Code04)"
+  difficulty: "困难"
+  tags: ["动态规划", "区间 DP", "字符串"]
+  description: "有台奇怪的打印机，每次只能打印同一个字符构成的连续子串，且可以覆盖之前打印过的字符。<br/><br/>给你一个字符串 <code>s</code> ，请你返回打印该字符串所需的最少操作次数。"
+  examples:
+    - input: "s = 'aaabbb'"
+      output: "2"
+      explanation: "首先打印 'aaa'，然后在其后打印 'bbb'，共需 2 次。"
+    - input: "s = 'aba'"
+      output: "2"
+      explanation: "首先打印 'aaa'，然后将中间覆盖打印为 'b'，共需 2 次。"
+  constraints:
+    - "1 <= s.length <= 100 (演示推荐 <= 8)"
+    - "s 由小写英文字母组成"
+  leetcodeUrl: "https://leetcode.cn/problems/strange-printer/"
+
+directions:
+  forward:
+    label: "子串长度顺推 (len=2..n 上三角自底向上填表)"
+    branches:
+      - name: "same_cover"
+        label: "首尾相同字符顺带覆盖"
+        formula: "dp[i][j - 1]"
+      - name: "split_diff"
+        label: "首尾相异枚举分割点 k"
+        formula: "min_{k}(dp[i][k] + dp[k + 1][j])"
+    combineFormula: "s[i]==s[j] ? dp[i][j-1] : min_{k}(dp[i][k] + dp[k+1][j])"
+  reverse:
+    label: "全局子串逆推分解 (从全局 [0, n-1] 逆向寻源)"
+    description: "从完整字符串 s[0..n-1] 出发，逆向展示打印机染色覆盖与子串分割依赖"
+    startFormula: "dp[0][n - 1]"
+    target: "dp[i][i] = 1"
+    branches:
+      - name: "trace_branches"
+        label: "逆向最优打印覆盖推导"
+        formula: "dp[i][k] + dp[k+1][j]"
+    combineFormula: "逆向染色覆盖依赖分析"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    type: "recursion"
+    timeBadge: "O(2ⁿ)"
+    badgeBg: "bg-slate-100 text-slate-700"
+    name:
+      forward: "阶段 1: 暴力分治递归树展开 (字符染色与分割枚举)"
+      reverse: "阶段 1: 暴力递归逆推寻源 (状态空间倒序展开)"
+    desc:
+      forward: "分治策略：若 s[i] == s[j]，打印左端字符时可以一次性刷到右端，因此直接归约为子问题 dfs(i, j-1)；若 s[i] != s[j]，枚举切分点 k 分段独立打印。"
+      reverse: "从全局字符串 [0..n-1] 逆向展示递归染色决策分支。"
+    variants:
+      standard:
+        variantLabel: "标准分治递归实现"
+        title:
+          forward: "StrangePrinter_Recursive.java"
+          reverse: "StrangePrinter_Recursive_Reverse.java"
+        code:
+          forward:
+            title: "StrangePrinter_Recursive.java"
+            source: |
+              class Solution {
+                  public int strangePrinter(String s) { // @step:entry
+                      int n = s.length(); // @step:init_n
+                      if (n <= 1) return n; // @step:guard_less
+                      return dfs(s, 0, n - 1); // @step:return
+                  }
+                  private int dfs(String s, int i, int j) { // @step:dfs_entry
+                      if (i > j) return 0; // @step:guard_empty
+                      if (i == j) return 1; // @step:boundary
+                      if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                          return dfs(s, i, j - 1); // @step:transfer_same
+                      }
+                      int minTurns = Integer.MAX_VALUE; // @step:init_min
+                      for (int k = i; k < j; k++) { // @step:loop_k
+                          int turns = dfs(s, i, k) + dfs(s, k + 1, j); // @step:calc_turns
+                          minTurns = Math.min(minTurns, turns); // @step:update_min
+                      }
+                      return minTurns; // @step:transfer_diff
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int strangePrinter(String s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        return dfs(s, 0, n - 1); // @step:return
+                    }
+                    private int dfs(String s, int i, int j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i == j) return 1; // @step:boundary
+                        if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                            return dfs(s, i, j - 1); // @step:transfer_same
+                        }
+                        int minTurns = Integer.MAX_VALUE; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int turns = dfs(s, i, k) + dfs(s, k + 1, j); // @step:calc_turns
+                            minTurns = Math.min(minTurns, turns); // @step:update_min
+                        }
+                        return minTurns; // @step:transfer_diff
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int strangePrinter(string s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        return dfs(s, 0, n - 1); // @step:return
+                    }
+                    int dfs(const string& s, int i, int j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i == j) return 1; // @step:boundary
+                        if (s[i] == s[j]) { // @step:cond_same
+                            return dfs(s, i, j - 1); // @step:transfer_same
+                        }
+                        int minTurns = INT_MAX; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int turns = dfs(s, i, k) + dfs(s, k + 1, j); // @step:calc_turns
+                            minTurns = min(minTurns, turns); // @step:update_min
+                        }
+                        return minTurns; // @step:transfer_diff
+                    }
+                };
+              python: |
+                class Solution:
+                    def strangePrinter(self, s: str) -> int: # @step:entry
+                        n = len(s) # @step:init_n
+                        if n <= 1: return n # @step:guard_less
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i > j: return 0 # @step:guard_empty
+                            if i == j: return 1 # @step:boundary
+                            if s[i] == s[j]: # @step:cond_same
+                                return dfs(i, j - 1) # @step:transfer_same
+                            min_turns = float('inf') # @step:init_min
+                            for k in range(i, j): # @step:loop_k
+                                turns = dfs(i, k) + dfs(k + 1, j) # @step:calc_turns
+                                min_turns = min(min_turns, turns) # @step:update_min
+                            return min_turns # @step:transfer_diff
+                        return dfs(0, n - 1) # @step:return
+              javascript: |
+                function strangePrinter(s) { // @step:entry
+                    const n = s.length; // @step:init_n
+                    if (n <= 1) return n; // @step:guard_less
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i === j) return 1; // @step:boundary
+                        if (s[i] === s[j]) { // @step:cond_same
+                            return dfs(i, j - 1); // @step:transfer_same
+                        }
+                        let minTurns = Infinity; // @step:init_min
+                        for (let k = i; k < j; k++) { // @step:loop_k
+                            const turns = dfs(i, k) + dfs(k + 1, j); // @step:calc_turns
+                            minTurns = Math.min(minTurns, turns); // @step:update_min
+                        }
+                        return minTurns; // @step:transfer_diff
+                    }
+                    return dfs(0, n - 1); // @step:return
+                }
+
+  stage-2:
+    shortName: "记忆化"
+    type: "memoization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-blue-100 text-blue-700"
+    name:
+      forward: "阶段 2: 记忆化搜索剪枝 (备忘录消除重复子串涂色)"
+      reverse: "阶段 2: 记忆化逆向回溯 (带缓存的染色推演)"
+    desc:
+      forward: "引入 memo[i][j] 备忘录缓存子串 s[i..j] 的最少打印次数。查表若已计算则直接 O(1) 返回，消除重叠子串的重复求解。"
+      reverse: "逆向展示记忆化树的剪枝效果与缓存复用。"
+    variants:
+      standard:
+        variantLabel: "备忘录搜索实现"
+        title:
+          forward: "StrangePrinter_Memo.java"
+          reverse: "StrangePrinter_Memo_Reverse.java"
+        code:
+          forward:
+            title: "StrangePrinter_Memo.java"
+            source: |
+              class Solution {
+                  public int strangePrinter(String s) { // @step:entry
+                      int n = s.length(); // @step:init_n
+                      if (n <= 1) return n; // @step:guard_less
+                      int[][] memo = new int[n][n]; // @step:init_dp
+                      return dfs(s, memo, 0, n - 1); // @step:call_dfs
+                  }
+                  private int dfs(String s, int[][] memo, int i, int j) { // @step:dfs_entry
+                      if (i > j) return 0; // @step:guard_empty
+                      if (i == j) return 1; // @step:boundary
+                      if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                      if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                          memo[i][j] = dfs(s, memo, i, j - 1); // @step:transfer_same
+                          return memo[i][j]; // @step:return_same
+                      }
+                      int minTurns = Integer.MAX_VALUE; // @step:init_min
+                      for (int k = i; k < j; k++) { // @step:loop_k
+                          int turns = dfs(s, memo, i, k) + dfs(s, memo, k + 1, j); // @step:calc_turns
+                          minTurns = Math.min(minTurns, turns); // @step:update_min
+                      }
+                      memo[i][j] = minTurns; // @step:transfer_diff
+                      return minTurns; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int strangePrinter(String s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        int[][] memo = new int[n][n]; // @step:init_dp
+                        return dfs(s, memo, 0, n - 1); // @step:call_dfs
+                    }
+                    private int dfs(String s, int[][] memo, int i, int j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i == j) return 1; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                            memo[i][j] = dfs(s, memo, i, j - 1); // @step:transfer_same
+                            return memo[i][j]; // @step:return_same
+                        }
+                        int minTurns = Integer.MAX_VALUE; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int turns = dfs(s, memo, i, k) + dfs(s, memo, k + 1, j); // @step:calc_turns
+                            minTurns = Math.min(minTurns, turns); // @step:update_min
+                        }
+                        memo[i][j] = minTurns; // @step:transfer_diff
+                        return minTurns; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int strangePrinter(string s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        vector<vector<int>> memo(n, vector<int>(n, 0)); // @step:init_dp
+                        return dfs(s, memo, 0, n - 1); // @step:call_dfs
+                    }
+                    int dfs(const string& s, vector<vector<int>>& memo, int i, int j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i == j) return 1; // @step:boundary
+                        if (memo[i][j] != 0) return memo[i][j]; // @step:cache_hit
+                        if (s[i] == s[j]) { // @step:cond_same
+                            return memo[i][j] = dfs(s, memo, i, j - 1); // @step:transfer_same
+                        }
+                        int minTurns = INT_MAX; // @step:init_min
+                        for (int k = i; k < j; k++) { // @step:loop_k
+                            int turns = dfs(s, memo, i, k) + dfs(s, memo, k + 1, j); // @step:calc_turns
+                            minTurns = min(minTurns, turns); // @step:update_min
+                        }
+                        return memo[i][j] = minTurns; // @step:transfer_diff
+                    }
+                };
+              python: |
+                class Solution:
+                    def strangePrinter(self, s: str) -> int: # @step:entry
+                        n = len(s) # @step:init_n
+                        if n <= 1: return n # @step:guard_less
+                        memo = {} # @step:init_dp
+                        def dfs(i: int, j: int) -> int: # @step:dfs_entry
+                            if i > j: return 0 # @step:guard_empty
+                            if i == j: return 1 # @step:boundary
+                            if (i, j) in memo: return memo[(i, j)] # @step:cache_hit
+                            if s[i] == s[j]: # @step:cond_same
+                                memo[(i, j)] = dfs(i, j - 1) # @step:transfer_same
+                                return memo[(i, j)] # @step:return_same
+                            min_turns = float('inf') # @step:init_min
+                            for k in range(i, j): # @step:loop_k
+                                turns = dfs(i, k) + dfs(k + 1, j) # @step:calc_turns
+                                min_turns = min(min_turns, turns) # @step:update_min
+                            memo[(i, j)] = min_turns # @step:transfer_diff
+                            return min_turns # @step:return
+                        return dfs(0, n - 1) # @step:call_dfs
+              javascript: |
+                function strangePrinter(s) { // @step:entry
+                    const n = s.length; // @step:init_n
+                    if (n <= 1) return n; // @step:guard_less
+                    const memo = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    function dfs(i, j) { // @step:dfs_entry
+                        if (i > j) return 0; // @step:guard_empty
+                        if (i === j) return 1; // @step:boundary
+                        if (memo[i][j] !== 0) return memo[i][j]; // @step:cache_hit
+                        if (s[i] === s[j]) { // @step:cond_same
+                            return memo[i][j] = dfs(i, j - 1); // @step:transfer_same
+                        }
+                        let minTurns = Infinity; // @step:init_min
+                        for (let k = i; k < j; k++) { // @step:loop_k
+                            const turns = dfs(i, k) + dfs(k + 1, j); // @step:calc_turns
+                            minTurns = Math.min(minTurns, turns); // @step:update_min
+                        }
+                        return memo[i][j] = minTurns; // @step:transfer_diff
+                    }
+                    return dfs(0, n - 1); // @step:call_dfs
+                }
+
+  stage-3:
+    shortName: "二维DP"
+    type: "tabulation"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-emerald-100 text-emerald-700"
+    name:
+      forward: "阶段 3: 严格二维表递推 (按子串长度自底向上填表)"
+      reverse: "阶段 3: 逆向依赖寻源填表 (从全串逆向校验染色边界)"
+    desc:
+      forward: "初始化对角线 dp[i][i] = 1。外层按子串跨度 len 从 2 到 n 递增填表。若首尾相同，直接 O(1) 继承 dp[i][j-1]；若不同，枚举中间分割点 k 取最优拼接。"
+      reverse: "从最终全局目标 dp[0][n-1] 逆向回溯字符染色链与最优切分点。"
+    variants:
+      standard:
+        variantLabel: "标准区间DP填表"
+        title:
+          forward: "StrangePrinter_Tabulation.java"
+          reverse: "StrangePrinter_Tabulation_Reverse.java"
+        code:
+          forward:
+            title: "StrangePrinter_Tabulation.java"
+            source: |
+              class Solution {
+                  public int strangePrinter(String s) { // @step:entry
+                      int n = s.length(); // @step:init_n
+                      if (n <= 1) return n; // @step:guard_less
+                      int[][] dp = new int[n][n]; // @step:init_dp
+                      for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                      for (int len = 2; len <= n; len++) { // @step:loop_len
+                          for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                              int j = i + len - 1; // @step:calc_j
+                              if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                                  dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                              } else {
+                                  int minTurns = Integer.MAX_VALUE; // @step:init_min
+                                  for (int k = i; k < j; k++) { // @step:loop_k
+                                      int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                      minTurns = Math.min(minTurns, turns); // @step:update_min
+                                  }
+                                  dp[i][j] = minTurns; // @step:transfer_diff
+                              }
+                          }
+                      }
+                      return dp[0][n - 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int strangePrinter(String s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        int[][] dp = new int[n][n]; // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                                    dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                                } else {
+                                    int minTurns = Integer.MAX_VALUE; // @step:init_min
+                                    for (int k = i; k < j; k++) { // @step:loop_k
+                                        int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                        minTurns = Math.min(minTurns, turns); // @step:update_min
+                                    }
+                                    dp[i][j] = minTurns; // @step:transfer_diff
+                                }
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int strangePrinter(string s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        vector<vector<int>> dp(n, vector<int>(n, 0)); // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                        for (int len = 2; len <= n; len++) { // @step:loop_len
+                            for (int i = 0; i <= n - len; i++) { // @step:loop_i
+                                int j = i + len - 1; // @step:calc_j
+                                if (s[i] == s[j]) { // @step:cond_same
+                                    dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                                } else {
+                                    int minTurns = INT_MAX; // @step:init_min
+                                    for (int k = i; k < j; k++) { // @step:loop_k
+                                        int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                        minTurns = min(minTurns, turns); // @step:update_min
+                                    }
+                                    dp[i][j] = minTurns; // @step:transfer_diff
+                                }
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def strangePrinter(self, s: str) -> int: # @step:entry
+                        n = len(s) # @step:init_n
+                        if n <= 1: return n # @step:guard_less
+                        dp = [[0] * n for _ in range(n)] # @step:init_dp
+                        for i in range(n): dp[i][i] = 1 # @step:init_base
+                        for length in range(2, n + 1): # @step:loop_len
+                            for i in range(n - length + 1): # @step:loop_i
+                                j = i + length - 1 # @step:calc_j
+                                if s[i] == s[j]: # @step:cond_same
+                                    dp[i][j] = dp[i][j - 1] # @step:transfer_same
+                                else:
+                                    dp[i][j] = min(dp[i][k] + dp[k + 1][j] for k in range(i, j)) # @step:transfer_diff
+                        return dp[0][n - 1] # @step:return
+              javascript: |
+                function strangePrinter(s) { // @step:entry
+                    const n = s.length; // @step:init_n
+                    if (n <= 1) return n; // @step:guard_less
+                    const dp = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    for (let i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                    for (let len = 2; len <= n; len++) { // @step:loop_len
+                        for (let i = 0; i <= n - len; i++) { // @step:loop_i
+                            const j = i + len - 1; // @step:calc_j
+                            if (s[i] === s[j]) { // @step:cond_same
+                                dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                            } else {
+                                let minTurns = Infinity; // @step:init_min
+                                for (let k = i; k < j; k++) { // @step:loop_k
+                                    minTurns = Math.min(minTurns, dp[i][k] + dp[k + 1][j]); // @step:calc_turns
+                                }
+                                dp[i][j] = minTurns; // @step:transfer_diff
+                            }
+                        }
+                    }
+                    return dp[0][n - 1]; // @step:return
+                }
+
+  stage-4:
+    shortName: "拓扑优化"
+    type: "optimization"
+    timeBadge: "O(n³)"
+    badgeBg: "bg-purple-100 text-purple-700"
+    name:
+      forward: "阶段 4: 对角线倒序填表拓扑演化"
+      reverse: "阶段 4: 拓扑演化逆向推演"
+    desc:
+      forward: "外层倒序固定起点 i 从 n - 2 到 0，内层正序终点 j 从 i + 1 到 n - 1，严格沿对角线拓扑推进，极大提升 CPU 缓存局部性与执行效率。"
+      reverse: "逆向分析上三角染色矩阵的依赖收敛。"
+    variants:
+      standard:
+        variantLabel: "对角线倒序填表实现"
+        title:
+          forward: "StrangePrinter_Optimized.java"
+          reverse: "StrangePrinter_Optimized_Reverse.java"
+        code:
+          forward:
+            title: "StrangePrinter_Optimized.java"
+            source: |
+              class Solution {
+                  public int strangePrinter(String s) { // @step:entry
+                      int n = s.length(); // @step:init_n
+                      if (n <= 1) return n; // @step:guard_less
+                      int[][] dp = new int[n][n]; // @step:init_dp
+                      for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                      for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                          for (int j = i + 1; j < n; j++) { // @step:calc_j
+                              if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                                  dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                              } else {
+                                  int minTurns = Integer.MAX_VALUE; // @step:init_min
+                                  for (int k = i; k < j; k++) { // @step:loop_k
+                                      int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                      minTurns = Math.min(minTurns, turns); // @step:update_min
+                                  }
+                                  dp[i][j] = minTurns; // @step:transfer_diff
+                              }
+                          }
+                      }
+                      return dp[0][n - 1]; // @step:return
+                  }
+              }
+            languages:
+              java: |
+                class Solution {
+                    public int strangePrinter(String s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        int[][] dp = new int[n][n]; // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                if (s.charAt(i) == s.charAt(j)) { // @step:cond_same
+                                    dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                                } else {
+                                    int minTurns = Integer.MAX_VALUE; // @step:init_min
+                                    for (int k = i; k < j; k++) { // @step:loop_k
+                                        int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                        minTurns = Math.min(minTurns, turns); // @step:update_min
+                                    }
+                                    dp[i][j] = minTurns; // @step:transfer_diff
+                                }
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                }
+              cpp: |
+                class Solution {
+                public:
+                    int strangePrinter(string s) { // @step:entry
+                        int n = s.length(); // @step:init_n
+                        if (n <= 1) return n; // @step:guard_less
+                        vector<vector<int>> dp(n, vector<int>(n, 0)); // @step:init_dp
+                        for (int i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                        for (int i = n - 2; i >= 0; i--) { // @step:loop_i
+                            for (int j = i + 1; j < n; j++) { // @step:calc_j
+                                if (s[i] == s[j]) { // @step:cond_same
+                                    dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                                } else {
+                                    int minTurns = INT_MAX; // @step:init_min
+                                    for (int k = i; k < j; k++) { // @step:loop_k
+                                        int turns = dp[i][k] + dp[k + 1][j]; // @step:calc_turns
+                                        minTurns = min(minTurns, turns); // @step:update_min
+                                    }
+                                    dp[i][j] = minTurns; // @step:transfer_diff
+                                }
+                            }
+                        }
+                        return dp[0][n - 1]; // @step:return
+                    }
+                };
+              python: |
+                class Solution:
+                    def strangePrinter(self, s: str) -> int: # @step:entry
+                        n = len(s) # @step:init_n
+                        if n <= 1: return n # @step:guard_less
+                        dp = [[0] * n for _ in range(n)] # @step:init_dp
+                        for i in range(n): dp[i][i] = 1 # @step:init_base
+                        for i in range(n - 2, -1, -1): # @step:loop_i
+                            for j in range(i + 1, n): # @step:calc_j
+                                if s[i] == s[j]: # @step:cond_same
+                                    dp[i][j] = dp[i][j - 1] # @step:transfer_same
+                                else:
+                                    dp[i][j] = min(dp[i][k] + dp[k + 1][j] for k in range(i, j)) # @step:transfer_diff
+                        return dp[0][n - 1] # @step:return
+              javascript: |
+                function strangePrinter(s) { // @step:entry
+                    const n = s.length; // @step:init_n
+                    if (n <= 1) return n; // @step:guard_less
+                    const dp = Array.from({ length: n }, () => new Array(n).fill(0)); // @step:init_dp
+                    for (let i = 0; i < n; i++) dp[i][i] = 1; // @step:init_base
+                    for (let i = n - 2; i >= 0; i--) { // @step:loop_i
+                        for (let j = i + 1; j < n; j++) { // @step:calc_j
+                            if (s[i] === s[j]) { // @step:cond_same
+                                dp[i][j] = dp[i][j - 1]; // @step:transfer_same
+                            } else {
+                                let minTurns = Infinity; // @step:init_min
+                                for (let k = i; k < j; k++) { // @step:loop_k
+                                    minTurns = Math.min(minTurns, dp[i][k] + dp[k + 1][j]); // @step:calc_turns
+                                }
+                                dp[i][j] = minTurns; // @step:transfer_diff
+                            }
+                        }
+                    }
+                    return dp[0][n - 1]; // @step:return
+                }

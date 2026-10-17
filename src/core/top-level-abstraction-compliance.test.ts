@@ -119,6 +119,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'burst-balloons',
   'predict-the-winner',
   'min-score-triangulation',
+  'strange-printer',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {
@@ -366,6 +367,15 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
           const valsLen = Array.isArray(rawValues) ? rawValues.length : (typeof rawValues === 'string' ? rawValues.split(',').length : 3);
           if (resolved.m !== valsLen || resolved.n !== valsLen) {
             dimensionMismatches.push(`${id} (多边形矩阵规格期望 m=${valsLen}, n=${valsLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
+          }
+          continue;
+        }
+
+        if (id === 'strange-printer') {
+          const s = typeof params.s === 'string' ? params.s : 'aaabbb';
+          const sLen = s.length;
+          if (resolved.m !== sLen || resolved.n !== sLen) {
+            dimensionMismatches.push(`${id} (字符串染色矩阵规格期望 m=${sLen}, n=${sLen}，但解析出 m=${resolved.m}, n=${resolved.n})`);
           }
           continue;
         }

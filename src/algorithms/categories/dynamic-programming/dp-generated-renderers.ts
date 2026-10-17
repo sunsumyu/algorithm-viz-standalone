@@ -1226,22 +1226,6 @@ registerDemo({
 
 
 
-registerDemo({
-  id: 'strange-printer',
-  name: '奇怪的打印机 (Strange Printer)',
-  description: '左程云算法讲解076 Code04：LeetCode 664 奇怪的打印机，字符涂色刷漆贪心抵消的区间 DP。',
-  icon: '🖨️',
-  inputs: [{ id: 's', label: '字符串 s', value: 'aaabbb', width: 150 }],
-  build: makeEngineBuilder('strange-printer'),
-  difficulty: 3,
-  levelOrder: 664,
-  learningGoal: '理解区间两端字符相同时可通过连续刷漆免费顺带刷出末尾字符的区间 DP 边界消减技巧',
-  aliases: ['class076-code04', 'strange-printer-664', 'leetcode-664'],
-  examples: [
-    { label: '两段纯色 "aaabbb" Ans=2', values: { s: 'aaabbb' } },
-    { label: '交错三段 "aba" Ans=2', values: { s: 'aba' } },
-  ],
-});
 
 registerDemo({
   id: 'merge-stones',

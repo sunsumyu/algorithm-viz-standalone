@@ -310,6 +310,16 @@ export class ProblemDimensionResolver {
       const mSize = values.length;
       return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
     }
+    if (
+      modelId === 'strange-printer' ||
+      modelId === 'class076-code04' ||
+      modelId === 'strange-printer-664' ||
+      modelId === 'leetcode-664'
+    ) {
+      const s = typeof params.s === 'string' ? params.s : 'aaabbb';
+      const mSize = s.length;
+      return { m: mSize, n: mSize, is1D: false, category: '2d-grid' };
+    }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
     if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {

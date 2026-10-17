@@ -2122,14 +2122,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "strange-printer",
-    name: "奇怪的打印机 (Strange Printer)",
+    name: "奇怪的打印机 (LeetCode 664)",
     viewId: "strange-printer",
     category: "dynamic-programming",
     description: "左程云算法讲解076 Code04：LeetCode 664 奇怪的打印机，字符涂色刷漆贪心抵消的区间 DP。",
     icon: "🖨️",
     difficulty: 3,
     levelOrder: 664,
-    learningGoal: "理解区间两端字符相同时可通过连续刷漆免费顺带刷出末尾字符的区间 DP 边界消减技巧",
+    learningGoal: "理解区间两端字符相同时可通过连续刷漆免费顺带刷出末尾字符的区间 DP 边界消减技巧与最优切分点枚举",
     aliases: ["class076-code04","strange-printer-664","leetcode-664"],
   },
   {
