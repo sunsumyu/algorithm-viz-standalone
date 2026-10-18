@@ -587,6 +587,7 @@ export const UNIVERSAL_DP_MODEL_IDS: ReadonlySet<string> = new Set([
   "optimal-account-balancing",
   "good-subsets",
   "distribute-repeating-integers",
+  "bounded-knapsack-naive",
   "combination-sum-iv",
   "best-time-to-buy-and-sell-stock-iv",
   "best-time-to-buy-and-sell-stock-with-cooldown",

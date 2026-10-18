@@ -1,0 +1,201 @@
+id: bounded-knapsack-naive
+name: 多重背包朴素枚举 (洛谷 P1776 宝物筛选)
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-4
+defaultDirection: forward
+
+defaultParams:
+  weights: [2, 3, 5]
+  values: [3, 4, 7]
+  nums: [2, 3, 2]
+  bagWeight: 10
+
+problem:
+  title: "多重背包朴素枚举 (洛谷 P1776 宝物筛选)"
+  difficulty: "Medium"
+  description: |
+    一共有 n 种货物，背包容量为 t。每种货物的价值为 v[i]、重量为 w[i]、数量为 c[i]。
+    请返回选择货物不超过背包容量的情况下，能得到的最大价值。
+    本题作为多重背包的 baseline 教学基准，展示朴素枚举每种宝物品类选取件数 k 的运行轨迹与向空间压缩的一维转化。
+  examples:
+    - input: "weights=[2, 3, 5], values=[3, 4, 7], nums=[2, 3, 2], bagWeight=10"
+      output: "14"
+      explanation: "最优选法：2件第1种货物(重4,价6) + 2件第2种货物(重6,价8) => 总重量10, 最大总价值14；或2件第3种货物(重10,价14)。"
+  constraints:
+    - "1 <= n <= 100"
+    - "1 <= t <= 40000"
+    - "0 <= v[i] <= 100"
+    - "1 <= w[i] <= 100"
+    - "1 <= c[i] <= 10000"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: 物品正序枚举
+    description: 外层逐一考察每种货物，内层枚举选取件数 k (0 <= k <= c[i]) 与背包容量寻找最优
+    branches:
+      - name: 不选当前货物 (k=0)
+        description: dp[i][j] = dp[i-1][j]
+      - name: 选 k 件当前货物 (1 <= k <= c[i], k*w[i] <= j)
+        description: dp[i][j] = max(dp[i][j], dp[i-1][j - k*w[i]] + k*v[i])
+
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从目标容量向子问题反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
+
+stages:
+  stage-1:
+    shortName: "递归"
+    name: "阶段 1: 朴素多叉递归尝试 (每种选 0..c[i] 件)"
+    desc: 对每种货物做「选取 0 到 c[i] 件」的多分支决策，递归函数状态为 (货物下标 i, 剩余容量 remCap)，枚举 k 件，返回最大价值。
+    timeComplexity: "O(Π(c[i] + 1))"
+    spaceComplexity: "O(N)"
+    variants:
+      standard:
+        name: 枚举件数多叉递归
+        desc: 对每种货物枚举 0..c[i] 件的所有决策分支
+        code: |
+          public static int maxValue(int[] w, int[] v, int[] c, int t) { // @step:entry
+              return dfs(w, v, c, 0, t); // @step:return
+          }
+
+          private static int dfs(int[] w, int[] v, int[] c, int i, int remCap) { // @step:dfs_entry
+              if (i >= w.length || remCap <= 0) return 0; // @step:boundary // @step:base_match // @step:base_overflow
+              int maxVal = 0; // @step:initMax
+              for (int k = 0; k <= c[i] && k * w[i] <= remCap; k++) { // @step:loop_k // @step:loop_count // @step:branch_take
+                  int nextVal = dfs(w, v, c, i + 1, remCap - k * w[i]) + k * v[i];
+                  maxVal = Math.max(maxVal, nextVal);
+              }
+              return maxVal; // @step:return_best
+          }
+
+  stage-2:
+    shortName: "记忆化"
+    name: "阶段 2: 记忆化搜索 memo[i][remCap]"
+    desc: 引入 memo[i][remCap] 缓存 (货物下标 i, 剩余容量 remCap) 的最优解，消除重叠子问题与重复件数枚举。
+    timeComplexity: "O(N × W × max(c[i]))"
+    spaceComplexity: "O(N × W)"
+    variants:
+      standard:
+        name: 二维备忘录记忆化
+        desc: 缓存状态 (i, remCap) 剪枝重复子树
+        code: |
+          public static int maxValue(int[] w, int[] v, int[] c, int t) { // @step:entry
+              int[][] memo = new int[w.length][t + 1]; // @step:memo_init
+              for (int[] row : memo) Arrays.fill(row, -1); // @step:memo_fill
+              return dfs(w, v, c, 0, t, memo); // @step:return
+          }
+
+          private static int dfs(int[] w, int[] v, int[] c, int i, int remCap, int[][] memo) { // @step:dfs_entry
+              if (i >= w.length || remCap <= 0) return 0; // @step:boundary // @step:base_match // @step:base_overflow
+              if (memo[i][remCap] != -1) return memo[i][remCap]; // @step:cache_hit
+              int maxVal = 0;
+              for (int k = 0; k <= c[i] && k * w[i] <= remCap; k++) { // @step:loop_k // @step:loop_count // @step:branch_take
+                  int nextVal = dfs(w, v, c, i + 1, remCap - k * w[i], memo) + k * v[i];
+                  maxVal = Math.max(maxVal, nextVal);
+              }
+              return memo[i][remCap] = maxVal; // @step:store // @step:return_best
+          }
+
+  stage-3:
+    shortName: "二维DP"
+    name: "阶段 3: 严格位置依赖二维动态规划"
+    desc: 构建 N × (t+1) 二维状态表，dp[i][j] 表示前 i 种货物在容量 j 下的最大价值，内层循环枚举选取件数 k (0..c[i])。
+    timeComplexity: "O(N × W × max(c[i]))"
+    spaceComplexity: "O(N × W)"
+    variants:
+      standard:
+        name: 二维状态表件数枚举
+        desc: 正序货物、正序容量、枚举件数
+        code: |
+          public static int maxValue(int[] w, int[] v, int[] c, int t) { // @step:entry
+              int n = w.length;
+              int[][] dp = new int[n][t + 1]; // @step:init
+
+              // 初始化第 0 种货物
+              for (int j = 0; j <= t; j++) { // @step:init_row
+                  int k = Math.min(c[0], j / w[0]);
+                  dp[0][j] = k * v[0];
+              }
+
+              for (int i = 1; i < n; i++) { // @step:loop_i
+                  for (int j = 0; j <= t; j++) { // @step:loop_j
+                      int best = dp[i - 1][j]; // @step:cond
+                      for (int k = 1; k <= c[i] && k * w[i] <= j; k++) { // @step:loop_k
+                          best = Math.max(best, dp[i - 1][j - k * w[i]] + k * v[i]); // @step:transfer
+                      }
+                      dp[i][j] = best; // @step:assign
+                  }
+              }
+              return dp[n - 1][t]; // @step:return
+          }
+
+  stage-4:
+    shortName: "空间压缩"
+    name: "阶段 4: 一维空间压缩三重循环（倒序）"
+    desc: 利用一维数组滚动压缩 dp[j]，内层容量 j 必须从大到小倒序枚举，确保每个状态只依赖上一行的历史计算值，空间复杂度降为 O(t)。
+    timeComplexity: "O(t × Σc[i])"
+    spaceComplexity: "O(t)"
+    variants:
+      rolling_1d:
+        name: 一维倒序滚动压缩
+        desc: 外层货物正序、中层容量倒序、内层枚举件数
+        code: |
+          public static int maxValue(int[] w, int[] v, int[] c, int t) { // @step:entry
+              int[] dp = new int[t + 1]; // @step:init
+
+              for (int i = 0; i < w.length; i++) { // @step:loop_i
+                  for (int j = t; j >= w[i]; j--) { // @step:loop_j
+                      for (int k = 1; k <= c[i] && k * w[i] <= j; k++) { // @step:loop_k
+                          dp[j] = Math.max(dp[j], dp[j - k * w[i]] + k * v[i]); // @step:transfer
+                      }
+                  }
+              }
+              return dp[t]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    多重背包（Bounded Knapsack）是 0-1 背包与完全背包的结合体：每种物品有固定的最大选取件数限制 c[i]。
+    
+    1. 朴素转移方程：
+       dp[i][j] = max_{0 <= k <= c[i], k*w[i] <= j} (dp[i-1][j - k*w[i]] + k*v[i])
+    
+    2. 空间压缩原理：
+       因为状态更新依赖上一阶段（i-1）容量较小的旧值，所以容量 j 必须倒序（从 t 递减至 w[i]）遍历。
+       如果采用正序遍历，同一件物品会被重复累加超过 c[i] 件，退化为完全背包。
+
+    3. 复杂度瓶颈：
+       朴素枚举的时间复杂度为 O(t × Σc[i])，在数据规模较大时（如 c[i] 达到 10^4）容易超时，后续通过二进制拆分转化为 0-1 背包（Class 075 Code02）或单调队列优化（Class 075 Code03）进行渐进式阶梯提速。
+  dimensionComparison:
+    - dimension: "朴素多叉递归"
+      timeComplexity: "O(Π(c[i] + 1))"
+      spaceComplexity: "O(N)"
+      pros: "直观展示每种货物的每件选取分支"
+      cons: "指数级重叠子问题"
+    - dimension: "记忆化搜索"
+      timeComplexity: "O(N × t × max(c[i]))"
+      spaceComplexity: "O(N × t)"
+      pros: "自顶向下记忆化消除冗余计算"
+      cons: "递归调用栈额外开销"
+    - dimension: "严格二维DP"
+      timeComplexity: "O(N × t × max(c[i]))"
+      spaceComplexity: "O(N × t)"
+      pros: "状态依赖关系和填表轨迹清晰"
+      cons: "状态表空间消耗大"
+    - dimension: "一维空间压缩"
+      timeComplexity: "O(t × Σc[i])"
+      spaceComplexity: "O(t)"
+      pros: "空间复杂度降至 O(t)"
+      cons: "三重循环仍存在冗余枚举"
+
+faqs:
+  - q: "为什么空间压缩时容量必须倒序枚举？"
+    a: "因为 dp[j - k*w[i]] 必须代表上一行（前 i-1 种物品）的旧状态。如果正序枚举，dp[j - k*w[i]] 可能已经在当前轮次被修改过了，从而导致同一物品被累选超过 c[i] 次。"
+  - q: "多重背包朴素枚举在什么情况下会 TLE 超时？"
+    a: "当物品数量限制 c[i] 或背包容量 t 较大时，三重循环的总迭代次数 t × Σc[i] 会达到 10^8 以上，此时必须使用二进制拆分（转化为 O(t × Σlog(c[i]))）或单调队列优化（降至 O(N × t)）。"

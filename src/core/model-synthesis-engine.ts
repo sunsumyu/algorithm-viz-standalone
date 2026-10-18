@@ -23,6 +23,7 @@ export class ModelSynthesisEngine {
     'perfect-squares': { n: 12 },
     'combination-sum-iv': { nums: [1, 2, 3], target: 4, n: 4 },
     'multiple-knapsack': { weights: [1, 3, 4], values: [15, 20, 30], nums: [2, 3, 2], bagWeight: 4, n: 4 },
+    'bounded-knapsack-naive': { weights: [2, 3, 5], values: [3, 4, 7], nums: [2, 3, 2], bagWeight: 10, n: 10 },
     'ones-and-zeroes': { strs: ['10', '0001', '111001', '1', '0'], m: 5, n: 3 },
     'word-break': { s: 'leetcode', wordDict: ['leet', 'code'] },
     'max-distance-in-tree': { root: '1,2,3,4,5', n: 5 },

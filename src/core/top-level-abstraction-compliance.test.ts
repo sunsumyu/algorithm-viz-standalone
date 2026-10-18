@@ -140,6 +140,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'optimal-account-balancing',
   'good-subsets',
   'distribute-repeating-integers',
+  'bounded-knapsack-naive',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

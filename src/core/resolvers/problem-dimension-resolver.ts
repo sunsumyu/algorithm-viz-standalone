@@ -58,6 +58,11 @@ export class ProblemDimensionResolver {
     'buying-hay-min-cost-074',
     'class074-code06',
     'luogu-p2918',
+    'bounded-knapsack-naive',
+    'class075-code01',
+    'bounded-knapsack-naive-075',
+    'multiple-knapsack-naive',
+    'luogu-p1776-naive',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -347,7 +352,7 @@ export class ProblemDimensionResolver {
     }
 
     // 4. 背包类问题族群 (Knapsack Domain Problems)
-    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId.includes('partitioned') && params.items !== undefined) || params.h !== undefined) {
+    if (this.KNAPSACK_PROBLEM_IDS.has(modelId) || params.bagWeight !== undefined || params.target !== undefined || params.weights !== undefined || params.coins !== undefined || params.stones !== undefined || params.piles !== undefined || (modelId?.includes?.('partitioned') && params.items !== undefined) || params.h !== undefined) {
       const isBuyingHay =
         modelId === 'buying-hay-min-cost' ||
         modelId === 'class074-code06' ||

@@ -20,6 +20,7 @@ import { PartitionDPStrategy, PartitionIntegerBreakStrategy } from './partition-
 
 import { KnapsackFamilyStrategy } from './knapsack-family-strategy';
 import { KnapsackBuyingHayStrategy } from './knapsack-buying-hay-strategy';
+import { BoundedKnapsackStrategy } from './bounded-knapsack-strategy';
 import { HouseRobberFamilyStrategy, HouseRobberStrategy } from './house-robber-family-strategy';
 import { StockStrategy } from './stock-strategy';
 import { SequenceAdvancedStrategy } from './sequence-advanced-strategy';
@@ -145,6 +146,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('partitioned-knapsack-standard'));
   AlgorithmStrategyRegistry.register(new KnapsackFamilyStrategy('unbounded-knapsack-standard'));
   AlgorithmStrategyRegistry.register(new KnapsackBuyingHayStrategy('buying-hay-min-cost'));
+  AlgorithmStrategyRegistry.register(new BoundedKnapsackStrategy());
 
   // House Robber Family
   AlgorithmStrategyRegistry.register(new HouseRobberStrategy('house-robber'));
