@@ -21,7 +21,7 @@ registerAlgorithm({
   category: 'dynamic-programming',
   description: '左程云算法讲解080 Code01：LeetCode 464 我能赢吗，经典状态压缩博弈论 DP：二进制掩码 status 记录可选数字集合，极大极小 (Minimax) 搜索与记忆化剪枝判断先手必胜。',
   icon: '🎲',
-  aliases: ['class080-code01', 'class080-code03', 'can-i-win-464', 'leetcode-464'],
+  aliases: ['class080-code01', 'can-i-win-464', 'leetcode-464'],
   template: '<div id="can-i-win" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,

@@ -16,6 +16,7 @@ export function compileMatchsticks(
 ): UniversalStep[] {
   const steps: UniversalStep[] = [];
   const anchorMap = params.anchorMap;
+  const isReverse = params.direction === 'reverse';
 
   let matchsticks: number[];
   const raw = params.params?.nums;
@@ -35,22 +36,47 @@ export function compileMatchsticks(
   const lineGuardSum = anchorMap?.guard_sum || 5;
   const lineCalcSide = anchorMap?.calc_side || 6;
   const lineSort = anchorMap?.sort || 7;
-  const lineInit = anchorMap?.init || 8;
-  const lineStartDfs = anchorMap?.start_dfs || 9;
-  const lineDfsEntry = anchorMap?.dfs_entry || 11;
-  const lineBoundary = anchorMap?.boundary || 12;
-  const lineCacheHit = anchorMap?.cache_hit || 13;
-  const lineInitAns = anchorMap?.init_ans || 14;
-  const lineLoopMatch = anchorMap?.loop_match || 15;
-  const lineCondFit = anchorMap?.cond_fit || 16;
-  const lineCalcNext = anchorMap?.calc_next || 17;
-  const lineBranchCall = anchorMap?.branch_call || 18;
-  const lineMarkWin = anchorMap?.mark_win || 19;
-  const lineBreak = anchorMap?.break || 20;
-  const lineRecord = anchorMap?.record || 24;
-  const lineReturn = anchorMap?.return || 25;
+  const lineInit = anchorMap?.init || 9;
+  const lineStartDfs = anchorMap?.start_dfs || 10;
+  const lineDfsEntry = anchorMap?.dfs_entry || 12;
+  const lineBoundary = anchorMap?.boundary || 13;
+  const lineCacheHit = anchorMap?.cache_hit || 14;
+  const lineInitAns = anchorMap?.init_ans || 15;
+  const lineLoopMatch = anchorMap?.loop_match || 16;
+  const lineCondFit = anchorMap?.cond_fit || 17;
+  const lineCalcNext = anchorMap?.calc_next || 18;
+  const lineBranchCall = anchorMap?.branch_call || 19;
+  const lineMarkWin = anchorMap?.mark_win || 20;
+  const lineBreak = anchorMap?.break || 21;
+  const lineRecord = anchorMap?.record || 25;
+  const lineReturn = anchorMap?.return || 26;
 
   const n = matchsticks.length;
+
+  const formatSteps = (
+    rawSteps: UniversalStep[],
+    result: boolean,
+    targetSide: number
+  ) => {
+    const currentStage =
+      typeof params.stage === 'number'
+        ? params.stage
+        : parseInt(String(params.stage || '1').replace(/\D/g, ''), 10) || 1;
+    return rawSteps.map((s, idx) => ({
+      ...s,
+      stepIndex: idx,
+      stage: currentStage,
+      line: s.line || lineEntry,
+      codeLine: s.codeLine || s.line || lineEntry,
+      decision: s.decision || s.log || s.tag || '状压DP火柴拼正方形',
+      message: s.message || s.msg || s.log || '',
+      metrics: s.metrics || {
+        '火柴数': String(n),
+        '目标边长': targetSide > 0 ? String(targetSide) : '无解(总长非4倍数)',
+        '拼成判定': result ? '可行 (true)' : '失败 (false)',
+      },
+    }));
+  };
 
   // Step 0: 主入口
   steps.push({
@@ -61,9 +87,13 @@ export function compileMatchsticks(
     dp1d: [0],
     memo: {},
     activeSlot: 0,
-    tag: 'makesquare 入口',
-    log: `🌲 进入 makesquare：输入火柴 [${matchsticks.join(', ')}]，准备计算总和与四边均分`,
-    msg: `主函数入口：考察火柴数组 <code>[${matchsticks.join(', ')}]</code>，判定能否无折断拼成正方形。`,
+    tag: isReverse ? '[逆向升序搜索] makesquare 入口' : 'makesquare 入口',
+    log: isReverse
+      ? `🌲 [逆向小火柴优先] 进入 makesquare：输入火柴 [${matchsticks.join(', ')}]`
+      : `🌲 进入 makesquare：输入火柴 [${matchsticks.join(', ')}]，准备计算总和与四边均分`,
+    msg: isReverse
+      ? `逆向小火柴优先探查：考察火柴数组 <code>[${matchsticks.join(', ')}]</code>，从小到大尝试碎片填充。`
+      : `主函数入口：考察火柴数组 <code>[${matchsticks.join(', ')}]</code>，判定能否无折断拼成正方形。`,
   });
 
   // Step 1: 计算总和
@@ -95,7 +125,7 @@ export function compileMatchsticks(
       log: `| 🛑 总长 ${sum} 不是 4 的倍数，无法构成正方形，直接返回 false`,
       msg: `边界特判：总长度 <code>${sum} % 4 != 0</code>，无法分为 4 等长边，返回 <strong>false</strong>。`,
     });
-    return steps;
+    return formatSteps(steps, false, 0);
   }
 
   // Step 3: 计算目标边长
@@ -141,7 +171,7 @@ export function compileMatchsticks(
       log: `| 🛑 存在单根火柴 ${matchsticks[n - 1]} 大于目标边长 ${side}，无法放入任何边，返回 false`,
       msg: `剪枝特判：单根火柴 <code>${matchsticks[n - 1]} > ${side}</code>，直接返回 <strong>false</strong>。`,
     });
-    return steps;
+    return formatSteps(steps, false, side);
   }
 
   // Step 5: 初始化状态压缩记忆化表
@@ -168,9 +198,13 @@ export function compileMatchsticks(
     dp1d: [0, side],
     memo: {},
     activeSlot: 0,
-    tag: '启动 dfs(status=0, cur=0)',
-    log: '| 🚀 启动记忆化搜索：从 0 根火柴开始，当前边已拼长度 cur=0',
-    msg: '调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。',
+    tag: isReverse ? '[逆向升序] 启动 dfs(status=0, cur=0)' : '启动 dfs(status=0, cur=0)',
+    log: isReverse
+      ? '| 🚀 [逆向小火柴优先] 启动记忆化搜索：从小火柴开始枚举填充，当前边已拼 cur=0'
+      : '| 🚀 启动记忆化搜索：从 0 根火柴开始，当前边已拼长度 cur=0',
+    msg: isReverse
+      ? '逆向从小火柴优先调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。'
+      : '调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。',
   });
 
   let stepCount = 0;
@@ -244,8 +278,15 @@ export function compileMatchsticks(
 
     let ans = false;
 
-    // 从大到小尝试火柴
-    for (let i = n - 1; i >= 0; i--) {
+    // 遍历未选火柴：正向优先大火柴加速剪枝，逆序优先小火柴探索碎片填充
+    const order: number[] = [];
+    if (isReverse) {
+      for (let i = 0; i < n; i++) order.push(i);
+    } else {
+      for (let i = n - 1; i >= 0; i--) order.push(i);
+    }
+
+    for (const i of order) {
       if (stepCount >= maxSteps) break;
 
       steps.push({
@@ -256,9 +297,13 @@ export function compileMatchsticks(
         dp1d: [ans ? 1 : 0, cur, matchsticks[i]],
         memo: { ...memoTable },
         activeSlot: 0,
-        tag: `尝试第 ${i} 根火柴(长${matchsticks[i]})`,
-        log: `| 🔄 检查火柴 #${i}(长度=${matchsticks[i]})`,
-        msg: `尝试火柴 <strong>#${i} (长度 ${matchsticks[i]})</strong>。`,
+        tag: isReverse ? `[逆序] 尝试第 ${i} 根火柴(长${matchsticks[i]})` : `尝试第 ${i} 根火柴(长${matchsticks[i]})`,
+        log: isReverse
+          ? `| 🔄 【逆序探查】优先检查较小火柴 #${i}(长度=${matchsticks[i]})`
+          : `| 🔄 检查火柴 #${i}(长度=${matchsticks[i]})`,
+        msg: isReverse
+          ? `逆序较小火柴优先探查：尝试火柴 <strong>#${i} (长度 ${matchsticks[i]})</strong>。`
+          : `尝试火柴 <strong>#${i} (长度 ${matchsticks[i]})</strong>。`,
       });
 
       const isUsed = (status & (1 << i)) !== 0;
@@ -402,10 +447,16 @@ export function compileMatchsticks(
     dp1d: [finalResult ? 1 : 0],
     memo: { ...memoTable },
     activeSlot: 0,
-    tag: `最终结果: ${finalResult ? '能拼成正方形 ✓' : '不能拼成正方形 ✗'}`,
-    log: `| 🏆 状压推导演化完成！makesquare = ${finalResult}`,
-    msg: `🏆 状态压缩推导完成！给定火柴 <strong>${finalResult ? '能够拼成正方形 (true) ✓' : '无法拼成正方形 (false) ✗'}</strong>。`,
+    tag: isReverse
+      ? `[逆序推导完成]: ${finalResult ? '能拼成正方形 ✓' : '不能拼成正方形 ✗'}`
+      : `最终结果: ${finalResult ? '能拼成正方形 ✓' : '不能拼成正方形 ✗'}`,
+    log: isReverse
+      ? `| 🏆 【逆序升序探查完成】makesquare = ${finalResult}`
+      : `| 🏆 状压推导演化完成！makesquare = ${finalResult}`,
+    msg: isReverse
+      ? `🏆 逆向升序火柴推导完成！给定火柴 <strong>${finalResult ? '能够拼成正方形 (true) ✓' : '无法拼成正方形 (false) ✗'}</strong>。`
+      : `🏆 状态压缩推导完成！给定火柴 <strong>${finalResult ? '能够拼成正方形 (true) ✓' : '无法拼成正方形 (false) ✗'}</strong>。`,
   });
 
-  return steps;
+  return formatSteps(steps, finalResult, side);
 }

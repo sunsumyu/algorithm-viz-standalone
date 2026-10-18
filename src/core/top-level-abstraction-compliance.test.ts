@@ -133,6 +133,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'height-removal-queries',
   'minimum-score-after-removals',
   'can-i-win',
+  'matchsticks-to-square',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

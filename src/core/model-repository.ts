@@ -126,6 +126,7 @@ import longestPathDifferentCharactersModel from './models/longest-path-different
 import heightRemovalQueriesModel from './models/height-removal-queries.yaml';
 import minimumScoreAfterRemovalsModel from './models/minimum-score-after-removals.yaml';
 import canIWinModel from './models/can-i-win.yaml';
+import matchsticksToSquareModel from './models/matchsticks-to-square.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -287,9 +288,13 @@ export class AlgorithmModelRepository {
     ['leetcode-2322', minimumScoreAfterRemovalsModel as IYamlAlgorithmModel],
     ['can-i-win', canIWinModel as IYamlAlgorithmModel],
     ['class080-code01', canIWinModel as IYamlAlgorithmModel],
-    ['class080-code03', canIWinModel as IYamlAlgorithmModel],
     ['can-i-win-464', canIWinModel as IYamlAlgorithmModel],
     ['leetcode-464', canIWinModel as IYamlAlgorithmModel],
+    ['matchsticks-to-square', matchsticksToSquareModel as IYamlAlgorithmModel],
+    ['class080-code02', matchsticksToSquareModel as IYamlAlgorithmModel],
+    ['class080-code02-ext', matchsticksToSquareModel as IYamlAlgorithmModel],
+    ['matchsticks-to-square-473', matchsticksToSquareModel as IYamlAlgorithmModel],
+    ['leetcode-473', matchsticksToSquareModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

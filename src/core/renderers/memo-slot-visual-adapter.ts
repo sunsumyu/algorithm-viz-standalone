@@ -46,7 +46,15 @@ export class MemoSlotVisualAdapter {
     // 强制重置容器为竖向列式居中容器，杜绝与上层 HTML 任何 flex-row 冲突
     container.className = 'w-full h-full flex flex-col items-center justify-center gap-2 p-1 relative overflow-auto';
     
-    const memoArr = step.memoSnapshot || step.memo || step.dp1d || (step.grid && step.grid[0]) || [];
+    const memoArr: any[] = Array.isArray(step.memoSnapshot)
+      ? step.memoSnapshot
+      : Array.isArray(step.dp1d)
+      ? step.dp1d
+      : Array.isArray(step.memo)
+      ? step.memo
+      : (step.grid && Array.isArray(step.grid[0]))
+      ? step.grid[0]
+      : [];
 
     // 1. 顶层状态转移等式 / 解释卡片
     const equationWrapper = document.createElement('div');
@@ -67,7 +75,7 @@ export class MemoSlotVisualAdapter {
     if (step.slotMode === 'down') {
       const isKeep = step.type === 'keep-val';
       const label = isKeep ? '首列保持旧值 (Down):' : '读取上方旧值 (Down):';
-      const val = step.down ?? step.memoj ?? (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
+      const val = step.down ?? step.memoj ?? (activeSlotIdx !== undefined && memoArr[activeSlotIdx] !== undefined ? memoArr[activeSlotIdx] : 0);
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-purple-700 bg-purple-50/90 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center justify-between shadow-xs animate-pulse">
           <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>${label}</span></span>
@@ -82,7 +90,7 @@ export class MemoSlotVisualAdapter {
         </div>
       `;
     } else if (step.slotMode === 'updated') {
-      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
+      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined && memoArr[activeSlotIdx] !== undefined ? memoArr[activeSlotIdx] : 0);
       const isBlocked = step.type === 'obstacle-cell';
       const icon = isBlocked ? '🚧' : '<span class="animal-frog">🐸</span>';
       const label = isBlocked ? '障碍物清零覆盖:' : '滚动覆盖累加:';
@@ -95,7 +103,7 @@ export class MemoSlotVisualAdapter {
         </div>
       `;
     } else if (activeSlotIdx !== undefined && step.type?.includes('update')) {
-      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined ? memoArr[activeSlotIdx] : 0);
+      const sumVal = step.memoj !== undefined ? step.memoj : (activeSlotIdx !== undefined && memoArr[activeSlotIdx] !== undefined ? memoArr[activeSlotIdx] : 0);
       const isBlocked = step.type === 'obstacle-cell';
       const icon = isBlocked ? '🚧' : '<span class="animal-frog">🐸</span>';
       const label = isBlocked ? '障碍物清零覆盖:' : (step.tag || '状态转移更新:');

@@ -1,0 +1,335 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 火柴拼正方形 顶层领域模型
+# 对应：LeetCode 473 / 左程云算法讲解 080 Code02 (状压DP专题 上)
+# 包含：二进制位掩码子集划分、边长均分前置剪枝、记忆化搜索
+# ==============================================================================
+
+id: matchsticks-to-square
+name: 火柴拼正方形 (LeetCode 473)
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 状压 DP
+  - 动态规划
+  - 回溯
+  - 剪枝
+  - 位运算
+
+description: |
+  LeetCode 473 · 左程云算法通关课第 080 讲 状压 DP（上）Code02：火柴拼正方形 (Matchsticks to Square)。
+  给定整数数组 matchsticks，其中 matchsticks[i] 是第 i 根火柴的长度。
+  你要用所有的火柴拼成一个正方形。你 不能折断 任何一根火柴，但可以把它们连在一起，而且每根火柴都要 用到恰好一次 。
+  如果能拼成，则返回 true ，否则返回 false 。
+
+  核心状压与回溯模型：
+  1. 可行性前置校验与目标边长：
+     - 若总长 sum % 4 != 0，无法构成 4 等长边，直接返回 false。
+     - 目标边长 side = sum / 4。
+     - 若存在任意火柴长度 > side，直接返回 false。
+  2. 状压二进制掩码定义：
+     - status 的第 i 位为 1 表示第 i 根火柴已被选用，为 0 表示尚未选用。
+     - status == (1 << n) - 1 表示全部火柴均已放置完成，成功拼成正方形。
+  3. 递归状态与边拼凑：
+     - dfs(status, cur) 表示在已选火柴掩码 status、当前正在拼凑的边已达到长度 cur 时，能否顺利将剩余火柴填满正方形。
+     - 遍历所有未使用的火柴 i，若 cur + matchsticks[i] <= side：
+       nextCur = (cur + matchsticks[i]) % side
+       若 dfs(status | (1 << i), nextCur) 返回 true，则说明后续可以成功拼成，当前亦返回 true。
+  4. 记忆化与剪枝：
+     - 排序火柴（大火柴优先放入），大幅压缩前中期无效搜索空间。
+     - dp[status] 记录该掩码下是否能拼成正方形 (1: 可行, -1: 不可行)，避免指数级重复枚举。
+
+defaultParams:
+  nums: [1, 1, 2, 2, 2]
+
+constraints:
+  - 1 <= matchsticks.length <= 15（演示环境默认 5 根火柴）
+  - 1 <= matchsticks[i] <= 10^8
+
+directions:
+  forward:
+    name: 降序大火柴优先正向搜索 (Descending Greedier Pruning DFS)
+    description: 火柴优先从大到小放入当前边，更早触发超长剪枝，加速回溯与记忆化收敛
+  reverse:
+    name: 升序小火柴优先逆向搜索 (Ascending Fine-Grained Exploration)
+    description: 火柴从小到大放入当前边，演示碎片填充对博弈搜索空间与回溯分支的影响
+
+stages:
+  stage-1:
+    name: 暴力递归与子集划分
+    description: 递归尝试所有未用火柴放入当前边，满 side 则模运算开启下一条边，直到全部火柴用尽
+    complexity:
+      time: O(4^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean makesquare(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfs(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = m.length - 1; i >= 0; i--) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfs(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean makesquareReverse(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfsReverse(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < m.length; i++) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfsReverse(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 状态压缩记忆化搜索
+    description: 引入 dp[1<<n] 数组记录已搜索掩码 status 的可行性，大幅剪除重叠子问题
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean makesquare(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfs(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = m.length - 1; i >= 0; i--) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfs(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean makesquareReverse(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfsReverse(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < m.length; i++) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfsReverse(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 边长溢出贪心排序剪枝
+    description: 大火柴先行填充，单边溢出立即跳出当前分支，极大压缩搜索树宽度
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean makesquare(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfs(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = m.length - 1; i >= 0; i--) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfs(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean makesquareReverse(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfsReverse(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < m.length; i++) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfsReverse(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 位运算常数级压缩与极限性能
+    description: 纯位运算掩码转移，状态表压缩与位运算剪枝达到理论最优
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean makesquare(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfs(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = m.length - 1; i >= 0; i--) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfs(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean makesquareReverse(int[] matchsticks) { // @step:entry
+                  int sum = 0;
+                  for (int m : matchsticks) sum += m; // @step:calc_sum
+                  if (sum % 4 != 0) return false; // @step:guard_sum
+                  int side = sum / 4; // @step:calc_side
+                  Arrays.sort(matchsticks); // @step:sort
+                  int n = matchsticks.length;
+                  int[] dp = new int[1 << n]; // @step:init
+                  return dfsReverse(matchsticks, 0, 0, side, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] m, int status, int cur, int side, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << m.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < m.length; i++) { // @step:loop_match
+                      if ((status & (1 << i)) == 0 && cur + m[i] <= side) { // @step:cond_fit
+                          int nextCur = (cur + m[i]) % side; // @step:calc_next
+                          if (dfsReverse(m, status | (1 << i), nextCur, side, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }

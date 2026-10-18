@@ -787,21 +787,7 @@ const demos: DemoDef[] = [
   // 状压DP 演示 (Bitmask DP Demos — 第080讲：状压dp-上)
   // ---------------------------------------------------------------------------
 
-  {
-    id: 'matchsticks-to-square',
-    name: '火柴拼正方形',
-    description: '左程云算法讲解080 Code02延伸：LeetCode 473 火柴拼正方形，状压DP与子集和划分，将火柴等分至4条等长边。',
-    icon: '🔥',
-    inputs: [
-      { id: 'nums', label: '火柴长度', value: '1,1,2,2,2', width: 160 },
-    ],
-    examples: [
-      { label: '[1,1,2,2,2] (可拼成)', values: { nums: '1,1,2,2,2' } },
-      { label: '[3,3,3,3,4] (不可拼成)', values: { nums: '3,3,3,3,4' } },
-    ],
-    build: makeEngineBuilder('matchsticks-to-square'),
-    aliases: ['class080-code02-ext', 'matchsticks-to-square-473', 'leetcode-473'],
-  },
+
   {
     id: 'partition-k-equal-subsets',
     name: '划分为k个相等子集',
@@ -975,7 +961,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
   // 状压DP 专题（第080讲：状压dp-上）
-  { type: 'demo', id: 'matchsticks-to-square' },
   { type: 'demo', id: 'partition-k-equal-subsets' },
   { type: 'demo', id: 'tsp-bitmask-dp' },
   // 状压DP 进阶（第081讲：状压dp-下）
