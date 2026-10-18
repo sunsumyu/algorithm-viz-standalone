@@ -1344,17 +1344,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握树型DP\"信息汇报元组\"设计范式，学会从子节点收集信息、在当前节点完成决策",
   },
   {
-    id: "can-i-win",
-    name: "我能赢吗",
-    viewId: "can-i-win",
-    category: "dynamic-programming",
-    description: "左程云算法讲解080 Code03：LeetCode 464 我能赢吗，状压DP + 博弈论，用位掩码记录可选数字集合与先手必胜记忆化搜索。",
-    icon: "🎲",
-    difficulty: 1,
-    levelOrder: 67,
-    aliases: ["class080-code03","can-i-win-464","leetcode-464"],
-  },
-  {
     id: "matchsticks-to-square",
     name: "火柴拼正方形",
     viewId: "matchsticks-to-square",
@@ -1362,7 +1351,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解080 Code02延伸：LeetCode 473 火柴拼正方形，状压DP与子集和划分，将火柴等分至4条等长边。",
     icon: "🔥",
     difficulty: 1,
-    levelOrder: 68,
+    levelOrder: 67,
     aliases: ["class080-code02-ext","matchsticks-to-square-473","leetcode-473"],
   },
   {
@@ -1373,7 +1362,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解080 Code02：LeetCode 698 划分为k个相等的子集，状压DP + 剪枝回溯，等和子集装箱分配。",
     icon: "📦",
     difficulty: 1,
-    levelOrder: 69,
+    levelOrder: 68,
     aliases: ["class080-code02","partition-k-equal-subsets-698","leetcode-698"],
   },
   {
@@ -1384,7 +1373,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解080 Code01：经典旅行商问题 TSP，状压DP求经过所有节点且当前在 i 的最短哈密顿回路。",
     icon: "🗺️",
     difficulty: 1,
-    levelOrder: 70,
+    levelOrder: 69,
     aliases: ["class080-code01","tsp-bitmask","traveling-salesperson"],
   },
   {
@@ -1395,7 +1384,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code01：LeetCode 1434 每个人戴不同帽子的方案数，维度反转状压 DP（人少帽子多，对人状压逐顶帽子决策）。",
     icon: "🎩",
     difficulty: 1,
-    levelOrder: 71,
+    levelOrder: 70,
     aliases: ["class081-code01","number-of-ways-wear-hats-1434","leetcode-1434"],
   },
   {
@@ -1406,7 +1395,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，和为0子集最大化贪心状压 DP。",
     icon: "⚖️",
     difficulty: 1,
-    levelOrder: 72,
+    levelOrder: 71,
     aliases: ["class081-code02","optimal-account-balancing-465","leetcode-465"],
   },
   {
@@ -1417,7 +1406,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code03：LeetCode 1994 好子集的数目，数论质因数分解与 01 背包计数状压 DP。",
     icon: "✨",
     difficulty: 1,
-    levelOrder: 73,
+    levelOrder: 72,
     aliases: ["class081-code03","good-subsets-1994","leetcode-1994"],
   },
   {
@@ -1428,7 +1417,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code04：LeetCode 1655 分配重复整数，频次统计与子掩码高效枚举状压 DP。",
     icon: "📊",
     difficulty: 1,
-    levelOrder: 74,
+    levelOrder: 73,
     aliases: ["class081-code04","distribute-repeating-integers-1655","leetcode-1655"],
   },
   {
@@ -1439,7 +1428,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 75,
+    levelOrder: 74,
   },
   {
     id: "knapsack-01-standard",
@@ -2202,6 +2191,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 7906,
     learningGoal: "深入掌握树型 DP 与 DFN 序拓扑关系判定：深刻理解边定向转子树切除、DFN 序区间包含判定定理，以及三连通块异或分解与全局极差最小化收敛机制。",
     aliases: ["class079-code06","min-score-removals-2322","leetcode-2322"],
+  },
+  {
+    id: "can-i-win",
+    name: "我能赢吗 (LeetCode 464)",
+    viewId: "can-i-win",
+    category: "dynamic-programming",
+    description: "左程云算法讲解080 Code01：LeetCode 464 我能赢吗，经典状态压缩博弈论 DP：二进制掩码 status 记录可选数字集合，极大极小 (Minimax) 搜索与记忆化剪枝判断先手必胜。",
+    icon: "🎲",
+    difficulty: 2,
+    levelOrder: 8001,
+    learningGoal: "掌握状态压缩在博弈论决策树中的应用：二进制位掩码表示已选数字池，依据必胜转移与对手必败反转逻辑完成极小化极大记忆化搜索。",
+    aliases: ["class080-code01","class080-code03","can-i-win-464","leetcode-464"],
   },
   {
     id: "clash-of-algorithms",

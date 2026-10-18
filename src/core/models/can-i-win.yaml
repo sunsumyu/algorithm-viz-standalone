@@ -1,0 +1,315 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 我能赢吗 顶层领域模型
+# 对应：LeetCode 464 / 左程云算法讲解 080 Code01 (状压DP专题 上)
+# 包含：二进制位掩码数字池状态压缩、博弈极小化极大 (Minimax) 搜索、记忆化剪枝
+# ==============================================================================
+
+id: can-i-win
+name: 我能赢吗
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 状压 DP
+  - 动态规划
+  - 博弈论
+  - 记忆化搜索
+  - 位运算
+
+description: |
+  LeetCode 464 · 左程云算法通关课第 080 讲 状压 DP（上）Code01：我能赢吗 (Can I Win)。
+  两个玩家轮流从公共整数池 1~n 中不放回地选数，选出的数累加起来，谁在自己回合让累加和 ≥ m 谁获胜。
+  
+  核心状压博弈模型：
+  1. 状态定义：
+     status 的第 i 位为 1 表示数字 i 已被选取，为 0 表示数字 i 尚在可选池中。
+     f(status, rest) 表示在当前数字池状态 status 下，距离目标累加和尚需 rest 时，当前选手能否必胜。
+  2. 博弈胜负判定原则 (Minimax Principle)：
+     当前选手遍历所有未使用的数字 i (1 <= i <= n)：
+     - 若 i >= rest：当前选手选入 i 即可直接让累加和达标，宣告立即获胜 (return true)；
+     - 若对手在后续局面 dfs(status | (1 << i), rest - i) 中必败 (返回 false)：
+       意味着当前选手选择 i 可以将必败局面强加给对手，因此当前选手必胜 (return true)；
+     - 若尝试了所有可选数字均无法令对手必败，则当前选手在此局面下必败 (return false)。
+  3. 记忆化存储：
+     使用长度为 1 << (n + 1) 的数组 dp 记录 status 的胜负结果 (0: 未计算, 1: 必胜, -1: 必败)，
+     将指数级博弈搜索树有效剪枝收敛为 O(2^n * n) 复杂度。
+
+defaultParams:
+  n: 4
+  m: 6
+
+constraints:
+  - 1 <= n <= 20（演示教学环境默认 n=4, m=6）
+  - 0 <= m <= 300
+
+directions:
+  forward:
+    name: 先手正向博弈推导 (Minimax Forward DFS)
+    description: 从数字池初始状态出发，从小到大遍历可选数字，递归推导当前选手的必胜策略
+  reverse:
+    name: 逆序选数大数优先探查 (Heuristic Large-Number First Exploration)
+    description: 从大到小优先试探高面值数字，对比正向推导在博弈树分支剪枝上的异同
+
+stages:
+  stage-1:
+    name: 暴力递归博弈搜索
+    description: 递归展开博弈决策树，尝试全部未使用的数字，若能让累加和超标或令对手必败则当前选手获胜
+    complexity:
+      time: O(N!)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfs(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfs(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 1; i <= n; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfs(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfsReverse(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = n; i >= 1; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfsReverse(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 状态压缩记忆化搜索
+    description: 引入 dp 数组以二进制 mask 记录各局面胜负，避免重叠博弈子局面的指数级重复搜索
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfs(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfs(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 1; i <= n; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfs(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfsReverse(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = n; i >= 1; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfsReverse(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 逆序贪心大数优先剪枝
+    description: 优先试探高价值面额以更快速击穿 rest 达到目标，提升博弈决策分支的剪枝概率
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfs(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfs(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 1; i <= n; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfs(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfsReverse(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = n; i >= 1; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfsReverse(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 位运算与常数级压缩优化
+    description: 纯整数位运算 (1 << i) 取代集合与数组访问，达到理论最优时间与常数级空间开销
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfs(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfs(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 1; i <= n; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfs(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canIWin(int n, int m) { // @step:entry
+                  if (m == 0) return true; // @step:guard_win
+                  if (n * (n + 1) / 2 < m) return false; // @step:guard_lose
+                  int[] dp = new int[1 << (n + 1)]; // @step:init
+                  return dfsReverse(n, 0, m, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int n, int status, int rest, int[] dp) { // @step:dfs_entry
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = n; i >= 1; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0) { // @step:cond_available
+                          if (i >= rest) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                          if (!dfsReverse(n, status | (1 << i), rest - i, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }

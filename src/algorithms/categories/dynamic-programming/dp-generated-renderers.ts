@@ -786,22 +786,7 @@ const demos: DemoDef[] = [
 
   // 状压DP 演示 (Bitmask DP Demos — 第080讲：状压dp-上)
   // ---------------------------------------------------------------------------
-  {
-    id: 'can-i-win',
-    name: '我能赢吗',
-    description: '左程云算法讲解080 Code03：LeetCode 464 我能赢吗，状压DP + 博弈论，用位掩码记录可选数字集合与先手必胜记忆化搜索。',
-    icon: '🎲',
-    inputs: [
-      { id: 'n', label: '可选上限 n', value: '4', width: 80 },
-      { id: 'm', label: '目标 m', value: '6', width: 80 },
-    ],
-    examples: [
-      { label: 'n=4, m=6 (先手必胜)', values: { n: '4', m: '6' } },
-      { label: 'n=10, m=11 (先手必败)', values: { n: '10', m: '11' } },
-    ],
-    build: makeEngineBuilder('can-i-win'),
-    aliases: ['class080-code03', 'can-i-win-464', 'leetcode-464'],
-  },
+
   {
     id: 'matchsticks-to-square',
     name: '火柴拼正方形',
@@ -990,7 +975,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
   // 状压DP 专题（第080讲：状压dp-上）
-  { type: 'demo', id: 'can-i-win' },
   { type: 'demo', id: 'matchsticks-to-square' },
   { type: 'demo', id: 'partition-k-equal-subsets' },
   { type: 'demo', id: 'tsp-bitmask-dp' },

@@ -125,6 +125,7 @@ import minimumFuelCostModel from './models/minimum-fuel-cost.yaml';
 import longestPathDifferentCharactersModel from './models/longest-path-different-characters.yaml';
 import heightRemovalQueriesModel from './models/height-removal-queries.yaml';
 import minimumScoreAfterRemovalsModel from './models/minimum-score-after-removals.yaml';
+import canIWinModel from './models/can-i-win.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -284,6 +285,11 @@ export class AlgorithmModelRepository {
     ['class079-code06', minimumScoreAfterRemovalsModel as IYamlAlgorithmModel],
     ['min-score-removals-2322', minimumScoreAfterRemovalsModel as IYamlAlgorithmModel],
     ['leetcode-2322', minimumScoreAfterRemovalsModel as IYamlAlgorithmModel],
+    ['can-i-win', canIWinModel as IYamlAlgorithmModel],
+    ['class080-code01', canIWinModel as IYamlAlgorithmModel],
+    ['class080-code03', canIWinModel as IYamlAlgorithmModel],
+    ['can-i-win-464', canIWinModel as IYamlAlgorithmModel],
+    ['leetcode-464', canIWinModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

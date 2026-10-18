@@ -186,6 +186,11 @@ export class ProblemDimensionResolver {
     let n = 6;
     let category: ResolvedDimensions['category'] = '1d-linear';
 
+    // 0. 特殊状压博弈模型 (如 can-i-win: n 个可选数字与累加和 m)
+    if (modelId === 'can-i-win') {
+      return { m: 1, n: Number(params.n ?? 4), is1D: true, category: '1d-linear' };
+    }
+
     // 0. 特殊二维费用背包 (如 ones-and-zeroes: strs 结合 m 个 0 和 n 个 1)
     if (params.strs !== undefined && params.m !== undefined && params.n !== undefined) {
       m = Number(params.m) + 1;

@@ -16,6 +16,7 @@ export function compileCanIWin(
 ): UniversalStep[] {
   const n = Number(params.params?.n) || 4;
   const m = Number(params.params?.m) || 6;
+  const isReverse = params.direction === 'reverse';
   const anchorMap = params.anchorMap;
 
   const lineEntry = anchorMap?.entry || 2;
@@ -45,9 +46,13 @@ export function compileCanIWin(
     dp1d: [0],
     memo: {},
     activeSlot: 0,
-    tag: `canIWin(n=${n}, m=${m}) 入口`,
-    log: `🎯 进入 canIWin：可选池 1~${n}，目标累加和 ≥ ${m}`,
-    msg: `主函数入口：数字池为 <code>1 ~ ${n}</code>，目标累加和达到或超过 <code>${m}</code> 即可获胜。`,
+    tag: isReverse ? `[逆序探查] canIWin(n=${n}, m=${m}) 入口` : `canIWin(n=${n}, m=${m}) 入口`,
+    log: isReverse
+      ? `🎯 [逆序大数优先] 进入 canIWin：池 1~${n}，目标 ≥ ${m}`
+      : `🎯 进入 canIWin：可选池 1~${n}，目标累加和 ≥ ${m}`,
+    msg: isReverse
+      ? `逆序大数优先探查：数字池 <code>1 ~ ${n}</code>，从高面值数字优先试探以加速剪枝。`
+      : `主函数入口：数字池为 <code>1 ~ ${n}</code>，目标累加和达到或超过 <code>${m}</code> 即可获胜。`,
   });
 
   // Step 1: 特判
@@ -166,8 +171,15 @@ export function compileCanIWin(
 
     let ans = false;
 
-    // 遍历可选数字 1 ~ n
-    for (let i = 1; i <= n; i++) {
+    // 遍历可选数字 (正向: 1~n 从小到大; 逆序: n~1 从大到小优先试探)
+    const candidates: number[] = [];
+    if (isReverse) {
+      for (let i = n; i >= 1; i--) candidates.push(i);
+    } else {
+      for (let i = 1; i <= n; i++) candidates.push(i);
+    }
+
+    for (const i of candidates) {
       if (stepCount >= maxSteps) break;
 
       steps.push({
@@ -178,9 +190,13 @@ export function compileCanIWin(
         dp1d: [ans ? 1 : 0, rest, i],
         memo: { ...memoTable },
         activeSlot: 0,
-        tag: `尝试数字 ${i}`,
-        log: `| 🔄 循环检查数字 i=${i}`,
-        msg: `循环遍历：检查数字 <strong>${i}</strong> 是否已被选用。`,
+        tag: isReverse ? `[逆序] 尝试大数 ${i}` : `尝试数字 ${i}`,
+        log: isReverse
+          ? `| 🔄 【逆序探查】优先检查高面值数字 i=${i}`
+          : `| 🔄 循环检查数字 i=${i}`,
+        msg: isReverse
+          ? `逆序大数优先探查：优先尝试较大面值数字 <strong>${i}</strong>，期望更快击穿目标 <code>rest=${rest}</code>。`
+          : `循环遍历：检查数字 <strong>${i}</strong> 是否已被选用。`,
       });
 
       const isUsed = (status & (1 << i)) !== 0;
@@ -342,9 +358,15 @@ export function compileCanIWin(
     dp1d: [finalResult ? 1 : 0],
     memo: { ...memoTable },
     activeSlot: 0,
-    tag: `最终推导: 先手${finalResult ? '能赢 ✓' : '不能赢 ✗'}`,
-    log: `| 🏆 推导演化完成！canIWin(n=${n}, m=${m}) = ${finalResult}`,
-    msg: `🏆 状压博弈推导完成！对于规模 <code>n=${n}, m=${m}</code>，先手 <strong>${finalResult ? '必胜 (true) ✓' : '必败 (false) ✗'}</strong>。`,
+    tag: isReverse
+      ? `[逆序推导结果]: 先手${finalResult ? '必胜 ✓' : '必败 ✗'}`
+      : `最终推导: 先手${finalResult ? '能赢 ✓' : '不能赢 ✗'}`,
+    log: isReverse
+      ? `| 🏆 【逆序大数探查完成】canIWin(n=${n}, m=${m}) = ${finalResult}`
+      : `| 🏆 推导演化完成！canIWin(n=${n}, m=${m}) = ${finalResult}`,
+    msg: isReverse
+      ? `🏆 逆序大数优先博弈推导完成！在规模 <code>n=${n}, m=${m}</code> 下先手 <strong>${finalResult ? '必胜 (true) ✓' : '必败 (false) ✗'}</strong>。`
+      : `🏆 状压博弈推导完成！对于规模 <code>n=${n}, m=${m}</code>，先手 <strong>${finalResult ? '必胜 (true) ✓' : '必败 (false) ✗'}</strong>。`,
   });
 
   return steps;
