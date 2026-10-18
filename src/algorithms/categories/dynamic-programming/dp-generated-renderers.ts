@@ -793,21 +793,7 @@ const demos: DemoDef[] = [
 
   // 状压DP 进阶 (Bitmask DP Demos — 第081讲：状压dp-下)
   // ---------------------------------------------------------------------------
-  {
-    id: 'number-of-ways-wear-hats',
-    name: '每个人戴不同帽子的方案数',
-    description: '左程云算法讲解081 Code01：LeetCode 1434 每个人戴不同帽子的方案数，维度反转状压 DP（人少帽子多，对人状压逐顶帽子决策）。',
-    icon: '🎩',
-    inputs: [
-      { id: 'hats', label: '帽子分配二维数组 (JSON)', value: '[[3,4],[4,5],[5]]', width: 220 },
-    ],
-    examples: [
-      { label: '3人3帽 [[3,4],[4,5],[5]]', values: { hats: '[[3,4],[4,5],[5]]' } },
-      { label: '2人2帽 [[3,5,1],[3,5]]', values: { hats: '[[3,5,1],[3,5]]' } },
-    ],
-    build: makeEngineBuilder('number-of-ways-wear-hats'),
-    aliases: ['class081-code01', 'number-of-ways-wear-hats-1434', 'leetcode-1434'],
-  },
+
   {
     id: 'optimal-account-balancing',
     name: '最优账单平衡',
@@ -933,8 +919,7 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
 
-  // 状压DP 进阶（第081讲：状压dp-下）
-  { type: 'demo', id: 'number-of-ways-wear-hats' },
+
   { type: 'demo', id: 'optimal-account-balancing' },
   { type: 'demo', id: 'good-subsets' },
   { type: 'demo', id: 'distribute-repeating-integers' },

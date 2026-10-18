@@ -52,6 +52,9 @@ import './categories/dynamic-programming/bitmask-dp-080/matchsticks-to-square-re
 import './categories/dynamic-programming/bitmask-dp-080/partition-k-equal-subsets-renderer';
 import './categories/dynamic-programming/bitmask-dp-080/tsp-bitmask-dp-renderer';
 
+// 左程云算法讲解081【必备】状压dp（下）
+import './categories/dynamic-programming/bitmask-dp-081/number-of-ways-wear-hats-renderer';
+
 // 左程云算法讲解075【必备】背包dp-多重背包、混合背包 5大算法渲染器
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-naive-renderer';
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-binary-renderer';

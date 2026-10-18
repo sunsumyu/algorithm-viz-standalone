@@ -1,0 +1,322 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 每个人戴不同帽子的方案数 顶层领域模型
+# 对应：LeetCode 1434 / 左程云算法讲解 081 Code01 (状压DP专题 下)
+# 核心：维度反转 (人少帽子多，对人状压逐顶帽子决策)、0-1 背包式滚动转移
+# ==============================================================================
+
+id: number-of-ways-wear-hats
+name: 每个人戴不同帽子的方案数
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 状压 DP
+  - 维度反转
+  - 动态规划
+  - 0-1背包
+  - 位运算
+
+description: |
+  左程云算法通关课第 081 讲 状压 DP（下）Code01：每个人戴不同帽子的方案数 (LeetCode 1434)。
+  总共有 n 个人和 40 顶不同的帽子，每个人喜欢帽子的一部分。每个人戴一顶不同且喜欢的帽子，求所有可能方案数模 10^9+7。
+
+  核心状压 DP 模型：维度反转 (Dimension Inversion)
+  1. 状态定义：
+     - 若按人选帽子：每个人从 40 顶帽子中挑，复杂度高达 40^n，无法承受。
+     - 观察到人数极少 (n <= 10)，而帽子较多 (1 <= hat <= 40)。
+     - 维度反转：外层枚举“帽子” (1..40)，内层枚举“人的满足集合” S（二进制掩码）。
+     - dp[S] 表示前若干顶帽子分配完毕后，戴上帽子的人的集合为 S 时的总方案数。
+  2. 基底初始化：
+     - dp[0] = 1：初始没有人戴帽子，方案数为 1。其余 dp[S] 初始为 0。
+  3. 0-1 背包式逆序状态转移：
+     - 考察第 h 顶帽子以及喜欢该帽子的人员列表 interested：
+     - 从满集 full = (1 << n) - 1 逆序枚举已戴帽子人员集合 S：
+     - 若当前状态可行 (dp[S] > 0)，枚举喜欢该帽子且尚未戴帽子的人 p (S & (1 << p) == 0)：
+       nextS = S | (1 << p)
+       dp[nextS] = (dp[nextS] + dp[S]) % MOD
+  4. 最终收敛：
+     - 遍历完所有 40 顶帽子后，dp[full] 即为所有人均戴上满意帽子的总方案数。
+
+defaultParams:
+  hats:
+    - [3, 4]
+    - [4, 5]
+    - [5]
+
+constraints:
+  - 1 <= n <= 10 (帽子数组长度)
+  - 1 <= hats[i].length <= 40
+  - 1 <= hats[i][j] <= 40
+  - hats[i] 包含互不相同的整数
+
+directions:
+  forward:
+    name: 逐顶正向升序分配 (Ascending Hat Iteration)
+    description: 编号 1 至 40 的帽子顺推决策，逐顶分配给喜欢的人并向后累加状态
+  reverse:
+    name: 逆向降序帽子探测 (Descending Hat Exploration)
+    description: 编号 40 至 1 的帽子逆序对偶决策，验证分配顺序对最终方案全集的不变性
+
+stages:
+  stage-1:
+    name: 暴力递归与全排列分配
+    description: 枚举每个人选择每顶喜欢的帽子，递归搜索所有合法分配全排列
+    complexity:
+      time: O(40^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberWays(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 1; h <= 40; h++) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberWaysReverse(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 40; h >= 1; h--) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 维度反转与记忆化搜索
+    description: 建立“帽子到人”反向映射，按帽子逐顶记忆化搜索已满足人的二进制状态
+    complexity:
+      time: O(40 * 2^N * N)
+      space: O(40 * 2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberWays(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 1; h <= 40; h++) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberWaysReverse(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 40; h >= 1; h--) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 0-1背包式状压DP迭代填表
+    description: 帽子作为物品，人员集合作为背包容量，空间压缩至一维 2^N 数组逆序递推
+    complexity:
+      time: O(40 * 2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberWays(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 1; h <= 40; h++) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberWaysReverse(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 40; h >= 1; h--) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 稀疏人员掩码与位运算常数级优化
+    description: 预过滤无候选者的空帽子，使用位掩码紧凑表示人员喜好列表，达到极限常数速度
+    complexity:
+      time: O(40 * 2^N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberWays(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 1; h <= 40; h++) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberWaysReverse(List<List<Integer>> hats) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int n = hats.size(); // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  List<Integer>[] hatToPersons = new ArrayList[41]; // @step:init_map
+                  for (int i = 1; i <= 40; i++) hatToPersons[i] = new ArrayList<>(); // @step:alloc_map
+                  for (int p = 0; p < n; p++) { // @step:loop_person
+                      for (int h : hats.get(p)) hatToPersons[h].add(p); // @step:fill_map
+                  }
+                  int[] dp = new int[1 << n]; // @step:init_dp
+                  dp[0] = 1; // @step:base
+                  for (int h = 40; h >= 1; h--) { // @step:loop_hat
+                      for (int s = full; s >= 0; s--) { // @step:loop_status
+                          if (dp[s] == 0) continue; // @step:cond_skip
+                          for (int p : hatToPersons[h]) { // @step:loop_p
+                              if ((s & (1 << p)) == 0) { // @step:cond_available
+                                  int nextS = s | (1 << p); // @step:calc_next_s
+                                  dp[nextS] = (dp[nextS] + dp[s]) % mod; // @step:transfer
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }

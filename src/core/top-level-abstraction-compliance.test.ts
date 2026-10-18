@@ -136,6 +136,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'matchsticks-to-square',
   'partition-k-equal-subsets',
   'tsp-bitmask-dp',
+  'number-of-ways-wear-hats',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

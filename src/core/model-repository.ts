@@ -129,6 +129,7 @@ import canIWinModel from './models/can-i-win.yaml';
 import matchsticksToSquareModel from './models/matchsticks-to-square.yaml';
 import partitionKEqualSubsetsModel from './models/partition-k-equal-subsets.yaml';
 import tspBitmaskDpModel from './models/tsp-bitmask-dp.yaml';
+import numberOfWaysWearHatsModel from './models/number-of-ways-wear-hats.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -305,6 +306,10 @@ export class AlgorithmModelRepository {
     ['class080-code04', tspBitmaskDpModel as IYamlAlgorithmModel],
     ['tsp-bitmask', tspBitmaskDpModel as IYamlAlgorithmModel],
     ['traveling-salesperson', tspBitmaskDpModel as IYamlAlgorithmModel],
+    ['number-of-ways-wear-hats', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
+    ['class081-code01', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
+    ['number-of-ways-wear-hats-1434', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
+    ['leetcode-1434', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],
