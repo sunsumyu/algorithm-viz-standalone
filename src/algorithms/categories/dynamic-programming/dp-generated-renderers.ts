@@ -789,20 +789,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'tsp-bitmask-dp',
-    name: '旅行商问题 TSP',
-    description: '左程云算法讲解080 Code01：经典旅行商问题 TSP，状压DP求经过所有节点且当前在 i 的最短哈密顿回路。',
-    icon: '🗺️',
-    inputs: [
-      { id: 'n', label: '城市数 n', value: '4', width: 80 },
-    ],
-    examples: [
-      { label: 'n=4 城市回路', values: { n: '4' } },
-    ],
-    build: makeEngineBuilder('tsp-bitmask-dp'),
-    aliases: ['class080-code01', 'tsp-bitmask', 'traveling-salesperson'],
-  },
+
 
   // 状压DP 进阶 (Bitmask DP Demos — 第081讲：状压dp-下)
   // ---------------------------------------------------------------------------
@@ -945,8 +932,7 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  // 状压DP 专题（第080讲：状压dp-上）
-  { type: 'demo', id: 'tsp-bitmask-dp' },
+
   // 状压DP 进阶（第081讲：状压dp-下）
   { type: 'demo', id: 'number-of-ways-wear-hats' },
   { type: 'demo', id: 'optimal-account-balancing' },

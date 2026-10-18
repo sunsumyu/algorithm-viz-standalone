@@ -135,6 +135,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'can-i-win',
   'matchsticks-to-square',
   'partition-k-equal-subsets',
+  'tsp-bitmask-dp',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

@@ -1344,17 +1344,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握树型DP\"信息汇报元组\"设计范式，学会从子节点收集信息、在当前节点完成决策",
   },
   {
-    id: "tsp-bitmask-dp",
-    name: "旅行商问题 TSP",
-    viewId: "tsp-bitmask-dp",
-    category: "dynamic-programming",
-    description: "左程云算法讲解080 Code01：经典旅行商问题 TSP，状压DP求经过所有节点且当前在 i 的最短哈密顿回路。",
-    icon: "🗺️",
-    difficulty: 1,
-    levelOrder: 67,
-    aliases: ["class080-code01","tsp-bitmask","traveling-salesperson"],
-  },
-  {
     id: "number-of-ways-wear-hats",
     name: "每个人戴不同帽子的方案数",
     viewId: "number-of-ways-wear-hats",
@@ -1362,7 +1351,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code01：LeetCode 1434 每个人戴不同帽子的方案数，维度反转状压 DP（人少帽子多，对人状压逐顶帽子决策）。",
     icon: "🎩",
     difficulty: 1,
-    levelOrder: 68,
+    levelOrder: 67,
     aliases: ["class081-code01","number-of-ways-wear-hats-1434","leetcode-1434"],
   },
   {
@@ -1373,7 +1362,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，和为0子集最大化贪心状压 DP。",
     icon: "⚖️",
     difficulty: 1,
-    levelOrder: 69,
+    levelOrder: 68,
     aliases: ["class081-code02","optimal-account-balancing-465","leetcode-465"],
   },
   {
@@ -1384,7 +1373,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code03：LeetCode 1994 好子集的数目，数论质因数分解与 01 背包计数状压 DP。",
     icon: "✨",
     difficulty: 1,
-    levelOrder: 70,
+    levelOrder: 69,
     aliases: ["class081-code03","good-subsets-1994","leetcode-1994"],
   },
   {
@@ -1395,7 +1384,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code04：LeetCode 1655 分配重复整数，频次统计与子掩码高效枚举状压 DP。",
     icon: "📊",
     difficulty: 1,
-    levelOrder: 71,
+    levelOrder: 70,
     aliases: ["class081-code04","distribute-repeating-integers-1655","leetcode-1655"],
   },
   {
@@ -1406,7 +1395,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 72,
+    levelOrder: 71,
   },
   {
     id: "knapsack-01-standard",
@@ -2205,6 +2194,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 8003,
     learningGoal: "掌握状态压缩在多子集均分装箱问题中的应用：位掩码标记已选元素，配合降序贪心、整除特判与记忆化表剪枝提升搜索效率。",
     aliases: ["class080-code03","partition-k-equal-subsets-698","leetcode-698"],
+  },
+  {
+    id: "tsp-bitmask-dp",
+    name: "旅行商问题 (TSP)",
+    viewId: "tsp-bitmask-dp",
+    category: "dynamic-programming",
+    description: "左程云算法讲解080 Code04：经典旅行商问题 (TSP)，状压DP求经过所有城市恰好一次并返回起点的最短哈密顿回路。",
+    icon: "🗺️",
+    difficulty: 3,
+    levelOrder: 8004,
+    learningGoal: "掌握状态压缩动态规划求解 NP-Hard 最优哈密顿回路的经典范式：二进制掩码表示已访问城市集合，维度递推保证拓扑有序，最终闭环回到起点。",
+    aliases: ["class080-code04","tsp-bitmask","traveling-salesperson"],
   },
   {
     id: "clash-of-algorithms",

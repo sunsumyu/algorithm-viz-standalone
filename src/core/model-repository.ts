@@ -128,6 +128,7 @@ import minimumScoreAfterRemovalsModel from './models/minimum-score-after-removal
 import canIWinModel from './models/can-i-win.yaml';
 import matchsticksToSquareModel from './models/matchsticks-to-square.yaml';
 import partitionKEqualSubsetsModel from './models/partition-k-equal-subsets.yaml';
+import tspBitmaskDpModel from './models/tsp-bitmask-dp.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -300,6 +301,10 @@ export class AlgorithmModelRepository {
     ['class080-code03', partitionKEqualSubsetsModel as IYamlAlgorithmModel],
     ['partition-k-equal-subsets-698', partitionKEqualSubsetsModel as IYamlAlgorithmModel],
     ['leetcode-698', partitionKEqualSubsetsModel as IYamlAlgorithmModel],
+    ['tsp-bitmask-dp', tspBitmaskDpModel as IYamlAlgorithmModel],
+    ['class080-code04', tspBitmaskDpModel as IYamlAlgorithmModel],
+    ['tsp-bitmask', tspBitmaskDpModel as IYamlAlgorithmModel],
+    ['traveling-salesperson', tspBitmaskDpModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

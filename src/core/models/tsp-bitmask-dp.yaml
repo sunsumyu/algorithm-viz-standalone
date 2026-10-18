@@ -1,0 +1,300 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 旅行商问题 (TSP) 顶层领域模型
+# 对应：经典 NP-hard 问题 / 左程云算法讲解 080 Code04 (状压DP专题 上)
+# 包含：二进制子集掩码记录城市访问状态、起点闭环回路递推、状态压缩DP
+# ==============================================================================
+
+id: tsp-bitmask-dp
+name: 旅行商问题 (TSP)
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 状压 DP
+  - 动态规划
+  - 图论
+  - NP-Hard
+  - 位运算
+
+description: |
+  左程云算法通关课第 080 讲 状压 DP（上）Code04：旅行商问题 (Travelling Salesman Problem / TSP)。
+  给定 n 个城市之间的完整距离矩阵 dist[i][j]，求从城市 0 出发，经过所有城市恰好一次，最后回到城市 0 的最短路径回路。
+
+  核心状压 DP 模型：
+  1. 状态定义：
+     - dp[S][i] 表示已经访问过的城市集合为 S（二进制位掩码表示），且当前正停留在城市 i 时的最短路径花费。
+     - 集合 S 的第 k 位为 1 表示城市 k 已访问过，为 0 表示尚未访问。
+  2. 基底初始化：
+     - dp[1][0] = 0：起点在城市 0，已访问集合为 {0}（二进制为 0001），初始花费为 0。
+     - 其余所有状态初始为正无穷 INF。
+  3. 状态转移方程：
+     - 外层枚举集合大小与掩码 S，中层枚举当前城市 i（必须满足 i ∈ S 且 dp[S][i] < INF）。
+     - 内层枚举下一步尝试飞往的未访问城市 j（满足 j ∉ S）：
+       nextS = S | (1 << j)
+       dp[nextS][j] = min(dp[nextS][j], dp[S][i] + dist[i][j])
+  4. 最终收敛闭环：
+     - 当遍历完所有城市（S = (1 << n) - 1）时，枚举最后停驻城市 i，加上返回起点 0 的路费：
+       ans = min_{1 <= i < n} (dp[(1 << n) - 1][i] + dist[i][0])
+
+defaultParams:
+  n: 4
+
+constraints:
+  - 2 <= n <= 20（演示环境默认 n=4，范围 2~6）
+  - 1 <= dist[i][j] <= 10^6
+
+directions:
+  forward:
+    name: 集合升序正向递推 (Ascending Bitmask DP)
+    description: 城市访问集合从 0001 顺推扩充至 1111，自底向上构建最短哈密顿回路
+  reverse:
+    name: 逆序反向对偶探索 (Descending Candidate Exploration)
+    description: 逆序尝试各终点城市回溯路径，展示不同路径决策顺序下的极值收敛过程
+
+stages:
+  stage-1:
+    name: 暴力递归与全排列搜索
+    description: 枚举所有城市访问全排列，寻找能够形成闭合回路且花费最小的路径
+    complexity:
+      time: O(N!)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int tsp(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = 0; i < n; i++) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = 0; j < n; j++) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = 1; i < n; i++) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int tspReverse(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = n - 1; i >= 1; i--) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 状态压缩记忆化搜索
+    description: 引入 dp[1<<n][n] 缓存已访问城市集合与当前停驻点的最优子路径，避免重复枚举
+    complexity:
+      time: O(2^N * N^2)
+      space: O(2^N * N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int tsp(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = 0; i < n; i++) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = 0; j < n; j++) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = 1; i < n; i++) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int tspReverse(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = n - 1; i >= 1; i--) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 状态压缩动态规划迭代填表
+    description: 按照位掩码数值从小到大推进状态转移，保证子状态先行就绪，O(1) 更新每个后继状态
+    complexity:
+      time: O(2^N * N^2)
+      space: O(2^N * N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int tsp(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = 0; i < n; i++) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = 0; j < n; j++) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = 1; i < n; i++) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int tspReverse(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = n - 1; i >= 1; i--) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 位运算常数级压缩与极限性能
+    description: 纯位运算掩码转移，状态表压缩与位运算剪枝达到理论最优
+    complexity:
+      time: O(2^N * N^2)
+      space: O(2^N * N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int tsp(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = 0; i < n; i++) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = 0; j < n; j++) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = 1; i < n; i++) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int tspReverse(int[][] dist) { // @step:entry
+                  int n = dist.length; // @step:init_n
+                  int full = (1 << n) - 1; // @step:init_full
+                  int[][] dp = new int[1 << n][n]; // @step:init_dp
+                  for (int[] row : dp) Arrays.fill(row, Integer.MAX_VALUE / 2); // @step:fill_inf
+                  dp[1][0] = 0; // @step:base
+                  for (int s = 1; s <= full; s++) { // @step:loop_status
+                      for (int i = n - 1; i >= 0; i--) { // @step:loop_curr
+                          if ((s & (1 << i)) == 0 || dp[s][i] >= Integer.MAX_VALUE / 2) continue; // @step:cond_valid
+                          for (int j = n - 1; j >= 0; j--) { // @step:loop_next
+                              if ((s & (1 << j)) != 0) continue; // @step:cond_not_visited
+                              int nextS = s | (1 << j); // @step:calc_next_s
+                              dp[nextS][j] = Math.min(dp[nextS][j], dp[s][i] + dist[i][j]); // @step:transfer
+                          }
+                      }
+                  }
+                  int ans = Integer.MAX_VALUE / 2; // @step:init_ans
+                  for (int i = n - 1; i >= 1; i--) { // @step:loop_final
+                      ans = Math.min(ans, dp[full][i] + dist[i][0]); // @step:update_ans
+                  }
+                  return ans; // @step:return
+              }
+          }
