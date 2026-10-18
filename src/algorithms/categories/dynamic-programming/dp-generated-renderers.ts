@@ -794,20 +794,7 @@ const demos: DemoDef[] = [
   // 状压DP 进阶 (Bitmask DP Demos — 第081讲：状压dp-下)
   // ---------------------------------------------------------------------------
 
-  {
-    id: 'optimal-account-balancing',
-    name: '最优账单平衡',
-    description: '左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，和为0子集最大化贪心状压 DP。',
-    icon: '⚖️',
-    inputs: [
-      { id: 'transactions', label: '交易记录 (JSON)', value: '[[0,1,10],[2,0,5]]', width: 220 },
-    ],
-    examples: [
-      { label: '3人转账 [[0,1,10],[2,0,5]]', values: { transactions: '[[0,1,10],[2,0,5]]' } },
-    ],
-    build: makeEngineBuilder('optimal-account-balancing'),
-    aliases: ['class081-code02', 'optimal-account-balancing-465', 'leetcode-465'],
-  },
+
   {
     id: 'good-subsets',
     name: '好子集的数目',
@@ -920,7 +907,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'article', id: 'tree-dp-theory' },
 
 
-  { type: 'demo', id: 'optimal-account-balancing' },
   { type: 'demo', id: 'good-subsets' },
   { type: 'demo', id: 'distribute-repeating-integers' },
   { type: 'article', id: 'dp-final-summary' },

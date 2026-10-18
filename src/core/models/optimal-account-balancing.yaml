@@ -1,0 +1,410 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 最优账单平衡 顶层领域模型
+# 对应：LeetCode 465 / 左程云算法讲解 081 Code02 (状压DP专题 下)
+# 核心：债务抵消、最大和为0独立子集拆分、状压 DP
+# ==============================================================================
+
+id: optimal-account-balancing
+name: 最优账单平衡
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 状压 DP
+  - 贪心
+  - 动态规划
+  - 账单流
+  - 位运算
+
+description: |
+  左程云算法通关课第 081 讲 状压 DP（下）Code02：最优账单平衡 (LeetCode 465)。
+  给出一组交易 transactions，每笔交易 [from, to, amount] 表示从 person_from 借给 person_to 一笔钱。
+  返还债务的最少交易笔数是多少？
+
+  核心状压 DP 模型：
+  1. 负债归纳与过滤：
+     - 统计每个人的净结余：付款方 -amount，收款方 +amount。
+     - 净结余为 0 的人已完全平衡，无需参与后续交易，将其过滤，剩余 m 个非零负债者 debts[0..m-1]。
+  2. 数学规约：
+     - 在任意一个“内部净额和为 0”的独立子集中，只需 size - 1 笔交易即可全部结清（例如环形或链式转账）。
+     - 若将全部 m 个人划分为 k 个互不相交且各自和为 0 的子集，则总交易笔数为 ∑(size_i - 1) = m - k。
+     - 要使总交易笔数最小，等价于求最多能拆出多少个和为 0 的独立子集 (最大化 k)！
+  3. 预处理子集和与状压 DP：
+     - 预处理 sum[S] 表示集合 S 的净额累加和，其中 0 <= S < (1 << m)。
+     - dp[S] 表示集合 S 最多能拆出多少个内部和为 0 的独立子集：
+       dp[S] = max_{i ∈ S} (dp[S ^ (1 << i)])
+       若 sum[S] == 0，则 dp[S]++（发现一个新的内部平衡子集）。
+  4. 最终收敛：
+     - 最少转账笔数 = m - dp[(1 << m) - 1]。
+
+defaultParams:
+  transactions:
+    - [0, 1, 10]
+    - [2, 0, 5]
+
+constraints:
+  - 1 <= transactions.length <= 8
+  - transactions[i].length == 3
+  - 0 <= from_i, to_i < 12
+  - from_i != to_i
+  - 1 <= amount_i <= 100
+
+directions:
+  forward:
+    name: 集合正向升序递推 (Ascending Bitmask DP)
+    description: 从单元素子集逐步向全集递推，正向枚举元素并发现和为 0 的闭合子集
+  reverse:
+    name: 逆序元素候选探测 (Descending Element Exploration)
+    description: 逆序枚举转移元素前驱，验证子集和为 0 的极大独立拆分不变性
+
+stages:
+  stage-1:
+    name: 暴力回溯与对冲贪心
+    description: 递归尝试所有正负债务两两对冲抵消，回溯寻找最少转账步数
+    complexity:
+      time: O(M!)
+      space: O(M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int minTransfers(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = 0; i < m; i++) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = 0; i < m; i++) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int minTransfersReverse(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = m - 1; i >= 0; i--) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 规约转化与和为0子集搜索
+    description: 证明最少转账数 = m - maxZeroSubsets，建立子集和表进行记忆化搜索
+    complexity:
+      time: O(2^M * M)
+      space: O(2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int minTransfers(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = 0; i < m; i++) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = 0; i < m; i++) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int minTransfersReverse(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = m - 1; i >= 0; i--) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 状态压缩动态规划迭代填表
+    description: 按照二进制掩码从小到大推进 dp[s]，O(m) 转移继承子状态极大值
+    complexity:
+      time: O(2^M * M)
+      space: O(2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int minTransfers(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = 0; i < m; i++) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = 0; i < m; i++) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int minTransfersReverse(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = m - 1; i >= 0; i--) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 位运算常数级压缩与快速子集枚举
+    description: 纯位运算 Lowbit 与异或快速定位子集，常量时间实现最优交易收敛
+    complexity:
+      time: O(2^M * M)
+      space: O(2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int minTransfers(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = 0; i < m; i++) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = 0; i < m; i++) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int minTransfersReverse(int[][] transactions) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int[] t : transactions) { // @step:loop_trans
+                      map.put(t[0], map.getOrDefault(t[0], 0) - t[2]); // @step:record_from
+                      map.put(t[1], map.getOrDefault(t[1], 0) + t[2]); // @step:record_to
+                  }
+                  List<Integer> list = new ArrayList<>(); // @step:init_list
+                  for (int d : map.values()) if (d != 0) list.add(d); // @step:filter_zero
+                  int m = list.size(); // @step:init_m
+                  if (m == 0) return 0; // @step:guard_zero
+                  int[] debts = new int[m]; // @step:alloc_debts
+                  for (int i = m - 1; i >= 0; i--) debts[i] = list.get(i); // @step:fill_debts
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_has
+                              sum[s] = sum[s ^ (1 << i)] + debts[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  int[] dp = new int[1 << m]; // @step:alloc_dp
+                  for (int s = 1; s <= full; s++) { // @step:loop_dp_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_dp_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_dp_has
+                              dp[s] = Math.max(dp[s], dp[s ^ (1 << i)]); // @step:transfer_sub
+                          }
+                      }
+                      if (sum[s] == 0) { // @step:cond_zero_sum
+                          dp[s]++; // @step:increment_zero_subset
+                      }
+                  }
+                  return m - dp[full]; // @step:return
+              }
+          }

@@ -130,6 +130,7 @@ import matchsticksToSquareModel from './models/matchsticks-to-square.yaml';
 import partitionKEqualSubsetsModel from './models/partition-k-equal-subsets.yaml';
 import tspBitmaskDpModel from './models/tsp-bitmask-dp.yaml';
 import numberOfWaysWearHatsModel from './models/number-of-ways-wear-hats.yaml';
+import optimalAccountBalancingModel from './models/optimal-account-balancing.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -310,6 +311,10 @@ export class AlgorithmModelRepository {
     ['class081-code01', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
     ['number-of-ways-wear-hats-1434', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
     ['leetcode-1434', numberOfWaysWearHatsModel as IYamlAlgorithmModel],
+    ['optimal-account-balancing', optimalAccountBalancingModel as IYamlAlgorithmModel],
+    ['class081-code02', optimalAccountBalancingModel as IYamlAlgorithmModel],
+    ['optimal-account-balancing-465', optimalAccountBalancingModel as IYamlAlgorithmModel],
+    ['leetcode-465', optimalAccountBalancingModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

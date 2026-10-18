@@ -1344,17 +1344,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     learningGoal: "掌握树型DP\"信息汇报元组\"设计范式，学会从子节点收集信息、在当前节点完成决策",
   },
   {
-    id: "optimal-account-balancing",
-    name: "最优账单平衡",
-    viewId: "optimal-account-balancing",
-    category: "dynamic-programming",
-    description: "左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，和为0子集最大化贪心状压 DP。",
-    icon: "⚖️",
-    difficulty: 1,
-    levelOrder: 67,
-    aliases: ["class081-code02","optimal-account-balancing-465","leetcode-465"],
-  },
-  {
     id: "good-subsets",
     name: "好子集的数目",
     viewId: "good-subsets",
@@ -1362,7 +1351,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code03：LeetCode 1994 好子集的数目，数论质因数分解与 01 背包计数状压 DP。",
     icon: "✨",
     difficulty: 1,
-    levelOrder: 68,
+    levelOrder: 67,
     aliases: ["class081-code03","good-subsets-1994","leetcode-1994"],
   },
   {
@@ -1373,7 +1362,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "左程云算法讲解081 Code04：LeetCode 1655 分配重复整数，频次统计与子掩码高效枚举状压 DP。",
     icon: "📊",
     difficulty: 1,
-    levelOrder: 69,
+    levelOrder: 68,
     aliases: ["class081-code04","distribute-repeating-integers-1655","leetcode-1655"],
   },
   {
@@ -1384,7 +1373,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     description: "动态规划全景复盘：基础、背包、打家劫舍、股票、子序列、树型DP各大流派题型地图。",
     icon: "🏁",
     difficulty: 1,
-    levelOrder: 70,
+    levelOrder: 69,
   },
   {
     id: "knapsack-01-standard",
@@ -2207,6 +2196,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 8101,
     learningGoal: "掌握维度反转（Dimension Inversion）状压动态规划设计：当决策对象数量极多（帽子 40 顶）而受体数量极少（人 <= 10）时，将状态压缩维度建立在稀疏受体上，外层按物品逐项推进 0-1 背包转移。",
     aliases: ["class081-code01","number-of-ways-wear-hats-1434","leetcode-1434"],
+  },
+  {
+    id: "optimal-account-balancing",
+    name: "最优账单平衡",
+    viewId: "optimal-account-balancing",
+    category: "dynamic-programming",
+    description: "左程云算法讲解081 Code02：LeetCode 465 最优账单平衡，账单流抵消与最大和为0独立子集拆分状压 DP。",
+    icon: "⚖️",
+    difficulty: 3,
+    levelOrder: 8102,
+    learningGoal: "掌握债务流抵消规约与最大和为0子集状压 DP：证明最少转账笔数等于非零负债人数减去最大独立平衡子集数，通过二进制掩码预处理子集和并继承极大拆分数。",
+    aliases: ["class081-code02","optimal-account-balancing-465","leetcode-465"],
   },
   {
     id: "clash-of-algorithms",
