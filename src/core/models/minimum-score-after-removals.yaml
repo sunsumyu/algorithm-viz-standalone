@@ -1,0 +1,385 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL TREE DP MODEL] 从树中删除边的最小分数 顶层领域模型
+# 对应：LeetCode 2322 / 左程云算法讲解 079 Code06
+# 包含：DFN 序区间拓扑包含判定、三连通块异或分解、O(n^2) 枚举最优极差
+# ==============================================================================
+
+id: minimum-score-after-removals
+name: 从树中删除边的最小分数 (LeetCode 2322)
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 树型 DP
+  - 动态规划
+  - 树
+  - 深度优先搜索
+  - DFN序
+  - 拓扑关系判定
+  - 位运算
+
+description: |
+  LeetCode 2322 · 左程云算法通关课第 079 讲 树型 DP（下）Code06：从树中删除边的最小分数。
+  存在一棵包含 n 个节点的无向树，节点标号 0..n-1，每个节点带有权值 nums[i]。
+  要求删除树中两条不同的边，将整树分割为 3 个独立的连通块。
+  定义每个连通块的分数为其内部所有节点权值的异或和。
+  一种方案的得分为 3 个连通块异或和的极值差：max(x1, x2, x3) - min(x1, x2, x3)。
+  求遍历所有删边方案可能获得的最小分数。
+
+  核心 DFN 序拓扑关系判定模型 (DFN Subtree Inclusion & XOR Decomposition):
+  1. 定根化与 DFN 连续区间：
+     以 0 号节点为根建树，DFS 先序记录每个节点的访问时间戳 dfn[u] 与子树规模 size[u]。
+     以 u 为根的子树节点在时间戳上占据连续区间：[dfn[u], dfn[u] + size[u] - 1]。
+  2. 边定向与删边等价转换：
+     每条边 (u, v) 中时间戳较大者为指向更深处的端点 edgeEnds[k]。
+     删除第 k 条边等价于切掉以 edgeEnds[k] 为根的完整子树。
+  3. O(1) 拓扑位置关系判定：
+     设两条切除边对应的子树根节点分别为 a 与 b：
+     - 情况 1 (b 属于 a 的子树)：dfn[a] <= dfn[b] < dfn[a] + size[a]
+       x1 = xor[b]
+       x2 = xor[a] ^ xor[b]
+       x3 = allXor ^ xor[a]
+     - 情况 2 (a 属于 b 的子树)：dfn[b] <= dfn[a] < dfn[a] + size[b]
+       x1 = xor[a]
+       x2 = xor[b] ^ xor[a]
+       x3 = allXor ^ xor[b]
+     - 情况 3 (a 与 b 属于互不相交的并列分支)：
+       x1 = xor[a]
+       x2 = xor[b]
+       x3 = allXor ^ xor[a] ^ xor[b]
+  4. O(n^2) 全局极差枚举更新：
+     diff = max(x1, x2, x3) - min(x1, x2, x3)，ans = min(ans, diff)。
+
+defaultParams:
+  nums: [1, 5, 5, 4, 11]
+  edges: [[0, 1], [1, 2], [1, 3], [3, 4]]
+
+constraints:
+  - n == nums.length
+  - 3 <= n <= 1000（教学演示推荐 5~8）
+  - 1 <= nums[i] <= 10^8
+  - edges.length == n - 1
+
+directions:
+  forward:
+    name: DFN 序拓扑判定与子树异或 (DFN Subtree Inclusion with Subtree XOR)
+    description: DFS构建时间戳与子树大小，O(1)判定子树包含与并列关系，O(n^2)枚举切边方案计算最小异或差值
+  reverse:
+    name: 独立连通块三路染色重测对比 (Three-Way Component Flood-Fill Verification)
+    description: 逆向枚举断边并显式三路泛洪求连通块异或和，验证 DFN 序拓扑判定的 O(1) 优越性
+
+stages:
+  stage-1:
+    name: 先序 DFN 序构建与后序子树异或和
+    description: 以 0 为根建树，先序记录 dfn 与 size，后序收集子树异或和 xor，并将无向边定向为子节点端点
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int dfnCnt = 0;
+              public int minimumScore(int[] nums, int[][] edges) { // @step:entry
+                  int n = nums.length;
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
+                  dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
+                  int allXor = xor[0], m = edges.length; // @step:calc_allxor
+                  int[] edgeEnds = new int[m]; // @step:init_edge_ends
+                  for (int k = 0; k < m; k++) { // @step:loop_edges
+                      int u = edges[k][0], v = edges[k][1];
+                      edgeEnds[k] = dfn[u] > dfn[v] ? u : v; // @step:orient_edges
+                  }
+                  int ans = Integer.MAX_VALUE; // @step:init_ans
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      int a = edgeEnds[i];
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int b = edgeEnds[j];
+                          int x1, x2, x3;
+                          if (dfn[a] <= dfn[b] && dfn[b] < dfn[a] + size[a]) { // @step:check_relation
+                              x1 = xor[b]; x2 = xor[a] ^ xor[b]; x3 = allXor ^ xor[a];
+                          } else if (dfn[b] <= dfn[a] && dfn[a] < dfn[b] + size[b]) {
+                              x1 = xor[a]; x2 = xor[b] ^ xor[a]; x3 = allXor ^ xor[b];
+                          } else {
+                              x1 = xor[a]; x2 = xor[b]; x3 = allXor ^ xor[a] ^ xor[b];
+                          }
+                          ans = Math.min(ans, Math.max(x1, Math.max(x2, x3)) - Math.min(x1, Math.min(x2, x3))); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(int u, int p, List<Integer>[] tree, int[] nums, int[] dfn, int[] size, int[] xor) { // @step:dfs_entry
+                  dfn[u] = dfnCnt++; size[u] = 1; xor[u] = nums[u]; // @step:record_dfn
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) { // @step:check_child
+                          dfs(v, u, tree, nums, dfn, size, xor); // @step:dfs_child
+                          size[u] += size[v]; xor[u] ^= xor[v]; // @step:post_combine
+                      }
+                  }
+              } // @step:dfs_exit
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionBruteForce {
+              public int minimumScoreReverse(int[] nums, int[][] edges) { // @step:entry
+                  int m = edges.length, ans = Integer.MAX_VALUE; // @step:init_arrays
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int[] xors = floodFillThreeComponents(nums, edges, i, j); // @step:call_dfs
+                          int diff = Math.max(xors[0], Math.max(xors[1], xors[2])) - Math.min(xors[0], Math.min(xors[1], xors[2])); // @step:check_relation
+                          ans = Math.min(ans, diff); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private int[] floodFillThreeComponents(int[] nums, int[][] edges, int cut1, int cut2) { // @step:dfs_entry
+                  boolean[] visited = new boolean[nums.length]; // @step:record_dfn
+                  int[] res = new int[3]; int compIdx = 0; // @step:calc_allxor
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_child
+                      if (!visited[i]) res[compIdx++] = bfsXor(i, nums, edges, cut1, cut2, visited); // @step:check_child
+                  }
+                  return res; // @step:dfs_exit
+              }
+              private int bfsXor(int root, int[] nums, int[][] edges, int cut1, int cut2, boolean[] vis) { return nums[root]; }
+          }
+
+  stage-2:
+    name: 树拓扑结构与 DFN 时间戳包含关系展开
+    description: 显式展示树结构节点分布、DFN序时间戳映射，以及子树祖先-后代包含判定的推导过程
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int dfnCnt = 0;
+              public int minimumScore(int[] nums, int[][] edges) { // @step:entry
+                  int n = nums.length;
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
+                  dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
+                  int allXor = xor[0], m = edges.length; // @step:calc_allxor
+                  int[] edgeEnds = new int[m]; // @step:init_edge_ends
+                  for (int k = 0; k < m; k++) { // @step:loop_edges
+                      int u = edges[k][0], v = edges[k][1];
+                      edgeEnds[k] = dfn[u] > dfn[v] ? u : v; // @step:orient_edges
+                  }
+                  int ans = Integer.MAX_VALUE; // @step:init_ans
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      int a = edgeEnds[i];
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int b = edgeEnds[j];
+                          int x1, x2, x3;
+                          if (dfn[a] <= dfn[b] && dfn[b] < dfn[a] + size[a]) { // @step:check_relation
+                              x1 = xor[b]; x2 = xor[a] ^ xor[b]; x3 = allXor ^ xor[a];
+                          } else if (dfn[b] <= dfn[a] && dfn[a] < dfn[b] + size[b]) {
+                              x1 = xor[a]; x2 = xor[b] ^ xor[a]; x3 = allXor ^ xor[b];
+                          } else {
+                              x1 = xor[a]; x2 = xor[b]; x3 = allXor ^ xor[a] ^ xor[b];
+                          }
+                          ans = Math.min(ans, Math.max(x1, Math.max(x2, x3)) - Math.min(x1, Math.min(x2, x3))); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(int u, int p, List<Integer>[] tree, int[] nums, int[] dfn, int[] size, int[] xor) { // @step:dfs_entry
+                  dfn[u] = dfnCnt++; size[u] = 1; xor[u] = nums[u]; // @step:record_dfn
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) { // @step:check_child
+                          dfs(v, u, tree, nums, dfn, size, xor); // @step:dfs_child
+                          size[u] += size[v]; xor[u] ^= xor[v]; // @step:post_combine
+                      }
+                  }
+              } // @step:dfs_exit
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionBruteForce {
+              public int minimumScoreReverse(int[] nums, int[][] edges) { // @step:entry
+                  int m = edges.length, ans = Integer.MAX_VALUE; // @step:init_arrays
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int[] xors = floodFillThreeComponents(nums, edges, i, j); // @step:call_dfs
+                          int diff = Math.max(xors[0], Math.max(xors[1], xors[2])) - Math.min(xors[0], Math.min(xors[1], xors[2])); // @step:check_relation
+                          ans = Math.min(ans, diff); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private int[] floodFillThreeComponents(int[] nums, int[][] edges, int cut1, int cut2) { // @step:dfs_entry
+                  boolean[] visited = new boolean[nums.length]; // @step:record_dfn
+                  int[] res = new int[3]; int compIdx = 0; // @step:calc_allxor
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_child
+                      if (!visited[i]) res[compIdx++] = bfsXor(i, nums, edges, cut1, cut2, visited); // @step:check_child
+                  }
+                  return res; // @step:dfs_exit
+              }
+              private int bfsXor(int root, int[] nums, int[][] edges, int cut1, int cut2, boolean[] vis) { return nums[root]; }
+          }
+
+  stage-3:
+    name: 三连通块异或极差状态表转移
+    description: 映射为标准状态表向量，直观呈现节点权值 nums[]、时间戳 dfn[]、子树大小 size[] 与异或和 xor[]
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int dfnCnt = 0;
+              public int minimumScore(int[] nums, int[][] edges) { // @step:entry
+                  int n = nums.length;
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
+                  dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
+                  int allXor = xor[0], m = edges.length; // @step:calc_allxor
+                  int[] edgeEnds = new int[m]; // @step:init_edge_ends
+                  for (int k = 0; k < m; k++) { // @step:loop_edges
+                      int u = edges[k][0], v = edges[k][1];
+                      edgeEnds[k] = dfn[u] > dfn[v] ? u : v; // @step:orient_edges
+                  }
+                  int ans = Integer.MAX_VALUE; // @step:init_ans
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      int a = edgeEnds[i];
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int b = edgeEnds[j];
+                          int x1, x2, x3;
+                          if (dfn[a] <= dfn[b] && dfn[b] < dfn[a] + size[a]) { // @step:check_relation
+                              x1 = xor[b]; x2 = xor[a] ^ xor[b]; x3 = allXor ^ xor[a];
+                          } else if (dfn[b] <= dfn[a] && dfn[a] < dfn[b] + size[b]) {
+                              x1 = xor[a]; x2 = xor[b] ^ xor[a]; x3 = allXor ^ xor[b];
+                          } else {
+                              x1 = xor[a]; x2 = xor[b]; x3 = allXor ^ xor[a] ^ xor[b];
+                          }
+                          ans = Math.min(ans, Math.max(x1, Math.max(x2, x3)) - Math.min(x1, Math.min(x2, x3))); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(int u, int p, List<Integer>[] tree, int[] nums, int[] dfn, int[] size, int[] xor) { // @step:dfs_entry
+                  dfn[u] = dfnCnt++; size[u] = 1; xor[u] = nums[u]; // @step:record_dfn
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) { // @step:check_child
+                          dfs(v, u, tree, nums, dfn, size, xor); // @step:dfs_child
+                          size[u] += size[v]; xor[u] ^= xor[v]; // @step:post_combine
+                      }
+                  }
+              } // @step:dfs_exit
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionBruteForce {
+              public int minimumScoreReverse(int[] nums, int[][] edges) { // @step:entry
+                  int m = edges.length, ans = Integer.MAX_VALUE; // @step:init_arrays
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int[] xors = floodFillThreeComponents(nums, edges, i, j); // @step:call_dfs
+                          int diff = Math.max(xors[0], Math.max(xors[1], xors[2])) - Math.min(xors[0], Math.min(xors[1], xors[2])); // @step:check_relation
+                          ans = Math.min(ans, diff); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private int[] floodFillThreeComponents(int[] nums, int[][] edges, int cut1, int cut2) { // @step:dfs_entry
+                  boolean[] visited = new boolean[nums.length]; // @step:record_dfn
+                  int[] res = new int[3]; int compIdx = 0; // @step:calc_allxor
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_child
+                      if (!visited[i]) res[compIdx++] = bfsXor(i, nums, edges, cut1, cut2, visited); // @step:check_child
+                  }
+                  return res; // @step:dfs_exit
+              }
+              private int bfsXor(int root, int[] nums, int[][] edges, int cut1, int cut2, boolean[] vis) { return nums[root]; }
+          }
+
+  stage-4:
+    name: 空间压缩与位运算常数级极值加速
+    description: 优化数组申请，原地利用单数组与位运算指令加速三连通块异或值极差计算
+    complexity:
+      time: O(N^2)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              private int dfnCnt = 0;
+              public int minimumScore(int[] nums, int[][] edges) { // @step:entry
+                  int n = nums.length;
+                  List<Integer>[] tree = new ArrayList[n];
+                  for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
+                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
+                  dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
+                  int allXor = xor[0], m = edges.length; // @step:calc_allxor
+                  int[] edgeEnds = new int[m]; // @step:init_edge_ends
+                  for (int k = 0; k < m; k++) { // @step:loop_edges
+                      int u = edges[k][0], v = edges[k][1];
+                      edgeEnds[k] = dfn[u] > dfn[v] ? u : v; // @step:orient_edges
+                  }
+                  int ans = Integer.MAX_VALUE; // @step:init_ans
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      int a = edgeEnds[i];
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int b = edgeEnds[j];
+                          int x1, x2, x3;
+                          if (dfn[a] <= dfn[b] && dfn[b] < dfn[a] + size[a]) { // @step:check_relation
+                              x1 = xor[b]; x2 = xor[a] ^ xor[b]; x3 = allXor ^ xor[a];
+                          } else if (dfn[b] <= dfn[a] && dfn[a] < dfn[b] + size[b]) {
+                              x1 = xor[a]; x2 = xor[b] ^ xor[a]; x3 = allXor ^ xor[b];
+                          } else {
+                              x1 = xor[a]; x2 = xor[b]; x3 = allXor ^ xor[a] ^ xor[b];
+                          }
+                          ans = Math.min(ans, Math.max(x1, Math.max(x2, x3)) - Math.min(x1, Math.min(x2, x3))); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(int u, int p, List<Integer>[] tree, int[] nums, int[] dfn, int[] size, int[] xor) { // @step:dfs_entry
+                  dfn[u] = dfnCnt++; size[u] = 1; xor[u] = nums[u]; // @step:record_dfn
+                  for (int v : tree[u]) { // @step:loop_child
+                      if (v != p) { // @step:check_child
+                          dfs(v, u, tree, nums, dfn, size, xor); // @step:dfs_child
+                          size[u] += size[v]; xor[u] ^= xor[v]; // @step:post_combine
+                      }
+                  }
+              } // @step:dfs_exit
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionBruteForce {
+              public int minimumScoreReverse(int[] nums, int[][] edges) { // @step:entry
+                  int m = edges.length, ans = Integer.MAX_VALUE; // @step:init_arrays
+                  for (int i = 0; i < m; i++) { // @step:loop_outer
+                      for (int j = i + 1; j < m; j++) { // @step:loop_inner
+                          int[] xors = floodFillThreeComponents(nums, edges, i, j); // @step:call_dfs
+                          int diff = Math.max(xors[0], Math.max(xors[1], xors[2])) - Math.min(xors[0], Math.min(xors[1], xors[2])); // @step:check_relation
+                          ans = Math.min(ans, diff); // @step:update_ans
+                      }
+                  }
+                  return ans; // @step:return
+              }
+              private int[] floodFillThreeComponents(int[] nums, int[][] edges, int cut1, int cut2) { // @step:dfs_entry
+                  boolean[] visited = new boolean[nums.length]; // @step:record_dfn
+                  int[] res = new int[3]; int compIdx = 0; // @step:calc_allxor
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_child
+                      if (!visited[i]) res[compIdx++] = bfsXor(i, nums, edges, cut1, cut2, visited); // @step:check_child
+                  }
+                  return res; // @step:dfs_exit
+              }
+              private int bfsXor(int root, int[] nums, int[][] edges, int cut1, int cut2, boolean[] vis) { return nums[root]; }
+          }

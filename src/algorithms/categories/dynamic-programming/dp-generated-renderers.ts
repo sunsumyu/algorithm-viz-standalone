@@ -782,20 +782,7 @@ const demos: DemoDef[] = [
 
 
 
-  {
-    id: 'minimum-score-after-removals',
-    name: '从树中删除边的最小分数',
-    description: '树型DP与拓扑关系判定：DFN序区间包含判定，O(n^2) 枚举断边方案求3连通块最小异或差值 (LeetCode 2322)。',
-    icon: '🪓',
-    aliases: ['class079-code06', 'min-score-removals-2322', 'leetcode-2322'],
-    inputs: [
-      { id: 'nums', label: '节点权值 nums', value: '1,5,5,4,11', width: 140 },
-    ],
-    examples: [
-      { label: 'nums=[1,5,5,4,11]', values: { nums: '1,5,5,4,11' } },
-    ],
-    build: makeEngineBuilder('minimum-score-after-removals'),
-  },
+
 
   // 状压DP 演示 (Bitmask DP Demos — 第080讲：状压dp-上)
   // ---------------------------------------------------------------------------
@@ -1002,7 +989,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'demo', id: 'palindromic-substrings' },
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
-  { type: 'demo', id: 'minimum-score-after-removals' },
   // 状压DP 专题（第080讲：状压dp-上）
   { type: 'demo', id: 'can-i-win' },
   { type: 'demo', id: 'matchsticks-to-square' },

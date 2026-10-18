@@ -70,7 +70,7 @@ export class TreeDpStrategy implements IAlgorithmStrategy {
       case 'height-removal-queries':
         return compileHeightRemovalQueries(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       case 'minimum-score-after-removals':
-        return compileMinimumScoreAfterRemovals(model, stage, anchorMap);
+        return compileMinimumScoreAfterRemovals(model, stage, anchorMap, params.direction === 'reverse' ? 'reverse' : 'forward');
       default:
         return compileMaxDistance(model, parseTreeArray(rawRoot || '1,2,3,4,5'), stage, anchorMap);
     }

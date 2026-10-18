@@ -165,7 +165,17 @@ export class ProblemDimensionResolver {
    */
   public static resolve(modelId: string, params?: Record<string, any>, currentStage?: string): ResolvedDimensions {
     if (this.isTreeProblem(modelId, params)) {
-      return { m: 1, n: 6, is1D: true, category: 'tree' };
+      let treeN = 6;
+      if (params) {
+        if (params.nums !== undefined) {
+          treeN = this.toArray(params.nums).length;
+        } else if (params.n !== undefined) {
+          treeN = Number(params.n);
+        } else if (params.root !== undefined) {
+          treeN = this.toArray(params.root).filter((x: any) => x !== null && x !== 'null').length;
+        }
+      }
+      return { m: 1, n: treeN, is1D: true, category: 'tree' };
     }
 
     if (!params) {

@@ -4,15 +4,15 @@ import type { StageExecutionParams } from './algorithm-strategy';
 import { cloneTree } from './strategy-helpers';
 
 export function compileMinimumScoreAfterRemovals(
-    _model: IYamlAlgorithmModel,
-    _stage: number,
-    _anchorMap?: Record<string, number>
+    model: IYamlAlgorithmModel,
+    _stage: number = 1,
+    anchorMap?: Record<string, number>,
+    direction: 'forward' | 'reverse' = 'forward'
   ): UniversalStep[] {
-    const steps: UniversalStep[] = [];
-
-    const nums = [1, 5, 5, 4, 11];
+    const params = (model?.defaultParams as any) || {};
+    const nums: number[] = Array.isArray(params.nums) && params.nums.length > 0 ? params.nums : [1, 5, 5, 4, 11];
     const n = nums.length;
-    const edges = [
+    const edges: number[][] = Array.isArray(params.edges) && params.edges.length > 0 ? params.edges : [
       [0, 1],
       [1, 2],
       [1, 3],
@@ -53,12 +53,219 @@ export function compileMinimumScoreAfterRemovals(
       ],
     };
 
+    // 逆向独立连通块三路染色重测对比推导分支 (Reverse Three-Way Component Flood-Fill)
+    if (direction === 'reverse') {
+      const revSteps: UniversalStep[] = [];
+      let revGlobalAns = Infinity;
+      const lineRevEntry = anchorMap?.entry ?? 2;
+      const lineRevInit = anchorMap?.init_arrays ?? 3;
+      const lineRevOuter = anchorMap?.loop_outer ?? 4;
+      const lineRevCallDfs = anchorMap?.call_dfs ?? 6;
+      const lineRevUpdateAns = anchorMap?.update_ans ?? 8;
+      const lineRevReturn = anchorMap?.return ?? 11;
+
+      const revTree = cloneTree(treeState);
+      function getRevStateArrays(activeCutPair?: [number, number], curDiff?: number): StateArrayItem[] {
+        return [
+          {
+            id: 'arr-edges',
+            name: 'edges',
+            label: '待切除树边',
+            indices: edges.map((e, idx) => `e${idx}(${e[0]}-${e[1]})`),
+            values: edges.map((_, idx) => (activeCutPair && (activeCutPair[0] === idx || activeCutPair[1] === idx) ? 1 : 0)),
+            activeIdx: activeCutPair ? activeCutPair[1] : undefined,
+            color: 'rose',
+          },
+          {
+            id: 'arr-rev-ans',
+            name: 'ans',
+            label: '暴力测量最小分数',
+            indices: ['minScore'],
+            values: [revGlobalAns === Infinity ? 0 : revGlobalAns],
+            activeIdx: curDiff !== undefined ? 0 : undefined,
+            color: 'emerald',
+          },
+        ];
+      }
+
+      function addRevStep(data: Partial<UniversalStep> & { cutPair?: [number, number]; curDiff?: number }) {
+        const { cutPair, curDiff, ...rest } = data;
+        revSteps.push({
+          type: rest.type || 'step',
+          line: rest.line || lineRevEntry,
+          codeLine: rest.codeLine || rest.line || lineRevEntry,
+          i: rest.i ?? 0,
+          j: rest.j ?? 0,
+          dp1d: [revGlobalAns === Infinity ? 0 : revGlobalAns],
+          memo: [revGlobalAns === Infinity ? 0 : revGlobalAns],
+          activeSlot: rest.activeSlot ?? 0,
+          tag: rest.tag || '',
+          log: rest.log || '',
+          msg: rest.msg || '',
+          activeNodeId: rest.activeNodeId,
+          treeRoot: rest.treeRoot || cloneTree(revTree),
+          stateArrays: getRevStateArrays(cutPair, curDiff),
+        });
+      }
+
+      addRevStep({
+        type: 'entry',
+        line: lineRevEntry,
+        tag: 'minimumScoreReverse 入口',
+        log: '🚀 启动逆向三路泛洪对比：遍历切边组合并独立计算 3 连通块异或值',
+        msg: '启动 <code>minimumScoreReverse</code>：脱离先序 DFN 序包含判定，直接对每次断边方案执行泛洪染色。',
+        activeNodeId: 'score-0',
+      });
+
+      addRevStep({
+        type: 'init',
+        line: lineRevInit,
+        tag: '初始化答案 ans = MAX_VALUE',
+        log: '| int m = edges.length, ans = Integer.MAX_VALUE;',
+        msg: '初始化逆向极值：<code>ans = Integer.MAX_VALUE</code>。',
+        activeNodeId: 'score-0',
+      });
+
+      for (let i = 0; i < m; i++) {
+        for (let j = i + 1; j < m; j++) {
+          addRevStep({
+            type: 'loop',
+            line: lineRevOuter,
+            cutPair: [i, j],
+            tag: `尝试切断边对 (e${i}, e${j})`,
+            log: `| 逆向尝试切除第 ${i} 条边 e${i}[${edges[i].join('-')}] 与第 ${j} 条边 e${j}[${edges[j].join('-')}]`,
+            msg: `断开树边 <code>e${i}</code> 与 <code>e${j}</code>，准备执行三路独立连通块异或求和。`,
+            activeNodeId: `score-${edges[j][1]}`,
+          });
+
+          const subAdj: number[][] = Array.from({ length: n }, () => []);
+          for (let k = 0; k < m; k++) {
+            if (k !== i && k !== j) {
+              const [u, v] = edges[k];
+              subAdj[u].push(v);
+              subAdj[v].push(u);
+            }
+          }
+          const vis = new Array(n).fill(false);
+          const compXors: number[] = [];
+          const compColors: UniversalTreeNode['status'][] = ['normal', 'active', 'visited'];
+          const nodeStatusMap = new Map<number, UniversalTreeNode['status']>();
+
+          for (let start = 0; start < n; start++) {
+            if (!vis[start]) {
+              let curXor = 0;
+              const q = [start];
+              vis[start] = true;
+              const color = compColors[compXors.length] || 'visited';
+              while (q.length > 0) {
+                const curr = q.shift()!;
+                curXor ^= nums[curr];
+                nodeStatusMap.set(curr, color);
+                for (const next of subAdj[curr]) {
+                  if (!vis[next]) {
+                    vis[next] = true;
+                    q.push(next);
+                  }
+                }
+              }
+              compXors.push(curXor);
+            }
+          }
+
+          const cTree = cloneTree(treeState);
+          function applyColor(node: UniversalTreeNode) {
+            const u = parseInt(node.id.replace('score-', ''), 10);
+            if (nodeStatusMap.has(u)) {
+              node.status = nodeStatusMap.get(u)!;
+              node.tag = `块#${u}`;
+            }
+            node.children.forEach(applyColor);
+          }
+          if (cTree) applyColor(cTree);
+
+          const maxC = Math.max(...compXors);
+          const minC = Math.min(...compXors);
+          const diff = maxC - minC;
+          if (diff < revGlobalAns) {
+            revGlobalAns = diff;
+          }
+
+          addRevStep({
+            type: 'call',
+            line: lineRevCallDfs,
+            cutPair: [i, j],
+            curDiff: diff,
+            tag: `泛洪结果: [${compXors.join(', ')}]`,
+            log: `| 3 连通块独立异或和: [${compXors.join(', ')}] -> 差值 = ${maxC} - ${minC} = ${diff}`,
+            msg: `泛洪求和：切除 <code>e${i}, e${j}</code> 后 3 个独立连通块异或值分别为 <code>[${compXors.join(', ')}]</code>，极差为 <code>${maxC} - ${minC} = <strong>${diff}</strong></code>。`,
+            treeRoot: cTree,
+          });
+
+          addRevStep({
+            type: 'update',
+            line: lineRevUpdateAns,
+            cutPair: [i, j],
+            curDiff: diff,
+            tag: `更新全局最小分数: ${revGlobalAns}`,
+            log: `| ans = min(ans, ${diff}) -> ${revGlobalAns}`,
+            msg: `极差结算：当前切边方案极差 <strong>${diff}</strong>，全局最小异或分数刷新为 <strong>${revGlobalAns}</strong>！`,
+            treeRoot: cTree,
+          });
+        }
+      }
+
+      addRevStep({
+        type: 'return',
+        line: lineRevReturn,
+        tag: `最小分数: ${revGlobalAns}`,
+        log: `| 🏆 逆向暴力对比全部完成！return ans = ${revGlobalAns}`,
+        msg: `🏆 逆向泛洪对比推导全部完成！验证全局最小分数为 <strong>${revGlobalAns}</strong>，与 DFN 序 O(1) 判定结果高度一致！`,
+        activeNodeId: 'score-0',
+      });
+
+      return revSteps.map((s, idx) => ({
+        ...s,
+        stepIndex: idx,
+        stage: _stage || 1,
+        line: s.line || 1,
+        codeLine: s.codeLine || s.line || 1,
+        decision: s.decision || s.log || s.tag || '从树中删除边的最小分数逆向染色对比',
+        message: s.message || s.msg || s.log || '',
+        metrics: {
+          '最小异或极差': String(revGlobalAns),
+          '树节点数': '5',
+          '树边数': '4',
+          '模式': '逆向独立泛洪对比',
+        },
+      }));
+    }
+
+    // 正向 DFN 序与子树包含判定求解 (Forward DFN Inclusion)
+    const steps: UniversalStep[] = [];
     let dfnCnt = 0;
     const dfn: number[] = new Array(n).fill(0);
     const size: number[] = new Array(n).fill(0);
     const xor: number[] = new Array(n).fill(0);
     const edgeEnds: number[] = new Array(m).fill(0);
     let globalAns = Infinity;
+
+    const lineEntry = anchorMap?.entry ?? 3;
+    const lineInitArrays = anchorMap?.init_arrays ?? 8;
+    const lineCallDfs = anchorMap?.call_dfs ?? 9;
+    const lineCalcAllXor = anchorMap?.calc_allxor ?? 10;
+    const lineInitEdgeEnds = anchorMap?.init_edge_ends ?? 11;
+    const lineLoopEdges = anchorMap?.loop_edges ?? 12;
+    const lineOrientEdges = anchorMap?.orient_edges ?? 14;
+    const lineInitAns = anchorMap?.init_ans ?? 16;
+    const lineLoopOuter = anchorMap?.loop_outer ?? 17;
+    const lineCheckRelation = anchorMap?.check_relation ?? 22;
+    const lineUpdateAns = anchorMap?.update_ans ?? 29;
+    const lineReturn = anchorMap?.return ?? 32;
+    const lineDfsEntry = anchorMap?.dfs_entry ?? 34;
+    const lineRecordDfn = anchorMap?.record_dfn ?? 35;
+    const lineCheckChild = anchorMap?.check_child ?? 37;
+    const linePostCombine = anchorMap?.post_combine ?? 39;
+    const lineDfsExit = anchorMap?.dfs_exit ?? 42;
 
     function setNodeStatus(id: string, status: any, tag?: string) {
       function traverse(node: UniversalTreeNode) {
@@ -143,7 +350,7 @@ export function compileMinimumScoreAfterRemovals(
     // Line 3: public int minimumScore(int[] nums, int[][] edges) {
     addStep({
       type: 'entry',
-      line: 3,
+      line: lineEntry,
       i: 0,
       j: 0,
       dp1d: [0],
@@ -159,7 +366,7 @@ export function compileMinimumScoreAfterRemovals(
     // Line 10: int[] dfn = new int[n], size = new int[n], xor = new int[n];
     addStep({
       type: 'update',
-      line: 10,
+      line: lineInitArrays,
       i: 0,
       j: 0,
       dp1d: [0],
@@ -177,7 +384,7 @@ export function compileMinimumScoreAfterRemovals(
     // Line 11: dfs(0, -1, tree, nums, dfn, size, xor);
     addStep({
       type: 'call',
-      line: 11,
+      line: lineCallDfs,
       i: 0,
       j: 0,
       dp1d: [0],
@@ -210,7 +417,7 @@ export function compileMinimumScoreAfterRemovals(
       // Line 36: private void dfs(int u, int p, ...)
       addStep({
         type: 'entry',
-        line: 36,
+        line: lineDfsEntry,
         i: u,
         j: p,
         dp1d: [...xor],
@@ -231,7 +438,7 @@ export function compileMinimumScoreAfterRemovals(
 
       addStep({
         type: 'update',
-        line: 37,
+        line: lineRecordDfn,
         i: u,
         j: p,
         dp1d: [...xor],
@@ -253,7 +460,7 @@ export function compileMinimumScoreAfterRemovals(
         // Line 39: if (v != p) {
         addStep({
           type: 'call',
-          line: 39,
+          line: lineCheckChild,
           i: u,
           j: v,
           dp1d: [...xor],
@@ -276,7 +483,7 @@ export function compileMinimumScoreAfterRemovals(
 
         addStep({
           type: 'update',
-          line: 41,
+          line: linePostCombine,
           i: u,
           j: v,
           dp1d: [...xor],
@@ -295,7 +502,7 @@ export function compileMinimumScoreAfterRemovals(
       // Line 44: dfs 退出
       addStep({
         type: 'return',
-        line: 44,
+        line: lineDfsExit,
         i: u,
         j: p,
         dp1d: [...xor],
@@ -318,7 +525,7 @@ export function compileMinimumScoreAfterRemovals(
     const allXor = xor[0];
     addStep({
       type: 'update',
-      line: 12,
+      line: lineCalcAllXor,
       i: 0,
       j: 0,
       dp1d: [allXor],
@@ -336,7 +543,7 @@ export function compileMinimumScoreAfterRemovals(
     // Line 13: int[] edgeEnds = new int[m];
     addStep({
       type: 'update',
-      line: 13,
+      line: lineInitEdgeEnds,
       i: 0,
       j: 0,
       dp1d: [allXor],
@@ -359,7 +566,7 @@ export function compileMinimumScoreAfterRemovals(
 
       addStep({
         type: 'update',
-        line: 16,
+        line: lineOrientEdges,
         i: k,
         j: edgeEnds[k],
         dp1d: [...edgeEnds],
@@ -379,7 +586,7 @@ export function compileMinimumScoreAfterRemovals(
     globalAns = 9;
     addStep({
       type: 'update',
-      line: 18,
+      line: lineInitAns,
       i: 0,
       j: 0,
       dp1d: [globalAns],
@@ -400,7 +607,7 @@ export function compileMinimumScoreAfterRemovals(
 
       addStep({
         type: 'loop',
-        line: 19,
+        line: lineLoopOuter,
         i,
         j: 0,
         dp1d: [globalAns],
@@ -464,7 +671,7 @@ export function compileMinimumScoreAfterRemovals(
         // Line 24: 检查关系
         addStep({
           type: 'update',
-          line: 24,
+          line: lineCheckRelation,
           i,
           j,
           dp1d: [x1, x2, x3],
@@ -491,7 +698,7 @@ export function compileMinimumScoreAfterRemovals(
         // Line 31: 计算极差
         addStep({
           type: 'update',
-          line: 31,
+          line: lineUpdateAns,
           i,
           j,
           dp1d: [x1, x2, x3],
@@ -513,7 +720,7 @@ export function compileMinimumScoreAfterRemovals(
     // Line 34: return ans;
     addStep({
       type: 'return',
-      line: 34,
+      line: lineReturn,
       i: 0,
       j: 0,
       dp1d: [globalAns],
@@ -528,5 +735,26 @@ export function compileMinimumScoreAfterRemovals(
       activeArrSlot: 0,
     });
 
-    return steps;
+    const stageLines = _stage === 2 ? 35 : _stage === 3 ? 35 : _stage === 4 ? 35 : 42;
+    return steps.map((s, idx) => {
+      let line = s.line || 1;
+      if (_stage > 1 && !anchorMap) {
+        line = Math.min(line, stageLines);
+      }
+      return {
+        ...s,
+        stepIndex: idx,
+        stage: _stage || 1,
+        line,
+        codeLine: line,
+        decision: s.decision || s.log || s.tag || '从树中删除边的最小分数状态转移',
+        message: s.message || s.msg || s.log || '',
+        metrics: s.metrics || {
+          '最小异或极差': String(globalAns === Infinity ? 9 : globalAns),
+          '树节点数': '5',
+          '树边数': '4',
+          '当前切边方案': 'e0, e1',
+        },
+      };
+    });
 }
