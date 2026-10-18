@@ -15,28 +15,28 @@ describe('左程云算法通关课【必备篇】Class 080 & 081 状压动态规
   const EXPECTED_BITMASK_ALGORITHMS = [
     // Class 080: 状压 DP（上）
     {
-      id: 'tsp-bitmask-dp',
-      aliases: ['class080-code01', 'tsp-bitmask', 'traveling-salesperson'],
+      id: 'can-i-win',
+      aliases: ['class080-code01', 'can-i-win-464', 'leetcode-464'],
       classCode: 'Class 080 Code01',
-      name: '旅行商问题 TSP',
-    },
-    {
-      id: 'partition-k-equal-subsets',
-      aliases: ['class080-code02', 'partition-k-equal-subsets-698', 'leetcode-698'],
-      classCode: 'Class 080 Code02',
-      name: '划分为k个相等子集',
+      name: '我能赢吗',
     },
     {
       id: 'matchsticks-to-square',
-      aliases: ['class080-code02-ext', 'matchsticks-to-square-473', 'leetcode-473'],
-      classCode: 'Class 080 Code02延伸',
+      aliases: ['class080-code02', 'class080-code02-ext', 'matchsticks-to-square-473', 'leetcode-473'],
+      classCode: 'Class 080 Code02',
       name: '火柴拼正方形',
     },
     {
-      id: 'can-i-win',
-      aliases: ['class080-code03', 'can-i-win-464', 'leetcode-464'],
+      id: 'partition-k-equal-subsets',
+      aliases: ['class080-code03', 'partition-k-equal-subsets-698', 'leetcode-698'],
       classCode: 'Class 080 Code03',
-      name: '我能赢吗',
+      name: '划分为k个相等子集',
+    },
+    {
+      id: 'tsp-bitmask-dp',
+      aliases: ['class080-code04', 'tsp-bitmask', 'traveling-salesperson'],
+      classCode: 'Class 080 Code04',
+      name: '旅行商问题',
     },
 
     // Class 081: 状压 DP（下）

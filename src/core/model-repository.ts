@@ -132,6 +132,7 @@ import tspBitmaskDpModel from './models/tsp-bitmask-dp.yaml';
 import numberOfWaysWearHatsModel from './models/number-of-ways-wear-hats.yaml';
 import optimalAccountBalancingModel from './models/optimal-account-balancing.yaml';
 import goodSubsetsModel from './models/good-subsets.yaml';
+import distributeRepeatingIntegersModel from './models/distribute-repeating-integers.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -320,6 +321,10 @@ export class AlgorithmModelRepository {
     ['class081-code03', goodSubsetsModel as IYamlAlgorithmModel],
     ['good-subsets-1994', goodSubsetsModel as IYamlAlgorithmModel],
     ['leetcode-1994', goodSubsetsModel as IYamlAlgorithmModel],
+    ['distribute-repeating-integers', distributeRepeatingIntegersModel as IYamlAlgorithmModel],
+    ['class081-code04', distributeRepeatingIntegersModel as IYamlAlgorithmModel],
+    ['distribute-repeating-integers-1655', distributeRepeatingIntegersModel as IYamlAlgorithmModel],
+    ['leetcode-1655', distributeRepeatingIntegersModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

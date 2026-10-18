@@ -1,0 +1,370 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 分配重复整数 顶层领域模型
+# 对应：LeetCode 1655 / 左程云算法讲解 081 Code04 (状压DP专题 下)
+# 核心：频次提取、顾客状态压缩、(sub-1)&s 高效子掩码枚举、0-1 背包转移
+# ==============================================================================
+
+id: distribute-repeating-integers
+name: 分配重复整数
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 状压 DP
+  - 0-1背包
+  - 子掩码枚举
+  - 动态规划
+  - 位运算
+
+description: |
+  左程云算法通关课第 081 讲 状压 DP（下）Code04：分配重复整数 (LeetCode 1655)。
+  给你一个长度为 n 的整数数组 nums，以及一个长度为 m 的整数数组 quantity，其中第 i 位顾客需要恰好 quantity[i] 个相同的整数。
+  如果每个顾客获得的都是相同的数字，且所有顾客都能得到满足，返回 true；否则返回 false。
+
+  核心状压 DP 模型：
+  1. 维度分析与状态压缩：
+     - nums 数组中具体是哪个数值并不重要，关键是每种数字的“可用频次” counts。
+     - 顾客数量非常少 (m <= 10)，而数字可能很多。
+     - 将顾客的满足状态进行二进制压缩：集合 S 的第 i 位为 1 表示第 i 位顾客已被满足。
+     - dp[S] 表示前若干组可用频次能否同时满足顾客子集 S。
+  2. 预处理顾客子集需求总量 sum[1 << m]：
+     - sum[S] 表示满足集合 S 中所有顾客所需要的数字频次总量：
+       sum[S] = ∑_{i ∈ S} quantity[i]。
+  3. 0-1 背包式状压转移与高效子掩码枚举：
+     - 初始基底：dp[0] = true（没有顾客需要满足）。
+     - 枚举每个数字的可用频次 c ∈ counts：
+     - 逆序枚举顾客目标集合 S（从 full 到 1）：
+       若 dp[S] 已经为 true 则跳过；
+       利用经典的子掩码快速枚举算法：sub = (sub - 1) & S：
+       若当前频次能一次性喂饱子集 sub（sum[sub] <= c），且剩余顾客在此前已被满足（dp[S ^ sub] == true）：
+       则状态 S 达成：dp[S] = true，并跳出子掩码枚举。
+  4. 最终收敛：
+     - 返回 dp[(1 << m) - 1]，即所有 m 位顾客能否全部得到满足。
+
+defaultParams:
+  nums:
+    - 1
+    - 1
+    - 2
+    - 2
+  quantity:
+    - 2
+    - 2
+
+constraints:
+  - 1 <= nums.length <= 10^5
+  - 1 <= nums[i] <= 1000
+  - 1 <= quantity.length <= 10 (演示默认 m=2~4)
+  - 1 <= quantity[i] <= 10^5
+
+directions:
+  forward:
+    name: 频次正序分配决策 (Ascending Item Iteration)
+    description: 依次按频次正序尝试满足顾客子集，正向构建可达状态全集
+  reverse:
+    name: 频次逆序对偶探测 (Descending Item Exploration)
+    description: 逆序尝试不同频次整数分组，验证分配顺序对最终可满足性的不变性
+
+stages:
+  stage-1:
+    name: 暴力回溯与装箱搜索
+    description: 尝试将每种整数分配给不同顾客，递归搜索所有合法分配组合
+    complexity:
+      time: O(M^K)
+      space: O(M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canDistribute(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canDistributeReverse(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 频次聚合与记忆化子掩码搜索
+    description: 预处理顾客子集需求，使用 (sub-1)&s 高效枚举子掩码进行记忆化搜索
+    complexity:
+      time: O(K * 3^M)
+      space: O(K * 2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canDistribute(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canDistributeReverse(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 0-1背包状压DP迭代填表
+    description: 逆序枚举 2^M 顾客掩码，子掩码枚举复杂度优化至 O(3^M) 纯位运算
+    complexity:
+      time: O(K * 3^M)
+      space: O(2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canDistribute(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canDistributeReverse(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 降序贪心剪枝与子掩码终极性能
+    description: 优先满足大需求顾客，频次降序排列，提前命中目标 full 状态短路返回
+    complexity:
+      time: O(K * 3^M)
+      space: O(2^M)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canDistribute(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = 0; i < m; i++) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canDistributeReverse(int[] nums, int[] quantity) { // @step:entry
+                  Map<Integer, Integer> map = new HashMap<>(); // @step:init_map
+                  for (int x : nums) map.put(x, map.getOrDefault(x, 0) + 1); // @step:count_freq
+                  List<Integer> counts = new ArrayList<>(map.values()); // @step:get_counts
+                  int m = quantity.length; // @step:init_m
+                  int full = (1 << m) - 1; // @step:init_full
+                  int[] sum = new int[1 << m]; // @step:alloc_sum
+                  for (int s = 1; s <= full; s++) { // @step:loop_sum_s
+                      for (int i = m - 1; i >= 0; i--) { // @step:loop_sum_i
+                          if ((s & (1 << i)) != 0) { // @step:cond_sum_bit
+                              sum[s] = sum[s ^ (1 << i)] + quantity[i]; // @step:calc_sum
+                              break; // @step:break_sum
+                          }
+                      }
+                  }
+                  boolean[] dp = new boolean[1 << m]; // @step:alloc_dp
+                  dp[0] = true; // @step:base
+                  for (int c : counts) { // @step:loop_count
+                      for (int s = full; s > 0; s--) { // @step:loop_status
+                          for (int sub = s; sub > 0; sub = (sub - 1) & s) { // @step:loop_submask
+                              if (sum[sub] <= c && dp[s ^ sub]) { // @step:cond_valid_sub
+                                  dp[s] = true; // @step:mark_achieved
+                                  break; // @step:break_submask
+                              }
+                          }
+                      }
+                  }
+                  return dp[full]; // @step:return
+              }
+          }

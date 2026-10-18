@@ -793,24 +793,6 @@ const demos: DemoDef[] = [
 
   // 状压DP 进阶 (Bitmask DP Demos — 第081讲：状压dp-下)
   // ---------------------------------------------------------------------------
-
-
-
-  {
-    id: 'distribute-repeating-integers',
-    name: '分配重复整数',
-    description: '左程云算法讲解081 Code04：LeetCode 1655 分配重复整数，频次统计与子掩码高效枚举状压 DP。',
-    icon: '📊',
-    inputs: [
-      { id: 'nums', label: '数组 nums', value: '1,1,2,2', width: 140 },
-      { id: 'quantity', label: '顾客需求 quantity', value: '2,2', width: 140 },
-    ],
-    examples: [
-      { label: 'nums=[1,1,2,2], q=[2,2]', values: { nums: '1,1,2,2', quantity: '2,2' } },
-    ],
-    build: makeEngineBuilder('distribute-repeating-integers'),
-    aliases: ['class081-code04', 'distribute-repeating-integers-1655', 'leetcode-1655'],
-  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -894,7 +876,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
 
 
 
-  { type: 'demo', id: 'distribute-repeating-integers' },
   { type: 'article', id: 'dp-final-summary' },
 ];
 
