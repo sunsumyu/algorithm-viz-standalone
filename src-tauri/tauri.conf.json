@@ -5,7 +5,7 @@
   "identifier": "com.algorithmviz.desktop",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://127.0.0.1:3300",
+    "devUrl": "http://127.0.0.1:23300",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },

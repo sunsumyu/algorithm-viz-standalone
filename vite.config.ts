@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
     },
   server: {
     host: '0.0.0.0',
-    port: 3300,
+    port: 23300,
     strictPort: true,
     open: false,
     watch: {
