@@ -131,6 +131,7 @@ import partitionKEqualSubsetsModel from './models/partition-k-equal-subsets.yaml
 import tspBitmaskDpModel from './models/tsp-bitmask-dp.yaml';
 import numberOfWaysWearHatsModel from './models/number-of-ways-wear-hats.yaml';
 import optimalAccountBalancingModel from './models/optimal-account-balancing.yaml';
+import goodSubsetsModel from './models/good-subsets.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -315,6 +316,10 @@ export class AlgorithmModelRepository {
     ['class081-code02', optimalAccountBalancingModel as IYamlAlgorithmModel],
     ['optimal-account-balancing-465', optimalAccountBalancingModel as IYamlAlgorithmModel],
     ['leetcode-465', optimalAccountBalancingModel as IYamlAlgorithmModel],
+    ['good-subsets', goodSubsetsModel as IYamlAlgorithmModel],
+    ['class081-code03', goodSubsetsModel as IYamlAlgorithmModel],
+    ['good-subsets-1994', goodSubsetsModel as IYamlAlgorithmModel],
+    ['leetcode-1994', goodSubsetsModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

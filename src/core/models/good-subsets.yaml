@@ -1,0 +1,396 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 好子集的数目 顶层领域模型
+# 对应：LeetCode 1994 / 左程云算法讲解 081 Code03 (状压DP专题 下)
+# 核心：数论质因数分解、平方因子过滤、0-1 背包状压计数、2^cnt[1] 倍乘
+# ==============================================================================
+
+id: good-subsets
+name: 好子集的数目
+category: dynamic-programming
+difficulty: hard
+tags:
+  - 状压 DP
+  - 数论
+  - 动态规划
+  - 0-1背包
+  - 位运算
+
+description: |
+  左程云算法通关课第 081 讲 状压 DP（下）Code03：好子集的数目 (LeetCode 1994)。
+  给你一个整数数组 nums。如果 nums 的一个子集中，所有元素的乘积可以表示为一个或多个互不相同的质数的乘积，那么我们称该子集为 好子集。
+  返回 nums 中不同的 好子集 的数目对 10^9 + 7 取余的结果。
+
+  核心状压 DP 模型：
+  1. 质数表与质因数二进制掩码：
+     - 输入数组元素范围仅在 1 ~ 30 之间。
+     - 30 以内的质数恰好有 10 个：primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]。
+     - 任何好子集的乘积不得含有平方因子（如 4, 8, 9, 12, 16, 18, 20, 24, 25, 27, 28 含有平方因子，mask 设为 -1，绝对不可选入）。
+     - 其余 2~30 的合法数字映射为其质因数集合构成的 10 位二进制掩码 mask[i]。
+  2. 0-1 背包式状压转移：
+     - dp[S] 表示所选数字质因数集合恰好为 S（0 <= S < 1 << 10）的方案数。
+     - 初始基底：dp[0] = 1。
+     - 枚举每个出现的合法数字 i (2..30)，设其频次为 cnt[i]，掩码为 m = mask[i]：
+     - 从满集 (1 << 10) - 1 逆序枚举已有质数集合 S：
+       若 (S & m) == 0（无共享质因数），则进行 0-1 背包累加：
+       dp[S | m] = (dp[S | m] + dp[S] * cnt[i]) % MOD
+  3. 处理特殊数字 1：
+     - 数字 1 不含任何质因数，任何好子集添加任意个 1 仍是好子集。
+     - cnt[1] 个 1 每个都有“选与不选” 2 种可能，贡献 2^cnt[1] 倍乘因子。
+  4. 最终收敛：
+     - ans = (∑_{S=1}^{1023} dp[S]) * 2^cnt[1] % MOD。
+
+defaultParams:
+  nums:
+    - 1
+    - 2
+    - 3
+    - 4
+
+constraints:
+  - 1 <= nums.length <= 10^5 (演示默认规模 4~8)
+  - 1 <= nums[i] <= 30
+
+directions:
+  forward:
+    name: 正向升序数字决策 (Ascending Number Iteration)
+    description: 数字从 2 到 30 顺推枚举，按质数掩码逐步累加不相交状态
+  reverse:
+    name: 逆序降序数字探测 (Descending Number Exploration)
+    description: 数字从 30 到 2 逆序对偶枚举，展示数字选择顺序无关性与背包组合不变性
+
+stages:
+  stage-1:
+    name: 质因数分解与暴力子集枚举
+    description: 过滤带平方因子的数，递归枚举所有无冲突质因数子集组合
+    complexity:
+      time: O(2^18)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberOfGoodSubsets(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 2; i <= 30; i++) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 2; i <= 30; i++) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberOfGoodSubsetsReverse(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 30; i >= 2; i--) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 30; i >= 2; i--) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 质因数状态压缩与记忆化搜索
+    description: 建立 10 位质数掩码，记忆化搜索前 i 个数选出质数集合 S 的合法方案
+    complexity:
+      time: O(30 * 2^10)
+      space: O(30 * 2^10)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberOfGoodSubsets(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 2; i <= 30; i++) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 2; i <= 30; i++) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberOfGoodSubsetsReverse(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 30; i >= 2; i--) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 30; i >= 2; i--) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 0-1背包状压DP迭代填表
+    description: 逆序枚举 1024 个质数掩码状态，常数空间滚动更新 dp[S|m]
+    complexity:
+      time: O(30 * 2^10)
+      space: O(2^10)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberOfGoodSubsets(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 2; i <= 30; i++) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 2; i <= 30; i++) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberOfGoodSubsetsReverse(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 30; i >= 2; i--) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 30; i >= 2; i--) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 稀疏质因数掩码预处理与极限常数级优化
+    description: 预打表 18 个无平方因子数的掩码，仅枚举有效非零状态，位运算加速
+    complexity:
+      time: O(18 * 2^10)
+      space: O(2^10)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public int numberOfGoodSubsets(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 2; i <= 30; i++) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 2; i <= 30; i++) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public int numberOfGoodSubsetsReverse(int[] nums) { // @step:entry
+                  int mod = 1000000007; // @step:init_mod
+                  int[] primes = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29}; // @step:init_primes
+                  int[] cnt = new int[31]; // @step:alloc_cnt
+                  for (int x : nums) cnt[x]++; // @step:count_freq
+                  int[] masks = new int[31]; // @step:alloc_masks
+                  for (int i = 30; i >= 2; i--) { // @step:loop_calc_mask
+                      int m = 0, x = i; // @step:init_x
+                      for (int j = 0; j < 10; j++) { // @step:loop_prime
+                          if (x % primes[j] == 0) { // @step:cond_div
+                              x /= primes[j]; // @step:div_prime
+                              if (x % primes[j] == 0) { m = -1; break; } // @step:check_sq
+                              m |= (1 << j); // @step:set_bit
+                          }
+                      }
+                      masks[i] = m; // @step:save_mask
+                  }
+                  int[] dp = new int[1 << 10]; // @step:alloc_dp
+                  dp[0] = 1; // @step:base
+                  for (int i = 30; i >= 2; i--) { // @step:loop_num
+                      if (cnt[i] == 0 || masks[i] == -1) continue; // @step:cond_skip_num
+                      int m = masks[i]; // @step:get_mask
+                      for (int s = (1 << 10) - 1; s >= 0; s--) { // @step:loop_status
+                          if ((s & m) == 0 && dp[s] > 0) { // @step:cond_disjoint
+                              dp[s | m] = (int)((dp[s | m] + 1L * dp[s] * cnt[i]) % mod); // @step:transfer
+                          }
+                      }
+                  }
+                  long ans = 0; // @step:init_ans
+                  for (int s = 1; s < (1 << 10); s++) ans = (ans + dp[s]) % mod; // @step:sum_ans
+                  for (int i = 0; i < cnt[1]; i++) ans = (ans * 2) % mod; // @step:mult_ones
+                  return (int)ans; // @step:return
+              }
+          }

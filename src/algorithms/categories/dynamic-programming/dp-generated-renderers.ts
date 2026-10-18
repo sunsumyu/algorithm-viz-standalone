@@ -795,21 +795,7 @@ const demos: DemoDef[] = [
   // ---------------------------------------------------------------------------
 
 
-  {
-    id: 'good-subsets',
-    name: '好子集的数目',
-    description: '左程云算法讲解081 Code03：LeetCode 1994 好子集的数目，数论质因数分解与 01 背包计数状压 DP。',
-    icon: '✨',
-    inputs: [
-      { id: 'nums', label: '数组 nums', value: '4,2,3,15', width: 160 },
-    ],
-    examples: [
-      { label: '[4,2,3,15]', values: { nums: '4,2,3,15' } },
-      { label: '[1,2,3,4]', values: { nums: '1,2,3,4' } },
-    ],
-    build: makeEngineBuilder('good-subsets'),
-    aliases: ['class081-code03', 'good-subsets-1994', 'leetcode-1994'],
-  },
+
   {
     id: 'distribute-repeating-integers',
     name: '分配重复整数',
@@ -907,7 +893,7 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   { type: 'article', id: 'tree-dp-theory' },
 
 
-  { type: 'demo', id: 'good-subsets' },
+
   { type: 'demo', id: 'distribute-repeating-integers' },
   { type: 'article', id: 'dp-final-summary' },
 ];
