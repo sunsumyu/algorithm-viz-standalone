@@ -1,0 +1,327 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL BITMASK DP MODEL] 划分为k个相等的子集 顶层领域模型
+# 对应：LeetCode 698 / 左程云算法讲解 080 Code03 (状压DP专题 上)
+# 包含：二进制位掩码子集划分、目标组和前置剪枝、记忆化搜索
+# ==============================================================================
+
+id: partition-k-equal-subsets
+name: 划分为k个相等的子集 (LeetCode 698)
+category: dynamic-programming
+difficulty: medium
+tags:
+  - 状压 DP
+  - 动态规划
+  - 回溯
+  - 剪枝
+  - 位运算
+
+description: |
+  LeetCode 698 · 左程云算法通关课第 080 讲 状压 DP（上）Code03：划分为k个相等的子集 (Partition to K Equal Sum Subsets)。
+  给定一个整数数组 nums 和一个正整数 k，找出是否有可能把这个数组分成 k 个非空子集，其总和都相等。
+
+  核心状压与回溯模型：
+  1. 可行性前置校验与目标子集和：
+     - 若总和 sum % k != 0，无法构成 k 个等和子集，直接返回 false。
+     - 目标子集和 target = sum / k。
+     - 若存在任意元素值 > target，直接返回 false。
+  2. 状压二进制掩码定义：
+     - status 的第 i 位为 1 表示第 i 个元素已被选用，为 0 表示尚未选用。
+     - status == (1 << n) - 1 表示全部元素均已分配完成，成功划分。
+  3. 递归状态与子集填装：
+     - dfs(status, cur) 表示在已选掩码 status、当前正在拼凑的子集已达累加和 cur 时，能否顺利将剩余元素划分为目标子集。
+     - 遍历所有未使用的元素 i，若 cur + nums[i] <= target：
+       nextCur = (cur + nums[i]) % target
+       若 dfs(status | (1 << i), nextCur) 返回 true，则说明后续可以成功划分，当前亦返回 true。
+  4. 记忆化与剪枝：
+     - 升序/降序排序元素，大元素优先装箱可极大压缩搜索树宽度。
+     - dp[status] 记录该掩码下是否能成功划分 (1: 可行, -1: 不可行)，避免指数级重复枚举。
+
+defaultParams:
+  nums: [4, 3, 2, 3, 5, 2, 1]
+  k: 4
+
+constraints:
+  - 1 <= k <= nums.length <= 16（演示环境默认 7 个元素，k=4）
+  - 0 < nums[i] < 10^4
+  - 每个元素的和不超过 10^5
+
+directions:
+  forward:
+    name: 降序大元素优先正向搜索 (Descending Greedier Pruning DFS)
+    description: 元素优先从大到小放入当前子集，更早触发超额剪枝，加速回溯与记忆化收敛
+  reverse:
+    name: 升序小元素优先逆向搜索 (Ascending Fine-Grained Exploration)
+    description: 元素从小到大放入当前子集，演示碎片填充对博弈搜索空间与回溯分支的影响
+
+stages:
+  stage-1:
+    name: 暴力递归与子集划分
+    description: 递归尝试所有未用元素放入当前子集，满 target 则模运算开启下一子集，直到全部元素用尽
+    complexity:
+      time: O(K^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canPartitionKSubsets(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfs(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = nums.length - 1; i >= 0; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfs(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canPartitionKSubsetsReverse(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfsReverse(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfsReverse(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-2:
+    name: 状态压缩记忆化搜索
+    description: 引入 dp[1<<n] 数组记录已搜索掩码 status 的可行性，大幅剪除重叠子问题
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canPartitionKSubsets(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfs(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = nums.length - 1; i >= 0; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfs(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canPartitionKSubsetsReverse(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfsReverse(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfsReverse(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-3:
+    name: 容量溢出贪心排序剪枝
+    description: 大元素先行填充，单桶溢出立即跳出当前分支，极大压缩搜索树宽度
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canPartitionKSubsets(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfs(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = nums.length - 1; i >= 0; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfs(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canPartitionKSubsetsReverse(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfsReverse(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfsReverse(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+
+  stage-4:
+    name: 位运算常数级压缩与极限性能
+    description: 纯位运算掩码转移，状态表压缩与位运算剪枝达到理论最优
+    complexity:
+      time: O(2^N * N)
+      space: O(2^N)
+    code:
+      forward:
+        language: java
+        source: |
+          class Solution {
+              public boolean canPartitionKSubsets(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfs(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfs(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = nums.length - 1; i >= 0; i--) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfs(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }
+      reverse:
+        language: java
+        source: |
+          class SolutionReverse {
+              public boolean canPartitionKSubsetsReverse(int[] nums, int k) { // @step:entry
+                  int sum = 0;
+                  for (int num : nums) sum += num; // @step:calc_sum
+                  if (sum % k != 0) return false; // @step:guard_sum
+                  int target = sum / k; // @step:calc_target
+                  Arrays.sort(nums); // @step:sort
+                  int[] dp = new int[1 << nums.length]; // @step:init
+                  return dfsReverse(nums, 0, 0, target, dp); // @step:start_dfs
+              }
+              private boolean dfsReverse(int[] nums, int status, int cur, int target, int[] dp) { // @step:dfs_entry
+                  if (status == (1 << nums.length) - 1) return true; // @step:boundary
+                  if (dp[status] != 0) return dp[status] == 1; // @step:cache_hit
+                  boolean ans = false; // @step:init_ans
+                  for (int i = 0; i < nums.length; i++) { // @step:loop_num
+                      if ((status & (1 << i)) == 0 && cur + nums[i] <= target) { // @step:cond_fit
+                          int nextCur = (cur + nums[i]) % target; // @step:calc_next
+                          if (dfsReverse(nums, status | (1 << i), nextCur, target, dp)) { // @step:branch_call
+                              ans = true; // @step:mark_win
+                              break; // @step:break
+                          }
+                      }
+                  }
+                  dp[status] = ans ? 1 : -1; // @step:record
+                  return ans; // @step:return
+              }
+          }

@@ -788,22 +788,7 @@ const demos: DemoDef[] = [
   // ---------------------------------------------------------------------------
 
 
-  {
-    id: 'partition-k-equal-subsets',
-    name: '划分为k个相等子集',
-    description: '左程云算法讲解080 Code02：LeetCode 698 划分为k个相等的子集，状压DP + 剪枝回溯，等和子集装箱分配。',
-    icon: '📦',
-    inputs: [
-      { id: 'nums', label: '数组', value: '4,3,2,3,5,2,1', width: 180 },
-      { id: 'k', label: 'k', value: '4', width: 60 },
-    ],
-    examples: [
-      { label: '[4,3,2,3,5,2,1], k=4', values: { nums: '4,3,2,3,5,2,1', k: '4' } },
-      { label: '[1,2,3,4], k=3', values: { nums: '1,2,3,4', k: '3' } },
-    ],
-    build: makeEngineBuilder('partition-k-equal-subsets'),
-    aliases: ['class080-code02', 'partition-k-equal-subsets-698', 'leetcode-698'],
-  },
+
   {
     id: 'tsp-bitmask-dp',
     name: '旅行商问题 TSP',
@@ -961,7 +946,6 @@ const ordered: Array<{ type: 'article' | 'demo'; id: string }> = [
   // 树型DP 专题（第078讲、第079讲：树型dp 上/下）
   { type: 'article', id: 'tree-dp-theory' },
   // 状压DP 专题（第080讲：状压dp-上）
-  { type: 'demo', id: 'partition-k-equal-subsets' },
   { type: 'demo', id: 'tsp-bitmask-dp' },
   // 状压DP 进阶（第081讲：状压dp-下）
   { type: 'demo', id: 'number-of-ways-wear-hats' },

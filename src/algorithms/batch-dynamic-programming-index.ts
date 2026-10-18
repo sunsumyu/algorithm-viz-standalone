@@ -49,6 +49,7 @@ import './categories/dynamic-programming/tree-dp-079/minimum-score-after-removal
 // 左程云算法讲解080【必备】状压dp（上）
 import './categories/dynamic-programming/bitmask-dp-080/can-i-win-renderer';
 import './categories/dynamic-programming/bitmask-dp-080/matchsticks-to-square-renderer';
+import './categories/dynamic-programming/bitmask-dp-080/partition-k-equal-subsets-renderer';
 
 // 左程云算法讲解075【必备】背包dp-多重背包、混合背包 5大算法渲染器
 import './categories/dynamic-programming/knapsack-075/bounded-knapsack-naive-renderer';

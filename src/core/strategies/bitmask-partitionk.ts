@@ -17,6 +17,8 @@ export function compilePartitionK(
   const steps: UniversalStep[] = [];
   const anchorMap = params.anchorMap;
 
+  const isReverse = params.direction === 'reverse';
+
   let nums: number[];
   const raw = params.params?.nums;
   if (Array.isArray(raw)) {
@@ -53,6 +55,32 @@ export function compilePartitionK(
 
   const n = nums.length;
 
+  const formatSteps = (
+    rawSteps: UniversalStep[],
+    result: boolean,
+    targetVal: number
+  ) => {
+    const currentStage =
+      typeof params.stage === 'number'
+        ? params.stage
+        : parseInt(String(params.stage || '1').replace(/\D/g, ''), 10) || 1;
+    return rawSteps.map((s, idx) => ({
+      ...s,
+      stepIndex: idx,
+      stage: currentStage,
+      line: s.line || lineEntry,
+      codeLine: s.codeLine || s.line || lineEntry,
+      decision: s.decision || s.log || s.tag || '状压DP子集划分推导',
+      message: s.message || s.msg || s.log || '',
+      metrics: s.metrics || {
+        '元素数': String(n),
+        '划分组数(k)': String(k),
+        '目标组和': targetVal > 0 ? String(targetVal) : '无解(总和非k倍数)',
+        '划分判定': result ? '可行 (true)' : '失败 (false)',
+      },
+    }));
+  };
+
   // Step 0: 主入口
   steps.push({
     type: 'entry',
@@ -62,9 +90,15 @@ export function compilePartitionK(
     dp1d: [0],
     memo: {},
     activeSlot: 0,
-    tag: `canPartitionKSubsets(k=${k}) 入口`,
-    log: `🌲 进入 canPartitionKSubsets：数组 [${nums.join(', ')}]，目标分为 ${k} 个等和子集`,
-    msg: `主函数入口：考察数组 <code>[${nums.join(', ')}]</code>，判定能否划分为 <code>${k}</code> 个等和子集。`,
+    tag: isReverse
+      ? `[逆向升序搜索] canPartitionKSubsets(k=${k}) 入口`
+      : `canPartitionKSubsets(k=${k}) 入口`,
+    log: isReverse
+      ? `🌲 [逆向小元素优先] 进入 canPartitionKSubsets：数组 [${nums.join(', ')}]，目标分为 ${k} 个等和子集`
+      : `🌲 进入 canPartitionKSubsets：数组 [${nums.join(', ')}]，目标分为 ${k} 个等和子集`,
+    msg: isReverse
+      ? `逆向小元素优先探查：考察数组 <code>[${nums.join(', ')}]</code>，判定能否划分为 <code>${k}</code> 个等和子集。`
+      : `主函数入口：考察数组 <code>[${nums.join(', ')}]</code>，判定能否划分为 <code>${k}</code> 个等和子集。`,
   });
 
   // Step 1: 计算总和
@@ -96,7 +130,7 @@ export function compilePartitionK(
       log: `| 🛑 总和 ${sum} 不是 k=${k} 的倍数，无法均分，返回 false`,
       msg: `边界特判：总和 <code>${sum} % ${k} != 0</code>，无法分为 ${k} 个等和子集，返回 <strong>false</strong>。`,
     });
-    return steps;
+    return formatSteps(steps, false, 0);
   }
 
   // Step 3: 计算目标每组和
@@ -142,7 +176,7 @@ export function compilePartitionK(
       log: `| 🛑 最大值 ${nums[n - 1]} 大于每组目标和 ${target}，无法放入任何组，返回 false`,
       msg: `剪枝特判：最大值 <code>${nums[n - 1]} > ${target}</code>，直接返回 <strong>false</strong>。`,
     });
-    return steps;
+    return formatSteps(steps, false, target);
   }
 
   // Step 5: 初始化记忆化表
@@ -169,9 +203,13 @@ export function compilePartitionK(
     dp1d: [0, target],
     memo: {},
     activeSlot: 0,
-    tag: '启动 dfs(status=0, cur=0)',
-    log: '| 🚀 启动记忆化搜索：dfs(status=0, cur=0)',
-    msg: '调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。',
+    tag: isReverse ? '[逆向升序] 启动 dfs(status=0, cur=0)' : '启动 dfs(status=0, cur=0)',
+    log: isReverse
+      ? '| 🚀 [逆向小元素优先] 启动记忆化搜索：dfs(status=0, cur=0)'
+      : '| 🚀 启动记忆化搜索：dfs(status=0, cur=0)',
+    msg: isReverse
+      ? '逆向从小元素优先调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。'
+      : '调用辅助递归函数：<code>dfs(status=0, cur=0)</code>。',
   });
 
   let stepCount = 0;
@@ -242,7 +280,15 @@ export function compilePartitionK(
 
     let ans = false;
 
-    for (let i = n - 1; i >= 0; i--) {
+    // 遍历未选元素：正向优先大元素加速剪枝，逆序优先小元素探索碎片填充
+    const order: number[] = [];
+    if (isReverse) {
+      for (let i = 0; i < n; i++) order.push(i);
+    } else {
+      for (let i = n - 1; i >= 0; i--) order.push(i);
+    }
+
+    for (const i of order) {
       if (stepCount >= maxSteps) break;
 
       steps.push({
@@ -253,9 +299,13 @@ export function compilePartitionK(
         dp1d: [ans ? 1 : 0, cur, nums[i]],
         memo: { ...memoTable },
         activeSlot: 0,
-        tag: `尝试数字 #${i}(值${nums[i]})`,
-        log: `| 🔄 检查元素 #${i} (值=${nums[i]})`,
-        msg: `尝试元素 <strong>#${i} (值 ${nums[i]})</strong>。`,
+        tag: isReverse ? `[逆序] 尝试第 ${i} 个元素(值${nums[i]})` : `尝试数字 #${i}(值${nums[i]})`,
+        log: isReverse
+          ? `| 🔄 【逆序探查】优先检查较小元素 #${i}(值=${nums[i]})`
+          : `| 🔄 检查元素 #${i} (值=${nums[i]})`,
+        msg: isReverse
+          ? `逆序较小元素优先探查：尝试元素 <strong>#${i} (值 ${nums[i]})</strong>。`
+          : `尝试元素 <strong>#${i} (值 ${nums[i]})</strong>。`,
       });
 
       const isUsed = (status & (1 << i)) !== 0;
@@ -399,10 +449,16 @@ export function compilePartitionK(
     dp1d: [finalResult ? 1 : 0],
     memo: { ...memoTable },
     activeSlot: 0,
-    tag: `最终结果: ${finalResult ? '能划分为 ' + k + ' 个等和子集 ✓' : '不能划分 ✗'}`,
-    log: `| 🏆 状压推导演化完成！canPartitionKSubsets = ${finalResult}`,
-    msg: `🏆 状态压缩推导完成！数组 <strong>${finalResult ? `能够划分为 ${k} 个等和子集 (true) ✓` : `无法划分为 ${k} 个等和子集 (false) ✗`}</strong>。`,
+    tag: isReverse
+      ? `[逆序推导结果]: ${finalResult ? '能划分为 ' + k + ' 个等和子集 ✓' : '不能划分 ✗'}`
+      : `最终结果: ${finalResult ? '能划分为 ' + k + ' 个等和子集 ✓' : '不能划分 ✗'}`,
+    log: isReverse
+      ? `| 🏆 【逆序升序探查完成】canPartitionKSubsets = ${finalResult}`
+      : `| 🏆 状压推导演化完成！canPartitionKSubsets = ${finalResult}`,
+    msg: isReverse
+      ? `🏆 逆向升序推导完成！数组 <strong>${finalResult ? `能够划分为 ${k} 个等和子集 (true) ✓` : `无法划分为 ${k} 个等和子集 (false) ✗`}</strong>。`
+      : `🏆 状态压缩推导完成！数组 <strong>${finalResult ? `能够划分为 ${k} 个等和子集 (true) ✓` : `无法划分为 ${k} 个等和子集 (false) ✗`}</strong>。`,
   });
 
-  return steps;
+  return formatSteps(steps, finalResult, target);
 }
