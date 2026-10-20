@@ -558,9 +558,44 @@ export function buildStrangePrinterSteps(params: StrangePrinterStepParams): Univ
             const leftTurns = grid[i]![k] ?? 1;
             const rightTurns = grid[k + 1]![j] ?? 1;
             const turns = leftTurns + rightTurns;
+
+            pushStep({
+              type: 'loop_k',
+              flowPhase: 'forward',
+              line: lineLoopK,
+              i,
+              j,
+              gridHighlight: { i, j },
+              deps: [
+                { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftTurns}` },
+                { r: k + 1, c: j, type: 'bottom' as any, label: `dp[${k + 1}][${j}]=${rightTurns}` },
+              ],
+              decision: `切分点 k=${k}`,
+              tag: `子串 [${i}..${j}] 尝试切分点 k=${k}: "${s.slice(i, k + 1)}" + "${s.slice(k + 1, j + 1)}" ➔ 次数=${turns}`,
+              log: `| 🔍 尝试分割点 k=${k}：左段 dp[${i}][${k}]=${leftTurns} + 右段 dp[${k + 1}][${j}]=${rightTurns} = ${turns}`,
+              msg: `尝试在 <code>k = ${k}</code> 处切分：左半段 <code>"${s.slice(i, k + 1)}"</code> 需 <code>${leftTurns}</code> 次，右半段 <code>"${s.slice(k + 1, j + 1)}"</code> 需 <code>${rightTurns}</code> 次，总共 <strong>${turns}</strong> 次。`,
+            });
+
             if (turns < minTurns) {
               minTurns = turns;
               bestK = k;
+
+              pushStep({
+                type: 'update_min',
+                flowPhase: 'forward',
+                line: lineUpdateMin,
+                i,
+                j,
+                gridHighlight: { i, j },
+                deps: [
+                  { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftTurns}` },
+                  { r: k + 1, c: j, type: 'bottom' as any, label: `dp[${k + 1}][${j}]=${rightTurns}` },
+                ],
+                decision: `更新最少次数 minTurns=${turns}`,
+                tag: `更优切分：k=${k} 最少打印次数更新为 ${turns}`,
+                log: `| ✨ 找到更优切分点 k=${k}：最少打印次数更新为 ${minTurns}`,
+                msg: `更新最优切分：在 <code>k = ${k}</code> 处分段仅需 <strong>${turns}</strong> 次打印，刷新当前子串最少操作数。`,
+              });
             }
           }
 

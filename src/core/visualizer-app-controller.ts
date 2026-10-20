@@ -22,6 +22,7 @@ import { StageNavigationCoordinator } from './controllers/stage-navigation-coord
 import { RightPanelTabCoordinator } from './controllers/right-panel-tab-coordinator';
 import { VisualizerInteractionBinder } from './controllers/visualizer-interaction-binder';
 import { PhysicsDebugHUD } from './controllers/physics-debug-hud';
+import { IntervalDpSandboxAdapter } from './renderers/adapters/interval-dp-sandbox-adapter';
 import type { IYamlAlgorithmModel } from './interfaces';
 
 export type VisualizerMode = 'lite' | 'full';
@@ -52,7 +53,7 @@ export class VisualizerAppController {
   private themeManager: VisualThemeManager;
   private isDestroyed = false;
   private selectedPresetIndex = 0;
-  public stage3SubView: 'matrix' | 'tree' | 'alignment' = 'matrix';
+  public stage3SubView: 'matrix' | 'tree' | 'alignment' | 'sandbox' = 'matrix';
   public stage4SubView: 'memo' | 'alignment' = 'memo';
   public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
   public card1SubView: 'grid' | 'deduction' = 'grid';
@@ -63,7 +64,7 @@ export class VisualizerAppController {
     this.mode = options.mode || 'lite';
     this.themeManager = VisualThemeManager.getInstance({ defaultTheme: options.defaultTheme });
     const savedStage3 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage3-subview') as any) : null;
-    this.stage3SubView = (savedStage3 === 'tree' || savedStage3 === 'alignment') ? savedStage3 : 'matrix';
+    this.stage3SubView = (savedStage3 === 'tree' || savedStage3 === 'alignment' || savedStage3 === 'sandbox') ? savedStage3 : 'matrix';
     const savedStage4 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage4-subview') as any) : null;
     this.stage4SubView = (savedStage4 === 'alignment') ? 'alignment' : 'memo';
     const savedCard2 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-card2-subview') as any) : null;
@@ -122,7 +123,26 @@ export class VisualizerAppController {
     // 若为树型算法，默认阶段 3 子视图切换为 'tree'
     if (resolved.category === 'tree') {
       this.stage3SubView = 'tree';
-    } else if (resolved.category === '2d-sequence' || ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string', 'min-delete-to-be-substring'].includes(this.modelId)) {
+    } else if (
+      resolved.category === '2d-sequence' ||
+      [
+        'longest-common-subsequence',
+        'distinct-subsequences',
+        'edit-distance',
+        'wildcard-matching',
+        'wildcard-matching-074',
+        'class074-code05',
+        'wildcard-matching-problem',
+        'leetcode-44',
+        'regular-expression-matching',
+        'regex-matching',
+        'regex-matching-074',
+        'class074-code04',
+        'leetcode-10',
+        'interleaving-string',
+        'min-delete-to-be-substring',
+      ].includes(this.modelId)
+    ) {
       const globalSubView = typeof localStorage !== 'undefined' ? localStorage.getItem('algo-global-subview') : null;
       if (globalSubView === 'alignment') {
         this.card2SubView = 'alignment';
@@ -237,6 +257,17 @@ export class VisualizerAppController {
     if (targetStep > 0 && targetStep < this.steps.length) {
       this.timeline.seek(targetStep);
     }
+
+    // 10. 标记 DOM 渲染完备，优雅淡入展示，彻底消除未就绪骨架闪烁 (Zero-FOUC)
+    if (typeof document !== 'undefined') {
+      document.body?.classList?.add('viz-ready');
+      if (document.body) document.body.style.opacity = '1';
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        window.parent?.postMessage({ type: 'VIZ_READY', modelId: this.modelId }, '*');
+      } catch {}
+    }
   }
 
   /**
@@ -288,9 +319,9 @@ export class VisualizerAppController {
     }
 
     // 生成当前阶段的执行步骤
-    const anchorMap = (stageConfig.variants?.[this.currentStageVariant])
-      ? stageConfig.variants[this.currentStageVariant].anchorMap
-      : stageConfig.anchorMap;
+    const anchorMap = (stageConfig.variants?.[this.currentStageVariant]?.anchorMap)
+      ?? stageConfig.anchorMap
+      ?? (stageConfig.variants ? Object.values(stageConfig.variants)[0]?.anchorMap : undefined);
 
     const stageNum = parseInt(this.currentStage.replace('stage-', ''), 10) || 1;
     this.steps = UniversalStageEngine.generateSteps(this.model, {
@@ -453,7 +484,8 @@ export class VisualizerAppController {
       n: this.n,
       isReverse,
       is3DMode: isTreeProblem ? false : this.is3DMode,
-      modelId: this.modelId
+      modelId: this.modelId,
+      params: this.model?.defaultParams
     }, this.steps, index);
   }
 
@@ -531,14 +563,30 @@ export class VisualizerAppController {
     return !!(
       (firstStep as any)?.s1 ||
       (firstStep as any)?.s ||
-      ['longest-common-subsequence', 'distinct-subsequences', 'edit-distance', 'wildcard-matching', 'regular-expression-matching', 'interleaving-string', 'min-delete-to-be-substring'].includes(this.modelId)
+      [
+        'longest-common-subsequence',
+        'distinct-subsequences',
+        'edit-distance',
+        'wildcard-matching',
+        'wildcard-matching-074',
+        'class074-code05',
+        'wildcard-matching-problem',
+        'leetcode-44',
+        'regular-expression-matching',
+        'regex-matching',
+        'regex-matching-074',
+        'class074-code04',
+        'leetcode-10',
+        'interleaving-string',
+        'min-delete-to-be-substring',
+      ].includes(this.modelId)
     );
   }
 
   /**
-   * 设置阶段 3 的子视图模式 (DP 矩阵 vs 状态依赖树 vs 串比对)
+   * 设置阶段 3 的子视图模式 (DP 矩阵 vs 状态依赖树 vs 串比对 vs 背包组桶沙盘)
    */
-  public setStage3SubView(view: 'matrix' | 'tree' | 'alignment'): void {
+  public setStage3SubView(view: 'matrix' | 'tree' | 'alignment' | 'sandbox'): void {
     this.stage3SubView = view;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('algo-stage3-subview', view);
@@ -566,7 +614,9 @@ export class VisualizerAppController {
     const effectiveM = (this.steps && this.steps[0]?.grid && this.steps[0].grid.length > 1) ? this.steps[0].grid.length : this.m;
     const isStage32D = effectiveM > 1;
     const isStringProblem = this.checkIsStringProblem();
-    StageNavigationCoordinator.updateStage3SubViewTabs(this.currentStage, this.stage3SubView, isStage32D, isStringProblem);
+    const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(this.modelId);
+    const hasSandbox = isKnapsack || IntervalDpSandboxAdapter.isSupported(this.modelId);
+    StageNavigationCoordinator.updateStage3SubViewTabs(this.currentStage, this.stage3SubView, isStage32D, isStringProblem, hasSandbox);
   }
 
   /**
@@ -689,12 +739,11 @@ export class VisualizerAppController {
 
   private updateCodePanel(stageConfig: any): void {
     const variantKeys = stageConfig.variants ? Object.keys(stageConfig.variants) : [];
-    if (stageConfig.variants && variantKeys.length > 1) {
+    if (stageConfig.variants && variantKeys.length > 0) {
       const savedVariant = VisualizerParamSynchronizer.getPreference(`algo-variant-${this.modelId}-${this.currentStage}`, '');
       if (savedVariant && stageConfig.variants[savedVariant]) {
         this.currentStageVariant = savedVariant;
-      }
-      if (!stageConfig.variants[this.currentStageVariant]) {
+      } else if (!stageConfig.variants[this.currentStageVariant]) {
         this.currentStageVariant = variantKeys[0];
       }
     }

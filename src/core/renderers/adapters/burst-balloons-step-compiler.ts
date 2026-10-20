@@ -496,9 +496,56 @@ export function buildBurstBalloonsSteps(params: BurstBalloonsStepParams): Univer
           const leftCoins = grid[i]![k] ?? 0;
           const rightCoins = grid[k]![j] ?? 0;
           const total = leftCoins + rightCoins + gain;
+
+          steps.push({
+            stage: 3,
+            type: 'loop_k',
+            flowPhase: 'forward',
+            line: lineLoopK,
+            codeLine: lineLoopK,
+            i,
+            j,
+            grid: snapshotGrid2D(grid),
+            dp1d: [...val],
+            memo: {},
+            activeSlot: k,
+            gridHighlight: { i, j },
+            deps: [
+              { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftCoins}` },
+              { r: k, c: j, type: 'bottom' as any, label: `dp[${k}][${j}]=${rightCoins}` },
+            ],
+            decision: `尝试最后戳破气球 #${k}(值${val[k]})`,
+            tag: `开区间 (${i}, ${j}) 尝试气球 #${k}: 即时金币=${val[i]}*${val[k]}*${val[j]}=${gain}`,
+            log: `| 🎯 尝试以气球 #${k}(值${val[k]}) 作为开区间 (${i}, ${j}) 最后一个戳破者：金币=${gain} + 左侧(${leftCoins}) + 右侧(${rightCoins}) = ${total}`,
+            msg: `开区间 <code>(${i}, ${j})</code> 尝试以气球 <code>#${k}</code>（值 <code>${val[k]}</code>）作为最后戳破者：即时金币 <code>${val[i]} × ${val[k]} × ${val[j]} = ${gain}</code>，左侧 <code>dp[${i}][${k}] = ${leftCoins}</code>，右侧 <code>dp[${k}][${j}] = ${rightCoins}</code>，总收益 <strong>${total}</strong>。`,
+          });
+
           if (total > best) {
             best = total;
             bestK = k;
+
+            steps.push({
+              stage: 3,
+              type: 'update_best',
+              flowPhase: 'forward',
+              line: lineUpdateBest,
+              codeLine: lineUpdateBest,
+              i,
+              j,
+              grid: snapshotGrid2D(grid),
+              dp1d: [...val],
+              memo: {},
+              activeSlot: k,
+              gridHighlight: { i, j },
+              deps: [
+                { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftCoins}` },
+                { r: k, c: j, type: 'bottom' as any, label: `dp[${k}][${j}]=${rightCoins}` },
+              ],
+              decision: `刷新最大金币 best=${total} (选气球 #${k})`,
+              tag: `更优方案：最后戳气球 #${k} 获得金币 ${total} > 原最高`,
+              log: `| 🏆 刷新最优解：开区间 (${i}, ${j}) 最后戳气球 #${k}，金币刷新为 ${best}`,
+              msg: `更新最优决策：开区间 <code>(${i}, ${j})</code> 最后戳破气球 <code>#${k}</code> 获得金币 <strong>${total}</strong> 刷新当前最高记录。`,
+            });
           }
         }
 

@@ -17,12 +17,24 @@ import { AlgorithmModelRepository } from '../model-repository';
 import { DistinctSubsequencesDeductionAdapter } from './distinct-subsequences-deduction-adapter';
 import { StaticDeductionTreeAdapter } from './static-deduction-tree-adapter';
 import { parseTreeArray, buildRawTree, toUniversalTree } from '../strategies/tree-dp-shared';
+import {
+  buildPartitionedKnapsackDPDependencyTree,
+  buildKnapsackDPDependencyTree,
+  build2DDPDependencyTree,
+  build1DDPDependencyTree,
+} from '../strategies/strategy-helpers';
+import { PartitionedKnapsackSandboxAdapter } from './adapters/partitioned-knapsack-sandbox-adapter';
+import { CoinsFromPilesSandboxAdapter } from './adapters/coins-from-piles-sandbox-adapter';
+import { UnboundedKnapsackSandboxAdapter } from './adapters/unbounded-knapsack-sandbox-adapter';
+import { BuyingHaySandboxAdapter } from './adapters/buying-hay-sandbox-adapter';
+import { BoundedKnapsackSandboxAdapter } from './adapters/bounded-knapsack-sandbox-adapter';
+import { IntervalDpSandboxAdapter } from './adapters/interval-dp-sandbox-adapter';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
-  stage3SubView?: 'matrix' | 'tree' | 'alignment';
+  stage3SubView?: 'matrix' | 'tree' | 'alignment' | 'sandbox';
   stage4SubView?: 'memo' | 'alignment';
-  card2SubView?: 'tree' | 'alignment' | 'stack' | 'matrix' | 'memo';
+  card2SubView?: 'tree' | 'alignment' | 'stack' | 'matrix' | 'memo' | 'sandbox';
   card1SubView?: 'grid' | 'deduction';
   step: UniversalStep;
   m: number;
@@ -32,6 +44,7 @@ export interface StateSpacePresentationOptions {
   is3DLayered?: boolean;
   modelId: string;
   isGridProblem?: boolean;
+  params?: Record<string, any>;
 }
 
 export class StateSpacePresenter {
@@ -436,9 +449,11 @@ export class StateSpacePresenter {
     }
 
     if (currentStage === 'stage-4' || currentStage === 'stage-5') {
-      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位 vs 串比对
+      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位 vs 串比对 vs 区间DP拟物沙盘
       if (options.stage4SubView === 'alignment' || options.card2SubView === 'alignment') {
         this.renderSequenceAlignmentCard2(container, step, options);
+      } else if (IntervalDpSandboxAdapter.isSupported(options.modelId)) {
+        IntervalDpSandboxAdapter.render(container, step, options);
       } else {
         GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       }
@@ -482,8 +497,69 @@ export class StateSpacePresenter {
           }
         }
 
-        if ((stage3SubView === 'tree' || (!is2DGrid && !step.grid && step.treeRoot)) && step.treeRoot) {
+        if (stage3SubView === 'tree') {
+          const depTree = this.resolveStage3DependencyTree(options, step, effectiveM, effectiveN, isReverse);
+          if (depTree) {
+            RecursionTreeAdapter.renderRecursionTree(container, depTree, step.activeNodeId || depTree.id, true);
+            return;
+          }
+        }
+
+        if (stage3SubView === 'sandbox' || options.card2SubView === 'sandbox') {
+          const mId = options.modelId;
+          if (
+            mId === 'coins-from-piles' ||
+            mId === 'coins-from-piles-074' ||
+            mId === 'class074-code02' ||
+            mId === 'maximum-value-of-k-coins-from-piles' ||
+            mId === 'leetcode-2218' ||
+            (step as any).piles !== undefined
+          ) {
+            CoinsFromPilesSandboxAdapter.render(container, step, options);
+          } else if (
+            mId === 'unbounded-knapsack-standard' ||
+            mId === 'complete-knapsack' ||
+            mId === 'unbounded-knapsack' ||
+            mId === 'unbounded-knapsack-074' ||
+            mId === 'class074-code03' ||
+            mId === 'luogu-p1616'
+          ) {
+            UnboundedKnapsackSandboxAdapter.render(container, step, options);
+          } else if (
+            mId === 'buying-hay-min-cost' ||
+            mId === 'buying-hay-min-cost-074' ||
+            mId === 'buying-hay' ||
+            mId === 'class074-code06' ||
+            mId === 'luogu-p2918' ||
+            (step as any).hTarget !== undefined
+          ) {
+            BuyingHaySandboxAdapter.render(container, step, options);
+          } else if (
+            mId === 'bounded-knapsack-naive' ||
+            mId === 'bounded-knapsack-naive-075' ||
+            mId === 'class075-code01' ||
+            mId === 'multiple-knapsack-naive' ||
+            mId === 'luogu-p1776-naive' ||
+            mId === 'bounded-knapsack-binary' ||
+            mId === 'bounded-knapsack-binary-075' ||
+            mId === 'class075-code02' ||
+            mId === 'multiple-knapsack-binary' ||
+            mId === 'luogu-p1776-binary' ||
+            mId === 'multiple-knapsack'
+          ) {
+            BoundedKnapsackSandboxAdapter.render(container, step, options);
+          } else if (IntervalDpSandboxAdapter.isSupported(mId)) {
+            IntervalDpSandboxAdapter.render(container, step, options);
+          } else {
+            PartitionedKnapsackSandboxAdapter.render(container, step, options);
+          }
+          return;
+        }
+
+        if (!is2DGrid && !step.grid && step.treeRoot) {
           RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
+        } else if (IntervalDpSandboxAdapter.isSupported(options.modelId)) {
+          IntervalDpSandboxAdapter.render(container, step, options);
         } else if (is2DGrid && step.grid && step.grid.length > 1) {
           GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel, category: currentCategory });
         } else if (step.dp1d && step.dp1d.length > 0) {
@@ -511,6 +587,76 @@ export class StateSpacePresenter {
         );
       }
     }
+  }
+
+  /**
+   * 动态解析阶段 3 状态依赖拓扑树 (State Dependency Tree)
+   * 优先使用已编译的 treeRoot；若未携带，则按领域规则即时编译拓扑树，杜绝表格冒充状态树！
+   */
+  public static resolveStage3DependencyTree(
+    options: StateSpacePresentationOptions,
+    step: UniversalStep,
+    effectiveM: number,
+    effectiveN: number,
+    isReverse: boolean = false
+  ): any | null {
+    if (step.treeRoot) return step.treeRoot;
+
+    const modelId = options.modelId || '';
+    const isPartitioned = modelId.includes('partitioned') || modelId.includes('074') || (step as any).teams !== undefined;
+
+    if (isPartitioned) {
+      let groups: Array<Array<{ cost: number; val: number }>> = [];
+      const currentModel = AlgorithmModelRepository.hasModel(modelId) ? AlgorithmModelRepository.getModel(modelId) : null;
+      const params = options.params || (currentModel?.defaultParams as any);
+      const rawItems = params?.items || (step as any).items || (step.variables as any)?.items;
+      if (Array.isArray(rawItems) && rawItems.length > 0) {
+        const groupMap = new Map<number, Array<{ cost: number; val: number }>>();
+        for (const it of rawItems) {
+          if (Array.isArray(it) && it.length >= 3) {
+            const [c, v, g] = it;
+            if (!groupMap.has(g)) groupMap.set(g, []);
+            groupMap.get(g)!.push({ cost: Number(c), val: Number(v) });
+          } else if (it && typeof it === 'object' && 'group' in it) {
+            const g = Number(it.group);
+            if (!groupMap.has(g)) groupMap.set(g, []);
+            groupMap.get(g)!.push({ cost: Number(it.cost ?? it.weight ?? 0), val: Number(it.val ?? it.value ?? 0) });
+          }
+        }
+        const sortedKeys = Array.from(groupMap.keys()).sort((a, b) => a - b);
+        groups = sortedKeys.map(k => groupMap.get(k)!);
+      }
+      if (groups.length === 0) {
+        groups = [
+          [{ cost: 10, val: 10 }, { cost: 10, val: 20 }],
+          [{ cost: 20, val: 20 }]
+        ];
+      }
+      const capacity = Number(params?.m || (step as any).capacity || (step.variables as any)?.m || effectiveN - 1 || 45);
+      return buildPartitionedKnapsackDPDependencyTree(groups, capacity, step.grid, step.i, step.j);
+    }
+
+    if (modelId.includes('knapsack') || modelId.includes('01') || options.params?.weights) {
+      const isComplete = modelId.includes('complete');
+      const currentModel = AlgorithmModelRepository.hasModel(modelId) ? AlgorithmModelRepository.getModel(modelId) : null;
+      const params = options.params || (currentModel?.defaultParams as any);
+      let items: Array<{ weight: number; value: number }> = [];
+      if (params?.weights && params?.values) {
+        items = params.weights.map((w: number, idx: number) => ({ weight: w, value: params.values[idx] || 0 }));
+      }
+      const capacity = Number(params?.capacity || params?.bagWeight || params?.m || effectiveN - 1 || 10);
+      return buildKnapsackDPDependencyTree(items, capacity, step.grid, step.i, step.j, isComplete);
+    }
+
+    if (effectiveM > 1 && effectiveN > 1) {
+      return build2DDPDependencyTree(effectiveM, effectiveN, isReverse ? 'reverse' : 'forward', undefined, step.grid, step.i, step.j);
+    }
+
+    if (step.dp1d && step.dp1d.length > 0) {
+      return build1DDPDependencyTree(step.dp1d.length - 1, modelId, step.dp1d, step.i ?? step.j);
+    }
+
+    return null;
   }
 
   /**

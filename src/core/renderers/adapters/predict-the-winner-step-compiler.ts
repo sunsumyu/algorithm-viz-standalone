@@ -520,7 +520,47 @@ export function buildPredictTheWinnerSteps(params: PredictTheWinnerStepParams): 
       for (let i = 0; i <= n - len; i++) {
         const j = i + len - 1;
         const chooseLeft = nums[i]! - (grid[i + 1]![j] ?? 0);
+        steps.push({
+          stage: 3,
+          type: 'branch_left',
+          flowPhase: 'forward',
+          line: lineBranchLeft,
+          codeLine: lineBranchLeft,
+          i,
+          j,
+          grid: snapshotGrid2D(grid),
+          dp1d: [...nums],
+          memo: {},
+          activeSlot: i,
+          gridHighlight: { i, j },
+          deps: [{ r: i + 1, c: j, type: 'bottom' as any, label: `dp[${i + 1}][${j}]=${grid[i + 1]![j] ?? 0}` }],
+          decision: `选左端 nums[${i}]=${nums[i]} 净胜 ${chooseLeft}`,
+          tag: `区间 [${i}, ${j}] 抉择1: 拿走左端牌 nums[${i}](${nums[i]}) ➔ 净胜 ${chooseLeft}`,
+          log: `| 👈 抉择1: 拿走左端牌 nums[${i}]=${nums[i]}，对手后手净胜 dp[${i + 1}][${j}]=${grid[i + 1]![j] ?? 0} ➔ 自身净胜 = ${chooseLeft}`,
+          msg: `区间 <code>[${i}, ${j}]</code> 尝试拿走左端 <code>nums[${i}]=${nums[i]}</code>：对手在后续区间 <code>[${i + 1}, ${j}]</code> 获得净胜分 <code>${grid[i + 1]![j] ?? 0}</code>，自身净得 <code>${chooseLeft}</code>。`,
+        });
+
         const chooseRight = nums[j]! - (grid[i]![j - 1] ?? 0);
+        steps.push({
+          stage: 3,
+          type: 'branch_right',
+          flowPhase: 'forward',
+          line: lineBranchRight,
+          codeLine: lineBranchRight,
+          i,
+          j,
+          grid: snapshotGrid2D(grid),
+          dp1d: [...nums],
+          memo: {},
+          activeSlot: j,
+          gridHighlight: { i, j },
+          deps: [{ r: i, c: j - 1, type: 'left', label: `dp[${i}][${j - 1}]=${grid[i]![j - 1] ?? 0}` }],
+          decision: `选右端 nums[${j}]=${nums[j]} 净胜 ${chooseRight}`,
+          tag: `区间 [${i}, ${j}] 抉择2: 拿走右端牌 nums[${j}](${nums[j]}) ➔ 净胜 ${chooseRight}`,
+          log: `| 👉 抉择2: 拿走右端牌 nums[${j}]=${nums[j]}，对手后手净胜 dp[${i}][${j - 1}]=${grid[i]![j - 1] ?? 0} ➔ 自身净胜 = ${chooseRight}`,
+          msg: `区间 <code>[${i}, ${j}]</code> 尝试拿走右端 <code>nums[${j}]=${nums[j]}</code>：对手在后续区间 <code>[${i}, ${j - 1}]</code> 获得净胜分 <code>${grid[i]![j - 1] ?? 0}</code>，自身净得 <code>${chooseRight}</code>。`,
+        });
+
         const best = Math.max(chooseLeft, chooseRight);
         grid[i]![j] = best;
 

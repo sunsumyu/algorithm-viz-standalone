@@ -31,7 +31,11 @@ export class VariableContextResolver {
     'curL', 'curR', 'curI', 'curJ', 'left', 'right', 'mid', 'target', 'ans', 'val', 'sum',
     'cur', 'prev', 'next', 'min', 'max', 'count', 'res', 'dist', 'weight', 'capacity', 'cost',
     'head', 'tail', 'slow', 'fast', 'pivot', 'low', 'high', 'top', 'leftDown', 'backup',
-    's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'dp', 'memo', 'n', 'm',
+    's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'items', 'piles', 'values', 'dp', 'memo', 'n', 'm',
+    // 背包、分组背包与区间DP核心状态键
+    'teams', 'start', 'end', 'candidate', 'group', 'curGroup', 'groupCount', 'remCap',
+    // 常量与标准I/O句柄
+    'MAXN', 'MAXM', 'INF', 'MOD', 'maxn', 'maxm', 'inf', 'mod', 'br', 'in', 'out', 'args',
     // 扩展图论、树与通用算法核心状态键
     'curNode', 'to', 'w', 'edge', 'd', 'visited', 'distance', 'distList', 'visitedList',
     'cnt', 'ei', 'curWeight',
@@ -43,6 +47,29 @@ export class VariableContextResolver {
 
   /** 全局常见算法核心变量业务语义词典（用于代码悬停气泡精准显示变量作用） */
   private static readonly DEFAULT_VARIABLE_DESCRIPTIONS: Record<string, string> = {
+    // ── 基础数据与输入集合 ──
+    arr: '二维物品三元组数组: arr[k][0]=体积, arr[k][1]=价值, arr[k][2]=组号',
+    items: '二维物品特征集合列表: items[k][0]=体积, items[k][1]=价值, items[k][2]=组号',
+    nums: '核心数字序列/元素数组',
+    values: '多边形顶点权值数组 (凸多边形逆时针顶点权值)',
+    maxn: '常量: 物品/数据规模上限 (静态分配空间)',
+    maxm: '常量: 背包容量/列规模上限 (静态分配空间)',
+    inf: '无穷大哨兵常量 (如 1e9 / 0x3f3f3f3f)',
+    mod: '大质数取模常量 (1e9+7)',
+    br: '标准输入缓冲字符流 (BufferedReader)',
+    in: '标准输入分词器 (StreamTokenizer)',
+    out: '标准格式化输出流 (PrintWriter)',
+    args: '主函数命令行启动参数 (String[] args)',
+
+    // ── 分组背包与动态规划 ──
+    teams: '独立物品组总数 (按组互斥划分)',
+    start: '当前物品组起始下标 (双指针区间起点)',
+    end: '当前物品组终止边界 (双指针开区间终点)',
+    capacity: '背包当前限制容量 (最大可承载负荷)',
+    remCap: '背包剩余可用容量',
+    cost: '物品消耗成本 / 占用体积',
+    candidate: '状态转移候选计算值',
+
     // ── 图论与最短路核心 ──
     k: '信号广播源点 (起始发射节点)',
     n: '网络节点总数 (标记为 1 到 n)',
@@ -148,6 +175,107 @@ export class VariableContextResolver {
   }
 
   /**
+   * 获取变量的业务语义说明（支持题干定制与全局语义词典）
+   */
+  public static getDescription(varName: string, stepContext?: any): string | undefined {
+    if (!varName) return undefined;
+    const clean = varName.trim();
+    const cleanLower = clean.toLowerCase();
+
+    const customDesc =
+      stepContext?.varDetails?.[clean] ||
+      stepContext?.vars?.varDetails?.[clean] ||
+      stepContext?.varDetails?.[cleanLower] ||
+      stepContext?.vars?.varDetails?.[cleanLower];
+
+    if (customDesc) return customDesc;
+
+    return (
+      this.DEFAULT_VARIABLE_DESCRIPTIONS[clean] ||
+      this.DEFAULT_VARIABLE_DESCRIPTIONS[cleanLower]
+    );
+  }
+
+  /**
+   * 安全解析下标表达式（如 "i", "j", "i - 1", "j - 10", "k + 1", "0", "j - arr[k][0]"）
+   */
+  public static evaluateIndexExpr(
+    expr: string,
+    varsMap: Map<string, ResolvedVariable>,
+    stepContext?: any,
+    depth: number = 0
+  ): number {
+    if (!expr || depth > 2) return NaN;
+    const trimmed = expr.trim();
+    if (/^-?\d+$/.test(trimmed)) {
+      return parseInt(trimmed, 10);
+    }
+    const directVar = varsMap.get(trimmed);
+    if (directVar && /^-?\d+$/.test(directVar.value)) {
+      return parseInt(directVar.value, 10);
+    }
+    const opMatch = trimmed.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*([+-])\s*(.+)$/);
+    if (opMatch) {
+      const leftId = opMatch[1];
+      const op = opMatch[2];
+      const rightTerm = opMatch[3].trim();
+      const leftVal = parseInt(varsMap.get(leftId)?.value ?? '', 10);
+      let rightVal = NaN;
+      if (/^\d+$/.test(rightTerm)) {
+        rightVal = parseInt(rightTerm, 10);
+      } else if (varsMap.has(rightTerm)) {
+        rightVal = parseInt(varsMap.get(rightTerm)?.value ?? '', 10);
+      } else if (rightTerm.includes('[') && depth < 2) {
+        // 尝试解析嵌套数组表达式 如 arr[k][0]
+        const nestedRes = this.getVariable(varsMap, rightTerm, stepContext);
+        if (nestedRes && /^-?\d+$/.test(nestedRes.value)) {
+          rightVal = parseInt(nestedRes.value, 10);
+        }
+      }
+      if (!isNaN(leftVal) && !isNaN(rightVal)) {
+        return op === '+' ? leftVal + rightVal : leftVal - rightVal;
+      }
+    }
+    return NaN;
+  }
+
+  /**
+   * 解析数组/矩阵下标表达式（支持多维嵌套，如 "dp[i - 1][j - arr[k][0]]", "arr[k][1]", "dp[j]"）
+   */
+  public static parseSubscriptExpression(expr: string): { tableName: string; indices: string[] } | null {
+    if (!expr) return null;
+    const trimmed = expr.trim();
+    const idMatch = trimmed.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\[/);
+    if (!idMatch) return null;
+
+    const tableName = idMatch[1];
+    let idx = idMatch[0].length - 1; // pointing to first '['
+    const indices: string[] = [];
+
+    while (idx < trimmed.length && trimmed[idx] === '[') {
+      let depth = 0;
+      const start = idx + 1;
+      while (idx < trimmed.length) {
+        if (trimmed[idx] === '[') depth++;
+        else if (trimmed[idx] === ']') {
+          depth--;
+          if (depth === 0) {
+            indices.push(trimmed.slice(start, idx));
+            idx++;
+            break;
+          }
+        }
+        idx++;
+      }
+      if (depth !== 0) return null; // 未正确闭合
+      while (idx < trimmed.length && /\s/.test(trimmed[idx])) idx++;
+    }
+
+    if (indices.length === 0 || idx < trimmed.length) return null;
+    return { tableName, indices };
+  }
+
+  /**
    * 判断是否为 Canvas/SVG 专用图元布局对象（包含带坐标的 nodes/edges），避免图元污染变量表
    */
   private static isVisualLayoutObject(val: unknown): boolean {
@@ -187,12 +315,21 @@ export class VariableContextResolver {
 
     const s = step as Record<string, any>;
 
-    // ── 0. 优先解析 step.scope (一等局部变量快照) ───────────────────
-    if (s.scope && typeof s.scope === 'object') {
-      for (const [k, val] of Object.entries(s.scope)) {
-        const entry = this.formatValueEntry(k, val);
-        if (entry) {
-          varsMap.set(k, entry);
+    // ── 0. 优先解析 step.scope / step.variables / step.locals (一等局部变量快照) ──
+    const explicitScopes = [
+      s.scope && typeof s.scope === 'object' ? s.scope : null,
+      s.variables && typeof s.variables === 'object' && !Array.isArray(s.variables) ? s.variables : null,
+      s.locals && typeof s.locals === 'object' ? s.locals : null,
+    ];
+    for (const sc of explicitScopes) {
+      if (sc) {
+        for (const [k, val] of Object.entries(sc)) {
+          if (!varsMap.has(k)) {
+            const entry = this.formatValueEntry(k, val);
+            if (entry) {
+              varsMap.set(k, entry);
+            }
+          }
         }
       }
     }
@@ -367,15 +504,27 @@ export class VariableContextResolver {
       varsMap.set('n', { name: 'n', value: String(s.s2.length), type: 'number', raw: s.s2.length });
     }
 
-    // 3. 网格矩阵行与列派生
+    // 2.5 背包问题 capacity 与 teams 语义对齐
+    if (s.capacity !== undefined && !varsMap.has('capacity')) {
+      varsMap.set('capacity', { name: 'capacity', value: String(s.capacity), type: 'number', raw: s.capacity });
+    }
+    if (s.teams !== undefined && !varsMap.has('teams')) {
+      varsMap.set('teams', { name: 'teams', value: String(s.teams), type: 'number', raw: s.teams });
+    }
+
+    // 3. 网格矩阵行与列派生 (仅在非背包/非组间DP网格中执行兜底派生，避免将 teams+1 错当成 m)
+    const isKnapsackLike = varsMap.has('teams') || varsMap.has('capacity') || s.teams !== undefined || s.capacity !== undefined;
     const grid = s.grid || s.dpTable || s.memoGrid;
-    if (Array.isArray(grid) && grid.length > 0) {
+    if (Array.isArray(grid) && grid.length > 0 && !isKnapsackLike) {
       if (!varsMap.has('m')) {
         varsMap.set('m', { name: 'm', value: String(grid.length), type: 'number', raw: grid.length });
       }
       if (Array.isArray(grid[0]) && !varsMap.has('n')) {
         varsMap.set('n', { name: 'n', value: String(grid[0].length), type: 'number', raw: grid[0].length });
       }
+    } else if (isKnapsackLike && s.capacity !== undefined && !varsMap.has('m')) {
+      // 背包问题中标准 OJ 模板中 m 往往指代容量 (如 dp[teams + 1][m + 1])
+      varsMap.set('m', { name: 'm', value: String(s.capacity), type: 'number', raw: s.capacity });
     }
 
     // 4. 区间与滑动窗口智能推导 (l, r, len 三元互推)
@@ -443,6 +592,51 @@ export class VariableContextResolver {
       if (!varsMap.has('adj')) {
         const entry = this.formatValueEntry('adj', graphData);
         if (entry) varsMap.set('adj', entry);
+      }
+    }
+
+    // F. 数据集与集合智能推导 (items, arr, nums, data, grid, matrix)
+    const rawItems = s.items || s.arr || s.nums || s.rawItems || s.vars?.items || s.vars?.arr || s.vars?.nums || varsMap.get('items')?.raw || varsMap.get('arr')?.raw;
+    if (rawItems !== undefined && !this.isVisualLayoutObject(rawItems)) {
+      if (!varsMap.has('items')) {
+        const entry = this.formatValueEntry('items', rawItems);
+        if (entry) varsMap.set('items', entry);
+      }
+      if (!varsMap.has('arr')) {
+        const entry = this.formatValueEntry('arr', rawItems);
+        if (entry) varsMap.set('arr', entry);
+      }
+      if (!varsMap.has('nums')) {
+        const entry = this.formatValueEntry('nums', rawItems);
+        if (entry) varsMap.set('nums', entry);
+      }
+      if (Array.isArray(rawItems) && !varsMap.has('n')) {
+        varsMap.set('n', { name: 'n', value: String(rawItems.length), type: 'number', raw: rawItems.length });
+      }
+    }
+
+    const rawGrid = s.grid || s.matrix || s.board || s.dpTable || s.memoGrid || s.table || s.vars?.grid || s.vars?.matrix || varsMap.get('grid')?.raw || varsMap.get('matrix')?.raw;
+    if (rawGrid !== undefined && !this.isVisualLayoutObject(rawGrid)) {
+      const keysToSet = ['grid', 'matrix', 'board', 'table'];
+      if (Array.isArray(rawGrid)) {
+        keysToSet.push('dp', 'memo', 'dpTable', 'memoGrid');
+      }
+      for (const key of keysToSet) {
+        if (!varsMap.has(key)) {
+          const entry = this.formatValueEntry(key, rawGrid);
+          if (entry) varsMap.set(key, entry);
+        }
+      }
+    }
+
+    // F.1 一维滚动状态槽位智能推导 (slotVector, slots, dp)
+    const rawSlots = s.slotVector || s.slots || s.arr1D || s.vars?.slotVector || s.vars?.slots;
+    if (Array.isArray(rawSlots) && !this.isVisualLayoutObject(rawSlots)) {
+      for (const key of ['slots', 'slotVector', 'dp']) {
+        if (!varsMap.has(key)) {
+          const entry = this.formatValueEntry(key, rawSlots);
+          if (entry) varsMap.set(key, entry);
+        }
       }
     }
 
@@ -710,7 +904,7 @@ export class VariableContextResolver {
     this.syncAliasGroup(varsMap, resultAliases);
 
     // 语义组 11: 源点入参 / 起点 (Source Node / Start Parameter)
-    const sourceAliases = ['k', 'source', 'src', 'startNode', 'start', 'startVertex'];
+    const sourceAliases = ['k', 'source', 'src', 'startNode', 'startVertex'];
     this.syncAliasGroup(varsMap, sourceAliases);
 
     // 语义组 12: 目标端点 / 终点 (Destination Node / Target Parameter)
@@ -726,6 +920,26 @@ export class VariableContextResolver {
     // 语义组 14: 当前搜索路径与路径栈 (Current Search Path / Path Stack)
     const pathAliases = ['path', 'currentPath', 'pathNodes', 'activePath'];
     this.syncAliasGroup(varsMap, pathAliases);
+
+    // 语义组 15: 集合与核心输入数据集 (Collections / Input Arrays)
+    const collectionAliases = ['arr', 'items', 'nums', 'data', 'elements', 'values', 'list'];
+    this.syncAliasGroup(varsMap, collectionAliases);
+
+    // 语义组 16: 二维网格与矩阵 (Grid / Matrix)
+    const gridAliases = ['grid', 'matrix', 'board', 'table'];
+    this.syncAliasGroup(varsMap, gridAliases);
+
+    // 语义组 17: 字符串与输入序列 (Strings / Sequences)
+    const stringAliases = ['s', 'str', 's1', 'text1'];
+    this.syncAliasGroup(varsMap, stringAliases);
+
+    // 语义组 18: 背包容量与额度 (Capacity / Limit)
+    const capacityAliases = ['m', 'capacity', 'remCap', 'limit'];
+    this.syncAliasGroup(varsMap, capacityAliases);
+
+    // 语义组 19: 规模与元素总数 (Size / Total Count)
+    const sizeAliases = ['n', 'size', 'count', 'total', 'len'];
+    this.syncAliasGroup(varsMap, sizeAliases);
 
     // 语义组 15: 全量解路径集合 (All Paths / Result Paths)
     const pathsAliases = ['allPaths', 'paths', 'res', 'resultPaths', 'pathList'];
@@ -795,20 +1009,219 @@ export class VariableContextResolver {
     if (!varsMap || !varName) return undefined;
     const cleanExpr = varName.trim();
 
-    // 0. 特殊处理：若查询 dp / memo 且当前存在 l 和 r，优先丰富关联单元格详情
-    if (cleanExpr === 'dp' || cleanExpr === 'memo' || cleanExpr === 'dpTable') {
+    // 0. 特殊处理：若查询 dp / memo / table，智能求值单元格、滚动槽位或状态表格
+    if (cleanExpr === 'dp' || cleanExpr === 'memo' || cleanExpr === 'dpTable' || cleanExpr === 'memoGrid' || cleanExpr === 'table') {
       const lVal = varsMap.get('l')?.value || varsMap.get('i')?.value;
       const rVal = varsMap.get('r')?.value || varsMap.get('j')?.value;
-      const tableData = stepContext?.dpTable || stepContext?.memoGrid || varsMap.get('dp')?.raw || varsMap.get('dpTable')?.raw;
-      if (lVal != null && rVal != null && Array.isArray(tableData)) {
-        const curCellVal = tableData[parseInt(lVal, 10)]?.[parseInt(rVal, 10)];
-        const valStr = curCellVal === null || curCellVal === undefined ? '-' : String(curCellVal);
+      const tableData =
+        stepContext?.grid ||
+        stepContext?.dpTable ||
+        stepContext?.memoGrid ||
+        stepContext?.table ||
+        stepContext?.slotVector ||
+        stepContext?.slots ||
+        varsMap.get('dp')?.raw ||
+        varsMap.get('grid')?.raw ||
+        varsMap.get('matrix')?.raw ||
+        varsMap.get('dpTable')?.raw;
+
+      if (Array.isArray(tableData)) {
+        if (Array.isArray(tableData[0])) {
+          // 二维表
+          if (lVal != null && rVal != null) {
+            const rIdx = parseInt(lVal, 10);
+            const cIdx = parseInt(rVal, 10);
+            if (!isNaN(rIdx) && !isNaN(cIdx)) {
+              const curCellVal = tableData[rIdx]?.[cIdx];
+              const valStr = curCellVal === null || curCellVal === undefined ? '-' : String(curCellVal);
+              return {
+                name: cleanExpr,
+                value: `[${lVal}][${rVal}] = ${valStr}`,
+                type: 'expression',
+                detail: `当前单元格 ${cleanExpr}[${lVal}][${rVal}] = ${valStr}`,
+                raw: tableData,
+              };
+            }
+          }
+          const rows = tableData.length;
+          const cols = tableData[0].length;
+          return {
+            name: cleanExpr,
+            value: `[${rows}×${cols}]`,
+            type: 'array',
+            detail: `动态规划二维状态表 (${rows} 行 ${cols} 列)`,
+            raw: tableData,
+          };
+        } else {
+          // 一维滚动数组
+          const idxVal = rVal ?? lVal;
+          if (idxVal != null) {
+            const idxNum = parseInt(idxVal, 10);
+            if (!isNaN(idxNum)) {
+              const cellVal = tableData[idxNum];
+              const valStr = cellVal === null || cellVal === undefined ? '-' : String(cellVal);
+              return {
+                name: cleanExpr,
+                value: `[${idxVal}] = ${valStr}`,
+                type: 'expression',
+                detail: `当前一维状态 ${cleanExpr}[${idxVal}] = ${valStr}`,
+                raw: tableData,
+              };
+            }
+          }
+          return {
+            name: cleanExpr,
+            value: `[${tableData.length}]`,
+            type: 'array',
+            detail: `一维动态规划滚动数组 (长度 ${tableData.length})`,
+            raw: tableData,
+          };
+        }
+      }
+    }
+
+    // 0.05 特殊处理：若查询 arr / items / nums / weights / costs / values 变量，展示整个数组的全量值与结构，并关联当前下标指针
+    if (
+      cleanExpr === 'arr' ||
+      cleanExpr === 'items' ||
+      cleanExpr === 'nums' ||
+      cleanExpr === 'weights' ||
+      cleanExpr === 'costs' ||
+      cleanExpr === 'cost' ||
+      cleanExpr === 'values' ||
+      cleanExpr === 'vals' ||
+      cleanExpr === 'val'
+    ) {
+      const arrData =
+        stepContext?.[cleanExpr] ||
+        stepContext?.items ||
+        stepContext?.arr ||
+        stepContext?.vars?.[cleanExpr] ||
+        stepContext?.vars?.items ||
+        stepContext?.vars?.arr ||
+        stepContext?.nums ||
+        varsMap.get(cleanExpr)?.raw ||
+        varsMap.get('items')?.raw ||
+        varsMap.get('arr')?.raw ||
+        varsMap.get('nums')?.raw;
+
+      if (Array.isArray(arrData) && arrData.length > 0) {
+        // 过滤占位项（如 1-indexed 数组的 index 0: null/undefined）
+        const isOneIndexed = arrData[0] === null || arrData[0] === undefined;
+        const validItems = isOneIndexed ? arrData.slice(1) : arrData;
+        const totalCount = validItems.length;
+
+        // 格式化整个数组值
+        let arrayPreview = '';
+        const is2DArray = validItems.some((it: any) => Array.isArray(it));
+        if (is2DArray) {
+          const formattedRows = validItems.slice(0, 6).map((it: any) => {
+            if (Array.isArray(it)) {
+              return `[${it.join(', ')}]`;
+            }
+            return String(it);
+          });
+          const suffix = totalCount > 6 ? `, ... (共 ${totalCount} 项)` : '';
+          arrayPreview = `[${formattedRows.join(', ')}${suffix}]`;
+        } else {
+          const formattedItems = validItems.slice(0, 8).map((it: any) => String(it));
+          const suffix = totalCount > 8 ? `, ... (共 ${totalCount} 项)` : '';
+          arrayPreview = `[${formattedItems.join(', ')}${suffix}]`;
+        }
+
+        // 检测当前指针上下文 (k, i, mid)
+        const idxKey = varsMap.has('k') ? 'k' : varsMap.has('i') ? 'i' : varsMap.has('mid') ? 'mid' : undefined;
+        const idxVal = idxKey ? varsMap.get(idxKey)?.value : undefined;
+        let pointerDetail = '';
+
+        if (idxVal != null) {
+          const idxNum = parseInt(idxVal, 10);
+          if (!isNaN(idxNum) && idxNum >= 0 && idxNum < arrData.length) {
+            const itemVal = arrData[idxNum];
+            if (Array.isArray(itemVal) && itemVal.length >= 3) {
+              pointerDetail = `。当前指针 ${idxKey}=${idxVal} 指向物品 #${idxVal} 特征三元组: 体积 ${itemVal[0]}, 价值 ${itemVal[1]}, 组号 ${itemVal[2]}`;
+            } else if (itemVal !== null && itemVal !== undefined) {
+              const itemPreview = Array.isArray(itemVal) ? `[${itemVal.join(', ')}]` : String(itemVal);
+              pointerDetail = `。当前指针 ${idxKey}=${idxVal} 指向元素: ${cleanExpr}[${idxVal}] = ${itemPreview}`;
+            }
+          }
+        }
+
+        const typeDesc = is2DArray ? '二维物品数组' : '数据数组';
         return {
           name: cleanExpr,
-          value: `[${lVal}][${rVal}] = ${valStr}`,
-          type: 'expression',
-          detail: `当前单元格 ${cleanExpr}[${lVal}][${rVal}] = ${valStr}`,
-          raw: tableData,
+          value: arrayPreview,
+          type: 'array',
+          detail: `${typeDesc} (共 ${totalCount} 项)${pointerDetail}`,
+          raw: arrData,
+        };
+      }
+    }
+
+    // 0.08 特殊处理：若查询 piles (硬币栈集合)，展示全部硬币栈并关联当前栈指针与抽取状态
+    if (cleanExpr === 'piles') {
+      const pilesData =
+        stepContext?.piles ||
+        stepContext?.vars?.piles ||
+        varsMap.get('piles')?.raw;
+
+      if (Array.isArray(pilesData) && pilesData.length > 0) {
+        const formattedPiles = pilesData.map((p: any) => (Array.isArray(p) ? `[${p.join(', ')}]` : String(p)));
+        const valPreview = `[${formattedPiles.join(', ')}]`;
+
+        const curIVal = varsMap.get('i')?.value;
+        const curCVal = varsMap.get('c')?.value;
+        let pointerDetail = '';
+        if (curIVal != null) {
+          const iNum = parseInt(curIVal, 10);
+          if (!isNaN(iNum) && iNum >= 0 && iNum < pilesData.length) {
+            const curPile = pilesData[iNum];
+            const pileStr = Array.isArray(curPile) ? `[${curPile.join(', ')}]` : String(curPile);
+            const cStr = curCVal != null ? `，当前试选抽取 c=${curCVal} 枚` : '';
+            pointerDetail = `。当前指针 i=${curIVal} 指向硬币栈 #${curIVal}: ${pileStr}${cStr}`;
+          }
+        }
+
+        return {
+          name: 'piles',
+          value: valPreview,
+          type: 'array',
+          detail: `硬币栈列表 (共 ${pilesData.length} 个独立栈)${pointerDetail}`,
+          raw: pilesData,
+        };
+      }
+    }
+
+    // 0.09 特殊处理：若查询 preSum (前缀和数组)
+    if (cleanExpr === 'preSum' || cleanExpr === 'presum') {
+      const curIVal = varsMap.get('i')?.value;
+      const pilesData = stepContext?.piles || varsMap.get('piles')?.raw;
+      const curI = curIVal != null ? parseInt(curIVal, 10) : 0;
+      const curPile = Array.isArray(pilesData) && curI >= 0 && curI < pilesData.length ? pilesData[curI] : null;
+
+      let preSumArr = stepContext?.preSum || varsMap.get('preSum')?.raw;
+      if (!Array.isArray(preSumArr) && Array.isArray(curPile)) {
+        preSumArr = [0];
+        for (let p = 0; p < curPile.length; p++) {
+          preSumArr.push(preSumArr[p] + curPile[p]);
+        }
+      }
+
+      if (Array.isArray(preSumArr) && preSumArr.length > 0) {
+        const curCVal = varsMap.get('c')?.value;
+        let cDetail = '';
+        if (curCVal != null) {
+          const cNum = parseInt(curCVal, 10);
+          if (!isNaN(cNum) && cNum >= 0 && cNum < preSumArr.length) {
+            cDetail = `。当前连续拿取 c=${curCVal} 枚面值收益 = ${preSumArr[cNum]}`;
+          }
+        }
+        return {
+          name: cleanExpr,
+          value: `[${preSumArr.join(', ')}]`,
+          type: 'array',
+          detail: `当前栈前缀和数组 (长度 ${preSumArr.length}): 索引 c 代表连续提取 c 枚硬币的总面值${cDetail}`,
+          raw: preSumArr,
         };
       }
     }
@@ -870,34 +1283,88 @@ export class VariableContextResolver {
       }
     }
 
-    // 3. 复合二维下标求值: 如 dp[l][r], dp[i][j], arr[i][j], memo[l][r]
-    const index2DMatch = cleanExpr.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\[([^\]]+)\]\[([^\]]+)\]$/);
-    if (index2DMatch) {
-      const tableName = index2DMatch[1];
-      const rExpr = index2DMatch[2].trim();
-      const cExpr = index2DMatch[3].trim();
-      const rVal = parseInt(varsMap.get(rExpr)?.value ?? rExpr, 10);
-      const cVal = parseInt(varsMap.get(cExpr)?.value ?? cExpr, 10);
+    // 3. 复合二维下标求值: 如 dp[l][r], dp[i][j], arr[k][1], memo[l][r], dp[i - 1][j - arr[k][0]]
+    const parsedSub = this.parseSubscriptExpression(cleanExpr);
+    if (parsedSub && parsedSub.indices.length === 2) {
+      const tableName = parsedSub.tableName;
+      const rExpr = parsedSub.indices[0].trim();
+      const cExpr = parsedSub.indices[1].trim();
+      const rVal = this.evaluateIndexExpr(rExpr, varsMap, stepContext);
+      const cVal = this.evaluateIndexExpr(cExpr, varsMap, stepContext);
 
-      const tableData = stepContext?.dpTable || stepContext?.memoGrid || varsMap.get(tableName)?.raw || varsMap.get('dp')?.raw || varsMap.get('dpTable')?.raw;
+      let tableData: any = null;
+      if (tableName === 'arr' || tableName === 'items') {
+        tableData = stepContext?.items || stepContext?.arr || stepContext?.vars?.items || stepContext?.vars?.arr || varsMap.get('items')?.raw || varsMap.get('arr')?.raw;
+      } else if (tableName === 'dp' || tableName === 'memo' || tableName === 'dpTable' || tableName === 'memoGrid') {
+        tableData = stepContext?.dpTable || stepContext?.grid || stepContext?.memoGrid || varsMap.get('dp')?.raw || varsMap.get('grid')?.raw;
+      } else {
+        tableData = stepContext?.[tableName] || varsMap.get(tableName)?.raw || stepContext?.grid || varsMap.get('grid')?.raw;
+      }
+
       if (Array.isArray(tableData) && !isNaN(rVal) && !isNaN(cVal)) {
-        const cellVal = tableData[rVal]?.[cVal];
+        const row = tableData[rVal];
+        const cellVal = Array.isArray(row) ? row[cVal] : undefined;
         const displayVal = cellVal === null || cellVal === undefined ? '-' : String(cellVal);
+
+        if (tableName === 'arr' || tableName === 'items') {
+          let colSemantic = '';
+          if (cVal === 0) {
+            colSemantic = '消耗体积 (容量占用)';
+          } else if (cVal === 1) {
+            colSemantic = '收益价值 (价值增加)';
+          } else if (cVal === 2) {
+            colSemantic = '所属组号';
+          }
+
+          const tripleSummary = Array.isArray(row) && row.length >= 3
+            ? `(所属三元组: [体积: ${row[0]}, 价值: ${row[1]}, 组号: ${row[2]}])`
+            : '';
+
+          const detail = colSemantic
+            ? `物品 #${rVal} ${colSemantic} = ${displayVal} ${tripleSummary}`
+            : `物品 #${rVal}[${cVal}] = ${displayVal} ${tripleSummary}`;
+
+          return {
+            name: `${tableName}[${rVal}][${cVal}]`,
+            value: displayVal,
+            type: 'expression',
+            detail: detail.trim(),
+            raw: cellVal,
+          };
+        }
+
+        if (tableName === 'dp' || tableName === 'memo' || tableName === 'dpTable') {
+          const stage = stepContext?.stage;
+          let dpDetail = '';
+          if (stage === 3 || stepContext?.teams != null) {
+            dpDetail = `动态规划状态格 dp[${rVal}][${cVal}] = ${displayVal} (前 ${rVal} 组物品、容量为 ${cVal} 时的最大收益)`;
+          } else {
+            dpDetail = `动态规划状态格 ${tableName}[${rVal}][${cVal}] = ${displayVal}`;
+          }
+          return {
+            name: `${tableName}[${rVal}][${cVal}]`,
+            value: displayVal,
+            type: 'expression',
+            detail: dpDetail,
+            raw: cellVal,
+          };
+        }
+
         return {
           name: `${tableName}[${rVal}][${cVal}]`,
           value: displayVal,
           type: 'expression',
-          detail: `${cleanExpr} = ${displayVal}`,
+          detail: `二维单元格 ${tableName}[${rVal}][${cVal}] = ${displayVal}`,
+          raw: cellVal,
         };
       }
     }
 
-    // 4. 一维下标求值: 如 dp[r], arr[i], nums[mid], s[l], head[u], next[cnt]
-    const index1DMatch = cleanExpr.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\[([^\]]+)\]$/);
-    if (index1DMatch) {
-      const arrName = index1DMatch[1];
-      const idxExpr = index1DMatch[2].trim();
-      const idxVal = parseInt(varsMap.get(idxExpr)?.value ?? idxExpr, 10);
+    // 4. 一维下标求值: 如 dp[r], arr[i], nums[mid], s[l], head[u], next[cnt], dp[j], arr[k]
+    if (parsedSub && parsedSub.indices.length === 1) {
+      const arrName = parsedSub.tableName;
+      const idxExpr = parsedSub.indices[0].trim();
+      const idxVal = this.evaluateIndexExpr(idxExpr, varsMap, stepContext);
 
       if (!isNaN(idxVal)) {
         // 先检查 varsMap 中是否已有推导好的精确具体项 (如 head[2], next[1])
@@ -911,14 +1378,18 @@ export class VariableContextResolver {
           };
         }
 
-        const arrData =
-          varsMap.get(arrName)?.raw ||
-          stepContext?.[arrName] ||
-          stepContext?.s ||
-          stepContext?.str ||
-          varsMap.get('s')?.raw ||
-          varsMap.get('str')?.raw ||
-          varsMap.get('s')?.value?.replace(/^['"]|['"]$/g, '');
+        let arrData: any = null;
+        if (arrName === 'arr' || arrName === 'items') {
+          arrData = stepContext?.items || stepContext?.arr || stepContext?.vars?.items || stepContext?.vars?.arr || varsMap.get('items')?.raw || varsMap.get('arr')?.raw;
+        } else if (arrName === 'dp' || arrName === 'slots' || arrName === 'slotVector') {
+          arrData = stepContext?.slotVector || stepContext?.slots || varsMap.get('slots')?.raw || varsMap.get('slotVector')?.raw || varsMap.get('dp')?.raw;
+        } else if (arrName === 'values') {
+          arrData = stepContext?.values || stepContext?.dp1d || varsMap.get('values')?.raw || varsMap.get('dp1d')?.raw;
+        } else if (arrName === 'val') {
+          arrData = stepContext?.val || stepContext?.dp1d || varsMap.get('val')?.raw || varsMap.get('dp1d')?.raw;
+        } else {
+          arrData = varsMap.get(arrName)?.raw || stepContext?.[arrName] || stepContext?.nums || stepContext?.s || stepContext?.str;
+        }
 
         if (typeof arrData === 'string' && idxVal >= 0 && idxVal < arrData.length) {
           const ch = arrData[idxVal];
@@ -930,12 +1401,22 @@ export class VariableContextResolver {
           };
         } else if (Array.isArray(arrData)) {
           const itemVal = arrData[idxVal];
-          const displayVal = itemVal === null || itemVal === undefined ? '-' : String(itemVal);
+          if (Array.isArray(itemVal) && (arrName === 'arr' || arrName === 'items') && itemVal.length >= 3) {
+            return {
+              name: `${arrName}[${idxVal}]`,
+              value: `[${itemVal.join(', ')}]`,
+              type: 'expression',
+              detail: `物品 #${idxVal} 特征三元组: 体积 ${itemVal[0]}, 价值 ${itemVal[1]}, 组号 ${itemVal[2]} (二维结构: ${arrName}[k][0:体积, 1:价值, 2:组号])`,
+              raw: itemVal,
+            };
+          }
+          const displayVal = itemVal === null || itemVal === undefined ? '-' : (Array.isArray(itemVal) ? `[${itemVal.join(', ')}]` : String(itemVal));
           return {
             name: `${arrName}[${idxVal}]`,
             value: displayVal,
             type: 'expression',
-            detail: `${cleanExpr} = ${displayVal}`,
+            detail: `${arrName}[${idxVal}] = ${displayVal}`,
+            raw: itemVal,
           };
         }
       }
@@ -989,6 +1470,28 @@ export class VariableContextResolver {
           raw: itemVal,
         };
       }
+    }
+
+    // 7. 标准系统 / 算法通用常量与 I/O 句柄降级求值
+    const systemHandles: Record<string, { value: string; type: ResolvedVariable['type']; detail: string }> = {
+      br: { value: 'BufferedReader', type: 'object', detail: '字符缓冲输入流 (包装 System.in 提升读取性能)' },
+      in: { value: 'StreamTokenizer', type: 'object', detail: '快速 I/O 分词器 (高频整数与符号极速解析)' },
+      out: { value: 'PrintWriter', type: 'object', detail: '格式化输出打印流 (带缓冲批量 flush 杜绝 TLE)' },
+      args: { value: 'String[]', type: 'array', detail: '主函数命令行启动入参 (String[] args)' },
+      maxn: { value: '1005', type: 'number', detail: '常量: 物品/数据规模上限 (静态分配空间 1005)' },
+      maxm: { value: '1005', type: 'number', detail: '常量: 背包容量/列规模上限 (静态分配空间 1005)' },
+      inf: { value: '1000000000', type: 'number', detail: '无穷大哨兵常量 (1e9 / 0x3f3f3f3f)' },
+      mod: { value: '1000000007', type: 'number', detail: '大质数取模常量 (1e9+7)' },
+    };
+
+    if (systemHandles[lower]) {
+      const h = systemHandles[lower];
+      return {
+        name: cleanExpr,
+        value: h.value,
+        type: h.type,
+        detail: h.detail,
+      };
     }
 
     return undefined;
@@ -1097,6 +1600,19 @@ export class VariableContextResolver {
         };
       }
       if (Array.isArray(val[0])) {
+        if (name === 'matrix' || name === 'grid') {
+          return { name, value: `[${val.length}×${val[0].length}]`, type: 'array', raw: val };
+        }
+        if (val.length <= 6) {
+          const rowPreview = val.map((row: any) => Array.isArray(row) ? `[${row.slice(0, 4).join(',')}${row.length > 4 ? '..' : ''}]` : String(row)).join(', ');
+          return {
+            name,
+            value: `[${rowPreview}]`,
+            type: 'array',
+            detail: `${name}: ${val.length} 项数据三元组/矩阵 [体积, 价值, 组号]`,
+            raw: val,
+          };
+        }
         return { name, value: `[${val.length}×${val[0].length}]`, type: 'array', raw: val };
       }
       const formatItem = (x: any): string => {

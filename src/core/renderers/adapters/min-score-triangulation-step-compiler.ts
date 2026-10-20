@@ -520,9 +520,56 @@ export function buildMinScoreTriangulationSteps(params: MinScoreTriangulationSte
           const leftScore = grid[i]![k] ?? 0;
           const rightScore = grid[k]![j] ?? 0;
           const score = leftScore + rightScore + tri;
+
+          steps.push({
+            stage: 3,
+            type: 'loop_k',
+            flowPhase: 'forward',
+            line: lineLoopK,
+            codeLine: lineLoopK,
+            i,
+            j,
+            grid: snapshotGrid2D(grid),
+            dp1d: [...values],
+            memo: {},
+            activeSlot: k,
+            gridHighlight: { i, j },
+            deps: [
+              { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftScore}` },
+              { r: k, c: j, type: 'bottom' as any, label: `dp[${k}][${j}]=${rightScore}` },
+            ],
+            decision: `枚举顶点 k=${k} 构三角形`,
+            tag: `多边形 [${i}..${j}] 尝试顶点 k=${k}: 三角形(${i},${k},${j})得分=${tri}`,
+            log: `| 🔍 尝试以顶点 k=${k} 构三角形：(${values[i]}*${values[k]}*${values[j]}=${tri}) + 左侧(${leftScore}) + 右侧(${rightScore}) = ${score}`,
+            msg: `多边形 <code>[${i}..${j}]</code> 尝试以顶点 <code>k = ${k}</code> 构成三角形：三角形得分 <code>${values[i]} × ${values[k]} × ${values[j]} = ${tri}</code>，左侧 <code>dp[${i}][${k}] = ${leftScore}</code>，右侧 <code>dp[${k}][${j}] = ${rightScore}</code>，总计 <strong>${score}</strong>。`,
+          });
+
           if (score < minScore) {
             minScore = score;
             bestK = k;
+
+            steps.push({
+              stage: 3,
+              type: 'update_min',
+              flowPhase: 'forward',
+              line: lineUpdateMin,
+              codeLine: lineUpdateMin,
+              i,
+              j,
+              grid: snapshotGrid2D(grid),
+              dp1d: [...values],
+              memo: {},
+              activeSlot: k,
+              gridHighlight: { i, j },
+              deps: [
+                { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftScore}` },
+                { r: k, c: j, type: 'bottom' as any, label: `dp[${k}][${j}]=${rightScore}` },
+              ],
+              decision: `更新最低得分 minScore=${score} (k=${k})`,
+              tag: `更优方案：选顶点 k=${k} 得分 ${score} < 原最低`,
+              log: `| ✨ 找到更低得分：k=${k}，最低得分更新为 ${minScore}`,
+              msg: `更新最优解：选择顶点 <code>k = ${k}</code> 时总得分 <strong>${score}</strong> 优于之前方案，刷新当前子多边形最低得分。`,
+            });
           }
         }
 
