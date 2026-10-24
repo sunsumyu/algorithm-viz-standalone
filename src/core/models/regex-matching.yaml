@@ -84,20 +84,23 @@ stages:
       forward: "对于模式串中的每个字符，若下一字符为 '*'，则枚举匹配 0 次或消耗首字符后继续保持星号规则，展开为深层决策树。"
       reverse: "从终点目标状态向前倒推，展示朴素递归中出现的严重重叠子问题与指数级爆炸分支。"
     variants:
-      standard:
-        variantLabel: "标准递归实现"
+      branch_opt:
+        variantLabel: "完全背包分支版 (无循环二选一递归 · 推荐)"
         title:
-          forward: "RegexMatching_Recursive.java"
-          reverse: "RegexMatching_Recursive_Reverse.java"
+          forward: "Code04_RegularExpressionMatching_Branch.java"
+          reverse: "Code04_RegularExpressionMatching_Branch_Reverse.java"
         code:
           forward:
-            title: "RegexMatching_Recursive.java"
+            title: "Code04_RegularExpressionMatching_Branch.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配 - 阶段 1: 完全背包选择分支版 (无循环二选一)
+              // 核心思想：遇到 '*'，要么匹配 0 次 (j+2)，要么首字符匹配后继续保留当前 '*' 规则 (i+1, j)
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
                   }
-                  private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                  // 阶段 1: 暴力递归尝试 (星号完全背包选择分支)
+                  private static boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
                       if (j == p.length) return i == s.length; // @step:boundary
                       boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
                       if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
@@ -108,19 +111,71 @@ stages:
                   }
               }
           reverse:
-            title: "RegexMatching_Recursive_Reverse.java"
+            title: "Code04_RegularExpressionMatching_Branch_Reverse.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配 - 阶段 1: 完全背包选择分支版 (逆推)
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
                   }
-                  private boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                  private static boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
                       if (j == p.length) return i == s.length; // @step:boundary
                       boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
                       if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
                           return dfs(s, p, i, j + 2) // @step:branch_zero
                               || (first && dfs(s, p, i + 1, j)); // @step:branch_take
                       }
+                      return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+                  }
+              }
+      naive_loop:
+        variantLabel: "左神074原版循环枚举尝试 (带 while 暴力版)"
+        title:
+          forward: "Code04_RegularExpressionMatching_NaiveLoop.java"
+          reverse: "Code04_RegularExpressionMatching_NaiveLoop_Reverse.java"
+        code:
+          forward:
+            title: "Code04_RegularExpressionMatching_NaiveLoop.java"
+            source: |
+              // LeetCode 10. 正则表达式匹配 - 阶段 1: 左神 074 原版朴素循环枚举版
+              // 核心思想：遇到 '*'，依次循环枚举匹配 0 个、1 个、2 个... 直到字符无法匹配
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
+                      return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+                  }
+                  private static boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                      if (j == p.length) return i == s.length; // @step:boundary
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          // 决策 1: 当前 '*' 匹配 0 次
+                          if (dfs(s, p, i, j + 2)) return true; // @step:branch_zero
+                          // 决策 2: 用循环枚举 '*' 匹配 1 次、2 次、3 次...
+                          for (int k = i; k < s.length && (s[k] == p[j] || p[j] == '.'); k++) { // @step:branch_take
+                              if (dfs(s, p, k + 1, j + 2)) return true;
+                          }
+                          return false;
+                      }
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
+                      return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
+                  }
+              }
+          reverse:
+            title: "Code04_RegularExpressionMatching_NaiveLoop_Reverse.java"
+            source: |
+              // LeetCode 10. 正则表达式匹配 - 阶段 1: 左神 074 原版朴素循环枚举版 (逆推)
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
+                      return dfs(s.toCharArray(), p.toCharArray(), 0, 0); // @step:entry
+                  }
+                  private static boolean dfs(char[] s, char[] p, int i, int j) { // @step:dfs_entry
+                      if (j == p.length) return i == s.length; // @step:boundary
+                      if (j + 1 < p.length && p[j + 1] == '*') { // @step:check_star
+                          if (dfs(s, p, i, j + 2)) return true; // @step:branch_zero
+                          for (int k = i; k < s.length && (s[k] == p[j] || p[j] == '.'); k++) { // @step:branch_take
+                              if (dfs(s, p, k + 1, j + 2)) return true;
+                          }
+                          return false;
+                      }
+                      boolean first = i < s.length && (s[i] == p[j] || p[j] == '.'); // @step:first_match
                       return first && dfs(s, p, i + 1, j + 1); // @step:branch_single
                   }
               }
@@ -140,19 +195,22 @@ stages:
       array_memo:
         variantLabel: "二维矩阵缓存版"
         title:
-          forward: "RegexMatching_Memo.java"
-          reverse: "RegexMatching_Memo_Reverse.java"
+          forward: "Code04_RegularExpressionMatching_Memo.java"
+          reverse: "Code04_RegularExpressionMatching_Memo_Reverse.java"
         code:
           forward:
-            title: "RegexMatching_Memo.java"
+            title: "Code04_RegularExpressionMatching_Memo.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       char[] sArr = s.toCharArray(), pArr = p.toCharArray();
                       int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
                       return dfs(sArr, pArr, 0, 0, memo);
                   }
-                  private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+                  // 阶段 2: 记忆化搜索 (二维备忘录消除重叠子问题)
+                  private static boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
                       if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
                       if (j == p.length) { // @step:boundary
                           memo[i][j] = (i == s.length) ? 2 : 1;
@@ -170,15 +228,17 @@ stages:
                   }
               }
           reverse:
-            title: "RegexMatching_Memo_Reverse.java"
+            title: "Code04_RegularExpressionMatching_Memo_Reverse.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       char[] sArr = s.toCharArray(), pArr = p.toCharArray();
                       int[][] memo = new int[sArr.length + 1][pArr.length + 1]; // @step:entry
                       return dfs(sArr, pArr, 0, 0, memo);
                   }
-                  private boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
+                  private static boolean dfs(char[] s, char[] p, int i, int j, int[][] memo) { // @step:dfs_entry
                       if (memo[i][j] != 0) return memo[i][j] == 2; // @step:cache_hit
                       if (j == p.length) { // @step:boundary
                           memo[i][j] = (i == s.length) ? 2 : 1;
@@ -211,14 +271,18 @@ stages:
       standard:
         variantLabel: "二维 DP 状态表"
         title:
-          forward: "RegexMatching_2D.java"
-          reverse: "RegexMatching_2D_Reverse.java"
+          forward: "Code04_RegularExpressionMatching.java"
+          reverse: "Code04_RegularExpressionMatching_Reverse.java"
         code:
           forward:
-            title: "RegexMatching_2D.java"
+            title: "Code04_RegularExpressionMatching.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+
+                  // 阶段 3: 严格位置依赖二维动态规划 (自底向上填表，星号斜率优化)
+                  public static boolean isMatch(String s, String p) {
                       int n = s.length(), m = p.length();
                       boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
                       dp[n][m] = true; // @step:base
@@ -238,10 +302,12 @@ stages:
                   }
               }
           reverse:
-            title: "RegexMatching_2D_Reverse.java"
+            title: "Code04_RegularExpressionMatching_Reverse.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       int n = s.length(), m = p.length();
                       boolean[][] dp = new boolean[n + 1][m + 1]; // @step:init
                       dp[n][m] = true; // @step:base
@@ -276,14 +342,18 @@ stages:
       rolling:
         variantLabel: "两行滚动优化版"
         title:
-          forward: "RegexMatching_Rolling.java"
-          reverse: "RegexMatching_Rolling_Reverse.java"
+          forward: "Code04_RegularExpressionMatching_Rolling.java"
+          reverse: "Code04_RegularExpressionMatching_Rolling_Reverse.java"
         code:
           forward:
-            title: "RegexMatching_Rolling.java"
+            title: "Code04_RegularExpressionMatching_Rolling.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+
+                  // 阶段 4: 两行滚动数组空间压缩 (O(M) 空间优化)
+                  public static boolean isMatch(String s, String p) {
                       int n = s.length(), m = p.length();
                       boolean[] next = new boolean[m + 1]; // @step:init
                       next[m] = true; // @step:base
@@ -305,10 +375,12 @@ stages:
                   }
               }
           reverse:
-            title: "RegexMatching_Rolling_Reverse.java"
+            title: "Code04_RegularExpressionMatching_Rolling_Reverse.java"
             source: |
-              class Solution {
-                  public boolean isMatch(String s, String p) {
+              // LeetCode 10. 正则表达式匹配
+              // 左程云算法通关课 Class 074 Code04 标准实现
+              public class Code04_RegularExpressionMatching {
+                  public static boolean isMatch(String s, String p) {
                       int n = s.length(), m = p.length();
                       boolean[] next = new boolean[m + 1]; // @step:init
                       next[m] = true; // @step:base

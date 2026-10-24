@@ -2578,15 +2578,15 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "islands",
-    name: "岛屿数量 (DFS)",
+    name: "岛屿数量 (LC 200 全阶段演化)",
     viewId: "algo-islands-view",
     category: "graph",
-    description: "使用深度优先搜索沉岛法计算二维网格中连通岛屿的数量",
+    description: "从 DFS 递归沉岛到 BFS 队列波浪扩散，再到并查集 Union-Find 连通分量的完整演化",
     icon: "🏝️",
     difficulty: 2,
     levelOrder: 1,
-    learningGoal: "掌握网格图 DFS 连通分量遍历与沉岛染色技巧",
-    aliases: ["class029-code01","islands","number-of-islands","leetcode-200"],
+    learningGoal: "掌握网格图连通块分析三大经典解法：DFS、BFS 与并查集",
+    aliases: ["class029-code01","islands","number-of-islands","leetcode-200","islands-bfs","number-of-islands-bfs","leetcode-200-bfs"],
   },
   {
     id: "dfs-theory",
@@ -2599,18 +2599,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     levelOrder: 2,
     learningGoal: "掌握 DFS 递归深入与回溯机制，深刻理解递归调用栈与状态空间遍历",
     aliases: ["dfs-basic","depth-first-search-theory"],
-  },
-  {
-    id: "islands-bfs",
-    name: "岛屿数量 (BFS)",
-    viewId: "algo-islands-bfs-view",
-    category: "graph",
-    description: "使用广度优先搜索队列波浪式染色计算二维网格中连通岛屿的数量",
-    icon: "🌊",
-    difficulty: 2,
-    levelOrder: 2,
-    learningGoal: "掌握网格图 BFS 逐层扩散与入队即染色的内存控制技巧",
-    aliases: ["islands-bfs","number-of-islands-bfs","leetcode-200-bfs"],
   },
   {
     id: "max-island-area",
@@ -2699,11 +2687,11 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     name: "太平洋大西洋水流 (LC 417)",
     viewId: "algo-water-flow-view",
     category: "graph",
-    description: "逆向思维：分别从太平洋与大西洋边界逆流登山搜索，求双洋可达性交集",
+    description: "从正向暴力到逆向思维：双洋边界逆流登山 (DFS/BFS) 与双矩阵交集求解",
     icon: "🌊",
     difficulty: 2,
     levelOrder: 17,
-    learningGoal: "掌握逆向多源 DFS/BFS 搜索与双矩阵交集求解技巧",
+    learningGoal: "深刻掌握正向顺流与逆向登山思维逆转，熟练对比 DFS 递归栈与 BFS 队列波前扩散",
     aliases: ["class058-code04","pacific-atlantic-417"],
   },
   {
@@ -6604,7 +6592,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "彻底掌握二叉树前中后序遍历的递归与迭代两种实现，理解访问时机与栈操作的本质",
-    aliases: ["class018-code01","binary-tree-traversal","preorder-inorder-postorder"],
+    aliases: ["class018-code01","binary-tree-traversal","preorder-inorder-postorder","leetcode-144","leetcode-94","leetcode-145","144","94","145"],
   },
   {
     id: "tree-invert",
@@ -6616,7 +6604,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3,
     learningGoal: "掌握利用递归或层序遍历互换每个节点左右子树指针的算法本质",
-    aliases: ["leetcode-226","invert-binary-tree"],
+    aliases: ["leetcode-226","226","invert-binary-tree"],
   },
   {
     id: "tree-symmetric",
@@ -6628,7 +6616,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 4,
     learningGoal: "掌握镜像二叉树双指针同时向下递归遍历外侧与内侧节点的算法设计模式",
-    aliases: ["leetcode-101","symmetric-tree"],
+    aliases: ["leetcode-101","101","symmetric-tree"],
   },
   {
     id: "trie-tree-017",
@@ -6640,7 +6628,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 17,
     learningGoal: "深入掌握前缀树节点 pass 与 end 核心设计，理解多模式串共享公共前缀的快速统计与静态数组优化",
-    aliases: ["class017-code01","trie-tree-017","trie-prefix-tree","leetcode-208"],
+    aliases: ["class017-code01","trie-tree-017","trie-tree","trie-prefix-tree","leetcode-208"],
   },
   {
     id: "tree-recursion-patterns-019",
@@ -6652,7 +6640,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 19,
     learningGoal: "彻底掌握树形 DP 递归套路，学会设计统一 Info 结构体解决平衡树、搜索二叉树与树最大距离等高频考题",
-    aliases: ["class019-code01","tree-recursion-patterns-019","tree-dp-patterns"],
+    aliases: ["class019-code01","tree-recursion-patterns-019","tree-recursion-patterns","tree-dp-patterns","tree-recursion"],
   },
   {
     id: "tree-traversal-iterative-020",
@@ -6664,7 +6652,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 20,
     learningGoal: "掌握使用显式单栈/双栈模拟系统递归调用过程，深入理解先序、中序、后序在栈内的时序转换",
-    aliases: ["class020-code01","tree-traversal-iterative-020","iterative-traversal","tree-traversal-stack"],
+    aliases: ["class020-code01","tree-traversal-iterative-020","tree-traversal-iterative","iterative-traversal","tree-traversal-stack"],
   },
   {
     id: "tree-serialization-021",
@@ -6676,7 +6664,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 21,
     learningGoal: "掌握二叉树空节点标记设计，实现先序与层序序列化字符串与二叉树拓扑结构互转",
-    aliases: ["class021-code01","tree-serialization-021","serialize-and-deserialize-binary-tree","leetcode-297"],
+    aliases: ["class021-code01","tree-serialization-021","serialize-and-deserialize-binary-tree","leetcode-297","tree-serialization"],
   },
   {
     id: "max-sum-bst-036",
@@ -6688,7 +6676,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 36,
     learningGoal: "掌握二叉树树形 DP 递归套路与 Info 结构体设计，自底向上搜集子树信息判定二叉搜索树并动态刷新最大键值和",
-    aliases: ["leetcode-1373","max-sum-bst","maximum-sum-bst-in-binary-tree"],
+    aliases: ["leetcode-1373","1373","max-sum-bst","maximum-sum-bst-in-binary-tree"],
   },
   {
     id: "tree-serialization-037",
@@ -6712,7 +6700,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 40,
     learningGoal: "理解折纸物理展开与满二叉树中序遍历的数学同构关系，掌握不建树利用递归栈完成 O(N) 空间求解的技巧",
-    aliases: ["paper-folding","zuo-class-040","fold-paper-creases"],
+    aliases: ["paper-folding","paper-folding-040","zuo-class-040","fold-paper-creases"],
   },
   {
     id: "binary-tree-level",
@@ -6723,7 +6711,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🥞",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["tree-036-level-order"],
+    aliases: ["tree-036-level-order","leetcode-102","binary-tree-level-order-traversal"],
   },
   {
     id: "bst-delete",
@@ -6806,18 +6794,6 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     aliases: ["class039-code01","class016-code01","comparator-priority-queue","priority-queue-comparator"],
   },
   {
-    id: "find-duplicate-subtrees",
-    name: "寻找重复的子树",
-    viewId: "algo-find-duplicate-subtrees-view",
-    category: "tree",
-    description: "寻找重复的子树",
-    icon: "📊",
-    difficulty: 2,
-    levelOrder: 99,
-    learningGoal: "掌握二叉树自底向上后序遍历子树序列化判定图同构，深度理解三元组 (val, leftUID, rightUID) 的 O(N) 整数哈希压缩原理",
-    aliases: ["leetcode-652","find-duplicate-subtrees"],
-  },
-  {
     id: "heap-greater-041",
     name: "手动实现加强堆 (Class 041)",
     viewId: "algo-heap-greater-041-view",
@@ -6837,7 +6813,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 3,
     levelOrder: 99,
-    aliases: ["class042-code02","find-median-from-data-stream-295","leetcode-295","median-finder"],
+    aliases: ["class042-code02","heap-median-stream","heap-median-stream-042","find-median-from-data-stream-295","find-median-from-data-stream","leetcode-295","median-finder","dual-heap"],
   },
   {
     id: "heap-sort-040",
@@ -6859,7 +6835,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🤝",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["tree-037-lowest-common-ancestor"],
+    aliases: ["tree-037-lowest-common-ancestor","leetcode-236","236","lowest-common-ancestor-of-a-binary-tree"],
   },
   {
     id: "path-sum",
@@ -6870,7 +6846,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "🪜",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["tree-037-path-sum-ii"],
+    aliases: ["tree-037-path-sum-ii","leetcode-112","leetcode-113","path-sum-ii"],
   },
   {
     id: "pseudotree-dp-199",
@@ -6950,7 +6926,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 109,
     learningGoal: "掌握离散化 rank 映射与倒序扫描利用树状数组动态统计逆序对数的经典算法",
-    aliases: ["class109-code01","fenwick-inversion","fenwick-inversion-109","inversion-pairs-bit"],
+    aliases: ["class109-code01","fenwick-inversion","fenwick-inversion-109","inversion-pairs-bit","p1908"],
   },
   {
     id: "segment-tree-110",
@@ -6974,7 +6950,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 111,
     learningGoal: "理解动态开点在处理 10^9 等超大坐标轴时按需分配节点的空间优化思想",
-    aliases: ["class111-code01","dynamic-segment-tree","dynamic-segment-tree-111"],
+    aliases: ["class111-code01","dynamic-segment-tree","dynamic-segment-tree-111","leetcode-715","p2781"],
   },
   {
     id: "min-depth",
@@ -6998,7 +6974,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 112,
     learningGoal: "深入掌握权值线段树对值域进行二分建树与单点插入，实现 O(log V) 查找动态集合中第 K 小元素",
-    aliases: ["class112-code01","value-segment-tree","value-segment-tree-112","kth-smallest-seg-tree"],
+    aliases: ["class112-code01","value-segment-tree","value-segment-tree-112","kth-smallest-seg-tree","p1138","p3369"],
   },
   {
     id: "interval-merge-segment-tree-113",
@@ -7010,7 +6986,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 113,
     learningGoal: "掌握线段树四元组 (sum, lmax, rmax, maxSum) 的合并定理与跨越中点动态拼接技巧",
-    aliases: ["class113-code01","interval-merge-segment-tree","interval-merge-segment-tree-113","max-subarray-sum-seg-tree"],
+    aliases: ["class113-code01","interval-merge-segment-tree","interval-merge-segment-tree-113","max-subarray-sum-seg-tree","p4513","gss1"],
   },
   {
     id: "sweep-line-115",
@@ -7022,7 +6998,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 115,
     learningGoal: "掌握经典几何扫描线 (Sweep Line) 思想，将二维面积积分转化为一维切片线段树覆盖长度的动态维护",
-    aliases: ["class115-code01","sweep-line","sweep-line-115","rectangle-area-union"],
+    aliases: ["class115-code01","sweep-line","sweep-line-115","rectangle-area-union","p5490"],
   },
   {
     id: "sparse-table-117",
@@ -7034,7 +7010,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 117,
     learningGoal: "掌握 ST 表倍增状态设计与可重复贡献性质（Idempotent），理解 O(1) 常数时间静态区间最值查询原理",
-    aliases: ["class117-code01","sparse-table","sparse-table-117","st-table","rmq"],
+    aliases: ["class117-code01","sparse-table","sparse-table-117","st-table","rmq","p3865"],
   },
   {
     id: "tree-lca-binary-lifting-118",
@@ -7046,7 +7022,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 118,
     learningGoal: "深刻理解树上倍增深度二进制对齐与同步倍增逼近 LCA 的核心原理与 O(log N) 复杂度证明",
-    aliases: ["class118-code01","tree-lca-118","lowest-common-ancestor-binary-lifting"],
+    aliases: ["class118-code01","tree-lca-118","tree-lca","lowest-common-ancestor-binary-lifting"],
   },
   {
     id: "tree-centroid-120",
@@ -7094,7 +7070,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 123,
     learningGoal: "深刻理解两遍 BFS 求解无权/非负权树直径的数学证明与线性复杂度实现",
-    aliases: ["class123-code01","tree-diameter-123"],
+    aliases: ["class123-code01","tree-diameter","tree-diameter-123","sp1437","leetcode-1245","longest-path-in-a-tree"],
   },
   {
     id: "binary-tree-maximum-path-sum",
@@ -7106,7 +7082,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 124,
     learningGoal: "透彻掌握树形 DP 经典模型：单边向上贡献收益与跨根拱形全路径和分离计算的精妙架构",
-    aliases: ["max-path-sum-tree","leetcode-124-tree"],
+    aliases: ["leetcode-124","124","max-path-sum-tree","leetcode-124-tree"],
   },
   {
     id: "morris-traversal-124",
@@ -7130,7 +7106,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 129,
     learningGoal: "掌握二叉树自顶向下递归路径数值累加，理解叶子判定、BFS 双队列同步与显式双栈迭代机制",
-    aliases: ["leetcode-129","sum-numbers","sum-root-to-leaf"],
+    aliases: ["leetcode-129","129","sum-numbers","sum-root-to-leaf"],
   },
   {
     id: "avl-tree-148",
@@ -7385,6 +7361,18 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     aliases: ["leetcode-617","merge-two-binary-trees"],
   },
   {
+    id: "find-duplicate-subtrees",
+    name: "寻找重复的子树",
+    viewId: "algo-find-duplicate-subtrees-view",
+    category: "tree",
+    description: "寻找重复的子树",
+    icon: "👯",
+    difficulty: 2,
+    levelOrder: 652,
+    learningGoal: "掌握二叉树自底向上后序遍历子树序列化判定图同构，深度理解三元组 (val, leftUID, rightUID) 的 O(N) 整数哈希压缩原理",
+    aliases: ["leetcode-652","652","find-duplicate-subtrees"],
+  },
+  {
     id: "max-tree",
     name: "最大二叉树",
     viewId: "algo-max-tree-view",
@@ -7430,6 +7418,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 3605,
     learningGoal: "掌握先序遍历占位符 (#) 序列化协议，深入理解基于 Token 递归队列无损重建二叉树的机制",
+    aliases: ["preorder-serialize","tree-036-preorder-serialize","tree-036-code05"],
   },
   {
     id: "tree-036-levelorder-serialize",
@@ -7441,6 +7430,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3606,
     learningGoal: "掌握基于队列的层序序列化与反序列化双指针重建机制，体会自顶向下逐层消费 token 恢复子树的过程",
+    aliases: ["levelorder-serialize","tree-036-levelorder-serialize","tree-036-code06"],
   },
   {
     id: "tree-036-completeness-binary-tree",
@@ -7476,7 +7466,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3702,
     learningGoal: "领会二叉搜索树分叉点定理，利用数值单调性在 O(h) 时间与 O(1) 空间内直接定位 LCA",
-    aliases: ["bst-lca"],
+    aliases: ["bst-lca","leetcode-235","235","lowest-common-ancestor-bst"],
   },
   {
     id: "tree-037-balanced-binary-tree",
@@ -7500,7 +7490,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3706,
     learningGoal: "掌握二叉搜索树单侧越界整枝修剪的递归精髓，理解子树提升替代父节点的指针重挂机制",
-    aliases: ["bst-trim"],
+    aliases: ["trim-bst","tree-037-trim-bst","leetcode-669","trim-a-binary-search-tree","bst-trim","class037-code06"],
   },
   {
     id: "tree-037-house-robber-iii",
@@ -7512,6 +7502,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3707,
     learningGoal: "领会树形动态规划经典互斥状态设计 [notRob, robCur]，掌握后序遍历自底向上的状态转移方程推导",
+    aliases: ["leetcode-337","house-robber-iii","tree-dp-house-robber","house-robber-3"],
   },
   {
     id: "substring-concatenation-words",

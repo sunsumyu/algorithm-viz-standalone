@@ -77,13 +77,64 @@ describe('BuildTreeStepCompiler & BuildTreeCanvasAdapter Deep Module Suite', () 
       expect(vals).toEqual([1, 2, 3]);
     });
 
-    it('renderCanvas 与 renderCustomMetrics 不抛出异常', () => {
+    it('所有推演步骤均具备非空指标值 (消除 Card 2 空横杠破相缺陷)', () => {
+      const steps1 = buildTreeSteps(preorder, inorder);
+      for (const step of steps1) {
+        expect(step.metrics).toBeDefined();
+        expect(step.metrics!['cur-root']).toBeTruthy();
+        expect(step.metrics!['pre-range']).toBeTruthy();
+        expect(step.metrics!['in-range']).toBeTruthy();
+      }
+
+      const steps2 = buildTreeStage2PostorderSteps(inorder, postorder);
+      for (const step of steps2) {
+        expect(step.metrics).toBeDefined();
+        expect(step.metrics!['cur-root']).toBeTruthy();
+        expect(step.metrics!['pre-range']).toBeTruthy();
+        expect(step.metrics!['in-range']).toBeTruthy();
+      }
+
+      const steps3 = buildTreeStage3StackSteps(preorder, inorder);
+      for (const step of steps3) {
+        expect(step.metrics).toBeDefined();
+        expect(step.metrics!['cur-root']).toBeTruthy();
+        expect(step.metrics!['pre-range']).toBeTruthy();
+        expect(step.metrics!['in-range']).toBeTruthy();
+      }
+    });
+
+    it('renderCanvas 严格遵循 Zero-Subbox 契约与 100% 自包含内联布局', () => {
       const container = document.createElement('div');
       const steps = buildTreeSteps(preorder, inorder);
-      expect(() => {
-        BuildTreeCanvasAdapter.renderCanvas(container, steps[0]);
-        BuildTreeCanvasAdapter.renderCustomMetrics(container, steps[steps.length - 1]);
-      }).not.toThrow();
+      BuildTreeCanvasAdapter.renderCanvas(container, steps[1]);
+
+      // 1. 不包含违规的内联指标微型盒 (Zero-Subbox)
+      expect(container.innerHTML).not.toContain('🎯 锁定根');
+
+      // 2. 具有自包含内联样式与双轨切片
+      expect(container.innerHTML).toContain('display: flex');
+      expect(container.innerHTML).toContain('中序 &amp; 前序切片对齐');
+      expect(container.innerHTML).toContain('preorder:');
+      expect(container.innerHTML).toContain('inorder:');
+
+      // 3. Stage 2 后序切片对齐测试
+      const steps2 = buildTreeStage2PostorderSteps(inorder, postorder);
+      BuildTreeCanvasAdapter.renderCanvas(container, steps2[1]);
+      expect(container.innerHTML).toContain('中序 &amp; 后序切片对齐');
+      expect(container.innerHTML).toContain('postorder:');
+    });
+
+    it('renderCustomMetrics 正确挂载方程卡片与递归深度监控', () => {
+      const container = document.createElement('div');
+      const steps = buildTreeSteps(preorder, inorder);
+      const stepWithRoot = steps.find((s) => s.rootVal != null)!;
+      expect(stepWithRoot).toBeDefined();
+      BuildTreeCanvasAdapter.renderCustomMetrics(container, stepWithRoot);
+
+      expect(container.innerHTML).toContain('分治切分方程与实参代入');
+      expect(container.innerHTML).toContain('左子树递归实参');
+      expect(container.innerHTML).toContain('右子树递归实参');
     });
   });
 });
+
