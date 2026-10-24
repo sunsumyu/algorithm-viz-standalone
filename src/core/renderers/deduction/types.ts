@@ -13,6 +13,9 @@ export interface StaticDeductionRenderOptions {
   word1?: string;
   word2?: string;
   inputs?: Record<string, any>;
+  params?: Record<string, any>;
+  piles?: number[][];
+  k?: number;
   preset?: string;
   step?: any;
   extra?: any;

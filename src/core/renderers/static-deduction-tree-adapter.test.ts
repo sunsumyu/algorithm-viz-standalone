@@ -1375,6 +1375,118 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(container.innerHTML).toContain('到达对偶汇点与提前终止');
     expect(container.innerHTML).toContain('对偶路径回溯与原图割割边映射');
   });
+
+  it('应当能正确为 balanced-binary-tree (判断平衡二叉树 · LeetCode 110 / Class 037) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('balanced-binary-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-037-balanced-binary-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-110')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('110')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-037-balanced-binary-tree',
+    });
+    expect(container.innerHTML).toContain('判断平衡二叉树 (Balanced Binary Tree · LeetCode 110 / Class 037) · 全景推演树');
+    expect(container.innerHTML).toContain('自底向上递归与 Info 二元组模型');
+    expect(container.innerHTML).toContain('返回值复用与 -1 剪枝击穿优化');
+    expect(container.innerHTML).toContain('显式后序遍历与深度表映射');
+    expect(container.innerHTML).toContain('二叉树递归套路黄金模板');
+  });
+
+  it('应当能正确为 build-tree (从前序/后序与中序构造二叉树 · LeetCode 105 & 106) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('build-tree')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('105')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('106')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-105')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('tree-036-build-tree-preorder-inorder')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'build-tree',
+    });
+    expect(container.innerHTML).toContain('从前序/后序与中序遍历构造二叉树');
+    expect(container.innerHTML).toContain('六步切分法');
+    expect(container.innerHTML).toContain('前序+中序分治切分递归构造');
+  });
+
+  it('应当能正确为 lowest-common-ancestor-bst (二叉搜索树最近公共祖先 · LeetCode 235) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('lowest-common-ancestor-bst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('235')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-235')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('bst-lca')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'lowest-common-ancestor-bst',
+    });
+    expect(container.innerHTML).toContain('二叉搜索树最近公共祖先');
+    expect(container.innerHTML).toContain('分流点定理');
+  });
+
+  it('应当能正确为 lca (二叉树最近公共祖先 · LeetCode 236) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('lca')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('236')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-236')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'lca',
+    });
+    expect(container.innerHTML).toContain('二叉树最近公共祖先');
+    expect(container.innerHTML).toContain('后序遍历自底向上天然汇聚');
+  });
+
+  it('应当能正确为 sorted-array-to-bst (有序数组转二叉搜索树 · LeetCode 108) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('sorted-array-to-bst')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('108')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-108')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'sorted-array-to-bst',
+    });
+    expect(container.innerHTML).toContain('有序数组转二叉搜索树');
+    expect(container.innerHTML).toContain('二分选根分治思想');
+  });
+
+  it('应当能正确为 tree-invert (翻转二叉树 · LeetCode 226) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tree-invert')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('226')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-226')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-invert',
+    });
+    expect(container.innerHTML).toContain('翻转二叉树');
+    expect(container.innerHTML).toContain('前序遍历最为顺畅自然');
+  });
+
+  it('应当能正确为 tree-symmetric (对称二叉树 · LeetCode 101) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('tree-symmetric')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('101')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-101')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'tree-symmetric',
+    });
+    expect(container.innerHTML).toContain('对称二叉树');
+    expect(container.innerHTML).toContain('外侧与内侧双指针联动模型');
+  });
+
+  it('应当能正确为 path-sum (路径总和与全解收集 · LeetCode 112 & 113) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('path-sum')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('112')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('113')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-112')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'path-sum',
+    });
+    expect(container.innerHTML).toContain('路径总和与全解收集');
+  });
 });
 
 

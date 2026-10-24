@@ -14,7 +14,7 @@ export class ReachablePathsDeductionRenderer implements IDeductionTreeRenderer {
     return (
       modelId === 'reachable-paths' ||
       modelId === '797' ||
-      modelId === 'all-paths' ||
+      modelId === 'all-paths-source-target' ||
       modelId === 'allPathsSourceTarget'
     );
   }

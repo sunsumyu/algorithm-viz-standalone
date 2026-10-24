@@ -27,12 +27,15 @@ export interface InnerStepOptions {
 export interface OuterRoundOptions {
   title: string;
   subtitle: string;
-  stepLinesHtml: string;
+  stepLinesHtml?: string;
+  innerStepsHtml?: string;
 }
 
 export interface FinalReturnOptions {
-  returnCode: string;
-  answerDescription: string;
+  returnCode?: string;
+  answerDescription?: string;
+  resultStr?: string;
+  complexityStr?: string;
 }
 
 export class DeductionBoardPrimitives {
@@ -105,6 +108,7 @@ export class DeductionBoardPrimitives {
   }
 
   public static renderOuterRound(opts: OuterRoundOptions): string {
+    const content = opts.stepLinesHtml ?? opts.innerStepsHtml ?? '';
     return `
       <div class="deduction-round-card border border-slate-200/90 rounded-lg overflow-hidden bg-slate-50/50">
         <div class="deduction-round-header bg-slate-100/90 px-2.5 py-1.5 border-b border-slate-200 flex items-center justify-between">
@@ -114,7 +118,7 @@ export class DeductionBoardPrimitives {
           <span class="deduction-round-badge text-[10px] text-slate-500 font-mono">${opts.subtitle}</span>
         </div>
         <div class="deduction-round-body p-2 space-y-2 font-mono text-[11px]">
-          ${opts.stepLinesHtml}
+          ${content}
         </div>
       </div>
     `;
@@ -140,6 +144,8 @@ export class DeductionBoardPrimitives {
   }
 
   public static renderFinalReturn(opts: FinalReturnOptions): string {
+    const code = opts.returnCode ?? opts.resultStr ?? '';
+    const desc = opts.answerDescription ?? opts.complexityStr ?? '';
     return `
       <div class="deduction-section-card bg-white border border-slate-200 rounded-xl p-3 shadow-2xs">
         <div class="deduction-section-top font-extrabold text-slate-800 flex items-center gap-1.5 text-xs mb-2">
@@ -147,9 +153,9 @@ export class DeductionBoardPrimitives {
           <span class="deduction-section-title">第三阶段：返回最终结果</span>
         </div>
         <div class="deduction-return-box font-mono text-[11px] bg-slate-900 text-slate-200 rounded-lg p-3 space-y-1">
-          <div class="deduction-return-line text-slate-400">回到代码最后一行：<span class="deduction-return-code text-amber-300">${opts.returnCode}</span></div>
+          <div class="deduction-return-line text-slate-400">输出与复杂度：<span class="deduction-return-code text-amber-300">${code}</span></div>
           <div class="deduction-return-desc text-emerald-400 font-bold text-xs pt-1">
-            🏆 最终返回：${opts.answerDescription}
+            🏆 最终规约：${desc}
           </div>
         </div>
       </div>

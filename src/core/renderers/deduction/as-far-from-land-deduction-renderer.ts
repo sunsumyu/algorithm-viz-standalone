@@ -14,7 +14,8 @@ export class AsFarFromLandDeductionRenderer implements IDeductionTreeRenderer {
       modelId === 'as-far-from-land' ||
       modelId === 'as-far-from-land-062' ||
       modelId === 'map-analysis-1162' ||
-      modelId === 'leetcode-1162'
+      modelId === 'leetcode-1162' ||
+      modelId === '1162'
     );
   }
 
