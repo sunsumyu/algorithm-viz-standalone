@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { VariableContextResolver } from '../variable-context-resolver';
-import { captureScope } from './scope-capture';
+import { captureScope, UniversalScopeSession } from './scope-capture';
 
 describe('全项目全自动变量捕获与智能求值引擎 (Universal VarScopeTracer Engine) 门禁测试', () => {
   it('应当能从仅包含 curL, curR, s 的老旧 step 中无损解析 l, r, n, s (等价类映射与环境派生)', () => {
@@ -151,5 +151,92 @@ describe('全项目全自动变量捕获与智能求值引擎 (Universal VarScop
     expect(inlineSummary).toContain('l: 2');
     expect(inlineSummary).toContain('n: 5');
     expect(inlineSummary).toContain('len: 2');
+  });
+
+  it('应当支持 step.variables / step.locals 多方言无损解析并优先于启发式推导', () => {
+    const stepWithVars = {
+      variables: {
+        teams: 2,
+        m: 45,
+        n: 5,
+      },
+      grid: [[0, 0], [0, 0], [0, 0]], // 故意设置 grid.length = 3
+    };
+
+    const varsMap = VariableContextResolver.resolve(stepWithVars, 'java');
+    expect(varsMap.get('teams')?.value).toBe('2');
+    // 验证 m 绝不被 grid.length=3 覆盖，而是使用真实的 m=45
+    expect(varsMap.get('m')?.value).toBe('45');
+    expect(varsMap.get('n')?.value).toBe('5');
+
+    const lineCode = 'int[][] dp = new int[teams + 1][m + 1];';
+    const inlineSummary = VariableContextResolver.formatInlineSummary(varsMap, lineCode);
+    expect(inlineSummary).toContain('teams: 2');
+    expect(inlineSummary).toContain('m: 45');
+  });
+
+  it('应当支持 UniversalScopeSession 会话累积器生成完整的单步作用域', () => {
+    const session = new UniversalScopeSession({ m: 45, n: 5 });
+    session.set({ teams: 2 });
+
+    const step1 = session.emitStep({
+      type: 'count-teams',
+      line: 402,
+    });
+    expect(step1.scope).toEqual({ m: 45, n: 5, teams: 2 });
+    expect(step1.variables).toEqual({ m: 45, n: 5, teams: 2 });
+
+    session.set({ start: 1, end: 2, i: 1 });
+    const step2 = session.emitStep({
+      type: 'outer-group',
+      line: 409,
+    });
+    expect(step2.scope.teams).toBe(2);
+    expect(step2.scope.start).toBe(1);
+    expect(step2.scope.i).toBe(1);
+  });
+
+  it('应当能自动将 items 数组同步为 arr 别名并格式化二维数组内容', () => {
+    const rawItems = [[10, 10, 1], [10, 20, 1], [20, 20, 2]];
+    const step = {
+      items: rawItems,
+      teams: 2,
+      m: 45,
+    };
+
+    const varsMap = VariableContextResolver.resolve(step, 'java');
+    expect(varsMap.has('items')).toBe(true);
+    expect(varsMap.has('arr')).toBe(true);
+
+    const varArr = VariableContextResolver.getVariable(varsMap, 'arr', step);
+    expect(varArr).toBeDefined();
+    expect(varArr?.name).toBe('arr');
+    expect(varArr?.value).toContain('10, 10, 1');
+    expect(varArr?.detail).toContain('数据三元组');
+  });
+
+  it('应当支持系统常用输入输出句柄与静态常量免漏捕获', () => {
+    const varsMap = VariableContextResolver.resolve({}, 'java');
+
+    const varBr = VariableContextResolver.getVariable(varsMap, 'br');
+    expect(varBr).toBeDefined();
+    expect(varBr?.value).toBe('BufferedReader');
+    expect(varBr?.detail).toContain('缓冲');
+
+    const varIn = VariableContextResolver.getVariable(varsMap, 'in');
+    expect(varIn).toBeDefined();
+    expect(varIn?.value).toBe('StreamTokenizer');
+
+    const varOut = VariableContextResolver.getVariable(varsMap, 'out');
+    expect(varOut).toBeDefined();
+    expect(varOut?.value).toBe('PrintWriter');
+
+    const varMaxN = VariableContextResolver.getVariable(varsMap, 'MAXN');
+    expect(varMaxN).toBeDefined();
+    expect(varMaxN?.value).toBe('1005');
+
+    const varMaxM = VariableContextResolver.getVariable(varsMap, 'MAXM');
+    expect(varMaxM).toBeDefined();
+    expect(varMaxM?.value).toBe('1005');
   });
 });

@@ -2233,6 +2233,9 @@ function compileStage1Steps(
       line: lineDfsEntry,
       i: Math.min(Math.max(0, i), n - 1),
       j: remK,
+      remK,
+      k: remK,
+      team: i >= 0 && i < n ? [...piles[i]] : [],
       activeNodeId: parentNode.id,
       tag: `进入帧 ${callLabel}`,
       log: `| 📥 进入递归帧 ${callLabel}，剩余容量 remK=${remK}`,
@@ -2249,6 +2252,8 @@ function compileStage1Steps(
         line: lineBoundary,
         i: Math.min(Math.max(0, i), n - 1),
         j: remK,
+        remK,
+        k: remK,
         activeNodeId: parentNode.id,
         tag: '命中基底返回 0',
         log: `| 🎯 边界命中: ${remK === 0 ? '容量扣减完毕' : '栈已考察完毕'}，return 0`,
@@ -2277,6 +2282,11 @@ function compileStage1Steps(
       line: lineBranch0,
       i,
       j: remK,
+      remK,
+      k: remK,
+      c: 0,
+      sum: 0,
+      team: i >= 0 && i < n ? [...piles[i]] : [],
       activeNodeId: parentNode.id,
       tag: `栈#${i} 拿 0 枚`,
       log: `| 🌿 分支 0: 栈 #${i} 拿 0 枚，转向下层 dfs(${nextI}, ${remK})`,
@@ -2308,6 +2318,12 @@ function compileStage1Steps(
         line: lineLoopCoins,
         i,
         j: remK,
+        remK,
+        k: remK,
+        c,
+        sum,
+        t,
+        team: [...pile],
         activeNodeId: parentNode.id,
         tag: `栈#${i} 拿 ${c} 枚 (和=${sum})`,
         log: `| 🪙 分支 ${c}: 栈 #${i} 拿 ${c} 枚，累计前缀和 ${sum}，深入 dfs(${nextI}, ${remK - c})`,
@@ -2325,6 +2341,15 @@ function compileStage1Steps(
         line: lineBranchTake,
         i,
         j: remK,
+        remK,
+        k: remK,
+        c,
+        sum,
+        t,
+        maxVal,
+        val: maxVal,
+        sub,
+        team: [...pile],
         activeNodeId: parentNode.id,
         tag: `试算分支收益=${sub}`,
         log: `| ⚖️ 分支收益比较: 拿 ${c} 枚得 ${sub}，当前最高 maxVal=${maxVal}`,
@@ -2340,6 +2365,10 @@ function compileStage1Steps(
       line: lineCombine,
       i,
       j: remK,
+      remK,
+      k: remK,
+      maxVal,
+      val: maxVal,
       activeNodeId: parentNode.id,
       tag: `汇聚返回 ${maxVal}`,
       log: `| 🔄 栈 #${i} 决策完毕，汇总返回 maxVal=${maxVal}`,
@@ -2410,6 +2439,9 @@ function compileStage2Steps(
     line: lineInitMemo,
     i: 0,
     j: 0,
+    remK: k,
+    k,
+    memo: memoGrid,
     activeNodeId: rootNode.id,
     tag: `初始化备忘录 memo[${n}][${k + 1}]`,
     log: `| 📋 初始化二维备忘录 memo[${n}][${k + 1}] 全为 null (-1)`,
@@ -2420,6 +2452,11 @@ function compileStage2Steps(
   pushStep({
     type: 'entry',
     line: lineEntry,
+    i: isReverse ? n - 1 : 0,
+    j: k,
+    remK: k,
+    k,
+    memo: memoGrid,
     activeNodeId: rootNode.id,
     tag: `启动记忆化 dfsMemo(${isReverse ? n - 1 : 0}, ${k})`,
     log: `| 🚀 启动记忆化搜索：dfsMemo(${isReverse ? n - 1 : 0}, ${k})`,
@@ -2433,11 +2470,16 @@ function compileStage2Steps(
     activeStack.push(callLabel);
 
     const safeI = Math.min(Math.max(0, i), n - 1);
+    const curTeam = (safeI >= 0 && safeI < n ? [...piles[safeI]] : []);
     pushStep({
       type: 'dfs-entry',
       line: lineDfsEntry,
       i: safeI,
       j: remK,
+      remK,
+      k: remK,
+      team: curTeam,
+      memo: memoGrid,
       activeNodeId: parentNode.id,
       tag: `进入帧 ${callLabel}`,
       log: `| 📥 进入帧 ${callLabel}，探查备忘录缓存`,
@@ -2454,6 +2496,12 @@ function compileStage2Steps(
         line: lineBoundary,
         i: safeI,
         j: remK,
+        remK,
+        k: remK,
+        val: 0,
+        maxVal: 0,
+        team: curTeam,
+        memo: memoGrid,
         activeNodeId: parentNode.id,
         tag: '命中基底 0',
         log: `| 🎯 边界命中: 剩余容量为 0 或栈已耗尽，return 0`,
@@ -2473,6 +2521,12 @@ function compileStage2Steps(
         line: lineCacheHit,
         i,
         j: remK,
+        remK,
+        k: remK,
+        val: cached,
+        maxVal: cached,
+        team: curTeam,
+        memo: memoGrid,
         activeNodeId: parentNode.id,
         gridHighlight: { i, j: remK },
         tag: `⚡ 备忘录命中 memo[${i}][${remK}] = ${cached}`,
@@ -2496,11 +2550,21 @@ function compileStage2Steps(
     };
     parentNode.children.push(child0);
 
+    const pile = piles[i];
+    const t = Math.min(pile.length, remK);
+
     pushStep({
       type: 'branch-call',
       line: lineBranch0,
       i,
       j: remK,
+      remK,
+      k: remK,
+      c: 0,
+      sum: 0,
+      t,
+      team: [...pile],
+      memo: memoGrid,
       activeNodeId: parentNode.id,
       tag: `栈#${i} 选拿 0 枚`,
       log: `| 🌿 缓存未命中，展开分支 0：栈 #${i} 拿 0 枚`,
@@ -2510,8 +2574,6 @@ function compileStage2Steps(
 
     let maxVal = dfsMemo(nextI, remK, child0);
 
-    const pile = piles[i];
-    const t = Math.min(pile.length, remK);
     let sum = 0;
     for (let c = 1; c <= t; c++) {
       sum += pile[c - 1];
@@ -2531,6 +2593,13 @@ function compileStage2Steps(
         line: lineLoopCoins,
         i,
         j: remK,
+        remK,
+        k: remK,
+        c,
+        sum,
+        t,
+        team: [...pile],
+        memo: memoGrid,
         activeNodeId: parentNode.id,
         tag: `栈#${i} 拿 ${c} 枚`,
         log: `| 🪙 分支 ${c}: 栈 #${i} 连续拿 ${c} 枚 (和=${sum})`,
@@ -2548,6 +2617,16 @@ function compileStage2Steps(
         line: lineBranchTake,
         i,
         j: remK,
+        remK,
+        k: remK,
+        c,
+        sum,
+        t,
+        maxVal,
+        val: maxVal,
+        sub,
+        team: [...pile],
+        memo: memoGrid,
         activeNodeId: parentNode.id,
         tag: `试算结果=${sub}`,
         log: `| ⚖️ 分支收益比较: 拿 ${c} 枚收益 ${sub}，当前 maxVal=${maxVal}`,
@@ -2565,6 +2644,12 @@ function compileStage2Steps(
       line: lineCombine,
       i,
       j: remK,
+      remK,
+      k: remK,
+      maxVal,
+      val: maxVal,
+      team: [...pile],
+      memo: memoGrid,
       activeNodeId: parentNode.id,
       gridHighlight: { i, j: remK },
       tag: `💾 写入 memo[${i}][${remK}] = ${maxVal}`,
@@ -2597,19 +2682,25 @@ function compileStage3Steps(
   const lineInitDp = anchors?.init_dp || 4;
   const lineOuterLoop = anchors?.outer_loop || 5;
   const linePresumCalc = anchors?.presum_calc || 8;
-  const lineInnerCap = anchors?.inner_cap || 10;
-  const lineBranch0 = anchors?.branch_not_take || 11;
-  const lineLoopCoins = anchors?.loop_coins || 12;
-  const lineTransition = anchors?.transition || 13;
-  const lineReturnAns = anchors?.return_ans || 17;
+  const lineInnerCap = anchors?.inner_cap || 13;
+  const lineBranch0 = anchors?.branch_not_take || 14;
+  const lineLoopCoins = anchors?.loop_coins || 15;
+  const lineTransition = anchors?.transition || 16;
+  const lineReturnAns = anchors?.return_ans || 20;
 
-  // dp 矩阵为 n x (k + 1)，行代表硬币栈 0..n-1，列代表容量 0..k
-  const dp: number[][] = Array.from({ length: n }, () => new Array(k + 1).fill(0));
+  // dp 矩阵为 (n + 1) x (k + 1)，行 0 为基底（0 个栈，面值全为 0），行 1..n 对应硬币栈 1..n
+  // 严格初始化为 null，严防伪造已求解的绿色足迹
+  const dp: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(null));
 
   function pushStep(data: Partial<UniversalStep>) {
     steps.push({
       stage: 3,
       grid: JSON.parse(JSON.stringify(dp)),
+      piles: [...piles],
+      capacity: k,
+      kTarget: k,
+      m: k,
+      n,
       decision: data.decision || '二维动态规划状态转移',
       log: data.log || '| DP填表',
       msg: data.msg || data.log || '',
@@ -2623,16 +2714,19 @@ function compileStage3Steps(
     line: lineInitDp,
     i: 0,
     j: 0,
-    tag: `创建二维 DP 矩阵 dp[${n}][${k + 1}]`,
-    log: `| 📋 创建规格为 ${n} × ${k + 1} 的二维动态规划状态表`,
-    msg: `初始化 <code>${n} × ${k + 1}</code> 的二维 DP 状态表，行表示硬币栈，列表示抽取容量上限。`,
+    tag: `创建二维 DP 矩阵 dp[${n + 1}][${k + 1}]`,
+    log: `| 📋 创建规格为 ${n + 1} × ${k + 1} 的二维动态规划状态表`,
+    msg: `初始化 <code>${n + 1} × ${k + 1}</code> 的二维 DP 状态表，行表示硬币栈 (1..${n})，列表示抽取容量上限。`,
     decision: '初始化 DP 表'
   });
 
   if (!isReverse) {
-    // 正序推导：从栈 0 到 栈 n-1
-    for (let i = 0; i < n; i++) {
-      const pile = piles[i];
+    // 正序推导：从栈 1 到 栈 n
+    // 基底行：处理栈 1 前，第 0 行全置为 0
+    for (let j = 0; j <= k; j++) dp[0][j] = 0;
+
+    for (let i = 1; i <= n; i++) {
+      const pile = piles[i - 1];
       const t = Math.min(pile.length, k);
       const preSum = new Array(t + 1).fill(0);
       for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
@@ -2642,6 +2736,9 @@ function compileStage3Steps(
         line: lineOuterLoop,
         i,
         j: 0,
+        t,
+        team: [...pile],
+        preSum: [...preSum],
         gridHighlight: { i, j: 0 },
         tag: `考察硬币栈 #${i} (前缀和预处理)`,
         log: `| 🔁 外层循环: 考察硬币栈 #${i}，前缀和预处理完成 preSum=[${preSum.join(',')}]`,
@@ -2655,6 +2752,9 @@ function compileStage3Steps(
           line: lineInnerCap,
           i,
           j,
+          t,
+          team: [...pile],
+          preSum: [...preSum],
           gridHighlight: { i, j },
           tag: `考察容量 j=${j}`,
           log: `| ➡️ 内层循环: 考察容量上限 j = ${j}/${k}`,
@@ -2663,71 +2763,125 @@ function compileStage3Steps(
         });
 
         // 分支 0: 拿 0 枚
-        const valNotTake = i > 0 ? dp[i - 1][j] : 0;
+        const valNotTake = dp[i - 1][j] ?? 0;
         let bestVal = valNotTake;
         let bestC = 0;
-
-        const candidateDeps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [];
-        if (i > 0) {
-          candidateDeps.push({ r: i - 1, c: j, type: 'top', label: `拿0枚(dp[${i - 1}][${j}])` });
-        }
-
-        // 组内互斥枚举拿 1..t 枚
-        for (let c = 1; c <= Math.min(t, j); c++) {
-          const prevVal = i > 0 ? dp[i - 1][j - c] : 0;
-          const cand = prevVal + preSum[c];
-          if (i > 0) {
-            candidateDeps.push({
-              r: i - 1,
-              c: j - c,
-              type: 'diag',
-              label: `拿${c}枚(dp[${i - 1}][${j - c}]+${preSum[c]})`
-            });
-          }
-          if (cand > bestVal) {
-            bestVal = cand;
-            bestC = c;
-          }
-        }
-
         dp[i][j] = bestVal;
 
         pushStep({
-          type: 'transition',
-          line: lineTransition,
+          type: 'branch-not-take',
+          line: lineBranch0,
           i,
           j,
+          t,
+          team: [...pile],
+          preSum: [...preSum],
+          c: 0,
+          k: 0,
           val: bestVal,
-          topI: i > 0 ? i - 1 : undefined,
-          topJ: j,
-          leftI: i > 0 && bestC > 0 ? i - 1 : undefined,
-          leftJ: i > 0 && bestC > 0 ? j - bestC : undefined,
-          deps: candidateDeps.length > 0 ? candidateDeps : [{ r: i, c: j, type: 'top', label: `基底: ${bestVal}` }],
+          deps: [{ r: i - 1, c: j, type: 'top', label: `拿0枚(dp[${i - 1}][${j}])` }],
           gridHighlight: { i, j },
-          tag: `转移落盘 dp[${i}][${j}] = ${bestVal}`,
-          log: `| ⚖️ 组内互斥转移: dp[${i}][${j}] = ${bestVal} (优选拿${bestC}枚)`,
-          msg: `组内互斥决策：比较拿 0..${Math.min(t, j)} 枚硬币，最优选择为<strong>拿 ${bestC} 枚</strong>，<code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
-          decision: `dp[${i}][${j}] = ${bestVal}`
+          tag: `分支 0 (不拿): dp[${i}][${j}] = ${bestVal}`,
+          log: `| ⏭️ 分支 0: 栈 #${i} 拿 0 枚硬币，继承收益 ${bestVal}`,
+          msg: `分支 0（本栈不拿）：直接继承前一栈收益 <code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
+          decision: `不拿当前栈硬币，继承 dp=${bestVal}`
         });
+
+        // 组内互斥枚举拿 1..t 枚
+        for (let c = 1; c <= Math.min(t, j); c++) {
+          const prevVal = dp[i - 1][j - c] ?? 0;
+          const cand = prevVal + preSum[c];
+
+          pushStep({
+            type: 'loop-coins',
+            line: lineLoopCoins,
+            i,
+            j,
+            c,
+            k: c,
+            t,
+            team: [...pile],
+            preSum: [...preSum],
+            cand,
+            deps: [{ r: i - 1, c: j - c, type: 'diag', label: `拿${c}枚` }],
+            gridHighlight: { i, j },
+            tag: `尝试拿 ${c} 枚 (前缀和=${preSum[c]})`,
+            log: `| 🪙 互斥枚举: 尝试从栈 #${i} 连续提取 ${c} 枚硬币 (累加面值=${preSum[c]})`,
+            msg: `尝试拿 <code>${c}</code> 枚硬币：前缀面值和为 <code>${preSum[c]}</code>。`,
+            decision: `尝试拿 ${c} 枚`
+          });
+
+          const isUpdate = cand > bestVal;
+          if (isUpdate) {
+            bestVal = cand;
+            bestC = c;
+            dp[i][j] = bestVal;
+          }
+
+          pushStep({
+            type: 'transition',
+            line: lineTransition,
+            i,
+            j,
+            c,
+            k: c,
+            t,
+            team: [...pile],
+            preSum: [...preSum],
+            cand,
+            val: bestVal,
+            deps: [
+              { r: i - 1, c: j, type: 'top', label: `当前最优(dp[${i - 1}][${j}])` },
+              { r: i - 1, c: j - c, type: 'diag', label: `拿${c}枚(dp[${i - 1}][${j - c}]+${preSum[c]})` }
+            ],
+            gridHighlight: { i, j },
+            tag: `转移比较 dp[${i}][${j}] = ${bestVal}`,
+            log: `| ⚖️ 组内互斥比较: 拿 ${c} 枚得 ${cand} -> 当前最优 dp[${i}][${j}] = ${bestVal}`,
+            msg: `组内互斥比较：选拿 ${c} 枚硬币（面值 +${preSum[c]}），从上一栈状态 <code>dp[${i - 1}][${j - c}]</code> 转移，${isUpdate ? `<strong>收益更新为 ${bestVal}</strong>` : `保持当前最优 ${bestVal}`}`,
+            decision: isUpdate ? `更新 dp[${i}][${j}] = ${bestVal}` : `保持最优 ${bestVal}`
+          });
+
+          // 若有下一轮循环，显式插入【循环自增步进相】(k++)，杜绝跳步与 k 冻结认知错觉
+          if (c + 1 <= Math.min(t, j)) {
+            pushStep({
+              type: 'loop-step',
+              line: lineLoopCoins,
+              i,
+              j,
+              c: c + 1,
+              k: c + 1,
+              prevK: c,
+              t,
+              team: [...pile],
+              preSum: [...preSum],
+              val: bestVal,
+              gridHighlight: { i, j },
+              tag: `循环自增 k: ${c} ➔ ${c + 1}`,
+              log: `| 🔄 步进自增: k 由 ${c} 递增为 ${c + 1} (k++)，准备尝试提取 ${c + 1} 枚硬币`,
+              msg: `循环步进自增：<code>k++</code>，抽取枚数从 <code>${c}</code> 递增至 <code>${c + 1}</code>，进入下一轮分支试选。`,
+              decision: `k 递增为 ${c + 1}`
+            });
+          }
+        }
       }
     }
 
     pushStep({
       type: 'return-ans',
       line: lineReturnAns,
-      i: n - 1,
+      i: n,
       j: k,
-      val: dp[n - 1][k],
-      gridHighlight: { i: n - 1, j: k },
-      tag: `全局最优解 = ${dp[n - 1][k]}`,
-      log: `| 🎉 二维填表完成！全部 ${n} 个栈在容量 ${k} 下最大面值为 dp[${n - 1}][${k}] = ${dp[n - 1][k]}`,
-      msg: `🎉 <strong>二维填表推导完成</strong>！在容量为 <code>${k}</code> 下，最大可得面值为 <strong>${dp[n - 1][k]}</strong>。`,
-      decision: `最终最大面值 = ${dp[n - 1][k]}`
+      val: dp[n][k] ?? 0,
+      gridHighlight: { i: n, j: k },
+      tag: `全局最优解 = ${dp[n][k] ?? 0}`,
+      log: `| 🎉 二维填表完成！全部 ${n} 个栈在容量 ${k} 下最大面值为 dp[${n}][${k}] = ${dp[n][k] ?? 0}`,
+      msg: `🎉 <strong>二维填表推导完成</strong>！在容量为 <code>${k}</code> 下，最大可得面值为 <strong>${dp[n][k] ?? 0}</strong>。`,
+      decision: `最终最大面值 = ${dp[n][k] ?? 0}`
     });
   } else {
-    // 逆向推导：从栈 n-1 倒推至 栈 0，容量从 k 倒推至 0
-    for (let i = n - 1; i >= 0; i--) {
-      const pile = piles[i];
+    // 逆向推导：从栈 n 倒推至 栈 1，容量从 k 倒推至 0
+    for (let i = n; i >= 1; i--) {
+      const pile = piles[i - 1];
       const t = Math.min(pile.length, k);
       const preSum = new Array(t + 1).fill(0);
       for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
@@ -2737,6 +2891,9 @@ function compileStage3Steps(
         line: lineOuterLoop,
         i,
         j: k,
+        t,
+        team: [...pile],
+        preSum: [...preSum],
         gridHighlight: { i, j: k },
         tag: `逆向考察硬币栈 #${i}`,
         log: `| 🔁 逆向外层循环: 考察硬币栈 #${i}`,
@@ -2744,57 +2901,150 @@ function compileStage3Steps(
         decision: `逆向考察栈 #${i}`
       });
 
+      pushStep({
+        type: 'presum-calc',
+        line: linePresumCalc,
+        i,
+        j: k,
+        t,
+        team: [...pile],
+        preSum: [...preSum],
+        gridHighlight: { i, j: k },
+        tag: `栈 #${i} 前缀和预处理`,
+        log: `| 🧮 预计算硬币栈 #${i} 连续前缀和: preSum=[${preSum.join(',')}]`,
+        msg: `预处理前缀和数组 <code>preSum</code>：连续提取前 <code>t = ${t}</code> 枚硬币的总面值。`,
+        decision: `计算栈 #${i} 前缀和`
+      });
+
       for (let j = k; j >= 0; j--) {
-        const valNotTake = i < n - 1 ? dp[i + 1][j] : 0;
+        pushStep({
+          type: 'inner-cap',
+          line: lineInnerCap,
+          i,
+          j,
+          t,
+          team: [...pile],
+          preSum: [...preSum],
+          gridHighlight: { i, j },
+          tag: `逆向考察容量 j=${j}`,
+          log: `| ⬅️ 逆向内层循环: 考察容量限制 j = ${j}/${k}`,
+          msg: `逆向内层循环：当前考察抽取容量上限 <code>j = ${j}</code>。`,
+          decision: `考察容量 j = ${j}`
+        });
+
+        const valNotTake = i < n ? (dp[i + 1][j] ?? 0) : 0;
         let bestVal = valNotTake;
         let bestC = 0;
-
-        const candidateDeps: Array<{ r: number; c: number; type?: 'top' | 'left' | 'diag'; label?: string }> = [];
-        if (i < n - 1) {
-          candidateDeps.push({ r: i + 1, c: j, type: 'top', label: `拿0枚` });
-        }
-
-        for (let c = 1; c <= Math.min(t, j); c++) {
-          const prevVal = i < n - 1 ? dp[i + 1][j - c] : 0;
-          const cand = prevVal + preSum[c];
-          if (i < n - 1) {
-            candidateDeps.push({ r: i + 1, c: j - c, type: 'diag', label: `拿${c}枚` });
-          }
-          if (cand > bestVal) {
-            bestVal = cand;
-            bestC = c;
-          }
-        }
-
         dp[i][j] = bestVal;
 
         pushStep({
-          type: 'transition',
-          line: lineTransition,
+          type: 'branch-not-take',
+          line: lineBranch0,
           i,
           j,
+          t,
+          team: [...pile],
+          preSum: [...preSum],
+          c: 0,
+          k: 0,
           val: bestVal,
-          deps: candidateDeps.length > 0 ? candidateDeps : [{ r: i, c: j, type: 'top', label: `基底: ${bestVal}` }],
+          deps: i < n ? [{ r: i + 1, c: j, type: 'top', label: `拿0枚` }] : [],
           gridHighlight: { i, j },
-          tag: `逆向转移 dp[${i}][${j}] = ${bestVal}`,
-          log: `| ⚖️ 逆向转移: dp[${i}][${j}] = ${bestVal}`,
-          msg: `逆向依赖回溯：状态 <code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
-          decision: `逆向更新 dp[${i}][${j}] = ${bestVal}`
+          tag: `逆向分支 0: dp[${i}][${j}] = ${bestVal}`,
+          log: `| ⏭️ 逆向分支 0: 继承后一栈状态收益 ${bestVal}`,
+          msg: `逆向分支 0（不拿）：继承后一栈收益 <code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
+          decision: `继承后一栈收益=${bestVal}`
         });
+
+        for (let c = 1; c <= Math.min(t, j); c++) {
+          const prevVal = i < n ? (dp[i + 1][j - c] ?? 0) : 0;
+          const cand = prevVal + preSum[c];
+
+          pushStep({
+            type: 'loop-coins',
+            line: lineLoopCoins,
+            i,
+            j,
+            c,
+            k: c,
+            t,
+            team: [...pile],
+            preSum: [...preSum],
+            cand,
+            deps: i < n ? [{ r: i + 1, c: j - c, type: 'diag', label: `拿${c}枚` }] : [],
+            gridHighlight: { i, j },
+            tag: `逆向枚举拿 ${c} 枚`,
+            log: `| 🪙 逆向枚举: 尝试连续拿 ${c} 枚硬币 (累加面值=${preSum[c]})`,
+            msg: `逆向尝试拿 <code>${c}</code> 枚硬币：前缀面值和为 <code>${preSum[c]}</code>。`,
+            decision: `逆向尝试拿 ${c} 枚`
+          });
+
+          const isUpdate = cand > bestVal;
+          if (isUpdate) {
+            bestVal = cand;
+            bestC = c;
+            dp[i][j] = bestVal;
+          }
+
+          pushStep({
+            type: 'transition',
+            line: lineTransition,
+            i,
+            j,
+            c,
+            k: c,
+            t,
+            team: [...pile],
+            preSum: [...preSum],
+            cand,
+            val: bestVal,
+            deps: i < n ? [
+              { r: i + 1, c: j, type: 'top', label: `当前最优(dp[${i + 1}][${j}])` },
+              { r: i + 1, c: j - c, type: 'diag', label: `拿${c}枚` }
+            ] : [],
+            gridHighlight: { i, j },
+            tag: `逆向转移 dp[${i}][${j}] = ${bestVal}`,
+            log: `| ⚖️ 逆向转移: dp[${i}][${j}] = ${bestVal}`,
+            msg: `逆向依赖回溯：状态 <code>dp[${i}][${j}] = <strong>${bestVal}</strong></code>。`,
+            decision: `逆向更新 dp[${i}][${j}] = ${bestVal}`
+          });
+
+          if (c + 1 <= Math.min(t, j)) {
+            pushStep({
+              type: 'loop-step',
+              line: lineLoopCoins,
+              i,
+              j,
+              c: c + 1,
+              k: c + 1,
+              prevK: c,
+              t,
+              team: [...pile],
+              preSum: [...preSum],
+              val: bestVal,
+              gridHighlight: { i, j },
+              tag: `逆向自增 k: ${c} ➔ ${c + 1}`,
+              log: `| 🔄 步进自增: k 由 ${c} 递增为 ${c + 1} (k++)`,
+              msg: `循环步进自增：<code>k++</code>，当前抽取枚数从 <code>${c}</code> 递增至 <code>${c + 1}</code>。`,
+              decision: `k 递增为 ${c + 1}`
+            });
+          }
+        }
       }
     }
 
     pushStep({
       type: 'return-ans',
       line: lineReturnAns,
-      i: 0,
+      i: 1,
       j: k,
-      val: dp[0][k],
-      gridHighlight: { i: 0, j: k },
-      tag: `逆向收敛最优解 = ${dp[0][k]}`,
-      log: `| 🎉 逆向推演收敛完成！最大面值为 ${dp[0][k]}`,
-      msg: `🎉 <strong>逆向推演收敛完成</strong>！最优收益为 <strong>${dp[0][k]}</strong>。`,
-      decision: `逆向收敛 = ${dp[0][k]}`
+      val: dp[1][k] ?? 0,
+      team: piles[0] ? [...piles[0]] : [],
+      gridHighlight: { i: 1, j: k },
+      tag: `逆向收敛最优解 = ${dp[1][k] ?? 0}`,
+      log: `| 🎉 逆向推演收敛完成！最大面值为 ${dp[1][k] ?? 0}`,
+      msg: `🎉 <strong>逆向推演收敛完成</strong>！最优收益为 <strong>${dp[1][k] ?? 0}</strong>。`,
+      decision: `逆向收敛 = ${dp[1][k] ?? 0}`
     });
   }
 
@@ -2814,16 +3064,28 @@ function compileStage4Steps(
   const n = piles.length;
   const lineInitDp = anchors?.init_dp || 3;
   const lineOuterLoop = anchors?.outer_loop || 4;
-  const lineInnerCap = anchors?.inner_cap || 8;
-  const lineTransition = anchors?.transition || 10;
-  const lineReturnAns = anchors?.return_ans || 14;
+  const linePresumCalc = anchors?.presum_calc || 6;
+  const lineInnerCap = anchors?.inner_cap || 11;
+  const lineLoopCoins = anchors?.loop_coins || 12;
+  const lineTransition = anchors?.transition || 13;
+  const lineReturnAns = anchors?.return_ans || 17;
 
   const dp = new Array(k + 1).fill(0);
+
+  // 维护全尺寸二维 DP 对照网格，使 Card 1 (二维状态网格) 具有完整的历史沉淀，彻底杜绝空白与大片残缺
+  const dpGrid: (number | null)[][] = Array.from({ length: n + 1 }, () =>
+    new Array(k + 1).fill(null)
+  );
 
   function pushStep(data: Partial<UniversalStep>) {
     steps.push({
       stage: 4,
       dp1d: [...dp],
+      grid: dpGrid.map((r) => [...r]),
+      piles: [...piles],
+      m: k,
+      kTarget: k,
+      capacity: k,
       metrics: { space: 'O(K)' },
       decision: data.decision || '空间压缩状态流转',
       log: data.log || '| 一维压缩流转',
@@ -2837,31 +3099,99 @@ function compileStage4Steps(
     type: 'init-dp',
     line: lineInitDp,
     activeSlot: 0,
+    m: k,
+    gridHighlight: { i: 0, j: 0 },
     tag: `初始化一维数组 dp[0..${k}] 全为 0`,
     log: `| 📋 初始化一维滚动数组 dp[0..${k}] 全为 0`,
     msg: `初始化长度为 <code>${k + 1}</code> 的一维滚动数组，辅助空间由 O(N×K) 大幅降至 <strong>O(K)</strong>。`,
     decision: '初始化一维数组'
   });
 
+  for (let col = 0; col <= k; col++) {
+    dpGrid[0][col] = 0;
+  }
+
   const pileIndices = isReverse
     ? Array.from({ length: n }, (_, idx) => n - 1 - idx)
     : Array.from({ length: n }, (_, idx) => idx);
 
   for (const i of pileIndices) {
+    const rowI = i + 1;
     const pile = piles[i];
     const t = Math.min(pile.length, k);
     const preSum = new Array(t + 1).fill(0);
-    for (let p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile[p];
+
+    // 新的一行开始前，先继承前一行的累计最优值 (相当于拿0枚硬币)
+    for (let col = 0; col <= k; col++) {
+      dpGrid[rowI][col] = dp[col];
+    }
 
     pushStep({
       type: 'outer-loop',
       line: lineOuterLoop,
       activeSlot: 0,
-      tag: `考察硬币栈 #${i}`,
-      log: `| 🔁 空间压缩外层: 考察硬币栈 #${i}，前缀和 preSum=[${preSum.join(',')}]`,
-      msg: `外层遍历硬币栈 <code>#${i}</code>。注意：分组背包中<strong>容量必须在外层倒序遍历</strong>，以防同组重复拿取！`,
-      decision: `考察硬币栈 #${i}`
+      i: rowI,
+      j: 0,
+      k: undefined,
+      c: undefined,
+      team: [...pile],
+      preSum: [...preSum],
+      t,
+      n: pile.length,
+      m: k,
+      gridHighlight: { i: rowI, j: 0 },
+      tag: `考察硬币栈 #${i + 1}`,
+      log: `| 🔁 空间压缩外层: 考察硬币栈 #${i + 1}`,
+      msg: `外层遍历硬币栈 <code>#${i + 1}</code>。注意：分组背包中<strong>容量必须在内层倒序遍历</strong>，以防同组重复拿取！`,
+      decision: `考察硬币栈 #${i + 1}`
     });
+
+    // 逐行执行前缀和累加，绝不跳步！
+    pushStep({
+      type: 'presum-init',
+      line: linePresumCalc,
+      activeSlot: 0,
+      i: rowI,
+      j: 0,
+      k: undefined,
+      c: undefined,
+      team: [...pile],
+      preSum: [0],
+      t,
+      n: pile.length,
+      m: k,
+      gridHighlight: { i: rowI, j: 0 },
+      tag: `分配 preSum[${t + 1}] 数组`,
+      log: `| 🧮 预处理前缀和: 分配 preSum 数组长度 ${t + 1}，基底 preSum[0]=0`,
+      msg: `初始化硬币面值前缀和数组 <code>preSum[0] = 0</code>，准备累加硬币转化为互斥物品组。`,
+      decision: `初始化前缀和数组`
+    });
+
+    let currentSum = 0;
+    for (let p = 0; p < t; p++) {
+      currentSum += pile[p];
+      preSum[p + 1] = currentSum;
+
+      pushStep({
+        type: 'presum-calc',
+        line: linePresumCalc,
+        activeSlot: 0,
+        i: rowI,
+        j: 0,
+        k: undefined,
+        c: undefined,
+        team: [...pile],
+        preSum: [...preSum],
+        t,
+        n: pile.length,
+        m: k,
+        gridHighlight: { i: rowI, j: 0 },
+        tag: `累加前缀和 preSum[${p + 1}] = ${currentSum}`,
+        log: `| ➕ 前缀累加: 栈 #${i + 1} 第 ${p + 1} 枚硬币 (+${pile[p]}) -> 累加和 preSum[${p + 1}] = ${currentSum}`,
+        msg: `连续提取 <code>${p + 1}</code> 枚硬币：累加面值 <code>+${pile[p]}</code>，前缀和 <code>preSum[${p + 1}] = <strong>${currentSum}</strong></code>。`,
+        decision: `累加第 ${p + 1} 枚前缀和`
+      });
+    }
 
     // 容量从 k 倒序遍历至 1
     for (let j = k; j > 0; j--) {
@@ -2869,6 +3199,17 @@ function compileStage4Steps(
         type: 'inner-cap',
         line: lineInnerCap,
         activeSlot: j,
+        i: rowI,
+        j,
+        k: undefined,
+        c: undefined,
+        team: [...pile],
+        preSum: [...preSum],
+        t,
+        n: pile.length,
+        m: k,
+        deps: [{ r: rowI - 1, c: j, type: 'top', label: '上栈最优' }],
+        gridHighlight: { i: rowI, j },
         tag: `容量倒序 j = ${j}`,
         log: `| ⬅️ 容量倒序: j = ${j}，防止同组多选`,
         msg: `容量倒序考察 <code>j = ${j}</code>：枚举拿取 1..${Math.min(t, j)} 枚硬币。`,
@@ -2876,22 +3217,136 @@ function compileStage4Steps(
       });
 
       for (let c = 1; c <= Math.min(t, j); c++) {
-        const candidate = dp[j - c] + preSum[c];
+        const prevVal = dp[j - c];
+        const candidate = prevVal + preSum[c];
+        const oldVal = dp[j];
+
+        pushStep({
+          type: 'loop-coins',
+          line: lineLoopCoins,
+          activeSlot: j,
+          highlightSlots: [j - c],
+          slotMode: 'down',
+          i: rowI,
+          j,
+          c,
+          k: c,
+          cand: candidate,
+          memoj: dp[j],
+          down: dp[j],
+          right: prevVal,
+          decisions: [
+            {
+              label: '保持上一栈最优 (拿0枚)',
+              formula: `dp[${j}] = ${oldVal}`,
+              value: oldVal,
+              isSelected: candidate <= oldVal
+            },
+            {
+              label: `试算拿取 ${c} 枚硬币`,
+              formula: `dp[${j - c}] + preSum[${c}] = ${prevVal} + ${preSum[c]} = ${candidate}`,
+              value: candidate,
+              isSelected: candidate > oldVal
+            }
+          ],
+          team: [...pile],
+          preSum: [...preSum],
+          t,
+          n: pile.length,
+          m: k,
+          deps: [
+            { r: rowI - 1, c: j, type: 'top', label: '上栈最优' },
+            { r: rowI - 1, c: j - c, type: 'diag', label: `拿${c}枚(+${preSum[c]})` }
+          ],
+          fromI: rowI - 1,
+          fromJ: j - c,
+          toI: rowI,
+          toJ: j,
+          gridHighlight: { i: rowI, j },
+          tag: `尝试拿 ${c} 枚 (前缀和=${preSum[c]})`,
+          log: `| 🪙 互斥枚举: 尝试从栈 #${i + 1} 拿取 ${c} 枚硬币，前缀和 preSum[${c}]=${preSum[c]}`,
+          msg: `枚举从栈 #${i + 1} 拿取 <code>${c}</code> 枚硬币，消耗抽取容量 <code>${c}</code>，上一栈对应收益 <code>dp[${j - c}] = ${prevVal}</code>，试算总和 <code>${candidate}</code>。`,
+          decision: `尝试拿 ${c} 枚`
+        });
+
         const isUpdate = candidate > dp[j];
         if (isUpdate) {
           dp[j] = candidate;
         }
+        dpGrid[rowI][j] = dp[j];
 
         pushStep({
           type: 'transition',
           line: lineTransition,
           activeSlot: j,
           highlightSlots: [j - c],
+          slotMode: isUpdate ? 'updated' : 'down',
+          i: rowI,
+          j,
+          c,
+          k: c,
+          cand: candidate,
+          val: dp[j],
+          memoj: dp[j],
+          down: dpGrid[rowI - 1][j] ?? 0,
+          right: prevVal,
+          decisions: [
+            {
+              label: '保持上一栈最优 (拿0枚)',
+              formula: `dp[${j}] = ${oldVal}`,
+              value: oldVal,
+              isSelected: !isUpdate
+            },
+            {
+              label: `拿取 ${c} 枚硬币`,
+              formula: `dp[${j - c}] + preSum[${c}] = ${prevVal} + ${preSum[c]} = ${candidate}`,
+              value: candidate,
+              isSelected: isUpdate
+            }
+          ],
+          team: [...pile],
+          preSum: [...preSum],
+          t,
+          n: pile.length,
+          m: k,
+          deps: [
+            { r: rowI - 1, c: j, type: 'top', label: '上栈最优' },
+            { r: rowI - 1, c: j - c, type: 'diag', label: `拿${c}枚(+${preSum[c]})` }
+          ],
+          fromI: rowI - 1,
+          fromJ: j - c,
+          toI: rowI,
+          toJ: j,
+          gridHighlight: { i: rowI, j },
           tag: `转移 dp[${j}] = max(dp[${j}], dp[${j - c}] + ${preSum[c]}) = ${dp[j]}`,
-          log: `| 🪙 拿取 ${c} 枚: 试算 dp[${j - c}] + ${preSum[c]} = ${candidate} -> dp[${j}] = ${dp[j]}`,
-          msg: `组内互斥比较：尝试拿 <code>${c}</code> 枚硬币，从历史状态 <code>dp[${j - c}]</code> 转移，更新 <code>dp[${j}] = <strong>${dp[j]}</strong></code>。`,
+          log: `| 🪙 转移比较: 试算 dp[${j - c}] + ${preSum[c]} = ${candidate} -> dp[${j}] = ${dp[j]}`,
+          msg: `组内互斥转移：拿 <code>${c}</code> 枚硬币，从上一栈历史状态 <code>dp[${j - c}]</code> 转移，${isUpdate ? `<strong>更新 dp[${j}] = ${dp[j]}</strong>` : `保持当前最优 dp[${j}] = ${dp[j]}`}`,
           decision: isUpdate ? `更新 dp[${j}] = ${dp[j]}` : `保持当前最优 dp[${j}]`
         });
+
+        if (c + 1 <= Math.min(t, j)) {
+          pushStep({
+            type: 'loop-step',
+            line: lineLoopCoins,
+            activeSlot: j,
+            i: rowI,
+            j,
+            c: c + 1,
+            k: c + 1,
+            prevK: c,
+            team: [...pile],
+            preSum: [...preSum],
+            t,
+            n: pile.length,
+            m: k,
+            val: dp[j],
+            gridHighlight: { i: rowI, j },
+            tag: `循环自增 k: ${c} ➔ ${c + 1}`,
+            log: `| 🔄 步进自增: k 由 ${c} 递增为 ${c + 1} (k++)，准备尝试从栈 #${i + 1} 提取 ${c + 1} 枚硬币`,
+            msg: `循环步进自增：<code>k++</code>，当前抽取枚数从 <code>${c}</code> 递增至 <code>${c + 1}</code>，进入下一轮分支试选。`,
+            decision: `k 递增为 ${c + 1}`
+          });
+        }
       }
     }
   }
@@ -2900,6 +3355,13 @@ function compileStage4Steps(
     type: 'return-ans',
     line: lineReturnAns,
     activeSlot: k,
+    i: n,
+    j: k,
+    val: dp[k],
+    memoj: dp[k],
+    slotMode: 'updated',
+    m: k,
+    gridHighlight: { i: n, j: k },
     tag: `一维压缩完成！最大收益 = ${dp[k]}`,
     log: `| 🎉 一维空间压缩完成！dp[${k}] = ${dp[k]}`,
     msg: `🎉 <strong>空间压缩演化完成</strong>！在 O(K) 辅助空间下，求得全局最大收益为 <strong>${dp[k]}</strong>。`,

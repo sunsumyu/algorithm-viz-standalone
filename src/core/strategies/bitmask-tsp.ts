@@ -95,8 +95,21 @@ export function compileTsp(
     }));
   };
 
+  // 预先分配状态空间与网格快照提取器
+  const dp: number[][] = Array.from({ length: 1 << n }, () => new Array(n).fill(INF));
+  const getGridSnapshot = (): (number | null)[][] => {
+    return dp.map((row) => row.map((v) => (v >= INF ? null : v)));
+  };
+
+  const pushStep = (s: Partial<UniversalStep>) => {
+    steps.push({
+      grid: getGridSnapshot(),
+      ...s,
+    } as UniversalStep);
+  };
+
   // Step 0: 主函数入口
-  steps.push({
+  pushStep({
     type: 'entry',
     line: lineEntry,
     i: 0,
@@ -114,7 +127,7 @@ export function compileTsp(
   });
 
   // Step 1: 城市数与全集掩码
-  steps.push({
+  pushStep({
     type: 'init',
     line: lineInitN,
     i: 0,
@@ -127,7 +140,7 @@ export function compileTsp(
     msg: `城市数量：<code>n = ${n}</code>。`,
   });
 
-  steps.push({
+  pushStep({
     type: 'init',
     line: lineInitFull,
     i: 0,
@@ -141,8 +154,7 @@ export function compileTsp(
   });
 
   // Step 2: 初始化 DP 矩阵
-  const dp: number[][] = Array.from({ length: 1 << n }, () => new Array(n).fill(INF));
-  steps.push({
+  pushStep({
     type: 'init',
     line: lineInitDp,
     i: 0,
@@ -155,7 +167,7 @@ export function compileTsp(
     msg: `初始化状压状态：<code>dp = new int[1 << ${n}][${n}]</code>。`,
   });
 
-  steps.push({
+  pushStep({
     type: 'update',
     line: lineFillInf,
     i: 0,
@@ -173,7 +185,7 @@ export function compileTsp(
   const baseKey = `dp[${(1).toString(2).padStart(n, '0')}][0]`;
   memoRecord[baseKey] = 0;
 
-  steps.push({
+  pushStep({
     type: 'update',
     line: lineBase,
     i: 1,
@@ -195,7 +207,7 @@ export function compileTsp(
 
     const sBin = s.toString(2).padStart(n, '0');
 
-    steps.push({
+    pushStep({
       type: 'loop',
       line: lineLoopStatus,
       i: s,
@@ -215,7 +227,7 @@ export function compileTsp(
     for (const i of currCities) {
       if (stepCount >= maxSteps) break;
 
-      steps.push({
+      pushStep({
         type: 'loop',
         line: lineLoopCurr,
         i: s,
@@ -235,7 +247,7 @@ export function compileTsp(
         continue;
       }
 
-      steps.push({
+      pushStep({
         type: 'cond',
         line: lineCondValid,
         i: s,
@@ -255,7 +267,7 @@ export function compileTsp(
       for (const j of nextCities) {
         if (stepCount >= maxSteps) break;
 
-        steps.push({
+        pushStep({
           type: 'loop',
           line: lineLoopNext,
           i: s,
@@ -273,7 +285,7 @@ export function compileTsp(
           continue;
         }
 
-        steps.push({
+        pushStep({
           type: 'cond',
           line: lineCondNotVisited,
           i: s,
@@ -289,7 +301,7 @@ export function compileTsp(
         const nextS = s | (1 << j);
         const nextSBin = nextS.toString(2).padStart(n, '0');
 
-        steps.push({
+        pushStep({
           type: 'update',
           line: lineCalcNextS,
           i: nextS,
@@ -307,7 +319,7 @@ export function compileTsp(
           dp[nextS][j] = newCost;
           memoRecord[`dp[${nextSBin}][${j}]`] = newCost;
 
-          steps.push({
+          pushStep({
             type: 'update',
             line: lineTransfer,
             i: nextS,
@@ -341,7 +353,7 @@ export function compileTsp(
   }
 
   // Step 4: 闭环回溯收敛到起点 0
-  steps.push({
+  pushStep({
     type: 'init',
     line: lineInitAns,
     i: 0,
@@ -363,7 +375,7 @@ export function compileTsp(
 
   for (const i of finalCities) {
     const cost = dp[full][i] + dist[i][0];
-    steps.push({
+    pushStep({
       type: 'loop',
       line: lineLoopFinal,
       i,
@@ -379,7 +391,7 @@ export function compileTsp(
     if (cost < ans) {
       ans = cost;
       bestI = i;
-      steps.push({
+      pushStep({
         type: 'update',
         line: lineUpdateAns,
         i,
@@ -395,7 +407,7 @@ export function compileTsp(
   }
 
   // 最终收敛返回
-  steps.push({
+  pushStep({
     type: 'return',
     line: lineReturn,
     i: 0,

@@ -15,6 +15,8 @@
  */
 
 import type { StepVar } from './interfaces';
+import { LoopIndexReconciler } from './loop-index-reconciler';
+import { StepExecutionSynchronizer } from './step-execution-synchronizer';
 
 export interface ResolvedVariable {
   name: string;
@@ -31,9 +33,11 @@ export class VariableContextResolver {
     'curL', 'curR', 'curI', 'curJ', 'left', 'right', 'mid', 'target', 'ans', 'val', 'sum',
     'cur', 'prev', 'next', 'min', 'max', 'count', 'res', 'dist', 'weight', 'capacity', 'cost',
     'head', 'tail', 'slow', 'fast', 'pivot', 'low', 'high', 'top', 'leftDown', 'backup',
-    's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'items', 'piles', 'values', 'dp', 'memo', 'n', 'm',
-    // 背包、分组背包与区间DP核心状态键
-    'teams', 'start', 'end', 'candidate', 'group', 'curGroup', 'groupCount', 'remCap',
+    's1', 's2', 'a', 'b', 's', 'str', 'nums', 'arr', 'items', 'piles', 'values', 'stones', 'dp', 'memo', 'n', 'm',
+    // 状压 DP、背包、分组背包与区间DP核心状态键
+    'status', 'rest', 'full', 'nextS',
+    'teams', 'team', 't', 'preSum', 'presum', 'cand', 'candidate', 'take', 'notTake', 'bestVal', 'bestC', 'best',
+    'start', 'end', 'group', 'curGroup', 'groupCount', 'remCap', 'limit', 'bound', 'remK', 'maxVal', 'sub',
     // 常量与标准I/O句柄
     'MAXN', 'MAXM', 'INF', 'MOD', 'maxn', 'maxm', 'inf', 'mod', 'br', 'in', 'out', 'args',
     // 扩展图论、树与通用算法核心状态键
@@ -43,15 +47,43 @@ export class VariableContextResolver {
     'source', 'dest', 'destination', 'path', 'found',
     // 图论拓扑、邻接表与网格矩阵核心键
     'graph', 'adj', 'times', 'matrix', 'grid', 'edges',
+    // 贪心算法核心键
+    'strs', 'ab', 'ba', 'people', 'delta', 'intervals', 'rooms', 'maxRooms', 'courses', 'totalTime', 'sticks', 'mergeHistory',
   ]);
 
   /** 全局常见算法核心变量业务语义词典（用于代码悬停气泡精准显示变量作用） */
   private static readonly DEFAULT_VARIABLE_DESCRIPTIONS: Record<string, string> = {
+    // ── 贪心算法核心变量 ──
+    strs: '字符串序列数组 (待按自定义拼接比较器规则排序)',
+    ab: '两字符串拼接结果 a + b',
+    ba: '两字符串拼接结果 b + a',
+    people: '待分配旅客列表 (包含飞往A市与B市的支出)',
+    delta: '旅客改派前往B市的边际成本差额 (costB - costA)',
+    totalCost: '全局当前已累积产生的调度或合并总成本',
+    intervals: '时间区间列表 [start, end]',
+    rooms: '会议室占用轨道与会议分配列表',
+    maxRooms: '历史上同时使用的会议室峰值数量',
+    courses: '课程信息列表 [duration, lastDay]',
+    totalTime: '已选修课程累计消耗的总学时天数',
+    sticks: '待合并的各木棒长度列表',
+    mergeHistory: '哈夫曼两两合并的历史过程记录',
+
     // ── 基础数据与输入集合 ──
     arr: '二维物品三元组数组: arr[k][0]=体积, arr[k][1]=价值, arr[k][2]=组号',
     items: '二维物品特征集合列表: items[k][0]=体积, items[k][1]=价值, items[k][2]=组号',
     nums: '核心数字序列/元素数组',
     values: '多边形顶点权值数组 (凸多边形逆时针顶点权值)',
+    stones: '石子堆序列数组 (各堆石子重量序列)',
+    status: '二进制位掩码状态 (1 表示已选用/已访问，0 表示可用/未访问)',
+    rest: '当前选手达成目标所需的剩余累加和',
+    full: '全集二进制位掩码 (1<<n - 1)',
+    nextS: '转移后的下一个二进制掩码状态 (s | (1 << j))',
+    hats: '每个人喜欢的帽子编号列表集合',
+    debts: '各参与人的净债务金额数组 (过滤 0 结余后)',
+    primes: '质数基底表 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]',
+    quantity: '顾客订单对相同整数的需求量列表',
+    sub: '子掩码枚举变量 ((sub - 1) & s)',
+    mask: '当前元素或质因数构成的二进制状态掩码',
     maxn: '常量: 物品/数据规模上限 (静态分配空间)',
     maxm: '常量: 背包容量/列规模上限 (静态分配空间)',
     inf: '无穷大哨兵常量 (如 1e9 / 0x3f3f3f3f)',
@@ -63,12 +95,26 @@ export class VariableContextResolver {
 
     // ── 分组背包与动态规划 ──
     teams: '独立物品组总数 (按组互斥划分)',
+    team: '当前考察的独立硬币栈 / 物品组列表',
+    t: '当前硬币栈/物品组可抽取的最大上限 Math.min(team.size(), m)',
+    presum: '当前硬币栈连续提取前缀和收益数组 (preSum[c] 为取 c 枚的总面值)',
     start: '当前物品组起始下标 (双指针区间起点)',
     end: '当前物品组终止边界 (双指针开区间终点)',
     capacity: '背包当前限制容量 (最大可承载负荷)',
     remCap: '背包剩余可用容量',
     cost: '物品消耗成本 / 占用体积',
+    cand: '当前状态转移候选计算值',
     candidate: '状态转移候选计算值',
+    take: '采纳当前选择/选入物品后的决策收益',
+    nottake: '放弃当前选择/不选当前物品的继承收益',
+    bestval: '当前容量下遍历各分支所得的最优收益',
+    bestc: '当前最优决策所选取的硬币枚数',
+    remk: '当前递归分支剩余待提取的硬币配额 (容量)',
+    remK: '当前递归分支剩余待提取的硬币配额 (容量)',
+    maxval: '当前递归状态下各分支能够取得的最大收益',
+    maxVal: '当前递归状态下各分支能够取得的最大收益',
+    memo: '二维记忆化备忘录矩阵 memo[i][remK] (缓存重叠子状态避免重复计算)',
+    memogrid: '二维记忆化备忘录矩阵 memo[i][remK] (缓存重叠子状态避免重复计算)',
 
     // ── 图论与最短路核心 ──
     k: '信号广播源点 (起始发射节点)',
@@ -113,7 +159,6 @@ export class VariableContextResolver {
 
     // ── 动态规划与缓存 ──
     dp: '动态规划最优子结构状态备忘表',
-    memo: '记忆化递归搜索缓存表',
 
     // ── 链式前向星 ──
     head: '链式前向星顶点出边表头指针',
@@ -532,6 +577,94 @@ export class VariableContextResolver {
 
     // 5. 图论拓扑与遍历状态智能推导 (activeEdge, curNode, distList, visitedList)
     this.deriveGraphTopologyContext(s, varsMap);
+
+    // 6. 分组背包与硬币栈多态上下文智能推导 (piles, team, t, preSum, m, n)
+    this.deriveKnapsackGroupContext(s, varsMap);
+  }
+
+  /**
+   * 分组背包与硬币栈多态上下文智能推导
+   */
+  private static deriveKnapsackGroupContext(s: Record<string, any>, varsMap: Map<string, ResolvedVariable>): void {
+    const rawPiles = s.piles || s.vars?.piles || varsMap.get('piles')?.raw;
+    const capacityVal = s.k ?? s.capacity ?? s.m ?? s.kTarget ?? varsMap.get('capacity')?.raw ?? varsMap.get('k')?.raw ?? varsMap.get('m')?.raw;
+    const iVal = s.i ?? varsMap.get('i')?.raw ?? varsMap.get('i')?.value;
+
+    if (Array.isArray(rawPiles) && rawPiles.length > 0) {
+      if (!varsMap.has('piles')) {
+        varsMap.set('piles', {
+          name: 'piles',
+          value: `[${rawPiles.map((p: any) => (Array.isArray(p) ? `[${p.join(', ')}]` : String(p))).join(', ')}]`,
+          type: 'array',
+          raw: rawPiles,
+        });
+      }
+      if (!varsMap.has('n')) {
+        varsMap.set('n', { name: 'n', value: String(rawPiles.length), type: 'number', raw: rawPiles.length });
+      }
+
+      const curI = iVal != null ? parseInt(String(iVal), 10) : 0;
+      const pileIdx = curI >= 0 && curI < rawPiles.length ? curI : (curI - 1 >= 0 && curI - 1 < rawPiles.length ? curI - 1 : 0);
+      const curPile = s.team || rawPiles[pileIdx];
+
+      if (Array.isArray(curPile)) {
+        if (!varsMap.has('team')) {
+          varsMap.set('team', {
+            name: 'team',
+            value: `[${curPile.join(', ')}]`,
+            type: 'array',
+            detail: `当前硬币栈 #${curI} (包含 ${curPile.length} 枚硬币)`,
+            raw: curPile,
+          });
+        }
+
+        const capNum = capacityVal != null ? parseInt(String(capacityVal), 10) : curPile.length;
+        const tVal = s.t ?? Math.min(curPile.length, isNaN(capNum) ? curPile.length : capNum);
+        if (!varsMap.has('t')) {
+          varsMap.set('t', {
+            name: 't',
+            value: String(tVal),
+            type: 'number',
+            detail: `当前栈有效抽取上限 Math.min(team.size(), m) = ${tVal}`,
+            raw: tVal,
+          });
+        }
+
+        if (!varsMap.has('preSum') && !varsMap.has('presum')) {
+          const preSumArr = Array.isArray(s.preSum) ? s.preSum : [0];
+          if (!Array.isArray(s.preSum)) {
+            for (let p = 0; p < curPile.length; p++) {
+              preSumArr.push(preSumArr[p] + curPile[p]);
+            }
+          }
+          varsMap.set('preSum', {
+            name: 'preSum',
+            value: `[${preSumArr.join(', ')}]`,
+            type: 'array',
+            detail: `当前栈前缀和: preSum[${preSumArr.length - 1}] = ${preSumArr[preSumArr.length - 1]}`,
+            raw: preSumArr,
+          });
+        }
+      }
+    }
+
+    if (capacityVal != null) {
+      const capNum = parseInt(String(capacityVal), 10);
+      if (!isNaN(capNum)) {
+        if (!varsMap.has('m')) {
+          varsMap.set('m', { name: 'm', value: String(capNum), type: 'number', raw: capNum });
+        }
+        if (!varsMap.has('capacity')) {
+          varsMap.set('capacity', { name: 'capacity', value: String(capNum), type: 'number', raw: capNum });
+        }
+      }
+    }
+
+    // 循环变量别名双向互通: 代码中为 k, 推演步中为 c
+    const cVal = s.c ?? s.k ?? varsMap.get('c')?.raw ?? varsMap.get('c')?.value;
+    if (cVal != null && !varsMap.has('k')) {
+      varsMap.set('k', { name: 'k', value: String(cVal), type: 'number', raw: Number(cVal) });
+    }
   }
 
   /**
@@ -615,11 +748,18 @@ export class VariableContextResolver {
       }
     }
 
+    const isStage4 = s.stage === 4 || s.metrics?.space === 'O(K)' || s.metrics?.space === 'O(V)' || s.metrics?.space === 'O(M)';
+    const has1dDp = Array.isArray(s.dp1d) && s.dp1d.length > 0;
+
     const rawGrid = s.grid || s.matrix || s.board || s.dpTable || s.memoGrid || s.table || s.vars?.grid || s.vars?.matrix || varsMap.get('grid')?.raw || varsMap.get('matrix')?.raw;
     if (rawGrid !== undefined && !this.isVisualLayoutObject(rawGrid)) {
       const keysToSet = ['grid', 'matrix', 'board', 'table'];
       if (Array.isArray(rawGrid)) {
-        keysToSet.push('dp', 'memo', 'dpTable', 'memoGrid');
+        if (!isStage4 && !has1dDp) {
+          keysToSet.push('dp', 'memo', 'dpTable', 'memoGrid');
+        } else {
+          keysToSet.push('dpTable', 'memoGrid');
+        }
       }
       for (const key of keysToSet) {
         if (!varsMap.has(key)) {
@@ -629,11 +769,14 @@ export class VariableContextResolver {
       }
     }
 
-    // F.1 一维滚动状态槽位智能推导 (slotVector, slots, dp)
-    const rawSlots = s.slotVector || s.slots || s.arr1D || s.vars?.slotVector || s.vars?.slots;
+    // F.1 一维滚动状态槽位智能推导 (dp1d, slotVector, slots, dp)
+    const rawSlots = s.dp1d || s.slotVector || s.slots || s.arr1D || s.vars?.dp1d || s.vars?.slotVector || s.vars?.slots;
     if (Array.isArray(rawSlots) && !this.isVisualLayoutObject(rawSlots)) {
-      for (const key of ['slots', 'slotVector', 'dp']) {
-        if (!varsMap.has(key)) {
+      for (const key of ['slots', 'slotVector', 'dp1d', 'dp']) {
+        if (key === 'dp' && (isStage4 || has1dDp)) {
+          const entry = this.formatValueEntry(key, rawSlots);
+          if (entry) varsMap.set(key, entry);
+        } else if (!varsMap.has(key)) {
           const entry = this.formatValueEntry(key, rawSlots);
           if (entry) varsMap.set(key, entry);
         }
@@ -855,8 +998,12 @@ export class VariableContextResolver {
     const verticalAliases = ['r', 'curR', 'right', 'j', 'curJ', 'col'];
     this.syncAliasGroup(varsMap, verticalAliases);
 
-    // 语义组 3: 状态表格
-    const tableAliases = ['dp', 'dpTable', 'memo', 'memoGrid', 'table'];
+    // 语义组 3: 状态表格 (若 dp 已是一维滚动数组，则不与二维 dpTable / table 混淆)
+    const dpEntry = varsMap.get('dp');
+    const isDp1D = dpEntry && Array.isArray(dpEntry.raw) && (dpEntry.raw.length === 0 || !Array.isArray(dpEntry.raw[0]));
+    const tableAliases = isDp1D
+      ? ['dpTable', 'memoGrid', 'table']
+      : ['dp', 'dpTable', 'memo', 'memoGrid', 'table'];
     this.syncAliasGroup(varsMap, tableAliases);
 
     // 语义组 4: 顶点 / 当前节点 / 出发点 (Graph Vertex / Current Node)
@@ -934,7 +1081,7 @@ export class VariableContextResolver {
     this.syncAliasGroup(varsMap, stringAliases);
 
     // 语义组 18: 背包容量与额度 (Capacity / Limit)
-    const capacityAliases = ['m', 'capacity', 'remCap', 'limit'];
+    const capacityAliases = ['m', 'capacity', 'remCap', 'limit', 'remK', 'remk'];
     this.syncAliasGroup(varsMap, capacityAliases);
 
     // 语义组 19: 规模与元素总数 (Size / Total Count)
@@ -1013,13 +1160,19 @@ export class VariableContextResolver {
     if (cleanExpr === 'dp' || cleanExpr === 'memo' || cleanExpr === 'dpTable' || cleanExpr === 'memoGrid' || cleanExpr === 'table') {
       const lVal = varsMap.get('l')?.value || varsMap.get('i')?.value;
       const rVal = varsMap.get('r')?.value || varsMap.get('j')?.value;
+      const isStage4 = stepContext?.stage === 4 || stepContext?.metrics?.space === 'O(K)' || stepContext?.metrics?.space === 'O(V)' || stepContext?.metrics?.space === 'O(M)';
+      const has1dDp = Array.isArray(stepContext?.dp1d);
       const tableData =
+        ((isStage4 || has1dDp) && (cleanExpr === 'dp' || cleanExpr === 'memo')
+          ? (stepContext?.dp1d || stepContext?.slotVector || stepContext?.slots || varsMap.get('dp')?.raw)
+          : null) ||
         stepContext?.grid ||
         stepContext?.dpTable ||
         stepContext?.memoGrid ||
         stepContext?.table ||
         stepContext?.slotVector ||
         stepContext?.slots ||
+        stepContext?.dp1d ||
         varsMap.get('dp')?.raw ||
         varsMap.get('grid')?.raw ||
         varsMap.get('matrix')?.raw ||
@@ -1028,52 +1181,70 @@ export class VariableContextResolver {
       if (Array.isArray(tableData)) {
         if (Array.isArray(tableData[0])) {
           // 二维表
+          const rows = tableData.length;
+          const cols = tableData[0].length;
+          const formattedRows = tableData.slice(0, 5).map((row: any[]) => {
+            if (!Array.isArray(row)) return String(row);
+            const cells = row.slice(0, 6).map((cell: any) => (cell === null || cell === undefined ? '0' : String(cell)));
+            const cSuffix = row.length > 6 ? ', ...' : '';
+            return `[${cells.join(', ')}${cSuffix}]`;
+          });
+          const rSuffix = rows > 5 ? `, ... (共 ${rows} 行)` : '';
+          const matrixPreview = `[${formattedRows.join(', ')}${rSuffix}]`;
+
           if (lVal != null && rVal != null) {
             const rIdx = parseInt(lVal, 10);
             const cIdx = parseInt(rVal, 10);
             if (!isNaN(rIdx) && !isNaN(cIdx)) {
               const curCellVal = tableData[rIdx]?.[cIdx];
-              const valStr = curCellVal === null || curCellVal === undefined ? '-' : String(curCellVal);
+              const isUnfilled = curCellVal === null || curCellVal === undefined;
+              const valStr = isUnfilled ? '0' : String(curCellVal);
+              const cellStatus = isUnfilled ? '0 (未计算/初始为0)' : valStr;
               return {
                 name: cleanExpr,
                 value: `[${lVal}][${rVal}] = ${valStr}`,
                 type: 'expression',
-                detail: `当前单元格 ${cleanExpr}[${lVal}][${rVal}] = ${valStr}`,
+                detail: `当前单元格 ${cleanExpr}[${lVal}][${rVal}] = ${cellStatus}。状态矩阵 [${rows}×${cols}]: ${matrixPreview}`,
                 raw: tableData,
               };
             }
           }
-          const rows = tableData.length;
-          const cols = tableData[0].length;
           return {
             name: cleanExpr,
             value: `[${rows}×${cols}]`,
             type: 'array',
-            detail: `动态规划二维状态表 (${rows} 行 ${cols} 列)`,
+            detail: `动态规划二维状态表 (${rows} 行 ${cols} 列，未填槽位初始为 0): ${matrixPreview}`,
             raw: tableData,
           };
         } else {
           // 一维滚动数组
+          const len = tableData.length;
+          const formattedItems = tableData.slice(0, 8).map((it: any) => (it === null || it === undefined ? '0' : String(it)));
+          const suffix = len > 8 ? `, ... (共 ${len} 项)` : '';
+          const arrayPreview = `[${formattedItems.join(', ')}${suffix}]`;
+
           const idxVal = rVal ?? lVal;
           if (idxVal != null) {
             const idxNum = parseInt(idxVal, 10);
             if (!isNaN(idxNum)) {
               const cellVal = tableData[idxNum];
-              const valStr = cellVal === null || cellVal === undefined ? '-' : String(cellVal);
+              const isUnfilled = cellVal === null || cellVal === undefined;
+              const valStr = isUnfilled ? '0' : String(cellVal);
+              const cellStatus = isUnfilled ? '0 (未计算/初始为0)' : valStr;
               return {
                 name: cleanExpr,
                 value: `[${idxVal}] = ${valStr}`,
                 type: 'expression',
-                detail: `当前一维状态 ${cleanExpr}[${idxVal}] = ${valStr}`,
+                detail: `当前一维状态 ${cleanExpr}[${idxVal}] = ${cellStatus}。滚动数组 (长度 ${len}): ${arrayPreview}`,
                 raw: tableData,
               };
             }
           }
           return {
             name: cleanExpr,
-            value: `[${tableData.length}]`,
+            value: `[${len}]`,
             type: 'array',
-            detail: `一维动态规划滚动数组 (长度 ${tableData.length})`,
+            detail: `一维动态规划滚动数组 (长度 ${len}，未填槽位初始为 0): ${arrayPreview}`,
             raw: tableData,
           };
         }
@@ -1147,7 +1318,8 @@ export class VariableContextResolver {
           }
         }
 
-        const typeDesc = is2DArray ? '二维物品数组' : '数据数组';
+        const isTriplet = is2DArray && validItems.some((it: any) => Array.isArray(it) && it.length === 3);
+        const typeDesc = isTriplet ? '数据三元组数组 [体积, 价值, 组号]' : is2DArray ? '二维物品数组' : '数据数组';
         return {
           name: cleanExpr,
           value: arrayPreview,
@@ -1192,6 +1364,57 @@ export class VariableContextResolver {
       }
     }
 
+    // 0.081 特殊处理：若查询 team (当前硬币栈/物品组)
+    if (cleanExpr === 'team') {
+      const curIVal = varsMap.get('i')?.value;
+      const pilesData = stepContext?.piles || varsMap.get('piles')?.raw;
+      const curI = curIVal != null ? parseInt(curIVal, 10) : 0;
+      const pileIdx = Array.isArray(pilesData) && curI >= 0 && curI < pilesData.length ? curI : (curI - 1 >= 0 && curI - 1 < (pilesData?.length || 0) ? curI - 1 : 0);
+      const curPile = stepContext?.team || (Array.isArray(pilesData) ? pilesData[pileIdx] : null);
+
+      if (Array.isArray(curPile)) {
+        return {
+          name: 'team',
+          value: `[${curPile.join(', ')}]`,
+          type: 'array',
+          detail: `当前硬币栈 #${curI} (包含 ${curPile.length} 枚硬币)`,
+          raw: curPile,
+        };
+      }
+    }
+
+    // 0.082 特殊处理：若查询 t (当前栈有效抽取上限 Math.min(team.size(), m))
+    if (cleanExpr === 't') {
+      const directT = stepContext?.t ?? varsMap.get('t')?.raw ?? varsMap.get('t')?.value;
+      if (directT !== undefined && directT !== null) {
+        const num = Number(directT);
+        return {
+          name: 't',
+          value: String(num),
+          type: 'number',
+          detail: `当前硬币栈有效抽取上限 Math.min(team.size(), m) = ${num}`,
+          raw: num,
+        };
+      }
+      const curIVal = varsMap.get('i')?.value;
+      const pilesData = stepContext?.piles || varsMap.get('piles')?.raw;
+      const curI = curIVal != null ? parseInt(curIVal, 10) : 0;
+      const pileIdx = Array.isArray(pilesData) && curI >= 0 && curI < pilesData.length ? curI : (curI - 1 >= 0 && curI - 1 < (pilesData?.length || 0) ? curI - 1 : 0);
+      const curPile = stepContext?.team || (Array.isArray(pilesData) ? pilesData[pileIdx] : null);
+      const capacityVal = stepContext?.k ?? stepContext?.capacity ?? stepContext?.m ?? varsMap.get('capacity')?.raw ?? varsMap.get('m')?.raw ?? 2;
+      const capNum = Number(capacityVal) || 2;
+      if (Array.isArray(curPile)) {
+        const calcT = Math.min(curPile.length, capNum);
+        return {
+          name: 't',
+          value: String(calcT),
+          type: 'number',
+          detail: `当前硬币栈有效抽取上限 Math.min(team.size(), m) = ${calcT}`,
+          raw: calcT,
+        };
+      }
+    }
+
     // 0.09 特殊处理：若查询 preSum (前缀和数组)
     if (cleanExpr === 'preSum' || cleanExpr === 'presum') {
       const curIVal = varsMap.get('i')?.value;
@@ -1223,6 +1446,87 @@ export class VariableContextResolver {
           detail: `当前栈前缀和数组 (长度 ${preSumArr.length}): 索引 c 代表连续提取 c 枚硬币的总面值${cDetail}`,
           raw: preSumArr,
         };
+      }
+    }
+
+    // 0.091 特殊处理：若查询 stones (石子堆序列数组)
+    if (cleanExpr === 'stones') {
+      const stonesData =
+        stepContext?.stones ||
+        stepContext?.vars?.stones ||
+        (Array.isArray(stepContext?.dp1d) ? stepContext.dp1d : null) ||
+        varsMap.get('stones')?.raw;
+
+      if (Array.isArray(stonesData) && stonesData.length > 0) {
+        const valPreview = `[${stonesData.join(', ')}]`;
+        const curI = varsMap.get('i')?.value;
+        const curJ = varsMap.get('j')?.value;
+        const curK = varsMap.get('k')?.value;
+        let pointerDetail = '';
+        if (curI != null && curJ != null) {
+          const kStr = curK != null ? `，当前切分点 k=${curK}` : '';
+          pointerDetail = `。当前正在考察区间 [${curI}..${curJ}]${kStr}`;
+        }
+        return {
+          name: 'stones',
+          value: valPreview,
+          type: 'array',
+          detail: `石子堆序列数组 (共 ${stonesData.length} 堆)${pointerDetail}`,
+          raw: stonesData,
+        };
+      }
+    }
+
+    // 0.092 特殊处理：若查询 sum 且为数组 (区间 DP 前缀和)
+    if (cleanExpr === 'sum') {
+      const sumData =
+        stepContext?.sum ||
+        stepContext?.vars?.sum ||
+        varsMap.get('sum')?.raw;
+      if (Array.isArray(sumData) && sumData.length > 0) {
+        const curI = varsMap.get('i')?.value;
+        const curJ = varsMap.get('j')?.value;
+        let rangeDetail = '';
+        if (curI != null && curJ != null) {
+          const iNum = parseInt(curI, 10);
+          const jNum = parseInt(curJ, 10);
+          if (!isNaN(iNum) && !isNaN(jNum) && jNum + 1 < sumData.length && iNum < sumData.length) {
+            const weight = sumData[jNum + 1] - sumData[iNum];
+            rangeDetail = `。当前区间 [${iNum}..${jNum}] 总重量 = sum[${jNum + 1}] - sum[${iNum}] = ${weight}`;
+          }
+        }
+        return {
+          name: 'sum',
+          value: `[${sumData.join(', ')}]`,
+          type: 'array',
+          detail: `前缀和数组 (长度 ${sumData.length})${rangeDetail}`,
+          raw: sumData,
+        };
+      }
+    }
+
+    // 0.093 特殊处理：若查询 status (状压二进制位掩码)
+    if (cleanExpr === 'status') {
+      const statusVal = varsMap.get('status')?.value ?? stepContext?.status;
+      if (statusVal != null) {
+        const numVal = typeof statusVal === 'number' ? statusVal : parseInt(String(statusVal), 10);
+        if (!isNaN(numVal)) {
+          const nVal = varsMap.get('n')?.value ?? stepContext?.n ?? 4;
+          const nDigits = Math.max(1, parseInt(String(nVal), 10));
+          const binStr = numVal.toString(2).padStart(nDigits, '0');
+          const activeBits: number[] = [];
+          for (let b = 1; b <= nDigits; b++) {
+            if ((numVal & (1 << b)) !== 0) activeBits.push(b);
+          }
+          const bitsDesc = activeBits.length > 0 ? `已包含数字集合: {${activeBits.join(', ')}}` : '全空集合 (无数字已选)';
+          return {
+            name: 'status',
+            value: `${numVal} (0b${binStr})`,
+            type: 'number',
+            detail: `状态压缩二进制位掩码 (1=已选/已访问, 0=未选)。${bitsDesc}`,
+            raw: numVal,
+          };
+        }
       }
     }
 
@@ -1296,7 +1600,7 @@ export class VariableContextResolver {
       if (tableName === 'arr' || tableName === 'items') {
         tableData = stepContext?.items || stepContext?.arr || stepContext?.vars?.items || stepContext?.vars?.arr || varsMap.get('items')?.raw || varsMap.get('arr')?.raw;
       } else if (tableName === 'dp' || tableName === 'memo' || tableName === 'dpTable' || tableName === 'memoGrid') {
-        tableData = stepContext?.dpTable || stepContext?.grid || stepContext?.memoGrid || varsMap.get('dp')?.raw || varsMap.get('grid')?.raw;
+        tableData = stepContext?.memo || stepContext?.dpTable || stepContext?.grid || stepContext?.memoGrid || varsMap.get('dp')?.raw || varsMap.get('grid')?.raw || varsMap.get('memo')?.raw;
       } else {
         tableData = stepContext?.[tableName] || varsMap.get(tableName)?.raw || stepContext?.grid || varsMap.get('grid')?.raw;
       }
@@ -1304,7 +1608,7 @@ export class VariableContextResolver {
       if (Array.isArray(tableData) && !isNaN(rVal) && !isNaN(cVal)) {
         const row = tableData[rVal];
         const cellVal = Array.isArray(row) ? row[cVal] : undefined;
-        const displayVal = cellVal === null || cellVal === undefined ? '-' : String(cellVal);
+        const displayVal = cellVal === null || cellVal === undefined ? '-1' : String(cellVal);
 
         if (tableName === 'arr' || tableName === 'items') {
           let colSemantic = '';
@@ -1336,7 +1640,10 @@ export class VariableContextResolver {
         if (tableName === 'dp' || tableName === 'memo' || tableName === 'dpTable') {
           const stage = stepContext?.stage;
           let dpDetail = '';
-          if (stage === 3 || stepContext?.teams != null) {
+          if (tableName === 'memo' || stage === 2) {
+            const statusStr = (cellVal === null || cellVal === undefined || cellVal === -1) ? '未缓存 (-1)' : `${displayVal}`;
+            dpDetail = `备忘录缓存 memo[${rVal}][${cVal}] = ${statusStr} (硬币栈 #${rVal} 在剩余容量为 ${cVal} 时的子问题记忆化收益)`;
+          } else if (stage === 3 || stepContext?.teams != null) {
             dpDetail = `动态规划状态格 dp[${rVal}][${cVal}] = ${displayVal} (前 ${rVal} 组物品、容量为 ${cVal} 时的最大收益)`;
           } else {
             dpDetail = `动态规划状态格 ${tableName}[${rVal}][${cVal}] = ${displayVal}`;
@@ -1382,7 +1689,18 @@ export class VariableContextResolver {
         if (arrName === 'arr' || arrName === 'items') {
           arrData = stepContext?.items || stepContext?.arr || stepContext?.vars?.items || stepContext?.vars?.arr || varsMap.get('items')?.raw || varsMap.get('arr')?.raw;
         } else if (arrName === 'dp' || arrName === 'slots' || arrName === 'slotVector') {
-          arrData = stepContext?.slotVector || stepContext?.slots || varsMap.get('slots')?.raw || varsMap.get('slotVector')?.raw || varsMap.get('dp')?.raw;
+          const is1DStage = stepContext?.stage === 4 || stepContext?.metrics?.space === 'O(K)' || stepContext?.metrics?.space === 'O(V)' || stepContext?.metrics?.space === 'O(M)' || Array.isArray(stepContext?.dp1d);
+          arrData =
+            (is1DStage ? (stepContext?.dp1d || stepContext?.slotVector || stepContext?.slots) : null) ||
+            stepContext?.slotVector ||
+            stepContext?.slots ||
+            stepContext?.dp1d ||
+            varsMap.get('slots')?.raw ||
+            varsMap.get('slotVector')?.raw ||
+            varsMap.get('dp1d')?.raw ||
+            varsMap.get('dp')?.raw;
+        } else if (arrName === 'preSum' || arrName === 'presum') {
+          arrData = stepContext?.preSum || varsMap.get('preSum')?.raw || varsMap.get('presum')?.raw;
         } else if (arrName === 'values') {
           arrData = stepContext?.values || stepContext?.dp1d || varsMap.get('values')?.raw || varsMap.get('dp1d')?.raw;
         } else if (arrName === 'val') {
@@ -1400,7 +1718,20 @@ export class VariableContextResolver {
             detail: `'${ch}'`,
           };
         } else if (Array.isArray(arrData)) {
-          const itemVal = arrData[idxVal];
+          let itemVal: any;
+          if (Array.isArray(arrData[0]) && arrName !== 'arr' && arrName !== 'items') {
+            // 如果误将二维网格用于一维下标检索（如 dp[j]），且存在行指针 i，按当前行取该列的标量值
+            const curI = varsMap.get('i')?.value || varsMap.get('l')?.value;
+            const rowIdx = curI != null ? parseInt(curI, 10) : 0;
+            if (rowIdx >= 0 && rowIdx < arrData.length) {
+              itemVal = arrData[rowIdx]?.[idxVal];
+            } else {
+              itemVal = arrData[idxVal];
+            }
+          } else {
+            itemVal = arrData[idxVal];
+          }
+
           if (Array.isArray(itemVal) && (arrName === 'arr' || arrName === 'items') && itemVal.length >= 3) {
             return {
               name: `${arrName}[${idxVal}]`,
@@ -1410,12 +1741,22 @@ export class VariableContextResolver {
               raw: itemVal,
             };
           }
-          const displayVal = itemVal === null || itemVal === undefined ? '-' : (Array.isArray(itemVal) ? `[${itemVal.join(', ')}]` : String(itemVal));
+          const displayVal = itemVal === null || itemVal === undefined
+            ? '0'
+            : (Array.isArray(itemVal)
+                ? `[${itemVal.map((x: any) => x === null || x === undefined ? '0' : String(x)).join(', ')}]`
+                : String(itemVal));
+          let customDetail = `${arrName}[${idxVal}] = ${displayVal}`;
+          if (arrName === 'dp' || arrName === 'slots') {
+            customDetail = `一维滚动状态: ${arrName}[${idxVal}] = ${displayVal} (容量 ${idxVal} 时的累计最优收益)`;
+          } else if (arrName === 'preSum' || arrName === 'presum') {
+            customDetail = `硬币面值前缀和: preSum[${idxVal}] = ${displayVal} (连续拿取 ${idxVal} 枚的总面值)`;
+          }
           return {
             name: `${arrName}[${idxVal}]`,
             value: displayVal,
             type: 'expression',
-            detail: `${arrName}[${idxVal}] = ${displayVal}`,
+            detail: customDetail,
             raw: itemVal,
           };
         }
@@ -1498,36 +1839,18 @@ export class VariableContextResolver {
   }
 
   /**
-   * 针对当前代码行生成行末内联调试提示文本（IDEA Inline Hints 格式）
+   * 针对当前代码行生成行末内联调试提示文本（IDEA Inline Hints 格式，集成动作相与变量）
    */
   public static formatInlineSummary(
     varsMap: Map<string, ResolvedVariable>,
-    lineCode?: string
+    lineCode?: string,
+    stepContext?: any
   ): string {
     if (!varsMap || varsMap.size === 0 || !lineCode) {
       return '';
     }
 
-    const idents = new Set<string>();
-    const matches = lineCode.match(/\b([A-Za-z_$][A-Za-z0-9_$]*)\b/g);
-    if (matches) {
-      for (const m of matches) {
-        idents.add(m);
-      }
-    }
-
-    const matchedVars: string[] = [];
-    for (const id of idents) {
-      const v = this.getVariable(varsMap, id);
-      if (v && v.value && !v.value.startsWith('{') && !v.value.startsWith('[')) {
-        if (!matchedVars.some((item) => item.startsWith(`${v.name}:`))) {
-          matchedVars.push(`${v.name}: ${v.value}`);
-        }
-      }
-    }
-
-    if (matchedVars.length === 0) return '';
-    return `// ${matchedVars.slice(0, 4).join(', ')}`;
+    return StepExecutionSynchronizer.formatActionInlineHint(varsMap, lineCode, stepContext);
   }
 
   private static formatValueEntry(name: string, val: unknown): ResolvedVariable | undefined {

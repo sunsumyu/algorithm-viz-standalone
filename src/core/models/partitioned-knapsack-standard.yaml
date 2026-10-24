@@ -1,12 +1,11 @@
 # ==============================================================================
 # 🏆 [TOP-LEVEL ALGORITHM MODEL] 顶层抽象模型规范
 # 分组背包模版 (洛谷 P1757 通天之分组背包) - 左程云算法通关课 Class 074 Code01
-# 组内物品互斥决策（至多选 1 件），外层容量倒序内层枚举组内候选
 # 四阶段全演化标准参考模型 (Stage 1-4, forward/reverse 双向支持)
 # ==============================================================================
 
 id: partitioned-knapsack-standard
-name: "分组背包模版 (通天之分组背包)"
+name: "分组背包模版 (洛谷 P1757 通天之分组背包)"
 nameEn: "Partitioned Knapsack Standard"
 defaultStage: "stage-3"
 category: "dynamic-programming"
@@ -20,7 +19,6 @@ defaultParams:
   items: [[10, 10, 1], [10, 20, 1], [20, 20, 2]]
 
 problem:
-  leetcodeId: 1757
   title: "通天之分组背包 (洛谷 P1757)"
   difficulty: "普及+/提高"
   tags: ["动态规划", "背包问题", "分组背包"]
@@ -28,7 +26,7 @@ problem:
   examples:
     - input: "m = 45, items = [[10, 10, 1], [10, 20, 1], [20, 20, 2]]"
       output: "40"
-      explanation: "组 1 选择物品 2 (体积 10, 价值 20)；组 2 选择物品 3 (体积 20, 价值 20)。总占用体积 30 <= 45，最大总价值为 40。"
+      explanation: "组 1 选择物品 2 (体积 10, 价值 20)；组 2 选择物品 3 (体积 20, 20)。总占用体积 30 <= 45，最大总价值为 40。"
     - input: "m = 50, items = [[15, 25, 1], [10, 15, 1], [20, 30, 2], [15, 20, 2], [10, 20, 3]]"
       output: "75"
       explanation: "组 1 选 (15, 25)，组 2 选 (20, 30)，组 3 选 (10, 20)，总容量 45 <= 50，总价值 25 + 30 + 20 = 75。"
@@ -76,17 +74,55 @@ stages:
       standard:
         variantLabel: "标准多分支递归"
         title:
-          forward: "PartitionedKnapsack_Recursive.java"
-          reverse: "PartitionedKnapsack_Recursive_Reverse.java"
+          forward: "Main.java (递归版)"
+          reverse: "Main_Reverse.java (递归逆推版)"
         code:
           forward:
-            title: "PartitionedKnapsack_Recursive.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+              // 洛谷 P1757 通天之分组背包 - 阶段 1: 暴力递归分支展开
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int m, n;
+                  public static int[][] arr = new int[1005][3];
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]);
+                          List<List<int[]>> groups = new ArrayList<>();
+                          for (int start = 1, end = 2; start <= n;) {
+                              while (end <= n && arr[end][2] == arr[start][2]) end++;
+                              List<int[]> curGroup = new ArrayList<>();
+                              for (int k = start; k < end; k++) {
+                                  curGroup.add(new int[]{arr[k][0], arr[k][1]});
+                              }
+                              groups.add(curGroup);
+                              start = end++;
+                          }
+                          out.println(compute(m, groups.size(), groups));
+                      }
+                      out.flush();
+                      out.close();
+                  }
+
+                  public static int compute(int m, int numGroups, List<List<int[]>> groups) {
                       return dfs(0, m, numGroups, groups); // @step:entry
                   }
-                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+
+                  private static int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
                       if (g >= numGroups || remCap <= 0) return 0; // @step:boundary
                       int maxVal = dfs(g + 1, remCap, numGroups, groups); // @step:branch_not_take
                       for (int[] item : groups.get(g)) { // @step:loop_items
@@ -99,13 +135,51 @@ stages:
                   }
               }
           reverse:
-            title: "PartitionedKnapsack_Recursive_Reverse.java"
+            title: "Main_Reverse.java"
             source: |
-              class Solution {
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+              // 洛谷 P1757 通天之分组背包 - 阶段 1: 暴力递归逆推寻源
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int m, n;
+                  public static int[][] arr = new int[1005][3];
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]);
+                          List<List<int[]>> groups = new ArrayList<>();
+                          for (int start = 1, end = 2; start <= n;) {
+                              while (end <= n && arr[end][2] == arr[start][2]) end++;
+                              List<int[]> curGroup = new ArrayList<>();
+                              for (int k = start; k < end; k++) {
+                                  curGroup.add(new int[]{arr[k][0], arr[k][1]});
+                              }
+                              groups.add(curGroup);
+                              start = end++;
+                          }
+                          out.println(compute(m, groups.size(), groups));
+                      }
+                      out.flush();
+                      out.close();
+                  }
+
+                  public static int compute(int m, int numGroups, List<List<int[]>> groups) {
                       return dfs(numGroups - 1, m, numGroups, groups); // @step:entry
                   }
-                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+
+                  private static int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
                       if (g < 0 || remCap <= 0) return 0; // @step:boundary
                       int maxVal = dfs(g - 1, remCap, numGroups, groups); // @step:branch_not_take
                       for (int[] item : groups.get(g)) { // @step:loop_items
@@ -133,20 +207,58 @@ stages:
       standard:
         variantLabel: "二维备忘录剪枝版"
         title:
-          forward: "PartitionedKnapsack_Memo.java"
-          reverse: "PartitionedKnapsack_Memo_Reverse.java"
+          forward: "Main.java (记忆化搜索版)"
+          reverse: "Main_Reverse.java (倒序备忘录版)"
         code:
           forward:
-            title: "PartitionedKnapsack_Memo.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  private int[][] memo;
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+              // 洛谷 P1757 通天之分组背包 - 阶段 2: 记忆化搜索剪枝 (可直接在洛谷提交 AC)
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int m, n;
+                  public static int[][] arr = new int[1005][3];
+                  private static int[][] memo;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]);
+                          List<List<int[]>> groups = new ArrayList<>();
+                          for (int start = 1, end = 2; start <= n;) {
+                              while (end <= n && arr[end][2] == arr[start][2]) end++;
+                              List<int[]> curGroup = new ArrayList<>();
+                              for (int k = start; k < end; k++) {
+                                  curGroup.add(new int[]{arr[k][0], arr[k][1]});
+                              }
+                              groups.add(curGroup);
+                              start = end++;
+                          }
+                          out.println(compute(m, groups.size(), groups));
+                      }
+                      out.flush();
+                      out.close();
+                  }
+
+                  public static int compute(int m, int numGroups, List<List<int[]>> groups) {
                       memo = new int[numGroups][m + 1]; // @step:init_memo
                       for (int[] row : memo) Arrays.fill(row, -1);
                       return dfs(0, m, numGroups, groups); // @step:entry
                   }
-                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+
+                  private static int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
                       if (g >= numGroups || remCap <= 0) return 0; // @step:boundary
                       if (memo[g][remCap] != -1) return memo[g][remCap]; // @step:cache_hit
                       int maxVal = dfs(g + 1, remCap, numGroups, groups); // @step:branch_not_take
@@ -160,16 +272,54 @@ stages:
                   }
               }
           reverse:
-            title: "PartitionedKnapsack_Memo_Reverse.java"
+            title: "Main_Reverse.java"
             source: |
-              class Solution {
-                  private int[][] memo;
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
+              // 洛谷 P1757 通天之分组背包 - 阶段 2: 倒序备忘录剪枝
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int m, n;
+                  public static int[][] arr = new int[1005][3];
+                  private static int[][] memo;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]);
+                          List<List<int[]>> groups = new ArrayList<>();
+                          for (int start = 1, end = 2; start <= n;) {
+                              while (end <= n && arr[end][2] == arr[start][2]) end++;
+                              List<int[]> curGroup = new ArrayList<>();
+                              for (int k = start; k < end; k++) {
+                                  curGroup.add(new int[]{arr[k][0], arr[k][1]});
+                              }
+                              groups.add(curGroup);
+                              start = end++;
+                          }
+                          out.println(compute(m, groups.size(), groups));
+                      }
+                      out.flush();
+                      out.close();
+                  }
+
+                  public static int compute(int m, int numGroups, List<List<int[]>> groups) {
                       memo = new int[numGroups][m + 1]; // @step:init_memo
                       for (int[] row : memo) Arrays.fill(row, -1);
                       return dfs(numGroups - 1, m, numGroups, groups); // @step:entry
                   }
-                  private int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
+
+                  private static int dfs(int g, int remCap, int numGroups, List<List<int[]>> groups) { // @step:dfs_entry
                       if (g < 0 || remCap <= 0) return 0; // @step:boundary
                       if (memo[g][remCap] != -1) return memo[g][remCap]; // @step:cache_hit
                       int maxVal = dfs(g - 1, remCap, numGroups, groups); // @step:branch_not_take
@@ -189,54 +339,130 @@ stages:
     timeBadge: "O(numGroups · M · |group|)"
     badgeBg: "bg-blue-100 text-blue-700"
     name:
-      forward: "阶段 3: 严格二维分组背包动态规划 (组间决策与组内互斥填表)"
-      reverse: "阶段 3: 逆向依赖二维填表 (倒序边界推导)"
+      forward: "阶段 3: 严格二维位置依赖动态规划 (左神原版 compute1)"
+      reverse: "阶段 3: 逆向依赖二维动态规划 (自顶向下反向推进)"
     desc:
-      forward: "建立状态表 dp[g][j]，表示考察完前 g 组后在容量限制为 j 下的最大收益：dp[g][j] = max(dp[g-1][j], max_k(dp[g-1][j - cost[k]] + val[k]))。"
+      forward: "左程云算法通关课 Class 074 Code01 核心实现 compute1()：按组号排序后双指针划定组，开辟 dp[teams + 1][m + 1]，外层组、中层容量、内层枚举组内物品，无递归栈且零 GC。"
       reverse: "自右下角终点状态向基底反推依赖关系，高亮展示组内候选与上一组的依赖来源。"
     variants:
       standard:
-        variantLabel: "二维矩阵填表版"
+        variantLabel: "洛谷 AC 提交版"
         title:
-          forward: "PartitionedKnapsack_DP2D.java"
-          reverse: "PartitionedKnapsack_DP2D_Reverse.java"
+          forward: "Main.java (洛谷 P1757 完整提交版)"
+          reverse: "Main_Reverse.java (洛谷 P1757 逆向依赖版)"
         code:
           forward:
-            title: "PartitionedKnapsack_DP2D.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
-                      int[][] dp = new int[numGroups + 1][m + 1]; // @step:init_dp
-                      for (int g = 1; g <= numGroups; g++) { // @step:outer_loop
+
+              public class Main {
+                  public static int MAXN = 1005;
+                  public static int MAXM = 1005;
+                  // arr[i][0] 体积, arr[i][1] 价值, arr[i][2] 组号
+                  public static int[][] arr = new int[MAXN][3];
+                  public static int m, n;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken();
+                              arr[i][0] = (int) in.nval;
+                              in.nextToken();
+                              arr[i][1] = (int) in.nval;
+                              in.nextToken();
+                              arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]); // @step:sort_items
+                          out.println(compute1());
+                      }
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  // 阶段 3: 严格位置依赖的二维动态规划 (仅在此阶段展示 compute1)
+                  public static int compute1() {
+                      int teams = 1; // @step:count_teams
+                      for (int i = 2; i <= n; i++) {
+                          if (arr[i - 1][2] != arr[i][2]) {
+                              teams++;
+                          }
+                      }
+                      int[][] dp = new int[teams + 1][m + 1]; // @step:init_dp
+                      for (int start = 1, end = 2, i = 1; start <= n; i++) { // @step:outer_group
+                          while (end <= n && arr[end][2] == arr[start][2]) { // @step:group_end
+                              end++;
+                          }
                           for (int j = 0; j <= m; j++) { // @step:inner_cap
-                              dp[g][j] = dp[g - 1][j]; // @step:branch_not_take
-                              for (int[] item : groups.get(g - 1)) { // @step:loop_items
-                                  int cost = item[0], val = item[1];
-                                  if (j >= cost) {
-                                      dp[g][j] = Math.max(dp[g][j], dp[g - 1][j - cost] + val); // @step:transition
+                              dp[i][j] = dp[i - 1][j]; // @step:branch_not_take
+                              for (int k = start; k < end; k++) { // @step:loop_items
+                                  if (j - arr[k][0] >= 0) { // @step:check_fit
+                                      dp[i][j] = Math.max(dp[i][j], dp[i - 1][j - arr[k][0]] + arr[k][1]); // @step:transition
                                   }
                               }
                           }
+                          start = end++; // @step:advance_group
                       }
-                      return dp[numGroups][m]; // @step:return_ans
+                      return dp[teams][m]; // @step:return_ans
                   }
               }
           reverse:
-            title: "PartitionedKnapsack_DP2D_Reverse.java"
+            title: "Main_Reverse.java"
             source: |
-              class Solution {
-                  public int compute(int m, int numGroups, List<List<int[]>> groups) {
-                      int[][] dp = new int[numGroups + 1][m + 1]; // @step:init_dp
-                      for (int g = numGroups; g >= 1; g--) { // @step:outer_loop
+              // 洛谷 P1757 通天之分组背包 - 阶段 3 逆向依赖版
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int MAXN = 1005;
+                  public static int MAXM = 1005;
+                  public static int[][] arr = new int[MAXN][3];
+                  public static int m, n;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]); // @step:sort_items
+                          out.println(compute1Reverse());
+                      }
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  public static int compute1Reverse() {
+                      int teams = 1; // @step:count_teams
+                      for (int i = 2; i <= n; i++) {
+                          if (arr[i - 1][2] != arr[i][2]) teams++;
+                      }
+                      int[][] dp = new int[teams + 1][m + 1]; // @step:init_dp
+                      for (int start = 1, end = 2, i = teams; start <= n; i--) { // @step:outer_group
+                          while (end <= n && arr[end][2] == arr[start][2]) end++; // @step:group_end
                           for (int j = m; j >= 0; j--) { // @step:inner_cap
-                              dp[g][j] = (g == numGroups) ? 0 : dp[g + 1][j]; // @step:branch_not_take
-                              for (int[] item : groups.get(g - 1)) { // @step:loop_items
-                                  int cost = item[0], val = item[1];
-                                  if (j >= cost) {
-                                      dp[g][j] = Math.max(dp[g][j], dp[g + 1][j - cost] + val); // @step:transition
+                              dp[i][j] = (i == teams) ? 0 : dp[i + 1][j]; // @step:branch_not_take
+                              for (int k = start; k < end; k++) { // @step:loop_items
+                                  if (j >= arr[k][0]) { // @step:check_fit
+                                      dp[i][j] = Math.max(dp[i][j], dp[i + 1][j - arr[k][0]] + arr[k][1]); // @step:transition
                                   }
                               }
                           }
+                          start = end++; // @step:advance_group
                       }
                       return dp[1][m]; // @step:return_ans
                   }
@@ -248,31 +474,76 @@ stages:
     timeBadge: "O(numGroups · M · |group|) · 空间 O(M)"
     badgeBg: "bg-emerald-100 text-emerald-700"
     name:
-      forward: "阶段 4: 一维滚动空间压缩 (容量倒序防组内多选)"
+      forward: "阶段 4: 一维滚动空间压缩 (左神原版 compute2)"
       reverse: "阶段 4: 空间压缩极简倒序流转 (O(M) 辅助空间)"
     desc:
       forward: "使用一维数组 dp[j] 时，容量循环与组内物品枚举的内外层顺序绝对不能颠倒：容量 j 必须在外层从 m 倒序遍历至 0，内层枚举组内候选物品，杜绝组内连锁累加！"
       reverse: "严格维护一维滚动数组，展示容量从 m 倒序至 0 的单层流转过程与组内互斥性保护。"
     variants:
       standard:
-        variantLabel: "一维空间压缩版"
+        variantLabel: "洛谷 AC 提交版"
         title:
-          forward: "PartitionedKnapsack_DP1D.java"
-          reverse: "PartitionedKnapsack_DP1D_Reverse.java"
+          forward: "Main.java (洛谷 P1757 完整提交版)"
+          reverse: "Main_Reverse.java (洛谷 P1757 逆向一维版)"
         code:
           forward:
-            title: "PartitionedKnapsack_DP1D.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int compute(int m, int n, int[][] arr) {
-                      Arrays.sort(arr, 0, n, (a, b) -> a[2] - b[2]); // @step:sort_items
-                      int[] dp = new int[m + 1]; // @step:init_dp
-                      for (int start = 0, end = 1; start < n;) { // @step:outer_group
-                          while (end < n && arr[end][2] == arr[start][2]) end++; // @step:group_end
+              // 洛谷 P1757 通天之分组背包
+              // 阶段 4: 空间压缩一维动态规划 (左程云算法通关课 Class 074 Code01)
+              // 测试链接 : https://www.luogu.com.cn/problem/P1757
+              // 提交时保持类名为 Main 即可直接在洛谷 AC 满分！
+              import java.io.BufferedReader;
+              import java.io.IOException;
+              import java.io.InputStreamReader;
+              import java.io.OutputStreamWriter;
+              import java.io.PrintWriter;
+              import java.io.StreamTokenizer;
+              import java.util.Arrays;
+
+              public class Main {
+                  public static int MAXN = 1005;
+                  public static int MAXM = 1005;
+                  // arr[i][0] 体积, arr[i][1] 价值, arr[i][2] 组号
+                  public static int[][] arr;
+                  public static int[] dp = new int[MAXM];
+                  public static int m, n;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken();
+                              arr[i][0] = (int) in.nval;
+                              in.nextToken();
+                              arr[i][1] = (int) in.nval;
+                              in.nextToken();
+                              arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> a[2] - b[2]); // @step:sort_items
+                          out.println(compute2());
+                      }
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  // 阶段 4: 空间压缩一维动态规划 (仅在此阶段展示 compute2)
+                  public static int compute2() {
+                      Arrays.fill(dp, 0, m + 1, 0); // @step:init_dp
+                      for (int start = 1, end = 2; start <= n;) { // @step:outer_group
+                          while (end <= n && arr[end][2] == arr[start][2]) { // @step:group_end
+                              end++;
+                          }
                           for (int j = m; j >= 0; j--) { // @step:cap_loop
                               for (int k = start; k < end; k++) { // @step:item_loop
-                                  if (j >= arr[k][0]) {
-                                      dp[j] = Math.max(dp[j], dp[j - arr[k][0]] + arr[k][1]); // @step:transition
+                                  if (j >= arr[k][0]) { // @step:check_fit
+                                      dp[j] = Math.max(dp[j], arr[k][1] + dp[j - arr[k][0]]); // @step:transition
                                   }
                               }
                           }
@@ -282,18 +553,50 @@ stages:
                   }
               }
           reverse:
-            title: "PartitionedKnapsack_DP1D_Reverse.java"
+            title: "Main_Reverse.java"
             source: |
-              class Solution {
-                  public int compute(int m, int n, int[][] arr) {
-                      Arrays.sort(arr, 0, n, (a, b) -> b[2] - a[2]); // @step:sort_items
-                      int[] dp = new int[m + 1]; // @step:init_dp
-                      for (int start = 0, end = 1; start < n;) { // @step:outer_group
-                          while (end < n && arr[end][2] == arr[start][2]) end++; // @step:group_end
+              // 洛谷 P1757 通天之分组背包 - 阶段 4 逆向一维版
+              import java.io.*;
+              import java.util.*;
+
+              public class Main {
+                  public static int MAXN = 1005;
+                  public static int MAXM = 1005;
+                  public static int[][] arr;
+                  public static int[] dp = new int[MAXM];
+                  public static int m, n;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          m = (int) in.nval;
+                          in.nextToken();
+                          n = (int) in.nval;
+                          for (int i = 1; i <= n; i++) {
+                              in.nextToken(); arr[i][0] = (int) in.nval;
+                              in.nextToken(); arr[i][1] = (int) in.nval;
+                              in.nextToken(); arr[i][2] = (int) in.nval;
+                          }
+                          Arrays.sort(arr, 1, n + 1, (a, b) -> b[2] - a[2]); // @step:sort_items
+                          out.println(compute2Reverse());
+                      }
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  public static int compute2Reverse() {
+                      Arrays.fill(dp, 0, m + 1, 0); // @step:init_dp
+                      for (int start = 1, end = 2; start <= n;) { // @step:outer_group
+                          while (end <= n && arr[end][2] == arr[start][2]) { // @step:group_end
+                              end++;
+                          }
                           for (int j = m; j >= 0; j--) { // @step:cap_loop
                               for (int k = start; k < end; k++) { // @step:item_loop
-                                  if (j >= arr[k][0]) {
-                                      dp[j] = Math.max(dp[j], dp[j - arr[k][0]] + arr[k][1]); // @step:transition
+                                  if (j >= arr[k][0]) { // @step:check_fit
+                                      dp[j] = Math.max(dp[j], arr[k][1] + dp[j - arr[k][0]]); // @step:transition
                                   }
                               }
                           }

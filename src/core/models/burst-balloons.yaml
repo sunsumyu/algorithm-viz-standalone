@@ -98,7 +98,7 @@ stages:
                       for (int k = i + 1; k < j; k++) { // @step:loop_k
                           int gain = val[i] * val[k] * val[j]; // @step:calc_gain
                           int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
-                          best = Math.max(best, coins); // @step:update_best
+                          best = Math.max(best, coins); // @step:transfer
                       }
                       return best; // @step:return
                   }
@@ -119,7 +119,7 @@ stages:
                         for (int k = i + 1; k < j; k++) { // @step:loop_k
                             int gain = val[i] * val[k] * val[j]; // @step:calc_gain
                             int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
-                            best = Math.max(best, coins); // @step:update_best
+                            best = Math.max(best, coins); // @step:transfer
                         }
                         return best; // @step:return
                     }
@@ -139,7 +139,7 @@ stages:
                         for (int k = i + 1; k < j; k++) { // @step:loop_k
                             int gain = val[i] * val[k] * val[j]; // @step:calc_gain
                             int coins = dfs(val, i, k) + dfs(val, k, j) + gain; // @step:calc_coins
-                            best = max(best, coins); // @step:update_best
+                            best = max(best, coins); // @step:transfer
                         }
                         return best; // @step:return
                     }
@@ -154,7 +154,7 @@ stages:
                             for k in range(i + 1, j): # @step:loop_k
                                 gain = val[i] * val[k] * val[j] # @step:calc_gain
                                 coins = dfs(i, k) + dfs(k, j) + gain # @step:calc_coins
-                                best = max(best, coins) # @step:update_best
+                                best = max(best, coins) # @step:transfer
                             return best # @step:return
                         return dfs(0, len(nums) + 1) # @step:init_dp
               javascript: |
@@ -166,7 +166,7 @@ stages:
                         for (let k = i + 1; k < j; k++) { // @step:loop_k
                             const gain = val[i] * val[k] * val[j]; // @step:calc_gain
                             const coins = dfs(i, k) + dfs(k, j) + gain; // @step:calc_coins
-                            best = Math.max(best, coins); // @step:update_best
+                            best = Math.max(best, coins); // @step:transfer
                         }
                         return best; // @step:return
                     }
