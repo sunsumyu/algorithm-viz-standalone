@@ -14,6 +14,9 @@ export class HeapGreaterDeductionRenderer implements IDeductionTreeRenderer {
     return (
       modelId === 'heap-greater' ||
       modelId === 'heap-greater-041' ||
+      modelId === 'heap-greater-026' ||
+      modelId === 'class026' ||
+      modelId === 'class026-code01' ||
       modelId === 'class041-code01' ||
       modelId === 'indexed-priority-queue'
     );

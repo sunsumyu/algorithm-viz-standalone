@@ -1487,6 +1487,96 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     });
     expect(container.innerHTML).toContain('路径总和与全解收集');
   });
+
+  it('应当能正确为 daily-temperatures (每日温度 · LeetCode 739) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('daily-temperatures')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('739')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-739')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'daily-temperatures',
+    });
+    expect(container.innerHTML).toContain('每日温度');
+    expect(container.innerHTML).toContain('单调递减栈');
+  });
+
+  it('应当能正确为 trapping-rain-water (接雨水 · LeetCode 42) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('trapping-rain-water')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('42')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-42')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'trapping-rain-water',
+    });
+    expect(container.innerHTML).toContain('接雨水');
+    expect(container.innerHTML).toContain('单调递减栈横向切片法');
+  });
+
+  it('应当能正确为 largest-rectangle-histogram (柱状图中最大的矩形 · LeetCode 84) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('largest-rectangle-histogram')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('84')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-84')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'largest-rectangle-histogram',
+    });
+    expect(container.innerHTML).toContain('柱状图中最大的矩形');
+  });
+
+  it('应当能正确为 sliding-window-max (滑动窗口最大值 · LeetCode 239) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('sliding-window-max')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('239')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-239')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'sliding-window-max',
+    });
+    expect(container.innerHTML).toContain('滑动窗口最大值');
+    expect(container.innerHTML).toContain('单调双端队列');
+  });
+
+  it('应当能正确为 two-sum (两数之和 · LeetCode 1) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('two-sum')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('1')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-1')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'two-sum',
+    });
+    expect(container.innerHTML).toContain('两数之和');
+    expect(container.innerHTML).toContain('哈希表');
+  });
+
+  it('应当能正确为 min-stack (最小栈 · LeetCode 155) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('min-stack')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('155')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-155')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'min-stack',
+    });
+    expect(container.innerHTML).toContain('最小栈');
+    expect(container.innerHTML).toContain('双栈镜像');
+  });
+
+  it('应当能正确为 bracket (有效的括号 · LeetCode 20) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bracket')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('20')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-20')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, {
+      modelId: 'bracket',
+    });
+    expect(container.innerHTML).toContain('有效的括号');
+    expect(container.innerHTML).toContain('遇左压右');
+  });
 });
 
 

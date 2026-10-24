@@ -438,7 +438,6 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "course-schedule-ii-210": "topological-sort-deduction-renderer.ts",
   "leetcode-210": "topological-sort-deduction-renderer.ts",
   "class059-code02": "topological-sort-deduction-renderer.ts",
-  "class026-code01": "topological-sort-deduction-renderer.ts",
   "total-island-area": "total-island-area-deduction-renderer.ts",
   "isolated-islands-sum": "total-island-area-deduction-renderer.ts",
   "island-total-area": "total-island-area-deduction-renderer.ts",
@@ -656,6 +655,11 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "class107-code01": "trie-xor-max-deduction-renderer.ts",
   "heap-sort": "heap-sort-deduction-renderer.ts",
   "heap-sort-040": "heap-sort-deduction-renderer.ts",
+  "heap-and-heapsort": "heap-sort-deduction-renderer.ts",
+  "heap-and-heapsort-025": "heap-sort-deduction-renderer.ts",
+  "class025": "heap-sort-deduction-renderer.ts",
+  "class025-code01": "heap-sort-deduction-renderer.ts",
+  "heap-sort-inplace": "heap-sort-deduction-renderer.ts",
   "class040-code01": "heap-sort-deduction-renderer.ts",
   "class014-code01": "heap-sort-deduction-renderer.ts",
   "heapify": "heap-sort-deduction-renderer.ts",
@@ -670,6 +674,9 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "class042-code02": "heap-median-stream-deduction-renderer.ts",
   "heap-greater": "heap-greater-deduction-renderer.ts",
   "heap-greater-041": "heap-greater-deduction-renderer.ts",
+  "heap-greater-026": "heap-greater-deduction-renderer.ts",
+  "class026": "heap-greater-deduction-renderer.ts",
+  "class026-code01": "heap-greater-deduction-renderer.ts",
   "class041-code01": "heap-greater-deduction-renderer.ts",
   "indexed-priority-queue": "heap-greater-deduction-renderer.ts",
   "comparator-priority-queue": "comparator-priority-queue-deduction-renderer.ts",
@@ -747,7 +754,7 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "160": "intersection-linked-list-deduction-renderer.ts",
   "leetcode-160": "intersection-linked-list-deduction-renderer.ts",
   "intersection-linked-list-036": "intersection-linked-list-deduction-renderer.ts",
-  "class036-code01": "intersection-linked-list-deduction-renderer.ts",
+  "class036-intersection": "intersection-linked-list-deduction-renderer.ts",
   "class008-code01": "intersection-linked-list-deduction-renderer.ts",
   "intersection-of-two-linked-lists": "intersection-linked-list-deduction-renderer.ts",
   "palindrome-linked-list": "palindrome-linked-list-deduction-renderer.ts",
@@ -778,7 +785,6 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "21": "merge-sorted-lists-deduction-renderer.ts",
   "leetcode-21": "merge-sorted-lists-deduction-renderer.ts",
   "class038-code01": "merge-sorted-lists-deduction-renderer.ts",
-  "class007-code01": "merge-sorted-lists-deduction-renderer.ts",
   "reorder-list": "reorder-list-deduction-renderer.ts",
   "143": "reorder-list-deduction-renderer.ts",
   "leetcode-143": "reorder-list-deduction-renderer.ts",
@@ -791,7 +797,345 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "linked-list-basics": "linked-list-basics-deduction-renderer.ts",
   "linked-list-basics-006": "linked-list-basics-deduction-renderer.ts",
   "class006-code01": "linked-list-basics-deduction-renderer.ts",
-  "class006-code02": "linked-list-basics-deduction-renderer.ts"
+  "class006-code02": "linked-list-basics-deduction-renderer.ts",
+  "daily-temperatures": "daily-temperatures-deduction-renderer.ts",
+  "daily-temperatures-052": "daily-temperatures-deduction-renderer.ts",
+  "739": "daily-temperatures-deduction-renderer.ts",
+  "leetcode-739": "daily-temperatures-deduction-renderer.ts",
+  "class052-code03": "daily-temperatures-deduction-renderer.ts",
+  "trapping-rain-water": "trapping-rain-water-deduction-renderer.ts",
+  "42": "trapping-rain-water-deduction-renderer.ts",
+  "leetcode-42": "trapping-rain-water-deduction-renderer.ts",
+  "trap-rain-water": "trapping-rain-water-deduction-renderer.ts",
+  "trapping-rain-water-42": "trapping-rain-water-deduction-renderer.ts",
+  "class052-water": "trapping-rain-water-deduction-renderer.ts",
+  "largest-rectangle-histogram": "largest-rectangle-histogram-deduction-renderer.ts",
+  "largest-rectangle-histogram-052": "largest-rectangle-histogram-deduction-renderer.ts",
+  "84": "largest-rectangle-histogram-deduction-renderer.ts",
+  "leetcode-84": "largest-rectangle-histogram-deduction-renderer.ts",
+  "largest-rectangle": "largest-rectangle-histogram-deduction-renderer.ts",
+  "class052-code05": "largest-rectangle-histogram-deduction-renderer.ts",
+  "next-greater-element-i": "next-greater-element-i-deduction-renderer.ts",
+  "496": "next-greater-element-i-deduction-renderer.ts",
+  "leetcode-496": "next-greater-element-i-deduction-renderer.ts",
+  "next-greater-element": "next-greater-element-i-deduction-renderer.ts",
+  "next-greater-element-ii": "next-greater-element-ii-deduction-renderer.ts",
+  "503": "next-greater-element-ii-deduction-renderer.ts",
+  "leetcode-503": "next-greater-element-ii-deduction-renderer.ts",
+  "next-greater-element-circular": "next-greater-element-ii-deduction-renderer.ts",
+  "remove-k-digits": "remove-k-digits-deduction-renderer.ts",
+  "remove-k-digits-053": "remove-k-digits-deduction-renderer.ts",
+  "402": "remove-k-digits-deduction-renderer.ts",
+  "leetcode-402": "remove-k-digits-deduction-renderer.ts",
+  "class053-code03": "remove-k-digits-deduction-renderer.ts",
+  "maximal-rectangle": "maximal-rectangle-deduction-renderer.ts",
+  "maximal-rectangle-052": "maximal-rectangle-deduction-renderer.ts",
+  "85": "maximal-rectangle-deduction-renderer.ts",
+  "leetcode-85": "maximal-rectangle-deduction-renderer.ts",
+  "class052-code06": "maximal-rectangle-deduction-renderer.ts",
+  "sum-subarray-minimums": "sum-subarray-minimums-deduction-renderer.ts",
+  "sum-subarray-minimums-052": "sum-subarray-minimums-deduction-renderer.ts",
+  "907": "sum-subarray-minimums-deduction-renderer.ts",
+  "leetcode-907": "sum-subarray-minimums-deduction-renderer.ts",
+  "class052-code04": "sum-subarray-minimums-deduction-renderer.ts",
+  "remove-duplicate-letters": "remove-duplicate-letters-deduction-renderer.ts",
+  "remove-duplicate-letters-053": "remove-duplicate-letters-deduction-renderer.ts",
+  "316": "remove-duplicate-letters-deduction-renderer.ts",
+  "leetcode-316": "remove-duplicate-letters-deduction-renderer.ts",
+  "1081": "remove-duplicate-letters-deduction-renderer.ts",
+  "leetcode-1081": "remove-duplicate-letters-deduction-renderer.ts",
+  "class053-code04": "remove-duplicate-letters-deduction-renderer.ts",
+  "maximum-subarray-min-product": "maximum-subarray-min-product-deduction-renderer.ts",
+  "maximum-subarray-min-product-053": "maximum-subarray-min-product-deduction-renderer.ts",
+  "1856": "maximum-subarray-min-product-deduction-renderer.ts",
+  "leetcode-1856": "maximum-subarray-min-product-deduction-renderer.ts",
+  "class053-code06": "maximum-subarray-min-product-deduction-renderer.ts",
+  "count-submatrices-all-ones": "count-submatrices-all-ones-deduction-renderer.ts",
+  "count-submatrices-all-ones-1504": "count-submatrices-all-ones-deduction-renderer.ts",
+  "count-submatrices-all-ones-053": "count-submatrices-all-ones-deduction-renderer.ts",
+  "1504": "count-submatrices-all-ones-deduction-renderer.ts",
+  "leetcode-1504": "count-submatrices-all-ones-deduction-renderer.ts",
+  "class053-code01": "count-submatrices-all-ones-deduction-renderer.ts",
+  "big-fish-eat-small-fish": "big-fish-eat-small-fish-deduction-renderer.ts",
+  "big-fish-eat-small-fish-053": "big-fish-eat-small-fish-deduction-renderer.ts",
+  "大鱼吃小鱼": "big-fish-eat-small-fish-deduction-renderer.ts",
+  "class053-code02": "big-fish-eat-small-fish-deduction-renderer.ts",
+  "longest-well-performing-interval": "longest-well-performing-interval-deduction-renderer.ts",
+  "longest-well-performing-interval-053": "longest-well-performing-interval-deduction-renderer.ts",
+  "1124": "longest-well-performing-interval-deduction-renderer.ts",
+  "leetcode-1124": "longest-well-performing-interval-deduction-renderer.ts",
+  "表现良好的最长时间段": "longest-well-performing-interval-deduction-renderer.ts",
+  "class053-code05": "longest-well-performing-interval-deduction-renderer.ts",
+  "verify-preorder-sequence-in-bst": "verify-preorder-bst-deduction-renderer.ts",
+  "255": "verify-preorder-bst-deduction-renderer.ts",
+  "leetcode-255": "verify-preorder-bst-deduction-renderer.ts",
+  "verify-preorder-bst": "verify-preorder-bst-deduction-renderer.ts",
+
+  // --- Monotonic Queue Family (Class 054 & Class 055) ---
+  // 1. 滑动窗口最大值 (LC 239 / Class 054 Code01)
+  "sliding-window-max": "sliding-window-max-deduction-renderer.ts",
+  "sliding-window-max-054": "sliding-window-max-deduction-renderer.ts",
+  "sliding-window-maximum": "sliding-window-max-deduction-renderer.ts",
+  "sliding-window-maximum-239": "sliding-window-max-deduction-renderer.ts",
+  "239": "sliding-window-max-deduction-renderer.ts",
+  "leetcode-239": "sliding-window-max-deduction-renderer.ts",
+  "class054-code01": "sliding-window-max-deduction-renderer.ts",
+  "monotonic-queue-basic-054": "sliding-window-max-deduction-renderer.ts",
+
+  // 2. 绝对差限制最长子数组 (LC 1438 / Class 054 Code02)
+  "longest-subarray-limit": "longest-subarray-limit-deduction-renderer.ts",
+  "longest-subarray-limit-054": "longest-subarray-limit-deduction-renderer.ts",
+  "longest-subarray-limit-1438": "longest-subarray-limit-deduction-renderer.ts",
+  "1438": "longest-subarray-limit-deduction-renderer.ts",
+  "leetcode-1438": "longest-subarray-limit-deduction-renderer.ts",
+  "class054-code02": "longest-subarray-limit-deduction-renderer.ts",
+  "valid-subarray-limit-055": "longest-subarray-limit-deduction-renderer.ts",
+
+  // 3. 接取落水最小花盆 (洛谷 P2698 / Class 054 Code03)
+  "falling-water-flower-pot": "falling-water-flower-pot-deduction-renderer.ts",
+  "falling-water-flower-pot-054": "falling-water-flower-pot-deduction-renderer.ts",
+  "falling-water-flowerpot": "falling-water-flower-pot-deduction-renderer.ts",
+  "falling-water-flowerpot-054": "falling-water-flower-pot-deduction-renderer.ts",
+  "luogu-p2698": "falling-water-flower-pot-deduction-renderer.ts",
+  "p2698": "falling-water-flower-pot-deduction-renderer.ts",
+  "2698": "falling-water-flower-pot-deduction-renderer.ts",
+  "usaco-flowerpot": "falling-water-flower-pot-deduction-renderer.ts",
+  "class054-code03": "falling-water-flower-pot-deduction-renderer.ts",
+
+  // 4. 和至少为 K 的最短子数组 (LC 862 / Class 055 Code01)
+  "shortest-subarray-sum-k": "shortest-subarray-sum-k-deduction-renderer.ts",
+  "shortest-subarray-sum-k-055": "shortest-subarray-sum-k-deduction-renderer.ts",
+  "shortest-subarray-862": "shortest-subarray-sum-k-deduction-renderer.ts",
+  "862": "shortest-subarray-sum-k-deduction-renderer.ts",
+  "leetcode-862": "shortest-subarray-sum-k-deduction-renderer.ts",
+  "class055-code01": "shortest-subarray-sum-k-deduction-renderer.ts",
+
+  // 5. 满足不等式最大值 (LC 1499 / Class 055 Code02)
+  "max-value-of-equation": "max-value-of-equation-deduction-renderer.ts",
+  "max-value-of-equation-055": "max-value-of-equation-deduction-renderer.ts",
+  "max-value-of-equation-1499": "max-value-of-equation-deduction-renderer.ts",
+  "1499": "max-value-of-equation-deduction-renderer.ts",
+  "leetcode-1499": "max-value-of-equation-deduction-renderer.ts",
+  "class055-code02": "max-value-of-equation-deduction-renderer.ts",
+
+  // 6. 安排最多任务数目 (LC 2071 / Class 055 Code03)
+  "max-tasks-assign": "max-tasks-assign-deduction-renderer.ts",
+  "max-tasks-assign-055": "max-tasks-assign-deduction-renderer.ts",
+  "max-task-assign": "max-tasks-assign-deduction-renderer.ts",
+  "2071": "max-tasks-assign-deduction-renderer.ts",
+  "leetcode-2071": "max-tasks-assign-deduction-renderer.ts",
+  "class055-code03": "max-tasks-assign-deduction-renderer.ts",
+
+  // --- Stack & Queue Family (LeetCode 20, 150, 232, 225, 155, 1047, 641) ---
+  // 1. 有效的括号 (LC 20)
+  "bracket": "bracket-deduction-renderer.ts",
+  "valid-parentheses": "bracket-deduction-renderer.ts",
+  "valid-parentheses-20": "bracket-deduction-renderer.ts",
+  "20": "bracket-deduction-renderer.ts",
+  "leetcode-20": "bracket-deduction-renderer.ts",
+
+  // 2. 逆波兰表达式求值 (LC 150)
+  "eval-rpn": "eval-rpn-deduction-renderer.ts",
+  "evaluate-reverse-polish-notation": "eval-rpn-deduction-renderer.ts",
+  "eval-rpn-150": "eval-rpn-deduction-renderer.ts",
+  "150": "eval-rpn-deduction-renderer.ts",
+  "leetcode-150": "eval-rpn-deduction-renderer.ts",
+
+  // 3. 用栈实现队列 (LC 232)
+  "implement-queue-using-stack": "implement-queue-using-stack-deduction-renderer.ts",
+  "implement-queue-using-stack-232": "implement-queue-using-stack-deduction-renderer.ts",
+  "queue-using-stacks": "implement-queue-using-stack-deduction-renderer.ts",
+  "232": "implement-queue-using-stack-deduction-renderer.ts",
+  "leetcode-232": "implement-queue-using-stack-deduction-renderer.ts",
+
+  // 4. 用队列实现栈 (LC 225)
+  "implement-stack-using-queue": "implement-stack-using-queue-deduction-renderer.ts",
+  "implement-stack-using-queue-225": "implement-stack-using-queue-deduction-renderer.ts",
+  "stack-using-queues": "implement-stack-using-queue-deduction-renderer.ts",
+  "225": "implement-stack-using-queue-deduction-renderer.ts",
+  "leetcode-225": "implement-stack-using-queue-deduction-renderer.ts",
+
+  // 5. 最小栈 (LC 155)
+  "min-stack": "min-stack-deduction-renderer.ts",
+  "min-stack-155": "min-stack-deduction-renderer.ts",
+  "155": "min-stack-deduction-renderer.ts",
+  "leetcode-155": "min-stack-deduction-renderer.ts",
+
+  // 6. 删除相邻重复项 (LC 1047)
+  "remove-adjacent-duplicates": "remove-adjacent-duplicates-deduction-renderer.ts",
+  "remove-adjacent-duplicates-1047": "remove-adjacent-duplicates-deduction-renderer.ts",
+  "remove-duplicates": "remove-adjacent-duplicates-deduction-renderer.ts",
+  "1047": "remove-adjacent-duplicates-deduction-renderer.ts",
+  "leetcode-1047": "remove-adjacent-duplicates-deduction-renderer.ts",
+
+  // 7. 循环双端队列 (LC 641 / Class 007)
+  "circular-deque": "circular-deque-deduction-renderer.ts",
+  "circular-deque-007": "circular-deque-deduction-renderer.ts",
+  "design-circular-deque": "circular-deque-deduction-renderer.ts",
+  "design-circular-deque-641": "circular-deque-deduction-renderer.ts",
+  "641": "circular-deque-deduction-renderer.ts",
+  "leetcode-641": "circular-deque-deduction-renderer.ts",
+  "class007": "circular-deque-deduction-renderer.ts",
+  "class007-code01": "circular-deque-deduction-renderer.ts",
+
+  // --- Stack Advanced Family (Class 036, LC 678, LC 1249) ---
+  // 8. 递归逆序栈 (Class 036 Code01)
+  "reverse-stack-using-recursive": "reverse-stack-recursive-deduction-renderer.ts",
+  "reverse-stack-using-recursive-036": "reverse-stack-recursive-deduction-renderer.ts",
+  "reverse-stack": "reverse-stack-recursive-deduction-renderer.ts",
+  "reverse-stack-recursive": "reverse-stack-recursive-deduction-renderer.ts",
+  "reverse-stack-036": "reverse-stack-recursive-deduction-renderer.ts",
+  "class036-reverse-stack": "reverse-stack-recursive-deduction-renderer.ts",
+  "class036-code01": "reverse-stack-recursive-deduction-renderer.ts",
+
+  // 9. 辅助栈排序 (Class 036 Code03)
+  "sort-stack-using-recursive": "sort-stack-recursive-deduction-renderer.ts",
+  "sort-stack-using-recursive-036": "sort-stack-recursive-deduction-renderer.ts",
+  "sort-stack": "sort-stack-recursive-deduction-renderer.ts",
+  "sort-stack-036": "sort-stack-recursive-deduction-renderer.ts",
+  "class036-sort-stack": "sort-stack-recursive-deduction-renderer.ts",
+  "class036-code03": "sort-stack-recursive-deduction-renderer.ts",
+
+  // 10. 有效的括号字符串 (LC 678)
+  "valid-parenthesis-string": "valid-parenthesis-string-deduction-renderer.ts",
+  "valid-parenthesis-string-678": "valid-parenthesis-string-deduction-renderer.ts",
+  "valid-string": "valid-parenthesis-string-deduction-renderer.ts",
+  "678": "valid-parenthesis-string-deduction-renderer.ts",
+  "leetcode-678": "valid-parenthesis-string-deduction-renderer.ts",
+
+  // 11. 移除无效的括号 (LC 1249)
+  "min-remove-valid-parentheses": "min-remove-valid-parentheses-deduction-renderer.ts",
+  "min-remove-valid-parentheses-1249": "min-remove-valid-parentheses-deduction-renderer.ts",
+  "min-remove-parentheses": "min-remove-valid-parentheses-deduction-renderer.ts",
+  "1249": "min-remove-valid-parentheses-deduction-renderer.ts",
+  "leetcode-1249": "min-remove-valid-parentheses-deduction-renderer.ts",
+
+  // 12. 前 K 个高频元素 (LC 347)
+  "top-k-frequent": "top-k-frequent-deduction-renderer.ts",
+  "top-k-frequent-elements": "top-k-frequent-deduction-renderer.ts",
+  "347": "top-k-frequent-deduction-renderer.ts",
+  "leetcode-347": "top-k-frequent-deduction-renderer.ts",
+
+  // 13. 两数之和 (LC 1)
+  "two-sum": "two-sum-deduction-renderer.ts",
+  "two-sum-hash": "two-sum-deduction-renderer.ts",
+  "1": "two-sum-deduction-renderer.ts",
+  "leetcode-1": "two-sum-deduction-renderer.ts",
+
+  // 14. 三数之和 (LC 15)
+  "three-sum": "three-sum-deduction-renderer.ts",
+  "three-sum-two-pointers": "three-sum-deduction-renderer.ts",
+  "15": "three-sum-deduction-renderer.ts",
+  "leetcode-15": "three-sum-deduction-renderer.ts",
+
+  // 15. 四数之和 (LC 18)
+  "four-sum": "four-sum-deduction-renderer.ts",
+  "four-sum-two-pointers": "four-sum-deduction-renderer.ts",
+  "18": "four-sum-deduction-renderer.ts",
+  "leetcode-18": "four-sum-deduction-renderer.ts",
+
+  // 16. 四数相加 II (LC 454)
+  "four-sum-ii": "four-sum-ii-deduction-renderer.ts",
+  "four-sum-ii-hash": "four-sum-ii-deduction-renderer.ts",
+  "454": "four-sum-ii-deduction-renderer.ts",
+  "leetcode-454": "four-sum-ii-deduction-renderer.ts",
+
+  // 17. 最长连续序列 (LC 128)
+  "longest-consecutive-sequence": "longest-consecutive-sequence-deduction-renderer.ts",
+  "longest-consecutive": "longest-consecutive-sequence-deduction-renderer.ts",
+  "128": "longest-consecutive-sequence-deduction-renderer.ts",
+  "leetcode-128": "longest-consecutive-sequence-deduction-renderer.ts",
+
+  // 18. 和为 K 的子数组 (LC 560 / Class 049 Code 01)
+  "subarray-sum-equals-k": "subarray-sum-equals-k-deduction-renderer.ts",
+  "subarray-sum-equals-k-560": "subarray-sum-equals-k-deduction-renderer.ts",
+  "560": "subarray-sum-equals-k-deduction-renderer.ts",
+  "leetcode-560": "subarray-sum-equals-k-deduction-renderer.ts",
+  "prefix-sum-basic-049": "subarray-sum-equals-k-deduction-renderer.ts",
+  "class049": "subarray-sum-equals-k-deduction-renderer.ts",
+  "class049-code01": "subarray-sum-equals-k-deduction-renderer.ts",
+  "prefix-sum-k": "subarray-sum-equals-k-deduction-renderer.ts",
+
+  // 19. 移除元素 (LC 27)
+  "remove-element": "remove-element-deduction-renderer.ts",
+  "remove-element-fast-slow": "remove-element-deduction-renderer.ts",
+  "27": "remove-element-deduction-renderer.ts",
+  "leetcode-27": "remove-element-deduction-renderer.ts",
+
+  // 20. 有序数组的平方 (LC 977)
+  "sorted-squares": "sorted-squares-deduction-renderer.ts",
+  "squares-of-sorted-array": "sorted-squares-deduction-renderer.ts",
+  "sorted-squares-two-pointers": "sorted-squares-deduction-renderer.ts",
+  "977": "sorted-squares-deduction-renderer.ts",
+  "leetcode-977": "sorted-squares-deduction-renderer.ts",
+
+  // 21. 长度最小的子数组 (LC 209)
+  "min-subarray-len": "min-subarray-len-deduction-renderer.ts",
+  "minimum-size-subarray-sum": "min-subarray-len-deduction-renderer.ts",
+  "209": "min-subarray-len-deduction-renderer.ts",
+  "leetcode-209": "min-subarray-len-deduction-renderer.ts",
+
+  // 22. 螺旋矩阵 II (LC 59)
+  "spiral-matrix-ii": "spiral-matrix-ii-deduction-renderer.ts",
+  "spiral-matrix-2": "spiral-matrix-ii-deduction-renderer.ts",
+  "59": "spiral-matrix-ii-deduction-renderer.ts",
+  "leetcode-59": "spiral-matrix-ii-deduction-renderer.ts",
+
+  // 23. 除自身以外数组的乘积 (LC 238)
+  "product-except-self-238": "product-except-self-deduction-renderer.ts",
+  "product-except-self": "product-except-self-deduction-renderer.ts",
+  "238": "product-except-self-deduction-renderer.ts",
+  "leetcode-238": "product-except-self-deduction-renderer.ts",
+
+  // 24. 缺失的第一个正数 (LC 41)
+  "first-missing-positive": "first-missing-positive-deduction-renderer.ts",
+  "first-missing-positive-in-place-hash": "first-missing-positive-deduction-renderer.ts",
+  "41": "first-missing-positive-deduction-renderer.ts",
+  "leetcode-41": "first-missing-positive-deduction-renderer.ts",
+
+  // 25. 反转字符串 (LC 344)
+  "reverse-string": "reverse-string-deduction-renderer.ts",
+  "reverse-string-two-pointers": "reverse-string-deduction-renderer.ts",
+  "344": "reverse-string-deduction-renderer.ts",
+  "leetcode-344": "reverse-string-deduction-renderer.ts",
+
+  // 26. 反转字符串 II (LC 541)
+  "reverse-string-ii": "reverse-string-ii-deduction-renderer.ts",
+  "reverse-string-2": "reverse-string-ii-deduction-renderer.ts",
+  "541": "reverse-string-ii-deduction-renderer.ts",
+  "leetcode-541": "reverse-string-ii-deduction-renderer.ts",
+
+  // 27. 翻转字符串里的单词 (LC 151)
+  "reverse-words": "reverse-words-deduction-renderer.ts",
+  "reverse-words-in-a-string": "reverse-words-deduction-renderer.ts",
+  "151": "reverse-words-deduction-renderer.ts",
+  "leetcode-151": "reverse-words-deduction-renderer.ts",
+
+  // 28. 右旋转字符串 (KamaCoder 55 / 剑指 Offer 58-II)
+  "right-rotate-string": "right-rotate-string-deduction-renderer.ts",
+  "kama-55": "right-rotate-string-deduction-renderer.ts",
+  "kamacoder-55": "right-rotate-string-deduction-renderer.ts",
+  "offer-58-2": "right-rotate-string-deduction-renderer.ts",
+  "rotate-string-right": "right-rotate-string-deduction-renderer.ts",
+
+  // 29. 实现 strStr() / KMP 算法 (LC 28)
+  "str-str": "implement-str-str-deduction-renderer.ts",
+  "implement-str-str": "implement-str-str-deduction-renderer.ts",
+  "kmp-algorithm": "implement-str-str-deduction-renderer.ts",
+  "28": "implement-str-str-deduction-renderer.ts",
+  "leetcode-28": "implement-str-str-deduction-renderer.ts",
+
+  // 30. 重复的子字符串 (LC 459)
+  "repeated-substring": "repeated-substring-deduction-renderer.ts",
+  "repeated-substring-pattern": "repeated-substring-deduction-renderer.ts",
+  "459": "repeated-substring-deduction-renderer.ts",
+  "leetcode-459": "repeated-substring-deduction-renderer.ts",
+
+  // 31. 最长公共前缀 (LC 14)
+  "longest-common-prefix": "longest-common-prefix-deduction-renderer.ts",
+  "longest-common-prefix-vertical": "longest-common-prefix-deduction-renderer.ts",
+  "14": "longest-common-prefix-deduction-renderer.ts",
+  "leetcode-14": "longest-common-prefix-deduction-renderer.ts"
 };
 
 export const UNIVERSAL_DP_MODEL_IDS: ReadonlySet<string> = new Set([

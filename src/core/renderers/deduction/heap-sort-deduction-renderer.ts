@@ -14,6 +14,10 @@ export class HeapSortDeductionRenderer implements IDeductionTreeRenderer {
     return (
       modelId === 'heap-sort' ||
       modelId === 'heap-sort-040' ||
+      modelId === 'heap-and-heapsort-025' ||
+      modelId === 'class025' ||
+      modelId === 'class025-code01' ||
+      modelId === 'heap-sort-inplace' ||
       modelId === 'class040-code01' ||
       modelId === 'class014-code01' ||
       modelId === 'heapify' ||
