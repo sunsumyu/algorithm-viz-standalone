@@ -79,6 +79,13 @@ export class IntervalDpSandboxAdapter {
       modelId === 'leetcode-664'
     ) {
       this.renderStrangePrinter(container, step, options);
+    } else if (
+      modelId === 'merge-stones' ||
+      modelId === 'merge-stones-1000' ||
+      modelId === 'class077-code01' ||
+      modelId === 'leetcode-1000'
+    ) {
+      this.renderMergeStones(container, step, options);
     } else {
       this.renderMinScoreTriangulation(container, step, options);
     }
@@ -764,6 +771,235 @@ export class IntervalDpSandboxAdapter {
 
           <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
             💡 <strong>奇怪打印机的物理特质</strong>：打印机每次只能用同一种颜色打印连续的一整段字符，后打印的颜色会覆盖之前打印的颜色。首尾相同顺带覆盖是区间 DP 的关键剪枝点。
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ==========================================================================
+  // 5. 合并石头的最低成本 (merge-stones · LC 1000 / Class 077 Code 01)
+  // ==========================================================================
+  private static renderMergeStones(
+    container: HTMLElement,
+    step: UniversalStep,
+    options: Partial<StateSpacePresentationOptions>
+  ): void {
+    const rawStones = (options.params?.stones || (Array.isArray(step.dp1d) ? step.dp1d : [3, 2, 4, 1])) as number[];
+    const stones = Array.isArray(rawStones) && rawStones.length >= 2 ? rawStones : [3, 2, 4, 1];
+    const n = stones.length;
+
+    const i = typeof step.i === 'number' ? Math.max(0, Math.min(step.i, n - 1)) : 0;
+    const j = typeof step.j === 'number' ? Math.max(i, Math.min(step.j, n - 1)) : n - 1;
+    const grid = step.grid as (number | null)[][] | undefined;
+
+    // 前缀和数组
+    const sum = new Array(n + 1).fill(0);
+    for (let idx = 0; idx < n; idx++) sum[idx + 1] = sum[idx] + stones[idx];
+
+    // 解析当前切分点 k
+    let k = -1;
+    if (step.deps && step.deps.length > 0) {
+      const depK = step.deps.find((d) => d.r === i && d.c >= i && d.c < j);
+      if (depK) k = depK.c;
+    }
+    if (k === -1 && typeof step.decision === 'string') {
+      const match = step.decision.match(/k\s*=\s*(\d+)/i);
+      if (match) k = parseInt(match[1], 10);
+    }
+    if (k === -1 && typeof step.tag === 'string') {
+      const match = step.tag.match(/k\s*=\s*(\d+)/i);
+      if (match) k = parseInt(match[1], 10);
+    }
+    if (k === -1 && j > i) {
+      k = i;
+    }
+
+    const leftCost = k >= i && grid ? (grid[i]?.[k] ?? 0) : 0;
+    const rightCost = k >= i && k < j && grid ? (grid[k + 1]?.[j] ?? 0) : 0;
+    const subCost = leftCost + rightCost;
+    const totalWeight = sum[j + 1] - sum[i];
+
+    let recordedDp = grid ? grid[i]?.[j] : null;
+    if (recordedDp === null && i === j) recordedDp = 0;
+    const finalCost = recordedDp !== null ? recordedDp : (j > i ? subCost + totalWeight : 0);
+
+    const maxStoneWeight = Math.max(...stones, 1);
+
+    // 构建石子堆陈列
+    const pilesHtml = stones
+      .map((val, idx) => {
+        const isOutOfInterval = idx < i || idx > j;
+        const isLeftPart = idx >= i && idx <= k;
+        const isRightPart = idx > k && idx <= j;
+        const isSinglePebble = i === j && idx === i;
+
+        // 根据重量计算柱高/堆高 (40px ~ 85px)
+        const heightPx = Math.max(45, Math.round((val / maxStoneWeight) * 85));
+
+        let cardBorder = 'border-slate-800 bg-slate-900/40 text-slate-500 opacity-30';
+        let pebbleBg = 'from-slate-700 to-slate-800';
+
+        if (isSinglePebble) {
+          cardBorder = 'border-emerald-500 bg-emerald-950/60 text-emerald-200 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-950/50';
+          pebbleBg = 'from-emerald-600 to-emerald-800';
+        } else if (isLeftPart) {
+          cardBorder = 'border-sky-500 bg-sky-950/50 text-sky-200 ring-1 ring-sky-500/40 shadow-md shadow-sky-950/40';
+          pebbleBg = 'from-sky-600 to-sky-800';
+        } else if (isRightPart) {
+          cardBorder = 'border-amber-500 bg-amber-950/50 text-amber-200 ring-1 ring-amber-500/40 shadow-md shadow-amber-950/40';
+          pebbleBg = 'from-amber-600 to-amber-800';
+        }
+
+        const dividerHtml =
+          idx === k && k < j
+            ? `
+          <div class="flex flex-col items-center justify-center px-1 text-rose-400 z-10">
+            <span class="text-xs">🪓</span>
+            <div class="w-0.5 h-16 bg-gradient-to-b from-rose-500 via-rose-400 to-transparent"></div>
+            <span class="text-[9px] font-mono font-bold text-rose-300 mt-0.5">k=${k}</span>
+          </div>
+        `
+            : '';
+
+        return `
+          <div class="flex items-center">
+            <div class="flex flex-col items-center">
+              <div class="w-14 rounded-xl border ${cardBorder} flex flex-col items-center justify-end p-2 transition-all duration-300 relative" style="height: 110px;">
+                <!-- 顶部重量标识 -->
+                <div class="text-xs font-black font-mono mb-1.5 flex items-center gap-0.5">
+                  <span>${val}</span>
+                  <span class="text-[9px] font-normal opacity-70">kg</span>
+                </div>
+                <!-- 拟物石子堆立面 -->
+                <div class="w-full rounded-lg bg-gradient-to-t ${pebbleBg} border border-white/10 flex items-center justify-center shadow-inner" style="height: ${heightPx}px;">
+                  <span class="text-xs opacity-75">🪨</span>
+                </div>
+              </div>
+              <span class="text-[10px] font-mono mt-1 font-bold ${isOutOfInterval ? 'text-slate-600' : 'text-slate-300'}">
+                #${idx}
+              </span>
+            </div>
+            ${dividerHtml}
+          </div>
+        `;
+      })
+      .join('');
+
+    container.innerHTML = `
+      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+        <!-- 左侧 7 列：石子堆序列陈列沙盘 -->
+        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <span>🪨</span> 石子堆序列陈列沙盘 (Stone Piles & Interval Slice)
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-950 text-sky-300 border border-sky-700/50">
+                区间 [${i}..${j}]
+              </span>
+              ${
+                j > i && k >= i
+                  ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-700/50">切分点 k=${k}</span>`
+                  : ''
+              }
+            </div>
+          </div>
+
+          <!-- 石子堆陈列舞台 -->
+          <div class="w-full flex-1 flex flex-wrap items-center justify-center gap-2 my-2 px-2">
+            ${pilesHtml}
+          </div>
+
+          <!-- 区间重量指示条 -->
+          <div class="w-full p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400">区间石子总重：</span>
+              <span class="text-emerald-400 font-bold">sum[${j + 1}] - sum[${i}] = ${totalWeight} kg</span>
+            </div>
+            ${
+              j > i && k >= i
+                ? `
+              <div class="flex gap-3 text-[11px]">
+                <span class="text-sky-400 font-bold">左段 [${i}..${k}]</span>
+                <span class="text-slate-500">|</span>
+                <span class="text-amber-400 font-bold">右段 [${k + 1}..${j}]</span>
+              </div>
+            `
+                : '<span class="text-emerald-400 text-[11px]">单堆基底无需合并 (成本 0)</span>'
+            }
+          </div>
+        </div>
+
+        <!-- 右侧 5 列：合并成本与前缀和演算舱 -->
+        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+              <span>⚡</span> 合并成本与前缀和演算舱
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50">
+              dp[${i}][${j}]
+            </span>
+          </div>
+
+          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
+            ${
+              j === i
+                ? `
+              <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/50 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-emerald-300">🏁 单堆基底状态：dp[${i}][${i}] = 0</span>
+                  <span class="text-base font-bold font-mono text-emerald-400">0 成本</span>
+                </div>
+                <div class="text-[11px] text-slate-300 leading-relaxed">
+                  单堆石子已经属于同一堆，完全不需要执行任何合并操作，合并基础开销为 <strong>0</strong>。
+                </div>
+              </div>
+            `
+                : `
+              <!-- 左子区间成本 -->
+              <div class="p-2.5 rounded-lg bg-sky-950/40 border border-sky-500/40 flex items-center justify-between">
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider text-sky-400 font-bold">👈 左子段合并成本 dp[${i}][${k}]</div>
+                  <div class="text-[11px] text-slate-300 font-mono">石子 #${i} 到 #${k} 先行合并</div>
+                </div>
+                <div class="text-lg font-bold text-sky-300 font-mono">${leftCost}</div>
+              </div>
+
+              <!-- 右子区间成本 -->
+              <div class="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-center justify-between">
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">👉 右子段合并成本 dp[${k + 1}][${j}]</div>
+                  <div class="text-[11px] text-slate-300 font-mono">石子 #${k + 1} 到 #${j} 先行合并</div>
+                </div>
+                <div class="text-lg font-bold text-amber-300 font-mono">${rightCost}</div>
+              </div>
+
+              <!-- 物理质量守恒与本次合并代价 -->
+              <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">🧮 最终大合并代价 (总重量)</div>
+                  <div class="text-[11px] text-slate-400 font-mono">sum[${j + 1}] - sum[${i}]</div>
+                </div>
+                <div class="text-lg font-bold text-slate-200 font-mono">+${totalWeight}</div>
+              </div>
+            `
+            }
+
+            <!-- 最终合并总成本 -->
+            <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">区间 [${i}..${j}] 归约合并总成本</div>
+                <div class="text-[11px] text-slate-300 font-mono">
+                  ${j === i ? '无需合并' : `子成本(${leftCost} + ${rightCost}) + 重量(${totalWeight})`}
+                </div>
+              </div>
+              <div class="text-xl font-black text-emerald-400 font-mono">${finalCost}</div>
+            </div>
+          </div>
+
+          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+            💡 <strong>物理质量守恒与区间 DP</strong>：无论以何种顺序将区间内的石子最终合为一堆，最后一次两堆大合并所付出的成本必为整个区间石子重量的总和 <code>sum[i..j]</code>。因此问题精确归约为枚举最后一次合并的切分点 <code>k</code>。
           </div>
         </div>
       </div>

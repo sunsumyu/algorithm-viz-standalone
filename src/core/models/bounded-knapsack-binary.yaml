@@ -1,0 +1,191 @@
+id: bounded-knapsack-binary
+name: 多重背包二进制拆分 (洛谷 P1776 宝物筛选)
+category: dynamic-programming
+difficulty: medium
+defaultStage: stage-4
+defaultDirection: forward
+
+defaultParams:
+  weights: [2, 3, 5]
+  values: [3, 4, 7]
+  nums: [2, 3, 2]
+  bagWeight: 10
+
+problem:
+  title: "多重背包二进制拆分 (洛谷 P1776 宝物筛选)"
+  difficulty: "Medium"
+  description: |
+    一共有 n 种货物，背包容量为 t。每种货物的价值为 v[i]、重量为 w[i]、数量为 c[i]。
+    利用二进制分组位权拆分技术将多重背包高效转化为 0-1 背包，将每种数量为 c[i] 的货物拆分为 1, 2, 4, ..., 2^k 以及余数衍生包。
+    拆分后的衍生包通过 0-1 背包求解，复杂度大幅降低至 O(t × Σlog(c[i]))，在规定时限内完全通过洛谷评测。
+  examples:
+    - input: "weights=[2, 3, 5], values=[3, 4, 7], nums=[2, 3, 2], bagWeight=10"
+      output: "14"
+      explanation: "原货物二进制拆分后转化为 6 件衍生 0-1 背包物品：(w=2,v=3), (w=2,v=3), (w=3,v=4), (w=6,v=8), (w=5,v=7), (w=5,v=7)。在容量 t=10 限制下求得最大价值为 14。"
+  constraints:
+    - "1 <= n <= 100"
+    - "1 <= t <= 40000"
+    - "0 <= v[i] <= 100"
+    - "1 <= w[i] <= 100"
+    - "1 <= c[i] <= 10000"
+
+directions:
+  forward:
+    label: "顺推 (正序)"
+    name: 衍生包正序决策
+    description: 完成二进制拆分后，将全部衍生包视作独立 0-1 物品，正序遍历考察每件衍生包的选/不选决策寻找全局最优解
+    branches:
+      - name: 不选当前衍生包
+        description: 保持当前容量价值不变
+      - name: 选当前衍生包
+        description: 扣减相应位权重量并累加位权价值
+
+  reverse:
+    label: "逆推 (倒序)"
+    description: "从目标容量向子问题反推"
+    startFormula: "末尾状态"
+    target: "起始状态"
+    branches: []
+    combineFormula: "逆向聚合"
+
+stages:
+  stage-1:
+    shortName: "衍生递归"
+    name: "阶段 1: 衍生 01 包暴力递归分治"
+    desc: 利用 1, 2, 4... 位权无遗漏拆分后，对生成的 m 件衍生包执行「选或不选」二叉分支暴力递归搜索。
+    timeComplexity: "O(2^m)"
+    spaceComplexity: "O(m)"
+    variants:
+      standard:
+        name: 衍生包二叉分治
+        desc: 选或不选衍生包二叉分支展开
+        code: |
+          public static int maxValue(int[] nw, int[] nv, int t) {
+              return dfs(nw, nv, 0, t); // @step:return
+          }
+
+          private static int dfs(int[] nw, int[] nv, int idx, int remCap) { // @step:entry // @step:dfs_entry
+              if (idx >= nw.length || remCap <= 0) return 0; // @step:boundary // @step:base_match // @step:base_overflow
+              int notTake = dfs(nw, nv, idx + 1, remCap); // @step:branch_down // @step:branch_not_take
+              int take = 0;
+              if (remCap >= nw[idx]) { // @step:cond_take
+                  take = dfs(nw, nv, idx + 1, remCap - nw[idx]) + nv[idx]; // @step:branch_right // @step:branch_take
+              }
+              return Math.max(notTake, take); // @step:combine // @step:return_best
+          }
+
+  stage-2:
+    shortName: "衍生记忆化"
+    name: "阶段 2: 衍生 01 包记忆化搜索"
+    desc: 对衍生 01 物品建立二维备忘录 memo[idx][remCap]，自顶向下消除重叠子问题。
+    timeComplexity: "O(m × t)"
+    spaceComplexity: "O(m × t)"
+    variants:
+      standard:
+        name: 衍生包备忘录剪枝
+        desc: 记忆化缓存 (idx, remCap) 剪枝
+        code: |
+          public static int maxValue(int[] nw, int[] nv, int t) {
+              int m = nw.length;
+              int[][] memo = new int[m][t + 1]; // @step:memo_init
+              for (int[] row : memo) Arrays.fill(row, -1); // @step:memo_fill
+              return dfs(nw, nv, 0, t, memo); // @step:return
+          }
+
+          private static int dfs(int[] nw, int[] nv, int idx, int remCap, int[][] memo) { // @step:entry // @step:dfs_entry
+              if (idx >= nw.length || remCap <= 0) return 0; // @step:boundary // @step:base_match // @step:base_overflow
+              if (memo[idx][remCap] != -1) return memo[idx][remCap]; // @step:cache_hit
+              int notTake = dfs(nw, nv, idx + 1, remCap, memo); // @step:branch_down // @step:branch_not_take
+              int take = 0;
+              if (remCap >= nw[idx]) { // @step:cond_take
+                  take = dfs(nw, nv, idx + 1, remCap - nw[idx], memo) + nv[idx]; // @step:branch_right // @step:branch_take
+              }
+              return memo[idx][remCap] = Math.max(notTake, take); // @step:combine // @step:store // @step:return_best
+          }
+
+  stage-3:
+    shortName: "衍生二维DP"
+    name: "阶段 3: 衍生 01 包二维 DP 填表"
+    desc: 构建 m × (t+1) 二维状态表，dp[i][j] 表示前 i 个衍生包在容量 j 下的最大价值。
+    timeComplexity: "O(m × t)"
+    spaceComplexity: "O(m × t)"
+    variants:
+      standard:
+        name: 衍生包二维填表
+        desc: 衍生包正序、容量正序递推
+        code: |
+          public static int maxValue(int[] nw, int[] nv, int t) {
+              int m = nw.length;
+              int[][] dp = new int[m][t + 1]; // @step:init
+              for (int j = nw[0]; j <= t; j++) dp[0][j] = nv[0]; // @step:init_val // @step:init_row
+              for (int i = 1; i < m; i++) { // @step:loop_i
+                  for (int j = 0; j <= t; j++) { // @step:loop_j
+                      if (j < nw[i]) { // @step:cond
+                          dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
+                      } else {
+                          dp[i][j] = Math.max(dp[i - 1][j], dp[i - 1][j - nw[i]] + nv[i]); // @step:transfer_max // @step:transfer
+                      }
+                  }
+              }
+              return dp[m - 1][t]; // @step:return
+          }
+
+  stage-4:
+    shortName: "01空间压缩"
+    name: "阶段 4: 二进制拆分 + 01 背包空间压缩"
+    desc: 先将原宝物拆分为若干二进制衍生包，随后仅用一维数组 dp[j] 倒序枚举容量，实现空间复杂度 O(t) 与时间复杂度 O(t · Σlog c)。
+    timeComplexity: "O(t × Σlog(c[i]))"
+    spaceComplexity: "O(t)"
+    variants:
+      rolling_1d:
+        name: 二进制拆分空间压缩
+        desc: 外层遍历拆分出的衍生包，内层容量从 t 倒序递减
+        code: |
+          public static int maxValue(int[] nw, int[] nv, int t) {
+              int[] dp = new int[t + 1]; // @step:init
+              for (int i = 0; i < nw.length; i++) { // @step:loop_i
+                  for (int j = t; j >= nw[i]; j--) { // @step:loop_j
+                      dp[j] = Math.max(dp[j], dp[j - nw[i]] + nv[i]); // @step:accumulate // @step:transfer
+                  }
+              }
+              return dp[t]; // @step:return
+          }
+
+analysis:
+  coreInsight: |
+    二进制拆分是将多重背包转化为 0-1 背包的经典技术：
+    1. 拆分思想：
+       任意正整数 C 均可被二进制拆分为 1, 2, 4, ..., 2^k 以及余数 R = C - (2^(k+1) - 1)。
+       这些拆分项可以在 0-1 选与不选的决策下，无遗漏且不重合地组合出 [0, C] 之间的任意整数。
+    
+    2. 复杂度跃迁：
+       原来朴素多重背包外层与内层枚举件数需要 O(t × Σc[i]) 时间。
+       经过二进制拆分后，每种物品最多拆分为 floor(log2(c[i])) + 1 件，总物品数变为 Σlog(c[i])。
+       整体时间复杂度降至 O(t × Σlog(c[i]))，在洛谷 P1776 等大件数用例下能够轻松 AC。
+  dimensionComparison:
+    - dimension: "衍生 01 递归"
+      timeComplexity: "O(2^m)"
+      spaceComplexity: "O(m)"
+      pros: "衍生包选与不选二叉分支清晰"
+      cons: "衍生包总数增大后状态爆炸"
+    - dimension: "衍生 01 记忆化"
+      timeComplexity: "O(m × t)"
+      spaceComplexity: "O(m × t)"
+      pros: "记忆化剪枝避免重复计算"
+      cons: "递归栈开销"
+    - dimension: "衍生 01 二维 DP"
+      timeComplexity: "O(m × t)"
+      spaceComplexity: "O(m × t)"
+      pros: "状态转移和前驱依赖直观"
+      cons: "二维表格内存占用大"
+    - dimension: "二进制拆分 + 一维压缩"
+      timeComplexity: "O(t × Σlog(c[i]))"
+      spaceComplexity: "O(t)"
+      pros: "时间和空间双重达到最优"
+      cons: "位权拆分需要预处理衍生包"
+
+faqs:
+  - q: "二进制拆分为什么能保证拼出 [0, C] 之间的所有件数？"
+    a: "二进制权值 1, 2, 4, ..., 2^k 可以连续拼凑出 [0, 2^(k+1) - 1] 的任意整数；余数 R 加上该区间后覆盖 [R, C]。由于 R <= 2^(k+1) - 1 + 1，两个区间无缝重叠连接，完全覆盖 [0, C] 且最大和不超过 C。"
+  - q: "二进制拆分转化后的背包为什么能当成 0-1 背包做？"
+    a: "因为每个衍生小包只有「选」或「不选」两种状态，对应系数为 1 或 0。所有小包的选取决策天然符合 0-1 背包的模型，因此直接套用 0-1 背包的状态转移方程与倒序空间压缩即可。"

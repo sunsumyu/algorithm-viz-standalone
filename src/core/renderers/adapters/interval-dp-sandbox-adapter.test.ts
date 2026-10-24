@@ -178,4 +178,43 @@ describe('IntervalDpSandboxAdapter 区间动态规划拟物沙盘适配器测试
     expect(html).not.toContain('[object Object]');
     expect(html).not.toContain('NaN');
   });
+
+  it('5. 合并石头的最低成本 (merge-stones) 拟物沙盘应正确渲染石子堆序列陈列沙盘与合并成本演算舱', () => {
+    const step: UniversalStep = {
+      stage: 3,
+      line: 15,
+      codeLine: 15,
+      i: 0,
+      j: 3,
+      grid: [
+        [0, 5, 14, 19],
+        [null, 0, 6, 12],
+        [null, null, 0, 5],
+        [null, null, null, 0],
+      ],
+      dp1d: [3, 2, 4, 1],
+      deps: [
+        { r: 0, c: 1, type: 'left', label: 'dp[0][1]=5' },
+        { r: 2, c: 3, type: 'bottom' as any, label: 'dp[2][3]=5' },
+      ],
+      decision: '切分点 k=1',
+      tag: '区间 [0..3] 最优切分 k=1 ➔ 成本 19',
+      log: '合并计算完成',
+      msg: '计算完成',
+    };
+
+    IntervalDpSandboxAdapter.render(container, step, {
+      modelId: 'merge-stones',
+      params: { stones: [3, 2, 4, 1] },
+    });
+
+    const html = container.innerHTML;
+    expect(html).toContain('石子堆序列陈列沙盘');
+    expect(html).toContain('合并成本与前缀和演算舱');
+    expect(html).toContain('切分点 k=1');
+    expect(html).toContain('区间 [0..3]');
+    expect(html).toContain('物理质量守恒与区间 DP');
+    expect(html).not.toContain('[object Object]');
+    expect(html).not.toContain('NaN');
+  });
 });
