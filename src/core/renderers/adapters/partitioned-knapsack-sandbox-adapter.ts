@@ -130,9 +130,9 @@ export class PartitionedKnapsackSandboxAdapter {
   ): void {
     if (!container) return;
 
-    container.className = 'w-full h-full flex flex-col relative z-0 bg-transparent border-0 shadow-none p-0 overflow-y-auto';
-    container.style.display = 'flex';
-    container.style.width = '100%';
+    container.className = 'knapsack-buckets-sandbox-container';
+    container.style.cssText =
+      'width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; z-index: 0; background: transparent; border: 0; padding: 0; overflow-y: auto; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif;';
 
     const { items, groups, capacity } = this.parseItemsAndGroups(step, options);
 
@@ -166,36 +166,45 @@ export class PartitionedKnapsackSandboxAdapter {
     const candidateVal = step.variables?.candidate !== undefined ? Number(step.variables.candidate) : undefined;
     const prevVal = step.variables?.['dp[j]'] !== undefined ? Number(step.variables['dp[j]']) : (step.variables?.dp !== undefined ? Number(step.variables.dp) : totalVal);
 
+    const comparisonText =
+      trialingItem && candidateVal !== undefined
+        ? `试选桶 #${trialingItem.group} 物品 #${trialingItem.id}: 试选后总价值 <strong>${candidateVal}</strong> vs 当前最优 <strong>${prevVal}</strong> ➔ ${
+            candidateVal > prevVal
+              ? '<span style="color: #15803d; font-weight: 700;">✅ 价值更高，装入背包更新最优！</span>'
+              : '<span style="color: #64748b; font-weight: 700;">保持当前最优</span>'
+          }`
+        : escapeHtml(step.decision || step.msg || step.log || '当前步状态流转稳定');
+
     container.innerHTML = `
-      <div class="knapsack-buckets-sandbox w-full flex flex-col gap-3 p-3 font-sans select-none text-slate-800 dark:text-slate-100">
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; padding: 10px; box-sizing: border-box; user-select: none; color: #1e293b;">
         <!-- 顶部提示横条 -->
-        <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 via-blue-500/10 to-emerald-500/10 border border-amber-500/20 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🗂️</span>
-            <span class="font-bold text-amber-700 dark:text-amber-300">分组背包物理决策沙盘</span>
-            <span class="text-slate-400">|</span>
-            <span class="text-slate-600 dark:text-slate-300">组内互斥铁律：<strong class="text-rose-600 dark:text-rose-400">每个桶至多挑选 1 件物品</strong> 放入背包，或 1 件都不选！</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: linear-gradient(to right, rgba(245, 158, 11, 0.08), rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08)); border: 1px solid rgba(245, 158, 11, 0.25); font-size: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">🗂️</span>
+            <span style="font-weight: 700; color: #b45309;">分组背包物理决策沙盘</span>
+            <span style="color: #cbd5e1;">|</span>
+            <span style="color: #475569;">组内互斥铁律：<strong style="color: #e11d48;">每个桶至多挑选 1 件物品</strong> 放入背包，或 1 件都不选！</span>
           </div>
-          <div class="flex items-center gap-2 font-mono text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">当前组: 桶 #${curG}</span>
-            <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-800 dark:text-blue-200 font-bold">目标容量: ${curJ} / ${capacity}</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px;">
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #b45309; font-weight: 700;">当前组: 桶 #${curG}</span>
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.15); color: #1d4ed8; font-weight: 700;">目标容量: ${curJ} / ${capacity}</span>
           </div>
         </div>
 
         <!-- 主体区域：左右双栏布局 (左: 各组物品桶，右: 实体背包) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start;">
           
           <!-- 左侧：多组实体存放物品的桶 (7 列) -->
-          <div class="lg:col-span-7 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-boxes-stacked text-amber-600"></i> 分组存放物品的桶 (Buckets · 互斥候选池)
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #334155;">
+              <span style="display: flex; align-items: gap: 6px;">
+                <i class="fa-solid fa-boxes-stacked" style="color: #d97706; margin-right: 4px;"></i> 分组存放物品的桶 (Buckets · 互斥候选池)
               </span>
-              <span class="text-[11px] font-mono text-slate-500">共 ${sortedGroupKeys.length} 个独立物品组</span>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b;">共 ${sortedGroupKeys.length} 个独立物品组</span>
             </div>
 
             <!-- 桶列表容器 -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
               ${sortedGroupKeys.map((gNum) => {
                 const groupItems = groups.get(gNum) || [];
                 const isCurrentGroup = gNum === curG;
@@ -204,70 +213,87 @@ export class PartitionedKnapsackSandboxAdapter {
                 // 检查本桶中是否有物品已被装入背包
                 const selectedInBucket = bagItems.find((it) => it.group === gNum);
 
-                let bucketBorder = 'border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60';
-                let bucketBadge = 'bg-slate-100 dark:bg-slate-800 text-slate-500';
+                let bucketBorder = '#e2e8f0';
+                let bucketBg = '#ffffff';
+                let bucketBadgeBg = '#f1f5f9';
+                let bucketBadgeColor = '#64748b';
                 let bucketStatus = '待决策 ⏳';
+                let bucketExtraStyle = '';
 
                 if (isCurrentGroup) {
-                  bucketBorder = 'border-amber-500/80 bg-amber-50/40 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-400/30';
-                  bucketBadge = 'bg-amber-500 text-white animate-pulse';
+                  bucketBorder = '#f59e0b';
+                  bucketBg = '#fffbeb';
+                  bucketBadgeBg = '#f59e0b';
+                  bucketBadgeColor = '#ffffff';
                   bucketStatus = '当前决策组 ⚡';
+                  bucketExtraStyle = 'box-shadow: 0 4px 6px -1px rgba(245,158,11,0.15); border: 2px solid #f59e0b;';
                 } else if (isPastGroup) {
-                  bucketBorder = 'border-emerald-500/40 bg-emerald-50/20 dark:bg-emerald-950/10 opacity-90';
-                  bucketBadge = 'bg-emerald-600/20 text-emerald-700 dark:text-emerald-300';
+                  bucketBorder = '#86efac';
+                  bucketBg = '#f0fdf4';
+                  bucketBadgeBg = '#dcfce7';
+                  bucketBadgeColor = '#15803d';
                   bucketStatus = selectedInBucket ? `已选物品 #${selectedInBucket.id} ✅` : '本组未选 ⏭️';
                 }
 
                 return `
-                  <div class="relative p-3 rounded-xl border flex flex-col gap-2 transition-all ${bucketBorder}">
+                  <div style="position: relative; padding: 10px 12px; border-radius: 12px; border: 1px solid ${bucketBorder}; background: ${bucketBg}; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s ease; ${bucketExtraStyle}">
                     <!-- 桶顶盖拟物横条 -->
-                    <div class="flex items-center justify-between border-b border-dashed border-slate-200 dark:border-slate-800 pb-1.5">
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-sm">🪣</span>
-                        <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100">桶 #${gNum} (组 ${gNum})</span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 14px;">🪣</span>
+                        <span style="font-weight: 800; font-size: 12px; color: #1e293b;">桶 #${gNum} (组 ${gNum})</span>
                       </div>
-                      <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${bucketBadge}">${bucketStatus}</span>
+                      <span style="font-size: 10px; font-family: monospace; font-weight: 700; padding: 2px 8px; border-radius: 9999px; background: ${bucketBadgeBg}; color: ${bucketBadgeColor};">${bucketStatus}</span>
                     </div>
 
                     <!-- 桶内物品卡片列表 -->
-                    <div class="flex flex-col gap-2">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
                       ${groupItems.map((item) => {
                         const isTrialing = isCurrentGroup && curK === item.id;
                         const isOverweight = item.cost > curJ;
                         const isSelected = selectedInBucket?.id === item.id;
                         const isExcludedByMutual = isCurrentGroup && curK !== undefined && curK !== item.id;
 
-                        let itemClass = 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 shadow-2xs';
+                        let itemBorder = '#e2e8f0';
+                        let itemBg = '#f8fafc';
                         let glowTag = '';
+                        let extraItemStyle = '';
 
                         if (isTrialing) {
-                          itemClass = 'border-amber-500 bg-amber-50/90 dark:bg-amber-950/40 shadow-md ring-2 ring-amber-400 scale-[1.02] z-10';
-                          glowTag = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500 text-white shadow whitespace-nowrap animate-bounce">试装入中 ↓</span>';
+                          itemBorder = '#f59e0b';
+                          itemBg = '#fffbeb';
+                          extraItemStyle = 'box-shadow: 0 2px 4px rgba(245,158,11,0.2); transform: scale(1.02); z-index: 10; border: 1.5px solid #f59e0b;';
+                          glowTag = '<span style="font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f59e0b; color: #ffffff; white-space: nowrap;">试装入中 ↓</span>';
                         } else if (isSelected) {
-                          itemClass = 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-1 ring-emerald-400/50';
-                          glowTag = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-600 text-white whitespace-nowrap">已装入背包 ✅</span>';
+                          itemBorder = '#10b981';
+                          itemBg = '#ecfdf5';
+                          glowTag = '<span style="font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #059669; color: #ffffff; white-space: nowrap;">已装入背包 ✅</span>';
                         } else if (isOverweight && isCurrentGroup) {
-                          itemClass = 'border-rose-300 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 opacity-75';
-                          glowTag = '<span class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 whitespace-nowrap">超重放不下 ❌</span>';
+                          itemBorder = '#fecdd3';
+                          itemBg = '#fff1f2';
+                          extraItemStyle = 'opacity: 0.75;';
+                          glowTag = '<span style="font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #ffe4e6; color: #be123c; white-space: nowrap;">超重放不下 ❌</span>';
                         } else if (isExcludedByMutual) {
-                          itemClass = 'border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-900/60 opacity-60';
-                          glowTag = '<span class="text-[9px] font-mono text-slate-500 whitespace-nowrap">🔒 组内互斥锁止</span>';
+                          itemBorder = '#e2e8f0';
+                          itemBg = '#f1f5f9';
+                          extraItemStyle = 'opacity: 0.6;';
+                          glowTag = '<span style="font-size: 9px; font-family: monospace; color: #64748b; white-space: nowrap;">🔒 组内互斥锁止</span>';
                         }
 
                         return `
-                          <div class="relative p-2 rounded-lg border flex items-center justify-between gap-2 transition-all ${itemClass}">
-                            <div class="flex items-center gap-2">
-                              <span class="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">#${item.id}</span>
-                              <div class="flex flex-col">
-                                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">物品 #${item.id}</span>
-                                <span class="text-[10px] text-slate-500">组内候选 item</span>
+                          <div style="position: relative; padding: 6px 8px; border-radius: 6px; border: 1px solid ${itemBorder}; background: ${itemBg}; display: flex; align-items: center; justify-content: space-between; gap: 6px; transition: all 0.2s ease; ${extraItemStyle}">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                              <span style="font-size: 11px; font-family: monospace; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b;">#${item.id}</span>
+                              <div style="display: flex; flex-direction: column;">
+                                <span style="font-size: 11px; font-weight: 700; color: #334155;">物品 #${item.id}</span>
+                                <span style="font-size: 9px; color: #64748b;">组内候选 item</span>
                               </div>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                              <div class="flex flex-col items-end text-[11px] font-mono">
-                                <span class="text-sky-600 dark:text-sky-400 font-bold">📦 耗容量: ${item.cost}</span>
-                                <span class="text-amber-600 dark:text-amber-400 font-bold">💎 得价值: +${item.val}</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                              <div style="display: flex; flex-direction: column; align-items: flex-end; font-size: 10px; font-family: monospace;">
+                                <span style="color: #0284c7; font-weight: 700;">📦 耗容量: ${item.cost}</span>
+                                <span style="color: #d97706; font-weight: 700;">💎 得价值: +${item.val}</span>
                               </div>
                               ${glowTag}
                             </div>
@@ -282,78 +308,78 @@ export class PartitionedKnapsackSandboxAdapter {
           </div>
 
           <!-- 右侧：真实物理背包容器 (5 列) -->
-          <div class="lg:col-span-5 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-bag-shopping text-blue-600"></i> 实体物理背包 (Knapsack Container)
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #334155;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-bag-shopping" style="color: #2563eb; margin-right: 4px;"></i> 实体物理背包 (Knapsack Container)
               </span>
-              <span class="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-extrabold">容量刻度: ${curJ} / ${capacity}</span>
+              <span style="font-size: 11px; font-family: monospace; color: #0284c7; font-weight: 800;">容量刻度: ${curJ} / ${capacity}</span>
             </div>
 
             <!-- 背包舱体卡片 -->
-            <div class="relative p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-gradient-to-b from-slate-100 to-slate-200/90 dark:from-slate-800/90 dark:to-slate-900/90 shadow-lg flex flex-col gap-3">
+            <div style="position: relative; padding: 12px 14px; border-radius: 16px; border: 2px solid #cbd5e1; background: linear-gradient(to bottom, #f8fafc, #f1f5f9); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px;">
               <!-- 背包顶部皮带与提把造型 -->
-              <div class="w-16 h-2 mx-auto rounded-full bg-slate-400 dark:bg-slate-600 shadow-inner"></div>
+              <div style="width: 64px; height: 8px; margin: 0 auto; border-radius: 9999px; background: #94a3b8; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);"></div>
 
               <!-- 水位指示仪表 -->
-              <div class="p-2.5 rounded-xl bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-2xs">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-slate-600 dark:text-slate-300">背包体积填充进度</span>
-                  <span class="font-mono font-extrabold ${fillPercent >= 100 ? 'text-rose-600 dark:text-rose-400' : 'text-blue-600 dark:text-blue-400'}">${fillPercent}% (${usedCost} / ${curJ})</span>
+              <div style="padding: 10px; border-radius: 10px; background: #ffffff; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                  <span style="font-weight: 700; color: #475569;">背包体积填充进度</span>
+                  <span style="font-family: monospace; font-weight: 800; color: ${fillPercent >= 100 ? '#e11d48' : '#2563eb'};">${fillPercent}% (${usedCost} / ${curJ})</span>
                 </div>
-                <div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden p-0.5">
-                  <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300" style="width: ${fillPercent}%;"></div>
+                <div style="width: 100%; background: #e2e8f0; height: 10px; border-radius: 9999px; overflow: hidden; padding: 1px;">
+                  <div style="height: 100%; border-radius: 9999px; background: linear-gradient(to right, #3b82f6, #6366f1); transition: width 0.3s ease; width: ${fillPercent}%;"></div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-1.5 pt-1 text-center">
-                  <div class="p-1 rounded bg-slate-100 dark:bg-slate-700/60">
-                    <div class="text-[9px] text-slate-500">已占体积</div>
-                    <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">${usedCost}</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 4px; text-align: center;">
+                  <div style="padding: 4px; border-radius: 4px; background: #f1f5f9;">
+                    <div style="font-size: 9px; color: #64748b;">已占体积</div>
+                    <div style="font-size: 12px; font-family: monospace; font-weight: 700; color: #1e293b;">${usedCost}</div>
                   </div>
-                  <div class="p-1 rounded bg-slate-100 dark:bg-slate-700/60">
-                    <div class="text-[9px] text-slate-500">剩余容积</div>
-                    <div class="text-xs font-mono font-bold ${curJ >= usedCost ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}">${curJ - usedCost}</div>
+                  <div style="padding: 4px; border-radius: 4px; background: #f1f5f9;">
+                    <div style="font-size: 9px; color: #64748b;">剩余容积</div>
+                    <div style="font-size: 12px; font-family: monospace; font-weight: 700; color: ${curJ >= usedCost ? '#16a34a' : '#dc2626'};">${curJ - usedCost}</div>
                   </div>
-                  <div class="p-1 rounded bg-amber-500/10 border border-amber-500/20">
-                    <div class="text-[9px] text-amber-600 dark:text-amber-400 font-bold">累计总收益</div>
-                    <div class="text-sm font-mono font-black text-amber-600 dark:text-amber-300">${totalVal}</div>
+                  <div style="padding: 4px; border-radius: 4px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);">
+                    <div style="font-size: 9px; color: #d97706; font-weight: 700;">累计总收益</div>
+                    <div style="font-size: 13px; font-family: monospace; font-weight: 900; color: #d97706;">${totalVal}</div>
                   </div>
                 </div>
               </div>
 
               <!-- 背包内部装入清单 -->
-              <div class="flex flex-col gap-1.5">
-                <div class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 12px; font-weight: 700; color: #334155; display: flex; align-items: center; justify-content: space-between;">
                   <span>🎒 包内当前物品陈列:</span>
-                  <span class="text-[10px] font-mono text-slate-500">${bagItems.length} 件物品</span>
+                  <span style="font-size: 10px; font-family: monospace; color: #64748b;">${bagItems.length} 件物品</span>
                 </div>
 
-                <div class="min-h-[90px] p-2 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-dashed border-slate-300 dark:border-slate-800 flex flex-col gap-1.5">
+                <div style="min-height: 80px; padding: 8px; border-radius: 10px; background: #ffffff; border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 6px;">
                   ${bagItems.length === 0
-                    ? '<div class="h-full flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 py-6">背包当前为空 (尚未装入任何物品)</div>'
+                    ? '<div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 60px; font-size: 12px; color: #94a3b8; font-style: italic;">背包当前为空 (尚未装入任何物品)</div>'
                     : bagItems.map((it) => `
-                        <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs">
-                          <div class="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-200">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; font-size: 11px;">
+                          <div style="display: flex; align-items: center; gap: 4px; font-weight: 700; color: #166534;">
                             <span>🪣 桶 #${it.group}</span>
-                            <span class="text-slate-400">·</span>
+                            <span style="color: #cbd5e1;">·</span>
                             <span>物品 #${it.id}</span>
                           </div>
-                          <div class="font-mono text-[11px] flex items-center gap-2">
-                            <span class="text-sky-700 dark:text-sky-300">体积: ${it.cost}</span>
-                            <span class="text-amber-700 dark:text-amber-300 font-bold">价值: +${it.val}</span>
+                          <div style="font-family: monospace; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #0369a1;">体积: ${it.cost}</span>
+                            <span style="color: #15803d; font-weight: 700;">价值: +${it.val}</span>
                           </div>
                         </div>
                       `).join('')}
 
                   <!-- 若当前有试选物品，显示试装入虚线预览卡 -->
                   ${trialingItem ? `
-                    <div class="flex items-center justify-between p-2 rounded-lg border-2 border-dashed border-amber-400 bg-amber-500/10 text-xs animate-pulse">
-                      <div class="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; border: 1.5px dashed #f59e0b; background: #fffbeb; font-size: 11px;">
+                      <div style="display: flex; align-items: center; gap: 4px; font-weight: 700; color: #b45309;">
                         <span>⚡ 试选放入: 桶 #${trialingItem.group} · 物品 #${trialingItem.id}</span>
                       </div>
-                      <div class="font-mono text-[11px] flex items-center gap-2">
-                        <span class="text-sky-600 dark:text-sky-400">体积: ${trialingItem.cost}</span>
-                        <span class="text-amber-600 dark:text-amber-400 font-bold">价值: +${trialingItem.val}</span>
+                      <div style="font-family: monospace; font-size: 11px; display: flex; align-items: center; gap: 6px;">
+                        <span style="color: #0284c7;">体积: ${trialingItem.cost}</span>
+                        <span style="color: #d97706; font-weight: 700;">价值: +${trialingItem.val}</span>
                       </div>
                     </div>
                   ` : ''}
@@ -361,15 +387,13 @@ export class PartitionedKnapsackSandboxAdapter {
               </div>
 
               <!-- 决策比较看板 -->
-              <div class="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs flex flex-col gap-1">
-                <div class="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                  <i class="fa-solid fa-scale-balanced text-amber-500"></i>
+              <div style="padding: 10px; border-radius: 10px; background: #eff6ff; border: 1px solid #bfdbfe; font-size: 11.5px; display: flex; flex-direction: column; gap: 4px;">
+                <div style="font-weight: 700; color: #1d4ed8; display: flex; align-items: center; gap: 4px;">
+                  <i class="fa-solid fa-scale-balanced" style="color: #d97706; margin-right: 4px;"></i>
                   <span>转移决策比较看板</span>
                 </div>
-                <div class="text-[11px] text-slate-600 dark:text-slate-300">
-                  ${trialingItem && candidateVal !== undefined
-                    ? `试选桶 #${trialingItem.group} 物品 #${trialingItem.id}: 试选后总价值 <strong>${candidateVal}</strong> vs 当前最优 <strong>${prevVal}</strong> ➔ ${candidateVal > prevVal ? '<span class="text-emerald-600 dark:text-emerald-400 font-bold">✅ 价值更高，装入背包更新最优！</span>' : '<span class="text-slate-500 font-bold">保持当前最优</span>'}`
-                    : escapeHtml(step.decision || step.msg || step.log || '当前步状态流转稳定')}
+                <div style="font-size: 11px; color: #334155; line-height: 1.4;">
+                  ${comparisonText}
                 </div>
               </div>
             </div>

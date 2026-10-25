@@ -7,7 +7,7 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     expect(StaticDeductionTreeAdapter.isSupported('longest-common-subsequence')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('edit-distance')).toBe(true);
     expect(StaticDeductionTreeAdapter.isSupported('distinct-subsequences')).toBe(true);
-    expect(StaticDeductionTreeAdapter.isSupported('binary-search')).toBe(false);
+    expect(StaticDeductionTreeAdapter.isSupported('non-existent-algorithm-model')).toBe(false);
   });
 
   it('应当能正确为 unique-paths 渲染静态推演树 HTML', async () => {
@@ -1576,6 +1576,328 @@ describe('StaticDeductionTreeAdapter (全景静态推演展板适配器)', () =>
     });
     expect(container.innerHTML).toContain('有效的括号');
     expect(container.innerHTML).toContain('遇左压右');
+  });
+
+  it('应当能正确为 binary-search (二分查找 · LeetCode 704) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('binary-search')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('704')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-704')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'binary-search' });
+    expect(container.innerHTML).toContain('二分查找');
+    expect(container.innerHTML).toContain('左闭右闭区间不变量');
+  });
+
+  it('应当能正确为 binary-search-005 (二分三板斧 · 体系课 004/005) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('binary-search-005')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class004-code02')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('class005-code01')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'binary-search-005' });
+    expect(container.innerHTML).toContain('二分搜索三板斧');
+    expect(container.innerHTML).toContain('局部最小值');
+  });
+
+  it('应当能正确为 find-peak-element (寻找峰值 · LeetCode 162) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('find-peak-element')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('162')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-162')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'find-peak-element' });
+    expect(container.innerHTML).toContain('寻找峰值');
+    expect(container.innerHTML).toContain('上坡必达峰');
+  });
+
+  it('应当能正确为 find-min-rotated-sorted-array-ii (寻找旋转排序数组中的最小值 II · LeetCode 154) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('find-min-rotated-sorted-array-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('154')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-154')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'find-min-rotated-sorted-array-ii' });
+    expect(container.innerHTML).toContain('寻找旋转排序数组中的最小值 II');
+    expect(container.innerHTML).toContain('三分支决策');
+  });
+
+  it('应当能正确为 koko-eating-bananas (爱吃香蕉的珂珂 · LeetCode 875) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('koko-eating-bananas')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('875')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-875')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'koko-eating-bananas' });
+    expect(container.innerHTML).toContain('爱吃香蕉的珂珂');
+    expect(container.innerHTML).toContain('二分答案法母题');
+  });
+
+  it('应当能正确为 combination (组合 · LeetCode 77) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('combination')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('77')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-77')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'combination' });
+    expect(container.innerHTML).toContain('组合');
+    expect(container.innerHTML).toContain('剪枝优化');
+  });
+
+  it('应当能正确为 combination-sum (组合总和 · LeetCode 39) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('combination-sum')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('39')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-39')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'combination-sum' });
+    expect(container.innerHTML).toContain('组合总和');
+  });
+
+  it('应当能正确为 combination-sum-ii (组合总和 II · LeetCode 40) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('combination-sum-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('40')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-40')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'combination-sum-ii' });
+    expect(container.innerHTML).toContain('组合总和 II');
+  });
+
+  it('应当能正确为 combination-sum-iii (组合总和 III · LeetCode 216) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('combination-sum-iii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('216')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-216')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'combination-sum-iii' });
+    expect(container.innerHTML).toContain('组合总和 III');
+  });
+
+  it('应当能正确为 phone-letters (电话号码的字母组合 · LeetCode 17) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('phone-letters')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('17')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-17')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'phone-letters' });
+    expect(container.innerHTML).toContain('电话号码的字母组合');
+  });
+
+  it('应当能正确为 palindrome-partition (分割回文串 · LeetCode 131) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('palindrome-partition')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('131')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-131')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'palindrome-partition' });
+    expect(container.innerHTML).toContain('分割回文串');
+  });
+
+  it('应当能正确为 restore-ip (复原 IP 地址 · LeetCode 93) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('restore-ip')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('93')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-93')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'restore-ip' });
+    expect(container.innerHTML).toContain('复原 IP 地址');
+  });
+
+  it('应当能正确为 subset (子集 · LeetCode 78) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('subset')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('78')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-78')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'subset' });
+    expect(container.innerHTML).toContain('子集');
+  });
+
+  it('应当能正确为 subsets-ii (子集 II · LeetCode 90) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('subsets-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('90')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-90')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'subsets-ii' });
+    expect(container.innerHTML).toContain('子集 II');
+  });
+
+  it('应当能正确为 permutation (全排列 · LeetCode 46) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('permutation')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('46')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-46')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'permutation' });
+    expect(container.innerHTML).toContain('全排列');
+  });
+
+  it('应当能正确为 permutation-ii (全排列 II · LeetCode 47) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('permutation-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('47')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-47')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'permutation-ii' });
+    expect(container.innerHTML).toContain('全排列 II');
+  });
+
+  it('应当能正确为 nqueen (N 皇后 · LeetCode 51) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('nqueen')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('51')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-51')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'nqueen' });
+    expect(container.innerHTML).toContain('N 皇后');
+  });
+
+  it('应当能正确为 sudoku (解数独 · LeetCode 37) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('sudoku')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('37')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('leetcode-37')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'sudoku' });
+    expect(container.innerHTML).toContain('解数独');
+  });
+
+  it('应当能正确为 bubble-sort (冒泡排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bubble-sort')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('bubble-sort-004')).toBe(true);
+
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'bubble-sort' });
+    expect(container.innerHTML).toContain('冒泡排序');
+  });
+
+  it('应当能正确为 selection-sort (选择排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('selection-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'selection-sort' });
+    expect(container.innerHTML).toContain('选择排序');
+  });
+
+  it('应当能正确为 insertion-sort (插入排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('insertion-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'insertion-sort' });
+    expect(container.innerHTML).toContain('插入排序');
+  });
+
+  it('应当能正确为 merge-sort (归并排序 · LeetCode 912) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('merge-sort')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('912')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'merge-sort' });
+    expect(container.innerHTML).toContain('归并排序');
+  });
+
+  it('应当能正确为 quick-sort (快速排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('quick-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'quick-sort' });
+    expect(container.innerHTML).toContain('快速排序');
+  });
+
+  it('应当能正确为 counting-sort (计数排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('counting-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'counting-sort' });
+    expect(container.innerHTML).toContain('计数排序');
+  });
+
+  it('应当能正确为 radix-sort (基数排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('radix-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'radix-sort' });
+    expect(container.innerHTML).toContain('基数排序');
+  });
+
+  it('应当能正确为 bucket-sort (桶排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bucket-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'bucket-sort' });
+    expect(container.innerHTML).toContain('桶排序');
+  });
+
+  it('应当能正确为 shell-sort (希尔排序) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('shell-sort')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'shell-sort' });
+    expect(container.innerHTML).toContain('希尔排序');
+  });
+
+  it('应当能正确为 netherlands-flag (荷兰国旗 · LeetCode 75) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('netherlands-flag')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('75')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'netherlands-flag' });
+    expect(container.innerHTML).toContain('荷兰国旗');
+  });
+
+  it('应当能正确为 small-sum (小和问题) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('small-sum')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'small-sum' });
+    expect(container.innerHTML).toContain('小和');
+  });
+
+  it('应当能正确为 single-number-ii (只出现一次的数字 II · LeetCode 137) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('single-number-ii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('137')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'single-number-ii' });
+    expect(container.innerHTML).toContain('只出现一次的数字 II');
+  });
+
+  it('应当能正确为 single-number-iii (只出现一次的数字 III · LeetCode 260) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('single-number-iii')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('260')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'single-number-iii' });
+    expect(container.innerHTML).toContain('只出现一次的数字 III');
+  });
+
+  it('应当能正确为 bit-tricks (位运算技巧与 Brian Kernighan) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bit-tricks')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('brian-kernighan')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'bit-tricks' });
+    expect(container.innerHTML).toContain('位运算');
+  });
+
+  it('应当能正确为 divide-two-integers (两数相除 · LeetCode 29) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('divide-two-integers')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('29')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'divide-two-integers' });
+    expect(container.innerHTML).toContain('两数相除');
+  });
+
+  it('应当能正确为 bitwise-arithmetic (位运算四则运算) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('bitwise-arithmetic')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'bitwise-arithmetic' });
+    expect(container.innerHTML).toContain('位运算');
+  });
+
+  it('应当能正确为 max-points-on-a-line (直线上最多的点数 · LeetCode 149) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('max-points-on-a-line')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('149')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'max-points-on-a-line' });
+    expect(container.innerHTML).toContain('直线上最多的点数');
+  });
+
+  it('应当能正确为 random-generator-035 (不均匀随机发生器转换 · LeetCode 470) 渲染静态推演树 HTML', async () => {
+    expect(StaticDeductionTreeAdapter.isSupported('random-generator-035')).toBe(true);
+    expect(StaticDeductionTreeAdapter.isSupported('470')).toBe(true);
+    const container = { innerHTML: '' } as unknown as HTMLElement;
+    await StaticDeductionTreeAdapter.renderDeduction(container, { modelId: 'random-generator-035' });
+    expect(container.innerHTML).toContain('随机发生器');
   });
 });
 

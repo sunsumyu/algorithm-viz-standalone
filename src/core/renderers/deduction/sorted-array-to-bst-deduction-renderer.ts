@@ -6,6 +6,11 @@
 
 import { IDeductionTreeRenderer, StaticDeductionRenderOptions } from './types';
 import { DeductionBoardPrimitives } from './deduction-board-primitives';
+import {
+  parseAndBuildSortedArrayToBstNums,
+  buildSortedArrayToBstStage1Steps,
+} from '../adapters/sorted-array-to-bst-step-compiler';
+import { RecursiveCallTraceAdapter } from '../adapters/recursive-call-trace-adapter';
 
 export class SortedArrayToBstDeductionRenderer implements IDeductionTreeRenderer {
   public readonly id = 'sorted-array-to-bst';
@@ -19,19 +24,22 @@ export class SortedArrayToBstDeductionRenderer implements IDeductionTreeRenderer
     );
   }
 
-  public render(_options: StaticDeductionRenderOptions): string {
+  public render(options: StaticDeductionRenderOptions): string {
+    const nums = parseAndBuildSortedArrayToBstNums(options.inputs);
+    const stage1Steps = buildSortedArrayToBstStage1Steps(nums);
+    const fullSnapshot = stage1Steps[stage1Steps.length - 1]?.callTrace || null;
+
     const header = DeductionBoardPrimitives.renderHeader({
       title: '力扣 108. 有序数组转二叉搜索树 (Convert Sorted Array to BST) · 全景推演树',
       badge: '代码随想录 · 二分区间黄金中点 / 左右严格平衡 / 三队列 BFS 迭代',
       descriptionHtml: `
         高度平衡二叉搜索树（Balanced BST）要求：<strong>任何节点的左右两棵子树高度差绝对值不超过 1</strong>。<br/>
-        给定单调递增有序数组 <code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">nums</code>，如何构造才能保证高度天然平衡？<br/>
+        给定单调递增有序数组 <code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">nums = [${nums.join(', ')}]</code>，如何构造才能保证高度天然平衡？<br/>
         <strong>《代码随想录》教学破局点——二分选根分治思想：</strong><br/>
-        必须每次选定当前区间的<strong>正中位置元素作为局部根节点</strong>（<code class="font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">mid = left + (right - left) / 2</code>）！<br/>
-        这样左侧子区间元素数量与右侧子区间元素数量相差绝不超过 1，递归构造出的左子树与右子树高度差天然 $\le 1$！<br/>
-        与二分查找一脉相承：以<strong>左闭右闭区间 [left, right]</strong> 贯穿到底，越界条件为 <code class="font-mono bg-slate-100 text-slate-800 px-1 py-0.5 rounded font-bold">left &gt; right</code>。
+        每次选定当前区间的<strong>正中位置元素作为局部根节点</strong>（<code class="font-mono bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">mid = left + (right - left) / 2</code>）！<br/>
+        左侧子区间与右侧子区间元素数量相差 $\\le 1$，左右子树高度差天然 $\\le 1$！
       `,
-      initialStateText: `构造入口：sortedArrayToBST(nums) ➔ 初始化二分范围 traversal(nums, 0, nums.length - 1)。`,
+      initialStateText: `构造入口：sortedArrayToBST(nums=[${nums.join(', ')}]) ➔ 初始化二分范围 traversal(nums, 0, ${Math.max(0, nums.length - 1)})。`,
     });
 
     const baseCase = DeductionBoardPrimitives.renderBaseCases([
@@ -42,6 +50,22 @@ export class SortedArrayToBstDeductionRenderer implements IDeductionTreeRenderer
       },
     ]);
 
+    // 核心段落 1：基于当前真实输入展开的完整递归调用推演树
+    const traceHtml = fullSnapshot
+      ? RecursiveCallTraceAdapter.renderHtml(fullSnapshot, {
+          title: `升序数组 nums=[${nums.join(', ')}] 完整分治推演调用展开树`,
+          theme: 'light',
+          maxHeight: '480px',
+        })
+      : '<div class="text-slate-500 italic p-3">暂无推演快照</div>';
+
+    const dynamicCallTreeRound = DeductionBoardPrimitives.renderOuterRound({
+      title: `全景分治推演调用树 (nums=[${nums.join(', ')}])`,
+      subtitle: `基于当前输入的完整递归展开 · 步骤数 ${stage1Steps.length} 帧`,
+      stepLinesHtml: traceHtml,
+    });
+
+    // 核心段落 2：三阶段演化对比归纳
     const step1 = DeductionBoardPrimitives.renderInnerStep({
       connector: '├───',
       label: '阶段 1: 偏左中点二分分治递归 (Floor Mid Partitioning)',
@@ -78,8 +102,8 @@ export class SortedArrayToBstDeductionRenderer implements IDeductionTreeRenderer
       fillLine: '广度优先层序解法：显式模拟树形分层构建，消除深层递归系统调用栈',
     });
 
-    const round = DeductionBoardPrimitives.renderOuterRound({
-      title: '三级演化阶梯全景推演流 (Binary Partitioning to Three-Queue BFS)',
+    const evolutionRound = DeductionBoardPrimitives.renderOuterRound({
+      title: '三级演化阶梯方法论对比 (Binary Partitioning to Three-Queue BFS)',
       subtitle: 'Programmer Carl Sorted Array to Balanced BST Paradigms',
       stepLinesHtml: step1 + step2 + step3,
     });
@@ -89,6 +113,8 @@ export class SortedArrayToBstDeductionRenderer implements IDeductionTreeRenderer
       answerDescription: '时间复杂度严格 O(N)，每个元素仅构建一次；递归与队列空间复杂度为树高 O(log N)。',
     });
 
-    return DeductionBoardPrimitives.wrapBoard(header + baseCase + round + finalReturn);
+    return DeductionBoardPrimitives.wrapBoard(
+      header + baseCase + dynamicCallTreeRound + evolutionRound + finalReturn
+    );
   }
 }

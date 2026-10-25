@@ -1135,7 +1135,242 @@ export const DEDICATED_MODEL_FILE_MAP: Record<string, string> = {
   "longest-common-prefix": "longest-common-prefix-deduction-renderer.ts",
   "longest-common-prefix-vertical": "longest-common-prefix-deduction-renderer.ts",
   "14": "longest-common-prefix-deduction-renderer.ts",
-  "leetcode-14": "longest-common-prefix-deduction-renderer.ts"
+  "leetcode-14": "longest-common-prefix-deduction-renderer.ts",
+
+  // 32. 二分查找 (LC 704)
+  "binary-search": "binary-search-deduction-renderer.ts",
+  "binary-search-closed-interval": "binary-search-deduction-renderer.ts",
+  "704": "binary-search-deduction-renderer.ts",
+  "leetcode-704": "binary-search-deduction-renderer.ts",
+
+  // 33. 二分三板斧 (Class 004 / Class 005)
+  "binary-search-005": "binary-search-triad-deduction-renderer.ts",
+  "binary-search-logarithmic-004": "binary-search-triad-deduction-renderer.ts",
+  "class004-code02": "binary-search-triad-deduction-renderer.ts",
+  "class005-code01": "binary-search-triad-deduction-renderer.ts",
+  "binary-search-verifier": "binary-search-triad-deduction-renderer.ts",
+  "logarithmic-verifier": "binary-search-triad-deduction-renderer.ts",
+
+  // 34. 寻找峰值 (LC 162)
+  "find-peak-element": "find-peak-element-deduction-renderer.ts",
+  "162": "find-peak-element-deduction-renderer.ts",
+  "leetcode-162": "find-peak-element-deduction-renderer.ts",
+
+  // 35. 寻找旋转排序数组中的最小值 II (LC 154)
+  "find-min-rotated-sorted-array-ii": "find-min-rotated-ii-deduction-renderer.ts",
+  "154": "find-min-rotated-ii-deduction-renderer.ts",
+  "leetcode-154": "find-min-rotated-ii-deduction-renderer.ts",
+
+  // 36. 爱吃香蕉的珂珂 (LC 875)
+  "koko-eating-bananas": "koko-eating-bananas-deduction-renderer.ts",
+  "875": "koko-eating-bananas-deduction-renderer.ts",
+  "leetcode-875": "koko-eating-bananas-deduction-renderer.ts",
+
+  // 37. 组合 (LC 77)
+  "combination": "combination-deduction-renderer.ts",
+  "combination-optimized": "combination-deduction-renderer.ts",
+  "combinations": "combination-deduction-renderer.ts",
+  "77": "combination-deduction-renderer.ts",
+  "leetcode-77": "combination-deduction-renderer.ts",
+
+  // 38. 组合总和 (LC 39)
+  "combination-sum": "combination-sum-deduction-renderer.ts",
+  "combination-sum-unlimited": "combination-sum-deduction-renderer.ts",
+  "39": "combination-sum-deduction-renderer.ts",
+  "leetcode-39": "combination-sum-deduction-renderer.ts",
+
+  // 39. 组合总和 II (LC 40)
+  "combination-sum-ii": "combination-sum-ii-deduction-renderer.ts",
+  "combination-sum-dedup": "combination-sum-ii-deduction-renderer.ts",
+  "40": "combination-sum-ii-deduction-renderer.ts",
+  "leetcode-40": "combination-sum-ii-deduction-renderer.ts",
+
+  // 40. 组合总和 III (LC 216)
+  "combination-sum-iii": "combination-sum-iii-deduction-renderer.ts",
+  "combination-sum-3": "combination-sum-iii-deduction-renderer.ts",
+  "216": "combination-sum-iii-deduction-renderer.ts",
+  "leetcode-216": "combination-sum-iii-deduction-renderer.ts",
+
+  // 41. 电话号码的字母组合 (LC 17)
+  "phone-letters": "phone-letters-deduction-renderer.ts",
+  "letter-combinations": "phone-letters-deduction-renderer.ts",
+  "letter-combinations-of-a-phone-number": "phone-letters-deduction-renderer.ts",
+  "17": "phone-letters-deduction-renderer.ts",
+  "leetcode-17": "phone-letters-deduction-renderer.ts",
+
+  // 42. 分割回文串 (LC 131)
+  "palindrome-partition": "palindrome-partition-deduction-renderer.ts",
+  "palindrome-partitioning": "palindrome-partition-deduction-renderer.ts",
+  "131": "palindrome-partition-deduction-renderer.ts",
+  "leetcode-131": "palindrome-partition-deduction-renderer.ts",
+
+  // 43. 复原 IP 地址 (LC 93)
+  "restore-ip": "restore-ip-deduction-renderer.ts",
+  "restore-ip-addresses": "restore-ip-deduction-renderer.ts",
+  "93": "restore-ip-deduction-renderer.ts",
+  "leetcode-93": "restore-ip-deduction-renderer.ts",
+
+  // 44. 子集 (LC 78)
+  "subset": "subset-deduction-renderer.ts",
+  "subsets": "subset-deduction-renderer.ts",
+  "78": "subset-deduction-renderer.ts",
+  "leetcode-78": "subset-deduction-renderer.ts",
+
+  // 45. 子集 II (LC 90)
+  "subsets-ii": "subsets-ii-deduction-renderer.ts",
+  "subsets-with-dup": "subsets-ii-deduction-renderer.ts",
+  "90": "subsets-ii-deduction-renderer.ts",
+  "leetcode-90": "subsets-ii-deduction-renderer.ts",
+
+  // 46. 全排列 (LC 46)
+  "permutation": "permutation-deduction-renderer.ts",
+  "permutations": "permutation-deduction-renderer.ts",
+  "permutations-all": "permutation-deduction-renderer.ts",
+  "permutations-used": "permutation-deduction-renderer.ts",
+  "46": "permutation-deduction-renderer.ts",
+  "leetcode-46": "permutation-deduction-renderer.ts",
+
+  // 47. 全排列 II (LC 47)
+  "permutation-ii": "permutation-ii-deduction-renderer.ts",
+  "permutations-ii": "permutation-ii-deduction-renderer.ts",
+  "47": "permutation-ii-deduction-renderer.ts",
+  "leetcode-47": "permutation-ii-deduction-renderer.ts",
+
+  // 48. N 皇后 (LC 51)
+  "nqueen": "nqueen-deduction-renderer.ts",
+  "n-queens": "nqueen-deduction-renderer.ts",
+  "51": "nqueen-deduction-renderer.ts",
+  "leetcode-51": "nqueen-deduction-renderer.ts",
+
+  // 49. 解数独 (LC 37)
+  "sudoku": "sudoku-deduction-renderer.ts",
+  "sudoku-solver": "sudoku-deduction-renderer.ts",
+  "37": "sudoku-deduction-renderer.ts",
+  "leetcode-37": "sudoku-deduction-renderer.ts",
+
+  // 50. 冒泡排序
+  "bubble-sort": "bubble-sort-deduction-renderer.ts",
+  "bubble-sort-standard": "bubble-sort-deduction-renderer.ts",
+  "bubble-sort-004": "bubble-sort-deduction-renderer.ts",
+  "bubble": "bubble-sort-deduction-renderer.ts",
+
+  // 51. 选择排序
+  "selection-sort": "selection-sort-deduction-renderer.ts",
+  "selection-sort-standard": "selection-sort-deduction-renderer.ts",
+  "selection-sort-004": "selection-sort-deduction-renderer.ts",
+  "selection": "selection-sort-deduction-renderer.ts",
+
+  // 52. 插入排序
+  "insertion-sort": "insertion-sort-deduction-renderer.ts",
+  "insertion-sort-standard": "insertion-sort-deduction-renderer.ts",
+  "insertion-sort-004": "insertion-sort-deduction-renderer.ts",
+  "insertion": "insertion-sort-deduction-renderer.ts",
+
+  // 53. 归并排序 (LC 912)
+  "merge-sort": "merge-sort-deduction-renderer.ts",
+  "merge-sort-043": "merge-sort-deduction-renderer.ts",
+  "class043-code01": "merge-sort-deduction-renderer.ts",
+  "912": "merge-sort-deduction-renderer.ts",
+  "leetcode-912": "merge-sort-deduction-renderer.ts",
+  "leetcode-912-merge": "merge-sort-deduction-renderer.ts",
+
+  // 54. 快速排序与荷兰国旗三向切分
+  "quick-sort": "quick-sort-deduction-renderer.ts",
+  "quick-sort-dutch-flag-045": "quick-sort-deduction-renderer.ts",
+  "class045-code01": "quick-sort-deduction-renderer.ts",
+
+  // 55. 计数排序
+  "counting-sort": "counting-sort-deduction-renderer.ts",
+  "count-sort": "counting-sort-deduction-renderer.ts",
+
+  // 56. 基数排序 (Class 028)
+  "radix-sort": "radix-sort-deduction-renderer.ts",
+  "radix-sort-028": "radix-sort-deduction-renderer.ts",
+  "class028-code01": "radix-sort-deduction-renderer.ts",
+
+  // 57. 桶排序
+  "bucket-sort": "bucket-sort-deduction-renderer.ts",
+  "bucket-sort-standard": "bucket-sort-deduction-renderer.ts",
+
+  // 58. 希尔排序
+  "shell-sort": "shell-sort-deduction-renderer.ts",
+  "shell-sort-standard": "shell-sort-deduction-renderer.ts",
+  "shell": "shell-sort-deduction-renderer.ts",
+
+  // 59. 荷兰国旗三向切分 (LC 75)
+  "netherlands-flag": "netherlands-flag-deduction-renderer.ts",
+  "netherlands-flag-024": "netherlands-flag-deduction-renderer.ts",
+  "dutch-national-flag": "netherlands-flag-deduction-renderer.ts",
+  "sort-colors-75": "netherlands-flag-deduction-renderer.ts",
+  "sort-colors": "netherlands-flag-deduction-renderer.ts",
+  "75": "netherlands-flag-deduction-renderer.ts",
+  "leetcode-75": "netherlands-flag-deduction-renderer.ts",
+
+  // 60. 小和问题与翻转对 (Class 044 / 022)
+  "small-sum": "small-sum-deduction-renderer.ts",
+  "small-sum-merge-044": "small-sum-deduction-renderer.ts",
+  "merge-sort-small-sum-022": "small-sum-deduction-renderer.ts",
+  "class044-code01": "small-sum-deduction-renderer.ts",
+  "class022-code01": "small-sum-deduction-renderer.ts",
+
+  // 61. 三大简单排序与复杂度对比 (Class 004)
+  "sort-basics-004": "bubble-sort-deduction-renderer.ts",
+
+  // 62. 只出现一次的数字 II (LC 137 / Class 031)
+  "single-number-ii": "single-number-ii-deduction-renderer.ts",
+  "single-number-137": "single-number-ii-deduction-renderer.ts",
+  "leetcode-137": "single-number-ii-deduction-renderer.ts",
+  "single-number-2": "single-number-ii-deduction-renderer.ts",
+  "137": "single-number-ii-deduction-renderer.ts",
+  "class031-code01": "single-number-ii-deduction-renderer.ts",
+
+  // 63. 只出现一次的数字 III (LC 260 / Class 034)
+  "single-number-iii": "single-number-iii-deduction-renderer.ts",
+  "single-number-260": "single-number-iii-deduction-renderer.ts",
+  "leetcode-260": "single-number-iii-deduction-renderer.ts",
+  "single-number-3": "single-number-iii-deduction-renderer.ts",
+  "260": "single-number-iii-deduction-renderer.ts",
+  "bitwise-xor-odd-times-034": "single-number-iii-deduction-renderer.ts",
+  "bitwise-xor": "single-number-iii-deduction-renderer.ts",
+  "single-number-136": "single-number-iii-deduction-renderer.ts",
+  "136": "single-number-iii-deduction-renderer.ts",
+  "leetcode-136": "single-number-iii-deduction-renderer.ts",
+
+  // 64. 位运算神技与 Brian Kernighan (LC 191 / 231 / Class 030)
+  "bit-tricks": "bit-tricks-deduction-renderer.ts",
+  "brian-kernighan": "bit-tricks-deduction-renderer.ts",
+  "bit-tricks-030": "bit-tricks-deduction-renderer.ts",
+  "class030-code01": "bit-tricks-deduction-renderer.ts",
+  "class002-code01": "bit-tricks-deduction-renderer.ts",
+  "191": "bit-tricks-deduction-renderer.ts",
+  "leetcode-191": "bit-tricks-deduction-renderer.ts",
+  "231": "bit-tricks-deduction-renderer.ts",
+  "leetcode-231": "bit-tricks-deduction-renderer.ts",
+
+  // 65. 两数相除 (LC 29)
+  "divide-two-integers": "divide-two-integers-deduction-renderer.ts",
+  "divide-integers": "divide-two-integers-deduction-renderer.ts",
+  "29": "divide-two-integers-deduction-renderer.ts",
+  "leetcode-29": "divide-two-integers-deduction-renderer.ts",
+
+  // 66. 位运算实现加减乘除 (Class 032)
+  "bitwise-arithmetic": "bitwise-arithmetic-deduction-renderer.ts",
+  "bitwise-arithmetic-032": "bitwise-arithmetic-deduction-renderer.ts",
+  "bitwise-add": "bitwise-arithmetic-deduction-renderer.ts",
+  "class032-code02": "bitwise-arithmetic-deduction-renderer.ts",
+  "class032": "bitwise-arithmetic-deduction-renderer.ts",
+
+  // 67. 直线上最多的点数 (LC 149)
+  "max-points-on-a-line": "max-points-deduction-renderer.ts",
+  "max-points": "max-points-deduction-renderer.ts",
+  "149": "max-points-deduction-renderer.ts",
+  "leetcode-149": "max-points-deduction-renderer.ts",
+
+  // 68. 不均匀随机发生器向等概率转化 (Class 035 / LC 470)
+  "random-generator-035": "random-generator-deduction-renderer.ts",
+  "random-generator": "random-generator-deduction-renderer.ts",
+  "470": "random-generator-deduction-renderer.ts",
+  "leetcode-470": "random-generator-deduction-renderer.ts"
 };
 
 export const UNIVERSAL_DP_MODEL_IDS: ReadonlySet<string> = new Set([
