@@ -1,0 +1,235 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 使数组相似的最少操作次数顶层领域模型
+# 对应：LeetCode 2449 / 奇偶分类独立排序 / 顺位贪心对齐 / 排序不等式
+# 包含：奇偶划分归约、双轨决策树展开、顺位差值演进矩阵、常数空间双指针流转
+# ==============================================================================
+
+id: minimum-operations-to-make-similar
+name: 使数组相似的最少操作次数 (Minimum Operations to Make Array Similar)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 排序不等式
+  - 奇偶独立性
+  - 双指针
+  - 顺位对齐
+
+description: |
+  给你两个正整数数组 nums 和 target ，它们的长度相同。
+  在一次操作中，你可以选择两个不同的下标 i 和 j ，并使 nums[i] += 2 以及 nums[j] -= 2 。
+  若 nums 重新排列后能够与 target 完全相同，则称 nums 与 target 相似。
+  请返回使 nums 与 target 相似的最少操作次数。数据保证 nums 一定能够转换为 target 。
+
+  核心贪心策略与数学归约（排序不等式与奇偶不变性）：
+  1. 奇偶不变性：每次操作固定选一个数 +2，选另一个数 -2，所有数字的奇偶性在整个变换过程中严格不变！
+     因此奇数只能变成奇数，偶数只能变成偶数。整个问题完全解耦为两个独立子问题：奇数子集对齐与偶数子集对齐。
+  2. 排序不等式与顺位对齐：在各自奇偶子集内部分别进行升序排序后，
+     按照相同排位顺位对应配对（nums[i] 配对 target[i]），能保证绝对距离之和 ∑|nums[i] - target[i]| 达到理论最小值。
+  3. 差值互抵与折半结算：每次操作同时消耗一个 +2 与一个 -2，
+     正差值总和必然严格等于负差值总和。因此最少操作次数即为所有正差值 (nums[i] - target[i]) / 2 的累加和！
+
+defaultParams:
+  nums: [8, 12, 6]
+  target: [2, 14, 10]
+
+constraints:
+  - n == nums.length == target.length
+  - 1 <= n <= 10^5
+  - 1 <= nums[i], target[i] <= 10^9
+
+directions:
+  forward:
+    name: 升序顺位配对与正差值累加贪心
+    description: 奇偶分离升序排序，从低位向高位顺位配对并累加正差值之和除以 2
+  reverse:
+    name: 降序倒排对偶与负差值反向校验
+    description: 降序倒序配对并累加负差值绝对值除以 2，验证奇偶配对互抵完备性
+
+stages:
+  stage-1:
+    name: 奇偶分离独立排序与正差值顺位贪心
+    description: 奇偶解耦，分别升序排序后顺位对齐，累加正差值除以 2 计算最少操作
+    complexity:
+      time: O(N log N)
+      space: O(N)
+    card2Title: 奇偶分流与顺位配对看板 (Pair Alignment)
+    card2Desc: 追踪奇偶子集划分、顺位配对 (nums[i] -> target[i]) 与正差值贡献
+    code:
+      forward:
+        language: java
+        content: |
+          public long makeSimilar(int[] nums, int[] target) {
+              Arrays.sort(nums); Arrays.sort(target);
+              List<Integer> oddNums = new ArrayList<>(), evenNums = new ArrayList<>();
+              List<Integer> oddTarget = new ArrayList<>(), evenTarget = new ArrayList<>();
+              for (int x : nums) (x % 2 == 1 ? oddNums : evenNums).add(x);
+              for (int x : target) (x % 2 == 1 ? oddTarget : evenTarget).add(x);
+              long ops = 0;
+              for (int i = 0; i < oddNums.size(); i++) {
+                  if (oddNums.get(i) > oddTarget.get(i)) ops += (oddNums.get(i) - oddTarget.get(i)) / 2;
+              }
+              for (int i = 0; i < evenNums.size(); i++) {
+                  if (evenNums.get(i) > evenTarget.get(i)) ops += (evenNums.get(i) - evenTarget.get(i)) / 2;
+              }
+              return ops;
+          }
+        lineMap:
+          entry: 1
+          sortSplit: 2
+          initOddEvenLists: 3
+          initTargetLists: 4
+          splitNums: 5
+          splitTarget: 6
+          initOps: 7
+          loopOdd: 8
+          oddPairs: 9
+          endOdd: 10
+          loopEven: 11
+          evenPairs: 12
+          endEven: 13
+          done: 14
+      reverse:
+        language: java
+        content: |
+          public long verifySimilarDual(int[] nums, int[] target) {
+              // 逆向对偶校验：降序累加负差值
+              long negOps = 0;
+              for (int i = nums.length - 1; i >= 0; i--) {
+                  if (target[i] > nums[i]) negOps += (target[i] - nums[i]) / 2;
+              }
+              return negOps;
+          }
+        lineMap:
+          entry: 1
+          initOps: 3
+          loopOdd: 4
+          oddPairs: 5
+          done: 6
+
+  stage-2:
+    name: 奇偶双轨顺位配对决策树
+    description: 展开奇数与偶数两条独立轨道的顺位对齐分支与差值判定
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 双轨对齐决策树 (Dual-Track Match Tree)
+    card2Desc: 拓扑展开奇数轨道与偶数轨道各顺位节点的配对、差值与贡献判定
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 奇偶双轨顺位决策树展开
+          for (int i = 0; i < oddNums.size(); i++) {
+              int diff = oddNums.get(i) - oddTarget.get(i);
+              if (diff > 0) ops += diff / 2;
+          }
+          for (int i = 0; i < evenNums.size(); i++) {
+              int diff = evenNums.get(i) - evenTarget.get(i);
+              if (diff > 0) ops += diff / 2;
+          }
+          return ops;
+        lineMap:
+          entry: 1
+          loopOdd: 2
+          calcOddDiff: 3
+          oddBranch: 4
+          loopEven: 6
+          calcEvenDiff: 7
+          evenBranch: 8
+          done: 10
+      reverse:
+        language: java
+        content: |
+          // 逆向决策判定
+          long dualOps = totalNegDiff / 2;
+          return dualOps;
+        lineMap:
+          entry: 1
+          calcOddDiff: 2
+          done: 3
+
+  stage-3:
+    name: 顺位差值演进追踪矩阵
+    description: 二维决策演进矩阵，逐行记录奇偶类型、顺位序号、原值、目标、差值与累计操作
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 顺位对齐演进矩阵 (Difference Matrix)
+    card2Desc: 动态追踪各配对类型 (奇/偶)、序号 idx、原值 a、目标 b、差值 diff 与累计操作
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维状态矩阵填报
+          int[][] matrix = new int[n][5];
+          for (int i = 0; i < n; i++) {
+              matrix[i][0] = nums[i];
+              matrix[i][1] = target[i];
+              matrix[i][2] = nums[i] - target[i];
+              matrix[i][3] = Math.max(0, (nums[i] - target[i]) / 2);
+              matrix[i][4] = totalOps;
+          }
+        lineMap:
+          entry: 1
+          initMatrix: 2
+          loop: 3
+          fillNum: 4
+          fillTarget: 5
+          fillDiff: 6
+          fillOps: 7
+          fillTotal: 8
+          done: 9
+      reverse:
+        language: java
+        content: |
+          // 逆向矩阵校验
+          long finalOps = matrix[n - 1][4];
+          return finalOps;
+        lineMap:
+          entry: 1
+          fillTotal: 2
+          done: 3
+
+  stage-4:
+    name: 原地双指针与常数空间极速结算
+    description: 利用数组原地奇偶划分和单调双指针，以 O(1) 辅助变量高速流转结算
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    card2Title: 常数空间双指针流转 (Two-Pointer Flow)
+    card2Desc: 原地维护奇数指针 oIdx 与偶数指针 eIdx，无额外内存开销流转结算
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 原地双指针与常数寄存器结算
+          long ops = 0;
+          int o1 = 0, o2 = 0, e1 = 0, e2 = 0;
+          while (o1 < oddLen) {
+              if (oddNums[o1] > oddTarget[o2]) ops += (oddNums[o1] - oddTarget[o2]) >> 1;
+              o1++; o2++;
+          }
+          while (e1 < evenLen) {
+              if (evenNums[e1] > evenTarget[e2]) ops += (evenNums[e1] - evenTarget[e2]) >> 1;
+              e1++; e2++;
+          }
+          return ops;
+        lineMap:
+          entry: 1
+          initRegs: 2
+          whileOdd: 4
+          addOddOps: 5
+          advanceOdd: 6
+          whileEven: 8
+          addEvenOps: 9
+          advanceEven: 10
+          done: 12
+      reverse:
+        language: java
+        content: |
+          // 逆向双指针对偶
+          return ops;
+        lineMap:
+          entry: 1
+          done: 2

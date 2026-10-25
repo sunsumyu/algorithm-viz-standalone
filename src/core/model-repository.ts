@@ -85,6 +85,7 @@ import minCostHireWorkersModel from './models/min-cost-hire-workers.yaml';
 import maxAvgPassRatioModel from './models/max-avg-pass-ratio.yaml';
 import quizScoreMaximizationModel from './models/quiz-score-maximization.yaml';
 import minimizeDeviationInArrayModel from './models/minimize-deviation-in-array.yaml';
+import minOperationsSimilarModel from './models/minimum-operations-to-make-similar.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -397,6 +398,12 @@ export class AlgorithmModelRepository {
     ['minimize-deviation-1675', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
     ['class092-code01', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
     ['leetcode-1675', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
+    ['minimum-operations-to-make-similar', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['min-operations-similar', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['min-operations-similar-2449', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['class092-code03', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['leetcode-2449', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['make-array-similar', minOperationsSimilarModel as IYamlAlgorithmModel],
     ['dungeon-game-reverse-dp', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['dungeon-game', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['max-product-subarray', maxProductSubarrayModel as IYamlAlgorithmModel],

@@ -3066,4 +3066,638 @@ export class TwoSequenceGreedyStepCompiler {
     return steps;
   }
 
+  // ==========================================================================
+  // 使数组相似的最少操作次数 (LeetCode 2449: Make Array Similar) 顺位对齐贪心编译器
+  // ==========================================================================
+  public static compileMinOperationsSimilar(
+    model: IYamlAlgorithmModel,
+    rawNums: number[],
+    rawTarget: number[],
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const defaultNums = [8, 12, 6];
+    const defaultTarget = [2, 14, 10];
+    const nums =
+      Array.isArray(rawNums) && rawNums.length > 0
+        ? rawNums.map(Number).filter((n) => !isNaN(n))
+        : defaultNums;
+    const target =
+      Array.isArray(rawTarget) && rawTarget.length > 0
+        ? rawTarget.map(Number).filter((n) => !isNaN(n))
+        : defaultTarget;
+
+    switch (stage) {
+      case 2:
+        return this.compileMinOpsSimilarStage2(model, nums, target, direction, anchorMap);
+      case 3:
+        return this.compileMinOpsSimilarStage3(model, nums, target, direction, anchorMap);
+      case 4:
+        return this.compileMinOpsSimilarStage4(model, nums, target, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileMinOpsSimilarStage1(model, nums, target, direction, anchorMap);
+    }
+  }
+
+  private static compileMinOpsSimilarStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    target: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+    const slots = nums.map((v, i) => `nums[${i}]=${v}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `主函数入口：接收 nums=[${nums.join(', ')}]，target=[${target.join(', ')}]，长度 n=${nums.length}`,
+      message: '每次操作只能 +2 或 -2，奇偶性严格保持不变，奇数只能对齐奇数，偶数只能对齐偶数',
+      slots: [...slots],
+      variables: { n: nums.length, nums: [...nums], target: [...target] },
+      metrics: { '数组规模': `${nums.length}`, '当前操作数': '0' },
+    });
+
+    const sortedNums = [...nums].sort((a, b) => a - b);
+    const sortedTarget = [...target].sort((a, b) => a - b);
+    const oddNums = sortedNums.filter((x) => x % 2 !== 0);
+    const evenNums = sortedNums.filter((x) => x % 2 === 0);
+    const oddTarget = sortedTarget.filter((x) => x % 2 !== 0);
+    const evenTarget = sortedTarget.filter((x) => x % 2 === 0);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.sortSplit || 2,
+      codeLine: anchors.sortSplit || 2,
+      decision: `原数组与目标数组整体升序排序：nums ➔ [${sortedNums.join(', ')}]，target ➔ [${sortedTarget.join(', ')}]`,
+      message: '排序为后续奇偶子序列独立提取奠定基础',
+      slots: sortedNums.map((v, i) => `有序[${i}]=${v}`),
+      variables: { sortedNums, sortedTarget },
+      metrics: { 'nums 范围': `[${sortedNums[0]}..${sortedNums[sortedNums.length - 1]}]`, 'target 范围': `[${sortedTarget[0]}..${sortedTarget[sortedTarget.length - 1]}]` },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.initOddEvenLists || 3,
+      codeLine: anchors.initOddEvenLists || 3,
+      decision: `奇偶分离提取：\n奇数集: nums=[${oddNums.join(', ')}] (${oddNums.length}项), target=[${oddTarget.join(', ')}] (${oddTarget.length}项)\n偶数集: nums=[${evenNums.join(', ')}] (${evenNums.length}项), target=[${evenTarget.join(', ')}] (${evenTarget.length}项)`,
+      message: '根据排序不等式，同类内部顺位配对（低位对低位，高位对高位）保证总绝对差最小',
+      slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+      variables: { oddNums, oddTarget, evenNums, evenTarget },
+      metrics: { '奇数项数': `${oddNums.length}`, '偶数项数': `${evenNums.length}` },
+    });
+
+    let totalOps = 0;
+
+    // 奇数对齐
+    for (let i = 0; i < oddNums.length; i++) {
+      const a = oddNums[i];
+      const b = oddTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+      totalOps += ops;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loopOdd || 8,
+        codeLine: anchors.loopOdd || 8,
+        decision: `奇数顺位配对 #${i}: 考察 oddNums[${i}]=${a} 与 oddTarget[${i}]=${b}，差值 diff = ${a} - ${b} = ${diff >= 0 ? '+' : ''}${diff}`,
+        message: '检查是否产生正差值贡献',
+        slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+        variables: { pairType: 'odd', idx: i, a, b, diff },
+        metrics: { '配对': `奇数 #${i}`, '差值': `${diff}`, '累计操作': `${totalOps}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.oddPairs || 9,
+        codeLine: anchors.oddPairs || 9,
+        decision: `奇数对齐计算 #${i}: ${a} ➔ ${b}，${diff > 0 ? `贡献正向操作 +${ops} 次` : '差值 <= 0，由正差值端抵消'}，当前总操作累计达 ${totalOps} 次`,
+        message: '一次操作包含一个 +2 与一个 -2，累计正差值 / 2 即为最少操作数',
+        slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+        variables: { pairType: 'odd', idx: i, a, b, diff, ops, totalOps },
+        metrics: { '单项操作': `${ops}`, '累计总操作': `${totalOps}` },
+      });
+    }
+
+    // 偶数对齐
+    for (let i = 0; i < evenNums.length; i++) {
+      const a = evenNums[i];
+      const b = evenTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+      totalOps += ops;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.loopEven || 11,
+        codeLine: anchors.loopEven || 11,
+        decision: `偶数顺位配对 #${i}: 考察 evenNums[${i}]=${a} 与 evenTarget[${i}]=${b}，差值 diff = ${a} - ${b} = ${diff >= 0 ? '+' : ''}${diff}`,
+        message: '检查是否产生正差值贡献',
+        slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+        variables: { pairType: 'even', idx: i, a, b, diff },
+        metrics: { '配对': `偶数 #${i}`, '差值': `${diff}`, '累计操作': `${totalOps}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.evenPairs || 12,
+        codeLine: anchors.evenPairs || 12,
+        decision: `偶数对齐计算 #${i}: ${a} ➔ ${b}，${diff > 0 ? `贡献正向操作 +${ops} 次` : '差值 <= 0，由正差值端抵消'}，当前总操作累计达 ${totalOps} 次`,
+        message: '一次操作包含一个 +2 与一个 -2，累计正差值 / 2 即为最少操作数',
+        slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+        variables: { pairType: 'even', idx: i, a, b, diff, ops, totalOps },
+        metrics: { '单项操作': `${ops}`, '累计总操作': `${totalOps}` },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 14,
+      codeLine: anchors.done || 14,
+      decision: `🏁 贪心配对计算完毕：使 nums 变换为 target 所需的最少操作次数为 ${totalOps}`,
+      message: '排序不等式证明顺位对齐全局最优，无更优解',
+      slots: [...oddNums.map(x => `奇:${x}`), ...evenNums.map(x => `偶:${x}`)],
+      variables: { totalOps },
+      metrics: { '最终最少操作': `${totalOps}`, '证明判定': '排序不等式全局最优' },
+    });
+
+    return steps;
+  }
+
+  private static compileMinOpsSimilarStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    target: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    const sortedNums = [...nums].sort((a, b) => a - b);
+    const sortedTarget = [...target].sort((a, b) => a - b);
+    const oddNums = sortedNums.filter((x) => x % 2 !== 0);
+    const evenNums = sortedNums.filter((x) => x % 2 === 0);
+    const oddTarget = sortedTarget.filter((x) => x % 2 !== 0);
+    const evenTarget = sortedTarget.filter((x) => x % 2 === 0);
+
+    const treeRoot: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      val: `双轨配对决策树 (n=${nums.length})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌲 构建双轨对齐决策树：初始输入 [${nums.join(', ')}]，准备奇偶双轨分支展开`,
+      message: '决策树分离奇数轨道与偶数轨道独立分支',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { n: nums.length },
+      metrics: { '初始状态': '就绪', '决策深度': '0' },
+    });
+
+    const oddTrackNode: UniversalTreeNode = {
+      id: 'odd-track',
+      r: 1,
+      c: 0,
+      val: `奇数序列轨道 (${oddNums.length}项)`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(oddTrackNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.loopOdd || 2,
+      codeLine: anchors.loopOdd || 2,
+      decision: `🌿 奇数轨道分支展开：共有 ${oddNums.length} 个奇数元素准备顺位配对`,
+      message: '展开奇数对齐子树',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { oddCount: oddNums.length },
+      metrics: { '当前轨道': '奇数轨道', '子集规模': `${oddNums.length}` },
+    });
+
+    if (oddNums.length === 0) {
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.loopOdd || 2,
+        codeLine: anchors.loopOdd || 2,
+        decision: `ℹ️ 奇数轨道元素为空 (${oddNums.length} 项)，直接跳过奇数顺位匹配下探`,
+        message: '无需奇数间操作调整',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { oddCount: 0 },
+        metrics: { '奇数轨道状态': '无元素，直接跳过' },
+      });
+    }
+
+    let totalOps = 0;
+    for (let i = 0; i < oddNums.length; i++) {
+      const a = oddNums[i];
+      const b = oddTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.loopOdd || 2,
+        codeLine: anchors.loopOdd || 2,
+        decision: `🔍 探测奇数顺位对 #${i}: oddNums[${i}]=${a} 与 oddTarget[${i}]=${b}，准备比对差值`,
+        message: '奇数轨道顺位下探',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'odd', idx: i, a, b },
+        metrics: { '当前节点': `奇#${i}`, '探查值': `${a}➔${b}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcOddDiff || 3,
+        codeLine: anchors.calcOddDiff || 3,
+        decision: `🌿 奇数差值判定 #${i}: diff = ${a} - ${b} = ${diff >= 0 ? '+' : ''}${diff}`,
+        message: diff > 0 ? `正差值产生 +${ops} 次操作需求` : '差值 <= 0，由正向增量对冲',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'odd', idx: i, a, b, diff, ops },
+        metrics: { '当前节点': `奇#${i}`, '单项差值': `${diff}`, '操作产生': `${ops}` },
+      });
+
+      totalOps += ops;
+
+      const node: UniversalTreeNode = {
+        id: `odd-${i}`,
+        r: 2,
+        c: i,
+        val: `奇#${i}: ${a}➔${b} (diff=${diff > 0 ? '+' : ''}${diff}, ops=${ops})`,
+        status: 'completed',
+        children: [],
+      };
+      oddTrackNode.children.push(node);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.oddBranch || anchors.calcOddDiff || 4,
+        codeLine: anchors.oddBranch || anchors.calcOddDiff || 4,
+        decision: `✅ 奇数顺位分支 #${i} 拓扑固化: 节点挂载完成，累计总操作达 ${totalOps} 次`,
+        message: '奇数子树状态更新完毕',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'odd', idx: i, a, b, diff, ops, totalOps },
+        metrics: { '当前节点': `奇#${i}`, '单项操作': `${ops}`, '累计总操作': `${totalOps}` },
+      });
+    }
+
+    const evenTrackNode: UniversalTreeNode = {
+      id: 'even-track',
+      r: 1,
+      c: 1,
+      val: `偶数序列轨道 (${evenNums.length}项)`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(evenTrackNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.loopEven || 6,
+      codeLine: anchors.loopEven || 6,
+      decision: `🌿 偶数轨道分支展开：共有 ${evenNums.length} 个偶数元素准备顺位配对`,
+      message: '展开偶数对齐子树',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { evenCount: evenNums.length },
+      metrics: { '当前轨道': '偶数轨道', '子集规模': `${evenNums.length}` },
+    });
+
+    for (let i = 0; i < evenNums.length; i++) {
+      const a = evenNums[i];
+      const b = evenTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.loopEven || 6,
+        codeLine: anchors.loopEven || 6,
+        decision: `🔍 探测偶数顺位对 #${i}: evenNums[${i}]=${a} 与 evenTarget[${i}]=${b}，准备比对差值`,
+        message: '偶数轨道顺位下探',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'even', idx: i, a, b },
+        metrics: { '当前节点': `偶#${i}`, '探查值': `${a}➔${b}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcEvenDiff || 7,
+        codeLine: anchors.calcEvenDiff || 7,
+        decision: `🌿 偶数差值判定 #${i}: diff = ${a} - ${b} = ${diff >= 0 ? '+' : ''}${diff}`,
+        message: diff > 0 ? `正差值产生 +${ops} 次操作需求` : '差值 <= 0，由正向增量对冲',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'even', idx: i, a, b, diff, ops },
+        metrics: { '当前节点': `偶#${i}`, '单项差值': `${diff}`, '操作产生': `${ops}` },
+      });
+
+      totalOps += ops;
+
+      const node: UniversalTreeNode = {
+        id: `even-${i}`,
+        r: 2,
+        c: oddNums.length + i,
+        val: `偶#${i}: ${a}➔${b} (diff=${diff > 0 ? '+' : ''}${diff}, ops=${ops})`,
+        status: 'completed',
+        children: [],
+      };
+      evenTrackNode.children.push(node);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.evenBranch || anchors.calcEvenDiff || 8,
+        codeLine: anchors.evenBranch || anchors.calcEvenDiff || 8,
+        decision: `✅ 偶数顺位分支 #${i} 拓扑固化: 节点挂载完成，累计总操作达 ${totalOps} 次`,
+        message: '偶数子树状态更新完毕',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { track: 'even', idx: i, a, b, diff, ops, totalOps },
+        metrics: { '当前节点': `偶#${i}`, '单项操作': `${ops}`, '累计总操作': `${totalOps}` },
+      });
+    }
+
+    treeRoot.status = 'completed';
+    oddTrackNode.status = 'completed';
+    evenTrackNode.status = 'completed';
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🏁 决策树全部拓扑分支收敛：双轨配对计算完毕，最少操作总次数为 ${totalOps}`,
+      message: '决策树数学证明完备成立',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { totalOps },
+      metrics: { '最终最少操作': `${totalOps}`, '分支总数': `${nums.length}` },
+    });
+
+    return steps;
+  }
+
+  private static compileMinOpsSimilarStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    target: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    const sortedNums = [...nums].sort((a, b) => a - b);
+    const sortedTarget = [...target].sort((a, b) => a - b);
+    const oddNums = sortedNums.filter((x) => x % 2 !== 0);
+    const evenNums = sortedNums.filter((x) => x % 2 === 0);
+    const oddTarget = sortedTarget.filter((x) => x % 2 !== 0);
+    const evenTarget = sortedTarget.filter((x) => x % 2 === 0);
+
+    interface PairRow {
+      type: string;
+      idx: number;
+      a: number;
+      b: number;
+      diff: number;
+      ops: number;
+      accOps: number;
+    }
+    const pairRows: PairRow[] = [];
+    let acc = 0;
+    for (let i = 0; i < oddNums.length; i++) {
+      const a = oddNums[i];
+      const b = oddTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+      acc += ops;
+      pairRows.push({ type: '奇数', idx: i, a, b, diff, ops, accOps: acc });
+    }
+    for (let i = 0; i < evenNums.length; i++) {
+      const a = evenNums[i];
+      const b = evenTarget[i];
+      const diff = a - b;
+      const ops = diff > 0 ? diff / 2 : 0;
+      acc += ops;
+      pairRows.push({ type: '偶数', idx: i, a, b, diff, ops, accOps: acc });
+    }
+
+    const colHeaders = ['序号', 'nums 原值', 'target 目标', '差值 (a-b)', '产生操作', '累计操作'];
+    const rowHeaders = pairRows.map((p) => `${p.type} #${p.idx}`);
+    const matrix: (number | null)[][] = pairRows.map((p) => [
+      p.idx,
+      p.a,
+      p.b,
+      p.diff,
+      p.ops,
+      p.accOps,
+    ]);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.initMatrix || 2,
+      codeLine: anchors.initMatrix || 2,
+      decision: `📊 初始化顺位对齐状态矩阵 matrix[${pairRows.length}][6]，开始逐步演进填报`,
+      message: '表格逐行记录各顺位配对元素的值、差值与操作累计',
+      slots: [...slots],
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      variables: { rows: pairRows.length, cols: 6 },
+      metrics: { '配对总数': `${pairRows.length}`, '指标列数': '6 列' },
+    });
+
+    for (let r = 0; r < pairRows.length; r++) {
+      const p = pairRows[r];
+      for (let c = 0; c < 6; c++) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.fillNum || 4,
+          codeLine: anchors.fillNum || 4,
+          decision: `📝 演进表填报 [第 ${r + 1} 行 第 ${c + 1} 列]: ${rowHeaders[r]} 的 ${colHeaders[c]} = ${matrix[r][c]}`,
+          message: c === 5 ? `当前累计最少操作数达 ${p.accOps} 次` : '追踪顺位差值数据点',
+          slots: [...slots],
+          grid: matrix,
+          matrix,
+          rowLabels: rowHeaders,
+          colLabels: colHeaders,
+          activeSlot: r,
+          variables: { row: r, col: c, pair: p },
+          metrics: { '当前配对': `${p.type} #${p.idx}`, '原值➔目标': `${p.a}➔${p.b}`, '累计操作': `${p.accOps}` },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🏁 顺位状态矩阵演进收敛：全量配对追踪完毕，使数组相似最少操作次数收敛至 ${acc}`,
+      message: '状态矩阵完整刻画单调顺位最优性',
+      slots: [...slots],
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      activeSlot: pairRows.length - 1,
+      variables: { totalOps: acc },
+      metrics: { '最终最少操作': `${acc}` },
+    });
+
+    return steps;
+  }
+
+  private static compileMinOpsSimilarStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    target: number[],
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    const sortedNums = [...nums].sort((a, b) => a - b);
+    const sortedTarget = [...target].sort((a, b) => a - b);
+    const oddNums = sortedNums.filter((x) => x % 2 !== 0);
+    const evenNums = sortedNums.filter((x) => x % 2 === 0);
+    const oddTarget = sortedTarget.filter((x) => x % 2 !== 0);
+    const evenTarget = sortedTarget.filter((x) => x % 2 === 0);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: '⚡ 启动常数空间双指针状态机：初始化指针 o1, o2, e1, e2 与累加器 ops=0',
+      message: '原地双指针直接比较，无需额外表格开销，达成 O(1) 辅助变量流转',
+      slots: [...slots],
+      variables: { ops: 0, o1: 0, o2: 0, e1: 0, e2: 0 },
+      metrics: { '空间复杂度': 'O(1) 寄存器', '初始操作数': '0' },
+    });
+
+    let ops = 0;
+    for (let o = 0; o < oddNums.length; o++) {
+      const a = oddNums[o];
+      const b = oddTarget[o];
+      const diff = a - b;
+      const add = diff > 0 ? diff >> 1 : 0;
+      ops += add;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.whileOdd || 4,
+        codeLine: anchors.whileOdd || 4,
+        decision: `🔍 奇数双指针推进 [o=${o}]: 比较 oddNums[${o}]=${a} 与 oddTarget[${o}]=${b}`,
+        message: '常数寄存器流转',
+        slots: [...slots],
+        variables: { o, a, b, ops },
+        metrics: { '奇数指针 o': `${o}`, '当前操作数': `${ops}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.advanceOdd || 6,
+        codeLine: anchors.advanceOdd || 6,
+        decision: `⚡ 奇数指针移位: ${diff > 0 ? `正差值产生 +${add} ➔ ops=${ops}` : '无正差值贡献'}，指针 o1++, o2++ 推进`,
+        message: '极速位移运算更新',
+        slots: [...slots],
+        variables: { o, add, ops },
+        metrics: { '新增操作': `+${add}`, '总操作数 ops': `${ops}` },
+      });
+    }
+
+    for (let e = 0; e < evenNums.length; e++) {
+      const a = evenNums[e];
+      const b = evenTarget[e];
+      const diff = a - b;
+      const add = diff > 0 ? diff >> 1 : 0;
+      ops += add;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.whileEven || 8,
+        codeLine: anchors.whileEven || 8,
+        decision: `🔍 偶数双指针推进 [e=${e}]: 比较 evenNums[${e}]=${a} 与 evenTarget[${e}]=${b}`,
+        message: '常数寄存器流转',
+        slots: [...slots],
+        variables: { e, a, b, ops },
+        metrics: { '偶数指针 e': `${e}`, '当前操作数': `${ops}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.advanceEven || 10,
+        codeLine: anchors.advanceEven || 10,
+        decision: `⚡ 偶数指针移位: ${diff > 0 ? `正差值产生 +${add} ➔ ops=${ops}` : '无正差值贡献'}，指针 e1++, e2++ 推进`,
+        message: '极速位移运算更新',
+        slots: [...slots],
+        variables: { e, add, ops },
+        metrics: { '新增操作': `+${add}`, '总操作数 ops': `${ops}` },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 12,
+      codeLine: anchors.done || 12,
+      decision: `🏁 双指针流转完毕：全量顺位对齐结算终结，输出最少操作次数 ops=${ops}`,
+      message: '以 O(1) 极简寄存器达成数学最优收敛',
+      slots: [...slots],
+      variables: { finalOps: ops },
+      metrics: { '最终操作数': `${ops}`, '额外空间': 'O(1)' },
+    });
+
+    return steps;
+  }
 }

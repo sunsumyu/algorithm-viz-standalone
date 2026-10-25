@@ -4593,14 +4593,14 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "minimum-operations-to-make-similar",
     name: "使数组相似的最少操作次数",
-    viewId: "algo-minimum-operations-to-make-similar-view",
+    viewId: "algo-min-operations-similar-view",
     category: "greedy",
-    description: "使数组相似的最少操作次数",
+    description: "LeetCode 2449：奇偶分类独立排序与排序不等式顺位对齐的正差值累加贪心法",
     icon: "🔄",
     difficulty: 3,
     levelOrder: 923,
     learningGoal: "掌握奇偶分类独立排序与排序不等式顺位对齐的正差值累加贪心法",
-    aliases: ["class092-code03","min-operations-similar-2449","leetcode-2449","make-array-similar"],
+    aliases: ["class092-code03","min-operations-similar-2449","leetcode-2449","make-array-similar","min-operations-similar"],
   },
   {
     id: "quiz-score-maximization",

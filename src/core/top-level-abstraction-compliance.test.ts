@@ -74,6 +74,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'max-avg-pass-ratio',
   'quiz-score-maximization',
   'minimize-deviation-in-array',
+  'minimum-operations-to-make-similar',
 
   // 动态规划族群 (Dynamic Programming)
   'unique-paths',
@@ -279,7 +280,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'greedy-final-summary',
         'queue-vector-explained',
         // 子目录专题 (greedy-089 ~ greedy-094)
-        'min-operations-similar',
         'divide-array-seq',
         'cross-river',
         'string-transforms',
@@ -287,7 +287,6 @@ describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)'
         'cutting-tree',
         'fractional-programming-138',
         'divide-array-into-increasing-sequences',
-        'minimum-operations-to-make-similar',
         'cross-river-classic',
         'string-transforms-into-another-string',
       ]);
