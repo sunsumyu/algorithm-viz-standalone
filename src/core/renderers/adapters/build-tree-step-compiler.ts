@@ -42,7 +42,7 @@ export interface BTStep {
   secondaryHighlightedNodes?: number[];
   // 递归调用栈踪迹快照
   callTrace?: RecursiveCallTraceSnapshot;
-  stageId?: 'stage-1' | 'stage-2' | 'stage-3';
+  stageId?: 'stage-1' | 'stage-2' | 'stage-3' | 'stage-4';
 }
 
 function cloneTree(node: TreeNode | null): TreeNode | null {
@@ -138,6 +138,18 @@ export const BUILD_TREE_STAGE3_LINES = {
   attachLeft: { java: 12, cpp: 13, python: 11, javascript: 10 },
   popStack: { java: 15, cpp: 16, python: 14, javascript: 13 },
   attachRight: { java: 19, cpp: 20, python: 17, javascript: 17 },
+  done: { java: 23, cpp: 24, python: 19, javascript: 21 },
+};
+
+// Stage 4 代码行号映射 (后序+中序显式栈迭代)
+export const BUILD_TREE_STAGE4_LINES = {
+  entry: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  init: { java: 4, cpp: 5, python: 4, javascript: 3 },
+  loop: { java: 8, cpp: 9, python: 7, javascript: 6 },
+  checkRight: { java: 11, cpp: 12, python: 10, javascript: 9 },
+  attachRight: { java: 12, cpp: 13, python: 11, javascript: 10 },
+  popStack: { java: 15, cpp: 16, python: 14, javascript: 13 },
+  attachLeft: { java: 19, cpp: 20, python: 17, javascript: 17 },
   done: { java: 23, cpp: 24, python: 19, javascript: 21 },
 };
 
@@ -988,9 +1000,173 @@ export class BuildTreeStepCompiler {
 
     return steps;
   }
+
+  /**
+   * Stage 4: 迭代显式栈模拟后序重构 ($O(N)$ 零哈希表 · LC 106 迭代法)
+   */
+  public static compileStage4StackSteps(inorder: number[], postorder: number[]): BTStep[] {
+    const steps: BTStep[] = [];
+    const n = postorder.length;
+
+    if (n === 0 || inorder.length !== n) {
+      steps.push({
+        tree: null,
+        preorder: [],
+        inorder,
+        postorder,
+        pL: -1,
+        pR: -1,
+        iL: -1,
+        iR: -1,
+        rootVal: null,
+        inRoot: -1,
+        leftLen: 0,
+        decision: '数组为空或长度不匹配',
+        action: 'done',
+        message: '后序与中序数组为空或长度不匹配，无法构造二叉树。',
+        log: 'empty arrays -> return null',
+        metrics: formatMetrics('异常空树', '[]', '[]'),
+        codeLine: BUILD_TREE_STAGE4_LINES.entry,
+        stackState: [],
+        inIdx: 0,
+        stageId: 'stage-4',
+      });
+      return steps;
+    }
+
+    const rootVal = postorder[n - 1];
+    const rootNode: TreeNode = { val: rootVal, left: null, right: null };
+    const stack: TreeNode[] = [rootNode];
+    let inIdx = n - 1;
+
+    steps.push({
+      tree: cloneTree(rootNode),
+      preorder: [],
+      inorder: [...inorder],
+      postorder: [...postorder],
+      pL: n - 1,
+      pR: n - 1,
+      iL: n - 1,
+      iR: n - 1,
+      rootVal,
+      inRoot: -1,
+      leftLen: 0,
+      decision: `后序末尾首根 ${rootVal} 入栈作为根节点`,
+      action: 'enter',
+      message: `初始化显式单调栈，放入后序尾节点 ${rootVal}。倒序中序指针 inIdx 指向 ${n - 1} (inorder[${n - 1}]=${inorder[n - 1]})。`,
+      log: `push root ${rootVal} to stack`,
+      metrics: formatMetrics(rootVal, `后序倒序指针 ${n - 1}`, `中序倒序指针 ${inIdx}`),
+      codeLine: BUILD_TREE_STAGE4_LINES.init,
+      stackState: stack.map((node) => node.val),
+      inIdx,
+      stageId: 'stage-4',
+    });
+
+    for (let i = n - 2; i >= 0; i--) {
+      const val = postorder[i];
+      let node = stack[stack.length - 1];
+
+      if (node.val !== inorder[inIdx]) {
+        const childNode: TreeNode = { val, left: null, right: null };
+        node.right = childNode;
+        stack.push(childNode);
+
+        steps.push({
+          tree: cloneTree(rootNode),
+          preorder: [],
+          inorder,
+          postorder,
+          pL: i,
+          pR: n - 1,
+          iL: inIdx,
+          iR: n - 1,
+          rootVal: val,
+          inRoot: -1,
+          leftLen: 0,
+          decision: `栈顶 ${node.val} != in[${inIdx}](${inorder[inIdx]})，挂载为右孩子`,
+          action: 'split',
+          message: `后序倒序元素 ${val}：栈顶节点 ${node.val} 与当前中序元素 ${inorder[inIdx]} 不等，说明属于一路向右分支，挂载为 ${node.val} 的右孩子并压栈。`,
+          log: `node ${node.val}.right = ${val}, push ${val}`,
+          metrics: formatMetrics(val, `后序 post[${i}]`, `中序 in[${inIdx}]`),
+          codeLine: BUILD_TREE_STAGE4_LINES.attachRight,
+          stackState: stack.map((nd) => nd.val),
+          inIdx,
+          stageId: 'stage-4',
+          highlightedNodes: [val],
+          visitedNodes: collectTreeValues(rootNode).filter((v) => v !== val),
+        });
+      } else {
+        const poppedNodes: number[] = [];
+        while (stack.length > 0 && stack[stack.length - 1].val === inorder[inIdx]) {
+          node = stack.pop()!;
+          poppedNodes.push(node.val);
+          inIdx--;
+        }
+
+        const childNode: TreeNode = { val, left: null, right: null };
+        node.left = childNode;
+        stack.push(childNode);
+
+        steps.push({
+          tree: cloneTree(rootNode),
+          preorder: [],
+          inorder,
+          postorder,
+          pL: i,
+          pR: n - 1,
+          iL: inIdx,
+          iR: n - 1,
+          rootVal: val,
+          inRoot: -1,
+          leftLen: 0,
+          decision: `匹配中序，出栈 [${poppedNodes.join(', ')}]，拐点 ${node.val} 挂载左孩子 ${val}`,
+          action: 'leave',
+          message: `栈顶与中序 ${poppedNodes.join('->')} 匹配成功出栈，倒序指针推进至 ${inIdx}。后序元素 ${val} 挂载为拐点节点 ${node.val} 的左孩子并压栈。`,
+          log: `pop [${poppedNodes.join(', ')}], node ${node.val}.left = ${val}`,
+          metrics: formatMetrics(val, `后序 post[${i}]`, `中序 in[${inIdx}]`),
+          codeLine: BUILD_TREE_STAGE4_LINES.attachLeft,
+          stackState: stack.map((nd) => nd.val),
+          inIdx,
+          stageId: 'stage-4',
+          highlightedNodes: [val],
+          visitedNodes: collectTreeValues(rootNode).filter((v) => v !== val),
+        });
+      }
+    }
+
+    const allTreeNodes = collectTreeValues(rootNode);
+
+    steps.push({
+      tree: cloneTree(rootNode),
+      preorder: [],
+      inorder,
+      postorder,
+      pL: 0,
+      pR: n - 1,
+      iL: 0,
+      iR: n - 1,
+      rootVal: rootNode.val,
+      inRoot: -1,
+      leftLen: 0,
+      decision: '迭代显式栈后序重构构建完成',
+      action: 'done',
+      message: `全部后序与中序节点消费完毕，二叉树拓扑完整还原，根节点为 ${rootNode.val}。`,
+      log: 'iterative stack postorder build done',
+      metrics: formatMetrics(rootNode.val, '倒序遍历重构完成', '倒序遍历重构完成', allTreeNodes.length),
+      codeLine: BUILD_TREE_STAGE4_LINES.done,
+      stackState: stack.map((nd) => nd.val),
+      inIdx,
+      stageId: 'stage-4',
+      highlightedNodes: [rootNode.val],
+      visitedNodes: allTreeNodes,
+    });
+
+    return steps;
+  }
 }
 
 // 向后兼容函数导出
 export const buildTreeSteps = BuildTreeStepCompiler.compilePreorderInorderSteps;
 export const buildTreeStage2PostorderSteps = BuildTreeStepCompiler.compileInorderPostorderSteps;
 export const buildTreeStage3StackSteps = BuildTreeStepCompiler.compileStage3StackSteps;
+export const buildTreeStage4StackSteps = BuildTreeStepCompiler.compileStage4StackSteps;

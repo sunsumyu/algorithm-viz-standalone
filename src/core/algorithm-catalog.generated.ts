@@ -4569,9 +4569,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "minimize-deviation-in-array",
     name: "数组的最小偏移量 (Minimize Deviation)",
-    viewId: "algo-minimize-deviation-in-array-view",
+    viewId: "algo-minimize-deviation-view",
     category: "greedy",
-    description: "数组的最小偏移量 (Minimize Deviation)",
+    description: "LeetCode 1675：全奇数乘以 2 的数值单调归一化与大顶堆贪心缩小极差的证明",
     icon: "📉",
     difficulty: 3,
     levelOrder: 921,

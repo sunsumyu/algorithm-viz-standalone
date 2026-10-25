@@ -1,0 +1,228 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 数组的最小偏移量顶层领域模型
+# 对应：LeetCode 1675 / 奇数乘2单调归一化 / 大顶堆贪心缩小极差 / 极值收敛证明
+# 包含：单向化归约、状态转移决策树、极差追踪矩阵、常数空间极速判定
+# ==============================================================================
+
+id: minimize-deviation-in-array
+name: 数组的最小偏移量 (Minimize Deviation in Array)
+category: greedy
+difficulty: hard
+tags:
+  - 贪心算法
+  - 大顶堆
+  - 单调归一化
+  - 极值收敛
+  - 有序集合
+
+description: |
+  给你一个由 n 个正整数组成的数组 nums 。你可以对数组中的任意元素执行两种操作：
+  1. 如果元素是奇数，乘以 2（乘完变偶数后不能再乘）；
+  2. 如果元素是偶数，除以 2（可以多次除以 2 直到变为奇数）。
+  数组的偏移量是数组中任意两个元素之间的最大差值。求数组可以达到的最小偏移量。
+
+  核心贪心策略与数学单调归一化：
+  1. 单向化消除混乱：每个奇数乘以 2 只能操作一次，而每个偶数可以连续除以 2。
+     若双向操作同时发生极易造成状态震荡。第一步将所有奇数乘以 2 提升至其理论上限，
+     使全数组所有元素均处于偶数状态（或原奇数×2），后续操作全部单调变为「除以 2 缩减」。
+  2. 大顶堆贪心缩减：当前极差 = 最大值 - 最小值。
+     为了让极差变小，必须降低最大值（因为所有数都在上限，无法再增大任何数）。
+     每次取出当前全局最大值，将其除以 2 并压回堆中，动态刷新全局最小值与当前最小偏移量。
+  3. 收敛停机条件：当堆顶最大值是奇数时，它已经无法再除以 2 缩小，
+     此时最大值无法再降低，后续任何操作只会减小更小的数使得极差扩大，因此立即终止并输出全局最优解！
+
+defaultParams:
+  nums: [4, 1, 5, 20, 3]
+
+constraints:
+  - 2 <= nums.length <= 5 * 10^4
+  - 1 <= nums[i] <= 10^9
+
+directions:
+  forward:
+    name: 奇数翻倍归一化与大顶堆贪心收敛
+    description: 将所有奇数扩大为偶数上限，放入大顶堆单调除以 2 缩小当前最大值
+  reverse:
+    name: 逆向极差边界验证对偶 (Deviation Lower Bound Reverse Trace)
+    description: 从终止奇数堆顶逆向倒推极差收缩轨迹，验证收敛充要性
+
+stages:
+  stage-1:
+    name: 奇数翻倍归一化与大顶堆贪心收敛
+    description: 奇数全部乘 2 统一上限，大顶堆弹出偶数除以 2，直至堆顶为奇数收敛
+    complexity:
+      time: O(N log(max_val) log N)
+      space: O(N)
+    card2Title: 大顶堆极差收缩看板 (Heap Deviation)
+    card2Desc: 追踪堆顶最大值、全局最小值 minVal 与当前最小偏移量 ans
+    code:
+      forward:
+        language: java
+        content: |
+          public int minimumDeviation(int[] nums) {
+              TreeSet<Integer> set = new TreeSet<>();
+              for (int num : nums) {
+                  set.add(num % 2 == 1 ? num * 2 : num);
+              }
+              int ans = set.last() - set.first();
+              while (ans > 0 && set.last() % 2 == 0) {
+                  int maxVal = set.last();
+                  set.remove(maxVal);
+                  set.add(maxVal / 2);
+                  ans = Math.min(ans, set.last() - set.first());
+              }
+              return ans;
+          }
+        lineMap:
+          entry: 1
+          initHeap: 2
+          insertLoop: 3
+          addNormalized: 4
+          calcAns: 6
+          loopCheck: 7
+          getMax: 8
+          removeMax: 9
+          reduceEven: 10
+          updateAns: 11
+          done: 13
+      reverse:
+        language: java
+        content: |
+          public int verifyDeviationBound(int[] nums) {
+              // 逆向反证：从终止收敛奇数堆顶反向校验极差不可逆性
+              int minVal = Integer.MAX_VALUE;
+              for (int x : nums) minVal = Math.min(minVal, x % 2 == 1 ? x * 2 : x);
+              int bound = minVal;
+              return bound;
+          }
+        lineMap:
+          entry: 1
+          initHeap: 3
+          insertLoop: 4
+          calcAns: 5
+          reduceEven: 5
+          done: 6
+
+  stage-2:
+    name: 堆顶奇偶分支与极差收缩决策树
+    description: 展开每次从堆顶弹出元素的奇偶判定与缩小决策分支
+    complexity:
+      time: O(N log(max_val))
+      space: O(N)
+    card2Title: 堆顶奇偶判定决策树 (Decision Tree)
+    card2Desc: 拓扑展开偶数除以 2 压回分支与奇数封顶收敛终止分支
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 堆顶奇偶决策判定
+          int maxVal = heap.poll();
+          if (maxVal % 2 == 0) {
+              int half = maxVal / 2;
+              heap.offer(half);
+              minVal = Math.min(minVal, half);
+              ans = Math.min(ans, heap.peek() - minVal);
+          } else {
+              // 堆顶为奇数，不可再缩小，贪心收敛
+              return ans;
+          }
+        lineMap:
+          entry: 1
+          pollMax: 2
+          checkEven: 3
+          divideEven: 4
+          pushHalf: 5
+          updateMin: 6
+          updateAns: 7
+          oddBranch: 8
+          done: 10
+      reverse:
+        language: java
+        content: |
+          // 逆向决策验证
+          if (maxVal % 2 != 0) {
+              return ans; // 奇数无法继续除以 2
+          }
+        lineMap:
+          entry: 1
+          checkEven: 2
+          done: 3
+
+  stage-3:
+    name: 极差动态收缩追踪演进矩阵
+    description: 二维决策演进矩阵，逐行记录每次缩减的堆顶、折半值、全局最小与当前最优偏移量
+    complexity:
+      time: O(N log(max_val))
+      space: O(N)
+    card2Title: 极差收缩追踪矩阵 (Deviation Matrix)
+    card2Desc: 动态追踪步数 step、弹出 maxVal、折半 half、全局 minVal 与最新 ans
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 二维极差演进追踪
+          int[][] matrix = new int[steps][5];
+          for (int s = 0; s < steps; s++) {
+              matrix[s][0] = curMax;
+              matrix[s][1] = curMax / 2;
+              matrix[s][2] = curMin;
+              matrix[s][3] = curDiff;
+              matrix[s][4] = bestAns;
+          }
+        lineMap:
+          entry: 1
+          initMatrix: 2
+          loop: 3
+          fillMax: 4
+          fillHalf: 5
+          fillMin: 6
+          fillDiff: 7
+          fillAns: 8
+          done: 9
+      reverse:
+        language: java
+        content: |
+          // 逆向极差状态校验
+          int finalAns = matrix[steps - 1][4];
+          return finalAns;
+        lineMap:
+          entry: 1
+          fillAns: 2
+          done: 3
+
+  stage-4:
+    name: 常数寄存器流转与极速收敛判定
+    description: 优化中间对象开销，利用原生大顶堆或双端优先队列以 O(1) 辅助变量流转
+    complexity:
+      time: O(N log(max_val) log N)
+      space: O(1)
+    card2Title: 常数空间极速寄存器 (Register Flow)
+    card2Desc: 仅维护 minVal、maxVal 与 ans 标量寄存器，原地极速收敛
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 常数空间极速收敛
+          while ((maxVal = heap.poll()) % 2 == 0) {
+              minVal = Math.min(minVal, maxVal >>= 1);
+              heap.offer(maxVal);
+              int diff = heap.peek() - minVal;
+              if (diff < ans) ans = diff;
+          }
+          return ans;
+        lineMap:
+          entry: 1
+          whileCheck: 2
+          shiftMin: 3
+          pushHeap: 4
+          calcDiff: 5
+          updateAns: 6
+          done: 8
+      reverse:
+        language: java
+        content: |
+          // 逆向寄存器对偶
+          return ans;
+        lineMap:
+          entry: 1
+          done: 2

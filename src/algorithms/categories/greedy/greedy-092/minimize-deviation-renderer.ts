@@ -1,12 +1,10 @@
 /**
- * 数组的最小偏移量 (LeetCode 1675) - 声明式教学级沙盘渲染器
+ * 数组的最小偏移量 (LeetCode 1675) - 声明式教学级沙盘渲染器 (Thin Domain Adapter)
  * 核心贪心：奇数乘2单调归一化 + 大顶堆贪心除2缩小极差
- * Thin Domain Adapter (< 60 LOC)
  */
 
-import { registerDeclarativeAlgorithm } from '../../../../core/declarative-algorithm-visualizer';
-import { GREEDY_092_PROBLEMS } from './greedy-092-problem-content';
-import { MINIMIZE_DEVIATION_CODES } from './greedy-092-stage-codes';
+import { UniversalStageVisualizer } from '../../dynamic-programming/unique-paths-renderer';
+import { registerAlgorithm } from '../../../../core/registry';
 import {
   MinimizeDeviationStep,
   buildMinimizeDeviationSteps,
@@ -15,34 +13,32 @@ import {
 import { renderMinimizeDeviationCanvas } from './minimize-deviation-canvas-adapter';
 
 export type { MinimizeDeviationStep };
-export { buildMinimizeDeviationSteps, renderMinimizeDeviationCanvas };
+export {
+  buildMinimizeDeviationSteps,
+  parseMinimizeDeviationInputs,
+  renderMinimizeDeviationCanvas,
+};
 
-export const minimizeDeviationVisualizer = registerDeclarativeAlgorithm<MinimizeDeviationStep>({
+const template = `<div id="algo-minimize-deviation-view" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>`;
+
+export const minimizeDeviationRenderer = UniversalStageVisualizer;
+export const minimizeDeviationVisualizer = UniversalStageVisualizer;
+
+registerAlgorithm({
   id: 'minimize-deviation-in-array',
   name: '数组的最小偏移量 (Minimize Deviation)',
+  viewId: 'algo-minimize-deviation-view',
   category: 'greedy',
+  description: 'LeetCode 1675：全奇数乘以 2 的数值单调归一化与大顶堆贪心缩小极差的证明',
   icon: '📉',
+  template,
+  Visualizer: UniversalStageVisualizer,
   difficulty: 3,
   levelOrder: 921,
-  aliases: ['class092-code01', 'minimize-deviation-1675', 'leetcode-1675', 'minimize-deviation'],
   learningGoal: '掌握全奇数乘以2的数值单调归一化与大顶堆贪心缩小极差的证明',
-  problemHtml: GREEDY_092_PROBLEMS.minimizeDeviation.html,
-  analysisHtml: GREEDY_092_PROBLEMS.minimizeDeviation.html,
-  inputs: [
-    {
-      id: 'input-nums',
-      label: '正整数数组 nums',
-      type: 'text',
-      defaultValue: '4, 1, 5, 20, 3',
-      placeholder: '4, 1, 5, 20, 3',
-    },
-  ],
-  codeLanguages: MINIMIZE_DEVIATION_CODES,
-  buildSteps: (inputs: Record<string, any>) => {
-    const nums = parseMinimizeDeviationInputs(inputs);
-    return buildMinimizeDeviationSteps(nums);
-  },
-  renderCanvas: (stageContainer: HTMLElement, step: MinimizeDeviationStep) => {
-    renderMinimizeDeviationCanvas(stageContainer, step);
-  },
+  aliases: ['class092-code01', 'minimize-deviation-1675', 'leetcode-1675', 'minimize-deviation'],
 });
+
+export function registerMinimizeDeviation(): void {
+  // 保持向前兼容导出
+}

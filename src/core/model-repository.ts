@@ -84,6 +84,7 @@ import largestPalindromicNumberModel from './models/largest-palindromic-number.y
 import minCostHireWorkersModel from './models/min-cost-hire-workers.yaml';
 import maxAvgPassRatioModel from './models/max-avg-pass-ratio.yaml';
 import quizScoreMaximizationModel from './models/quiz-score-maximization.yaml';
+import minimizeDeviationInArrayModel from './models/minimize-deviation-in-array.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -391,6 +392,11 @@ export class AlgorithmModelRepository {
     ['quiz-score', quizScoreMaximizationModel as IYamlAlgorithmModel],
     ['quiz-score-max', quizScoreMaximizationModel as IYamlAlgorithmModel],
     ['class092-code04', quizScoreMaximizationModel as IYamlAlgorithmModel],
+    ['minimize-deviation-in-array', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
+    ['minimize-deviation', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
+    ['minimize-deviation-1675', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
+    ['class092-code01', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
+    ['leetcode-1675', minimizeDeviationInArrayModel as IYamlAlgorithmModel],
     ['dungeon-game-reverse-dp', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['dungeon-game', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['max-product-subarray', maxProductSubarrayModel as IYamlAlgorithmModel],

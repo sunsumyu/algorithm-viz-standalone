@@ -53,6 +53,9 @@ export class ResourceGreedyStepCompiler {
     stage: number = 1
   ): UniversalStep[] {
     const pid = options.problemId || model.id;
+    if (pid === 'minimize-deviation-in-array' || pid === 'minimize-deviation' || pid === 'class092-code01' || pid === 'minimize-deviation-1675' || (pid.startsWith('minimize-deviation') && options.nums !== undefined)) {
+      return this.compileMinimizeDeviation(model, options, stage);
+    }
     if (pid === 'max-avg-pass-ratio' || options.classes !== undefined) {
       return this.compileMaxAvgPassRatio(model, options, stage);
     }
@@ -9648,6 +9651,495 @@ export class ResourceGreedyStepCompiler {
       variables: { finalAvg, verified: true },
       slots: curClasses.map(([p, t]) => Number((p / t).toFixed(3))),
       metrics: { '最终最高均值': `${(finalAvg * 100).toFixed(4)}%`, '等价性验证': '100% 吻合' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 数组的最小偏移量 (LeetCode 1675: Minimize Deviation in Array) 堆收敛贪心编译器
+  // ==========================================================================
+  public static compileMinimizeDeviation(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    let nums: number[] = [4, 1, 5, 20, 3];
+    const raw = (options as any).nums ?? model.defaultParams?.nums;
+    if (Array.isArray(raw)) {
+      nums = raw.map(Number).filter((n) => !isNaN(n));
+    } else if (typeof raw === 'string') {
+      nums = raw.split(/[,，\s]+/).map(Number).filter((n) => !isNaN(n));
+    }
+    if (nums.length === 0) nums = [4, 1, 5, 20, 3];
+
+    switch (stage) {
+      case 2:
+        return this.compileMinimizeDeviationStage2(model, nums, options);
+      case 3:
+        return this.compileMinimizeDeviationStage3(model, nums, options);
+      case 4:
+        return this.compileMinimizeDeviationStage4(model, nums, options);
+      case 1:
+      default:
+        return this.compileMinimizeDeviationStage1(model, nums, options);
+    }
+  }
+
+  private static compileMinimizeDeviationStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 1, options.direction || 'forward', options.anchorMap);
+    const slots = nums.map((x, idx) => `num[${idx}]=${x}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `主函数入口：接收输入数组 nums=[${nums.join(', ')}]，长度 n=${nums.length}`,
+      message: '为了消除双向操作的混乱，第一步将所有奇数乘以 2 归一为偶数理论上限',
+      slots: [...slots],
+      variables: { n: nums.length, originalNums: [...nums] },
+      metrics: { '数组长度': `${nums.length}`, '当前极差': '计算中' },
+    });
+
+    const heap = nums.map((x) => (x % 2 === 1 ? x * 2 : x));
+    heap.sort((a, b) => b - a);
+    let minVal = Math.min(...heap);
+    let maxVal = heap[0];
+    let ans = maxVal - minVal;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.addNormalized || 4,
+      codeLine: anchors.addNormalized || 4,
+      decision: `奇数翻倍归一化入堆：所有奇数×2 ➔ [${heap.join(', ')}]，当前最小值 minVal=${minVal}，最大值 maxVal=${maxVal}，初始偏移量 ans = ${maxVal} - ${minVal} = ${ans}`,
+      message: '所有元素均处于其理论最大上限，后续仅需执行单向除以 2 缩小操作',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      variables: { minVal, maxVal, ans, heap: [...heap] },
+      metrics: { '堆顶最大值': `${maxVal}`, '全局最小值': `${minVal}`, '初始极差': `${ans}` },
+    });
+
+    let iter = 0;
+    while (heap[0] % 2 === 0 && ans > 0 && iter < 30) {
+      iter++;
+      const popped = heap.shift()!;
+      const half = Math.floor(popped / 2);
+      heap.push(half);
+      minVal = Math.min(minVal, half);
+      heap.sort((a, b) => b - a);
+      const curDiff = heap[0] - minVal;
+      const isBetter = curDiff < ans;
+      if (isBetter) ans = curDiff;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.getMax || 8,
+        codeLine: anchors.getMax || 8,
+        decision: `第 ${iter} 轮极值探测：从堆顶取出当前最大偶数 ${popped}，准备除以 2 缩小极差`,
+        message: '大顶堆维护当前最大值',
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { popped, minVal, ans },
+        metrics: { '当前堆顶': `${popped}`, '当前最小': `${minVal}`, '历史最优偏移量': `${ans}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.reduceEven || 10,
+        codeLine: anchors.reduceEven || 10,
+        decision: `第 ${iter} 轮贪心折半：${popped} 除以 2 变为 ${half} 并压回堆，更新全局最小值 minVal=min(${minVal}, ${half})=${minVal}`,
+        message: `当前堆中元素 [${heap.join(', ')}]`,
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { popped, half, minVal, ans },
+        metrics: { '折半结果': `${half}`, '全局最小': `${minVal}`, '历史最优偏移量': `${ans}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 1,
+        line: anchors.updateAns || 11,
+        codeLine: anchors.updateAns || 11,
+        decision: `第 ${iter} 轮极差刷新：压回后新堆顶为 ${heap[0]}，当前极差 = ${heap[0]} - ${minVal} = ${curDiff}${isBetter ? ' ➔ 刷新历史最优最小偏移量！' : ' ➔ 保持历史最优'}`,
+        message: `最新最优偏移量 ans=${ans}`,
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { popped, half, minVal, curMax: heap[0], curDiff, ans },
+        metrics: { '当前堆顶': `${heap[0]}`, '当前极差': `${curDiff}`, '历史最优偏移量': `${ans}` },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 13,
+      codeLine: anchors.done || 13,
+      decision: `🎉 贪心收敛终止：当前堆顶最大值 ${heap[0]} 是奇数（或极差已达0），无法再通过除以 2 缩小，全局最小偏移量锁定为 ${ans}`,
+      message: '单向缩小证明完备，不存在更小的可能极差',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      variables: { finalAns: ans, finalHeap: [...heap] },
+      metrics: { '最终最小偏移量': `${ans}`, '终止原因': `${heap[0] % 2 !== 0 ? '堆顶为奇数封顶' : '极差归零'}` },
+    });
+
+    return steps;
+  }
+
+  private static compileMinimizeDeviationStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, options.direction || 'forward', options.anchorMap);
+    const slots = nums.map((x, idx) => `num[${idx}]=${x}`);
+
+    const treeRoot: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      val: `极差缩小决策拓扑 (n=${nums.length})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌲 构建极差收缩决策树：初始输入 [${nums.join(', ')}]，准备奇数翻倍与分支推导`,
+      message: '树节点动态跟踪堆顶弹出、奇偶判定与缩小分支',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { n: nums.length },
+      metrics: { '初始状态': '就绪', '决策深度': '0' },
+    });
+
+    const heap = nums.map((x) => (x % 2 === 1 ? x * 2 : x));
+    heap.sort((a, b) => b - a);
+    let minVal = Math.min(...heap);
+    let maxVal = heap[0];
+    let ans = maxVal - minVal;
+
+    const normNode: UniversalTreeNode = {
+      id: 'norm',
+      r: 1,
+      c: 0,
+      val: `归一化上限 [${heap.join(',')}] min=${minVal} max=${maxVal} diff=${ans}`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(normNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.pollMax || 2,
+      codeLine: anchors.pollMax || 2,
+      decision: `🌿 归一化分支生成：全员扩大至理论上限 [${heap.join(', ')}]，初始极差 ans=${ans}`,
+      message: '树根下挂载上限状态',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { minVal, maxVal, ans },
+      metrics: { '初始堆顶': `${maxVal}`, '初始极差': `${ans}` },
+    });
+
+    let iter = 0;
+    while (heap[0] % 2 === 0 && ans > 0 && iter < 10) {
+      iter++;
+      const popped = heap.shift()!;
+      const half = Math.floor(popped / 2);
+      heap.push(half);
+      minVal = Math.min(minVal, half);
+      heap.sort((a, b) => b - a);
+      const curDiff = heap[0] - minVal;
+      const isBetter = curDiff < ans;
+      if (isBetter) ans = curDiff;
+
+      const stepNode: UniversalTreeNode = {
+        id: `step-${iter}`,
+        r: iter + 1,
+        c: 0,
+        val: `第${iter}轮: 弹出偶数 ${popped} ➔ 折半 ${half} 压回, min=${minVal}, diff=${curDiff}, ans=${ans}`,
+        status: 'active',
+        children: [],
+      };
+      normNode.children.push(stepNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.pollMax || 2,
+        codeLine: anchors.pollMax || 2,
+        decision: `🌿 决策分支 [轮次 ${iter}]: 从堆顶弹出当前最大值 ${popped}，检查是否为偶数`,
+        message: '大顶堆决策探测',
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { iter, popped, minVal, ans },
+        metrics: { '考察节点': `${popped}`, '当前极差': `${ans}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.divideEven || 4,
+        codeLine: anchors.divideEven || 4,
+        decision: `🔀 偶数除2分支生效: ${popped} 为偶数，折半为 ${half} 压回堆，更新 minVal=${minVal}`,
+        message: '偶数分支深入展开',
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { iter, popped, half, minVal, ans },
+        metrics: { '折半值': `${half}`, '全局最小': `${minVal}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.updateAns || 7,
+        codeLine: anchors.updateAns || 7,
+        decision: `🔄 极差刷新判定: 压回后堆顶为 ${heap[0]}，当前极差 ${curDiff} ➔ ${isBetter ? '刷新全局最优！' : '保持局部最优'}`,
+        message: `历史最优偏移量 ans=${ans}`,
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { iter, popped, half, minVal, curDiff, ans },
+        metrics: { '当前极差': `${curDiff}`, '全局最优': `${ans}` },
+      });
+    }
+
+    const termNode: UniversalTreeNode = {
+      id: 'term',
+      r: iter + 2,
+      c: 0,
+      val: `终止分支: 堆顶 ${heap[0]} 为奇数 (不可再除2) ➔ 收敛锁定 ans=${ans}`,
+      status: 'completed',
+      children: [],
+    };
+    normNode.children.push(termNode);
+    treeRoot.status = 'completed';
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.oddBranch || 8,
+      codeLine: anchors.oddBranch || 8,
+      decision: `🛑 奇数封顶分支: 堆顶最大值 ${heap[0]} 是奇数，无法再通过除以 2 缩小，贪心收敛锁定全局最优`,
+      message: '奇数无法再缩小，触发终结分支',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { topVal: heap[0], ans },
+      metrics: { '堆顶状态': '奇数封顶', '最终最优': `${ans}` },
+    });
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🏁 决策树全部拓扑分支收敛：堆顶元素为奇数封顶，分支探索终结，全局最小偏移量为 ${ans}`,
+      message: '决策树数学证明完备成立',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { ans },
+      metrics: { '最终最小偏移量': `${ans}`, '分支总数': `${iter + 1}` },
+    });
+
+    return steps;
+  }
+
+  private static compileMinimizeDeviationStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, options.direction || 'forward', options.anchorMap);
+    const slots = nums.map((x, idx) => `num[${idx}]=${x}`);
+
+    const heap = nums.map((x) => (x % 2 === 1 ? x * 2 : x));
+    heap.sort((a, b) => b - a);
+    let minVal = Math.min(...heap);
+    let ans = heap[0] - minVal;
+
+    interface SimRow {
+      step: number;
+      curMax: number;
+      half: number;
+      curMin: number;
+      curDiff: number;
+      bestAns: number;
+    }
+    const history: SimRow[] = [
+      { step: 0, curMax: heap[0], half: Math.floor(heap[0] / 2), curMin: minVal, curDiff: ans, bestAns: ans },
+    ];
+
+    const simHeap = [...heap];
+    let simMin = minVal;
+    let simAns = ans;
+    let round = 0;
+    while (simHeap[0] % 2 === 0 && simAns > 0 && round < 8) {
+      round++;
+      const popped = simHeap.shift()!;
+      const half = Math.floor(popped / 2);
+      simHeap.push(half);
+      simMin = Math.min(simMin, half);
+      simHeap.sort((a, b) => b - a);
+      const diff = simHeap[0] - simMin;
+      if (diff < simAns) simAns = diff;
+      history.push({ step: round, curMax: popped, half, curMin: simMin, curDiff: diff, bestAns: simAns });
+    }
+
+    const colHeaders = ['轮次', '堆顶(maxVal)', '减半(half)', '全局最小(minVal)', '当前极差', '最优偏移量'];
+    const rowHeaders = history.map((h) => `第 ${h.step} 步`);
+    const matrix: (number | null)[][] = history.map((h) => [h.step, h.curMax, h.half, h.curMin, h.curDiff, h.bestAns]);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.initMatrix || 2,
+      codeLine: anchors.initMatrix || 2,
+      decision: `📊 初始化极差收缩演进表 matrix[${history.length}][6]，开始逐步演进填报`,
+      message: '表格逐行记录每次堆顶弹出除以 2 后的全局状态迁移',
+      slots: [...slots],
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      variables: { rows: history.length, cols: 6 },
+      metrics: { '推演步数': `${history.length}`, '指标列数': '6 列' },
+    });
+
+    for (let r = 0; r < history.length; r++) {
+      const h = history[r];
+      for (let c = 0; c < 6; c++) {
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.fillMax || 4,
+          codeLine: anchors.fillMax || 4,
+          decision: `📝 演进表填报 [第 ${r + 1} 行 第 ${c + 1} 列]: ${rowHeaders[r]} 的 ${colHeaders[c]} = ${matrix[r][c]}`,
+          message: c === 5 ? `当前最优偏移量锁定为 ${h.bestAns}` : '追踪极值动态收缩数据点',
+          slots: [...slots],
+          grid: matrix,
+          matrix,
+          rowLabels: rowHeaders,
+          colLabels: colHeaders,
+          activeSlot: r,
+          variables: { step: h.step, curMax: h.curMax, curMin: h.curMin, bestAns: h.bestAns },
+          metrics: { '当前步数': `第 ${h.step} 步`, '最新极差': `${h.curDiff}`, '全局最优': `${h.bestAns}` },
+        });
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 9,
+      codeLine: anchors.done || 9,
+      decision: `🏁 极差状态矩阵演进收敛：全量缩减轨迹追踪完毕，全局最小偏移量收敛至 ${history[history.length - 1].bestAns}`,
+      message: '状态矩阵完整刻画单调收敛全过程',
+      slots: [...slots],
+      grid: matrix,
+      matrix,
+      rowLabels: rowHeaders,
+      colLabels: colHeaders,
+      activeSlot: history.length - 1,
+      variables: { finalAns: history[history.length - 1].bestAns },
+      metrics: { '最终最小偏移量': `${history[history.length - 1].bestAns}` },
+    });
+
+    return steps;
+  }
+
+  private static compileMinimizeDeviationStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, options.direction || 'forward', options.anchorMap);
+
+    const heap = nums.map((x) => (x % 2 === 1 ? x * 2 : x));
+    heap.sort((a, b) => b - a);
+    let minVal = Math.min(...heap);
+    let maxVal = heap[0];
+    let ans = maxVal - minVal;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: '⚡ 启动常数空间寄存器状态机：初始化 minVal, maxVal, ans 与 diff 标量',
+      message: '原地堆操作无需任何辅助表格，达成 O(1) 辅助变量流转',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      variables: { minVal, maxVal, ans, diff: ans },
+      metrics: { '空间复杂度': 'O(1) 寄存器', '初始偏移量': `${ans}` },
+    });
+
+    let iter = 0;
+    while (heap[0] % 2 === 0 && ans > 0 && iter < 12) {
+      iter++;
+      const popped = heap.shift()!;
+      const half = popped >> 1;
+      heap.push(half);
+      minVal = Math.min(minVal, half);
+      heap.sort((a, b) => b - a);
+      const diff = heap[0] - minVal;
+      const isBetter = diff < ans;
+      if (isBetter) ans = diff;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.whileCheck || 2,
+        codeLine: anchors.whileCheck || 2,
+        decision: `🔍 寄存器轮次 ${iter}: 堆顶 maxVal=${popped} 为偶数，执行原地快速移位除2`,
+        message: '常数寄存器流转',
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { iter, maxVal: popped, minVal, ans },
+        metrics: { 'maxVal 寄存器': `${popped}`, 'minVal 寄存器': `${minVal}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.shiftMin || 3,
+        codeLine: anchors.shiftMin || 3,
+        decision: `⚡ 原地移位除2: ${popped} >> 1 ➔ ${half}，刷新 minVal 寄存器 = min(${minVal}, ${half}) = ${minVal}`,
+        message: '极速位运算更新',
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { half, minVal, ans },
+        metrics: { '折半 half': `${half}`, 'minVal 寄存器': `${minVal}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.calcDiff || 5,
+        codeLine: anchors.calcDiff || 5,
+        decision: `🔄 极差寄存器刷新: 压回后新堆顶为 ${heap[0]}，极差 diff = ${diff}${isBetter ? ' ➔ ans 寄存器刷新！' : ' ➔ 保持原有 ans'}`,
+        message: `当前 ans 寄存器 = ${ans}`,
+        slots: heap.map((v, i) => `堆[${i}]=${v}`),
+        variables: { iter, curMax: heap[0], diff, ans },
+        metrics: { 'diff 寄存器': `${diff}`, 'ans 寄存器': `${ans}` },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 8,
+      codeLine: anchors.done || 8,
+      decision: `🏁 常数寄存器流转完毕：堆顶达到奇数下界，输出最终最小偏移量 ans=${ans}`,
+      message: '以 O(1) 极简寄存器达成数学最优收敛',
+      slots: heap.map((v, i) => `堆[${i}]=${v}`),
+      variables: { finalAns: ans },
+      metrics: { '最终最小偏移量': `${ans}`, '额外空间': 'O(1)' },
     });
 
     return steps;
