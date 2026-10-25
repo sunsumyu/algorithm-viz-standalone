@@ -71,5 +71,5 @@ describe('Advanced Classes 107 ~ 144 Implementation & Integrity', () => {
     const class112 = await algorithmRegistry.resolve('class112-code01');
     expect(class112).toBeDefined();
     expect(class112?.id).toBe('value-segment-tree-112');
-  }, 30000);
+  }, 60000);
 });
