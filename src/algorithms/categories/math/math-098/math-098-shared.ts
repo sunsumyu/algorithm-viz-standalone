@@ -88,13 +88,13 @@ export function renderMatrix(
     flex-direction: column;
     gap: 6px;
     padding: 10px 14px;
-    background: #ffffff;
+    background: #0f172a;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e293b;
   `;
 
   const label = document.createElement('div');
-  label.style.cssText = 'font-size: 11px; font-weight: 700; color: #64748b; font-family: monospace;';
+  label.style.cssText = 'font-size: 11px; font-weight: 700; color: #38bdf8; font-family: \'JetBrains Mono\', monospace;';
   label.textContent = `${title} (${M.length}×${M[0]?.length || 0}):`;
   wrapper.appendChild(label);
 
@@ -103,25 +103,25 @@ export function renderMatrix(
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 6px 10px;
-    background: #f8fafc;
+    padding: 8px 12px;
+    background: #1e293b;
     border-radius: 6px;
-    border-left: 3px solid #3b82f6;
-    border-right: 3px solid #3b82f6;
+    border-left: 3px solid #38bdf8;
+    border-right: 3px solid #38bdf8;
   `;
 
   M.forEach(row => {
     const rowDiv = document.createElement('div');
-    rowDiv.style.cssText = 'display: flex; gap: 8px; justify-content: center;';
+    rowDiv.style.cssText = 'display: flex; gap: 10px; justify-content: center;';
     row.forEach(val => {
       const cell = document.createElement('div');
       cell.style.cssText = `
-        min-width: 38px;
+        min-width: 40px;
         text-align: center;
         font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        font-weight: 700;
-        color: #1e293b;
+        font-size: 13px;
+        font-weight: 800;
+        color: #f8fafc;
       `;
       cell.textContent = `${val}`;
       rowDiv.appendChild(cell);
@@ -146,11 +146,12 @@ export function renderExpBits(
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: #0f172a;
     border-radius: 8px;
+    border: 1px solid #1e293b;
     color: #f8fafc;
-    font-family: monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
   `;
 
@@ -158,14 +159,14 @@ export function renderExpBits(
   const chipsHtml = binStr.split('').map((bit, idx) => {
     const isCur = curBitIdx !== undefined && idx === binStr.length - 1 - curBitIdx;
     return `
-      <span style="display: inline-block; width: 22px; text-align: center; padding: 2px 0; border-radius: 4px; background: ${isCur ? '#3b82f6' : bit === '1' ? '#1e293b' : '#090d16'}; border: 1px solid ${isCur ? '#60a5fa' : bit === '1' ? '#38bdf840' : '#334155'}; font-weight: 700; color: ${bit === '1' ? '#38bdf8' : '#64748b'};">
+      <span style="display: inline-block; width: 24px; text-align: center; padding: 2px 0; border-radius: 4px; background: ${isCur ? '#38bdf8' : bit === '1' ? 'rgba(56, 189, 248, 0.15)' : '#1e293b'}; border: 1px solid ${isCur ? '#38bdf8' : bit === '1' ? '#38bdf8' : '#334155'}; font-weight: 800; color: ${isCur ? '#0f172a' : bit === '1' ? '#38bdf8' : '#64748b'};">
         ${bit}
       </span>
     `;
   }).join('');
 
   box.innerHTML = `
-    <span style="color: #94a3b8;">指数二进制分解 (b=${exp}):</span>
+    <span style="color: #94a3b8; font-weight: 600;">指数二进制分解 (b=${exp}):</span>
     <div style="display: flex; gap: 4px;">${chipsHtml}</div>
   `;
 

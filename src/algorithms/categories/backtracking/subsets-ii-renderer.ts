@@ -29,6 +29,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'subsets-ii',
+  aliases: ['90', 'leetcode-90', 'subsets-with-dup'],
+  hasDeductionTree: true,
   name: '子集 II',
   category: 'backtracking',
   description: '含重复元素数组的子集生成，排序后树层去重',

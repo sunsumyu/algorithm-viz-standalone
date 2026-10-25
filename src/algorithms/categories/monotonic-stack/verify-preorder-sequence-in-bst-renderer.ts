@@ -17,8 +17,10 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'verify-preorder-sequence-in-bst',
+  aliases: ['255', 'leetcode-255', 'verify-preorder-bst'],
   name: '验证二叉搜索树的前序遍历序列',
   category: 'monotonic-stack',
+  hasDeductionTree: true,
   learningGoal: '利用单调栈与下界跃升机制，以 O(N) 时间和空间验证前序遍历是否符合二叉搜索树特性',
   inputs: [
     {

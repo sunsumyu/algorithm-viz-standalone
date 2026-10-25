@@ -34,6 +34,8 @@ registerDeclarativeAlgorithm({
   icon: '💧',
   difficulty: 3,
   levelOrder: 4,
+  aliases: ['42', 'leetcode-42', 'trap-rain-water', 'trapping-rain-water-42', 'class052-water'],
+  hasDeductionTree: true,
   learningGoal: '掌握单调栈在二维几何与物理蓄水中的横向分层计算思想，理解凹槽底出栈时与左右壁构建积水矩形的本质',
   inputs: [
     {

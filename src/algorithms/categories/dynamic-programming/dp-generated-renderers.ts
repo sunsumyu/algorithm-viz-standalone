@@ -583,7 +583,7 @@ const demos: DemoDef[] = [
     name: '骑士在棋盘上的概率',
     description: '三维概率 DP：求国际象棋骑士走 k 步后仍留在 n x n 棋盘上的概率 (LeetCode 688)。',
     icon: '♞',
-    aliases: ['class069-code01', 'knight-probability-069', 'knight-probability-class069', 'leetcode-688-knight'],
+    aliases: ['class069-code01', 'knight-probability-069', 'knight-probability-class069', 'leetcode-688', 'leetcode-688-knight'],
     inputs: [
       { id: 'n', label: '棋盘大小 n', value: '3', width: 90 },
       { id: 'k', label: '步数 k', value: '2', width: 80 },

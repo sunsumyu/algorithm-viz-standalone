@@ -26,7 +26,8 @@ export {
 
 export const reverseLinkedListVisualizer = registerDeclarativeAlgorithm({
   id: 'reverse-linked-list',
-  aliases: ['class034-code01', 'reverse-linked-list-034', 'leetcode-206'],
+  aliases: ['class034-code01', 'reverse-linked-list-034', 'reverse-linked-list', 'leetcode-206', 'reverse-list'],
+  hasDeductionTree: true,
   name: '反转链表',
   category: 'linked-list',
   description: 'LeetCode 206 · 双指针迭代原地修改指针指向，暂存 next 节点防止链表断裂',

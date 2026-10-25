@@ -16,6 +16,8 @@ export { SUBARRAY_SUM_CODES, buildSubarraySumSteps, renderSubarraySumCanvas };
 
 registerDeclarativeAlgorithm({
   id: 'subarray-sum-equals-k',
+  aliases: ['560', 'leetcode-560', 'subarray-sum-equals-k-560'],
+  hasDeductionTree: true,
   name: '和为 K 的子数组',
   category: 'hash-table',
   difficulty: 2,

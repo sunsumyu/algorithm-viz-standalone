@@ -161,6 +161,9 @@ export function highlightTokens(
 
       if (keywords.has(word)) {
         out += wrap('algo-code-token-keyword text-purple-400 font-semibold', word);
+      } else if (/^[A-Z0-9_]{2,}$/.test(word) && !/^[A-Z][a-z]/.test(word)) {
+        // 常量 (如 MAXN, MAXM, INF, MOD)
+        out += `<span class="algo-code-ident algo-code-token-constant text-amber-300 font-bold" data-var="${escapeHtml(word)}">${escapeHtml(word)}</span>`;
       } else if (/^[A-Z]/.test(word)) {
         const after = line[j];
         if (after !== '(') {

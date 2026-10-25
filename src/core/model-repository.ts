@@ -134,6 +134,7 @@ import optimalAccountBalancingModel from './models/optimal-account-balancing.yam
 import goodSubsetsModel from './models/good-subsets.yaml';
 import distributeRepeatingIntegersModel from './models/distribute-repeating-integers.yaml';
 import boundedKnapsackNaiveModel from './models/bounded-knapsack-naive.yaml';
+import boundedKnapsackBinaryModel from './models/bounded-knapsack-binary.yaml';
 import { DpStepEngine } from './dp-engine/dp-step-engine';
 import {
   ModelSynthesisEngine,
@@ -331,6 +332,11 @@ export class AlgorithmModelRepository {
     ['bounded-knapsack-naive-075', boundedKnapsackNaiveModel as IYamlAlgorithmModel],
     ['multiple-knapsack-naive', boundedKnapsackNaiveModel as IYamlAlgorithmModel],
     ['luogu-p1776-naive', boundedKnapsackNaiveModel as IYamlAlgorithmModel],
+    ['bounded-knapsack-binary', boundedKnapsackBinaryModel as IYamlAlgorithmModel],
+    ['class075-code02', boundedKnapsackBinaryModel as IYamlAlgorithmModel],
+    ['bounded-knapsack-binary-075', boundedKnapsackBinaryModel as IYamlAlgorithmModel],
+    ['multiple-knapsack-binary', boundedKnapsackBinaryModel as IYamlAlgorithmModel],
+    ['luogu-p1776-binary', boundedKnapsackBinaryModel as IYamlAlgorithmModel],
     ['jump-game-ii', jumpGameIIModel as IYamlAlgorithmModel],
     ['jump-game', jumpGameIIModel as IYamlAlgorithmModel],
     ['can-jump', canJumpModel as IYamlAlgorithmModel],

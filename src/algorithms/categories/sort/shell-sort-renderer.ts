@@ -22,6 +22,8 @@ export { shellSortSteps, withMetrics, renderShellSortCanvas };
 
 registerDeclarativeAlgorithm<ShellStep>({
   id: 'shell-sort',
+  aliases: ['shell-sort', 'shell-sort-standard', 'shell'],
+  hasDeductionTree: true,
   name: '希尔排序',
   category: 'sort',
   description: '逐步演示希尔排序：缩小增量 gap，跨步插入排序',

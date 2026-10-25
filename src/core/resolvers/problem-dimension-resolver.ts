@@ -63,6 +63,11 @@ export class ProblemDimensionResolver {
     'bounded-knapsack-naive-075',
     'multiple-knapsack-naive',
     'luogu-p1776-naive',
+    'bounded-knapsack-binary',
+    'class075-code02',
+    'bounded-knapsack-binary-075',
+    'multiple-knapsack-binary',
+    'luogu-p1776-binary',
   ]);
 
   private static readonly PURE_1D_PROBLEM_IDS = new Set([
@@ -123,6 +128,11 @@ export class ProblemDimensionResolver {
     'min-cost-tickets',
     'min-cost-tickets-066',
     'class066-code02',
+    'eliminate-monsters',
+    'eliminate-maximum-monsters',
+    'class094-code01',
+    'leetcode-1921',
+    'eliminate-monsters-1921',
   ]);
 
   private static readonly TREE_PROBLEM_IDS = new Set([
@@ -382,6 +392,37 @@ export class ProblemDimensionResolver {
         const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
         m = isStage4 ? 1 : numGroups + 1;
         n = bag + 1;
+        category = 'knapsack';
+        return { m, n, is1D: isStage4, category };
+      }
+
+      if ((modelId.includes('coins-from-piles') || modelId.includes('coins-from-piles-074') || modelId.includes('class074-code02')) && params.piles !== undefined) {
+        const rawPiles = typeof params.piles === 'string' ? JSON.parse(params.piles) : params.piles;
+        const pilesLen = Array.isArray(rawPiles) ? rawPiles.length : 2;
+        const bag = Number(params.k ?? params.m ?? 2);
+        const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
+        m = pilesLen + 1;
+        n = bag + 1;
+        category = 'knapsack';
+        return { m, n, is1D: isStage4, category };
+      }
+
+      if (modelId.includes('bounded-knapsack-binary') && params.nums !== undefined && params.weights !== undefined) {
+        const nums = this.toArray(params.nums);
+        let decompCount = 0;
+        for (const c of nums) {
+          let count = Number(c);
+          for (let k = 1; k <= count; k <<= 1) {
+            decompCount++;
+            count -= k;
+          }
+          if (count > 0) decompCount++;
+        }
+        const bag = Number(params.bagWeight ?? params.t ?? params.capacity ?? 10);
+        const isStage4 = currentStage === 'stage-4' || currentStage === 'stage-5';
+        const isStage3 = currentStage === 'stage-3';
+        m = isStage4 ? 1 : (isStage3 ? (decompCount > 0 ? decompCount : 6) : nums.length);
+        n = bag >= 0 ? bag + 1 : 11;
         category = 'knapsack';
         return { m, n, is1D: isStage4, category };
       }

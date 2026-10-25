@@ -27,6 +27,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'divide-two-integers',
+  aliases: ['29', 'leetcode-29', 'divide-two-integers', 'divide-integers'],
+  hasDeductionTree: true,
   name: '两数相除',
   category: 'bit-manipulation',
   difficulty: 2,

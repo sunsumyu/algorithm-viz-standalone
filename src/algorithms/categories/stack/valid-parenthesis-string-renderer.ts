@@ -16,8 +16,10 @@ export { VALID_PARENTHESIS_STRING_CODES, buildValidParenthesisStringSteps, rende
 
 registerDeclarativeAlgorithm<ValidStringStep>({
   id: 'valid-parenthesis-string',
+  aliases: ['valid-string', 'valid-parenthesis-string-678', 'leetcode-678', '678'],
   name: '有效的括号字符串',
   category: 'stack',
+  hasDeductionTree: true,
   difficulty: 2,
   learningGoal: 'LeetCode 678: 带通配符 * 的有效括号判定。利用贪心区间维护未匹配左括号范围 [minOpen, maxOpen]，在 O(N) 极速完成判定。',
   codeLanguages: VALID_PARENTHESIS_STRING_CODES,

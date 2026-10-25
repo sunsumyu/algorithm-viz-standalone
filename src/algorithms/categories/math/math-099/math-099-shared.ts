@@ -28,13 +28,13 @@ export function renderInverseCards(
   mod: number = MOD_1E9_7
 ) {
   const box = document.createElement('div');
-  box.style.cssText = 'padding: 12px 16px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 8px;';
+  box.style.cssText = 'padding: 12px 16px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 8px;';
 
   const header = document.createElement('div');
-  header.style.cssText = 'display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #1e293b;';
+  header.style.cssText = 'display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #f8fafc;';
   header.innerHTML = `
     <span>⚡ 模 ${mod} 乘法逆元对照表 (满足 (a × a⁻¹) ≡ 1)</span>
-    <span style="font-size: 11px; color: #64748b;">共 ${inverses.length} 项</span>
+    <span style="font-size: 11px; color: #94a3b8;">共 ${inverses.length} 项</span>
   `;
   box.appendChild(header);
 
@@ -44,21 +44,24 @@ export function renderInverseCards(
   inverses.forEach(item => {
     const isActive = item.num === activeNum;
     const card = document.createElement('div');
+    const glow = isActive ? 'box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);' : '';
     card.style.cssText = `
-      padding: 4px 8px;
+      padding: 5px 10px;
       border-radius: 6px;
-      background: ${isActive ? '#eff6ff' : '#f8fafc'};
-      border: 1.5px solid ${isActive ? '#3b82f6' : '#cbd5e1'};
+      background: ${isActive ? 'rgba(56, 189, 248, 0.2)' : '#1e293b'};
+      border: 1.5px solid ${isActive ? '#38bdf8' : '#334155'};
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 12px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      ${glow}
+      transition: all 0.2s ease;
     `;
     card.innerHTML = `
-      <span style="font-weight: 700; color: ${isActive ? '#1d4ed8' : '#334155'};">${item.num}⁻¹</span>
-      <span style="color: #94a3b8;">=</span>
-      <span style="font-weight: 800; color: #059669;">${item.inv}</span>
+      <span style="font-weight: 700; color: ${isActive ? '#38bdf8' : '#94a3b8'};">${item.num}⁻¹</span>
+      <span style="color: #64748b;">=</span>
+      <span style="font-weight: 800; color: #34d399;">${item.inv}</span>
     `;
     list.appendChild(card);
   });

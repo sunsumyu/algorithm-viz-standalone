@@ -71,10 +71,11 @@ export function collectTreeValues(node: TreeNode | null): number[] {
 function formatMetrics(
   curRoot: string | number | null,
   prePostRange: string,
-  inRange: string
+  inRange: string,
+  totalNodes?: number
 ): Record<string, string | number> {
   const rootStr = curRoot != null ? String(curRoot) : '待锁定';
-  return {
+  const res: Record<string, string | number> = {
     'cur-root': rootStr,
     'pre-range': prePostRange,
     'in-range': inRange,
@@ -82,6 +83,10 @@ function formatMetrics(
     '前序/后序区间 [pL..pR]': prePostRange,
     '中序区间 [iL..iR]': inRange,
   };
+  if (totalNodes !== undefined) {
+    res['总节点数'] = totalNodes;
+  }
+  return res;
 }
 
 // Stage 1 代码行号映射
@@ -466,7 +471,7 @@ export class BuildTreeStepCompiler {
       action: 'done',
       message: `成功利用前序与中序重构整棵二叉树，根节点值为 ${resultTree ? resultTree.val : 'null'}。`,
       log: 'build finished successfully',
-      metrics: formatMetrics(resultTree ? resultTree.val : 'null', '全树构建完成', '全树构建完成'),
+      metrics: formatMetrics(resultTree ? resultTree.val : 'null', '全树构建完成', '全树构建完成', allTreeNodes.length),
       codeLine: BUILD_TREE_CODE_LINES.done,
       callTrace: trace.snapshot(),
       stageId: 'stage-1',
@@ -815,7 +820,7 @@ export class BuildTreeStepCompiler {
       action: 'done',
       message: `成功利用后序与中序重构整棵二叉树，根节点值为 ${resultTree ? resultTree.val : 'null'}。`,
       log: 'postorder build finished successfully',
-      metrics: formatMetrics(resultTree ? resultTree.val : 'null', '全树构建完成', '全树构建完成'),
+      metrics: formatMetrics(resultTree ? resultTree.val : 'null', '全树构建完成', '全树构建完成', allTreeNodes.length),
       codeLine: BUILD_TREE_STAGE2_LINES.done,
       callTrace: trace.snapshot(),
       stageId: 'stage-2',
@@ -972,7 +977,7 @@ export class BuildTreeStepCompiler {
       action: 'done',
       message: `全部前序与中序节点消费完毕，二叉树拓扑完整还原，根节点为 ${rootNode.val}。`,
       log: 'iterative stack build done',
-      metrics: formatMetrics(rootNode.val, '遍历重构完成', '遍历重构完成'),
+      metrics: formatMetrics(rootNode.val, '遍历重构完成', '遍历重构完成', allTreeNodes.length),
       codeLine: BUILD_TREE_STAGE3_LINES.done,
       stackState: stack.map((nd) => nd.val),
       inIdx,

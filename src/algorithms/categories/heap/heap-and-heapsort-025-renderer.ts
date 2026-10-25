@@ -21,12 +21,13 @@ export {
 
 export const heapAndHeapsort025Visualizer = registerDeclarativeAlgorithm<HeapSortStep>({
   id: 'heap-and-heapsort-025',
+  aliases: ['class025-code01', 'class025', 'heap-and-heapsort', 'heap-and-heapsort-025', 'heap-sort-inplace'],
   name: 'Class 025: 大根堆与原地堆排序 (HeapSort)',
   category: 'heap',
+  hasDeductionTree: true,
   icon: '⛰️',
   difficulty: 2,
   levelOrder: 25,
-  aliases: ['class025-code01', 'heap-and-heapsort-025', 'heap-sort-inplace'],
   learningGoal: '透彻理解完全二叉树的连续数组映射、大根堆性质、heapify 下沉操作与 O(1) 额外空间的原地堆排序算法',
   problemHtml: `
     <div style="line-height: 1.6;">

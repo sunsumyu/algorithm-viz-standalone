@@ -27,6 +27,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'four-sum',
+  aliases: ['18', 'leetcode-18', 'four-sum-two-pointers'],
+  hasDeductionTree: true,
   name: '四数之和（排序+双指针）',
   category: 'hash-table',
   description: '排序后固定 i/j 再双指针求和为 target 的四元组',

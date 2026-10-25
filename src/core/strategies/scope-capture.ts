@@ -83,3 +83,57 @@ export function captureScope(
 
   return cleanScope;
 }
+
+/**
+ * 统一通用作用域会话追踪器 (Universal Scope Session)
+ * 
+ * 为所有 StepCompiler 提供一劳永逸的作用域状态管理模板：
+ * 1. 自动合并与累积前序步骤定义的变量（m, n, teams 等）；
+ * 2. 局部变量覆盖更新（i, j, k, start, end 等）；
+ * 3. 产生标准化的 scope 与 variables 键，彻底杜绝单步变量丢失。
+ */
+export class UniversalScopeSession {
+  private activeScope: Record<string, any> = {};
+
+  constructor(initialVars: Record<string, any> = {}) {
+    this.activeScope = captureScope(initialVars);
+  }
+
+  /**
+   * 声明或更新当前执行栈存活的局部变量
+   */
+  public set(vars: Record<string, any>): this {
+    Object.assign(this.activeScope, captureScope(vars));
+    return this;
+  }
+
+  /**
+   * 移除出栈或已失效的临时变量
+   */
+  public delete(...keys: string[]): this {
+    for (const k of keys) {
+      delete this.activeScope[k];
+    }
+    return this;
+  }
+
+  /**
+   * 获取当前作用域的深拷贝镜像
+   */
+  public getSnapshot(): Record<string, any> {
+    return { ...this.activeScope };
+  }
+
+  /**
+   * 生成携带标准作用域快照的单步数据对象
+   */
+  public emitStep<T extends Record<string, any>>(stepData: T): T & { scope: Record<string, any>; variables: Record<string, any> } {
+    const snap = this.getSnapshot();
+    return {
+      ...stepData,
+      scope: snap,
+      variables: snap,
+    };
+  }
+}
+

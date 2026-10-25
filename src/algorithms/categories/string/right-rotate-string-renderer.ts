@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'right-rotate-string',
+  aliases: ['kama-55', 'kamacoder-55', 'offer-58-2', 'rotate-string-right'],
+  hasDeductionTree: true,
   name: '右旋转字符串（三次反转）',
   viewId: 'algo-right-rotate-view',
   category: 'string',

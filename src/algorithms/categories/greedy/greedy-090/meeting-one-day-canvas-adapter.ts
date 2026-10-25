@@ -37,12 +37,12 @@ export function renderMeetingOneDayCanvas(container: HTMLElement, step: MeetingO
 
 export function renderMeetingOneDayCustomMetrics(container: HTMLElement, step: MeetingOneDayStep): void {
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 11px; font-weight: 700; color: #475569;">小根堆当前截止日:</span>
-        <span style="font-size: 11px; color: #10b981; font-weight: 700; font-family: monospace;">[${step.heapContents.join(', ') || '空'}]</span>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
+        <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">小根堆当前截止日:</span>
+        <span style="font-size: 11px; color: #34d399; font-weight: 800; font-family: 'JetBrains Mono', monospace; background: rgba(16,185,129,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.3);">[${step.heapContents.join(', ') || '空'}]</span>
       </div>
-      <div style="padding: 6px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11.5px; color: #334155;">
+      <div style="padding: 8px 12px; background: #020617; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; border-radius: 6px; font-size: 11.5px; color: #cbd5e1; line-height: 1.5;">
         ${step.message}
       </div>
     </div>

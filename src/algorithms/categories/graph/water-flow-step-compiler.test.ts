@@ -4,6 +4,8 @@ import {
   createWaterFlowSteps,
   parseHeightsText,
   heightsToText,
+  formatHeightsInput,
+  createWaterFlowStageSteps,
   DEFAULT_HEIGHTS,
   PRESET_CASES,
 } from './water-flow-step-compiler';
@@ -24,6 +26,13 @@ describe('water-flow-step-compiler', () => {
     expect(finalStep.bothCount).toBeGreaterThan(0);
     expect(finalStep.pacCount).toBeGreaterThan(0);
     expect(finalStep.atlCount).toBeGreaterThan(0);
+
+    // Verify codeLine dynamically covers core DFS and intersection lines without freezing
+    const codeLines = new Set(steps.map((s) => JSON.stringify(s.codeLine)));
+    expect(codeLines.size).toBeGreaterThanOrEqual(4);
+    expect(steps.some((s) => s.action === 'pacific' && s.codeLine === 26)).toBe(true);
+    expect(steps.some((s) => s.action === 'intersect' && s.codeLine === 19)).toBe(true);
+    expect(steps.some((s) => s.action === 'done' && s.codeLine === 22)).toBe(true);
   });
 
   it('should generate steps with metrics through createWaterFlowSteps', () => {
@@ -46,6 +55,20 @@ describe('water-flow-step-compiler', () => {
     const formatted = heightsToText(parsed);
     expect(formatted).toBe('1 2 3\n4 5 6');
 
+    // Semicolon format
+    const semiFormatted = formatHeightsInput(parsed);
+    expect(semiFormatted).toBe('1 2 3; 4 5 6');
+    expect(parseHeightsText(semiFormatted)).toEqual([
+      [1, 2, 3],
+      [4, 5, 6],
+    ]);
+
+    // Robustness: single-line flat sequence auto-recovery
+    const flat25 = '1 2 2 3 5 3 2 3 4 4 2 4 5 3 1 6 7 1 4 5 5 1 1 2 4';
+    const recovered = parseHeightsText(flat25);
+    expect(recovered.length).toBe(5);
+    expect(recovered[0].length).toBe(5);
+
     // Fallback to default when empty
     expect(parseHeightsText('')).toEqual(DEFAULT_HEIGHTS);
   });
@@ -57,5 +80,23 @@ describe('water-flow-step-compiler', () => {
       expect(steps.length).toBeGreaterThan(1);
       expect(steps[steps.length - 1].action).toBe('done');
     }
+  });
+
+  it('should generate valid steps for all 3 evolution stages', () => {
+    const s1Steps = createWaterFlowStageSteps('stage-1', DEFAULT_HEIGHTS);
+    expect(s1Steps.length).toBeGreaterThan(10);
+    expect(s1Steps[0].stage).toContain('正向顺流暴力');
+    expect(s1Steps[s1Steps.length - 1].action).toBe('done');
+    expect(s1Steps[s1Steps.length - 1].bothCount).toBeGreaterThan(0);
+
+    const s2Steps = createWaterFlowStageSteps('stage-2', DEFAULT_HEIGHTS);
+    expect(s2Steps.length).toBeGreaterThan(10);
+    expect(s2Steps[s2Steps.length - 1].action).toBe('done');
+
+    const s3Steps = createWaterFlowStageSteps('stage-3', DEFAULT_HEIGHTS);
+    expect(s3Steps.length).toBeGreaterThan(10);
+    expect(s3Steps[0].statusText).toContain('逆向多源 BFS');
+    expect(s3Steps[s3Steps.length - 1].action).toBe('done');
+    expect(s3Steps[s3Steps.length - 1].bothCount).toBe(s2Steps[s2Steps.length - 1].bothCount);
   });
 });

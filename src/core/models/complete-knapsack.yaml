@@ -74,25 +74,56 @@ stages:
       forward: "对每种物品决策：不放入背包（转向下一物品 i+1），或放入一件背包（扣减重量并累加价值，物品索引仍保持 i 允许继续放入），展开为递归决策树。"
     variants:
       standard:
-        variantLabel: "完全背包递归版"
+        variantLabel: "洛谷提交递归版"
         title:
-          forward: "CompleteKnapsack_Recursive.java"
+          forward: "Main.java (递归版)"
         code:
           forward:
-            title: "CompleteKnapsack_Recursive.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int completeKnapsack(int[] weights, int[] values, int w) {
-                      return dfs(weights, values, 0, w); // @step:return
-                  }
-                  private int dfs(int[] weights, int[] values, int i, int w) { // @step:entry
-                      if (i >= weights.length || w <= 0) return 0; // @step:boundary // 物品遍历完毕或背包容量耗尽
-                      int notTake = dfs(weights, values, i + 1, w); // @step:branch_down @step:branch_not_take // 决策 1: 不选当前物品，考察下一物品
-                      int take = 0;
-                      if (w >= weights[i]) { // @step:cond_take
-                          take = values[i] + dfs(weights, values, i, w - weights[i]); // @step:branch_right @step:branch_take // 决策 2: 选当前物品，仍可继续选物品 i
+              // 洛谷 P1616 疯狂的采药 / 完全背包模版
+              // 左程云算法通关课 Class 074 Code03 - 阶段 1: 暴力递归分支展开
+              import java.io.BufferedReader;
+              import java.io.IOException;
+              import java.io.InputStreamReader;
+              import java.io.OutputStreamWriter;
+              import java.io.PrintWriter;
+              import java.io.StreamTokenizer;
+
+              public class Main {
+                  public static int MAXM = 10001;
+                  public static int[] cost = new int[MAXM];
+                  public static int[] val = new int[MAXM];
+                  public static int t, m;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          t = (int) in.nval;
+                          in.nextToken();
+                          m = (int) in.nval;
+                          for (int i = 1; i <= m; i++) {
+                              in.nextToken(); cost[i] = (int) in.nval;
+                              in.nextToken(); val[i] = (int) in.nval;
+                          }
+                          out.println(dfs(1, t)); // @step:return
                       }
-                      return Math.max(notTake, take); // @step:combine // 汇聚两分支最优解
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  // 暴力递归完全背包：每种草药可选无限次 (若选入，仍停留在第 i 种继续选)
+                  public static long dfs(int i, int remCap) { // @step:entry
+                      if (i > m || remCap <= 0) return 0; // @step:boundary
+                      long notTake = dfs(i + 1, remCap); // @step:branch_down @step:branch_not_take
+                      long take = 0;
+                      if (remCap >= cost[i]) { // @step:cond_take
+                          take = dfs(i, remCap - cost[i]) + val[i]; // @step:branch_right @step:branch_take
+                      }
+                      return Math.max(notTake, take); // @step:combine
                   }
               }
 
@@ -107,29 +138,60 @@ stages:
       forward: "状态由 (物品索引 i, 剩余容量 w) 唯一确定。使用 memo[n][w+1] 二维数组缓存子问题计算结果，消灭重叠子树。"
     variants:
       array_memo:
-        variantLabel: "二维备忘录版"
+        variantLabel: "洛谷提交备忘录版"
         title:
-          forward: "CompleteKnapsack_Memo.java"
+          forward: "Main.java (备忘录版)"
         code:
           forward:
-            title: "CompleteKnapsack_Memo.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int completeKnapsack(int[] weights, int[] values, int w) {
-                      int n = weights.length;
-                      int[][] memo = new int[n][w + 1];
-                      for (int[] row : memo) Arrays.fill(row, -1);
-                      return dfs(weights, values, 0, w, memo); // @step:return
-                  }
-                  private int dfs(int[] weights, int[] values, int i, int w, int[][] memo) { // @step:entry
-                      if (i >= weights.length || w <= 0) return 0; // @step:boundary
-                      if (memo[i][w] != -1) return memo[i][w]; // @step:cache_hit // 剪枝命中直接返回
-                      int notTake = dfs(weights, values, i + 1, w, memo); // @step:branch_down @step:branch_not_take
-                      int take = 0;
-                      if (w >= weights[i]) { // @step:cond_take
-                          take = values[i] + dfs(weights, values, i, w - weights[i], memo); // @step:branch_right @step:branch_take
+              // 洛谷 P1616 疯狂的采药 / 完全背包模版
+              // 左程云算法通关课 Class 074 Code03 - 阶段 2: 记忆化搜索完全背包
+              import java.io.BufferedReader;
+              import java.io.IOException;
+              import java.io.InputStreamReader;
+              import java.io.OutputStreamWriter;
+              import java.io.PrintWriter;
+              import java.io.StreamTokenizer;
+              import java.util.Arrays;
+
+              public class Main {
+                  public static int MAXM = 10001;
+                  public static int[] cost = new int[MAXM];
+                  public static int[] val = new int[MAXM];
+                  public static long[][] memo;
+                  public static int t, m;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          t = (int) in.nval;
+                          in.nextToken();
+                          m = (int) in.nval;
+                          for (int i = 1; i <= m; i++) {
+                              in.nextToken(); cost[i] = (int) in.nval;
+                              in.nextToken(); val[i] = (int) in.nval;
+                          }
+                          memo = new long[m + 1][t + 1];
+                          for (long[] row : memo) Arrays.fill(row, -1);
+                          out.println(dfs(1, t)); // @step:return
                       }
-                      return memo[i][w] = Math.max(notTake, take); // @step:combine // 写入备忘录
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  public static long dfs(int i, int remCap) { // @step:entry
+                      if (i > m || remCap <= 0) return 0; // @step:boundary
+                      if (memo[i][remCap] != -1) return memo[i][remCap]; // @step:cache_hit
+                      long notTake = dfs(i + 1, remCap); // @step:branch_down @step:branch_not_take
+                      long take = 0;
+                      if (remCap >= cost[i]) { // @step:cond_take
+                          take = dfs(i, remCap - cost[i]) + val[i]; // @step:branch_right @step:branch_take
+                      }
+                      return memo[i][remCap] = Math.max(notTake, take); // @step:combine
                   }
               }
 
@@ -139,35 +201,70 @@ stages:
     timeBadge: "O(n×w)"
     badgeBg: "bg-emerald-100 text-emerald-700"
     name:
-      forward: "阶段 3: 二维 DP 状态表 (dp[i][j] 物品×容量 同行转移)"
+      forward: "阶段 3: 严格位置依赖二维动态规划 (左神原版 compute1)"
     desc:
       forward: "dp[i][j] 表示前 i 种物品装入容量 j 背包的最大价值。由于物品可重复选取，放入决策来自本行已更新的状态：dp[i][j] = max(dp[i-1][j], dp[i][j - w[i]] + v[i])。"
     variants:
       standard:
-        variantLabel: "二维网格填表版"
+        variantLabel: "洛谷提交二维DP版"
         title:
-          forward: "CompleteKnapsack_2D.java"
+          forward: "Main.java (二维DP版)"
         code:
           forward:
-            title: "CompleteKnapsack_2D.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int completeKnapsack(int[] weights, int[] values, int bagWeight) {
-                      int n = weights.length;
-                      int[][] dp = new int[n][bagWeight + 1]; // @step:init
-                      for (int j = weights[0]; j <= bagWeight; j++) { // @step:init_val // 初始化首行
-                          dp[0][j] = dp[0][j - weights[0]] + values[0];
+              // 洛谷 P1616 疯狂的采药 / 完全背包模版
+              // 左程云算法通关课 Class 074 Code03
+              // 阶段 3: 严格位置依赖二维动态规划 (仅在此阶段展示 compute1)
+              // 注意：洛谷 P1616 数据量 t <= 10^7, m <= 10^4，二维表会超出内存限制 (MLE)，故在此阶段展示数学转移机理
+              import java.io.BufferedReader;
+              import java.io.IOException;
+              import java.io.InputStreamReader;
+              import java.io.OutputStreamWriter;
+              import java.io.PrintWriter;
+              import java.io.StreamTokenizer;
+
+              public class Main {
+                  public static int MAXM = 10001;
+                  public static int[] cost = new int[MAXM];
+                  public static int[] val = new int[MAXM];
+                  public static int t, m;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          t = (int) in.nval;
+                          in.nextToken();
+                          m = (int) in.nval;
+                          for (int i = 1; i <= m; i++) {
+                              in.nextToken(); cost[i] = (int) in.nval;
+                              in.nextToken(); val[i] = (int) in.nval;
+                          }
+                          out.println(compute1());
                       }
-                      for (int i = 1; i < n; i++) { // @step:loop_i // 遍历物品
-                          for (int j = 0; j <= bagWeight; j++) { // @step:loop_j // 遍历容量
-                              if (j < weights[i]) { // @step:cond
-                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip // 容量不足，继承上方一行
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  // 阶段 3: 严格位置依赖的二维动态规划 (compute1)
+                  public static long compute1() {
+                      long[][] dp = new long[m + 1][t + 1]; // @step:init
+                      for (int j = cost[1]; j <= t; j++) { // @step:init_val
+                          dp[1][j] = dp[1][j - cost[1]] + val[1];
+                      }
+                      for (int i = 2; i <= m; i++) { // @step:loop_i
+                          for (int j = 0; j <= t; j++) { // @step:loop_j
+                              if (j < cost[i]) { // @step:cond
+                                  dp[i][j] = dp[i - 1][j]; // @step:transfer_skip
                               } else {
-                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - weights[i]] + values[i]); // @step:transfer_max // 核心：dp[i]同行左侧转移
+                                  dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - cost[i]] + val[i]); // @step:transfer_max
                               }
                           }
                       }
-                      return dp[n - 1][bagWeight]; // @step:return
+                      return dp[m][t]; // @step:return
                   }
               }
 
@@ -177,27 +274,68 @@ stages:
     timeBadge: "O(w) ★"
     badgeBg: "bg-amber-100 text-amber-700"
     name:
-      forward: "阶段 4: 一维空间压缩 (正序遍历 dp[j])"
+      forward: "阶段 4: 空间压缩一维动态规划 (左神原版 compute2)"
     desc:
       forward: "将二维矩阵压缩为一维数组 dp[j]。完全背包与0-1背包的本质区别：容量必须【从小到大正序遍历】，利用同一物品已被放入的累加效果达成多次选取！"
     variants:
       forward_1d:
-        variantLabel: "正序滚动一维版"
+        variantLabel: "洛谷 AC 满分提交版"
         title:
-          forward: "CompleteKnapsack_1D_Forward.java"
+          forward: "Main.java (洛谷 P1616 完整提交版)"
         code:
           forward:
-            title: "CompleteKnapsack_1D_Forward.java"
+            title: "Main.java"
             source: |
-              class Solution {
-                  public int completeKnapsack(int[] weights, int[] values, int bagWeight) {
-                      int[] dp = new int[bagWeight + 1]; // @step:init
-                      for (int i = 0; i < weights.length; i++) { // @step:loop_i // 遍历物品
-                          for (int j = weights[i]; j <= bagWeight; j++) { // @step:loop_j // 核心：正序遍历容量允许累加
-                              dp[j] = Math.max(dp[j], dp[j - weights[i]] + values[i]); // @step:accumulate // 原地正序滚动覆盖
+              // 洛谷 P1616 疯狂的采药 / 完全背包模版
+              // 左程云算法通关课 Class 074 Code03
+              // 阶段 4: 空间压缩一维动态规划 (仅在此阶段展示 compute2)
+              // 测试链接 : https://www.luogu.com.cn/problem/P1616
+              // 提交以下全部代码保持主类名为 Main，可以直接在洛谷 100% AC 满分通过！
+              import java.io.BufferedReader;
+              import java.io.IOException;
+              import java.io.InputStreamReader;
+              import java.io.OutputStreamWriter;
+              import java.io.PrintWriter;
+              import java.io.StreamTokenizer;
+              import java.util.Arrays;
+
+              public class Main {
+                  public static int MAXM = 10001;
+                  public static int MAXT = 10000001;
+                  public static int[] cost = new int[MAXM];
+                  public static int[] val = new int[MAXM];
+                  public static long[] dp = new long[MAXT];
+                  public static int t, m;
+
+                  public static void main(String[] args) throws IOException {
+                      BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                      StreamTokenizer in = new StreamTokenizer(br);
+                      PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
+                      while (in.nextToken() != StreamTokenizer.TT_EOF) {
+                          t = (int) in.nval;
+                          in.nextToken();
+                          m = (int) in.nval;
+                          for (int i = 1; i <= m; i++) {
+                              in.nextToken(); cost[i] = (int) in.nval;
+                              in.nextToken(); val[i] = (int) in.nval;
+                          }
+                          out.println(compute2());
+                      }
+                      out.flush();
+                      out.close();
+                      br.close();
+                  }
+
+                  // 阶段 4: 空间压缩一维动态规划 (compute2)
+                  // 关键：容量从小到大正序遍历，允许同轮对同一草药进行无限次自累加
+                  public static long compute2() {
+                      Arrays.fill(dp, 1, t + 1, 0); // @step:init
+                      for (int i = 1; i <= m; i++) { // @step:loop_i @step:outer_loop
+                          for (int j = cost[i]; j <= t; j++) { // @step:loop_j
+                              dp[j] = Math.max(dp[j], dp[j - cost[i]] + val[i]); // @step:transfer_max @step:calc_max @step:accumulate
                           }
                       }
-                      return dp[bagWeight]; // @step:return
+                      return dp[t]; // @step:return
                   }
               }
 

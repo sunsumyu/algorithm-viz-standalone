@@ -28,7 +28,7 @@ export interface IslandsStep {
   stage: string;
   message: string;
   log: string;
-  codeLine: number | Record<string, number>;
+  codeLine: number;
   adventurer: AdventurerState | null;
   metrics?: Record<string, string>;
 }
@@ -41,31 +41,31 @@ export const PRESET_CASES: Record<string, { label: string; grid: number[][] }> =
 
 export const DEFAULT_GRID = PRESET_CASES.classic.grid;
 
-export const DFS_LINES: Record<string, Record<string, number>> = {
-  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
-  scan: { java: 6, cpp: 7, python: 14, javascript: 13 },
-  found: { java: 8, cpp: 9, python: 16, javascript: 15 },
-  dfsCall: { java: 9, cpp: 10, python: 17, javascript: 16 },
-  baseCheck: { java: 16, cpp: 16, python: 6, javascript: 5 },
-  mark: { java: 17, cpp: 17, python: 8, javascript: 6 },
-  down: { java: 18, cpp: 18, python: 9, javascript: 7 },
-  up: { java: 19, cpp: 19, python: 10, javascript: 8 },
-  right: { java: 20, cpp: 20, python: 11, javascript: 9 },
-  left: { java: 21, cpp: 21, python: 12, javascript: 10 },
-  returnCount: { java: 13, cpp: 13, python: 18, javascript: 17 },
+export const DFS_LINES: Record<string, number> = {
+  init: 3,
+  scan: 6,
+  found: 8,
+  dfsCall: 9,
+  baseCheck: 16,
+  mark: 17,
+  down: 18,
+  up: 19,
+  right: 20,
+  left: 21,
+  returnCount: 13,
 };
 
-export const BFS_LINES: Record<string, Record<string, number>> = {
-  init: { java: 3, cpp: 4, python: 3, javascript: 2 },
-  scan: { java: 7, cpp: 7, python: 7, javascript: 6 },
-  found: { java: 9, cpp: 9, python: 9, javascript: 8 },
-  markStart: { java: 10, cpp: 10, python: 10, javascript: 9 },
-  enqueue: { java: 12, cpp: 12, python: 11, javascript: 11 },
-  dequeue: { java: 14, cpp: 14, python: 13, javascript: 13 },
-  checkNeighbor: { java: 17, cpp: 17, python: 16, javascript: 16 },
-  markNeighbor: { java: 18, cpp: 18, python: 17, javascript: 17 },
-  pushNeighbor: { java: 19, cpp: 19, python: 18, javascript: 18 },
-  done: { java: 21, cpp: 21, python: 19, javascript: 23 },
+export const BFS_LINES: Record<string, number> = {
+  init: 3,
+  scan: 7,
+  found: 9,
+  markStart: 10,
+  enqueue: 12,
+  dequeue: 14,
+  checkNeighbor: 17,
+  markNeighbor: 18,
+  pushNeighbor: 19,
+  done: 21,
 };
 
 /** Stage 1: DFS 深度优先沉岛法 */
@@ -78,7 +78,7 @@ export function buildIslandsDfsSteps(grid: number[][]): IslandsStep[] {
   let count = 0;
   let visitedLand = 0;
 
-  const pushStep = (extra: Partial<IslandsStep> & { codeLine: number | Record<string, number> }): void => {
+  const pushStep = (extra: Partial<IslandsStep> & { codeLine: number }): void => {
     steps.push({
       grid,
       states: snapshotGrid2D(states),
@@ -131,7 +131,7 @@ export function buildIslandsDfsSteps(grid: number[][]): IslandsStep[] {
       adventurer: { r, c, state: 'swimming', isHopping: false },
     });
 
-    const dirs: Array<{ dr: number; dc: number; line: Record<string, number>; name: string }> = [
+    const dirs: Array<{ dr: number; dc: number; line: number; name: string }> = [
       { dr: 1, dc: 0, line: DFS_LINES.down, name: '向下' },
       { dr: -1, dc: 0, line: DFS_LINES.up, name: '向上' },
       { dr: 0, dc: 1, line: DFS_LINES.right, name: '向右' },
@@ -218,7 +218,7 @@ export function buildIslandsBfsSteps(grid: number[][]): IslandsStep[] {
   let count = 0;
   let visitedLand = 0;
 
-  const pushStep = (extra: Partial<IslandsStep> & { codeLine: number | Record<string, number> }): void => {
+  const pushStep = (extra: Partial<IslandsStep> & { codeLine: number }): void => {
     steps.push({
       grid,
       states: snapshotGrid2D(states),

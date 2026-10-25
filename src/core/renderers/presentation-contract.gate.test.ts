@@ -166,11 +166,12 @@ describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation
         const resolved = ProblemDimensionResolver.resolve(id, model.defaultParams);
 
         for (const stageKey of ['stage-1', 'stage-2', 'stage-3', 'stage-4']) {
+          const stageResolved = ProblemDimensionResolver.resolve(id, model.defaultParams, stageKey);
           const stageNum = parseInt(stageKey.replace('stage-', ''), 10);
           const steps = UniversalStageEngine.generateSteps(model, {
             stage: stageNum,
-            m: resolved.m,
-            n: resolved.n,
+            m: stageResolved.m,
+            n: stageResolved.n,
             direction: 'forward',
           });
 
@@ -184,16 +185,16 @@ describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation
             stageConfig,
             stageKey,
             'forward',
-            resolved.m,
-            resolved.n
+            stageResolved.m,
+            stageResolved.n
           );
 
           StateSpacePresenter.renderLiteVisuals(
             {
               currentStage: stageKey,
               step,
-              m: resolved.m,
-              n: resolved.n,
+              m: stageResolved.m,
+              n: stageResolved.n,
               modelId: id,
               isReverse: false,
               isGridProblem: false,
@@ -373,7 +374,13 @@ describe('🏆 表现层真实渲染契约与红灯陷阱死门禁 (Presentation
           }
 
           // 陷阱 8 判定：代码行号必须为有效数字且不能越界
-          const stageCode = (stageConfig?.code?.forward as any)?.source || (stageConfig?.code?.forward as any)?.content || '';
+          const stageCode =
+            (stageConfig?.code?.forward as any)?.source ||
+            (stageConfig?.code?.forward as any)?.content ||
+            (stageConfig?.variants?.standard?.code?.forward as any)?.source ||
+            (stageConfig?.variants && (Object.values(stageConfig.variants)[0] as any)?.code?.forward?.source) ||
+            (typeof (stageConfig?.variants?.standard as any)?.code === 'string' ? (stageConfig?.variants?.standard as any)?.code : '') ||
+            '';
           const totalCodeLines = stageCode ? stageCode.split('\n').length : 50;
 
           for (let idx = 0; idx < steps.length; idx++) {

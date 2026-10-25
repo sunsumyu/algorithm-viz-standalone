@@ -80,9 +80,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<MQStep>({
 
 registerAlgorithm({
   id: 'implement-queue-using-stack',
+  aliases: ['queue-using-stacks', 'implement-queue-using-stack-232', 'leetcode-232', '232'],
   name: '用栈实现队列',
   viewId: 'algo-implement-queue-using-stack-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '双栈架构：输入栈 inStack 处理 push，输出栈 outStack 为空时一次性倾倒反转实现 FIFO',
   icon: '🔄',
   template,

@@ -46,12 +46,14 @@ export interface CompiledStageViewConfig {
   card2Desc: string;
   codeTitle?: string;
   codeHtml?: string;
+  cleanSource?: string;
   anchorMap?: Record<string, number>;
   variants?: Record<string, {
     variantLabel?: string;
     title: string;
     codeTitle: string;
     codeHtml: string;
+    cleanSource?: string;
     anchorMap: Record<string, number>;
   }>;
 }
@@ -169,7 +171,7 @@ export class YamlModelLoader {
     return {
       title: snippet.title || '',
       cleanSource: cleanLines.join('\n'),
-      codeHtml: htmlLines.join(''),
+      codeHtml: htmlLines.join('\n'),
       lineCount: lines.length,
       anchorMap
     };
@@ -227,6 +229,7 @@ export class YamlModelLoader {
         const compiled = YamlModelLoader.compileSource(codeSnippet);
         result.codeTitle = compiled.title;
         result.codeHtml = compiled.codeHtml;
+        result.cleanSource = compiled.cleanSource;
         result.anchorMap = compiled.anchorMap;
       }
     }
@@ -254,6 +257,7 @@ export class YamlModelLoader {
             title: vTitle,
             codeTitle: compiled.title,
             codeHtml: compiled.codeHtml,
+            cleanSource: compiled.cleanSource,
             anchorMap: compiled.anchorMap
           };
         }
@@ -266,6 +270,7 @@ export class YamlModelLoader {
       if (firstVariant) {
         result.codeTitle = firstVariant.codeTitle || firstVariant.title;
         result.codeHtml = firstVariant.codeHtml;
+        result.cleanSource = firstVariant.cleanSource;
         result.anchorMap = firstVariant.anchorMap;
       }
     }

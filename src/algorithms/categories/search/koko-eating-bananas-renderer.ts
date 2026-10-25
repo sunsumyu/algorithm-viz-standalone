@@ -22,6 +22,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'koko-eating-bananas',
+  aliases: ['875', 'leetcode-875'],
+  hasDeductionTree: true,
   name: '爱吃香蕉的珂珂',
   category: 'search',
   difficulty: 2,

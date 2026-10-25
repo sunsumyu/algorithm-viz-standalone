@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'reverse-string-ii',
+  aliases: ['541', 'leetcode-541', 'reverse-string-2'],
+  hasDeductionTree: true,
   name: '反转字符串II（分段反转）',
   category: 'string',
   description: '每隔 2k 个字符反转前 k 个字符',

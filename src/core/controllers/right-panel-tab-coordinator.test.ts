@@ -6,7 +6,7 @@ class MockElement {
   public children: any[] = [];
   public classList = {
     classes: new Set<string>(),
-    add(cls: string) { this.classes.add(cls); },
+    add(...clsList: string[]) { clsList.forEach(cls => this.classes.add(cls)); },
     remove(...clsList: string[]) { clsList.forEach(cls => this.classes.delete(cls)); },
     contains(cls: string) { return this.classes.has(cls); }
   };

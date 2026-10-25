@@ -80,9 +80,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<TKFStep>({
 
 registerAlgorithm({
   id: 'top-k-frequent',
+  aliases: ['347', 'leetcode-347', 'top-k-frequent-elements'],
   name: '前 K 个高频元素',
   viewId: 'algo-top-k-frequent-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '哈希统计频次 + 维护大小为 k 的小顶堆，堆顶淘汰低频元素，最终堆内保留前 K 高频',
   icon: '🏆',
   template,

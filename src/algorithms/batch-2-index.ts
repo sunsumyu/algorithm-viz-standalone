@@ -60,7 +60,6 @@ import './categories/monotonic-stack/largest-rectangle-histogram-renderer';
  * 图论算法注册入口
  */
 import './categories/graph/islands-renderer';
-import './categories/graph/islands-bfs-renderer';
 import './categories/graph/max-island-area-renderer';
 import './categories/graph/total-island-area-renderer';
 import './categories/graph/sink-islands-renderer';

@@ -29,6 +29,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'permutations',
+  aliases: ['permutations-used'],
+  hasDeductionTree: true,
   name: '全排列·used数组',
   category: 'backtracking',
   description: '回溯枚举所有排列，used 标记已选元素',

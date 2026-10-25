@@ -32,6 +32,7 @@ export const countSubmatricesAllOnes1504Visualizer = registerDeclarativeAlgorith
   icon: '🧱',
   difficulty: 3,
   levelOrder: 1504,
+  hasDeductionTree: true,
   learningGoal: '掌握二维矩阵压缩高度后运用单调递增栈快速统计子矩形数量的组合数学公式与 O(M * N) 算法实现',
   problemHtml: `
     <div style="line-height: 1.6;">

@@ -23,6 +23,8 @@ export { buildCombinationTree, combinationSteps, renderCombinationCanvas };
 
 registerDeclarativeAlgorithm({
   id: 'combination',
+  aliases: ['77', 'leetcode-77', 'combinations'],
+  hasDeductionTree: true,
   name: '组合问题（回溯）',
   category: 'backtracking',
   description: '使用回溯算法生成所有组合',

@@ -352,7 +352,6 @@ ${details}
       '../../algorithms/categories/greedy/monotone-digits-renderer.ts',
       '../../algorithms/categories/greedy/merge-intervals-renderer.ts',
       '../../algorithms/categories/greedy/reconstruct-queue-renderer.ts',
-      '../../algorithms/categories/graph/islands-bfs-renderer.ts',
       '../../algorithms/categories/graph/islands-renderer.ts',
       '../../algorithms/categories/graph/coastline-renderer.ts',
       '../../algorithms/categories/graph/make-largest-island-renderer.ts',
@@ -498,7 +497,6 @@ ${details}
 
   it('门禁 5: 图论网格探索算法必须委托 BinaryGridCanvasAdapter 严禁内联手写 DOM', () => {
     const islandRenderers = [
-      '../../algorithms/categories/graph/islands-bfs-renderer.ts',
       '../../algorithms/categories/graph/islands-renderer.ts',
       '../../algorithms/categories/graph/coastline-renderer.ts',
       '../../algorithms/categories/graph/make-largest-island-renderer.ts',

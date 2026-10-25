@@ -7,8 +7,8 @@ export interface VisualizerInteractionActions {
   onSeek?: (step: number) => void;
   onSpeedChange?: (speed: number) => void;
   onFontScale?: (delta: number) => void;
-  onStage3SubView?: (view: 'matrix' | 'tree' | 'alignment') => void;
-  onStage4SubView?: (view: 'memo' | 'alignment') => void;
+  onStage3SubView?: (view: 'matrix' | 'tree' | 'alignment' | 'sandbox') => void;
+  onStage4SubView?: (view: 'memo' | 'tree' | 'sandbox' | 'alignment') => void;
   onCard2SubView?: (view: 'tree' | 'alignment' | 'stack') => void;
   onCard1SubView?: (view: 'grid' | 'deduction') => void;
   onToggle3D?: () => void;
@@ -20,6 +20,43 @@ export interface VisualizerInteractionActions {
   onOpenProblemModal?: () => void;
   onCloseProblemModal?: () => void;
   onOpenSelector?: () => void;
+  onCopyCode?: () => string | null | undefined;
+}
+
+/**
+ * 从代码容器中提取干净完整的源码（按行保留缩进换行，彻底剥离行号与调试幽灵变量）
+ */
+export function extractCleanCodeFromContainer(codeBox: HTMLElement | null): string {
+  if (!codeBox) return '';
+
+  // 1. 尝试匹配所有的代码行元素 (.code-line 或 .algo-code-line)
+  const lineEls = codeBox.querySelectorAll<HTMLElement>('.code-line, .algo-code-line');
+  if (lineEls.length > 0) {
+    const lines: string[] = [];
+    lineEls.forEach((el) => {
+      // 优先从 data-raw-code 或 data-raw 属性取原始干净源码
+      const raw = el.getAttribute('data-raw-code') ?? el.getAttribute('data-raw') ?? el.dataset?.rawCode ?? el.dataset?.raw;
+      if (raw !== null && raw !== undefined) {
+        lines.push(raw);
+        return;
+      }
+      // 次优方案：克隆该行，移除所有行号、悬停徽章、返回图标、幽灵变量提示等附带装饰
+      const clone = el.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('.code-line-num, .algo-code-line-number, .algo-code-inline-hint, .code-return-icon, .hover-var-badge').forEach((n) => n.remove());
+      const textEl = clone.querySelector('.code-line-text, .algo-code-line-text') || clone;
+      lines.push(textEl.textContent || '');
+    });
+    return lines.join('\n');
+  }
+
+  // 2. 若容器内有 pre 或 code，保留原始换行
+  const preEl = codeBox.querySelector('pre, code');
+  if (preEl) {
+    return preEl.textContent || (preEl as any).innerText || '';
+  }
+
+  // 3. 兜底方案
+  return (codeBox as any)?.innerText || codeBox.textContent || '';
 }
 
 /**
@@ -61,10 +98,24 @@ export class VisualizerInteractionBinder {
     // 2.1 代码复制按钮 (#btn-code-copy) 跨环境双保险复制与即时反馈
     const btnCodeCopy = document.getElementById('btn-code-copy');
     if (btnCodeCopy && (btnCodeCopy as any)._bound !== true) {
+      if ((btnCodeCopy as any)._darkTerminalBound === true) {
+        // 已由 DarkCodeTerminalPresenter 托管，无需重复绑定
+        return;
+      }
       (btnCodeCopy as any)._bound = true;
       btnCodeCopy.addEventListener('click', async () => {
-        const codeBox = document.getElementById('code-content') || document.getElementById('code-container-box') || document.getElementById('code-lines-wrapper');
-        const text = codeBox?.textContent || (codeBox as any)?.innerText || '';
+        // 1. 优先获取 Controller 提供的纯净原始源码
+        let text = actions.onCopyCode?.() || '';
+
+        // 2. 次优方案：智能提取代码容器 DOM（精准按行还原缩进换行，剥离行号与调试幽灵变量）
+        if (!text.trim()) {
+          const codeBox = document.getElementById('code-content') ||
+                          document.getElementById('code-container-box') ||
+                          document.getElementById('code-lines-wrapper') ||
+                          document.getElementById('code-display-container');
+          text = extractCleanCodeFromContainer(codeBox);
+        }
+
         if (!text.trim()) return;
 
         let success = false;
@@ -117,15 +168,21 @@ export class VisualizerInteractionBinder {
     // 3. Stage 3 子视图切换
     const btnSubMatrix = document.getElementById('btn-subview-matrix');
     const btnSubTree = document.getElementById('btn-subview-tree');
+    const btnSubSandbox = document.getElementById('btn-subview-sandbox');
     const btnSubAlign = document.getElementById('btn-subview-alignment');
     if (btnSubMatrix) btnSubMatrix.addEventListener('click', () => actions.onStage3SubView?.('matrix'));
     if (btnSubTree) btnSubTree.addEventListener('click', () => actions.onStage3SubView?.('tree'));
+    if (btnSubSandbox) btnSubSandbox.addEventListener('click', () => actions.onStage3SubView?.('sandbox'));
     if (btnSubAlign) btnSubAlign.addEventListener('click', () => actions.onStage3SubView?.('alignment'));
 
-    // 3.0 Stage 4 子视图切换 (滚动数组 vs 串比对)
+    // 3.0 Stage 4 子视图切换 (滚动数组 vs 依赖树 vs 沙盘 vs 串比对)
     const btnStage4Memo = document.getElementById('btn-stage4-memo');
+    const btnStage4Tree = document.getElementById('btn-stage4-tree');
+    const btnStage4Sandbox = document.getElementById('btn-stage4-sandbox');
     const btnStage4Align = document.getElementById('btn-stage4-alignment');
     if (btnStage4Memo) btnStage4Memo.addEventListener('click', () => actions.onStage4SubView?.('memo'));
+    if (btnStage4Tree) btnStage4Tree.addEventListener('click', () => actions.onStage4SubView?.('tree'));
+    if (btnStage4Sandbox) btnStage4Sandbox.addEventListener('click', () => actions.onStage4SubView?.('sandbox'));
     if (btnStage4Align) btnStage4Align.addEventListener('click', () => actions.onStage4SubView?.('alignment'));
 
     // 3.1 Card 2 阶段 1/2 复合子视图切换 (横向药丸 + 下拉选择器)

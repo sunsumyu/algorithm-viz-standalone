@@ -28,13 +28,14 @@ export {
 
 export const palindromeLinkedListVisualizer = registerDeclarativeAlgorithm<PalindromeStep>({
   id: 'palindrome-linked-list-034',
-  aliases: ['class034-code02', 'palindrome-linked-list', 'palindrome-list', 'leetcode-234'],
+  aliases: ['class034-code02', 'palindrome-linked-list', 'palindrome-list', 'leetcode-234', '234'],
   name: 'Class 034: 判断链表是否为回文结构 (Palindrome Linked List)',
   category: 'linked-list',
   icon: '🪞',
   difficulty: 2,
   levelOrder: 234,
   learningGoal: '掌握快慢指针找中点、局部链表原地反转与 O(1) 空间无副作用复原链表的面试母题',
+  hasDeductionTree: true,
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>课程核心内容 (Class 034 / LeetCode 234)</h3>

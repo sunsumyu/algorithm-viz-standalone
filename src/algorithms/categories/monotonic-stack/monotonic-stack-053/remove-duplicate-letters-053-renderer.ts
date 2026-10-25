@@ -21,6 +21,7 @@ export const removeDuplicateLetters053Visualizer = registerDeclarativeAlgorithm<
   category: 'monotonic-stack',
   difficulty: 'medium',
   aliases: ['remove-duplicate-letters', '316', '1081', '去除重复字母', 'class053-code04'],
+  hasDeductionTree: true,
   learningGoal:
     '掌握字符频次表与单调栈联动设计，理解栈内布尔去重集合与字典序贪心让位的双重约束。',
   problemContent: {

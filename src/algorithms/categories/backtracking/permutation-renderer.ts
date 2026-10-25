@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'permutation',
+  aliases: ['46', 'leetcode-46', 'permutations-all'],
+  hasDeductionTree: true,
   name: '全排列',
   category: 'backtracking',
   description: '无重复元素全排列，used 数组树枝标记与全循环回溯',

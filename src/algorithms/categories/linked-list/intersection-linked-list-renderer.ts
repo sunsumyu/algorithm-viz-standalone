@@ -33,7 +33,7 @@ export {
 
 export const intersectionLinkedListVisualizer = registerDeclarativeAlgorithm({
   id: 'intersection-linked-list',
-  aliases: ['class036-code01', 'class008-code01', 'intersection-linked-list-036', 'intersection-of-two-linked-lists', 'leetcode-160'],
+  aliases: ['class036-code01', 'class008-code01', 'intersection-linked-list-036', 'intersection-of-two-linked-lists', 'leetcode-160', '160'],
   name: '链表相交',
   category: 'linked-list',
   description: '面试题 02.07 / LC 160 · 双指针浪漫换道相遇，巧妙消除长度差确定两链表交点',
@@ -41,6 +41,7 @@ export const intersectionLinkedListVisualizer = registerDeclarativeAlgorithm({
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '透彻理解双指针换道算法数学原理 (a + c + b == b + c + a) 与链表相交判定技巧',
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'case',

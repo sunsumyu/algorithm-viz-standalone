@@ -185,10 +185,13 @@ export interface IYamlCodeSnippet {
 export interface IYamlStageVariant {
   variantLabel?: string;
   title: { forward: string; reverse: string } | string;
-  code: {
+  code?: {
     forward?: IYamlCodeSnippet;
     reverse?: IYamlCodeSnippet;
   };
+  cleanSource?: string;
+  codeHtml?: string;
+  codeTitle?: string;
 }
 
 export interface IYamlStageSpec {
@@ -204,6 +207,9 @@ export interface IYamlStageSpec {
     forward?: IYamlCodeSnippet;
     reverse?: IYamlCodeSnippet;
   };
+  cleanSource?: string;
+  codeHtml?: string;
+  codeTitle?: string;
   variants?: Record<string, IYamlStageVariant>;
 }
 
@@ -246,6 +252,11 @@ export interface IYamlAlgorithmModel {
   problem?: IAlgorithmProblemMeta;
   analysis?: Record<string, { title?: string; content?: string }>;
   faqs?: IAlgorithmFaqItem[];
+  presets?: Array<{
+    label: string;
+    values: Record<string, any>;
+    description?: string;
+  }>;
   directions: {
     forward: IYamlDirectionDef;
     reverse: IYamlDirectionDef;

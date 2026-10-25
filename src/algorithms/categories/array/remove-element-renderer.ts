@@ -81,6 +81,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<RemoveStep>({
 
 registerAlgorithm({
   id: 'remove-element',
+  aliases: ['27', 'leetcode-27', 'remove-element-fast-slow'],
+  hasDeductionTree: true,
   name: '移除元素',
   viewId: 'algo-remove-element-view',
   category: 'array',

@@ -72,9 +72,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<BracketStep>({
 
 registerAlgorithm({
   id: 'bracket',
+  aliases: ['valid-parentheses', 'valid-parentheses-20', 'leetcode-20', '20'],
   name: '有效的括号',
   viewId: 'algo-bracket-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '遇左括号压入对应右括号，遇右括号只需 O(1) 比对并弹出栈顶元素',
   icon: '🎯',
   template,

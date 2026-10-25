@@ -96,9 +96,10 @@ export class PhysicsDebugHUD {
       </div>
     `;
 
+    hud.style.display = 'none';
     document.body.appendChild(hud);
     this.container = hud;
-    this.isVisible = true;
+    this.isVisible = false;
 
     // 绑定展开/折叠
     const header = hud.querySelector('#physics-hud-header');

@@ -89,8 +89,8 @@ export class AlienDictCanvasAdapter {
       .join('');
 
     container.innerHTML = `
-      <div class="w-full h-full flex flex-col justify-center items-center select-none bg-slate-950/80 rounded-lg p-2 box-border">
-        <svg viewBox="0 0 360 210" class="w-full h-full max-h-[380px]" preserveAspectRatio="xMidYMid meet">
+      <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; user-select: none; background: rgba(2, 6, 23, 0.85); border-radius: 8px; padding: 8px; box-sizing: border-box;">
+        <svg viewBox="0 0 360 210" style="width: 100%; height: 100%; max-height: 380px; display: block;" preserveAspectRatio="xMidYMid meet">
           <defs>
             <linearGradient id="alien-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#090d16" />

@@ -609,7 +609,7 @@ export class SequenceAdvancedStrategy implements IAlgorithmStrategy {
     }
 
     const steps: UniversalStep[] = [];
-    const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    const dp: (number | null)[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(null));
 
     steps.push({
       type: 'init',
@@ -622,12 +622,15 @@ export class SequenceAdvancedStrategy implements IAlgorithmStrategy {
       msg: `判断 <code>"${s}"</code> 是否为 <code>"${t}"</code> 的子序列。`
     });
 
+    for (let j = 0; j <= n; j++) dp[0][j] = 0;
+    for (let i = 0; i <= m; i++) dp[i][0] = 0;
+
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
         if (s[i - 1] === t[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1] + 1;
+          dp[i][j] = (dp[i - 1][j - 1] ?? 0) + 1;
         } else {
-          dp[i][j] = dp[i][j - 1];
+          dp[i][j] = dp[i][j - 1] ?? 0;
         }
 
         steps.push({

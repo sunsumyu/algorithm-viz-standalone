@@ -20,6 +20,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'longest-consecutive-sequence',
+  aliases: ['128', 'leetcode-128', 'longest-consecutive'],
+  hasDeductionTree: true,
   name: '最长连续序列',
   category: 'hash-table',
   difficulty: 2,

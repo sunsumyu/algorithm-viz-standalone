@@ -94,5 +94,6 @@ registerAlgorithm({
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法',
-  aliases: ['squares-of-sorted-array'],
+  aliases: ['squares-of-sorted-array', '977', 'leetcode-977', 'sorted-squares-two-pointers'],
+  hasDeductionTree: true,
 });

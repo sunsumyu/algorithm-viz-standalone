@@ -98,7 +98,8 @@ export function buildKnapsackDPDependencyTree(
   capacity: number,
   currentGrid?: (number | null)[][],
   currentI?: number,
-  currentJ?: number
+  currentJ?: number,
+  isComplete: boolean = false
 ): UniversalTreeNode {
   const n = items.length;
   const targetI = currentI !== undefined && currentI >= 0 ? currentI : n - 1;
@@ -138,7 +139,72 @@ export function buildKnapsackDPDependencyTree(
         { state: { i: s.i - 1, j: s.j }, edgeLabel: '不放', isWinner: true }
       ];
       if (s.j >= wi) {
-        deps.push({ state: { i: s.i - 1, j: s.j - wi }, edgeLabel: `放(+${items[s.i]?.value ?? 0})` });
+        const nextI = isComplete ? s.i : s.i - 1;
+        deps.push({ state: { i: nextI, j: s.j - wi }, edgeLabel: `${isComplete ? '选(可复选)' : '放'}(+${items[s.i]?.value ?? 0})` });
+      }
+      return deps;
+    }
+  };
+
+  return compileStateDependencyTree({ i: targetI, j: targetJ }, rule, { maxExpandDepth: 4, maxNodes: 40 });
+}
+
+/**
+ * 构建分组背包 DP 状态依赖树 (Partitioned Knapsack DP Dependency Tree)
+ * 组号 i 递减直达初始行 (i <= 0)，每个组内可选择「不选」或互斥挑选组内任意物品 k。
+ */
+export function buildPartitionedKnapsackDPDependencyTree(
+  groups: Array<Array<{ cost: number; val: number }>>,
+  capacity: number,
+  currentGrid?: (number | null)[][],
+  currentI?: number,
+  currentJ?: number
+): UniversalTreeNode {
+  const numGroups = groups.length;
+  const targetI = currentI !== undefined && currentI >= 0 ? currentI : numGroups;
+  const targetJ = currentJ !== undefined && currentJ >= 0 ? currentJ : capacity;
+
+  const rule: StateDependencyRule<{ i: number; j: number }> = {
+    key: (s) => `part-knap-node-${s.i}-${s.j}`,
+    coord: (s) => ({ r: s.i, c: s.j }),
+    label: (s, from) => {
+      const val = currentGrid?.[s.i]?.[s.j] ?? null;
+      let status: 'normal' | 'current' | 'base' | 'visited' = 'normal';
+      let tag: string | undefined = undefined;
+      if (s.i > 0 && val !== null) {
+        status = 'visited';
+        tag = `= ${val}`;
+      }
+      if (currentI === s.i && currentJ === s.j) {
+        status = 'current';
+        tag = val !== null ? `= ${val}` : '当前计算';
+      }
+      const prefix = from ? `${from.edgeLabel} ` : '';
+      return { val: `${prefix}dp[${s.i}][${s.j}]`, status, tag };
+    },
+    isBase: (s) => s.i <= 0,
+    baseLabel: (s, from) => {
+      const val = currentGrid?.[s.i]?.[s.j] ?? null;
+      const prefix = from ? `${from.edgeLabel} ` : '';
+      if (currentI === s.i && currentJ === s.j) {
+        return { val: `${prefix}dp[${s.i}][${s.j}]`, tag: val !== null ? `= ${val}` : '当前计算', status: 'current' };
+      }
+      return { val: `${prefix}dp[${s.i}][${s.j}]`, tag: val !== null ? `= ${val}` : '空组基底: 0', status: val !== null ? 'base' : 'normal' };
+    },
+    dependencies: (s) => {
+      if (s.i <= 0) return [];
+      const deps: StateDepEdge<{ i: number; j: number }>[] = [
+        { state: { i: s.i - 1, j: s.j }, edgeLabel: '不选本组', isWinner: true }
+      ];
+      const curGroup = groups[s.i - 1] || [];
+      for (let idx = 0; idx < curGroup.length; idx++) {
+        const item = curGroup[idx];
+        if (s.j >= item.cost) {
+          deps.push({
+            state: { i: s.i - 1, j: s.j - item.cost },
+            edgeLabel: `选#${idx + 1}(花${item.cost},+${item.val})`
+          });
+        }
       }
       return deps;
     }

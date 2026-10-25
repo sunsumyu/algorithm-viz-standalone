@@ -22,6 +22,8 @@ export { countingSortSteps, withMetrics, renderCountingSortCanvas };
 
 registerDeclarativeAlgorithm<CSStep>({
   id: 'counting-sort',
+  aliases: ['counting-sort', 'count-sort'],
+  hasDeductionTree: true,
   name: '计数排序',
   category: 'sort',
   description: '逐步演示计数排序：统计频次、前缀和累加、倒序稳定输出',

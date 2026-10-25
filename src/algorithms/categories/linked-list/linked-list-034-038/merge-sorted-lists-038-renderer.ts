@@ -18,10 +18,11 @@ export { buildMergeSortedLists038Steps };
 
 export const mergeSortedLists038Visualizer = registerDeclarativeAlgorithm<MergeSortedLists038Step>({
   id: 'merge-sorted-lists-038',
-  aliases: ['class038-code01', 'class007-code01', 'merge-two-sorted-lists', 'leetcode-21', 'merge-two-sorted-lists-21'],
+  aliases: ['class038-code01', 'class007-code01', 'merge-two-sorted-lists', 'leetcode-21', 'merge-two-sorted-lists-21', '21', 'merge-sorted-lists'],
   name: '有序链表合并 (Class 038)',
   category: 'linked-list',
   difficulty: 'easy',
+  hasDeductionTree: true,
   problemContent: LINKED_LIST_034_038_PROBLEMS.mergeSortedLists038,
   sourceCodes: MERGE_SORTED_LISTS_038_CODES,
   generateSteps: buildMergeSortedLists038Steps,
@@ -35,11 +36,6 @@ export const mergeSortedLists038Visualizer = registerDeclarativeAlgorithm<MergeS
           step.curL1,
           step.curL2,
           step.phase
-        )}
-        ${renderFormulaCard(
-          '单链表有序合并时空定理',
-          'T(N, M) = O(N + M), \\quad S(N, M) = O(1)',
-          '利用虚拟哨兵节点统一插入逻辑，双指针比较较小值，在不申请任何额外新节点的情况下，就地重构指针指向完成合并。'
         )}
       </div>
     `;

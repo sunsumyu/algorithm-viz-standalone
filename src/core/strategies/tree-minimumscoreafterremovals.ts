@@ -260,7 +260,7 @@ export function compileMinimumScoreAfterRemovals(
     const lineLoopOuter = anchorMap?.loop_outer ?? 17;
     const lineCheckRelation = anchorMap?.check_relation ?? 22;
     const lineUpdateAns = anchorMap?.update_ans ?? 29;
-    const lineReturn = anchorMap?.return ?? 32;
+    const lineReturn = anchorMap?.return ?? 34;
     const lineDfsEntry = anchorMap?.dfs_entry ?? 34;
     const lineRecordDfn = anchorMap?.record_dfn ?? 35;
     const lineCheckChild = anchorMap?.check_child ?? 37;

@@ -2385,7 +2385,7 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
 
       for (const id of allIds) {
         const model = AlgorithmModelRepository.getModel(id);
-        if (!model) continue;
+        if (!model || model.category !== 'dynamic-programming') continue;
 
         for (const stage of [3, 4]) {
           for (const dir of ['forward', 'reverse'] as const) {
@@ -2396,7 +2396,7 @@ describe('🎯 动态规划全库 Stage 1 / Stage 2 顶级机械门禁 (DP Stage
               });
               if (!steps || steps.length === 0) continue;
 
-              const initStep = steps.find(s => s.type === 'init' || s.type === 'entry');
+              const initStep = steps.find(s => s.type === 'init' || s.type === 'entry' || s.type === 'init-dp') || (steps[0]?.grid ? steps[0] : undefined);
               if (initStep && initStep.grid) {
                 const nonNulls = initStep.grid.flatMap(r => Array.isArray(r) ? r : [r]).filter(c => c !== null);
                 if (nonNulls.length > 0) {

@@ -116,8 +116,28 @@ function renderSidebarRecentFooter(): void {
   });
 }
 
+// ========== Reset Search State ==========
+function resetSearchState(): void {
+  searchQuery = '';
+  const input = $('search-input') as HTMLInputElement | null;
+  const clearBtn = $('search-clear');
+  const searchBox = $('search-box');
+  if (input) {
+    input.value = '';
+  }
+  clearBtn?.classList.remove('visible');
+  searchBox?.classList.remove('has-value');
+  hideSearchHistory();
+}
+
 // ========== Select Category ==========
 function selectCategory(category: string): void {
+  // 当用户在搜索状态下主动点击侧边栏分类（包含最近访问/全部算法/具体分类）时，
+  // 退出搜索模式并重置输入框，展示目标分类的完整内容
+  if (searchQuery.trim()) {
+    resetSearchState();
+  }
+
   currentCategory = category;
 
   // Update sidebar active state
@@ -137,39 +157,43 @@ function selectCategory(category: string): void {
 // ========== Update Content Header ==========
 function updateContentHeader(): void {
   const titleEl = $('content-title');
-  const countEl = $('result-count');
-  if (!titleEl || !countEl) return;
+  if (!titleEl) return;
 
   const visibleCards = getVisibleCards();
   const courseFiltered = filterAlgorithmsByCourse(allAlgorithms, currentCourse);
 
+  let titleHtml = '';
+  let countText = '';
+
   if (searchQuery.trim()) {
-    titleEl.innerHTML = `搜索结果`;
-    countEl.textContent = `(${visibleCards.length} 个匹配)`;
+    titleHtml = `🔍 搜索结果`;
+    countText = `(${visibleCards.length} 个匹配)`;
   } else if (currentCategory === 'all') {
     if (currentCourse === 'bigtech') {
-      titleEl.innerHTML = `🔥 大厂高频面试真题`;
-      countEl.textContent = `(${courseFiltered.length} 关)`;
+      titleHtml = `🔥 大厂高频面试真题`;
+      countText = `(${courseFiltered.length} 关)`;
     } else if (currentCourse === 'zuo') {
-      titleEl.innerHTML = `🎓 算法通关课`;
-      countEl.textContent = `(${courseFiltered.length} 关)`;
+      titleHtml = `🎓 算法通关课`;
+      countText = `(${courseFiltered.length} 关)`;
     } else if (currentCourse === 'standard') {
-      titleEl.innerHTML = `📘 经典题库`;
-      countEl.textContent = `(${courseFiltered.length} 关)`;
+      titleHtml = `📘 经典题库`;
+      countText = `(${courseFiltered.length} 关)`;
     } else {
-      titleEl.innerHTML = `全部算法`;
-      countEl.textContent = `(${allAlgorithms.length} 个)`;
+      titleHtml = `全部算法`;
+      countText = `(${allAlgorithms.length} 个)`;
     }
   } else if (currentCategory === 'recent') {
     const recentCount = getRecentAlgorithmIds().length;
-    titleEl.innerHTML = `🕒 最近访问`;
-    countEl.textContent = `(${recentCount} 个记录)`;
+    titleHtml = `🕒 最近访问`;
+    countText = `(${recentCount} 个记录)`;
   } else {
     const config = CATEGORY_CONFIG[currentCategory] || { name: currentCategory, icon: '📁' };
     const count = courseFiltered.filter((a) => a.category === currentCategory).length;
-    titleEl.innerHTML = `${config.icon} ${config.name}`;
-    countEl.textContent = `(${count} 关)`;
+    titleHtml = `${config.icon} ${config.name}`;
+    countText = `(${count} 关)`;
   }
+
+  titleEl.innerHTML = `${titleHtml} <span class="result-count" id="result-count">${countText}</span>`;
 }
 
 // ========== Get Visible Cards ==========
@@ -392,11 +416,7 @@ function setupSearch(): void {
 
   // Clear button
   clearBtn?.addEventListener('click', () => {
-    input.value = '';
-    searchQuery = '';
-    clearBtn.classList.remove('visible');
-    searchBox?.classList.remove('has-value');
-    hideSearchHistory();
+    resetSearchState();
     input.focus();
     updateContentHeader();
     renderCards();
@@ -433,10 +453,7 @@ function setupSearch(): void {
       hideSearchHistory();
       if (document.activeElement === input) {
         if (searchQuery) {
-          input.value = '';
-          searchQuery = '';
-          clearBtn?.classList.remove('visible');
-          searchBox?.classList.remove('has-value');
+          resetSearchState();
           updateContentHeader();
           renderCards();
           renderSidebarCategories();
@@ -515,9 +532,15 @@ export const algorithmVizPlugin: Plugin = {
     if (typeof window !== 'undefined') {
       _recentUpdatedHandler = () => {
         renderSidebarRecentFooter();
+        if (currentCategory === 'recent') {
+          updateContentHeader();
+          renderCards();
+        }
       };
       _selectorShownHandler = () => {
         renderCourseFilterUI();
+        updateContentHeader();
+        renderCards();
         renderSidebarCategories();
         renderSidebarRecentFooter();
       };
@@ -556,4 +579,23 @@ export const algorithmVizPlugin: Plugin = {
     expandedCategories.clear();
     console.log('[AlgorithmVizPlugin] Destroyed');
   },
+};
+
+// ========== Test Hooks for Unit Testing ==========
+export const __testHooks = {
+  resetSearchState,
+  selectCategory,
+  updateContentHeader,
+  getVisibleCards,
+  setAllAlgorithms: (algos: AlgorithmMetadata[]) => {
+    allAlgorithms = algos;
+  },
+  setSearchQuery: (query: string) => {
+    searchQuery = query;
+  },
+  getSearchQuery: () => searchQuery,
+  setCurrentCategory: (cat: string) => {
+    currentCategory = cat;
+  },
+  getCurrentCategory: () => currentCategory,
 };

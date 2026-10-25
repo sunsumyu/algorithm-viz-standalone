@@ -32,6 +32,8 @@ registerDeclarativeAlgorithm({
   icon: '🔄',
   difficulty: 2,
   levelOrder: 3,
+  aliases: ['503', 'leetcode-503', 'next-greater-element-circular'],
+  hasDeductionTree: true,
   learningGoal: '掌握循环数组在单调栈中的取模模拟技巧，理解两轮遍历即可完备覆盖循环边界的数学原理',
   inputs: [
     {

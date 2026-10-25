@@ -76,9 +76,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<MSStep>({
 
 registerAlgorithm({
   id: 'implement-stack-using-queue',
+  aliases: ['stack-using-queues', 'implement-stack-using-queue-225', 'leetcode-225', '225'],
   name: '用队列实现栈',
   viewId: 'algo-implement-stack-using-queue-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '单队列循环旋转法：push 入队后将前面 size - 1 个元素出队再入队，保持队头为栈顶',
   icon: '🥞',
   template,

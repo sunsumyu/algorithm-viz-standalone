@@ -26,6 +26,8 @@ export {
 
 export const firstMissingPositiveVisualizer = registerDeclarativeAlgorithm<MissingPositiveStep>({
   id: 'first-missing-positive',
+  aliases: ['41', 'leetcode-41', 'first-missing-positive-in-place-hash'],
+  hasDeductionTree: true,
   name: 'Hard 22: 缺失的第一个正数 (First Missing Positive)',
   category: 'array',
   icon: '🎯',

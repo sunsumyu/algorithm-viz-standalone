@@ -21,6 +21,8 @@ export {
 
 export const bitwiseXorOddTimes034Visualizer = registerDeclarativeAlgorithm<XorStep>({
   id: 'bitwise-xor-odd-times-034',
+  aliases: ['class034-code01', 'bitwise-xor-odd-times-034', 'bitwise-xor', 'single-number-136', '136', 'leetcode-136'],
+  hasDeductionTree: true,
   name: 'Class 034: 异或运算的奇妙用法与奇数次提取 (Bitwise XOR)',
   category: 'bit-manipulation',
   icon: '⚡',

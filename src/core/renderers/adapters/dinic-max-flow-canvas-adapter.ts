@@ -76,25 +76,25 @@ export class DinicMaxFlowCanvasAdapter {
     const currentMode = (container as any)._dinicMode || '2d';
 
     container.innerHTML = `
-      <div class="w-full h-full flex flex-col justify-between items-stretch bg-slate-950/80 rounded-lg p-2.5 box-border select-none">
-        <div class="flex justify-between items-center pb-1.5 border-b border-slate-800">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-300">🌊 残量网络拓扑 (流/容量)</span>
-            <div class="flex bg-slate-900 border border-slate-700 rounded p-0.5 gap-0.5">
-              <button id="btn-dinic-2d" class="text-[10px] font-bold px-1.5 py-0.5 rounded transition ${currentMode === '2d' ? 'bg-blue-600 text-white' : 'text-slate-400'}">🌐 2D</button>
-              <button id="btn-dinic-3d" class="text-[10px] font-bold px-1.5 py-0.5 rounded transition ${currentMode === '3d' ? 'bg-blue-600 text-white' : 'text-slate-400'}">🪐 3D 沙盘</button>
+      <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; background: rgba(2, 6, 23, 0.85); border-radius: 8px; padding: 10px; box-sizing: border-box; user-select: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 6px; border-bottom: 1px solid #1e293b;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: #cbd5e1;">🌊 残量网络拓扑 (流/容量)</span>
+            <div style="display: flex; background: #0f172a; border: 1px solid #334155; border-radius: 4px; padding: 2px; gap: 2px;">
+              <button id="btn-dinic-2d" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: none; cursor: pointer; transition: all 0.2s; ${currentMode === '2d' ? 'background: #2563eb; color: #ffffff;' : 'background: transparent; color: #94a3b8;'}">🌐 2D</button>
+              <button id="btn-dinic-3d" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; border: none; cursor: pointer; transition: all 0.2s; ${currentMode === '3d' ? 'background: #2563eb; color: #ffffff;' : 'background: transparent; color: #94a3b8;'}">🪐 3D 沙盘</button>
             </div>
           </div>
-          <span class="text-[11px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-            全网最大流: <b class="text-emerald-400">${step.curMaxFlow}</b>
+          <span style="font-size: 11px; color: #cbd5e1; background: #0f172a; padding: 2px 8px; border-radius: 4px; border: 1px solid #1e293b;">
+            全网最大流: <b style="color: #34d399;">${step.curMaxFlow}</b>
           </span>
         </div>
 
-        <div id="dinic-view-mount" class="w-full min-h-[175px] h-[175px] bg-slate-950 rounded-md flex justify-center items-center border border-slate-800 relative overflow-hidden my-1">
+        <div id="dinic-view-mount" style="width: 100%; min-height: 175px; height: 175px; background: #020617; border-radius: 6px; display: flex; justify-content: center; align-items: center; border: 1px solid #1e293b; position: relative; overflow: hidden; margin: 4px 0;">
           ${
             currentMode === '2d'
               ? `
-            <svg class="w-full h-full" viewBox="0 0 310 160" preserveAspectRatio="xMidYMid meet">
+            <svg style="width: 100%; height: 100%; display: block;" viewBox="0 0 310 160" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <marker id="dinic-arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
                   <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
@@ -104,8 +104,8 @@ export class DinicMaxFlowCanvasAdapter {
               ${svgNodes}
             </svg>
           `
-              : `<div id="dinic-3d-canvas-container" class="w-full h-full"></div>
-                 <div class="absolute bottom-1 right-2 text-[9px] text-slate-400 pointer-events-none bg-slate-900/80 px-1.5 py-0.5 rounded">🖱️ 拖拽旋转 / 滚轮缩放</div>`
+              : `<div id="dinic-3d-canvas-container" style="width: 100%; height: 100%;"></div>
+                 <div style="position: absolute; bottom: 4px; right: 8px; font-size: 9px; color: #94a3b8; pointer-events: none; background: rgba(15, 23, 42, 0.85); padding: 2px 6px; border-radius: 4px;">🖱️ 拖拽旋转 / 滚轮缩放</div>`
           }
         </div>
       </div>

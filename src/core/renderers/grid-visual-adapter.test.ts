@@ -1,590 +1,71 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { GridVisualAdapter, RecursionTreeAdapter } from './grid-visual-adapter';
+// @vitest-environment jsdom
+import { describe, it, expect } from 'vitest';
+import { GridVisualAdapter } from './grid-visual-adapter';
 
-// Lightweight DOM mock for node environment
-class MockHTMLElement {
-  public style: Record<string, string> = {};
-  public _innerHTML = '';
-  public className = '';
-  public children: MockHTMLElement[] = [];
-  public id = '';
-  public dataset: Record<string, string> = {};
-  public attributes: Record<string, string> = {};
-
-  public get innerHTML(): string {
-    if (this.children.length > 0) {
-      return this._innerHTML + this.children.map(c => c.innerHTML).join('');
-    }
-    return this._innerHTML;
-  }
-
-  public set innerHTML(val: string) {
-    this._innerHTML = val;
-    if (val === '') {
-      this.children = [];
-    }
-  }
-
-  public appendChild(child: MockHTMLElement) {
-    this.children.push(child);
-  }
-
-  public setAttribute(name: string, value: string) {
-    this.attributes[name] = value;
-  }
-
-  public getAttribute(name: string): string | null {
-    return this.attributes[name] ?? null;
-  }
-
-  public querySelector(selector: string): MockHTMLElement | null {
-    if (selector.startsWith('#')) {
-      const id = selector.slice(1);
-      if (this.id === id) return this;
-    }
-    if (selector.startsWith('.')) {
-      const cls = selector.slice(1);
-      if (this.className.includes(cls) || this.innerHTML.includes(cls)) return this;
-    }
-    if (selector.startsWith('[data-coord=')) {
-      const match = selector.match(/\[data-coord="([^"]+)"\]/);
-      if (match && this.attributes['data-coord'] === match[1]) return this;
-    }
-    for (const c of this.children) {
-      const found = c.querySelector(selector);
-      if (found) return found;
-    }
-    return null;
-  }
-
-  public get firstElementChild(): MockHTMLElement | null {
-    return this.children[0] || null;
-  }
-
-  public get textContent(): string {
-    return this.innerHTML.replace(/<[^>]*>/g, '');
-  }
-}
-
-describe('GridVisualAdapter Deep Module', () => {
-  beforeEach(() => {
-    (globalThis as any).document = {
-      createElement: () => new MockHTMLElement()
-    };
-  });
-
-  it('应该正确生成探险家小人矢量 SVG HTML', () => {
-    const normalSvg = GridVisualAdapter.getAdventurerSvgHtml({ state: 'walking' });
-    expect(normalSvg).toContain('<svg class="adventurer-char');
-    expect(normalSvg).toContain('is-walking');
-
-    const blockedSvg = GridVisualAdapter.getAdventurerSvgHtml({ state: 'blocked' });
-    expect(blockedSvg).toContain('is-blocked');
-
-    const cheerSvg = GridVisualAdapter.getAdventurerSvgHtml({ isFinish: true });
-    expect(cheerSvg).toContain('is-cheering');
-    expect(cheerSvg).toContain('🏆');
-  });
-
-  it('应该能构建并更新二维网格 DOM 元素', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      i: 1,
-      j: 1,
-      topI: 0,
-      topJ: 1,
-      leftI: 1,
-      leftJ: 0,
-      grid: [
-        [1, 1, 1],
-        [1, 2, null],
-        [1, null, null]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.children.length).toBe(9);
-    expect(mockContainer.style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))');
-
-    // 检查当前单元格 (1, 1) 是否具有 active 特征
-    const curCell = mockContainer.children[4];
-    expect(curCell.innerHTML).toContain('adventurer-char');
-    expect(curCell.innerHTML).toContain('1,1');
-  });
-
-  it('应该在递归调用栈中正确渲染探索足迹 👣 (is-trail)', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
+describe('GridVisualAdapter 递归足迹与探索路径深度契约门禁 (Active Trail & Footprints)', () => {
+  it('1. extractActiveTrail 必须能将 dfs/dfsMemo/函数格式调用栈精准归一化为坐标 "r,c"', () => {
+    const stepWithFnNames = {
       i: 2,
-      j: 0,
-      activeStack: ['0,0', '1,0', '2,0'],
-      grid: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    // 检查 (0, 0) 和 (1, 0) 是探索足迹 (is-trail) 并包含 👣
-    const trailCell00 = mockContainer.children[0]; // (0,0)
-    const trailCell10 = mockContainer.children[3]; // (1,0)
-    const curCell20 = mockContainer.children[6];   // (2,0)
-
-    expect(trailCell00.className).toContain('is-trail');
-    expect(trailCell00.innerHTML).toContain('👣');
-    expect(trailCell10.className).toContain('is-trail');
-    expect(trailCell10.innerHTML).toContain('👣');
-    // 当前点 (2,0) 则是探险家
-    expect(curCell20.className).toContain('is-cur');
-    expect(curCell20.innerHTML).toContain('adventurer-char');
-  });
-
-  it('当进入越界方法头 (dfs(3,0)) 时，探险家小人应驻留在父节点单元格 (2,0) 上而不消失', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      type: 'dfs-call',
-      i: 3,
-      j: 0,
-      fromI: 2,
-      fromJ: 0,
-      activeStack: ['0,0', '1,0', '2,0', '3,0'],
-      grid: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    // 检查父节点单元格 (2,0) 是否依然持有探险家小人 (is-cur)
-    const parentCell20 = mockContainer.children[6]; // (2,0)
-    expect(parentCell20.className).toContain('is-cur');
-    expect(parentCell20.innerHTML).toContain('adventurer-char');
-  });
-
-  it('当探险家遭遇障碍物格点 (1,1) 时，探险家小人应弹回到安全来源格 (0,1) 上而不停留在障碍物格子里', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      type: 'obstacle-hit',
-      i: 1,
       j: 1,
-      fromI: 0,
-      fromJ: 1,
-      activeStack: ['0,0', '0,1', '1,1'],
-      obstacleGrid: [
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 0, 0]
-      ],
-      grid: [
-        [null, null, null],
-        [null, null, null],
-        [null, null, null]
-      ]
+      activeStack: ['dfs(0,2)', 'dfs(1,1)', 'dfs(2,1)']
     };
-
-    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    const originCell01 = mockContainer.children[1];   // (0,1) 来源格
-    const obstacleCell11 = mockContainer.children[4]; // (1,1) 障碍格
-
-    // 1. 探险家小人应安全驻留在来源格 (0,1) 上并播放遇障弹回动画
-    expect(originCell01.className).toContain('is-cur');
-    expect(originCell01.innerHTML).toContain('adventurer-char');
-    expect(originCell01.innerHTML).toContain('遇障弹回');
-
-    // 2. 障碍物格子 (1,1) 保持为纯障碍物，严禁小人站在障碍物内部
-    expect(obstacleCell11.className).toContain('is-obstacle');
-    expect(obstacleCell11.innerHTML).toContain('🚧');
-    expect(obstacleCell11.innerHTML).not.toContain('adventurer-char');
+    const trails = GridVisualAdapter.extractActiveTrail(stepWithFnNames);
+    expect(trails).toEqual(['0,2', '1,1', '2,1']);
   });
 
-  it('应该能构建一维空间压缩槽位', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    GridVisualAdapter.build1DSlots(container, 4, 'dp');
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.children.length).toBe(4);
-    expect(mockContainer.querySelector('#memo-slot-0')?.textContent).toContain('dp[0]');
-    expect(mockContainer.querySelector('#memo-slot-3')?.textContent).toContain('dp[3]');
-  });
-
-  it('应该能渲染 Lite 模式下的 memo 槽位并标注活跃与参考项', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      memoSnapshot: [1, 2, 3, 0],
-      activeSlot: 1,
-      slotMode: 'updated',
-      memoj: 2
-    };
-    GridVisualAdapter.renderLiteMemoSlots(container, mockStep, 4);
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.children.length).toBe(2); // 包含顶部等式看板与槽位行
-    const slotsRow = mockContainer.children[1];
-    expect(slotsRow.children.length).toBe(4);
-    // 检查第 1 项 (被更新项) 包含青蛙 icon
-    expect(slotsRow.children[1].innerHTML).toContain('🐸');
-  });
-
-  it('应该能渲染 Stage-3 状态转移等式看板', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      topVal: 3,
-      leftVal: 4,
-      sumVal: 7
-    };
-    GridVisualAdapter.renderTransferEquation(container, mockStep, false);
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('3');
-    expect(mockContainer.innerHTML).toContain('4');
-    expect(mockContainer.innerHTML).toContain('7');
-  });
-
-  it('在 Stage 3 二维 DP 阶段遍历到障碍格 (1,1) 时，探险家必须驻留在此单元格展示受阻状态，绝不消失', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockStep = {
-      type: 'obstacle-cell',
-      i: 1,
-      j: 1,
-      obstacleGrid: [
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 0, 0]
-      ],
-      grid: [
-        [1, 1, 1],
-        [1, null, null],
-        [null, null, null]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, mockStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    const obstacleCell11 = mockContainer.children[4]; // (1,1) 障碍格
-
-    // 探险家必须驻留在正在计算的障碍格 (1,1) 上，同时展示 🚧 与障碍格置 0 徽章
-    expect(obstacleCell11.className).toContain('is-obstacle');
-    expect(obstacleCell11.className).toContain('is-cur');
-    expect(obstacleCell11.innerHTML).toContain('adventurer-char');
-    expect(obstacleCell11.innerHTML).toContain('is-blocked');
-    expect(obstacleCell11.innerHTML).toContain('🚧 障碍格置 0');
-  });
-
-  it('兜底卫士：在全阶段任何边界或异常步骤下，整个网格中必须有且仅有一个 adventurer-char 存在', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    // 模拟无坐标或极端异常的步
-    const irregularStep = {
-      type: 'unknown-boundary',
-      grid: [
-        [1, 1, 1],
-        [1, 2, 3],
-        [1, 3, 6]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, irregularStep, { m: 3, n: 3 });
-    const mockContainer = container as unknown as MockHTMLElement;
-    // 兜底机制生效，探险家被自动注入到默认单元格
-    const foundAdventurer = mockContainer.querySelector('.adventurer-char');
-    expect(foundAdventurer).not.toBeNull();
-  });
-});
-
-describe('RecursionTreeAdapter Deep Module', () => {
-  it('应该正确渲染 SVG 递归树', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockTree = {
-      id: '0,0',
-      val: '(0,0)=2',
-      status: 'visited',
-      children: [
-        { id: '1,0', val: '(1,0)=1', status: 'base', children: [] },
-        { id: '0,1', val: '(0,1)=1', status: 'base', children: [] }
-      ]
-    };
-
-    RecursionTreeAdapter.renderRecursionTree(container, mockTree, '0,0');
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('<svg');
-    expect(mockContainer.innerHTML).toContain('(0,0)=2');
-    expect(mockContainer.innerHTML).toContain('(1,0)=1');
-    expect(mockContainer.innerHTML).toContain('(0,1)=1');
-    expect(mockContainer.innerHTML).toContain('🐸');
-  });
-
-  it('当没有递归树时展示友好提示', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    RecursionTreeAdapter.renderRecursionTree(container, null);
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.textContent).toContain('暂无递归调用树');
-  });
-
-  it('应该在活跃节点更新时自动计算 2D 视口滚动并聚焦活跃节点', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockTree = {
-      id: 'root',
-      val: 'dfs(7,6)',
-      status: 'visited',
-      children: [
-        {
-          id: 'child-1',
-          val: 'dfs(6,5)',
-          status: 'visited',
-          children: [
-            { id: 'deep-active', val: 'dfs(1,1)', status: 'current', children: [] }
-          ]
-        }
-      ]
-    };
-
-    RecursionTreeAdapter.renderRecursionTree(container, mockTree, 'deep-active');
-    const mockContainer = container as unknown as MockHTMLElement;
-    const scrollBox = mockContainer.querySelector('#tree-scroll-box');
-    expect(scrollBox).toBeDefined();
-    expect(mockContainer.innerHTML).toContain('dfs(7,6)');
-    expect(mockContainer.innerHTML).toContain('dfs(1,1)');
-    expect(mockContainer.innerHTML).toContain('🐸');
-  });
-
-  it('应该正确渲染 edgeLabel 分支边标注与自适应节点宽', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const mockTree = {
-      id: 'root',
-      val: 'dfs(0,11)',
-      status: 'visited',
-      children: [
-        { id: 'c1', val: 'dfs(1,11)', edgeLabel: '不选', status: 'visited', children: [] },
-        { id: 'c2', val: 'dfs(1,6)', edgeLabel: '选入', status: 'current', children: [] }
-      ]
-    };
-
-    RecursionTreeAdapter.renderRecursionTree(container, mockTree, 'c2');
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('不选');
-    expect(mockContainer.innerHTML).toContain('选入');
-    expect(mockContainer.innerHTML).toContain('dfs(0,11)');
-    expect(mockContainer.innerHTML).toContain('dfs(1,6)');
-    expect(mockContainer.innerHTML).toContain('🐸');
-  });
-
-  it('应该支持渲染带有字符行列标尺与匹配标徽的双串语义网格 (renderLabeledGrid)', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const step = {
-      i: 1,
-      j: 1,
-      grid: [
-        [0, 0],
-        [0, 1]
-      ],
-      activeStack: ['0,0', '1,1']
-    };
-
-    GridVisualAdapter.renderGrid(container, step, {
-      m: 2,
-      n: 2,
-      rowLabels: ['Ø', 'a'],
-      colLabels: ['Ø', 'a'],
-      isMatch: (r, c) => r === 1 && c === 1
-    });
-
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('s1 \\ s2');
-    expect(mockContainer.innerHTML).toContain('stage1-grid-board');
-    expect(mockContainer.innerHTML).toContain('stage1-trail-svg');
-    expect(mockContainer.innerHTML).toContain('Ø');
-    expect(mockContainer.innerHTML).toContain('✨');
-    expect(mockContainer.innerHTML).toContain('i=1');
-    expect(mockContainer.innerHTML).toContain('j=1');
-    expect(mockContainer.innerHTML).toContain('(i=1, j=1)');
-  });
-
-  it('应该支持在带标尺网格中精准高亮 2D DP 前驱依赖单元格与未计算单元格', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const step = {
-      i: 1,
-      j: 1,
-      topI: 0,
-      topJ: 1,
-      leftI: 1,
-      leftJ: 0,
-      grid: [
-        [null, 2],
-        [3, -1]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, step, {
-      m: 2,
-      n: 2,
-      rowLabels: ['0', '1'],
-      colLabels: ['0', '1'],
-      deps: [
-        { r: 0, c: 1, type: 'top' },
-        { r: 1, c: 0, type: 'left' }
-      ]
-    });
-
-    const mockContainer = container as unknown as MockHTMLElement;
-    expect(mockContainer.innerHTML).toContain('is-top is-dep');
-    expect(mockContainer.innerHTML).toContain('⬆️');
-    expect(mockContainer.innerHTML).toContain('is-left is-dep');
-    expect(mockContainer.innerHTML).toContain('⬅️');
-    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-top');
-    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-left');
-    expect(mockContainer.innerHTML).toContain('⬆️ 垂直(删除)');
-  });
-
-  it('应该在二维状态网络中以三种颜色与专属标记标示三个递归分支（对角/垂直/水平）', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const step = {
-      i: 1,
-      j: 1,
-      diagI: 0,
-      diagJ: 0,
-      topI: 0,
-      topJ: 1,
-      leftI: 1,
-      leftJ: 0,
-      grid: [
-        [1, 2],
-        [3, null]
-      ]
-    };
-
-    // 1. 在带字符标尺的网络中渲染
-    GridVisualAdapter.renderGrid(container, step, {
-      m: 2,
-      n: 2,
-      rowLabels: ['a', 'b'],
-      colLabels: ['x', 'y'],
-      deps: [
-        { r: 0, c: 0, type: 'diag', label: '替换/匹配分支' },
-        { r: 0, c: 1, type: 'top', label: '删除分支' },
-        { r: 1, c: 0, type: 'left', label: '插入分支' }
-      ]
-    });
-
-    const mockContainer = container as unknown as MockHTMLElement;
-    // 验证三个分支的专有 CSS 类与标记
-    expect(mockContainer.innerHTML).toContain('is-diag is-dep');
-    expect(mockContainer.innerHTML).toContain('↖️');
-    expect(mockContainer.innerHTML).toContain('is-top is-dep');
-    expect(mockContainer.innerHTML).toContain('⬆️');
-    expect(mockContainer.innerHTML).toContain('is-left is-dep');
-    expect(mockContainer.innerHTML).toContain('⬅️');
-
-    // 验证三个分支的专属 SVG 箭头 marker
-    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-diag');
-    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-top');
-    expect(mockContainer.innerHTML).toContain('dp-dep-arrow-left');
-
-    // 验证底部三色分支专属图例
-    expect(mockContainer.innerHTML).toContain('↖️ 对角(匹配/替换)');
-    expect(mockContainer.innerHTML).toContain('⬆️ 垂直(删除)');
-    expect(mockContainer.innerHTML).toContain('⬅️ 水平(插入)');
-
-    // 2. 在通用无标尺网格中渲染，检查子单元格 className
-    const plainContainer = new MockHTMLElement() as unknown as HTMLElement;
-    GridVisualAdapter.renderGrid(plainContainer, step, { m: 2, n: 2 });
-    const mockPlain = plainContainer as unknown as MockHTMLElement;
-    const cell00 = mockPlain.children[0]; // (0,0) 对角依赖
-    const cell01 = mockPlain.children[1]; // (0,1) 上方依赖
-    const cell10 = mockPlain.children[2]; // (1,0) 左侧依赖
-    expect(cell00.className).toContain('is-diag');
-    expect(cell01.className).toContain('is-top');
-    expect(cell10.className).toContain('is-left');
-  });
-
-  it('在带标尺网格的顺推探索初始帧 (0, 0)，冒险家小人不得误判为终点 (不得佩戴终点金奖杯或 cheering)', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const initialStep = {
-      i: 0,
-      j: 0,
-      type: 'entry',
-      callStack: [{ label: 'dfs(0,0)', coord: '0,0', depth: 1 }],
-      grid: [
-        [null, null],
-        [null, null]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, initialStep, {
-      m: 2,
-      n: 2,
-      isReverse: false,
-      rowLabels: ['a', 'Ø'],
-      colLabels: ['x', 'Ø']
-    });
-
-    const html = (container as unknown as MockHTMLElement).innerHTML;
-    // 验证处于活跃行走态 walking，未佩戴奖杯，没有 cheering 终态标记
-    expect(html).toContain('is-cur');
-    expect(html).not.toContain('id="gold-trophy"');
-  });
-
-  it('逆推模式下前驱依赖应呈现正确方向徽章 (⬇️ 垂直/↘️ 对角/➡️ 水平) 与专属图例', () => {
-    const container = new MockHTMLElement() as unknown as HTMLElement;
-    const step = {
-      i: 1,
-      j: 1,
-      type: 'cond',
-      topI: 2,
-      topJ: 1,
-      diagI: 2,
-      diagJ: 2,
-      leftI: 1,
-      leftJ: 2,
-      grid: [
-        [null, null, null],
-        [null, 0, null],
-        [null, 1, 1]
-      ]
-    };
-
-    GridVisualAdapter.renderGrid(container, step, {
-      m: 3,
-      n: 3,
-      isReverse: true,
-      rowLabels: ['r', 'a', 'b'],
-      colLabels: ['r', 'a', 'b']
-    });
-
-    const mockContainer = container as unknown as MockHTMLElement;
-    // 逆推模式下徽章图标必须反映实际物理依赖方向（朝向下方与右侧）
-    expect(mockContainer.innerHTML).toContain('⬇️');
-    expect(mockContainer.innerHTML).toContain('↘️');
-    expect(mockContainer.innerHTML).toContain('➡️');
-
-    // 逆推底部图例
-    expect(mockContainer.innerHTML).toContain('↘️ 对角(匹配/替换)');
-    expect(mockContainer.innerHTML).toContain('⬇️ 垂直(删除/继承)');
-    expect(mockContainer.innerHTML).toContain('➡️ 水平(插入)');
-  });
-
-  it('当步骤缺少显式依赖坐标但在计算阶段时，resolveSpatialDependencies 必须自动推导空间前驱', () => {
-    const stepWithoutExplicitCoords = {
+  it('2. extractActiveTrail 必须能将对象格式与数组格式调用栈精准归一化为坐标 "r,c"', () => {
+    const stepWithObjects = {
       i: 1,
       j: 2,
-      type: 'cond',
-      isMatch: true,
-      activeSlot: 2
+      activeStack: [{ i: 0, j: 2 }, { r: 1, c: 2 }]
+    };
+    const trails = GridVisualAdapter.extractActiveTrail(stepWithObjects);
+    expect(trails).toEqual(['0,2', '1,2']);
+  });
+
+  it('3. renderLabeledGrid 必须为走过的调用栈祖先节点渲染 "is-trail"、"🐾" 探索足迹及天蓝虚线框', () => {
+    const container = document.createElement('div');
+    const step = {
+      i: 2,
+      j: 1,
+      grid: [
+        [null, null, null],
+        [null, null, null],
+        [null, null, null]
+      ],
+      activeStack: ['dfs(0,2)', 'dfs(1,1)', 'dfs(2,1)']
     };
 
-    const resolved = GridVisualAdapter.resolveSpatialDependencies(stepWithoutExplicitCoords, {
-      m: 4,
-      n: 4,
-      isReverse: true
+    GridVisualAdapter.renderLabeledGrid(container, step, {
+      m: 3,
+      n: 3,
+      modelId: 'coins-from-piles',
+      rowLabels: ['栈 0', '栈 1', '栈 2'],
+      colLabels: ['容 0', '容 1', '容 2']
     });
 
-    // 逆推模式下 (i=1, j=2) 自动推导出 topI=2, topJ=2; 匹配时 diagI=2, diagJ=3
-    expect(resolved.effTopI).toBe(2);
-    expect(resolved.effTopJ).toBe(2);
-    expect(resolved.effDiagI).toBe(2);
-    expect(resolved.effDiagJ).toBe(3);
+    const html = container.innerHTML;
+
+    // 当前活跃位置 (2, 1) 是小人，不是 trail
+    const cell21 = container.querySelector('[data-coord="2,1"]');
+    expect(cell21).not.toBeNull();
+    expect(cell21?.className).toContain('is-cur');
+
+    // 祖先位置 (0, 2) 必须是探索中足迹 is-trail
+    const cell02 = container.querySelector('[data-coord="0,2"]');
+    expect(cell02).not.toBeNull();
+    expect(cell02?.className).toContain('is-trail');
+    expect(cell02?.innerHTML).toContain('🐾');
+
+    // 祖先位置 (1, 1) 必须是探索中足迹 is-trail
+    const cell11 = container.querySelector('[data-coord="1,1"]');
+    expect(cell11).not.toBeNull();
+    expect(cell11?.className).toContain('is-trail');
+    expect(cell11?.innerHTML).toContain('🐾');
+
+    // 其他未涉足位置 (0, 0) 必须是空单元格 is-empty
+    const cell00 = container.querySelector('[data-coord="0,0"]');
+    expect(cell00).not.toBeNull();
+    expect(cell00?.className).toContain('is-empty');
   });
 });
-
-

@@ -22,6 +22,7 @@ export { LinkedListModel, buildPresetSteps, withDesignLinkedListMetrics, renderD
 
 registerDeclarativeAlgorithm({
   id: 'design-linked-list',
+  aliases: ['707', 'leetcode-707', 'my-linked-list'],
   name: '设计链表',
   category: 'linked-list',
   description: 'LeetCode 707 · 使用虚拟头节点 (dummyHead) 实现单链表增删查改 (CRUD)',
@@ -29,6 +30,7 @@ registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 5,
   learningGoal: '深入掌握虚拟头节点 (dummyHead) 统一链表头与中间操作的标准编程范式',
+  hasDeductionTree: true,
   inputs: [],
   metrics: [
     { id: 'size', label: '链表长度 (size)', color: '#2563eb' },

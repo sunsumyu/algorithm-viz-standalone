@@ -22,6 +22,8 @@ export { insertionSortSteps, withMetrics, renderInsertionSortCanvas };
 
 registerDeclarativeAlgorithm<ISStep>({
   id: 'insertion-sort',
+  aliases: ['insertion-sort', 'insertion-sort-standard', 'insertion'],
+  hasDeductionTree: true,
   name: '插入排序',
   category: 'sort',
   description: '逐步演示插入排序：元素后移、插入到有序区合适位置',

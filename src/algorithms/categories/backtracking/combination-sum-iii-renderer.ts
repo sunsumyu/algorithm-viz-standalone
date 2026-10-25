@@ -22,6 +22,8 @@ export { buildCombinationSum3Tree, buildCombinationSum3Steps, renderCombinationS
 
 registerDeclarativeAlgorithm({
   id: 'combination-sum-iii',
+  aliases: ['216', 'leetcode-216', 'combination-sum-3'],
+  hasDeductionTree: true,
   name: '组合总和 III',
   category: 'backtracking',
   description: '1-9 中选 k 个数字且和为 n，双重剪枝',

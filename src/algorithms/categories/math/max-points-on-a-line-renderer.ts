@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'max-points-on-a-line',
+  aliases: ['149', 'leetcode-149', 'max-points-on-a-line', 'max-points'],
+  hasDeductionTree: true,
   name: '直线上最多的点数',
   category: 'math',
   difficulty: 3,

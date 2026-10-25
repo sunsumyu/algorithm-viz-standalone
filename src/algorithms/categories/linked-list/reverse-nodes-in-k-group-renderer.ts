@@ -27,13 +27,14 @@ export {
 
 export const reverseNodesInKGroupVisualizer = registerDeclarativeAlgorithm<KGroupStep>({
   id: 'reverse-nodes-in-k-group',
-  aliases: ['class037-code01', 'reverse-k-group-037', 'reverse-nodes-in-k-group-25', 'leetcode-25'],
+  aliases: ['class037-code01', 'reverse-k-group-037', 'reverse-nodes-in-k-group-25', 'leetcode-25', '25', 'reverse-k-group'],
   name: 'Hard 21: K 个一组翻转链表 (Reverse Nodes in k-Group)',
   category: 'linked-list',
   icon: '🔁',
   difficulty: 3,
   levelOrder: 25,
   learningGoal: '掌握经典链表局部指针翻转与边界缝合技巧，理解常数额外空间 O(1) 处理组内重构的精妙逻辑',
+  hasDeductionTree: true,
   metrics: [
     { id: 'k', label: '每组翻转规模 (k)', color: '#0ea5e9' },
     { id: 'groupRange', label: '当前活跃区间', color: '#f59e0b' },

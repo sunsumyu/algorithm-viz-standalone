@@ -70,6 +70,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<SpiralStep>({
 
 registerAlgorithm({
   id: 'spiral-matrix-ii',
+  aliases: ['59', 'leetcode-59', 'spiral-matrix-2'],
+  hasDeductionTree: true,
   name: '螺旋矩阵 II',
   viewId: 'algo-spiral-matrix-ii-view',
   category: 'array',

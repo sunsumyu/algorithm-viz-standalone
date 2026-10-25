@@ -36,12 +36,12 @@ export function renderMeetingMonopolyCanvas(container: HTMLElement, step: Meetin
 
 export function renderMeetingMonopolyCustomMetrics(container: HTMLElement, step: MeetingMonopolyStep): void {
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 11px; font-weight: 700; color: #475569;">当前推演决策:</span>
-        <span style="font-size: 11px; color: #0284c7; font-weight: 700;">${step.decision}</span>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
+        <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">当前推演决策:</span>
+        <span style="font-size: 11px; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">${step.decision}</span>
       </div>
-      <div style="padding: 6px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 11.5px; color: #334155;">
+      <div style="padding: 8px 12px; background: #020617; border: 1px solid #1e293b; border-left: 3px solid #10b981; border-radius: 6px; font-size: 11.5px; color: #cbd5e1; line-height: 1.5;">
         ${step.message}
       </div>
     </div>

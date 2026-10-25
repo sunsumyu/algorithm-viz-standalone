@@ -19,13 +19,14 @@ export { COPY_LIST_CODES, COPY_LINES, buildCopyListSteps, renderCopyListCanvas }
 
 export const copyListRandomPointer042Visualizer = registerDeclarativeAlgorithm<CopyListStep>({
   id: 'copy-list-random-pointer-042',
-  aliases: ['class035-code01', 'class042-code01', 'copy-random-list-035', 'copy-list-random-pointer', 'copy-random-list', 'leetcode-138'],
+  aliases: ['class035-code01', 'class042-code01', 'copy-random-list-035', 'copy-list-random-pointer', 'copy-random-list', 'leetcode-138', '138'],
   name: '复杂链表的复制 (Class 042)',
   category: 'linked-list',
   icon: '📋',
   difficulty: 2,
   levelOrder: 42,
   learningGoal: '掌握利用链表就地插入建立映射的精妙技巧，彻底摆脱哈希表实现 O(1) 额外空间复杂度的复杂链表深拷贝',
+  hasDeductionTree: true,
   problemHtml: `
     <div style="line-height: 1.6;">
       <h3>课程核心内容 (Class 042 / LeetCode 138)</h3>

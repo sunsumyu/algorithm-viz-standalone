@@ -84,7 +84,9 @@ stages:
                   int n = nums.length;
                   List<Integer>[] tree = new ArrayList[n];
                   for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
-                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  for (int[] e : edges) {
+                      tree[e[0]].add(e[1]); tree[e[1]].add(e[0]);
+                  }
                   int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
                   dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
                   int allXor = xor[0], m = edges.length; // @step:calc_allxor
@@ -163,7 +165,9 @@ stages:
                   int n = nums.length;
                   List<Integer>[] tree = new ArrayList[n];
                   for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
-                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  for (int[] e : edges) {
+                      tree[e[0]].add(e[1]); tree[e[1]].add(e[0]);
+                  }
                   int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
                   dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
                   int allXor = xor[0], m = edges.length; // @step:calc_allxor
@@ -242,7 +246,9 @@ stages:
                   int n = nums.length;
                   List<Integer>[] tree = new ArrayList[n];
                   for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
-                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  for (int[] e : edges) {
+                      tree[e[0]].add(e[1]); tree[e[1]].add(e[0]);
+                  }
                   int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
                   dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
                   int allXor = xor[0], m = edges.length; // @step:calc_allxor
@@ -321,7 +327,9 @@ stages:
                   int n = nums.length;
                   List<Integer>[] tree = new ArrayList[n];
                   for (int i = 0; i < n; i++) tree[i] = new ArrayList<>();
-                  for (int[] e : edges) { tree[e[0]].add(e[1]); tree[e[1]].add(e[0]); }
+                  for (int[] e : edges) {
+                      tree[e[0]].add(e[1]); tree[e[1]].add(e[0]);
+                  }
                   int[] dfn = new int[n], size = new int[n], xor = new int[n]; // @step:init_arrays
                   dfs(0, -1, tree, nums, dfn, size, xor); // @step:call_dfs
                   int allXor = xor[0], m = edges.length; // @step:calc_allxor

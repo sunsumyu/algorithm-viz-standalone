@@ -26,6 +26,7 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'remove-nth-from-end',
+  aliases: ['19', 'leetcode-19', 'remove-nth-node'],
   name: '删除链表的倒数第 N 个结点',
   category: 'linked-list',
   description: 'LeetCode 19 · 虚拟头节点 + 快慢指针定距一趟扫描完成倒数第 N 个节点跨越删除',
@@ -33,6 +34,7 @@ registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 2,
   learningGoal: '掌握虚拟头节点 (dummyHead) 消除特判与快慢指针定距一趟扫描删除链表结点的核心技巧',
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'list',

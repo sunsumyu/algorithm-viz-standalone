@@ -31,20 +31,14 @@ export class MemoSlotVisualAdapter {
     if (!container || !step) return;
     container.innerHTML = '';
 
-    // 优先：如果步骤包含决策天平比对分支 (Decision Inspector)，直接挂载专属业务决策看板
-    if (Array.isArray(step.decisions) && step.decisions.length > 0) {
-      this.renderDecisionInspector(container, step);
-      return;
-    }
-
     // 如果该步骤携带了多维状态数组监视数据，直接进入高级多维状态面板渲染
     if (Array.isArray(step.stateArrays) && step.stateArrays.length > 0) {
       this.renderStateArrays(container, step.stateArrays, step);
       return;
     }
     
-    // 强制重置容器为竖向列式居中容器，杜绝与上层 HTML 任何 flex-row 冲突
-    container.className = 'w-full h-full flex flex-col items-center justify-center gap-2 p-1 relative overflow-auto';
+    // 强制重置容器为竖向列式容器，保证槽位居顶、决策看板居下且平滑滚动
+    container.className = 'w-full h-full flex flex-col items-center justify-start gap-2 p-1.5 relative overflow-auto';
     
     const memoArr: any[] = Array.isArray(step.memoSnapshot)
       ? step.memoSnapshot
@@ -55,6 +49,15 @@ export class MemoSlotVisualAdapter {
       : (step.grid && Array.isArray(step.grid[0]))
       ? step.grid[0]
       : [];
+
+    const isDpArray = Boolean(
+      step.dp1d || 
+      step.stage === 4 || 
+      step.stage === 'stage-4' || 
+      step.slotPrefix === 'dp' ||
+      (step.activeSlot !== undefined && step.grid === undefined && step.dp1d !== undefined)
+    );
+    const slotPrefix = step.slotPrefix || (isDpArray ? 'dp' : 'memo');
 
     // 1. 顶层状态转移等式 / 解释卡片
     const equationWrapper = document.createElement('div');
@@ -79,14 +82,14 @@ export class MemoSlotVisualAdapter {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-purple-700 bg-purple-50/90 px-3 py-1.5 rounded-lg border border-purple-200 flex items-center justify-between shadow-xs animate-pulse">
           <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>${label}</span></span>
-          <span class="font-extrabold bg-purple-200/80 px-2 py-0.5 rounded text-purple-900">memo[${activeSlotIdx ?? 0}] = ${val}</span>
+          <span class="font-extrabold bg-purple-200/80 px-2 py-0.5 rounded text-purple-900">${slotPrefix}[${activeSlotIdx ?? 0}] = ${val}</span>
         </div>
       `;
     } else if (step.slotMode === 'right') {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold text-amber-700 bg-amber-50/90 px-3 py-1.5 rounded-lg border border-amber-200 flex items-center justify-between shadow-xs animate-pulse">
           <span class="flex items-center gap-1.5"><span class="animal-cat">🐱</span> <span>读取左侧新值 (Right):</span></span>
-          <span class="font-extrabold bg-amber-200/80 px-2 py-0.5 rounded text-amber-900">right = memo[${activeSlotIdx ?? 0}] = ${step.right ?? step.memoj}</span>
+          <span class="font-extrabold bg-amber-200/80 px-2 py-0.5 rounded text-amber-900">right = ${slotPrefix}[${activeSlotIdx ?? 0}] = ${step.right ?? step.memoj}</span>
         </div>
       `;
     } else if (step.slotMode === 'updated') {
@@ -99,7 +102,7 @@ export class MemoSlotVisualAdapter {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold ${color} px-3 py-1.5 rounded-lg border flex items-center justify-between shadow-xs">
           <span class="flex items-center gap-1.5">${icon} <span>${label}</span></span>
-          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">memo[${activeSlotIdx ?? 0}] = ${sumVal}</span>
+          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">${slotPrefix}[${activeSlotIdx ?? 0}] = ${sumVal}</span>
         </div>
       `;
     } else if (activeSlotIdx !== undefined && step.type?.includes('update')) {
@@ -112,7 +115,7 @@ export class MemoSlotVisualAdapter {
       equationWrapper.innerHTML = `
         <div class="text-xs font-mono font-bold ${color} px-3 py-1.5 rounded-lg border flex items-center justify-between shadow-xs">
           <span class="flex items-center gap-1.5">${icon} <span>${label}</span></span>
-          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">dp[${activeSlotIdx ?? 0}] = ${sumVal}</span>
+          <span class="font-extrabold ${badgeColor} px-2 py-0.5 rounded">${slotPrefix}[${activeSlotIdx ?? 0}] = ${sumVal}</span>
         </div>
       `;
     } else {
@@ -183,7 +186,7 @@ export class MemoSlotVisualAdapter {
       }
 
       slotBox.innerHTML = `
-        <span class="text-[10px] font-mono-code font-semibold text-slate-500">memo[${j}]</span>
+        <span class="text-[10px] font-mono-code font-semibold text-slate-500">${slotPrefix}[${j}]</span>
         <div class="${slotClass}">
           ${iconBadge}
           <span class="slot-val text-sm sm:text-base font-extrabold">${val}</span>
@@ -193,6 +196,12 @@ export class MemoSlotVisualAdapter {
       slotsRow.appendChild(slotBox);
     }
     container.appendChild(slotsRow);
+
+    // 3. 若步骤包含决策天平比对分支 (Decision Inspector)，在槽位下方无缝挂载专属业务决策看板
+    if (Array.isArray(step.decisions) && step.decisions.length > 0) {
+      const decisionWrapper = this.buildDecisionWrapper(step);
+      if (decisionWrapper) container.appendChild(decisionWrapper);
+    }
   }
 
   /**
@@ -355,8 +364,18 @@ export class MemoSlotVisualAdapter {
    */
   public static renderDecisionInspector(container: HTMLElement, step: any): void {
     if (!container || !step || !Array.isArray(step.decisions)) return;
+    container.innerHTML = '';
     container.className = 'w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 gap-3 relative overflow-auto bg-slate-50/50';
 
+    const wrapper = this.buildDecisionWrapper(step);
+    if (wrapper) container.appendChild(wrapper);
+  }
+
+  /**
+   * 构建决策天平对比卡片包裹层 (可嵌入槽位下方或独立呈现)
+   */
+  public static buildDecisionWrapper(step: any): HTMLElement | null {
+    if (!step || !Array.isArray(step.decisions) || step.decisions.length === 0) return null;
     const decisions = step.decisions as Array<{
       label: string;
       formula: string;
@@ -365,11 +384,11 @@ export class MemoSlotVisualAdapter {
     }>;
 
     const wrapper = document.createElement('div');
-    wrapper.className = 'w-full max-w-xl flex flex-col items-center gap-3 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm';
+    wrapper.className = 'w-full max-w-xl flex flex-col items-center gap-2.5 bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-xs mt-1 flex-shrink-0';
 
     // 1. 顶部标题栏
     const header = document.createElement('div');
-    header.className = 'w-full flex items-center justify-between border-b border-slate-100 pb-2.5';
+    header.className = 'w-full flex items-center justify-between border-b border-slate-100 pb-2';
     const targetLabel = step.tag || (step.activeSlot !== undefined ? `dp[${step.activeSlot}]` : '状态转移决策');
     header.innerHTML = `
       <div class="flex items-center gap-2">
@@ -385,7 +404,7 @@ export class MemoSlotVisualAdapter {
 
     // 2. 候选决策天平分支卡片区
     const cardsRow = document.createElement('div');
-    cardsRow.className = 'w-full grid grid-cols-1 sm:grid-cols-2 gap-3';
+    cardsRow.className = 'w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5';
 
     decisions.forEach((dec) => {
       const isSelected = dec.isSelected ?? (decisions.length === 1 ? true : false);
@@ -395,14 +414,14 @@ export class MemoSlotVisualAdapter {
       const val = dec.value !== undefined ? dec.value : (decAny.val !== undefined ? decAny.val : '-');
 
       const card = document.createElement('div');
-      card.className = `rounded-xl p-3 border transition-all flex flex-col justify-between ${
+      card.className = `rounded-xl p-2.5 border transition-all flex flex-col justify-between ${
         isSelected
-          ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-300/60 shadow-sm'
+          ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-300/60 shadow-xs'
           : 'bg-slate-50/70 border-slate-200 opacity-75'
       }`;
 
       card.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center justify-between mb-1.5">
           <span class="text-xs font-bold ${isSelected ? 'text-emerald-900 font-extrabold' : 'text-slate-600'}">${label}</span>
           ${isSelected
             ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">🏆 较优选择</span>'
@@ -421,14 +440,14 @@ export class MemoSlotVisualAdapter {
     // 3. 底部转移结论条
     if (step.msg || step.log) {
       const footer = document.createElement('div');
-      footer.className = 'w-full bg-slate-50 rounded-xl px-3 py-2 border border-slate-200/60 text-xs text-slate-600 flex items-center justify-between';
+      footer.className = 'w-full bg-slate-50 rounded-xl px-2.5 py-1.5 border border-slate-200/60 text-xs text-slate-600 flex items-center justify-between';
       footer.innerHTML = `
         <span class="flex items-center gap-1.5"><i class="fa-solid fa-calculator text-blue-500 text-[11px]"></i> <span>决策依据:</span></span>
-        <span class="font-mono font-bold text-slate-800">${step.msg || step.log}</span>
+        <span class="font-mono font-bold text-slate-800 text-[11px] truncate">${step.msg || step.log}</span>
       `;
       wrapper.appendChild(footer);
     }
 
-    container.appendChild(wrapper);
+    return wrapper;
   }
 }

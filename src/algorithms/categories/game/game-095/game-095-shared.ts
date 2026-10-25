@@ -26,10 +26,11 @@ export function renderPlayerBanner(
   formulaText: string
 ) {
   const banner = document.createElement('div');
-  const winBg = isFirstWin ? '#ecfdf5' : '#fef2f2';
+  const winBg = isFirstWin ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)';
   const winBorder = isFirstWin ? '#10b981' : '#ef4444';
-  const winColor = isFirstWin ? '#047857' : '#b91c1c';
+  const winColor = isFirstWin ? '#34d399' : '#f87171';
   const badgeText = isFirstWin ? '🏆 先手必胜 (N-position)' : '💀 先手必败 (P-position)';
+  const glow = isFirstWin ? '0 0 12px rgba(16, 185, 129, 0.25)' : '0 0 12px rgba(239, 68, 68, 0.25)';
 
   banner.style.cssText = `
     display: flex;
@@ -39,17 +40,17 @@ export function renderPlayerBanner(
     background: ${winBg};
     border-radius: 8px;
     border: 1.5px solid ${winBorder};
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: ${glow};
   `;
 
   banner.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
-      <span style="font-size: 13px; font-weight: 800; color: ${winColor}; background: #ffffff; padding: 3px 10px; border-radius: 6px; border: 1px solid ${winBorder}60;">
+      <span style="font-size: 13px; font-weight: 800; color: ${winColor}; background: rgba(15, 23, 42, 0.6); padding: 3px 10px; border-radius: 6px; border: 1px solid ${winBorder}80;">
         ${badgeText}
       </span>
-      <span style="font-size: 13px; font-weight: 600; color: #1e293b;">${statusText}</span>
+      <span style="font-size: 13px; font-weight: 700; color: #f8fafc;">${statusText}</span>
     </div>
-    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #475569; background: #ffffffcc; padding: 3px 10px; border-radius: 6px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #38bdf8; background: rgba(15, 23, 42, 0.7); padding: 4px 10px; border-radius: 6px; border: 1px solid #1e293b;">
       ${formulaText}
     </div>
   `;
@@ -73,9 +74,9 @@ export function renderStonePiles(
     justify-content: center;
     align-items: flex-end;
     padding: 16px;
-    background: #f8fafc;
+    background: #0f172a;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e293b;
     min-height: 140px;
     overflow-x: auto;
   `;
@@ -93,16 +94,18 @@ export function renderStonePiles(
 
     // 堆顶石子数量徽章
     const countBadge = document.createElement('div');
+    const badgeGlow = isActive ? '0 0 10px rgba(56, 189, 248, 0.4)' : 'none';
     countBadge.style.cssText = `
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
       font-weight: 800;
-      color: ${isActive ? '#2563eb' : '#334155'};
-      background: ${isActive ? '#eff6ff' : '#ffffff'};
-      border: 1.5px solid ${isActive ? '#3b82f6' : '#cbd5e1'};
+      color: ${isActive ? '#38bdf8' : '#f1f5f9'};
+      background: ${isActive ? 'rgba(56, 189, 248, 0.15)' : '#1e293b'};
+      border: 1.5px solid ${isActive ? '#38bdf8' : '#334155'};
       border-radius: 12px;
       padding: 2px 8px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      box-shadow: ${badgeGlow};
+      transition: all 0.2s ease;
     `;
     countBadge.textContent = `${count} 颗`;
     col.appendChild(countBadge);
@@ -122,12 +125,14 @@ export function renderStonePiles(
     for (let s = 0; s < visibleDots; s++) {
       const dot = document.createElement('div');
       const isTarget = isActive && highlightStones && s >= count - highlightStones;
+      const dotBg = isTarget ? '#f59e0b' : isActive ? '#38bdf8' : '#475569';
+      const dotGlow = isTarget ? '0 0 6px #f59e0b' : isActive ? '0 0 6px #38bdf8' : 'none';
       dot.style.cssText = `
-        width: 36px;
-        height: 7px;
+        width: 38px;
+        height: 8px;
         border-radius: 4px;
-        background: ${isTarget ? '#f59e0b' : isActive ? '#3b82f6' : '#64748b'};
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.15);
+        background: ${dotBg};
+        box-shadow: ${dotGlow};
         transition: all 0.2s ease;
       `;
       stonesStack.appendChild(dot);
@@ -135,7 +140,7 @@ export function renderStonePiles(
 
     if (count > 12) {
       const moreText = document.createElement('div');
-      moreText.style.cssText = 'font-size: 10px; color: #94a3b8; font-weight: 600;';
+      moreText.style.cssText = 'font-size: 10px; color: #94a3b8; font-weight: 700;';
       moreText.textContent = `+${count - 12} 隐藏`;
       stonesStack.appendChild(moreText);
     }
@@ -147,7 +152,7 @@ export function renderStonePiles(
     label.style.cssText = `
       font-size: 11px;
       font-weight: 700;
-      color: ${isActive ? '#1d4ed8' : '#64748b'};
+      color: ${isActive ? '#38bdf8' : '#94a3b8'};
       font-family: 'JetBrains Mono', monospace;
     `;
     label.textContent = `第 ${idx + 1} 堆`;

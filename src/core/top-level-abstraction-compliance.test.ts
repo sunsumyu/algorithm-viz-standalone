@@ -116,6 +116,8 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'regex-matching',
   'wildcard-matching',
   'buying-hay-min-cost',
+  'bounded-knapsack-naive',
+  'bounded-knapsack-binary',
   'burst-balloons',
   'predict-the-winner',
   'min-score-triangulation',
@@ -141,6 +143,7 @@ export const LOCKED_TOP_LEVEL_ALGORITHMS = [
   'good-subsets',
   'distribute-repeating-integers',
   'bounded-knapsack-naive',
+  'bounded-knapsack-binary',
 ];
 
 describe('🏆 顶层抽象合规硬门禁 (Top-Level Abstraction Strict Gates)', () => {

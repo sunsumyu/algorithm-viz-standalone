@@ -72,9 +72,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
 
 registerAlgorithm({
   id: 'remove-adjacent-duplicates',
+  aliases: ['remove-duplicates', 'remove-adjacent-duplicates-1047', 'leetcode-1047', '1047'],
   name: '删除相邻重复项',
   viewId: 'algo-remove-adjacent-duplicates-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '栈消消乐模型：栈顶即当前前驱，遇到相同字符直接出栈对消，形成连锁反应',
   icon: '✨',
   template,

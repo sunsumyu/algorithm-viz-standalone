@@ -54,7 +54,7 @@ export class VisualizerAppController {
   private isDestroyed = false;
   private selectedPresetIndex = 0;
   public stage3SubView: 'matrix' | 'tree' | 'alignment' | 'sandbox' = 'matrix';
-  public stage4SubView: 'memo' | 'alignment' = 'memo';
+  public stage4SubView: 'memo' | 'tree' | 'sandbox' | 'alignment' = 'memo';
   public card2SubView: 'tree' | 'alignment' | 'stack' = 'tree';
   public card1SubView: 'grid' | 'deduction' = 'grid';
   public activeRightTab: 'code' | 'problem' | 'analysis' = 'code';
@@ -66,7 +66,7 @@ export class VisualizerAppController {
     const savedStage3 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage3-subview') as any) : null;
     this.stage3SubView = (savedStage3 === 'tree' || savedStage3 === 'alignment' || savedStage3 === 'sandbox') ? savedStage3 : 'matrix';
     const savedStage4 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-stage4-subview') as any) : null;
-    this.stage4SubView = (savedStage4 === 'alignment') ? 'alignment' : 'memo';
+    this.stage4SubView = (savedStage4 === 'alignment' || savedStage4 === 'sandbox' || savedStage4 === 'tree') ? savedStage4 : 'memo';
     const savedCard2 = typeof localStorage !== 'undefined' ? (localStorage.getItem('algo-card2-subview') as any) : null;
     if (savedCard2 === 'tree' || savedCard2 === 'alignment' || savedCard2 === 'stack') {
       this.card2SubView = savedCard2;
@@ -622,7 +622,7 @@ export class VisualizerAppController {
   /**
    * 设置阶段 4 的子视图模式 (一维滚动数组 vs 串比对)
    */
-  public setStage4SubView(view: 'memo' | 'alignment'): void {
+  public setStage4SubView(view: 'memo' | 'tree' | 'sandbox' | 'alignment'): void {
     this.stage4SubView = view;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('algo-stage4-subview', view);
@@ -648,7 +648,11 @@ export class VisualizerAppController {
    */
   public updateStage4SubViewTabs(): void {
     const isStringProblem = this.checkIsStringProblem();
-    StageNavigationCoordinator.updateStage4SubViewTabs(this.currentStage, this.stage4SubView, isStringProblem);
+    const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(this.modelId);
+    const hasSandbox = isKnapsack || IntervalDpSandboxAdapter.isSupported(this.modelId);
+    const effectiveM = (this.steps && this.steps[0]?.grid && this.steps[0].grid.length > 1) ? this.steps[0].grid.length : this.m;
+    const hasTree = effectiveM > 1 || isKnapsack;
+    StageNavigationCoordinator.updateStage4SubViewTabs(this.currentStage, this.stage4SubView, isStringProblem, hasSandbox, hasTree);
   }
 
   /**
@@ -946,6 +950,11 @@ export class VisualizerAppController {
       onSwitchRightTab: (tab) => this.switchRightTab(tab),
       onOpenProblemModal: () => this.openProblemModal(),
       onCloseProblemModal: () => this.closeProblemModal(),
+      onCopyCode: () => {
+        const stageConfig = this.model?.stages?.[this.currentStage];
+        const variant = stageConfig?.variants ? (stageConfig.variants[this.currentStageVariant] || Object.values(stageConfig.variants)[0]) : null;
+        return variant?.cleanSource || stageConfig?.cleanSource || null;
+      },
       onOpenSelector: () => {
         if (typeof window !== 'undefined') {
           if ((window as any).viewMountEngine) {

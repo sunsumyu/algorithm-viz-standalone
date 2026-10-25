@@ -34,16 +34,20 @@ export function renderSieveGrid(
     flex-direction: column;
     gap: 8px;
     padding: 12px 16px;
-    background: #ffffff;
+    background: #0f172a;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e293b;
   `;
 
   const header = document.createElement('div');
-  header.style.cssText = 'display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #1e293b;';
+  header.style.cssText = 'display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #f8fafc;';
   header.innerHTML = `
     <span>🔢 ${title}</span>
-    <span style="font-size: 11px; color: #64748b; font-weight: 500;">绿色=质数 | 浅灰=合数 (含标记因子) | 蓝色=活跃游标</span>
+    <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">
+      <span style="color: #34d399; font-weight: 700;">● 质数</span> | 
+      <span style="color: #64748b;">● 合数</span> | 
+      <span style="color: #38bdf8; font-weight: 700;">● 活跃游标</span>
+    </span>
   `;
   box.appendChild(header);
 
@@ -54,14 +58,16 @@ export function renderSieveGrid(
     const isActive = cell.val === activeVal;
     const isP = cell.isPrime;
 
-    let bg = isP ? '#ecfdf5' : '#f8fafc';
-    let border = isP ? '#10b981' : '#cbd5e1';
-    let text = isP ? '#047857' : '#94a3b8';
+    let bg = isP ? 'rgba(16, 185, 129, 0.15)' : '#1e293b';
+    let border = isP ? '#10b981' : '#334155';
+    let text = isP ? '#34d399' : '#64748b';
+    let glow = isP ? 'box-shadow: 0 0 6px rgba(16, 185, 129, 0.2);' : '';
 
     if (isActive) {
-      bg = '#eff6ff';
-      border = '#3b82f6';
-      text = '#1d4ed8';
+      bg = 'rgba(56, 189, 248, 0.25)';
+      border = '#38bdf8';
+      text = '#38bdf8';
+      glow = 'box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);';
     }
 
     const card = document.createElement('div');
@@ -76,11 +82,13 @@ export function renderSieveGrid(
       border: 1.5px solid ${border};
       font-family: 'JetBrains Mono', monospace;
       position: relative;
+      ${glow}
+      transition: all 0.2s ease;
     `;
 
     card.innerHTML = `
       <span style="font-size: 12px; font-weight: 800; color: ${text};">${cell.val}</span>
-      ${!isP && cell.markedBy ? `<span style="font-size: 8px; color: #ef4444; line-height: 1;">÷${cell.markedBy}</span>` : ''}
+      ${!isP && cell.markedBy ? `<span style="font-size: 8px; color: #f43f5e; line-height: 1; font-weight: 700;">÷${cell.markedBy}</span>` : ''}
     `;
 
     gridContainer.appendChild(card);

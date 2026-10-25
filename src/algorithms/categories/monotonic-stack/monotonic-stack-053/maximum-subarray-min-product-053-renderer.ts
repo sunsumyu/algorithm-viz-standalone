@@ -21,6 +21,7 @@ export const maximumSubarrayMinProduct053Visualizer = registerDeclarativeAlgorit
   category: 'monotonic-stack',
   difficulty: 'medium',
   aliases: ['maximum-subarray-min-product', '1856', '子数组最小乘积的最大值', 'class053-code06'],
+  hasDeductionTree: true,
   learningGoal:
     '掌握单调递增栈求解每个柱子作为最小值所能延展的最远辐射区间，配合前缀和 O(1) 提取区间和。',
   problemContent: {

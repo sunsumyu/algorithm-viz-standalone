@@ -21,8 +21,10 @@ export {
 
 export const heapGreater026Visualizer = registerDeclarativeAlgorithm<HeapGreaterStep>({
   id: 'heap-greater-026',
+  aliases: ['class026-code01', 'class026', 'heap-greater-026'],
   name: 'Class 026: 手写加强堆结构 (HeapGreater)',
   category: 'heap',
+  hasDeductionTree: true,
   icon: '🏗️',
   difficulty: 3,
   levelOrder: 26,

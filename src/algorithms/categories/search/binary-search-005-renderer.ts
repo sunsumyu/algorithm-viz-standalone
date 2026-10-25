@@ -21,6 +21,7 @@ export {
 
 export const binarySearch005Visualizer = registerDeclarativeAlgorithm<BinarySearch005Step>({
   id: 'binary-search-005',
+  hasDeductionTree: true,
   name: '二分搜索与局部最小值检测 (Class 005)',
   category: 'search',
   icon: '🔍',

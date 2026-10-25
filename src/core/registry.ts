@@ -22,6 +22,8 @@ export interface AlgorithmMetadata {
   learningGoal?: string;
   /** 名称别名（中英文变体、旧称、课程别称）：同一概念的全部名称表现统一收纳于此，用于检索命中，不参与目录展示 */
   aliases?: string[];
+  /** 是否支持全景推演树 */
+  hasDeductionTree?: boolean;
 }
 
 export interface AlgorithmManifest extends AlgorithmMetadata {

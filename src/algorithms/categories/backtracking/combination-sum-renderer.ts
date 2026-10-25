@@ -23,6 +23,8 @@ export { buildCombinationSumTree, buildCombinationSumSteps, renderCombinationSum
 
 registerDeclarativeAlgorithm({
   id: 'combination-sum',
+  aliases: ['39', 'leetcode-39', 'combination-sum-unlimited'],
+  hasDeductionTree: true,
   name: '组合总和',
   category: 'backtracking',
   description: '无重复元素，可重复选取，剪枝求目标总和',

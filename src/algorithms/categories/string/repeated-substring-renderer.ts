@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'repeated-substring',
+  aliases: ['459', 'leetcode-459', 'repeated-substring-pattern'],
+  hasDeductionTree: true,
   name: '重复的子字符串',
   category: 'string',
   description: '判断字符串是否可由重复子串构成',

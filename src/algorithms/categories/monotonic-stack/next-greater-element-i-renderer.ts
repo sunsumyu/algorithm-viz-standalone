@@ -32,6 +32,8 @@ registerDeclarativeAlgorithm({
   icon: '🔍',
   difficulty: 1,
   levelOrder: 2,
+  aliases: ['496', 'leetcode-496', 'next-greater-element'],
+  hasDeductionTree: true,
   learningGoal: '掌握单调栈与哈希表结合的高效解题范式，理解子集查询先在母集建表的降维思路',
   inputs: [
     {

@@ -134,10 +134,13 @@ export function compileCanIWin(
         dp1d: [cached ? 1 : 0, rest],
         memo: { ...memoTable },
         activeSlot: 0,
+        status,
+        rest,
+        candidate: 0,
         tag: `缓存命中: 状态[${statusBin}] -> ${cached ? '先手赢' : '先手输'}`,
         log: `| ⚡ 【缓存命中】状态 status=${statusBin} 已推导过，直接返回 ${cached ? 'true(必胜)' : 'false(必败)'}`,
         msg: `记忆化缓存命中：局面 <code>status=${statusBin}</code> 结论为 <strong>${cached ? '先手必胜' : '先手必败'}</strong>。`,
-      });
+      } as any);
       return cached;
     }
 
@@ -150,10 +153,13 @@ export function compileCanIWin(
       dp1d: [0, rest],
       memo: { ...memoTable },
       activeSlot: 0,
+      status,
+      rest,
+      candidate: 0,
       tag: `进入递归 dfs(status=${statusBin}, rest=${rest})`,
       log: `| 📥 【递归帧】考察局面 status=${statusBin}，当前选手需凑齐 rest=${rest}`,
       msg: `进入递归函数：当前局面二进制状态 <code>${statusBin}</code>，距离目标尚需 <code>${rest}</code>。`,
-    });
+    } as any);
 
     // 初始化本回合 ans = false
     steps.push({
@@ -164,10 +170,13 @@ export function compileCanIWin(
       dp1d: [0, rest],
       memo: { ...memoTable },
       activeSlot: 0,
+      status,
+      rest,
+      candidate: 0,
       tag: 'ans = false (假定必败)',
       log: '| 📍 初始化当前回合结论 ans = false，尝试所有可选数字寻找必胜分支',
       msg: '初始化当前选手胜负结论：<code>ans = false</code>，只要找到一种让对手必败的选法即告胜。',
-    });
+    } as any);
 
     let ans = false;
 
@@ -190,6 +199,9 @@ export function compileCanIWin(
         dp1d: [ans ? 1 : 0, rest, i],
         memo: { ...memoTable },
         activeSlot: 0,
+        status,
+        rest,
+        candidate: i,
         tag: isReverse ? `[逆序] 尝试大数 ${i}` : `尝试数字 ${i}`,
         log: isReverse
           ? `| 🔄 【逆序探查】优先检查高面值数字 i=${i}`
@@ -197,7 +209,7 @@ export function compileCanIWin(
         msg: isReverse
           ? `逆序大数优先探查：优先尝试较大面值数字 <strong>${i}</strong>，期望更快击穿目标 <code>rest=${rest}</code>。`
           : `循环遍历：检查数字 <strong>${i}</strong> 是否已被选用。`,
-      });
+      } as any);
 
       const isUsed = (status & (1 << i)) !== 0;
       if (isUsed) {
@@ -212,10 +224,13 @@ export function compileCanIWin(
         dp1d: [ans ? 1 : 0, rest, i],
         memo: { ...memoTable },
         activeSlot: 0,
+        status,
+        rest,
+        candidate: i,
         tag: `数字 ${i} 可用`,
         log: `| 🟢 数字 i=${i} 未被使用，属于当前可选策略`,
         msg: `条件满足：数字 <strong>${i}</strong> 尚未被使用，尝试选择该数字。`,
-      });
+      } as any);
 
       if (i >= rest) {
         // 当前选手选 i 即可直接达成目标获胜
@@ -228,10 +243,13 @@ export function compileCanIWin(
           dp1d: [1, rest, i],
           memo: { ...memoTable },
           activeSlot: 0,
+          status,
+          rest,
+          candidate: i,
           tag: `选 ${i} >= rest(${rest})，当前选手立即获胜！`,
           log: `| 🏆 【一步致胜】当前选手选择 ${i} >= rest(${rest})，立即达到目标累加和，宣告胜利！`,
           msg: `当前选手选择 <code>${i} >= rest(${rest})</code>，累加和达标，<strong>立即获胜！</strong>`,
-        });
+        } as any);
 
         steps.push({
           type: 'break',
@@ -241,10 +259,13 @@ export function compileCanIWin(
           dp1d: [1, rest, i],
           memo: { ...memoTable },
           activeSlot: 0,
+          status,
+          rest,
+          candidate: i,
           tag: '已获胜，剪枝跳出循环',
           log: '| ✂️ 已找到致胜策略，无需尝试其他数字，提前 break 剪枝',
           msg: '剪枝跳出：已找到致胜分支，<code>break</code> 终止遍历。',
-        });
+        } as any);
         break;
       }
 
@@ -261,10 +282,13 @@ export function compileCanIWin(
         dp1d: [0, nextRest, i],
         memo: { ...memoTable },
         activeSlot: 0,
+        status,
+        rest,
+        candidate: i,
         tag: `选择 ${i} -> 交替由对手行动 dfs(status|${1 << i}, rest-${i})`,
         log: `| 🌿 【分支深入】选择 ${i}，进入对手回合：dfs(status=${nextStatus.toString(2).padStart(n + 1, '0')}, rest=${nextRest})`,
         msg: `深入对手回合：选入数字 <strong>${i}</strong>，局面转移至对手，求解对手在该局面下能否必胜。`,
-      });
+      } as any);
       stepCount++;
 
       const opponentWin = dfs(nextStatus, nextRest);
@@ -280,10 +304,13 @@ export function compileCanIWin(
         dp1d: [opponentWin ? 0 : 1, rest, i],
         memo: { ...memoTable },
         activeSlot: 0,
+        status,
+        rest,
+        candidate: i,
         tag: `对手回合返回: ${opponentWin ? '对手必胜' : '对手必败 -> 我方必胜！'}`,
         log: `| ↩️ 【回溯赋值】对手在局面 ${nextStatus.toString(2).padStart(n + 1, '0')} 下${opponentWin ? '能赢' : '必输(我方胜！)'}`,
         msg: `对手回合回溯赋值：对手在选入 <code>${i}</code> 后的局面下结果为 <strong>${opponentWin ? '能赢' : '必输 (从而我方必胜！)'}</strong>。`,
-      });
+      } as any);
 
       if (!opponentWin) {
         ans = true;
@@ -295,10 +322,13 @@ export function compileCanIWin(
           dp1d: [1, rest, i],
           memo: { ...memoTable },
           activeSlot: 0,
+          status,
+          rest,
+          candidate: i,
           tag: `选 ${i} 令对手必败 -> 当前选手胜！`,
           log: `| 🏆 【博弈致胜】选入 ${i} 导致对手必输，当前选手达成必胜策略 ans = true`,
           msg: `选择数字 <code>${i}</code> 后对手无路可走必输，因此当前选手 <strong>必胜！</strong>`,
-        });
+        } as any);
 
         steps.push({
           type: 'break',
@@ -308,10 +338,13 @@ export function compileCanIWin(
           dp1d: [1, rest, i],
           memo: { ...memoTable },
           activeSlot: 0,
+          status,
+          rest,
+          candidate: i,
           tag: '已获胜，剪枝跳出',
           log: '| ✂️ 已找到令对手必输的策略，提前 break',
           msg: '剪枝跳出：已找到致胜分支，<code>break</code> 终止遍历。',
-        });
+        } as any);
         break;
       }
     }
@@ -326,10 +359,13 @@ export function compileCanIWin(
       dp1d: [ans ? 1 : 0, rest],
       memo: { ...memoTable },
       activeSlot: 0,
+      status,
+      rest,
+      candidate: 0,
       tag: `dp[${statusBin}] = ${ans ? '1 (必胜)' : '-1 (必败)'}`,
       log: `| 💾 【记忆化保存】记录局面 dp[${statusBin}] = ${ans ? '1(必胜)' : '-1(必败)'}`,
       msg: `保存状态：局面 <code>${statusBin}</code> 记忆化保存为 <strong>${ans ? '1 (必胜)' : '-1 (必败)'}</strong>。`,
-    });
+    } as any);
 
     steps.push({
       type: 'return',
@@ -339,10 +375,13 @@ export function compileCanIWin(
       dp1d: [ans ? 1 : 0, rest],
       memo: { ...memoTable },
       activeSlot: 0,
+      status,
+      rest,
+      candidate: 0,
       tag: `返回: ${ans}`,
       log: `| ⬆️ 局面 ${statusBin} 计算完毕，返回 ${ans}`,
       msg: `返回递归结果：<code>return ${ans}</code>。`,
-    });
+    } as any);
 
     return ans;
   }
@@ -358,6 +397,9 @@ export function compileCanIWin(
     dp1d: [finalResult ? 1 : 0],
     memo: { ...memoTable },
     activeSlot: 0,
+    status: 0,
+    rest: m,
+    candidate: 0,
     tag: isReverse
       ? `[逆序推导结果]: 先手${finalResult ? '必胜 ✓' : '必败 ✗'}`
       : `最终推导: 先手${finalResult ? '能赢 ✓' : '不能赢 ✗'}`,
@@ -367,7 +409,7 @@ export function compileCanIWin(
     msg: isReverse
       ? `🏆 逆序大数优先博弈推导完成！在规模 <code>n=${n}, m=${m}</code> 下先手 <strong>${finalResult ? '必胜 (true) ✓' : '必败 (false) ✗'}</strong>。`
       : `🏆 状压博弈推导完成！对于规模 <code>n=${n}, m=${m}</code>，先手 <strong>${finalResult ? '必胜 (true) ✓' : '必败 (false) ✗'}</strong>。`,
-  });
+  } as any);
 
   return steps;
 }

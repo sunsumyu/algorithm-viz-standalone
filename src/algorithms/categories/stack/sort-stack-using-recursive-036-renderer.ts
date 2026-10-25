@@ -16,8 +16,10 @@ export { generateSortStackSteps, SORT_STACK_CODES };
 
 registerDeclarativeAlgorithm<SortStackStep>({
   id: 'sort-stack-using-recursive-036',
+  aliases: ['class036-sort-stack', 'class036-code03', 'sort-stack', 'sort-stack-using-recursive', 'sort-stack-036'],
   name: '用一个辅助栈对栈进行排序',
   category: 'stack',
+  hasDeductionTree: true,
   difficulty: 'medium',
   description: '仅允许使用一个辅助栈，不能使用额外数据结构，将一个无序栈从顶到底按升序/降序排好序。',
   problemHtml: `

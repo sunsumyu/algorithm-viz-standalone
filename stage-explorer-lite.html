@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LeetCode 62. 不同路径 - 算法可视化演示 (精简版)</title>
   
-  <!-- Tailwind CSS (非阻塞异步加载) -->
-  <script src="https://cdn.tailwindcss.com" defer></script>
+  <!-- Tailwind CSS (本地离线优先，0ms 极速就绪) -->
+  <script src="/vendor/tailwindcss.js"></script>
+  <script>if (!window.tailwind) document.write('<script src="https://cdn.tailwindcss.com"><\/script>');</script>
   <!-- 本地离线 js-yaml 核心引擎 (0ms 离线解析) -->
   <script src="/vendor/js-yaml.min.js"></script>
   
-  <!-- Font Awesome Icons (异步非阻塞) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'" />
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   
   <!-- Shared Visualizer Theme CSS -->
   <link rel="stylesheet" href="/src/styles/visualizer-theme.css" />
@@ -174,11 +175,20 @@
                 <button id="btn-subview-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1" style="display: none;">
                   <i class="fa-solid fa-font"></i> <span>串比对</span>
                 </button>
+                <button id="btn-subview-sandbox" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1" style="display: none;">
+                  <i class="fa-solid fa-box-open"></i> <span>背包与组桶</span>
+                </button>
               </div>
-              <!-- 阶段 4 专用：一维滚动数组与串比对切换 Tab -->
+              <!-- 阶段 4 专用：一维滚动数组、依赖树、沙盘与串比对切换 Tab -->
               <div id="stage4-subview-bar" class="hidden items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-bold">
                 <button id="btn-stage4-memo" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1">
                   <i class="fa-solid fa-bars-staggered"></i> <span>滚动数组</span>
+                </button>
+                <button id="btn-stage4-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1" style="display: none;">
+                  <i class="fa-solid fa-network-wired"></i> <span>状态依赖树</span>
+                </button>
+                <button id="btn-stage4-sandbox" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1" style="display: none;">
+                  <i class="fa-solid fa-box-open"></i> <span>背包与组桶</span>
                 </button>
                 <button id="btn-stage4-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1" style="display: none;">
                   <i class="fa-solid fa-font"></i> <span>串比对</span>

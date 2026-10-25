@@ -366,7 +366,10 @@ public static mount(
   btnFontInc?.addEventListener('click', onFontIncClick);
 
   const onCopyClick = () => { void copyCodeImpl(rendererDeps, rendererState); };
-  btnCopy?.addEventListener('click', onCopyClick);
+  if (btnCopy) {
+    (btnCopy as any)._darkTerminalBound = true;
+    btnCopy.addEventListener('click', onCopyClick);
+  }
 
   const onOpenModalClick = () => {
     if (modalProblem) { modalProblem.classList.remove('hidden'); modalProblem.style.display = 'flex'; }
@@ -386,6 +389,9 @@ public static mount(
 
   // ── 8. 提取模块：变量悬停气泡 ────────────────────────────
   let currentStepContext: unknown = null;
+  const persistentExecutionScope = new Map<string, ResolvedVariable>();
+  let lastObservedIndex = -1;
+
   const hoverMgr = createHoverTooltipManager(
     { codeWrapper, createEl: DarkCodeTerminalPresenter.createSafeElement.bind(DarkCodeTerminalPresenter) },
     {
@@ -405,14 +411,28 @@ public static mount(
     highlightLine: (target) => hl(target),
     updateVars: (vars?: StepVar[], stepContext?: unknown) => {
       currentStepContext = stepContext;
-      currentVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
+      const s = stepContext as Record<string, any> | undefined;
+      const currentIdx = typeof s?.index === 'number' ? s.index : (typeof s?.stepIndex === 'number' ? s.stepIndex : undefined);
+
+      if (currentIdx !== undefined && (currentIdx <= 0 || currentIdx < lastObservedIndex)) {
+        persistentExecutionScope.clear();
+      }
+      if (currentIdx !== undefined) {
+        lastObservedIndex = currentIdx;
+      }
+
+      const freshVarsMap = VariableContextResolver.resolve(stepContext || { vars }, currentLang);
+      for (const [k, v] of freshVarsMap.entries()) {
+        persistentExecutionScope.set(k, v);
+      }
+      currentVarsMap = new Map(persistentExecutionScope);
       rendererState.currentVarsMap = currentVarsMap;
 
       if (codeWrapper) {
         const activeLineEl = (codeWrapper.querySelector?.('.code-line.active') ||
           codeWrapper.querySelector?.('.code-line.is-active')) as HTMLElement | null;
         if (activeLineEl) {
-          updateInlineHint(activeLineEl, rendererDeps, rendererState);
+          updateInlineHint(activeLineEl, rendererDeps, rendererState, stepContext);
         }
       }
 

@@ -29,6 +29,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'subset',
+  aliases: ['78', 'leetcode-78', 'subsets'],
+  hasDeductionTree: true,
   name: '子集',
   category: 'backtracking',
   description: '求无重复数组的所有子集（幂集），全节点收集',

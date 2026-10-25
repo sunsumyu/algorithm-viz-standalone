@@ -452,5 +452,125 @@ describe('StateSpacePresenter (Deep Facade & Scoped Container)', () => {
     expect(container.className).toContain('grid');
     expect(container.className).not.toContain('flex-col');
   });
+
+  it('Card 2 在 Stage 3 且 stage3SubView === "tree" 时应动态解析并委托 RecursionTreeAdapter 渲染真实状态依赖树，杜绝表格冒充树', () => {
+    const container = new MockElement('card2-container');
+    const step: UniversalStep = {
+      stepIndex: 35,
+      type: 'transition',
+      i: 1,
+      j: 12,
+      grid: [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 20],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null]
+      ],
+      teams: 2
+    };
+
+    StateSpacePresenter.renderCard2(container as any, {
+      currentStage: 'stage-3',
+      stage3SubView: 'tree',
+      step,
+      m: 2,
+      n: 45,
+      modelId: 'partitioned-knapsack-standard',
+      params: {
+        m: 45,
+        items: [[10, 10, 1], [10, 20, 1], [20, 20, 2]]
+      }
+    });
+
+    // 必须调用 RecursionTreeAdapter 渲染树，严禁调用 GridVisualAdapter 渲染表格冒充树！
+    expect(RecursionTreeAdapter.renderRecursionTree).toHaveBeenCalledWith(
+      container,
+      expect.objectContaining({
+        val: expect.stringContaining('dp[1][12]'),
+        children: expect.arrayContaining([
+          expect.objectContaining({
+            val: expect.stringContaining('不选本组')
+          })
+        ])
+      }),
+      expect.any(String),
+      true
+    );
+    expect(GridVisualAdapter.renderStage3DPTable).not.toHaveBeenCalled();
+  });
+
+  it('Card 2 在 Stage 3 且 stage3SubView === "matrix" 时应正常委托 GridVisualAdapter 渲染二维 DP 状态表', () => {
+    const container = new MockElement('card2-container');
+    const step: UniversalStep = {
+      stepIndex: 35,
+      type: 'transition',
+      i: 1,
+      j: 12,
+      grid: [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 20],
+        [null, null, null, null, null, null, null, null, null, null, null, null, null]
+      ]
+    };
+
+    StateSpacePresenter.renderCard2(container as any, {
+      currentStage: 'stage-3',
+      stage3SubView: 'matrix',
+      step,
+      m: 3,
+      n: 46,
+      modelId: 'partitioned-knapsack-standard'
+    });
+
+    expect(GridVisualAdapter.renderStage3DPTable).toHaveBeenCalledWith(
+      container,
+      step,
+      expect.objectContaining({
+        m: 3,
+        n: 13
+      })
+    );
+    expect(RecursionTreeAdapter.renderRecursionTree).not.toHaveBeenCalled();
+  });
+
+  it('Card 2 在 Stage 3 完全背包下应生成支持同物品复选的同行转移状态依赖树', () => {
+    const container = new MockElement('card2-container');
+    const step: UniversalStep = {
+      stepIndex: 10,
+      type: 'transition',
+      i: 1,
+      j: 3,
+      grid: [
+        [0, 0, 0, 0, 0],
+        [0, 15, 30, 45, 60]
+      ]
+    };
+
+    StateSpacePresenter.renderCard2(container as any, {
+      currentStage: 'stage-3',
+      stage3SubView: 'tree',
+      step,
+      m: 2,
+      n: 5,
+      modelId: 'complete-knapsack',
+      params: {
+        bagWeight: 4,
+        weights: [1, 3],
+        values: [15, 20]
+      }
+    });
+
+    expect(RecursionTreeAdapter.renderRecursionTree).toHaveBeenCalledWith(
+      container,
+      expect.objectContaining({
+        children: expect.arrayContaining([
+          expect.objectContaining({
+            val: expect.stringContaining('可复选')
+          })
+        ])
+      }),
+      expect.any(String),
+      true
+    );
+  });
 });
 

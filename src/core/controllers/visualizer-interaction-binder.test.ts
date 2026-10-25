@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { VisualizerInteractionBinder } from './visualizer-interaction-binder';
+import { VisualizerInteractionBinder, extractCleanCodeFromContainer } from './visualizer-interaction-binder';
 
 class MockDomElement {
   public value = '';
@@ -105,5 +105,76 @@ describe('VisualizerInteractionBinder (画板全局交互事件绑定深模块)'
     // 弹窗未包含 hidden 类时触发 Escape
     docListeners['keydown']?.forEach(fn => fn({ key: 'Escape' }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  describe('extractCleanCodeFromContainer 纯净代码提取门禁', () => {
+    it('应优先从 data-raw-code 提取原始源码，严格保留换行和缩进，杜绝乱码粘连', () => {
+      const container = {
+        querySelectorAll: (selector: string) => {
+          if (selector.includes('.code-line')) {
+            return [
+              {
+                getAttribute: (k: string) => k === 'data-raw-code' ? 'public class Solution {' : null,
+                dataset: {},
+                cloneNode: () => ({ querySelectorAll: () => [], querySelector: () => null, textContent: '' })
+              },
+              {
+                getAttribute: (k: string) => k === 'data-raw-code' ? '    int ans = 0;' : null,
+                dataset: {},
+                cloneNode: () => ({ querySelectorAll: () => [], querySelector: () => null, textContent: '' })
+              },
+              {
+                getAttribute: (k: string) => k === 'data-raw-code' ? '}' : null,
+                dataset: {},
+                cloneNode: () => ({ querySelectorAll: () => [], querySelector: () => null, textContent: '' })
+              }
+            ];
+          }
+          return [];
+        },
+        querySelector: () => null,
+        textContent: 'public class Solution { int ans = 0; }'
+      };
+
+      const clean = extractCleanCodeFromContainer(container as any);
+      expect(clean).toBe('public class Solution {\n    int ans = 0;\n}');
+    });
+
+    it('当缺失 data-raw-code 时，应克隆节点并彻底剔除行号与调试幽灵变量提示', () => {
+      const mockHint = { remove: vi.fn() };
+      const mockNum = { remove: vi.fn() };
+      const cloneEl = {
+        querySelectorAll: (sel: string) => {
+          if (sel.includes('.algo-code-inline-hint') || sel.includes('.code-line-num')) {
+            return [mockHint, mockNum];
+          }
+          return [];
+        },
+        querySelector: (sel: string) => sel.includes('.code-line-text') ? { textContent: 'dp[i] = dp[i-1];' } : null,
+        textContent: '1 dp[i] = dp[i-1]; // i: 0'
+      };
+
+      const container = {
+        querySelectorAll: (selector: string) => {
+          if (selector.includes('.code-line')) {
+            return [
+              {
+                getAttribute: () => null,
+                dataset: {},
+                cloneNode: () => cloneEl
+              }
+            ];
+          }
+          return [];
+        },
+        querySelector: () => null,
+        textContent: '1 dp[i] = dp[i-1]; // i: 0'
+      };
+
+      const clean = extractCleanCodeFromContainer(container as any);
+      expect(clean).toBe('dp[i] = dp[i-1];');
+      expect(mockHint.remove).toHaveBeenCalled();
+      expect(mockNum.remove).toHaveBeenCalled();
+    });
   });
 });

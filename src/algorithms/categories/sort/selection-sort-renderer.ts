@@ -22,6 +22,8 @@ export { selectionSortSteps, withMetrics, renderSelectionSortCanvas };
 
 registerDeclarativeAlgorithm<SSStep>({
   id: 'selection-sort',
+  aliases: ['selection-sort', 'selection-sort-standard', 'selection'],
+  hasDeductionTree: true,
   name: '选择排序',
   category: 'sort',
   description: '逐步演示选择排序：未排序区间选出最小值并交换',

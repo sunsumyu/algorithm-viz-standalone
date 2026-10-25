@@ -81,6 +81,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<SWStep>({
 
 registerAlgorithm({
   id: 'min-subarray-len',
+  aliases: ['209', 'leetcode-209', 'minimum-size-subarray-sum'],
+  hasDeductionTree: true,
   name: '长度最小的子数组',
   viewId: 'algo-min-subarray-len-view',
   category: 'array',

@@ -4,8 +4,8 @@ import { RecursionTreeAdapter } from './recursion-tree-adapter';
 
 export interface StagePresentationOptions {
   currentStage: string;
-  stage3SubView?: 'matrix' | 'tree' | 'alignment';
-  stage4SubView?: 'memo' | 'alignment';
+  stage3SubView?: 'matrix' | 'tree' | 'alignment' | 'sandbox';
+  stage4SubView?: 'memo' | 'tree' | 'sandbox' | 'alignment';
   step: UniversalStep;
   m: number;
   n: number;

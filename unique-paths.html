@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LeetCode 62. 不同路径 - 算法演化与空间优化交互可视化</title>
   
-  <!-- Tailwind CSS (非阻塞异步加载) -->
-  <script src="https://cdn.tailwindcss.com" defer></script>
+  <!-- Tailwind CSS (本地离线优先，0ms 极速就绪) -->
+  <script src="/vendor/tailwindcss.js"></script>
+  <script>if (!window.tailwind) document.write('<script src="https://cdn.tailwindcss.com"><\/script>');</script>
   <!-- 本地离线 js-yaml 核心引擎 (0ms 离线解析) -->
   <script src="/vendor/js-yaml.min.js"></script>
   
-  <!-- FontAwesome 图标 (异步非阻塞) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" media="print" onload="this.media='all'" />
+  <!-- FontAwesome 图标 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   
   <script>
     tailwind.config = {
@@ -42,6 +43,11 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+      opacity: 0;
+      transition: opacity 0.12s ease-out;
+    }
+    body.viz-ready {
+      opacity: 1;
     }
   </style>
 </head>
@@ -264,7 +270,7 @@
             </div>
 
             <!-- 2D/3D 网格矩阵 -->
-            <div id="grid-board-wrapper" class="relative">
+            <div id="grid-board-wrapper" class="relative w-full max-w-full overflow-x-auto overflow-y-auto">
               <div id="grid-container" class="grid gap-2 transition-all duration-300">
                 <!-- 动态生成网格格子 -->
               </div>

@@ -85,20 +85,21 @@ export class TargetSumStandardStrategy implements IAlgorithmStrategy {
 
   private generateOffset2D(nums: number[], target: number, map?: Record<string, number>): UniversalStep[] {
     const steps: UniversalStep[] = [], n = nums.length, offset = nums.reduce((a, b) => a + Math.abs(b), 0), cols = 2 * offset + 1;
-    const dp = Array.from({ length: n + 1 }, () => new Array(cols).fill(0));
+    const dp: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(cols).fill(null));
+    steps.push({ flowPhase: 'forward', line: map?.initDp ?? 7, tag: '初始化', msg: `🚀 初始化二维状态表，offset=${offset}`, grid: dp.map(r => [...r]) });
+    for (let j = 0; j < cols; j++) dp[0][j] = 0;
     dp[0][offset] = 1;
-    steps.push({ flowPhase: 'forward', line: map?.initDp ?? 7, tag: '初始化', msg: `🚀 初始化二维状态表，offset=${offset}` });
 
     for (let i = 1; i <= n; i++) {
       const num = nums[i - 1];
-      steps.push({ flowPhase: 'forward', line: map?.outerLoopI ?? 9, tag: '外层循环', msg: `📦 外层考察第 ${i} 个数字 nums[${i - 1}]=${num}` });
+      steps.push({ flowPhase: 'forward', line: map?.outerLoopI ?? 9, tag: '外层循环', msg: `📦 外层考察第 ${i} 个数字 nums[${i - 1}]=${num}`, grid: dp.map(r => [...r]) });
       for (let j = 0; j < cols; j++) {
-        const w1 = j >= num ? dp[i - 1][j - num] : 0, w2 = j + num < cols ? dp[i - 1][j + num] : 0;
+        const w1 = j >= num ? (dp[i - 1][j - num] ?? 0) : 0, w2 = j + num < cols ? (dp[i - 1][j + num] ?? 0) : 0;
         dp[i][j] = w1 + w2;
         steps.push({ flowPhase: 'forward', line: map?.updateCell ?? 14, tag: '转移', msg: `✨ dp[${i}][${j}] = ${w1}+${w2}=${dp[i][j]}`, grid: dp.map(r => [...r]), i, j });
       }
     }
-    const targetCol = target + offset, ans = targetCol >= 0 && targetCol < cols ? dp[n][targetCol] : 0;
+    const targetCol = target + offset, ans = targetCol >= 0 && targetCol < cols ? (dp[n][targetCol] ?? 0) : 0;
     steps.push({ flowPhase: 'terminal', line: map?.returnAns ?? 16, tag: '返回', msg: `🏁 offset 填表完毕！答案 = ${ans}` });
     return steps;
   }

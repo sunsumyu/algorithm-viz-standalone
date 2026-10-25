@@ -305,6 +305,212 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(headExpr).toBeDefined();
     expect(headExpr?.value).toBe('1');
   });
+
+  it('automatically resolves dp, memo, table and cell values from step.grid across all algorithms', () => {
+    // 即使领域适配器 step 中完全没有显式提供 dp，顶层抽象解析器也能从 step.grid 和坐标自动求值
+    const rawDpStep = {
+      i: 1,
+      j: 2,
+      grid: [
+        [0, 0, 0],
+        [0, 10, 20],
+      ],
+    };
+
+    const varsMap = VariableContextResolver.resolve(rawDpStep);
+
+    // 1. 查询 dp 标识符：自动求值当前单元格 dp[1][2] = 20
+    const dpVar = VariableContextResolver.getVariable(varsMap, 'dp', rawDpStep);
+    expect(dpVar).toBeDefined();
+    expect(dpVar?.value).toBe('[1][2] = 20');
+    expect(dpVar?.detail).toContain('当前单元格 dp[1][2] = 20');
+
+    // 2. 复合二维下标带算术求值: dp[i - 1][j] -> dp[0][2] = 0
+    const prevCell = VariableContextResolver.getVariable(varsMap, 'dp[i - 1][j]', rawDpStep);
+    expect(prevCell).toBeDefined();
+    expect(prevCell?.value).toBe('0');
+
+    // 3. 初始阶段（尚无 i / j 坐标时），查询 dp 显示表格整体规格
+    const initialDpStep = {
+      grid: [
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+    };
+    const initVarsMap = VariableContextResolver.resolve(initialDpStep);
+    const initDpVar = VariableContextResolver.getVariable(initVarsMap, 'dp', initialDpStep);
+    expect(initDpVar).toBeDefined();
+    expect(initDpVar?.value).toBe('[2×3]');
+    expect(initDpVar?.detail).toContain('2 行 3 列');
+  });
+
+  it('correctly evaluates 2D item array expressions (arr[k][1], arr[k][0]) and provides rich Chinese semantic explanations', () => {
+    // 模拟分组背包状态：k = 2, arr 包含物品三元组 [体积, 价值, 组号]
+    const step = {
+      i: 1,
+      j: 20,
+      k: 2,
+      teams: 3,
+      arr: [
+        [0, 0, 0],
+        [10, 10, 1],
+        [20, 20, 2], // 物品 #2: 体积 20, 价值 20, 组号 2
+        [30, 30, 2],
+      ],
+      grid: [
+        [0, 0, 0, 0],
+        [0, 0, 20, 20],
+      ],
+    };
+
+    const varsMap = VariableContextResolver.resolve(step);
+
+    // 1. 测试 2D 下标求值 arr[k][1] (收益价值)
+    const valExpr = VariableContextResolver.getVariable(varsMap, 'arr[k][1]', step);
+    expect(valExpr).toBeDefined();
+    expect(valExpr?.name).toBe('arr[2][1]');
+    expect(valExpr?.value).toBe('20');
+    expect(valExpr?.detail).toContain('收益价值');
+    expect(valExpr?.detail).toContain('[体积: 20, 价值: 20, 组号: 2]');
+
+    // 2. 测试 2D 下标求值 arr[k][0] (消耗体积)
+    const costExpr = VariableContextResolver.getVariable(varsMap, 'arr[k][0]', step);
+    expect(costExpr).toBeDefined();
+    expect(costExpr?.name).toBe('arr[2][0]');
+    expect(costExpr?.value).toBe('20');
+    expect(costExpr?.detail).toContain('消耗体积');
+    expect(costExpr?.detail).toContain('[体积: 20, 价值: 20, 组号: 2]');
+
+    // 3. 测试 2D 下标求值 arr[k][2] (所属组号)
+    const groupExpr = VariableContextResolver.getVariable(varsMap, 'arr[k][2]', step);
+    expect(groupExpr).toBeDefined();
+    expect(groupExpr?.name).toBe('arr[2][2]');
+    expect(groupExpr?.value).toBe('2');
+    expect(groupExpr?.detail).toContain('所属组号');
+
+    // 4. 测试 1D 下标求值 arr[k] (特征三元组)
+    const item1D = VariableContextResolver.getVariable(varsMap, 'arr[k]', step);
+    expect(item1D).toBeDefined();
+    expect(item1D?.name).toBe('arr[2]');
+    expect(item1D?.value).toBe('[20, 20, 2]');
+    expect(item1D?.detail).toContain('特征三元组');
+    expect(item1D?.detail).toContain('体积 20, 价值 20, 组号 2');
+
+    // 5. 测试直接查询 arr 标识符 (当光标悬停在 arr 且 k=2 时展示全量数组与当前指针上下文)
+    const arrIdent = VariableContextResolver.getVariable(varsMap, 'arr', step);
+    expect(arrIdent).toBeDefined();
+    expect(arrIdent?.name).toBe('arr');
+    expect(arrIdent?.type).toBe('array');
+    expect(arrIdent?.value).toContain('[10, 10, 1]');
+    expect(arrIdent?.value).toContain('[20, 20, 2]');
+    expect(arrIdent?.detail).toContain('特征三元组');
+    expect(arrIdent?.detail).toContain('当前指针 k=2');
+  });
+
+  it('parses nested subscript expressions and evaluates complex DP transitions', () => {
+    // 验证下标提取器对嵌套括号的健壮性
+    const parsed = VariableContextResolver.parseSubscriptExpression('dp[i - 1][j - arr[k][0]]');
+    expect(parsed).toBeDefined();
+    expect(parsed?.tableName).toBe('dp');
+    expect(parsed?.indices).toEqual(['i - 1', 'j - arr[k][0]']);
+
+    const step = {
+      i: 1,
+      j: 20,
+      k: 2,
+      arr: [
+        [0, 0, 0],
+        [10, 10, 1],
+        [20, 20, 2],
+      ],
+      grid: [
+        [15, 0], // grid[0][0] = 15
+        [0, 20],
+      ],
+    };
+    const varsMap = VariableContextResolver.resolve(step);
+
+    // 验证 evaluateIndexExpr 对 'j - arr[k][0]' 的求值: j=20, arr[2][0]=20 -> 20 - 20 = 0
+    const colIdx = VariableContextResolver.evaluateIndexExpr('j - arr[k][0]', varsMap, step);
+    expect(colIdx).toBe(0);
+
+    // 验证 dp[i - 1][j - arr[k][0]] -> dp[0][0] = 15
+    const transitionCell = VariableContextResolver.getVariable(varsMap, 'dp[i - 1][j - arr[k][0]]', step);
+    expect(transitionCell).toBeDefined();
+    expect(transitionCell?.name).toBe('dp[0][0]');
+    expect(transitionCell?.value).toBe('15');
+  });
+
+  it('provides rich semantic descriptions from dictionary via getDescription', () => {
+    expect(VariableContextResolver.getDescription('dp')).toBe('动态规划最优子结构状态备忘表');
+    expect(VariableContextResolver.getDescription('end')).toBe('当前物品组终止边界 (双指针开区间终点)');
+    expect(VariableContextResolver.getDescription('start')).toBe('当前物品组起始下标 (双指针区间起点)');
+    expect(VariableContextResolver.getDescription('teams')).toBe('独立物品组总数 (按组互斥划分)');
+    expect(VariableContextResolver.getDescription('arr')).toContain('二维物品三元组数组');
+  });
+
+  it('resolves piles and preSum variables with full structure and active pointer context', () => {
+    const step = {
+      i: 0,
+      j: 2,
+      c: 2,
+      piles: [
+        [1, 100, 3],
+        [7, 8, 9],
+      ],
+      preSum: [0, 1, 101, 104],
+    };
+    const varsMap = VariableContextResolver.resolve(step);
+
+    // 1. 查询 piles (硬币栈集合)
+    const pilesVar = VariableContextResolver.getVariable(varsMap, 'piles', step);
+    expect(pilesVar).toBeDefined();
+    expect(pilesVar?.name).toBe('piles');
+    expect(pilesVar?.type).toBe('array');
+    expect(pilesVar?.value).toContain('[1, 100, 3]');
+    expect(pilesVar?.value).toContain('[7, 8, 9]');
+    expect(pilesVar?.detail).toContain('2 个独立栈');
+    expect(pilesVar?.detail).toContain('当前指针 i=0');
+    expect(pilesVar?.detail).toContain('抽取 c=2 枚');
+
+    // 2. 查询 preSum (前缀和数组)
+    const preSumVar = VariableContextResolver.getVariable(varsMap, 'preSum', step);
+    expect(preSumVar).toBeDefined();
+    expect(preSumVar?.name).toBe('preSum');
+    expect(preSumVar?.type).toBe('array');
+    expect(preSumVar?.value).toBe('[0, 1, 101, 104]');
+    expect(preSumVar?.detail).toContain('前缀和');
+    expect(preSumVar?.detail).toContain('当前连续拿取 c=2 枚面值收益 = 101');
+  });
+
+  it('resolves stones and sum variables for interval DP with range weight calculation', () => {
+    const step = {
+      i: 0,
+      j: 3,
+      k: 1,
+      stones: [3, 2, 4, 1],
+      sum: [0, 3, 5, 9, 10],
+    };
+    const varsMap = VariableContextResolver.resolve(step);
+
+    // 1. 查询 stones (石子堆数组)
+    const stonesVar = VariableContextResolver.getVariable(varsMap, 'stones', step);
+    expect(stonesVar).toBeDefined();
+    expect(stonesVar?.name).toBe('stones');
+    expect(stonesVar?.type).toBe('array');
+    expect(stonesVar?.value).toBe('[3, 2, 4, 1]');
+    expect(stonesVar?.detail).toContain('4 堆');
+    expect(stonesVar?.detail).toContain('考察区间 [0..3]');
+    expect(stonesVar?.detail).toContain('切分点 k=1');
+
+    // 2. 查询 sum (区间 DP 前缀和数组)
+    const sumVar = VariableContextResolver.getVariable(varsMap, 'sum', step);
+    expect(sumVar).toBeDefined();
+    expect(sumVar?.name).toBe('sum');
+    expect(sumVar?.type).toBe('array');
+    expect(sumVar?.value).toBe('[0, 3, 5, 9, 10]');
+    expect(sumVar?.detail).toContain('当前区间 [0..3] 总重量 = sum[4] - sum[0] = 10');
+  });
 });
 
 

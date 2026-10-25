@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'longest-common-prefix',
+  aliases: ['14', 'leetcode-14', 'longest-common-prefix-vertical'],
+  hasDeductionTree: true,
   name: '最长公共前缀（逐列扫描）',
   category: 'string',
   description: '以第一个字符串为基准，逐列比对找公共前缀',

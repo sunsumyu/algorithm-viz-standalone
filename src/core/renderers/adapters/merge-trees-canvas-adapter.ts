@@ -394,6 +394,7 @@ export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesSt
     container.appendChild(qBox);
   } else if (step.callTrace) {
     const traceHost = document.createElement('div');
+    traceHost.className = 'merge-trees-trace-host';
     traceHost.style.cssText =
       'flex: 1; min-height: 140px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; box-sizing: border-box;';
     container.appendChild(traceHost);

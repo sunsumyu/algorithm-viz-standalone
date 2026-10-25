@@ -87,6 +87,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<BSStep>({
 
 registerAlgorithm({
   id: 'binary-search',
+  aliases: ['704', 'leetcode-704', 'binary-search-closed-interval'],
+  hasDeductionTree: true,
   name: '二分查找',
   viewId: 'algo-binary-search-view',
   category: 'search',

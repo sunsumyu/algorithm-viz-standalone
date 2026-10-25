@@ -6,22 +6,23 @@
  * tree-template 保留 re-export 门面以兼容既有树算法消费方。
  */
 
-/** 二叉树节点（按值定位高亮） */
+/** 二叉树节点（支持按唯一身份 id 或数值定位高亮） */
 export interface TreeNode {
   val: number;
   left: TreeNode | null;
   right: TreeNode | null;
+  id?: number | string;
 }
 
 export function renderTreeSVG(
   container: HTMLElement,
   root: TreeNode | null,
-  highlight: Set<number>,
+  highlight: Set<number | string>,
   highlightColor: string,
-  secondaryHighlight?: Set<number>,
+  secondaryHighlight?: Set<number | string>,
   secondaryColor?: string,
-  labels?: Map<number, string>,
-  visitedHighlight?: Set<number>,
+  labels?: Map<number | string, string>,
+  visitedHighlight?: Set<number | string>,
   visitedColor?: string,
 ): void {
   if (!root) { container.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-weight: 500;">（空树）</span>'; return; }
@@ -32,10 +33,29 @@ export function renderTreeSVG(
   svg.setAttribute('height', '280');
   svg.setAttribute('viewBox', '0 0 600 280');
 
+  const hasStringId = (set?: Set<number | string>): boolean => {
+    if (!set) return false;
+    for (const item of set) {
+      if (typeof item === 'string') return true;
+    }
+    return false;
+  };
+
+  const primaryHasId = hasStringId(highlight);
+  const secondaryHasId = hasStringId(secondaryHighlight);
+  const visitedHasId = hasStringId(visitedHighlight);
+
+  const matchNode = (set: Set<number | string> | undefined, hasId: boolean, node: TreeNode): boolean => {
+    if (!set || set.size === 0) return false;
+    if (node.id !== undefined && set.has(node.id)) return true;
+    if (hasId) return false;
+    return set.has(node.val);
+  };
+
   const draw = (node: TreeNode, x: number, y: number, spread: number) => {
-    const isH = highlight.has(node.val);
-    const isS = secondaryHighlight?.has(node.val);
-    const isV = visitedHighlight?.has(node.val);
+    const isH = matchNode(highlight, primaryHasId, node);
+    const isS = matchNode(secondaryHighlight, secondaryHasId, node);
+    const isV = matchNode(visitedHighlight, visitedHasId, node);
     if (node.left) {
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
@@ -73,7 +93,7 @@ export function renderTreeSVG(
     t.setAttribute('font-weight', '700');
     t.textContent = String(node.val);
     svg.appendChild(t);
-    const label = labels?.get(node.val);
+    const label = (node.id !== undefined ? labels?.get(node.id) : undefined) ?? labels?.get(node.val);
     if (label) {
       const lb = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       lb.setAttribute('x', String(x)); lb.setAttribute('y', String(y - 23));

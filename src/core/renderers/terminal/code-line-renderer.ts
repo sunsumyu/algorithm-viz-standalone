@@ -105,6 +105,7 @@ export function updateInlineHint(
   activeLineEl: HTMLElement | null,
   deps: CodeLineRendererDeps,
   state: CodeLineRendererState,
+  stepContext?: any
 ): void {
   const { codeWrapper, createEl } = deps;
   if (!codeWrapper) return;
@@ -117,7 +118,7 @@ export function updateInlineHint(
   const rawLine = activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw') || '';
   if (!rawLine) return;
 
-  const hintSummary = VariableContextResolver.formatInlineSummary(state.currentVarsMap, rawLine);
+  const hintSummary = VariableContextResolver.formatInlineSummary(state.currentVarsMap, rawLine, stepContext);
   if (!hintSummary) return;
 
   const hintEl = createEl('span');
@@ -176,15 +177,49 @@ export function highlightLineInternal(
     lineEl.style.borderLeftColor = '#64748b';
   };
 
+  const scrollLineIntoVisibleArea = (lineEl: HTMLElement | null) => {
+    if (!lineEl) return;
+    const container = (lineEl.closest?.('.terminal-body') || lineEl.parentElement?.parentElement) as HTMLElement | null;
+    if (container && typeof container.scrollTo === 'function' && container.clientHeight > 0) {
+      let lineTop = lineEl.offsetTop;
+      let lineHeight = lineEl.offsetHeight || 22;
+      const currentScrollTop = container.scrollTop;
+      const viewHeight = container.clientHeight;
+
+      if (typeof lineEl.getBoundingClientRect === 'function' && typeof container.getBoundingClientRect === 'function') {
+        const lineRect = lineEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        if (containerRect.height > 0) {
+          lineTop = lineRect.top - containerRect.top + currentScrollTop;
+          lineHeight = lineRect.height || lineHeight;
+        }
+      }
+
+      // 上下各保留 20% (至少 35px, 至多 80px) 安全可视缓冲区，确保高亮行始终稳固处于视口舒适区
+      const padding = Math.min(80, Math.max(35, Math.floor(viewHeight * 0.2)));
+      if (lineTop < currentScrollTop + padding) {
+        container.scrollTo({
+          top: Math.max(0, lineTop - padding),
+          behavior: 'smooth',
+        });
+      } else if (lineTop + lineHeight > currentScrollTop + viewHeight - padding) {
+        container.scrollTo({
+          top: lineTop + lineHeight - viewHeight + padding,
+          behavior: 'smooth',
+        });
+      }
+    } else if (typeof lineEl.scrollIntoView === 'function') {
+      lineEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  };
+
   const applyTarget = (t: HighlightTarget | null | undefined) => {
     if (t == null) return;
     if (typeof t === 'number') {
       const lineEl = codeWrapper.querySelector(`[data-line="${t}"]`) as HTMLElement | null;
       if (lineEl) {
         markLine(lineEl);
-        if (typeof lineEl.scrollIntoView === 'function') {
-          lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
+        scrollLineIntoVisibleArea(lineEl);
       }
     } else if (typeof t === 'string') {
       const num = parseInt(t, 10);
@@ -192,9 +227,7 @@ export function highlightLineInternal(
         const lineEl = codeWrapper.querySelector(`[data-line="${num}"]`) as HTMLElement | null;
         if (lineEl) {
           markLine(lineEl);
-          if (typeof lineEl.scrollIntoView === 'function') {
-            lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }
+          scrollLineIntoVisibleArea(lineEl);
         }
       } else {
         const anchorLine = codeModel.resolveAnchorLine(t, state.currentLang);
@@ -209,8 +242,8 @@ export function highlightLineInternal(
       });
       if (t.length > 0) {
         const firstEl = codeWrapper.querySelector(`[data-line="${t[0]}"]`) as HTMLElement | null;
-        if (firstEl && typeof firstEl.scrollIntoView === 'function') {
-          firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (firstEl) {
+          scrollLineIntoVisibleArea(firstEl);
         }
       }
     } else if (typeof t === 'object') {
@@ -225,8 +258,8 @@ export function highlightLineInternal(
           markLine(lineEl);
         }
         const firstEl = codeWrapper.querySelector(`[data-line="${t.from}"]`) as HTMLElement | null;
-        if (firstEl && typeof firstEl.scrollIntoView === 'function') {
-          firstEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (firstEl) {
+          scrollLineIntoVisibleArea(firstEl);
         }
       } else if ('primary' in t) {
         const p = (t as any).primary;

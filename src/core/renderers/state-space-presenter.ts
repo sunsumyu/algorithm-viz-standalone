@@ -29,13 +29,14 @@ import { UnboundedKnapsackSandboxAdapter } from './adapters/unbounded-knapsack-s
 import { BuyingHaySandboxAdapter } from './adapters/buying-hay-sandbox-adapter';
 import { BoundedKnapsackSandboxAdapter } from './adapters/bounded-knapsack-sandbox-adapter';
 import { IntervalDpSandboxAdapter } from './adapters/interval-dp-sandbox-adapter';
+import { BitmaskDpSandboxAdapter } from './adapters/bitmask-dp-sandbox-adapter';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
   stage3SubView?: 'matrix' | 'tree' | 'alignment' | 'sandbox';
-  stage4SubView?: 'memo' | 'alignment';
+  stage4SubView?: 'memo' | 'tree' | 'sandbox' | 'alignment';
   card2SubView?: 'tree' | 'alignment' | 'stack' | 'matrix' | 'memo' | 'sandbox';
-  card1SubView?: 'grid' | 'deduction';
+  card1SubView?: 'grid' | 'deduction' | 'sandbox';
   step: UniversalStep;
   m: number;
   n: number;
@@ -189,10 +190,18 @@ export class StateSpacePresenter {
       return;
     }
 
+    const isCoinsFromPiles = modelId === 'coins-from-piles' || modelId === 'coins-from-piles-074' || modelId === 'class074-code02' || modelId === 'maximum-value-of-k-coins-from-piles' || modelId === 'leetcode-2218';
     const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(modelId);
     if (isKnapsack && (currentStage === 'stage-1' || currentStage === 'stage-2')) {
-      this.renderKnapsackSandbox(container, step, options);
-      return;
+      if (isCoinsFromPiles) {
+        if (options.card1SubView === 'sandbox') {
+          this.renderKnapsackSandbox(container, step, options);
+          return;
+        }
+      } else {
+        this.renderKnapsackSandbox(container, step, options);
+        return;
+      }
     }
 
     // 彻底清除在 Stage 1/2 背包沙盘中可能残留的 flex 布局属性，恢复标准网格沙盘容器规格
@@ -209,7 +218,12 @@ export class StateSpacePresenter {
     }
 
     const isPureGrid = isGridProblem || ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(modelId);
-    const effectiveM = isPureGrid ? ((step.grid && step.grid.length > 1) ? step.grid.length : m) : (m > 1 ? m : 1);
+    const isPure1D = ProblemDimensionResolver.isPure1DProblem(modelId);
+    const effectiveM = isPure1D
+      ? 1
+      : ((step.grid && Array.isArray(step.grid) && step.grid.length > 1)
+          ? step.grid.length
+          : (isPureGrid ? m : (m > 1 ? m : 1)));
     const effectiveN = (step.grid && step.grid[0] && step.grid[0].length > 0) ? step.grid[0].length : n;
 
     // 1. 3D WebGL 立体透视沙盘更新
@@ -305,20 +319,26 @@ export class StateSpacePresenter {
     } else if (!rowLabels && AlgorithmModelRepository.hasModel(modelId)) {
       const model = AlgorithmModelRepository.getModel(modelId);
       const params = model.defaultParams as any;
-      if (params && params.weights && (params.bagWeight !== undefined || params.target !== undefined)) {
-        const weights = Array.isArray(params.weights) ? params.weights : [];
-        const values = Array.isArray(params.values) ? params.values : [];
-        if (weights.length > 0 && effectiveM === weights.length) {
-          rowLabels = weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
-          colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
-          cornerLabel = '物品(i) \\ 容量(j)';
-        }
-      } else if (params && params.piles) {
-        const piles = Array.isArray(params.piles) ? params.piles : [];
-        if (piles.length > 0 && effectiveM === piles.length) {
-          rowLabels = piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
-          colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
-          cornerLabel = '硬币栈(i) \\ 容量(j)';
+      const weights = (step as any).weights || (options.params && options.params.weights) || (params && params.weights ? params.weights : []);
+      const values = (step as any).values || (options.params && options.params.values) || (params && params.values ? params.values : []);
+      if (weights.length > 0 && (effectiveM === weights.length + 1 || effectiveM === weights.length)) {
+        rowLabels = effectiveM === weights.length + 1
+          ? ['Ø(空)', ...weights.map((w: number | string, idx: number) => `物${idx + 1}(w:${w})`)]
+          : weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
+        colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+        cornerLabel = '物品(i) \\ 容量(j)';
+      } else if (params && (params.piles || (step as any).piles || options.params?.piles)) {
+        const piles = (step as any).piles || (options.params && options.params.piles) || (params && params.piles ? params.piles : []);
+        if (piles.length > 0 && (effectiveM === piles.length + 1 || effectiveM === piles.length)) {
+          rowLabels = effectiveM === piles.length + 1
+            ? ['Ø(空)', ...piles.map((p: any[], idx: number) => `栈${idx + 1}(${p.length}枚)`)]
+            : piles.map((p: any[], idx: number) => `栈${idx + 1}(${p.length}枚)`);
+          colLabels = effectiveM === piles.length + 1
+            ? Array.from({ length: effectiveN }, (_, c) => `容${c}`)
+            : Array.from({ length: effectiveN }, (_, c) => `余${c}`);
+          cornerLabel = effectiveM === piles.length + 1
+            ? '硬币栈(i) \\ 容量(j)'
+            : '硬币栈(i) \\ 剩余容量(remK)';
         }
       } else if (params && params.items && modelId.includes('partitioned')) {
         const rawItems = Array.isArray(params.items) ? params.items : [];
@@ -449,11 +469,22 @@ export class StateSpacePresenter {
     }
 
     if (currentStage === 'stage-4' || currentStage === 'stage-5') {
-      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位 vs 串比对 vs 区间DP拟物沙盘
+      // 阶段 4 / 阶段 5: 一维滚动数组压缩槽位 vs 状态依赖树 vs 串比对 vs 背包沙盘
       if (options.stage4SubView === 'alignment' || options.card2SubView === 'alignment') {
         this.renderSequenceAlignmentCard2(container, step, options);
+      } else if (options.stage4SubView === 'tree') {
+        const depTree = this.resolveStage3DependencyTree(options, step, effectiveM, effectiveN, isReverse);
+        if (depTree) {
+          RecursionTreeAdapter.renderRecursionTree(container, depTree, step.activeNodeId || depTree.id, true);
+          return;
+        }
+        GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
+      } else if (options.stage4SubView === 'sandbox' || options.card2SubView === 'sandbox') {
+        this.renderKnapsackOrDpSandbox(container, step, options);
       } else if (IntervalDpSandboxAdapter.isSupported(options.modelId)) {
         IntervalDpSandboxAdapter.render(container, step, options);
+      } else if (BitmaskDpSandboxAdapter.isSupported(options.modelId)) {
+        BitmaskDpSandboxAdapter.render(container, step, options);
       } else {
         GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       }
@@ -471,18 +502,20 @@ export class StateSpacePresenter {
 
         if (currentModel) {
           const params = currentModel.defaultParams as any;
-          if (params && params.weights && (params.bagWeight !== undefined || params.target !== undefined)) {
-            const weights = Array.isArray(params.weights) ? params.weights : [];
-            const values = Array.isArray(params.values) ? params.values : [];
-            if (weights.length > 0 && effectiveM === weights.length) {
-              rowLabels = weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
-              colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
-              cornerLabel = '物品(i) \\ 容量(j)';
-            }
-          } else if (params && params.piles) {
-            const piles = Array.isArray(params.piles) ? params.piles : [];
-            if (piles.length > 0 && effectiveM === piles.length) {
-              rowLabels = piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
+          const weights = (step as any).weights || (options.params && options.params.weights) || (params && params.weights ? params.weights : []);
+          const values = (step as any).values || (options.params && options.params.values) || (params && params.values ? params.values : []);
+          if (weights.length > 0 && (effectiveM === weights.length + 1 || effectiveM === weights.length)) {
+            rowLabels = effectiveM === weights.length + 1
+              ? ['Ø(空)', ...weights.map((w: number | string, idx: number) => `物${idx + 1}(w:${w})`)]
+              : weights.map((w: number | string, idx: number) => `物${idx}(w:${w},v:${values[idx] ?? w})`);
+            colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
+            cornerLabel = '物品(i) \\ 容量(j)';
+          } else if (params && (params.piles || (step as any).piles || options.params?.piles)) {
+            const piles = (step as any).piles || (options.params && options.params.piles) || (params && params.piles ? params.piles : []);
+            if (piles.length > 0 && (effectiveM === piles.length + 1 || effectiveM === piles.length)) {
+              rowLabels = effectiveM === piles.length + 1
+                ? ['Ø(空)', ...piles.map((p: any[], idx: number) => `栈${idx + 1}(${p.length}枚)`)]
+                : piles.map((p: any[], idx: number) => `栈${idx}(len:${p.length})`);
               colLabels = Array.from({ length: effectiveN }, (_, c) => `容${c}`);
               cornerLabel = '硬币栈(i) \\ 容量(j)';
             }
@@ -506,53 +539,7 @@ export class StateSpacePresenter {
         }
 
         if (stage3SubView === 'sandbox' || options.card2SubView === 'sandbox') {
-          const mId = options.modelId;
-          if (
-            mId === 'coins-from-piles' ||
-            mId === 'coins-from-piles-074' ||
-            mId === 'class074-code02' ||
-            mId === 'maximum-value-of-k-coins-from-piles' ||
-            mId === 'leetcode-2218' ||
-            (step as any).piles !== undefined
-          ) {
-            CoinsFromPilesSandboxAdapter.render(container, step, options);
-          } else if (
-            mId === 'unbounded-knapsack-standard' ||
-            mId === 'complete-knapsack' ||
-            mId === 'unbounded-knapsack' ||
-            mId === 'unbounded-knapsack-074' ||
-            mId === 'class074-code03' ||
-            mId === 'luogu-p1616'
-          ) {
-            UnboundedKnapsackSandboxAdapter.render(container, step, options);
-          } else if (
-            mId === 'buying-hay-min-cost' ||
-            mId === 'buying-hay-min-cost-074' ||
-            mId === 'buying-hay' ||
-            mId === 'class074-code06' ||
-            mId === 'luogu-p2918' ||
-            (step as any).hTarget !== undefined
-          ) {
-            BuyingHaySandboxAdapter.render(container, step, options);
-          } else if (
-            mId === 'bounded-knapsack-naive' ||
-            mId === 'bounded-knapsack-naive-075' ||
-            mId === 'class075-code01' ||
-            mId === 'multiple-knapsack-naive' ||
-            mId === 'luogu-p1776-naive' ||
-            mId === 'bounded-knapsack-binary' ||
-            mId === 'bounded-knapsack-binary-075' ||
-            mId === 'class075-code02' ||
-            mId === 'multiple-knapsack-binary' ||
-            mId === 'luogu-p1776-binary' ||
-            mId === 'multiple-knapsack'
-          ) {
-            BoundedKnapsackSandboxAdapter.render(container, step, options);
-          } else if (IntervalDpSandboxAdapter.isSupported(mId)) {
-            IntervalDpSandboxAdapter.render(container, step, options);
-          } else {
-            PartitionedKnapsackSandboxAdapter.render(container, step, options);
-          }
+          this.renderKnapsackOrDpSandbox(container, step, options);
           return;
         }
 
@@ -560,6 +547,8 @@ export class StateSpacePresenter {
           RecursionTreeAdapter.renderRecursionTree(container, step.treeRoot, step.activeNodeId, true);
         } else if (IntervalDpSandboxAdapter.isSupported(options.modelId)) {
           IntervalDpSandboxAdapter.render(container, step, options);
+        } else if (BitmaskDpSandboxAdapter.isSupported(options.modelId)) {
+          BitmaskDpSandboxAdapter.render(container, step, options);
         } else if (is2DGrid && step.grid && step.grid.length > 1) {
           GridVisualAdapter.renderStage3DPTable(container, step, { m: effectiveM, n: effectiveN, isReverse, rowLabels, colLabels, cornerLabel, category: currentCategory });
         } else if (step.dp1d && step.dp1d.length > 0) {
@@ -575,6 +564,8 @@ export class StateSpacePresenter {
         this.renderSequenceAlignmentCard2(container, step, options);
       } else if (subView === 'stack') {
         this.renderCallStackCard2(container, step, options);
+      } else if (BitmaskDpSandboxAdapter.isSupported(options.modelId) && (subView === 'sandbox' || !step.treeRoot)) {
+        BitmaskDpSandboxAdapter.render(container, step, options);
       } else if (!step.treeRoot && (step.stateArrays || step.decisions || step.dp1d)) {
         GridVisualAdapter.renderLiteMemoSlots(container, step, effectiveN);
       } else {
@@ -586,6 +577,65 @@ export class StateSpacePresenter {
           currentStage === 'stage-2'
         );
       }
+    }
+  }
+
+  /**
+   * 统合渲染背包与 DP 拟物沙盘 (Knapsack & Simulation Sandbox Adapter)
+   */
+  private static renderKnapsackOrDpSandbox(
+    container: HTMLElement,
+    step: UniversalStep,
+    options: StateSpacePresentationOptions
+  ): void {
+    const mId = options.modelId;
+    if (
+      mId === 'coins-from-piles' ||
+      mId === 'coins-from-piles-074' ||
+      mId === 'class074-code02' ||
+      mId === 'maximum-value-of-k-coins-from-piles' ||
+      mId === 'leetcode-2218' ||
+      (step as any).piles !== undefined
+    ) {
+      CoinsFromPilesSandboxAdapter.render(container, step, options);
+    } else if (
+      mId === 'unbounded-knapsack-standard' ||
+      mId === 'complete-knapsack' ||
+      mId === 'unbounded-knapsack' ||
+      mId === 'unbounded-knapsack-074' ||
+      mId === 'class074-code03' ||
+      mId === 'luogu-p1616'
+    ) {
+      UnboundedKnapsackSandboxAdapter.render(container, step, options);
+    } else if (
+      mId === 'buying-hay-min-cost' ||
+      mId === 'buying-hay-min-cost-074' ||
+      mId === 'buying-hay' ||
+      mId === 'class074-code06' ||
+      mId === 'luogu-p2918' ||
+      (step as any).hTarget !== undefined
+    ) {
+      BuyingHaySandboxAdapter.render(container, step, options);
+    } else if (
+      mId === 'bounded-knapsack-naive' ||
+      mId === 'bounded-knapsack-naive-075' ||
+      mId === 'class075-code01' ||
+      mId === 'multiple-knapsack-naive' ||
+      mId === 'luogu-p1776-naive' ||
+      mId === 'bounded-knapsack-binary' ||
+      mId === 'bounded-knapsack-binary-075' ||
+      mId === 'class075-code02' ||
+      mId === 'multiple-knapsack-binary' ||
+      mId === 'luogu-p1776-binary' ||
+      mId === 'multiple-knapsack'
+    ) {
+      BoundedKnapsackSandboxAdapter.render(container, step, options);
+    } else if (IntervalDpSandboxAdapter.isSupported(mId)) {
+      IntervalDpSandboxAdapter.render(container, step, options);
+    } else if (BitmaskDpSandboxAdapter.isSupported(mId)) {
+      BitmaskDpSandboxAdapter.render(container, step, options);
+    } else {
+      PartitionedKnapsackSandboxAdapter.render(container, step, options);
     }
   }
 
@@ -633,6 +683,34 @@ export class StateSpacePresenter {
         ];
       }
       const capacity = Number(params?.m || (step as any).capacity || (step.variables as any)?.m || effectiveN - 1 || 45);
+      return buildPartitionedKnapsackDPDependencyTree(groups, capacity, step.grid, step.i, step.j);
+    }
+
+    const isCoinsFromPiles =
+      modelId === 'coins-from-piles' ||
+      modelId === 'coins-from-piles-074' ||
+      modelId === 'class074-code02' ||
+      modelId === 'maximum-value-of-k-coins-from-piles' ||
+      modelId === 'leetcode-2218' ||
+      (step as any).piles !== undefined;
+
+    if (isCoinsFromPiles) {
+      const currentModel = AlgorithmModelRepository.hasModel(modelId) ? AlgorithmModelRepository.getModel(modelId) : null;
+      const params = options.params || (currentModel?.defaultParams as any);
+      const rawPiles = (step as any).piles || params?.piles || [[1, 100, 3], [7, 8, 9]];
+      const piles: number[][] = Array.isArray(rawPiles) ? rawPiles : [[1, 100, 3], [7, 8, 9]];
+      const capacity = Number((step as any).kTarget || (step as any).capacity || params?.k || effectiveN - 1 || 2);
+
+      const groups: Array<Array<{ cost: number; val: number }>> = [];
+      for (const pile of piles) {
+        const grp: Array<{ cost: number; val: number }> = [];
+        let sum = 0;
+        for (let c = 0; c < pile.length; c++) {
+          sum += pile[c];
+          grp.push({ cost: c + 1, val: sum });
+        }
+        groups.push(grp);
+      }
       return buildPartitionedKnapsackDPDependencyTree(groups, capacity, step.grid, step.i, step.j);
     }
 
@@ -689,7 +767,9 @@ export class StateSpacePresenter {
         legendRefEl.style.display = 'none';
       } else {
         legendRefEl.style.display = '';
-        legendRefEl.innerHTML = options.isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方';
+        legendRefEl.innerHTML = isGridProblem
+          ? (options.isReverse ? '🐱 参考下方/右方' : '🐱 参考上方/左方')
+          : (options.isReverse ? '↖️ 状态转移依赖' : '↖️ 状态转移依赖');
       }
     }
 
@@ -757,6 +837,7 @@ export class StateSpacePresenter {
     currentStage: string
   ): void {
     if (typeof document === 'undefined') return;
+    const isReverse = Boolean(step.isReverse || step.direction === 'reverse');
 
     const explainer = document.getElementById('step-explainer-content');
     if (explainer) explainer.textContent = step.log || step.msg || '';
@@ -781,22 +862,41 @@ export class StateSpacePresenter {
 
         if (valEl) valEl.textContent = val !== null ? String(val) : '-';
 
+        let roleBadge = cell.querySelector('.cell-role-badge') as HTMLElement | null;
+        if (!roleBadge) {
+          roleBadge = document.createElement('span');
+          roleBadge.className = 'cell-role-badge absolute top-1 right-1 px-1 py-0.2 rounded text-[8px] font-bold leading-none shadow-2xs pointer-events-none';
+          cell.appendChild(roleBadge);
+        }
+
         cell.className = 'w-14 h-14 sm:w-16 sm:h-16 rounded-xl border-2 flex flex-col items-center justify-between p-1 relative transition-all duration-200';
         if (isCurrent) {
           cell.className += ' bg-blue-50/90 border-blue-500 shadow-md scale-105 z-10';
           if (indEl) indEl.className = 'h-1.5 w-8 rounded-full bg-blue-500';
+          roleBadge.className = 'cell-role-badge absolute top-1 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-blue-500 text-white leading-none shadow-2xs pointer-events-none';
+          roleBadge.textContent = '当前';
+          roleBadge.style.display = 'inline-block';
         } else if (isTop) {
           cell.className += ' bg-purple-50/90 border-purple-400 shadow-xs';
           if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-purple-400';
+          roleBadge.className = 'cell-role-badge absolute top-1 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-purple-600 text-white leading-none shadow-2xs pointer-events-none';
+          roleBadge.textContent = isReverse ? '⬇️' : '⬆️';
+          roleBadge.style.display = 'inline-block';
         } else if (isLeft) {
           cell.className += ' bg-amber-50/90 border-amber-400 shadow-xs';
           if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-amber-400';
-        } else if (val !== null) {
-          cell.className += ' bg-slate-50 border-slate-200';
-          if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-emerald-400';
+          roleBadge.className = 'cell-role-badge absolute top-1 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-amber-600 text-white leading-none shadow-2xs pointer-events-none';
+          roleBadge.textContent = isReverse ? '➡️' : '↖️';
+          roleBadge.style.display = 'inline-block';
         } else {
-          cell.className += ' bg-white border-slate-200';
-          if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-slate-100';
+          roleBadge.style.display = 'none';
+          if (val !== null) {
+            cell.className += ' bg-slate-50 border-slate-200';
+            if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-emerald-400';
+          } else {
+            cell.className += ' bg-white border-slate-200';
+            if (indEl) indEl.className = 'h-1.5 w-6 rounded-full bg-slate-100';
+          }
         }
       }
     }
@@ -1206,6 +1306,66 @@ export class StateSpacePresenter {
     if (riverBarrier) riverBarrier.style.display = 'none';
     const arrowsSvg = this.queryScoped(container, '#grid-arrows-svg');
     if (arrowsSvg) arrowsSvg.style.display = 'none';
+
+    // 优先分发至各背包领域专属拟物沙盘适配器
+    const mId = options.modelId;
+    if (
+      mId === 'coins-from-piles' ||
+      mId === 'coins-from-piles-074' ||
+      mId === 'class074-code02' ||
+      mId === 'maximum-value-of-k-coins-from-piles' ||
+      mId === 'leetcode-2218' ||
+      (step as any).piles !== undefined
+    ) {
+      CoinsFromPilesSandboxAdapter.render(container, step, options);
+      return;
+    }
+    if (
+      mId === 'unbounded-knapsack-standard' ||
+      mId === 'complete-knapsack' ||
+      mId === 'unbounded-knapsack' ||
+      mId === 'unbounded-knapsack-074' ||
+      mId === 'class074-code03' ||
+      mId === 'luogu-p1616'
+    ) {
+      UnboundedKnapsackSandboxAdapter.render(container, step, options);
+      return;
+    }
+    if (
+      mId === 'buying-hay-min-cost' ||
+      mId === 'buying-hay-min-cost-074' ||
+      mId === 'buying-hay' ||
+      mId === 'class074-code06' ||
+      mId === 'luogu-p2918' ||
+      (step as any).hTarget !== undefined
+    ) {
+      BuyingHaySandboxAdapter.render(container, step, options);
+      return;
+    }
+    if (
+      mId === 'bounded-knapsack-naive' ||
+      mId === 'bounded-knapsack-naive-075' ||
+      mId === 'class075-code01' ||
+      mId === 'multiple-knapsack-naive' ||
+      mId === 'luogu-p1776-naive' ||
+      mId === 'bounded-knapsack-binary' ||
+      mId === 'bounded-knapsack-binary-075' ||
+      mId === 'class075-code02' ||
+      mId === 'multiple-knapsack-binary' ||
+      mId === 'luogu-p1776-binary' ||
+      mId === 'multiple-knapsack'
+    ) {
+      BoundedKnapsackSandboxAdapter.render(container, step, options);
+      return;
+    }
+    if (
+      mId.includes('partitioned') ||
+      (step as any).teams !== undefined ||
+      ((options.params || {}).items && Array.isArray((options.params || {}).items))
+    ) {
+      PartitionedKnapsackSandboxAdapter.render(container, step, options);
+      return;
+    }
 
     // 提取物品池与容量
     let items: Array<{ index: number; weight: number; value: number }> = [];

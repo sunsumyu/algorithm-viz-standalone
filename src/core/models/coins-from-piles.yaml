@@ -19,6 +19,23 @@ defaultParams:
   k: 2
   piles: [[1, 100, 3], [7, 8, 9]]
 
+presets:
+  - label: "用例 1: 诱惑栈底 [1,100,3] (k=2)"
+    values:
+      k: 2
+      piles: [[1, 100, 3], [7, 8, 9]]
+    description: "第1栈栈顶为1、次顶为100，需连取2枚才能拿到100，全局最优解 101"
+  - label: "用例 2: 栈顶高面值 [100,1,3] (k=2)"
+    values:
+      k: 2
+      piles: [[100, 1, 3], [7, 8, 9]]
+    description: "将第1栈100与1顺序对调，栈顶直接为100！取第1栈1枚(100)+第2栈1枚(7)，全局最优解跃升为 107"
+  - label: "用例 3: 多栈深层对决 (k=7)"
+    values:
+      k: 7
+      piles: [[100], [100], [100], [100], [100], [100], [1, 1, 1, 1, 1, 1, 700]]
+    description: "LeetCode 示例 2：前6个栈各自取1枚 vs 最后一个栈连续取7枚(706)"
+
 problem:
   leetcodeId: 2218
   title: "从栈中取出 K 个硬币的最大面值和"
@@ -29,6 +46,9 @@ problem:
     - input: "piles = [[1,100,3],[7,8,9]], k = 2"
       output: "101"
       explanation: "从栈 0 中取出 2 个硬币（1 + 100 = 101），获得最大面值 101。"
+    - input: "piles = [[100,1,3],[7,8,9]], k = 2"
+      output: "107"
+      explanation: "将栈 0 中 100 与 1 顺序对调后，栈顶直接是 100。分别从栈 0 取 1 枚（100）、从栈 1 取 1 枚（7），获得最大面值 100 + 7 = 107。"
     - input: "piles = [[100],[100],[100],[100],[100],[100],[1,1,1,1,1,1,700]], k = 7"
       output: "706"
       explanation: "如果从前面的栈各自取 1 个硬币，最多获得 600 面值。但如果从最后一个栈连续取 7 个硬币（1*6 + 700 = 706），可以获得最大面值 706。"
@@ -187,60 +207,66 @@ stages:
     timeBadge: "O(N · K · min(len, K))"
     badgeBg: "bg-blue-100 text-blue-700"
     name:
-      forward: "阶段 3: 二维分组背包动态规划 (前缀和互斥决策填表)"
+      forward: "阶段 3: 严格位置依赖二维动态规划 (左神原版 maxValueOfCoins1)"
       reverse: "阶段 3: 逆向依赖二维填表 (倒序边界推导)"
     desc:
-      forward: "建立状态表 dp[i][j]，表示前 i 个硬币栈在总提取容量 j 限制下的最大面值。每个栈预处理前缀和转为互斥物品组：dp[i][j] = max(dp[i-1][j], max_c(dp[i-1][j-c] + preSum[c]))。"
+      forward: "左程云算法通关课 Class 074 Code02 原版实现 maxValueOfCoins1：建立状态表 dp[i][j]，表示前 i 个硬币栈在提取容量 j 下的最大面值。每个栈预处理前缀和转为互斥物品组：dp[i][j] = max(dp[i-1][j], max_k(dp[i-1][j-k] + preSum[k]))。"
       reverse: "自右下角终点状态向基底反推依赖关系，高亮展示多路组内候选依赖来源。"
     variants:
       standard:
         variantLabel: "二维矩阵填表版"
         title:
-          forward: "CoinsFromPiles_DP2D.java"
-          reverse: "CoinsFromPiles_DP2D_Reverse.java"
+          forward: "Code02_MaximumValueOfKcoinsFromPiles.java"
+          reverse: "Code02_MaximumValueOfKcoinsFromPiles_Reverse.java"
         code:
           forward:
-            title: "CoinsFromPiles_DP2D.java"
+            title: "Solution.java"
             source: |
               class Solution {
-                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int m) {
                       int n = piles.size();
-                      int[][] dp = new int[n + 1][k + 1]; // @step:init_dp
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init_dp
                       for (int i = 1; i <= n; i++) { // @step:outer_loop
-                          List<Integer> pile = piles.get(i - 1);
-                          int t = Math.min(pile.size(), k);
+                          List<Integer> team = piles.get(i - 1);
+                          int t = Math.min(team.size(), m);
                           int[] preSum = new int[t + 1]; // @step:presum_calc
-                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
-                          for (int j = 0; j <= k; j++) { // @step:inner_cap
+                          for (int j = 0, sum = 0; j < t; j++) {
+                              sum += team.get(j);
+                              preSum[j + 1] = sum;
+                          }
+                          for (int j = 0; j <= m; j++) { // @step:inner_cap
                               dp[i][j] = dp[i - 1][j]; // @step:branch_not_take
-                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
-                                  dp[i][j] = Math.max(dp[i][j], dp[i - 1][j - c] + preSum[c]); // @step:transition
+                              for (int k = 1; k <= Math.min(t, j); k++) { // @step:loop_coins
+                                  dp[i][j] = Math.max(dp[i][j], dp[i - 1][j - k] + preSum[k]); // @step:transition
                               }
                           }
                       }
-                      return dp[n][k]; // @step:return_ans
+                      return dp[n][m]; // @step:return_ans
                   }
               }
           reverse:
-            title: "CoinsFromPiles_DP2D_Reverse.java"
+            title: "Solution_Reverse.java"
             source: |
               class Solution {
-                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
+                  public int maxValueOfCoins(List<List<Integer>> piles, int m) {
                       int n = piles.size();
-                      int[][] dp = new int[n + 1][k + 1]; // @step:init_dp
+                      int[][] dp = new int[n + 1][m + 1]; // @step:init_dp
                       for (int i = n; i >= 1; i--) { // @step:outer_loop
-                          List<Integer> pile = piles.get(i - 1);
-                          int t = Math.min(pile.size(), k);
+                          List<Integer> team = piles.get(i - 1);
+                          int t = Math.min(team.size(), m);
                           int[] preSum = new int[t + 1]; // @step:presum_calc
-                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
-                          for (int j = k; j >= 0; j--) { // @step:inner_cap
+                          for (int j = 0, sum = 0; j < t; j++) {
+                              sum += team.get(j);
+                              preSum[j + 1] = sum;
+                          }
+                          for (int j = m; j >= 0; j--) { // @step:inner_cap
                               dp[i][j] = (i == n) ? 0 : dp[i + 1][j]; // @step:branch_not_take
-                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
-                                  dp[i][j] = Math.max(dp[i][j], dp[i + 1][j - c] + preSum[c]); // @step:transition
+                              for (int k = 1; k <= Math.min(t, j); k++) { // @step:loop_coins
+                                  dp[i][j] = Math.max(dp[i][j], dp[i + 1][j - k] + preSum[k]); // @step:transition
                               }
                           }
                       }
-                      return dp[1][k]; // @step:return_ans
+                      return dp[1][m]; // @step:return_ans
                   }
               }
 
@@ -250,54 +276,60 @@ stages:
     timeBadge: "O(N · K · min(len, K)) · 空间 O(K)"
     badgeBg: "bg-emerald-100 text-emerald-700"
     name:
-      forward: "阶段 4: 一维滚动空间压缩 (容量倒序防串组)"
+      forward: "阶段 4: 一维滚动空间压缩 (左神原版 maxValueOfCoins2)"
       reverse: "阶段 4: 空间压缩极简倒序流转 (O(K) 辅助空间)"
     desc:
-      forward: "由于当前行 dp[i][j] 仅依赖上一行更小容量 dp[i-1][j-c]，将二维矩阵压缩为一维数组 dp[j]。关键：容量 j 必须从 k 倒序遍历至 1，彻底防止同一硬币栈内多种拿取方案被重复累加！"
+      forward: "左程云算法通关课 Class 074 Code02 原版实现 maxValueOfCoins2：由于当前行 dp[i][j] 仅依赖上一行更小容量 dp[i-1][j-k]，将二维矩阵压缩为一维数组 dp[j]。关键：容量 j 必须在外层从 k 倒序遍历至 1，彻底防止同一硬币栈内多种拿取方案被重复累加！"
       reverse: "严格维护一维滚动数组，展示容量从 k 倒序至 0 的单层流转过程与互斥性保护。"
     variants:
       standard:
         variantLabel: "一维空间压缩版"
         title:
-          forward: "CoinsFromPiles_DP1D.java"
-          reverse: "CoinsFromPiles_DP1D_Reverse.java"
+          forward: "Solution.java"
+          reverse: "Solution_Reverse.java"
         code:
           forward:
-            title: "CoinsFromPiles_DP1D.java"
+            title: "Solution.java"
             source: |
               class Solution {
-                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
-                      int[] dp = new int[k + 1]; // @step:init_dp
-                      for (List<Integer> pile : piles) { // @step:outer_loop
-                          int t = Math.min(pile.size(), k);
+                  public int maxValueOfCoins(List<List<Integer>> piles, int m) {
+                      int[] dp = new int[m + 1]; // @step:init_dp
+                      for (List<Integer> team : piles) { // @step:outer_loop
+                          int t = Math.min(team.size(), m);
                           int[] preSum = new int[t + 1]; // @step:presum_calc
-                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
-                          for (int j = k; j > 0; j--) { // @step:inner_cap
-                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
-                                  dp[j] = Math.max(dp[j], dp[j - c] + preSum[c]); // @step:transition
+                          for (int j = 0, sum = 0; j < t; j++) {
+                              sum += team.get(j);
+                              preSum[j + 1] = sum;
+                          }
+                          for (int j = m; j > 0; j--) { // @step:inner_cap
+                              for (int k = 1; k <= Math.min(t, j); k++) { // @step:loop_coins
+                                  dp[j] = Math.max(dp[j], dp[j - k] + preSum[k]); // @step:transition
                               }
                           }
                       }
-                      return dp[k]; // @step:return_ans
+                      return dp[m]; // @step:return_ans
                   }
               }
           reverse:
-            title: "CoinsFromPiles_DP1D_Reverse.java"
+            title: "Solution_Reverse.java"
             source: |
               class Solution {
-                  public int maxValueOfCoins(List<List<Integer>> piles, int k) {
-                      int[] dp = new int[k + 1]; // @step:init_dp
+                  public int maxValueOfCoins(List<List<Integer>> piles, int m) {
+                      int[] dp = new int[m + 1]; // @step:init_dp
                       for (int pIdx = piles.size() - 1; pIdx >= 0; pIdx--) { // @step:outer_loop
-                          List<Integer> pile = piles.get(pIdx);
-                          int t = Math.min(pile.size(), k);
+                          List<Integer> team = piles.get(pIdx);
+                          int t = Math.min(team.size(), m);
                           int[] preSum = new int[t + 1]; // @step:presum_calc
-                          for (int p = 0; p < t; p++) preSum[p + 1] = preSum[p] + pile.get(p);
-                          for (int j = k; j > 0; j--) { // @step:inner_cap
-                              for (int c = 1; c <= Math.min(t, j); c++) { // @step:loop_coins
-                                  dp[j] = Math.max(dp[j], dp[j - c] + preSum[c]); // @step:transition
+                          for (int j = 0, sum = 0; j < t; j++) {
+                              sum += team.get(j);
+                              preSum[j + 1] = sum;
+                          }
+                          for (int j = m; j > 0; j--) { // @step:inner_cap
+                              for (int k = 1; k <= Math.min(t, j); k++) { // @step:loop_coins
+                                  dp[j] = Math.max(dp[j], dp[j - k] + preSum[k]); // @step:transition
                               }
                           }
                       }
-                      return dp[k]; // @step:return_ans
+                      return dp[m]; // @step:return_ans
                   }
               }

@@ -37,12 +37,12 @@ export function renderBambooCanvas(container: HTMLElement, step: BambooStep): vo
 
 export function renderBambooCustomMetrics(container: HTMLElement, step: BambooStep): void {
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0;">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 11px; font-weight: 700; color: #475569;">当前决策阶段:</span>
-        <span style="font-size: 11px; color: #0284c7; font-weight: 700;">${step.decision}</span>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 4px;">
+        <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">当前决策阶段:</span>
+        <span style="font-size: 11px; color: #38bdf8; font-weight: 800; background: rgba(56,189,248,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">${step.decision}</span>
       </div>
-      <div style="padding: 6px 10px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700; color: #0f172a;">
+      <div style="padding: 8px 12px; background: #020617; border: 1px solid #1e293b; border-left: 3px solid #10b981; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #f8fafc;">
         ${step.formula}
       </div>
     </div>

@@ -36,6 +36,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'sudoku',
+  aliases: ['37', 'leetcode-37', 'sudoku-solver'],
+  hasDeductionTree: true,
   name: '解数独',
   category: 'backtracking',
   description: '9×9 棋盘填数回溯，行、列、3×3 宫合法性约束与递归立即返回',

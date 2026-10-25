@@ -21,8 +21,18 @@ export {
 
 export const circularDeque007Visualizer = registerDeclarativeAlgorithm<CircularDequeStep>({
   id: 'circular-deque-007',
+  aliases: [
+    'class007-code01',
+    'class007',
+    'design-circular-deque',
+    'design-circular-deque-641',
+    'circular-deque',
+    'leetcode-641',
+    '641',
+  ],
   name: 'Class 007: 循环双端队列设计 (Circular Deque)',
   category: 'queue',
+  hasDeductionTree: true,
   icon: '🔄',
   difficulty: 1,
   levelOrder: 7,

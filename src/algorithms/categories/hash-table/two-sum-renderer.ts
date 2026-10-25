@@ -22,6 +22,8 @@ export { buildTwoSumSteps, withTwoSumMetrics, renderTwoSumCanvas };
 
 registerDeclarativeAlgorithm({
   id: 'two-sum',
+  aliases: ['1', 'leetcode-1', 'two-sum-hash'],
+  hasDeductionTree: true,
   name: '两数之和（哈希表）',
   category: 'hash-table',
   description: '哈希表一次遍历求两数之和',

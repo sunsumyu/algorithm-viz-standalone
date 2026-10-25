@@ -21,6 +21,8 @@ export {
 
 export const bitwiseArithmetic032Visualizer = registerDeclarativeAlgorithm<BitwiseArithmeticStep>({
   id: 'bitwise-arithmetic-032',
+  aliases: ['class032-code01', 'class032-code02', 'bitwise-arithmetic-032', 'bitwise-arithmetic', 'bitwise-add'],
+  hasDeductionTree: true,
   name: 'Class 032: 位运算实现加减乘除 (Bitwise Arithmetic)',
   category: 'bit-manipulation',
   icon: '⚡',

@@ -352,6 +352,57 @@ describe('DarkCodeTerminalPresenter (深模块测试 - 0 DOM依赖环境)', () =
     expect(inlineHint?.textContent).toContain('i: 3');
     expect(inlineHint?.textContent).toContain('j: 1');
   });
+
+  it('preserves outer scope variables across consecutive steps via persistent execution scope', () => {
+    const presenter = DarkCodeTerminalPresenter.mount(root as unknown as HTMLElement, {
+      codeLanguages: {
+        java: [
+          'int teams = 2;',
+          'for (int i = 1; i <= teams; i++) {',
+          '    for (int k = start; k < end; k++) {',
+          '    }',
+          '}',
+        ],
+      },
+      initialLang: 'java',
+    });
+
+    // Step 0: 初始化外层变量 teams=2, m=45
+    presenter.updateVars([], { index: 0, teams: 2, m: 45 });
+
+    // Step 1: 进入外层循环，只声明 i=1, start=1, end=3 (未重复声明 teams 和 m)
+    presenter.updateVars([], { index: 1, i: 1, start: 1, end: 3 });
+
+    // Step 2: 进入内层循环，只声明 k=1
+    presenter.highlightLine(3);
+    presenter.updateVars([], { index: 2, k: 1 });
+
+    const linesWrapper = root.querySelector('#code-lines-wrapper');
+    const activeLine = linesWrapper?.querySelector('[data-line="3"]');
+    const inlineHint = activeLine?.querySelector('.algo-code-inline-hint');
+
+    // 验证：即使第 2 步只传了 k=1，外层已计算的 start=1 和 end=3 仍然跨步保留！
+    expect(inlineHint?.textContent).toContain('k: 1');
+    expect(inlineHint?.textContent).toContain('start: 1');
+    expect(inlineHint?.textContent).toContain('end: 3');
+  });
+
+  it('correctly extracts matching brackets and subscript expressions for 2D and 1D indexing', async () => {
+    const { extractMatchingBrackets } = await import('./terminal/hover-tooltip-manager');
+
+    // 1. 2D 下标: [k][1]
+    expect(extractMatchingBrackets('[k][1]);', 2)).toBe('[k][1]');
+
+    // 2. 2D 复合嵌套下标: [i - 1][j - arr[k][0]]
+    expect(extractMatchingBrackets('[i - 1][j - arr[k][0]] + arr[k][1]);', 2)).toBe('[i - 1][j - arr[k][0]]');
+
+    // 3. 1D 下标: [k]
+    expect(extractMatchingBrackets('[k];', 1)).toBe('[k]');
+
+    // 4. 空或者非括号开头
+    expect(extractMatchingBrackets(' = 10;', 2)).toBeNull();
+    expect(extractMatchingBrackets('', 2)).toBeNull();
+  });
 });
 
 

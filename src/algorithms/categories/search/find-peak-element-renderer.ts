@@ -22,6 +22,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'find-peak-element',
+  aliases: ['162', 'leetcode-162'],
+  hasDeductionTree: true,
   name: '寻找峰值',
   category: 'search',
   difficulty: 2,

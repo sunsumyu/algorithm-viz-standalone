@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'palindrome-partition',
+  aliases: ['131', 'leetcode-131', 'palindrome-partitioning'],
+  hasDeductionTree: true,
   name: '分割回文串',
   category: 'backtracking',
   description: '将字符串分割为若干回文子串，回文判定剪枝',

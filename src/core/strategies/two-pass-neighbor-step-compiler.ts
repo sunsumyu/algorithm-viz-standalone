@@ -3316,7 +3316,7 @@ export class TwoPassNeighborStepCompiler {
 
     const rowLabels = machines.map((_, i) => `M${i}`);
     const colLabels = ['存量', '左侧净需', '右侧净需', '单机瓶颈', '累计最大步数'];
-    const grid: (number | null)[][] = Array.from({ length: n }, () => Array(5).fill(0));
+    const grid: (number | null)[][] = Array.from({ length: n }, () => Array(5).fill(null));
 
     steps.push({
       stepIndex: 0,

@@ -188,6 +188,99 @@ export class UniversalStageEngine {
 
     const is1D = ProblemDimensionResolver.isPure1DProblem(model?.id || '', { m: params.m, n: params.n });
 
+    // 提取全域数据输入（items, arr, nums, grid, matrix, s, str, piles, weights, values, costs, times, edges）
+    const modelDefaults = (model?.defaultParams as Record<string, any>) || {};
+    const inputParams = (params as Record<string, any>) || {};
+    const metaDemo = (model as any)?.metadata?.demoData || (model as any)?.demoData || {};
+
+    const rawInputs: Record<string, any> = {
+      ...metaDemo,
+      ...modelDefaults,
+      ...inputParams,
+    };
+
+    let cumulativeScope: Record<string, any> = {
+      ...(params.m !== undefined ? { m: params.m } : (rawInputs.m !== undefined ? { m: rawInputs.m } : {})),
+      ...(params.n !== undefined ? { n: params.n } : (rawInputs.n !== undefined ? { n: rawInputs.n } : {})),
+    };
+
+    // 数组与核心数据集提取与语义别名同步
+    const rawItems = rawInputs.items ?? rawInputs.arr ?? rawInputs.nums ?? rawInputs.data;
+    if (rawItems !== undefined) {
+      cumulativeScope.items = rawItems;
+      cumulativeScope.arr = rawItems;
+      cumulativeScope.nums = rawItems;
+      if (Array.isArray(rawItems) && cumulativeScope.n === undefined) {
+        cumulativeScope.n = rawItems.length;
+      }
+    }
+
+    const rawGrid = rawInputs.grid ?? rawInputs.matrix ?? rawInputs.board;
+    if (rawGrid !== undefined) {
+      cumulativeScope.grid = rawGrid;
+      cumulativeScope.matrix = rawGrid;
+      cumulativeScope.board = rawGrid;
+    }
+
+    const rawStr = rawInputs.s ?? rawInputs.str ?? rawInputs.s1 ?? rawInputs.text1;
+    if (rawStr !== undefined) {
+      cumulativeScope.s = rawStr;
+      cumulativeScope.str = rawStr;
+    }
+
+    if (rawInputs.capacity !== undefined) {
+      cumulativeScope.capacity = rawInputs.capacity;
+      if (cumulativeScope.m === undefined) cumulativeScope.m = rawInputs.capacity;
+    }
+    if (rawInputs.m !== undefined && cumulativeScope.capacity === undefined) {
+      cumulativeScope.capacity = rawInputs.m;
+    }
+    if (rawInputs.k !== undefined) cumulativeScope.k = rawInputs.k;
+    if (rawInputs.piles !== undefined) cumulativeScope.piles = rawInputs.piles;
+    if (rawInputs.stones !== undefined) cumulativeScope.stones = rawInputs.stones;
+    if (rawInputs.values !== undefined) cumulativeScope.values = rawInputs.values;
+    if (rawInputs.target !== undefined) cumulativeScope.target = rawInputs.target;
+    if (rawInputs.times !== undefined) cumulativeScope.times = rawInputs.times;
+    if (rawInputs.edges !== undefined) cumulativeScope.edges = rawInputs.edges;
+    if (rawInputs.hats !== undefined) cumulativeScope.hats = rawInputs.hats;
+    if (rawInputs.transactions !== undefined) cumulativeScope.transactions = rawInputs.transactions;
+    if (rawInputs.debts !== undefined) cumulativeScope.debts = rawInputs.debts;
+    if (rawInputs.primes !== undefined) cumulativeScope.primes = rawInputs.primes;
+    if (rawInputs.quantity !== undefined) cumulativeScope.quantity = rawInputs.quantity;
+
+    // 扫描 model.stages 中所有源码的静态常量定义 (如 MAXN = 1005, MAXM = 1005, INF = 1e9)
+    if (model?.stages && typeof model.stages === 'object') {
+      try {
+        const stageList = Object.values(model.stages);
+        for (const st of stageList) {
+          const variants = (st as any)?.variants || {};
+          for (const v of Object.values(variants)) {
+            const sources = [
+              (v as any)?.code?.forward?.source,
+              (v as any)?.code?.reverse?.source,
+              (v as any)?.code?.source,
+              (v as any)?.source,
+            ];
+            for (const src of sources) {
+              if (typeof src === 'string') {
+                const constMatches = src.matchAll(/(?:public\s+static\s+|const\s+|#define\s+)?(?:final\s+)?(?:int|long|double|float)\s+([A-Z0-9_]{2,})\s*=\s*(-?\d+|0x[0-9a-fA-F]+)/g);
+                for (const match of constMatches) {
+                  const cName = match[1];
+                  const cValStr = match[2];
+                  if (!cumulativeScope[cName]) {
+                    const parsedNum = cValStr.startsWith('0x') ? parseInt(cValStr, 16) : parseInt(cValStr, 10);
+                    cumulativeScope[cName] = !isNaN(parsedNum) ? parsedNum : cValStr;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        // 静默安全保护
+      }
+    }
+
     let prevSlot: number | undefined = undefined;
     for (let idx = 0; idx < steps.length; idx++) {
       const step = steps[idx];
@@ -260,6 +353,37 @@ export class UniversalStageEngine {
           }
         }
       }
+
+      // 🌟 5. 全自动词法作用域累积继承契约 (Cumulative Lexical Scope Invariant)
+      // 消除步骤孤岛效应：自动继承前序步骤已声明的有效变量（如 teams, m, n, start, end），防止 hover 时丢失
+      const stepExplicit = (step.scope && typeof step.scope === 'object' ? step.scope : undefined) ||
+        (step.variables && typeof step.variables === 'object' && !Array.isArray(step.variables) ? step.variables : undefined) ||
+        (step.locals && typeof step.locals === 'object' ? step.locals : undefined);
+
+      const stepPrimitives: Record<string, any> = {};
+      const trackKeys = [
+        'i', 'j', 'k', 'l', 'r', 'c', 'u', 'v', 'm', 'n',
+        'teams', 'start', 'end', 'candidate', 'group', 'curGroup', 'groupCount', 'remCap',
+        'capacity', 'cost', 'val', 'ans', 'sum', 'status', 'rest', 'full', 'nextS',
+        'sub', 'mask', 'c', 'p', 'h',
+        'arr', 'items', 'nums', 'grid', 'matrix', 'piles', 'stones', 'values', 'times', 'edges',
+        'hats', 'transactions', 'debts', 'primes', 'quantity',
+        'MAXN', 'MAXM', 'INF', 'MOD',
+      ];
+      for (const k of trackKeys) {
+        if (step[k] !== undefined && typeof step[k] !== 'function') {
+          stepPrimitives[k] = step[k];
+        }
+      }
+
+      cumulativeScope = {
+        ...cumulativeScope,
+        ...stepPrimitives,
+        ...(stepExplicit || {}),
+      };
+
+      step.scope = { ...cumulativeScope };
+      step.variables = { ...cumulativeScope };
     }
 
     return steps;

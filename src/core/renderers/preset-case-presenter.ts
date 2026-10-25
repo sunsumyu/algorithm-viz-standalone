@@ -252,7 +252,7 @@ export class PresetCasePresenter {
         const v1 = p.values[k];
         const v2 = currentParams[k];
         if (Array.isArray(v1) && Array.isArray(v2)) {
-          return v1.length === v2.length && v1.every((val, i) => val === v2[i]);
+          return JSON.stringify(v1) === JSON.stringify(v2);
         }
         return String(v1) === String(v2);
       });

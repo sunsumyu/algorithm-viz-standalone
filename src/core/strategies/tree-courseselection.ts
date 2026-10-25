@@ -367,33 +367,56 @@ export function compileCourseSelection(
 
       // 树上分组背包逆序枚举
       for (let j = maxCap; j >= 1; j--) {
-        let updated = false;
-        let bestK = 0;
-        let bestVal = dp[u][j];
+        addCourseStep({
+          type: 'knapsack-cap',
+          line: lineKnapsackCap,
+          codeLine: lineKnapsackCap,
+          i: u,
+          j,
+          dp1d: [...dp[u]],
+          activeSlot: j,
+          tag: `考察容量上限 j=${j}`,
+          log: `| 📦 节点 #${u} 容量逆序考察 j = ${j}/${maxCap}`,
+          msg: `考察容量 <code>j=${j}</code>：为节点 <strong>#${u}</strong> 及其子树分配课程名额。`,
+          activeCourse: u,
+        });
 
         for (let k = 0; k < j; k++) {
-          const candidate = dp[u][j - k] + dp[v][k];
-          if (candidate > bestVal) {
-            bestVal = candidate;
-            bestK = k;
-            updated = true;
-          }
-        }
-
-        if (updated) {
-          dp[u][j] = bestVal;
           addCourseStep({
-            type: 'update',
+            type: 'alloc-quota',
+            line: lineAllocQuota,
+            codeLine: lineAllocQuota,
+            i: u,
+            j,
+            k,
+            dp1d: [...dp[u]],
+            memo: [dp[u][j - k], dp[v][k]],
+            activeSlot: j,
+            tag: `尝试分配子树#${v}配额 k=${k}`,
+            log: `| ⚖️ 尝试将配额 k=${k} 分配给子树 #${v}，自身与其余保留 j-k=${j - k}`,
+            msg: `尝试分配配额：分配给子树 <strong>#${v}</strong> <code>k=${k}</code> 门课，自身及已有子树保留 <code>${j - k}</code> 门课。`,
+            activeCourse: u,
+          });
+
+          const candidate = dp[u][j - k] + dp[v][k];
+          const isUpdate = candidate > dp[u][j];
+          if (isUpdate) {
+            dp[u][j] = candidate;
+          }
+
+          addCourseStep({
+            type: 'transfer',
             line: lineTransfer,
             codeLine: lineTransfer,
             i: u,
             j,
+            k,
             dp1d: [...dp[u]],
-            memo: [dp[u][j - bestK], dp[v][bestK]],
+            memo: [dp[u][j - k], dp[v][k]],
             activeSlot: j,
-            tag: `节点#${u}容量${j}更新: 最优${bestVal}`,
-            log: `| ⚡ 【分组背包转移】dp[${u}][${j}] = dp[${u}][${j - bestK}] + dp[${v}][${bestK}] = ${bestVal} (分配子树#${v} ${bestK} 门课)`,
-            msg: `子树合并：节点 <strong>#${u}</strong> 容量 <code>j=${j}</code> 时，分配给子树 <strong>#${v}</strong> <code>${bestK}</code> 门课，获得学分 <strong>${bestVal}</strong>。`,
+            tag: `转移比较: candidate=${candidate}, dp[${u}][${j}]=${dp[u][j]}`,
+            log: `| ⚡ 分组转移: candidate(${candidate}) vs 当前最优 -> dp[${u}][${j}] = ${dp[u][j]}`,
+            msg: `转移比选：分配 <code>k=${k}</code> 门课收益为 <code>${candidate}</code>，${isUpdate ? `<strong>刷新最大学分为 ${dp[u][j]}</strong>` : `保持当前最优 ${dp[u][j]}`}`,
             activeCourse: u,
             activeArrName: 'dp-curr',
             activeArrSlot: j,

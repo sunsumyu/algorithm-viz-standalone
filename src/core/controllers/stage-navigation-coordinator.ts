@@ -288,9 +288,12 @@ export class StageNavigationCoordinator {
     }
 
     const isKnapsack = ProblemDimensionResolver.isKnapsackProblem(model?.id);
+    const isCoinsFromPiles = model?.id?.includes('coins-from-piles') || model?.id?.includes('class074-code02');
     if (card1TitleEl) {
       if (isTreeProblem) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-emerald-600"></i> 🌲 二叉树拓扑结构与剪枝 (Tree Topology)`;
+      } else if (isCoinsFromPiles && (currentStage === 'stage-1' || currentStage === 'stage-2')) {
+        card1TitleEl.innerHTML = `<i class="fa-solid fa-layer-group text-amber-500"></i> 硬币栈与收集舱沙盘 (Coin Piles & Wallet Sandbox)`;
       } else if (isKnapsack && (currentStage === 'stage-1' || currentStage === 'stage-2')) {
         card1TitleEl.innerHTML = `<i class="fa-solid fa-boxes-stacked text-blue-600"></i> 候选物品池与决策沙盘 (Item Decision Sandbox)`;
       } else if (isGridProblem) {
@@ -321,18 +324,40 @@ export class StageNavigationCoordinator {
           <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 已推导</span>
           <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span> 剪枝/剔除</span>
         `;
+      } else if (isKnapsack) {
+        const isReverse = currentDirection === 'reverse';
+        const topLabel = isReverse ? '参考下方' : '参考上方';
+        const diagLabel = isReverse ? '参考前驱' : '参考前驱';
+        legendBar.innerHTML = `
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已求解</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> ⬆️${topLabel}(不选/继承)</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> ↖️${diagLabel}(选入/转移)</span>
+        `;
       } else if (!isGridProblem) {
         const isReverse = currentDirection === 'reverse';
         const topLabel = isReverse ? '参考下方' : '参考上方';
         const leftLabel = isReverse ? '参考右方' : '参考左方';
         const diagLabel = isReverse ? '参考右下' : '参考左上';
-        legendBar.innerHTML = `
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已求解</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-cyan-100 border border-cyan-400"></span> ↖️${diagLabel}(匹配/替换)</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> ⬆️${topLabel}(删除)</span>
-          <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> ⬅️${leftLabel}(插入)</span>
-        `;
+        const mid = model?.id || '';
+        const isStringSeq = mid.includes('edit-distance') || mid.includes('subsequence') || mid.includes('match') || mid.includes('interleaving');
+        if (isStringSeq) {
+          legendBar.innerHTML = `
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已求解</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-cyan-100 border border-cyan-400"></span> ↖️${diagLabel}(匹配/替换)</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> ⬆️${topLabel}(删除)</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> ⬅️${leftLabel}(插入)</span>
+          `;
+        } else {
+          legendBar.innerHTML = `
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-blue-100 border border-blue-500"></span> 当前计算</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-100 border border-emerald-400"></span> 已求解</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-purple-100 border border-purple-400"></span> ⬆️${topLabel}</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-amber-100 border border-amber-400"></span> ⬅️${leftLabel}</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-sm bg-cyan-100 border border-cyan-400"></span> ↖️${diagLabel}</span>
+          `;
+        }
       }
     }
   }
@@ -342,9 +367,10 @@ export class StageNavigationCoordinator {
    */
   public static updateStage3SubViewTabs(
     currentStage: string,
-    stage3SubView: 'matrix' | 'tree' | 'alignment',
+    stage3SubView: 'matrix' | 'tree' | 'alignment' | 'sandbox',
     isStage32D: boolean,
-    isStringProblem: boolean = false
+    isStringProblem: boolean = false,
+    isKnapsack: boolean = false
   ): void {
     if (typeof document === 'undefined') return;
     const bar = document.getElementById('stage3-subview-bar');
@@ -360,10 +386,14 @@ export class StageNavigationCoordinator {
 
     const btnMatrix = document.getElementById('btn-subview-matrix');
     const btnTree = document.getElementById('btn-subview-tree');
+    const btnSandbox = document.getElementById('btn-subview-sandbox');
     const btnAlign = document.getElementById('btn-subview-alignment');
 
     if (btnAlign) {
       btnAlign.style.display = isStringProblem ? '' : 'none';
+    }
+    if (btnSandbox) {
+      btnSandbox.style.display = isKnapsack ? '' : 'none';
     }
 
     const activeCls = 'active px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white shadow-2xs transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
@@ -371,6 +401,7 @@ export class StageNavigationCoordinator {
 
     if (btnMatrix) btnMatrix.className = stage3SubView === 'matrix' ? activeCls : inactiveCls;
     if (btnTree) btnTree.className = stage3SubView === 'tree' ? activeCls : inactiveCls;
+    if (btnSandbox) btnSandbox.className = stage3SubView === 'sandbox' ? activeCls : inactiveCls;
     if (btnAlign) btnAlign.className = stage3SubView === 'alignment' ? activeCls : inactiveCls;
   }
 
@@ -379,14 +410,17 @@ export class StageNavigationCoordinator {
    */
   public static updateStage4SubViewTabs(
     currentStage: string,
-    stage4SubView: 'memo' | 'alignment',
-    isStringProblem: boolean = false
+    stage4SubView: 'memo' | 'tree' | 'sandbox' | 'alignment',
+    isStringProblem: boolean = false,
+    hasSandbox: boolean = false,
+    hasTree: boolean = false
   ): void {
     if (typeof document === 'undefined') return;
     const bar = document.getElementById('stage4-subview-bar');
     if (!bar) return;
 
-    if (currentStage !== 'stage-4' || !isStringProblem) {
+    const hasMultipleViews = isStringProblem || hasSandbox || hasTree;
+    if (currentStage !== 'stage-4' || !hasMultipleViews) {
       bar.classList.add('hidden');
       bar.classList.remove('inline-flex');
       return;
@@ -395,16 +429,26 @@ export class StageNavigationCoordinator {
     bar.classList.add('inline-flex');
 
     const btnMemo = document.getElementById('btn-stage4-memo');
+    const btnTree = document.getElementById('btn-stage4-tree');
+    const btnSandbox = document.getElementById('btn-stage4-sandbox');
     const btnAlign = document.getElementById('btn-stage4-alignment');
 
     if (btnAlign) {
       btnAlign.style.display = isStringProblem ? '' : 'none';
+    }
+    if (btnSandbox) {
+      btnSandbox.style.display = hasSandbox ? '' : 'none';
+    }
+    if (btnTree) {
+      btnTree.style.display = hasTree ? '' : 'none';
     }
 
     const activeCls = 'active px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white shadow-2xs transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
     const inactiveCls = 'px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition flex items-center gap-1 whitespace-nowrap flex-shrink-0';
 
     if (btnMemo) btnMemo.className = stage4SubView === 'memo' ? activeCls : inactiveCls;
+    if (btnTree) btnTree.className = stage4SubView === 'tree' ? activeCls : inactiveCls;
+    if (btnSandbox) btnSandbox.className = stage4SubView === 'sandbox' ? activeCls : inactiveCls;
     if (btnAlign) btnAlign.className = stage4SubView === 'alignment' ? activeCls : inactiveCls;
   }
 
@@ -540,17 +584,51 @@ export class StageNavigationCoordinator {
       return;
     }
 
-    // 只有在树型问题或具有真实树模型时，才允许 Card 2 标为状态依赖树，杜绝表格冒充树的脑裂！
-    const hasRealTree = isTreeProblem || Boolean((params as any).hasTree);
-    if (params.activeSubView === 'tree' && params.currentStage === 'stage-3' && hasRealTree) {
+    // 阶段 3 / 阶段 4 切换至状态依赖树视图：无论底层是否预存静态树，均已由 StateSpacePresenter.resolveStage3DependencyTree 即时编译拓扑树
+    if (params.activeSubView === 'tree' && (params.currentStage === 'stage-3' || params.currentStage === 'stage-4')) {
       if (card2TitleEl) {
-        card2TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-blue-600 dark:text-blue-400"></i> 状态依赖拓扑树 (Dependency Tree)`;
+        card2TitleEl.innerHTML = `<i class="fa-solid fa-network-wired text-emerald-600 dark:text-emerald-400"></i> 状态依赖拓扑树 (State Dependency Tree)`;
       }
       if (card2DescEl) {
-        card2DescEl.textContent = '依赖解析：可视化展现状态之间的推导拓扑与计算次序。';
+        card2DescEl.textContent = '依赖解析：可视化展现状态之间的推导拓扑、前驱子问题与计算次序。';
       }
       if (memoLenBadge) {
-        memoLenBadge.textContent = '拓扑依赖树';
+        memoLenBadge.textContent = '状态依赖树';
+      }
+      return;
+    }
+
+    // 阶段 3 切换至实体背包与分组物品桶沙盘 / 硬币栈与收集舱沙盘 / 完全背包采药沙盘
+    if (params.activeSubView === 'sandbox') {
+      const isCoinsFromPiles =
+        params.model?.id === 'coins-from-piles' ||
+        params.model?.id === 'coins-from-piles-074' ||
+        params.model?.id === 'class074-code02';
+
+      const isUnboundedKnapsack =
+        params.model?.id === 'unbounded-knapsack-standard' ||
+        params.model?.id === 'complete-knapsack' ||
+        params.model?.id === 'unbounded-knapsack' ||
+        params.model?.id === 'unbounded-knapsack-074' ||
+        params.model?.id === 'class074-code03' ||
+        params.model?.id === 'luogu-p1616';
+
+      if (card2TitleEl) {
+        card2TitleEl.innerHTML = isCoinsFromPiles
+          ? `<i class="fa-solid fa-layer-group text-amber-500 dark:text-amber-400"></i> 硬币栈与收集舱沙盘 (Coin Piles & Wallet Sandbox)`
+          : isUnboundedKnapsack
+          ? `<i class="fa-solid fa-seedling text-emerald-500 dark:text-emerald-400"></i> 采药时间与自叠加背包沙盘 (Herb Gathering & Unbounded Knapsack)`
+          : `<i class="fa-solid fa-box-open text-amber-500 dark:text-amber-400"></i> 实体背包与分组物品桶 (Knapsack & Grouped Buckets)`;
+      }
+      if (card2DescEl) {
+        card2DescEl.textContent = isCoinsFromPiles
+          ? '物理沙盘：直观呈现自栈顶向下连续提取硬币、前缀和互斥组桶与钱包容量配额。'
+          : isUnboundedKnapsack
+          ? '物理沙盘：直观呈现草药无限采摘池、同种草药自叠加放入背包与容量水位变化。'
+          : '物理沙盘：直观呈现每组互斥候选桶与物理背包容量填充，步进实时联动。';
+      }
+      if (memoLenBadge) {
+        memoLenBadge.textContent = isCoinsFromPiles ? '硬币栈沙盘' : isUnboundedKnapsack ? '采药背包沙盘' : '背包与组桶沙盘';
       }
       return;
     }
@@ -572,7 +650,7 @@ export class StageNavigationCoordinator {
         if (params.currentStage === 'stage-1') defaultCard2Title = '递归搜索调用树 (Recursive Call Tree)';
         else if (params.currentStage === 'stage-2') defaultCard2Title = '记忆化搜索剪枝树 (Memoized Tree)';
         else if (params.currentStage === 'stage-3') defaultCard2Title = isStage32D ? '二维 DP 状态转移表 (int[][] dp)' : '一维 DP 状态数组 (int[] dp)';
-        else if (params.currentStage === 'stage-4') defaultCard2Title = '空间压缩滚动数组 (int[] memo)';
+        else if (params.currentStage === 'stage-4') defaultCard2Title = '空间压缩滚动数组 (int[] dp)';
       }
 
       const stageTitle = (params.stageConfig?.card2Title && typeof params.stageConfig.card2Title === 'object')

@@ -247,6 +247,26 @@ export class RightPanelTabCoordinator {
     if (stepContext) {
       this.currentStep = stepContext;
       this.currentVarsMap = VariableContextResolver.resolve(stepContext, language);
+
+      // 自动从当前代码行中补充提取静态常量 (如 MAXN = 1005, MAXM = 1005, INF = 1e9)
+      container.querySelectorAll('.code-line').forEach(el => {
+        const raw = (el as HTMLElement).dataset.rawCode || el.textContent || '';
+        const constMatch = raw.match(/(?:public\s+static\s+|const\s+|#define\s+)?(?:final\s+)?(?:int|long|double|float)\s+([A-Z0-9_]{2,})\s*=\s*(-?\d+|0x[0-9a-fA-F]+)/);
+        if (constMatch) {
+          const cName = constMatch[1];
+          const cValStr = constMatch[2];
+          if (!this.currentVarsMap.has(cName)) {
+            const valNum = cValStr.startsWith('0x') ? parseInt(cValStr, 16) : parseInt(cValStr, 10);
+            this.currentVarsMap.set(cName, {
+              name: cName,
+              value: cValStr,
+              type: 'number',
+              raw: !isNaN(valNum) ? valNum : cValStr,
+              detail: `静态常量 ${cName} = ${cValStr}`,
+            });
+          }
+        }
+      });
     }
     if (this.hoverTooltipBoundContainer !== container) {
       this.bindHoverTooltip(container, language);
@@ -259,7 +279,10 @@ export class RightPanelTabCoordinator {
         htmlEl.innerHTML = highlightTokens(htmlEl.dataset.rawCode, language);
         delete htmlEl.dataset.isDirty;
       }
-      htmlEl.classList.remove('active-line', 'return-line');
+      htmlEl.classList.remove('active', 'active-line', 'is-active', 'return-line');
+      htmlEl.style.backgroundColor = '';
+      htmlEl.style.borderLeftColor = '';
+      htmlEl.style.fontWeight = '';
       const oldIcon = htmlEl.querySelector('.code-return-icon');
       if (oldIcon) oldIcon.remove();
     });
@@ -268,7 +291,10 @@ export class RightPanelTabCoordinator {
 
     const activeLineEl = container.querySelector(`.code-line[data-line="${line}"]`) as HTMLElement | null;
     if (activeLineEl) {
-      activeLineEl.classList.add('active-line');
+      activeLineEl.classList.add('active', 'active-line', 'is-active');
+      activeLineEl.style.backgroundColor = 'rgba(37, 99, 235, 0.25)';
+      activeLineEl.style.borderLeftColor = '#2563eb';
+      activeLineEl.style.fontWeight = '700';
       if (isReturn) {
         activeLineEl.classList.add('return-line');
       }
@@ -304,19 +330,32 @@ export class RightPanelTabCoordinator {
         }
       }
 
-      // 3. 自动滚动居中
-      if (line <= 6) {
-        if (typeof container.scrollTo === 'function') {
-          container.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          container.scrollTop = 0;
-        }
-      } else {
-        const lineOffsetTop = activeLineEl.offsetTop || 0;
+      // 4. 自动滚动居中，确保高亮行始终稳固处于视口舒适区（双向检测上下边界）
+      const viewHeight = container.clientHeight;
+      if (viewHeight > 0) {
+        let lineTop = activeLineEl.offsetTop || 0;
+        let lineHeight = activeLineEl.offsetHeight || 22;
         const currentScroll = container.scrollTop || 0;
 
-        if (lineOffsetTop < currentScroll + 32) {
-          const targetTop = Math.max(0, lineOffsetTop - 40);
+        if (typeof activeLineEl.getBoundingClientRect === 'function' && typeof container.getBoundingClientRect === 'function') {
+          const lineRect = activeLineEl.getBoundingClientRect();
+          const containerRect = container.getBoundingClientRect();
+          if (containerRect.height > 0) {
+            lineTop = lineRect.top - containerRect.top + currentScroll;
+            lineHeight = lineRect.height || lineHeight;
+          }
+        }
+
+        const padding = Math.min(80, Math.max(35, Math.floor(viewHeight * 0.2)));
+        if (lineTop < currentScroll + padding) {
+          const targetTop = Math.max(0, lineTop - padding);
+          if (typeof container.scrollTo === 'function') {
+            container.scrollTo({ top: targetTop, behavior: 'smooth' });
+          } else {
+            container.scrollTop = targetTop;
+          }
+        } else if (lineTop + lineHeight > currentScroll + viewHeight - padding) {
+          const targetTop = lineTop + lineHeight - viewHeight + padding;
           if (typeof container.scrollTo === 'function') {
             container.scrollTo({ top: targetTop, behavior: 'smooth' });
           } else {

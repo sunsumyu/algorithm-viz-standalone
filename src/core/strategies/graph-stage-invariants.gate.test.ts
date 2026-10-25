@@ -26,10 +26,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildIslandsSteps } from '../../algorithms/categories/graph/islands-renderer';
+import { buildIslandsSteps, buildIslandsBFSSteps } from '../../algorithms/categories/graph/islands-renderer';
 import { ISLANDS_CODE_LANGUAGES } from '../../algorithms/categories/graph/islands-problem-content';
-import { buildIslandsBFSSteps } from '../../algorithms/categories/graph/islands-bfs-renderer';
-import { ISLANDS_BFS_CODE_LANGUAGES } from '../../algorithms/categories/graph/islands-bfs-problem-content';
+import { STAGE2_BFS_CODES as ISLANDS_BFS_CODE_LANGUAGES } from '../../algorithms/categories/graph/islands-problem-content';
 import { buildMIASteps } from '../../algorithms/categories/graph/max-island-area-renderer';
 import { MAX_ISLAND_AREA_CODE_LANGUAGES } from '../../algorithms/categories/graph/max-island-area-problem-content';
 import { buildDJBSteps } from '../../algorithms/categories/graph/dijkstra-basic-renderer';

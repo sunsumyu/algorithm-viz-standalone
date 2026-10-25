@@ -21,6 +21,7 @@ export const longestWPI053Visualizer = registerDeclarativeAlgorithm<Step053>({
   category: 'monotonic-stack',
   difficulty: 'medium',
   aliases: ['longest-well-performing-interval', '1124', '表现良好的最长时间段', 'class053-code05'],
+  hasDeductionTree: true,
   learningGoal:
     '掌握 +1/-1 差值前缀和归一化建模，理解单调递减栈维护最优左候选端点与右端点倒序贪心消除。',
   problemContent: {

@@ -33,24 +33,26 @@ export function renderSgTable(
     flex-direction: column;
     gap: 8px;
     padding: 12px 16px;
-    background: #ffffff;
+    background: #0f172a;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid #1e293b;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
   `;
 
   const header = document.createElement('div');
-  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: #1e293b;';
+  header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: #cbd5e1;';
   header.innerHTML = `
-    <span style="display: flex; align-items: center; gap: 6px;">📊 ${label}</span>
-    <span style="font-size: 11px; color: #64748b; font-weight: 500;">绿色: 必胜态 (SG>0) | 红色: 必败态 (SG=0)</span>
+    <span style="display: flex; align-items: center; gap: 6px; color: #f8fafc;">📊 ${label}</span>
+    <span style="font-size: 11px; color: #94a3b8; font-weight: 500;">
+      <span style="color: #34d399; font-weight: 700;">绿色: 必胜 (SG>0)</span> | <span style="color: #f87171; font-weight: 700;">红色: 必败 (SG=0)</span>
+    </span>
   `;
   wrapper.appendChild(header);
 
   const grid = document.createElement('div');
   grid.style.cssText = `
     display: flex;
-    gap: 4px;
+    gap: 6px;
     overflow-x: auto;
     padding-bottom: 4px;
   `;
@@ -59,36 +61,38 @@ export function renderSgTable(
     const isActive = idx === activeIdx;
     const isZero = val === 0;
     const col = document.createElement('div');
+    const colGlow = isActive ? 'box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);' : '';
     col.style.cssText = `
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-width: 32px;
-      padding: 4px 2px;
+      min-width: 36px;
+      padding: 5px 3px;
       border-radius: 6px;
-      background: ${isActive ? '#eff6ff' : '#f8fafc'};
-      border: 1.5px solid ${isActive ? '#3b82f6' : '#e2e8f0'};
+      background: ${isActive ? 'rgba(56, 189, 248, 0.15)' : '#1e293b'};
+      border: 1.5px solid ${isActive ? '#38bdf8' : '#334155'};
       font-family: 'JetBrains Mono', monospace;
+      ${colGlow}
       transition: all 0.2s ease;
     `;
 
     // 索引下标 x
     const idxLabel = document.createElement('div');
-    idxLabel.style.cssText = `font-size: 10px; color: ${isActive ? '#1d4ed8' : '#64748b'}; font-weight: 700;`;
+    idxLabel.style.cssText = `font-size: 10px; color: ${isActive ? '#38bdf8' : '#94a3b8'}; font-weight: 700;`;
     idxLabel.textContent = `${idx}`;
     col.appendChild(idxLabel);
 
     // SG(x) 数值
     const valBadge = document.createElement('div');
     valBadge.style.cssText = `
-      margin-top: 2px;
+      margin-top: 3px;
       font-size: 12px;
       font-weight: 800;
-      color: ${isZero ? '#dc2626' : '#059669'};
-      background: ${isZero ? '#fef2f2' : '#ecfdf5'};
-      padding: 1px 4px;
+      color: ${isZero ? '#f87171' : '#34d399'};
+      background: ${isZero ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'};
+      padding: 1px 6px;
       border-radius: 4px;
-      border: 1px solid ${isZero ? '#ef444440' : '#10b98140'};
+      border: 1px solid ${isZero ? '#ef4444' : '#10b981'};
     `;
     valBadge.textContent = `${val}`;
     col.appendChild(valBadge);
@@ -158,9 +162,10 @@ export function renderPlayerBanner(
   subtitle: string = ''
 ) {
   const banner = document.createElement('div');
-  const bg = isFirstWin ? '#ecfdf5' : '#fef2f2';
+  const bg = isFirstWin ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)';
   const border = isFirstWin ? '#10b981' : '#ef4444';
-  const color = isFirstWin ? '#047857' : '#b91c1c';
+  const color = isFirstWin ? '#34d399' : '#f87171';
+  const glow = isFirstWin ? '0 0 12px rgba(16, 185, 129, 0.25)' : '0 0 12px rgba(239, 68, 68, 0.25)';
   const text = isFirstWin ? '🏆 先手必胜 (First Player Wins)' : '🛡️ 后手必胜 (Second Player Wins)';
 
   banner.style.cssText = `
@@ -171,13 +176,14 @@ export function renderPlayerBanner(
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: ${glow};
   `;
   banner.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 2px;">
       <span style="font-size: 14px; font-weight: 800; color: ${color};">${text}</span>
-      ${subtitle ? `<span style="font-size: 11px; color: ${color}; font-family: monospace;">${subtitle}</span>` : ''}
+      ${subtitle ? `<span style="font-size: 11px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">${subtitle}</span>` : ''}
     </div>
-    ${reason ? `<span style="font-size: 12px; color: ${color};">${reason}</span>` : ''}
+    ${reason ? `<span style="font-size: 12px; font-weight: 700; color: ${color}; background: rgba(15, 23, 42, 0.6); padding: 4px 10px; border-radius: 6px; border: 1px solid ${border}80;">${reason}</span>` : ''}
   `;
   container.appendChild(banner);
 }
@@ -194,31 +200,36 @@ export function renderBitwiseXorBoard(
   const card = document.createElement('div');
   card.style.cssText = `
     padding: 12px 16px;
-    background: #ffffff;
+    background: #0f172a;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e293b;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   `;
   const normalizedItems = items.map((it, idx) =>
     typeof it === 'number' ? { label: `子游戏 #${idx + 1}`, val: it } : it
   );
   const itemsHtml = normalizedItems.map(it => `
-    <div style="display: flex; align-items: center; gap: 8px; font-family: monospace;">
-      <span style="font-size: 12px; color: #64748b; width: 140px;">${it.label}:</span>
-      <span style="font-size: 13px; font-weight: 700; color: #1e293b;">${it.val}</span>
-      <span style="font-size: 11px; color: #94a3b8;">(0b${(it.val >>> 0).toString(2).padStart(6, '0')})</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 3px 0;">
+      <span style="color: #94a3b8; width: 140px;">${it.label}:</span>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-weight: 800; color: #38bdf8; font-size: 13px;">SG = ${it.val}</span>
+        <span style="font-size: 11px; color: #64748b; background: #020617; padding: 1px 6px; border-radius: 4px; border: 1px solid #1e293b;">(0b${(it.val >>> 0).toString(2).padStart(4, '0')})</span>
+      </div>
     </div>
   `).join('');
 
   card.innerHTML = `
-    <div style="font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 2px;">⚡ ${title}</div>
+    <div style="font-size: 12px; font-weight: 700; color: #cbd5e1; margin-bottom: 2px; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">⚡ ${title}</div>
     ${itemsHtml}
-    <div style="height: 1px; background: #e2e8f0; margin: 4px 0;"></div>
-    <div style="display: flex; align-items: center; justify-content: space-between; font-family: monospace;">
-      <span style="font-weight: 700; color: #2563eb;">综合 SG 异或和:</span>
-      <span style="font-size: 14px; font-weight: 800; color: ${totalXor !== 0 ? '#16a34a' : '#dc2626'};">${totalXor} (0b${(totalXor >>> 0).toString(2)})</span>
+    <div style="height: 1px; background: #1e293b; margin: 4px 0;"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; font-family: 'JetBrains Mono', monospace;">
+      <span style="font-weight: 700; color: #f8fafc; font-size: 12px;">综合 SG 异或和:</span>
+      <span style="font-size: 14px; font-weight: 900; color: ${totalXor !== 0 ? '#34d399' : '#f87171'}; background: ${totalXor !== 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'}; padding: 3px 10px; border-radius: 6px; border: 1px solid ${totalXor !== 0 ? '#10b981' : '#ef4444'};">
+        XOR = ${totalXor} (0b${(totalXor >>> 0).toString(2)}) ➔ ${totalXor !== 0 ? '必胜态' : '必败态'}
+      </span>
     </div>
   `;
   container.appendChild(card);

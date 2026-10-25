@@ -149,7 +149,7 @@ export class GeneralTrieCanvasAdapter {
     container.style.background = '#090d16';
 
     if (!step.nodes || step.nodes.length === 0) {
-      container.innerHTML = `<div class="text-slate-500 font-mono text-sm">前缀树为空</div>`;
+      container.innerHTML = `<div style="color: #64748b; font-family: monospace; font-size: 14px;">前缀树为空</div>`;
       return;
     }
 

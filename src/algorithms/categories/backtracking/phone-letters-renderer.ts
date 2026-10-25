@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'phone-letters',
+  aliases: ['17', 'leetcode-17', 'letter-combinations', 'letter-combinations-of-a-phone-number'],
+  hasDeductionTree: true,
   name: '电话号码的字母组合',
   category: 'backtracking',
   description: '经典电话按键九宫格跨集合字母回溯组合',

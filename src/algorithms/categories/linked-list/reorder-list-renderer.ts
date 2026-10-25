@@ -13,9 +13,10 @@ export { REORDER_LIST_CODES, REORDER_CODE_LINES, buildReorderListSteps, renderRe
 
 registerDeclarativeAlgorithm({
   id: 'reorder-list',
-  aliases: ['class034-code03', 'reorder-list', 'leetcode-143', 'reorder-list-034'],
+  aliases: ['class034-code03', 'reorder-list', 'leetcode-143', '143', 'reorder-list-034'],
   name: '大厂高频真题: 重排链表 (Reorder List)',
   category: 'linked-list',
+  hasDeductionTree: true,
   learningGoal: '经典综合题王：快慢指针寻中点 + 原地反转后半段 + 双指针交替穿针引线交叉合并',
   inputs: [
     {

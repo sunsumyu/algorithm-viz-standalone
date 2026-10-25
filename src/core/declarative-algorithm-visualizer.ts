@@ -187,6 +187,10 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         this.metricElements.set(metricId, el);
         const bareId = m.id.startsWith('metric-') ? m.id.slice(7) : m.id;
         this.metricElements.set(bareId, el);
+        if (m.label) {
+          this.metricElements.set(m.label, el);
+          this.metricElements.set(m.label.trim(), el);
+        }
       }
     });
 
@@ -523,6 +527,10 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           this.metricElements.set(metricId, el);
           const bareId = m.id.startsWith('metric-') ? m.id.slice(7) : m.id;
           this.metricElements.set(bareId, el);
+          if (m.label) {
+            this.metricElements.set(m.label, el);
+            this.metricElements.set(m.label.trim(), el);
+          }
         }
       });
     }
@@ -1062,6 +1070,18 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
             metricEl = null;
           }
         }
+        if (!metricEl) {
+          // 智能语义模糊匹配 (例如 '当前考察节点' 命中 '当前节点', '整树平衡判定' 命中 '平衡判定')
+          for (const [registeredKey, el] of this.metricElements.entries()) {
+            if (
+              registeredKey === key ||
+              (registeredKey.length >= 2 && (key.includes(registeredKey) || registeredKey.includes(key)))
+            ) {
+              metricEl = el;
+              break;
+            }
+          }
+        }
         if (metricEl) {
           metricEl.textContent = String(val);
         }
@@ -1080,7 +1100,10 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         this.codeTerminal.highlightLine(targetLine);
       }
       // 保证代码框纯净，绝不将 Card 2 外部 metrics 泄露悬浮至代码终端内
-      this.codeTerminal.updateVars(anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : [], anyStep);
+      this.codeTerminal.updateVars(
+        anyStep.vars && anyStep.vars.length > 0 ? anyStep.vars : [],
+        { ...anyStep, index: this.currentIndex }
+      );
     }
 
     // 3. 更新日志流 (严格对齐 StateSpacePresenter 标准树形日志模板)

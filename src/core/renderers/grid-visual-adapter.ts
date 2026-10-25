@@ -36,38 +36,77 @@ import { SpatialCompressionPrimitives } from '../strategies/spatial-compression-
 
 export class GridVisualAdapter {
   /**
+   * 网格坐标归一化引擎 (Coordinate Normalization Engine)
+   * 支持多形态输入：
+   * 1. 纯坐标或函数签名字符串: "0,2", "dfs(0,2)", "dfsMemo(1, 1)", "[0,2]", "(0, 2)"
+   * 2. 二元数组: [0, 2]
+   * 3. 坐标对象: { i, j }, { r, c }, { row, col }, { l, r }
+   */
+  public static normalizeCoordinate(item: any): string | null {
+    if (item === null || item === undefined) return null;
+
+    if (typeof item === 'string') {
+      const trimmed = item.trim();
+      const match = trimmed.match(/(-?\d+)\s*,\s*(-?\d+)/);
+      if (match) {
+        return `${parseInt(match[1], 10)},${parseInt(match[2], 10)}`;
+      }
+      return null;
+    }
+
+    if (Array.isArray(item) && item.length >= 2) {
+      const r = Number(item[0]);
+      const c = Number(item[1]);
+      if (!Number.isNaN(r) && !Number.isNaN(c)) {
+        return `${r},${c}`;
+      }
+      return null;
+    }
+
+    if (typeof item === 'object') {
+      const isInterval = item.l !== undefined && item.r !== undefined;
+      const r = item.i ?? (isInterval ? item.l : (item.row ?? item.r_coord ?? item.r));
+      const c = item.j ?? item.c ?? item.col ?? item.c_coord ?? (isInterval ? item.r : undefined);
+      if (typeof r === 'number' && typeof c === 'number' && !Number.isNaN(r) && !Number.isNaN(c)) {
+        return `${r},${c}`;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * 通用足迹提取器：从步骤中自动推导探索足迹坐标集合
-   * 支持 activeStack, activeTrail 以及通用调用栈 callStack/stack/frames
+   * 支持 activeTrail, activeStack, 通用调用栈 callStack/stack/frames 以及 trail/path
    */
   public static extractActiveTrail(step: any): string[] {
     if (!step) return [];
-    if (Array.isArray(step.activeStack) && step.activeStack.length > 0) {
-      return step.activeStack.map(String);
-    }
-    if (Array.isArray(step.activeTrail) && step.activeTrail.length > 0) {
-      return step.activeTrail.map(String);
-    }
-    const stack = step.callStack || step.stack || step.frames;
-    if (Array.isArray(stack) && stack.length > 0) {
-      const coords: string[] = [];
-      for (const item of stack) {
-        if (item && typeof item === 'object') {
-          const r = item.i ?? item.l ?? item.r_coord ?? item.row;
-          const c = item.j ?? item.r ?? item.c_coord ?? item.col;
-          if (typeof r === 'number' && typeof c === 'number') {
-            coords.push(`${r},${c}`);
-            continue;
+
+    const candidateSources = [
+      step.activeTrail,
+      step.activeStack,
+      step.callStack,
+      step.stack,
+      step.frames,
+      step.trail,
+      step.path
+    ];
+
+    for (const source of candidateSources) {
+      if (Array.isArray(source) && source.length > 0) {
+        const coords: string[] = [];
+        for (const item of source) {
+          const coord = GridVisualAdapter.normalizeCoordinate(item);
+          if (coord) {
+            coords.push(coord);
           }
         }
-        if (typeof item === 'string') {
-          const m = item.match(/(?:f\s*\()?\s*(-?\d+)\s*,\s*(-?\d+)\s*\)?/);
-          if (m) {
-            coords.push(`${m[1]},${m[2]}`);
-          }
+        if (coords.length > 0) {
+          return coords;
         }
       }
-      if (coords.length > 0) return coords;
     }
+
     return [];
   }
 
@@ -105,6 +144,9 @@ export class GridVisualAdapter {
     let effDiagI = step.diagI;
     let effDiagJ = step.diagJ;
     const effDeps = options.deps ? [...options.deps] : [];
+    if (Array.isArray(step.deps)) {
+      effDeps.push(...step.deps);
+    }
 
     const isCalculating =
       step.isComparing ||
@@ -241,11 +283,14 @@ export class GridVisualAdapter {
 
     const parentWrapper = container.parentElement;
     if (parentWrapper && parentWrapper.id === 'grid-board-wrapper') {
-      parentWrapper.style.width = '';
+      parentWrapper.style.width = '100%';
+      parentWrapper.style.maxWidth = '100%';
       parentWrapper.style.display = '';
       parentWrapper.style.flexDirection = '';
       parentWrapper.style.alignItems = '';
       parentWrapper.style.justifyContent = '';
+      parentWrapper.style.overflowX = 'auto';
+      parentWrapper.style.overflowY = 'auto';
     }
 
     if (container.style) {
@@ -470,7 +515,8 @@ export class GridVisualAdapter {
             : `<div class="absolute -top-1 -right-1 flex h-2.5 w-2.5 pointer-events-none z-20">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-600 border border-white"></span>
-              </div>`;
+              </div>
+              <span class="absolute top-0.5 right-2 px-1 py-0.2 rounded text-[8px] font-bold bg-blue-500 text-white leading-none shadow-2xs">当前</span>`;
 
           cellEl.className = `viz-cell is-cur ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-blue-50/90 border-blue-500 shadow-sm`;
           cellEl.innerHTML = `
@@ -486,23 +532,32 @@ export class GridVisualAdapter {
             <span class="cell-val text-xs font-extrabold mt-0.5 z-10 text-sky-700">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isTop) {
+          const catHtml = isGridProblem
+            ? '<span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>'
+            : `<span class="absolute top-0.5 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-purple-600 text-white leading-none shadow-2xs">${isReverse ? '⬇️' : '⬆️'}</span>`;
           cellEl.className = `viz-cell is-top ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-purple-50/90 border-purple-400 shadow-2xs`;
           cellEl.innerHTML = `
-            <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+            ${catHtml}
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isLeft) {
+          const catHtml = isGridProblem
+            ? '<span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>'
+            : `<span class="absolute top-0.5 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-amber-600 text-white leading-none shadow-2xs">${isReverse ? '➡️' : '↖️'}</span>`;
           cellEl.className = `viz-cell is-left ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-amber-50/90 border-amber-400 shadow-2xs`;
           cellEl.innerHTML = `
-            <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+            ${catHtml}
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
         } else if (isDiag) {
+          const catHtml = isGridProblem
+            ? '<span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>'
+            : `<span class="absolute top-0.5 right-1 px-1 py-0.2 rounded text-[8px] font-bold bg-cyan-600 text-white leading-none shadow-2xs">${isReverse ? '↘️' : '↖️'}</span>`;
           cellEl.className = `viz-cell is-diag ${cellSizeClass} rounded-lg flex flex-col items-center justify-center relative font-mono-code transition-all border font-bold bg-cyan-50/90 border-cyan-400 text-cyan-900 shadow-2xs`;
           cellEl.innerHTML = `
-            <span class="absolute -top-3 -right-1 text-base select-none"><span class="animal-cat">🐱</span></span>
+            ${catHtml}
             <span class="cell-coord text-[9px] font-bold absolute top-0.5 left-1">${coordText}</span>
             <span class="cell-val text-sm font-extrabold mt-2 z-10">${cellVal !== null ? cellVal : ''}</span>
           `;
@@ -578,26 +633,30 @@ export class GridVisualAdapter {
     const parentWrapper = container.parentElement;
     if (parentWrapper && parentWrapper.id === 'grid-board-wrapper') {
       parentWrapper.style.width = '100%';
+      parentWrapper.style.maxWidth = '100%';
       parentWrapper.style.display = 'flex';
       parentWrapper.style.flexDirection = 'column';
-      parentWrapper.style.alignItems = 'center';
-      parentWrapper.style.justifyContent = 'center';
+      parentWrapper.style.alignItems = 'stretch';
+      parentWrapper.style.justifyContent = 'flex-start';
+      parentWrapper.style.overflowX = 'auto';
+      parentWrapper.style.overflowY = 'auto';
     }
 
     if (container.style) {
       container.style.display = 'flex';
       container.style.flexDirection = 'column';
       container.style.alignItems = 'center';
-      container.style.justifyContent = 'center';
+      container.style.justifyContent = 'flex-start';
       container.style.gridTemplateColumns = 'none';
-      container.style.width = '100%';
-      container.style.maxWidth = '100%';
+      container.style.width = 'max-content';
+      container.style.minWidth = '100%';
+      container.style.margin = '0 auto';
       container.style.background = 'transparent';
       container.style.border = 'none';
       container.style.boxShadow = 'none';
       container.style.padding = '0';
     }
-    container.className = 'w-full flex flex-col items-center justify-center transition-all duration-300 relative z-0';
+    container.className = 'flex flex-col items-center justify-start transition-all duration-300 relative z-0';
 
     const { m, n, rowLabels, colLabels, isReverse = false } = options;
     const activeI = step.i ?? 0;
@@ -732,7 +791,7 @@ export class GridVisualAdapter {
             z-index: 10;
           `;
           cellContent = `
-            <span class="animate-pulse" style="font-size: 13px; user-select: none;">👣</span>
+            <span class="animate-pulse" style="font-size: 13px; user-select: none;">🐾</span>
             ${cellVal !== null && cellVal !== -1 ? `<span class="cell-val" style="font-size: ${cellPx >= 44 ? '11px' : '9px'}; font-weight: 800; color: #0284c7; margin-top: 1px; z-index: 10;">${cellVal}</span>` : ''}
           `;
         } else if (isTop) {
@@ -878,13 +937,14 @@ export class GridVisualAdapter {
 
     container.innerHTML = `
       <div style="
-        width: 100%;
+        width: max-content;
+        min-width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        padding: 10px 4px;
+        justify-content: flex-start;
+        padding: 10px 14px;
         box-sizing: border-box;
         overflow: visible;
         user-select: none;
@@ -976,7 +1036,12 @@ export class GridVisualAdapter {
       const boardRect = boardEl.getBoundingClientRect();
 
       // 1. 调用栈路径安全绳 (仅在递归/DFS 阶段有效，禁止在 DP 填表与空间压缩阶段绘制调用栈安全绳)
-      const isRecursiveStage = Boolean(step.callStack && step.callStack.length > 0) || Boolean(step.frames && step.frames.length > 0);
+      const isRecursiveStage =
+        Boolean(step.callStack && step.callStack.length > 0) ||
+        Boolean(step.frames && step.frames.length > 0) ||
+        Boolean(step.activeStack && step.activeStack.length > 0) ||
+        Boolean(step.activeTrail && step.activeTrail.length > 0) ||
+        Boolean(step.stage === 1 || step.stage === 2);
       if (isRecursiveStage && activeStackList.length >= 2) {
         for (let k = 0; k < activeStackList.length - 1; k++) {
           const coord1 = activeStackList[k];
@@ -1072,6 +1137,29 @@ export class GridVisualAdapter {
             line.setAttribute('opacity', '0.9');
             svgEl.appendChild(line);
           }
+        }
+      }
+    }
+
+    // 动态居中滚动到当前激活单元格 (确保长矩阵/宽网格在推演时视野平滑居中聚焦，不遗漏边缘格)
+    if (parentWrapper && parentWrapper.id === 'grid-board-wrapper') {
+      const curCell = container.querySelector(`[data-coord="${activeI},${activeJ}"]`) as HTMLElement | null;
+      if (curCell) {
+        if (typeof curCell.getBoundingClientRect === 'function' && typeof parentWrapper.getBoundingClientRect === 'function') {
+          const cellRect = curCell.getBoundingClientRect();
+          const wrapperRect = parentWrapper.getBoundingClientRect();
+          if (wrapperRect.width > 0) {
+            const currentScrollLeft = parentWrapper.scrollLeft || 0;
+            const cellCenterInWrapper = cellRect.left - wrapperRect.left + currentScrollLeft + cellRect.width / 2;
+            const targetScrollLeft = Math.max(0, cellCenterInWrapper - wrapperRect.width / 2);
+            if (typeof parentWrapper.scrollTo === 'function') {
+              parentWrapper.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+            } else {
+              parentWrapper.scrollLeft = targetScrollLeft;
+            }
+          }
+        } else if (typeof curCell.scrollIntoView === 'function') {
+          curCell.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
         }
       }
     }

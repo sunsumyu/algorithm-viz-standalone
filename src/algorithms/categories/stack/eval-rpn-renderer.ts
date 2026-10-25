@@ -75,9 +75,11 @@ const { template, Visualizer } = createDeclarativeVisualizer<RPNStep>({
 
 registerAlgorithm({
   id: 'eval-rpn',
+  aliases: ['evaluate-reverse-polish-notation', 'eval-rpn-150', 'leetcode-150', '150'],
   name: '逆波兰表达式求值',
   viewId: 'algo-eval-rpn-view',
   category: 'stack',
+  hasDeductionTree: true,
   description: '遇操作数入栈，遇运算符弹出右操作数 b 与左操作数 a，计算 a op b 并压回栈中',
   icon: '🧮',
   template,

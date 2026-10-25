@@ -22,6 +22,8 @@ export { buildCombinationSum2Tree, buildCombinationSum2Steps, renderCombinationS
 
 registerDeclarativeAlgorithm({
   id: 'combination-sum-ii',
+  aliases: ['40', 'leetcode-40', 'combination-sum-dedup'],
+  hasDeductionTree: true,
   name: '组合总和 II',
   category: 'backtracking',
   description: '含重复元素，每个元素限用一次，同层去重',

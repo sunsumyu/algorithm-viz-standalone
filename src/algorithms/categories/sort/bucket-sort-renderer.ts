@@ -22,6 +22,8 @@ export { bucketSortSteps, withMetrics, renderBucketSortCanvas };
 
 registerDeclarativeAlgorithm<BucketStep>({
   id: 'bucket-sort',
+  aliases: ['bucket-sort', 'bucket-sort-standard'],
+  hasDeductionTree: true,
   name: '桶排序',
   category: 'sort',
   description: '逐步演示桶排序：区间映射分流、桶内独立排序、顺序归拢回填',

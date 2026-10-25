@@ -33,7 +33,8 @@ const { Visualizer } = registerDeclarativeAlgorithm({
   difficulty: 3,
   levelOrder: 5,
   learningGoal: '掌握单调递增栈在直方图最大矩形中的双向边界扩展技巧，深刻理解首尾哨兵 0 消除边界特判的精妙设计',
-  aliases: ['largest-rectangle-histogram-052', 'class052-code05', 'leetcode-84', '84'],
+  aliases: ['largest-rectangle-histogram-052', 'class052-code05', 'leetcode-84', '84', 'largest-rectangle'],
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'heights',

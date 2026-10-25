@@ -24,6 +24,7 @@ import {
   resolveHeaderContext,
 } from './declarative-stage-fragments';
 import type { DeclarativeAlgorithmSpec } from './declarative-stage-spec';
+import { DeductionRendererRegistry } from './deduction/deduction-renderer-registry';
 
 export * from './declarative-stage-spec';
 export { renderMetricsHtml } from './declarative-stage-fragments';
@@ -53,7 +54,13 @@ export class DeclarativeStagePresenter {
     const legendHtml = renderLegendHtml(ctx.curStage?.legend || spec.legend);
     const metricsHtml = renderMetricsHtml(ctx.curStage?.metrics || spec.metrics);
 
-    const hasDeduction = Boolean(spec.hasDeductionTree || spec.id === 'a-star' || spec.id === 'a-star-journey' || spec.id === 'unique-paths');
+    const hasDeduction = Boolean(
+      spec.hasDeductionTree ||
+      DeductionRendererRegistry.isSupported(spec.id) ||
+      spec.id === 'a-star' ||
+      spec.id === 'a-star-journey' ||
+      spec.id === 'unique-paths'
+    );
     const card1SubViewBarHtml = renderCard1SubViewBarHtml(hasDeduction, ctx.domainMeta);
 
     const algorithmName = spec.name || spec.title || spec.id;

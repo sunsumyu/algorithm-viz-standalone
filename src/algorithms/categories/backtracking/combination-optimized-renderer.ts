@@ -22,6 +22,7 @@ export { buildOptimizedTree, buildOptimizedSteps, renderCombinationOptimizedCanv
 
 registerDeclarativeAlgorithm({
   id: 'combination-optimized',
+  hasDeductionTree: true,
   name: '组合（优化）',
   category: 'backtracking',
   description: '剪枝优化：i <= n - (k - path.length) + 1',

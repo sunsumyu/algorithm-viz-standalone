@@ -35,42 +35,44 @@ export function renderDecisionBalance(
   const isLeftWinner = balance.winner === 'left';
   const isRightWinner = balance.winner === 'right';
 
-  const leftBorder = isLeftWinner ? '#10b981' : '#e2e8f0';
-  const leftBg = isLeftWinner ? '#ecfdf5' : '#ffffff';
-  const leftText = isLeftWinner ? '#047857' : '#475569';
+  const leftBorder = isLeftWinner ? '#10b981' : '#334155';
+  const leftBg = isLeftWinner ? 'rgba(16, 185, 129, 0.15)' : '#1e293b';
+  const leftText = isLeftWinner ? '#34d399' : '#94a3b8';
+  const leftGlow = isLeftWinner ? 'box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : '';
 
-  const rightBorder = isRightWinner ? '#10b981' : '#e2e8f0';
-  const rightBg = isRightWinner ? '#ecfdf5' : '#ffffff';
-  const rightText = isRightWinner ? '#047857' : '#475569';
+  const rightBorder = isRightWinner ? '#10b981' : '#334155';
+  const rightBg = isRightWinner ? 'rgba(16, 185, 129, 0.15)' : '#1e293b';
+  const rightText = isRightWinner ? '#34d399' : '#94a3b8';
+  const rightGlow = isRightWinner ? 'box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : '';
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 4px;">
-        <span style="font-weight: 700; font-size: 12px; color: #1e293b;">⚖️ 贪心决策天平 (Decision Balance)</span>
-        <span style="font-size: 11px; color: #64748b; font-weight: 600;">判定: <b style="color: #059669;">${balance.reason}</b></span>
+    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b; padding: 12px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+        <span style="font-weight: 700; font-size: 12px; color: #f8fafc;">⚖️ 贪心决策天平 (Decision Balance)</span>
+        <span style="font-size: 11px; color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56,189,248,0.3);">判定: ${balance.reason}</span>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center;">
+      <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; padding: 6px 0;">
         <!-- 左侧决策 -->
-        <div style="background: ${leftBg}; border: 1.5px solid ${leftBorder}; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px;">
+        <div style="background: ${leftBg}; border: 1.5px solid ${leftBorder}; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; ${leftGlow} transition: all 0.2s ease;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #64748b; font-weight: 600;">${balance.leftTitle}</span>
-            ${isLeftWinner ? '<span style="font-size: 10px; background: #10b981; color: #fff; padding: 1px 4px; border-radius: 4px; font-weight: 700;">最优选择 ✓</span>' : ''}
+            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${balance.leftTitle}</span>
+            ${isLeftWinner ? '<span style="font-size: 10px; background: rgba(16,185,129,0.2); color: #34d399; padding: 1px 6px; border-radius: 4px; font-weight: 800; border: 1px solid #10b981;">最优选择 ✓</span>' : ''}
           </div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: ${leftText};">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: ${leftText};">
             ${balance.leftVal}
           </div>
         </div>
 
-        <div style="font-weight: 700; color: #94a3b8; font-size: 12px;">VS</div>
+        <div style="font-weight: 900; color: #64748b; font-size: 14px; font-family: 'JetBrains Mono', monospace;">VS</div>
 
         <!-- 右侧决策 -->
-        <div style="background: ${rightBg}; border: 1.5px solid ${rightBorder}; border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px;">
+        <div style="background: ${rightBg}; border: 1.5px solid ${rightBorder}; border-radius: 6px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; ${rightGlow} transition: all 0.2s ease;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; color: #64748b; font-weight: 600;">${balance.rightTitle}</span>
-            ${isRightWinner ? '<span style="font-size: 10px; background: #10b981; color: #fff; padding: 1px 4px; border-radius: 4px; font-weight: 700;">最优选择 ✓</span>' : ''}
+            <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">${balance.rightTitle}</span>
+            ${isRightWinner ? '<span style="font-size: 10px; background: rgba(16,185,129,0.2); color: #34d399; padding: 1px 6px; border-radius: 4px; font-weight: 800; border: 1px solid #10b981;">最优选择 ✓</span>' : ''}
           </div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: ${rightText};">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 800; color: ${rightText};">
             ${balance.rightVal}
           </div>
         </div>
@@ -95,34 +97,35 @@ export function renderArrayPointers(
     }
 
     const matchedPointers = pointers.filter(p => p.index === idx);
-    const bg = inRange ? '#eff6ff' : '#ffffff';
-    const border = inRange ? '#3b82f6' : '#e2e8f0';
-    const text = inRange ? '#1d4ed8' : '#334155';
+    const bg = inRange ? 'rgba(56, 189, 248, 0.15)' : '#1e293b';
+    const border = inRange ? '#38bdf8' : '#334155';
+    const text = inRange ? '#38bdf8' : '#f8fafc';
+    const glow = inRange ? 'box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);' : '';
 
     return `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 42px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 44px;">
         <!-- 顶部指针标签 -->
-        <div style="height: 18px; display: flex; align-items: center; justify-content: center; gap: 2px;">
+        <div style="height: 20px; display: flex; align-items: center; justify-content: center; gap: 2px;">
           ${matchedPointers.map(p => `
-            <span style="font-size: 10px; font-weight: 700; color: ${p.color}; background: ${p.color}15; padding: 1px 4px; border-radius: 3px; border: 1px solid ${p.color}40;">
+            <span style="font-size: 10px; font-weight: 800; color: ${p.color}; background: ${p.color}25; padding: 1px 5px; border-radius: 3px; border: 1px solid ${p.color}; box-shadow: 0 0 6px ${p.color}40;">
               ${p.label}
             </span>
           `).join('')}
         </div>
 
         <!-- 元素方块 -->
-        <div style="width: 100%; height: 36px; display: flex; align-items: center; justify-content: center; background: ${bg}; border: 1.5px solid ${border}; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 13px; color: ${text}; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <div style="width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; background: ${bg}; border: 1.5px solid ${border}; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 14px; color: ${text}; ${glow} transition: all 0.2s ease;">
           ${val}
         </div>
 
         <!-- 底部索引 -->
-        <span style="font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">[${idx}]</span>
+        <span style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono', monospace;">[${idx}]</span>
       </div>
     `;
   }).join('');
 
   container.innerHTML = `
-    <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; box-sizing: border-box; width: 100%;">
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; padding: 12px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b; box-sizing: border-box; width: 100%;">
       ${itemsHtml}
     </div>
   `;

@@ -22,6 +22,8 @@ export { bubbleSortSteps, withMetrics, renderBubbleSortCanvas };
 
 registerDeclarativeAlgorithm<BSStep>({
   id: 'bubble-sort',
+  aliases: ['bubble-sort', 'bubble-sort-standard', 'bubble'],
+  hasDeductionTree: true,
   name: '冒泡排序',
   category: 'sort',
   description: '逐步演示冒泡排序：相邻元素比较、交换、冒泡到位',

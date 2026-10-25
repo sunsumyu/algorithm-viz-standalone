@@ -11,8 +11,10 @@ export { MIN_STACK_CODES, buildMinStackSteps, renderMinStackCanvas };
 
 registerDeclarativeAlgorithm({
   id: 'min-stack',
+  aliases: ['min-stack-155', 'leetcode-155', '155'],
   name: '最小栈',
   category: 'stack',
+  hasDeductionTree: true,
   learningGoal: '掌握双栈同步机制，支持 push、pop、top 及常数时间 O(1) 检索最小元素',
   inputs: [
     {

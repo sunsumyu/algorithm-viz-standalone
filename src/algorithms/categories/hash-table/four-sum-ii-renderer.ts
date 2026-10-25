@@ -21,6 +21,8 @@ export { buildFourSumIISteps, withFourSumIIMetrics, renderFourSumIICanvas };
 
 registerDeclarativeAlgorithm({
   id: 'four-sum-ii',
+  aliases: ['454', 'leetcode-454', 'four-sum-ii-hash'],
+  hasDeductionTree: true,
   name: '四数相加II（分组哈希）',
   category: 'hash-table',
   description: '将四数组分为两组，用哈希表统计和为0的元组数',

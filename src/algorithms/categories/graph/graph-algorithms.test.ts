@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildIslandsSteps } from './islands-renderer';
-import { buildIslandsBFSSteps } from './islands-bfs-renderer';
+import { buildIslandsSteps, buildIslandsBFSSteps } from './islands-renderer';
 import { buildMIASteps } from './max-island-area-renderer';
 import { buildDJBSteps } from './dijkstra-basic-renderer';
 import { buildDJHSteps } from './dijkstra-heap-renderer';

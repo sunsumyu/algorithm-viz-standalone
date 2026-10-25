@@ -100,8 +100,8 @@ export class DiffConstraintsCanvasAdapter {
       .join('');
 
     container.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden">
-        <svg class="w-full h-full max-h-[220px]" viewBox="0 0 350 200">
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #020617; padding: 8px; user-select: none; overflow: hidden; box-sizing: border-box;">
+        <svg style="width: 100%; height: 100%; max-height: 220px; display: block;" viewBox="0 0 350 200">
           <text x="60" y="24" fill="#a855f7" font-size="9.5" font-weight="700" text-anchor="middle">超级源点 (S₀=0)</text>
           <text x="225" y="24" fill="#38bdf8" font-size="9.5" font-weight="700" text-anchor="middle">差分约束变量节点 (x₁ ~ x₃)</text>
           ${svgEdges}

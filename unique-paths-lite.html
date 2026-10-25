@@ -5,19 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LeetCode 62. 不同路径 - 算法可视化演示 (精简版)</title>
   
-  <!-- Tailwind CSS (非阻塞异步加载) -->
-  <script src="https://cdn.tailwindcss.com" defer></script>
+  <!-- Tailwind CSS (本地离线优先，0ms 极速就绪) -->
+  <script src="/vendor/tailwindcss.js"></script>
+  <script>if (!window.tailwind) document.write('<script src="https://cdn.tailwindcss.com"><\/script>');</script>
   <!-- 本地离线 js-yaml 核心引擎 (0ms 离线解析) -->
   <script src="/vendor/js-yaml.min.js"></script>
   
-  <!-- Font Awesome Icons (异步非阻塞) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'" />
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   
   <!-- Shared Visualizer Theme CSS -->
   <link rel="stylesheet" href="/src/styles/visualizer-theme.css" />
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      opacity: 0;
+      transition: opacity 0.12s ease-out;
+    }
+    body.viz-ready {
+      opacity: 1;
     }
   </style>
 </head>
@@ -53,7 +59,7 @@
       <!-- 4. 右侧：网格尺寸与操作工具组 -->
       <div class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 justify-end">
         <div id="preset-selector-container" class="inline-flex items-center flex-shrink-0"></div>
-        <div id="grid-dimension-inputs" class="flex items-center gap-0.5 sm:gap-1 bg-slate-50 px-1.5 py-0.5 rounded-xl border border-slate-200 text-xs font-mono">
+        <div id="grid-dimension-inputs" style="display: none;" class="flex items-center gap-0.5 sm:gap-1 bg-slate-50 px-1.5 py-0.5 rounded-xl border border-slate-200 text-xs font-mono">
           <span class="text-slate-500 font-semibold text-[11px]">m:</span>
           <input type="number" id="input-m" min="1" max="8" value="3" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
           <span class="text-slate-400 font-bold text-[10px]">×</span>
@@ -61,11 +67,11 @@
           <input type="number" id="input-n" min="1" max="8" value="4" class="w-6 sm:w-7 h-5 sm:h-6 bg-white border border-slate-300 rounded text-center font-extrabold text-slate-800 focus:outline-none focus:border-blue-500 text-xs p-0 shadow-2xs" />
         </div>
 
-        <button id="btn-generate" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center flex-shrink-0" title="应用参数并生成演示">
+        <button id="btn-generate" style="display: none;" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-xs flex items-center justify-center flex-shrink-0" title="应用参数并生成演示">
           应用
         </button>
 
-        <button id="btn-reset" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
+        <button id="btn-reset" style="display: none;" class="px-1.5 sm:px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-200">
           重置
         </button>
 
@@ -127,7 +133,7 @@
             <div id="grid-deduction-container" class="w-full h-full hidden overflow-auto p-2 sm:p-3 relative z-10"></div>
 
             <!-- 2D 经典平面展示盒 (2D 模式显示) -->
-            <div id="grid-board-wrapper" class="relative inline-flex flex-col items-center m-auto pt-3 pb-8">
+            <div id="grid-board-wrapper" class="relative w-full max-w-full overflow-x-auto overflow-y-auto flex flex-col items-center m-auto pt-3 pb-8">
               <div id="grid-container" class="inline-grid gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-sm relative z-0">
                 <!-- 动态构建单元格 -->
               </div>
@@ -223,11 +229,20 @@
                 <button id="btn-subview-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
                   <i class="fa-solid fa-font text-[10px]"></i> <span>串比对</span>
                 </button>
+                <button id="btn-subview-sandbox" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
+                  <i class="fa-solid fa-box-open text-[10px]"></i> <span>背包与组桶</span>
+                </button>
               </div>
-              <!-- 阶段 4 专用：一维滚动数组与串比对切换 Tab -->
+              <!-- 阶段 4 专用：一维滚动数组、依赖树、沙盘与串比对切换 Tab -->
               <div id="stage4-subview-bar" class="hidden inline-flex flex-row items-center gap-0.5 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 text-[11px] font-bold whitespace-nowrap flex-shrink-0">
                 <button id="btn-stage4-memo" class="px-2 py-0.5 rounded-md transition shadow-2xs bg-white text-blue-700 font-extrabold flex items-center gap-1 whitespace-nowrap cursor-pointer">
                   <i class="fa-solid fa-bars-staggered text-[10px]"></i> <span>滚动数组</span>
+                </button>
+                <button id="btn-stage4-tree" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
+                  <i class="fa-solid fa-network-wired text-[10px]"></i> <span>状态依赖树</span>
+                </button>
+                <button id="btn-stage4-sandbox" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
+                  <i class="fa-solid fa-box-open text-[10px]"></i> <span>背包与组桶</span>
                 </button>
                 <button id="btn-stage4-alignment" class="px-2 py-0.5 rounded-md transition text-slate-600 hover:text-slate-900 flex items-center gap-1 whitespace-nowrap cursor-pointer" style="display: none;">
                   <i class="fa-solid fa-font text-[10px]"></i> <span>串比对</span>

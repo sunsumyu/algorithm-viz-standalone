@@ -21,7 +21,7 @@ export { buildCycleSteps, withLinkedListCycleIIMetrics, renderLinkedListCycleIIC
 
 export const linkedListCycleIIVisualizer = registerDeclarativeAlgorithm({
   id: 'linked-list-cycle-ii',
-  aliases: ['linked-list-cycle-ii-041'],
+  aliases: ['linked-list-cycle-ii-041', 'class041-code01', 'leetcode-142', '142', 'detect-cycle'],
   name: '环形链表 II',
   category: 'linked-list',
   description: 'LeetCode 142 · 快慢指针判断环形与相遇点，严谨数学推导 (x = z) 寻找入环口',
@@ -29,6 +29,7 @@ export const linkedListCycleIIVisualizer = registerDeclarativeAlgorithm({
   difficulty: 2,
   levelOrder: 4,
   learningGoal: '掌握 Floyd 判圈算法数学推导原理与快慢双指针协作技巧',
+  hasDeductionTree: true,
   inputs: [
     {
       id: 'case',

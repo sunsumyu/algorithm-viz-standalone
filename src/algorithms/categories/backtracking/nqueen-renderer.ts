@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'nqueen',
+  aliases: ['51', 'leetcode-51', 'n-queens'],
+  hasDeductionTree: true,
   name: 'N 皇后',
   category: 'backtracking',
   description: '在 N×N 棋盘上放置 N 个皇后，逐行放置与三方向对角线冲突剪枝',

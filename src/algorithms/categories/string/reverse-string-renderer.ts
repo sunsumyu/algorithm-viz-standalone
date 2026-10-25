@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'reverse-string',
+  aliases: ['344', 'leetcode-344', 'reverse-string-two-pointers'],
+  hasDeductionTree: true,
   name: '反转字符串（双指针）',
   category: 'string',
   description: '首尾双指针原地反转字符数组',

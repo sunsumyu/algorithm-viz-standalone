@@ -12,6 +12,7 @@ class MockDomElement {
     contains(cls: string) { return this.classes.has(cls); }
   };
   public className = '';
+  public textContent = '';
   public dataset: Record<string, string> = {};
   public title = '';
   public listeners: Record<string, Function[]> = {};
@@ -179,5 +180,33 @@ describe('StageNavigationCoordinator (阶段演化导航与 Tab 状态协调深�
 
     expect(container.classList.contains('hidden')).toBe(false);
     expect(container.children.length).toBe(2);
+  });
+
+  it('updateCard2HeaderMeta 在 Stage 3 且 activeSubView === "tree" 时应将 Card 2 标题设为状态依赖拓扑树', () => {
+    const card2Title = new MockDomElement('h3');
+    const card2Desc = new MockDomElement('p');
+    const memoLenBadge = new MockDomElement('span');
+
+    const domMap: Record<string, any> = {
+      'card2-title': card2Title,
+      'card2-desc': card2Desc,
+      'badge-memo-len': memoLenBadge
+    };
+
+    (globalThis as any).document.getElementById = (id: string) => domMap[id] || null;
+
+    StageNavigationCoordinator.updateCard2HeaderMeta({
+      model: mockModel,
+      stageConfig: {},
+      currentStage: 'stage-3',
+      currentDirection: 'forward',
+      activeSubView: 'tree',
+      effectiveM: 3,
+      effectiveN: 46
+    });
+
+    expect(card2Title.innerHTML).toContain('状态依赖拓扑树 (State Dependency Tree)');
+    expect(card2Desc.textContent).toContain('依赖解析');
+    expect(memoLenBadge.textContent).toBe('状态依赖树');
   });
 });

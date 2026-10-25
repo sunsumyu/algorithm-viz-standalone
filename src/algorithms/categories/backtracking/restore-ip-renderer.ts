@@ -26,6 +26,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'restore-ip',
+  aliases: ['93', 'leetcode-93', 'restore-ip-addresses'],
+  hasDeductionTree: true,
   name: '复原 IP 地址',
   category: 'backtracking',
   description: '在数字串中插入点号复原合法有效 IP 地址',

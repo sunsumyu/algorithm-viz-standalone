@@ -111,6 +111,18 @@ describe('PresetCasePresenter Shared Component', () => {
     expect(inferred[1].values.algo).toBe('bfs');
   });
 
+  it('should accurately match 2D array preset cases via deep equality', () => {
+    const presetsWith2D: PresetCaseDef[] = [
+      { label: 'Case 1', values: { k: 2, piles: [[1, 100, 3], [7, 8, 9]] } },
+      { label: 'Case 2', values: { k: 2, piles: [[100, 1, 3], [7, 8, 9]] } },
+      { label: 'Case 3', values: { k: 7, piles: [[100], [100]] } },
+    ];
+
+    expect(PresetCasePresenter.findMatchingPresetIndex(presetsWith2D, { k: 2, piles: [[1, 100, 3], [7, 8, 9]] })).toBe(0);
+    expect(PresetCasePresenter.findMatchingPresetIndex(presetsWith2D, { k: 2, piles: [[100, 1, 3], [7, 8, 9]] })).toBe(1);
+    expect(PresetCasePresenter.findMatchingPresetIndex(presetsWith2D, { k: 7, piles: [[100], [100]] })).toBe(2);
+  });
+
   it('should return empty array when neither presets nor inputs are provided', () => {
     expect(PresetCasePresenter.resolvePresets(undefined, undefined)).toEqual([]);
     expect(PresetCasePresenter.resolvePresets([], [])).toEqual([]);

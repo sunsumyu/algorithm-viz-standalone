@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'permutation-ii',
+  aliases: ['47', 'leetcode-47', 'permutations-ii'],
+  hasDeductionTree: true,
   name: '全排列 II',
   category: 'backtracking',
   description: '含重复元素全排列，树层去重 (!used[i-1]) 与树枝标记',

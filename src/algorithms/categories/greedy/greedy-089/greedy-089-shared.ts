@@ -53,31 +53,36 @@ export function renderDualHeapVisual(
   const isMin = type === 'min';
   const typeText = isMin ? '小顶堆 (Min-Heap)' : '大顶堆 (Max-Heap)';
   const badgeColor = isMin ? '#10b981' : '#f59e0b';
+  const badgeGlow = isMin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)';
 
-  // 1. 物理数组展示 (扁平卡片条)
+  // 1. 物理连续内存数组展示 (紧凑寄存器单元)
   const arrayItemsHtml = heap.length === 0
-    ? '<span style="color: #94a3b8; font-size: 11px; font-style: italic;">堆为空 (Empty)</span>'
+    ? '<span style="color: #64748b; font-size: 11px; font-style: italic;">堆内暂无元素 (Empty)</span>'
     : heap.map((item, idx) => {
         const isRoot = idx === 0;
-        let bg = isRoot ? (isMin ? '#ecfdf5' : '#fffbeb') : '#ffffff';
-        let border = isRoot ? (isMin ? '#10b981' : '#f59e0b') : '#e2e8f0';
-        let text = isRoot ? (isMin ? '#047857' : '#b45309') : '#334155';
+        let bg = isRoot ? (isMin ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)') : '#1e293b';
+        let border = isRoot ? (isMin ? '#10b981' : '#f59e0b') : '#334155';
+        let text = isRoot ? (isMin ? '#34d399' : '#fbbf24') : '#f1f5f9';
+        let glow = isRoot ? `0 0 10px ${badgeGlow}` : 'none';
+
         if (item.highlight || item.status === 'inserting') {
-          bg = '#eff6ff';
+          bg = 'rgba(59, 130, 246, 0.2)';
           border = '#3b82f6';
-          text = '#1d4ed8';
+          text = '#60a5fa';
+          glow = '0 0 10px rgba(59, 130, 246, 0.3)';
         } else if (item.status === 'popping') {
-          bg = '#fef2f2';
+          bg = 'rgba(239, 68, 68, 0.2)';
           border = '#ef4444';
-          text = '#b91c1c';
+          text = '#f87171';
+          glow = '0 0 10px rgba(239, 68, 68, 0.3)';
         }
 
         return `
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-            <div style="min-width: 38px; height: 32px; padding: 0 6px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; color: ${text}; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+            <div style="min-width: 44px; height: 34px; padding: 0 8px; border-radius: 6px; background: ${bg}; border: 1.5px solid ${border}; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; color: ${text}; box-shadow: ${glow}; transition: all 0.2s ease;">
               ${item.label || item.val}
             </div>
-            <span style="font-size: 9px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">[${idx}]</span>
+            <span style="font-size: 9px; color: #64748b; font-family: 'JetBrains Mono', monospace;">[${idx}]</span>
           </div>
         `;
       }).join('');
@@ -86,25 +91,25 @@ export function renderDualHeapVisual(
   const treeSvg = renderHeapTreeSvg(heap, isMin);
 
   container.innerHTML = `
-    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; box-sizing: border-box;">
-      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 6px;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span style="font-weight: 700; font-size: 13px; color: #1e293b;">${title}</span>
-          <span style="font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: ${badgeColor}15; color: ${badgeColor}; border: 1px solid ${badgeColor}40;">${typeText}</span>
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; height: 100%; box-sizing: border-box; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-weight: 700; font-size: 13px; color: #f8fafc;">${title}</span>
+          <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: ${badgeGlow}; color: ${badgeColor}; border: 1px solid ${badgeColor};">${typeText}</span>
         </div>
-        <span style="font-size: 11px; color: #64748b; font-family: 'JetBrains Mono', monospace;">容量: <b>${heap.length}</b></span>
+        <span style="font-size: 11px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">节点数: <b style="color: #f8fafc;">${heap.length}</b></span>
       </div>
 
       <!-- 逻辑树形结构区域 -->
-      <div style="flex: 1; min-height: 140px; position: relative; display: flex; align-items: center; justify-content: center; background: #f8fafc; border-radius: 8px; border: 1px solid #f1f5f9; overflow: auto; padding: 6px;">
+      <div style="flex: 1; min-height: 140px; position: relative; display: flex; align-items: center; justify-content: center; background: #020617; border-radius: 8px; border: 1px solid #1e293b; overflow: auto; padding: 8px;">
         ${treeSvg}
       </div>
 
       <!-- 物理连续内存数组区域 -->
-      <div style="display: flex; flex-direction: column; gap: 4px; background: #ffffff; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
+      <div style="display: flex; flex-direction: column; gap: 6px; background: #090d16; padding: 8px; border-radius: 8px; border: 1px solid #1e293b;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 600; color: #475569;">物理底层数组 (Array Store)</span>
-          <span style="font-size: 10px; color: #94a3b8;">左孩 2i+1 · 右孩 2i+2 · 亲 (i-1)/2</span>
+          <span style="font-size: 11px; font-weight: 700; color: #cbd5e1;">📦 物理紧凑连续内存存储 (Array Store)</span>
+          <span style="font-size: 10px; color: #64748b; font-family: 'JetBrains Mono', monospace;">左孩 2i+1 · 右孩 2i+2 · 亲 (i-1)/2</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; overflow-x: auto; padding: 4px 2px;">
           ${arrayItemsHtml}
@@ -116,13 +121,13 @@ export function renderDualHeapVisual(
 
 function renderHeapTreeSvg(heap: HeapVisualItem[], isMin: boolean): string {
   if (heap.length === 0) {
-    return `<div style="color: #94a3b8; font-size: 12px; font-style: italic;">暂无节点</div>`;
+    return `<div style="color: #64748b; font-size: 12px; font-style: italic;">优先队列为空，暂无树节点</div>`;
   }
 
   const n = heap.length;
   const levels = Math.floor(Math.log2(n)) + 1;
-  const svgWidth = Math.max(300, Math.min(600, Math.pow(2, levels - 1) * 70));
-  const svgHeight = levels * 48 + 20;
+  const svgWidth = Math.max(320, Math.min(600, Math.pow(2, levels - 1) * 72));
+  const svgHeight = levels * 50 + 24;
 
   // 计算每个节点的 (x, y) 坐标
   const coords: Array<{ x: number; y: number }> = [];
@@ -132,20 +137,20 @@ function renderHeapTreeSvg(heap: HeapVisualItem[], isMin: boolean): string {
     const countInLevel = Math.pow(2, level);
     const stepX = svgWidth / (countInLevel + 1);
     const x = stepX * (posInLevel + 1);
-    const y = 24 + level * 46;
+    const y = 26 + level * 48;
     coords.push({ x, y });
   }
 
-  // 连线
+  // 连线 (霓虹暗蓝与发光效果)
   let linesHtml = '';
   for (let i = 0; i < n; i++) {
     const leftChild = 2 * i + 1;
     const rightChild = 2 * i + 2;
     if (leftChild < n) {
-      linesHtml += `<line x1="${coords[i].x}" y1="${coords[i].y}" x2="${coords[leftChild].x}" y2="${coords[leftChild].y}" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />`;
+      linesHtml += `<line x1="${coords[i].x}" y1="${coords[i].y}" x2="${coords[leftChild].x}" y2="${coords[leftChild].y}" stroke="#334155" stroke-width="2" stroke-linecap="round" />`;
     }
     if (rightChild < n) {
-      linesHtml += `<line x1="${coords[i].x}" y1="${coords[i].y}" x2="${coords[rightChild].x}" y2="${coords[rightChild].y}" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />`;
+      linesHtml += `<line x1="${coords[i].x}" y1="${coords[i].y}" x2="${coords[rightChild].x}" y2="${coords[rightChild].y}" stroke="#334155" stroke-width="2" stroke-linecap="round" />`;
     }
   }
 
@@ -155,22 +160,29 @@ function renderHeapTreeSvg(heap: HeapVisualItem[], isMin: boolean): string {
     const { x, y } = coords[i];
     const isRoot = i === 0;
     const item = heap[i];
-    let fill = isRoot ? (isMin ? '#ecfdf5' : '#fffbeb') : '#ffffff';
-    let stroke = isRoot ? (isMin ? '#10b981' : '#f59e0b') : '#94a3b8';
-    let textFill = isRoot ? (isMin ? '#065f46' : '#92400e') : '#1e293b';
+    let fill = isRoot ? (isMin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)') : '#1e293b';
+    let stroke = isRoot ? (isMin ? '#10b981' : '#f59e0b') : '#475569';
+    let textFill = isRoot ? (isMin ? '#34d399' : '#fbbf24') : '#f8fafc';
+    let glowFilter = isRoot ? (isMin ? 'filter: drop-shadow(0 0 6px rgba(16,185,129,0.5));' : 'filter: drop-shadow(0 0 6px rgba(245,158,11,0.5));') : '';
 
-    if (item.highlight) {
-      fill = '#eff6ff';
+    if (item.highlight || item.status === 'inserting') {
+      fill = 'rgba(59, 130, 246, 0.25)';
       stroke = '#3b82f6';
-      textFill = '#1d4ed8';
+      textFill = '#60a5fa';
+      glowFilter = 'filter: drop-shadow(0 0 6px rgba(59,130,246,0.6));';
+    } else if (item.status === 'popping') {
+      fill = 'rgba(239, 68, 68, 0.25)';
+      stroke = '#ef4444';
+      textFill = '#f87171';
+      glowFilter = 'filter: drop-shadow(0 0 6px rgba(239,68,68,0.6));';
     }
 
     const valText = item.label || String(item.val);
     nodesHtml += `
-      <g>
-        <circle cx="${x}" cy="${y}" r="15" fill="${fill}" stroke="${stroke}" stroke-width="2" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.08))" />
+      <g style="${glowFilter}">
+        <circle cx="${x}" cy="${y}" r="16" fill="${fill}" stroke="${stroke}" stroke-width="2" />
         <text x="${x}" y="${y + 4}" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-weight="700" font-size="11" fill="${textFill}">${valText}</text>
-        ${isRoot ? `<text x="${x}" y="${y - 18}" text-anchor="middle" font-size="9" font-weight="700" fill="${stroke}">TOP</text>` : ''}
+        ${isRoot ? `<text x="${x}" y="${y - 19}" text-anchor="middle" font-size="9" font-weight="800" fill="${stroke}">TOP</text>` : ''}
       </g>
     `;
   }
@@ -203,60 +215,63 @@ export function renderGanttTimeline(
   currentPointerTime?: number,
   maxTimeSpan = 30
 ): void {
-  const trackHeight = 36;
-  const paddingLeft = 60;
-  const svgWidth = 520;
-  const svgHeight = numTracks * trackHeight + 40;
-  const usableWidth = svgWidth - paddingLeft - 30;
+  const trackHeight = 38;
+  const paddingLeft = 68;
+  const svgWidth = 540;
+  const svgHeight = numTracks * trackHeight + 48;
+  const usableWidth = svgWidth - paddingLeft - 24;
   const scale = usableWidth / Math.max(1, maxTimeSpan);
 
   // 轨道背景线与标签
   let tracksHtml = '';
   for (let t = 0; t < numTracks; t++) {
-    const y = 30 + t * trackHeight;
+    const y = 32 + t * trackHeight;
     tracksHtml += `
-      <text x="10" y="${y + 20}" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="600" fill="#64748b">轨道 ${t + 1}</text>
-      <line x1="${paddingLeft}" y1="${y + 16}" x2="${svgWidth - 20}" y2="${y + 16}" stroke="#f1f5f9" stroke-width="24" stroke-linecap="round" />
-      <line x1="${paddingLeft}" y1="${y + 28}" x2="${svgWidth - 20}" y2="${y + 28}" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 3" />
+      <text x="12" y="${y + 20}" font-size="11" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#94a3b8">轨道 #${t + 1}</text>
+      <rect x="${paddingLeft}" y="${y + 4}" width="${usableWidth}" height="26" rx="4" fill="rgba(30, 41, 59, 0.4)" stroke="#1e293b" stroke-width="1" />
+      <line x1="${paddingLeft}" y1="${y + 30}" x2="${svgWidth - 24}" y2="${y + 30}" stroke="#1e293b" stroke-width="1" stroke-dasharray="3 3" />
     `;
   }
 
-  // 区间矩形
+  // 区间矩形 (发光彩色胶囊)
   let intervalsHtml = '';
   intervals.forEach((iv) => {
     const x = paddingLeft + iv.start * scale;
-    const width = Math.max(8, (iv.end - iv.start) * scale);
-    const y = 30 + iv.trackIndex * trackHeight + 4;
+    const width = Math.max(12, (iv.end - iv.start) * scale);
+    const y = 32 + iv.trackIndex * trackHeight + 5;
     const fill = iv.color || '#3b82f6';
-    const stroke = iv.active ? '#1e40af' : '#2563eb';
-    const strokeWidth = iv.active ? 2.5 : 1;
+    const stroke = iv.active ? '#60a5fa' : '#2563eb';
+    const strokeWidth = iv.active ? 2.5 : 1.5;
+    const glow = iv.active ? 'filter: drop-shadow(0 0 8px rgba(59,130,246,0.6));' : '';
 
     intervalsHtml += `
-      <g>
-        <rect x="${x}" y="${y}" width="${width}" height="24" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${iv.active ? '1' : '0.88'}" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.1))" />
-        <text x="${x + width / 2}" y="${y + 15}" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#ffffff">${iv.label} [${iv.start}~${iv.end}]</text>
+      <g style="${glow}">
+        <rect x="${x}" y="${y}" width="${width}" height="24" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${iv.active ? '1' : '0.88'}" />
+        <text x="${x + width / 2}" y="${y + 16}" text-anchor="middle" font-size="10" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#ffffff">${iv.label} [${iv.start}~${iv.end}]</text>
       </g>
     `;
   });
 
-  // 时间推进红线游标
+  // 时间推进红线激光游标
   let pointerHtml = '';
   if (currentPointerTime !== undefined && currentPointerTime >= 0) {
     const px = paddingLeft + currentPointerTime * scale;
     pointerHtml = `
-      <line x1="${px}" y1="16" x2="${px}" y2="${svgHeight - 10}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 2" />
-      <polygon points="${px - 4},16 ${px + 4},16 ${px},22" fill="#ef4444" />
-      <text x="${px}" y="12" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="700" fill="#ef4444">t=${currentPointerTime}</text>
+      <g style="filter: drop-shadow(0 0 6px rgba(239,68,68,0.7));">
+        <line x1="${px}" y1="18" x2="${px}" y2="${svgHeight - 12}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4 2" />
+        <polygon points="${px - 4},18 ${px + 4},18 ${px},24" fill="#ef4444" />
+        <text x="${px}" y="14" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', monospace" font-weight="800" fill="#f87171">t=${currentPointerTime}</text>
+      </g>
     `;
   }
 
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 8px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #475569; font-weight: 600;">
-        <span>📊 甘特轨道占用图 (共 ${numTracks} 间会议室/轨道)</span>
-        <span style="font-family: 'JetBrains Mono', monospace; color: #64748b;">时间刻度 [0 ~ ${maxTimeSpan}]</span>
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 8px; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #cbd5e1; font-weight: 700;">
+        <span>📊 物理甘特时间轴与轨道占用矩阵 (共 ${numTracks} 间会议室/轨道)</span>
+        <span style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">时间刻度 [0 ~ ${maxTimeSpan}]</span>
       </div>
-      <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow-x: auto; padding: 6px;">
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: #020617; border-radius: 8px; border: 1px solid #1e293b; overflow-x: auto; padding: 6px;">
         <svg width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
           ${tracksHtml}
           ${intervalsHtml}
@@ -287,45 +302,54 @@ export function renderDecisionBalance(
   const leftWin = comp.winner === 'left';
   const rightWin = comp.winner === 'right';
 
-  const leftBg = leftWin ? '#ecfdf5' : '#f8fafc';
-  const leftBorder = leftWin ? '#10b981' : '#cbd5e1';
-  const leftColor = leftWin ? '#047857' : '#475569';
+  const leftBg = leftWin ? 'rgba(16, 185, 129, 0.15)' : '#1e293b';
+  const leftBorder = leftWin ? '#10b981' : '#334155';
+  const leftColor = leftWin ? '#34d399' : '#94a3b8';
+  const leftGlow = leftWin ? 'box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : '';
 
-  const rightBg = rightWin ? '#ecfdf5' : '#f8fafc';
-  const rightBorder = rightWin ? '#10b981' : '#cbd5e1';
-  const rightColor = rightWin ? '#047857' : '#475569';
+  const rightBg = rightWin ? 'rgba(16, 185, 129, 0.15)' : '#1e293b';
+  const rightBorder = rightWin ? '#10b981' : '#334155';
+  const rightColor = rightWin ? '#34d399' : '#94a3b8';
+  const rightGlow = rightWin ? 'box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);' : '';
+
+  const statusText = comp.winner === 'equal'
+    ? '两方案等价'
+    : `${comp.winner === 'left' ? comp.leftTitle : comp.rightTitle} 胜出 (更优)`;
 
   container.innerHTML = `
-    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
-      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">
-        <span style="font-size: 12px; font-weight: 700; color: #334155;">⚖️ 贪心决策天平 (${modeName})</span>
-        <span style="font-size: 11px; font-weight: 600; color: #3b82f6;">${comp.winner === 'equal' ? '两方案等价' : `${comp.winner === 'left' ? comp.leftTitle : comp.rightTitle} 胜出`}</span>
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; justify-content: center; background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 6px;">
+        <span style="font-size: 12px; font-weight: 700; color: #f8fafc;">⚖️ 贪心决策天平 (${modeName})</span>
+        <span style="font-size: 11px; font-weight: 700; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">${statusText}</span>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px; justify-content: center; padding: 10px 0;">
-        <!-- 左侧方案 -->
-        <div style="flex: 1; max-width: 180px; padding: 10px; border-radius: 8px; background: ${leftBg}; border: 2px solid ${leftBorder}; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="font-size: 11px; color: #64748b; font-weight: 600;">${comp.leftTitle}</div>
-          <div style="font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${leftColor}; margin-top: 4px;">
+      <div style="display: flex; align-items: center; gap: 12px; justify-content: center; padding: 12px 0;">
+        <!-- 左侧方案托盘 -->
+        <div style="flex: 1; max-width: 180px; padding: 12px; border-radius: 8px; background: ${leftBg}; border: 2px solid ${leftBorder}; text-align: center; ${leftGlow} transition: all 0.2s ease;">
+          <div style="font-size: 11px; color: #94a3b8; font-weight: 700;">${comp.leftTitle}</div>
+          <div style="font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${leftColor}; margin-top: 6px;">
             ${comp.leftVal}
           </div>
-          ${leftWin ? '<span style="display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 700; color: #10b981;">✓ 优选方案</span>' : ''}
+          ${leftWin ? '<span style="display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.15); padding: 2px 6px; border-radius: 4px;">✓ 优选前移</span>' : ''}
         </div>
 
-        <div style="font-size: 16px; font-weight: 900; color: #94a3b8;">VS</div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+          <span style="font-size: 16px; font-weight: 900; color: #64748b; font-family: 'JetBrains Mono', monospace;">VS</span>
+          <span style="font-size: 9px; color: #475569;">比对天平</span>
+        </div>
 
-        <!-- 右侧方案 -->
-        <div style="flex: 1; max-width: 180px; padding: 10px; border-radius: 8px; background: ${rightBg}; border: 2px solid ${rightBorder}; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="font-size: 11px; color: #64748b; font-weight: 600;">${comp.rightTitle}</div>
-          <div style="font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${rightColor}; margin-top: 4px;">
+        <!-- 右侧方案托盘 -->
+        <div style="flex: 1; max-width: 180px; padding: 12px; border-radius: 8px; background: ${rightBg}; border: 2px solid ${rightBorder}; text-align: center; ${rightGlow} transition: all 0.2s ease;">
+          <div style="font-size: 11px; color: #94a3b8; font-weight: 700;">${comp.rightTitle}</div>
+          <div style="font-size: 18px; font-family: 'JetBrains Mono', monospace; font-weight: 800; color: ${rightColor}; margin-top: 6px;">
             ${comp.rightVal}
           </div>
-          ${rightWin ? '<span style="display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 700; color: #10b981;">✓ 优选方案</span>' : ''}
+          ${rightWin ? '<span style="display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 800; color: #10b981; background: rgba(16,185,129,0.15); padding: 2px 6px; border-radius: 4px;">✓ 优选前移</span>' : ''}
         </div>
       </div>
 
-      <div style="padding: 6px 10px; border-radius: 6px; background: #f8fafc; border-left: 3px solid #3b82f6; font-size: 11px; color: #475569; line-height: 1.5;">
-        <b>决策判定：</b>${comp.reason}
+      <div style="padding: 8px 12px; border-radius: 6px; background: #020617; border-left: 3px solid #38bdf8; font-size: 11px; color: #cbd5e1; line-height: 1.5; border-top: 1px solid #1e293b; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b;">
+        <span style="color: #38bdf8; font-weight: 700;">📐 决策判定：</span>${comp.reason}
       </div>
     </div>
   `;

@@ -27,6 +27,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'three-sum',
+  aliases: ['15', 'leetcode-15', 'three-sum-two-pointers'],
+  hasDeductionTree: true,
   name: '三数之和（排序+双指针）',
   category: 'hash-table',
   description: '排序后双指针求和为0的三元组',

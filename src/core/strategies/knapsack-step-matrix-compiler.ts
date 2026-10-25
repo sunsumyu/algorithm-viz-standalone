@@ -166,8 +166,10 @@ export class KnapsackStepMatrixCompiler {
     const lineLoopI = anchorMap?.loop_i || 6;
     const lineLoopJ = anchorMap?.loop_j || 7;
     const lineCond = anchorMap?.cond || 8;
+    const lineLoopK = anchorMap?.loop_k || (lineCond + 1);
     const lineTransferSkip = anchorMap?.transfer_skip || anchorMap?.init_val || (lineCond + 1);
     const lineTransferMax = anchorMap?.transfer_max || anchorMap?.transfer || (lineCond + 3);
+    const lineAssign = anchorMap?.assign || anchorMap?.transfer_max || (lineCond + 4);
     const lineReturn = anchorMap?.return || 15;
 
     if (oddCheck?.hasOddFail) {
@@ -280,6 +282,109 @@ export class KnapsackStepMatrixCompiler {
           gridHighlight: { i, j }
         });
 
+        if (kind === 'multiple-knapsack') {
+          const count = items[i].count ?? 1;
+          const valNotTake = dp[i - 1][j] ?? 0;
+          let best = valNotTake;
+          let bestK = 0;
+
+          // 1. 基准不选 (k = 0): int best = dp[i - 1][j];
+          steps.push({
+            type: 'cond',
+            line: lineCond,
+            i,
+            j,
+            k: 0,
+            val: best,
+            topI: i - 1,
+            topJ: j,
+            deps: [{ r: i - 1, c: j, type: 'top' }],
+            grid: JSON.parse(JSON.stringify(dp)),
+            gridHighlight: { i, j },
+            tag: `基准不选 (k=0): best = dp[${i - 1}][${j}] = ${best}`,
+            log: `| 📦 不选当前物品(k=0): 继承上一行 dp[${i - 1}][${j}] = ${best}`,
+            msg: `初始基准决策（<code>k = 0</code>）：<code>best = dp[${i - 1}][${j}] = <strong>${best}</strong></code>。`
+          });
+
+          // 2. 枚举件数 k (1..count && k * wi <= j)
+          for (let k = 1; k <= count && k * wi <= j; k++) {
+            // (1) 循环头 loop_k
+            steps.push({
+              type: 'loop-k',
+              line: lineLoopK,
+              i,
+              j,
+              k,
+              val: best,
+              deps: [{ r: i - 1, c: j - k * wi, type: 'diag' }],
+              grid: JSON.parse(JSON.stringify(dp)),
+              gridHighlight: { i, j },
+              tag: `尝试选入 k = ${k} 件 (重 ${k * wi}, 价 +${k * vi})`,
+              log: `| 🔍 枚举选取件数: 尝试选取 k=${k}/${count} 件物品 ${i}（占用重量 ${k * wi}）`,
+              msg: `枚举件数循环：尝试选入 <code>k = ${k}</code> 件物品 <code>${i}</code>（占用容量 <code>${k * wi}</code>，增加价值 <code>${k * vi}</code>）。`
+            });
+
+            // (2) 状态转移对比 transfer: best = Math.max(best, dp[i - 1][j - k * wi] + k * vi)
+            const cand = (dp[i - 1][j - k * wi] ?? 0) + k * vi;
+            const isBetter = cand > best;
+            if (isBetter) {
+              best = cand;
+              bestK = k;
+            }
+
+            steps.push({
+              type: 'transfer',
+              line: lineTransferMax,
+              i,
+              j,
+              k,
+              val: best,
+              topI: i - 1,
+              topJ: j,
+              leftI: i - 1,
+              leftJ: j - k * wi,
+              deps: [
+                { r: i - 1, c: j, type: 'top' },
+                { r: i - 1, c: j - k * wi, type: 'diag' }
+              ],
+              grid: JSON.parse(JSON.stringify(dp)),
+              gridHighlight: { i, j },
+              tag: isBetter
+                ? `决策对比: 选 ${k} 件最优 (${cand} > 原值)`
+                : `决策对比: 选 ${k} 件不优 (${cand} <= 原值 ${best})`,
+              log: `| ⚡ 决策对比(k=${k}): dp[${i - 1}][${j - k * wi}] + ${k * vi} = ${cand} vs 当前最优 ${best} => ${isBetter ? '刷新最优' : '保留当前'}`,
+              msg: isBetter
+                ? `决策刷新：选入 <code>${k}</code> 件带来更大价值 <code>dp[${i - 1}][${j - k * wi}] + ${k * vi} = ${cand}</code>，更新 <code>best = <strong>${cand}</strong></code>。`
+                : `决策保持：选入 <code>${k}</code> 件价值 <code>dp[${i - 1}][${j - k * wi}] + ${k * vi} = ${cand} <= ${best}</code>，维持当前最优 <code>best = <strong>${best}</strong></code>。`
+            });
+          }
+
+          // 3. 最终落盘: dp[i][j] = best;
+          dp[i][j] = best;
+          steps.push({
+            type: 'assign',
+            line: lineAssign,
+            i,
+            j,
+            k: bestK,
+            val: best,
+            topI: i - 1,
+            topJ: j,
+            leftI: i - 1,
+            leftJ: j - bestK * wi,
+            deps: bestK > 0
+              ? [
+                  { r: i - 1, c: j, type: 'top' },
+                  { r: i - 1, c: j - bestK * wi, type: 'diag' }
+                ]
+              : [{ r: i - 1, c: j, type: 'top' }],
+            grid: JSON.parse(JSON.stringify(dp)),
+            gridHighlight: { i, j },
+            tag: `状态落盘: dp[${i}][${j}] = ${best} (选 ${bestK} 件)`,
+            log: `| 💾 写入状态表: dp[${i}][${j}] = ${best} (最佳选取 ${bestK} 件物品 ${i})`,
+            msg: `完成当前槽位：写入 <code>dp[${i}][${j}] = <strong>${best}</strong></code>（最优决策为选取 <code>${bestK}</code> 件物品 <code>${i}</code>）。`
+          });
+        } else {
         const isEnough = j >= wi;
         steps.push({
           type: 'cond',
@@ -315,35 +420,6 @@ export class KnapsackStepMatrixCompiler {
           });
         } else {
           const valNotTake = dp[i - 1][j] ?? (isMinKind ? 1000000 : 0);
-          if (kind === 'multiple-knapsack') {
-            const count = items[i].count ?? 1;
-            let best = valNotTake;
-            let bestK = 0;
-            for (let k = 1; k <= count && k * wi <= j; k++) {
-              const cand = (dp[i - 1][j - k * wi] ?? 0) + k * vi;
-              if (cand > best) {
-                best = cand;
-                bestK = k;
-              }
-            }
-            dp[i][j] = best;
-            steps.push({
-              type: 'transfer',
-              line: lineTransferMax,
-              i,
-              j,
-              val: dp[i][j],
-              topI: i - 1,
-              topJ: j,
-              leftI: i - 1,
-              leftJ: j - bestK * wi,
-              grid: JSON.parse(JSON.stringify(dp)),
-              gridHighlight: { i, j },
-              tag: `多重背包决策: 选${bestK}件, dp[${i}][${j}] = ${best}`,
-              log: `| 📦 多重背包决策: 物品 ${i} 最佳选入 ${bestK} 件，dp[${i}][${j}] = ${best}`,
-              msg: `多重背包转移：第 <code>${i}</code> 件物品最佳选入 <code>${bestK}</code> 件，<code>dp[${i}][${j}] = <strong>${best}</strong></code>。`
-            });
-          } else {
           // 完全背包依赖当前行 dp[i][j - wi]，0-1 背包依赖上一行 dp[i - 1][j - wi]
           const takePrevI = isComplete ? i : (i - 1);
           const rawSub = dp[takePrevI][j - wi] ?? (isMinKind ? 1000000 : 0);
@@ -379,7 +455,7 @@ export class KnapsackStepMatrixCompiler {
               ? `完全背包转移：<code>dp[${i}][${j}] = <strong>${dp[i][j] === 1000000 ? '∞' : dp[i][j]}</strong></code>。`
               : `状态转移：<code>dp[${i}][${j}] = <strong>${dp[i][j] === 1000000 ? '∞' : dp[i][j]}</strong></code>。`
           });
-          }
+        }
         }
       }
     }
@@ -486,11 +562,29 @@ export class KnapsackStepMatrixCompiler {
 
       if (kind === 'multiple-knapsack') {
         const count = items[i].count ?? 1;
+        const lineLoopK = anchorMap?.loop_k || 6;
         for (let j = capacity; j >= wi; j--) {
           const oldVal = dp[j];
           let best = oldVal;
           let bestK = 0;
           for (let k = 1; k <= count && k * wi <= j; k++) {
+            steps.push({
+              type: 'loop-k',
+              line: lineLoopK,
+              i,
+              j,
+              k,
+              dp1d: [...dp],
+              memoj: best,
+              highlightSlots: [j],
+              srcSlots: [j - k * wi],
+              currentI: i,
+              currentJ: j,
+              tag: `尝试选入 ${k} 件 (重 ${k * wi}, 价 +${k * vi})`,
+              log: `| 🔍 考察选入 k=${k} 件物品 ${i} (占用重量 ${k * wi})`,
+              msg: `枚举件数：尝试选入 <code>${k}</code> 件该物品（消耗容量 <code>${k * wi}</code>，增加价值 <code>${k * vi}</code>）。`
+            });
+
             const cand = dp[j - k * wi] + k * vi;
             if (cand > best) {
               best = cand;
@@ -503,6 +597,7 @@ export class KnapsackStepMatrixCompiler {
             line: lineTransfer,
             i,
             j,
+            k: bestK,
             dp1d: [...dp],
             memoj: dp[j],
             highlightSlots: [j],

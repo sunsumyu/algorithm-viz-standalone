@@ -33,8 +33,44 @@ export class SpatialFlowVisualAdapter {
         <marker id="arrow-left-right" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
           <path d="M 0 1 L 9 5 L 0 9 z" fill="#d97706" />
         </marker>
+        <marker id="arrow-diag" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#0891b2" />
+        </marker>
       </defs>
     `;
+  }
+
+  /**
+   * 获取指定单元格相对于当前 SVG 坐标系的中心点，彻底免疫外层弹性居中与 Margin/Padding 漂移
+   */
+  private static getCellCenter(cell: HTMLElement, svg: SVGElement): { x: number; y: number } {
+    if (typeof svg.getBoundingClientRect === 'function' && typeof cell.getBoundingClientRect === 'function') {
+      const sRect = svg.getBoundingClientRect();
+      const cRect = cell.getBoundingClientRect();
+      if (sRect.width > 0 || sRect.height > 0 || cRect.width > 0 || cRect.height > 0) {
+        return {
+          x: cRect.left + cRect.width / 2 - sRect.left,
+          y: cRect.top + cRect.height / 2 - sRect.top,
+        };
+      }
+    }
+    return {
+      x: (cell.offsetLeft || 0) + (cell.offsetWidth || 0) / 2,
+      y: (cell.offsetTop || 0) + (cell.offsetHeight || 0) / 2,
+    };
+  }
+
+  /**
+   * 优先通过 data-coord 寻找单元格，索引兜底
+   */
+  private static findCell(container: HTMLElement, r: number, c: number, n: number): HTMLElement | null {
+    if (!container) return null;
+    if (typeof container.querySelector === 'function') {
+      const byCoord = container.querySelector(`[data-coord="${r},${c}"]`) as HTMLElement | null;
+      if (byCoord) return byCoord;
+    }
+    const idx = r * n + c;
+    return (container.children && container.children[idx] as HTMLElement) || null;
   }
 
   /**
@@ -54,7 +90,22 @@ export class SpatialFlowVisualAdapter {
     const isGridProblem =
       options.isGridProblem ??
       (options.modelId ? ['unique-paths', 'unique-paths-ii', 'min-path-sum', 'dungeon-game-reverse-dp'].includes(options.modelId) : true);
-    const activeStackList: string[] = Array.isArray(step.activeStack) ? step.activeStack : [];
+    const rawStack = Array.isArray(step.activeStack) ? step.activeStack : (Array.isArray(step.activeTrail) ? step.activeTrail : []);
+    const activeStackList: string[] = [];
+    for (const item of rawStack) {
+      if (typeof item === 'string') {
+        const match = item.match(/(-?\d+)\s*,\s*(-?\d+)/);
+        if (match) {
+          activeStackList.push(`${parseInt(match[1], 10)},${parseInt(match[2], 10)}`);
+        }
+      } else if (item && typeof item === 'object') {
+        const r = item.i ?? item.row ?? item.r;
+        const c = item.j ?? item.col ?? item.c;
+        if (typeof r === 'number' && typeof c === 'number' && !Number.isNaN(r) && !Number.isNaN(c)) {
+          activeStackList.push(`${r},${c}`);
+        }
+      }
+    }
 
     // 1. 递归路径足迹连线 (Stage 1 & Stage 2) - 仅在网格迷宫问题上绘制空间探索足迹连线
     if (isGridProblem && activeStackList.length >= 2 && typeof document.createElementNS === 'function') {
@@ -62,28 +113,24 @@ export class SpatialFlowVisualAdapter {
         const [r1, c1] = activeStackList[i].split(',').map(Number);
         const [r2, c2] = activeStackList[i + 1].split(',').map(Number);
 
-        const idx1 = r1 * n + c1;
-        const cellEl1 = container.children[idx1] as HTMLElement;
-        if (!cellEl1 || typeof cellEl1.offsetLeft === 'undefined') continue;
+        const cellEl1 = this.findCell(container, r1, c1, n);
+        if (!cellEl1) continue;
 
-        const x1 = cellEl1.offsetLeft + cellEl1.offsetWidth / 2;
-        const y1 = cellEl1.offsetTop + cellEl1.offsetHeight / 2;
+        const p1 = this.getCellCenter(cellEl1, svg);
 
         if (r2 < m && c2 < n && r2 >= 0 && c2 >= 0) {
-          const idx2 = r2 * n + c2;
-          const cellEl2 = container.children[idx2] as HTMLElement;
-          if (!cellEl2 || typeof cellEl2.offsetLeft === 'undefined') continue;
+          const cellEl2 = this.findCell(container, r2, c2, n);
+          if (!cellEl2) continue;
 
-          const x2 = cellEl2.offsetLeft + cellEl2.offsetWidth / 2;
-          const y2 = cellEl2.offsetTop + cellEl2.offsetHeight / 2;
+          const p2 = this.getCellCenter(cellEl2, svg);
 
-          const dx = x2 - x1;
-          const dy = y2 - y1;
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const sx = x1 + (dx / dist) * 12;
-          const sy = y1 + (dy / dist) * 12;
-          const ex = x2 - (dx / dist) * 14;
-          const ey = y2 - (dy / dist) * 14;
+          const sx = p1.x + (dx / dist) * 12;
+          const sy = p1.y + (dy / dist) * 12;
+          const ex = p2.x - (dx / dist) * 14;
+          const ey = p2.y - (dy / dist) * 14;
 
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           line.setAttribute('x1', String(sx));
@@ -100,10 +147,17 @@ export class SpatialFlowVisualAdapter {
         } else if (r2 >= m) {
           // 向下跳入深水河流
           const riverBarrier = typeof document.getElementById === 'function' ? document.getElementById('grid-river-barrier') : null;
-          const targetY = riverBarrier ? riverBarrier.offsetTop : y1 + cellEl1.offsetHeight / 2 + 16;
-          const sx = x1;
-          const sy = y1 + 12;
-          const ex = x1;
+          let targetY = p1.y + 36;
+          if (riverBarrier && typeof riverBarrier.getBoundingClientRect === 'function' && typeof svg.getBoundingClientRect === 'function') {
+            const sRect = svg.getBoundingClientRect();
+            const rRect = riverBarrier.getBoundingClientRect();
+            if (sRect.height > 0 || rRect.height > 0) {
+              targetY = rRect.top - sRect.top + rRect.height / 2;
+            }
+          }
+          const sx = p1.x;
+          const sy = p1.y + 12;
+          const ex = p1.x;
           const ey = targetY;
 
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -119,10 +173,10 @@ export class SpatialFlowVisualAdapter {
           svg.appendChild(line);
         } else if (c2 >= n) {
           // 向右撞墙
-          const sx = x1 + 12;
-          const sy = y1;
-          const ex = x1 + cellEl1.offsetWidth / 2 + 14;
-          const ey = y1;
+          const sx = p1.x + 12;
+          const sy = p1.y;
+          const ex = p1.x + (cellEl1.offsetWidth || 40) / 2 + 14;
+          const ey = p1.y;
 
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           line.setAttribute('x1', String(sx));
@@ -137,10 +191,10 @@ export class SpatialFlowVisualAdapter {
           svg.appendChild(line);
         } else if (r2 < 0) {
           // 向上撞墙
-          const sx = x1;
-          const sy = y1 - 12;
-          const ex = x1;
-          const ey = container.offsetTop - 8;
+          const sx = p1.x;
+          const sy = p1.y - 12;
+          const ex = p1.x;
+          const ey = Math.max(0, p1.y - (cellEl1.offsetHeight || 40) / 2 - 14);
 
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           line.setAttribute('x1', String(sx));
@@ -155,10 +209,10 @@ export class SpatialFlowVisualAdapter {
           svg.appendChild(line);
         } else if (c2 < 0) {
           // 向左撞墙
-          const sx = x1 - 12;
-          const sy = y1;
-          const ex = container.offsetLeft - 8;
-          const ey = y1;
+          const sx = p1.x - 12;
+          const sy = p1.y;
+          const ex = Math.max(0, p1.x - (cellEl1.offsetWidth || 40) / 2 - 14);
+          const ey = p1.y;
 
           const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
           line.setAttribute('x1', String(sx));
@@ -180,63 +234,53 @@ export class SpatialFlowVisualAdapter {
       (step.type === 'update' ||
         step.type === 'update-cell' ||
         (step.topI !== undefined && step.topI >= 0) ||
-        (step.leftI !== undefined && step.leftI >= 0)) &&
-      typeof document.createElementNS === 'function'
+        (step.leftI !== undefined && step.leftI >= 0) ||
+        (step.diagI !== undefined && step.diagI >= 0)) &&
+      typeof document.createElementNS === 'function' &&
+      typeof step.i === 'number' &&
+      typeof step.j === 'number'
     ) {
-      const curIdx = step.i * n + step.j;
-      const curCell = container.children[curIdx] as HTMLElement;
-      if (curCell && typeof curCell.offsetLeft !== 'undefined') {
-        const curX = curCell.offsetLeft + curCell.offsetWidth / 2;
-        const curY = curCell.offsetTop + curCell.offsetHeight / 2;
+      const curCell = this.findCell(container, step.i, step.j, n);
+      if (curCell) {
+        const curCenter = this.getCellCenter(curCell, svg);
 
-        if (
-          step.topI !== undefined &&
-          step.topI >= 0 &&
-          step.topI < m &&
-          step.topJ !== undefined &&
-          step.topJ >= 0 &&
-          step.topJ < n
-        ) {
-          const topIdx = step.topI * n + step.topJ;
-          const topCell = container.children[topIdx] as HTMLElement;
-          if (topCell && typeof topCell.offsetLeft !== 'undefined') {
-            const topX = topCell.offsetLeft + topCell.offsetWidth / 2;
-            const topY = topCell.offsetTop + topCell.offsetHeight / 2;
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', String(topX));
-            line.setAttribute('y1', String(topY + 12));
-            line.setAttribute('x2', String(curX));
-            line.setAttribute('y2', String(curY - 14));
-            line.setAttribute('stroke', '#9333ea');
-            line.setAttribute('stroke-width', '2.2');
-            line.setAttribute('marker-end', 'url(#arrow-top-down)');
-            svg.appendChild(line);
-          }
+        const drawArrow = (srcI: number, srcJ: number, strokeColor: string, markerId: string) => {
+          if (srcI < 0 || srcI >= m || srcJ < 0 || srcJ >= n) return;
+          const srcCell = this.findCell(container, srcI, srcJ, n);
+          if (!srcCell) return;
+          const srcCenter = this.getCellCenter(srcCell, svg);
+
+          const dx = curCenter.x - srcCenter.x;
+          const dy = curCenter.y - srcCenter.y;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+          // 从源单元格边缘指向当前计算单元格边缘，留出标头空隙
+          const sx = srcCenter.x + (dx / dist) * 14;
+          const sy = srcCenter.y + (dy / dist) * 14;
+          const ex = curCenter.x - (dx / dist) * 16;
+          const ey = curCenter.y - (dy / dist) * 16;
+
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', String(sx));
+          line.setAttribute('y1', String(sy));
+          line.setAttribute('x2', String(ex));
+          line.setAttribute('y2', String(ey));
+          line.setAttribute('stroke', strokeColor);
+          line.setAttribute('stroke-width', '2.2');
+          line.setAttribute('marker-end', `url(#${markerId})`);
+          svg.appendChild(line);
+        };
+
+        if (step.topI !== undefined && step.topI >= 0 && step.topJ !== undefined && step.topJ >= 0) {
+          drawArrow(step.topI, step.topJ, '#9333ea', 'arrow-top-down');
         }
 
-        if (
-          step.leftI !== undefined &&
-          step.leftI >= 0 &&
-          step.leftI < m &&
-          step.leftJ !== undefined &&
-          step.leftJ >= 0 &&
-          step.leftJ < n
-        ) {
-          const leftIdx = step.leftI * n + step.leftJ;
-          const leftCell = container.children[leftIdx] as HTMLElement;
-          if (leftCell && typeof leftCell.offsetLeft !== 'undefined') {
-            const leftX = leftCell.offsetLeft + leftCell.offsetWidth / 2;
-            const leftY = leftCell.offsetTop + leftCell.offsetHeight / 2;
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', String(leftX + 12));
-            line.setAttribute('y1', String(leftY));
-            line.setAttribute('x2', String(curX - 14));
-            line.setAttribute('y2', String(curY));
-            line.setAttribute('stroke', '#d97706');
-            line.setAttribute('stroke-width', '2.2');
-            line.setAttribute('marker-end', 'url(#arrow-left-right)');
-            svg.appendChild(line);
-          }
+        if (step.leftI !== undefined && step.leftI >= 0 && step.leftJ !== undefined && step.leftJ >= 0) {
+          drawArrow(step.leftI, step.leftJ, '#d97706', 'arrow-left-right');
+        }
+
+        if (step.diagI !== undefined && step.diagI >= 0 && step.diagJ !== undefined && step.diagJ >= 0) {
+          drawArrow(step.diagI, step.diagJ, '#0891b2', 'arrow-diag');
         }
       }
     }

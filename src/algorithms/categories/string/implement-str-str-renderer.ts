@@ -28,6 +28,8 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'str-str',
+  aliases: ['28', 'leetcode-28', 'implement-str-str', 'kmp-algorithm'],
+  hasDeductionTree: true,
   name: '实现strStr()（KMP算法）',
   category: 'string',
   description: '用 KMP 算法在 haystack 中查找 needle 的首次位置',

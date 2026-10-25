@@ -22,6 +22,8 @@ export {
 
 export const findMinRotatedSortedArrayIIVisualizer = registerDeclarativeAlgorithm<MinRotatedStep>({
   id: 'find-min-rotated-sorted-array-ii',
+  aliases: ['154', 'leetcode-154'],
+  hasDeductionTree: true,
   name: 'Hard 27: 寻找旋转排序数组最小值 II (LeetCode 154)',
   category: 'search',
   icon: '📉',

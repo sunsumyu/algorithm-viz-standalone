@@ -17,6 +17,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 2,
     learningGoal: "掌握利用快慢双指针在单数组中原地覆写元素以消除特定目标的经典范式",
+    aliases: ["27","leetcode-27","remove-element-fast-slow"],
   },
   {
     id: "sorted-squares",
@@ -28,7 +29,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3,
     learningGoal: "掌握首尾对撞双指针在非递减含负数数组平方排序中的线性 O(n) 解法",
-    aliases: ["squares-of-sorted-array"],
+    aliases: ["squares-of-sorted-array","977","leetcode-977","sorted-squares-two-pointers"],
   },
   {
     id: "min-subarray-len",
@@ -40,6 +41,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 4,
     learningGoal: "掌握滑动窗口在连续子数组条件最值问题中的右扩左缩单调收敛机制",
+    aliases: ["209","leetcode-209","minimum-size-subarray-sum"],
   },
   {
     id: "spiral-matrix-ii",
@@ -51,6 +53,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 5,
     learningGoal: "掌握二维矩阵模拟中四边界收缩法的高效无差错边界控制思想",
+    aliases: ["59","leetcode-59","spiral-matrix-2"],
   },
   {
     id: "range-sum",
@@ -95,6 +98,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 41,
     learningGoal: "掌握原地哈希桶排序置换技巧，深刻理解鸽巢原理在常数级额外空间 O(1) 检索中的精妙应用",
+    aliases: ["41","leetcode-41","first-missing-positive-in-place-hash"],
   },
   {
     id: "arithmetic-sequence-difference-051",
@@ -184,6 +188,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 238,
     learningGoal: "掌握前缀积与后缀积双向扫描拆解数组乘积的核心思想，体会利用返回结果复用空间的 O(1) 优化技巧",
+    aliases: ["product-except-self","238","leetcode-238"],
   },
   {
     id: "find-duplicate-number-287",
@@ -251,6 +256,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "掌握回溯法的基础框架：选择、递归、撤销，理解决策树结构",
+    aliases: ["77","leetcode-77","combinations"],
   },
   {
     id: "combination-optimized",
@@ -273,6 +279,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3,
     learningGoal: "掌握元素可重复选取的回溯搜索与累加和剪枝",
+    aliases: ["39","leetcode-39","combination-sum-unlimited"],
   },
   {
     id: "combination-sum-ii",
@@ -284,6 +291,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 4,
     learningGoal: "掌握经典树层去重 (i > startIndex && c[i]==c[i-1]) 机制",
+    aliases: ["40","leetcode-40","combination-sum-dedup"],
   },
   {
     id: "backtracking-week-summary-1",
@@ -305,6 +313,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 5,
     learningGoal: "掌握固定区间 (1~9) 的深度回溯与多维剪枝不等式",
+    aliases: ["216","leetcode-216","combination-sum-3"],
   },
   {
     id: "palindrome-partition",
@@ -316,6 +325,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 6,
     learningGoal: "理解字符串切割问题到树形回溯的建模与即时回文剪枝",
+    aliases: ["131","leetcode-131","palindrome-partitioning"],
   },
   {
     id: "restore-ip",
@@ -327,6 +337,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 7,
     learningGoal: "掌握 4 段式点分十进制切割与前导零、255 上限等全方位剪枝",
+    aliases: ["93","leetcode-93","restore-ip-addresses"],
   },
   {
     id: "phone-letters",
@@ -338,6 +349,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 8,
     learningGoal: "理解跨多个独立集合枚举与深度递进的回溯遍历范式",
+    aliases: ["17","leetcode-17","letter-combinations","letter-combinations-of-a-phone-number"],
   },
   {
     id: "subset",
@@ -349,6 +361,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 9,
     learningGoal: "掌握子集问题的全节点收集特性与 2^N 幂集回溯模型",
+    aliases: ["78","leetcode-78","subsets"],
   },
   {
     id: "subsets-ii",
@@ -360,6 +373,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 10,
     learningGoal: "掌握含重复元素时的全节点收集与树层去重 (i > startIndex && nums[i]==nums[i-1]) 机制",
+    aliases: ["90","leetcode-90","subsets-with-dup"],
   },
   {
     id: "backtracking-week-summary-2",
@@ -392,6 +406,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 12,
     learningGoal: "掌握排列问题中从 0 开始的全局循环与 used[] 树枝去重标记机制",
+    aliases: ["46","leetcode-46","permutations-all"],
   },
   {
     id: "permutation-ii",
@@ -403,6 +418,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 13,
     learningGoal: "掌握含重复元素排列中的树层去重 (!used[i-1]) 与树枝占用的本质区别",
+    aliases: ["47","leetcode-47","permutations-ii"],
   },
   {
     id: "permutations",
@@ -414,6 +430,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 15,
     learningGoal: "掌握 used 数组标记法在排列回溯中的去重与剪枝原理",
+    aliases: ["permutations-used"],
   },
   {
     id: "nqueen",
@@ -425,6 +442,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 16,
     learningGoal: "掌握二维棋盘回溯模型的按行递归与三方向 (列、主副对角线) 冲突检验机制",
+    aliases: ["51","leetcode-51","n-queens"],
   },
   {
     id: "backtracking-week-summary-3",
@@ -446,6 +464,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 17,
     learningGoal: "掌握二维双重循环回溯、布尔返回值剪枝与九宫格坐标映射机制",
+    aliases: ["37","leetcode-37","sudoku-solver"],
   },
   {
     id: "backtracking-dedup-alt",
@@ -533,7 +552,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 4,
     learningGoal: "掌握有序数组二分边界查找、无序数组局部最小值二分，以及对数器大样本随机对比验证思想",
-    aliases: ["class004-code02","class005-code01","binary-search-logarithmic-004","binary-search-verifier","logarithmic-verifier"],
+    aliases: ["class004-code02","class005-code01","binary-search-verifier","logarithmic-verifier"],
   },
   {
     id: "bit-tricks",
@@ -544,7 +563,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["class030-code01","class002-code01","brian-kernighan","bit-tricks-030"],
+    aliases: ["class030-code01","class002-code01","brian-kernighan","bit-tricks-030","191","leetcode-191","231","leetcode-231"],
   },
   {
     id: "bitset-array",
@@ -566,7 +585,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["class031-code01","single-number-137","leetcode-137","single-number-2"],
+    aliases: ["class031-code01","single-number-137","leetcode-137","single-number-2","137"],
   },
   {
     id: "single-number-iii",
@@ -577,7 +596,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
-    aliases: ["class032-code01","single-number-260","leetcode-260","single-number-3"],
+    aliases: ["class032-code01","single-number-260","leetcode-260","single-number-3","260"],
   },
   {
     id: "bitwise-arithmetic-032",
@@ -589,6 +608,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 32,
     learningGoal: "不用任何算术运算符 (+, -, *, /)，纯粹利用位运算 (异或、与、非、移位) 实现算术四则运算",
+    aliases: ["class032-code01","class032-code02","bitwise-arithmetic-032","bitwise-arithmetic","bitwise-add"],
   },
   {
     id: "bitmap-design-033",
@@ -611,6 +631,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 34,
     learningGoal: "掌握异或运算无进位相加与自反性质，熟练应用提取最右侧 1 (eor & -eor) 技巧解决海量数字奇偶次频度问题",
+    aliases: ["class034-code01","bitwise-xor-odd-times-034","bitwise-xor","single-number-136","136","leetcode-136"],
   },
   {
     id: "divide-two-integers",
@@ -622,6 +643,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 29: 不用乘除与取模运算实现除法。基于二进制倍增减法，在 O(log^2 N) 时间内高效定位商。",
+    aliases: ["29","leetcode-29","divide-two-integers","divide-integers"],
   },
   {
     id: "dp-theory",
@@ -993,7 +1015,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "♞",
     difficulty: 1,
     levelOrder: 34,
-    aliases: ["class069-code01","knight-probability-069","knight-probability-class069","leetcode-688-knight"],
+    aliases: ["class069-code01","knight-probability-069","knight-probability-class069","leetcode-688","leetcode-688-knight"],
   },
   {
     id: "out-of-boundary-paths",
@@ -4780,6 +4802,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "理解哈希表如何替代暴力枚举降低时间复杂度",
+    aliases: ["1","leetcode-1","two-sum-hash"],
   },
   {
     id: "happy-number",
@@ -4802,6 +4825,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 2,
     learningGoal: "掌握排序 + 双指针 + 去重的三数求和技巧",
+    aliases: ["15","leetcode-15","three-sum-two-pointers"],
   },
   {
     id: "anagram",
@@ -4824,6 +4848,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 3,
     learningGoal: "掌握嵌套双指针 + 多层去重的四数求和技巧",
+    aliases: ["18","leetcode-18","four-sum-two-pointers"],
   },
   {
     id: "four-sum-ii",
@@ -4835,6 +4860,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 4,
     learningGoal: "掌握分组降维 + 哈希表计数优化四重循环",
+    aliases: ["454","leetcode-454","four-sum-ii-hash"],
   },
   {
     id: "ransom-note",
@@ -4857,6 +4883,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 128: 在未排序数组中以 O(N) 时间找出数字连续的最长序列长度。利用哈希表高效跳过非起点数字，达成真正线性复杂度。",
+    aliases: ["128","leetcode-128","longest-consecutive"],
   },
   {
     id: "sort-characters-by-frequency",
@@ -4879,6 +4906,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 560: 统计连续子数组和等于 k 的个数。利用前缀和移项与哈希表频次统计，将 O(N^2) 暴力枚举优化为 O(N) 线性推演。",
+    aliases: ["560","leetcode-560","subarray-sum-equals-k-560"],
   },
   {
     id: "merge-k-sorted-lists",
@@ -4902,7 +4930,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 25,
     learningGoal: "透彻理解完全二叉树的连续数组映射、大根堆性质、heapify 下沉操作与 O(1) 额外空间的原地堆排序算法",
-    aliases: ["class025-code01","heap-and-heapsort-025","heap-sort-inplace"],
+    aliases: ["class025-code01","class025","heap-and-heapsort","heap-and-heapsort-025","heap-sort-inplace"],
   },
   {
     id: "heap-greater-026",
@@ -4914,6 +4942,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 26,
     learningGoal: "掌握手写加强堆结构与反向索引映射表 (indexMap)，克服原生堆结构无法 O(log N) 修改或删除指定元素的缺陷",
+    aliases: ["class026-code01","class026","heap-greater-026"],
   },
   {
     id: "the-skyline-problem",
@@ -4936,7 +4965,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "透彻掌握单链表双指针迭代与原地指针反转技巧，理解暂存 next 防止断链的本质",
-    aliases: ["class034-code01","reverse-linked-list-034","leetcode-206"],
+    aliases: ["class034-code01","reverse-linked-list-034","reverse-linked-list","leetcode-206","reverse-list"],
   },
   {
     id: "remove-nth-from-end",
@@ -4948,6 +4977,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 2,
     learningGoal: "掌握虚拟头节点 (dummyHead) 消除特判与快慢指针定距一趟扫描删除链表结点的核心技巧",
+    aliases: ["19","leetcode-19","remove-nth-node"],
   },
   {
     id: "intersection-linked-list",
@@ -4959,7 +4989,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3,
     learningGoal: "透彻理解双指针换道算法数学原理 (a + c + b == b + c + a) 与链表相交判定技巧",
-    aliases: ["class036-code01","class008-code01","intersection-linked-list-036","intersection-of-two-linked-lists","leetcode-160"],
+    aliases: ["class036-code01","class008-code01","intersection-linked-list-036","intersection-of-two-linked-lists","leetcode-160","160"],
   },
   {
     id: "linked-list-cycle-ii",
@@ -4971,7 +5001,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 4,
     learningGoal: "掌握 Floyd 判圈算法数学推导原理与快慢双指针协作技巧",
-    aliases: ["linked-list-cycle-ii-041"],
+    aliases: ["linked-list-cycle-ii-041","class041-code01","leetcode-142","142","detect-cycle"],
   },
   {
     id: "design-linked-list",
@@ -4983,6 +5013,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 5,
     learningGoal: "深入掌握虚拟头节点 (dummyHead) 统一链表头与中间操作的标准编程范式",
+    aliases: ["707","leetcode-707","my-linked-list"],
   },
   {
     id: "linked-list-basics-006",
@@ -5028,7 +5059,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 25,
     learningGoal: "掌握经典链表局部指针翻转与边界缝合技巧，理解常数额外空间 O(1) 处理组内重构的精妙逻辑",
-    aliases: ["class037-code01","reverse-k-group-037","reverse-nodes-in-k-group-25","leetcode-25"],
+    aliases: ["class037-code01","reverse-k-group-037","reverse-nodes-in-k-group-25","leetcode-25","25","reverse-k-group"],
   },
   {
     id: "copy-list-random-pointer-042",
@@ -5040,7 +5071,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 42,
     learningGoal: "掌握利用链表就地插入建立映射的精妙技巧，彻底摆脱哈希表实现 O(1) 额外空间复杂度的复杂链表深拷贝",
-    aliases: ["class035-code01","class042-code01","copy-random-list-035","copy-list-random-pointer","copy-random-list","leetcode-138"],
+    aliases: ["class035-code01","class042-code01","copy-random-list-035","copy-list-random-pointer","copy-random-list","leetcode-138","138"],
   },
   {
     id: "merge-sorted-lists-038",
@@ -5051,7 +5082,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 1,
     levelOrder: 99,
-    aliases: ["class038-code01","class007-code01","merge-two-sorted-lists","leetcode-21","merge-two-sorted-lists-21"],
+    aliases: ["class038-code01","class007-code01","merge-two-sorted-lists","leetcode-21","merge-two-sorted-lists-21","21","merge-sorted-lists"],
   },
   {
     id: "reorder-list",
@@ -5063,7 +5094,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "经典综合题王：快慢指针寻中点 + 原地反转后半段 + 双指针交替穿针引线交叉合并",
-    aliases: ["class034-code03","reorder-list","leetcode-143","reorder-list-034"],
+    aliases: ["class034-code03","reorder-list","leetcode-143","143","reorder-list-034"],
   },
   {
     id: "palindrome-linked-list-034",
@@ -5075,7 +5106,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 234,
     learningGoal: "掌握快慢指针找中点、局部链表原地反转与 O(1) 空间无副作用复原链表的面试母题",
-    aliases: ["class034-code02","palindrome-linked-list","palindrome-list","leetcode-234"],
+    aliases: ["class034-code02","palindrome-linked-list","palindrome-list","leetcode-234","234"],
   },
   {
     id: "lfu-cache",
@@ -5098,6 +5129,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 35,
     learningGoal: "理解冯·诺依曼偏置消除法数学原理，掌握由偏置随机发生器向等概率发生器及任意范围随机数的转化模型",
+    aliases: ["class035","class035-code01","random-generator-035","random-generator","470","leetcode-470"],
   },
   {
     id: "max-points-on-a-line",
@@ -5109,6 +5141,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "LeetCode 149: 平面直角坐标系中最多有多少个点在同一条直线上。采用 GCD 斜率约分化简，以避免浮点数精度误差。",
+    aliases: ["149","leetcode-149","max-points-on-a-line","max-points"],
   },
   {
     id: "linear-basis-132",
@@ -5624,7 +5657,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "掌握单调队列与坐标排序、双指针在二维几何与物理落水模型中的联合应用，体会 O(1) 极差维护与滑动窗口收缩的精妙契合。",
-    aliases: ["class054-code03","falling-water-flowerpot","falling-water-flower-pot","luogu-p2698","usaco-flowerpot","falling-water-flowerpot-054"],
+    aliases: ["class054-code03","falling-water-flowerpot","falling-water-flower-pot","luogu-p2698","p2698","2698","usaco-flowerpot","falling-water-flowerpot-054"],
   },
   {
     id: "longest-subarray-limit-054",
@@ -5636,7 +5669,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "理解双单调队列在动态极差维护中的威力，掌握双指针配合单调队列在 O(N) 复杂度解决滑动窗口极值约束问题。",
-    aliases: ["class054-code02","longest-subarray-limit","longest-subarray-limit-1438","leetcode-1438","valid-subarray-limit-055"],
+    aliases: ["class054-code02","longest-subarray-limit","longest-subarray-limit-1438","leetcode-1438","1438","valid-subarray-limit-055"],
   },
   {
     id: "max-tasks-assign-055",
@@ -5648,7 +5681,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "深入领会二分答案思想与双端队列在复杂贪心约束下的绝妙协同，掌握头出最易、尾出最难的双向调度哲理。",
-    aliases: ["class055-code03","max-tasks-assign","max-task-assign","leetcode-2071"],
+    aliases: ["class055-code03","max-tasks-assign","max-task-assign","leetcode-2071","2071"],
   },
   {
     id: "max-value-of-equation-055",
@@ -5660,7 +5693,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "掌握不等式与绝对值在几何有序点集中的数学拆解技巧，体会单调队列维护多变量分离极值的核心解题模式。",
-    aliases: ["class055-code02","max-value-of-equation","max-value-of-equation-1499","leetcode-1499"],
+    aliases: ["class055-code02","max-value-of-equation","max-value-of-equation-1499","leetcode-1499","1499"],
   },
   {
     id: "shortest-subarray-sum-k-055",
@@ -5672,7 +5705,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "深刻理解负数破坏滑窗单调性时前缀和转换的妙用，掌握队头达标永久结算与队尾小值降维打击的单调队列精髓。",
-    aliases: ["class055-code01","shortest-subarray-sum-k","shortest-subarray-862","leetcode-862"],
+    aliases: ["class055-code01","shortest-subarray-sum-k","shortest-subarray-862","leetcode-862","862"],
   },
   {
     id: "sliding-window-max-054",
@@ -5684,7 +5717,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "彻底掌握单调双端队列核心哲学：后入且更大者淘汰老旧劣质元素，队头严格维护当前活动窗口最大值。",
-    aliases: ["class054-code01","sliding-window-max","sliding-window-maximum","sliding-window-maximum-239","leetcode-239","monotonic-queue-basic-054"],
+    aliases: ["class054-code01","sliding-window-max","sliding-window-maximum","sliding-window-maximum-239","leetcode-239","239","monotonic-queue-basic-054"],
   },
   {
     id: "daily-temperatures",
@@ -5708,6 +5741,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 2,
     learningGoal: "掌握单调栈与哈希表结合的高效解题范式，理解子集查询先在母集建表的降维思路",
+    aliases: ["496","leetcode-496","next-greater-element"],
   },
   {
     id: "next-greater-element-ii",
@@ -5719,6 +5753,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3,
     learningGoal: "掌握循环数组在单调栈中的取模模拟技巧，理解两轮遍历即可完备覆盖循环边界的数学原理",
+    aliases: ["503","leetcode-503","next-greater-element-circular"],
   },
   {
     id: "trapping-rain-water",
@@ -5730,6 +5765,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 4,
     learningGoal: "掌握单调栈在二维几何与物理蓄水中的横向分层计算思想，理解凹槽底出栈时与左右壁构建积水矩形的本质",
+    aliases: ["42","leetcode-42","trap-rain-water","trapping-rain-water-42","class052-water"],
   },
   {
     id: "largest-rectangle-histogram",
@@ -5741,7 +5777,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 5,
     learningGoal: "掌握单调递增栈在直方图最大矩形中的双向边界扩展技巧，深刻理解首尾哨兵 0 消除边界特判的精妙设计",
-    aliases: ["largest-rectangle-histogram-052","class052-code05","leetcode-84","84"],
+    aliases: ["largest-rectangle-histogram-052","class052-code05","leetcode-84","84","largest-rectangle"],
   },
   {
     id: "hard-largest-rectangle-histogram",
@@ -5809,7 +5845,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "掌握二维 0/1 矩阵向一维连续高度直方图压缩的降维思维，熟练串联多算法解决高维难题。",
-    aliases: ["maximal-rectangle-052","class052-code06","leetcode-85"],
+    aliases: ["maximal-rectangle","maximal-rectangle-052","class052-code06","leetcode-85","85"],
   },
   {
     id: "maximum-subarray-min-product-053",
@@ -5891,7 +5927,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 99,
     learningGoal: "领悟贡献法的逆向思维，掌握单调栈界定辐射范围以及开闭区间规避重复统计的精妙技巧。",
-    aliases: ["sum-subarray-minimums","leetcode-907","class052-code04"],
+    aliases: ["sum-subarray-minimums","leetcode-907","907","class052-code04"],
   },
   {
     id: "verify-preorder-sequence-in-bst",
@@ -5903,6 +5939,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "利用单调栈与下界跃升机制，以 O(N) 时间和空间验证前序遍历是否符合二叉搜索树特性",
+    aliases: ["255","leetcode-255","verify-preorder-bst"],
   },
   {
     id: "count-submatrices-all-ones-1504",
@@ -5926,6 +5963,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 7,
     learningGoal: "掌握静态连续数组构建环形双端队列 (Deque) 的环形指针取模与双端 O(1) 存取设计技巧",
+    aliases: ["class007-code01","class007","design-circular-deque","design-circular-deque-641","circular-deque","leetcode-641","641"],
   },
   {
     id: "binary-search",
@@ -5937,6 +5975,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "掌握左闭右闭区间折半查找的不变量设计与防溢出中点计算公式",
+    aliases: ["704","leetcode-704","binary-search-closed-interval"],
   },
   {
     id: "binary-search-005",
@@ -5970,6 +6009,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 162: 在无序数组中寻找局部峰值元素。巧妙利用“往高处走必有峰值”的单调上坡性质，在 O(log N) 时间内锁定极值。",
+    aliases: ["162","leetcode-162"],
   },
   {
     id: "flood-fill-058",
@@ -5993,6 +6033,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 875: 二分答案法母题。利用耗时关于速度的单调不增性质，在 O(N log(max)) 时间内求解最小可行吃速。",
+    aliases: ["875","leetcode-875"],
   },
   {
     id: "find-min-rotated-sorted-array-ii",
@@ -6004,6 +6045,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 154,
     learningGoal: "深刻理解带重复元素二分查找的三分支决策模型，掌握通过 right-- 平缓降级解决单调性歧义的关键技巧",
+    aliases: ["154","leetcode-154"],
   },
   {
     id: "mo-algorithm-159",
@@ -6051,6 +6093,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "掌握选择排序的最小值选取和交换机制",
+    aliases: ["selection-sort","selection-sort-standard","selection"],
   },
   {
     id: "bubble-sort",
@@ -6062,6 +6105,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 2,
     learningGoal: "理解冒泡排序的相邻比较和元素冒泡过程",
+    aliases: ["bubble-sort","bubble-sort-standard","bubble"],
   },
   {
     id: "insertion-sort",
@@ -6073,6 +6117,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3,
     learningGoal: "理解插入排序的摸牌原理和后移腾位过程",
+    aliases: ["insertion-sort","insertion-sort-standard","insertion"],
   },
   {
     id: "shell-sort",
@@ -6084,6 +6129,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 4,
     learningGoal: "理解希尔排序的跨步插入和缩小增量过程",
+    aliases: ["shell-sort","shell-sort-standard","shell"],
   },
   {
     id: "sort-basics-004",
@@ -6107,6 +6153,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 8,
     learningGoal: "理解非比较排序思想、计数数组与前缀和定位原理",
+    aliases: ["counting-sort","count-sort"],
   },
   {
     id: "bucket-sort",
@@ -6118,6 +6165,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 9,
     learningGoal: "掌握分桶映射思想、数据局部有序化与归拢还原过程",
+    aliases: ["bucket-sort","bucket-sort-standard"],
   },
   {
     id: "netherlands-flag-024",
@@ -6129,7 +6177,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 24,
     learningGoal: "深刻掌握荷兰国旗小于/等于/大于三向划分算法，理解随机快速排序 Partition 核心",
-    aliases: ["class024-code01","netherlands-flag-024","netherlands-flag","dutch-national-flag","sort-colors-75"],
+    aliases: ["class024-code01","netherlands-flag-024","netherlands-flag","dutch-national-flag","sort-colors-75","sort-colors","75","leetcode-75"],
   },
   {
     id: "radix-sort-028",
@@ -6152,7 +6200,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 1,
     levelOrder: 99,
-    aliases: ["class043-code01","class010-code01","class009-code01","merge-sort-043","merge-sort"],
+    aliases: ["class043-code01","class010-code01","class009-code01","merge-sort-043","merge-sort","912","leetcode-912","leetcode-912-merge"],
   },
   {
     id: "quick-select-046",
@@ -6197,6 +6245,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "掌握经典栈匹配思想与“遇左压右”简化比对逻辑的巧妙设计技巧",
+    aliases: ["valid-parentheses","valid-parentheses-20","leetcode-20","20"],
   },
   {
     id: "remove-adjacent-duplicates",
@@ -6208,6 +6257,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 2,
     learningGoal: "理解栈在消除相邻元素中的经典应用，掌握利用栈顶作为动态前驱消除递归连锁重复项的设计范式",
+    aliases: ["remove-duplicates","remove-adjacent-duplicates-1047","leetcode-1047","1047"],
   },
   {
     id: "eval-rpn",
@@ -6219,6 +6269,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 3,
     learningGoal: "掌握后缀表达式在编译器与计算器中的天然无括号优先级求值算法，理解操作数栈的设计模式",
+    aliases: ["evaluate-reverse-polish-notation","eval-rpn-150","leetcode-150","150"],
   },
   {
     id: "implement-queue-using-stack",
@@ -6230,6 +6281,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 4,
     learningGoal: "掌握双栈组合出 FIFO 队列的精妙架构，理解均摊时间复杂度 O(1) 的倒栈触发准则",
+    aliases: ["queue-using-stacks","implement-queue-using-stack-232","leetcode-232","232"],
   },
   {
     id: "implement-stack-using-queue",
@@ -6241,6 +6293,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 5,
     learningGoal: "掌握单队列通过自环旋转实现 LIFO 栈的精简思想，实现真正的 O(1) Pop 与 Top 查询",
+    aliases: ["stack-using-queues","implement-stack-using-queue-225","leetcode-225","225"],
   },
   {
     id: "top-k-frequent",
@@ -6252,6 +6305,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 7,
     learningGoal: "掌握利用小顶堆维护 Top-K 最优状态的经典算法模式，理解为什么求前 K 大需要用小顶堆",
+    aliases: ["347","leetcode-347","top-k-frequent-elements"],
   },
   {
     id: "longest-valid-parentheses",
@@ -6275,7 +6329,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 36,
     learningGoal: "深刻理解递归的嵌套调用与系统调用栈天然暂存状态的能力，掌握 bottomOut 与 reverse 组合原语",
-    aliases: ["reverse-stack","reverse-stack-recursive","reverse-stack-using-recursive","reverse-stack-036"],
+    aliases: ["class036-reverse-stack","class036-code01","reverse-stack","reverse-stack-recursive","reverse-stack-using-recursive","reverse-stack-036"],
   },
   {
     id: "min-stack",
@@ -6287,6 +6341,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "掌握双栈同步机制，支持 push、pop、top 及常数时间 O(1) 检索最小元素",
+    aliases: ["min-stack-155","leetcode-155","155"],
   },
   {
     id: "sort-stack-using-recursive-036",
@@ -6297,6 +6352,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     icon: "📊",
     difficulty: 2,
     levelOrder: 99,
+    aliases: ["class036-sort-stack","class036-code03","sort-stack","sort-stack-using-recursive","sort-stack-036"],
   },
   {
     id: "stack-queue-theory",
@@ -6319,6 +6375,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 99,
     learningGoal: "LeetCode 678: 带通配符 * 的有效括号判定。利用贪心区间维护未匹配左括号范围 [minOpen, maxOpen]，在 O(N) 极速完成判定。",
+    aliases: ["valid-string","valid-parenthesis-string-678","leetcode-678","678"],
   },
   {
     id: "basic-calculator-full",
@@ -6342,6 +6399,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 3,
     levelOrder: 1249,
     learningGoal: "掌握利用索引栈标记未匹配括号的线性重构技巧，理解布尔数组在字符串原地/单趟过滤中的核心应用",
+    aliases: ["min-remove-parentheses","min-remove-valid-parentheses-1249","leetcode-1249","1249"],
   },
   {
     id: "reverse-string",
@@ -6353,6 +6411,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 1,
     learningGoal: "掌握原地反转字符串的双指针法",
+    aliases: ["344","leetcode-344","reverse-string-two-pointers"],
   },
   {
     id: "replace-digits",
@@ -6375,6 +6434,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 2,
     learningGoal: "掌握分段处理 + 边界条件的双指针反转",
+    aliases: ["541","leetcode-541","reverse-string-2"],
   },
   {
     id: "reverse-words",
@@ -6386,6 +6446,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 2,
     learningGoal: "学会分割-反转-重组的字符串处理模式",
+    aliases: ["151","leetcode-151","reverse-words-in-a-string"],
   },
   {
     id: "longest-common-prefix",
@@ -6397,6 +6458,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 3,
     learningGoal: "理解逐字符纵向比较求公共前缀的思路",
+    aliases: ["14","leetcode-14","longest-common-prefix-vertical"],
   },
   {
     id: "right-rotate-string",
@@ -6408,6 +6470,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 1,
     levelOrder: 5,
     learningGoal: "掌握通过分段反转实现字符串旋转的技巧",
+    aliases: ["kama-55","kamacoder-55","offer-58-2","rotate-string-right"],
   },
   {
     id: "str-str",
@@ -6419,6 +6482,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 6,
     learningGoal: "掌握 KMP 算法的 next 数组与状态转移",
+    aliases: ["28","leetcode-28","implement-str-str","kmp-algorithm"],
   },
   {
     id: "repeated-substring",
@@ -6430,6 +6494,7 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
     difficulty: 2,
     levelOrder: 7,
     learningGoal: "掌握用 KMP 前缀表判断重复子串的数学原理",
+    aliases: ["459","leetcode-459","repeated-substring-pattern"],
   },
   {
     id: "hard-regex-matching",

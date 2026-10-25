@@ -23,6 +23,7 @@ export const bigFishEatSmallFish053Visualizer = registerDeclarativeAlgorithm<Ste
   category: 'monotonic-stack',
   difficulty: 'hard',
   aliases: ['big-fish-eat-small-fish', '大鱼吃小鱼', 'class053-code02'],
+  hasDeductionTree: true,
   learningGoal:
     '掌握单调递减栈维护轮数转移动态规划思想，理解左侧大鱼吃右侧小鱼的轮数级联模型。',
   problemContent: {
