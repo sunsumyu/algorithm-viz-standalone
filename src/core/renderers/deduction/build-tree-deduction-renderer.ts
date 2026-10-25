@@ -6,6 +6,12 @@
 
 import { IDeductionTreeRenderer, StaticDeductionRenderOptions } from './types';
 import { DeductionBoardPrimitives } from './deduction-board-primitives';
+import { parseNumberList } from '../../input-primitives';
+import {
+  buildTreeSteps,
+  buildTreeStage2PostorderSteps,
+} from '../adapters/build-tree-step-compiler';
+import { RecursiveCallTraceAdapter } from '../adapters/recursive-call-trace-adapter';
 
 export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
   public readonly id = 'build-tree';
@@ -25,11 +31,41 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
   }
 
   public render(options: StaticDeductionRenderOptions): string {
+    const pre = parseNumberList(
+      options.inputs?.['input-preorder'] || options.inputs?.['preorder'] || '3, 9, 20, 15, 7',
+      [3, 9, 20, 15, 7]
+    );
+    const inArr = parseNumberList(
+      options.inputs?.['input-inorder'] || options.inputs?.['inorder'] || '9, 3, 15, 20, 7',
+      [9, 3, 15, 20, 7]
+    );
+    const post = parseNumberList(
+      options.inputs?.['input-postorder'] || options.inputs?.['postorder'] || '9, 15, 7, 20, 3',
+      [9, 15, 7, 20, 3]
+    );
+
+    const isStage2 =
+      (options.step?.postorder !== undefined && options.step?.postorder.length > 0) ||
+      options.modelId === 'leetcode-106' ||
+      options.modelId === '106';
+
+    const steps = isStage2
+      ? buildTreeStage2PostorderSteps(inArr, post)
+      : buildTreeSteps(pre, inArr);
+    const fullSnapshot = steps[steps.length - 1]?.callTrace || null;
+
+    const seqInfo = isStage2
+      ? `inorder = [${inArr.join(', ')}], postorder = [${post.join(', ')}]`
+      : `preorder = [${pre.join(', ')}], inorder = [${inArr.join(', ')}]`;
+
     const header = DeductionBoardPrimitives.renderHeader({
       title: '力扣 105 / 106. 从前序/后序与中序遍历构造二叉树 (Construct Binary Tree) · 全景推演树',
-      badge: '代码随想录 · 六步切分法 / 双向区间分治 / 零哈希显式栈',
+      badge: isStage2
+        ? '后序+中序分治切分 / 左右子树严格长度对齐 / 镜像展开'
+        : '代码随想录 · 六步切分法 / 双向区间分治 / 零哈希显式栈',
       descriptionHtml: `
         二叉树重构经典分治命题：已知中序遍历和（前序/后序）遍历，恢复二叉树拓扑结构。<br/>
+        当前算例参数：<code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">${seqInfo}</code><br/>
         <strong>《代码随想录》核心教学洞见——六步切分法：</strong><br/>
         1. 递归终止判定（区间无效返回 null，单节点快速返回叶子）；<br/>
         2. 取前序首元素 / 后序尾元素作为当前子树根节点值；<br/>
@@ -38,7 +74,7 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
         5. 计算中序左子树长度 <code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">leftLen = inRoot - inL</code>，联动切分前序/后序左、右两段；<br/>
         6. 递归构建左右子树并挂载到 root.left / root.right，返回根节点。
       `,
-      initialStateText: `根调用入口：buildTree(preorder/postorder, inorder) ➔ 预建中序哈希表 inMap 提速至 O(1) 定位根，初始范围 [0..N-1]。`,
+      initialStateText: `根调用入口：buildTree(${isStage2 ? 'postorder, inorder' : 'preorder, inorder'}) ➔ 预建中序哈希表 inMap 提速至 O(1) 定位根，初始范围 [0..${inArr.length - 1}]。`,
     });
 
     const baseCase = DeductionBoardPrimitives.renderBaseCases([
@@ -53,6 +89,21 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
         valuesStr: 'pL == pR ➔ return new TreeNode(val) (无孩子，直接返回叶节点)',
       },
     ]);
+
+    // 核心段落 1：基于当前真实输入序列展开的分治递归调用全景推演树
+    const traceHtml = fullSnapshot
+      ? RecursiveCallTraceAdapter.renderHtml(fullSnapshot, {
+          title: `当前算例 (${seqInfo}) 完整递归分治推演调用树`,
+          theme: 'light',
+          maxHeight: '480px',
+        })
+      : '<div class="text-slate-500 italic p-3">暂无推演快照</div>';
+
+    const dynamicCallTreeRound = DeductionBoardPrimitives.renderOuterRound({
+      title: '全景分治推演调用展开树 (Divide-and-Conquer State DAG)',
+      subtitle: `基于当前输入序列实时展开 · 全程共 ${steps.length} 步推演`,
+      stepLinesHtml: traceHtml,
+    });
 
     const step1 = DeductionBoardPrimitives.renderInnerStep({
       connector: '├───',
@@ -103,6 +154,8 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
       answerDescription: '重构完成，返回树根。时间复杂度 O(N)，空间复杂度 O(N)。前提是序列无重复元素。',
     });
 
-    return DeductionBoardPrimitives.wrapBoard(header + baseCase + round + finalReturn);
+    return DeductionBoardPrimitives.wrapBoard(
+      header + baseCase + dynamicCallTreeRound + round + finalReturn
+    );
   }
 }

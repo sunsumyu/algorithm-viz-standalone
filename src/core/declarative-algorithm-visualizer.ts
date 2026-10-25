@@ -284,6 +284,10 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     const deductionWrap = this.root.querySelector('#dsp-deduction-container') as HTMLElement | null;
 
     if (btnCard1Grid && btnCard1Deduction && sandboxWrap && deductionWrap) {
+      const leftSection = this.root.querySelector('.dsp-left-section') as HTMLElement | null;
+      const playbackBar = this.root.querySelector('.dsp-playback-bar') as HTMLElement | null;
+      const card2 = leftSection?.querySelector('.dsp-card:last-child') as HTMLElement | null;
+
       const updateSubView = (subView: 'sandbox' | 'deduction') => {
         this.card1SubView = subView;
         Card1SubViewControlsAdapter.syncBarState(this.root, subView === 'deduction' ? 'deduction' : 'primary');
@@ -291,6 +295,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         if (subView === 'deduction') {
           sandboxWrap.style.display = 'none';
           deductionWrap.style.display = 'block';
+          if (leftSection) leftSection.classList.add('is-deduction-mode');
+          if (playbackBar) playbackBar.style.display = 'none';
+          if (card2) card2.style.display = 'none';
 
           const curStep = this.steps[this.currentIndex] as any;
           import('./renderers/static-deduction-tree-adapter').then(({ StaticDeductionTreeAdapter }) => {
@@ -305,6 +312,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
         } else {
           sandboxWrap.style.display = 'block';
           deductionWrap.style.display = 'none';
+          if (leftSection) leftSection.classList.remove('is-deduction-mode');
+          if (playbackBar) playbackBar.style.display = 'flex';
+          if (card2) card2.style.display = 'flex';
         }
       };
 

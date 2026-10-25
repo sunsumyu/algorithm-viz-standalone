@@ -221,33 +221,32 @@ export class BuildTreeCanvasAdapter {
         : `[${step.pL + step.leftLen + 1} .. ${step.pR}]`;
 
       const formulaCard = document.createElement('div');
-      formulaCard.style.padding = '10px';
-      formulaCard.style.borderRadius = '10px';
-      formulaCard.style.background = '#f8fafc';
-      formulaCard.style.border = '1px solid #e2e8f0';
+      formulaCard.style.padding = '4px 6px';
+      formulaCard.style.borderRadius = '8px';
+      formulaCard.style.background = 'transparent';
       formulaCard.style.flexShrink = '0';
       formulaCard.style.fontSize = '12px';
 
       formulaCard.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0;">
-          <span style="font-weight: 700; color: #334155; display: flex; align-items: center; gap: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0;">
+          <span style="font-weight: 700; color: #334155; font-size: 11px; display: flex; align-items: center; gap: 4px;">
             <span>📐 分治切分方程与实参代入</span>
           </span>
-          <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #0d9488; background: #f0fdf4; padding: 2px 6px; border-radius: 4px; border: 1px solid #bbf7d0;">
+          <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #0d9488; background: #f0fdf4; padding: 1px 5px; border-radius: 4px; border: 1px solid #bbf7d0;">
             leftLen = inRoot - iL = ${step.inRoot} - ${step.iL} = ${step.leftLen}
           </span>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-family: ui-monospace, monospace;">
-          <div style="padding: 8px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
-            <div style="font-weight: 700; color: #1d4ed8; margin-bottom: 4px;">👈 左子树递归实参</div>
-            <div style="color: #475569; line-height: 1.4;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; font-family: ui-monospace, monospace;">
+          <div style="padding: 6px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
+            <div style="font-weight: 700; color: #1d4ed8; margin-bottom: 2px;">👈 左子树递归实参</div>
+            <div style="color: #475569; line-height: 1.3; font-size: 10.5px;">
               <div>中序区间: <span style="font-weight: 700; color: #1d4ed8;">[${step.iL} .. ${step.inRoot - 1}]</span></div>
               <div>${isStage2 ? '后序区间' : '前序区间'}: <span style="font-weight: 700; color: #1d4ed8;">${leftPrePost}</span></div>
             </div>
           </div>
-          <div style="padding: 8px; border-radius: 6px; background: #faf5ff; border: 1px solid #e9d5ff; color: #581c87;">
-            <div style="font-weight: 700; color: #7e22ce; margin-bottom: 4px;">👉 右子树递归实参</div>
-            <div style="color: #475569; line-height: 1.4;">
+          <div style="padding: 6px; border-radius: 6px; background: #faf5ff; border: 1px solid #e9d5ff; color: #581c87;">
+            <div style="font-weight: 700; color: #7e22ce; margin-bottom: 2px;">👉 右子树递归实参</div>
+            <div style="color: #475569; line-height: 1.3; font-size: 10.5px;">
               <div>中序区间: <span style="font-weight: 700; color: #7e22ce;">[${step.inRoot + 1} .. ${step.iR}]</span></div>
               <div>${isStage2 ? '后序区间' : '前序区间'}: <span style="font-weight: 700; color: #7e22ce;">${rightPrePost}</span></div>
             </div>
@@ -260,27 +259,27 @@ export class BuildTreeCanvasAdapter {
     // 2. 中部：Stage 1/2 递归调用栈追踪 VS Stage 3 显式遍历栈监控
     if (isStackStage) {
       const stackBox = document.createElement('div');
-      stackBox.style.padding = '10px';
-      stackBox.style.borderRadius = '10px';
+      stackBox.style.padding = '6px 8px';
+      stackBox.style.borderRadius = '8px';
       stackBox.style.background = '#f8fafc';
       stackBox.style.border = '1px solid #e2e8f0';
       stackBox.style.flexShrink = '0';
-      stackBox.style.fontSize = '12px';
+      stackBox.style.fontSize = '11px';
 
       stackBox.innerHTML = `
-        <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+        <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px;">
           <span>🥞 ${isStage2 ? '倒序显式单调栈监控 (Postorder Mirror Stack · LC 106)' : '显式单调栈监控 (Explicit Monotonic Stack · LC 105)'}</span>
           <span style="font-size: 10px; color: #64748b; font-weight: normal;">inIdx = ${step.inIdx ?? 0}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: ui-monospace, monospace;">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: ui-monospace, monospace;">
           <span style="color: #64748b;">栈内元素 (栈底 ➔ 栈顶):</span>
-          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
             ${
               step.stackState && step.stackState.length > 0
                 ? step.stackState
                     .map(
                       (v, idx) => `
-                    <span style="padding: 2px 6px; border-radius: 4px; font-family: ui-monospace, monospace; font-weight: 700; ${
+                    <span style="padding: 1px 5px; border-radius: 4px; font-family: ui-monospace, monospace; font-weight: 700; ${
                       idx === step.stackState!.length - 1
                         ? 'background: #fef3c7; border: 1px solid #f59e0b; color: #b45309;'
                         : 'background: #eff6ff; border: 1px solid #60a5fa; color: #1d4ed8;'
@@ -299,13 +298,11 @@ export class BuildTreeCanvasAdapter {
     } else if (step.callTrace) {
       const traceBox = document.createElement('div');
       traceBox.style.flex = '1';
-      traceBox.style.minHeight = '160px';
+      traceBox.style.minHeight = '140px';
       traceBox.style.display = 'flex';
       traceBox.style.flexDirection = 'column';
-      traceBox.style.borderRadius = '10px';
       traceBox.style.overflow = 'hidden';
-      traceBox.style.border = '1px solid #e2e8f0';
-      traceBox.style.background = '#ffffff';
+      traceBox.style.background = 'transparent';
       RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
       container.appendChild(traceBox);
     }

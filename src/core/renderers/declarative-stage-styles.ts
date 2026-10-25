@@ -428,6 +428,10 @@ export function renderStageStyles(viewId: string): string {
   #${viewId} .dsp-left-section .dsp-card:first-child {
     flex: 1 1 0;
   }
+  #${viewId} .dsp-left-section.is-deduction-mode .dsp-card:first-child {
+    flex: 1 1 100% !important;
+    height: 100% !important;
+  }
   #${viewId} .dsp-left-section .dsp-card:last-child {
     flex: 0 0 240px;
   }
