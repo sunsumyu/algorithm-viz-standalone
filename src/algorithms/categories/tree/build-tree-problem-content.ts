@@ -25,7 +25,7 @@ export const BUILD_TREE_PROBLEM_HTML = `
 export const BUILD_TREE_ANALYSIS_HTML = `
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
     <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
-      <span>💡</span> 三阶段算法演进体系 (Three-Stage Evolution)
+      <span>💡</span> 四阶段算法演进体系 (Four-Stage Evolution)
     </h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
@@ -48,11 +48,20 @@ export const BUILD_TREE_ANALYSIS_HTML = `
       </div>
 
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #c084fc; margin-bottom: 4px;">Stage 3: 迭代显式栈模拟重构 ($O(N)$ 零哈希表 · LC 105 迭代法)</div>
+        <div style="font-weight: 700; color: #c084fc; margin-bottom: 4px;">Stage 3: 迭代显式栈模拟前序重构 ($O(N)$ 零哈希表 · LC 105 迭代法)</div>
         <p style="margin: 0; color: #94a3b8;">
         • 维护节点单调前序探索栈 <code style="color: #c084fc; font-family: monospace;">stack</code> 和中序指针 <code style="color: #38bdf8; font-family: monospace;">inIdx = 0</code>。<br/>
         • 遍历前序数组：若栈顶元素与中序指针不匹配，说明仍处于一路向左的分支，将新节点挂载为当前栈顶的<strong>左孩子</strong>并压栈；<br/>
         • 若栈顶与中序指针匹配，说明左边界已达，通过持续出栈回溯到拐点父节点，将新节点挂载为该节点的<strong>右孩子</strong>并压栈。
+        </p>
+      </div>
+
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #f59e0b; margin-bottom: 4px;">Stage 4: 迭代显式栈模拟后序重构 ($O(N)$ 镜像对偶 · LC 106 迭代法)</div>
+        <p style="margin: 0; color: #94a3b8;">
+        • 逆序扫描后序序列与中序序列（后序根-右-左 vs 中序右-根-左，呈现前序对偶镜像）。<br/>
+        • 倒序指针 <code style="color: #f59e0b; font-family: monospace;">inIdx = n - 1</code>，优先向右探索挂载<strong>右孩子</strong>并压栈；<br/>
+        • 栈顶与倒序中序匹配时，出栈推进指针定位拐点，将新节点挂载为拐点节点的<strong>左孩子</strong>并压栈。
         </p>
       </div>
     </div>

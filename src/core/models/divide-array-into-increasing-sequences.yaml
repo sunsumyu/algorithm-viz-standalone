@@ -1,0 +1,243 @@
+id: divide-array-into-increasing-sequences
+name: 将数组分成几个递增序列 (Divide Array Sequences)
+category: greedy
+difficulty: 3
+levelOrder: 925
+aliases:
+  - class092-code05
+  - divide-array-increasing-1121
+  - leetcode-1121
+  - divide-array-seq
+learningGoal: 掌握众数频次瓶颈与鸽巢原理判定 nums.length >= maxFreq * k
+
+dimensions:
+  N: 7
+  K: 3
+
+dimensionResolver: |
+  (inputs) => {
+    const rawNums = String(inputs?.['input-nums'] || '1, 2, 2, 3, 3, 4, 4');
+    const nums = rawNums.split(/[,，\s]+/).map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+    const k = parseInt(String(inputs?.['input-k'] ?? 3), 10);
+    return { N: nums.length || 7, K: isNaN(k) ? 3 : k };
+  }
+
+inputs:
+  - id: input-nums
+    label: 非递减数组 nums
+    type: text
+    defaultValue: '1, 2, 2, 3, 3, 4, 4'
+    placeholder: '1, 2, 2, 3, 3, 4, 4'
+  - id: input-k
+    label: 子序列最小长度 k
+    type: number
+    defaultValue: 3
+    placeholder: '如 3'
+
+presets:
+  - name: 案例 1：标准合法划分 (n=7, k=3, maxFreq=2)
+    inputs:
+      input-nums: '1, 2, 2, 3, 3, 4, 4'
+      input-k: 3
+  - name: 案例 2：紧凑刚好满足 (n=4, k=2, maxFreq=2)
+    inputs:
+      input-nums: '5, 6, 6, 7'
+      input-k: 2
+  - name: 案例 3：众数过多容量不足 (n=6, k=2, maxFreq=4)
+    inputs:
+      input-nums: '1, 1, 1, 1, 2, 3'
+      input-k: 2
+  - name: 案例 4：全相异单元素 (n=4, k=3, maxFreq=1)
+    inputs:
+      input-nums: '1, 2, 3, 4'
+      input-k: 3
+
+directions:
+  forward:
+    name: 正向频次扫描 (Forward Scan)
+    description: 从左到右单遍扫描非递减序列，统计相同元素连续出现最高频次 maxFreq
+  reverse:
+    name: 逆向频次扫描 (Reverse Scan)
+    description: 从右到左逆序扫描，对称性统计最高频次众数并验证容量判定等价性
+
+defaultStage: stage-1
+
+stages:
+  stage-1:
+    name: 众数最高频次扫描与瓶颈判定
+    description: 统计非递减数组中出现频次最高数值 maxFreq，根据鸽巢原理检验总长度是否满足 nums.length >= maxFreq * k
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: 众数扫描与容量平衡沙盘
+    card2Desc: 实时跟踪当前连续频次 curFreq 与历史最高频次 maxFreq，动态对比所需总容量
+    code:
+      forward:
+        language: java
+        content: |
+          public boolean canDivideIntoSubsequences(int[] nums, int k) {
+              int maxFreq = 1, curFreq = 1;
+              for (int i = 1; i < nums.length; i++) {
+                  if (nums[i] == nums[i - 1]) {
+                      curFreq++;
+                      maxFreq = Math.max(maxFreq, curFreq);
+                  } else {
+                      curFreq = 1;
+                  }
+              }
+              return nums.length >= maxFreq * k;
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          checkSame: 4
+          incCur: 5
+          updateMax: 6
+          resetCur: 8
+          done: 11
+      reverse:
+        language: java
+        content: |
+          public boolean canDivideIntoSubsequencesReverse(int[] nums, int k) {
+              int maxFreq = 1, curFreq = 1;
+              for (int i = nums.length - 2; i >= 0; i--) {
+                  if (nums[i] == nums[i + 1]) {
+                      curFreq++;
+                      maxFreq = Math.max(maxFreq, curFreq);
+                  } else {
+                      curFreq = 1;
+                  }
+              }
+              return nums.length >= maxFreq * k;
+          }
+        lineMap:
+          entry: 1
+          init: 2
+          loop: 3
+          checkSame: 4
+          incCur: 5
+          updateMax: 6
+          resetCur: 8
+          done: 11
+
+  stage-2:
+    name: 鸽巢原理容量约束决策树
+    description: 拓扑展开鸽巢原理约束下子序列数量下限、容量阈值与可行性证明判定
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 鸽巢容量决策树 (Pigeonhole Decision Tree)
+    card2Desc: 分层推演众数约束、子序列数量下限与容量充裕性分支
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 2: 鸽巢原理决策树展开与容量约束检验
+          int maxFreq = getMaxFrequency(nums);
+          int minRequired = maxFreq * k;
+          boolean feasible = nums.length >= minRequired;
+          return feasible;
+        lineMap:
+          entry: 1
+          calcMaxFreq: 2
+          calcRequired: 3
+          checkFeasible: 4
+          done: 5
+      reverse:
+        language: java
+        content: |
+          // 逆向容量约束对偶判定
+          int deficit = maxFreq * k - nums.length;
+          boolean feasible = deficit <= 0;
+          return feasible;
+        lineMap:
+          entry: 1
+          calcRequired: 2
+          checkFeasible: 3
+          done: 4
+
+  stage-3:
+    name: 分桶轮询构建矩阵
+    description: 二维构建矩阵模拟将数组元素以轮询分配法交替插入 maxFreq 个子序列中，验证每组严格递增与长度达标
+    complexity:
+      time: O(N)
+      space: O(N)
+    card2Title: 轮询分桶分配矩阵 (Allocation Matrix)
+    card2Desc: 追踪各子序列桶逐轮接收元素、严格递增性保持与长度达标进度
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 3: 分桶轮询构建矩阵 (Round-Robin Allocation Matrix)
+          List<List<Integer>> subseqs = new ArrayList<>();
+          for (int i = 0; i < maxFreq; i++) subseqs.add(new ArrayList<>());
+          for (int i = 0; i < nums.length; i++) {
+              subseqs.get(i % maxFreq).add(nums[i]);
+          }
+          return subseqs.stream().allMatch(s -> s.size() >= k);
+        lineMap:
+          entry: 1
+          initBuckets: 2
+          createLists: 3
+          loopNums: 4
+          fillSlot: 5
+          done: 7
+      reverse:
+        language: java
+        content: |
+          // 逆向轮询分配回溯验证
+          for (int i = nums.length - 1; i >= 0; i--) {
+              int bucket = i % maxFreq;
+              subseqs.get(bucket).add(0, nums[i]);
+          }
+          return true;
+        lineMap:
+          entry: 1
+          loopNums: 2
+          fillSlot: 4
+          done: 6
+
+  stage-4:
+    name: 常数空间滑动计数状态机
+    description: 原地单指针滑动窗口极速统计，无任何动态堆栈与外部哈希表分配，达成 O(1) 辅助变量流转
+    complexity:
+      time: O(N)
+      space: O(1)
+    card2Title: O(1) 滑动计数状态机
+    card2Desc: 展示寄存器 maxFreq、curFreq 毫秒级流动与判定收敛
+    code:
+      forward:
+        language: java
+        content: |
+          // Step 4: 常数空间滑动计数状态机
+          int maxFreq = 1, curFreq = 1;
+          for (int i = 1; i < nums.length; i++) {
+              curFreq = (nums[i] == nums[i - 1]) ? curFreq + 1 : 1;
+              if (curFreq > maxFreq) maxFreq = curFreq;
+          }
+          return nums.length >= maxFreq * k;
+        lineMap:
+          entry: 1
+          initVars: 2
+          forLoop: 3
+          updateCur: 4
+          updateMax: 5
+          done: 7
+      reverse:
+        language: java
+        content: |
+          // 逆向常数空间寄存器流转
+          int maxFreq = 1, curFreq = 1;
+          for (int i = nums.length - 2; i >= 0; i--) {
+              curFreq = (nums[i] == nums[i + 1]) ? curFreq + 1 : 1;
+              if (curFreq > maxFreq) maxFreq = curFreq;
+          }
+          return nums.length >= maxFreq * k;
+        lineMap:
+          entry: 1
+          initVars: 2
+          forLoop: 3
+          updateCur: 4
+          updateMax: 5
+          done: 7

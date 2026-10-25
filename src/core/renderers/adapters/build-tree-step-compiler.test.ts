@@ -5,6 +5,7 @@ import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
+  buildTreeStage4StackSteps,
   collectTreeValues,
 } from './build-tree-step-compiler';
 import { BuildTreeCanvasAdapter } from './build-tree-canvas-adapter';
@@ -69,6 +70,25 @@ describe('BuildTreeStepCompiler & BuildTreeCanvasAdapter Deep Module Suite', () 
     });
   });
 
+  describe('Stage 4: 迭代显式栈后序重构 ($O(N)$ 镜像对偶 · LC 106)', () => {
+    it('正确构造二叉树拓扑结构并与 Stage 2 拓扑一致', () => {
+      const steps = buildTreeStage4StackSteps(inorder, postorder);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(3);
+      expect(last.tree?.left?.val).toBe(9);
+      expect(last.tree?.right?.val).toBe(20);
+    });
+
+    it('空数组边界防护产生异常退出步', () => {
+      const steps = buildTreeStage4StackSteps([], []);
+      expect(steps.length).toBe(1);
+      expect(steps[0].action).toBe('done');
+      expect(steps[0].tree).toBeNull();
+    });
+  });
+
   describe('BuildTreeCanvasAdapter 视觉呈现契约', () => {
     it('collectTreeValues 正确层序遍历节点值', () => {
       const steps = buildTreeSteps([1, 2, 3], [2, 1, 3]);
@@ -96,6 +116,14 @@ describe('BuildTreeStepCompiler & BuildTreeCanvasAdapter Deep Module Suite', () 
 
       const steps3 = buildTreeStage3StackSteps(preorder, inorder);
       for (const step of steps3) {
+        expect(step.metrics).toBeDefined();
+        expect(step.metrics!['cur-root']).toBeTruthy();
+        expect(step.metrics!['pre-range']).toBeTruthy();
+        expect(step.metrics!['in-range']).toBeTruthy();
+      }
+
+      const steps4 = buildTreeStage4StackSteps(inorder, postorder);
+      for (const step of steps4) {
         expect(step.metrics).toBeDefined();
         expect(step.metrics!['cur-root']).toBeTruthy();
         expect(step.metrics!['pre-range']).toBeTruthy();

@@ -15,17 +15,19 @@ import {
   BUILD_TREE_STAGE1_PRE_IN_CODE,
   BUILD_TREE_STAGE2_POST_IN_CODE,
   BUILD_TREE_STAGE3_STACK_CODE,
+  BUILD_TREE_STAGE4_POST_STACK_CODE,
 } from './build-tree-stage-codes';
 import {
-  BuildTreeStepCompiler,
   BTStep,
   BUILD_TREE_CODE_LINES,
   BUILD_TREE_STAGE2_LINES,
   BUILD_TREE_STAGE3_LINES,
+  BUILD_TREE_STAGE4_LINES,
   collectTreeValues,
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
+  buildTreeStage4StackSteps,
 } from '../../../core/renderers/adapters/build-tree-step-compiler';
 import {
   BuildTreeCanvasAdapter,
@@ -39,13 +41,19 @@ export {
   BUILD_TREE_CODE_LINES,
   BUILD_TREE_STAGE2_LINES,
   BUILD_TREE_STAGE3_LINES,
+  BUILD_TREE_STAGE4_LINES,
   collectTreeValues,
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
+  buildTreeStage4StackSteps,
   renderBuildTreeCanvas,
   renderBuildTreeCustomMetrics,
 };
+
+const getPre = (i?: Record<string, string>) => parseNumberList(i?.['input-preorder'] || i?.['preorder'] || '3, 9, 20, 15, 7', [3, 9, 20, 15, 7]);
+const getIn = (i?: Record<string, string>) => parseNumberList(i?.['input-inorder'] || i?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
+const getPost = (i?: Record<string, string>) => parseNumberList(i?.['input-postorder'] || i?.['postorder'] || '9, 15, 7, 20, 3', [9, 15, 7, 20, 3]);
 
 export const buildTreeVisualizer = registerDeclarativeAlgorithm({
   id: 'build-tree',
@@ -62,7 +70,7 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
   inputs: [
     { id: 'input-preorder', label: '前序遍历 preorder', type: 'text', defaultValue: '3, 9, 20, 15, 7', placeholder: '3, 9, 20, 15, 7' },
     { id: 'input-inorder', label: '中序遍历 inorder', type: 'text', defaultValue: '9, 3, 15, 20, 7', placeholder: '9, 3, 15, 20, 7' },
-    { id: 'input-postorder', label: '后序遍历 postorder (Stage 2 专用)', type: 'text', defaultValue: '9, 15, 7, 20, 3', placeholder: '9, 15, 7, 20, 3' },
+    { id: 'input-postorder', label: '后序遍历 postorder (Stage 2 & 4 专用)', type: 'text', defaultValue: '9, 15, 7, 20, 3', placeholder: '9, 15, 7, 20, 3' },
   ],
   presets: [
     { label: 'LeetCode 经典不平衡树', values: { 'input-preorder': '3, 9, 20, 15, 7', 'input-inorder': '9, 3, 15, 20, 7', 'input-postorder': '9, 15, 7, 20, 3' }, description: '根3，左9，右20(15,7)' },
@@ -86,11 +94,7 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
       shortName: '前序+中序分治',
       num: 1,
       codeLanguages: BUILD_TREE_STAGE1_PRE_IN_CODE,
-      buildSteps: (inputs) => {
-        const pre = parseNumberList(inputs?.['input-preorder'] || inputs?.['preorder'] || '3, 9, 20, 15, 7', [3, 9, 20, 15, 7]);
-        const inArr = parseNumberList(inputs?.['input-inorder'] || inputs?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
-        return buildTreeSteps(pre, inArr);
-      },
+      buildSteps: (inputs) => buildTreeSteps(getPre(inputs), getIn(inputs)),
       renderCanvas: BuildTreeCanvasAdapter.renderCanvas,
       renderCustomMetrics: BuildTreeCanvasAdapter.renderCustomMetrics,
     },
@@ -100,39 +104,33 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
       shortName: '后序+中序分治',
       num: 2,
       codeLanguages: BUILD_TREE_STAGE2_POST_IN_CODE,
-      buildSteps: (inputs) => {
-        const inArr = parseNumberList(inputs?.['input-inorder'] || inputs?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
-        const post = parseNumberList(inputs?.['input-postorder'] || inputs?.['postorder'] || '9, 15, 7, 20, 3', [9, 15, 7, 20, 3]);
-        return buildTreeStage2PostorderSteps(inArr, post);
-      },
+      buildSteps: (inputs) => buildTreeStage2PostorderSteps(getIn(inputs), getPost(inputs)),
       renderCanvas: BuildTreeCanvasAdapter.renderCanvas,
       renderCustomMetrics: BuildTreeCanvasAdapter.renderCustomMetrics,
     },
     {
       id: 'stage-3',
       name: 'Stage 3: 迭代显式栈模拟前序重构 ($O(N)$ 零哈希表 · LC 105 迭代法)',
-      shortName: '迭代显式栈',
+      shortName: '前序迭代栈',
       num: 3,
       codeLanguages: BUILD_TREE_STAGE3_STACK_CODE,
-      buildSteps: (inputs) => {
-        const pre = parseNumberList(inputs?.['input-preorder'] || inputs?.['preorder'] || '3, 9, 20, 15, 7', [3, 9, 20, 15, 7]);
-        const inArr = parseNumberList(inputs?.['input-inorder'] || inputs?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
-        return buildTreeStage3StackSteps(pre, inArr);
-      },
+      buildSteps: (inputs) => buildTreeStage3StackSteps(getPre(inputs), getIn(inputs)),
+      renderCanvas: BuildTreeCanvasAdapter.renderCanvas,
+      renderCustomMetrics: BuildTreeCanvasAdapter.renderCustomMetrics,
+    },
+    {
+      id: 'stage-4',
+      name: 'Stage 4: 迭代显式栈模拟后序重构 ($O(N)$ 镜像对偶 · LC 106 迭代法)',
+      shortName: '后序迭代栈',
+      num: 4,
+      codeLanguages: BUILD_TREE_STAGE4_POST_STACK_CODE,
+      buildSteps: (inputs) => buildTreeStage4StackSteps(getIn(inputs), getPost(inputs)),
       renderCanvas: BuildTreeCanvasAdapter.renderCanvas,
       renderCustomMetrics: BuildTreeCanvasAdapter.renderCustomMetrics,
     },
   ],
-  generateSteps: (inputs) => {
-    const pre = parseNumberList(inputs?.['input-preorder'] || inputs?.['preorder'] || '3, 9, 20, 15, 7', [3, 9, 20, 15, 7]);
-    const inArr = parseNumberList(inputs?.['input-inorder'] || inputs?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
-    return buildTreeSteps(pre, inArr);
-  },
-  buildSteps: (inputs) => {
-    const pre = parseNumberList(inputs?.['input-preorder'] || inputs?.['preorder'] || '3, 9, 20, 15, 7', [3, 9, 20, 15, 7]);
-    const inArr = parseNumberList(inputs?.['input-inorder'] || inputs?.['inorder'] || '9, 3, 15, 20, 7', [9, 3, 15, 20, 7]);
-    return buildTreeSteps(pre, inArr);
-  },
+  generateSteps: (inputs) => buildTreeSteps(getPre(inputs), getIn(inputs)),
+  buildSteps: (inputs) => buildTreeSteps(getPre(inputs), getIn(inputs)),
   renderCanvas: BuildTreeCanvasAdapter.renderCanvas,
   renderCustomMetrics: BuildTreeCanvasAdapter.renderCustomMetrics,
 });

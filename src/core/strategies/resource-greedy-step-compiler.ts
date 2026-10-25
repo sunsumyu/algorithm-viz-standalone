@@ -56,6 +56,15 @@ export class ResourceGreedyStepCompiler {
     if (pid === 'minimize-deviation-in-array' || pid === 'minimize-deviation' || pid === 'class092-code01' || pid === 'minimize-deviation-1675' || (pid.startsWith('minimize-deviation') && options.nums !== undefined)) {
       return this.compileMinimizeDeviation(model, options, stage);
     }
+    if (
+      pid === 'divide-array-into-increasing-sequences' ||
+      pid === 'divide-array-seq' ||
+      pid === 'class092-code05' ||
+      pid === 'divide-array-increasing-1121' ||
+      pid === 'leetcode-1121'
+    ) {
+      return this.compileDivideArraySeq(model, options, stage);
+    }
     if (pid === 'max-avg-pass-ratio' || options.classes !== undefined) {
       return this.compileMaxAvgPassRatio(model, options, stage);
     }
@@ -10140,6 +10149,618 @@ export class ResourceGreedyStepCompiler {
       slots: heap.map((v, i) => `堆[${i}]=${v}`),
       variables: { finalAns: ans },
       metrics: { '最终最小偏移量': `${ans}`, '额外空间': 'O(1)' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
+  // 将数组分成几个递增序列 (LeetCode 1121: Divide Array Sequences) 众数瓶颈编译器
+  // ==========================================================================
+  public static compileDivideArraySeq(
+    model: IYamlAlgorithmModel,
+    options: ResourceGreedyCompileOptions,
+    stage: number = 1
+  ): UniversalStep[] {
+    const rawNums = options.nums && options.nums.length > 0 ? options.nums : [1, 2, 2, 3, 3, 4, 4];
+    const k = typeof options.k === 'number' && !isNaN(options.k) ? options.k : 3;
+    const nums = [...rawNums].sort((a, b) => a - b);
+
+    switch (stage) {
+      case 2:
+        return this.compileDivideArraySeqStage2(model, nums, k, options);
+      case 3:
+        return this.compileDivideArraySeqStage3(model, nums, k, options);
+      case 4:
+        return this.compileDivideArraySeqStage4(model, nums, k, options);
+      case 1:
+      default:
+        return this.compileDivideArraySeqStage1(model, nums, k, options);
+    }
+  }
+
+  private static compileDivideArraySeqStage1(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const direction = options.direction || 'forward';
+    const anchors = this.extractAnchors(model, 1, direction, options.anchorMap);
+    const n = nums.length;
+    const slots = nums.map((v, i) => `nums[${i}]=${v}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `主函数入口：接收非递减数组 nums=[${nums.join(', ')}]，子序列最小长度要求 k=${k}`,
+      message: '严格递增子序列中绝不能包含相同数字，出现频次最高的元素决定了子序列数量的硬性下限',
+      slots: [...slots],
+      variables: { n, k, nums: [...nums] },
+      metrics: { '数组长度 n': `${n}`, '最小长度 k': `${k}`, '判定结论': '待扫描' },
+    });
+
+    let maxFreq = 1;
+    let curFreq = 1;
+    let maxFreqVal = nums[0];
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.init || 2,
+      codeLine: anchors.init || 2,
+      decision: `初始化统计标量：maxFreq=1, curFreq=1，首元素基准值 val=${nums[0]}`,
+      message: '准备遍历序列统计相邻相同元素的最大连续出现次数',
+      slots: [...slots],
+      activeSlot: 0,
+      variables: { maxFreq, curFreq, maxFreqVal },
+      metrics: { '当前频次': `${curFreq}`, '历史最高频次': `${maxFreq}` },
+    });
+
+    if (direction === 'reverse') {
+      for (let i = n - 2; i >= 0; i--) {
+        const isSame = nums[i] === nums[i + 1];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.checkSame || 4,
+          codeLine: anchors.checkSame || 4,
+          decision: `🔍 逆向比对相邻元素：nums[${i}]=${nums[i]} 与 nums[${i + 1}]=${nums[i + 1]} ➔ ${isSame ? '相同元素连续' : '遇到新数值'}`,
+          message: isSame ? '数值相同，频次累加' : '数值不同，重置连续频次',
+          slots: [...slots],
+          activeSlot: i,
+          activeIndices: [i, i + 1],
+          variables: { i, 'nums[i]': nums[i], 'nums[i+1]': nums[i + 1], curFreq, maxFreq },
+          metrics: { '当前位置': `i=${i}`, '数值': `${nums[i]}`, '最高频次': `${maxFreq}` },
+        });
+
+        if (isSame) {
+          curFreq++;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.incCur || 5,
+            codeLine: anchors.incCur || 5,
+            decision: `📈 相同元素累加：连续频次增至 curFreq=${curFreq} (当前数值 ${nums[i]})`,
+            message: '相同元素必须分流到不同子序列中',
+            slots: [...slots],
+            activeSlot: i,
+            variables: { i, curFreq, maxFreq },
+            metrics: { '当前频次 curFreq': `${curFreq}`, '最高频次 maxFreq': `${maxFreq}` },
+          });
+
+          if (curFreq > maxFreq) {
+            maxFreq = curFreq;
+            maxFreqVal = nums[i];
+            steps.push({
+              stepIndex: steps.length,
+              stage: 1,
+              line: anchors.updateMax || 6,
+              codeLine: anchors.updateMax || 6,
+              decision: `🏆 刷新最高频次！当前频次 ${curFreq} > maxFreq，更新最高频次 maxFreq=${maxFreq} (众数数值 ${maxFreqVal})`,
+              message: `至少需要划分出 ${maxFreq} 个子序列`,
+              slots: [...slots],
+              activeSlot: i,
+              variables: { maxFreq, maxFreqVal },
+              metrics: { '最高频次 maxFreq': `${maxFreq}`, '众数数值': `${maxFreqVal}` },
+            });
+          }
+        } else {
+          curFreq = 1;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.resetCur || 8,
+            codeLine: anchors.resetCur || 8,
+            decision: `🔄 遇到新数值：nums[${i}]=${nums[i]} != ${nums[i + 1]}，重置连续计数 curFreq=1`,
+            message: '开始统计新数值的连续频次',
+            slots: [...slots],
+            activeSlot: i,
+            variables: { i, curFreq, maxFreq },
+            metrics: { '当前频次 curFreq': '1', '最高频次 maxFreq': `${maxFreq}` },
+          });
+        }
+      }
+    } else {
+      for (let i = 1; i < n; i++) {
+        const isSame = nums[i] === nums[i - 1];
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 1,
+          line: anchors.checkSame || 4,
+          codeLine: anchors.checkSame || 4,
+          decision: `🔍 正向比对相邻元素：nums[${i}]=${nums[i]} 与 nums[${i - 1}]=${nums[i - 1]} ➔ ${isSame ? '相同元素连续' : '遇到新数值'}`,
+          message: isSame ? '数值相同，频次累加' : '数值不同，重置连续频次',
+          slots: [...slots],
+          activeSlot: i,
+          activeIndices: [i - 1, i],
+          variables: { i, 'nums[i]': nums[i], 'nums[i-1]': nums[i - 1], curFreq, maxFreq },
+          metrics: { '当前位置': `i=${i}`, '数值': `${nums[i]}`, '最高频次': `${maxFreq}` },
+        });
+
+        if (isSame) {
+          curFreq++;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.incCur || 5,
+            codeLine: anchors.incCur || 5,
+            decision: `📈 相同元素累加：连续频次增至 curFreq=${curFreq} (当前数值 ${nums[i]})`,
+            message: '相同元素必须分流到不同子序列中',
+            slots: [...slots],
+            activeSlot: i,
+            variables: { i, curFreq, maxFreq },
+            metrics: { '当前频次 curFreq': `${curFreq}`, '最高频次 maxFreq': `${maxFreq}` },
+          });
+
+          if (curFreq > maxFreq) {
+            maxFreq = curFreq;
+            maxFreqVal = nums[i];
+            steps.push({
+              stepIndex: steps.length,
+              stage: 1,
+              line: anchors.updateMax || 6,
+              codeLine: anchors.updateMax || 6,
+              decision: `🏆 刷新最高频次！当前频次 ${curFreq} > maxFreq，更新最高频次 maxFreq=${maxFreq} (众数数值 ${maxFreqVal})`,
+              message: `至少需要划分出 ${maxFreq} 个子序列`,
+              slots: [...slots],
+              activeSlot: i,
+              variables: { maxFreq, maxFreqVal },
+              metrics: { '最高频次 maxFreq': `${maxFreq}`, '众数数值': `${maxFreqVal}` },
+            });
+          }
+        } else {
+          curFreq = 1;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.resetCur || 8,
+            codeLine: anchors.resetCur || 8,
+            decision: `🔄 遇到新数值：nums[${i}]=${nums[i]} != ${nums[i - 1]}，重置连续计数 curFreq=1`,
+            message: '开始统计新数值的连续频次',
+            slots: [...slots],
+            activeSlot: i,
+            variables: { i, curFreq, maxFreq },
+            metrics: { '当前频次 curFreq': '1', '最高频次 maxFreq': `${maxFreq}` },
+          });
+        }
+      }
+    }
+
+    const minRequired = maxFreq * k;
+    const canDivide = n >= minRequired;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 11,
+      codeLine: anchors.done || 11,
+      decision: canDivide
+        ? `🎉 鸽巢容量判定成功！总元素数 n=${n} >= 瓶颈需求 (maxFreq * k = ${maxFreq} * ${k} = ${minRequired}) ➔ 可以成功划分！`
+        : `❌ 鸽巢容量判定失败！总元素数 n=${n} < 瓶颈需求 (maxFreq * k = ${maxFreq} * ${k} = ${minRequired}) ➔ 元素不足以划分出 ${maxFreq} 个长度 >= ${k} 的严格递增子序列！`,
+      message: canDivide ? '由轮询分配法保证严格递增构造解必然存在' : '由鸽巢原理反证无合法划分',
+      slots: [...slots],
+      variables: { n, k, maxFreq, minRequired, canDivide },
+      metrics: { '总元素数 n': `${n}`, '瓶颈需求': `${minRequired}`, '判定结论': canDivide ? 'TRUE (可以)' : 'FALSE (不可)' },
+    });
+
+    return steps;
+  }
+
+  private static compileDivideArraySeqStage2(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const direction = options.direction || 'forward';
+    const anchors = this.extractAnchors(model, 2, direction, options.anchorMap);
+    const n = nums.length;
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    const freqMap = new Map<number, number>();
+    for (const x of nums) {
+      freqMap.set(x, (freqMap.get(x) || 0) + 1);
+    }
+    let maxFreq = 1;
+    let maxFreqVal = nums[0];
+    for (const [val, count] of freqMap.entries()) {
+      if (count > maxFreq) {
+        maxFreq = count;
+        maxFreqVal = val;
+      }
+    }
+    const minRequired = maxFreq * k;
+    const canDivide = n >= minRequired;
+
+    const treeRoot: UniversalTreeNode = {
+      id: 'root',
+      r: 0,
+      c: 0,
+      val: `鸽巢原理决策树 (n=${n}, k=${k})`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: `🌲 构建鸽巢原理容量决策树：输入数组包含 ${n} 个元素，子序列最小长度要求 k=${k}`,
+      message: '以频次下界与鸽巢容量为核心展开分支',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { n, k },
+      metrics: { '根节点状态': '初始化就绪', '决策深度': '0' },
+    });
+
+    const freqNode: UniversalTreeNode = {
+      id: 'freq-branch',
+      r: 1,
+      c: 0,
+      val: `众数频次瓶颈分析 (独立元素 ${freqMap.size} 种)`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(freqNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.calcMaxFreq || 2,
+      codeLine: anchors.calcMaxFreq || 2,
+      decision: `🌿 展开频次统计分支：数组中共有 ${freqMap.size} 种不同数值，准备寻找出现次数最多的众数`,
+      message: '考察各个数字的出现频次',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { uniqueCounts: freqMap.size },
+      metrics: { '独立元素数': `${freqMap.size}`, '分支': '频次统计' },
+    });
+
+    let fIdx = 0;
+    for (const [val, count] of freqMap.entries()) {
+      const child: UniversalTreeNode = {
+        id: `val-${val}`,
+        r: 2,
+        c: fIdx++,
+        val: `数值 ${val}: 出现 ${count} 次${val === maxFreqVal ? ' (众数瓶颈 ★)' : ''}`,
+        status: val === maxFreqVal ? 'completed' : 'active',
+        children: [],
+      };
+      freqNode.children.push(child);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.calcMaxFreq || 2,
+        codeLine: anchors.calcMaxFreq || 2,
+        decision: `🔍 统计数值 ${val}: 连续出现 ${count} 次${val === maxFreqVal ? `，成为历史最高频次 maxFreq=${maxFreq}` : ''}`,
+        message: '相同数字不可放在同一递增子序列中',
+        slots: [...slots],
+        treeRoot: cloneStateDepTree(treeRoot),
+        variables: { val, count, maxFreq },
+        metrics: { '当前数值': `${val}`, '频次': `${count}`, '最高频次': `${maxFreq}` },
+      });
+    }
+
+    const subseqCountNode: UniversalTreeNode = {
+      id: 'subseq-branch',
+      r: 1,
+      c: 1,
+      val: `子序列分割约束: 最少需要 ${maxFreq} 个序列`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(subseqCountNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.calcRequired || 3,
+      codeLine: anchors.calcRequired || 3,
+      decision: `🌿 展开子序列约束分支：因为众数 ${maxFreqVal} 出现 ${maxFreq} 次，同一递增子序列中绝不能有相同元素，故必须至少划分 ${maxFreq} 个子序列`,
+      message: '划分子序列数量的硬性数学下限',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { minSubseqs: maxFreq },
+      metrics: { '子序列下限': `${maxFreq} 个`, '众数数值': `${maxFreqVal}` },
+    });
+
+    const capacityNode: UniversalTreeNode = {
+      id: 'cap-branch',
+      r: 1,
+      c: 2,
+      val: `容量阈值计算: ${maxFreq} * ${k} = ${minRequired}`,
+      status: 'active',
+      children: [],
+    };
+    treeRoot.children.push(capacityNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.calcRequired || 3,
+      codeLine: anchors.calcRequired || 3,
+      decision: `🌿 展开容量需求分支：每个子序列长度至少为 k=${k}，${maxFreq} 个子序列共需至少 ${maxFreq} * ${k} = ${minRequired} 个元素`,
+      message: '鸽巢原理最小需求容量',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { maxFreq, k, minRequired },
+      metrics: { '所需最小容量': `${minRequired}`, '公式': 'maxFreq * k' },
+    });
+
+    const verdictNode: UniversalTreeNode = {
+      id: 'verdict-branch',
+      r: 1,
+      c: 3,
+      val: `充裕性判定: n=${n} ${canDivide ? '>=' : '<'} ${minRequired} (${canDivide ? 'TRUE' : 'FALSE'})`,
+      status: canDivide ? 'completed' : 'active',
+      children: [],
+    };
+    treeRoot.children.push(verdictNode);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.checkFeasible || 4,
+      codeLine: anchors.checkFeasible || 4,
+      decision: canDivide
+        ? `⚖️ 充裕性判定：实际元素总数 n=${n} >= 需求 ${minRequired}，盈余 +${n - minRequired} 个元素，必然可行！`
+        : `⚖️ 充裕性判定：实际元素总数 n=${n} < 需求 ${minRequired}，缺少 ${minRequired - n} 个元素，绝对不可行！`,
+      message: '容量充裕性是合法划分的充要条件',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { n, minRequired, canDivide, delta: n - minRequired },
+      metrics: { '实际容量': `${n}`, '需求容量': `${minRequired}`, '判定结论': canDivide ? '可行 (TRUE)' : '不可行 (FALSE)' },
+    });
+
+    treeRoot.status = 'completed';
+    freqNode.status = 'completed';
+    subseqCountNode.status = 'completed';
+    capacityNode.status = 'completed';
+    verdictNode.status = 'completed';
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 5,
+      codeLine: anchors.done || 5,
+      decision: `🏁 决策树全部拓扑分支收敛：鸽巢原理数学论证完毕，最终判定结果为 ${canDivide ? 'TRUE (可以划分)' : 'FALSE (无法划分)'}`,
+      message: '严格递增构造与鸽巢原理判定完全一致',
+      slots: [...slots],
+      treeRoot: cloneStateDepTree(treeRoot),
+      variables: { canDivide },
+      metrics: { '最终判定': canDivide ? 'TRUE' : 'FALSE', '拓扑状态': '全分支收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileDivideArraySeqStage3(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const direction = options.direction || 'forward';
+    const anchors = this.extractAnchors(model, 3, direction, options.anchorMap);
+    const n = nums.length;
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    const freqMap = new Map<number, number>();
+    for (const x of nums) freqMap.set(x, (freqMap.get(x) || 0) + 1);
+    let maxFreq = 1;
+    for (const count of freqMap.values()) if (count > maxFreq) maxFreq = count;
+
+    const numRows = maxFreq;
+    const numCols = Math.max(k, Math.ceil(n / maxFreq));
+    const matrix: (number | null)[][] = Array.from({ length: numRows }, () =>
+      new Array(numCols).fill(null)
+    );
+
+    const rowLabels = Array.from({ length: numRows }, (_, idx) => `子序列 S${idx}`);
+    const colLabels = Array.from({ length: numCols }, (_, idx) => `位置 #${idx + 1}`);
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.initBuckets || 2,
+      codeLine: anchors.initBuckets || 2,
+      decision: `📊 初始化分桶轮询分配矩阵 matrix[${numRows}][${numCols}]：开辟 ${numRows} 个子序列桶，每个桶目标容量 >= ${k}`,
+      message: '采用轮询交替插入法构造互不相交的严格递增子序列',
+      slots: [...slots],
+      grid: matrix.map((row) => [...row]),
+      matrix: matrix.map((row) => [...row]),
+      rowLabels,
+      colLabels,
+      variables: { numRows, numCols, k },
+      metrics: { '子序列桶数': `${numRows}`, '目标列数': `${numCols}`, '当前元素数': '0' },
+    });
+
+    const bucketCounts = new Array(numRows).fill(0);
+    for (let i = 0; i < n; i++) {
+      const val = nums[i];
+      const bucketIdx = i % numRows;
+      const colIdx = bucketCounts[bucketIdx];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.loopNums || 4,
+        codeLine: anchors.loopNums || 4,
+        decision: `🔍 轮询分配考察 [元素 #${i}]: 数值 nums[${i}]=${val}，轮询匹配至子序列 S${bucketIdx}，目标槽位 #${colIdx + 1}`,
+        message: '轮询分流保证相同数字间隔恰好为 maxFreq，绝不进入同一桶中',
+        slots: [...slots],
+        grid: matrix.map((row) => [...row]),
+        matrix: matrix.map((row) => [...row]),
+        rowLabels,
+        colLabels,
+        activeSlot: i,
+        variables: { i, val, bucketIdx, colIdx },
+        metrics: { '分配目标': `S${bucketIdx}`, '数值': `${val}`, '当前总填入': `${i}` },
+      });
+
+      matrix[bucketIdx][colIdx] = val;
+      bucketCounts[bucketIdx]++;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 3,
+        line: anchors.fillSlot || 5,
+        codeLine: anchors.fillSlot || 5,
+        decision: `📝 矩阵填报更新: 将数值 ${val} 填入子序列 S${bucketIdx} 第 ${colIdx + 1} 槽位，S${bucketIdx} 当前长度增至 ${bucketCounts[bucketIdx]}`,
+        message: bucketCounts[bucketIdx] >= k ? '✅ 该子序列长度已达到最小长度 k 要求！' : `⏳ 该子序列尚需 ${k - bucketCounts[bucketIdx]} 个元素达标`,
+        slots: [...slots],
+        grid: matrix.map((row) => [...row]),
+        matrix: matrix.map((row) => [...row]),
+        rowLabels,
+        colLabels,
+        activeSlot: i,
+        variables: { i, val, bucketIdx, colIdx, bucketLength: bucketCounts[bucketIdx] },
+        metrics: { [`S${bucketIdx} 长度`]: `${bucketCounts[bucketIdx]}`, '达标': bucketCounts[bucketIdx] >= k ? '已达标' : '待达标' },
+      });
+    }
+
+    const allSatisfied = bucketCounts.every((len) => len >= k);
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
+      decision: allSatisfied
+        ? `🏁 轮询状态矩阵全部填报完毕！所有 ${numRows} 个子序列长度均 >= k(${k})，且元素严格递增 ➔ 成功构建合法划分！`
+        : `❌ 状态矩阵填报完毕，但存在子序列桶长度 < k(${k})，元素总数不足 ➔ 无法构成合法划分！`,
+      message: '状态矩阵直观证明了轮询分配的构造正确性',
+      slots: [...slots],
+      grid: matrix.map((row) => [...row]),
+      matrix: matrix.map((row) => [...row]),
+      rowLabels,
+      colLabels,
+      activeSlot: n - 1,
+      variables: { allSatisfied, bucketCounts },
+      metrics: { '最终构建判定': allSatisfied ? '成功' : '失败', '最小桶长': `${Math.min(...bucketCounts)}` },
+    });
+
+    return steps;
+  }
+
+  private static compileDivideArraySeqStage4(
+    model: IYamlAlgorithmModel,
+    nums: number[],
+    k: number,
+    options: ResourceGreedyCompileOptions
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const direction = options.direction || 'forward';
+    const anchors = this.extractAnchors(model, 4, direction, options.anchorMap);
+    const n = nums.length;
+    const slots = nums.map((v, i) => `n[${i}]=${v}`);
+
+    let maxFreq = 1;
+    let curFreq = 1;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.entry || 1,
+      codeLine: anchors.entry || 1,
+      decision: '⚡ 启动常数空间滑动计数状态机：初始化寄存器 maxFreq=1, curFreq=1',
+      message: '仅用寄存器原地单指针流转，无任何外部哈希表或动态内存开销',
+      slots: [...slots],
+      variables: { maxFreq: 1, curFreq: 1, n, k },
+      metrics: { '空间复杂度': 'O(1) 寄存器', 'maxFreq 寄存器': '1', 'curFreq 寄存器': '1' },
+    });
+
+    for (let i = 1; i < n; i++) {
+      const isSame = nums[i] === nums[i - 1];
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.forLoop || 3,
+        codeLine: anchors.forLoop || 3,
+        decision: `🔍 寄存器指针滑动 [i=${i}]: 考察 nums[${i}]=${nums[i]} 与 nums[${i - 1}]=${nums[i - 1]}`,
+        message: '常数寄存器单步比对',
+        slots: [...slots],
+        activeSlot: i,
+        variables: { i, 'nums[i]': nums[i], curFreq, maxFreq },
+        metrics: { '指针 i': `${i}`, 'curFreq': `${curFreq}`, 'maxFreq': `${maxFreq}` },
+      });
+
+      curFreq = isSame ? curFreq + 1 : 1;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.updateCur || 4,
+        codeLine: anchors.updateCur || 4,
+        decision: `⚡ 计数寄存器刷新: ${isSame ? `相同元素 curFreq++ ➔ curFreq=${curFreq}` : '不同元素，重置 curFreq=1'}`,
+        message: '极速三元条件赋值',
+        slots: [...slots],
+        activeSlot: i,
+        variables: { i, curFreq, maxFreq },
+        metrics: { 'curFreq 寄存器': `${curFreq}`, '状态': isSame ? '累加' : '重置' },
+      });
+
+      const updated = curFreq > maxFreq;
+      if (updated) maxFreq = curFreq;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.updateMax || 5,
+        codeLine: anchors.updateMax || 5,
+        decision: `🔄 极值寄存器流转: ${updated ? `刷新最高频次 maxFreq=${maxFreq}` : `保持 maxFreq=${maxFreq}`}`,
+        message: '最高众数极值追踪',
+        slots: [...slots],
+        activeSlot: i,
+        variables: { i, curFreq, maxFreq },
+        metrics: { 'maxFreq 寄存器': `${maxFreq}`, '当前需求': `${maxFreq * k}` },
+      });
+    }
+
+    const minRequired = maxFreq * k;
+    const canDivide = n >= minRequired;
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.done || 7,
+      codeLine: anchors.done || 7,
+      decision: `🏁 常数寄存器流转完毕：输出最终判定结果 nums.length(${n}) >= maxFreq(${maxFreq}) * k(${k}) = ${minRequired} ➔ ${canDivide ? 'TRUE' : 'FALSE'}`,
+      message: '以 O(1) 极简寄存器流转达成数学完备判定',
+      slots: [...slots],
+      variables: { n, k, maxFreq, minRequired, canDivide },
+      metrics: { '判定结论': canDivide ? 'TRUE' : 'FALSE', '额外空间': 'O(1)' },
     });
 
     return steps;

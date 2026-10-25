@@ -86,6 +86,7 @@ import maxAvgPassRatioModel from './models/max-avg-pass-ratio.yaml';
 import quizScoreMaximizationModel from './models/quiz-score-maximization.yaml';
 import minimizeDeviationInArrayModel from './models/minimize-deviation-in-array.yaml';
 import minOperationsSimilarModel from './models/minimum-operations-to-make-similar.yaml';
+import divideArraySeqModel from './models/divide-array-into-increasing-sequences.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -404,6 +405,11 @@ export class AlgorithmModelRepository {
     ['class092-code03', minOperationsSimilarModel as IYamlAlgorithmModel],
     ['leetcode-2449', minOperationsSimilarModel as IYamlAlgorithmModel],
     ['make-array-similar', minOperationsSimilarModel as IYamlAlgorithmModel],
+    ['divide-array-into-increasing-sequences', divideArraySeqModel as IYamlAlgorithmModel],
+    ['divide-array-seq', divideArraySeqModel as IYamlAlgorithmModel],
+    ['class092-code05', divideArraySeqModel as IYamlAlgorithmModel],
+    ['divide-array-increasing-1121', divideArraySeqModel as IYamlAlgorithmModel],
+    ['leetcode-1121', divideArraySeqModel as IYamlAlgorithmModel],
     ['dungeon-game-reverse-dp', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['dungeon-game', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['max-product-subarray', maxProductSubarrayModel as IYamlAlgorithmModel],

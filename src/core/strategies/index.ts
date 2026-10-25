@@ -79,6 +79,7 @@ import { MinCostTicketsStrategy } from './min-cost-tickets-strategy';
 import { QuizScoreStrategy } from './quiz-score-strategy';
 import { MinimizeDeviationStrategy } from './minimize-deviation-strategy';
 import { MinOperationsSimilarStrategy } from './min-operations-similar-strategy';
+import { DivideArraySeqStrategy } from './divide-array-seq-strategy';
 
 import { TreeDpStrategy } from './tree-dp-strategy';
 import { BitmaskDpStrategy } from './bitmask-dp-strategy';
@@ -238,6 +239,7 @@ export function registerBuiltinStrategies(): void {
   AlgorithmStrategyRegistry.register(new QuizScoreStrategy());
   AlgorithmStrategyRegistry.register(new MinimizeDeviationStrategy());
   AlgorithmStrategyRegistry.register(new MinOperationsSimilarStrategy());
+  AlgorithmStrategyRegistry.register(new DivideArraySeqStrategy());
 
   // Target Sum Standard (第 73 课标准版)
   AlgorithmStrategyRegistry.register(new TargetSumStandardStrategy());
@@ -250,6 +252,7 @@ export {
   QuizScoreStrategy,
   MinimizeDeviationStrategy,
   MinOperationsSimilarStrategy,
+  DivideArraySeqStrategy,
   TreeDpStrategy,
   GridUniquePathsStrategy,
   KnapsackPartitionSubsetStrategy,

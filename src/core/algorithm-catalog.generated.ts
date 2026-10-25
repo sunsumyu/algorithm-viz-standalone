@@ -4616,10 +4616,10 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   },
   {
     id: "divide-array-into-increasing-sequences",
-    name: "将数组分成几个递增序列 (Divide Array Sequences)",
-    viewId: "algo-divide-array-into-increasing-sequences-view",
+    name: "将数组分成几个递增序列",
+    viewId: "algo-divide-array-seq-view",
     category: "greedy",
-    description: "将数组分成几个递增序列 (Divide Array Sequences)",
+    description: "LeetCode 1121：基于最高频次众数瓶颈与鸽巢原理判定能否划分若干严格递增子序列",
     icon: "📊",
     difficulty: 3,
     levelOrder: 925,

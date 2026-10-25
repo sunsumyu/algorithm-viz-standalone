@@ -98,6 +98,7 @@ export class BuildTreeCanvasAdapter {
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     container.style.padding = '10px';
+    container.style.boxSizing = 'border-box';
     container.style.overflow = 'hidden';
 
     const isStage2 = step.postorder !== undefined && step.postorder.length > 0;
@@ -113,6 +114,7 @@ export class BuildTreeCanvasAdapter {
     stripContainer.style.borderRadius = '8px';
     stripContainer.style.background = '#f8fafc';
     stripContainer.style.border = '1px solid #e2e8f0';
+    stripContainer.style.boxSizing = 'border-box';
     stripContainer.style.flexShrink = '0';
 
     const otherSeqName = isStage2 ? 'postorder' : 'preorder';
@@ -121,7 +123,9 @@ export class BuildTreeCanvasAdapter {
     let otherRootIdx: number | null = null;
     let otherLeftEnd: number | null = null;
     if (step.rootVal != null) {
-      if (isStage2) {
+      if (step.stackState !== undefined) {
+        otherRootIdx = step.pL >= 0 ? step.pL : null;
+      } else if (isStage2) {
         otherRootIdx = step.pR >= 0 ? step.pR : null;
         otherLeftEnd = step.pL + step.leftLen - 1;
       } else {
@@ -265,7 +269,7 @@ export class BuildTreeCanvasAdapter {
 
       stackBox.innerHTML = `
         <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-          <span>🥞 显式单调栈监控 (Explicit Monotonic Stack)</span>
+          <span>🥞 ${isStage2 ? '倒序显式单调栈监控 (Postorder Mirror Stack · LC 106)' : '显式单调栈监控 (Explicit Monotonic Stack · LC 105)'}</span>
           <span style="font-size: 10px; color: #64748b; font-weight: normal;">inIdx = ${step.inIdx ?? 0}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: ui-monospace, monospace;">

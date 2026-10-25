@@ -201,12 +201,14 @@ import {
   buildTreeSteps,
   buildTreeStage2PostorderSteps,
   buildTreeStage3StackSteps,
+  buildTreeStage4StackSteps,
   collectTreeValues,
 } from '../../algorithms/categories/tree/build-tree-renderer';
 import {
   BUILD_TREE_STAGE1_PRE_IN_CODE,
   BUILD_TREE_STAGE2_POST_IN_CODE,
   BUILD_TREE_STAGE3_STACK_CODE,
+  BUILD_TREE_STAGE4_POST_STACK_CODE,
 } from '../../algorithms/categories/tree/build-tree-stage-codes';
 
 import {
@@ -2114,10 +2116,26 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(last.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
     });
 
-    it('三大 Stage 针对空数组均安全防御', () => {
+    it('Stage 4 (LC 106 迭代法): 显式栈模拟后序重构四语言行号合法且收尾步全树翡翠绿高亮', () => {
+      const steps = buildTreeStage4StackSteps(inArr, post);
+      expect(steps.length).toBeGreaterThan(0);
+
+      for (let i = 0; i < steps.length; i++) {
+        assertCodeLineWithinBounds(steps[i].codeLine, BUILD_TREE_STAGE4_POST_STACK_CODE, `BuildTree Stage 4 Step ${i}`);
+      }
+
+      const last = steps[steps.length - 1];
+      expect(last.action).toBe('done');
+      expect(last.tree?.val).toBe(3);
+      expect(last.highlightedNodes).toEqual([3]);
+      expect(last.visitedNodes?.sort((a, b) => a - b)).toEqual([3, 7, 9, 15, 20]);
+    });
+
+    it('四大 Stage 针对空数组均安全防御', () => {
       expect(buildTreeSteps([], []).pop()?.action).toBe('done');
       expect(buildTreeStage2PostorderSteps([], []).pop()?.action).toBe('done');
       expect(buildTreeStage3StackSteps([], []).pop()?.action).toBe('done');
+      expect(buildTreeStage4StackSteps([], []).pop()?.action).toBe('done');
     });
   });
 
