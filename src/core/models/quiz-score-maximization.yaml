@@ -1,0 +1,161 @@
+# ==============================================================================
+# 🏆 [TOP-LEVEL GREEDY MODEL] 知识竞赛得分最大化 顶层领域模型
+# 对应：左程云算法讲解 092 Code04 (Quiz Score Maximization)
+# 包含：差额排序贪心、回溯决策依赖树、二维状态转移矩阵 DP 填表、O(1) 空间极速流转
+# ==============================================================================
+
+id: quiz-score-maximization
+name: 知识竞赛得分最大化 (Quiz Score)
+category: greedy
+difficulty: medium
+tags:
+  - 贪心算法
+  - 数组
+  - 排序
+  - 动态规划
+
+description: |
+  有 n 道知识竞赛题目，每道题提供两种答题策略：
+  若选择策略 A 可获得 scoreA 分；若选择策略 B 可获得 scoreB 分。
+  规则要求：必须恰好选择 k 道题目采用策略 A，其余 n - k 道题目采用策略 B。
+  求解在满足配额约束的前提下，可获得的最高总得分。
+  核心策略：
+  1. 差额排序贪心：假定所有 n 道题全部选策略 B，总基础分为 sum(B[i])。
+     若将某道题从 B 改为 A，带来的净增量贡献为 diff = scoreA - scoreB。
+     要使最终总得分最大，只需将所有题目按 (scoreA - scoreB) 降序排序，
+     贪心挑选差值最大的前 k 道题使用策略 A，其余 n - k 道题目使用策略 B。
+  2. Forward: 假定全选 B，按 (scoreA - scoreB) 降序挑选前 k 题使用策略 A。
+  3. Reverse: 假定全选 A，按 (scoreB - scoreA) 降序挑选前 n-k 题使用策略 B。
+
+defaultParams:
+  questions:
+    - [10, 2]
+    - [8, 5]
+    - [6, 6]
+    - [3, 7]
+  k: 2
+
+constraints:
+  - 1 <= questions.length <= 100
+  - 0 <= k <= questions.length
+  - 0 <= scoreA, scoreB <= 1000
+
+directions:
+  forward:
+    name: 差额降序优先分配 A 策略 (A-Oriented Difference Greedy)
+    description: 全选 B 策略作为基准分，按 (scoreA - scoreB) 降序挑选前 k 题改选 A 策略，收益增量最大
+  reverse:
+    name: 差额降序优先分配 B 策略 (B-Oriented Difference Greedy)
+    description: 全选 A 策略作为基准分，按 (scoreB - scoreA) 降序挑选前 n-k 题改选 B 策略，收益增量最大
+
+stages:
+  stage-1:
+    name: 差额排序贪心调度
+    description: 计算每题选 A 相比选 B 的增量贡献 diff = A - B，降序排序后前 k 题选 A，剩余选 B
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          public int maxScore(int[][] questions, int k) {
+              // @step:sort 1. 按增益差值 (scoreA - scoreB) 降序排序
+              Arrays.sort(questions, (q1, q2) -> (q2[0] - q2[1]) - (q1[0] - q1[1]));
+              int total = 0;
+              // @step:pick_a 2. 差值最大的前 k 题分配策略 A
+              for (int i = 0; i < k; i++) total += questions[i][0];
+              // @step:pick_b 3. 剩余 n - k 题分配策略 B
+              for (int i = k; i < questions.length; i++) total += questions[i][1];
+              // @step:done 4. 返回最高总得分
+              return total;
+          }
+      reverse:
+        language: java
+        source: |
+          public int maxScoreReverse(int[][] questions, int k) {
+              // @step:sort 1. 逆向按 (scoreB - scoreA) 降序排序
+              Arrays.sort(questions, (q1, q2) -> (q2[1] - q2[0]) - (q1[1] - q1[0]));
+              int total = 0;
+              int rem = questions.length - k;
+              // @step:pick_b 2. 优先挑选前 rem 题分配策略 B
+              for (int i = 0; i < rem; i++) total += questions[i][1];
+              // @step:pick_a 3. 剩余 k 题分配策略 A
+              for (int i = rem; i < questions.length; i++) total += questions[i][0];
+              // @step:done 4. 返回最高总得分
+              return total;
+          }
+
+  stage-2:
+    name: 递归分支与决策依赖树展开
+    description: 展开每道题决策选 A 还是选 B 的递归决策分支树，展示配额剪枝与最优收益回溯
+    complexity:
+      time: O(2^N)
+      space: O(N)
+    code:
+      forward:
+        language: java
+        source: |
+          // 决策树遍历：dfs(questionIdx, countA, countB)
+          // @step:entry 1. 展开根节点 dfs(0, 0, 0)
+          // @step:branch_a 2. 分支决策：当前题选择策略 A (+scoreA)
+          // @step:branch_b 3. 分支决策：当前题选择策略 B (+scoreB)
+          // @step:prune 4. 配额溢出剪枝 (countA > k || countB > n - k)
+          // @step:backtrack 5. 递归回溯取较大收益
+          // @step:done 6. 决策树遍历收敛
+      reverse:
+        language: java
+        source: |
+          // 逆向决策依赖树
+          // @step:entry 1. 逆向决策树展开
+          // @step:branch_b 2. 优先尝试策略 B 分支
+          // @step:branch_a 3. 备选尝试策略 A 分支
+          // @step:prune 4. 配额约束剪枝
+          // @step:backtrack 5. 逆向回溯
+          // @step:done 6. 逆向决策收敛
+
+  stage-3:
+    name: 二维状态转移矩阵 DP 填表
+    description: 构建 dp[i][j] 状态矩阵，表示前 i 道题恰好分配 j 道策略 A 的最高总得分
+    complexity:
+      time: O(N * K)
+      space: O(N * K)
+    code:
+      forward:
+        language: java
+        source: |
+          // 状态转移矩阵：dp[N+1][K+1]
+          // @step:dp_init 1. 初始化矩阵 dp，dp[0][0] = 0
+          // @step:dp_loop 2. 外层遍历题目 i 从 1 到 N
+          // @step:dp_transfer 3. 状态转移：dp[i][j] = max(dp[i-1][j-1] + scoreA, dp[i-1][j] + scoreB)
+          // @step:dp_done 4. 全局最优：dp[N][K]
+      reverse:
+        language: java
+        source: |
+          // 逆向动态规划填表
+          // @step:dp_init 1. 逆向矩阵初始化
+          // @step:dp_loop 2. 逆向题目扫描
+          // @step:dp_transfer 3. 逆向状态转移
+          // @step:dp_done 4. 逆向矩阵收敛
+
+  stage-4:
+    name: O(1) 额外空间极速差值流转
+    description: 原地排序后单趟流式累加，空间复杂度降至 O(1)，极速产出最高总得分
+    complexity:
+      time: O(N log N)
+      space: O(1)
+    code:
+      forward:
+        language: java
+        source: |
+          // 原地单趟累加极速求解
+          // @step:reg_init 1. 寄存器初始化：ans = 0
+          // @step:reg_loop 2. 单趟极速累加：前 k 题累加 scoreA，后 n-k 题累加 scoreB
+          // @step:reg_done 3. 极速返回最高得分
+      reverse:
+        language: java
+        source: |
+          // 逆向极速累加
+          // @step:reg_init 1. 逆向寄存器初始化
+          // @step:reg_loop 2. 逆向极速累加
+          // @step:reg_done 3. 极速返回最高得分

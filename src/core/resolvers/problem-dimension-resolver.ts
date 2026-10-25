@@ -572,6 +572,22 @@ export class ProblemDimensionResolver {
       return { m, n, is1D: true, category };
     }
 
+    if (params.questions !== undefined) {
+      let qCount = 4;
+      if (Array.isArray(params.questions)) {
+        qCount = params.questions.length;
+      } else if (typeof params.questions === 'string') {
+        const parts = params.questions.split(/[;；]+/).filter((s: string) => s.trim().length > 0);
+        qCount = parts.length > 0 ? parts.length : 4;
+      }
+      const k = Number(params.k ?? 2);
+      const isStage3 = currentStage === 'stage-3';
+      m = isStage3 ? qCount + 1 : 1;
+      n = isStage3 ? k + 1 : qCount;
+      category = isStage3 ? '2d-grid' : '1d-linear';
+      return { m, n, is1D: !isStage3, category };
+    }
+
     if (params.profits !== undefined) {
       const profits = this.toArray(params.profits);
       m = 1;

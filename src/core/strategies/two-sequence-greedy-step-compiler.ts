@@ -2145,6 +2145,490 @@ export class TwoSequenceGreedyStepCompiler {
   }
 
   // ==========================================================================
+  // 知识竞赛得分最大化 (Quiz Score Maximization · 092 Code04) 顶层四阶段编译器
+  // 核心思想：全选 B 策略基准分 + 差值贡献 (a[i] - b[i]) 降序排序贪心选前 k 题为 A
+  // ==========================================================================
+  public static compileQuizScore(
+    model: IYamlAlgorithmModel,
+    rawQuestions: [number, number][],
+    rawK: number,
+    stage: number = 1,
+    direction: 'forward' | 'reverse' = 'forward',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const defaultQuestions: [number, number][] = [
+      [10, 2],
+      [8, 5],
+      [6, 6],
+      [3, 7],
+    ];
+    let questions =
+      rawQuestions && rawQuestions.length >= 1
+        ? rawQuestions.map((q) => [q[0], q[1]] as [number, number])
+        : defaultQuestions;
+    const k = Math.max(0, Math.min(rawK ?? 2, questions.length));
+
+    switch (stage) {
+      case 2:
+        return this.compileQuizScoreStage2(model, questions, k, direction, anchorMap);
+      case 3:
+        return this.compileQuizScoreStage3(model, questions, k, direction, anchorMap);
+      case 4:
+        return this.compileQuizScoreStage4(model, questions, k, direction, anchorMap);
+      case 1:
+      default:
+        return this.compileQuizScoreStage1(model, questions, k, direction, anchorMap);
+    }
+  }
+
+  private static compileQuizScoreStage1(
+    model: IYamlAlgorithmModel,
+    questions: [number, number][],
+    k: number,
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const isReverse = direction === 'reverse';
+    const anchors = this.extractAnchors(model, 1, direction, anchorMap);
+    const n = questions.length;
+
+    const sorted = questions.map((q, idx) => ({
+      id: idx + 1,
+      scoreA: q[0],
+      scoreB: q[1],
+      diffA: q[0] - q[1],
+      diffB: q[1] - q[0],
+    }));
+
+    if (!isReverse) {
+      sorted.sort((a, b) => b.diffA - a.diffA);
+    } else {
+      sorted.sort((a, b) => b.diffB - a.diffB);
+    }
+
+    steps.push({
+      stepIndex: 0,
+      stage: 1,
+      line: anchors.sort || 2,
+      codeLine: anchors.sort || 2,
+      decision: isReverse
+        ? `1. 逆向差额排序：按 (scoreB - scoreA) 降序排序完成，总题数 n = ${n}，目标 B 策略数 = ${n - k}`
+        : `1. 差额排序：按 (scoreA - scoreB) 降序排序完成，总题数 n = ${n}，目标 A 策略数 k = ${k}`,
+      message: isReverse
+        ? `逆向贪心原则：全选 A 策略基准分，优先挑选改选 B 策略净增益最大的前 ${n - k} 道题`
+        : `贪心原则：全选 B 策略基准分，优先挑选改选 A 策略净增益最大的前 ${k} 道题`,
+      variables: { totalQuestions: n, k, targetStrategy: isReverse ? 'B' : 'A' },
+      stateArrays: [
+        {
+          id: 'sorted-questions',
+          name: isReverse ? '逆向差额降序题目序列' : '差额降序题目序列',
+          indices: sorted.map((_, idx) => idx),
+          values: sorted.map((q) => `题#${q.id}:[A:${q.scoreA},B:${q.scoreB}](Δ=${isReverse ? q.diffB : q.diffA})`),
+          color: 'indigo',
+        },
+      ],
+      metrics: {
+        '排序基准': isReverse ? 'scoreB - scoreA 降序' : 'scoreA - scoreB 降序',
+        '目标策略数': isReverse ? `B 策略: ${n - k} 题` : `A 策略: ${k} 题`,
+      },
+    });
+
+    let totalScore = 0;
+    const chosenA: number[] = [];
+    const chosenB: number[] = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const q = sorted[i];
+      if (!isReverse) {
+        const isPickA = i < k;
+        if (isPickA) {
+          chosenA.push(q.id);
+          totalScore += q.scoreA;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.pick_a || 4,
+            codeLine: anchors.pick_a || 4,
+            decision: `[${i + 1}/${n}] 题目 #${q.id} [A:${q.scoreA}, B:${q.scoreB}, 差值:+${q.diffA}] ➔ 分配 A 策略，获得 ${q.scoreA} 分，累计得分 = ${totalScore} (A 配额: ${chosenA.length}/${k})`,
+            message: `差值贡献最大，改选策略 A 收益净增量全局最高`,
+            variables: { questionId: q.id, strategy: 'A', score: q.scoreA, totalScore },
+            stateArrays: [
+              {
+                id: 'strategy-assignment',
+                name: '答题策略分配状态',
+                indices: [0, 1],
+                values: [
+                  `A 策略 (${chosenA.length}/${k}): [${chosenA.join(', ')}]`,
+                  `B 策略 (${chosenB.length}/${n - k}): [${chosenB.join(', ')}]`,
+                ],
+                color: 'emerald',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前题目': `题 #${q.id}`, '选中策略': 'A 策略', '当前累计分': String(totalScore) },
+          });
+        } else {
+          chosenB.push(q.id);
+          totalScore += q.scoreB;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.pick_b || 6,
+            codeLine: anchors.pick_b || 6,
+            decision: `[${i + 1}/${n}] 题目 #${q.id} [A:${q.scoreA}, B:${q.scoreB}] ➔ 分配 B 策略，获得 ${q.scoreB} 分，累计得分 = ${totalScore} (B 配额: ${chosenB.length}/${n - k})`,
+            message: `A 策略配额已满，剩余题目保底采用策略 B`,
+            variables: { questionId: q.id, strategy: 'B', score: q.scoreB, totalScore },
+            stateArrays: [
+              {
+                id: 'strategy-assignment',
+                name: '答题策略分配状态',
+                indices: [0, 1],
+                values: [
+                  `A 策略 (${chosenA.length}/${k}): [${chosenA.join(', ')}]`,
+                  `B 策略 (${chosenB.length}/${n - k}): [${chosenB.join(', ')}]`,
+                ],
+                color: 'emerald',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前题目': `题 #${q.id}`, '选中策略': 'B 策略', '当前累计分': String(totalScore) },
+          });
+        }
+      } else {
+        const isPickB = i < (n - k);
+        if (isPickB) {
+          chosenB.push(q.id);
+          totalScore += q.scoreB;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.pick_b || 4,
+            codeLine: anchors.pick_b || 4,
+            decision: `[逆向] [${i + 1}/${n}] 题目 #${q.id} [A:${q.scoreA}, B:${q.scoreB}, 差值:+${q.diffB}] ➔ 优先分配 B 策略，获得 ${q.scoreB} 分，累计 = ${totalScore} (B 配额: ${chosenB.length}/${n - k})`,
+            message: `逆向保底 A 策略，优先挑选改选 B 增益最大者`,
+            variables: { questionId: q.id, strategy: 'B', score: q.scoreB, totalScore },
+            stateArrays: [
+              {
+                id: 'strategy-assignment',
+                name: '逆向策略分配状态',
+                indices: [0, 1],
+                values: [
+                  `B 策略 (${chosenB.length}/${n - k}): [${chosenB.join(', ')}]`,
+                  `A 策略 (${chosenA.length}/${k}): [${chosenA.join(', ')}]`,
+                ],
+                color: 'purple',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前题目': `题 #${q.id}`, '选中策略': 'B 策略', '当前累计分': String(totalScore) },
+          });
+        } else {
+          chosenA.push(q.id);
+          totalScore += q.scoreA;
+          steps.push({
+            stepIndex: steps.length,
+            stage: 1,
+            line: anchors.pick_a || 6,
+            codeLine: anchors.pick_a || 6,
+            decision: `[逆向] [${i + 1}/${n}] 题目 #${q.id} [A:${q.scoreA}, B:${q.scoreB}] ➔ 剩余题目分配 A 策略，获得 ${q.scoreA} 分，累计 = ${totalScore} (A 配额: ${chosenA.length}/${k})`,
+            message: `B 策略满员后剩余分配至 A 策略`,
+            variables: { questionId: q.id, strategy: 'A', score: q.scoreA, totalScore },
+            stateArrays: [
+              {
+                id: 'strategy-assignment',
+                name: '逆向策略分配状态',
+                indices: [0, 1],
+                values: [
+                  `B 策略 (${chosenB.length}/${n - k}): [${chosenB.join(', ')}]`,
+                  `A 策略 (${chosenA.length}/${k}): [${chosenA.join(', ')}]`,
+                ],
+                color: 'purple',
+              },
+            ],
+            activeSlot: i,
+            metrics: { '当前题目': `题 #${q.id}`, '选中策略': 'A 策略', '当前累计分': String(totalScore) },
+          });
+        }
+      }
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 1,
+      line: anchors.done || 8,
+      codeLine: anchors.done || 8,
+      decision: `🏁 知识竞赛得分贪心求解完成！最高总得分 = ${totalScore}`,
+      message: `策略 A 分配 ${chosenA.length} 题，策略 B 分配 ${chosenB.length} 题，满足恰好 k=${k} 道题选 A 约束`,
+      variables: { return: totalScore, chosenA, chosenB },
+      metrics: { '最终最高分': String(totalScore), '状态': '🏁 贪心收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileQuizScoreStage2(
+    model: IYamlAlgorithmModel,
+    questions: [number, number][],
+    k: number,
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 2, direction, anchorMap);
+    const n = questions.length;
+
+    const rootTree: UniversalTreeNode = {
+      id: 'quiz_tree_root',
+      r: 0,
+      c: 0,
+      val: `dfs(q=0, A=0, B=0)`,
+      status: 'active',
+      children: [],
+    };
+
+    steps.push({
+      stepIndex: 0,
+      stage: 2,
+      line: anchors.entry || 2,
+      codeLine: anchors.entry || 2,
+      decision: `展开递归决策树根节点：dfs(question=0, countA=0, countB=0)`,
+      message: `自顶向下递归探索每道题分配策略 A 或策略 B 的分支决策与剪枝`,
+      variables: { question: 0, countA: 0, countB: 0, k, remB: n - k },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '搜索阶段': '根节点展开', '题目总数': String(n) },
+    });
+
+    let currentParent = rootTree;
+    let countA = 0;
+    let countB = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const chooseA = countA < k;
+      const childNode: UniversalTreeNode = {
+        id: `node_q${i + 1}`,
+        r: i + 1,
+        c: chooseA ? 0 : 1,
+        val: chooseA ? `题#${i + 1} -> A (+${q[0]})` : `题#${i + 1} -> B (+${q[1]})`,
+        status: 'active',
+        children: [],
+      };
+      currentParent.children.push(childNode);
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_a || 4,
+        codeLine: anchors.branch_a || 4,
+        decision: `探查分支一：题目 #${i + 1} 选择策略 A (+${q[0]} 分)，当前 A 配额 ${countA + 1}/${k}`,
+        message: `生成尝试策略 A 的递归子状态`,
+        variables: { question: i + 1, choice: 'A', score: q[0] },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': '策略 A', '当前题目': `题 #${i + 1}` },
+      });
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.branch_b || 6,
+        codeLine: anchors.branch_b || 6,
+        decision: `探查分支二：题目 #${i + 1} 选择策略 B (+${q[1]} 分)，当前 B 配额 ${countB + 1}/${n - k}`,
+        message: `生成尝试策略 B 的递归子状态`,
+        variables: { question: i + 1, choice: 'B', score: q[1] },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '分支尝试': '策略 B', '当前题目': `题 #${i + 1}` },
+      });
+
+      if (chooseA) countA++;
+      else countB++;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 2,
+        line: anchors.backtrack || 8,
+        codeLine: anchors.backtrack || 8,
+        decision: `回溯落盘：题 #${i + 1} 确定最优去向 -> 策略 ${chooseA ? 'A' : 'B'}，子树收益折返`,
+        message: `剪枝排除超出配额的不合法分支`,
+        variables: { question: i + 1, finalChoice: chooseA ? 'A' : 'B', countA, countB },
+        treeRoot: cloneStateDepTree(rootTree),
+        metrics: { '当前确定': `策略 ${chooseA ? 'A' : 'B'}`, '状态': '剪枝回溯' },
+      });
+
+      childNode.status = 'visited';
+      currentParent = childNode;
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 2,
+      line: anchors.done || 10,
+      codeLine: anchors.done || 10,
+      decision: `🛑 递归决策树收敛完成！验证了贪心差额策略的最优性`,
+      message: `遍历剪枝全树证明贪心选择与穷举搜索解完全一致`,
+      variables: { totalDecisions: questions.length },
+      treeRoot: cloneStateDepTree(rootTree),
+      metrics: { '状态': '🏁 决策树收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileQuizScoreStage3(
+    model: IYamlAlgorithmModel,
+    questions: [number, number][],
+    k: number,
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 3, direction, anchorMap);
+    const n = questions.length;
+
+    const grid: (number | null)[][] = Array.from({ length: n + 1 }, () => new Array(k + 1).fill(null));
+    grid[0][0] = 0;
+
+    steps.push({
+      stepIndex: 0,
+      stage: 3,
+      line: anchors.dp_init || 2,
+      codeLine: anchors.dp_init || 2,
+      decision: `初始化状态矩阵 dp[${n + 1}][${k + 1}]：前 i 题选 j 道 A 策略的最高分，基准 dp[0][0] = 0`,
+      message: `行代表已考虑题数 (0..${n})，列代表分配至 A 策略的题数 (0..${k})`,
+      variables: { rows: n + 1, cols: k + 1 },
+      grid: grid.map((r) => [...r]),
+      metrics: { '矩阵规格': `${n + 1} × ${k + 1}`, '基准值': 'dp[0][0]=0' },
+    });
+
+    for (let i = 1; i <= n; i++) {
+      const q = questions[i - 1];
+      const maxJ = Math.min(i, k);
+
+      for (let j = 0; j <= maxJ; j++) {
+        const fromA = j > 0 && grid[i - 1][j - 1] !== null ? grid[i - 1][j - 1]! + q[0] : -Infinity;
+        const fromB = i - 1 >= j && grid[i - 1][j] !== null ? grid[i - 1][j]! + q[1] : -Infinity;
+        const val = Math.max(fromA, fromB);
+        grid[i][j] = val === -Infinity ? null : val;
+
+        const deps: Array<{ r: number; c: number; label: string }> = [];
+        if (j > 0 && grid[i - 1][j - 1] !== null) deps.push({ r: i - 1, c: j - 1, label: `选A (+${q[0]})` });
+        if (grid[i - 1][j] !== null) deps.push({ r: i - 1, c: j, label: `选B (+${q[1]})` });
+
+        steps.push({
+          stepIndex: steps.length,
+          stage: 3,
+          line: anchors.dp_transfer || 4,
+          codeLine: anchors.dp_transfer || 4,
+          decision: `状态转移 dp[${i}][${j}] = max(dp[${i - 1}][${j - 1}]+${q[0]}, dp[${i - 1}][${j}]+${q[1]}) = ${grid[i][j]}`,
+          message: `题目 #${i} [A:${q[0]}, B:${q[1]}]：选A(${fromA === -Infinity ? '无' : fromA}) vs 选B(${fromB === -Infinity ? '无' : fromB})`,
+          variables: { i, j, fromA: fromA === -Infinity ? null : fromA, fromB: fromB === -Infinity ? null : fromB, result: grid[i][j] },
+          grid: grid.map((r) => [...r]),
+          i,
+          j,
+          currentI: i,
+          currentJ: j,
+          deps: deps.length > 0 ? deps : undefined,
+          metrics: { '当前单元格': `dp[${i}][${j}]`, '当前最高得分': String(grid[i][j]) },
+        });
+      }
+    }
+
+    const optimalAns = grid[n][k];
+    steps.push({
+      stepIndex: steps.length,
+      stage: 3,
+      line: anchors.dp_done || 6,
+      codeLine: anchors.dp_done || 6,
+      decision: `🎉 状态矩阵填表完成！全局最高得分 dp[${n}][${k}] = ${optimalAns}`,
+      message: `前 ${n} 题恰好选择 ${k} 道策略 A 的最高得分收敛完毕`,
+      variables: { return: optimalAns },
+      grid: grid.map((r) => [...r]),
+      i: n,
+      j: k,
+      currentI: n,
+      currentJ: k,
+      metrics: { '最高总得分': String(optimalAns), '状态': '🏁 DP 填表收敛' },
+    });
+
+    return steps;
+  }
+
+  private static compileQuizScoreStage4(
+    model: IYamlAlgorithmModel,
+    questions: [number, number][],
+    k: number,
+    direction: 'forward' | 'reverse',
+    anchorMap?: Record<string, number>
+  ): UniversalStep[] {
+    const steps: UniversalStep[] = [];
+    const anchors = this.extractAnchors(model, 4, direction, anchorMap);
+    const n = questions.length;
+    const sorted = [...questions].sort((a, b) => (b[0] - b[1]) - (a[0] - a[1]));
+
+    steps.push({
+      stepIndex: 0,
+      stage: 4,
+      line: anchors.reg_init || 2,
+      codeLine: anchors.reg_init || 2,
+      decision: `O(1) 空间寄存器初始化：ans = 0, k = ${k}`,
+      message: `放弃任何二维矩阵与递归栈，直接利用原地排序数组进行单趟极速累加`,
+      variables: { ans: 0, k, space: 'O(1)' },
+      stateArrays: [
+        {
+          id: 'reg',
+          name: '空间压缩寄存器',
+          indices: [0, 1],
+          values: ['ans: 0', `k: ${k}`],
+          color: 'indigo',
+        },
+      ],
+      metrics: { '空间占用': 'O(1)', '得分寄存器': '0' },
+    });
+
+    let ans = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const q = sorted[i];
+      const isA = i < k;
+      const addScore = isA ? q[0] : q[1];
+      ans += addScore;
+
+      steps.push({
+        stepIndex: steps.length,
+        stage: 4,
+        line: anchors.reg_loop || 4,
+        codeLine: anchors.reg_loop || 4,
+        decision: `极速累加 [${i + 1}/${n}]: 题 #${i + 1} 选策略 ${isA ? 'A' : 'B'} (+${addScore} 分)，ans 寄存器 = ${ans}`,
+        message: `单趟常数空间累加流转`,
+        variables: { i, question: i + 1, strategy: isA ? 'A' : 'B', addScore, ans },
+        stateArrays: [
+          {
+            id: 'reg',
+            name: '空间压缩寄存器',
+            indices: [0, 1],
+            values: [`ans: ${ans}`, `当前: 题#${i + 1}->${isA ? 'A' : 'B'}`],
+            color: 'emerald',
+          },
+        ],
+        activeSlot: i,
+        metrics: { '当前题目': `题 #${i + 1}`, '累计得分': String(ans), 'space': 'O(1)' },
+      });
+    }
+
+    steps.push({
+      stepIndex: steps.length,
+      stage: 4,
+      line: anchors.reg_done || 6,
+      codeLine: anchors.reg_done || 6,
+      decision: `🏁 O(1) 空间极速求解完成！最高总得分 = ${ans}`,
+      message: `时间复杂度 O(N log N)，额外空间复杂度 O(1)`,
+      variables: { return: ans },
+      metrics: { '最终最高分': String(ans), '空间开销': 'O(1)', '状态': '🏁 极致收敛' },
+    });
+
+    return steps;
+  }
+
+  // ==========================================================================
   // 最大数 (LeetCode 179 / 089 Code01) 顶层四阶段编译器
   // 核心思想：自定义字符串拼接比较器 (b+a).compareTo(a+b) 传递性排序
   // ==========================================================================

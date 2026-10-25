@@ -83,6 +83,7 @@ import eliminateMonstersModel from './models/eliminate-monsters.yaml';
 import largestPalindromicNumberModel from './models/largest-palindromic-number.yaml';
 import minCostHireWorkersModel from './models/min-cost-hire-workers.yaml';
 import maxAvgPassRatioModel from './models/max-avg-pass-ratio.yaml';
+import quizScoreMaximizationModel from './models/quiz-score-maximization.yaml';
 import dpTheoryModel from './models/dp-theory.yaml';
 import dpWeekSummary1Model from './models/dp-week-summary-1.yaml';
 import dpWeekSummary2Model from './models/dp-week-summary-2.yaml';
@@ -386,6 +387,10 @@ export class AlgorithmModelRepository {
     ['largest-palindromic-number', largestPalindromicNumberModel as IYamlAlgorithmModel],
     ['min-cost-hire-workers', minCostHireWorkersModel as IYamlAlgorithmModel],
     ['max-avg-pass-ratio', maxAvgPassRatioModel as IYamlAlgorithmModel],
+    ['quiz-score-maximization', quizScoreMaximizationModel as IYamlAlgorithmModel],
+    ['quiz-score', quizScoreMaximizationModel as IYamlAlgorithmModel],
+    ['quiz-score-max', quizScoreMaximizationModel as IYamlAlgorithmModel],
+    ['class092-code04', quizScoreMaximizationModel as IYamlAlgorithmModel],
     ['dungeon-game-reverse-dp', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['dungeon-game', dungeonGameReverseDpModel as IYamlAlgorithmModel],
     ['max-product-subarray', maxProductSubarrayModel as IYamlAlgorithmModel],

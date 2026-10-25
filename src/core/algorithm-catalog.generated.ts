@@ -4605,9 +4605,9 @@ export const ALL_ALGORITHM_METADATA: AlgorithmMetadata[] = [
   {
     id: "quiz-score-maximization",
     name: "知识竞赛得分最大化 (Quiz Score)",
-    viewId: "algo-quiz-score-maximization-view",
+    viewId: "algo-quiz-score-view",
     category: "greedy",
-    description: "知识竞赛得分最大化 (Quiz Score)",
+    description: "左程云算法讲解 092 Code04：知识竞赛得分最大化，差额排序贪心策略与动态规划推演",
     icon: "📝",
     difficulty: 2,
     levelOrder: 924,
