@@ -692,8 +692,12 @@ function compileBuyingHayStage3Steps(
   const lineReturn = anchors?.return || 20;
 
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(INF));
+  const bestPlans: HayPurchaseItem[][][] = Array.from({ length: n + 1 }, () =>
+    Array.from({ length: m + 1 }, () => [])
+  );
 
   function pushStep(data: Partial<UniversalStep>) {
+    const curPlan = (data.i !== undefined && data.j !== undefined ? bestPlans[data.i]?.[data.j] : undefined) || (data as any).selectedItems;
     steps.push({
       stage: 3,
       grid: dp.map((row) => row.map((v) => (v >= INF ? null : v))),
@@ -701,6 +705,12 @@ function compileBuyingHayStage3Steps(
       log: data.log || '| DP填表',
       msg: data.msg || data.log || '',
       line: data.line || lineTransferTake,
+      hTarget: h,
+      maxVal: maxv,
+      expandedCapacity: m,
+      cost: [...cost],
+      val: [...val],
+      selectedItems: curPlan ? [...curPlan] : [],
       ...data,
     });
   }
@@ -744,10 +754,12 @@ function compileBuyingHayStage3Steps(
 
     for (let j = 0; j <= m; j++) {
       dp[i][j] = dp[i - 1][j];
+      bestPlans[i][j] = [...bestPlans[i - 1][j]];
       const canTake = j >= v && dp[i][j - v] !== INF;
 
-      if (canTake) {
-        dp[i][j] = Math.min(dp[i][j], dp[i][j - v] + c);
+      if (canTake && dp[i][j - v] + c < dp[i][j]) {
+        dp[i][j] = dp[i][j - v] + c;
+        bestPlans[i][j] = [...bestPlans[i][j - v], { supplierIdx: i, cost: c, val: v }];
       }
 
       const valStr = dp[i][j] >= INF ? 'INF' : `${dp[i][j]} 元`;
@@ -829,8 +841,10 @@ function compileBuyingHayStage4Steps(
 
   const dp: number[] = new Array(m + 1).fill(INF);
   dp[0] = 0;
+  const bestPlans: HayPurchaseItem[][] = Array.from({ length: m + 1 }, () => []);
 
   function pushStep(data: Partial<UniversalStep>) {
+    const curPlan = (data.activeSlot !== undefined ? bestPlans[data.activeSlot] : undefined) || (data as any).selectedItems;
     steps.push({
       stage: 4,
       grid: [dp.map((v) => (v >= INF ? null : v))],
@@ -839,6 +853,12 @@ function compileBuyingHayStage4Steps(
       log: data.log || '| 空间压缩',
       msg: data.msg || data.log || '',
       line: data.line || lineTransfer,
+      hTarget: h,
+      maxVal: maxv,
+      expandedCapacity: m,
+      cost: [...cost],
+      val: [...val],
+      selectedItems: curPlan ? [...curPlan] : [],
       ...data,
     });
   }
@@ -846,6 +866,8 @@ function compileBuyingHayStage4Steps(
   pushStep({
     type: 'calc-bound',
     line: lineCalcBound,
+    grid: [new Array(m + 1).fill(null)],
+    dp1d: new Array(m + 1).fill(null),
     tag: `容量安全扩充上限 m = H(${h}) + maxV(${maxv}) = ${m}`,
     log: `| 📐 计算安全扩充上限: m = ${m}`,
     msg: `空间压缩完全背包：确定容量上界 <code>m = H + maxVal = <strong>${m}</strong></code> 磅。`,
@@ -855,6 +877,8 @@ function compileBuyingHayStage4Steps(
   pushStep({
     type: 'init',
     line: lineInit,
+    grid: [new Array(m + 1).fill(null)],
+    dp1d: new Array(m + 1).fill(null),
     activeSlot: 0,
     tag: `初始化 dp[0..${m}], dp[0]=0 其余 INF`,
     log: `| 📋 初始化一维向量 dp[0..${m}]`,
@@ -871,6 +895,7 @@ function compileBuyingHayStage4Steps(
       if (dp[j - v] !== INF) {
         if (dp[j - v] + c < dp[j]) {
           dp[j] = dp[j - v] + c;
+          bestPlans[j] = [...bestPlans[j - v], { supplierIdx: i + 1, cost: c, val: v }];
           improved = true;
         }
       }

@@ -153,8 +153,8 @@ export class TarjanSCCDagCanvasAdapter {
         : '';
 
     container.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden">
-        <svg class="w-full h-full max-h-[220px]" viewBox="0 0 470 200">
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #020617; padding: 8px; user-select: none; overflow: hidden; box-sizing: border-box;">
+        <svg style="width: 100%; height: 100%; max-height: 220px;" viewBox="0 0 470 200">
           <defs>
             <marker id="tarjan-arrow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />

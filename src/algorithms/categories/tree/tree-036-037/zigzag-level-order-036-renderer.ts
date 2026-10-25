@@ -41,6 +41,7 @@ export const zigzagLevelOrder036Visualizer = registerDeclarativeAlgorithm<Zigzag
   aliases: ['zigzag-level-order', 'binary-tree-zigzag-level-order-traversal', 'leetcode-103'],
   category: 'tree',
   icon: '🔀',
+  hasDeductionTree: true,
   difficulty: 2,
   levelOrder: 3602,
   learningGoal: '掌握标准队列与双端队列/方向标志结合的锯齿形层序遍历技巧，理解出队顺序与收集顺序解耦的设计',

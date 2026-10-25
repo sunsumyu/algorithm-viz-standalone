@@ -76,22 +76,38 @@ export type { TreeNode } from '../../../core/renderers/tree-svg';
 
 export function buildTreeFromArr(arr: (number | null)[]): TreeNode | null {
   if (arr.length === 0 || arr[0] === null) return null;
-  const root: TreeNode = { val: arr[0]!, left: null, right: null };
+  let nextId = 1;
+  const root: TreeNode = { id: `node-${nextId++}`, val: arr[0]!, left: null, right: null };
   const queue: TreeNode[] = [root];
   let i = 1;
   while (queue.length > 0 && i < arr.length) {
     const node = queue.shift()!;
     if (i < arr.length && arr[i] !== null) {
-      node.left = { val: arr[i]!, left: null, right: null };
+      node.left = { id: `node-${nextId++}`, val: arr[i]!, left: null, right: null };
       queue.push(node.left);
     }
     i++;
     if (i < arr.length && arr[i] !== null) {
-      node.right = { val: arr[i]!, left: null, right: null };
+      node.right = { id: `node-${nextId++}`, val: arr[i]!, left: null, right: null };
       queue.push(node.right);
     }
     i++;
   }
+  return root;
+}
+
+export function ensureTreeIds(root: TreeNode | null): TreeNode | null {
+  if (!root) return null;
+  let nextId = 1;
+  const assign = (node: TreeNode | null) => {
+    if (!node) return;
+    if (!node.id) {
+      node.id = `node-${nextId++}`;
+    }
+    assign(node.left);
+    assign(node.right);
+  };
+  assign(root);
   return root;
 }
 

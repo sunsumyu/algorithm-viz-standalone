@@ -8,9 +8,136 @@
  */
 
 // ============================================================
-// Stage 1: 递归减法回溯 (Recursive Subtraction DFS · LC 112)
+// Stage 1: 代码随想录·辅助函数与显式回溯 (Carl's Explicit Backtracking DFS)
+// 递归遍历二叉树寻找路径，计数器 count 初始为 targetSum - root.val。
+// 到达叶子节点判断 count == 0；递归深入执行 count -= val，子递归返回后显式执行 count += val 现场恢复！
 // ============================================================
-export const PATH_SUM_STAGE1_CODE: Record<string, string[]> = {
+export const PATH_SUM_STAGE1_CARL_TRAVERSAL_CODE: Record<string, string[]> = {
+  java: [
+    'public class Solution {',                                                 // 1
+    '    public boolean hasPathSum(TreeNode root, int targetSum) {',          // 2
+    '        if (root == null) return false;',                                 // 3
+    '        return traversal(root, targetSum - root.val);',                   // 4
+    '    }',                                                                   // 5
+    '    private boolean traversal(TreeNode cur, int count) {',               // 6
+    '        if (cur.left == null && cur.right == null && count == 0) return true;', // 7
+    '        if (cur.left == null && cur.right == null) return false;',        // 8
+    '        if (cur.left != null) {',                                         // 9
+    '            count -= cur.left.val; // 递归深入',                           // 10
+    '            if (traversal(cur.left, count)) return true;',                // 11
+    '            count += cur.left.val; // 回溯现场恢复',                       // 12
+    '        }',                                                               // 13
+    '        if (cur.right != null) {',                                        // 14
+    '            count -= cur.right.val; // 递归深入',                          // 15
+    '            if (traversal(cur.right, count)) return true;',               // 16
+    '            count += cur.right.val; // 回溯现场恢复',                      // 17
+    '        }',                                                               // 18
+    '        return false;',                                                   // 19
+    '    }',                                                                   // 20
+    '}',                                                                       // 21
+  ],
+  cpp: [
+    'class Solution {',                                                        // 1
+    'public:',                                                                 // 2
+    '    bool hasPathSum(TreeNode* root, int targetSum) {',                    // 3
+    '        if (!root) return false;',                                        // 4
+    '        return traversal(root, targetSum - root->val);',                  // 5
+    '    }',                                                                   // 6
+    '    bool traversal(TreeNode* cur, int count) {',                          // 7
+    '        if (!cur->left && !cur->right && count == 0) return true;',       // 8
+    '        if (!cur->left && !cur->right) return false;',                    // 9
+    '        if (cur->left) {',                                                // 10
+    '            count -= cur->left->val; // 递归深入',                         // 11
+    '            if (traversal(cur->left, count)) return true;',               // 12
+    '            count += cur->left->val; // 回溯现场恢复',                    // 13
+    '        }',                                                               // 14
+    '        if (cur->right) {',                                               // 15
+    '            count -= cur->right->val; // 递归深入',                        // 16
+    '            if (traversal(cur->right, count)) return true;',              // 17
+    '            count += cur->right->val; // 回溯现场恢复',                   // 18
+    '        }',                                                               // 19
+    '        return false;',                                                   // 20
+    '    }',                                                                   // 21
+    '};',                                                                      // 22
+  ],
+  python: [
+    'class Solution:',                                                         // 1
+    '    def hasPathSum(self, root: Optional[TreeNode], targetSum: int) -> bool:', // 2
+    '        if not root:',                                                    // 3
+    '            return False',                                                // 4
+    '        return self.traversal(root, targetSum - root.val)',              // 5
+    '    def traversal(self, cur: TreeNode, count: int) -> bool:',             // 6
+    '        if not cur.left and not cur.right and count == 0:',               // 7
+    '            return True',                                                 // 8
+    '        if not cur.left and not cur.right:',                              // 9
+    '            return False',                                                // 10
+    '        if cur.left:',                                                    // 11
+    '            count -= cur.left.val  # 递归深入',                            // 12
+    '            if self.traversal(cur.left, count): return True',             // 13
+    '            count += cur.left.val  # 回溯现场恢复',                        // 14
+    '        if cur.right:',                                                   // 15
+    '            count -= cur.right.val  # 递归深入',                           // 16
+    '            if self.traversal(cur.right, count): return True',            // 17
+    '            count += cur.right.val  # 回溯现场恢复',                       // 18
+    '        return False',                                                    // 19
+  ],
+  javascript: [
+    'var hasPathSum = function(root, targetSum) {',                            // 1
+    '    if (!root) return false;',                                            // 2
+    '    return traversal(root, targetSum - root.val);',                       // 3
+    '};',                                                                      // 4
+    'function traversal(cur, count) {',                                        // 5
+    '    if (!cur.left && !cur.right && count === 0) return true;',            // 6
+    '    if (!cur.left && !cur.right) return false;',                          // 7
+    '    if (cur.left) {',                                                     // 8
+    '        count -= cur.left.val; // 递归深入',                               // 9
+    '        if (traversal(cur.left, count)) return true;',                    // 10
+    '        count += cur.left.val; // 回溯现场恢复',                          // 11
+    '    }',                                                                   // 12
+    '    if (cur.right) {',                                                    // 13
+    '        count -= cur.right.val; // 递归深入',                              // 14
+    '        if (traversal(cur.right, count)) return true;',                   // 15
+    '        count += cur.right.val; // 回溯现场恢复',                         // 16
+    '    }',                                                                   // 17
+    '    return false;',                                                       // 18
+    '}',                                                                       // 19
+  ],
+};
+
+export const PATH_SUM_STAGE1_CARL_TRAVERSAL_LINES = {
+  entry: { java: 2, cpp: 3, python: 2, javascript: 1 },
+  nullCheck: { java: 3, cpp: 4, python: 3, javascript: 2 },
+  callTraversal: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  traversalEntry: { java: 6, cpp: 7, python: 6, javascript: 5 },
+  leafMatch: { java: 7, cpp: 8, python: 7, javascript: 6 },
+  leafMismatch: { java: 8, cpp: 9, python: 9, javascript: 7 },
+  leftSub: { java: 10, cpp: 11, python: 12, javascript: 9 },
+  leftRecurse: { java: 11, cpp: 12, python: 13, javascript: 10 },
+  leftBacktrack: { java: 12, cpp: 13, python: 14, javascript: 11 },
+  rightSub: { java: 15, cpp: 16, python: 16, javascript: 14 },
+  rightRecurse: { java: 16, cpp: 17, python: 17, javascript: 15 },
+  rightBacktrack: { java: 17, cpp: 18, python: 18, javascript: 16 },
+  returnFalse: { java: 19, cpp: 20, python: 19, javascript: 18 },
+  done: { java: 4, cpp: 5, python: 5, javascript: 3 },
+
+  // 向后兼容旧别名映射
+  callProcess: { java: 4, cpp: 5, python: 5, javascript: 3 },
+  processEntry: { java: 6, cpp: 7, python: 6, javascript: 5 },
+  addSum: { java: 10, cpp: 11, python: 12, javascript: 9 },
+  leafCheck: { java: 8, cpp: 9, python: 9, javascript: 7 },
+  match: { java: 7, cpp: 8, python: 7, javascript: 6 },
+  recurseLeft: { java: 11, cpp: 12, python: 13, javascript: 10 },
+  recurseRight: { java: 16, cpp: 17, python: 17, javascript: 15 },
+  combine: { java: 19, cpp: 20, python: 19, javascript: 18 },
+};
+
+export const PATH_SUM_STAGE1_CUMULATIVE_CODE = PATH_SUM_STAGE1_CARL_TRAVERSAL_CODE;
+export const PATH_SUM_STAGE1_CUMULATIVE_LINES = PATH_SUM_STAGE1_CARL_TRAVERSAL_LINES;
+
+// ============================================================
+// Stage 2: 剩余差额单函数精简 (Remaining Target Subtraction · LC 112 精简解)
+// ============================================================
+export const PATH_SUM_STAGE2_SUBTRACT_CODE = {
   java: [
     'public class Solution {',                                          // 1
     '    public boolean hasPathSum(TreeNode root, int targetSum) {',     // 2
@@ -76,8 +203,11 @@ export const PATH_SUM_STAGE1_LINES = {
   done: { java: 10, cpp: 11, python: 9, javascript: 9 },
 };
 
+export const PATH_SUM_STAGE1_CODE = PATH_SUM_STAGE2_SUBTRACT_CODE;
+export const PATH_SUM_STAGE2_SUBTRACT_LINES = PATH_SUM_STAGE1_LINES;
+
 // ============================================================
-// Stage 2: 回溯现场恢复与全解收集 (Backtracking Path Restoration · LC 113)
+// Stage 3: 回溯现场恢复与全解收集 (Backtracking Path Restoration · LC 113)
 // ============================================================
 export const PATH_SUM_STAGE2_BACKTRACK_CODE: Record<string, string[]> = {
   java: [
@@ -288,3 +418,9 @@ export const PATH_SUM_STAGE3_BFS_LINES = {
   pushRight: { java: 19, cpp: 20, python: 15, javascript: 16 },
   returnFalse: { java: 23, cpp: 24, python: 17, javascript: 20 },
 };
+
+export const PATH_SUM_STAGE3_BACKTRACK_CODE = PATH_SUM_STAGE2_BACKTRACK_CODE;
+export const PATH_SUM_STAGE3_BACKTRACK_LINES = PATH_SUM_STAGE2_BACKTRACK_LINES;
+export const PATH_SUM_STAGE4_BFS_CODE = PATH_SUM_STAGE3_BFS_CODE;
+export const PATH_SUM_STAGE4_BFS_LINES = PATH_SUM_STAGE3_BFS_LINES;
+

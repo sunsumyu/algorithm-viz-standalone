@@ -72,6 +72,7 @@ export const mergeTreesVisualizer = registerDeclarativeAlgorithm<MergeTreesStep>
   difficulty: 1,
   levelOrder: 617,
   aliases: ['leetcode-617', 'merge-two-binary-trees'],
+  hasDeductionTree: true,
   learningGoal: '掌握双树同步遍历递归模型 (Simultaneous DFS) 与广度优先队列迭代合并两大工业范式',
   inputs: [
     { id: 'tree1', label: '树 1 层序数组', type: 'text', defaultValue: '1, 3, 2, 5', placeholder: '以逗号分隔，如 1, 3, 2, 5' },

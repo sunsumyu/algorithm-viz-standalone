@@ -501,9 +501,44 @@ export function buildMergeStonesSteps(params: MergeStonesStepParams): UniversalS
           const leftCost = grid[i]![k] ?? 0;
           const rightCost = grid[k + 1]![j] ?? 0;
           const total = leftCost + rightCost;
+
+          pushStep({
+            type: 'loop_k',
+            flowPhase: 'forward',
+            line: lineLoopK,
+            i,
+            j,
+            gridHighlight: { i, j },
+            deps: [
+              { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftCost}` },
+              { r: k + 1, c: j, type: 'bottom' as any, label: `dp[${k + 1}][${j}]=${rightCost}` },
+            ],
+            decision: `枚举切分点 k=${k}`,
+            tag: `区间 [${i}..${j}] 尝试切分点 k=${k}: [${i}..${k}] + [${k + 1}..${j}] ➔ 子成本=${total}`,
+            log: `| 🔍 尝试分割点 k=${k}：左段成本 dp[${i}][${k}]=${leftCost} + 右段成本 dp[${k + 1}][${j}]=${rightCost} = ${total}`,
+            msg: `尝试在 <code>k = ${k}</code> 处切分：左半段 <code>[${i}..${k}]</code> 合并需 <code>${leftCost}</code>，右半段 <code>[${k + 1}..${j}]</code> 合并需 <code>${rightCost}</code>，子成本合计 <strong>${total}</strong>。`,
+          });
+
           if (total < minCost) {
             minCost = total;
             bestK = k;
+
+            pushStep({
+              type: 'update_min',
+              flowPhase: 'forward',
+              line: lineUpdateMin,
+              i,
+              j,
+              gridHighlight: { i, j },
+              deps: [
+                { r: i, c: k, type: 'left', label: `dp[${i}][${k}]=${leftCost}` },
+                { r: k + 1, c: j, type: 'bottom' as any, label: `dp[${k + 1}][${j}]=${rightCost}` },
+              ],
+              decision: `更新最低子成本 minCost=${total}`,
+              tag: `更优切分：k=${k} 最低子成本更新为 ${total}`,
+              log: `| ✨ 找到更优切分点 k=${k}：最低子成本更新为 ${minCost}`,
+              msg: `更新最优切分：在 <code>k = ${k}</code> 处分段子成本仅需 <strong>${total}</strong>，刷新当前区间最低子合并成本。`,
+            });
           }
         }
 

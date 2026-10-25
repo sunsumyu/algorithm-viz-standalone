@@ -39,6 +39,7 @@ export const countCompleteTreeNodes036Visualizer = registerDeclarativeAlgorithm<
   name: '完全二叉树节点个数 (Class 036)',
   category: 'tree',
   icon: '🧮',
+  hasDeductionTree: true,
   difficulty: 2,
   levelOrder: 3609,
   learningGoal: '掌握完全二叉树右子树最左探测定界法，利用满树公式 2^k 实现 O((log N)^2) 极致递归剪枝',

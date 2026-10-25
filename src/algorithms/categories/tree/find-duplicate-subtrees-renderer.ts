@@ -55,8 +55,11 @@ export const findDuplicateSubtreesVisualizer = registerDeclarativeAlgorithm<Dupl
   id: 'find-duplicate-subtrees',
   name: '寻找重复的子树',
   category: 'tree',
+  icon: '👯',
+  hasDeductionTree: true,
+  levelOrder: 652,
   learningGoal: '掌握二叉树自底向上后序遍历子树序列化判定图同构，深度理解三元组 (val, leftUID, rightUID) 的 O(N) 整数哈希压缩原理',
-  aliases: ['leetcode-652', 'find-duplicate-subtrees'],
+  aliases: ['leetcode-652', '652', 'find-duplicate-subtrees'],
   stages: [
     {
       id: 'stage1',

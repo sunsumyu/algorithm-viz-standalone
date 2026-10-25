@@ -43,56 +43,57 @@ export function renderValidBstCanvas(container: HTMLElement, step: VBStep, _stag
  * Stage 1: Card 2 递归调用推演跟踪栈
  */
 export function renderStage1CustomMetrics(container: HTMLElement, step: VBStep): void {
+  if (!container) return;
   container.innerHTML = '';
-  container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
+  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   const isDone = step.action === 'done';
   const isValid = step.valid;
 
   // 1. 顶部 4 格关键指标
   const statsRow = document.createElement('div');
-  statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
   statsRow.innerHTML = `
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">当前考察</div>
-      <div class="text-sm font-bold ${step.invalidNode !== null ? 'text-rose-600' : 'text-amber-600'}">${step.current ?? '—'}</div>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">当前考察</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:${step.invalidNode !== null ? '#e11d48' : '#d97706'}; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.current != null ? `Node(${step.current})` : '—'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">前驱 prev</div>
-      <div class="text-sm font-bold text-blue-600">${step.prev ?? 'null'}</div>
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">前驱 prev</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.prev != null ? `Node(${step.prev})` : 'null'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">单调性判定</div>
-      <div class="text-sm font-bold ${isValid ? 'text-emerald-600' : 'text-rose-600'}">${isValid ? (isDone ? '全体验证通过' : '严格递增') : '违规破坏'}</div>
+    <div style="background:${isValid ? '#f0fdf4' : '#fff1f2'}; border:1px solid ${isValid ? '#bbf7d0' : '#fecdd3'}; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:${isValid ? '#15803d' : '#be123c'}; font-weight:700; text-transform:uppercase;">单调性判定</div>
+      <div style="font-size:12px; font-weight:800; color:${isValid ? '#16a34a' : '#e11d48'}; margin-top:3px;">${isValid ? (isDone ? '全体验证通过' : '严格递增') : '违规破坏'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">已收集序列</div>
-      <div class="text-sm font-bold text-slate-700">${step.sequence.length} 个</div>
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#475569; font-weight:700; text-transform:uppercase;">已收集序列</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#334155; margin-top:2px;">${step.sequence.length} 个</div>
     </div>
   `;
   container.appendChild(statsRow);
 
   // 2. 中序递增序列流
   const seqRow = document.createElement('div');
-  seqRow.className = 'flex flex-wrap items-center gap-1 p-2 bg-slate-50 border border-slate-200 rounded text-xs flex-shrink-0';
+  seqRow.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:6px 10px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; font-size:11px; flex-shrink:0;';
   const seqHtml = step.sequence.length > 0
     ? step.sequence.map((v, i) => `
-        <span class="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded font-mono font-bold">${v}</span>
-        ${i < step.sequence.length - 1 ? '<span class="text-slate-400 text-[10px]">&lt;</span>' : ''}
+        <span style="padding:1px 6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; border-radius:4px; font-family:ui-monospace,monospace; font-weight:700;">${v}</span>
+        ${i < step.sequence.length - 1 ? '<span style="color:#94a3b8; font-size:10px;">&lt;</span>' : ''}
       `).join('')
-    : '<span class="text-slate-400 italic">等待首个中序访问节点...</span>';
-  seqRow.innerHTML = `<span class="text-[11px] font-bold text-slate-600 mr-1">中序序列:</span> ${seqHtml}`;
+    : '<span style="color:#94a3b8; font-style:italic;">等待首个中序访问节点...</span>';
+  seqRow.innerHTML = `<span style="font-weight:700; color:#475569; margin-right:4px;">中序序列:</span> ${seqHtml}`;
   container.appendChild(seqRow);
 
   // 3. 决策信息条
   const decisionBar = document.createElement('div');
-  decisionBar.className = 'p-2 bg-blue-50/60 border border-blue-100 rounded text-[11px] text-slate-700 flex-shrink-0';
-  decisionBar.innerHTML = `<span class="font-bold text-blue-900">🧭 决策:</span> ${step.decision} <span class="text-slate-500 ml-2">(${step.message})</span>`;
+  decisionBar.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isValid ? (isDone ? '#f0fdf4' : '#f8fafc') : '#fff1f2'}; border:1px solid ${isValid ? (isDone ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
+  decisionBar.innerHTML = `<div style="font-weight:700; margin-bottom:2px; color:${isValid ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'};">🧭 决策: ${step.decision}</div><div style="color:#64748b; font-size:11px;">${step.message}</div>`;
   container.appendChild(decisionBar);
 
   // 4. 底部弹性容器挂载 RecursiveCallTraceAdapter
   const traceContainer = document.createElement('div');
-  traceContainer.className = 'flex-1 min-h-0 w-full overflow-hidden';
+  traceContainer.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
   container.appendChild(traceContainer);
 
   RecursiveCallTraceAdapter.render(traceContainer, step.callTrace || null, {
@@ -106,45 +107,47 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: VBStep):
  * Stage 2: Card 2 先序开区间定界与追踪栈
  */
 export function renderStage2CustomMetrics(container: HTMLElement, step: VBStep): void {
+  if (!container) return;
   container.innerHTML = '';
-  container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
+  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   const minVal = step.boundary?.min ?? '-∞';
   const maxVal = step.boundary?.max ?? '+∞';
   const inRange = step.boundary?.inRange ?? true;
+  const isDone = step.action === 'done';
 
   // 1. 顶部 4 格关键指标
   const statsRow = document.createElement('div');
-  statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
   statsRow.innerHTML = `
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">当前考察</div>
-      <div class="text-sm font-bold ${inRange ? 'text-amber-600' : 'text-rose-600'}">${step.current ?? '—'}</div>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">当前考察</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:${inRange ? '#d97706' : '#e11d48'}; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.current != null ? `Node(${step.current})` : '—'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">合法开区间</div>
-      <div class="text-sm font-bold text-blue-600 font-mono">(${minVal}, ${maxVal})</div>
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">合法开区间</div>
+      <div style="font-size:12px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">(${minVal}, ${maxVal})</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">区间检验</div>
-      <div class="text-sm font-bold ${inRange ? 'text-emerald-600' : 'text-rose-600'}">${inRange ? '落入区间' : '越界违规'}</div>
+    <div style="background:${inRange ? '#f0fdf4' : '#fff1f2'}; border:1px solid ${inRange ? '#bbf7d0' : '#fecdd3'}; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:${inRange ? '#15803d' : '#be123c'}; font-weight:700; text-transform:uppercase;">区间检验</div>
+      <div style="font-size:12px; font-weight:800; color:${inRange ? '#16a34a' : '#e11d48'}; margin-top:3px;">${inRange ? '落入区间' : '越界违规'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">已检验节点</div>
-      <div class="text-sm font-bold text-slate-700">${step.sequence.length} 个</div>
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#475569; font-weight:700; text-transform:uppercase;">已检验节点</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#334155; margin-top:2px;">${step.sequence.length} 个</div>
     </div>
   `;
   container.appendChild(statsRow);
 
   // 2. 决策信息条
   const decisionBar = document.createElement('div');
-  decisionBar.className = 'p-2 bg-blue-50/60 border border-blue-100 rounded text-[11px] text-slate-700 flex-shrink-0';
-  decisionBar.innerHTML = `<span class="font-bold text-blue-900">🧭 决策:</span> ${step.decision} <span class="text-slate-500 ml-2">(${step.message})</span>`;
+  decisionBar.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${inRange ? (isDone ? '#f0fdf4' : '#f8fafc') : '#fff1f2'}; border:1px solid ${inRange ? (isDone ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
+  decisionBar.innerHTML = `<div style="font-weight:700; margin-bottom:2px; color:${inRange ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'};">🧭 决策: ${step.decision}</div><div style="color:#64748b; font-size:11px;">${step.message}</div>`;
   container.appendChild(decisionBar);
 
   // 3. 底部弹性容器挂载 RecursiveCallTraceAdapter
   const traceContainer = document.createElement('div');
-  traceContainer.className = 'flex-1 min-h-0 w-full overflow-hidden';
+  traceContainer.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
   container.appendChild(traceContainer);
 
   RecursiveCallTraceAdapter.render(traceContainer, step.callTrace || null, {
@@ -158,65 +161,67 @@ export function renderStage2CustomMetrics(container: HTMLElement, step: VBStep):
  * Stage 3: Card 2 显式栈状态监视器
  */
 export function renderStage3CustomMetrics(container: HTMLElement, step: VBStep): void {
+  if (!container) return;
   container.innerHTML = '';
-  container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
+  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   const stackVals = step.stack || [];
+  const isDone = step.action === 'done';
 
   // 1. 顶部 4 格关键指标
   const statsRow = document.createElement('div');
-  statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
   statsRow.innerHTML = `
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">当前考察</div>
-      <div class="text-sm font-bold text-amber-600">${step.current ?? '—'}</div>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">当前考察</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.current != null ? `Node(${step.current})` : '—'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">栈内深度</div>
-      <div class="text-sm font-bold text-indigo-600">${stackVals.length}</div>
+    <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#7e22ce; font-weight:700; text-transform:uppercase;">栈内深度</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#9333ea; margin-top:2px;">${stackVals.length}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">前驱 prev</div>
-      <div class="text-sm font-bold text-blue-600">${step.prev ?? 'null'}</div>
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">前驱 prev</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.prev != null ? `Node(${step.prev})` : 'null'}</div>
     </div>
-    <div class="bg-slate-50 border border-slate-200 rounded p-2 text-center">
-      <div class="text-[10px] text-slate-500 font-bold">单调性判定</div>
-      <div class="text-sm font-bold ${step.valid ? 'text-emerald-600' : 'text-rose-600'}">${step.valid ? '严格递增' : '违规破坏'}</div>
+    <div style="background:${step.valid ? '#f0fdf4' : '#fff1f2'}; border:1px solid ${step.valid ? '#bbf7d0' : '#fecdd3'}; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:${step.valid ? '#15803d' : '#be123c'}; font-weight:700; text-transform:uppercase;">单调性判定</div>
+      <div style="font-size:12px; font-weight:800; color:${step.valid ? '#16a34a' : '#e11d48'}; margin-top:3px;">${step.valid ? (isDone ? '全体验证通过' : '严格递增') : '违规破坏'}</div>
     </div>
   `;
   container.appendChild(statsRow);
 
   // 2. 显式栈槽位可视化
   const stackRow = document.createElement('div');
-  stackRow.className = 'flex flex-col gap-1.5 p-2 bg-slate-50 border border-slate-200 rounded text-xs flex-shrink-0';
+  stackRow.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px 10px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; font-size:11px; flex-shrink:0;';
   const stackChips = stackVals.length > 0
-    ? stackVals.map((v) => `<span class="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold font-mono rounded text-xs shadow-sm">${v}</span>`).join('')
-    : '<span class="text-slate-400 italic">当前栈为空</span>';
+    ? stackVals.map((v) => `<span style="padding:3px 8px; background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; font-weight:700; font-family:ui-monospace,monospace; border-radius:4px; font-size:11px;">Node(${v})</span>`).join('')
+    : '<span style="color:#94a3b8; font-style:italic;">当前栈为空</span>';
   stackRow.innerHTML = `
-    <div class="flex items-center justify-between text-[11px] font-bold text-slate-600">
+    <div style="display:flex; align-items:center; justify-content:space-between; font-weight:700; color:#475569;">
       <span>🥞 显式调用栈 Stack&lt;TreeNode&gt;:</span>
-      <span class="text-[10px] text-slate-400">栈底在左 ➔ 栈顶在右</span>
+      <span style="font-size:10px; color:#94a3b8; font-weight:normal;">栈底在左 ➔ 栈顶在右</span>
     </div>
-    <div class="flex items-center gap-1.5 flex-wrap">${stackChips}</div>
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">${stackChips}</div>
   `;
   container.appendChild(stackRow);
 
   // 3. 中序序列流
   const seqRow = document.createElement('div');
-  seqRow.className = 'flex flex-wrap items-center gap-1 p-2 bg-slate-50 border border-slate-200 rounded text-xs flex-shrink-0';
+  seqRow.style.cssText = 'display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:6px 10px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; font-size:11px; flex-shrink:0;';
   const seqHtml = step.sequence.length > 0
     ? step.sequence.map((v, i) => `
-        <span class="px-2 py-0.5 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded font-mono font-bold">${v}</span>
-        ${i < step.sequence.length - 1 ? '<span class="text-slate-400 text-[10px]">&lt;</span>' : ''}
+        <span style="padding:1px 6px; background:#f0fdf4; border:1px solid #bbf7d0; color:#15803d; border-radius:4px; font-family:ui-monospace,monospace; font-weight:700;">${v}</span>
+        ${i < step.sequence.length - 1 ? '<span style="color:#94a3b8; font-size:10px;">&lt;</span>' : ''}
       `).join('')
-    : '<span class="text-slate-400 italic">等待出栈节点...</span>';
-  seqRow.innerHTML = `<span class="text-[11px] font-bold text-slate-600 mr-1">已出栈中序序列:</span> ${seqHtml}`;
+    : '<span style="color:#94a3b8; font-style:italic;">等待出栈节点...</span>';
+  seqRow.innerHTML = `<span style="font-weight:700; color:#475569; margin-right:4px;">已出栈中序序列:</span> ${seqHtml}`;
   container.appendChild(seqRow);
 
   // 4. 决策信息条
   const decisionBar = document.createElement('div');
-  decisionBar.className = 'p-2 bg-blue-50/60 border border-blue-100 rounded text-[11px] text-slate-700 flex-shrink-0';
-  decisionBar.innerHTML = `<span class="font-bold text-blue-900">🧭 决策:</span> ${step.decision} <span class="text-slate-500 ml-2">(${step.message})</span>`;
+  decisionBar.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${step.valid ? (isDone ? '#f0fdf4' : '#f8fafc') : '#fff1f2'}; border:1px solid ${step.valid ? (isDone ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
+  decisionBar.innerHTML = `<div style="font-weight:700; margin-bottom:2px; color:${step.valid ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'};">🧭 决策: ${step.decision}</div><div style="color:#64748b; font-size:11px;">${step.message}</div>`;
   container.appendChild(decisionBar);
 }
 

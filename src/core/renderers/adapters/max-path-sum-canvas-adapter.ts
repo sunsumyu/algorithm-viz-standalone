@@ -52,36 +52,37 @@ export function renderMaxPathSumCanvas(container: HTMLElement, step: PathSumStep
  * Card 2: 自定义运行监控与推演面板 (4 格指标 + 最优路径 + 推演栈 / Info 二元组 / 显式栈)
  */
 export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: PathSumStep): void {
+  if (!container) return;
   container.innerHTML = '';
-  container.className = 'flex flex-col gap-2 p-2 h-full overflow-y-auto text-slate-200';
+  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   // 1. 顶部 4 格 KPI 卡片
   const metricsGrid = document.createElement('div');
-  metricsGrid.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  metricsGrid.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
   metricsGrid.innerHTML = `
-    <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-      <span class="text-[11px] text-slate-400 font-medium">全局最大路径和</span>
-      <span class="text-base font-bold font-mono text-emerald-400">
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#15803d; font-weight:700; text-transform:uppercase;">全局最大路径和</div>
+      <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#16a34a; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
         ${step.maxGlobalSum === -Infinity ? '—' : step.maxGlobalSum}
-      </span>
+      </div>
     </div>
-    <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-      <span class="text-[11px] text-slate-400 font-medium">当前拱形和</span>
-      <span class="text-base font-bold font-mono text-cyan-400">
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">当前拱形和</div>
+      <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
         ${step.currentArchSum !== 0 ? step.currentArchSum : '—'}
-      </span>
+      </div>
     </div>
-    <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-      <span class="text-[11px] text-slate-400 font-medium">左单侧有效增益</span>
-      <span class="text-base font-bold font-mono text-amber-400">
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">左单侧有效增益</div>
+      <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
         ${step.leftGain !== undefined ? step.leftGain : '—'}
-      </span>
+      </div>
     </div>
-    <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-      <span class="text-[11px] text-slate-400 font-medium">右单侧有效增益</span>
-      <span class="text-base font-bold font-mono text-indigo-400">
+    <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#7e22ce; font-weight:700; text-transform:uppercase;">右单侧有效增益</div>
+      <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#9333ea; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
         ${step.rightGain !== undefined ? step.rightGain : '—'}
-      </span>
+      </div>
     </div>
   `;
   container.appendChild(metricsGrid);
@@ -89,20 +90,20 @@ export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: Path
   // 2. 最优全路径展示区
   if (step.bestArchPath && step.bestArchPath.length > 0) {
     const pathBox = document.createElement('div');
-    pathBox.className = 'p-2 rounded-lg bg-slate-800/60 border border-slate-700/50 flex items-center justify-between flex-shrink-0';
+    pathBox.style.cssText = 'padding:6px 10px; border-radius:6px; background:#ffffff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; font-size:11px;';
     pathBox.innerHTML = `
-      <div class="flex items-center gap-2">
-        <span class="text-[11px] text-slate-400">🏔️ 当前最优全路径:</span>
-        <div class="flex items-center gap-1">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="color:#64748b; font-weight:600;">🏔️ 当前最优全路径:</span>
+        <div style="display:flex; align-items:center; gap:4px;">
           ${step.bestArchPath.map((v, i) => `
-            <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-600/70 font-mono text-xs font-bold text-emerald-300">
+            <span style="display:inline-flex; align-items:center; justify-content:center; padding:1px 6px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:#dcfce7; border:1px solid #86efac; color:#15803d;">
               ${v}
             </span>
-            ${i < step.bestArchPath.length - 1 ? '<span class="text-slate-500 text-xs">➔</span>' : ''}
+            ${i < step.bestArchPath.length - 1 ? '<span style="color:#94a3b8; font-size:11px;">➔</span>' : ''}
           `).join('')}
         </div>
       </div>
-      <span class="text-xs font-mono font-bold text-emerald-400">Sum = ${step.maxGlobalSum}</span>
+      <span style="font-family:ui-monospace,monospace; font-size:12px; font-weight:800; color:#15803d;">Sum = ${step.maxGlobalSum}</span>
     `;
     container.appendChild(pathBox);
   }
@@ -110,48 +111,48 @@ export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: Path
   // 3. 中间推演区：根据 stageId 呈现推演树、二元组或显式栈
   if (step.stageId === 'stage-2') {
     const infoBox = document.createElement('div');
-    infoBox.className = 'p-2.5 rounded-lg bg-slate-800/70 border border-slate-700/60 flex-shrink-0';
+    infoBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#ffffff; border:1px solid #e2e8f0; flex-shrink:0; font-size:11px;';
     infoBox.innerHTML = `
-      <div class="text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+      <div style="font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
         <span>📦 树形 DP 二元组 Info 数据流</span>
-        <span class="text-[10px] text-slate-400 font-normal">(Zuoshen Class 077 套路)</span>
+        <span style="font-size:10px; color:#64748b; font-weight:normal;">(Zuoshen Class 077 套路)</span>
       </div>
-      <div class="grid grid-cols-2 gap-2 text-xs font-mono">
-        <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex flex-col">
-          <span class="text-[10px] text-slate-400">子树内部最大全路径和 (maxPathSum):</span>
-          <span class="text-sm font-bold text-emerald-400">${step.infoResult ? step.infoResult.maxPathSum : (step.maxGlobalSum === -Infinity ? '—' : step.maxGlobalSum)}</span>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-family:ui-monospace,monospace; font-size:11px;">
+        <div style="padding:6px 8px; border-radius:4px; background:#f0fdf4; border:1px solid #bbf7d0; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:10px; color:#15803d;">子树内部最大全路径和 (maxPathSum):</span>
+          <span style="font-size:13px; font-weight:800; color:#16a34a;">${step.infoResult ? step.infoResult.maxPathSum : (step.maxGlobalSum === -Infinity ? '—' : step.maxGlobalSum)}</span>
         </div>
-        <div class="p-2 rounded bg-slate-900/60 border border-slate-800 flex flex-col">
-          <span class="text-[10px] text-slate-400">从根向下延伸单边最大收益 (maxGainFromRoot):</span>
-          <span class="text-sm font-bold text-cyan-400">${step.infoResult ? step.infoResult.maxGainFromRoot : (step.currentNode !== null ? (step.currentNode + Math.max(step.leftGain, step.rightGain)) : '—')}</span>
+        <div style="padding:6px 8px; border-radius:4px; background:#f0f9ff; border:1px solid #bae6fd; display:flex; flex-direction:column; gap:2px;">
+          <span style="font-size:10px; color:#0369a1;">从根向下延伸单边最大收益 (maxGainFromRoot):</span>
+          <span style="font-size:13px; font-weight:800; color:#0284c7;">${step.infoResult ? step.infoResult.maxGainFromRoot : (step.currentNode !== null ? (step.currentNode + Math.max(step.leftGain, step.rightGain)) : '—')}</span>
         </div>
       </div>
     `;
     container.appendChild(infoBox);
   } else if (step.stageId === 'stage-3') {
     const stackBox = document.createElement('div');
-    stackBox.className = 'p-2.5 rounded-lg bg-slate-800/70 border border-slate-700/60 flex-shrink-0';
+    stackBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#ffffff; border:1px solid #e2e8f0; flex-shrink:0; font-size:11px;';
     stackBox.innerHTML = `
-      <div class="text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+      <div style="font-weight:700; color:#334155; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
         <span>🥞 显式栈与增益映射表 (Gain Map)</span>
-        <span class="text-[10px] text-slate-400 font-normal">(零系统栈后序遍历)</span>
+        <span style="font-size:10px; color:#64748b; font-weight:normal;">(零系统栈后序遍历)</span>
       </div>
-      <div class="flex flex-col gap-1.5 text-xs font-mono">
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400">显式遍历栈:</span>
-          <div class="flex items-center gap-1">
+      <div style="display:flex; flex-direction:column; gap:6px; font-family:ui-monospace,monospace; font-size:11px;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:#64748b;">显式遍历栈:</span>
+          <div style="display:flex; align-items:center; gap:4px;">
             ${(step.stackState && step.stackState.length > 0)
-              ? step.stackState.map(v => `<span class="px-1.5 py-0.5 rounded bg-blue-950/70 border border-blue-600/60 text-blue-300 font-bold">${v}</span>`).join('')
-              : '<span class="text-slate-500 italic">空栈 []</span>'}
+              ? step.stackState.map(v => `<span style="padding:2px 7px; border-radius:4px; background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; font-weight:700;">${v}</span>`).join('')
+              : '<span style="color:#94a3b8; font-style:italic;">空栈 []</span>'}
           </div>
         </div>
         ${step.gainMapState && step.gainMapState.length > 0 ? `
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-slate-400">已结算单边增益:</span>
-            <div class="flex items-center gap-1.5 flex-wrap">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <span style="color:#64748b;">已结算单边增益:</span>
+            <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
               ${step.gainMapState.map(item => `
-                <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300">
-                  Node(${item.val}) ➔ <strong class="text-amber-400">${item.gain}</strong>
+                <span style="padding:2px 6px; border-radius:4px; background:#f8fafc; border:1px solid #e2e8f0; color:#334155;">
+                  Node(${item.val}) ➔ <strong style="color:#d97706;">${item.gain}</strong>
                 </span>
               `).join('')}
             </div>
@@ -162,20 +163,23 @@ export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: Path
     container.appendChild(stackBox);
   } else if (step.callTrace) {
     const traceBox = document.createElement('div');
-    traceBox.className = 'flex-1 min-h-[160px] max-h-[260px] overflow-hidden flex flex-col rounded-lg bg-slate-800/60 border border-slate-700/50';
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
+    traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
+    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
+      title: '📜 递归调用推演与归约栈 (LC 124)',
+      theme: 'light',
+      maxHeight: '100%',
+      showTerminalHeader: true,
+    });
     container.appendChild(traceBox);
   }
 
   // 4. 当前推演决策总结
   const isDone = step.decision.includes('完成') || step.decision.includes('完毕') || step.statusBadge?.type === 'success';
   const summaryBox = document.createElement('div');
-  summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed flex-shrink-0 ${
-    isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
-  }`;
+  summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
   summaryBox.innerHTML = `
-    <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 当前决策: ${step.decision}</div>
-    <div class="text-slate-400">${step.message}</div>
+    <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 当前决策: ${step.decision}</div>
+    <div style="color:#64748b; font-size:11px;">${step.message}</div>
   `;
   container.appendChild(summaryBox);
 }

@@ -18,15 +18,15 @@ export class PrimeFactors097CanvasAdapter {
     // 2. 质因子卡片瀑布流
     if (step.factors && step.factors.length > 0) {
       const cardsBox = document.createElement('div');
-      cardsBox.style.cssText = 'display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;';
+      cardsBox.style.cssText = 'display: flex; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b;';
 
       step.factors.forEach(f => {
         const item = document.createElement('div');
-        item.style.cssText = 'padding: 8px 14px; border-radius: 6px; background: #eff6ff; border: 1.5px solid #3b82f6; display: flex; flex-direction: column; align-items: center;';
+        item.style.cssText = 'padding: 8px 14px; border-radius: 6px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid #38bdf8; display: flex; flex-direction: column; align-items: center; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);';
         item.innerHTML = `
-          <span style="font-size: 11px; color: #64748b; font-weight: 700;">质因数</span>
-          <span style="font-size: 18px; font-weight: 800; color: #1d4ed8; font-family: monospace;">${f.prime}</span>
-          <span style="font-size: 11px; color: #0284c7; font-weight: 700; margin-top: 2px;">出现 ${f.power} 次</span>
+          <span style="font-size: 11px; color: #94a3b8; font-weight: 700;">质因数</span>
+          <span style="font-size: 18px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${f.prime}</span>
+          <span style="font-size: 11px; color: #facc15; font-weight: 700; margin-top: 2px;">出现 ${f.power} 次</span>
         `;
         cardsBox.appendChild(item);
       });
@@ -35,7 +35,7 @@ export class PrimeFactors097CanvasAdapter {
 
     // 3. 决策信息
     const info = document.createElement('div');
-    info.style.cssText = 'padding: 8px 12px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #3b82f6; font-size: 12px; color: #334155;';
+    info.style.cssText = 'padding: 10px 14px; background: #0f172a; border-radius: 6px; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; font-size: 12px; color: #cbd5e1;';
     info.textContent = step.decision;
     root.appendChild(info);
 

@@ -61,6 +61,7 @@ registerDeclarativeAlgorithm<MaxTreeStep>({
   difficulty: 2,
   levelOrder: 654,
   aliases: ['leetcode-654', 'maximum-binary-tree'],
+  hasDeductionTree: true,
   learningGoal: '掌握分治扫描递归构建、笛卡尔树单调栈 O(N) 线性构建与显式任务栈模拟三大范式',
   inputs: [
     {

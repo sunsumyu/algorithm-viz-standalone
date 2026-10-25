@@ -98,47 +98,38 @@ export class UnboundedKnapsackSandboxAdapter {
 
       // 如果来自当前行的同种物品自叠加：dp[i][remJ] === dp[i][remJ - w] + v
       if (remJ >= item.weight && grid[i]?.[remJ - item.weight] !== undefined) {
-        const fromSameRow = grid[i]?.[remJ - item.weight] ?? 0;
-        if (curCell === fromSameRow + item.value && curCell > prevRowCell) {
-          counts.set(i, (counts.get(i) || 0) + 1);
+        const takeCell = grid[i]?.[remJ - item.weight] ?? 0;
+        if (curCell === takeCell + item.value && curCell > prevRowCell) {
+          counts.set(item.id, (counts.get(item.id) || 0) + 1);
           remJ -= item.weight;
-          // 继续停留在当前行 i 尝试是否重复选取！
-          continue;
+          continue; // 保持在当前行 i，继续考察是否由同一物品自叠加
         }
       }
 
-      // 如果第一行 i=0 且有非 0 贡献
-      if (i === 0 && remJ >= item.weight && curCell > 0) {
-        const takeOneFrom0 = (grid[0]?.[remJ - item.weight] ?? 0) + item.value;
-        if (curCell === takeOneFrom0 || curCell === Math.floor(remJ / item.weight) * item.value) {
-          counts.set(0, Math.floor(curJ / item.weight));
-          break;
-        }
-      }
-
-      // 否则转向上一行
+      // 否则说明来自上一行 (不选或已达本行上限)
       i--;
     }
 
     const inventory: HerbInventoryItem[] = [];
-    for (const [idx, count] of counts.entries()) {
-      if (count > 0 && items[idx]) {
+    for (const [id, count] of counts.entries()) {
+      const item = items.find((it) => it.id === id);
+      if (item && count > 0) {
         inventory.push({
-          id: idx,
-          weight: items[idx].weight,
-          value: items[idx].value,
+          id,
+          weight: item.weight,
+          value: item.value,
           count,
-          totalWeight: items[idx].weight * count,
-          totalValue: items[idx].value * count,
+          totalWeight: item.weight * count,
+          totalValue: item.value * count,
         });
       }
     }
-    inventory.sort((a, b) => a.id - b.id);
+
     return inventory;
   }
 
   /**
-   * 渲染拟物沙盘：无限草药池 + 自叠加背包
+   * 渲染完整拟物沙盘
    */
   public static render(
     container: HTMLElement,
@@ -147,9 +138,9 @@ export class UnboundedKnapsackSandboxAdapter {
   ): void {
     if (!container) return;
 
-    container.className = 'w-full h-full flex flex-col relative z-0 bg-transparent border-0 shadow-none p-0 overflow-y-auto';
-    container.style.display = 'flex';
-    container.style.width = '100%';
+    container.innerHTML = '';
+    container.className = 'unbounded-knapsack-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 0; background: transparent; overflow-y: auto; box-sizing: border-box; font-family: ui-sans-serif, system-ui, sans-serif;';
 
     const { items, capacity } = this.parseHerbsAndCapacity(step, options);
 
@@ -166,38 +157,37 @@ export class UnboundedKnapsackSandboxAdapter {
 
     // 计算当前草药状态
     const isEnough = curJ >= curItem.weight;
-    const maxMulti = curItem.weight > 0 ? Math.floor(curJ / curItem.weight) : 0;
 
     const html = `
-      <div class="unbounded-knapsack-sandbox w-full flex flex-col gap-3 p-3 font-sans select-none text-slate-800 dark:text-slate-100">
+      <div class="unbounded-knapsack-sandbox" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; user-select: none; color: #f1f5f9;">
         <!-- 顶部提示横条 -->
-        <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/20 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🌿</span>
-            <span class="font-bold text-emerald-700 dark:text-emerald-300">完全背包 (疯狂的采药) 拟物沙盘</span>
-            <span class="text-slate-400">|</span>
-            <span class="text-slate-600 dark:text-slate-300">核心特质：<strong class="text-emerald-600 dark:text-emerald-400">每种草药有无限株可用</strong>，同行左侧转移允许在已采摘的基础上无限自叠加！</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); font-size: 12px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">🌿</span>
+            <span style="font-weight: bold; color: #34d399;">完全背包 (疯狂的采药) 拟物沙盘</span>
+            <span style="color: #64748b;">|</span>
+            <span style="color: #cbd5e1;">核心特质：<strong style="color: #34d399;">每种草药有无限株可用</strong>，同行左侧转移允许在已采摘的基础上无限自叠加！</span>
           </div>
-          <div class="flex items-center gap-2 font-mono text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 font-bold">当前考察: 草药 #${curI}</span>
-            <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-800 dark:text-blue-200 font-bold">背包容量/时间: j = ${curJ} / ${capacity}</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px;">
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-weight: bold;">当前考察: 草药 #${curI}</span>
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-weight: bold;">背包容量/时间: j = ${curJ} / ${capacity}</span>
           </div>
         </div>
 
         <!-- 主体区域：左右双栏布局 (左 7 列: 无限草药池，右 5 列: 真实自叠加背包) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start; box-sizing: border-box;">
           
           <!-- 左侧：无限草药采摘池 (7 列) -->
-          <div class="lg:col-span-7 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-seedling text-emerald-600"></i> 无限草药采摘池 (Infinite Herb Pool)
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #10b981;">🌱</span> 无限草药采摘池 (Infinite Herb Pool)
               </span>
-              <span class="text-[11px] font-mono text-slate-500">共 ${items.length} 种可用药材 · 每种无限件 (∞)</span>
+              <span style="font-size: 11px; font-family: monospace; color: #94a3b8;">共 ${items.length} 种可用药材 · 每种无限件 (∞)</span>
             </div>
 
             <!-- 草药卡片网格 -->
-            <div class="grid grid-cols-1 sm:grid-cols-${Math.min(3, items.length)} gap-3">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
               ${items
                 .map((herb, idx) => {
                   const isCurrent = idx === curI;
@@ -205,51 +195,51 @@ export class UnboundedKnapsackSandboxAdapter {
                   const inBagCount = takenInfo ? takenInfo.count : 0;
 
                   let borderCls = isCurrent
-                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-md ring-2 ring-emerald-400/40'
-                    : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40';
+                    ? 'border: 2px solid #10b981; background: rgba(6, 78, 59, 0.4); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);'
+                    : 'border: 1px solid #334155; background: rgba(15, 23, 42, 0.6);';
 
                   return `
-                    <div class="relative p-3 rounded-xl border flex flex-col gap-2.5 transition-all ${borderCls}">
+                    <div style="position: relative; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s; box-sizing: border-box; ${borderCls}">
                       <!-- 药材名称与无限标记 -->
-                      <div class="flex items-center justify-between border-b border-dashed border-slate-200 dark:border-slate-800 pb-1.5">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-sm">🌿</span>
-                          <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100">草药 #${herb.id}</span>
+                      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed rgba(100, 116, 139, 0.4); padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <span style="font-size: 14px;">🌿</span>
+                          <span style="font-weight: 800; font-size: 12px; color: #f1f5f9;">草药 #${herb.id}</span>
                         </div>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                        <span style="font-size: 10px; font-family: monospace; padding: 2px 6px; border-radius: 4px; font-weight: bold; ${
                           isCurrent
-                            ? 'bg-emerald-500 text-white animate-pulse'
+                            ? 'background: #10b981; color: #ffffff;'
                             : inBagCount > 0
-                            ? 'bg-teal-500/20 text-teal-700 dark:text-teal-300'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            ? 'background: rgba(20, 184, 166, 0.2); color: #5eead4;'
+                            : 'background: rgba(51, 65, 85, 0.6); color: #94a3b8;'
                         }">
                           ${isCurrent ? '当前考察' : inBagCount > 0 ? `包内 ×${inBagCount} 株` : '无限可用 ∞'}
                         </span>
                       </div>
 
                       <!-- 规格指标卡 -->
-                      <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
-                        <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                          <div class="text-[9px] text-slate-500">采药耗时</div>
-                          <div class="font-bold text-sky-600 dark:text-sky-400">${herb.weight} 时间</div>
+                      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: center; font-size: 12px; font-family: monospace;">
+                        <div style="padding: 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.8);">
+                          <div style="font-size: 9px; color: #94a3b8;">采药耗时</div>
+                          <div style="font-weight: bold; color: #38bdf8;">${herb.weight} 时间</div>
                         </div>
-                        <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                          <div class="text-[9px] text-slate-500">药用价值</div>
-                          <div class="font-bold text-amber-600 dark:text-amber-400">+${herb.value} 价值</div>
+                        <div style="padding: 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.8);">
+                          <div style="font-size: 9px; color: #94a3b8;">药用价值</div>
+                          <div style="font-weight: bold; color: #fbbf24;">+${herb.value} 价值</div>
                         </div>
                       </div>
 
                       <!-- 完全背包特性指示卡 -->
-                      <div class="p-2 rounded-lg bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/20 flex flex-col gap-1 text-[11px]">
-                        <div class="flex items-center justify-between">
-                          <span class="text-slate-500 text-[10px]">当前容量上限 (${curJ}) 最多采:</span>
-                          <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      <div style="padding: 8px; border-radius: 8px; background: rgba(6, 78, 59, 0.2); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <span style="color: #94a3b8; font-size: 10px;">当前容量上限 (${curJ}) 最多采:</span>
+                          <span style="font-family: monospace; font-weight: bold; color: #34d399;">
                             ${herb.weight > 0 ? Math.floor(curJ / herb.weight) : 0} 株
                           </span>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-slate-500">
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94a3b8;">
                           <span>同轮已选放入:</span>
-                          <span class="font-mono font-bold text-teal-600 dark:text-teal-400">${inBagCount} 株</span>
+                          <span style="font-family: monospace; font-weight: bold; color: #2dd4bf;">${inBagCount} 株</span>
                         </div>
                       </div>
 
@@ -257,10 +247,10 @@ export class UnboundedKnapsackSandboxAdapter {
                       ${
                         isCurrent
                           ? isEnough
-                            ? `<div class="text-center text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 py-1 rounded">
+                            ? `<div style="text-align: center; font-size: 10px; font-weight: bold; color: #34d399; background: rgba(16, 185, 129, 0.15); padding: 4px; border-radius: 4px;">
                                  ✨ 时间充足！同行左侧 dp[${curI}][${curJ - herb.weight}] 允许无限自叠加
                                </div>`
-                            : `<div class="text-center text-[10px] font-bold text-rose-500 bg-rose-500/10 py-1 rounded">
+                            : `<div style="text-align: center; font-size: 10px; font-weight: bold; color: #fb7185; background: rgba(244, 63, 94, 0.15); padding: 4px; border-radius: 4px;">
                                  ⚠️ 时间不足 (需 ${herb.weight}，剩余 ${curJ})，直接继承上方旧值
                                </div>`
                           : ''
@@ -273,73 +263,73 @@ export class UnboundedKnapsackSandboxAdapter {
           </div>
 
           <!-- 右侧：真实自叠加背包容器 (5 列) -->
-          <div class="lg:col-span-5 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-basket-shopping text-emerald-600"></i> 自叠加采药背包舱 (Cumulative Knapsack)
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #10b981;">🧺</span> 自叠加采药背包舱 (Cumulative Knapsack)
               </span>
-              <span class="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-extrabold">
+              <span style="font-size: 11px; font-family: monospace; color: #34d399; font-weight: 800;">
                 总耗时: ${curJ} / ${capacity}
               </span>
             </div>
 
             <!-- 背包舱体卡片 -->
-            <div class="relative p-3.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-gradient-to-b from-slate-100 to-slate-200/90 dark:from-slate-800/90 dark:to-slate-900/90 shadow-lg flex flex-col gap-3">
+            <div style="position: relative; padding: 14px; border-radius: 16px; border: 2px solid #334155; background: linear-gradient(to bottom, #1e293b, #0f172a); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
               <!-- 背包提把造型 -->
-              <div class="w-16 h-2 mx-auto rounded-full bg-emerald-500 dark:bg-emerald-600 shadow-inner"></div>
+              <div style="width: 64px; height: 8px; margin: 0 auto; border-radius: 9999px; background: #059669; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);"></div>
 
               <!-- 水位指示仪表 -->
-              <div class="p-2.5 rounded-xl bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex flex-col gap-2 shadow-2xs">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="font-bold text-slate-600 dark:text-slate-300">采药时间已用配额</span>
-                  <span class="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div style="padding: 10px; border-radius: 12px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                  <span style="font-weight: bold; color: #cbd5e1;">采药时间已用配额</span>
+                  <span style="font-family: monospace; font-weight: 800; color: #34d399;">
                     ${progressPercent}% (${usedWeight} / ${capacity})
                   </span>
                 </div>
-                <div class="w-full bg-slate-200 dark:bg-slate-700 h-3 rounded-full overflow-hidden p-0.5">
-                  <div class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300" style="width: ${progressPercent}%;"></div>
+                <div style="width: 100%; background: #334155; height: 12px; border-radius: 9999px; overflow: hidden; padding: 2px; box-sizing: border-box;">
+                  <div style="height: 100%; border-radius: 9999px; background: linear-gradient(to right, #10b981, #14b8a6); width: ${progressPercent}%; transition: width 0.3s;"></div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-1.5 pt-1 text-center">
-                  <div class="p-1 rounded bg-slate-100 dark:bg-slate-700/60">
-                    <div class="text-[9px] text-slate-500">已耗时间</div>
-                    <div class="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">${usedWeight}</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding-top: 4px; text-align: center;">
+                  <div style="padding: 4px; border-radius: 4px; background: rgba(30, 41, 59, 0.6);">
+                    <div style="font-size: 9px; color: #94a3b8;">已耗时间</div>
+                    <div style="font-size: 12px; font-family: monospace; font-weight: bold; color: #f1f5f9;">${usedWeight}</div>
                   </div>
-                  <div class="p-1 rounded bg-slate-100 dark:bg-slate-700/60">
-                    <div class="text-[9px] text-slate-500">剩余时间</div>
-                    <div class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">${remCapacity}</div>
+                  <div style="padding: 4px; border-radius: 4px; background: rgba(30, 41, 59, 0.6);">
+                    <div style="font-size: 9px; color: #94a3b8;">剩余时间</div>
+                    <div style="font-size: 12px; font-family: monospace; font-weight: bold; color: #34d399;">${remCapacity}</div>
                   </div>
-                  <div class="p-1 rounded bg-amber-500/10 border border-amber-500/20">
-                    <div class="text-[9px] text-amber-600 dark:text-amber-400 font-bold">总药用价值</div>
-                    <div class="text-sm font-mono font-black text-amber-600 dark:text-amber-300">${totalCollectedVal}</div>
+                  <div style="padding: 4px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">
+                    <div style="font-size: 9px; color: #fbbf24; font-weight: bold;">总药用价值</div>
+                    <div style="font-size: 14px; font-family: monospace; font-weight: 900; color: #fde68a;">${totalCollectedVal}</div>
                   </div>
                 </div>
               </div>
 
               <!-- 背包内部装入草药清单 -->
-              <div class="flex flex-col gap-1.5">
-                <div class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center justify-between">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 12px; font-weight: bold; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
                   <span>🧺 背包内当前草药陈列:</span>
-                  <span class="text-[10px] font-mono text-slate-500">${inventory.length} 种草药已装入</span>
+                  <span style="font-size: 10px; font-family: monospace; color: #94a3b8;">${inventory.length} 种草药已装入</span>
                 </div>
 
-                <div class="min-h-[90px] p-2 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-dashed border-slate-300 dark:border-slate-800 flex flex-col gap-1.5">
+                <div style="min-height: 90px; padding: 8px; border-radius: 12px; background: rgba(2, 6, 23, 0.6); border: 1px dashed #334155; display: flex; flex-direction: column; gap: 6px; box-sizing: border-box;">
                   ${
                     inventory.length === 0
-                      ? '<div class="h-full flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 py-6">背包当前为空 (尚未采摘任何草药)</div>'
+                      ? '<div style="height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #64748b; padding: 24px 0;">背包当前为空 (尚未采摘任何草药)</div>'
                       : inventory
                           .map((it) => {
                             return `
-                              <div class="flex items-center justify-between p-2 rounded-lg bg-white dark:bg-slate-800 border border-emerald-500/30 text-xs shadow-2xs">
-                                <div class="flex items-center gap-2">
-                                  <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-mono font-bold">
+                              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 8px; background: #1e293b; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                  <span style="padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; font-family: monospace; font-weight: bold;">
                                     草药 #${it.id}
                                   </span>
-                                  <span class="font-extrabold text-teal-600 dark:text-teal-400">× ${it.count} 株</span>
+                                  <span style="font-weight: 800; color: #2dd4bf;">× ${it.count} 株</span>
                                 </div>
-                                <div class="flex items-center gap-2 font-mono">
-                                  <span class="text-slate-500 text-[11px]">耗时 ${it.totalWeight}</span>
-                                  <span class="text-amber-600 dark:text-amber-400 font-extrabold">+${it.totalValue}</span>
+                                <div style="display: flex; align-items: center; gap: 8px; font-family: monospace;">
+                                  <span style="color: #94a3b8; font-size: 11px;">耗时 ${it.totalWeight}</span>
+                                  <span style="color: #fbbf24; font-weight: 800;">+${it.totalValue}</span>
                                 </div>
                               </div>
                             `;
@@ -351,13 +341,13 @@ export class UnboundedKnapsackSandboxAdapter {
                   ${
                     isEnough
                       ? `
-                    <div class="flex items-center justify-between p-2 rounded-lg border-2 border-dashed border-emerald-400 bg-emerald-500/10 text-xs animate-pulse">
-                      <div class="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-200">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 8px; border: 2px dashed #34d399; background: rgba(16, 185, 129, 0.15); font-size: 12px;">
+                      <div style="display: flex; align-items: center; gap: 6px; font-weight: bold; color: #a7f3d0;">
                         <span>⚡ 正在试选放入: 草药 #${curI} (第 ${(inventory.find((x) => x.id === curI)?.count || 0) + 1} 株)</span>
                       </div>
-                      <div class="font-mono text-[11px] flex items-center gap-2">
-                        <span class="text-sky-600 dark:text-sky-400">需耗时: ${curItem.weight}</span>
-                        <span class="text-amber-600 dark:text-amber-400 font-bold">价值: +${curItem.value}</span>
+                      <div style="font-family: monospace; font-size: 11px; display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #38bdf8;">需耗时: ${curItem.weight}</span>
+                        <span style="color: #fbbf24; font-weight: bold;">价值: +${curItem.value}</span>
                       </div>
                     </div>
                   `
@@ -367,15 +357,15 @@ export class UnboundedKnapsackSandboxAdapter {
               </div>
 
               <!-- 决策比较看板：完全背包同行自叠加 vs 01 背包分界机理 -->
-              <div class="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40 text-xs flex flex-col gap-1.5">
-                <div class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-                  <i class="fa-solid fa-scale-balanced text-amber-500"></i>
+              <div style="padding: 10px; border-radius: 12px; background: rgba(6, 78, 59, 0.25); border: 1px solid rgba(16, 185, 129, 0.3); font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-weight: bold; color: #6ee7b7; display: flex; align-items: center; gap: 4px;">
+                  <span style="color: #f59e0b;">⚖️</span>
                   <span>完全背包转移决策看板 (同行自叠加机制)</span>
                 </div>
-                <div class="text-[11px] text-slate-600 dark:text-slate-300 font-mono">
+                <div style="font-size: 11px; color: #cbd5e1; font-family: monospace;">
                   ${escapeHtml(step.decision || step.msg || '完全背包状态转移推导中')}
                 </div>
-                <div class="text-[10px] text-slate-500 border-t border-dashed border-emerald-200/60 dark:border-emerald-800/60 pt-1">
+                <div style="font-size: 10px; color: #94a3b8; border-top: 1px dashed rgba(16, 185, 129, 0.3); padding-top: 4px;">
                   💡 <strong>同行转移核心铁律</strong>：<code>dp[i][j - w]</code> 来自<strong>当前行</strong>（非上一行），因此允许在此前已经选择该草药的状态上，再度追加该草药！
                 </div>
               </div>

@@ -47,10 +47,11 @@ function parseInputs(inputs?: Record<string, any>) {
 
 export const lcaVisualizer = registerDeclarativeAlgorithm<LCAStep>({
   id: 'lca',
-  aliases: ['tree-037-lowest-common-ancestor'],
+  aliases: ['tree-037-lowest-common-ancestor', 'leetcode-236', '236', 'lowest-common-ancestor-of-a-binary-tree'],
   name: '二叉树的最近公共祖先',
   category: 'tree',
   icon: '🤝',
+  hasDeductionTree: true,
   badge: { mode: '多阶段演化: 后序递归 · 父指针哈希 · 路径比对', complexity: 'O(N) · O(H)' },
   card1Title: '📊 二叉树拓扑与 LCA 汇聚沙盘',
   card2Title: '🧭 左右子树返回与祖先判定状态机',

@@ -1,7 +1,9 @@
 /**
  * 合并二叉树 (Merge Two Binary Trees · LeetCode 617) 视觉与监控适配器
- * Card 1: 主画布三树并排沙盘 (T1 + T2 ➔ Merged Tree)
- * Card 2: 节点合并算式推导 + 递归调用栈 / BFS 同步队列监视器
+ *
+ * 遵循 Matt Pocock 深模块规范与 Zero-Subbox 表现层契约：
+ *   - Card 1: 主画布三树并排沙盘 (T1 + T2 ➔ Merged Tree)，基于拓扑路径精准寻址高亮，杜绝同值节点串色
+ *   - Card 2: 节点合并算式推导 + 当前递归帧明细 + 递归调用栈 / BFS 队列全景监视器 (消除大片空白)
  */
 
 import { TreeNode } from '../../../algorithms/categories/tree/tree-template';
@@ -17,7 +19,8 @@ export function renderMiniTreeSVG(
   visitedColor: string,
   graftedVals?: Set<number>,
   graftColor = '#9333ea',
-  badgeText?: string
+  badgeText?: string,
+  focusPath?: string
 ): void {
   container.innerHTML = '';
   if (!root) {
@@ -33,14 +36,20 @@ export function renderMiniTreeSVG(
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '100%');
-  svg.setAttribute('viewBox', '0 0 240 210');
+  svg.setAttribute('viewBox', '0 0 240 220');
   svg.style.display = 'block';
   svg.style.overflow = 'visible';
 
-  const lh = 38;
+  // 舒展的树形层距，避免分支紧贴水平线
+  const lh = 46;
 
-  const draw = (node: TreeNode, x: number, y: number, spread: number) => {
-    const isFocus = focusVal !== null && node.val === focusVal;
+  const draw = (node: TreeNode, x: number, y: number, spread: number, curPath: string) => {
+    // 🌟 核心高亮不变式：优先基于拓扑唯一路径匹配，彻底根除同值节点（如两个 5）双焦点串色冲突！
+    const isFocus =
+      focusPath !== undefined && focusPath !== null
+        ? curPath === focusPath
+        : focusVal !== null && node.val === focusVal;
+
     const isGrafted = graftedVals ? graftedVals.has(node.val) : false;
     const isVisited = visitedVals ? visitedVals.has(node.val) : false;
 
@@ -55,7 +64,7 @@ export function renderMiniTreeSVG(
       line.setAttribute('stroke-width', '2.5');
       line.setAttribute('stroke-linecap', 'round');
       svg.appendChild(line);
-      draw(node.left, x - spread, y + lh, spread / 2);
+      draw(node.left, x - spread, y + lh, spread / 2, `${curPath}/L`);
     }
 
     if (node.right) {
@@ -68,7 +77,7 @@ export function renderMiniTreeSVG(
       line.setAttribute('stroke-width', '2.5');
       line.setAttribute('stroke-linecap', 'round');
       svg.appendChild(line);
-      draw(node.right, x + spread, y + lh, spread / 2);
+      draw(node.right, x + spread, y + lh, spread / 2, `${curPath}/R`);
     }
 
     // 活跃焦点微光外环 (Pulsing Halo)
@@ -76,12 +85,12 @@ export function renderMiniTreeSVG(
       const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       halo.setAttribute('cx', String(x));
       halo.setAttribute('cy', String(y));
-      halo.setAttribute('r', '20');
+      halo.setAttribute('r', '21');
       halo.setAttribute('fill', 'none');
       halo.setAttribute('stroke', focusColor);
-      halo.setAttribute('stroke-width', '2');
-      halo.setAttribute('stroke-opacity', '0.45');
-      halo.setAttribute('stroke-dasharray', '3, 2');
+      halo.setAttribute('stroke-width', '2.5');
+      halo.setAttribute('stroke-opacity', '0.75');
+      halo.setAttribute('stroke-dasharray', '4, 2');
       svg.appendChild(halo);
     }
 
@@ -91,7 +100,6 @@ export function renderMiniTreeSVG(
     circle.setAttribute('cy', String(y));
     circle.setAttribute('r', '15.5');
 
-    // 现代亮色主题自适应高对比色彩
     let fill = '#ffffff';
     let stroke = '#94a3b8';
     let strokeWidth = '2';
@@ -132,7 +140,7 @@ export function renderMiniTreeSVG(
     svg.appendChild(text);
   };
 
-  draw(root, 120, 28, 52);
+  draw(root, 120, 26, 54, 'root');
 
   // 顶部完成徽章 (若存在)
   if (badgeText) {
@@ -151,76 +159,106 @@ export function renderMiniTreeSVG(
 }
 
 /**
- * Card 1: 主画布三树并排沙盘渲染 (彻底消灭垂直折叠，保证全景横向排布)
+ * Card 1: 主画布三树并排沙盘渲染 (去套娃、轻量扁平、横向舒展)
  */
 export function renderMergeTreesCanvas(container: HTMLElement, step: MergeTreesStep): void {
   container.innerHTML = '';
 
-  // 强制创建独立横向容器包装，消除外部 CSS flex-direction: column 的影响
   const mainRow = document.createElement('div');
-  mainRow.style.cssText = [
-    'width: 100%',
-    'height: 100%',
-    'min-height: 280px',
-    'display: flex !important',
-    'flex-direction: row !important',
-    'align-items: stretch',
-    'justify-content: space-between',
-    'gap: 8px',
-    'padding: 4px',
-    'box-sizing: border-box',
-    'background: #ffffff',
-  ].join(';');
+  mainRow.style.cssText =
+    'width: 100%; height: 100%; display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 8px; padding: 8px; box-sizing: border-box; background: #ffffff; border-radius: 12px;';
 
   const isFinalComplete = step.opType === 'complete';
 
   // 1. 树 1 区域 (T1)
   const col1 = document.createElement('div');
-  col1.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; min-width: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+  col1.style.cssText =
+    'flex: 1; display: flex; flex-direction: column; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; min-width: 0; box-sizing: border-box;';
 
   const t1Header = document.createElement('div');
-  t1Header.style.cssText = 'font-size: 12px; font-weight: 700; color: #0284c7; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;';
-  const t1StatusText = isFinalComplete ? '✓ 全部合并' : (step.focus1 !== null ? `焦点: ${step.focus1}` : '焦点: 无');
+  t1Header.style.cssText =
+    'font-size: 12px; font-weight: 700; color: #0284c7; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;';
+  const t1StatusText = isFinalComplete
+    ? '✓ 全部合并'
+    : step.focus1 !== null
+    ? `焦点: ${step.focus1}`
+    : '焦点: 无';
   t1Header.innerHTML = `<span>🌳 输入树 1</span><span style="font-size: 11px; font-weight: 600; color: ${isFinalComplete ? '#16a34a' : '#64748b'};">${t1StatusText}</span>`;
   col1.appendChild(t1Header);
 
   const t1TreeBox = document.createElement('div');
   t1TreeBox.style.cssText = 'flex: 1; min-height: 190px; display: flex; align-items: center; justify-content: center;';
-  renderMiniTreeSVG(t1TreeBox, step.tree1, step.focus1, '#0284c7', step.tree1Visited, '#16a34a', step.graftedVals);
+  renderMiniTreeSVG(
+    t1TreeBox,
+    step.tree1,
+    step.focus1,
+    '#0284c7',
+    step.tree1Visited,
+    '#16a34a',
+    step.graftedVals,
+    '#9333ea',
+    undefined,
+    step.focus1Path
+  );
   col1.appendChild(t1TreeBox);
 
   // 2. 加号操作符
   const opPlus = document.createElement('div');
-  opPlus.style.cssText = 'display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; color: #94a3b8; width: 24px; flex-shrink: 0; user-select: none;';
+  opPlus.style.cssText =
+    'display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #94a3b8; width: 24px; flex-shrink: 0; user-select: none;';
   opPlus.textContent = '+';
 
   // 3. 树 2 区域 (T2)
   const col2 = document.createElement('div');
-  col2.style.cssText = 'flex: 1; display: flex; flex-direction: column; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; min-width: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03);';
+  col2.style.cssText =
+    'flex: 1; display: flex; flex-direction: column; padding: 8px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; min-width: 0; box-sizing: border-box;';
 
   const t2Header = document.createElement('div');
-  t2Header.style.cssText = 'font-size: 12px; font-weight: 700; color: #9333ea; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;';
-  const t2StatusText = isFinalComplete ? '✓ 全部合并' : (step.focus2 !== null ? `焦点: ${step.focus2}` : '焦点: 无');
+  t2Header.style.cssText =
+    'font-size: 12px; font-weight: 700; color: #9333ea; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;';
+  const t2StatusText = isFinalComplete
+    ? '✓ 全部合并'
+    : step.focus2 !== null
+    ? `焦点: ${step.focus2}`
+    : '焦点: 无';
   t2Header.innerHTML = `<span>🌿 输入树 2</span><span style="font-size: 11px; font-weight: 600; color: ${isFinalComplete ? '#16a34a' : '#64748b'};">${t2StatusText}</span>`;
   col2.appendChild(t2Header);
 
   const t2TreeBox = document.createElement('div');
   t2TreeBox.style.cssText = 'flex: 1; min-height: 190px; display: flex; align-items: center; justify-content: center;';
-  renderMiniTreeSVG(t2TreeBox, step.tree2, step.focus2, '#9333ea', step.tree2Visited, '#16a34a', step.graftedVals);
+  renderMiniTreeSVG(
+    t2TreeBox,
+    step.tree2,
+    step.focus2,
+    '#9333ea',
+    step.tree2Visited,
+    '#16a34a',
+    step.graftedVals,
+    '#9333ea',
+    undefined,
+    step.focus2Path
+  );
   col2.appendChild(t2TreeBox);
 
   // 4. 等号/箭头操作符
   const opArrow = document.createElement('div');
-  opArrow.style.cssText = 'display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: #16a34a; width: 24px; flex-shrink: 0; user-select: none;';
+  opArrow.style.cssText =
+    'display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #16a34a; width: 24px; flex-shrink: 0; user-select: none;';
   opArrow.textContent = '➔';
 
-  // 5. 合并结果树区域 (Merged)
+  // 5. 合并结果树区域 (Merged Tree)
   const col3 = document.createElement('div');
-  col3.style.cssText = 'flex: 1.25; display: flex; flex-direction: column; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 8px; min-width: 0; box-shadow: 0 1px 3px rgba(34,197,94,0.08);';
+  col3.style.cssText =
+    'flex: 1.25; display: flex; flex-direction: column; padding: 8px; border-radius: 8px; background: #f0fdf4; border: 1px solid #86efac; min-width: 0; box-sizing: border-box;';
 
   const t3Header = document.createElement('div');
-  t3Header.style.cssText = 'font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;';
-  const t3StatusText = isFinalComplete ? '🏆 100% 完成' : (step.sum !== null ? `当前生成: ${step.sum}` : '等待就绪');
+  t3Header.style.cssText =
+    'font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;';
+  const t3StatusText = isFinalComplete
+    ? '🏆 100% 完成'
+    : step.sum !== null
+    ? `当前生成: ${step.sum}`
+    : '等待就绪';
   t3Header.innerHTML = `<span>✨ 合并演进树</span><span style="font-size: 11px; font-weight: 700; color: #16a34a;">${t3StatusText}</span>`;
   col3.appendChild(t3Header);
 
@@ -235,7 +273,8 @@ export function renderMergeTreesCanvas(container: HTMLElement, step: MergeTreesS
     '#16a34a',
     step.graftedVals,
     '#9333ea',
-    isFinalComplete ? '🏆 完成' : undefined
+    isFinalComplete ? '🏆 完成' : undefined,
+    step.focusPath
   );
   col3.appendChild(t3TreeBox);
 
@@ -249,126 +288,114 @@ export function renderMergeTreesCanvas(container: HTMLElement, step: MergeTreesS
 }
 
 /**
- * Card 2: 辅助推演动态与状态卡片
+ * Card 2: 辅助推演动态与状态卡片 (充实饱满，消除大面积空白)
  */
 export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesStep): void {
   container.innerHTML = '';
-  container.style.display = 'flex';
-  container.style.flexDirection = 'column';
-  container.style.gap = '8px';
-  container.style.padding = '4px 2px';
+  container.style.cssText = 'height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px; overflow-y: auto; box-sizing: border-box; font-size: 12px; font-family: system-ui, -apple-system, sans-serif;';
 
   const isFinalComplete = step.opType === 'complete';
 
-  // 1. 算式推演视窗
+  // 1. 顶部：节点合并算式推导卡片
   const formulaBox = document.createElement('div');
-  formulaBox.style.background = '#f8fafc';
-  formulaBox.style.border = '1px solid #e2e8f0';
-  formulaBox.style.borderRadius = '8px';
-  formulaBox.style.padding = '8px 10px';
+  formulaBox.style.cssText =
+    'padding: 10px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box;';
 
   const formulaTitle = document.createElement('div');
-  formulaTitle.style.fontSize = '11px';
-  formulaTitle.style.fontWeight = '700';
-  formulaTitle.style.color = '#475569';
-  formulaTitle.style.marginBottom = '4px';
-  formulaTitle.textContent = '📐 节点合并算式推导';
+  formulaTitle.style.cssText = 'font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px; display: flex; align-items: gap: 4px;';
+  formulaTitle.innerHTML = '<span>📐 节点合并算式推导</span>';
   formulaBox.appendChild(formulaTitle);
 
   const formulaRow = document.createElement('div');
-  formulaRow.style.display = 'flex';
-  formulaRow.style.alignItems = 'center';
-  formulaRow.style.gap = '8px';
-  formulaRow.style.fontFamily = "'JetBrains Mono', ui-monospace, monospace";
-  formulaRow.style.fontSize = '12.5px';
-  formulaRow.style.fontWeight = '700';
+  formulaRow.style.cssText = 'display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 12px; font-weight: 700; flex-wrap: wrap;';
 
   if (isFinalComplete) {
     formulaRow.innerHTML = `
-      <span style="color: #16a34a; background: #dcfce7; padding: 3px 10px; border-radius: 4px; border: 1px solid #86efac;">
+      <span style="color: #15803d; background: #dcfce7; padding: 4px 10px; border-radius: 6px; border: 1px solid #86efac;">
         🎉 两棵二叉树同步遍历合并成功完成！全树所有对应节点累加与单边继承已全部就绪。
       </span>
     `;
   } else if (step.val1 !== null && step.val2 !== null && step.sum !== null) {
     formulaRow.innerHTML = `
-      <span style="color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 4px; border: 1px solid #bae6fd;">T1: ${step.val1}</span>
-      <span style="color: #64748b;">+</span>
-      <span style="color: #7e22ce; background: #f3e8ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e9d5ff;">T2: ${step.val2}</span>
+      <span style="color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 4px; border: 1px solid #7dd3fc;">T1: ${step.val1}</span>
+      <span style="color: #94a3b8;">+</span>
+      <span style="color: #7e22ce; background: #f3e8ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #d8b4fe;">T2: ${step.val2}</span>
       <span style="color: #16a34a;">=</span>
-      <span style="color: #854d0e; background: #fef9c3; padding: 2px 8px; border-radius: 4px; border: 1px solid #fde047;">合并新节点: ${step.sum}</span>
+      <span style="color: #92400e; background: #fef3c7; padding: 2px 8px; border-radius: 4px; border: 1px solid #fcd34d;">合并新节点: ${step.sum}</span>
     `;
   } else if (step.val1 !== null && step.val2 === null) {
     formulaRow.innerHTML = `
-      <span style="color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 4px; border: 1px solid #bae6fd;">T1: ${step.val1}</span>
-      <span style="color: #64748b;">+</span>
+      <span style="color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 4px; border: 1px solid #7dd3fc;">T1: ${step.val1}</span>
+      <span style="color: #94a3b8;">+</span>
       <span style="color: #94a3b8;">null</span>
       <span style="color: #16a34a;">➜</span>
-      <span style="color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 4px;">单边保留 T1 子树 (根节点 ${step.val1})</span>
+      <span style="color: #15803d; background: #f0fdf4; padding: 2px 8px; border-radius: 4px; border: 1px solid #bbf7d0;">单边保留 T1 子树 (根节点 ${step.val1})</span>
     `;
   } else if (step.val1 === null && step.val2 !== null) {
     formulaRow.innerHTML = `
       <span style="color: #94a3b8;">null</span>
-      <span style="color: #64748b;">+</span>
-      <span style="color: #7e22ce; background: #f3e8ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e9d5ff;">T2: ${step.val2}</span>
+      <span style="color: #94a3b8;">+</span>
+      <span style="color: #7e22ce; background: #f3e8ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #d8b4fe;">T2: ${step.val2}</span>
       <span style="color: #16a34a;">➜</span>
-      <span style="color: #7e22ce; background: #f3e8ff; padding: 2px 8px; border-radius: 4px;">单边嫁接 T2 子树 (根节点 ${step.val2})</span>
+      <span style="color: #7e22ce; background: #faf5ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #e9d5ff;">单边嫁接 T2 子树 (根节点 ${step.val2})</span>
     `;
   } else {
-    formulaRow.innerHTML = `<span style="color: #64748b;">(准备启动同步遍历)</span>`;
+    formulaRow.innerHTML = `<span style="color: #94a3b8;">(准备启动同步遍历)</span>`;
   }
   formulaBox.appendChild(formulaRow);
   container.appendChild(formulaBox);
 
-  // 2. 状态队列/调用栈沙盘
+  // 2. 中部：当前递归帧状态明细卡 (Current Frame Detail)
+  const frameCard = document.createElement('div');
+  frameCard.style.cssText =
+    'padding: 10px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box;';
+  frameCard.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: #334155;">
+      <span style="display: flex; align-items: center; gap: 4px;">🧭 递归帧状态明细 (Stack Frame)</span>
+      <span style="font-family: monospace; color: #0d9488;">Depth: ${step.depth} | Path: ${step.focusPath ?? 'root'}</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px; font-family: monospace;">
+      <div style="padding: 6px 8px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
+        <span style="color: #64748b;">T1 指针:</span> <span style="font-weight: 700;">${step.val1 !== null ? `Node(${step.val1})` : 'null'}</span>
+      </div>
+      <div style="padding: 6px 8px; border-radius: 6px; background: #faf5ff; border: 1px solid #e9d5ff; color: #581c87;">
+        <span style="color: #64748b;">T2 指针:</span> <span style="font-weight: 700;">${step.val2 !== null ? `Node(${step.val2})` : 'null'}</span>
+      </div>
+    </div>
+  `;
+  container.appendChild(frameCard);
+
+  // 3. 下部：BFS 队列状态 OR 递归调用推演树 (自适应撑满剩余高度)
   if (step.queueState && step.queueState.length > 0) {
     const qBox = document.createElement('div');
-    qBox.style.background = '#f8fafc';
-    qBox.style.border = '1px solid #e2e8f0';
-    qBox.style.borderRadius = '8px';
-    qBox.style.padding = '8px 10px';
+    qBox.style.cssText =
+      'padding: 10px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box;';
 
     const qTitle = document.createElement('div');
-    qTitle.style.fontSize = '11px';
-    qTitle.style.fontWeight = '700';
-    qTitle.style.color = '#475569';
-    qTitle.style.marginBottom = '4px';
+    qTitle.style.cssText = 'font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;';
     qTitle.textContent = `📋 BFS 待处理节点对队列 (Size: ${step.queueState.length})`;
     qBox.appendChild(qTitle);
 
     const qRow = document.createElement('div');
-    qRow.style.display = 'flex';
-    qRow.style.flexWrap = 'wrap';
-    qRow.style.gap = '6px';
+    qRow.style.cssText = 'display: flex; flex-wrap: wrap; gap: 6px; align-items: center;';
 
     step.queueState.forEach((item, idx) => {
       const pill = document.createElement('span');
-      pill.style.padding = '2px 8px';
-      pill.style.borderRadius = '4px';
-      pill.style.fontSize = '11px';
-      pill.style.fontFamily = "'JetBrains Mono', ui-monospace, monospace";
-      pill.style.fontWeight = '600';
-      if (idx === 0) {
-        pill.style.background = '#fef9c3';
-        pill.style.border = '1px solid #facc15';
-        pill.style.color = '#854d0e';
-        pill.textContent = `${item} (头)`;
-      } else {
-        pill.style.background = '#ffffff';
-        pill.style.border = '1px solid #cbd5e1';
-        pill.style.color = '#334155';
-        pill.textContent = item;
-      }
+      const isFirst = idx === 0;
+      pill.style.cssText = `padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; font-weight: 600; ${
+        isFirst
+          ? 'background: #fef3c7; border: 1px solid #f59e0b; color: #92400e;'
+          : 'background: #ffffff; border: 1px solid #cbd5e1; color: #334155;'
+      }`;
+      pill.textContent = isFirst ? `${item} (头)` : item;
       qRow.appendChild(pill);
     });
     qBox.appendChild(qRow);
     container.appendChild(qBox);
-  }
-
-  // 3. 递归调用推演栈 (DFS)
-  if (step.callTrace) {
+  } else if (step.callTrace) {
     const traceHost = document.createElement('div');
-    traceHost.className = 'merge-trees-trace-host';
-    traceHost.style.cssText = 'flex: 1; min-height: 140px; overflow: hidden;';
+    traceHost.style.cssText =
+      'flex: 1; min-height: 140px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; box-sizing: border-box;';
     container.appendChild(traceHost);
     RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
       title: '📜 递归 DFS 同步下潜调用推演栈',
@@ -378,25 +405,23 @@ export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesSt
     });
   }
 
-  // 4. 步骤决策与动态解释
+  // 4. 底部：当前步骤决策动态解释
   const summaryBox = document.createElement('div');
-  summaryBox.style.background = isFinalComplete ? '#f0fdf4' : '#f8fafc';
-  summaryBox.style.padding = '8px 10px';
-  summaryBox.style.borderRadius = '8px';
-  summaryBox.style.border = isFinalComplete ? '1px solid #86efac' : '1px solid #e2e8f0';
-  summaryBox.style.fontSize = '12px';
-  summaryBox.style.lineHeight = '1.5';
-  summaryBox.style.color = '#334155';
+  summaryBox.style.cssText = `padding: 10px; border-radius: 10px; border: 1px solid ${
+    isFinalComplete ? '#86efac' : '#e2e8f0'
+  }; font-size: 12px; line-height: 1.5; flex-shrink: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); background: ${
+    isFinalComplete ? '#f0fdf4' : '#f8fafc'
+  }; color: ${isFinalComplete ? '#166534' : '#334155'}; box-sizing: border-box;`;
   summaryBox.innerHTML = `
-    <div style="font-weight: 700; color: ${isFinalComplete ? '#16a34a' : '#0284c7'}; margin-bottom: 2px;">⚡ 当前操作动作</div>
-    <div style="color: #0f172a;">${step.message}</div>
+    <div style="font-weight: 700; color: ${
+      isFinalComplete ? '#15803d' : '#0284c7'
+    }; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+      <span>⚡ 操作决策: ${step.opType}</span>
+    </div>
+    <div style="color: ${isFinalComplete ? '#15803d' : '#334155'};">${step.message}</div>
   `;
   container.appendChild(summaryBox);
 }
-
-// ----------------------------------------------------
-// 注册声明式多阶段二叉树合并算法
-// ----------------------------------------------------
 
 export class MergeTreesCanvasAdapter {
   public static renderMiniTreeSVG = renderMiniTreeSVG;

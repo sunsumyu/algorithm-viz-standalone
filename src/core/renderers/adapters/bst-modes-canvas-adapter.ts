@@ -16,14 +16,35 @@ export class BstModesCanvasAdapter {
    */
   static renderCanvas(container: HTMLElement, step: BstModesStep): void {
     if (step.tree) {
-      const highlights = step.highlightedNodes && step.highlightedNodes.length > 0
+      const labels = new Map<number | string, string>();
+      if (step.currNodeId) {
+        labels.set(step.currNodeId, 'CURR');
+      } else if (step.currNodeVal != null) {
+        labels.set(step.currNodeVal, 'CURR');
+      }
+      if (step.prevNodeId && step.prevNodeId !== step.currNodeId) {
+        labels.set(step.prevNodeId, 'PREV');
+      } else if (step.prevNodeVal != null && step.prevNodeVal !== step.currNodeVal) {
+        labels.set(step.prevNodeVal, 'PREV');
+      }
+
+      const activeHighlights = step.highlightedNodes && step.highlightedNodes.length > 0
         ? step.highlightedNodes
-        : (step.currNodeVal != null ? [step.currNodeVal] : []);
+        : (step.currNodeId ? [step.currNodeId] : (step.currNodeVal != null ? [step.currNodeVal] : []));
+
+      const secondaryHighlights = step.prevNodeId
+        ? [step.prevNodeId]
+        : (step.prevNodeVal != null ? [step.prevNodeVal] : []);
 
       TreeCanvasAdapter.renderTree(container, {
         tree: step.tree,
-        current: step.currNodeVal,
-        highlightedNodes: highlights,
+        activeNodeId: step.currNodeId,
+        secondaryNodeId: step.prevNodeId,
+        current: step.currNodeId ?? step.currNodeVal,
+        highlightedNodes: activeHighlights,
+        secondaryHighlightedNodes: secondaryHighlights,
+        visitedNodes: step.visitedNodeIds ?? [],
+        labels,
         primaryColor: '#c026d3', // 紫红当前节点
         visitedColor: '#10b981', // 翡翠绿已访问节点
         secondaryColor: '#f59e0b', // 琥珀黄前驱节点

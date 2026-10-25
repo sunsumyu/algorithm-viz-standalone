@@ -19,7 +19,8 @@ export { DynamicNode, buildDynamicSegTreeSteps };
 export const dynamicSegmentTreeVisualizer = registerDeclarativeAlgorithm<DynamicSegTreeStep>({
   id: 'dynamic-segment-tree-111',
   name: '动态开点线段树 (Class 111)',
-  aliases: ['class111-code01', 'dynamic-segment-tree', 'dynamic-segment-tree-111'],
+  aliases: ['class111-code01', 'dynamic-segment-tree', 'dynamic-segment-tree-111', 'leetcode-715', 'p2781'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '🌱',
   difficulty: 3,

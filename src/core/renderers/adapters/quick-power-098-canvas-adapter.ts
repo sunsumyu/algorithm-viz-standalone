@@ -17,26 +17,26 @@ export class QuickPower098CanvasAdapter {
 
     // 2. 核心状态数据监控面板
     const statusBox = document.createElement('div');
-    statusBox.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 12px 16px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;';
+    statusBox.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 12px 16px; background: #0f172a; border-radius: 8px; border: 1px solid #1e293b;';
     statusBox.innerHTML = `
-      <div style="padding: 8px 12px; background: #f8fafc; border-radius: 6px; border: 1.5px solid #cbd5e1; text-align: center;">
-        <div style="font-size: 11px; color: #64748b; font-weight: 700;">当前底数 a</div>
-        <div style="font-size: 16px; font-weight: 800; color: #1e293b; font-family: monospace; margin-top: 2px;">${step.curA}</div>
+      <div style="padding: 10px 12px; background: #1e293b; border-radius: 6px; border: 1.5px solid #334155; text-align: center;">
+        <div style="font-size: 11px; color: #94a3b8; font-weight: 700;">当前底数 a</div>
+        <div style="font-size: 16px; font-weight: 800; color: #f8fafc; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">${step.curA}</div>
       </div>
-      <div style="padding: 8px 12px; background: #f8fafc; border-radius: 6px; border: 1.5px solid #cbd5e1; text-align: center;">
-        <div style="font-size: 11px; color: #64748b; font-weight: 700;">当前剩余指数 b</div>
-        <div style="font-size: 16px; font-weight: 800; color: #0284c7; font-family: monospace; margin-top: 2px;">${step.curB}</div>
+      <div style="padding: 10px 12px; background: #1e293b; border-radius: 6px; border: 1.5px solid #334155; text-align: center;">
+        <div style="font-size: 11px; color: #94a3b8; font-weight: 700;">当前剩余指数 b</div>
+        <div style="font-size: 16px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">${step.curB}</div>
       </div>
-      <div style="padding: 8px 12px; background: #ecfdf5; border-radius: 6px; border: 1.5px solid #10b981; text-align: center;">
-        <div style="font-size: 11px; color: #047857; font-weight: 700;">累乘答案 ans</div>
-        <div style="font-size: 16px; font-weight: 800; color: #059669; font-family: monospace; margin-top: 2px;">${step.curAns}</div>
+      <div style="padding: 10px 12px; background: rgba(16, 185, 129, 0.15); border-radius: 6px; border: 1.5px solid #10b981; text-align: center; box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);">
+        <div style="font-size: 11px; color: #34d399; font-weight: 700;">累乘答案 ans</div>
+        <div style="font-size: 16px; font-weight: 800; color: #34d399; font-family: 'JetBrains Mono', monospace; margin-top: 2px;">${step.curAns}</div>
       </div>
     `;
     root.appendChild(statusBox);
 
     // 3. 决策信息
     const info = document.createElement('div');
-    info.style.cssText = 'padding: 8px 12px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #3b82f6; font-size: 12px; color: #334155;';
+    info.style.cssText = 'padding: 10px 14px; background: #0f172a; border-radius: 6px; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; font-size: 12px; color: #cbd5e1;';
     info.textContent = step.decision;
     root.appendChild(info);
 

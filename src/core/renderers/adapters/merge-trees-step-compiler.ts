@@ -39,6 +39,9 @@ export interface MergeTreesStep {
   focus1: number | null;
   focus2: number | null;
   focusMerged: number | null;
+  focusPath?: string;
+  focus1Path?: string;
+  focus2Path?: string;
   tree1Visited: Set<number>;
   tree2Visited: Set<number>;
   highlightedMergedVals: Set<number>;
@@ -184,7 +187,8 @@ export function buildMergeTreesDfsSteps(
     n2: TreeNode | null,
     depth: number,
     parent?: TreeNode,
-    isLeft?: boolean
+    isLeft?: boolean,
+    path: string = 'root'
   ): TreeNode | null => {
     const n1Label = n1 ? `Node(${n1.val})` : 'null';
     const n2Label = n2 ? `Node(${n2.val})` : 'null';
@@ -205,6 +209,9 @@ export function buildMergeTreesDfsSteps(
         focus1: n1 ? n1.val : null,
         focus2: n2 ? n2.val : null,
         focusMerged: null,
+        focusPath: path,
+        focus1Path: n1 ? path : undefined,
+        focus2Path: n2 ? path : undefined,
         tree1Visited: new Set(tree1Visited),
         tree2Visited: new Set(tree2Visited),
         highlightedMergedVals: new Set(completedVals),
@@ -248,6 +255,9 @@ export function buildMergeTreesDfsSteps(
         focus1: null,
         focus2: n2 ? n2.val : null,
         focusMerged: n2 ? n2.val : null,
+        focusPath: path,
+        focus1Path: undefined,
+        focus2Path: n2 ? path : undefined,
         tree1Visited: new Set(tree1Visited),
         tree2Visited: new Set(tree2Visited),
         highlightedMergedVals: new Set(completedVals),
@@ -293,6 +303,9 @@ export function buildMergeTreesDfsSteps(
         focus1: n1.val,
         focus2: null,
         focusMerged: n1.val,
+        focusPath: path,
+        focus1Path: n1 ? path : undefined,
+        focus2Path: undefined,
         tree1Visited: new Set(tree1Visited),
         tree2Visited: new Set(tree2Visited),
         highlightedMergedVals: new Set(completedVals),
@@ -338,6 +351,9 @@ export function buildMergeTreesDfsSteps(
       focus1: n1.val,
       focus2: n2.val,
       focusMerged: sum,
+      focusPath: path,
+      focus1Path: path,
+      focus2Path: path,
       tree1Visited: new Set(tree1Visited),
       tree2Visited: new Set(tree2Visited),
       highlightedMergedVals: new Set(completedVals),
@@ -369,6 +385,9 @@ export function buildMergeTreesDfsSteps(
       focus1: n1.left ? n1.left.val : null,
       focus2: n2.left ? n2.left.val : null,
       focusMerged: sum,
+      focusPath: path,
+      focus1Path: n1.left ? `${path}/L` : undefined,
+      focus2Path: n2.left ? `${path}/L` : undefined,
       tree1Visited: new Set(tree1Visited),
       tree2Visited: new Set(tree2Visited),
       highlightedMergedVals: new Set(completedVals),
@@ -379,7 +398,7 @@ export function buildMergeTreesDfsSteps(
       opType: 'recurse_left',
       callTrace: trace.snapshot(),
     });
-    newNode.left = dfs(n1.left, n2.left, depth + 1, newNode, true);
+    newNode.left = dfs(n1.left, n2.left, depth + 1, newNode, true, `${path}/L`);
 
     // 递归右子树
     if (n1.right) tree1Visited.add(n1.right.val);
@@ -401,6 +420,9 @@ export function buildMergeTreesDfsSteps(
       focus1: n1.right ? n1.right.val : null,
       focus2: n2.right ? n2.right.val : null,
       focusMerged: sum,
+      focusPath: path,
+      focus1Path: n1.right ? `${path}/R` : undefined,
+      focus2Path: n2.right ? `${path}/R` : undefined,
       tree1Visited: new Set(tree1Visited),
       tree2Visited: new Set(tree2Visited),
       highlightedMergedVals: new Set(completedVals),
@@ -411,7 +433,7 @@ export function buildMergeTreesDfsSteps(
       opType: 'recurse_right',
       callTrace: trace.snapshot(),
     });
-    newNode.right = dfs(n1.right, n2.right, depth + 1, newNode, false);
+    newNode.right = dfs(n1.right, n2.right, depth + 1, newNode, false, `${path}/R`);
 
     // 左右合并完成，向上回溯
     trace.addReturnLeaf(`return Node(${sum}) (左右子树合并完毕)`, depth);
@@ -428,6 +450,9 @@ export function buildMergeTreesDfsSteps(
       focus1: n1.val,
       focus2: n2.val,
       focusMerged: sum,
+      focusPath: path,
+      focus1Path: path,
+      focus2Path: path,
       tree1Visited: new Set(tree1Visited),
       tree2Visited: new Set(tree2Visited),
       highlightedMergedVals: new Set(completedVals),

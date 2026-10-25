@@ -42,9 +42,77 @@ export class PathSumCanvasAdapter {
   }
 
   /**
-   * Card 2: Stage 1 递归减法回溯与推演栈监视器
+   * Card 2: Stage 1 代码随想录·辅助函数与显式回溯监视器 (Carl's Explicit Backtracking DFS)
    */
   static renderStage1CustomMetrics(container: HTMLElement, step: PSStep): void {
+    const pathChips =
+      step.path.length > 0
+        ? step.path
+            .map(
+              (v, idx) => `
+            <div style="display: flex; align-items: center;">
+              <span style="padding: 1px 7px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 4px; font-size: 10.5px; font-weight: 700; font-family: monospace;">${v}</span>
+              ${idx < step.path.length - 1 ? '<span style="color: #94a3b8; font-size: 9px; margin: 0 3px;">➔</span>' : ''}
+            </div>`
+            )
+            .join('')
+        : '<span style="color:#94a3b8; font-size: 10px; font-style:italic;">路径为空 (初始未深入)</span>';
+
+    container.innerHTML = `
+      <div style="display: flex; flex-direction: column; height: 100%; gap: 6px; font-size: 11px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex-shrink: 0;">
+          <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; color: #64748b;">当前节点:</span>
+            <span style="font-weight: 700; font-size: 12px; color: #2563eb;">${step.current != null ? `Node(${step.current})` : '空'}</span>
+          </div>
+          <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; color: #64748b;">计数器 count:</span>
+            <span style="font-weight: 700; font-size: 12px; color: #10b981;">${step.remain ?? 0}</span>
+          </div>
+          <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; color: #64748b;">目标和:</span>
+            <span style="font-weight: 700; font-size: 12px; color: #f59e0b;">${step.targetSum}</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; flex-shrink: 0;">
+          <span style="font-size: 10px; font-weight: 700; color: #475569; white-space: nowrap;">当前路径栈:</span>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 3px;">
+            ${pathChips}
+          </div>
+        </div>
+        <div class="ps-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
+      </div>
+    `;
+    if (step.callTrace) {
+      const traceHost = container.querySelector('.ps-trace-host') as HTMLElement | null;
+      if (traceHost) {
+        RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
+          title: '📜 代码随想录·显式回溯 traversal(cur, count) 调用追踪',
+          theme: 'light',
+          maxHeight: '100%',
+          showTerminalHeader: true,
+        });
+      }
+    }
+  }
+
+  /**
+   * Card 2: Stage 2 剩余差额单函数精简 (Remaining Target Subtraction · LC 112)
+   */
+  static renderStage2CustomMetrics(container: HTMLElement, step: PSStep): void {
+    const pathChips =
+      step.path.length > 0
+        ? step.path
+            .map(
+              (v, idx) => `
+            <div style="display: flex; align-items: center;">
+              <span style="padding: 1px 7px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 4px; font-size: 10.5px; font-weight: 700; font-family: monospace;">${v}</span>
+              ${idx < step.path.length - 1 ? '<span style="color: #94a3b8; font-size: 9px; margin: 0 3px;">➔</span>' : ''}
+            </div>`
+            )
+            .join('')
+        : '<span style="color:#94a3b8; font-size: 10px; font-style:italic;">路径为空 (初始未深入)</span>';
+
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; height: 100%; gap: 6px; font-size: 11px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex-shrink: 0;">
@@ -55,6 +123,12 @@ export class PathSumCanvasAdapter {
           <div style="padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; justify-content: space-between;">
             <span style="font-size: 10px; color: #64748b;">剩余需求 (remain):</span>
             <span style="font-weight: 700; font-size: 12px; color: #f59e0b;">${step.remain}</span>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 3px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; flex-shrink: 0;">
+          <span style="font-size: 10px; font-weight: 700; color: #475569; white-space: nowrap;">当前路径栈:</span>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 3px;">
+            ${pathChips}
           </div>
         </div>
         <div class="ps-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
@@ -74,9 +148,9 @@ export class PathSumCanvasAdapter {
   }
 
   /**
-   * Card 2: Stage 2 回溯现场恢复与全解收集监视器
+   * Card 2: Stage 3 回溯现场恢复与全解收集监视器 (LC 113)
    */
-  static renderStage2CustomMetrics(container: HTMLElement, step: PSStep): void {
+  static renderStage3CustomMetrics(container: HTMLElement, step: PSStep): void {
     const pathChips =
       step.path.length > 0
         ? step.path
@@ -136,9 +210,9 @@ export class PathSumCanvasAdapter {
   }
 
   /**
-   * Card 2: Stage 3 迭代 BFS 双队列管道监视器
+   * Card 2: Stage 4 迭代 BFS 双队列管道监视器
    */
-  static renderStage3CustomMetrics(container: HTMLElement, step: PSStep): void {
+  static renderStage4CustomMetrics(container: HTMLElement, step: PSStep): void {
     const pathChips =
       step.path.length > 0
         ? step.path
@@ -196,3 +270,5 @@ export const renderPathSumCanvas = PathSumCanvasAdapter.renderCanvas;
 export const renderStage1CustomMetrics = PathSumCanvasAdapter.renderStage1CustomMetrics;
 export const renderStage2CustomMetrics = PathSumCanvasAdapter.renderStage2CustomMetrics;
 export const renderStage3CustomMetrics = PathSumCanvasAdapter.renderStage3CustomMetrics;
+export const renderStage4CustomMetrics = PathSumCanvasAdapter.renderStage4CustomMetrics;
+

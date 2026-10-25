@@ -8,14 +8,16 @@ import { TreeNode, renderTreeSVG } from '../tree-svg';
 
 export interface TreeCanvasState {
   tree: TreeNode | null;
-  current: number | null;
-  highlightedNodes?: number[];
-  secondaryHighlightedNodes?: number[];
-  visitedNodes?: number[];
+  current?: number | string | null;
+  activeNodeId?: number | string | null;
+  secondaryNodeId?: number | string | null;
+  highlightedNodes?: (number | string)[];
+  secondaryHighlightedNodes?: (number | string)[];
+  visitedNodes?: (number | string)[];
   primaryColor?: string;
   secondaryColor?: string;
   visitedColor?: string;
-  labels?: Map<number, string>;
+  labels?: Map<number | string, string>;
 }
 
 export class TreeCanvasAdapter {
@@ -26,6 +28,8 @@ export class TreeCanvasAdapter {
     const {
       tree,
       current,
+      activeNodeId,
+      secondaryNodeId,
       highlightedNodes = [],
       secondaryHighlightedNodes = [],
       visitedNodes = [],
@@ -35,11 +39,14 @@ export class TreeCanvasAdapter {
       labels,
     } = state;
 
-    const primarySet = new Set<number>(highlightedNodes);
-    if (current != null) primarySet.add(current);
+    const primarySet = new Set<number | string>(highlightedNodes);
+    if (activeNodeId != null) primarySet.add(activeNodeId);
+    if (current != null && activeNodeId == null) primarySet.add(current);
 
-    const secondarySet = new Set<number>(secondaryHighlightedNodes);
-    const visitedSet = new Set<number>(visitedNodes);
+    const secondarySet = new Set<number | string>(secondaryHighlightedNodes);
+    if (secondaryNodeId != null) secondarySet.add(secondaryNodeId);
+
+    const visitedSet = new Set<number | string>(visitedNodes);
 
     // 清空并挂载 SVG 容器
     container.style.display = 'flex';

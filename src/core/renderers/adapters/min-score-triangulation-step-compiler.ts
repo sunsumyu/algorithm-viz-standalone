@@ -299,12 +299,6 @@ export function buildMinScoreTriangulationSteps(params: MinScoreTriangulationSte
   // ==========================================================================
   const grid: (number | null)[][] = Array.from({ length: n }, () => new Array(n).fill(null));
 
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j <= i + 1 && j < n; j++) {
-      grid[i]![j] = 0; // 点数 < 3 无法构成三角形，得分为 0
-    }
-  }
-
   // Step 0: 函数入口帧
   steps.push({
     stage,

@@ -19,6 +19,8 @@ export { buildLevelorderSerialize036Steps, renderLevelorderSerializeCanvas };
 
 export const levelorderSerialize036Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
   id: 'tree-036-levelorder-serialize',
+  aliases: ['levelorder-serialize', 'tree-036-levelorder-serialize', 'tree-036-code06'],
+  hasDeductionTree: true,
   name: '二叉树按层序列化与反序列化 (Class 036)',
   category: 'tree',
   icon: '📦',

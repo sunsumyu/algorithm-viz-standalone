@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
+import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import {
   buildBstModesStage1Steps,
   buildBstModesStage2Steps,
@@ -138,6 +140,55 @@ describe('BSTModesStepCompiler (LC 501 · 二叉搜索树中的众数)', () => {
     it('空树特判返回 []', () => {
       const steps = buildBstModesStage3Steps(null);
       expect(steps[0].modes).toEqual([]);
+    });
+  });
+
+  describe('唯一身份标识与重复值节点高亮隔离 (Node Identity & Duplicate Isolation)', () => {
+    it('[1, null, 2, 2] 重复节点具备不同唯一 ID 且每步单节点精准高亮', () => {
+      const root = buildTreeFromArr([1, null, 2, 2]);
+      expect(root?.id).toBeDefined();
+      expect(root?.right?.id).toBeDefined();
+      expect(root?.right?.left?.id).toBeDefined();
+      expect(root?.right?.id).not.toBe(root?.right?.left?.id);
+
+      const steps = buildBstModesStage1Steps(root);
+      // 遍历所有有当前节点的步进，验证 currNodeId 存在且精准
+      for (const step of steps) {
+        if (step.currNodeVal !== null) {
+          expect(step.currNodeId).toBeDefined();
+          if (step.highlightedNodes && step.highlightedNodes.length === 1) {
+            expect(typeof step.highlightedNodes[0]).toBe('string');
+          }
+        }
+      }
+    });
+
+    it('TreeCanvasAdapter 渲染重复值树时，仅高亮 activeNodeId 对应节点', () => {
+      const root = buildTreeFromArr([1, null, 2, 2]);
+      const parentNodeId = root?.right?.id as string;
+      const childNodeId = root?.right?.left?.id as string;
+
+      const container = document.createElement('div');
+      // 传入 childNodeId 作为 activeNodeId
+      const state = {
+        tree: root,
+        activeNodeId: childNodeId,
+        highlightedNodes: [childNodeId],
+        primaryColor: '#c026d3',
+      };
+      TreeCanvasAdapter.renderTree(container, state);
+
+      const circles = container.querySelectorAll('circle');
+      expect(circles.length).toBe(3); // 3 个节点
+
+      // 仅有 1 个 circle 具备 primaryColor 高亮，其余节点不具备
+      let highlightedCount = 0;
+      circles.forEach((c) => {
+        if (c.getAttribute('fill') === '#c026d3') {
+          highlightedCount++;
+        }
+      });
+      expect(highlightedCount).toBe(1);
     });
   });
 });

@@ -90,13 +90,30 @@ export class UniquePathsVisualizer implements IVisualizer {
       }
     };
 
+    let isReady = false;
     const onIframeReady = () => {
+      if (isReady) return;
+      isReady = true;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('message', messageHandler);
+      }
       iframe.style.opacity = '1';
       bindIframeShortcuts();
     };
 
-    iframe.addEventListener('load', onIframeReady);
-    setTimeout(onIframeReady, 40);
+    const messageHandler = (e: MessageEvent) => {
+      if (e.data && e.data.type === 'VIZ_READY') {
+        onIframeReady();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', messageHandler);
+    }
+
+    iframe.addEventListener('load', () => {
+      setTimeout(onIframeReady, 180);
+    });
+    setTimeout(onIframeReady, 350);
     setTimeout(bindIframeShortcuts, 250);
 
     // 挂载全局切换钩子，方便 iframe 内部一键切换并无损携带状态

@@ -48,10 +48,11 @@ function parseAndBuild(inputs?: Record<string, any>): TreeNode | null {
 // ============================================================
 export const treeSymmetricVisualizer = registerDeclarativeAlgorithm<TSStep>({
   id: 'tree-symmetric',
-  aliases: ['leetcode-101', 'symmetric-tree'],
+  aliases: ['leetcode-101', '101', 'symmetric-tree'],
   name: '对称二叉树',
   category: 'tree',
   icon: '⚖️',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 4,
   learningGoal: '掌握镜像二叉树双指针同时向下递归遍历外侧与内侧节点的算法设计模式',

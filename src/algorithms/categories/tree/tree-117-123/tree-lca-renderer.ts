@@ -25,7 +25,8 @@ export {
 export const treeLcaVisualizer = registerDeclarativeAlgorithm<TreeLcaStep>({
   id: 'tree-lca-binary-lifting-118',
   name: '树上倍增求 LCA (Class 118)',
-  aliases: ['class118-code01', 'tree-lca-118', 'lowest-common-ancestor-binary-lifting'],
+  aliases: ['class118-code01', 'tree-lca-118', 'tree-lca', 'lowest-common-ancestor-binary-lifting'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '🌳',
   difficulty: 2,

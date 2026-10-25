@@ -62,6 +62,8 @@ export class BitmaskDpSandboxAdapter {
     options: Partial<StateSpacePresentationOptions> = {}
   ): void {
     if (!container) return;
+    container.className = 'bitmask-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 0; background: transparent; overflow-y: auto; box-sizing: border-box; font-family: ui-sans-serif, system-ui, sans-serif;';
     const modelId = options.modelId || '';
 
     if (
@@ -229,9 +231,9 @@ export class BitmaskDpSandboxAdapter {
     }).join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：数字池抽取台与二进制位掩码沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🎲</span> 数字池抽取台与状态机 (Number Pool & Bitmask Register)
@@ -278,7 +280,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：博弈论 Minimax 极小化极大决策舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>⚖️</span> 博弈论 Minimax 决策舱
@@ -449,9 +451,9 @@ export class BitmaskDpSandboxAdapter {
     const visitedCount = Array.from({ length: n }).filter((_, idx) => (s & (1 << idx)) !== 0).length;
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：城市拓扑网络与巡回回路沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🌐</span> 城市拓扑网络与回路沙盘 (City Network & Route Sandbox)
@@ -487,7 +489,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：旅行商路径成本松弛演算舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🛣️</span> 状态压缩与松弛演算舱
@@ -572,9 +574,9 @@ export class BitmaskDpSandboxAdapter {
       .join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：装填台与物理桶沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>${isMatchsticks ? '🪵' : '🪣'}</span> ${isMatchsticks ? '火柴拾取台与四边拼装沙盘' : '数字池与 K 个目标子集装填沙盘'}
@@ -603,7 +605,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：装填可行性与子集和演算舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🎯</span> 装填可行性与剪枝决策舱
@@ -753,9 +755,9 @@ export class BitmaskDpSandboxAdapter {
     }).join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：帽子陈列台与人员受体掩码沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🎩</span> 帽子陈列台与人员受体沙盘 (Dimension Inversion)
@@ -808,7 +810,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：方案累计与维度反转决策舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>📊</span> 方案累计与 0-1 转移决策舱
@@ -946,9 +948,9 @@ export class BitmaskDpSandboxAdapter {
     }).join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：净收支账户卡与零和天平沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>💳</span> 账户净收支结余与子集天平沙盘 (Bank Ledger Scale)
@@ -990,7 +992,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：清算交易转化舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🔄</span> 债务清算与子集分解转化舱
@@ -1108,9 +1110,9 @@ export class BitmaskDpSandboxAdapter {
     }).join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：10 质数质谱仪与当前数字分子卡 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🧪</span> 10 质因数质谱仪与无平方分子沙盘 (Prime Spectrometer)
@@ -1161,7 +1163,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：好子集 0-1 背包转移与 1 的倍乘舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🎯</span> 0-1 背包与乘数倍率舱
@@ -1279,9 +1281,9 @@ export class BitmaskDpSandboxAdapter {
     }).join('');
 
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
+      <div class="bitmask-dp-sandbox-grid" style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-sizing: border-box;">
         <!-- 左侧 7 列：库存仓库与顾客订单推车沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>📦</span> 库存频次仓库与顾客订单沙盘 (Order Dispatcher)
@@ -1318,7 +1320,7 @@ export class BitmaskDpSandboxAdapter {
         </div>
 
         <!-- 右侧 5 列：子掩码调度决策舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
             <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
               <span>🎯</span> (sub-1)&amp;s 子掩码高效调度舱

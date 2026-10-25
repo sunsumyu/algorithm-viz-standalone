@@ -256,6 +256,10 @@ function compileWildcardStage1Steps(
       line: data.line || lineDfsEntry,
       s,
       p,
+      curI: data.i !== undefined ? data.i : undefined,
+      curJ: data.j !== undefined ? data.j : undefined,
+      label1: '文本串 S',
+      label2: '模式串 P',
       ...data,
     });
   }
@@ -492,6 +496,10 @@ function compileWildcardStage2Steps(
       line: data.line || lineDfsEntry,
       s,
       p,
+      curI: data.i !== undefined ? data.i : undefined,
+      curJ: data.j !== undefined ? data.j : undefined,
+      label1: '文本串 S',
+      label2: '模式串 P',
       ...data,
     });
   }
@@ -754,6 +762,10 @@ function compileWildcardStage3Steps(
       line: data.line || lineStarSlope,
       s,
       p,
+      curI: data.i !== undefined ? data.i : undefined,
+      curJ: data.j !== undefined ? data.j : undefined,
+      label1: '文本串 S',
+      label2: '模式串 P',
       ...data,
     });
   }
@@ -909,6 +921,10 @@ function compileWildcardStage4Steps(
       line: data.line || lineStarSlope,
       s,
       p,
+      curI: data.i !== undefined ? data.i : undefined,
+      curJ: data.j !== undefined ? data.j : undefined,
+      label1: '文本串 S',
+      label2: '模式串 P',
       ...data,
     });
   }
@@ -916,6 +932,8 @@ function compileWildcardStage4Steps(
   pushStep({
     type: 'init',
     line: lineInit,
+    grid: [new Array(m + 1).fill(null)],
+    dp1d: new Array(m + 1).fill(null),
     activeSlot: m,
     tag: `初始化滚动向量 next[${m + 1}]`,
     log: `| 📋 初始化 O(M) 空间压缩基底向量 next[${m + 1}]`,

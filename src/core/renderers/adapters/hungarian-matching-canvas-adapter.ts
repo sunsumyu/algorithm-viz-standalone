@@ -100,8 +100,8 @@ export class HungarianMatchingCanvasAdapter {
     }
 
     container.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden">
-        <svg class="w-full h-full max-h-[220px]" viewBox="0 0 380 200">
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #020617; padding: 8px; user-select: none; overflow: hidden; box-sizing: border-box;">
+        <svg style="width: 100%; height: 100%; max-height: 220px;" viewBox="0 0 380 200">
           <text x="90" y="18" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="middle">左部集合 (L)</text>
           <text x="270" y="18" fill="#10b981" font-size="10" font-weight="700" text-anchor="middle">右部集合 (R)</text>
           ${svgEdges.join('')}

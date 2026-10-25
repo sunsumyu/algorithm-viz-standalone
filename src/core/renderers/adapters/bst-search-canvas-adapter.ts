@@ -30,11 +30,11 @@ export class BstSearchCanvasAdapter {
    */
   static renderCustomMetrics(container: HTMLElement, step: BSTSStep): void {
     container.innerHTML = '';
-    container.className = 'flex flex-col gap-2 p-2 h-full overflow-y-auto text-slate-200';
+    container.style.cssText = 'display:flex; flex-direction:column; gap:8px; padding:8px; height:100%; overflow-y:auto; font-family:system-ui, -apple-system, sans-serif;';
 
-    // 1. 顶部 4 格 KPI 卡片
+    // 1. 顶部 4 格核心指标网格
     const metricsGrid = document.createElement('div');
-    metricsGrid.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+    metricsGrid.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; flex-shrink:0;';
     const foundText = step.insertedVal != null
       ? '已挂载新节点'
       : step.found
@@ -43,72 +43,74 @@ export class BstSearchCanvasAdapter {
       ? '未找到 (null)'
       : '检索中';
     const foundColor = step.insertedVal != null
-      ? 'text-purple-400'
+      ? '#7c3aed'
       : step.found
-      ? 'text-emerald-400'
+      ? '#059669'
       : step.action === 'not-found'
-      ? 'text-rose-400'
-      : 'text-cyan-400';
+      ? '#e11d48'
+      : '#0284c7';
 
     metricsGrid.innerHTML = `
-      <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-        <span class="text-[11px] text-slate-400 font-medium">检索目标数值</span>
-        <span class="text-base font-bold font-mono text-amber-400">val = ${step.val}</span>
+      <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#b45309; font-weight:700;">检索目标数值</div>
+        <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px;">val = ${step.val}</div>
       </div>
-      <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-        <span class="text-[11px] text-slate-400 font-medium">当前考察节点</span>
-        <span class="text-base font-bold font-mono text-blue-400">${step.current !== null ? `Node(${step.current})` : '—'}</span>
+      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#0369a1; font-weight:700;">当前考察节点</div>
+        <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px;">${step.current !== null ? `Node(${step.current})` : '—'}</div>
       </div>
-      <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-        <span class="text-[11px] text-slate-400 font-medium">分支转向决策</span>
-        <span class="text-xs font-semibold text-slate-200 truncate mt-1">${step.decision}</span>
+      <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#475569; font-weight:700;">分支转向决策</div>
+        <div style="font-size:11px; font-weight:700; color:#334155; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.decision}</div>
       </div>
-      <div class="flex flex-col p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 shadow-sm">
-        <span class="text-[11px] text-slate-400 font-medium">搜索命中状态</span>
-        <span class="text-sm font-bold ${foundColor} mt-0.5">${foundText}</span>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#15803d; font-weight:700;">搜索命中状态</div>
+        <div style="font-size:12px; font-weight:800; color:${foundColor}; margin-top:3px;">${foundText}</div>
       </div>
     `;
     container.appendChild(metricsGrid);
 
     // 2. 检索下潜路径展示区
     const pathBox = document.createElement('div');
-    pathBox.className = 'p-2 rounded-lg bg-slate-800/60 border border-slate-700/50 flex items-center justify-between flex-shrink-0';
+    pathBox.style.cssText = 'padding:6px 10px; border-radius:6px; background:#ffffff; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; font-size:11px;';
     pathBox.innerHTML = `
-      <div class="flex items-center gap-2">
-        <span class="text-[11px] text-slate-400">🛤️ 检索下潜路径:</span>
-        <div class="flex items-center gap-1">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="color:#64748b; font-weight:600;">🛤️ 下潜路径:</span>
+        <div style="display:flex; align-items:center; gap:4px;">
           ${step.path && step.path.length > 0 ? step.path.map((v, i) => {
             const isTarget = v === step.val;
-            const bg = isTarget ? 'bg-emerald-950/70 border-emerald-500/80 text-emerald-300' : 'bg-slate-900 border-slate-700 text-slate-300';
+            const bg = isTarget ? '#dcfce7' : '#f1f5f9';
+            const border = isTarget ? '#86efac' : '#cbd5e1';
+            const color = isTarget ? '#15803d' : '#334155';
             return `
-              <span class="inline-flex items-center justify-center px-2 py-0.5 rounded border font-mono text-xs font-bold ${bg}">
+              <span style="display:inline-flex; align-items:center; justify-content:center; padding:1px 6px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:${bg}; border:1px solid ${border}; color:${color};">
                 ${v}
               </span>
-              ${i < step.path.length - 1 ? '<span class="text-slate-500 text-xs">➔</span>' : ''}
+              ${i < step.path.length - 1 ? '<span style="color:#94a3b8; font-size:11px;">➔</span>' : ''}
             `;
-          }).join('') : '<span class="text-xs text-slate-500 italic">未开始</span>'}
+          }).join('') : '<span style="color:#94a3b8; font-style:italic;">未开始</span>'}
         </div>
       </div>
-      ${step.targetSubtree ? `<span class="text-xs font-mono font-bold text-emerald-400">Subtree(Root=${step.targetSubtree.val})</span>` : ''}
+      ${step.targetSubtree ? `<span style="font-family:ui-monospace,monospace; font-size:11px; font-weight:700; color:#059669;">Subtree(Root=${step.targetSubtree.val})</span>` : ''}
     `;
     container.appendChild(pathBox);
 
     // 3. 中间推演区：如果是 Stage 2 展示 Call Trace，其他 Stage 展示单向剪枝/槽位信息
     if (step.stageId === 'stage-2' && step.callTrace) {
       const traceBox = document.createElement('div');
-      traceBox.className = 'flex-1 min-h-[160px] max-h-[260px] overflow-hidden flex flex-col rounded-lg bg-slate-800/60 border border-slate-700/50';
+      traceBox.style.cssText = 'flex:1; min-height:140px; max-height:240px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
       RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
       container.appendChild(traceBox);
     } else if (step.stageId === 'stage-3') {
       const insertBox = document.createElement('div');
-      insertBox.className = 'p-2.5 rounded-lg bg-slate-800/70 border border-slate-700/60 flex-shrink-0';
+      insertBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#faf5ff; border:1px solid #e9d5ff; flex-shrink:0; font-size:11px;';
       insertBox.innerHTML = `
-        <div class="text-[11px] font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
+        <div style="font-weight:700; color:#7e22ce; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
           <span>🌱 BST 读写闭环动态插入 (LC 701)</span>
         </div>
-        <div class="text-xs text-slate-300 flex items-center gap-2">
-          <span class="text-slate-400">当前槽位动作:</span>
-          <span class="font-bold ${step.insertedVal != null ? 'text-purple-400' : 'text-cyan-400'}">${step.decision}</span>
+        <div style="color:#581c87; display:flex; align-items:center; gap:6px;">
+          <span>当前槽位动作:</span>
+          <span style="font-weight:700; color:${step.insertedVal != null ? '#7c3aed' : '#0284c7'};">${step.decision}</span>
         </div>
       `;
       container.appendChild(insertBox);
@@ -117,12 +119,10 @@ export class BstSearchCanvasAdapter {
     // 4. 当前推演决策总结
     const isDone = step.decision.includes('完成') || step.decision.includes('成功') || step.statusBadge?.type === 'success';
     const summaryBox = document.createElement('div');
-    summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed flex-shrink-0 ${
-      isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
-    }`;
+    summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
     summaryBox.innerHTML = `
-      <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 当前决策: ${step.decision}</div>
-      <div class="text-slate-400">${step.message}</div>
+      <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 当前决策: ${step.decision}</div>
+      <div style="color:#64748b; font-size:11px;">${step.message}</div>
     `;
     container.appendChild(summaryBox);
   }

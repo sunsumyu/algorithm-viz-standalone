@@ -50,6 +50,7 @@ export const allPathsVisualizer = registerDeclarativeAlgorithm<AllPathsStep>({
   name: '二叉树所有路径',
   category: 'tree',
   icon: '🛤️',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 257,
   aliases: ['leetcode-257', 'binary-tree-paths'],

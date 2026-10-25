@@ -46,6 +46,7 @@ export const widthOfBinaryTree036Visualizer = registerDeclarativeAlgorithm<Width
   name: '二叉树最大宽度 (Class 036)',
   category: 'tree',
   icon: '📏',
+  hasDeductionTree: true,
   difficulty: 2,
   levelOrder: 3603,
   learningGoal: '掌握完全二叉树编号模型与基于首节点偏移 base 消除整数溢出的工程技巧',

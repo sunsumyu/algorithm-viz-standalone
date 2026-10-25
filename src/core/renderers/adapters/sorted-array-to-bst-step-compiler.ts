@@ -35,6 +35,7 @@ export interface SortedArrayToBstStep {
   highlightedNodes?: number[];
   visitedNodes?: number[];
   metrics?: Record<string, string | number>;
+  vars?: Array<{ name: string; value: string }>;
   bfsQueues?: {
     nodeVals: number[];
     leftRanges: number[];
@@ -60,6 +61,46 @@ export function collectTreeValues(node: TreeNode | null): number[] {
     if (cur.right) queue.push(cur.right);
   }
   return res;
+}
+
+function formatMetrics(
+  curRange: string,
+  midVal: string | number,
+  actionType: string
+): Record<string, string | number> {
+  return {
+    'cur-range': curRange,
+    'mid-val': midVal,
+    'action-type': actionType,
+  };
+}
+
+function normalizeSteps(steps: SortedArrayToBstStep[]): SortedArrayToBstStep[] {
+  return steps.map((s) => ({
+    ...s,
+    vars:
+      s.vars ||
+      (s.bfsQueues
+        ? [
+            { name: 'curNode', value: s.currentVal != null ? `TreeNode(${s.currentVal})` : 'null' },
+            { name: 'left', value: String(s.left) },
+            { name: 'right', value: String(s.right) },
+            { name: 'mid', value: s.mid != null ? String(s.mid) : '—' },
+          ]
+        : s.left > s.right
+        ? [
+            { name: 'left', value: String(s.left) },
+            { name: 'right', value: String(s.right) },
+            { name: 'mid', value: 'N/A (越界基底)' },
+            { name: 'return', value: 'null' },
+          ]
+        : [
+            { name: 'left', value: String(s.left) },
+            { name: 'right', value: String(s.right) },
+            { name: 'mid', value: s.mid != null ? String(s.mid) : '—' },
+            { name: 'root', value: s.currentVal != null ? `TreeNode(${s.currentVal})` : 'null' },
+          ]),
+  }));
 }
 
 export function parseAndBuildSortedArrayToBstNums(inputs?: Record<string, any>): number[] {
@@ -92,9 +133,9 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
       codeLine: SORTED_ARRAY_TO_BST_STAGE1_LINES.entry,
       callTrace: trace.snapshot(),
       stageId: 'stage-1',
-      metrics: { '数组长度': 0, '当前状态': '空树直接返回' },
+      metrics: formatMetrics('空', '—', '空数组防守'),
     });
-    return steps;
+    return normalizeSteps(steps);
   }
 
   trace.addHeader(`sortedArrayToBST(nums[${n}])`, 0, '算法入口，启动偏左中点分治构建');
@@ -112,12 +153,18 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
     codeLine: SORTED_ARRAY_TO_BST_STAGE1_LINES.callBuild,
     callTrace: trace.snapshot(),
     stageId: 'stage-1',
-    metrics: { '数组长度': n, '初始区间': `[0..${n - 1}]` },
+    metrics: formatMetrics(`[0..${n - 1}]`, '待选取', '算法启动'),
   });
 
   let currentTreeRoot: TreeNode | null = null;
 
-  function build(left: number, right: number, depth: number): TreeNode | null {
+  function build(
+    left: number,
+    right: number,
+    depth: number,
+    parent?: TreeNode,
+    branch?: 'left' | 'right'
+  ): TreeNode | null {
     trace.addHeader(`build(left=${left}, right=${right})`, depth, `进入分治区间 [${left}..${right}]`);
 
     if (left > right) {
@@ -136,7 +183,7 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
         codeLine: SORTED_ARRAY_TO_BST_STAGE1_LINES.baseCheck,
         callTrace: trace.snapshot(),
         stageId: 'stage-1',
-        metrics: { '当前区间': `[${left}..${right}]`, '状态': '越界返回 null' },
+        metrics: formatMetrics(`[${left}..${right}]`, '越界 (null)', '空子树返回'),
       });
       return null;
     }
@@ -147,6 +194,8 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
 
     if (!currentTreeRoot) {
       currentTreeRoot = node;
+    } else if (parent && branch) {
+      parent[branch] = node;
     }
 
     trace.addConditionPass(`选定偏左中点 mid=${mid} (nums[${mid}]=${midVal})`, depth, `创建根节点 TreeNode(${midVal})`);
@@ -166,7 +215,7 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-1',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '当前区间': `[${left}..${right}]`, '选中中点': mid, '节点值': midVal },
+      metrics: formatMetrics(`[${left}..${right}]`, midVal, '选点建根'),
     });
 
     // 递归左子树
@@ -187,10 +236,10 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-1',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '父节点': midVal, '左子区间': `[${left}..${mid - 1}]` },
+      metrics: formatMetrics(`[${left}..${mid - 1}]`, midVal, '递归左子树'),
     });
 
-    node.left = build(left, mid - 1, depth + 1);
+    node.left = build(left, mid - 1, depth + 1, node, 'left');
 
     // 递归右子树
     trace.addRecursePrep(`递归右子树: build(${mid + 1}, ${right})`, depth, `右半区间 [${mid + 1}..${right}]`);
@@ -210,10 +259,10 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-1',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '父节点': midVal, '右子区间': `[${mid + 1}..${right}]` },
+      metrics: formatMetrics(`[${mid + 1}..${right}]`, midVal, '递归右子树'),
     });
 
-    node.right = build(mid + 1, right, depth + 1);
+    node.right = build(mid + 1, right, depth + 1, node, 'right');
 
     trace.addUnwindCalc(
       `节点 ${midVal} 左右子树构建完成并挂载`,
@@ -239,11 +288,7 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-1',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: {
-        '就绪节点': midVal,
-        '左孩子': node.left ? node.left.val : 'null',
-        '右孩子': node.right ? node.right.val : 'null',
-      },
+      metrics: formatMetrics(`[${left}..${right}]`, midVal, '子树挂载就绪'),
     });
 
     return node;
@@ -276,10 +321,10 @@ export function buildSortedArrayToBstStage1Steps(nums: number[]): SortedArrayToB
     stageId: 'stage-1',
     highlightedNodes: resultTree ? [resultTree.val] : [],
     visitedNodes: allNodes,
-    metrics: { '最终根节点': resultTree ? resultTree.val : 'null', '节点总数': n },
+    metrics: formatMetrics(`[0..${n - 1}]`, resultTree ? resultTree.val : 'null', '整树构建完成'),
   });
 
-  return steps;
+  return normalizeSteps(steps);
 }
 
 // =========================================================================
@@ -308,7 +353,7 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
       codeLine: SORTED_ARRAY_TO_BST_STAGE2_LINES.entry,
       callTrace: trace.snapshot(),
       stageId: 'stage-2',
-      metrics: { '数组长度': 0, '当前状态': '空树直接退出' },
+      metrics: formatMetrics('空', '—', '空数组防守'),
     });
     return steps;
   }
@@ -328,12 +373,18 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
     codeLine: SORTED_ARRAY_TO_BST_STAGE2_LINES.callBuild,
     callTrace: trace.snapshot(),
     stageId: 'stage-2',
-    metrics: { '数组长度': n, '取中策略': '偏右向上取整' },
+    metrics: formatMetrics(`[0..${n - 1}]`, '待选取', '偏右中点启动'),
   });
 
   let currentTreeRoot: TreeNode | null = null;
 
-  function build(left: number, right: number, depth: number): TreeNode | null {
+  function build(
+    left: number,
+    right: number,
+    depth: number,
+    parent?: TreeNode,
+    branch?: 'left' | 'right'
+  ): TreeNode | null {
     trace.addHeader(`build(left=${left}, right=${right})`, depth, `进入分治区间 [${left}..${right}]`);
 
     if (left > right) {
@@ -352,7 +403,7 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
         codeLine: SORTED_ARRAY_TO_BST_STAGE2_LINES.baseCheck,
         callTrace: trace.snapshot(),
         stageId: 'stage-2',
-        metrics: { '当前区间': `[${left}..${right}]`, '状态': '越界' },
+        metrics: formatMetrics(`[${left}..${right}]`, '越界 (null)', '空子树返回'),
       });
       return null;
     }
@@ -363,6 +414,8 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
 
     if (!currentTreeRoot) {
       currentTreeRoot = node;
+    } else if (parent && branch) {
+      parent[branch] = node;
     }
 
     trace.addConditionPass(`选定偏右中点 mid=${mid} (nums[${mid}]=${midVal})`, depth, `创建节点 TreeNode(${midVal})`);
@@ -382,7 +435,7 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-2',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '当前区间': `[${left}..${right}]`, '选中偏右中点': mid, '节点值': midVal },
+      metrics: formatMetrics(`[${left}..${right}]`, midVal, '偏右选点建根'),
     });
 
     // 递归左子树
@@ -403,10 +456,10 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-2',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '父节点': midVal, '左子区间': `[${left}..${mid - 1}]` },
+      metrics: formatMetrics(`[${left}..${mid - 1}]`, midVal, '递归左子树'),
     });
 
-    node.left = build(left, mid - 1, depth + 1);
+    node.left = build(left, mid - 1, depth + 1, node, 'left');
 
     // 递归右子树
     trace.addRecursePrep(`递归右子树: build(${mid + 1}, ${right})`, depth, `深入右半区间`);
@@ -426,10 +479,10 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-2',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '父节点': midVal, '右子区间': `[${mid + 1}..${right}]` },
+      metrics: formatMetrics(`[${mid + 1}..${right}]`, midVal, '递归右子树'),
     });
 
-    node.right = build(mid + 1, right, depth + 1);
+    node.right = build(mid + 1, right, depth + 1, node, 'right');
 
     trace.addUnwindCalc(
       `节点 ${midVal} 构建完毕`,
@@ -453,7 +506,7 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-2',
       highlightedNodes: [midVal],
       visitedNodes: collectTreeValues(currentTreeRoot).filter((v) => v !== midVal),
-      metrics: { '就绪节点': midVal },
+      metrics: formatMetrics(`[${left}..${right}]`, midVal, '子树挂载就绪'),
     });
 
     return node;
@@ -484,10 +537,10 @@ export function buildSortedArrayToBstStage2Steps(nums: number[]): SortedArrayToB
     stageId: 'stage-2',
     highlightedNodes: resultTree ? [resultTree.val] : [],
     visitedNodes: allNodes,
-    metrics: { '最终根节点': resultTree ? resultTree.val : 'null', '节点总数': n },
+    metrics: formatMetrics(`[0..${n - 1}]`, resultTree ? resultTree.val : 'null', '整树构建完成'),
   });
 
-  return steps;
+  return normalizeSteps(steps);
 }
 
 // =========================================================================
@@ -511,7 +564,7 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
       log: 'empty array -> return null',
       codeLine: SORTED_ARRAY_TO_BST_STAGE3_LINES.entry,
       stageId: 'stage-3',
-      metrics: { '数组长度': 0 },
+      metrics: formatMetrics('空', '—', '空数组防守'),
     });
     return steps;
   }
@@ -538,7 +591,7 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
     stageId: 'stage-3',
     highlightedNodes: [rootNode.val],
     visitedNodes: [],
-    metrics: { '根节点': rootNode.val, '队列长度': nodeQ.length },
+    metrics: formatMetrics(`[0..${n - 1}]`, rootNode.val, '总根节点入队'),
     bfsQueues: {
       nodeVals: nodeQ.map((nd) => nd.val),
       leftRanges: [...leftQ],
@@ -567,7 +620,7 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
       stageId: 'stage-3',
       highlightedNodes: [cur.val],
       visitedNodes: collectTreeValues(rootNode).filter((v) => v !== cur.val),
-      metrics: { '出队节点': cur.val, '当前区间': `[${l}..${r}]`, '中点': m },
+      metrics: formatMetrics(`[${l}..${r}]`, cur.val, '出队节点探测'),
       bfsQueues: {
         nodeVals: nodeQ.map((nd) => nd.val),
         leftRanges: [...leftQ],
@@ -599,7 +652,7 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
         stageId: 'stage-3',
         highlightedNodes: [leftChild.val, cur.val],
         visitedNodes: collectTreeValues(rootNode).filter((v) => v !== leftChild.val && v !== cur.val),
-        metrics: { '新挂左孩子': leftChild.val, '父节点': cur.val, '左区间': `[${l}..${m - 1}]` },
+        metrics: formatMetrics(`[${l}..${m - 1}]`, leftChild.val, '生成左孩子入队'),
         bfsQueues: {
           nodeVals: nodeQ.map((nd) => nd.val),
           leftRanges: [...leftQ],
@@ -632,7 +685,7 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
         stageId: 'stage-3',
         highlightedNodes: [rightChild.val, cur.val],
         visitedNodes: collectTreeValues(rootNode).filter((v) => v !== rightChild.val && v !== cur.val),
-        metrics: { '新挂右孩子': rightChild.val, '父节点': cur.val, '右区间': `[${m + 1}..${r}]` },
+        metrics: formatMetrics(`[${m + 1}..${r}]`, rightChild.val, '生成右孩子入队'),
         bfsQueues: {
           nodeVals: nodeQ.map((nd) => nd.val),
           leftRanges: [...leftQ],
@@ -659,9 +712,9 @@ export function buildSortedArrayToBstStage3Steps(nums: number[]): SortedArrayToB
     stageId: 'stage-3',
     highlightedNodes: [rootNode.val],
     visitedNodes: allTreeVals,
-    metrics: { '最终根节点': rootNode.val, '总节点数': n, '队列状态': '空队列 (消费完毕)' },
+    metrics: formatMetrics(`[0..${n - 1}]`, rootNode.val, 'BFS迭代构建完成'),
     bfsQueues: { nodeVals: [], leftRanges: [], rightRanges: [] },
   });
 
-  return steps;
+  return normalizeSteps(steps);
 }

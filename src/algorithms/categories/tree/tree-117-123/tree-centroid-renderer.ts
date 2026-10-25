@@ -26,6 +26,7 @@ export const treeCentroidVisualizer = registerDeclarativeAlgorithm<TreeCentroidS
   id: 'tree-centroid-120',
   name: '树的重心 (Class 120)',
   aliases: ['class120-code01', 'tree-centroid', 'tree-centroid-120'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '⚖️',
   difficulty: 2,

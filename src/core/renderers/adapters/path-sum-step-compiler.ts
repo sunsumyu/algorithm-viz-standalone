@@ -8,6 +8,8 @@ import { parseTreeArray } from '../../input-primitives';
 import { TreeNode, buildTreeFromArr as buildTree } from '../../../algorithms/categories/tree/tree-template';
 import { cloneStateDepTree } from '../../strategies/tree-clone';
 import {
+  PATH_SUM_STAGE1_CARL_TRAVERSAL_LINES,
+  PATH_SUM_STAGE1_CUMULATIVE_LINES,
   PATH_SUM_STAGE1_LINES,
   PATH_SUM_STAGE2_BACKTRACK_LINES,
   PATH_SUM_STAGE3_BFS_LINES,
@@ -77,22 +79,435 @@ export function parsePathSumInputs(inputs?: Record<string, any>): { root: TreeNo
 
 export function compilePathSumStage1(inputs?: Record<string, any>): PSStep[] {
   const { root, targetSum } = parsePathSumInputs(inputs);
-  return buildPSSteps(root, targetSum);
+  return buildPathSumStage1CumulativeSteps(root, targetSum);
 }
 
 export function compilePathSumStage2(inputs?: Record<string, any>): PSStep[] {
   const { root, targetSum } = parsePathSumInputs(inputs);
-  return buildPathSumStage2BacktrackSteps(root, targetSum);
+  return buildPSSteps(root, targetSum);
 }
 
 export function compilePathSumStage3(inputs?: Record<string, any>): PSStep[] {
+  const { root, targetSum } = parsePathSumInputs(inputs);
+  return buildPathSumStage2BacktrackSteps(root, targetSum);
+}
+
+export function compilePathSumStage4(inputs?: Record<string, any>): PSStep[] {
   const { root, targetSum } = parsePathSumInputs(inputs);
   return buildPathSumStage3BfsSteps(root, targetSum);
 }
 
 // ============================================================
-// Stage 1 Step Generator: 递归减法回溯 (LC 112)
 // ============================================================
+// Stage 1 Step Generator: 代码随想录·辅助函数与显式回溯 (Carl's Explicit Backtracking DFS)
+// 顺着二叉树向下递归，计数器 count 初始为 targetSum - root.val。
+// 到达叶子节点比对 count == 0；递归前显式 count -= child.val，失败返回后显式 count += child.val 恢复现场！
+// ============================================================
+export function buildPathSumStage1CumulativeSteps(root: TreeNode | null, targetSum: number): PSStep[] {
+  const steps: PSStep[] = [];
+  const L = PATH_SUM_STAGE1_CARL_TRAVERSAL_LINES;
+  const currentPath: number[] = [];
+  let found = false;
+
+  const workingTree = cloneTree(root);
+  const trace = new RecursiveCallTraceBuilder();
+  const rootText = workingTree ? `${workingTree.val}` : 'null';
+  trace.addHeader(`hasPathSum(${rootText}, targetSum=${targetSum})`, 0, '<- 根调用入口');
+
+  // Step 0: 函数入口帧 (Line 2: hasPathSum(root, targetSum))
+  steps.push({
+    tree: cloneTree(workingTree),
+    current: null,
+    targetSum,
+    currentSum: 0,
+    remain: targetSum,
+    path: [],
+    allPaths: [],
+    found: false,
+    decision: workingTree
+      ? `进入主函数：hasPathSum(root: ${workingTree.val}, targetSum: ${targetSum})`
+      : `进入主函数：hasPathSum(root: null, targetSum: ${targetSum})`,
+    action: 'enter',
+    message: workingTree
+      ? `初始化路径搜索：目标和 targetSum = ${targetSum}，准备判空后调用 traversal(root, targetSum - root.val) 辅助函数开启标准显式回溯。`
+      : '空树，准备执行判空检查。',
+    log: workingTree ? `hasPathSum(root: ${workingTree.val}, targetSum: ${targetSum})` : 'hasPathSum(null)',
+    metrics: { '目标和 targetSum': targetSum, '当前剩余差额 count': targetSum },
+    codeLine: L.entry,
+    statusBadge: { text: '算法启动', type: 'info' },
+    callTrace: trace.snapshot(),
+  });
+
+  // Step 1: 判空检查 (Line 3: if (root == null) return false;)
+  if (!workingTree) {
+    trace.addConditionHit('① root == null √ 命中! -> return false', 0);
+    trace.addReturnLeaf('return false', 0);
+    trace.addFinalResult('最终返回: false', 0, undefined, 'false');
+    steps.push({
+      tree: null,
+      current: null,
+      targetSum,
+      currentSum: 0,
+      remain: targetSum,
+      path: [],
+      allPaths: [],
+      found: false,
+      decision: '根节点为空 (root == null)，直接返回 false',
+      action: 'check-null',
+      message: '空树不存在任何根到叶的有效路径，直接返回 false。',
+      log: 'root == null -> return false',
+      metrics: { '目标和 targetSum': targetSum, '剩余差额 count': targetSum },
+      codeLine: L.nullCheck,
+      statusBadge: { text: '空树判空', type: 'warning' },
+      callTrace: trace.snapshot(),
+    });
+    steps.push({
+      tree: null,
+      current: null,
+      targetSum,
+      currentSum: 0,
+      remain: targetSum,
+      path: [],
+      allPaths: [],
+      found: false,
+      decision: '推演结束：空树判定结果为 false',
+      action: 'done',
+      message: '推演完成，整树不存在满足和等于 targetSum 的路径。',
+      log: 'done hasPathSum=false',
+      metrics: { '目标和 targetSum': targetSum, '最终结果': 'false' },
+      codeLine: L.nullCheck,
+      statusBadge: { text: '推演完成', type: 'danger' },
+      callTrace: trace.snapshot(),
+    });
+    return steps;
+  }
+
+  // Step 2: 调用辅助函数 (Line 4: return traversal(root, targetSum - root.val);)
+  const initialCount = targetSum - workingTree.val;
+  trace.addRecursePrep(`调用辅助函数 traversal(root: ${workingTree.val}, count: ${targetSum} - ${workingTree.val} = ${initialCount})`, 0);
+  steps.push({
+    tree: cloneTree(workingTree),
+    current: workingTree.val,
+    targetSum,
+    currentSum: workingTree.val,
+    remain: initialCount,
+    path: [workingTree.val],
+    allPaths: [],
+    found: false,
+    decision: `调用辅助函数：traversal(root: ${workingTree.val}, count: ${initialCount})`,
+    action: 'call-traversal',
+    message: `《代码随想录》第一步：根节点计入路径，初始计数器 count = targetSum - root.val = ${targetSum} - ${workingTree.val} = ${initialCount}。开启显式回溯递归。`,
+    log: `call traversal(root: ${workingTree.val}, count: ${initialCount})`,
+    metrics: { '目标和 targetSum': targetSum, '当前节点值': workingTree.val, '计数器 count': initialCount },
+    codeLine: L.callTraversal,
+    statusBadge: { text: '调用辅助函数', type: 'info' },
+    callTrace: trace.snapshot(),
+  });
+
+  const allVisited: number[] = [];
+  let successfulPath: number[] = [];
+
+  function dfsTraversal(cur: TreeNode, count: number, depth: number): boolean {
+    currentPath.push(cur.val);
+    allVisited.push(cur.val);
+
+    trace.addHeader(`traversal(cur: ${cur.val}, count: ${count})`, depth, `<- 深入 Node(${cur.val})`);
+
+    // Step A: 进入 traversal 函数头 (Line 6)
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: cur.val,
+      targetSum,
+      currentSum: targetSum - count,
+      remain: count,
+      path: [...currentPath],
+      allPaths: [],
+      found: false,
+      decision: `进入 traversal 帧：Node(${cur.val}), 计数器剩余额 count = ${count}`,
+      action: 'enter',
+      message: `递归深入考察节点 Node(${cur.val})，当前路径：[${currentPath.join(' -> ')}]，当前差额 count = ${count}。`,
+      log: `traversal(cur: ${cur.val}, count: ${count})`,
+      metrics: { '当前节点': cur.val, '计数器 count': count, '已累加路径和': targetSum - count },
+      codeLine: L.traversalEntry,
+      statusBadge: { text: `深度 ${depth}`, type: 'info' },
+      callTrace: trace.snapshot(),
+      visitedNodes: [...allVisited],
+    });
+
+    const isLeaf = cur.left == null && cur.right == null;
+
+    // Step B: 叶子节点且 count == 0 (Line 7)
+    if (isLeaf && count === 0) {
+      found = true;
+      successfulPath = [...currentPath];
+      trace.addConditionHit(`🎯 遇到叶子节点且 count == 0！找到目标路径 -> return true`, depth);
+      trace.addReturnLeaf('return true', depth);
+
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum,
+        remain: 0,
+        path: [...currentPath],
+        allPaths: [[...currentPath]],
+        found: true,
+        decision: `🎯 遇到叶子节点 Node(${cur.val}) 且 count == 0，找到符合条件的路径！返回 true`,
+        action: 'leaf-match',
+        message: `《代码随想录》终止条件 1：到达叶子节点且计数器扣减至 0，存在有效路径 [${currentPath.join(' -> ')}]，直接返回 true！`,
+        log: `Leaf Node(${cur.val}) count==0 -> return true`,
+        metrics: { '当前节点': cur.val, '计数器 count': 0, '判定结果': 'TRUE (命中有效路径)' },
+        codeLine: L.leafMatch,
+        statusBadge: { text: '🎯 命中目标', type: 'success' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+        highlightedNodes: [...currentPath],
+      });
+
+      return true;
+    }
+
+    // Step C: 叶子节点但 count != 0 (Line 8)
+    if (isLeaf && count !== 0) {
+      trace.addConditionSkip(`❌ 遇到叶子节点但 count(${count}) != 0 -> return false`, depth);
+      trace.addReturnLeaf('return false', depth);
+
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `❌ 遇到叶子节点 Node(${cur.val}) 但 count(${count}) != 0，未达成目标和，返回 false`,
+        action: 'leaf-mismatch',
+        message: `《代码随想录》终止条件 2：到达叶子节点但计数器 count 为 ${count} (≠ 0)，路径总和为 ${targetSum - count} ≠ ${targetSum}，此路不通，返回 false。`,
+        log: `Leaf Node(${cur.val}) count=${count}!=0 -> return false`,
+        metrics: { '当前节点': cur.val, '计数器 count': count, '判定结果': 'FALSE (未达成目标)' },
+        codeLine: L.leafMismatch,
+        statusBadge: { text: '叶子未命中', type: 'warning' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+
+      currentPath.pop();
+      return false;
+    }
+
+    // Step D: 递归左子树 (Lines 9-13)
+    if (cur.left != null) {
+      // 1. 递归深入前处理：count -= cur.left.val (Line 10)
+      count -= cur.left.val;
+      trace.addRecursePrep(`count -= cur.left.val(${cur.left.val}) = ${count}`, depth);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `左孩子存在：递归深入前处理 count -= cur.left.val(${cur.left.val}) = ${count}`,
+        action: 'left-sub',
+        message: `《代码随想录》显式回溯第一步：准备深入左子节点 Node(${cur.left.val})，计数器减去左孩子值，count 变为 ${count}。`,
+        log: `Node(${cur.val}) count -= ${cur.left.val} -> ${count}`,
+        metrics: { '当前节点': cur.val, '深入目标': `Left(${cur.left.val})`, '扣减后 count': count },
+        codeLine: L.leftSub,
+        statusBadge: { text: '递归扣减 (左)', type: 'info' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+
+      // 2. 递归调用：if (traversal(cur.left, count)) return true; (Line 11)
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `递归调用：traversal(cur.left: ${cur.left.val}, count: ${count})`,
+        action: 'left-recurse',
+        message: `进入左子树递归：搜索是否存在和为 targetSum 的根到叶路径。`,
+        log: `recurse traversal(left: ${cur.left.val}, count: ${count})`,
+        metrics: { '当前节点': cur.val, '递归调用': `traversal(${cur.left.val}, ${count})` },
+        codeLine: L.leftRecurse,
+        statusBadge: { text: '深入左子树', type: 'info' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+
+      const leftFound = dfsTraversal(cur.left, count, depth + 1);
+      if (leftFound) {
+        return true;
+      }
+
+      // 3. 回溯现场恢复：count += cur.left.val (Line 12)
+      count += cur.left.val;
+      trace.addUnwindCalc(`左子树未命中，回溯恢复：count += cur.left.val(${cur.left.val}) = ${count}`, depth);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `左子树未找到有效路径，执行回溯现场恢复：count += cur.left.val(${cur.left.val}) = ${count}`,
+        action: 'left-backtrack',
+        message: `《代码随想录》核心精髓【回溯现场恢复】：左子树搜索返回 false，必须将计数器加回 ${cur.left.val}，恢复为 ${count}，否则会污染右子树的探测！`,
+        log: `Node(${cur.val}) count += ${cur.left.val} -> ${count} (backtrack)`,
+        metrics: { '当前节点': cur.val, '回溯动作': `+${cur.left.val}`, '恢复后 count': count },
+        codeLine: L.leftBacktrack,
+        statusBadge: { text: '回溯撤销 (左)', type: 'warning' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+    }
+
+    // Step E: 递归右子树 (Lines 14-18)
+    if (cur.right != null) {
+      // 1. 递归深入前处理：count -= cur.right.val (Line 15)
+      count -= cur.right.val;
+      trace.addRecursePrep(`count -= cur.right.val(${cur.right.val}) = ${count}`, depth);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `右孩子存在：递归深入前处理 count -= cur.right.val(${cur.right.val}) = ${count}`,
+        action: 'right-sub',
+        message: `《代码随想录》显式回溯第一步：准备深入右子节点 Node(${cur.right.val})，计数器减去右孩子值，count 变为 ${count}。`,
+        log: `Node(${cur.val}) count -= ${cur.right.val} -> ${count}`,
+        metrics: { '当前节点': cur.val, '深入目标': `Right(${cur.right.val})`, '扣减后 count': count },
+        codeLine: L.rightSub,
+        statusBadge: { text: '递归扣减 (右)', type: 'info' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+
+      // 2. 递归调用：if (traversal(cur.right, count)) return true; (Line 16)
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `递归调用：traversal(cur.right: ${cur.right.val}, count: ${count})`,
+        action: 'right-recurse',
+        message: `进入右子树递归：搜索是否存在和为 targetSum 的根到叶路径。`,
+        log: `recurse traversal(right: ${cur.right.val}, count: ${count})`,
+        metrics: { '当前节点': cur.val, '递归调用': `traversal(${cur.right.val}, ${count})` },
+        codeLine: L.rightRecurse,
+        statusBadge: { text: '深入右子树', type: 'info' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+
+      const rightFound = dfsTraversal(cur.right, count, depth + 1);
+      if (rightFound) {
+        return true;
+      }
+
+      // 3. 回溯现场恢复：count += cur.right.val (Line 17)
+      count += cur.right.val;
+      trace.addUnwindCalc(`右子树未命中，回溯恢复：count += cur.right.val(${cur.right.val}) = ${count}`, depth);
+      steps.push({
+        tree: cloneTree(workingTree),
+        current: cur.val,
+        targetSum,
+        currentSum: targetSum - count,
+        remain: count,
+        path: [...currentPath],
+        allPaths: [],
+        found: false,
+        decision: `右子树未找到有效路径，执行回溯现场恢复：count += cur.right.val(${cur.right.val}) = ${count}`,
+        action: 'right-backtrack',
+        message: `《代码随想录》核心精髓【回溯现场恢复】：右子树搜索返回 false，必须将计数器加回 ${cur.right.val}，恢复为 ${count}！`,
+        log: `Node(${cur.val}) count += ${cur.right.val} -> ${count} (backtrack)`,
+        metrics: { '当前节点': cur.val, '回溯动作': `+${cur.right.val}`, '恢复后 count': count },
+        codeLine: L.rightBacktrack,
+        statusBadge: { text: '回溯撤销 (右)', type: 'warning' },
+        callTrace: trace.snapshot(),
+        visitedNodes: [...allVisited],
+      });
+    }
+
+    // Step F: 左右均未命中，返回 false (Line 19)
+    trace.addReturnLeaf(`Node(${cur.val}) 左右子树均无解 -> return false`, depth);
+    steps.push({
+      tree: cloneTree(workingTree),
+      current: cur.val,
+      targetSum,
+      currentSum: targetSum - count,
+      remain: count,
+      path: [...currentPath],
+      allPaths: [],
+      found: false,
+      decision: `Node(${cur.val}) 左右分支均无解，向父调用返回 false`,
+      action: 'return-false',
+      message: `Node(${cur.val}) 的左右子节点探测完毕均未找到满足 targetSum 的路径，返回 false。`,
+      log: `Node(${cur.val}) return false`,
+      metrics: { '当前节点': cur.val, '返回状态': 'false' },
+      codeLine: L.returnFalse,
+      statusBadge: { text: '返回 false', type: 'warning' },
+      callTrace: trace.snapshot(),
+      visitedNodes: [...allVisited],
+    });
+
+    currentPath.pop();
+    return false;
+  }
+
+  const finalRes = dfsTraversal(workingTree, initialCount, 0);
+
+  // Step Z: 最终完成帧 (Line 4: return traversal(...))
+  trace.addFinalResult(`🎯 算法完成：hasPathSum = ${finalRes}`, 0, undefined, `${finalRes}`);
+  steps.push({
+    tree: cloneTree(workingTree),
+    current: workingTree.val,
+    targetSum,
+    currentSum: finalRes ? targetSum : 0,
+    remain: finalRes ? 0 : targetSum,
+    path: successfulPath,
+    allPaths: successfulPath.length > 0 ? [successfulPath] : [],
+    found: finalRes,
+    decision: finalRes
+      ? `✅ 判定成功：整树中存在和为 ${targetSum} 的有效根到叶路径！`
+      : `❌ 判定失败：整树遍历完毕，不存在和为 ${targetSum} 的有效路径。`,
+    action: 'done',
+    message: finalRes
+      ? `推演成功结束！命中路径为：[${successfulPath.join(' -> ')}]，路径和等于 ${targetSum}。`
+      : `推演结束，整树所有根到叶路径之和均不等于 ${targetSum}。`,
+    log: `done hasPathSum=${finalRes}`,
+    metrics: { '目标和 targetSum': targetSum, '最终判定': finalRes ? 'TRUE (存在路径)' : 'FALSE (无路径)' },
+    codeLine: L.done,
+    statusBadge: { text: finalRes ? '判定存在 (TRUE)' : '判定无解 (FALSE)', type: finalRes ? 'success' : 'danger' },
+    callTrace: trace.snapshot(),
+    visitedNodes: allVisited,
+    highlightedNodes: finalRes ? successfulPath : undefined,
+  });
+
+  return steps;
+}
+
+// ============================================================
+// Stage 2 Step Generator: 递归减法单函数精简 (LC 112)
+// ============================================================
+export const buildPathSumStage2SubtractSteps = buildPSSteps;
 export function buildPSSteps(root: TreeNode | null, targetSum: number): PSStep[] {
   const steps: PSStep[] = [];
   const L = PATH_SUM_STAGE1_LINES;

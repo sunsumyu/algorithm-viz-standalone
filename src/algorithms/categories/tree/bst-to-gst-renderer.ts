@@ -42,6 +42,7 @@ export const bstToGstVisualizer = registerDeclarativeAlgorithm<BstToGstStep>({
   name: '把二叉搜索树转换为累加树',
   category: 'tree',
   icon: '💰',
+  hasDeductionTree: true,
   difficulty: 'medium',
   learningGoal: '利用BST「右-根-左」反向中序严格递减的性质，通过单变量全局累加实现节点值原地后缀累加转换。',
   problemHtml: BST_TO_GST_PROBLEM_HTML,

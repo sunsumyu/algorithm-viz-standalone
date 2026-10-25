@@ -26,6 +26,7 @@ export const hldVisualizer = registerDeclarativeAlgorithm<HldStep>({
   id: 'hld-heavy-light-decomposition-121',
   name: '重链剖分 / 树链剖分 (Class 121)',
   aliases: ['class121-code01', 'hld', 'hld-heavy-light-decomposition-121', 'heavy-light-decomposition'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '⛓️',
   difficulty: 3,

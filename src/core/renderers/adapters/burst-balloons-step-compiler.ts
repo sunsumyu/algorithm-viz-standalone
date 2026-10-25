@@ -334,12 +334,6 @@ export function buildBurstBalloonsSteps(params: BurstBalloonsStepParams): Univer
   // ==========================================================================
   const grid: (number | null)[][] = Array.from({ length: m }, () => new Array(m).fill(null));
 
-  for (let i = 0; i < m; i++) {
-    for (let j = 0; j <= i + 1 && j < m; j++) {
-      grid[i]![j] = 0;
-    }
-  }
-
   // Step 0: 函数入口帧
   steps.push({
     stage,

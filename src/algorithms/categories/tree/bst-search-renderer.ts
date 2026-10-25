@@ -62,6 +62,7 @@ export const bstSearchVisualizer = registerDeclarativeAlgorithm<BSTSStep>({
   name: '二叉搜索树中的搜索与插入',
   category: 'tree',
   icon: '🔍',
+  hasDeductionTree: true,
   badge: { mode: '多阶段演化: 迭代剪枝 · 递归分治 · 动态插入', complexity: 'O(log N) · O(1)' },
   card1Title: '📊 BST 拓扑结构与检索路径沙盘',
   card2Title: '🧭 单向分支决策与查找状态监视器',

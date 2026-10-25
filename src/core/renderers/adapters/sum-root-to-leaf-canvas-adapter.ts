@@ -125,27 +125,27 @@ export function renderSumNumbersCanvas(container: HTMLElement, step: SumNumbersS
 export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumNumbersStep): void {
   if (!container) return;
   container.innerHTML = '';
-  container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
+  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   // 1. 顶部 4 格关键指标
   const statsRow = document.createElement('div');
-  statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+  statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
   statsRow.innerHTML = `
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">考察节点</span>
-      <span class="text-amber-300 font-mono font-bold text-sm mt-0.5 truncate">${step.currentNodeId != null ? `Node(${step.currentNodeId})` : '-'}</span>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">考察节点</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.currentNodeId != null ? `Node(${step.currentNodeId})` : '—'}</div>
     </div>
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">当前路径数值</span>
-      <span class="text-blue-300 font-mono font-bold text-sm mt-0.5 truncate">${step.metrics?.['当前路径值'] ?? '-'}</span>
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">当前路径数值</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.metrics?.['当前路径值'] ?? '—'}</div>
     </div>
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">叶子路径数</span>
-      <span class="text-purple-300 font-mono font-bold text-sm mt-0.5 truncate">${step.completedPaths ? step.completedPaths.length : 0}</span>
+    <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#7e22ce; font-weight:700; text-transform:uppercase;">叶子路径数</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#9333ea; margin-top:2px;">${step.completedPaths ? step.completedPaths.length : 0}</div>
     </div>
-    <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-      <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">累计总和</span>
-      <span class="text-emerald-300 font-mono font-bold text-sm mt-0.5 truncate">${step.totalSum}</span>
+    <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+      <div style="font-size:10px; color:#15803d; font-weight:700; text-transform:uppercase;">累计总和</div>
+      <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#16a34a; margin-top:2px;">${step.totalSum}</div>
     </div>
   `;
   container.appendChild(statsRow);
@@ -153,41 +153,54 @@ export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumN
   // 2. 核心状态展示区：Stage 1 为递归推演栈，Stage 2 为 BFS 队列，Stage 3 为显式双栈
   if (step.stageId === 'stage-1' && step.callTrace) {
     const traceBox = document.createElement('div');
-    traceBox.className = 'flex-1 min-h-0 bg-slate-900/60 border border-slate-800 rounded-lg p-2 overflow-y-auto';
+    traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
     RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
       title: '🌿 递归自顶向下累加推演栈 (LC 129)',
+      theme: 'light',
       maxHeight: '100%',
+      showTerminalHeader: true,
     });
     container.appendChild(traceBox);
   } else if (step.stageId === 'stage-2') {
     const queueBox = document.createElement('div');
-    queueBox.className = 'flex-1 min-h-0 flex flex-col gap-2 bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 overflow-y-auto';
+    queueBox.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; overflow-y:auto;';
     const queueState = step.queueState || [];
     queueBox.innerHTML = `
-      <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+      <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
         <span>📦 BFS 节点与数值队列 (队首 ➔ 队尾)</span>
-        <span class="text-slate-500 font-mono">Size: ${queueState.length}</span>
+        <span style="font-family:ui-monospace,monospace; color:#64748b; font-size:10.5px;">Size: ${queueState.length}</span>
       </div>
-      <div class="flex flex-wrap gap-1.5 min-h-[26px]">
+      <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:26px; align-items:center;">
         ${queueState.length === 0 
-          ? '<span class="text-slate-500 italic text-[11px]">(队列为空)</span>' 
-          : queueState.map((q, i) => `<span class="px-2 py-1 rounded border font-mono text-xs ${i === 0 ? 'bg-amber-500/20 border-amber-400 text-amber-200 font-bold' : 'bg-slate-800/80 border-slate-700 text-slate-300'}">[Node(${q.node}), sum=${q.sum}]${i === 0 ? ' (首)' : ''}</span>`).join('')}
+          ? '<span style="color:#94a3b8; font-style:italic; font-size:11px;">(队列为空)</span>' 
+          : queueState.map((q, i) => {
+              const bg = i === 0 ? '#fffbeb' : '#f8fafc';
+              const border = i === 0 ? '#fde68a' : '#cbd5e1';
+              const color = i === 0 ? '#b45309' : '#334155';
+              return `<span style="padding:3px 8px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:${bg}; border:1px solid ${border}; color:${color};">[Node(${q.node}), sum=${q.sum}]${i === 0 ? ' (首)' : ''}</span>`;
+            }).join('')}
       </div>
     `;
     container.appendChild(queueBox);
   } else if (step.stageId === 'stage-3') {
     const stackBox = document.createElement('div');
-    stackBox.className = 'flex-1 min-h-0 flex flex-col gap-2 bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 overflow-y-auto';
+    stackBox.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; overflow-y:auto;';
     const stackState = step.stackState || [];
     stackBox.innerHTML = `
-      <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+      <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
         <span>🧱 显式迭代双栈 (栈顶 ➔ 栈底)</span>
-        <span class="text-slate-500 font-mono">Depth: ${stackState.length}</span>
+        <span style="font-family:ui-monospace,monospace; color:#64748b; font-size:10.5px;">Depth: ${stackState.length}</span>
       </div>
-      <div class="flex flex-wrap gap-1.5 min-h-[26px]">
+      <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:26px; align-items:center;">
         ${stackState.length === 0 
-          ? '<span class="text-slate-500 italic text-[11px]">(栈为空)</span>' 
-          : stackState.map((s, i) => `<span class="px-2 py-1 rounded border font-mono text-xs ${i === stackState.length - 1 ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200 font-bold' : 'bg-slate-800/80 border-slate-700 text-slate-300'}">[Node(${s.node}), sum=${s.sum}]${i === stackState.length - 1 ? ' (顶)' : ''}</span>`).join('')}
+          ? '<span style="color:#94a3b8; font-style:italic; font-size:11px;">(栈为空)</span>' 
+          : stackState.map((s, i) => {
+              const isTop = i === stackState.length - 1;
+              const bg = isTop ? '#f0f9ff' : '#f8fafc';
+              const border = isTop ? '#bae6fd' : '#cbd5e1';
+              const color = isTop ? '#0284c7' : '#334155';
+              return `<span style="padding:3px 8px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:${bg}; border:1px solid ${border}; color:${color};">[Node(${s.node}), sum=${s.sum}]${isTop ? ' (顶)' : ''}</span>`;
+            }).join('')}
       </div>
     `;
     container.appendChild(stackBox);
@@ -196,17 +209,17 @@ export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumN
   // 3. 已达成完整叶子路径列表
   if (step.completedPaths && step.completedPaths.length > 0) {
     const pathsBox = document.createElement('div');
-    pathsBox.className = 'flex flex-col gap-1.5 bg-slate-900/40 border border-slate-800/80 rounded-lg p-2 flex-shrink-0';
+    pathsBox.style.cssText = 'display:flex; flex-direction:column; gap:6px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; flex-shrink:0;';
     pathsBox.innerHTML = `
-      <div class="flex items-center justify-between text-slate-400 text-[10px] font-semibold uppercase">
+      <div style="display:flex; align-items:center; justify-content:space-between; font-size:10.5px; font-weight:700; color:#475569; text-transform:uppercase;">
         <span>已达成完整叶子路径</span>
-        <span class="text-emerald-400 font-mono font-bold">${step.completedPaths.length} 条</span>
+        <span style="font-family:ui-monospace,monospace; color:#15803d; font-weight:800;">${step.completedPaths.length} 条</span>
       </div>
-      <div class="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
+      <div style="display:flex; flex-wrap:wrap; gap:6px; max-height:64px; overflow-y:auto;">
         ${step.completedPaths.map((p) => `
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-700/60 font-mono text-xs text-emerald-300">
+          <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; background:#f0fdf4; border:1px solid #bbf7d0; font-family:ui-monospace,monospace; font-size:11px; color:#15803d;">
             <span>${p.pathStr}:</span>
-            <span class="font-bold text-amber-300">+${p.value}</span>
+            <span style="font-weight:800; color:#d97706;">+${p.value}</span>
           </span>
         `).join('')}
       </div>
@@ -217,12 +230,10 @@ export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumN
   // 4. 当前推演决策总结
   const isDone = step.decision.includes('完成') || step.decision.includes('结束') || (step.statusBadge?.type === 'success');
   const summaryBox = document.createElement('div');
-  summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed flex-shrink-0 ${
-    isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
-  }`;
+  summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
   summaryBox.innerHTML = `
-    <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 当前决策: ${step.decision}</div>
-    <div class="text-slate-400">${step.message}</div>
+    <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 当前决策: ${step.decision}</div>
+    <div style="color:#64748b; font-size:11px;">${step.message}</div>
   `;
   container.appendChild(summaryBox);
 }

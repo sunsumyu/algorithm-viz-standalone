@@ -125,13 +125,13 @@ function compilePartitionedStage1Steps(
   const numGroups = groups.length;
   let nodeCounter = 0;
 
-  const lineEntry = anchors?.entry || 3;
-  const lineDfsEntry = anchors?.dfs_entry || 5;
-  const lineBoundary = anchors?.boundary || 6;
-  const lineBranchNotTake = anchors?.branch_not_take || 7;
-  const lineLoopItems = anchors?.loop_items || 8;
-  const lineBranchTake = anchors?.branch_take || 11;
-  const lineCombine = anchors?.combine || 14;
+  const lineEntry = anchors?.entry || 42;
+  const lineDfsEntry = anchors?.dfs_entry || 45;
+  const lineBoundary = anchors?.boundary || 46;
+  const lineBranchNotTake = anchors?.branch_not_take || 47;
+  const lineLoopItems = anchors?.loop_items || 48;
+  const lineBranchTake = anchors?.branch_take || 51;
+  const lineCombine = anchors?.combine || 54;
 
   const startG = isReverse ? numGroups - 1 : 0;
   const rootNode: UniversalTreeNode = {
@@ -308,15 +308,15 @@ function compilePartitionedStage2Steps(
   const numGroups = groups.length;
   let nodeCounter = 0;
 
-  const lineInitMemo = anchors?.init_memo || 4;
-  const lineEntry = anchors?.entry || 6;
-  const lineDfsEntry = anchors?.dfs_entry || 8;
-  const lineBoundary = anchors?.boundary || 9;
-  const lineCacheHit = anchors?.cache_hit || 10;
-  const lineBranchNotTake = anchors?.branch_not_take || 11;
-  const lineLoopItems = anchors?.loop_items || 12;
-  const lineBranchTake = anchors?.branch_take || 15;
-  const lineCombine = anchors?.combine || 18;
+  const lineInitMemo = anchors?.init_memo || 42;
+  const lineEntry = anchors?.entry || 44;
+  const lineDfsEntry = anchors?.dfs_entry || 47;
+  const lineBoundary = anchors?.boundary || 48;
+  const lineCacheHit = anchors?.cache_hit || 49;
+  const lineBranchNotTake = anchors?.branch_not_take || 50;
+  const lineLoopItems = anchors?.loop_items || 51;
+  const lineBranchTake = anchors?.branch_take || 54;
+  const lineCombine = anchors?.combine || 57;
 
   const memoGrid: Array<Array<number | null>> = Array.from(
     { length: numGroups },
@@ -529,20 +529,38 @@ function compilePartitionedStage3Steps(
   const steps: UniversalStep[] = [];
   const numGroups = groups.length;
 
-  const lineInitDp = anchors?.init_dp || 3;
-  const lineOuterLoop = anchors?.outer_loop || 4;
-  const lineInnerCap = anchors?.inner_cap || 5;
-  const lineBranchNotTake = anchors?.branch_not_take || 6;
-  const lineLoopItems = anchors?.loop_items || 7;
-  const lineTransition = anchors?.transition || 10;
-  const lineReturnAns = anchors?.return_ans || 15;
+  const lineCountTeams = anchors?.count_teams || 35;
+  const lineInitDp = anchors?.init_dp || 41;
+  const lineOuterLoop = anchors?.outer_group || anchors?.outer_loop || 42;
+  const lineGroupEnd = anchors?.group_end || 43;
+  const lineInnerCap = anchors?.inner_cap || 46;
+  const lineBranchNotTake = anchors?.branch_not_take || 47;
+  const lineLoopItems = anchors?.loop_items || 48;
+  const lineCheckFit = anchors?.check_fit || 49;
+  const lineTransition = anchors?.transition || 50;
+  const lineAdvanceGroup = anchors?.advance_group || 54;
+  const lineReturnAns = anchors?.return_ans || 56;
 
-  const dp: number[][] = Array.from({ length: numGroups + 1 }, () => new Array(capacity + 1).fill(0));
+  const dp: (number | null)[][] = Array.from(
+    { length: numGroups + 1 },
+    () => new Array(capacity + 1).fill(null)
+  );
+
+  // 1-based arr array matching Java arr: arr[i][0] 体积, arr[i][1] 价值, arr[i][2] 组号
+  const arr1Based: Array<[number, number, number]> = [[0, 0, 0]];
+  for (let gIdx = 0; gIdx < numGroups; gIdx++) {
+    const gNum = gIdx + 1;
+    for (const it of groups[gIdx]) {
+      arr1Based.push([it.cost, it.val, gNum]);
+    }
+  }
 
   function pushStep(data: Partial<UniversalStep>) {
     steps.push({
       stage: 3,
       grid: JSON.parse(JSON.stringify(dp)),
+      arr: arr1Based,
+      items: arr1Based,
       decision: data.decision || '二维动态规划状态转移',
       log: data.log || '| DP填表',
       msg: data.msg || data.log || '',
@@ -551,16 +569,57 @@ function compilePartitionedStage3Steps(
     });
   }
 
+  const totalItems = groups.reduce((acc, g) => acc + g.length, 0);
+
+  pushStep({
+    type: 'count-teams',
+    line: lineCountTeams,
+    i: 0,
+    j: 0,
+    teams: numGroups,
+    capacity,
+    m: capacity,
+    n: totalItems,
+    scope: { teams: numGroups, m: capacity, n: totalItems },
+    variables: { teams: numGroups, m: capacity, n: totalItems },
+    tag: `双指针扫描统计总组数 teams = ${numGroups}`,
+    log: `| 📊 预处理统计: 数组按组号排序后，双指针统计得出共有 ${numGroups} 个独立物品组`,
+    msg: `统计总组数 <code>teams = <strong>${numGroups}</strong></code>，开辟二维矩阵 <code>dp[${numGroups + 1}][${capacity + 1}]</code>。`,
+    decision: `统计组数 teams=${numGroups}`
+  });
+
   pushStep({
     type: 'init-dp',
     line: lineInitDp,
     i: 0,
     j: 0,
+    teams: numGroups,
+    capacity,
+    m: capacity,
+    n: totalItems,
+    scope: { teams: numGroups, m: capacity, n: totalItems },
+    variables: { teams: numGroups, m: capacity, n: totalItems },
     tag: `创建二维 DP 矩阵 dp[${numGroups + 1}][${capacity + 1}]`,
     log: `| 📋 创建规格为 ${numGroups + 1} × ${capacity + 1} 的二维动态规划状态表`,
     msg: `建立二维动态规划状态表 <code>dp[${numGroups + 1}][${capacity + 1}]</code>，初始基底全为 0。`,
     decision: '初始化 DP 矩阵'
   });
+
+  // 初始化基底行：正向推导时第 0 组基底全为 0
+  if (!isReverse) {
+    for (let j = 0; j <= capacity; j++) {
+      dp[0][j] = 0;
+    }
+  }
+
+  // 预先计算每组在 arr 数组中的 1-based 连续区间 [start, end)
+  let currentStart = 1;
+  const groupRanges = new Map<number, { start: number; end: number }>();
+  for (let gIdx = 1; gIdx <= numGroups; gIdx++) {
+    const len = (groups[gIdx - 1] || []).length;
+    groupRanges.set(gIdx, { start: currentStart, end: currentStart + len });
+    currentStart += len;
+  }
 
   const groupIndices = isReverse
     ? Array.from({ length: numGroups }, (_, idx) => numGroups - idx)
@@ -568,16 +627,36 @@ function compilePartitionedStage3Steps(
 
   for (const g of groupIndices) {
     const curGroupItems = groups[g - 1] || [];
+    const { start, end } = groupRanges.get(g) || { start: 1, end: 1 };
 
     pushStep({
       type: 'outer-loop',
       line: lineOuterLoop,
       i: g,
       j: 0,
+      start,
+      end: start + 1,
+      scope: { i: g, start, end: start + 1, teams: numGroups, m: capacity, n: totalItems },
+      variables: { i: g, start, end: start + 1, teams: numGroups, m: capacity, n: totalItems },
       tag: `外层遍历物品组 #${g} (包含 ${curGroupItems.length} 件物品)`,
       log: `| 🔁 外层主循环: 推进至物品组 #${g}，组内包含 ${curGroupItems.length} 件候选物品`,
       msg: `外层主循环进入物品组 <code>#${g}</code>。同一个组内的物品存在<strong>互斥性（至多选 1 件）</strong>。`,
       decision: `推进至物品组 #${g}`
+    });
+
+    pushStep({
+      type: 'group-end',
+      line: lineGroupEnd,
+      i: g,
+      j: 0,
+      start,
+      end,
+      scope: { i: g, start, end, teams: numGroups, m: capacity, n: totalItems },
+      variables: { i: g, start, end, teams: numGroups, m: capacity, n: totalItems },
+      tag: `双指针扫描确定组 #${g} 的边界区间 [${start}, ${end})`,
+      log: `| 📐 组边界确定: while(end <= n && arr[end][2] == arr[start][2]) end++ 确定组内范围 [${start}, ${end})`,
+      msg: `双指针扫描确定组 <code>#${g}</code> 边界 <code>[${start}, ${end})</code>，共 <code>${curGroupItems.length}</code> 件候选物品。`,
+      decision: `确定组 #${g} 边界`
     });
 
     const capIndices = isReverse
@@ -590,32 +669,87 @@ function compilePartitionedStage3Steps(
         line: lineInnerCap,
         i: g,
         j,
+        start,
+        end,
+        scope: { i: g, j, start, end, teams: numGroups, m: capacity, n: totalItems },
+        variables: { i: g, j, start, end, teams: numGroups, m: capacity, n: totalItems, dp: (dp[g]?.[j] ?? 0) },
         tag: `枚举背包容量 j = ${j}`,
         log: `| 📦 考察容量 j = ${j}: 准备进行组内互斥决策`,
         msg: `考察容量 <code>j = ${j}</code>：先继承上一组结果（不选），再枚举本组候选物品更新。`,
         decision: `考察容量 j=${j}`
       });
 
-      const prevG = isReverse ? (g === numGroups ? 0 : g + 1) : g - 1;
-      dp[g][j] = dp[prevG][j];
+      const prevG = isReverse ? g + 1 : g - 1;
+      const prevVal = isReverse
+        ? (g === numGroups ? 0 : ((dp[prevG]?.[j] ?? 0) as number))
+        : ((dp[prevG]?.[j] ?? 0) as number);
+      dp[g][j] = prevVal;
 
       pushStep({
         type: 'branch-not-take',
         line: lineBranchNotTake,
         i: g,
         j,
-        highlightCells: [{ r: prevG, c: j }],
-        tag: `分支 0 (不选): dp[${g}][${j}] = dp[${prevG}][${j}] = ${dp[g][j]}`,
-        log: `| ⏭️ 分支 0 (本组不选): 继承上一组 dp[${prevG}][${j}] = ${dp[g][j]}`,
-        msg: `分支 0（本组全都不选）：直接继承前一组收益 <code>dp[${prevG}][${j}] = <strong>${dp[g][j]}</strong></code>。`,
+        start,
+        end,
+        scope: { i: g, j, start, end, teams: numGroups, m: capacity, n: totalItems },
+        variables: { i: g, j, start, end, teams: numGroups, m: capacity, n: totalItems, dp: dp[g][j] },
+        highlightCells: (isReverse && g === numGroups) ? [] : [{ r: prevG, c: j }],
+        deps: (isReverse && g === numGroups) ? [] : [{ r: prevG, c: j, type: 'top', label: `继承(dp[${prevG}][${j}])` }],
+        tag: `分支 0 (不选): dp[${g}][${j}] = ${dp[g][j]}`,
+        log: `| ⏭️ 分支 0 (本组不选): 继承上一组收益 dp = ${dp[g][j]}`,
+        msg: `分支 0（本组全都不选）：直接继承前一组收益 <code>dp = <strong>${dp[g][j]}</strong></code>。`,
         decision: `继承前一组收益=${dp[g][j]}`
       });
 
-      for (let k = 0; k < curGroupItems.length; k++) {
-        const item = curGroupItems[k];
-        if (j >= item.cost) {
-          const candidate = dp[prevG][j - item.cost] + item.val;
-          const isUpdate = candidate > dp[g][j];
+      for (let kOffset = 0; kOffset < curGroupItems.length; kOffset++) {
+        const item = curGroupItems[kOffset];
+        const k = start + kOffset;
+        const canFit = j >= item.cost;
+
+        pushStep({
+          type: 'loop-items',
+          line: lineLoopItems,
+          i: g,
+          j,
+          k,
+          start,
+          end,
+          scope: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems },
+          variables: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems, 'arr[k][0]': item.cost, 'arr[k][1]': item.val, dp: dp[g][j] },
+          tag: `枚举组内物品 #${k} (体积:${item.cost}, 价值:${item.val})`,
+          log: `| 🔍 组内候选: 考察组 #${g} 物品 #${k} (体积 ${item.cost}, 价值 ${item.val})`,
+          msg: `组内候选：考察物品 <code>#${k}</code>（体积 <code>${item.cost}</code>，价值 <code>${item.val}</code>）。`,
+          decision: `考察物品 #${k}`
+        });
+
+        pushStep({
+          type: 'check-fit',
+          line: lineCheckFit,
+          i: g,
+          j,
+          k,
+          start,
+          end,
+          scope: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems },
+          variables: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems, 'arr[k][0]': item.cost, 'j - arr[k][0]': j - item.cost, dp: dp[g][j] },
+          tag: canFit ? `容量充足: ${j} >= ${item.cost}` : `容量不足: ${j} < ${item.cost}`,
+          log: canFit
+            ? `| ✅ 条件满足: 容量 j=${j} >= 体积 ${item.cost}，可尝试选入`
+            : `| ❌ 条件不符: 容量 j=${j} < 体积 ${item.cost}，装不下跳过`,
+          msg: canFit
+            ? `容量充足：当前容量 <code>${j} >= ${item.cost}</code>，尝试选入进行比较。`
+            : `容量不足：当前容量 <code>${j} < ${item.cost}</code>，无法选入物品 #${k}，跳过。`,
+          decision: canFit ? `容量充足` : `容量不足跳过`
+        });
+
+        if (canFit) {
+          const prevCand = isReverse
+            ? (g === numGroups ? 0 : ((dp[prevG]?.[j - item.cost] ?? 0) as number))
+            : ((dp[prevG]?.[j - item.cost] ?? 0) as number);
+          const candidate = prevCand + item.val;
+          const curVal = (dp[g][j] ?? 0) as number;
+          const isUpdate = candidate > curVal;
           if (isUpdate) {
             dp[g][j] = candidate;
           }
@@ -625,15 +759,39 @@ function compilePartitionedStage3Steps(
             line: lineTransition,
             i: g,
             j,
-            highlightCells: [{ r: prevG, c: j - item.cost }],
+            k,
+            start,
+            end,
+            scope: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems },
+            variables: { i: g, j, k, start, end, teams: numGroups, m: capacity, n: totalItems, 'arr[k][0]': item.cost, 'arr[k][1]': item.val, dp: dp[g][j], candidate },
+            highlightCells: (isReverse && g === numGroups) ? [] : [{ r: prevG, c: j - item.cost }],
+            deps: (isReverse && g === numGroups) ? [] : [
+              { r: prevG, c: j, type: 'top', label: `当前最优(dp[${prevG}][${j}])` },
+              { r: prevG, c: j - item.cost, type: 'diag', label: `选物#${k}(dp[${prevG}][${j - item.cost}]+${item.val})` }
+            ],
             tag: `尝试物品 #${k} (c:${item.cost}, v:${item.val}): dp[${g}][${j}] = ${dp[g][j]}`,
-            log: `| 🗂️ 组内互斥: 试选物品 #${k} -> dp[${prevG}][${j - item.cost}] + ${item.val} = ${candidate} (当前 max=${dp[g][j]})`,
-            msg: `组内互斥决策：尝试选物品 #${k}（消耗容量 <code>${item.cost}</code>，收益 <code>${item.val}</code>），从 <code>dp[${prevG}][${j - item.cost}]</code> 转移，状态更新为 <code>dp[${g}][${j}] = <strong>${dp[g][j]}</strong></code>。`,
+            log: `| 🗂️ 组内互斥: 试选物品 #${k} -> 转移候选 = ${candidate} (当前 max=${dp[g][j]})`,
+            msg: `组内互斥决策：尝试选物品 #${k}（消耗容量 <code>${item.cost}</code>，收益 <code>${item.val}</code>），状态更新为 <code>dp[${g}][${j}] = <strong>${dp[g][j]}</strong></code>。`,
             decision: isUpdate ? `更新 dp[${g}][${j}]=${dp[g][j]}` : `保持当前最优`
           });
         }
       }
     }
+
+    pushStep({
+      type: 'advance-group',
+      line: lineAdvanceGroup,
+      i: g,
+      j: capacity,
+      start: end,
+      end: end + 1,
+      scope: { i: g, start: end, end: end + 1, teams: numGroups, m: capacity, n: totalItems },
+      variables: { i: g, start: end, end: end + 1, teams: numGroups, m: capacity, n: totalItems },
+      tag: `组 #${g} 计算完成，双指针 start = end++ 推进至下一组`,
+      log: `| ⏩ 组推进: 组 #${g} 决策全部就绪，指针 start 跃迁至下一组`,
+      msg: `组 <code>#${g}</code> 处理完毕，双指针 <code>start = end++</code> 推进至下一组。`,
+      decision: `推进至下一组`
+    });
   }
 
   const finalG = isReverse ? 1 : numGroups;
@@ -660,25 +818,35 @@ function compilePartitionedStage4Steps(
   isReverse: boolean = false
 ): UniversalStep[] {
   const steps: UniversalStep[] = [];
-  const lineSortItems = anchors?.sort_items || 3;
-  const lineInitDp = anchors?.init_dp || 4;
-  const lineOuterGroup = anchors?.outer_group || 5;
-  const lineGroupEnd = anchors?.group_end || 6;
-  const lineCapLoop = anchors?.cap_loop || 7;
-  const lineItemLoop = anchors?.item_loop || 8;
-  const lineTransition = anchors?.transition || 10;
-  const lineAdvanceGroup = anchors?.advance_group || 14;
-  const lineReturnAns = anchors?.return_ans || 16;
+  const lineSortItems = anchors?.sort_items || 37;
+  const lineInitDp = anchors?.init_dp || 47;
+  const lineOuterGroup = anchors?.outer_group || 48;
+  const lineGroupEnd = anchors?.group_end || 49;
+  const lineCapLoop = anchors?.cap_loop || 52;
+  const lineItemLoop = anchors?.item_loop || 53;
+  const lineCheckFit = anchors?.check_fit || 54;
+  const lineTransition = anchors?.transition || 55;
+  const lineAdvanceGroup = anchors?.advance_group || 59;
+  const lineReturnAns = anchors?.return_ans || 61;
 
   const items = [...rawItems].sort((a, b) => isReverse ? b.group - a.group : a.group - b.group);
   const n = items.length;
   const dp = new Array(capacity + 1).fill(0);
 
+  // 1-based arr array matching Java arr: arr[i][0] 体积, arr[i][1] 价值, arr[i][2] 组号
+  const arr1Based: Array<[number, number, number]> = [
+    [0, 0, 0],
+    ...items.map(it => [it.cost, it.val, it.group] as [number, number, number])
+  ];
+
   function pushStep(data: Partial<UniversalStep>) {
     steps.push({
       stage: 4,
       grid: [dp.slice()],
+      dp1d: dp.slice(),
       slotVector: dp.slice(),
+      arr: arr1Based,
+      items: arr1Based,
       metrics: { space: 'O(M)' },
       decision: data.decision || '空间压缩状态流转',
       log: data.log || '| 一维压缩流转',
@@ -688,10 +856,16 @@ function compilePartitionedStage4Steps(
     });
   }
 
+  const null1D = new Array(capacity + 1).fill(null);
+
   pushStep({
     type: 'sort-items',
     line: lineSortItems,
+    grid: [null1D],
+    dp1d: null1D,
+    slotVector: null1D,
     activeSlot: 0,
+    variables: { n, m: capacity },
     tag: `对全量 ${n} 件物品按组号进行排序`,
     log: `| 🔀 物品预处理: 按组号排序，使相同组物品在内存中连续排列`,
     msg: `对 <code>${n}</code> 件物品按组号递增排序，以便双指针批量切分处理每一组。`,
@@ -701,7 +875,11 @@ function compilePartitionedStage4Steps(
   pushStep({
     type: 'init-dp',
     line: lineInitDp,
+    grid: [null1D],
+    dp1d: null1D,
+    slotVector: null1D,
     activeSlot: 0,
+    variables: { m: capacity },
     tag: `初始化一维滚动数组 dp[0..${capacity}] 全为 0`,
     log: `| 📋 初始化一维滚动数组 dp[0..${capacity}] 全为 0`,
     msg: `初始化长度为 <code>${capacity + 1}</code> 的一维滚动数组，辅助空间由 O(G×M) 大幅降至 <strong>O(M)</strong>。`,
@@ -717,6 +895,7 @@ function compilePartitionedStage4Steps(
       type: 'outer-group',
       line: lineOuterGroup,
       activeSlot: 0,
+      variables: { start: start + 1, end: end + 1, group: curGroup },
       tag: `外层遍历推进至组 #${curGroup} (区间 [${start}, ${end}))`,
       log: `| 🔁 空间压缩外层: 推进至组 #${curGroup}，共包含 ${groupCount} 件候选物品`,
       msg: `外层循环处理组 <code>#${curGroup}</code>。核心铁律：<strong>容量必须在外层倒序遍历，组内候选物品在内层枚举</strong>，防止单组多次选取！`,
@@ -727,6 +906,7 @@ function compilePartitionedStage4Steps(
       type: 'group-end',
       line: lineGroupEnd,
       activeSlot: 0,
+      variables: { start: start + 1, end: end + 1, group: curGroup },
       tag: `组 #${curGroup} 边界确定：共 ${groupCount} 件物品`,
       log: `| 📐 组边界确定: 组 #${curGroup} 包含下标 [${start}..${end - 1}] 的物品`,
       msg: `双指针扫描确定组 <code>#${curGroup}</code> 的边界，共 <code>${groupCount}</code> 件候选物品。`,
@@ -738,6 +918,7 @@ function compilePartitionedStage4Steps(
         type: 'cap-loop',
         line: lineCapLoop,
         activeSlot: j,
+        variables: { j, 'dp[j]': dp[j], start: start + 1, end: end + 1 },
         tag: `容量倒序枚举 j = ${j} (严格倒序杜绝同组多选)`,
         log: `| ⬅️ 容量倒序: j = ${j}，外层枚举保证同组互斥`,
         msg: `容量倒序枚举 <code>j = ${j}</code>：外层倒序保证本轮组内任何更新只使用上一组的旧状态，彻底杜绝单组内多选！`,
@@ -746,7 +927,35 @@ function compilePartitionedStage4Steps(
 
       for (let k = start; k < end; k++) {
         const item = items[k];
-        if (j >= item.cost) {
+        const canFit = j >= item.cost;
+
+        pushStep({
+          type: 'item-loop',
+          line: lineItemLoop,
+          activeSlot: j,
+          variables: { j, k: k + 1, 'arr[k][0]': item.cost, 'arr[k][1]': item.val, 'dp[j]': dp[j] },
+          tag: `枚举组内物品 k = ${k + 1} (体积:${item.cost}, 价值:${item.val})`,
+          log: `| 🔍 组内候选: 考察组 #${curGroup} 物品 #${k + 1} (体积 ${item.cost}, 价值 ${item.val})`,
+          msg: `枚举组内物品 <code>#${k + 1}</code>：体积 <code>${item.cost}</code>，价值 <code>${item.val}</code>。`,
+          decision: `考察物品 #${k + 1}`
+        });
+
+        pushStep({
+          type: 'check-fit',
+          line: lineCheckFit,
+          activeSlot: j,
+          variables: { j, k: k + 1, 'arr[k][0]': item.cost, 'j - arr[k][0]': j - item.cost },
+          tag: canFit ? `容量充足: ${j} >= ${item.cost}` : `容量不足: ${j} < ${item.cost}`,
+          log: canFit
+            ? `| ✅ 条件满足: 容量 j=${j} >= 体积 ${item.cost}，可尝试选入`
+            : `| ❌ 条件不符: 容量 j=${j} < 体积 ${item.cost}，装不下跳过`,
+          msg: canFit
+            ? `容量充足：当前容量 <code>${j} >= ${item.cost}</code>，尝试转移更新。`
+            : `容量不足：当前容量 <code>${j} < ${item.cost}</code>，无法选入物品 #${k + 1}，跳过。`,
+          decision: canFit ? '容量充足' : '容量不足跳过'
+        });
+
+        if (canFit) {
           const candidate = dp[j - item.cost] + item.val;
           const isUpdate = candidate > dp[j];
           if (isUpdate) {
@@ -758,9 +967,10 @@ function compilePartitionedStage4Steps(
             line: lineTransition,
             activeSlot: j,
             highlightSlots: [j - item.cost],
+            variables: { j, k: k + 1, 'arr[k][0]': item.cost, 'arr[k][1]': item.val, 'dp[j]': dp[j], candidate },
             tag: `组内互斥比较: 试选 (c:${item.cost}, v:${item.val}) -> dp[${j}] = ${dp[j]}`,
-            log: `| 🗂️ 尝试组 #${curGroup} 物品 #${k}: dp[${j - item.cost}] + ${item.val} = ${candidate} -> dp[${j}] = ${dp[j]}`,
-            msg: `组内互斥尝试：选物品 #${k}（消耗容量 <code>${item.cost}</code>，增加价值 <code>${item.val}</code>），从 <code>dp[${j - item.cost}]</code> 转移，更新 <code>dp[${j}] = <strong>${dp[j]}</strong></code>。`,
+            log: `| 🗂️ 尝试组 #${curGroup} 物品 #${k + 1}: dp[${j - item.cost}] + ${item.val} = ${candidate} -> dp[${j}] = ${dp[j]}`,
+            msg: `组内互斥尝试：选物品 #${k + 1}（消耗容量 <code>${item.cost}</code>，增加价值 <code>${item.val}</code>），从 <code>dp[${j - item.cost}]</code> 转移，更新 <code>dp[${j}] = <strong>${dp[j]}</strong></code>。`,
             decision: isUpdate ? `更新 dp[${j}] = ${dp[j]}` : `保持当前最优`
           });
         }
@@ -772,6 +982,7 @@ function compilePartitionedStage4Steps(
       type: 'advance-group',
       line: lineAdvanceGroup,
       activeSlot: 0,
+      variables: { start: start + 1, end: end + 1 },
       tag: `组 #${curGroup} 决策完成，推进至下一组`,
       log: `| ⏩ 组 #${curGroup} 处理完毕，指针推进 start = ${start}`,
       msg: `组 <code>#${curGroup}</code> 组内所有物品与全容量流转完毕，指针推进至下一组。`,

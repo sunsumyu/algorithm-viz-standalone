@@ -44,6 +44,7 @@ export const balancedBinaryTree037Visualizer = registerDeclarativeAlgorithm<Bala
   name: '判断平衡二叉树 (Class 037)',
   category: 'tree',
   icon: '⚖️',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 3704,
   learningGoal: '掌握左神二叉树递归套路黄金模板，构建 Info 结构体优雅自底向上汇聚高度与平衡性，并对比 -1 剪枝与显式后序栈',

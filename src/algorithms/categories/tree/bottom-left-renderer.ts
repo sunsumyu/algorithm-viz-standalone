@@ -56,6 +56,7 @@ export const bottomLeftVisualizer = registerDeclarativeAlgorithm<BottomLeftStep>
   name: '找树左下角的值',
   category: 'tree',
   icon: '🎯',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 513,
   aliases: ['leetcode-513', 'find-bottom-left-value'],

@@ -50,10 +50,11 @@ const renderMetrics = (c: HTMLElement, s: BTLStep, stageId: string) =>
 // ============================================================
 export const binaryTreeLevelVisualizer = registerDeclarativeAlgorithm<BTLStep>({
   id: 'binary-tree-level',
-  aliases: ['tree-036-level-order'],
+  aliases: ['tree-036-level-order', 'leetcode-102', 'binary-tree-level-order-traversal'],
   name: '二叉树的层序遍历',
   category: 'tree',
   icon: '🥞',
+  hasDeductionTree: true,
   badge: { mode: 'BFS 队列逐层收集', complexity: 'O(n) · O(w)' },
   card1Title: '📊 二叉树拓扑与遍历沙盘',
   card2Title: '🧭 遍历状态与分层结果监视器',

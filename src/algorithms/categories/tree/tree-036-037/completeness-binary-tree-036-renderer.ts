@@ -36,6 +36,7 @@ export const completenessBinaryTree036Visualizer = registerDeclarativeAlgorithm<
   name: '完全二叉树检验 (Class 036)',
   category: 'tree',
   icon: '🛡️',
+  hasDeductionTree: true,
   difficulty: 2,
   levelOrder: 3608,
   learningGoal: '深入领会左神完全二叉树两大铁律：有右无左直接判伪、出现缺孩子节点后后续必须全部为叶子',

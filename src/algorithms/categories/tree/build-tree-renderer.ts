@@ -58,6 +58,7 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
     'leetcode-106',
     'construct-binary-tree-from-inorder-and-postorder',
   ],
+  hasDeductionTree: true,
   inputs: [
     { id: 'input-preorder', label: '前序遍历 preorder', type: 'text', defaultValue: '3, 9, 20, 15, 7', placeholder: '3, 9, 20, 15, 7' },
     { id: 'input-inorder', label: '中序遍历 inorder', type: 'text', defaultValue: '9, 3, 15, 20, 7', placeholder: '9, 3, 15, 20, 7' },

@@ -332,32 +332,33 @@ export class GeneralTrieCanvasAdapter {
    * Card 2: 4 维指标面板 + 字符推进滑轨 (Word Ribbon) + 静态映射表 + 调用树
    */
   public static renderTrieCard2(container: HTMLElement, step: GeneralTrieStepDef): void {
+    if (!container) return;
     container.innerHTML = '';
-    container.className = 'w-full h-full flex flex-col gap-2 p-2.5 overflow-hidden bg-slate-950 text-slate-100';
+    container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
     // 1. 顶部 4 维指标看板
     const statsRow = document.createElement('div');
-    statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+    statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
     statsRow.innerHTML = `
-      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold">当前操作</span>
-        <span class="text-sky-300 font-mono font-bold text-xs mt-0.5 truncate">
+      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">当前操作</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           ${step.operation === 'insert' ? '插入单词' : step.operation === 'prefixNumber' ? '前缀统计' : '完整匹配'}
-        </span>
+        </div>
       </div>
-      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold">目标单词</span>
-        <span class="text-amber-300 font-mono font-bold text-xs mt-0.5 truncate">"${step.curWord || '—'}"</span>
+      <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">目标单词</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${step.curWord || '—'}"</div>
       </div>
-      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold">活跃节点</span>
-        <span class="text-emerald-300 font-mono font-bold text-xs mt-0.5 truncate">节点 #${step.activeNodeId}</span>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#15803d; font-weight:700; text-transform:uppercase;">活跃节点</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#16a34a; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">节点 #${step.activeNodeId}</div>
       </div>
-      <div class="bg-slate-900/80 border border-slate-800 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold">结果计数</span>
-        <span class="text-purple-300 font-mono font-bold text-xs mt-0.5 truncate">
+      <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#7e22ce; font-weight:700; text-transform:uppercase;">结果计数</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#9333ea; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           ${step.resultCount !== undefined ? step.resultCount : '—'}
-        </span>
+        </div>
       </div>
     `;
     container.appendChild(statsRow);
@@ -365,29 +366,37 @@ export class GeneralTrieCanvasAdapter {
     // 2. 单词字符推进滑轨 (Word Character Ribbon)
     if (step.curWord) {
       const ribbonCard = document.createElement('div');
-      ribbonCard.className = 'bg-slate-900/60 border border-slate-800 rounded-lg p-2 flex flex-col gap-1 flex-shrink-0';
+      ribbonCard.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;';
       ribbonCard.innerHTML = `
-        <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
           <span>🔤 字符下潜滑轨 (Word Characters Ribbon)</span>
-          <span class="text-[10px] text-slate-500 font-mono">active: index ${step.curCharIndex >= 0 ? step.curCharIndex : 'head'}</span>
+          <span style="font-family:ui-monospace,monospace; color:#64748b; font-size:10px;">active: index ${step.curCharIndex >= 0 ? step.curCharIndex : 'head'}</span>
         </div>
       `;
 
       const ribbonTrack = document.createElement('div');
-      ribbonTrack.className = 'flex gap-1.5 overflow-x-auto py-1 items-center';
+      ribbonTrack.style.cssText = 'display:flex; gap:6px; overflow-x:auto; padding:4px 0; align-items:center;';
       for (let i = 0; i < step.curWord.length; i++) {
         const ch = step.curWord[i];
         const isActive = i === step.curCharIndex;
         const isPassed = i < step.curCharIndex;
         const pill = document.createElement('div');
-        pill.className = `flex flex-col items-center justify-center px-2 py-1 min-w-[34px] rounded border font-mono text-xs font-bold transition-all ${
-          isActive
-            ? 'bg-sky-500/25 border-sky-400 text-sky-200 shadow-sm shadow-sky-500/30 ring-1 ring-sky-400'
-            : isPassed
-            ? 'bg-emerald-500/10 border-emerald-600/40 text-emerald-300'
-            : 'bg-slate-800/80 border-slate-700 text-slate-400'
-        }`;
-        pill.innerHTML = `<span>${ch}</span><span class="text-[8px] font-normal opacity-70">#${i}</span>`;
+        
+        let bg = '#f8fafc';
+        let border = '#cbd5e1';
+        let color = '#64748b';
+        if (isActive) {
+          bg = '#e0f2fe';
+          border = '#38bdf8';
+          color = '#0284c7';
+        } else if (isPassed) {
+          bg = '#f0fdf4';
+          border = '#bbf7d0';
+          color = '#15803d';
+        }
+
+        pill.style.cssText = `display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3px 8px; min-width:34px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:${bg}; border:1px solid ${border}; color:${color}; transition:all 0.15s; flex-shrink:0;`;
+        pill.innerHTML = `<span>${ch}</span><span style="font-size:8px; font-weight:normal; opacity:0.7;">#${i}</span>`;
         ribbonTrack.appendChild(pill);
       }
       ribbonCard.appendChild(ribbonTrack);
@@ -397,34 +406,37 @@ export class GeneralTrieCanvasAdapter {
     // 3. Stage 2 静态内存映射表看板 (若提供 staticTable)
     if (step.staticTable && step.staticTable.rows.length > 0) {
       const staticCard = document.createElement('div');
-      staticCard.className = 'bg-slate-900/60 border border-slate-800 rounded-lg p-2 flex flex-col gap-1 flex-shrink-0';
+      staticCard.style.cssText = 'background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;';
       staticCard.innerHTML = `
-        <div class="flex items-center justify-between text-slate-400 text-[11px] font-semibold">
+        <div style="display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;">
           <span>💾 静态连续数组映射表 (tree[id][26] & pass & end)</span>
-          <span class="text-[10px] text-emerald-400 font-mono">cnt = ${step.nodes.length}</span>
+          <span style="font-family:ui-monospace,monospace; color:#15803d; font-size:10px;">cnt = ${step.nodes.length}</span>
         </div>
-        <div class="max-h-[85px] overflow-y-auto text-[11px] font-mono border border-slate-800/80 rounded">
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-slate-800/70 text-slate-400 sticky top-0">
+        <div style="max-height:85px; overflow-y:auto; font-size:11px; font-family:ui-monospace,monospace; border:1px solid #e2e8f0; border-radius:4px;">
+          <table style="width:100%; text-align:left; border-collapse:collapse;">
+            <thead style="background:#f8fafc; color:#64748b; position:sticky; top:0;">
               <tr>
-                <th class="p-1 border-b border-slate-700">id</th>
-                <th class="p-1 border-b border-slate-700">字符</th>
-                <th class="p-1 border-b border-slate-700 text-sky-400">pass</th>
-                <th class="p-1 border-b border-slate-700 text-rose-400">end</th>
-                <th class="p-1 border-b border-slate-700">子分支 (char ➔ id)</th>
+                <th style="padding:4px 6px; border-bottom:1px solid #e2e8f0;">id</th>
+                <th style="padding:4px 6px; border-bottom:1px solid #e2e8f0;">字符</th>
+                <th style="padding:4px 6px; border-bottom:1px solid #e2e8f0; color:#0284c7;">pass</th>
+                <th style="padding:4px 6px; border-bottom:1px solid #e2e8f0; color:#e11d48;">end</th>
+                <th style="padding:4px 6px; border-bottom:1px solid #e2e8f0;">子分支 (char ➔ id)</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-800/50">
+            <tbody>
               ${step.staticTable.rows.map(r => {
                 const isCur = r.id === step.activeNodeId;
                 const nextsStr = Object.entries(r.nexts).map(([c, id]) => `${c}➔${id}`).join(', ') || '—';
+                const rowBg = isCur ? '#e0f2fe' : '#ffffff';
+                const rowColor = isCur ? '#0369a1' : '#334155';
+                const fontWeight = isCur ? '700' : '500';
                 return `
-                  <tr class="${isCur ? 'bg-sky-500/20 text-sky-200 font-bold' : 'text-slate-300'}">
-                    <td class="p-1">#${r.id}</td>
-                    <td class="p-1">${r.char}</td>
-                    <td class="p-1 text-sky-400">${r.pass}</td>
-                    <td class="p-1 text-rose-400">${r.end}</td>
-                    <td class="p-1 text-slate-400 text-[10px]">${nextsStr}</td>
+                  <tr style="background:${rowBg}; color:${rowColor}; font-weight:${fontWeight}; border-bottom:1px solid #f1f5f9;">
+                    <td style="padding:3px 6px;">#${r.id}</td>
+                    <td style="padding:3px 6px;">${r.char}</td>
+                    <td style="padding:3px 6px; color:#0284c7;">${r.pass}</td>
+                    <td style="padding:3px 6px; color:#e11d48;">${r.end}</td>
+                    <td style="padding:3px 6px; color:#64748b; font-size:10px;">${nextsStr}</td>
                   </tr>
                 `;
               }).join('')}
@@ -438,12 +450,26 @@ export class GeneralTrieCanvasAdapter {
     // 4. 调用链路树 (Figure 1 层次规范适配器)
     if (step.callTrace) {
       const traceBox = document.createElement('div');
-      traceBox.className = 'flex-1 min-h-0 bg-slate-900/60 border border-slate-800 rounded-lg p-2 overflow-y-auto';
+      traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
       RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
         title: '🌳 前缀树状态演进与调用链 (Call Trace)',
+        theme: 'light',
         maxHeight: '100%',
+        showTerminalHeader: true,
       });
       container.appendChild(traceBox);
+    }
+
+    // 5. 当前推演决策总结
+    if (step.decision) {
+      const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.decision.includes('成功');
+      const summaryBox = document.createElement('div');
+      summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
+      summaryBox.innerHTML = `
+        <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 当前决策: ${step.decision}</div>
+        <div style="color:#64748b; font-size:11px;">${step.message}</div>
+      `;
+      container.appendChild(summaryBox);
     }
   }
 }

@@ -19,7 +19,8 @@ export { buildIntervalMergeSteps };
 export const intervalMergeVisualizer = registerDeclarativeAlgorithm<IntervalMergeStep>({
   id: 'interval-merge-segment-tree-113',
   name: '区间合并线段树 (Class 113)',
-  aliases: ['class113-code01', 'interval-merge-segment-tree', 'interval-merge-segment-tree-113', 'max-subarray-sum-seg-tree'],
+  aliases: ['class113-code01', 'interval-merge-segment-tree', 'interval-merge-segment-tree-113', 'max-subarray-sum-seg-tree', 'p4513', 'gss1'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '🧩',
   difficulty: 3,

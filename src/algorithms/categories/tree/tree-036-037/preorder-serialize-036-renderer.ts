@@ -19,6 +19,8 @@ export { buildPreorderSerialize036Steps, renderPreorderSerializeCanvas };
 
 export const preorderSerialize036Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
   id: 'tree-036-preorder-serialize',
+  aliases: ['preorder-serialize', 'tree-036-preorder-serialize', 'tree-036-code05'],
+  hasDeductionTree: true,
   name: '二叉树先序序列化与反序列化 (Class 036)',
   category: 'tree',
   icon: '📦',

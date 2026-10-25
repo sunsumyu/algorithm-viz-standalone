@@ -39,6 +39,7 @@ export const leftLeavesVisualizer = registerDeclarativeAlgorithm<LeftLeavesStep>
   name: '左叶子之和',
   category: 'tree',
   icon: '🍃',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 404,
   aliases: ['leetcode-404', 'sum-of-left-leaves'],

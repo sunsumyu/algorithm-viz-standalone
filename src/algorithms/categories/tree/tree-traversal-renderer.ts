@@ -44,10 +44,11 @@ export {
 // ============================================================
 export const treeTraversalVisualizer = registerDeclarativeAlgorithm<TTStep>({
   id: 'tree-traversal',
-  aliases: ['class018-code01', 'binary-tree-traversal', 'preorder-inorder-postorder'],
+  aliases: ['class018-code01', 'binary-tree-traversal', 'preorder-inorder-postorder', 'leetcode-144', 'leetcode-94', 'leetcode-145', '144', '94', '145'],
   name: '二叉树遍历',
   category: 'tree',
   icon: '🌲',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 1,
   learningGoal: '彻底掌握二叉树前中后序遍历的递归与迭代两种实现，理解访问时机与栈操作的本质',

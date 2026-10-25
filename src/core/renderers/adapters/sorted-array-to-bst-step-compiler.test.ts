@@ -84,4 +84,38 @@ describe('SortedArrayToBstStepCompiler (LeetCode 108)', () => {
     const defaultNums = parseAndBuildSortedArrayToBstNums();
     expect(defaultNums).toEqual([-10, -3, 0, 5, 9]);
   });
+
+  it('Stage 1 动态树增长：子节点创建后立即挂载到父节点，消除 Card 1 盲区', () => {
+    const nums = [-10, -3, 0, 5, 9];
+    const steps = buildSortedArrayToBstStage1Steps(nums);
+
+    // 寻找正在为 -10 递归右子树或处理 -10 的步骤
+    const stepWithMinus10 = steps.find(
+      (s) => s.currentVal === -10 && (s.action === 'split' || s.action === 'create')
+    );
+    expect(stepWithMinus10).toBeDefined();
+    expect(stepWithMinus10!.tree).toBeDefined();
+    // 根节点为 0
+    expect(stepWithMinus10!.tree!.val).toBe(0);
+    // 左子节点 -10 已成功连接到根 0 上
+    expect(stepWithMinus10!.tree!.left).toBeDefined();
+    expect(stepWithMinus10!.tree!.left!.val).toBe(-10);
+  });
+
+  it('全阶段步骤契约严格满足 cur-range, mid-val, action-type 框架指标规范', () => {
+    const nums = [-10, -3, 0, 5, 9];
+    const allSteps = [
+      ...buildSortedArrayToBstStage1Steps(nums),
+      ...buildSortedArrayToBstStage2Steps(nums),
+      ...buildSortedArrayToBstStage3Steps(nums),
+    ];
+
+    for (const step of allSteps) {
+      expect(step.metrics).toBeDefined();
+      expect(step.metrics!['cur-range']).toBeDefined();
+      expect(step.metrics!['mid-val']).toBeDefined();
+      expect(step.metrics!['action-type']).toBeDefined();
+    }
+  });
 });
+

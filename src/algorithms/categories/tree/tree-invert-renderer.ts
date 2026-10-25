@@ -30,20 +30,17 @@ import {
 // 兼容导出
 export type { InvertStep };
 export {
-  buildTreeInvertSteps,
-  buildTreeInvertBfsSteps,
-  buildTreeInvertStaticArraySteps,
-  collectTreeValues,
-  cloneTree,
-  renderTreeInvertCanvasForStep,
+  buildTreeInvertSteps, buildTreeInvertBfsSteps, buildTreeInvertStaticArraySteps,
+  collectTreeValues, cloneTree, renderTreeInvertCanvasForStep,
 };
 
 export const treeInvertVisualizer = registerDeclarativeAlgorithm<InvertStep>({
   id: 'tree-invert',
-  aliases: ['leetcode-226', 'invert-binary-tree'],
+  aliases: ['leetcode-226', '226', 'invert-binary-tree'],
   name: '翻转二叉树',
   category: 'tree',
   icon: '🪞',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 3,
   learningGoal: '掌握利用递归或层序遍历互换每个节点左右子树指针的算法本质',

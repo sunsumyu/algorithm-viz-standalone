@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
 import {
   buildPSSteps,
+  buildPathSumStage1CumulativeSteps,
   buildPathSumStage2BacktrackSteps,
   buildPathSumStage3BfsSteps,
   collectTreeValues,
@@ -14,12 +15,14 @@ import {
   renderStage1CustomMetrics,
   renderStage2CustomMetrics,
   renderStage3CustomMetrics,
+  renderStage4CustomMetrics,
 } from './path-sum-canvas-adapter';
 import {
   PATH_SUM_STAGE1_CODE,
   PATH_SUM_STAGE2_BACKTRACK_CODE,
   PATH_SUM_STAGE3_BFS_CODE,
 } from '../../../algorithms/categories/tree/path-sum-stage-codes';
+import { DeductionRendererRegistry } from '../deduction/deduction-renderer-registry';
 
 describe('PathSumStepCompiler & CanvasAdapter (Deep Module Contracts)', () => {
   it('collectTreeValues 正确收集树的所有节点值', () => {
@@ -42,7 +45,42 @@ describe('PathSumStepCompiler & CanvasAdapter (Deep Module Contracts)', () => {
     expect(parsedCustom.targetSum).toBe(4);
   });
 
-  describe('Stage 1: 递归减法回溯 (LC 112)', () => {
+  describe('Stage 1: 辅助函数与沿途累加和 (Recursive Cumulative Sum DFS)', () => {
+    it('空树返回安全判定与 callTrace', () => {
+      const steps = buildPathSumStage1CumulativeSteps(null, 10);
+      expect(steps.length).toBeGreaterThan(0);
+      const last = steps[steps.length - 1];
+      expect(last.found).toBe(false);
+      expect(last.action).toBe('done');
+      expect(last.callTrace).toBeDefined();
+    });
+
+    it('有效路径存在时返回 found=true 且覆盖四语言行号与回溯计数器正确性', () => {
+      const root = buildTreeFromArr([5, 4, 8, 11, null, 13, 4, 7, 2]);
+      const steps = buildPathSumStage1CumulativeSteps(root, 22);
+      expect(steps.length).toBeGreaterThan(0);
+
+      const last = steps[steps.length - 1];
+      expect(last.found).toBe(true);
+      expect(last.action).toBe('done');
+      expect(last.highlightedNodes).toEqual([5, 4, 11, 2]);
+
+      const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // entry
+      expect(javaLines).toContain(4); // callTraversal
+      expect(javaLines).toContain(6); // traversalEntry
+      expect(javaLines).toContain(7); // leafMatch
+      expect(javaLines).toContain(8); // leafMismatch
+      expect(javaLines).toContain(10); // leftSub: count -= cur.left.val
+      expect(javaLines).toContain(11); // leftRecurse: if (traversal(cur.left, count)) return true;
+
+      steps.forEach((step, idx) => {
+        expect(step.callTrace, `Step ${idx} 必须具有 callTrace`).toBeDefined();
+      });
+    });
+  });
+
+  describe('Stage 2: 递归减法回溯单函数精简 (LC 112)', () => {
     it('空树返回安全判定与 callTrace', () => {
       const steps = buildPSSteps(null, 10);
       expect(steps.length).toBeGreaterThan(0);
@@ -153,31 +191,60 @@ describe('PathSumStepCompiler & CanvasAdapter (Deep Module Contracts)', () => {
       expect(container.querySelector('svg')).not.toBeNull();
     });
 
-    it('renderStage1CustomMetrics 正常渲染调用栈与差额指标', () => {
+    it('renderStage1CustomMetrics 正常渲染调用栈与显式回溯计数器指标', () => {
+      const container = document.createElement('div');
+      const root = buildTreeFromArr([5, 4, 8]);
+      const steps = buildPathSumStage1CumulativeSteps(root, 9);
+      renderStage1CustomMetrics(container, steps[0]);
+      expect(container.innerHTML).toContain('当前节点');
+      expect(container.innerHTML).toContain('计数器 count');
+      expect(container.innerHTML).toContain('目标和');
+    });
+
+    it('renderStage2CustomMetrics 正常渲染减法差额与推演栈', () => {
       const container = document.createElement('div');
       const root = buildTreeFromArr([5, 4, 8]);
       const steps = buildPSSteps(root, 9);
-      renderStage1CustomMetrics(container, steps[0]);
+      renderStage2CustomMetrics(container, steps[0]);
       expect(container.innerHTML).toContain('当前节点');
       expect(container.innerHTML).toContain('剩余需求');
     });
 
-    it('renderStage2CustomMetrics 正常渲染回溯现场栈与解集指标', () => {
+    it('renderStage3CustomMetrics 正常渲染回溯现场栈与全解收集指标', () => {
       const container = document.createElement('div');
       const root = buildTreeFromArr([5, 4, 8]);
       const steps = buildPathSumStage2BacktrackSteps(root, 9);
-      renderStage2CustomMetrics(container, steps[steps.length - 1]);
+      renderStage3CustomMetrics(container, steps[steps.length - 1]);
       expect(container.innerHTML).toContain('当前路径栈');
       expect(container.innerHTML).toContain('已收集有效路径总集');
     });
 
-    it('renderStage3CustomMetrics 正常渲染双队列监视器', () => {
+    it('renderStage4CustomMetrics 正常渲染双队列监视器', () => {
       const container = document.createElement('div');
       const root = buildTreeFromArr([5, 4, 8]);
       const steps = buildPathSumStage3BfsSteps(root, 9);
-      renderStage3CustomMetrics(container, steps[0]);
+      renderStage4CustomMetrics(container, steps[0]);
       expect(container.innerHTML).toContain('nodeQueue');
       expect(container.innerHTML).toContain('sumQueue');
+    });
+  });
+
+  describe('PathSumDeductionRenderer (Card 1 Top-Level Deduction Abstraction)', () => {
+    it('DeductionRendererRegistry 能够成功识别并按需解析 path-sum 及其别名', async () => {
+      expect(DeductionRendererRegistry.isSupported('path-sum')).toBe(true);
+      expect(DeductionRendererRegistry.isSupported('tree-037-path-sum-ii')).toBe(true);
+      expect(DeductionRendererRegistry.isSupported('leetcode-112')).toBe(true);
+      expect(DeductionRendererRegistry.isSupported('leetcode-113')).toBe(true);
+
+      const renderer = await DeductionRendererRegistry.resolveRenderer('path-sum');
+      expect(renderer).not.toBeNull();
+      expect(renderer?.canHandle('path-sum')).toBe(true);
+
+      const html = renderer?.render({ modelId: 'path-sum' }) || '';
+      expect(html).toContain('力扣 112 / 113. 路径总和与全解收集');
+      expect(html).toContain('代码随想录 · 显式回溯');
+      expect(html).toContain('Base Case');
+      expect(html).toContain('traversal(cur, count)');
     });
   });
 });

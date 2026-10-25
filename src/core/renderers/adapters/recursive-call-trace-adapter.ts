@@ -53,13 +53,13 @@ export class RecursiveCallTraceAdapter {
   /**
    * 渲染递归调用推演跟踪树 (高雅层次化树形分支拓扑 - Figure 1 黄金范式)
    */
-  public static render(
-    container: HTMLElement,
+  /**
+   * 编译递归调用推演跟踪树 HTML 字符串
+   */
+  public static renderHtml(
     snapshot: CallTraceSnapshot | null,
     options: RecursiveCallTraceOptions = {}
-  ): void {
-    if (!container) return;
-
+  ): string {
     const {
       title = '🌳 递归调用推演跟踪树 (Call Trace)',
       maxHeight = '100%',
@@ -71,7 +71,7 @@ export class RecursiveCallTraceAdapter {
 
     if (!snapshot || !snapshot.lines || snapshot.lines.length === 0) {
       if (isLight) {
-        container.innerHTML = `
+        return `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; color: #64748b; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11.5px; gap: 6px; width: 100%; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 8px;">
             <div style="font-size: 22px;">🌳</div>
             <div style="font-weight: 600; color: #334155;">准备递归推演...</div>
@@ -79,7 +79,7 @@ export class RecursiveCallTraceAdapter {
           </div>
         `;
       } else {
-        container.innerHTML = `
+        return `
           <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 260px; color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 12px; gap: 8px; width: 100%;">
             <div style="font-size: 28px; opacity: 0.8;">🌳</div>
             <div>准备递归推演...</div>
@@ -87,7 +87,6 @@ export class RecursiveCallTraceAdapter {
           </div>
         `;
       }
-      return;
     }
 
     // ==========================================
@@ -402,7 +401,7 @@ export class RecursiveCallTraceAdapter {
       ? `display: flex; flex-direction: column; height: 100%; max-height: ${maxHeight}; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.03);`
       : `display: flex; flex-direction: column; height: 100%; max-height: ${maxHeight}; background: #020617; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);`;
 
-    container.innerHTML = `
+    return `
       <div class="rct-terminal-container" style="${containerStyle}">
         ${headerHtml}
         <div class="rct-scroll-body" style="flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; padding: 8px 10px; display: flex; flex-direction: column; gap: 1px;">
@@ -410,9 +409,21 @@ export class RecursiveCallTraceAdapter {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * 渲染递归调用推演跟踪树 (高雅层次化树形分支拓扑 - Figure 1 黄金范式)
+   */
+  public static render(
+    container: HTMLElement,
+    snapshot: CallTraceSnapshot | null,
+    options: RecursiveCallTraceOptions = {}
+  ): void {
+    if (!container) return;
+    container.innerHTML = this.renderHtml(snapshot, options);
 
     // 自动平滑滚动高亮行至可见区域
-    if (snapshot.activeLineId) {
+    if (snapshot?.activeLineId) {
       const activeEl = container.querySelector(`#rct-line-${snapshot.activeLineId}`) as HTMLElement | null;
       if (activeEl && typeof activeEl.scrollIntoView === 'function') {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

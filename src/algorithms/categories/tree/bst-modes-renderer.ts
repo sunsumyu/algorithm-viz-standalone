@@ -40,6 +40,7 @@ export const bstModesVisualizer = registerDeclarativeAlgorithm({
   name: '二叉搜索树中的众数',
   category: 'tree',
   icon: '📊',
+  hasDeductionTree: true,
   difficulty: 'easy',
   learningGoal: '利用BST中序遍历相同元素连续出现的单调特性，采用双指针在线动态清空重置模式，单趟统计出所有最高频众数。',
   problemHtml: BST_MODES_PROBLEM_HTML,

@@ -149,41 +149,46 @@ export class BoundedKnapsackSandboxAdapter {
           const pkg = derivedPackages[pIdx];
           const curCell = grid[pIdx]?.[remJ] ?? 0;
           const prevCell = pIdx > 0 ? (grid[pIdx - 1]?.[remJ] ?? 0) : 0;
-          const takeCell = remJ >= pkg.weight ? (pIdx > 0 ? grid[pIdx - 1]?.[remJ - pkg.weight] ?? 0 : 0) + pkg.value : -1;
-
-          if (takeCell === curCell && curCell > prevCell) {
+          if (curCell !== prevCell && remJ >= pkg.weight) {
             counts.set(pkg.origId, (counts.get(pkg.origId) || 0) + pkg.multiplier);
             remJ -= pkg.weight;
           }
           pIdx--;
         }
       } else {
-        const trialK = typeof (step as any)?.k === 'number' ? (step as any).k : undefined;
-        let i = Math.min(curI, grid.length - 1, items.length - 1);
-        if (trialK !== undefined && i >= 0 && i < items.length) {
-          const item = items[i];
-          if (trialK > 0) {
-            counts.set(item.id, trialK);
-            remJ = Math.max(0, remJ - trialK * item.weight);
+        // 朴素枚举回溯：如果当前步是试选步 (trialK)，扣除正在尝试的 k 件
+        if (typeof (step as any)?.k === 'number' && (step as any).k > 0) {
+          const currentItem = items[curI];
+          if (currentItem) {
+            const trialCount = (step as any).k;
+            const trialWeight = currentItem.weight * trialCount;
+            if (remJ >= trialWeight) {
+              counts.set(currentItem.id, trialCount);
+              remJ -= trialWeight;
+            }
           }
-          i--;
         }
+
+        // 从上一行往前倒推装入情况
+        let i = Math.min(curI - 1, grid.length - 1, items.length - 1);
         while (i >= 0 && remJ > 0) {
           const item = items[i];
           const curCell = grid[i]?.[remJ] ?? 0;
-          let bestK = 0;
+          const prevCell = i > 0 ? (grid[i - 1]?.[remJ] ?? 0) : 0;
 
-          for (let k = 1; k <= item.count && k * item.weight <= remJ; k++) {
-            const prev = i > 0 ? (grid[i - 1]?.[remJ - k * item.weight] ?? 0) : 0;
-            if (prev + k * item.value === curCell) {
-              bestK = k;
-              break;
+          if (curCell !== prevCell) {
+            for (let k = item.count; k >= 1; k--) {
+              const kw = k * item.weight;
+              const kv = k * item.value;
+              if (remJ >= kw) {
+                const subCell = i > 0 ? (grid[i - 1]?.[remJ - kw] ?? 0) : 0;
+                if (curCell === subCell + kv) {
+                  counts.set(item.id, (counts.get(item.id) || 0) + k);
+                  remJ -= kw;
+                  break;
+                }
+              }
             }
-          }
-
-          if (bestK > 0) {
-            counts.set(item.id, bestK);
-            remJ -= bestK * item.weight;
           }
           i--;
         }
@@ -191,11 +196,11 @@ export class BoundedKnapsackSandboxAdapter {
     }
 
     const inventory: BoundedInventoryItem[] = [];
-    for (const [id, count] of counts.entries()) {
-      const item = items.find((it) => it.id === id);
-      if (item && count > 0) {
+    for (const item of items) {
+      const count = counts.get(item.id) || 0;
+      if (count > 0) {
         inventory.push({
-          id,
+          id: item.id,
           name: item.name,
           unitWeight: item.weight,
           unitValue: item.value,
@@ -220,9 +225,8 @@ export class BoundedKnapsackSandboxAdapter {
     if (!container) return;
 
     container.innerHTML = '';
-    container.className = 'w-full h-full flex flex-col relative z-0 bg-transparent border-0 shadow-none p-0 overflow-y-auto';
-    container.style.display = 'flex';
-    container.style.width = '100%';
+    container.className = 'bounded-knapsack-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 0; background: transparent; overflow-y: auto; box-sizing: border-box; font-family: ui-sans-serif, system-ui, sans-serif;';
 
     const { items, derivedPackages, capacity, isBinary } = this.parseData(step, options);
 
@@ -235,79 +239,83 @@ export class BoundedKnapsackSandboxAdapter {
     const progressPercent = Math.min(100, Math.round((usedWeight / Math.max(1, capacity)) * 100));
 
     const html = `
-      <div class="bounded-knapsack-sandbox w-full flex flex-col gap-3 p-3 font-sans select-none text-slate-800 dark:text-slate-100">
+      <div class="bounded-knapsack-sandbox" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; user-select: none; color: #f1f5f9;">
         <!-- 顶部提示横条 -->
-        <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r ${
-          isBinary ? 'from-purple-500/10 via-indigo-500/10 to-blue-500/10 border border-purple-500/20' : 'from-amber-500/10 via-orange-500/10 to-yellow-500/10 border border-amber-500/20'
-        } text-xs">
-          <div class="flex items-center gap-2">
-            <span class="text-base">${isBinary ? '✂️' : '📦'}</span>
-            <span class="font-bold ${isBinary ? 'text-purple-700 dark:text-purple-300' : 'text-amber-700 dark:text-amber-300'}">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; ${
+          isBinary
+            ? 'background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.3);'
+            : 'background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3);'
+        } font-size: 12px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">${isBinary ? '✂️' : '📦'}</span>
+            <span style="font-weight: bold; color: ${isBinary ? '#c084fc' : '#fbbf24'};">
               ${isBinary ? '多重背包二进制拆分沙盘' : '多重背包朴素枚举沙盘'}
             </span>
-            <span class="text-slate-400">|</span>
-            <span class="text-slate-600 dark:text-slate-300">
+            <span style="color: #64748b;">|</span>
+            <span style="color: #cbd5e1;">
               ${
                 isBinary
-                  ? '将每种数量为 c[i] 的宝物按 <strong>1, 2, 4, ...</strong> 二进制拆分转化为 01 背包，时间复杂度 O(W · Σlog c)'
-                  : '每种宝物拥有<strong>数量上限 c[i]</strong>，状态转移时枚举放入 k 件 (0 <= k <= c[i])'
+                  ? '将每种数量为 c[i] 的宝物按 <strong style="color: #c084fc;">1, 2, 4, ...</strong> 二进制拆分转化为 01 背包，时间复杂度 O(W · Σlog c)'
+                  : '每种宝物拥有<strong style="color: #fbbf24;">数量上限 c[i]</strong>，状态转移时枚举放入 k 件 (0 <= k <= c[i])'
               }
             </span>
           </div>
-          <div class="flex items-center gap-2 font-mono text-[11px]">
-            <span class="px-2 py-0.5 rounded ${isBinary ? 'bg-purple-500/20 text-purple-800 dark:text-purple-200' : 'bg-amber-500/20 text-amber-800 dark:text-amber-200'} font-bold">
+          <div style="display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px;">
+            <span style="padding: 2px 8px; border-radius: 4px; font-weight: bold; ${
+              isBinary ? 'background: rgba(168, 85, 247, 0.2); color: #d8b4fe;' : 'background: rgba(245, 158, 11, 0.2); color: #fde68a;'
+            }">
               ${isBinary ? `衍生包 #${curI + 1}` : `宝物 #${curI + 1}`}
             </span>
-            <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-800 dark:text-blue-200 font-bold">
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-weight: bold;">
               容量: j = ${curJ} / ${capacity}
             </span>
           </div>
         </div>
 
         <!-- 主体区域：左右双栏布局 (左 7 列: 货架，右 5 列: 载荷舱) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start; box-sizing: border-box;">
           
           <!-- 左侧：宝物陈列货架 (7 列) -->
-          <div class="lg:col-span-7 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-boxes-stacked ${isBinary ? 'text-purple-600' : 'text-amber-600'}"></i>
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: ${isBinary ? '#c084fc' : '#fbbf24'};">📦</span>
                 ${isBinary ? '二进制拆分衍生 01 物品货架' : '宝物库品类与件数限制货架'}
               </span>
-              <span class="text-[11px] font-mono text-slate-500">
+              <span style="font-size: 11px; font-family: monospace; color: #94a3b8;">
                 ${isBinary ? `原 ${items.length} 种宝物 → 拆分为 ${derivedPackages.length} 件衍生包` : `共 ${items.length} 种宝物`}
               </span>
             </div>
 
             <!-- 卡片网格 -->
-            <div class="grid grid-cols-1 sm:grid-cols-${Math.min(3, isBinary ? derivedPackages.length : items.length)} gap-3">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
               ${
                 isBinary
                   ? derivedPackages
                       .map((pkg, idx) => {
                         const isCur = idx === curI;
                         let borderCls = isCur
-                          ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-md ring-2 ring-purple-400/40'
-                          : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40';
+                          ? 'border: 2px solid #a855f7; background: rgba(59, 7, 100, 0.4); box-shadow: 0 4px 6px -1px rgba(168, 85, 247, 0.2);'
+                          : 'border: 1px solid #334155; background: rgba(15, 23, 42, 0.6);';
 
                         return `
-                          <div class="relative p-2.5 rounded-xl border flex flex-col gap-2 transition-all ${borderCls}">
-                            <div class="flex items-center justify-between border-b border-dashed border-slate-200 dark:border-slate-800 pb-1">
-                              <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100">衍生包 #${pkg.id}</span>
-                              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                                isCur ? 'bg-purple-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                          <div style="position: relative; padding: 10px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s; box-sizing: border-box; ${borderCls}">
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed rgba(100, 116, 139, 0.4); padding-bottom: 4px;">
+                              <span style="font-weight: 800; font-size: 12px; color: #f1f5f9;">衍生包 #${pkg.id}</span>
+                              <span style="font-size: 10px; font-family: monospace; padding: 2px 6px; border-radius: 4px; font-weight: bold; ${
+                                isCur ? 'background: #a855f7; color: #ffffff;' : 'background: rgba(51, 65, 85, 0.6); color: #94a3b8;'
                               }">
                                 源宝物 #${pkg.origId} × ${pkg.multiplier}
                               </span>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5 text-center text-xs font-mono">
-                              <div class="p-1 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                                <div class="text-[9px] text-slate-500">重量</div>
-                                <div class="font-bold text-sky-600 dark:text-sky-400">${pkg.weight}</div>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; text-align: center; font-size: 12px; font-family: monospace;">
+                              <div style="padding: 4px; border-radius: 4px; background: rgba(30, 41, 59, 0.8);">
+                                <div style="font-size: 9px; color: #94a3b8;">重量</div>
+                                <div style="font-weight: bold; color: #38bdf8;">${pkg.weight}</div>
                               </div>
-                              <div class="p-1 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                                <div class="text-[9px] text-slate-500">价值</div>
-                                <div class="font-bold text-amber-600 dark:text-amber-400">+${pkg.value}</div>
+                              <div style="padding: 4px; border-radius: 4px; background: rgba(30, 41, 59, 0.8);">
+                                <div style="font-size: 9px; color: #94a3b8;">价值</div>
+                                <div style="font-weight: bold; color: #fbbf24;">+${pkg.value}</div>
                               </div>
                             </div>
                           </div>
@@ -321,22 +329,22 @@ export class BoundedKnapsackSandboxAdapter {
                         const takenCount = takenInfo ? takenInfo.count : 0;
 
                         let borderCls = isCur
-                          ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-400/40'
-                          : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40';
+                          ? 'border: 2px solid #fbbf24; background: rgba(69, 26, 3, 0.4); box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);'
+                          : 'border: 1px solid #334155; background: rgba(15, 23, 42, 0.6);';
 
                         return `
-                          <div class="relative p-3 rounded-xl border flex flex-col gap-2.5 transition-all ${borderCls}">
-                            <div class="flex items-center justify-between border-b border-dashed border-slate-200 dark:border-slate-800 pb-1.5">
-                              <div class="flex items-center gap-1.5">
-                                <span class="text-sm">💎</span>
-                                <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100">${escapeHtml(it.name)}</span>
+                          <div style="position: relative; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s; box-sizing: border-box; ${borderCls}">
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed rgba(100, 116, 139, 0.4); padding-bottom: 6px;">
+                              <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 14px;">💎</span>
+                                <span style="font-weight: 800; font-size: 12px; color: #f1f5f9;">${escapeHtml(it.name)}</span>
                               </div>
-                              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                              <span style="font-size: 10px; font-family: monospace; padding: 2px 6px; border-radius: 4px; font-weight: bold; ${
                                 isCur
-                                  ? 'bg-amber-500 text-white animate-pulse'
+                                  ? 'background: #f59e0b; color: #ffffff;'
                                   : takenCount > 0
-                                  ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                  ? 'background: rgba(16, 185, 129, 0.2); color: #6ee7b7;'
+                                  : 'background: rgba(51, 65, 85, 0.6); color: #94a3b8;'
                               }">
                                 ${
                                   isCur && typeof (step as any)?.k === 'number'
@@ -348,18 +356,18 @@ export class BoundedKnapsackSandboxAdapter {
                               </span>
                             </div>
 
-                            <div class="grid grid-cols-3 gap-1 text-center text-xs font-mono">
-                              <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                                <div class="text-[9px] text-slate-500">单件重量</div>
-                                <div class="font-bold text-sky-600 dark:text-sky-400">${it.weight}</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; text-align: center; font-size: 12px; font-family: monospace;">
+                              <div style="padding: 6px; border-radius: 4px; background: rgba(30, 41, 59, 0.8);">
+                                <div style="font-size: 9px; color: #94a3b8;">单件重量</div>
+                                <div style="font-weight: bold; color: #38bdf8;">${it.weight}</div>
                               </div>
-                              <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                                <div class="text-[9px] text-slate-500">单件价值</div>
-                                <div class="font-bold text-amber-600 dark:text-amber-400">${it.value}</div>
+                              <div style="padding: 6px; border-radius: 4px; background: rgba(30, 41, 59, 0.8);">
+                                <div style="font-size: 9px; color: #94a3b8;">单件价值</div>
+                                <div style="font-weight: bold; color: #fbbf24;">${it.value}</div>
                               </div>
-                              <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                                <div class="text-[9px] text-slate-500">可用上限</div>
-                                <div class="font-bold text-purple-600 dark:text-purple-400">${it.count} 件</div>
+                              <div style="padding: 6px; border-radius: 4px; background: rgba(30, 41, 59, 0.8);">
+                                <div style="font-size: 9px; color: #94a3b8;">可用上限</div>
+                                <div style="font-weight: bold; color: #c084fc;">${it.count} 件</div>
                               </div>
                             </div>
                           </div>
@@ -371,68 +379,67 @@ export class BoundedKnapsackSandboxAdapter {
           </div>
 
           <!-- 右侧：宝物载荷舱 (5 列) -->
-          <div class="lg:col-span-5 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-sack-dollar text-emerald-600"></i> 背包载荷舱 (Knapsack Container)
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #10b981;">💰</span> 背包载荷舱 (Knapsack Container)
               </span>
-              <span class="text-[11px] font-mono text-slate-500">剩余容量: ${Math.max(0, capacity - usedWeight)}</span>
+              <span style="font-size: 11px; font-family: monospace; color: #94a3b8;">剩余容量: ${Math.max(0, capacity - usedWeight)}</span>
             </div>
 
-            <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 flex flex-col gap-3 shadow-xs">
+            <div style="padding: 14px; border-radius: 12px; border: 1px solid #334155; background: rgba(15, 23, 42, 0.8); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
               
               <!-- 重量载荷条 -->
-              <div class="flex flex-col gap-1.5">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="text-slate-500">载重使用率</span>
-                  <span class="font-mono font-bold text-sky-600 dark:text-sky-400">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                  <span style="color: #94a3b8;">载重使用率</span>
+                  <span style="font-family: monospace; font-weight: bold; color: #38bdf8;">
                     ${usedWeight} / ${capacity} (${progressPercent}%)
                   </span>
                 </div>
                 
-                <div class="w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div style="width: 100%; height: 12px; border-radius: 9999px; background: #334155; overflow: hidden; border: 1px solid #475569; padding: 2px; box-sizing: border-box;">
                   <div
-                    class="h-full rounded-full transition-all duration-300 bg-gradient-to-r from-sky-500 to-indigo-500"
-                    style="width: ${progressPercent}%;"
+                    style="height: 100%; border-radius: 9999px; transition: width 0.3s; background: linear-gradient(to right, #38bdf8, #6366f1); width: ${progressPercent}%;"
                   ></div>
                 </div>
               </div>
 
               <!-- 价值与状态 -->
-              <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
-                <div class="p-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/80">
-                  <div class="text-[10px] text-slate-500">累计宝物价值</div>
-                  <div class="text-sm font-extrabold text-amber-600 dark:text-amber-400">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: center; font-size: 12px; font-family: monospace;">
+                <div style="padding: 8px; border-radius: 8px; background: rgba(30, 41, 59, 0.8);">
+                  <div style="font-size: 10px; color: #94a3b8;">累计宝物价值</div>
+                  <div style="font-size: 14px; font-weight: 800; color: #fbbf24;">
                     ${totalVal} 价值
                   </div>
                 </div>
-                <div class="p-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/80">
-                  <div class="text-[10px] text-slate-500">算法求解模式</div>
-                  <div class="text-xs font-bold ${isBinary ? 'text-purple-600 dark:text-purple-400' : 'text-amber-600 dark:text-amber-400'}">
+                <div style="padding: 8px; border-radius: 8px; background: rgba(30, 41, 59, 0.8);">
+                  <div style="font-size: 10px; color: #94a3b8;">算法求解模式</div>
+                  <div style="font-size: 12px; font-weight: bold; color: ${isBinary ? '#c084fc' : '#fbbf24'};">
                     ${isBinary ? '二进制拆分 01 转化' : '朴素三重循环枚举'}
                   </div>
                 </div>
               </div>
 
               <!-- 装入清单 -->
-              <div class="flex flex-col gap-1.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
-                <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px dashed rgba(100, 116, 139, 0.4);">
+                <div style="font-size: 11px; font-weight: bold; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between;">
                   <span>💎 包内宝物清单</span>
-                  <span class="text-[10px] font-normal text-slate-400">回溯统计</span>
+                  <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">回溯统计</span>
                 </div>
 
-                <div class="flex flex-wrap gap-1.5 min-h-[38px] items-center">
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; align-items: center;">
                   ${
                     inventory.length === 0
-                      ? `<span class="text-[11px] text-slate-400 italic">背包空空如也 (价值 0)</span>`
+                      ? `<span style="font-size: 11px; color: #64748b; font-style: italic;">背包空空如也 (价值 0)</span>`
                       : inventory
                           .map(
                             (it) => `
-                              <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] font-mono">
-                                <span class="font-bold text-amber-700 dark:text-amber-300">${escapeHtml(it.name)}</span>
-                                <span class="text-slate-400">×</span>
-                                <span class="font-extrabold text-emerald-600 dark:text-emerald-400">${it.count} 件</span>
-                                <span class="text-[10px] text-slate-500">(重${it.totalWeight}, 价${it.totalValue})</span>
+                              <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); font-size: 11px; font-family: monospace;">
+                                <span style="font-weight: bold; color: #fde68a;">${escapeHtml(it.name)}</span>
+                                <span style="color: #64748b;">×</span>
+                                <span style="font-weight: 800; color: #34d399;">${it.count} 件</span>
+                                <span style="font-size: 10px; color: #94a3b8;">(重${it.totalWeight}, 价${it.totalValue})</span>
                               </div>
                             `
                           )
@@ -442,12 +449,12 @@ export class BoundedKnapsackSandboxAdapter {
               </div>
 
               <!-- 决策看板 -->
-              <div class="p-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300 flex flex-col gap-1">
-                <div class="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200">
+              <div style="padding: 8px; border-radius: 8px; background: rgba(30, 41, 59, 0.8); border: 1px solid #334155; font-size: 11px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #f1f5f9;">
                   <span>⚖️ 状态转移决策</span>
-                  <span class="font-mono text-[10px]">dp[${curI}][${curJ}]</span>
+                  <span style="font-family: monospace; font-size: 10px;">dp[${curI}][${curJ}]</span>
                 </div>
-                <div class="text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
+                <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.5; font-family: monospace;">
                   ${escapeHtml(step.msg || step.log || '正在推导多重背包状态转移...')}
                 </div>
               </div>

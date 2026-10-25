@@ -36,15 +36,9 @@ import {
 // 重新导出契约与推演函数，保持全库既有单测 100% 原始绿灯兼容
 export type { VBStep };
 export {
-  VALID_BST_CODE_LINES,
-  collectTreeValues,
-  buildVBSteps,
-  buildValidBstStage2RangeSteps,
-  buildValidBstStage3StackSteps,
-  renderValidBstCanvas,
-  renderStage1CustomMetrics,
-  renderStage2CustomMetrics,
-  renderStage3CustomMetrics,
+  VALID_BST_CODE_LINES, collectTreeValues, buildVBSteps,
+  buildValidBstStage2RangeSteps, buildValidBstStage3StackSteps,
+  renderValidBstCanvas, renderStage1CustomMetrics, renderStage2CustomMetrics, renderStage3CustomMetrics,
 };
 
 function parseAndBuild(inputs?: Record<string, any>): TreeNode | null {
@@ -61,6 +55,7 @@ export const validBstVisualizer = registerDeclarativeAlgorithm<VBStep>({
   name: '验证二叉搜索树',
   category: 'tree',
   icon: '🛡️',
+  hasDeductionTree: true,
   badge: { mode: '多阶段演化: 中序递归 · 上下界定界 · 显式栈', complexity: 'O(N) · O(H)' },
   card1Title: '📊 二叉搜索树拓扑与染色沙盘',
   card2Title: '🧭 中序序列输出与单调性监视器',

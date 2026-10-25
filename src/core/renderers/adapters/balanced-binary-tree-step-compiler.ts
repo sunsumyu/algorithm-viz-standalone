@@ -39,6 +39,18 @@ export interface BalancedTree037Step extends Tree036Step {
   visitedNodes?: number[];
   callTrace?: RecursiveCallTraceSnapshot;
   result?: any;
+  infoDetail?: {
+    left?: { isBalanced: boolean; height: number };
+    right?: { isBalanced: boolean; height: number };
+    combined?: { isBalanced: boolean; height: number; diff: number };
+  };
+  pruneDetail?: {
+    left?: number;
+    right?: number;
+    diff?: number;
+    isPruned?: boolean;
+    reason?: string;
+  };
 }
 
 /** 收集树中所有有效节点值，支持全景高亮与收尾状态守卫 */
@@ -91,7 +103,14 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           log: 'isBalanced(root = null)',
           codeLine: lines.entry,
           stageId: 'stage-1',
-          metrics: { '当前节点': 'null', '套路结构体': 'Info { isBalanced: true, height: 0 }', '整树平衡判定': 'TRUE (空树平衡)' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (空树平衡)',
+            '平衡判定': 'TRUE (空树平衡)',
+          },
           statusBadge: { text: '空树平衡', type: 'success' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -104,7 +123,14 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           log: 'process(null) -> return Info(true, 0)',
           codeLine: lines.baseCheck,
           stageId: 'stage-1',
-          metrics: { '当前节点': 'null', '当前高度': 0, '局部平衡性': 'TRUE', '整树平衡判定': 'TRUE (空树平衡)' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (天然平衡)',
+            '平衡判定': 'TRUE (天然平衡)',
+          },
           statusBadge: { text: '基准退出', type: 'info' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -117,7 +143,15 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           log: 'return process(null).isBalanced -> true',
           codeLine: lines.done,
           stageId: 'stage-1',
-          metrics: { '整树最大高度': 0, '整树平衡判定': 'TRUE (空树平衡)' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (全树平衡)',
+            '平衡判定': 'TRUE (全树平衡)',
+            '整树平衡判定': 'TRUE (空树平衡)',
+          },
           statusBadge: { text: '全树平衡: TRUE', type: 'success' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -135,7 +169,14 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         codeLine: lines.entry,
         stageId: 'stage-1',
         activeNodeId: 1,
-        metrics: { '当前节点': `Node(${r.val})`, '套路结构体': 'Info { isBalanced, height }', '平衡条件': '|左高 - 右高| <= 1', '整树平衡判定': '计算中' },
+        metrics: {
+          cur: `Node(${r.val})`,
+          '当前节点': `Node(${r.val})`,
+          diff: '待左右子树汇聚',
+          '高度差': '待左右子树汇聚',
+          result: '计算中',
+          '平衡判定': '计算中',
+        },
         statusBadge: { text: '套路启动', type: 'info' },
         callTrace: ctx.trace.snapshot(),
       };
@@ -150,7 +191,14 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         codeLine: lines.callProcess,
         stageId: 'stage-1',
         activeNodeId: 1,
-        metrics: { '当前节点': `Node(${r.val})`, '套路结构体': 'Info { isBalanced, height }', '整树平衡判定': '计算中' },
+        metrics: {
+          cur: `Node(${r.val})`,
+          '当前节点': `Node(${r.val})`,
+          diff: '待子树递归',
+          '高度差': '待子树递归',
+          result: '计算中',
+          '平衡判定': '计算中',
+        },
         statusBadge: { text: '调用 process', type: 'info' },
         callTrace: ctx.trace.snapshot(),
       };
@@ -165,9 +213,21 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         message: '遇到空子节点，天然平衡且高度为 0，返回 new Info(true, 0)。',
         log: 'process(null) -> Info(true, 0)',
         codeLine: lines.baseCheck,
-        metrics: { '当前节点': 'null', '当前高度': 0, '局部平衡性': 'TRUE' },
+        metrics: {
+          cur: 'null',
+          '当前节点': 'null',
+          diff: '0 (空节点)',
+          '高度差': '0 (空节点)',
+          result: 'TRUE (局部基准)',
+          '平衡判定': 'TRUE (局部基准)',
+        },
         statusBadge: { text: '空节点基准', type: 'info' },
-        customFields: { action: 'base-null' },
+        customFields: {
+          action: 'base-null',
+          infoDetail: {
+            combined: { isBalanced: true, height: 0, diff: 0 },
+          },
+        },
       };
     },
     onEnter: (node, ctx) => {
@@ -177,7 +237,14 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         message: `节点 Node(${node.val}) != null，判空未命中，准备向左孩子 process(x.left) 索要信息。`,
         log: `process(${node.val}): node != null`,
         codeLine: lines.baseCheck,
-        metrics: { '当前节点': `Node(${node.val})`, '整树平衡判定': '递归计算中' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: '待左右汇聚',
+          '高度差': '待左右汇聚',
+          result: '递归推演中',
+          '平衡判定': '递归推演中',
+        },
         statusBadge: { text: `考察节点 ${node.val}`, type: 'info' },
         customFields: { action: 'process-entry', activeNodeId: node.val },
       };
@@ -189,9 +256,20 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         message: `准备向左子树发起递归调用 process(x.left)，获取左子树的 Info{isBalanced, height}。`,
         log: `process(${node.val}): call process(left)`,
         codeLine: lines.leftCall,
-        metrics: { '当前节点': `Node(${node.val})`, '正在探测': '左子树' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: '探测左子树中',
+          '高度差': '探测左子树中',
+          result: '计算中',
+          '平衡判定': '计算中',
+        },
         statusBadge: { text: '索要左信息', type: 'info' },
-        customFields: { action: 'left-call', secondaryCurrent: node.left ? node.left.val : null, activeNodeId: node.val },
+        customFields: {
+          action: 'left-call',
+          secondaryCurrent: node.left ? node.left.val : null,
+          activeNodeId: node.val,
+        },
       };
     },
     beforeRight: (node, leftRes, ctx) => {
@@ -201,9 +279,23 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         message: `左子树信息已就绪 (bal=${leftRes.isBalanced}, h=${leftRes.height})，现在向右子树发起递归调用 process(x.right)。`,
         log: `process(${node.val}): call process(right)`,
         codeLine: lines.rightCall,
-        metrics: { '当前节点': `Node(${node.val})`, '左高已锁定': leftRes.height, '正在探测': '右子树' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: `左高=${leftRes.height} (待右高)`,
+          '高度差': `左高=${leftRes.height} (待右高)`,
+          result: '计算中',
+          '平衡判定': '计算中',
+        },
         statusBadge: { text: '索要右信息', type: 'info' },
-        customFields: { action: 'right-call', secondaryCurrent: node.right ? node.right.val : null, activeNodeId: node.val },
+        customFields: {
+          action: 'right-call',
+          secondaryCurrent: node.right ? node.right.val : null,
+          activeNodeId: node.val,
+          infoDetail: {
+            left: { isBalanced: leftRes.isBalanced, height: leftRes.height },
+          },
+        },
       };
     },
     onCombine: (node, left, right, ctx) => {
@@ -231,12 +323,20 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         activeNodeId: node.val,
         visitedNodes: [...ctx.visitedNodes],
         metrics: {
+          cur: `Node(${node.val})`,
           '当前节点': `Node(${node.val})`,
-          '返回高度': h,
-          '返回平衡性': bal ? 'TRUE' : 'FALSE',
+          diff: `|${left.height} - ${right.height}| = ${diff}`,
+          '高度差': `|${left.height} - ${right.height}| = ${diff}`,
+          result: bal ? 'TRUE (平衡)' : 'FALSE (失衡)',
+          '平衡判定': bal ? 'TRUE (平衡)' : 'FALSE (失衡)',
         },
         statusBadge: { text: bal ? `返回 Info: 平衡` : `返回 Info: 失衡`, type: bal ? 'success' : 'danger' },
         callTrace: ctx.trace.snapshot(),
+        infoDetail: {
+          left: { isBalanced: left.isBalanced, height: left.height },
+          right: { isBalanced: right.isBalanced, height: right.height },
+          combined: { isBalanced: bal, height: h, diff },
+        },
       };
 
       return {
@@ -247,17 +347,22 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         log: `node ${node.val}: l=(${left.isBalanced}, ${left.height}), r=(${right.isBalanced}, ${right.height}) -> bal=${bal}, h=${h}`,
         codeLine: lines.aggregateInfo,
         metrics: {
+          cur: `Node(${node.val})`,
           '当前节点': `Node(${node.val})`,
-          '左子树高度': left.height,
-          '右子树高度': right.height,
-          '高度差': diff,
-          '局部平衡性': bal ? 'TRUE' : 'FALSE (失衡)',
-          '整树平衡判定': bal ? '局部平衡' : 'FALSE (存在失衡)',
+          diff: `|${left.height} - ${right.height}| = ${diff}`,
+          '高度差': `|${left.height} - ${right.height}| = ${diff}`,
+          result: bal ? 'TRUE (局部平衡)' : 'FALSE (失衡)',
+          '平衡判定': bal ? 'TRUE (局部平衡)' : 'FALSE (失衡)',
         },
         statusBadge: { text: bal ? `节点 ${node.val} 平衡` : `节点 ${node.val} 失衡`, type: bal ? 'info' : 'warning' },
         customFields: {
           secondaryCurrent: node.left ? node.left.val : (node.right ? node.right.val : null),
           activeNodeId: node.val,
+          infoDetail: {
+            left: { isBalanced: left.isBalanced, height: left.height },
+            right: { isBalanced: right.isBalanced, height: right.height },
+            combined: { isBalanced: bal, height: h, diff },
+          },
         },
         extraSteps: [returnInfoStep],
       };
@@ -280,13 +385,21 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         log: `Final return process(root).isBalanced = ${finalInfo.isBalanced}`,
         codeLine: lines.done,
         metrics: {
-          '整树最大高度': finalInfo.height,
+          cur: root ? `Node(${root.val})` : 'null',
+          '当前节点': root ? `Node(${root.val})` : 'null',
+          diff: `最大深度 ${finalInfo.height}`,
+          '高度差': `最大深度 ${finalInfo.height}`,
+          result: finalInfo.isBalanced ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
+          '平衡判定': finalInfo.isBalanced ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
           '整树平衡判定': finalInfo.isBalanced ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
         },
         statusBadge: { text: finalInfo.isBalanced ? '全树平衡: TRUE' : '判定失衡: FALSE', type: finalInfo.isBalanced ? 'success' : 'danger' },
         customFields: {
           visitedNodes: allTreeVals,
           activeNodeId: 1,
+          infoDetail: {
+            combined: { isBalanced: finalInfo.isBalanced, height: finalInfo.height, diff: 0 },
+          },
         },
       };
     },
@@ -319,7 +432,14 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           log: 'isBalanced(root = null)',
           codeLine: lines.entry,
           stageId: 'stage-2',
-          metrics: { '整树平衡判定': 'TRUE (空树平衡)', '剪枝状态': '无失衡' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (空树平衡)',
+            '平衡判定': 'TRUE (空树平衡)',
+          },
           statusBadge: { text: '空树平衡', type: 'success' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -332,7 +452,14 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           log: 'check(null) -> return 0',
           codeLine: lines.baseNull,
           stageId: 'stage-2',
-          metrics: { '当前高度': 0, '整树平衡判定': 'TRUE (空树平衡)' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (基准 0)',
+            '平衡判定': 'TRUE (基准 0)',
+          },
           statusBadge: { text: '高度: 0', type: 'info' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -345,7 +472,15 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           log: 'return check(root) != -1 -> true',
           codeLine: lines.done,
           stageId: 'stage-2',
-          metrics: { '根节点返回值': 0, '整树平衡判定': 'TRUE (空树平衡)' },
+          metrics: {
+            cur: 'null',
+            '当前节点': 'null',
+            diff: '0',
+            '高度差': '0',
+            result: 'TRUE (全树平衡)',
+            '平衡判定': 'TRUE (全树平衡)',
+            '整树平衡判定': 'TRUE (空树平衡)',
+          },
           statusBadge: { text: '全树平衡: TRUE', type: 'success' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -363,7 +498,14 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           log: `isBalanced(root: ${r.val}), 调用 check(root)`,
           codeLine: lines.entry,
           stageId: 'stage-2',
-          metrics: { '当前考察节点': `Node(${r.val})`, '剪枝状态': '正常递归中', '整树平衡判定': '计算中' },
+          metrics: {
+            cur: `Node(${r.val})`,
+            '当前节点': `Node(${r.val})`,
+            diff: '待深入探测',
+            '高度差': '待深入探测',
+            result: '递归计算中',
+            '平衡判定': '递归计算中',
+          },
           statusBadge: { text: '剪枝检测启动', type: 'info' },
           callTrace: ctx.trace.snapshot(),
         },
@@ -379,10 +521,18 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         message: '当前递归节点为空，子树高度为 0，未触发 -1 剪枝标记。',
         log: 'check(null) -> return 0',
         codeLine: lines.baseNull,
-        metrics: { '当前节点': 'null', '当前高度': 0, '剪枝状态': '正常' },
+        metrics: {
+          cur: 'null',
+          '当前节点': 'null',
+          diff: '0 (基准)',
+          '高度差': '0 (基准)',
+          result: '正常 (高 0)',
+          '平衡判定': '正常 (高 0)',
+        },
         statusBadge: { text: '空节点高度 0', type: 'info' },
         customFields: {
           action: 'base-null',
+          pruneDetail: { left: 0, right: 0, diff: 0, isPruned: false },
         },
       };
     },
@@ -393,7 +543,14 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         message: `进入 Node(${node.val})，准备计算其左右子树高度。`,
         log: `check(Node(${node.val}))`,
         codeLine: lines.entry,
-        metrics: { '当前考察节点': `Node(${node.val})`, '剪枝状态': '正常递归中', '整树平衡判定': '计算中' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: '待左右计算',
+          '高度差': '待左右计算',
+          result: '正常递归中',
+          '平衡判定': '正常递归中',
+        },
         statusBadge: { text: '深入调用', type: 'info' },
       };
     },
@@ -404,7 +561,14 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         message: `调用 check(node.left) 获取左子树高度；若左子树返回 -1 则立即触发提前剪枝。`,
         log: `check(${node.val}) -> checking left child`,
         codeLine: lines.checkLeft,
-        metrics: { '当前节点': `Node(${node.val})`, '正在探测': '左子树', '整树平衡判定': '计算中' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: '探测左子树中',
+          '高度差': '探测左子树中',
+          result: '计算中',
+          '平衡判定': '计算中',
+        },
         statusBadge: { text: '探测左子树', type: 'info' },
         customFields: {
           action: 'check-left',
@@ -424,11 +588,19 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
             message: `左子树已经失衡 (left == -1)，无需再探索右子树，直接返回 -1 逐层击穿调用栈！`,
             log: `node ${node.val}: left == -1 -> prune and return -1`,
             codeLine: lines.pruneLeft,
-            metrics: { '当前节点': `Node(${node.val})`, '剪枝原因': '左子树失衡', '返回高度': -1, '整树平衡判定': 'FALSE (提前剪枝)' },
+            metrics: {
+              cur: `Node(${node.val})`,
+              '当前节点': `Node(${node.val})`,
+              diff: '左子树失衡 (-1)',
+              '高度差': '左子树失衡 (-1)',
+              result: 'FALSE (提前剪枝)',
+              '平衡判定': 'FALSE (提前剪枝)',
+            },
             statusBadge: { text: '左侧剪枝返回 -1', type: 'danger' },
             customFields: {
               action: 'prune-left',
               pruned: true,
+              pruneDetail: { left: -1, isPruned: true, reason: '左子树已失衡提前剪枝' },
             },
           };
         }
@@ -443,11 +615,19 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
             message: `右子树已经失衡 (right == -1)，无需继续计算当前节点，直接返回 -1。`,
             log: `node ${node.val}: right == -1 -> prune and return -1`,
             codeLine: lines.pruneRight,
-            metrics: { '当前节点': `Node(${node.val})`, '剪枝原因': '右子树失衡', '返回高度': -1, '整树平衡判定': 'FALSE (提前剪枝)' },
+            metrics: {
+              cur: `Node(${node.val})`,
+              '当前节点': `Node(${node.val})`,
+              diff: '右子树失衡 (-1)',
+              '高度差': '右子树失衡 (-1)',
+              result: 'FALSE (提前剪枝)',
+              '平衡判定': 'FALSE (提前剪枝)',
+            },
             statusBadge: { text: '右侧剪枝返回 -1', type: 'danger' },
             customFields: {
               action: 'prune-right',
               pruned: true,
+              pruneDetail: { right: -1, isPruned: true, reason: '右子树已失衡提前剪枝' },
             },
           };
         }
@@ -461,11 +641,19 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         message: `调用 check(node.right) 获取右子树高度；若右子树返回 -1 则同样触发剪枝。`,
         log: `check(${node.val}) -> checking right child`,
         codeLine: lines.checkRight,
-        metrics: { '当前节点': `Node(${node.val})`, '左高已锁定': left, '正在探测': '右子树', '整树平衡判定': '计算中' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: `左高=${left} (待右高)`,
+          '高度差': `左高=${left} (待右高)`,
+          result: '正常递归中',
+          '平衡判定': '正常递归中',
+        },
         statusBadge: { text: '探测右子树', type: 'info' },
         customFields: {
           action: 'check-right',
           secondaryCurrent: node.right ? node.right.val : null,
+          pruneDetail: { left },
         },
       };
     },
@@ -475,12 +663,12 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         ctx.trace.addConditionHit(`④ |left - right| = |${left} - ${right}| = ${diff} > 1 √ 命中 -> 标记失衡 return -1`, ctx.depth);
         ctx.trace.addReturnLeaf('return -1 (高度差越界)', ctx.depth);
         const failMetrics: Record<string, string | number> = {
+          cur: `Node(${node.val})`,
           '当前节点': `Node(${node.val})`,
-          '左高': left,
-          '右高': right,
-          '高度差': diff,
-          '返回高度': -1,
-          '整树平衡判定': 'FALSE (高度差越界)',
+          diff: `|${left} - ${right}| = ${diff} (> 1)`,
+          '高度差': `|${left} - ${right}| = ${diff} (> 1)`,
+          result: 'FALSE (高度差越界剪枝)',
+          '平衡判定': 'FALSE (高度差越界剪枝)',
         };
         return {
           result: -1,
@@ -493,6 +681,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           statusBadge: { text: '高度差超标: -1', type: 'danger' },
           customFields: {
             pruned: true,
+            pruneDetail: { left, right, diff, isPruned: true, reason: '高度差超过 1 触发剪枝' },
           },
         };
       }
@@ -512,18 +701,26 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.returnHeight,
         stageId: 'stage-2',
         visitedNodes: [...ctx.visitedNodes],
-        metrics: { '当前节点': `Node(${node.val})`, '左高': left, '右高': right, '高度差': diff, '返回高度': curH, '整树平衡判定': '局部平衡' },
+        metrics: {
+          cur: `Node(${node.val})`,
+          '当前节点': `Node(${node.val})`,
+          diff: `|${left} - ${right}| = ${diff}`,
+          '高度差': `|${left} - ${right}| = ${diff}`,
+          result: `TRUE (局部平衡 高${curH})`,
+          '平衡判定': `TRUE (局部平衡 高${curH})`,
+        },
         statusBadge: { text: `节点 ${node.val} 高度: ${curH}`, type: 'info' },
         callTrace: ctx.trace.snapshot(),
         result: curH,
       };
 
       const passMetrics: Record<string, string | number> = {
+        cur: `Node(${node.val})`,
         '当前节点': `Node(${node.val})`,
-        '左高': left,
-        '右高': right,
-        '高度差': diff,
-        '差值判定': '合格 (<= 1)',
+        diff: `|${left} - ${right}| = ${diff}`,
+        '高度差': `|${left} - ${right}| = ${diff}`,
+        result: 'TRUE (差值合格 <= 1)',
+        '平衡判定': 'TRUE (差值合格 <= 1)',
       };
 
       return {
@@ -535,6 +732,9 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.checkDiff,
         metrics: passMetrics,
         statusBadge: { text: '高度差合格', type: 'info' },
+        customFields: {
+          pruneDetail: { left, right, diff, isPruned: false },
+        },
         extraSteps: [returnHeightStep],
       };
     },
@@ -556,7 +756,15 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           : `整树计算过程中击穿触发了 -1 失衡返回，整棵二叉树为非平衡二叉树！`,
         log: `Final return check(root) != -1 -> ${isBal} (res: ${finalRes})`,
         codeLine: lines.done,
-        metrics: { '根节点返回值': finalRes, '整树平衡判定': isBal ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)' },
+        metrics: {
+          cur: root ? `Node(${root.val})` : 'null',
+          '当前节点': root ? `Node(${root.val})` : 'null',
+          diff: isBal ? `整树高度 ${finalRes}` : '剪枝击穿失衡',
+          '高度差': isBal ? `整树高度 ${finalRes}` : '剪枝击穿失衡',
+          result: isBal ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
+          '平衡判定': isBal ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
+          '整树平衡判定': isBal ? 'TRUE (全树平衡)' : 'FALSE (存在失衡)',
+        },
         statusBadge: { text: isBal ? '全树平衡: TRUE' : '判定失衡: FALSE', type: isBal ? 'success' : 'danger' },
         customFields: {
           visitedNodes: allTreeVals,
@@ -584,7 +792,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       log: 'isBalanced(root = null)',
       codeLine: lines.entry,
       stageId: 'stage-3',
-      metrics: { '整树平衡判定': 'TRUE (空树平衡)', '栈大小': 0 },
+      metrics: {
+        cur: 'null',
+        '当前节点': 'null',
+        diff: '0',
+        '高度差': '0',
+        result: 'TRUE (空树平衡)',
+        '平衡判定': 'TRUE (空树平衡)',
+      },
       statusBadge: { text: '空树平衡', type: 'success' },
     });
     steps.push({
@@ -595,7 +810,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       log: 'root == null -> return true',
       codeLine: lines.entry,
       stageId: 'stage-3',
-      metrics: { '整树平衡判定': 'TRUE (空树平衡)', '栈大小': 0 },
+      metrics: {
+        cur: 'null',
+        '当前节点': 'null',
+        diff: '0',
+        '高度差': '0',
+        result: 'TRUE (空树平衡)',
+        '平衡判定': 'TRUE (空树平衡)',
+      },
       statusBadge: { text: '立即退出', type: 'info' },
     });
     steps.push({
@@ -606,7 +828,15 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       log: 'return true',
       codeLine: lines.done,
       stageId: 'stage-3',
-      metrics: { '整树平衡判定': 'TRUE (空树平衡)' },
+      metrics: {
+        cur: 'null',
+        '当前节点': 'null',
+        diff: '0',
+        '高度差': '0',
+        result: 'TRUE (全树平衡)',
+        '平衡判定': 'TRUE (全树平衡)',
+        '整树平衡判定': 'TRUE (空树平衡)',
+      },
       statusBadge: { text: '全树平衡: TRUE', type: 'success' },
     });
     return steps;
@@ -621,12 +851,27 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
     log: `isBalanced(root: ${root.val}), 初始化 stack 与 heightMap`,
     codeLine: lines.entry,
     stageId: 'stage-3',
-    metrics: { '当前考察节点': `Node(${root.val})`, '后序栈深度': 0, '已结算高度节点数': 0, '整树平衡判定': '计算中' },
+    metrics: {
+      cur: `Node(${root.val})`,
+      '当前节点': `Node(${root.val})`,
+      diff: '栈初始化 (深度 0)',
+      '高度差': '栈初始化 (深度 0)',
+      result: '计算中',
+      '平衡判定': '计算中',
+    },
     statusBadge: { text: '显式栈启动', type: 'info' },
   });
 
   const stack: TreeNode[] = [];
   const heightMap = new Map<TreeNode, number>();
+  const toHeightMapObj = (): Record<number, number> => {
+    const res: Record<number, number> = {};
+    heightMap.forEach((v, k) => {
+      res[k.val] = v;
+    });
+    return res;
+  };
+
   let curr: TreeNode | null = root;
   let lastVisited: TreeNode | null = null;
   let isBroken = false;
@@ -644,11 +889,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.pushLeft,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
+        heightMap: toHeightMapObj(),
         metrics: {
-          '当前压栈节点': `Node(${curr.val})`,
-          '后序栈深度': stack.length,
-          '栈顶节点': `Node(${stack[stack.length - 1].val})`,
-          '整树平衡判定': '计算中',
+          cur: `Node(${curr.val})`,
+          '当前节点': `Node(${curr.val})`,
+          diff: `栈深 ${stack.length}`,
+          '高度差': `栈深 ${stack.length}`,
+          result: '深入左子树中',
+          '平衡判定': '深入左子树中',
         },
         statusBadge: { text: `入栈: ${curr.val}`, type: 'info' },
       });
@@ -669,11 +917,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.checkRight,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
+        heightMap: toHeightMapObj(),
         metrics: {
-          '当前栈顶': `Node(${top.val})`,
-          '转向右孩子': `Node(${top.right.val})`,
-          '后序栈深度': stack.length,
-          '整树平衡判定': '计算中',
+          cur: `Node(${top.val})`,
+          '当前节点': `Node(${top.val})`,
+          diff: `转向右孩子 Node(${top.right.val})`,
+          '高度差': `转向右孩子 Node(${top.right.val})`,
+          result: '计算中',
+          '平衡判定': '计算中',
         },
         statusBadge: { text: `转向右: ${top.right.val}`, type: 'info' },
       });
@@ -694,12 +945,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.popAndCalc,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
+        heightMap: toHeightMapObj(),
         metrics: {
-          '出栈节点': `Node(${top.val})`,
-          '左子树高度': l,
-          '右子树高度': r,
-          '高度差': diff,
-          '整树平衡判定': '局部计算中',
+          cur: `Node(${top.val})`,
+          '当前节点': `Node(${top.val})`,
+          diff: `|${l} - ${r}| = ${diff}`,
+          '高度差': `|${l} - ${r}| = ${diff}`,
+          result: diff <= 1 ? '局部平衡' : '失衡超标',
+          '平衡判定': diff <= 1 ? '局部平衡' : '失衡超标',
         },
         statusBadge: { text: `出栈结算: ${top.val}`, type: 'info' },
       });
@@ -714,12 +967,15 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
           codeLine: lines.checkDiff,
           stageId: 'stage-3',
           stackState: stack.map((n) => n.val),
+          heightMap: toHeightMapObj(),
           metrics: {
-            '失衡节点': `Node(${top.val})`,
-            '左子树高度': l,
-            '右子树高度': r,
-            '高度差': diff,
-            '整树平衡判定': 'FALSE (高度差越界)',
+            cur: `Node(${top.val})`,
+            '当前节点': `Node(${top.val})`,
+            diff: `|${l} - ${r}| = ${diff} (> 1)`,
+            '高度差': `|${l} - ${r}| = ${diff} (> 1)`,
+            result: 'FALSE (高度差越界终止)',
+            '平衡判定': 'FALSE (高度差越界终止)',
+            '整树平衡判定': 'FALSE (高度差越界终止)',
           },
           statusBadge: { text: '判定失衡: FALSE', type: 'danger' },
         });
@@ -740,11 +996,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         codeLine: lines.saveHeight,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
+        heightMap: toHeightMapObj(),
         metrics: {
+          cur: `Node(${top.val})`,
           '当前节点': `Node(${top.val})`,
-          '自身高度': h,
-          '已结算节点数': heightMap.size,
-          '整树平衡判定': '局部平衡',
+          diff: `高度=${h} (差值${diff}<=1)`,
+          '高度差': `高度=${h} (差值${diff}<=1)`,
+          result: 'TRUE (局部平衡)',
+          '平衡判定': 'TRUE (局部平衡)',
         },
         statusBadge: { text: `高度: ${h}`, type: 'success' },
       });
@@ -763,9 +1022,14 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
     log: 'while loop finished without imbalance -> return true',
     codeLine: lines.done,
     stageId: 'stage-3',
+    heightMap: toHeightMapObj(),
     metrics: {
-      '整树最大高度': heightMap.get(root) || 0,
-      '遍历总节点数': heightMap.size,
+      cur: root ? `Node(${root.val})` : 'null',
+      '当前节点': root ? `Node(${root.val})` : 'null',
+      diff: `全树最大高度 ${heightMap.get(root) || 0}`,
+      '高度差': `全树最大高度 ${heightMap.get(root) || 0}`,
+      result: 'TRUE (全树平衡)',
+      '平衡判定': 'TRUE (全树平衡)',
       '整树平衡判定': 'TRUE (全树平衡)',
     },
     statusBadge: { text: '全树平衡: TRUE', type: 'success' },

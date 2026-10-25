@@ -19,7 +19,8 @@ export { discretize, buildFenwickInversionSteps };
 export const fenwickInversionVisualizer = registerDeclarativeAlgorithm<FenwickInversionStep>({
   id: 'fenwick-inversion-109',
   name: '树状数组求逆序对数 (Class 109)',
-  aliases: ['class109-code01', 'fenwick-inversion', 'fenwick-inversion-109', 'inversion-pairs-bit'],
+  aliases: ['class109-code01', 'fenwick-inversion', 'fenwick-inversion-109', 'inversion-pairs-bit', 'p1908'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '🔄',
   difficulty: 2,

@@ -74,27 +74,27 @@ export class BottomLeftCanvasAdapter {
   ): void {
     if (!container) return;
     container.innerHTML = '';
-    container.className = 'w-full h-full flex flex-col gap-2.5 p-3 text-xs font-sans overflow-hidden';
+    container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
     // 1. 顶部 4 格关键指标
     const statsRow = document.createElement('div');
-    statsRow.className = 'grid grid-cols-4 gap-2 flex-shrink-0';
+    statsRow.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; flex-shrink:0;';
     statsRow.innerHTML = `
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">考察节点</span>
-        <span class="text-amber-300 font-mono font-bold text-sm mt-0.5 truncate">${step.current != null ? `Node(${step.current})` : '-'}</span>
+      <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#b45309; font-weight:700; text-transform:uppercase;">考察节点</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.current != null ? `Node(${step.current})` : '—'}</div>
       </div>
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">当前深度</span>
-        <span class="text-blue-300 font-mono font-bold text-sm mt-0.5 truncate">${step.depth}</span>
+      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#0369a1; font-weight:700; text-transform:uppercase;">当前深度</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px;">${step.depth}</div>
       </div>
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">最深纪录</span>
-        <span class="text-purple-300 font-mono font-bold text-sm mt-0.5 truncate">${step.maxDepth >= 0 ? step.maxDepth : '-'}</span>
+      <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#7e22ce; font-weight:700; text-transform:uppercase;">最深纪录</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#9333ea; margin-top:2px;">${step.maxDepth >= 0 ? step.maxDepth : '—'}</div>
       </div>
-      <div class="bg-slate-800/80 border border-slate-700/60 rounded-lg p-2 flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-semibold tracking-wider">锁定左下角</span>
-        <span class="text-emerald-300 font-mono font-bold text-sm mt-0.5 truncate">${step.bottomLeft != null ? `Node(${step.bottomLeft})` : '-'}</span>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#15803d; font-weight:700; text-transform:uppercase;">锁定左下角</div>
+        <div style="font-size:13px; font-weight:800; font-family:ui-monospace,monospace; color:#16a34a; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.bottomLeft != null ? `Node(${step.bottomLeft})` : '—'}</div>
       </div>
     `;
     container.appendChild(statsRow);
@@ -102,39 +102,40 @@ export class BottomLeftCanvasAdapter {
     // 2. 核心状态展示区：Stage 1 为递归推演栈，Stage 2/3 为 BFS 队列监视器
     if (step.stageId === 'stage-1' && step.callTrace) {
       const traceBox = document.createElement('div');
-      traceBox.className = 'flex-1 min-h-0 bg-slate-900/60 border border-slate-800 rounded-lg p-2 overflow-y-auto';
+      traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
       RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
         title: '🌲 先序先登 DFS 递归调用推演栈 (LC 513)',
+        theme: 'light',
         maxHeight: '100%',
+        showTerminalHeader: true,
       });
       container.appendChild(traceBox);
     } else if (step.queueState && step.queueState.length >= 0) {
       const queueBox = document.createElement('div');
-      queueBox.className = 'flex-1 min-h-0 flex flex-col gap-2 bg-slate-900/60 border border-slate-800 rounded-lg p-2.5 overflow-y-auto';
+      queueBox.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; overflow-y:auto;';
 
       const queueHeader = document.createElement('div');
-      queueHeader.className = 'flex items-center justify-between text-slate-400 text-[11px] font-semibold';
+      queueHeader.style.cssText = 'display:flex; align-items:center; justify-content:space-between; font-size:11px; font-weight:700; color:#475569;';
       queueHeader.innerHTML = `
         <span>📦 BFS 队列状态 (队首 ➔ 队尾)</span>
-        <span class="text-slate-500 font-mono">Size: ${step.queueState.length}</span>
+        <span style="font-family:ui-monospace,monospace; color:#64748b; font-size:10.5px;">Size: ${step.queueState.length}</span>
       `;
       queueBox.appendChild(queueHeader);
 
       const queueRow = document.createElement('div');
-      queueRow.className = 'flex flex-wrap gap-2 items-center';
+      queueRow.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px; align-items:center; min-height:28px;';
 
       if (step.queueState.length === 0) {
-        queueRow.innerHTML = `<span class="text-slate-500 italic text-xs">(队列为空)</span>`;
+        queueRow.innerHTML = `<span style="color:#94a3b8; font-style:italic; font-size:11px;">(队列为空)</span>`;
       } else {
         step.queueState.forEach((v, idx) => {
           const isHead = idx === 0;
           const slot = document.createElement('div');
-          slot.className = `px-2.5 py-1.5 rounded border font-mono text-xs font-bold transition-all ${
-            isHead
-              ? 'bg-amber-500/20 border-amber-400 text-amber-200 shadow-sm shadow-amber-500/10'
-              : 'bg-slate-800/80 border-slate-700 text-slate-300'
-          }`;
-          slot.innerHTML = `<span>Node(${v})</span>${isHead ? '<span class="text-[9px] text-amber-300 ml-1 font-normal">(首)</span>' : ''}`;
+          const bg = isHead ? '#fffbeb' : '#f8fafc';
+          const border = isHead ? '#fde68a' : '#cbd5e1';
+          const color = isHead ? '#b45309' : '#334155';
+          slot.style.cssText = `padding:3px 8px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; font-weight:700; background:${bg}; border:1px solid ${border}; color:${color}; transition:all 0.15s;`;
+          slot.innerHTML = `<span>Node(${v})</span>${isHead ? '<span style="font-size:9px; color:#d97706; margin-left:3px; font-weight:normal;">(首)</span>' : ''}`;
           queueRow.appendChild(slot);
         });
       }
@@ -145,12 +146,10 @@ export class BottomLeftCanvasAdapter {
     // 3. 当前操作动作与决策总结
     const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.decision.includes('排空') || step.statusBadge?.type === 'success';
     const summaryBox = document.createElement('div');
-    summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed ${
-      isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
-    }`;
+    summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
     summaryBox.innerHTML = `
-      <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 当前决策: ${step.decision}</div>
-      <div class="text-slate-400">${step.message}</div>
+      <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 当前决策: ${step.decision}</div>
+      <div style="color:#64748b; font-size:11px;">${step.message}</div>
     `;
     container.appendChild(summaryBox);
   }

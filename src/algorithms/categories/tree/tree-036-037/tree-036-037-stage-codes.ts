@@ -812,13 +812,73 @@ export const LCA_037_LINES = {
 // ----------------------------------------------------
 // 11. LCA BST (Class 037 Code02)
 // ----------------------------------------------------
-export const LCA_BST_037_CODES = {
+export const LCA_BST_037_STAGE1_CODES = {
+  java: [
+    'public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {',
+    '    if (root == null) return null;',
+    '    if (root.val > p.val && root.val > q.val) {',
+    '        return lowestCommonAncestor(root.left, p, q);',
+    '    }',
+    '    if (root.val < p.val && root.val < q.val) {',
+    '        return lowestCommonAncestor(root.right, p, q);',
+    '    }',
+    '    return root;',
+    '}',
+  ],
+  cpp: [
+    'TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {',
+    '    if (!root) return nullptr;',
+    '    if (root->val > p->val && root->val > q->val) {',
+    '        return lowestCommonAncestor(root->left, p, q);',
+    '    }',
+    '    if (root->val < p->val && root->val < q->val) {',
+    '        return lowestCommonAncestor(root->right, p, q);',
+    '    }',
+    '    return root;',
+    '}',
+  ],
+  python: [
+    'def lowestCommonAncestor(root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:',
+    '    if not root: return None',
+    '    if root.val > p.val and root.val > q.val:',
+    '        return lowestCommonAncestor(root.left, p, q)',
+    '    if root.val < p.val and root.val < q.val:',
+    '        return lowestCommonAncestor(root.right, p, q)',
+    '    return root',
+  ],
+  javascript: [
+    'function lowestCommonAncestor(root, p, q) {',
+    '    if (!root) return null;',
+    '    if (root.val > p.val && root.val > q.val) {',
+    '        return lowestCommonAncestor(root.left, p, q);',
+    '    }',
+    '    if (root.val < p.val && root.val < q.val) {',
+    '        return lowestCommonAncestor(root.right, p, q);',
+    '    }',
+    '    return root;',
+    '}',
+  ],
+};
+
+export const LCA_BST_037_STAGE1_LINES = {
+  entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
+  nullCheck: { java: 2, cpp: 2, python: 2, javascript: 2 },
+  goLeft: { java: 4, cpp: 4, python: 4, javascript: 4 },
+  goRight: { java: 7, cpp: 7, python: 6, javascript: 7 },
+  splitFork: { java: 9, cpp: 9, python: 7, javascript: 9 },
+};
+
+export const LCA_BST_037_STAGE2_CODES = {
   java: [
     'public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {',
     '    while (root != null) {',
-    '        if (root.val > p.val && root.val > q.val) root = root.left;',
-    '        else if (root.val < p.val && root.val < q.val) root = root.right;',
-    '        else return root;',
+    '        if (root.val > p.val && root.val > q.val) {',
+    '            root = root.left;',
+    '        } else if (root.val < p.val && root.val < q.val) {',
+    '            root = root.right;',
+    '        } else {',
+    '            return root;',
+    '        }',
     '    }',
     '    return null;',
     '}',
@@ -826,9 +886,13 @@ export const LCA_BST_037_CODES = {
   cpp: [
     'TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {',
     '    while (root) {',
-    '        if (root->val > p->val && root->val > q->val) root = root->left;',
-    '        else if (root->val < p->val && root->val < q->val) root = root->right;',
-    '        else return root;',
+    '        if (root->val > p->val && root->val > q->val) {',
+    '            root = root->left;',
+    '        } else if (root->val < p->val && root->val < q->val) {',
+    '            root = root->right;',
+    '        } else {',
+    '            return root;',
+    '        }',
     '    }',
     '    return nullptr;',
     '}',
@@ -836,29 +900,42 @@ export const LCA_BST_037_CODES = {
   python: [
     'def lowestCommonAncestor(root: TreeNode, p: TreeNode, q: TreeNode) -> TreeNode:',
     '    while root:',
-    '        if root.val > p.val and root.val > q.val: root = root.left',
-    '        elif root.val < p.val and root.val < q.val: root = root.right',
-    '        else: return root',
+    '        if root.val > p.val and root.val > q.val:',
+    '            root = root.left',
+    '        elif root.val < p.val and root.val < q.val:',
+    '            root = root.right',
+    '        else:',
+    '            return root',
     '    return None',
   ],
   javascript: [
     'function lowestCommonAncestor(root, p, q) {',
     '    while (root) {',
-    '        if (root.val > p.val && root.val > q.val) root = root.left;',
-    '        else if (root.val < p.val && root.val < q.val) root = root.right;',
-    '        else return root;',
+    '        if (root.val > p.val && root.val > q.val) {',
+    '            root = root.left;',
+    '        } else if (root.val < p.val && root.val < q.val) {',
+    '            root = root.right;',
+    '        } else {',
+    '            return root;',
+    '        }',
     '    }',
     '    return null;',
     '}',
   ],
 };
 
-export const LCA_BST_037_LINES = {
+export const LCA_BST_037_STAGE2_LINES = {
   entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
-  goLeft: { java: 3, cpp: 3, python: 3, javascript: 3 },
-  goRight: { java: 4, cpp: 4, python: 4, javascript: 4 },
-  splitFork: { java: 5, cpp: 5, python: 5, javascript: 5 },
+  whileLoop: { java: 2, cpp: 2, python: 2, javascript: 2 },
+  goLeft: { java: 4, cpp: 4, python: 4, javascript: 4 },
+  goRight: { java: 6, cpp: 6, python: 6, javascript: 6 },
+  splitFork: { java: 8, cpp: 8, python: 8, javascript: 8 },
+  returnNull: { java: 11, cpp: 11, python: 9, javascript: 11 },
 };
+
+// 向后兼容别名
+export const LCA_BST_037_CODES = LCA_BST_037_STAGE1_CODES;
+export const LCA_BST_037_LINES = LCA_BST_037_STAGE1_LINES;
 
 // ----------------------------------------------------
 // 12. Path Sum II (Class 037 Code03)
@@ -1380,8 +1457,13 @@ export const HOUSE_ROBBER_III_037_CODES = {
 
 export const HOUSE_ROBBER_III_037_LINES = {
   entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
+  callDp: { java: 2, cpp: 2, python: 9, javascript: 10 },
+  returnMax: { java: 3, cpp: 3, python: 9, javascript: 11 },
+  dpHeader: { java: 6, cpp: 5, python: 2, javascript: 2 },
   baseCheck: { java: 7, cpp: 6, python: 3, javascript: 3 },
+  recurseLeft: { java: 8, cpp: 7, python: 4, javascript: 4 },
+  recurseRight: { java: 9, cpp: 7, python: 5, javascript: 4 },
   robCur: { java: 10, cpp: 8, python: 6, javascript: 6 },
   notRob: { java: 11, cpp: 9, python: 7, javascript: 7 },
-  returnMax: { java: 3, cpp: 3, python: 9, javascript: 11 },
+  returnDp: { java: 12, cpp: 10, python: 8, javascript: 8 },
 };

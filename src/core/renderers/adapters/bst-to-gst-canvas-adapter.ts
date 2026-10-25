@@ -45,8 +45,8 @@ export function renderBstToGstCanvas(container: HTMLElement, step: BstToGstStep)
  * Card 2: 领域指标监控看板 (Clean Custom Metrics DOM)
  */
 export function renderBstToGstCustomMetrics(container: HTMLElement, step: BstToGstStep): void {
-  const oldValStr = step.currOldVal !== null ? String(step.currOldVal) : '-';
-  const newValStr = step.currNewVal !== null ? String(step.currNewVal) : '-';
+  const oldValStr = step.currOldVal !== null ? String(step.currOldVal) : '—';
+  const newValStr = step.currNewVal !== null ? String(step.currNewVal) : '—';
 
   const reverseSeqHtml =
     step.reverseSeq.length > 0
@@ -141,7 +141,12 @@ export function renderBstToGstCustomMetrics(container: HTMLElement, step: BstToG
     const traceBox = document.createElement('div');
     traceBox.style.cssText =
       'flex:1; min-height:160px; max-height:260px; overflow:hidden; display:flex; flex-direction:column;';
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
+    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
+      title: '📜 反向中序递归调用推演栈',
+      theme: 'light',
+      maxHeight: '100%',
+      showTerminalHeader: true,
+    });
     container.appendChild(traceBox);
   }
 

@@ -102,8 +102,8 @@ export class TarjanBridgeCanvasAdapter {
     }
 
     container.innerHTML = `
-      <div class="w-full h-full flex items-center justify-center bg-slate-950 p-2 select-none overflow-hidden">
-        <svg class="w-full h-full max-h-[220px]" viewBox="0 0 390 190">
+      <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #020617; padding: 8px; user-select: none; overflow: hidden; box-sizing: border-box;">
+        <svg style="width: 100%; height: 100%; max-height: 220px;" viewBox="0 0 390 190">
           <text x="195" y="22" fill="#64748b" font-size="10.5" font-weight="700" text-anchor="middle">
             无向图 DFS 生成树 · 割点判定 (low[v] ≥ dfn[u]) · 割边桥判定 (low[v] > dfn[u])
           </text>

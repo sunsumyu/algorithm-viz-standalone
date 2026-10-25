@@ -60,6 +60,7 @@ export const minDepthVisualizer = registerDeclarativeAlgorithm<MinDepthStep>({
   name: '二叉树最小深度',
   category: 'tree',
   icon: '📏',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 111,
   aliases: ['leetcode-111', 'min-depth-tree', 'minimum-depth'],

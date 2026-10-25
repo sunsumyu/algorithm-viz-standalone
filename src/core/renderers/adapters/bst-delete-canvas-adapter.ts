@@ -50,27 +50,27 @@ export class BstDeleteCanvasAdapter {
    */
   static renderCustomMetrics(container: HTMLElement, step: BSTDeleteStep): void {
     container.innerHTML = '';
-    container.className = 'p-3 flex flex-col gap-3 min-h-[300px] overflow-y-auto';
+    container.style.cssText = 'display:flex; flex-direction:column; gap:8px; padding:8px; height:100%; overflow-y:auto; font-family:system-ui, -apple-system, sans-serif;';
 
     // 1. 顶部 4 维核心指标卡片网格
     const metricGrid = document.createElement('div');
-    metricGrid.className = 'grid grid-cols-2 sm:grid-cols-4 gap-2 flex-shrink-0';
+    metricGrid.style.cssText = 'display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; flex-shrink:0;';
     metricGrid.innerHTML = `
-      <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-        <span class="text-[10px] text-slate-400">待删目标键:</span>
-        <span class="text-sm font-bold text-rose-400 font-mono">${step.targetKey}</span>
+      <div style="background:#fff1f2; border:1px solid #fecdd3; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#be123c; font-weight:700;">待删目标键</div>
+        <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#e11d48; margin-top:2px;">key = ${step.targetKey}</div>
       </div>
-      <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-        <span class="text-[10px] text-slate-400">当前探查节点:</span>
-        <span class="text-sm font-bold text-sky-400 font-mono">${step.currentVal != null ? `${step.currentVal}` : '—'}</span>
+      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#0369a1; font-weight:700;">当前探查节点</div>
+        <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#0284c7; margin-top:2px;">${step.currentVal != null ? `Node(${step.currentVal})` : '—'}</div>
       </div>
-      <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-        <span class="text-[10px] text-slate-400">极小后继节点:</span>
-        <span class="text-sm font-bold text-emerald-400 font-mono">${step.successorVal != null ? `${step.successorVal}` : '—'}</span>
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#15803d; font-weight:700;">极小后继节点</div>
+        <div style="font-size:14px; font-weight:800; font-family:ui-monospace,monospace; color:#059669; margin-top:2px;">${step.successorVal != null ? `Node(${step.successorVal})` : '—'}</div>
       </div>
-      <div class="p-2 rounded-lg bg-slate-800/80 border border-slate-700/60 flex flex-col justify-between">
-        <span class="text-[10px] text-slate-400">当前操作动作:</span>
-        <span class="text-sm font-bold text-amber-400 font-mono">${step.action.toUpperCase()}</span>
+      <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:6px 8px; text-align:center;">
+        <div style="font-size:10px; color:#b45309; font-weight:700;">当前动作</div>
+        <div style="font-size:12px; font-weight:800; font-family:ui-monospace,monospace; color:#d97706; margin-top:3px;">${step.action.toUpperCase()}</div>
       </div>
     `;
     container.appendChild(metricGrid);
@@ -78,17 +78,17 @@ export class BstDeleteCanvasAdapter {
     // 2. 中部：结构化调用栈踪迹沙盘 (Stage 1 & 2) 或迭代状态沙盘 (Stage 3)
     if (step.callTrace) {
       const traceBox = document.createElement('div');
-      traceBox.className = 'flex-1 min-h-[160px] max-h-[260px] overflow-hidden flex flex-col rounded-lg bg-slate-800/60 border border-slate-700/50';
+      traceBox.style.cssText = 'flex:1; min-height:140px; max-height:240px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
       RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
       container.appendChild(traceBox);
     } else {
       const iterBox = document.createElement('div');
-      iterBox.className = 'p-3 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs flex flex-col gap-2';
+      iterBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f8fafc; border:1px solid #e2e8f0; font-size:11px; display:flex; flex-direction:column; gap:4px;';
       iterBox.innerHTML = `
-        <div class="text-[11px] font-bold text-slate-300">⚡ 双指针迭代状态监视器 (O(1) 空间)</div>
-        <div class="flex items-center gap-4 text-xs font-mono">
-          <div><span class="text-slate-400">父节点 pre:</span> <span class="text-amber-400 font-bold">${step.parentVal != null ? step.parentVal : 'null (根)'}</span></div>
-          <div><span class="text-slate-400">当前游标 cur:</span> <span class="text-sky-400 font-bold">${step.currentVal != null ? step.currentVal : 'null'}</span></div>
+        <div style="font-weight:700; color:#334155;">⚡ 双指针迭代状态监视器 (O(1) 空间)</div>
+        <div style="display:flex; align-items:center; gap:16px; font-family:ui-monospace,monospace; color:#475569;">
+          <div><span>父节点 pre:</span> <span style="font-weight:700; color:#d97706;">${step.parentVal != null ? step.parentVal : 'null (根)'}</span></div>
+          <div><span>当前游标 cur:</span> <span style="font-weight:700; color:#0284c7;">${step.currentVal != null ? step.currentVal : 'null'}</span></div>
         </div>
       `;
       container.appendChild(iterBox);
@@ -97,12 +97,10 @@ export class BstDeleteCanvasAdapter {
     // 3. 底部推演决策卡片
     const isDone = step.action === 'done';
     const summaryBox = document.createElement('div');
-    summaryBox.className = `p-2.5 rounded-lg border text-xs leading-relaxed flex-shrink-0 ${
-      isDone ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-200' : 'bg-slate-800/50 border-slate-700/40 text-slate-300'
-    }`;
+    summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;
     summaryBox.innerHTML = `
-      <div class="font-bold mb-1 ${isDone ? 'text-emerald-400' : 'text-cyan-400'}">⚡ 决策推演: ${step.decision}</div>
-      <div class="text-slate-400">${step.message}</div>
+      <div style="font-weight:700; margin-bottom:2px; color:${isDone ? '#15803d' : '#0284c7'};">⚡ 决策推演: ${step.decision}</div>
+      <div style="color:#64748b; font-size:11px;">${step.message}</div>
     `;
     container.appendChild(summaryBox);
   }

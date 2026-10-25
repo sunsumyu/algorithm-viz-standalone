@@ -24,7 +24,8 @@ export {
 export const valueSegTreeVisualizer = registerDeclarativeAlgorithm<ValueSegTreeStep>({
   id: 'value-segment-tree-112',
   name: '权值线段树与单点更新 (Class 112)',
-  aliases: ['class112-code01', 'value-segment-tree', 'value-segment-tree-112', 'kth-smallest-seg-tree'],
+  aliases: ['class112-code01', 'value-segment-tree', 'value-segment-tree-112', 'kth-smallest-seg-tree', 'p1138', 'p3369'],
+  hasDeductionTree: true,
   category: 'tree',
   icon: '⚖️',
   difficulty: 3,

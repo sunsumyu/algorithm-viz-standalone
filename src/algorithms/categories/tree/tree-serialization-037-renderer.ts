@@ -44,6 +44,7 @@ export const treeSerialization037Visualizer = registerDeclarativeAlgorithm<Seria
   difficulty: 3,
   levelOrder: 37,
   aliases: ['tree-serialization-037', 'postorder-serialize', 'serialize-deserialize-postorder', 'tree-serialize-037'],
+  hasDeductionTree: true,
   learningGoal: '掌握二叉树后序遍历左右中序列化与自右向左逆向建树公理，彻底理解中序不可反序列化歧义本质',
   stages: [
     {

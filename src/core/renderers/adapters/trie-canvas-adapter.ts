@@ -121,7 +121,7 @@ export class TrieCanvasAdapter {
     container.innerHTML = '';
     const nodes = state.nodesList || [];
     if (nodes.length === 0) {
-      container.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500 font-mono text-xs">空字典树沙盘</div>`;
+      container.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #64748b; font-family: monospace; font-size: 12px;">空字典树沙盘</div>`;
       return;
     }
 
@@ -302,25 +302,26 @@ export class TrieCanvasAdapter {
    * 渲染 Card 2 辅助诊断视图：包含二进制分解、静态连续内存映射表与前缀流
    */
   public static renderTrieCard2(container: HTMLElement, state: TrieCard2State): void {
+    if (!container) return;
     container.innerHTML = '';
     const root = document.createElement('div');
-    root.className = 'w-full h-full flex flex-col gap-2 p-3 font-mono text-xs overflow-y-auto select-none';
+    root.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow-y:auto;';
 
     // 1. 顶部全局决策与最优解横幅
     const topBar = document.createElement('div');
-    topBar.className = 'flex items-center justify-between bg-slate-900/80 border border-slate-800 rounded px-3 py-1.5';
+    topBar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 12px; flex-shrink:0;';
 
     const decisionSpan = document.createElement('span');
-    decisionSpan.className = 'text-slate-300 font-sans';
+    decisionSpan.style.cssText = 'font-weight:700; color:#334155;';
     decisionSpan.textContent = state.decision || '01-Trie 步进推演中...';
 
     const maxBadge = document.createElement('div');
-    maxBadge.className = 'flex items-center gap-2';
+    maxBadge.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:11px;';
     const pairTxt = state.bestPair ? `[${state.bestPair[0]}, ${state.bestPair[1]}]` : '';
     maxBadge.innerHTML = `
-      <span class="text-slate-400">全局最大异或:</span>
-      <span class="text-amber-400 font-bold font-mono text-sm">${state.globalMaxXor ?? 0}</span>
-      ${pairTxt ? `<span class="text-slate-500 text-[10px]">(${pairTxt})</span>` : ''}
+      <span style="color:#64748b;">全局最大异或:</span>
+      <span style="color:#d97706; font-weight:800; font-family:ui-monospace,monospace; font-size:13px;">${state.globalMaxXor ?? 0}</span>
+      ${pairTxt ? `<span style="color:#94a3b8; font-size:10px;">(${pairTxt})</span>` : ''}
     `;
 
     topBar.appendChild(decisionSpan);
@@ -331,33 +332,36 @@ export class TrieCanvasAdapter {
     if (state.stageId === 'stage-2' && state.staticTable) {
       // Stage 2: 静态连续数组内存映射表 (tree[N][2])
       const tableWrap = document.createElement('div');
-      tableWrap.className = 'flex-1 bg-slate-900/60 border border-slate-800 rounded p-2 overflow-y-auto';
+      tableWrap.style.cssText = 'flex:1; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; overflow-y:auto;';
 
       let rowsHtml = '';
       for (const row of state.staticTable.rows) {
         const isCur = row.index === state.staticTable.activeRow;
+        const rowBg = isCur ? '#e0f2fe' : '#ffffff';
+        const rowColor = isCur ? '#0369a1' : '#334155';
+        const fontWeight = isCur ? '700' : '500';
         rowsHtml += `
-          <tr class="${isCur ? 'bg-cyan-950/60 text-cyan-300 font-bold' : 'text-slate-400'} border-b border-slate-800/50">
-            <td class="py-1 px-2 text-center text-slate-500">${row.index}</td>
-            <td class="py-1 px-3 font-mono ${row.left > 0 ? 'text-emerald-400' : 'text-slate-600'}">${row.left}</td>
-            <td class="py-1 px-3 font-mono ${row.right > 0 ? 'text-emerald-400' : 'text-slate-600'}">${row.right}</td>
-            <td class="py-1 px-2 text-[10px] text-slate-500">${isCur ? '◀ 正在寻址' : '-'}</td>
+          <tr style="background:${rowBg}; color:${rowColor}; font-weight:${fontWeight}; border-bottom:1px solid #f1f5f9;">
+            <td style="padding:4px 6px; text-align:center; color:#94a3b8;">${row.index}</td>
+            <td style="padding:4px 8px; font-family:ui-monospace,monospace; color:${row.left > 0 ? '#15803d' : '#94a3b8'};">${row.left}</td>
+            <td style="padding:4px 8px; font-family:ui-monospace,monospace; color:${row.right > 0 ? '#15803d' : '#94a3b8'};">${row.right}</td>
+            <td style="padding:4px 6px; font-size:10px; color:${isCur ? '#0284c7' : '#94a3b8'};">${isCur ? '◀ 正在寻址' : '—'}</td>
           </tr>
         `;
       }
 
       tableWrap.innerHTML = `
-        <div class="text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+        <div style="font-size:11px; font-weight:700; color:#475569; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
           <span>竞赛连续静态数组 (tree[N][2]) 内存映射</span>
-          <span class="text-slate-500 text-[10px]">已分配节点数: ${state.trieSize ?? state.staticTable.rows.length}</span>
+          <span style="color:#94a3b8; font-size:10px;">已分配节点数: ${state.trieSize ?? state.staticTable.rows.length}</span>
         </div>
-        <table class="w-full text-left text-xs">
+        <table style="width:100%; text-align:left; border-collapse:collapse; font-size:11px; font-family:ui-monospace,monospace;">
           <thead>
-            <tr class="text-slate-500 text-[10px] border-b border-slate-700">
-              <th class="py-1 px-2 text-center">Node idx</th>
-              <th class="py-1 px-3">tree[idx][0]</th>
-              <th class="py-1 px-3">tree[idx][1]</th>
-              <th class="py-1 px-2">状态</th>
+            <tr style="color:#64748b; font-size:10px; border-bottom:1px solid #e2e8f0; background:#f8fafc;">
+              <th style="padding:4px 6px; text-align:center;">Node idx</th>
+              <th style="padding:4px 8px;">tree[idx][0]</th>
+              <th style="padding:4px 8px;">tree[idx][1]</th>
+              <th style="padding:4px 6px;">状态</th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -367,56 +371,57 @@ export class TrieCanvasAdapter {
     } else if (state.stageId === 'stage-3' && state.prefixXorList) {
       // Stage 3: 前缀异或自反性流 (Prefix XOR Stream)
       const pfxWrap = document.createElement('div');
-      pfxWrap.className = 'flex-1 bg-slate-900/60 border border-slate-800 rounded p-2 overflow-y-auto flex flex-col gap-1.5';
+      pfxWrap.style.cssText = 'flex:1; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;';
 
       let itemsHtml = '';
       for (const item of state.prefixXorList) {
         const isCur = item.isCurrent;
+        const itemBg = isCur ? '#fffbeb' : '#f8fafc';
+        const itemBorder = isCur ? '#fde68a' : '#e2e8f0';
+        const itemColor = isCur ? '#b45309' : '#334155';
         itemsHtml += `
-          <div class="flex items-center justify-between px-2 py-1 rounded text-xs ${
-            isCur ? 'bg-amber-950/50 border border-amber-500/50 text-amber-200' : 'bg-slate-800/40 text-slate-400'
-          }">
-            <span>eor[0..${item.idx}]</span>
-            <span class="text-slate-500 font-mono">原数: ${item.num}</span>
-            <span class="font-bold text-emerald-400 font-mono">累积前缀异或: ${item.eor}</span>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:4px 8px; border-radius:4px; font-size:11px; background:${itemBg}; border:1px solid ${itemBorder}; color:${itemColor};">
+            <span style="font-weight:700;">eor[0..${item.idx}]</span>
+            <span style="color:#64748b; font-family:ui-monospace,monospace;">原数: ${item.num}</span>
+            <span style="font-weight:800; color:#15803d; font-family:ui-monospace,monospace;">累积前缀异或: ${item.eor}</span>
           </div>
         `;
       }
 
       pfxWrap.innerHTML = `
-        <div class="text-[11px] font-bold text-slate-300 mb-0.5 flex justify-between">
+        <div style="font-size:11px; font-weight:700; color:#475569; margin-bottom:4px; display:flex; justify-content:space-between;">
           <span>前缀异或自反性集合: eor[j..i] = eor[i] ^ eor[j-1]</span>
-          <span class="text-slate-500 text-[10px]">当前累积: ${state.curXor ?? 0}</span>
+          <span style="color:#94a3b8; font-size:10px;">当前累积: ${state.curXor ?? 0}</span>
         </div>
-        <div class="flex flex-col gap-1 overflow-y-auto">${itemsHtml}</div>
+        <div style="display:flex; flex-direction:column; gap:4px; overflow-y:auto;">${itemsHtml}</div>
       `;
       root.appendChild(pfxWrap);
     } else {
       // Stage 1: 二进制位分解与贪心对偶分支探测仪表盘
       const diagWrap = document.createElement('div');
-      diagWrap.className = 'flex-1 grid grid-cols-2 gap-2';
+      diagWrap.style.cssText = 'flex:1; display:grid; grid-template-columns:1fr 1fr; gap:8px;';
 
-      const curNumBin = state.curNum !== undefined ? state.curNum.toString(2).padStart(6, '0') : '------';
-      const curXorBin = state.curXor !== undefined ? state.curXor.toString(2).padStart(6, '0') : '------';
+      const curNumBin = state.curNum !== undefined ? state.curNum.toString(2).padStart(6, '0') : '000000';
+      const curXorBin = state.curXor !== undefined ? state.curXor.toString(2).padStart(6, '0') : '000000';
 
       diagWrap.innerHTML = `
-        <div class="bg-slate-900/60 border border-slate-800 rounded p-2 flex flex-col justify-between">
-          <div class="text-[11px] font-bold text-slate-300">当前数字探测二进制位分解</div>
-          <div class="flex flex-col gap-1 my-1">
-            <div class="flex justify-between text-slate-400"><span>十进制数值:</span><span class="text-cyan-400 font-bold">${state.curNum ?? '-'}</span></div>
-            <div class="flex justify-between text-slate-400"><span>6-bit 格式:</span><span class="text-slate-200 font-mono">${curNumBin}</span></div>
-            <div class="flex justify-between text-slate-400"><span>当前探测位:</span><span class="text-amber-400 font-bold font-mono">bit ${state.curBit ?? '-'}</span></div>
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="font-size:11px; font-weight:700; color:#334155;">当前数字探测二进制位分解</div>
+          <div style="display:flex; flex-direction:column; gap:4px; margin:6px 0; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>十进制数值:</span><span style="color:#0284c7; font-weight:700;">${state.curNum ?? '—'}</span></div>
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>6-bit 格式:</span><span style="color:#334155; font-family:ui-monospace,monospace; font-weight:700;">${curNumBin}</span></div>
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>当前探测位:</span><span style="color:#d97706; font-weight:700; font-family:ui-monospace,monospace;">bit ${state.curBit ?? '—'}</span></div>
           </div>
-          <div class="text-[10px] text-slate-500">向高位 ➔ 低位逐位按位运算提取</div>
+          <div style="font-size:10px; color:#94a3b8;">向高位 ➔ 低位逐位按位运算提取</div>
         </div>
-        <div class="bg-slate-900/60 border border-slate-800 rounded p-2 flex flex-col justify-between">
-          <div class="text-[11px] font-bold text-slate-300">贪心对偶分支裁决结果</div>
-          <div class="flex flex-col gap-1 my-1">
-            <div class="flex justify-between text-slate-400"><span>期望最优对偶:</span><span class="text-emerald-400 font-bold">${state.expectedBit ?? '-'}</span></div>
-            <div class="flex justify-between text-slate-400"><span>实际走向分支:</span><span class="${state.actualBit === state.expectedBit ? 'text-emerald-400' : 'text-amber-400'} font-bold">${state.actualBit ?? '-'}</span></div>
-            <div class="flex justify-between text-slate-400"><span>当前累计异或:</span><span class="text-amber-400 font-bold font-mono">${state.curXor ?? 0} (${curXorBin})</span></div>
+        <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="font-size:11px; font-weight:700; color:#334155;">贪心对偶分支裁决结果</div>
+          <div style="display:flex; flex-direction:column; gap:4px; margin:6px 0; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>期望最优对偶:</span><span style="color:#15803d; font-weight:700;">${state.expectedBit ?? '—'}</span></div>
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>实际走向分支:</span><span style="color:${state.actualBit === state.expectedBit ? '#15803d' : '#d97706'}; font-weight:700;">${state.actualBit ?? '—'}</span></div>
+            <div style="display:flex; justify-content:space-between; color:#64748b;"><span>当前累计异或:</span><span style="color:#d97706; font-weight:800; font-family:ui-monospace,monospace;">${state.curXor ?? 0} (${curXorBin})</span></div>
           </div>
-          <div class="text-[10px] text-slate-500">${state.actualBit === state.expectedBit ? '🟢 命中对偶分支，异或位贡献 1' : '🟡 对偶分支缺失，保底走向现有分支'}</div>
+          <div style="font-size:10px; color:${state.actualBit === state.expectedBit ? '#15803d' : '#b45309'};">${state.actualBit === state.expectedBit ? '🟢 命中对偶分支，异或位贡献 1' : '🟡 对偶分支缺失，保底走向现有分支'}</div>
         </div>
       `;
       root.appendChild(diagWrap);

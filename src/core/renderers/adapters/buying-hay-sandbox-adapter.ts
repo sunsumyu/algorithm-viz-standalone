@@ -121,20 +121,30 @@ export class BuyingHaySandboxAdapter {
         ) {
           counts.set(sup.id, (counts.get(sup.id) || 0) + 1);
           remJ -= sup.val;
-        } else if (skipCell !== null && skipCell !== undefined && curCell === skipCell) {
-          i--;
-        } else {
-          i--;
+          continue;
         }
+
+        if (
+          skipCell !== null &&
+          skipCell !== undefined &&
+          curCell !== null &&
+          curCell !== undefined &&
+          curCell === skipCell
+        ) {
+          i--;
+          continue;
+        }
+
+        i--;
       }
     }
 
     const inventory: HayInventoryBundle[] = [];
-    for (const [id, count] of counts.entries()) {
-      const sup = suppliers.find((s) => s.id === id);
-      if (sup) {
+    for (const sup of suppliers) {
+      const count = counts.get(sup.id) || 0;
+      if (count > 0) {
         inventory.push({
-          supplierId: id,
+          supplierId: sup.id,
           cost: sup.cost,
           val: sup.val,
           count,
@@ -158,15 +168,13 @@ export class BuyingHaySandboxAdapter {
     if (!container) return;
 
     container.innerHTML = '';
-    container.className = 'w-full h-full flex flex-col relative z-0 bg-transparent border-0 shadow-none p-0 overflow-y-auto';
-    container.style.display = 'flex';
-    container.style.width = '100%';
+    container.className = 'buying-hay-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 0; background: transparent; overflow-y: auto; box-sizing: border-box; font-family: ui-sans-serif, system-ui, sans-serif;';
 
     const { suppliers, hTarget, expandedCapacity } = this.parseHayData(step, options);
 
     const curI = typeof step.i === 'number' ? step.i : 0;
     const curJ = typeof step.j === 'number' ? step.j : 0;
-    const activeSupplier = suppliers[Math.max(0, curI - 1)] || suppliers[0];
 
     const inventory = this.backtrackHay(curI, curJ, suppliers, step.grid, (step as any).selectedItems);
     const totalPounds = inventory.reduce((acc, it) => acc + it.totalVal, 0);
@@ -176,37 +184,37 @@ export class BuyingHaySandboxAdapter {
     const targetPercent = Math.min(100, Math.round((hTarget / Math.max(1, expandedCapacity)) * 100));
 
     const html = `
-      <div class="buying-hay-sandbox w-full flex flex-col gap-3 p-3 font-sans select-none text-slate-800 dark:text-slate-100">
+      <div class="buying-hay-sandbox" style="width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box; user-select: none; color: #f1f5f9;">
         <!-- 顶部提示横条 -->
-        <div class="flex items-center justify-between px-3 py-2 rounded-lg bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-emerald-500/10 border border-amber-500/20 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🌾</span>
-            <span class="font-bold text-amber-700 dark:text-amber-300">购买足量干草最小花费沙盘</span>
-            <span class="text-slate-400">|</span>
-            <span class="text-slate-600 dark:text-slate-300">
-              约翰需求：<strong class="text-amber-600 dark:text-amber-400">至少 ${hTarget} 磅</strong> · 允许超额只要更便宜 · 安全扩充上限 <strong class="text-sky-600 dark:text-sky-400">m = ${expandedCapacity} 磅</strong>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); font-size: 12px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">🌾</span>
+            <span style="font-weight: bold; color: #fbbf24;">购买足量干草最小花费沙盘</span>
+            <span style="color: #64748b;">|</span>
+            <span style="color: #cbd5e1;">
+              约翰需求：<strong style="color: #fbbf24;">至少 ${hTarget} 磅</strong> · 允许超额只要更便宜 · 安全扩充上限 <strong style="color: #38bdf8;">m = ${expandedCapacity} 磅</strong>
             </span>
           </div>
-          <div class="flex items-center gap-2 font-mono text-[11px]">
-            <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold">考察商: #${curI}</span>
-            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-800 dark:text-sky-200 font-bold">目标称重: j = ${curJ} 磅</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-family: monospace; font-size: 11px;">
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fde68a; font-weight: bold;">考察商: #${curI}</span>
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: #7dd3fc; font-weight: bold;">目标称重: j = ${curJ} 磅</span>
           </div>
         </div>
 
         <!-- 主体区域：左右双栏布局 (左 7 列: 供货商货架，右 5 列: 粮仓货舱) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start; box-sizing: border-box;">
           
           <!-- 左侧：农场干草供应商货架 (7 列) -->
-          <div class="lg:col-span-7 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-store text-amber-600"></i> 农场干草供应商货架 (Suppliers Hay Market)
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="color: #fbbf24;">🏢</span> 农场干草供应商货架 (Suppliers Hay Market)
               </span>
-              <span class="text-[11px] font-mono text-slate-500">共 ${suppliers.length} 家供货商 · 无限库存 (∞)</span>
+              <span style="font-size: 11px; font-family: monospace; color: #94a3b8;">共 ${suppliers.length} 家供货商 · 无限库存 (∞)</span>
             </div>
 
             <!-- 供应商卡片网格 -->
-            <div class="grid grid-cols-1 sm:grid-cols-${Math.min(2, suppliers.length)} gap-3">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
               ${suppliers
                 .map((sup, idx) => {
                   const isCurrent = idx + 1 === curI;
@@ -214,51 +222,51 @@ export class BuyingHaySandboxAdapter {
                   const inCartCount = takenInfo ? takenInfo.count : 0;
 
                   let borderCls = isCurrent
-                    ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 shadow-md ring-2 ring-amber-400/40'
-                    : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40';
+                    ? 'border: 2px solid #fbbf24; background: rgba(69, 26, 3, 0.4); box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);'
+                    : 'border: 1px solid #334155; background: rgba(15, 23, 42, 0.6);';
 
                   return `
-                    <div class="relative p-3 rounded-xl border flex flex-col gap-2.5 transition-all ${borderCls}">
+                    <div style="position: relative; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; transition: all 0.2s; box-sizing: border-box; ${borderCls}">
                       <!-- 供货商名称与标记 -->
-                      <div class="flex items-center justify-between border-b border-dashed border-slate-200 dark:border-slate-800 pb-1.5">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-sm">🏢</span>
-                          <span class="font-extrabold text-xs text-slate-800 dark:text-slate-100">${escapeHtml(sup.name)}</span>
+                      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px dashed rgba(100, 116, 139, 0.4); padding-bottom: 6px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <span style="font-size: 14px;">🏢</span>
+                          <span style="font-weight: 800; font-size: 12px; color: #f1f5f9;">${escapeHtml(sup.name)}</span>
                         </div>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                        <span style="font-size: 10px; font-family: monospace; padding: 2px 6px; border-radius: 4px; font-weight: bold; ${
                           isCurrent
-                            ? 'bg-amber-500 text-white animate-pulse'
+                            ? 'background: #f59e0b; color: #ffffff;'
                             : inCartCount > 0
-                            ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            ? 'background: rgba(16, 185, 129, 0.2); color: #6ee7b7;'
+                            : 'background: rgba(51, 65, 85, 0.6); color: #94a3b8;'
                         }">
                           ${isCurrent ? '当前考察' : inCartCount > 0 ? `已购 ×${inCartCount} 捆` : '无限供应 ∞'}
                         </span>
                       </div>
 
                       <!-- 规格指标卡 -->
-                      <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
-                        <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                          <div class="text-[9px] text-slate-500">单捆重量</div>
-                          <div class="font-bold text-amber-600 dark:text-amber-400">${sup.val} 磅</div>
+                      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: center; font-size: 12px; font-family: monospace;">
+                        <div style="padding: 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.8);">
+                          <div style="font-size: 9px; color: #94a3b8;">单捆重量</div>
+                          <div style="font-weight: bold; color: #fbbf24;">${sup.val} 磅</div>
                         </div>
-                        <div class="p-1.5 rounded bg-slate-100/80 dark:bg-slate-800/80">
-                          <div class="text-[9px] text-slate-500">采购售价</div>
-                          <div class="font-bold text-rose-600 dark:text-rose-400">${sup.cost} 元</div>
+                        <div style="padding: 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.8);">
+                          <div style="font-size: 9px; color: #94a3b8;">采购售价</div>
+                          <div style="font-weight: bold; color: #fb7185;">${sup.cost} 元</div>
                         </div>
                       </div>
 
                       <!-- 性价比与当前称重可购数 -->
-                      <div class="p-2 rounded-lg bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20 flex flex-col gap-1 text-[11px]">
-                        <div class="flex items-center justify-between">
-                          <span class="text-slate-500 text-[10px]">综合性价比:</span>
-                          <span class="font-mono font-bold text-amber-600 dark:text-amber-400">
+                      <div style="padding: 8px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <span style="color: #94a3b8; font-size: 10px;">综合性价比:</span>
+                          <span style="font-family: monospace; font-weight: bold; color: #fbbf24;">
                             ${sup.unitCost} 元/磅
                           </span>
                         </div>
-                        <div class="flex items-center justify-between text-[10px] text-slate-500">
+                        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: #94a3b8;">
                           <span>称重上限 (${curJ}磅) 最多购:</span>
-                          <span class="font-mono font-semibold text-slate-700 dark:text-slate-300">
+                          <span style="font-family: monospace; font-weight: 600; color: #cbd5e1;">
                             ${curJ >= sup.val ? Math.floor(curJ / sup.val) : 0} 捆
                           </span>
                         </div>
@@ -271,86 +279,84 @@ export class BuyingHaySandboxAdapter {
           </div>
 
           <!-- 右侧：奶牛干草粮仓货舱 (5 列) -->
-          <div class="lg:col-span-5 flex flex-col gap-2.5">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-              <span class="flex items-center gap-1.5">
-                <i class="fa-solid fa-warehouse text-sky-600"></i> 奶牛粮仓货舱 (Barn Container)
+          <div style="display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: bold; color: #cbd5e1;">
+              <span style="display: flex; align-items: gap: 6px;">
+                <span style="color: #38bdf8;">🏠</span> 奶牛粮仓货舱 (Barn Container)
               </span>
-              <span class="text-[11px] font-mono ${isTargetMet ? 'text-emerald-500 font-bold' : 'text-amber-500'}">
+              <span style="font-size: 11px; font-family: monospace; ${isTargetMet ? 'color: #34d399; font-weight: bold;' : 'color: #fbbf24;'}">
                 ${isTargetMet ? '✔ 已满足目标' : `还差 ${Math.max(0, hTarget - totalPounds)} 磅`}
               </span>
             </div>
 
-            <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 flex flex-col gap-3 shadow-xs">
+            <div style="padding: 14px; border-radius: 12px; border: 1px solid #334155; background: rgba(15, 23, 42, 0.8); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
               
               <!-- 重量达标进度水位表 (含 H 需求目标基准线) -->
-              <div class="flex flex-col gap-1.5">
-                <div class="flex items-center justify-between text-xs">
-                  <span class="text-slate-500">已购干草总重</span>
-                  <span class="font-mono font-bold ${isTargetMet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+                  <span style="color: #94a3b8;">已购干草总重</span>
+                  <span style="font-family: monospace; font-weight: bold; color: ${isTargetMet ? '#34d399' : '#fbbf24'};">
                     ${totalPounds} 磅 / 目标 ${hTarget} 磅 (上限 ${expandedCapacity})
                   </span>
                 </div>
                 
-                <div class="relative w-full h-3.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
+                <div style="position: relative; width: 100%; height: 14px; border-radius: 9999px; background: #334155; overflow: hidden; border: 1px solid #475569; padding: 2px; box-sizing: border-box;">
                   <div
-                    class="h-full rounded-full transition-all duration-300 ${
+                    style="height: 100%; border-radius: 9999px; transition: width 0.3s; background: ${
                       isTargetMet
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                        : 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                    }"
-                    style="width: ${progressPercent}%;"
+                        ? 'linear-gradient(to right, #10b981, #14b8a6)'
+                        : 'linear-gradient(to right, #f59e0b, #eab308)'
+                    }; width: ${progressPercent}%;"
                   ></div>
                   <!-- H 目标基准线 -->
                   <div
-                    class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 shadow-xs"
-                    style="left: ${targetPercent}%;"
+                    style="position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 10; left: ${targetPercent}%;"
                     title="目标需求线 H = ${hTarget} 磅"
                   ></div>
                 </div>
 
-                <div class="flex justify-between items-center text-[10px] text-slate-400 font-mono mt-0.5">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8; font-family: monospace; margin-top: 2px;">
                   <span>0 磅</span>
-                  <span class="text-red-500 font-bold">H 目标 (${hTarget}磅)</span>
+                  <span style="color: #ef4444; font-weight: bold;">H 目标 (${hTarget}磅)</span>
                   <span>安全上限 (${expandedCapacity}磅)</span>
                 </div>
               </div>
 
               <!-- 累计采购花费统计 -->
-              <div class="grid grid-cols-2 gap-2 text-center text-xs font-mono">
-                <div class="p-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/80">
-                  <div class="text-[10px] text-slate-500">累计花费金额</div>
-                  <div class="text-sm font-extrabold text-rose-600 dark:text-rose-400">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; text-align: center; font-size: 12px; font-family: monospace;">
+                <div style="padding: 8px; border-radius: 8px; background: rgba(30, 41, 59, 0.8);">
+                  <div style="font-size: 10px; color: #94a3b8;">累计花费金额</div>
+                  <div style="font-size: 14px; font-weight: 800; color: #fb7185;">
                     ${totalCost > 0 ? `${totalCost} 元` : '0 元 (基底)'}
                   </div>
                 </div>
-                <div class="p-2 rounded-lg bg-slate-100/80 dark:bg-slate-800/80">
-                  <div class="text-[10px] text-slate-500">需求满足状态</div>
-                  <div class="text-xs font-bold ${isTargetMet ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">
+                <div style="padding: 8px; border-radius: 8px; background: rgba(30, 41, 59, 0.8);">
+                  <div style="font-size: 10px; color: #94a3b8;">需求满足状态</div>
+                  <div style="font-size: 12px; font-weight: bold; color: ${isTargetMet ? '#34d399' : '#fbbf24'};">
                     ${isTargetMet ? `达标 (超额 ${totalPounds - hTarget}磅)` : `未达标 (缺 ${hTarget - totalPounds}磅)`}
                   </div>
                 </div>
               </div>
 
               <!-- 已采购干草清单 -->
-              <div class="flex flex-col gap-1.5 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
-                <div class="text-[11px] font-bold text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px dashed rgba(100, 116, 139, 0.4);">
+                <div style="font-size: 11px; font-weight: bold; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between;">
                   <span>📦 粮仓干草采购堆放清单</span>
-                  <span class="text-[10px] font-normal text-slate-400">按供货商回溯统计</span>
+                  <span style="font-size: 10px; font-weight: normal; color: #94a3b8;">按供货商回溯统计</span>
                 </div>
 
-                <div class="flex flex-wrap gap-1.5 min-h-[38px] items-center">
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; align-items: center;">
                   ${
                     inventory.length === 0
-                      ? `<span class="text-[11px] text-slate-400 italic">暂未采购任何干草 (空基底)</span>`
+                      ? `<span style="font-size: 11px; color: #64748b; font-style: italic;">暂未采购任何干草 (空基底)</span>`
                       : inventory
                           .map(
                             (it) => `
-                              <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] font-mono">
-                                <span class="font-bold text-amber-700 dark:text-amber-300">🏢 供货商 #${it.supplierId}</span>
-                                <span class="text-slate-400">×</span>
-                                <span class="font-extrabold text-emerald-600 dark:text-emerald-400">${it.count} 捆</span>
-                                <span class="text-[10px] text-slate-500">(${it.totalVal}磅 / ${it.totalCost}元)</span>
+                              <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); font-size: 11px; font-family: monospace;">
+                                <span style="font-weight: bold; color: #fde68a;">🏢 供货商 #${it.supplierId}</span>
+                                <span style="color: #64748b;">×</span>
+                                <span style="font-weight: 800; color: #34d399;">${it.count} 捆</span>
+                                <span style="font-size: 10px; color: #94a3b8;">(${it.totalVal}磅 / ${it.totalCost}元)</span>
                               </div>
                             `
                           )
@@ -360,12 +366,12 @@ export class BuyingHaySandboxAdapter {
               </div>
 
               <!-- 决策裁决与转移看板 -->
-              <div class="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40 text-[11px] text-slate-700 dark:text-slate-300 flex flex-col gap-1">
-                <div class="flex items-center justify-between font-bold text-sky-800 dark:text-sky-300">
+              <div style="padding: 8px; border-radius: 8px; background: rgba(8, 47, 73, 0.4); border: 1px solid rgba(56, 189, 248, 0.3); font-size: 11px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-weight: bold; color: #7dd3fc;">
                   <span>⚖️ 求最小值转移决策</span>
-                  <span class="font-mono text-[10px]">dp[${curI}][${curJ}]</span>
+                  <span style="font-family: monospace; font-size: 10px;">dp[${curI}][${curJ}]</span>
                 </div>
-                <div class="text-[10.5px] text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
+                <div style="font-size: 10.5px; color: #94a3b8; line-height: 1.5; font-family: monospace;">
                   ${escapeHtml(step.msg || step.log || '正在推导完全背包状态转移...')}
                 </div>
               </div>

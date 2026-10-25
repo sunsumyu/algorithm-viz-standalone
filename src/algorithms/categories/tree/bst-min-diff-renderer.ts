@@ -42,6 +42,7 @@ export const bstMinDiffVisualizer = registerDeclarativeAlgorithm({
   name: '二叉搜索树的最小绝对差',
   category: 'tree',
   icon: '📏',
+  hasDeductionTree: true,
   difficulty: 'easy',
   learningGoal: '利用BST中序遍历严格升序的单调性质，将全局任意两节点最小绝对差规约为相邻两项的极小差。',
   problemHtml: BST_MIN_DIFF_PROBLEM_HTML,

@@ -42,6 +42,7 @@ export const bstDeleteVisualizer = registerDeclarativeAlgorithm<BSTDeleteStep>({
   category: 'tree',
   aliases: ['leetcode-450', 'delete-node-in-a-bst'],
   icon: '🗑️',
+  hasDeductionTree: true,
   badge: { mode: '多阶段演化: 递归直接嫁接 · 递归后继值替换 · 双指针迭代', complexity: 'O(H) · O(1)' },
   card1Title: '📊 BST 拓扑重构与节点移除沙盘',
   card2Title: '🧭 五大场景分支决策与调用栈监视器',

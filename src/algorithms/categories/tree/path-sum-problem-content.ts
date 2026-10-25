@@ -22,23 +22,40 @@ export const PATH_SUM_PROBLEM_HTML = `
 export const PATH_SUM_ANALYSIS_HTML = `
   <div style="display: flex; flex-direction: column; gap: 12px; color: #cbd5e1; font-size: 12px; line-height: 1.6;">
     <h3 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0; display: flex; align-items: center; gap: 6px;">
-      <span>💡</span> 减法计数器与叶子节点到达判断
+      <span>💡</span> 《代码随想录》核心教学脉络与认知进阶
     </h3>
     <div style="display: flex; flex-direction: column; gap: 8px;">
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 递归回溯与减法计数</div>
+        <div style="font-weight: 700; color: #60a5fa; margin-bottom: 4px;">① 递归函数究竟什么时候需要返回值？</div>
         <p style="margin: 0; color: #94a3b8;">
-        1. <strong>空节点返回 false：</strong> <code style="color: #f87171; font-family: monospace;">if (root == null) return false;</code>；<br/>
-        2. <strong>叶子节点终止条件：</strong> 当且仅当当前节点是叶子节点（<code style="color: #38bdf8; font-family: monospace;">root.left == null && root.right == null</code>）时：<br/>
-        &nbsp;&nbsp;• 若 <code style="color: #34d399; font-family: monospace;">root.val == targetSum</code>，说明找到了一条合法路径，直接返回 <code style="color: #34d399; font-family: monospace;">true</code>；<br/>
-        3. <strong>递归左右子树：</strong> 沿路径深入时减去当前节点值：<br/>
-        &nbsp;&nbsp;• <code style="color: #fbbf24; font-family: monospace;">hasPathSum(root.left, targetSum - root.val) || hasPathSum(root.right, targetSum - root.val)</code>。
+        • <strong>搜索整棵二叉树且不用处理返回值：</strong> 递归函数不需要返回值（如 <strong>113. 路径总和 II</strong>，必须穷尽整棵树并收集所有满足条件的路径）；<br/>
+        • <strong>搜索整棵二叉树且需要处理返回值：</strong> 递归函数需要返回值（如 <strong>236. 二叉树的最近公共祖先</strong>）；<br/>
+        • <strong>搜索其中一条符合条件的路径：</strong> 递归函数<strong>一定需要返回值</strong>，因为一旦找到符合条件的路径就要立刻 <code style="color: #34d399; font-family: monospace;">return true</code> 截断搜索（本题 <strong>112. 路径总和</strong>）。
         </p>
       </div>
+
       <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
-        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">② 易错点</div>
+        <div style="font-weight: 700; color: #38bdf8; margin-bottom: 4px;">② 从最基础的显式回溯到精简代码</div>
         <p style="margin: 0; color: #94a3b8;">
-        • <strong>必须是叶子节点：</strong> 如果某非叶子节点的累加和已经达到 targetSum，但它还有子节点，不能提前返回 true，必须完整延伸到叶子。
+        很多题解直接给出单函数 3 行精简代码，初学者根本看不出回溯过程！《代码随想录》先从<strong>最基础的显式回溯</strong>讲起：<br/>
+        1. <strong>定义辅助函数：</strong> <code style="color: #fbbf24; font-family: monospace;">traversal(cur, count)</code>，初始传入 <code style="color: #fbbf24; font-family: monospace;">count = targetSum - root.val</code>；<br/>
+        2. <strong>叶子节点终止条件：</strong><br/>
+        &nbsp;&nbsp;• <code style="color: #34d399; font-family: monospace;">if (!cur.left && !cur.right && count == 0) return true;</code>（找到目标路径）<br/>
+        &nbsp;&nbsp;• <code style="color: #f87171; font-family: monospace;">if (!cur.left && !cur.right) return false;</code>（叶子但未达成目标）<br/>
+        3. <strong>对称回溯展开：</strong><br/>
+        &nbsp;&nbsp;• <code style="color: #fbbf24; font-family: monospace;">count -= cur.left.val;</code> ➔ 递归深入处理<br/>
+        &nbsp;&nbsp;• <code style="color: #fbbf24; font-family: monospace;">if (traversal(cur.left, count)) return true;</code> ➔ 命中立即向上返回<br/>
+        &nbsp;&nbsp;• <code style="color: #fbbf24; font-family: monospace;">count += cur.left.val;</code> ➔ <strong>回溯恢复现场</strong>，撤销当前选择，避免污染右子树！
+        </p>
+      </div>
+
+      <div style="padding: 10px; border-radius: 10px; background: #020617; border: 1px solid #1e293b;">
+        <div style="font-weight: 700; color: #34d399; margin-bottom: 4px;">③ 阶段演化四级台阶</div>
+        <p style="margin: 0; color: #94a3b8;">
+        • <strong>阶段 1 (最基础)：</strong> 代码随想录·辅助函数与显式回溯（展开 <code style="color: #fbbf24; font-family: monospace;">count -= val</code> 与 <code style="color: #fbbf24; font-family: monospace;">count += val</code>，理解回溯本质）；<br/>
+        • <strong>阶段 2 (进阶精简)：</strong> 参数隐藏回溯与单函数递归（将差额计算作为参数直接压栈传递）；<br/>
+        • <strong>阶段 3 (全解收集)：</strong> 113. 路径总和 II（全局收集全解，共享路径栈显式 <code style="color: #fbbf24; font-family: monospace;">path.pop()</code> 恢复现场）；<br/>
+        • <strong>阶段 4 (迭代演化)：</strong> 迭代法 BFS 双队列管道（节点队列与求和队列同步出入队，杜绝递归栈溢出）。
         </p>
       </div>
     </div>

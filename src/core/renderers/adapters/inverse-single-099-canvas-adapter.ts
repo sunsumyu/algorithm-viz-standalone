@@ -19,7 +19,7 @@ export class InverseSingle099CanvasAdapter {
 
     // 2. 决策信息
     const info = document.createElement('div');
-    info.style.cssText = 'padding: 8px 12px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #3b82f6; font-size: 12px; color: #334155;';
+    info.style.cssText = 'padding: 10px 14px; background: #0f172a; border-radius: 6px; border: 1px solid #1e293b; border-left: 3px solid #38bdf8; font-size: 12px; color: #cbd5e1;';
     info.textContent = step.decision;
     root.appendChild(info);
 

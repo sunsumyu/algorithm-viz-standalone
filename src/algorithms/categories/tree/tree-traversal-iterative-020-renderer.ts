@@ -42,7 +42,8 @@ export const treeTraversal020Visualizer = registerDeclarativeAlgorithm<Traversal
   icon: '🥞',
   difficulty: 2,
   levelOrder: 20,
-  aliases: ['class020-code01', 'tree-traversal-iterative-020', 'iterative-traversal', 'tree-traversal-stack'],
+  aliases: ['class020-code01', 'tree-traversal-iterative-020', 'tree-traversal-iterative', 'iterative-traversal', 'tree-traversal-stack'],
+  hasDeductionTree: true,
   learningGoal: '掌握使用显式单栈/双栈模拟系统递归调用过程，深入理解先序、中序、后序在栈内的时序转换',
   stages: [
     {

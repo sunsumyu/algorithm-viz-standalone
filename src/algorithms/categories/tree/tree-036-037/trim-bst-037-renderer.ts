@@ -19,7 +19,8 @@ export { buildTrimBst037Steps, renderTrimBstCanvas };
 
 export const trimBst037Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
   id: 'tree-037-trim-bst',
-  aliases: ['bst-trim'],
+  aliases: ['trim-bst', 'tree-037-trim-bst', 'leetcode-669', 'trim-a-binary-search-tree', 'bst-trim', 'class037-code06'],
+  hasDeductionTree: true,
   name: '修剪二叉搜索树 (Class 037)',
   category: 'tree',
   icon: '✂️',

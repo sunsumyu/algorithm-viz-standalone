@@ -53,6 +53,7 @@ export const treeDepthVisualizer = registerDeclarativeAlgorithm<TDStep>({
   name: '二叉树的最大深度',
   category: 'tree',
   icon: '📉',
+  hasDeductionTree: true,
   difficulty: 1,
   levelOrder: 104,
   learningGoal: '深刻理解后序自底向上分治归约与层次遍历逐层计数的两种求深度范式，掌握静态数组在层序中的极致优化',

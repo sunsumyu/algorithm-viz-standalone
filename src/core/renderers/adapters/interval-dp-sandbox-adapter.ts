@@ -7,6 +7,7 @@
  * 2. 预测赢家 / 纸牌博弈 (predict-the-winner · LC 486): 桌面纸牌博弈与零和博弈极小化极大决策舱
  * 3. 戳气球 (burst-balloons · LC 312): 靶场气球陈列架与逆向最后戳气球金币收益演算舱
  * 4. 奇怪的打印机 (strange-printer · LC 664): 打印机色带与首尾贪心顺带覆盖监视器
+ * 5. 合并石头的最低成本 (merge-stones · LC 1000 / Class 077 Code 01): 石子堆拟物立面与区间归约大合并演算舱
  */
 
 import type { UniversalStep } from '../../universal-stage-engine';
@@ -194,7 +195,7 @@ export class IntervalDpSandboxAdapter {
         }
 
         return `
-          <g class="transition-transform hover:scale-110 cursor-pointer">
+          <g style="cursor: pointer;">
             <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${ringR}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${isI || isJ || isK ? 3 : 1.5}" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))" />
             <text x="${c.x.toFixed(1)}" y="${(c.y + 4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="bold" fill="${textColor}">${c.val}</text>
             <text x="${c.x.toFixed(1)}" y="${(c.y + (c.y > cy ? 28 : -20)).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="600" fill="${isI ? '#38bdf8' : isJ ? '#818cf8' : isK ? '#34d399' : '#64748b'}">#${c.idx}${isI ? '(i底起)' : isJ ? '(j底止)' : isK ? '(k顶)' : ''}</text>
@@ -203,95 +204,96 @@ export class IntervalDpSandboxAdapter {
       })
       .join('');
 
-    container.className = 'w-full h-full flex flex-col justify-start p-3 bg-slate-900/90 text-slate-100 rounded-xl overflow-y-auto border border-slate-700/60 shadow-inner font-sans';
+    container.className = 'interval-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 12px; background: rgba(15, 23, 42, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); font-family: ui-sans-serif, system-ui, sans-serif; box-sizing: border-box;';
     container.innerHTML = `
-      <div class="grid grid-cols-12 gap-3 w-full h-full items-stretch">
-        <!-- 左侧 7 列：凸多边形几何剖分画布 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col items-center justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 relative">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-slate-800/80 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-bold">📐</span>
-              <span class="font-bold text-slate-200">凸多边形几何沙盘 (n=${n} 顶点)</span>
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; width: 100%; height: 100%; align-items: stretch; box-sizing: border-box;">
+        <!-- 左侧：凸多边形几何剖分画布 -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; position: relative; box-sizing: border-box;">
+          <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(30, 41, 59, 0.8); font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(99, 102, 241, 0.2); color: #818cf8; font-weight: bold;">📐</span>
+              <span style="font-weight: bold; color: #e2e8f0;">凸多边形几何沙盘 (n=${n} 顶点)</span>
             </div>
-            <div class="flex items-center gap-2 text-[11px] text-slate-400">
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-sky-400"></span> i:${i}
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400"></span> k:${k >= 0 ? k : '—'}
-              <span class="inline-block w-2.5 h-2.5 rounded-full bg-indigo-400"></span> j:${j}
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #94a3b8;">
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #38bdf8;"></span> i:${i}
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #34d399;"></span> k:${k >= 0 ? k : '—'}
+              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #818cf8;"></span> j:${j}
             </div>
           </div>
 
-          <div class="w-full flex-1 flex items-center justify-center my-1 relative">
-            <svg viewBox="0 0 ${svgW} ${svgH}" class="w-full max-w-[340px] max-h-[260px] drop-shadow-md">
+          <div style="width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; margin: 4px 0; position: relative;">
+            <svg viewBox="0 0 ${svgW} ${svgH}" style="width: 100%; max-width: 340px; max-height: 260px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
               <polygon points="${polygonPoints}" fill="#0f172a" stroke="#334155" stroke-width="2" />
               ${triangleSvg}
               ${verticesSvg}
             </svg>
           </div>
 
-          <div class="w-full grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/60 text-center text-xs">
-            <div class="p-1.5 rounded bg-slate-900/80 border border-sky-500/30">
-              <div class="text-[10px] text-slate-400">底边起点 (i)</div>
-              <div class="font-bold text-sky-400 text-sm">#${i} (值 ${values[i]})</div>
+          <div style="width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 8px; border-top: 1px solid rgba(30, 41, 59, 0.6); text-align: center; font-size: 12px;">
+            <div style="padding: 6px; border-radius: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(14, 165, 233, 0.3);">
+              <div style="font-size: 10px; color: #94a3b8;">底边起点 (i)</div>
+              <div style="font-weight: bold; color: #38bdf8; font-size: 14px;">#${i} (值 ${values[i]})</div>
             </div>
-            <div class="p-1.5 rounded bg-slate-900/80 border border-emerald-500/30">
-              <div class="text-[10px] text-slate-400">剖分顶点 (k)</div>
-              <div class="font-bold text-emerald-400 text-sm">${k >= 0 ? `#${k} (值 ${values[k]})` : '边界无分割'}</div>
+            <div style="padding: 6px; border-radius: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(16, 185, 129, 0.3);">
+              <div style="font-size: 10px; color: #94a3b8;">剖分顶点 (k)</div>
+              <div style="font-weight: bold; color: #34d399; font-size: 14px;">${k >= 0 ? `#${k} (值 ${values[k]})` : '边界无分割'}</div>
             </div>
-            <div class="p-1.5 rounded bg-slate-900/80 border border-indigo-500/30">
-              <div class="text-[10px] text-slate-400">底边终点 (j)</div>
-              <div class="font-bold text-indigo-400 text-sm">#${j} (值 ${values[j]})</div>
+            <div style="padding: 6px; border-radius: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(99, 102, 241, 0.3);">
+              <div style="font-size: 10px; color: #94a3b8;">底边终点 (j)</div>
+              <div style="font-weight: bold; color: #818cf8; font-size: 14px;">#${j} (值 ${values[j]})</div>
             </div>
           </div>
         </div>
 
-        <!-- 右侧 5 列：三角剖分乘积与区间状态决策舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
-          <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+        <!-- 右侧：三角剖分乘积与区间状态决策舱 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(30, 41, 59, 0.8); padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: gap: 6px;">
               <span>📊</span> 子多边形 [${i}..${j}] 剖分决策
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-950 text-indigo-300 border border-indigo-700/50">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #1e1b4b; color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.5);">
               跨度 len=${j - i + 1}
             </span>
           </div>
 
           <!-- 三段式得分拆解卡片 -->
-          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; font-size: 12px;">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>1. 左子多边形 dp[${i}][${k}]</span>
-                <span class="font-bold text-sky-300 text-sm">${leftScore}</span>
+                <span style="font-weight: bold; color: #7dd3fc; font-size: 14px;">${leftScore}</span>
               </div>
-              <div class="text-[11px] text-slate-500">子多边形 [${i}..${k}] 的最低三角剖分累加得分</div>
+              <div style="font-size: 11px; color: #64748b;">子多边形 [${i}..${k}] 的最低三角剖分累加得分</div>
             </div>
 
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>2. 右子多边形 dp[${k}][${j}]</span>
-                <span class="font-bold text-emerald-300 text-sm">${rightScore}</span>
+                <span style="font-weight: bold; color: #6ee7b7; font-size: 14px;">${rightScore}</span>
               </div>
-              <div class="text-[11px] text-slate-500">子多边形 [${k}..${j}] 的最低三角剖分累加得分</div>
+              <div style="font-size: 11px; color: #64748b;">子多边形 [${k}..${j}] 的最低三角剖分累加得分</div>
             </div>
 
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>3. 中间三角形 (${i}, ${k}, ${j})</span>
-                <span class="font-bold text-amber-300 text-sm">${values[i]} × ${k >= 0 ? values[k] : 0} × ${values[j]} = ${triScore}</span>
+                <span style="font-weight: bold; color: #fcd34d; font-size: 14px;">${values[i]} × ${k >= 0 ? values[k] : 0} × ${values[j]} = ${triScore}</span>
               </div>
-              <div class="text-[11px] text-slate-500">固定底边与顶点 k 构成的三角形顶点权值乘积</div>
+              <div style="font-size: 11px; color: #64748b;">固定底边与顶点 k 构成的三角形顶点权值乘积</div>
             </div>
 
             <!-- 当前合计与最优记录 -->
-            <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+            <div style="padding: 12px; border-radius: 8px; background: rgba(6, 78, 59, 0.4); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">当前最优最低得分 dp[${i}][${j}]</div>
-                <div class="text-[11px] text-slate-300">min { dp[i][k] + dp[k][j] + v[i]*v[k]*v[j] }</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: bold;">当前最优最低得分 dp[${i}][${j}]</div>
+                <div style="font-size: 11px; color: #cbd5e1;">min { dp[i][k] + dp[k][j] + v[i]*v[k]*v[j] }</div>
               </div>
-              <div class="text-xl font-black text-emerald-400 font-mono">${bestScore}</div>
+              <div style="font-size: 20px; font-weight: 900; color: #34d399; font-family: ui-monospace, monospace;">${bestScore}</div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+          <div style="font-size: 11px; color: #94a3b8; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(30, 41, 59, 0.8); line-height: 1.5;">
             💡 <strong>区间 DP 核心建模</strong>：固定凸多边形任意底边 <code>(${i}, ${j})</code>，多边形内部任意剖分必定有且仅有一个三角形以此底边为一边，枚举内部第三个顶点 <code>k</code> 即可无后效性拆分子问题。
           </div>
         </div>
@@ -334,120 +336,119 @@ export class IntervalDpSandboxAdapter {
         const suit = suits[idx % suits.length];
         const isRedSuit = suit === '♥' || suit === '♦';
 
-        let borderCls = 'border-slate-700 bg-slate-900/80 text-slate-400';
+        let cardStyle = 'border: 2px solid #475569; background: rgba(30, 41, 59, 0.9); color: #e2e8f0;';
         let badgeHtml = '';
 
         if (isTaken) {
-          borderCls = 'border-slate-800 bg-slate-950/60 opacity-30 grayscale';
+          cardStyle = 'border: 2px solid #1e293b; background: rgba(2, 6, 23, 0.6); opacity: 0.3; filter: grayscale(1);';
         } else if (isLeft && isRight) {
-          borderCls = 'border-purple-400 bg-purple-950/50 shadow-lg shadow-purple-500/20 scale-105';
-          badgeHtml = '<div class="absolute -top-2.5 px-1.5 py-0.2 rounded-full bg-purple-500 text-white text-[9px] font-bold">最后单牌</div>';
+          cardStyle = 'border: 2px solid #c084fc; background: rgba(59, 7, 100, 0.5); box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.2); transform: scale(1.05);';
+          badgeHtml = '<div style="position: absolute; top: -10px; padding: 2px 6px; border-radius: 9999px; background: #a855f7; color: #ffffff; font-size: 9px; font-weight: bold; white-space: nowrap;">最后单牌</div>';
         } else if (isLeft) {
-          borderCls = 'border-sky-400 bg-sky-950/50 shadow-lg shadow-sky-500/20 scale-105';
-          badgeHtml = '<div class="absolute -top-2.5 px-1.5 py-0.2 rounded-full bg-sky-500 text-white text-[9px] font-bold">👈 选左端</div>';
+          cardStyle = 'border: 2px solid #38bdf8; background: rgba(8, 47, 73, 0.5); box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.2); transform: scale(1.05);';
+          badgeHtml = '<div style="position: absolute; top: -10px; padding: 2px 6px; border-radius: 9999px; background: #0284c7; color: #ffffff; font-size: 9px; font-weight: bold; white-space: nowrap;">👈 选左端</div>';
         } else if (isRight) {
-          borderCls = 'border-amber-400 bg-amber-950/50 shadow-lg shadow-amber-500/20 scale-105';
-          badgeHtml = '<div class="absolute -top-2.5 px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold">👉 选右端</div>';
-        } else {
-          borderCls = 'border-slate-600 bg-slate-800/90 text-slate-200';
+          cardStyle = 'border: 2px solid #fbbf24; background: rgba(69, 26, 3, 0.5); box-shadow: 0 10px 15px -3px rgba(251, 191, 36, 0.2); transform: scale(1.05);';
+          badgeHtml = '<div style="position: absolute; top: -10px; padding: 2px 6px; border-radius: 9999px; background: #d97706; color: #ffffff; font-size: 9px; font-weight: bold; white-space: nowrap;">👉 选右端</div>';
         }
 
         return `
-          <div class="relative flex flex-col justify-between w-16 sm:w-20 h-28 sm:h-32 rounded-xl p-2.5 border-2 transition-all ${borderCls}">
+          <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; width: 72px; height: 116px; border-radius: 12px; padding: 10px; box-sizing: border-box; transition: all 0.2s; ${cardStyle}">
             ${badgeHtml}
-            <div class="flex justify-between items-center text-xs font-mono">
-              <span class="${isRedSuit ? 'text-rose-400' : 'text-slate-300'} font-bold">${suit}</span>
-              <span class="text-[10px] text-slate-500">#${idx}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: monospace;">
+              <span style="color: ${isRedSuit ? '#fb7185' : '#cbd5e1'}; font-weight: bold;">${suit}</span>
+              <span style="font-size: 10px; color: #64748b;">#${idx}</span>
             </div>
-            <div class="text-center font-black text-2xl sm:text-3xl font-mono text-slate-100">
+            <div style="text-align: center; font-weight: 900; font-size: 28px; font-family: monospace; color: #f8fafc;">
               ${num}
             </div>
-            <div class="flex justify-between items-center text-[10px] text-slate-400">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8;">
               <span>牌面</span>
-              <span class="${isRedSuit ? 'text-rose-400' : 'text-slate-300'}">${suit}</span>
+              <span style="color: ${isRedSuit ? '#fb7185' : '#cbd5e1'};">${suit}</span>
             </div>
           </div>
         `;
       })
       .join('');
 
-    container.className = 'w-full h-full flex flex-col justify-start p-3 bg-slate-900/90 text-slate-100 rounded-xl overflow-y-auto border border-slate-700/60 shadow-inner font-sans';
+    container.className = 'interval-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 12px; background: rgba(15, 23, 42, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); font-family: ui-sans-serif, system-ui, sans-serif; box-sizing: border-box;';
     container.innerHTML = `
-      <div class="grid grid-cols-12 gap-3 w-full h-full items-stretch">
-        <!-- 左侧 7 列：桌面纸牌陈列排布 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col items-center justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-amber-400 font-bold text-base">🃏</span>
-              <span class="font-bold text-slate-200">桌面连续纸牌博弈沙盘 (共 ${n} 张牌)</span>
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; width: 100%; height: 100%; align-items: stretch; box-sizing: border-box;">
+        <!-- 左侧：桌面纸牌陈列排布 -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; box-sizing: border-box;">
+          <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #1e293b; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #fbbf24; font-weight: bold; font-size: 16px;">🃏</span>
+              <span style="font-weight: bold; color: #e2e8f0;">桌面连续纸牌博弈沙盘 (共 ${n} 张牌)</span>
             </div>
-            <span class="text-[11px] text-slate-400 font-mono">当前有效牌堆: [${i}..${j}]</span>
+            <span style="font-size: 11px; color: #94a3b8; font-family: monospace;">当前有效牌堆: [${i}..${j}]</span>
           </div>
 
-          <div class="w-full flex-1 flex flex-wrap items-center justify-center gap-3 my-4 px-2">
+          <div style="width: 100%; flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin: 16px 0; padding: 0 8px;">
             ${cardsHtml}
           </div>
 
-          <div class="w-full p-2.5 rounded-lg bg-slate-900/80 border border-slate-800/80 flex items-center justify-between text-xs">
-            <span class="text-slate-400">两端端点可抽纸牌：</span>
-            <div class="flex gap-4 font-mono font-bold">
-              <span class="text-sky-400">左端 nums[${i}] = ${chooseLeftVal}</span>
-              <span class="text-amber-400">右端 nums[${j}] = ${chooseRightVal}</span>
+          <div style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(30, 41, 59, 0.8); display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+            <span style="color: #94a3b8;">两端端点可抽纸牌：</span>
+            <div style="display: flex; gap: 16px; font-family: monospace; font-weight: bold;">
+              <span style="color: #38bdf8;">左端 nums[${i}] = ${chooseLeftVal}</span>
+              <span style="color: #fbbf24;">右端 nums[${j}] = ${chooseRightVal}</span>
             </div>
           </div>
         </div>
 
-        <!-- 右侧 5 列：极小化极大决策与净胜分推导 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+        <!-- 右侧：极小化极大决策与净胜分推导 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 6px;">
               <span>⚖️</span> 零和博弈极小化极大决策舱
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-950 text-blue-300 border border-blue-700/50">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #172554; color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5);">
               dp[${i}][${j}]
             </span>
           </div>
 
-          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; font-size: 12px;">
             <!-- 方案 A: 拿走左牌 -->
-            <div class="p-2.5 rounded-lg ${gainLeft >= gainRight ? 'bg-sky-950/40 border-sky-500/50' : 'bg-slate-900/90 border-slate-800'} border">
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-sky-400">👈 抉择 1: 拿走左端牌 nums[${i}]</span>
-                <span class="font-mono font-bold text-sm text-sky-300">${gainLeft >= 0 ? '+' : ''}${gainLeft}</span>
+            <div style="padding: 10px; border-radius: 8px; ${gainLeft >= gainRight ? 'background: rgba(8, 47, 73, 0.4); border: 1px solid rgba(56, 189, 248, 0.5);' : 'background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;'}">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #38bdf8;">👈 抉择 1: 拿走左端牌 nums[${i}]</span>
+                <span style="font-family: monospace; font-weight: bold; font-size: 14px; color: #7dd3fc;">${gainLeft >= 0 ? '+' : ''}${gainLeft}</span>
               </div>
-              <div class="text-[11px] text-slate-400 font-mono">
+              <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
                 自身得 ${chooseLeftVal} - 对手后手净胜 dp[${i + 1}][${j}](${nextLeftOpponent}) = ${gainLeft}
               </div>
             </div>
 
             <!-- 方案 B: 拿走右牌 -->
-            <div class="p-2.5 rounded-lg ${gainRight >= gainLeft ? 'bg-amber-950/40 border-amber-500/50' : 'bg-slate-900/90 border-slate-800'} border">
-              <div class="flex justify-between items-center mb-1">
-                <span class="font-bold text-amber-400">👉 抉择 2: 拿走右端牌 nums[${j}]</span>
-                <span class="font-mono font-bold text-sm text-amber-300">${gainRight >= 0 ? '+' : ''}${gainRight}</span>
+            <div style="padding: 10px; border-radius: 8px; ${gainRight >= gainLeft ? 'background: rgba(69, 26, 3, 0.4); border: 1px solid rgba(245, 158, 11, 0.5);' : 'background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;'}">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-weight: bold; color: #fbbf24;">👉 抉择 2: 拿走右端牌 nums[${j}]</span>
+                <span style="font-family: monospace; font-weight: bold; font-size: 14px; color: #fcd34d;">${gainRight >= 0 ? '+' : ''}${gainRight}</span>
               </div>
-              <div class="text-[11px] text-slate-400 font-mono">
+              <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
                 自身得 ${chooseRightVal} - 对手后手净胜 dp[${i}][${j - 1}](${nextRightOpponent}) = ${gainRight}
               </div>
             </div>
 
             <!-- 最优决策与当前净胜分 -->
-            <div class="p-3 rounded-lg ${(recordedDp as number) >= 0 ? 'bg-emerald-950/40 border-emerald-500/40' : 'bg-rose-950/40 border-rose-500/40'} border flex items-center justify-between">
+            <div style="padding: 12px; border-radius: 8px; ${(recordedDp as number) >= 0 ? 'background: rgba(6, 78, 59, 0.4); border: 1px solid rgba(16, 185, 129, 0.4);' : 'background: rgba(76, 5, 25, 0.4); border: 1px solid rgba(244, 63, 94, 0.4);'} display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <div class="text-[10px] uppercase tracking-wider ${(recordedDp as number) >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: ${(recordedDp as number) >= 0 ? '#34d399' : '#fb7185'}; font-weight: bold;">
                   当前最优行动净胜分 dp[${i}][${j}]
                 </div>
-                <div class="text-[11px] text-slate-300">
+                <div style="font-size: 11px; color: #cbd5e1;">
                   ${(recordedDp as number) >= 0 ? '🟢 先手优势 (必胜态)' : '🔴 先手劣势 (必败态)'}
                 </div>
               </div>
-              <div class="text-xl font-black ${(recordedDp as number) >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-mono">
+              <div style="font-size: 20px; font-weight: 900; color: ${(recordedDp as number) >= 0 ? '#34d399' : '#fb7185'}; font-family: monospace;">
                 ${(recordedDp as number) >= 0 ? '+' : ''}${recordedDp}
               </div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+          <div style="font-size: 11px; color: #94a3b8; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(30, 41, 59, 0.8); line-height: 1.5;">
             💡 <strong>博弈论零和转化</strong>：<code>dp[i][j]</code> 定义为当前行动者相对于对手的<strong>净胜分数</strong>。无论选哪端，拿走后剩下的区间留给对手，故自身净胜分 = <code>本次得分 - 对手在剩余区间的净胜分</code>。
           </div>
         </div>
@@ -503,39 +504,36 @@ export class IntervalDpSandboxAdapter {
         const color = isVirtual ? '#64748b' : balloonColors[(idx - 1) % balloonColors.length];
 
         let stateBadge = '';
-        let borderCls = 'border-slate-700 bg-slate-900/80';
-        let scaleCls = 'scale-100';
+        let balloonBoxStyle = 'border: 2px solid #475569; background: rgba(15, 23, 42, 0.8);';
 
         if (isVirtual) {
-          borderCls = 'border-slate-600 bg-slate-800 text-slate-300';
-          stateBadge = '<div class="text-[9px] text-slate-400 font-bold">虚拟边界</div>';
+          balloonBoxStyle = 'border: 2px solid #475569; background: #1e293b; color: #cbd5e1;';
+          stateBadge = '<div style="font-size: 9px; color: #94a3b8; font-weight: bold;">虚拟边界</div>';
         } else if (isTarget) {
-          borderCls = 'border-amber-400 bg-amber-950/60 shadow-xl shadow-amber-500/30';
-          scaleCls = 'scale-110';
-          stateBadge = '<div class="text-[9px] text-amber-400 font-bold">🎯 最后戳破</div>';
+          balloonBoxStyle = 'border: 2px solid #fbbf24; background: rgba(69, 26, 3, 0.6); box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);';
+          stateBadge = '<div style="font-size: 9px; color: #fbbf24; font-weight: bold;">🎯 最后戳破</div>';
         } else if (idx > i && idx < j) {
-          borderCls = 'border-slate-600 bg-slate-900 text-slate-200';
-          stateBadge = '<div class="text-[9px] text-slate-500">区间待戳</div>';
+          balloonBoxStyle = 'border: 2px solid #475569; background: #0f172a; color: #e2e8f0;';
+          stateBadge = '<div style="font-size: 9px; color: #64748b;">区间待戳</div>';
         } else {
-          borderCls = 'border-slate-800 bg-slate-950/40 opacity-40';
-          stateBadge = '<div class="text-[9px] text-slate-600">已戳/界外</div>';
+          balloonBoxStyle = 'border: 2px solid #1e293b; background: rgba(2, 6, 23, 0.4); opacity: 0.4;';
+          stateBadge = '<div style="font-size: 9px; color: #475569;">已戳/界外</div>';
         }
 
         return `
-          <div class="flex flex-col items-center gap-1.5 transition-all ${scaleCls}">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; ${isTarget ? 'transform: scale(1.1);' : ''} transition: all 0.2s;">
             ${stateBadge}
             <!-- 拟物气球球体 -->
-            <div class="relative w-14 sm:w-16 h-18 sm:h-20 rounded-full flex flex-col items-center justify-center border-2 ${borderCls}"
-                 style="${isTarget ? 'box-shadow: 0 0 16px rgba(245, 158, 11, 0.4);' : ''}">
-              <div class="text-[10px] text-slate-400 font-mono">#${idx}</div>
-              <div class="text-xl sm:text-2xl font-black font-mono text-white" style="color: ${color}">
+            <div style="position: relative; width: 56px; height: 72px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; ${balloonBoxStyle}">
+              <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">#${idx}</div>
+              <div style="font-size: 22px; font-weight: 900; font-family: monospace; color: ${color};">
                 ${v}
               </div>
               <!-- 气球气嘴与线绳 -->
-              <div class="absolute -bottom-1.5 w-2 h-1.5 rounded-sm bg-slate-500"></div>
-              <div class="absolute -bottom-4 w-0.5 h-3 bg-slate-600"></div>
+              <div style="position: absolute; bottom: -6px; width: 8px; height: 6px; border-radius: 2px; background: #64748b;"></div>
+              <div style="position: absolute; bottom: -18px; width: 2px; height: 12px; background: #475569;"></div>
             </div>
-            <div class="text-[10px] font-mono ${isLeftWall ? 'text-sky-400 font-bold' : isRightWall ? 'text-indigo-400 font-bold' : 'text-slate-500'}">
+            <div style="font-size: 10px; font-family: monospace; ${isLeftWall ? 'color: #38bdf8; font-weight: bold;' : isRightWall ? 'color: #818cf8; font-weight: bold;' : 'color: #64748b;'}">
               ${isLeftWall ? '← i (左壁)' : isRightWall ? 'j (右壁) →' : `#${idx}`}
             </div>
           </div>
@@ -543,77 +541,78 @@ export class IntervalDpSandboxAdapter {
       })
       .join('');
 
-    container.className = 'w-full h-full flex flex-col justify-start p-3 bg-slate-900/90 text-slate-100 rounded-xl overflow-y-auto border border-slate-700/60 shadow-inner font-sans';
+    container.className = 'interval-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 12px; background: rgba(15, 23, 42, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); font-family: ui-sans-serif, system-ui, sans-serif; box-sizing: border-box;';
     container.innerHTML = `
-      <div class="grid grid-cols-12 gap-3 w-full h-full items-stretch">
-        <!-- 左侧 7 列：气球陈列与靶心沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col items-center justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-rose-400 font-bold text-base">🎈</span>
-              <span class="font-bold text-slate-200">气球陈列架沙盘 (开区间 (${i}, ${j}))</span>
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; width: 100%; height: 100%; align-items: stretch; box-sizing: border-box;">
+        <!-- 左侧：气球陈列与靶心沙盘 -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; box-sizing: border-box;">
+          <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #1e293b; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #f43f5e; font-weight: bold; font-size: 16px;">🎈</span>
+              <span style="font-weight: bold; color: #e2e8f0;">气球陈列架沙盘 (开区间 (${i}, ${j}))</span>
             </div>
-            <span class="text-[11px] text-slate-400 font-mono">开区间跨度 len=${j - i}</span>
+            <span style="font-size: 11px; color: #94a3b8; font-family: monospace;">开区间跨度 len=${j - i}</span>
           </div>
 
-          <div class="w-full flex-1 flex flex-wrap items-center justify-center gap-3.5 my-4 px-2">
+          <div style="width: 100%; flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin: 16px 0; padding: 0 8px;">
             ${balloonsHtml}
           </div>
 
-          <div class="w-full p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs">
-            <span class="text-slate-400">相邻紧贴边界计算：</span>
-            <div class="font-mono font-bold text-amber-400">
+          <div style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; font-size: 12px;">
+            <span style="color: #94a3b8;">相邻紧贴边界计算：</span>
+            <div style="font-family: monospace; font-weight: bold; color: #fbbf24;">
               val[${i}](${val[i]}) × val[${k}](${k >= 0 ? val[k] : '?'}) × val[${j}](${val[j]}) = ${gain}
             </div>
           </div>
         </div>
 
-        <!-- 右侧 5 列：逆向思维金币收益推导 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+        <!-- 右侧：逆向思维金币收益推导 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 6px;">
               <span>🪙</span> 金币收益演算舱
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-950 text-amber-300 border border-amber-700/50">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #451a03; color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.5);">
               dp[${i}][${j}]
             </span>
           </div>
 
-          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; font-size: 12px;">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>左子开区间 dp[${i}][${k}]</span>
-                <span class="font-bold text-sky-300 text-sm font-mono">${leftCoins}</span>
+                <span style="font-weight: bold; color: #7dd3fc; font-size: 14px; font-family: monospace;">${leftCoins}</span>
               </div>
-              <div class="text-[11px] text-slate-500">区间 (${i}, ${k}) 内部所有气球全部戳破的金币收益</div>
+              <div style="font-size: 11px; color: #64748b;">区间 (${i}, ${k}) 内部所有气球全部戳破的金币收益</div>
             </div>
 
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>右子开区间 dp[${k}][${j}]</span>
-                <span class="font-bold text-emerald-300 text-sm font-mono">${rightCoins}</span>
+                <span style="font-weight: bold; color: #6ee7b7; font-size: 14px; font-family: monospace;">${rightCoins}</span>
               </div>
-              <div class="text-[11px] text-slate-500">区间 (${k}, ${j}) 内部所有气球全部戳破的金币收益</div>
+              <div style="font-size: 11px; color: #64748b;">区间 (${k}, ${j}) 内部所有气球全部戳破的金币收益</div>
             </div>
 
-            <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800">
-              <div class="flex justify-between items-center text-slate-400 mb-1">
+            <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b;">
+              <div style="display: flex; justify-content: space-between; align-items: center; color: #94a3b8; margin-bottom: 4px;">
                 <span>最后戳破气球 #${k} 自身即时金币</span>
-                <span class="font-bold text-amber-300 text-sm font-mono">${gain}</span>
+                <span style="font-weight: bold; color: #fcd34d; font-size: 14px; font-family: monospace;">${gain}</span>
               </div>
-              <div class="text-[11px] text-slate-500">由于其左右气球已全破，此时其相邻气球必为边界 ${i} 与 ${j}</div>
+              <div style="font-size: 11px; color: #64748b;">由于其左右气球已全破，此时其相邻气球必为边界 ${i} 与 ${j}</div>
             </div>
 
-            <div class="p-3 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-center justify-between">
+            <div style="padding: 12px; border-radius: 8px; background: rgba(69, 26, 3, 0.4); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">开区间 (${i}, ${j}) 最大金币 dp[${i}][${j}]</div>
-                <div class="text-[11px] text-slate-300">max { dp[i][k] + dp[k][j] + val[i]*val[k]*val[j] }</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #fbbf24; font-weight: bold;">开区间 (${i}, ${j}) 最大金币 dp[${i}][${j}]</div>
+                <div style="font-size: 11px; color: #cbd5e1;">max { dp[i][k] + dp[k][j] + val[i]*val[k]*val[j] }</div>
               </div>
-              <div class="text-xl font-black text-amber-400 font-mono">${bestCoins}</div>
+              <div style="font-size: 20px; font-weight: 900; color: #fbbf24; font-family: monospace;">${bestCoins}</div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+          <div style="font-size: 11px; color: #94a3b8; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(30, 41, 59, 0.8); line-height: 1.5;">
             💡 <strong>逆向思维神来之笔</strong>：正向考虑“先戳哪个”会导致剩余气球不连续破坏子问题独立性；而<strong>逆向假设“k 是开区间中最后一个被戳破的”</strong>，无论中间怎么戳，气球 k 最终的相邻者必然就是外侧边界 <code>i</code> 和 <code>j</code>！
           </div>
         </div>
@@ -660,99 +659,100 @@ export class IntervalDpSandboxAdapter {
         const isJ = idx === j;
         const color = charColors[ch] || '#a855f7';
 
-        let borderCls = 'border-slate-700 bg-slate-900/70 text-slate-400';
+        let ribbonBoxStyle = 'border: 2px solid #475569; background: rgba(15, 23, 42, 0.7); color: #94a3b8;';
         let badgeHtml = '';
 
         if (!inSub) {
-          borderCls = 'border-slate-800 bg-slate-950/40 opacity-30';
+          ribbonBoxStyle = 'border: 2px solid #1e293b; background: rgba(2, 6, 23, 0.4); opacity: 0.3;';
         } else if (isI && isJ) {
-          borderCls = 'border-emerald-400 bg-emerald-950/50 shadow-md shadow-emerald-500/20';
-          badgeHtml = '<div class="absolute -top-3 text-[8px] font-bold text-emerald-400">单字符</div>';
+          ribbonBoxStyle = 'border: 2px solid #10b981; background: rgba(6, 78, 59, 0.5); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);';
+          badgeHtml = '<div style="position: absolute; top: -12px; font-size: 8px; font-weight: bold; color: #34d399; white-space: nowrap;">单字符</div>';
         } else if (isI) {
-          borderCls = 'border-sky-400 bg-sky-950/50 shadow-md shadow-sky-500/20';
-          badgeHtml = '<div class="absolute -top-3 text-[8px] font-bold text-sky-400">首端 i</div>';
+          ribbonBoxStyle = 'border: 2px solid #38bdf8; background: rgba(8, 47, 73, 0.5); box-shadow: 0 4px 6px -1px rgba(56, 189, 248, 0.2);';
+          badgeHtml = '<div style="position: absolute; top: -12px; font-size: 8px; font-weight: bold; color: #38bdf8; white-space: nowrap;">首端 i</div>';
         } else if (isJ) {
-          borderCls = isSameEnd ? 'border-sky-400 bg-sky-950/50 shadow-md shadow-sky-500/20' : 'border-amber-400 bg-amber-950/50';
-          badgeHtml = `<div class="absolute -top-3 text-[8px] font-bold ${isSameEnd ? 'text-sky-400' : 'text-amber-400'}">尾端 j</div>`;
+          ribbonBoxStyle = isSameEnd ? 'border: 2px solid #38bdf8; background: rgba(8, 47, 73, 0.5); box-shadow: 0 4px 6px -1px rgba(56, 189, 248, 0.2);' : 'border: 2px solid #fbbf24; background: rgba(69, 26, 3, 0.5);';
+          badgeHtml = `<div style="position: absolute; top: -12px; font-size: 8px; font-weight: bold; color: ${isSameEnd ? '#38bdf8' : '#fbbf24'}; white-space: nowrap;">尾端 j</div>`;
         } else {
-          borderCls = 'border-slate-600 bg-slate-800/80 text-slate-200';
+          ribbonBoxStyle = 'border: 2px solid #475569; background: rgba(30, 41, 59, 0.8); color: #e2e8f0;';
         }
 
         return `
-          <div class="relative flex flex-col items-center justify-between w-11 sm:w-13 h-16 sm:h-18 rounded-lg p-1.5 border-2 transition-all ${borderCls}">
+          <div style="position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between; width: 48px; height: 68px; border-radius: 8px; padding: 6px; box-sizing: border-box; ${ribbonBoxStyle}">
             ${badgeHtml}
-            <div class="text-[9px] text-slate-400 font-mono">#${idx}</div>
-            <div class="text-xl sm:text-2xl font-black font-mono" style="color: ${color}">
+            <div style="font-size: 9px; color: #94a3b8; font-family: monospace;">#${idx}</div>
+            <div style="font-size: 22px; font-weight: 900; font-family: monospace; color: ${color};">
               ${ch}
             </div>
-            <div class="w-full h-1 rounded-full" style="background-color: ${color}"></div>
+            <div style="width: 100%; height: 4px; border-radius: 9999px; background-color: ${color};"></div>
           </div>
         `;
       })
       .join('');
 
-    container.className = 'w-full h-full flex flex-col justify-start p-3 bg-slate-900/90 text-slate-100 rounded-xl overflow-y-auto border border-slate-700/60 shadow-inner font-sans';
+    container.className = 'interval-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 12px; background: rgba(15, 23, 42, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); font-family: ui-sans-serif, system-ui, sans-serif; box-sizing: border-box;';
     container.innerHTML = `
-      <div class="grid grid-cols-12 gap-3 w-full h-full items-stretch">
-        <!-- 左侧 7 列：打印机色带与喷头沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col items-center justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800">
-          <div class="w-full flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
-            <div class="flex items-center gap-2">
-              <span class="text-sky-400 font-bold text-base">🖨️</span>
-              <span class="font-bold text-slate-200">奇怪的打印机色带轨迹 (子串: "${s.slice(i, j + 1)}")</span>
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; width: 100%; height: 100%; align-items: stretch; box-sizing: border-box;">
+        <!-- 左侧：打印机色带与喷头沙盘 -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; box-sizing: border-box;">
+          <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #1e293b; font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #38bdf8; font-weight: bold; font-size: 16px;">🖨️</span>
+              <span style="font-weight: bold; color: #e2e8f0;">奇怪的打印机色带轨迹 (子串: "${s.slice(i, j + 1)}")</span>
             </div>
-            <span class="text-[11px] text-slate-400 font-mono">区间 [${i}..${j}] (长度 ${j - i + 1})</span>
+            <span style="font-size: 11px; color: #94a3b8; font-family: monospace;">区间 [${i}..${j}] (长度 ${j - i + 1})</span>
           </div>
 
-          <div class="w-full flex-1 flex flex-wrap items-center justify-center gap-2 my-4 px-2">
+          <div style="width: 100%; flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 16px 0; padding: 0 8px;">
             ${ribbonHtml}
           </div>
 
-          <div class="w-full p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400">两端字符比较：</span>
-              <span class="text-sky-400 font-bold">s[${i}] = '${charI}'</span>
-              <span class="text-slate-400">${isSameEnd ? '==' : '!='}</span>
-              <span class="${isSameEnd ? 'text-sky-400' : 'text-amber-400'} font-bold">s[${j}] = '${charJ}'</span>
+          <div style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: monospace;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #94a3b8;">两端字符比较：</span>
+              <span style="color: #38bdf8; font-weight: bold;">s[${i}] = '${charI}'</span>
+              <span style="color: #94a3b8;">${isSameEnd ? '==' : '!='}</span>
+              <span style="color: ${isSameEnd ? '#38bdf8' : '#fbbf24'}; font-weight: bold;">s[${j}] = '${charJ}'</span>
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] ${isSameEnd ? 'bg-sky-950 text-sky-300 border border-sky-500/40' : 'bg-amber-950 text-amber-300 border border-amber-500/40'}">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; ${isSameEnd ? 'background: #082f49; color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4);' : 'background: #451a03; color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4);'}">
               ${isSameEnd ? '✨ 首尾同色顺带覆盖' : '🔀 需切分点 k 分段刷漆'}
             </span>
           </div>
         </div>
 
-        <!-- 右侧 5 列：涂色策略与贪心抵消监视器 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+        <!-- 右侧：涂色策略与贪心抵消监视器 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 6px;">
               <span>🎨</span> 涂色策略与抵消决策舱
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #064e3b; color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5);">
               dp[${i}][${j}]
             </span>
           </div>
 
-          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; font-size: 12px;">
             ${
               isSameEnd
                 ? `
-              <div class="p-3 rounded-lg bg-sky-950/40 border border-sky-500/50 flex flex-col gap-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-sky-300">✨ 首尾相同优化：dp[i][j] = dp[i][j - 1]</span>
-                  <span class="text-base font-bold font-mono text-sky-400">${bestTurns} 次</span>
+              <div style="padding: 12px; border-radius: 8px; background: rgba(8, 47, 73, 0.4); border: 1px solid rgba(56, 189, 248, 0.5); display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: bold; color: #7dd3fc;">✨ 首尾相同优化：dp[i][j] = dp[i][j - 1]</span>
+                  <span style="font-size: 16px; font-weight: bold; font-family: monospace; color: #38bdf8;">${bestTurns} 次</span>
                 </div>
-                <div class="text-[11px] text-slate-300 leading-relaxed">
+                <div style="font-size: 11px; color: #cbd5e1; line-height: 1.5;">
                   打印首字符 <code>'${charI}'</code> 时，可贪心顺带一口气刷到尾部 <code>j</code>，尾部字符自然成型，后续子串涂色只需覆盖中间杂色部分，<strong>操作次数完全无需增加</strong>！
                 </div>
               </div>
             `
                 : `
-              <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800 flex flex-col gap-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-amber-300">🔀 枚举最优切分点 k ∈ [${i}..${j - 1}]</span>
-                  <span class="text-base font-bold font-mono text-amber-400">${bestTurns} 次</span>
+              <div style="padding: 12px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: bold; color: #fcd34d;">🔀 枚举最优切分点 k ∈ [${i}..${j - 1}]</span>
+                  <span style="font-size: 16px; font-weight: bold; font-family: monospace; color: #fbbf24;">${bestTurns} 次</span>
                 </div>
-                <div class="text-[11px] text-slate-400 leading-relaxed">
+                <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
                   首尾字符不同无法顺带涂刷，必须在某个切分点 <code>k</code> 处换色：<br/>
                   <code>dp[i][j] = min { dp[i][k] + dp[k + 1][j] }</code>
                 </div>
@@ -760,16 +760,16 @@ export class IntervalDpSandboxAdapter {
             `
             }
 
-            <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+            <div style="padding: 12px; border-radius: 8px; background: rgba(6, 78, 59, 0.4); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">子串 s[${i}..${j}] 最少打印次数</div>
-                <div class="text-[11px] text-slate-300 font-mono">"${s.slice(i, j + 1)}" 完美成型</div>
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: bold;">子串 s[${i}..${j}] 最少打印次数</div>
+                <div style="font-size: 11px; color: #cbd5e1; font-family: monospace;">"${s.slice(i, j + 1)}" 完美成型</div>
               </div>
-              <div class="text-xl font-black text-emerald-400 font-mono">${bestTurns}</div>
+              <div style="font-size: 20px; font-weight: 900; color: #34d399; font-family: monospace;">${bestTurns}</div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+          <div style="font-size: 11px; color: #94a3b8; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(30, 41, 59, 0.8); line-height: 1.5;">
             💡 <strong>奇怪打印机的物理特质</strong>：打印机每次只能用同一种颜色打印连续的一整段字符，后打印的颜色会覆盖之前打印的颜色。首尾相同顺带覆盖是区间 DP 的关键剪枝点。
           </div>
         </div>
@@ -837,46 +837,46 @@ export class IntervalDpSandboxAdapter {
         // 根据重量计算柱高/堆高 (40px ~ 85px)
         const heightPx = Math.max(45, Math.round((val / maxStoneWeight) * 85));
 
-        let cardBorder = 'border-slate-800 bg-slate-900/40 text-slate-500 opacity-30';
-        let pebbleBg = 'from-slate-700 to-slate-800';
+        let cardStyle = 'border: 1px solid #1e293b; background: rgba(15, 23, 42, 0.4); color: #64748b; opacity: 0.3;';
+        let pebbleBg = 'linear-gradient(to top, #1e293b, #334155)';
 
         if (isSinglePebble) {
-          cardBorder = 'border-emerald-500 bg-emerald-950/60 text-emerald-200 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-950/50';
-          pebbleBg = 'from-emerald-600 to-emerald-800';
+          cardStyle = 'border: 2px solid #10b981; background: rgba(6, 78, 59, 0.6); color: #a7f3d0; box-shadow: 0 10px 15px -3px rgba(6, 78, 59, 0.5);';
+          pebbleBg = 'linear-gradient(to top, #065f46, #059669)';
         } else if (isLeftPart) {
-          cardBorder = 'border-sky-500 bg-sky-950/50 text-sky-200 ring-1 ring-sky-500/40 shadow-md shadow-sky-950/40';
-          pebbleBg = 'from-sky-600 to-sky-800';
+          cardStyle = 'border: 2px solid #0284c7; background: rgba(8, 47, 73, 0.5); color: #bae6fd; box-shadow: 0 4px 6px -1px rgba(8, 47, 73, 0.4);';
+          pebbleBg = 'linear-gradient(to top, #0369a1, #0284c7)';
         } else if (isRightPart) {
-          cardBorder = 'border-amber-500 bg-amber-950/50 text-amber-200 ring-1 ring-amber-500/40 shadow-md shadow-amber-950/40';
-          pebbleBg = 'from-amber-600 to-amber-800';
+          cardStyle = 'border: 2px solid #d97706; background: rgba(69, 26, 3, 0.5); color: #fde68a; box-shadow: 0 4px 6px -1px rgba(69, 26, 3, 0.4);';
+          pebbleBg = 'linear-gradient(to top, #b45309, #d97706)';
         }
 
         const dividerHtml =
           idx === k && k < j
             ? `
-          <div class="flex flex-col items-center justify-center px-1 text-rose-400 z-10">
-            <span class="text-xs">🪓</span>
-            <div class="w-0.5 h-16 bg-gradient-to-b from-rose-500 via-rose-400 to-transparent"></div>
-            <span class="text-[9px] font-mono font-bold text-rose-300 mt-0.5">k=${k}</span>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 4px; color: #fb7185; z-index: 10;">
+            <span style="font-size: 12px;">🪓</span>
+            <div style="width: 2px; height: 64px; background: linear-gradient(to bottom, #f43f5e, #fb7185, transparent);"></div>
+            <span style="font-size: 9px; font-family: monospace; font-weight: bold; color: #fda4af; margin-top: 2px;">k=${k}</span>
           </div>
         `
             : '';
 
         return `
-          <div class="flex items-center">
-            <div class="flex flex-col items-center">
-              <div class="w-14 rounded-xl border ${cardBorder} flex flex-col items-center justify-end p-2 transition-all duration-300 relative" style="height: 110px;">
+          <div style="display: flex; align-items: center;">
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <div style="width: 56px; height: 110px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 8px; box-sizing: border-box; transition: all 0.3s; position: relative; ${cardStyle}">
                 <!-- 顶部重量标识 -->
-                <div class="text-xs font-black font-mono mb-1.5 flex items-center gap-0.5">
+                <div style="font-size: 12px; font-weight: 900; font-family: monospace; margin-bottom: 6px; display: flex; align-items: center; gap: 2px;">
                   <span>${val}</span>
-                  <span class="text-[9px] font-normal opacity-70">kg</span>
+                  <span style="font-size: 9px; font-weight: normal; opacity: 0.7;">kg</span>
                 </div>
                 <!-- 拟物石子堆立面 -->
-                <div class="w-full rounded-lg bg-gradient-to-t ${pebbleBg} border border-white/10 flex items-center justify-center shadow-inner" style="height: ${heightPx}px;">
-                  <span class="text-xs opacity-75">🪨</span>
+                <div style="width: 100%; height: ${heightPx}px; border-radius: 8px; background: ${pebbleBg}; border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
+                  <span style="font-size: 12px; opacity: 0.75;">🪨</span>
                 </div>
               </div>
-              <span class="text-[10px] font-mono mt-1 font-bold ${isOutOfInterval ? 'text-slate-600' : 'text-slate-300'}">
+              <span style="font-size: 10px; font-family: monospace; margin-top: 4px; font-weight: bold; color: ${isOutOfInterval ? '#475569' : '#cbd5e1'};">
                 #${idx}
               </span>
             </div>
@@ -886,119 +886,121 @@ export class IntervalDpSandboxAdapter {
       })
       .join('');
 
+    container.className = 'interval-dp-sandbox-container';
+    container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding: 12px; background: rgba(2, 6, 23, 0.95); color: #f1f5f9; border-radius: 12px; overflow-y: auto; border: 1px solid rgba(51, 65, 85, 0.6); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); font-family: ui-sans-serif, system-ui, sans-serif; box-sizing: border-box;';
     container.innerHTML = `
-      <div class="w-full h-full grid grid-cols-12 gap-3 p-3 bg-slate-950 text-slate-100 rounded-xl overflow-y-auto">
-        <!-- 左侧 7 列：石子堆序列陈列沙盘 -->
-        <div class="col-span-12 lg:col-span-7 flex flex-col justify-between bg-slate-900/60 rounded-xl p-3 border border-slate-800 gap-3">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+      <div style="width: 100%; height: 100%; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: stretch; box-sizing: border-box;">
+        <!-- 左侧：石子堆序列陈列沙盘 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 12px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 6px;">
               <span>🪨</span> 石子堆序列陈列沙盘 (Stone Piles & Interval Slice)
             </div>
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-950 text-sky-300 border border-sky-700/50">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #082f49; color: #7dd3fc; border: 1px solid rgba(14, 165, 233, 0.5);">
                 区间 [${i}..${j}]
               </span>
               ${
                 j > i && k >= i
-                  ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-700/50">切分点 k=${k}</span>`
+                  ? `<span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #4c0519; color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.5);">切分点 k=${k}</span>`
                   : ''
               }
             </div>
           </div>
 
           <!-- 石子堆陈列舞台 -->
-          <div class="w-full flex-1 flex flex-wrap items-center justify-center gap-2 my-2 px-2">
+          <div style="width: 100%; flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 8px 0; padding: 0 8px;">
             ${pilesHtml}
           </div>
 
           <!-- 区间重量指示条 -->
-          <div class="w-full p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs font-mono">
-            <div class="flex items-center gap-2">
-              <span class="text-slate-400">区间石子总重：</span>
-              <span class="text-emerald-400 font-bold">sum[${j + 1}] - sum[${i}] = ${totalWeight} kg</span>
+          <div style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: monospace;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="color: #94a3b8;">区间石子总重：</span>
+              <span style="color: #34d399; font-weight: bold;">sum[${j + 1}] - sum[${i}] = ${totalWeight} kg</span>
             </div>
             ${
               j > i && k >= i
                 ? `
-              <div class="flex gap-3 text-[11px]">
-                <span class="text-sky-400 font-bold">左段 [${i}..${k}]</span>
-                <span class="text-slate-500">|</span>
-                <span class="text-amber-400 font-bold">右段 [${k + 1}..${j}]</span>
+              <div style="display: flex; gap: 12px; font-size: 11px;">
+                <span style="color: #38bdf8; font-weight: bold;">左段 [${i}..${k}]</span>
+                <span style="color: #64748b;">|</span>
+                <span style="color: #fbbf24; font-weight: bold;">右段 [${k + 1}..${j}]</span>
               </div>
             `
-                : '<span class="text-emerald-400 text-[11px]">单堆基底无需合并 (成本 0)</span>'
+                : '<span style="color: #34d399; font-size: 11px;">单堆基底无需合并 (成本 0)</span>'
             }
           </div>
         </div>
 
-        <!-- 右侧 5 列：合并成本与前缀和演算舱 -->
-        <div class="col-span-12 lg:col-span-5 flex flex-col justify-between bg-slate-950/60 rounded-xl p-3 border border-slate-800 gap-2.5">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <div class="font-bold text-slate-200 text-xs flex items-center gap-1.5">
+        <!-- 右侧：合并成本与前缀和演算舱 -->
+        <div style="display: flex; flex-direction: column; justify-content: space-between; background: rgba(2, 6, 23, 0.6); border-radius: 12px; padding: 12px; border: 1px solid #1e293b; gap: 10px; box-sizing: border-box;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+            <div style="font-weight: bold; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 6px;">
               <span>⚡</span> 合并成本与前缀和演算舱
             </div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/50">
+            <span style="padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; background: #064e3b; color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.5);">
               dp[${i}][${j}]
             </span>
           </div>
 
-          <div class="flex-1 flex flex-col justify-around gap-2 text-xs">
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 8px; font-size: 12px;">
             ${
               j === i
                 ? `
-              <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/50 flex flex-col gap-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="font-bold text-emerald-300">🏁 单堆基底状态：dp[${i}][${i}] = 0</span>
-                  <span class="text-base font-bold font-mono text-emerald-400">0 成本</span>
+              <div style="padding: 12px; border-radius: 8px; background: rgba(6, 78, 59, 0.4); border: 1px solid rgba(16, 185, 129, 0.5); display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-weight: bold; color: #6ee7b7;">🏁 单堆基底状态：dp[${i}][${i}] = 0</span>
+                  <span style="font-size: 16px; font-weight: bold; font-family: monospace; color: #34d399;">0 成本</span>
                 </div>
-                <div class="text-[11px] text-slate-300 leading-relaxed">
+                <div style="font-size: 11px; color: #cbd5e1; line-height: 1.5;">
                   单堆石子已经属于同一堆，完全不需要执行任何合并操作，合并基础开销为 <strong>0</strong>。
                 </div>
               </div>
             `
                 : `
               <!-- 左子区间成本 -->
-              <div class="p-2.5 rounded-lg bg-sky-950/40 border border-sky-500/40 flex items-center justify-between">
+              <div style="padding: 10px; border-radius: 8px; background: rgba(8, 47, 73, 0.4); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                  <div class="text-[10px] uppercase tracking-wider text-sky-400 font-bold">👈 左子段合并成本 dp[${i}][${k}]</div>
-                  <div class="text-[11px] text-slate-300 font-mono">石子 #${i} 到 #${k} 先行合并</div>
+                  <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #38bdf8; font-weight: bold;">👈 左子段合并成本 dp[${i}][${k}]</div>
+                  <div style="font-size: 11px; color: #cbd5e1; font-family: monospace;">石子 #${i} 到 #${k} 先行合并</div>
                 </div>
-                <div class="text-lg font-bold text-sky-300 font-mono">${leftCost}</div>
+                <div style="font-size: 18px; font-weight: bold; color: #7dd3fc; font-family: monospace;">${leftCost}</div>
               </div>
 
               <!-- 右子区间成本 -->
-              <div class="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 flex items-center justify-between">
+              <div style="padding: 10px; border-radius: 8px; background: rgba(69, 26, 3, 0.4); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                  <div class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">👉 右子段合并成本 dp[${k + 1}][${j}]</div>
-                  <div class="text-[11px] text-slate-300 font-mono">石子 #${k + 1} 到 #${j} 先行合并</div>
+                  <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #fbbf24; font-weight: bold;">👉 右子段合并成本 dp[${k + 1}][${j}]</div>
+                  <div style="font-size: 11px; color: #cbd5e1; font-family: monospace;">石子 #${k + 1} 到 #${j} 先行合并</div>
                 </div>
-                <div class="text-lg font-bold text-amber-300 font-mono">${rightCost}</div>
+                <div style="font-size: 18px; font-weight: bold; color: #fcd34d; font-family: monospace;">${rightCost}</div>
               </div>
 
               <!-- 物理质量守恒与本次合并代价 -->
-              <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 flex items-center justify-between">
+              <div style="padding: 10px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                  <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">🧮 最终大合并代价 (总重量)</div>
-                  <div class="text-[11px] text-slate-400 font-mono">sum[${j + 1}] - sum[${i}]</div>
+                  <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-weight: bold;">🧮 最终大合并代价 (总重量)</div>
+                  <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">sum[${j + 1}] - sum[${i}]</div>
                 </div>
-                <div class="text-lg font-bold text-slate-200 font-mono">+${totalWeight}</div>
+                <div style="font-size: 18px; font-weight: bold; color: #e2e8f0; font-family: monospace;">+${totalWeight}</div>
               </div>
             `
             }
 
             <!-- 最终合并总成本 -->
-            <div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+            <div style="padding: 12px; border-radius: 8px; background: rgba(6, 78, 59, 0.4); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: space-between;">
               <div>
-                <div class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">区间 [${i}..${j}] 归约合并总成本</div>
-                <div class="text-[11px] text-slate-300 font-mono">
+                <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: bold;">区间 [${i}..${j}] 归约合并总成本</div>
+                <div style="font-size: 11px; color: #cbd5e1; font-family: monospace;">
                   ${j === i ? '无需合并' : `子成本(${leftCost} + ${rightCost}) + 重量(${totalWeight})`}
                 </div>
               </div>
-              <div class="text-xl font-black text-emerald-400 font-mono">${finalCost}</div>
+              <div style="font-size: 20px; font-weight: 900; color: #34d399; font-family: monospace;">${finalCost}</div>
             </div>
           </div>
 
-          <div class="text-[11px] text-slate-400 p-2 rounded bg-slate-900/60 border border-slate-800/80 leading-relaxed">
+          <div style="font-size: 11px; color: #94a3b8; padding: 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(30, 41, 59, 0.8); line-height: 1.5;">
             💡 <strong>物理质量守恒与区间 DP</strong>：无论以何种顺序将区间内的石子最终合为一堆，最后一次两堆大合并所付出的成本必为整个区间石子重量的总和 <code>sum[i..j]</code>。因此问题精确归约为枚举最后一次合并的切分点 <code>k</code>。
           </div>
         </div>
