@@ -1737,6 +1737,55 @@ button[class*="-chip"]:hover {
   padding-top: 2px !important;
 }
 
+/* 全景推演树根容器基础约束 (脱机自包含保证) */
+.deduction-board-root {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 12px !important;
+  color: #334155 !important;
+  user-select: text !important;
+  padding-bottom: 24px !important;
+}
+
+/* 通用无 Tailwind 环境下的自闭环动画与透明度原子支持 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite !important;
+  transform-origin: center !important;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+.opacity-75 {
+  opacity: 0.75 !important;
+}
+
+
 
 
 

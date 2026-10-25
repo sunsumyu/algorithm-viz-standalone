@@ -41,24 +41,24 @@ export class StaticDeductionTreeAdapter {
    */
   public static getSkeletonHtml(modelId?: string): string {
     return `
-<div class="p-6 bg-slate-900/90 rounded-2xl border border-slate-700/60 shadow-2xl backdrop-blur-md animate-pulse select-none text-slate-300">
-  <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-    <div class="space-y-2">
-      <div class="h-6 w-48 bg-slate-700/60 rounded-md"></div>
-      <div class="h-4 w-72 bg-slate-800/80 rounded-md"></div>
+<div class="deduction-skeleton-root animate-pulse" style="padding: 24px; background: rgba(15, 23, 42, 0.95); border-radius: 16px; border: 1px solid rgba(51, 65, 85, 0.7); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); user-select: none; color: #cbd5e1; font-family: system-ui, -apple-system, sans-serif;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 24px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="height: 24px; width: 192px; background: rgba(51, 65, 85, 0.6); border-radius: 6px;"></div>
+      <div style="height: 16px; width: 288px; background: rgba(30, 41, 59, 0.8); border-radius: 6px;"></div>
     </div>
-    <div class="h-8 w-24 bg-indigo-500/20 border border-indigo-500/40 rounded-full"></div>
+    <div style="height: 32px; width: 96px; background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 9999px;"></div>
   </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="h-20 bg-slate-800/50 rounded-xl border border-slate-700/40"></div>
-    <div class="h-20 bg-slate-800/50 rounded-xl border border-slate-700/40"></div>
-    <div class="h-20 bg-slate-800/50 rounded-xl border border-slate-700/40"></div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div style="height: 80px; background: rgba(30, 41, 59, 0.5); border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.4);"></div>
+    <div style="height: 80px; background: rgba(30, 41, 59, 0.5); border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.4);"></div>
+    <div style="height: 80px; background: rgba(30, 41, 59, 0.5); border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.4);"></div>
   </div>
-  <div class="h-64 bg-slate-800/40 rounded-xl border border-slate-700/30 flex items-center justify-center">
-    <div class="flex items-center space-x-3 text-slate-400 font-mono text-sm">
-      <svg class="animate-spin h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+  <div style="height: 256px; background: rgba(30, 41, 59, 0.4); border-radius: 12px; border: 1px solid rgba(51, 65, 85, 0.3); display: flex; align-items: center; justify-content: center;">
+    <div style="display: flex; align-items: center; gap: 12px; color: #94a3b8; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 14px;">
+      <svg class="animate-spin" style="width: 20px; height: 20px; color: #818cf8;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle opacity="0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path opacity="0.75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
       </svg>
       <span>正在构建全景推演树沙盘${modelId ? ` [${modelId}]` : ''}...</span>
     </div>
