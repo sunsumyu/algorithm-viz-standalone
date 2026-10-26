@@ -284,26 +284,32 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(prunedStep, '剪枝用例推演中 callTree 必须包含 pruned 节点或 -1 熔断 tag').toBeDefined();
     });
 
-    it('renderCanvas 支持在 data-tree 与 call-tree 子视图间自由无缝切换', () => {
+    it('renderCanvas 支持在 split、data-tree 与 call-tree 三种视图模式间自由无缝切换', () => {
       const root = buildTreeFromArr([3, 9, 20]);
       const steps = buildBalancedStage1Steps(root);
       const container = document.createElement('div');
       const midStep = steps[steps.length - 2];
 
-      // 1. 默认 data-tree 模式
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
+      // 1. 默认 split 双视口联动分屏模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
       renderBalancedTreeCanvas(container, midStep);
-      expect(container.innerHTML).toContain('🌲 拓扑生命树');
-      expect(container.innerHTML).toContain('🌳 递归展开树');
+      expect(container.innerHTML).toContain('btn-subview-split');
+      expect(container.innerHTML).toContain('btn-subview-data');
+      expect(container.innerHTML).toContain('btn-subview-call');
+      expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(1);
 
       // 2. 切换至 call-tree 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'call-tree';
       renderBalancedTreeCanvas(container, midStep);
-      // 应该挂载了自适应递归调用树（含控制按钮或 SVG）
       expect(container.querySelector('svg')).not.toBeNull();
 
-      // 切回默认
+      // 3. 切换至 data-tree 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
+      renderBalancedTreeCanvas(container, midStep);
+      expect(container.querySelector('svg')).not.toBeNull();
+
+      // 切回 split 默认
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
     });
   });
 });
