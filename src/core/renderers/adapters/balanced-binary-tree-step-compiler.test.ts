@@ -284,32 +284,74 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(prunedStep, '剪枝用例推演中 callTree 必须包含 pruned 节点或 -1 熔断 tag').toBeDefined();
     });
 
-    it('renderCanvas 支持在 split、data-tree 与 call-tree 三种视图模式间自由无缝切换', () => {
+    it('路线 E: 按递归深度显示 N 个树 (随调用栈动态增减)', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildBalancedStage1Steps(root);
+
+      // 1. 验证推演过程中生成了 treeStackFrames，且最大深度为 3
+      const depth3Steps = steps.filter((s) => s.treeStackFrames && s.treeStackFrames.length === 3);
+      expect(depth3Steps.length, '树高为3时必须存在深度为3的栈帧步骤').toBeGreaterThan(0);
+
+      const sampleD3 = depth3Steps[0];
+      expect(sampleD3.treeStackFrames![0].funcCall).toBe('process(3)');
+      expect(sampleD3.treeStackFrames!.length).toBe(3);
+      expect(sampleD3.treeStackFrames![2].isCurrent).toBe(true);
+
+      // 验证深入到 15 时的栈帧调用链
+      const step15 = steps.find((s) => s.current === 15 && s.treeStackFrames && s.treeStackFrames.length === 3);
+      expect(step15).toBeDefined();
+      expect(step15!.treeStackFrames!.map((f) => f.funcCall)).toEqual([
+        'process(3)',
+        'process(20)',
+        'process(15)',
+      ]);
+
+      // 2. 验证 renderCanvas 在默认 stack-depth 模式下挂载 3 棵树
+      const container = document.createElement('div');
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+      renderBalancedTreeCanvas(container, sampleD3);
+
+      expect(container.innerHTML).toContain('btn-subview-stack');
+      expect(container.innerHTML).toContain('d=1');
+      expect(container.innerHTML).toContain('d=2');
+      expect(container.innerHTML).toContain('d=3');
+      // 必须渲染了 3 棵完整的二叉树 SVG
+      const svgs = container.querySelectorAll('svg');
+      expect(svgs.length).toBe(3);
+    });
+
+    it('renderCanvas 支持在 stack-depth、split、data-tree 与 call-tree 四种视图模式间自由无缝切换', () => {
       const root = buildTreeFromArr([3, 9, 20]);
       const steps = buildBalancedStage1Steps(root);
       const container = document.createElement('div');
       const midStep = steps[steps.length - 2];
 
-      // 1. 默认 split 双视口联动分屏模式
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
+      // 1. 默认 stack-depth 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
       renderBalancedTreeCanvas(container, midStep);
+      expect(container.innerHTML).toContain('btn-subview-stack');
       expect(container.innerHTML).toContain('btn-subview-split');
       expect(container.innerHTML).toContain('btn-subview-data');
       expect(container.innerHTML).toContain('btn-subview-call');
       expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(1);
 
-      // 2. 切换至 call-tree 模式
+      // 2. 切换至 split 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
+      renderBalancedTreeCanvas(container, midStep);
+      expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(1);
+
+      // 3. 切换至 call-tree 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'call-tree';
       renderBalancedTreeCanvas(container, midStep);
       expect(container.querySelector('svg')).not.toBeNull();
 
-      // 3. 切换至 data-tree 模式
+      // 4. 切换至 data-tree 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
       renderBalancedTreeCanvas(container, midStep);
       expect(container.querySelector('svg')).not.toBeNull();
 
-      // 切回 split 默认
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
+      // 切回 stack-depth 默认
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
     });
   });
 });

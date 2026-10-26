@@ -84,6 +84,15 @@ export function cloneRecursionTree(node: RecursionTreeNode | null): RecursionTre
   };
 }
 
+/** 递归深度多栈帧二叉树契约 (TreeStackFrame) */
+export interface TreeStackFrame {
+  depth: number;
+  nodeVal: number | null;
+  funcCall: string;
+  branch?: string;
+  isCurrent?: boolean;
+}
+
 export interface BinaryTreeStep<TResult = any> extends StepBase {
   tree: TreeNode | null;
   current: number | null;
@@ -99,6 +108,7 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   callTrace?: CallTraceSnapshot;
   callTree?: RecursionTreeNode | null;
   activeCallId?: string;
+  treeStackFrames?: TreeStackFrame[];
   visitedNodes?: number[] | Set<number>;
 
   // 推演计算值
@@ -479,6 +489,7 @@ export class BinaryTreeTraversalCompiler {
     let callNodeIdCounter = 0;
     const callTreeHolder: { root: RecursionTreeNode | null } = { root: null };
     const callNodeStack: RecursionTreeNode[] = [];
+    const treeFrameStack: TreeStackFrame[] = [];
 
     const formatTag = (res: any): string => {
       if (res === undefined || res === null) return '';
@@ -517,6 +528,13 @@ export class BinaryTreeTraversalCompiler {
       if (step && !step.callTree && callTreeHolder.root) {
         step.callTree = cloneRecursionTree(callTreeHolder.root);
         step.activeCallId = callNodeStack[callNodeStack.length - 1]?.id;
+      }
+      // 路线 E：注入按递归深度追踪的多栈帧二叉树状态快照
+      if (step && !step.treeStackFrames && treeFrameStack.length > 0) {
+        step.treeStackFrames = treeFrameStack.map((f, idx) => ({
+          ...f,
+          isCurrent: idx === treeFrameStack.length - 1,
+        }));
       }
       if (spec.onStepPush) {
         spec.onStepPush(step, ctx);
@@ -632,6 +650,16 @@ export class BinaryTreeTraversalCompiler {
       }
       callNodeStack.push(currentCallNode);
 
+      const nodeVal = node ? getNodeVal(node) : null;
+      const currentFrame: TreeStackFrame = {
+        depth: currentDepth,
+        nodeVal,
+        funcCall: node ? `${funcName}(${nodeVal})` : `${funcName}(null)`,
+        branch: branch ?? 'ROOT',
+        isCurrent: true,
+      };
+      treeFrameStack.push(currentFrame);
+
       // 判空基底
       if (!node) {
         trace.addHeader(`${funcName}(null)`, currentDepth, '<- 深入空引用');
@@ -660,6 +688,7 @@ export class BinaryTreeTraversalCompiler {
         }, currentDepth);
 
         callNodeStack.pop();
+        treeFrameStack.pop();
         return nullMeta.result;
       }
 
@@ -729,6 +758,8 @@ export class BinaryTreeTraversalCompiler {
 
             resultMap.set(val, leafMeta.result);
             callStack.pop();
+            callNodeStack.pop();
+            treeFrameStack.pop();
             return leafMeta.result;
           } else {
             // 未命中叶子特判：如果声明了 step 或 decision/codeLine 则发射内部节点步骤
@@ -789,6 +820,8 @@ export class BinaryTreeTraversalCompiler {
           if (branchMode === 'skip') {
             resultMap.set(val, dispatchMeta.result!);
             callStack.pop();
+            callNodeStack.pop();
+            treeFrameStack.pop();
             return dispatchMeta.result!;
           }
         }
@@ -877,6 +910,7 @@ export class BinaryTreeTraversalCompiler {
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
             callNodeStack.pop();
+            treeFrameStack.pop();
             return pruneMeta.result;
           }
         }
@@ -964,6 +998,7 @@ export class BinaryTreeTraversalCompiler {
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
             callNodeStack.pop();
+            treeFrameStack.pop();
             return pruneMeta.result;
           }
         }
@@ -1033,6 +1068,7 @@ export class BinaryTreeTraversalCompiler {
       resultMap.set(val, combineMeta.result);
       callStack.pop();
       callNodeStack.pop();
+      treeFrameStack.pop();
       return combineMeta.result;
     }
 
@@ -1059,6 +1095,19 @@ export class BinaryTreeTraversalCompiler {
       callTrace: trace.snapshot(),
       result: finalResult,
       visitedNodes: [...visitedNodes],
+      treeStackFrames: spec.root ? [{
+        depth: 0,
+        nodeVal: getNodeVal(spec.root),
+        funcCall: `${funcName}(${getNodeVal(spec.root)})`,
+        branch: 'ROOT',
+        isCurrent: true,
+      }] : [{
+        depth: 0,
+        nodeVal: null,
+        funcCall: `${funcName}(null)`,
+        branch: 'ROOT',
+        isCurrent: true,
+      }],
       ...doneMeta?.customFields,
     }, 0);
 

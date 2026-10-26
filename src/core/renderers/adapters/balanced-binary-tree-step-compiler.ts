@@ -23,8 +23,11 @@ import {
   BinaryTreeStep,
   BinaryTreeTraversalCompiler,
   RecursionTreeNode,
+  TreeStackFrame,
   TreeLogGrammar,
 } from './binary-tree-traversal-compiler';
+
+export type { TreeStackFrame };
 
 // =========================================================================
 // 步骤状态契约 (Step Contract)
@@ -40,6 +43,7 @@ export interface BalancedTree037Step extends Tree036Step {
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
   callTree?: RecursionTreeNode | null;
   activeCallId?: string;
+  treeStackFrames?: TreeStackFrame[];
   stackState?: number[];
   callStack?: string[];
   pruned?: boolean;

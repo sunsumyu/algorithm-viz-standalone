@@ -12,8 +12,8 @@ import { renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/
 import { RecursionTreeAdapter } from '../recursion-tree-adapter';
 
 export class BalancedBinaryTreeCanvasAdapter {
-  /** 当前 Card 1 复合子视图模式 (路线 D 分屏 vs 路线 B 数据拓扑 vs 路线 C 递归展开树) */
-  public static activeSubView: 'split' | 'data-tree' | 'call-tree' = 'split';
+  /** 当前 Card 1 复合子视图模式 (路线 E 递归深度多树分层 vs 路线 D 分屏 vs 路线 B 单树 vs 路线 C 递归展开树) */
+  public static activeSubView: 'stack-depth' | 'split' | 'data-tree' | 'call-tree' = 'stack-depth';
 
   /**
    * Card 1: 表现层画板渲染器 (Presentation Canvas Renderer)
@@ -59,42 +59,52 @@ export class BalancedBinaryTreeCanvasAdapter {
       container.style.position = 'relative';
 
       // 物理数据生命树渲染闭包
-      const renderLivingDataTree = (targetBox: HTMLElement) => {
+      const renderLivingDataTree = (targetBox: HTMLElement, focusNode?: number | null, isCurrentFrame: boolean = true) => {
         TreeCanvasAdapter.renderTree(targetBox, {
           tree: step.tree,
-          current,
+          current: focusNode !== undefined ? focusNode : current,
           visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
-          secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
-          primaryColor: '#f59e0b',
+          secondaryHighlightedNodes: !isCurrentFrame && focusNode != null ? [focusNode] : (secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : []),
+          primaryColor: isCurrentFrame ? '#f59e0b' : '#38bdf8',
           secondaryColor: '#38bdf8',
           visitedColor: '#34d399',
           labels: labels.size > 0 ? labels : undefined,
           dimUnvisited: true,
-          nullProbe: step.nullProbe,
+          nullProbe: isCurrentFrame ? step.nullProbe : undefined,
         });
       };
 
-      // 1. 顶部子视图切换胶囊栏 (仅在具备 callTree 时展示自由切换)
-      if (step.callTree) {
+      // 1. 顶部子视图切换胶囊栏 (仅在具备 callTree 或 treeStackFrames 时展示自由切换)
+      if (step.callTree || (step.treeStackFrames && step.treeStackFrames.length > 0)) {
         const toolbar = document.createElement('div');
         toolbar.style.cssText =
           'display: flex; justify-content: flex-end; align-items: center; width: 100%; padding: 2px 6px; flex-shrink: 0; z-index: 10;';
         const curMode = BalancedBinaryTreeCanvasAdapter.activeSubView;
+        const isStack = curMode === 'stack-depth';
         const isSplit = curMode === 'split';
         const isData = curMode === 'data-tree';
         const isCall = curMode === 'call-tree';
 
         toolbar.innerHTML = `
           <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
+            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 深度分层树</button>
             <button id="btn-subview-split" style="border: none; background: ${isSplit ? '#ffffff' : 'transparent'}; color: ${isSplit ? '#1d4ed8' : '#64748b'}; font-weight: ${isSplit ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isSplit ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌓 双视口分屏</button>
-            <button id="btn-subview-data" style="border: none; background: ${isData ? '#ffffff' : 'transparent'}; color: ${isData ? '#1d4ed8' : '#64748b'}; font-weight: ${isData ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isData ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 数据生命树</button>
+            <button id="btn-subview-data" style="border: none; background: ${isData ? '#ffffff' : 'transparent'}; color: ${isData ? '#1d4ed8' : '#64748b'}; font-weight: ${isData ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isData ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 单一物理树</button>
             <button id="btn-subview-call" style="border: none; background: ${isCall ? '#ffffff' : 'transparent'}; color: ${isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 递归展开树</button>
           </div>
         `;
+        const btnStack = toolbar.querySelector('#btn-subview-stack') as HTMLButtonElement | null;
         const btnSplit = toolbar.querySelector('#btn-subview-split') as HTMLButtonElement | null;
         const btnData = toolbar.querySelector('#btn-subview-data') as HTMLButtonElement | null;
         const btnCall = toolbar.querySelector('#btn-subview-call') as HTMLButtonElement | null;
 
+        if (btnStack) {
+          btnStack.onclick = (e) => {
+            e.stopPropagation();
+            BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+            BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
+          };
+        }
         if (btnSplit) {
           btnSplit.onclick = (e) => {
             e.stopPropagation();
@@ -120,7 +130,64 @@ export class BalancedBinaryTreeCanvasAdapter {
       }
 
       // 2. 主绘图画板挂载区
-      if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'split' && step.callTree) {
+      if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'stack-depth') {
+        // 路线 E：按递归深度显示 N 个树 (随调用栈动态增减)
+        const frames = step.treeStackFrames && step.treeStackFrames.length > 0
+          ? step.treeStackFrames
+          : [{ depth: 0, nodeVal: current, funcCall: 'dfs(root)', isCurrent: true }];
+        const N = frames.length;
+
+        const stackContainer = document.createElement('div');
+        stackContainer.style.cssText =
+          'flex: 1; width: 100%; height: 100%; min-height: 0; box-sizing: border-box; display: flex; gap: 8px; overflow-x: auto; padding: 2px; align-items: stretch;';
+
+        frames.forEach((frame, idx) => {
+          const isCurrent = frame.isCurrent ?? (idx === N - 1);
+          const minWidth = N <= 3 ? '0' : '260px';
+          const frameCard = document.createElement('div');
+          frameCard.style.cssText = `
+            flex: 1 1 ${minWidth};
+            min-width: ${minWidth};
+            border: 1px solid ${isCurrent ? '#93c5fd' : '#e2e8f0'};
+            border-radius: 8px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            box-shadow: ${isCurrent ? '0 2px 8px rgba(59, 130, 246, 0.12)' : 'none'};
+            position: relative;
+          `;
+
+          // 纯净卡片顶部微标 (零 h1~h6 违规)
+          const header = document.createElement('div');
+          header.style.cssText = `padding: 4px 8px; background: ${isCurrent ? '#eff6ff' : '#f8fafc'}; border-bottom: 1px solid ${isCurrent ? '#bfdbfe' : '#e2e8f0'}; font-size: 10.5px; font-weight: 700; color: ${isCurrent ? '#1d4ed8' : '#475569'}; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;`;
+          header.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="background: ${isCurrent ? '#3b82f6' : '#94a3b8'}; color: #ffffff; padding: 0 4px; border-radius: 3px; font-size: 9.5px; font-family: monospace;">d=${frame.depth + 1}</span>
+              <span style="font-family: monospace;">${frame.funcCall}</span>
+            </div>
+            <span style="font-size: 9.5px; color: ${isCurrent ? '#2563eb' : '#94a3b8'}; font-weight: 600;">${isCurrent ? '⚡ 活跃执行' : '⏳ 等待回溯'}</span>
+          `;
+          frameCard.appendChild(header);
+
+          const canvasBox = document.createElement('div');
+          canvasBox.style.cssText =
+            'flex: 1; width: 100%; height: 100%; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;';
+          frameCard.appendChild(canvasBox);
+
+          renderLivingDataTree(canvasBox, frame.nodeVal, isCurrent);
+          stackContainer.appendChild(frameCard);
+        });
+
+        container.appendChild(stackContainer);
+
+        if (N >= 4) {
+          setTimeout(() => {
+            stackContainer.scrollLeft = stackContainer.scrollWidth;
+          }, 0);
+        }
+      } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'split' && step.callTree) {
         // 路线 D：双视口联动分屏模式 (左侧物理数据树 ⟷ 右侧递归展开树)
         const splitGrid = document.createElement('div');
         splitGrid.style.cssText =
@@ -156,7 +223,7 @@ export class BalancedBinaryTreeCanvasAdapter {
 
         const leftCanvas = leftPane.querySelector('#split-left-canvas') as HTMLElement | null;
         const rightCanvas = rightPane.querySelector('#split-right-canvas') as HTMLElement | null;
-        if (leftCanvas) renderLivingDataTree(leftCanvas);
+        if (leftCanvas) renderLivingDataTree(leftCanvas, current, true);
         if (rightCanvas) RecursionTreeAdapter.renderRecursionTree(rightCanvas, step.callTree, step.activeCallId);
       } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'call-tree' && step.callTree) {
         // 路线 C：全画幅递归展开树
@@ -171,7 +238,7 @@ export class BalancedBinaryTreeCanvasAdapter {
         canvasBox.style.cssText =
           'flex: 1; width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative;';
         container.appendChild(canvasBox);
-        renderLivingDataTree(canvasBox);
+        renderLivingDataTree(canvasBox, current, true);
       }
     } else if ((step.extraData as any)?.treeNodes) {
       const treeNodes = (step.extraData as any).treeNodes;
