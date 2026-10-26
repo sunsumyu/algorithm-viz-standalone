@@ -19,7 +19,11 @@ import {
   RecursiveCallTraceBuilder,
   RecursiveCallTraceSnapshot,
 } from './recursive-call-trace-adapter';
-import { BinaryTreeStep, BinaryTreeTraversalCompiler } from './binary-tree-traversal-compiler';
+import {
+  BinaryTreeStep,
+  BinaryTreeTraversalCompiler,
+  TreeLogGrammar,
+} from './binary-tree-traversal-compiler';
 
 // =========================================================================
 // 步骤状态契约 (Step Contract)
@@ -32,6 +36,7 @@ export interface BalancedTree037Step extends Tree036Step {
   isBalanced?: boolean;
   height?: number;
   heightMap?: Record<number, number>;
+  nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
   stackState?: number[];
   callStack?: string[];
   pruned?: boolean;
@@ -82,11 +87,19 @@ interface Info {
 
 export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037Step[] {
   const lines = BALANCED_TREE_037_STAGE1_LINES;
+  const heightMap: Record<number, number> = {};
+  let currentNullProbe: { parentVal: number; branch: 'left' | 'right' } | undefined = undefined;
 
   return BinaryTreeTraversalCompiler.compileDfs<TreeNode, Info>({
     root,
     stageId: 'stage-1',
     funcName: 'process',
+    onStepPush: (step) => {
+      step.heightMap = { ...heightMap };
+      if (currentNullProbe) {
+        step.nullProbe = { ...currentNullProbe };
+      }
+    },
     onEmpty: (ctx) => {
       ctx.trace.addHeader('isBalanced(null)', 0, '<- 根调用特判');
       ctx.trace.addConditionHit('① root == null √ 命中 -> return true', 0);
@@ -100,7 +113,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           decision: '算法启动：空树特判',
           action: 'entry',
           message: '传入二叉树根节点为空 (null)，启动递归基准条件检验。',
-          log: 'isBalanced(root = null)',
+          log: TreeLogGrammar.format(0, '📥', '算法启动：isBalanced(root = null) 空树特判启动'),
           codeLine: lines.entry,
           stageId: 'stage-1',
           metrics: {
@@ -120,7 +133,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           decision: '空节点直接返回 Info(true, 0)',
           action: 'base-check',
           message: '递归基准：x == null 返回 new Info(true, 0)。',
-          log: 'process(null) -> return Info(true, 0)',
+          log: TreeLogGrammar.format(0, '🔍', '【空节点基底】root == null 天然平衡，return Info(true, 高度=0)'),
           codeLine: lines.baseCheck,
           stageId: 'stage-1',
           metrics: {
@@ -140,7 +153,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
           decision: '空树最终判定：二叉树严格平衡 (TRUE)',
           action: 'done',
           message: '空树天然满足任意两子树高度差 <= 1 的平衡条件。',
-          log: 'return process(null).isBalanced -> true',
+          log: TreeLogGrammar.format(0, '🎯', '【全树结算】return process(null).isBalanced -> true (空树平衡)'),
           codeLine: lines.done,
           stageId: 'stage-1',
           metrics: {
@@ -165,7 +178,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         decision: `启动平衡二叉树递归信息套路判定: root = Node(${r.val})`,
         action: 'entry',
         message: '二叉树递归套路核心：定义结构体 Info { isBalanced, height }，向左子树要信息，向右子树要信息，最后在本层完成整合。',
-        log: `isBalanced(root: ${r.val})`,
+        log: TreeLogGrammar.format(0, '📥', `启动 Tree DP Info 二元组模型：isBalanced(root = Node(${r.val}))`),
         codeLine: lines.entry,
         stageId: 'stage-1',
         activeNodeId: 1,
@@ -187,7 +200,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         decision: `调用辅助递归函数: return process(root).isBalanced`,
         action: 'call-process',
         message: '进入递归辅助函数 process，向子树索取 Info 结构体并提取 isBalanced 判定结果。',
-        log: `call process(Node(${r.val}))`,
+        log: TreeLogGrammar.format(0, '⬇️', `调用辅助递归函数：return process(root = Node(${r.val})).isBalanced`),
         codeLine: lines.callProcess,
         stageId: 'stage-1',
         activeNodeId: 1,
@@ -211,7 +224,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         result: { isBalanced: true, height: 0 },
         decision: '空节点基准特判：x == null，返回 Info(true, 0)',
         message: '遇到空子节点，天然平衡且高度为 0，返回 new Info(true, 0)。',
-        log: 'process(null) -> Info(true, 0)',
+        log: TreeLogGrammar.format(ctx.depth, '🔍', '【空节点基底】process(null) 命中空引用，天然平衡，return Info(true, 高度=0)'),
         codeLine: lines.baseCheck,
         metrics: {
           cur: 'null',
@@ -231,11 +244,12 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     onEnter: (node, ctx) => {
+      currentNullProbe = undefined;
       ctx.trace.addConditionPass(`① x != null (Node(${node.val}))`, ctx.depth);
       return {
         decision: `考察节点 Node(${node.val})：检查判空基准条件`,
         message: `节点 Node(${node.val}) != null，判空未命中，准备向左孩子 process(x.left) 索要信息。`,
-        log: `process(${node.val}): node != null`,
+        log: TreeLogGrammar.format(ctx.depth, '📥', `进入 process(Node(${node.val})) [调用深度 d=${ctx.depth}]`),
         codeLine: lines.baseCheck,
         metrics: {
           cur: `Node(${node.val})`,
@@ -250,11 +264,12 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     beforeLeft: (node, ctx) => {
+      currentNullProbe = !node.left ? { parentVal: node.val, branch: 'left' } : undefined;
       ctx.trace.addRecursePrep(`l = process(${node.left ? `Node(${node.left.val})` : 'null'})`, ctx.depth, '<- 索要左子树 Info');
       return {
         decision: `向 Node(${node.val}) 的左子树索要信息：调用 process(x.left)`,
         message: `准备向左子树发起递归调用 process(x.left)，获取左子树的 Info{isBalanced, height}。`,
-        log: `process(${node.val}): call process(left)`,
+        log: TreeLogGrammar.format(ctx.depth, '⬇️', `执行 left = process(${node.left ? `Node(${node.left.val})` : 'null'})，准备索要左子树 Info`),
         codeLine: lines.leftCall,
         metrics: {
           cur: `Node(${node.val})`,
@@ -273,11 +288,12 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     beforeRight: (node, leftRes, ctx) => {
+      currentNullProbe = !node.right ? { parentVal: node.val, branch: 'right' } : undefined;
       ctx.trace.addRecursePrep(`r = process(${node.right ? `Node(${node.right.val})` : 'null'})`, ctx.depth, '<- 索要右子树 Info');
       return {
         decision: `向 Node(${node.val}) 的右子树索要信息：调用 process(x.right)`,
         message: `左子树信息已就绪 (bal=${leftRes.isBalanced}, h=${leftRes.height})，现在向右子树发起递归调用 process(x.right)。`,
-        log: `process(${node.val}): call process(right)`,
+        log: TreeLogGrammar.format(ctx.depth, '➡️', `执行 right = process(${node.right ? `Node(${node.right.val})` : 'null'})，准备索要右子树 Info`),
         codeLine: lines.rightCall,
         metrics: {
           cur: `Node(${node.val})`,
@@ -299,9 +315,11 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     onCombine: (node, left, right, ctx) => {
+      currentNullProbe = undefined;
       const h = Math.max(left.height, right.height) + 1;
       const diff = Math.abs(left.height - right.height);
       const bal = left.isBalanced && right.isBalanced && diff <= 1;
+      heightMap[node.val] = h;
 
       ctx.trace.addUnwindCalc(
         `整合: h = max(${left.height}, ${right.height}) + 1 = ${h}, diff = ${diff} ${diff <= 1 ? '<= 1' : '> 1'}`,
@@ -317,7 +335,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         decision: `节点 Node(${node.val}) 返回 Info(${bal}, ${h})`,
         action: 'return-info',
         message: `构造 Info 结构体并向上层调用栈返回：Info { isBalanced: ${bal}, height: ${h} }。`,
-        log: `return new Info(${bal}, ${h})`,
+        log: TreeLogGrammar.format(ctx.depth, '📦', `向上层调用栈返回 Info(isBalanced=${bal}, height=${h})`),
         codeLine: lines.returnInfo,
         stageId: 'stage-1',
         activeNodeId: node.val,
@@ -344,7 +362,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         action: 'aggregate',
         decision: `节点 Node(${node.val}) 汇聚左右子树: 左高 ${left.height}, 右高 ${right.height}, 差值 ${diff}`,
         message: `整合左右子树：左高 ${left.height}, 右高 ${right.height}，高度差 |${left.height} - ${right.height}| = ${diff} ${diff <= 1 ? '<= 1' : '> 1 (失衡)'}。当前节点是否平衡: ${bal}。`,
-        log: `node ${node.val}: l=(${left.isBalanced}, ${left.height}), r=(${right.isBalanced}, ${right.height}) -> bal=${bal}, h=${h}`,
+        log: TreeLogGrammar.format(ctx.depth, '🔄', `【后序归纳】Node(${node.val}) 汇总左右：左高 ${left.height}，右高 ${right.height}，高度差 |${left.height} - ${right.height}| = ${diff} ${diff <= 1 ? '<= 1 (平衡)' : '> 1 (失衡)'}`),
         codeLine: lines.aggregateInfo,
         metrics: {
           cur: `Node(${node.val})`,
@@ -368,6 +386,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     onDone: (finalInfo, ctx) => {
+      currentNullProbe = undefined;
       ctx.trace.addFinalResult(
         `最终结算: return process(root).isBalanced -> ${finalInfo.isBalanced}`,
         0,
@@ -382,7 +401,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         message: finalInfo.isBalanced
           ? `递归完成：向左右子树索要的 Info 结构体均满足平衡条件且高度差绝对值 <= 1，返回 true。`
           : `递归完成：检测到子树高度差绝对值 > 1 或子树自身非平衡，返回 false。`,
-        log: `Final return process(root).isBalanced = ${finalInfo.isBalanced}`,
+        log: TreeLogGrammar.format(0, finalInfo.isBalanced ? '🎯' : '⚠️', `【全树最终结算】return process(root).isBalanced -> ${finalInfo.isBalanced} (${finalInfo.isBalanced ? '全树严格平衡' : '检测到局部失衡'})`),
         codeLine: lines.done,
         metrics: {
           cur: root ? `Node(${root.val})` : 'null',
@@ -411,11 +430,19 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
 // =========================================================================
 export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTree037Step[] {
   const lines = BALANCED_TREE_037_STAGE2_LINES;
+  const heightMap: Record<number, number> = {};
+  let currentNullProbe: { parentVal: number; branch: 'left' | 'right' } | undefined = undefined;
 
   return BinaryTreeTraversalCompiler.compileDfs<TreeNode, number>({
     root,
     stageId: 'stage-2',
     funcName: 'check',
+    onStepPush: (step) => {
+      step.heightMap = { ...heightMap };
+      if (currentNullProbe) {
+        step.nullProbe = { ...currentNullProbe };
+      }
+    },
     onEmpty: (ctx) => {
       ctx.trace.addHeader('isBalanced(null)', 0, '<- 根调用特判');
       ctx.trace.addConditionHit('① check(null) == 0 != -1 √ 命中 -> return true', 0);
@@ -429,7 +456,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           decision: '算法启动：-1 标记剪枝检测 (空树用例)',
           action: 'entry',
           message: '传入根节点为 null，空树天然满足平衡条件。',
-          log: 'isBalanced(root = null)',
+          log: TreeLogGrammar.format(0, '📥', '算法启动：-1 标记剪枝检测 (空树用例)'),
           codeLine: lines.entry,
           stageId: 'stage-2',
           metrics: {
@@ -449,7 +476,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           decision: '空节点递归基准：返回高度 0',
           action: 'base-null',
           message: 'check(null) 返回高度 0，不属于 -1 失衡标记。',
-          log: 'check(null) -> return 0',
+          log: TreeLogGrammar.format(0, '🔍', '【空节点基底】check(null) 返回高度 0 != -1，天然平衡'),
           codeLine: lines.baseNull,
           stageId: 'stage-2',
           metrics: {
@@ -469,7 +496,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           decision: 'check(null) 返回 0 != -1，最终判定为平衡',
           action: 'done',
           message: '根节点返回值不等于 -1，判定结果为 true。',
-          log: 'return check(root) != -1 -> true',
+          log: TreeLogGrammar.format(0, '🎯', '【全树结算】return check(root) != -1 -> true (空树平衡)'),
           codeLine: lines.done,
           stageId: 'stage-2',
           metrics: {
@@ -495,7 +522,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           decision: `启动 -1 标记剪枝检测: check(root = Node(${r.val}))`,
           action: 'entry',
           message: '核心优化：若子树失衡直接返回 -1 逐层剪枝击穿递归，无需封装 Info 对象，极致节省调用栈与内存。',
-          log: `isBalanced(root: ${r.val}), 调用 check(root)`,
+          log: TreeLogGrammar.format(0, '📥', `启动 -1 标记剪枝检测：isBalanced(root: Node(${r.val}))，调用 check(root)`),
           codeLine: lines.entry,
           stageId: 'stage-2',
           metrics: {
@@ -519,7 +546,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         result: 0,
         decision: '空节点递归基准：node == null，返回高度 0',
         message: '当前递归节点为空，子树高度为 0，未触发 -1 剪枝标记。',
-        log: 'check(null) -> return 0',
+        log: TreeLogGrammar.format(ctx.depth, '🔍', '【空节点基底】check(null) 命中空引用，子树高度为 0，return 0'),
         codeLine: lines.baseNull,
         metrics: {
           cur: 'null',
@@ -537,11 +564,12 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       };
     },
     onEnter: (node, ctx) => {
+      currentNullProbe = undefined;
       ctx.trace.addConditionPass(`① node != null (Node(${node.val}))`, ctx.depth);
       return {
         decision: `深入考察节点 Node(${node.val})`,
         message: `进入 Node(${node.val})，准备计算其左右子树高度。`,
-        log: `check(Node(${node.val}))`,
+        log: TreeLogGrammar.format(ctx.depth, '📥', `进入 check(Node(${node.val})) [调用深度 d=${ctx.depth}]，准备计算子树高度`),
         codeLine: lines.entry,
         metrics: {
           cur: `Node(${node.val})`,
@@ -555,11 +583,12 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       };
     },
     beforeLeft: (node, ctx) => {
+      currentNullProbe = !node.left ? { parentVal: node.val, branch: 'left' } : undefined;
       ctx.trace.addRecursePrep(`left = check(${node.left ? `Node(${node.left.val})` : 'null'})`, ctx.depth, '<- 探测左子树');
       return {
         decision: `考察节点 Node(${node.val}) 的左子树：调用 check(node.left)`,
         message: `调用 check(node.left) 获取左子树高度；若左子树返回 -1 则立即触发提前剪枝。`,
-        log: `check(${node.val}) -> checking left child`,
+        log: TreeLogGrammar.format(ctx.depth, '⬇️', `执行 left = check(${node.left ? `Node(${node.left.val})` : 'null'})，准备深入左子树`),
         codeLine: lines.checkLeft,
         metrics: {
           cur: `Node(${node.val})`,
@@ -579,6 +608,8 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
     onPruneCheck: (node, branch, branchResult, ctx) => {
       if (branch === 'left') {
         if (branchResult === -1) {
+          heightMap[node.val] = -1;
+          currentNullProbe = undefined;
           ctx.trace.addConditionHit('② left == -1 √ 命中 -> 触发剪枝 return -1', ctx.depth);
           ctx.trace.addReturnLeaf('return -1 (剪枝击穿)', ctx.depth);
           return {
@@ -586,7 +617,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
             result: -1,
             decision: `节点 Node(${node.val}) 的左子树返回 -1，触发失衡剪枝提前返回 -1！`,
             message: `左子树已经失衡 (left == -1)，无需再探索右子树，直接返回 -1 逐层击穿调用栈！`,
-            log: `node ${node.val}: left == -1 -> prune and return -1`,
+            log: TreeLogGrammar.format(ctx.depth, '🛡️', `【-1 标记剪枝拦截】Node(${node.val}) 左子树已失衡 (left == -1)！立即逐层击穿调用栈，return -1`),
             codeLine: lines.pruneLeft,
             metrics: {
               cur: `Node(${node.val})`,
@@ -606,6 +637,8 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         }
       } else {
         if (branchResult === -1) {
+          heightMap[node.val] = -1;
+          currentNullProbe = undefined;
           ctx.trace.addConditionHit('③ right == -1 √ 命中 -> 触发剪枝 return -1', ctx.depth);
           ctx.trace.addReturnLeaf('return -1 (剪枝击穿)', ctx.depth);
           return {
@@ -613,7 +646,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
             result: -1,
             decision: `节点 Node(${node.val}) 的右子树返回 -1，触发失衡剪枝提前返回 -1！`,
             message: `右子树已经失衡 (right == -1)，无需继续计算当前节点，直接返回 -1。`,
-            log: `node ${node.val}: right == -1 -> prune and return -1`,
+            log: TreeLogGrammar.format(ctx.depth, '🛡️', `【-1 标记剪枝拦截】Node(${node.val}) 右子树已失衡 (right == -1)！立即逐层击穿调用栈，return -1`),
             codeLine: lines.pruneRight,
             metrics: {
               cur: `Node(${node.val})`,
@@ -635,11 +668,12 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       return { shouldPrune: false, result: branchResult };
     },
     beforeRight: (node, left, ctx) => {
+      currentNullProbe = !node.right ? { parentVal: node.val, branch: 'right' } : undefined;
       ctx.trace.addRecursePrep(`right = check(${node.right ? `Node(${node.right.val})` : 'null'})`, ctx.depth, '<- 探测右子树');
       return {
         decision: `节点 Node(${node.val}) 左子树正常 (高 ${left})，继续考察右子树: check(node.right)`,
         message: `调用 check(node.right) 获取右子树高度；若右子树返回 -1 则同样触发剪枝。`,
-        log: `check(${node.val}) -> checking right child`,
+        log: TreeLogGrammar.format(ctx.depth, '➡️', `执行 right = check(${node.right ? `Node(${node.right.val})` : 'null'})，准备深入右子树`),
         codeLine: lines.checkRight,
         metrics: {
           cur: `Node(${node.val})`,
@@ -658,8 +692,10 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       };
     },
     onCombine: (node, left, right, ctx) => {
+      currentNullProbe = undefined;
       const diff = Math.abs(left - right);
       if (diff > 1) {
+        heightMap[node.val] = -1;
         ctx.trace.addConditionHit(`④ |left - right| = |${left} - ${right}| = ${diff} > 1 √ 命中 -> 标记失衡 return -1`, ctx.depth);
         ctx.trace.addReturnLeaf('return -1 (高度差越界)', ctx.depth);
         const failMetrics: Record<string, string | number> = {
@@ -675,7 +711,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
           action: 'check-diff',
           decision: `节点 Node(${node.val}) 左右高度差 |${left} - ${right}| = ${diff} > 1，触发失衡返回 -1！`,
           message: `左右子树虽各自内部平衡，但在本节点高度差越界，立即标记失衡并返回 -1！`,
-          log: `node ${node.val}: |${left} - ${right}| = ${diff} > 1 -> return -1`,
+          log: TreeLogGrammar.format(ctx.depth, '🛡️', `【高度差超标拦截】Node(${node.val}) 左右高度差 |${left} - ${right}| = ${diff} > 1！标记失衡并击穿调用栈，return -1`),
           codeLine: lines.checkDiff,
           metrics: failMetrics,
           statusBadge: { text: '高度差超标: -1', type: 'danger' },
@@ -688,6 +724,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
 
       ctx.trace.addConditionPass(`④ |left - right| = |${left} - ${right}| = ${diff} <= 1 平衡未触发剪枝`, ctx.depth);
       const curH = Math.max(left, right) + 1;
+      heightMap[node.val] = curH;
       ctx.trace.addUnwindCalc(`平衡: curH = max(${left}, ${right}) + 1 = ${curH}, diff = ${diff} <= 1`, ctx.depth);
       ctx.trace.addReturnLeaf(`return ${curH}`, ctx.depth);
 
@@ -697,7 +734,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         action: 'return-height',
         decision: `节点 Node(${node.val}) 平衡 (|${left} - ${right}| <= 1)，返回自身高度 ${curH}`,
         message: `左右子树均平衡且高度差在 1 以内，自身高度为 max(${left}, ${right}) + 1 = ${curH}。`,
-        log: `node ${node.val}: balanced -> return ${curH}`,
+        log: TreeLogGrammar.format(ctx.depth, '🔄', `【后序归纳】Node(${node.val}) 左右子树平衡且高度差 <= 1，return 自身高度 ${curH}`),
         codeLine: lines.returnHeight,
         stageId: 'stage-2',
         visitedNodes: [...ctx.visitedNodes],
@@ -712,6 +749,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         statusBadge: { text: `节点 ${node.val} 高度: ${curH}`, type: 'info' },
         callTrace: ctx.trace.snapshot(),
         result: curH,
+        pruneDetail: { left, right, diff, isPruned: false },
       };
 
       const passMetrics: Record<string, string | number> = {
@@ -728,7 +766,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         action: 'check-diff',
         decision: `节点 Node(${node.val}) 左右高度差 |${left} - ${right}| = ${diff} <= 1，未触发剪枝`,
         message: `左右子树高度差处于平衡范围 (|${left} - ${right}| <= 1)，未触发 -1 剪枝，准备返回自身高度。`,
-        log: `node ${node.val}: |${left} - ${right}| = ${diff} <= 1 -> pass`,
+        log: TreeLogGrammar.format(ctx.depth, '🔄', `【高度检验通过】Node(${node.val}) 左右高度差 |${left} - ${right}| = ${diff} <= 1，平衡未被破坏`),
         codeLine: lines.checkDiff,
         metrics: passMetrics,
         statusBadge: { text: '高度差合格', type: 'info' },
@@ -739,6 +777,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       };
     },
     onDone: (finalRes, ctx) => {
+      currentNullProbe = undefined;
       const isBal = finalRes !== -1;
       ctx.trace.addFinalResult(
         `最终判定: return check(root) != -1 -> ${isBal} (res=${finalRes})`,
@@ -754,7 +793,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         message: isBal
           ? `整树无任何剪枝触发，根节点返回有效高度 ${finalRes}，整棵二叉树为平衡二叉树！`
           : `整树计算过程中击穿触发了 -1 失衡返回，整棵二叉树为非平衡二叉树！`,
-        log: `Final return check(root) != -1 -> ${isBal} (res: ${finalRes})`,
+        log: TreeLogGrammar.format(0, isBal ? '🎯' : '⚠️', `【全树最终判定】check(root) ${isBal ? `返回有效高度 ${finalRes} != -1，全树严格平衡 (TRUE)` : `返回 -1，全树失衡 (FALSE)`}`),
         codeLine: lines.done,
         metrics: {
           cur: root ? `Node(${root.val})` : 'null',
@@ -789,7 +828,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       current: null,
       decision: '算法启动：显式后序遍历与深度表映射 (空树特判)',
       message: '传入根节点为 null，空树天然满足平衡条件。',
-      log: 'isBalanced(root = null)',
+      log: TreeLogGrammar.format(0, '📥', '算法启动：显式后序遍历与深度表映射 (空树特判)'),
       codeLine: lines.entry,
       stageId: 'stage-3',
       metrics: {
@@ -807,7 +846,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       current: null,
       decision: '空树特判：root 为 null 直接返回 true',
       message: 'if (root == null) return true。',
-      log: 'root == null -> return true',
+      log: TreeLogGrammar.format(0, '🔍', '【空树基底】root == null 直接返回 true'),
       codeLine: lines.entry,
       stageId: 'stage-3',
       metrics: {
@@ -825,7 +864,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
       current: null,
       decision: '空树判定完成：返回 true',
       message: '后序遍历无需展开，空树属于平衡二叉树。',
-      log: 'return true',
+      log: TreeLogGrammar.format(0, '🎯', '【全树结算】空树判定完成，return true'),
       codeLine: lines.done,
       stageId: 'stage-3',
       metrics: {
@@ -848,7 +887,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
     current: root.val,
     decision: '算法启动：显式后序遍历与深度表映射 (零递归栈)',
     message: '维护显式栈 Deque<TreeNode> 模拟后序遍历 (左右根)，配合 Map<TreeNode, Integer> 记录子树高度。',
-    log: `isBalanced(root: ${root.val}), 初始化 stack 与 heightMap`,
+    log: TreeLogGrammar.format(0, '📥', `启动显式后序遍历：初始化 stack 与 heightMap (root = Node(${root.val}))`),
     codeLine: lines.entry,
     stageId: 'stage-3',
     metrics: {
@@ -885,7 +924,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         current: curr.val,
         decision: `节点 Node(${curr.val}) 压入显式栈，继续深入左子树`,
         message: `后序遍历先探索左孩子：将当前节点压栈，curr 移动到 curr.left。当前栈深: ${stack.length}。`,
-        log: `stack.push(${curr.val}), curr = curr.left`,
+        log: TreeLogGrammar.format(stack.length - 1, '⬇️', `【压栈探索】stack.push(Node(${curr.val}))，持续深入左分支 [栈深 ${stack.length}]`),
         codeLine: lines.pushLeft,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
@@ -913,7 +952,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         secondaryCurrent: top.right.val,
         decision: `栈顶 Node(${top.val}) 存在未访问的右孩子 Node(${top.right.val})，转向右子树`,
         message: `后序遍历必须先处理完右子树才能出栈自身：转向 curr = top.right。`,
-        log: `top ${top.val} has unvisited right child ${top.right.val} -> curr = top.right`,
+        log: TreeLogGrammar.format(stack.length - 1, '➡️', `【转向探测】栈顶 Node(${top.val}) 左子树已就绪，转向深入其右子树 Node(${top.right.val})`),
         codeLine: lines.checkRight,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
@@ -941,7 +980,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         current: top.val,
         decision: `栈顶 Node(${top.val}) 出栈，从深度表中查询左右高度: 左 ${l}, 右 ${r}`,
         message: `节点 ${top.val} 左右子树均已访问完毕，从 heightMap 取出左右高度进行高度差检验。`,
-        log: `stack.pop(${top.val}), leftHeight = ${l}, rightHeight = ${r}, diff = ${diff}`,
+        log: TreeLogGrammar.format(stack.length, '🔄', `【出栈检验】stack.pop(Node(${top.val}))，查询深度表：左高 ${l}，右高 ${r}，高度差 |${l} - ${r}| = ${diff}`),
         codeLine: lines.popAndCalc,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
@@ -963,7 +1002,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
           current: top.val,
           decision: `节点 Node(${top.val}) 高度差 |${l} - ${r}| = ${diff} > 1，立即返回 false 失衡终止！`,
           message: `显式栈检测到失衡节点，无需继续遍历其余栈内节点，直接返回 false 提前终止！`,
-          log: `node ${top.val}: diff = ${diff} > 1 -> return false`,
+          log: TreeLogGrammar.format(stack.length, '🛡️', `【高度差失衡拦截】Node(${top.val}) 左右高度差 |${l} - ${r}| = ${diff} > 1，立即提前终止并 return false`),
           codeLine: lines.checkDiff,
           stageId: 'stage-3',
           stackState: stack.map((n) => n.val),
@@ -992,7 +1031,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
         current: top.val,
         decision: `节点 Node(${top.val}) 记录高度 ${h}，存入 heightMap`,
         message: `高度合法 (|${l} - ${r}| <= 1)，更新 heightMap[${top.val}] = ${h}，更新 lastVisited。`,
-        log: `heightMap.put(${top.val}, ${h})`,
+        log: TreeLogGrammar.format(stack.length, '🔄', `【记录深度】Node(${top.val}) 左右平衡，写入深度表 heightMap[${top.val}] = ${h}`),
         codeLine: lines.saveHeight,
         stageId: 'stage-3',
         stackState: stack.map((n) => n.val),
@@ -1019,7 +1058,7 @@ export function buildBalancedStage3StackSteps(root: TreeNode | null): BalancedTr
     visitedNodes: allTreeVals,
     decision: '显式后序遍历完毕，全树所有节点均平衡，返回 true',
     message: '栈内所有节点全部安全弹出且未触发任何失衡退出，整棵树为平衡二叉树！',
-    log: 'while loop finished without imbalance -> return true',
+    log: TreeLogGrammar.format(0, '🎯', '【推演结束】显式后序遍历完毕，全树所有节点均平衡，return true'),
     codeLine: lines.done,
     stageId: 'stage-3',
     heightMap: toHeightMapObj(),

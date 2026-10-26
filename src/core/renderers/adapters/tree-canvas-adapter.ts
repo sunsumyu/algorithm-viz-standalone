@@ -18,6 +18,8 @@ export interface TreeCanvasState {
   secondaryColor?: string;
   visitedColor?: string;
   labels?: Map<number | string, string>;
+  dimUnvisited?: boolean;
+  nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
 }
 
 export class TreeCanvasAdapter {
@@ -37,6 +39,8 @@ export class TreeCanvasAdapter {
       secondaryColor = '#60a5fa',
       visitedColor = '#34d399',
       labels,
+      dimUnvisited,
+      nullProbe,
     } = state;
 
     const primarySet = new Set<number | string>(highlightedNodes);
@@ -63,6 +67,10 @@ export class TreeCanvasAdapter {
       labels,
       visitedSet,
       visitedColor,
+      {
+        dimUnvisited,
+        nullProbe,
+      },
     );
   }
 }

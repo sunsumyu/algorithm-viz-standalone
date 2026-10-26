@@ -138,16 +138,111 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(container.innerHTML).toContain('空树 (Null)');
     });
 
-    it('renderCustomMetrics 能正常挂载指标卡、栈状态与决策卡', () => {
+    it('renderCustomMetrics 能正常挂载扁平化后序信息流转沙盘与显式栈', () => {
       const container = document.createElement('div');
       const root = buildTreeFromArr([3, 9, 20]);
       const s1Steps = buildBalancedStage1Steps(root);
       renderBalancedCustomMetrics(container, s1Steps[0]);
-      expect(container.innerHTML).toContain('当前操作动作');
+      expect(container.innerHTML).toContain('左子树汇报');
+      expect(container.innerHTML).toContain('右子树汇报');
+      expect(container.innerHTML).toContain('本层后序判定');
+      expect(container.innerHTML).toContain('向上交付行为');
 
       const s3Steps = buildBalancedStage3StackSteps(root);
       renderBalancedCustomMetrics(container, s3Steps.find((s) => s.stackState && s.stackState.length > 0)!);
       expect(container.innerHTML).toContain('后序显式栈');
+      expect(container.innerHTML).toContain('节点高度映射表');
+    });
+  });
+
+  describe('TreeLogGrammar 黄金日志规范校验 (严格对齐图 1)', () => {
+    it('Stage 2 全量步骤日志必须具备树形导轨缩进、语义 Emoji 与全中文解说', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildBalancedStage2PruneSteps(root);
+
+      expect(steps.length).toBeGreaterThan(5);
+
+      steps.forEach((step, idx) => {
+        expect(step.log, `第 ${idx + 1} 步日志不能为空`).toBeTruthy();
+        expect(step.log.startsWith('|'), `第 ${idx + 1} 步日志必须以树形导轨 '|' 开头: "${step.log}"`).toBe(true);
+        expect(
+          /^(check relax|skip\s+\d|return\s+dist|checking left|checking right|prune and return)/i.test(step.log),
+          `第 ${idx + 1} 步日志严禁泄露粗糙机器调试英文: "${step.log}"`
+        ).toBe(false);
+      });
+
+      // 验证第 1 步到第 8 步（对应用户截图 2 场景）具备丰富生动图标
+      const emojis = ['📥', '⬇️', '🔍', '➡️', '🔄', '🛡️', '🎯'];
+      const hasEmojis = steps.some((s) => emojis.some((e) => s.log.includes(e)));
+      expect(hasEmojis, '日志流必须包含五段式语义 Emoji 图标').toBe(true);
+    });
+
+    it('Stage 1 与 Stage 3 同样严格遵循 TreeLogGrammar 树形导轨与 Emoji 规范', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const s1Steps = buildBalancedStage1Steps(root);
+      const s3Steps = buildBalancedStage3StackSteps(root);
+
+      s1Steps.forEach((s, idx) => {
+        expect(s.log.startsWith('|'), `Stage 1 第 ${idx + 1} 步必须以 '|' 开头`).toBe(true);
+      });
+
+      s3Steps.forEach((s, idx) => {
+        expect(s.log.startsWith('|'), `Stage 3 第 ${idx + 1} 步必须以 '|' 开头`).toBe(true);
+      });
+    });
+  });
+
+  describe('路线 B: 动态生命树推演与呈现契约 (Dynamic Tree Growth, Null Probe & Capsule Badges)', () => {
+    it('Stage 1 能够动态捕捉 nullProbe 探针并在推演过程中自底向上填充 heightMap', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildBalancedStage1Steps(root);
+
+      // 验证存在 nullProbe 探针 (如 9 的左子节点或右子节点)
+      const probeStep = steps.find((s) => s.nullProbe);
+      expect(probeStep, '推演过程中必须捕获到空节点物理探针 nullProbe').toBeDefined();
+      expect(probeStep?.nullProbe?.branch).toMatch(/left|right/);
+
+      // 验证 heightMap 逐步自底向上回填 (初始为空，后序归纳后增多)
+      expect(Object.keys(steps[0].heightMap || {}).length).toBe(0);
+      const doneStep = steps[steps.length - 1];
+      expect(Object.keys(doneStep.heightMap || {}).length).toBeGreaterThan(0);
+      expect(doneStep.heightMap?.[15]).toBe(1);
+      expect(doneStep.heightMap?.[3]).toBe(3);
+    });
+
+    it('Stage 2 剪枝场景下能动态记录 -1 熔断并在画布渲染 🚨 -1 徽章与 null 探针', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 3, null, null, 4, 4]);
+      const steps = buildBalancedStage2PruneSteps(root);
+
+      const pruneStep = steps.find((s) => s.heightMap && Object.values(s.heightMap).includes(-1));
+      expect(pruneStep, 'Stage 2 剪枝发生时 heightMap 必须记录 -1 熔断值').toBeDefined();
+
+      // 表现层渲染验证：包含 🚨 -1 熔断胶囊徽章
+      const container = document.createElement('div');
+      renderBalancedTreeCanvas(container, pruneStep!);
+      expect(container.innerHTML).toContain('🚨 -1 熔断');
+
+      // 探针渲染验证：包含 null:0 物理小方框
+      const probeStep = steps.find((s) => s.nullProbe);
+      expect(probeStep).toBeDefined();
+      renderBalancedTreeCanvas(container, probeStep!);
+      expect(container.innerHTML).toContain('null:0');
+    });
+
+    it('renderCanvas 能正确将 heightMap 转化为胶囊徽章并启用 dimUnvisited 呼吸态', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildBalancedStage1Steps(root);
+      const container = document.createElement('div');
+
+      // 渲染中间带有 heightMap 的步骤
+      const midStep = steps.find((s) => s.heightMap && Object.keys(s.heightMap).length > 0)!;
+      renderBalancedTreeCanvas(container, midStep);
+
+      // 应该含有 h= 徽章
+      expect(container.innerHTML).toContain('h=');
+      // 应该含有 opacity 探索态 (dimUnvisited)
+      expect(container.innerHTML).toContain('opacity');
     });
   });
 });
+

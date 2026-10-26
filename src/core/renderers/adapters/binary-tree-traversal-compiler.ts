@@ -24,6 +24,34 @@ import {
 // 统一通用二叉树步骤契约 (BinaryTreeStep)
 // =========================================================================
 
+/**
+ * 统一树形推演日志语法标尺 (TreeLogGrammar) - 顶层日志抽象规范
+ * 严格对齐图 1 黄金标准：树形深度导轨缩进 + 标准语义 Emoji + 清晰中文解说
+ */
+export class TreeLogGrammar {
+  /**
+   * 生成统一树状缩进导轨前缀 (严格对齐图 1 黄金标准)
+   * @param depth 递归调用深度 (0-based)
+   */
+  public static getIndent(depth: number): string {
+    const d = Math.max(0, depth);
+    return '| ' + (d > 0 ? '| '.repeat(d) : '');
+  }
+
+  /**
+   * 格式化标准树形推演日志行
+   * 严格规范：`| [| ...] <Emoji> <内容>`
+   */
+  public static format(depth: number, emoji: string, message: string): string {
+    const indent = this.getIndent(depth);
+    const cleaned = (message || '').replace(/^(\|\s*)+/, '').trim();
+    if (cleaned.startsWith(emoji)) {
+      return `${indent}${cleaned}`;
+    }
+    return `${indent}${emoji} ${cleaned}`;
+  }
+}
+
 export interface StaticQueueSnapshot {
   array?: (number | null | string)[];
   queue?: number[];
@@ -268,6 +296,9 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
 
   /** 步骤后处理器 (可选，微调最终输出) */
   stepTransformer?: (step: BinaryTreeStep<TResult>) => BinaryTreeStep<TResult>;
+
+  /** 步骤推入实时拦截器 (在步骤入列时实时调用，适合注入动态维护的快照如 heightMap / nullProbe) */
+  onStepPush?: (step: BinaryTreeStep<TResult>, ctx: TreeDfsContext<TNode, TResult>) => void;
 }
 
 // =========================================================================
@@ -426,11 +457,35 @@ export class BinaryTreeTraversalCompiler {
       resultMap,
     };
 
+    // 统一步骤收集包装器：注入顶层树形缩进导轨契约（对齐图 1 黄金标准）与活跃调用链快照
+    const pushStep = (step: BinaryTreeStep<TResult>, stepDepth: number = ctx.depth) => {
+      if (step && step.log) {
+        const trimmed = step.log.trim();
+        if (!trimmed.startsWith('|')) {
+          const indent = TreeLogGrammar.getIndent(stepDepth);
+          step.log = `${indent}${trimmed}`;
+        }
+      }
+      if (step && !step.callStack) {
+        step.callStack = [...callStack];
+      }
+      if (spec.onStepPush) {
+        spec.onStepPush(step, ctx);
+      }
+      steps.push(step);
+    };
+
     // 1. 空树入口守卫
     if (!spec.root) {
       if (spec.onEmpty) {
         const raw = spec.onEmpty(ctx);
-        return spec.stepTransformer ? raw.map(spec.stepTransformer) : raw;
+        const enriched = raw.map((s) => {
+          if (s && s.log && !s.log.trim().startsWith('|')) {
+            s.log = `${TreeLogGrammar.getIndent(0)}${s.log.trim()}`;
+          }
+          return s;
+        });
+        return spec.stepTransformer ? enriched.map(spec.stepTransformer) : enriched;
       }
 
       trace.addHeader(`${funcName}(null)`, 0, '<- 根调用空树特判');
@@ -446,7 +501,7 @@ export class BinaryTreeTraversalCompiler {
         action: 'entry',
         decision: '算法启动：空树基底检验',
         message: '传入二叉树根节点为空 (null)，启动基准条件判定。',
-        log: `${funcName}(root = null)`,
+        log: TreeLogGrammar.format(0, '📥', `${funcName}(root = null) 空树特判启动`),
         stageId,
         codeLine: nullMeta.codeLine,
         metrics: nullMeta.metrics || { '当前节点': 'null', '计算结果': String(nullMeta.result) },
@@ -462,7 +517,7 @@ export class BinaryTreeTraversalCompiler {
         action: 'base-check',
         decision: nullMeta.decision || '空树基底命中，直接返回基底值',
         message: nullMeta.message || '递归基准：root == null 返回基底解。',
-        log: nullMeta.log || `return ${JSON.stringify(nullMeta.result)}`,
+        log: TreeLogGrammar.format(0, '🔍', `【空树基底】root == null，直接返回 ${JSON.stringify(nullMeta.result)}`),
         stageId,
         codeLine: nullMeta.codeLine,
         metrics: nullMeta.metrics || { '当前节点': 'null', '计算结果': String(nullMeta.result) },
@@ -478,7 +533,7 @@ export class BinaryTreeTraversalCompiler {
         action: 'done',
         decision: '递归求解完成：返回最终结果',
         message: `全树递归结束，最终结果为 ${nullMeta.result}。`,
-        log: `最终结果 = ${nullMeta.result}`,
+        log: TreeLogGrammar.format(0, '🎯', `【求解完成】空树最终计算结果 = ${nullMeta.result}`),
         stageId,
         codeLine: nullMeta.codeLine,
         metrics: nullMeta.metrics || { '当前节点': 'null', '最终结果': String(nullMeta.result) },
@@ -495,7 +550,7 @@ export class BinaryTreeTraversalCompiler {
     // 1.1 若算法声明了初始入口包装步骤 (如 public wrapper 调用辅助递归函数)
     if (spec.onInitSteps) {
       const initSteps = spec.onInitSteps(spec.root, ctx);
-      steps.push(...initSteps);
+      initSteps.forEach((s) => pushStep(s, 0));
     }
 
     // 2. 递归主推演引擎
@@ -509,13 +564,13 @@ export class BinaryTreeTraversalCompiler {
         const nullMeta = spec.onBaseNull(ctx);
         trace.addReturnLeaf(`return ${JSON.stringify(nullMeta.result)}`, currentDepth);
 
-        steps.push({
+        pushStep({
           tree: cloneTree(spec.root as any),
           current: null,
           action: 'base-check',
           decision: nullMeta.decision || '命中空节点基底',
           message: nullMeta.message || '当前引用为空，直接返回基底值。',
-          log: nullMeta.log || `return ${JSON.stringify(nullMeta.result)}`,
+          log: nullMeta.log || TreeLogGrammar.format(currentDepth, '🔍', `【空节点基底】${funcName}(null) 命中空引用，return ${JSON.stringify(nullMeta.result)}`),
           stageId,
           codeLine: nullMeta.codeLine,
           metrics: nullMeta.metrics,
@@ -524,7 +579,7 @@ export class BinaryTreeTraversalCompiler {
           result: nullMeta.result,
           visitedNodes: [...visitedNodes],
           ...nullMeta.customFields,
-        });
+        }, currentDepth);
 
         return nullMeta.result;
       }
@@ -544,13 +599,13 @@ export class BinaryTreeTraversalCompiler {
 
       // 入口帧
       const enterMeta = spec.onEnter ? spec.onEnter(node, ctx) : undefined;
-      steps.push({
+      pushStep({
         tree: cloneTree(spec.root as any),
         current: val,
         action: enterMeta?.action || 'entry',
         decision: enterMeta?.decision || `进入 ${label}，开始探索`,
         message: enterMeta?.message || `执行调用帧 ${frameLabel}，准备向下推演。`,
-        log: enterMeta?.log || `-> ${frameLabel}`,
+        log: enterMeta?.log || TreeLogGrammar.format(currentDepth, '📥', `进入 ${frameLabel} [调用深度 d=${currentDepth}]`),
         stageId,
         codeLine: enterMeta?.codeLine,
         metrics: enterMeta?.metrics,
@@ -558,10 +613,10 @@ export class BinaryTreeTraversalCompiler {
         callTrace: trace.snapshot(),
         visitedNodes: [...visitedNodes],
         ...enterMeta?.customFields,
-      });
+      }, currentDepth);
 
       if (enterMeta?.extraSteps && enterMeta.extraSteps.length > 0) {
-        steps.push(...enterMeta.extraSteps);
+        enterMeta.extraSteps.forEach((s) => pushStep(s, currentDepth));
       }
 
       // 叶节点特判帧
@@ -572,13 +627,13 @@ export class BinaryTreeTraversalCompiler {
             trace.addConditionHit(`🎯 ${label} 为叶节点，提前返回`, currentDepth);
             trace.addReturnLeaf(`return ${JSON.stringify(leafMeta.result)}`, currentDepth);
 
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: 'base-leaf',
               decision: leafMeta.decision || `叶节点特判命中：${label}`,
               message: leafMeta.message || `${label} 无左右子树，返回叶子结果。`,
-              log: leafMeta.log || `叶子返回: ${JSON.stringify(leafMeta.result)}`,
+              log: leafMeta.log || TreeLogGrammar.format(currentDepth, '🎯', `【叶节点特判】${label} 为叶子节点，提前返回 return ${JSON.stringify(leafMeta.result)}`),
               stageId,
               codeLine: leafMeta.codeLine,
               metrics: leafMeta.metrics,
@@ -587,10 +642,10 @@ export class BinaryTreeTraversalCompiler {
               result: leafMeta.result,
               visitedNodes: [...visitedNodes],
               ...leafMeta.customFields,
-            });
+            }, currentDepth);
 
             if (leafMeta.extraSteps && leafMeta.extraSteps.length > 0) {
-              steps.push(...leafMeta.extraSteps);
+              leafMeta.extraSteps.forEach((s) => pushStep(s, currentDepth));
             }
 
             resultMap.set(val, leafMeta.result);
@@ -599,15 +654,15 @@ export class BinaryTreeTraversalCompiler {
           } else {
             // 未命中叶子特判：如果声明了 step 或 decision/codeLine 则发射内部节点步骤
             if (leafMeta.step) {
-              steps.push(leafMeta.step);
+              pushStep(leafMeta.step, currentDepth);
             } else if (leafMeta.decision || leafMeta.codeLine) {
-              steps.push({
+              pushStep({
                 tree: cloneTree(spec.root as any),
                 current: val,
                 action: 'not-leaf',
                 decision: leafMeta.decision || `非叶节点：${label}`,
                 message: leafMeta.message || `${label} 具有子节点，继续分支判定。`,
-                log: leafMeta.log || `${label} not a leaf`,
+                log: leafMeta.log || TreeLogGrammar.format(currentDepth, '🔍', `【内部节点】${label} 具有子分支，继续向下探测`),
                 stageId,
                 codeLine: leafMeta.codeLine,
                 metrics: leafMeta.metrics,
@@ -615,10 +670,10 @@ export class BinaryTreeTraversalCompiler {
                 callTrace: trace.snapshot(),
                 visitedNodes: [...visitedNodes],
                 ...leafMeta.customFields,
-              });
+              }, currentDepth);
             }
             if (leafMeta.extraSteps && leafMeta.extraSteps.length > 0) {
-              steps.push(...leafMeta.extraSteps);
+              leafMeta.extraSteps.forEach((s) => pushStep(s, currentDepth));
             }
           }
         }
@@ -633,13 +688,13 @@ export class BinaryTreeTraversalCompiler {
         if (dispatchMeta) {
           branchMode = dispatchMeta.mode;
           if (dispatchMeta.decision || dispatchMeta.codeLine) {
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: 'branch-dispatch',
               decision: dispatchMeta.decision || '分支调度决策',
               message: dispatchMeta.message || '根据子树状态进行单侧或双侧分支调度',
-              log: dispatchMeta.log || `branch dispatch: ${branchMode}`,
+              log: dispatchMeta.log || TreeLogGrammar.format(currentDepth, '🔀', `【分支调度】${label} 调度模式: ${branchMode}`),
               stageId,
               codeLine: dispatchMeta.codeLine,
               metrics: dispatchMeta.metrics,
@@ -647,10 +702,10 @@ export class BinaryTreeTraversalCompiler {
               callTrace: trace.snapshot(),
               visitedNodes: [...visitedNodes],
               ...dispatchMeta.customFields,
-            });
+            }, currentDepth);
           }
           if (dispatchMeta.extraSteps && dispatchMeta.extraSteps.length > 0) {
-            steps.push(...dispatchMeta.extraSteps);
+            dispatchMeta.extraSteps.forEach((s) => pushStep(s, currentDepth));
           }
           if (branchMode === 'skip') {
             resultMap.set(val, dispatchMeta.result!);
@@ -669,13 +724,13 @@ export class BinaryTreeTraversalCompiler {
           if (spec.beforeLeft) {
             const bl = spec.beforeLeft(node, ctx);
             if (bl) {
-              steps.push({
+              pushStep({
                 tree: cloneTree(spec.root as any),
                 current: val,
                 action: 'call-left',
                 decision: bl.decision || `准备进入 ${label} 的左子树`,
                 message: bl.message || `即将调用左分支 ${left ? getNodeLabel(left) : 'null'}`,
-                log: bl.log || `-> 深入左子树`,
+                log: bl.log || TreeLogGrammar.format(currentDepth, '⬇️', `深入左子树：准备调用 ${left ? getNodeLabel(left) : 'null'}`),
                 stageId,
                 codeLine: bl.codeLine,
                 metrics: bl.metrics,
@@ -683,7 +738,7 @@ export class BinaryTreeTraversalCompiler {
                 callTrace: trace.snapshot(),
                 visitedNodes: [...visitedNodes],
                 ...bl.customFields,
-              });
+              }, currentDepth);
             }
           } else {
             trace.addRecursePrep(`进入左子树调用`, currentDepth);
@@ -696,13 +751,13 @@ export class BinaryTreeTraversalCompiler {
         if (branchMode === 'both' && spec.afterLeft) {
           const al = spec.afterLeft(node, leftRes, ctx);
           if (al) {
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: al.action || 'left-done',
               decision: al.decision || `左子树调用就绪，返回结果 = ${leftRes}`,
               message: al.message || `从左子树归约返回至 ${label}`,
-              log: al.log || `<- 左子树返回 ${leftRes}`,
+              log: al.log || TreeLogGrammar.format(currentDepth, '🔄', `左子树归约就绪：返回至 ${label}，leftResult = ${leftRes}`),
               stageId,
               codeLine: al.codeLine,
               metrics: al.metrics,
@@ -711,7 +766,7 @@ export class BinaryTreeTraversalCompiler {
               visitedNodes: [...visitedNodes],
               leftResult: leftRes,
               ...al.customFields,
-            });
+            }, currentDepth);
           }
         }
 
@@ -720,13 +775,13 @@ export class BinaryTreeTraversalCompiler {
           const pruneMeta = spec.onPruneCheck(node, 'left', leftRes, ctx);
           if (pruneMeta.shouldPrune) {
             trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: 'prune',
               decision: pruneMeta.decision || `触发剪枝：提前返回`,
               message: pruneMeta.message || `左子树计算满足剪枝条件，停止探索右子树。`,
-              log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
+              log: pruneMeta.log || TreeLogGrammar.format(currentDepth, '🛡️', `【提前剪枝】${label} 左子树满足剪枝条件，停止深入并提前返回 return ${pruneMeta.result}`),
               stageId,
               codeLine: pruneMeta.codeLine,
               metrics: pruneMeta.metrics,
@@ -736,7 +791,7 @@ export class BinaryTreeTraversalCompiler {
               visitedNodes: [...visitedNodes],
               pruned: true,
               ...pruneMeta.customFields,
-            });
+            }, currentDepth);
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
             return pruneMeta.result;
@@ -750,13 +805,13 @@ export class BinaryTreeTraversalCompiler {
           if (spec.beforeRight) {
             const br = spec.beforeRight(node, leftRes as any, ctx);
             if (br) {
-              steps.push({
+              pushStep({
                 tree: cloneTree(spec.root as any),
                 current: val,
                 action: 'call-right',
                 decision: br.decision || `准备进入 ${label} 的右子树`,
                 message: br.message || `左子树已就绪，即将调用右分支`,
-                log: br.log || `-> 深入右子树`,
+                log: br.log || TreeLogGrammar.format(currentDepth, '➡️', `深入右子树：准备调用 ${right ? getNodeLabel(right) : 'null'}`),
                 stageId,
                 codeLine: br.codeLine,
                 metrics: br.metrics,
@@ -765,7 +820,7 @@ export class BinaryTreeTraversalCompiler {
                 visitedNodes: [...visitedNodes],
                 leftResult: leftRes,
                 ...br.customFields,
-              });
+              }, currentDepth);
             }
           } else {
             trace.addRecursePrep(`进入右子树调用`, currentDepth);
@@ -778,13 +833,13 @@ export class BinaryTreeTraversalCompiler {
         if (branchMode === 'both' && spec.afterRight) {
           const ar = spec.afterRight(node, rightRes, ctx);
           if (ar) {
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: ar.action || 'right-done',
               decision: ar.decision || `右子树调用就绪，返回结果 = ${rightRes}`,
               message: ar.message || `从右子树归约返回至 ${label}`,
-              log: ar.log || `<- 右子树返回 ${rightRes}`,
+              log: ar.log || TreeLogGrammar.format(currentDepth, '🔄', `右子树归约就绪：返回至 ${label}，rightResult = ${rightRes}`),
               stageId,
               codeLine: ar.codeLine,
               metrics: ar.metrics,
@@ -794,7 +849,7 @@ export class BinaryTreeTraversalCompiler {
               leftResult: leftRes,
               rightResult: rightRes,
               ...ar.customFields,
-            });
+            }, currentDepth);
           }
         }
 
@@ -803,13 +858,13 @@ export class BinaryTreeTraversalCompiler {
           const pruneMeta = spec.onPruneCheck(node, 'right', rightRes, ctx);
           if (pruneMeta.shouldPrune) {
             trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
-            steps.push({
+            pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
               action: 'prune',
               decision: pruneMeta.decision || `触发剪枝：提前返回`,
               message: pruneMeta.message || `右子树计算满足剪枝条件。`,
-              log: pruneMeta.log || `剪枝退出: ${pruneMeta.result}`,
+              log: pruneMeta.log || TreeLogGrammar.format(currentDepth, '🛡️', `【提前剪枝】${label} 右子树满足剪枝条件，停止深入并提前返回 return ${pruneMeta.result}`),
               stageId,
               codeLine: pruneMeta.codeLine,
               metrics: pruneMeta.metrics,
@@ -819,7 +874,7 @@ export class BinaryTreeTraversalCompiler {
               visitedNodes: [...visitedNodes],
               pruned: true,
               ...pruneMeta.customFields,
-            });
+            }, currentDepth);
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
             return pruneMeta.result;
@@ -862,13 +917,13 @@ export class BinaryTreeTraversalCompiler {
         );
       }
 
-      steps.push({
+      pushStep({
         tree: cloneTree(spec.root as any),
         current: val,
         action: combineMeta.action || 'combine',
         decision: combineMeta.decision,
         message: combineMeta.message,
-        log: combineMeta.log,
+        log: combineMeta.log || TreeLogGrammar.format(currentDepth, '🔄', `【后序归纳】${label} 汇总左右子树，结果 = ${JSON.stringify(combineMeta.result)}`),
         stageId,
         codeLine: combineMeta.codeLine,
         metrics: combineMeta.metrics,
@@ -879,10 +934,10 @@ export class BinaryTreeTraversalCompiler {
         rightResult: rightRes,
         visitedNodes: [...visitedNodes],
         ...combineMeta.customFields,
-      });
+      }, currentDepth);
 
       if (combineMeta.extraSteps && combineMeta.extraSteps.length > 0) {
-        steps.push(...combineMeta.extraSteps);
+        combineMeta.extraSteps.forEach((s: any) => pushStep(s, currentDepth));
       }
 
       resultMap.set(val, combineMeta.result);
@@ -896,13 +951,13 @@ export class BinaryTreeTraversalCompiler {
     trace.addFinalResult(`全树求解完毕: ${JSON.stringify(finalResult)}`, 0, undefined, String(finalResult));
     const doneMeta = spec.onDone ? spec.onDone(finalResult, ctx) : undefined;
 
-    steps.push({
+    pushStep({
       tree: cloneTree(spec.root as any),
       current: getNodeVal(spec.root),
       action: 'done',
       decision: doneMeta?.decision || `二叉树推演完成：最终结果 = ${finalResult}`,
       message: doneMeta?.message || `全树递归归约完毕，输出最终求解结果 ${finalResult}。`,
-      log: doneMeta?.log || `推演结束 -> 结果: ${finalResult}`,
+      log: doneMeta?.log || TreeLogGrammar.format(0, '🎯', `【推演结束】二叉树求解完成，最终返回结果 = ${finalResult}`),
       stageId,
       codeLine: doneMeta?.codeLine,
       metrics: doneMeta?.metrics,
@@ -911,7 +966,7 @@ export class BinaryTreeTraversalCompiler {
       result: finalResult,
       visitedNodes: [...visitedNodes],
       ...doneMeta?.customFields,
-    });
+    }, 0);
 
     return spec.stepTransformer ? steps.map(spec.stepTransformer) : steps;
   }

@@ -1,42 +1,14 @@
 /**
  * Balanced Binary Tree Canvas Adapter (LeetCode 110 / Class 037 Code01)
  *
- * 遵循 Matt Pocock 深模块哲学与 Thin Domain Adapter 架构规范。
- * Card 1: 委托 TreeCanvasAdapter 渲染二叉树拓扑沙盘 (支持右上角切至全景推演树)；
- * Card 2: 饱满丰富的「状态空间与指标监视器」：实时调用栈深、Info 二元组汇聚、-1 剪枝穿透指示器与高度映射表。
+ * 遵循 Matt Pocock 深模块哲学与 Thin Domain Adapter 架构规范 (<150 LOC)。
+ * Card 1: 委托 TreeCanvasAdapter 渲染二叉树拓扑沙盘 (支持全景高亮与收尾守卫)；
+ * Card 2: 扁平化【后序信息流转沙盘】：消灭俄罗斯套娃，直观呈现左右子树汇报与决策交付。
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { BalancedTree037Step, collectTreeValues } from './balanced-binary-tree-step-compiler';
 import { renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
-
-function renderDecisionHeader(step: BalancedTree037Step): HTMLDivElement {
-  const card = document.createElement('div');
-  card.style.cssText =
-    'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 7px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 3px; flex-shrink: 0;';
-
-  const bType = step.statusBadge?.type || 'info';
-  const badgeStyle =
-    bType === 'success'
-      ? 'background: #dcfce7; color: #15803d; border: 1px solid #86efac;'
-      : bType === 'danger'
-      ? 'background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;'
-      : bType === 'warning'
-      ? 'background: #fef3c7; color: #b45309; border: 1px solid #fde68a;'
-      : 'background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;';
-
-  card.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-      <span style="font-size: 11px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 4px;">
-        <span>🧭</span> <span>当前操作动作</span>
-      </span>
-      ${step.statusBadge ? `<span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; ${badgeStyle}">${step.statusBadge.text}</span>` : ''}
-    </div>
-    <div style="font-size: 11.5px; font-weight: 600; color: #1e293b; line-height: 1.35;">${step.decision || '推演执行中...'}</div>
-    ${step.message ? `<div style="font-size: 10.5px; color: #64748b; line-height: 1.3;">${step.message}</div>` : ''}
-  `;
-  return card;
-}
 
 export class BalancedBinaryTreeCanvasAdapter {
   /**
@@ -61,6 +33,19 @@ export class BalancedBinaryTreeCanvasAdapter {
         if (!visitedNodes || visitedNodes.length === 0) visitedNodes = allTreeVals;
       }
 
+      // 路线 B 动态生命树：根据 step.heightMap 构造高度与状态胶囊徽章 (Capsule Badges)
+      const labels = new Map<number | string, string>();
+      if (step.heightMap) {
+        for (const [k, v] of Object.entries(step.heightMap)) {
+          const numK = Number(k);
+          if (v === -1) {
+            labels.set(numK, '🚨 -1 熔断');
+          } else {
+            labels.set(numK, `h=${v}`);
+          }
+        }
+      }
+
       TreeCanvasAdapter.renderTree(container, {
         tree: step.tree,
         current,
@@ -69,6 +54,9 @@ export class BalancedBinaryTreeCanvasAdapter {
         primaryColor: '#f59e0b',
         secondaryColor: '#38bdf8',
         visitedColor: '#34d399',
+        labels: labels.size > 0 ? labels : undefined,
+        dimUnvisited: true,
+        nullProbe: step.nullProbe,
       });
     } else if ((step.extraData as any)?.treeNodes) {
       const treeNodes = (step.extraData as any).treeNodes;
@@ -90,136 +78,170 @@ export class BalancedBinaryTreeCanvasAdapter {
   }
 
   /**
-   * Card 2: 状态空间与指标监视器 (State Space & Metrics Monitor)
-   * 饱满呈现：当前考察状态、左右子树高度差、-1 剪枝阻抗熔断器、活跃调用栈与节点高度记忆表
+   * Card 2: 扁平化【后序信息流转与聚合沙盘】(Postorder Synthesis Flow)
+   * 零套娃、零镜像复读：清晰呈现【左树汇报 vs 右树汇报 -> 本层差值代入 -> 向上交付】
    */
   static renderCustomMetrics(container: HTMLElement, step: BalancedTree037Step): void {
     if (!container) return;
     container.innerHTML = '';
     container.style.cssText =
-      'display: flex; flex-direction: column; gap: 6px; width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 4px;';
-
-    // 1. 顶部当前推演决策状态条
-    container.appendChild(renderDecisionHeader(step));
+      'display: flex; flex-direction: column; gap: 8px; width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 4px; font-family: system-ui, -apple-system, sans-serif;';
 
     const stageId = step.stageId || 'stage-1';
-    const mainBox = document.createElement('div');
-    mainBox.style.cssText =
-      'flex: 1; min-height: 0; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; overflow-y: auto;';
-
-    // 2. 状态指标四宫格
     const curVal = step.current !== null && step.current !== undefined ? `Node(${step.current})` : 'null (空基底)';
-    const diff = step.metrics?.diff ?? step.metrics?.['高度差'] ?? '0';
-    const isPruned = step.pruned || step.pruneDetail?.isPruned;
-    const isDone = step.decision.includes('判定') || step.statusBadge?.type === 'success' || step.statusBadge?.type === 'danger';
-    const evalStatus = isPruned
-      ? '<span style="color: #e11d48; font-weight: 700;">🔴 剪枝熔断 (-1)</span>'
-      : isDone
-      ? '<span style="color: #059669; font-weight: 700;">🟢 整树平衡 (TRUE)</span>'
-      : '<span style="color: #2563eb; font-weight: 700;">🔵 局部平衡 (递归中)</span>';
+    const callStack = step.callStack || [];
 
-    const metricsGrid = document.createElement('div');
-    metricsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex-shrink: 0;';
-    metricsGrid.innerHTML = `
-      <div style="background: #ffffff; padding: 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-        <div style="color: #64748b; font-size: 10px;">当前考察节点</div>
-        <div style="font-weight: 700; color: #1e293b; font-size: 11.5px;">${curVal}</div>
+    // 1. 递归路径面包屑 (Call Chain Path)
+    const breadcrumbs = document.createElement('div');
+    breadcrumbs.style.cssText =
+      'display: flex; align-items: center; justify-content: space-between; font-size: 11px; padding: 2px 4px; flex-shrink: 0;';
+    const chipsHtml = callStack.length > 0
+      ? callStack.map((name, i) => `<span style="padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; ${i === callStack.length - 1 ? 'background: #dbeafe; color: #1e40af; font-weight: 700; border: 1px solid #bfdbfe;' : 'background: #f1f5f9; color: #64748b;'}">${name}</span>${i < callStack.length - 1 ? '<span style="color: #cbd5e1;">➔</span>' : ''}`).join('')
+      : '<span style="color: #94a3b8; font-style: italic;">根调用入口</span>';
+    breadcrumbs.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap;">
+        <span style="color: #64748b; font-weight: 600;">递归路径:</span> ${chipsHtml}
       </div>
-      <div style="background: #ffffff; padding: 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-        <div style="color: #64748b; font-size: 10px;">子树高度差 |diff|</div>
-        <div style="font-weight: 700; color: ${Number(diff) > 1 ? '#e11d48' : '#0284c7'}; font-size: 11.5px;">|diff| = ${diff}</div>
-      </div>
-      <div style="background: #ffffff; padding: 5px 8px; border-radius: 6px; border: 1px solid #e2e8f0; grid-column: span 2;">
-        <div style="color: #64748b; font-size: 10px;">当前推演状态</div>
-        <div style="font-size: 11.5px;">${evalStatus}</div>
-      </div>
+      <span style="font-size: 10.5px; color: #64748b; font-family: monospace; flex-shrink: 0;">Depth: ${callStack.length}</span>
     `;
-    mainBox.appendChild(metricsGrid);
+    container.appendChild(breadcrumbs);
 
-    // 3. Stage 1 & 2: 递归调用栈与状态字典流
+    // 2. Stage 3 显式栈专有呈现
     if (stageId === 'stage-3') {
-      // Stage 3: 显式后序遍历栈与哈希表
       const stack = step.stackState || [];
       const heightMap = step.heightMap || {};
       const heightEntries = Object.entries(heightMap);
 
-      const stackSection = document.createElement('div');
-      stackSection.style.cssText = 'display: flex; flex-direction: column; gap: 6px; flex: 1;';
-      stackSection.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-weight: 700; color: #475569;">🥞 后序显式栈 (Size: ${stack.length})</span>
-          <span style="font-size: 10px; color: #64748b; font-family: monospace;">Deque&lt;TreeNode&gt;</span>
+      const stackView = document.createElement('div');
+      stackView.style.cssText =
+        'display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; flex: 1; min-height: 0;';
+      stackView.innerHTML = `
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-weight: 700; color: #475569; font-size: 11px;">🥞 后序显式栈 (Size: ${stack.length})</div>
+          <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center; overflow-y: auto;">
+            ${stack.length > 0 ? stack.map((val, idx) => `<span style="padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; font-weight: 600; background: ${idx === stack.length - 1 ? '#dbeafe; color: #1d4ed8; border: 1px solid #93c5fd;' : '#f8fafc; color: #334155; border: 1px solid #e2e8f0;'}">${idx === stack.length - 1 ? '🔝 ' : ''}Node(${val})</span>`).join('') : '<span style="color: #94a3b8; font-style: italic; font-size: 10.5px;">当前显式栈为空</span>'}
+          </div>
         </div>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap; min-height: 26px; align-items: center;">
-          ${stack.length > 0 ? stack.map((val, idx) => `<span style="padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; font-weight: 600; background: ${idx === stack.length - 1 ? '#dbeafe; color: #1d4ed8; border: 1px solid #93c5fd;' : '#ffffff; color: #334155; border: 1px solid #cbd5e1;'}">${idx === stack.length - 1 ? '🔝 ' : ''}Node(${val})</span>`).join('') : '<span style="color: #94a3b8; font-style: italic;">当前显式栈为空</span>'}
-        </div>
-        <div style="border-top: 1px dashed #e2e8f0; padding-top: 6px;">
-          <div style="font-weight: 700; color: #475569; margin-bottom: 4px;">🗺️ 节点高度映射表 (Map&lt;Node, Integer&gt;, 共 ${heightEntries.length} 项)</div>
+        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto;">
+          <div style="font-weight: 700; color: #475569; font-size: 11px;">🗺️ 节点高度映射表 (已结算 ${heightEntries.length} 项)</div>
           <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-            ${heightEntries.length > 0 ? heightEntries.map(([k, v]) => `<span style="background: #ffffff; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; color: #334155;"><b style="color: #0284c7;">Node(${k})</b>: h=${v}</span>`).join('') : '<span style="color: #94a3b8; font-style: italic;">暂未结算任何节点高度</span>'}
+            ${heightEntries.length > 0 ? heightEntries.map(([k, v]) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; color: #334155;"><b style="color: #0284c7;">Node(${k})</b>: h=${v}</span>`).join('') : '<span style="color: #94a3b8; font-style: italic; font-size: 10.5px;">自底向上逐步回填中...</span>'}
           </div>
         </div>
       `;
-      mainBox.appendChild(stackSection);
-    } else {
-      // Stage 1 & Stage 2: 活跃调用栈面包屑 + Info 汇聚/剪枝监视器
-      const callStack = step.callStack || [];
-      const heightMap = step.heightMap || {};
-      const heightEntries = Object.entries(heightMap);
-
-      const stackBreadcrumb = document.createElement('div');
-      stackBreadcrumb.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; flex-shrink: 0;';
-      stackBreadcrumb.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-          <span style="font-weight: 700; color: #475569; font-size: 10.5px;">📞 递归活跃调用链 (Call Depth: ${callStack.length})</span>
-          <span style="font-size: 10px; color: #0284c7; background: #e0f2fe; padding: 1px 5px; border-radius: 4px;">Frame Stack</span>
-        </div>
-        <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-family: monospace; font-size: 11px;">
-          ${callStack.length > 0 ? callStack.map((name, i) => `<span style="padding: 1px 5px; border-radius: 4px; background: ${i === callStack.length - 1 ? '#dbeafe; color: #1e40af; font-weight: 700;' : '#f1f5f9; color: #64748b;'}">${name}</span>${i < callStack.length - 1 ? '<span style="color: #94a3b8;">➔</span>' : ''}`).join('') : '<span style="color: #94a3b8; font-style: italic;">根调用入口</span>'}
-        </div>
-      `;
-      mainBox.appendChild(stackBreadcrumb);
-
-      // Stage 2 剪枝指示器 或 Stage 1 左右子树 Info 汇聚
-      if (stageId === 'stage-2') {
-        const pruneBox = document.createElement('div');
-        pruneBox.style.cssText = `background: ${isPruned ? '#fff1f2' : '#ffffff'}; border: 1px solid ${isPruned ? '#fecdd3' : '#e2e8f0'}; border-radius: 6px; padding: 6px 8px; flex-shrink: 0;`;
-        pruneBox.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-weight: 700; color: ${isPruned ? '#be123c' : '#475569'}; font-size: 10.5px;">⚡ -1 剪枝击穿熔断监控仪</span>
-            <span style="font-size: 10px; font-weight: 700; color: ${isPruned ? '#be123c' : '#059669'};">${isPruned ? '🚨 触发剪枝熔断' : '🟢 正常自底向上传递'}</span>
-          </div>
-          <div style="font-size: 10.5px; color: ${isPruned ? '#9f1239' : '#64748b'}; margin-top: 2px;">
-            ${isPruned ? '子树高度差绝对值 > 1，立即直接返回 -1。父节点探测到 -1 无需计算剩余子树，实现极速穿透熔断！' : '当前所有子树高度均正常返回，未触发 -1 熔断信号。'}
-          </div>
-        `;
-        mainBox.appendChild(pruneBox);
-      }
-
-      // 子树高度映射字典
-      const heightDictBox = document.createElement('div');
-      heightDictBox.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; flex: 1; min-height: 0; overflow-y: auto;';
-      heightDictBox.innerHTML = `
-        <div style="font-weight: 700; color: #475569; font-size: 10.5px; margin-bottom: 4px;">🗺️ 已结算子树高度字典表 (共 ${heightEntries.length} 项)</div>
-        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          ${heightEntries.length > 0 ? heightEntries.map(([k, v]) => `<span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 10.5px; color: #334155;"><b style="color: #0284c7;">Node(${k})</b>: h=${v}</span>`).join('') : '<span style="color: #94a3b8; font-style: italic;">自底向上计算中...</span>'}
-        </div>
-      `;
-      mainBox.appendChild(heightDictBox);
+      container.appendChild(stackView);
+      return;
     }
 
-    // 4. 底部通关点拨
-    const footerTip = document.createElement('div');
-    footerTip.style.cssText =
-      'background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 10px; color: #64748b; line-height: 1.35; flex-shrink: 0;';
-    footerTip.innerHTML = `
-      💡 <b style="color: #1e293b;">左神二叉树通关套路：</b>后序遍历向左右子树要信息。若发现失衡以 -1 快速贯穿，每个节点只访一次，将 O(N²) 暴力降维至 O(N) 线性最优解。
-    `;
-    mainBox.appendChild(footerTip);
+    // 3. Stage 1 & 2: 三栏式【后序信息流转沙盘】
+    const info = step.infoDetail;
+    const prune = step.pruneDetail;
+    const isStage1 = stageId === 'stage-1';
 
-    container.appendChild(mainBox);
+    // 提炼左子树信息
+    let leftHtml = '<span style="color: #94a3b8;">⏳ 待索取</span>';
+    if (isStage1 && info?.left) {
+      leftHtml = `<div style="font-weight: 700; color: #0284c7; font-size: 13px;">高度 h = ${info.left.height}</div><div style="font-size: 10.5px; color: ${info.left.isBalanced ? '#16a34a' : '#dc2626'}; font-weight: 600;">${info.left.isBalanced ? '🟢 平衡' : '🔴 失衡'}</div>`;
+    } else if (!isStage1 && prune?.left !== undefined) {
+      const isP = prune.left === -1;
+      leftHtml = `<div style="font-weight: 700; color: ${isP ? '#dc2626' : '#0284c7'}; font-size: 13px;">${isP ? '🔴 -1 (剪枝)' : `h = ${prune.left}`}</div><div style="font-size: 10.5px; color: ${isP ? '#dc2626' : '#16a34a'}; font-weight: 600;">${isP ? '失衡击穿' : '正常'}</div>`;
+    } else if (step.action === 'base-null') {
+      leftHtml = '<div style="font-weight: 600; color: #64748b; font-size: 11.5px;">null (h=0)</div><div style="font-size: 10.5px; color: #16a34a; font-weight: 600;">🟢 基准平衡</div>';
+    } else if (step.action === 'left-call' || step.action === 'check-left') {
+      leftHtml = '<span style="color: #2563eb; font-weight: 600;">🔍 深入探测中...</span>';
+    }
+
+    // 提炼右子树信息
+    let rightHtml = '<span style="color: #94a3b8;">⏳ 待索取</span>';
+    if (isStage1 && info?.right) {
+      rightHtml = `<div style="font-weight: 700; color: #0284c7; font-size: 13px;">高度 h = ${info.right.height}</div><div style="font-size: 10.5px; color: ${info.right.isBalanced ? '#16a34a' : '#dc2626'}; font-weight: 600;">${info.right.isBalanced ? '🟢 平衡' : '🔴 失衡'}</div>`;
+    } else if (!isStage1 && prune?.right !== undefined) {
+      const isP = prune.right === -1;
+      rightHtml = `<div style="font-weight: 700; color: ${isP ? '#dc2626' : '#0284c7'}; font-size: 13px;">${isP ? '🔴 -1 (剪枝)' : `h = ${prune.right}`}</div><div style="font-size: 10.5px; color: ${isP ? '#dc2626' : '#16a34a'}; font-weight: 600;">${isP ? '失衡击穿' : '正常'}</div>`;
+    } else if (step.action === 'base-null') {
+      rightHtml = '<div style="font-weight: 600; color: #64748b; font-size: 11.5px;">null (h=0)</div><div style="font-size: 10.5px; color: #16a34a; font-weight: 600;">🟢 基准平衡</div>';
+    } else if (step.action === 'right-call' || step.action === 'check-right') {
+      rightHtml = '<span style="color: #2563eb; font-weight: 600;">🔍 深入探测中...</span>';
+    }
+
+    // 提炼中枢本层后序判定
+    const isPruned = Boolean(step.pruned || prune?.isPruned);
+    const combined = info?.combined;
+    const diffVal = combined?.diff ?? prune?.diff ?? (info?.left && info?.right ? Math.abs(info.left.height - info.right.height) : (prune?.left !== undefined && prune?.right !== undefined && prune.left >= 0 && prune.right >= 0 ? Math.abs(prune.left - prune.right) : null));
+    const isEvaluated = combined !== undefined || (prune?.left !== undefined && prune?.right !== undefined) || step.action === 'base-null';
+
+    let centerCalcHtml = '';
+    let centerVerdictHtml = '';
+    if (step.action === 'base-null') {
+      centerCalcHtml = '<div style="font-size: 11px; color: #64748b;">空节点递归基底 (x == null)</div>';
+      centerVerdictHtml = '<div style="font-size: 12px; font-weight: 700; color: #16a34a;">返回自身高度 0 (天然平衡)</div>';
+    } else if (isPruned) {
+      centerCalcHtml = `<div style="font-size: 11px; font-weight: 600; color: #e11d48;">${prune?.reason || '探测到失衡信号或高度差 > 1'}</div>`;
+      centerVerdictHtml = '<div style="font-size: 12px; font-weight: 700; color: #be123c;">🚨 触发极速熔断，返回 -1</div>';
+    } else if (isEvaluated && diffVal !== null) {
+      const leftH = info?.left?.height ?? prune?.left ?? 0;
+      const rightH = info?.right?.height ?? prune?.right ?? 0;
+      const curH = Math.max(leftH, rightH) + 1;
+      centerCalcHtml = `
+        <div style="font-size: 11px; color: #475569; font-family: monospace;">|h_L - h_R| = |${leftH} - ${rightH}| = <b>${diffVal}</b> ≤ 1</div>
+        <div style="font-size: 10.5px; color: #64748b;">h = max(${leftH}, ${rightH}) + 1 = <b>${curH}</b></div>
+      `;
+      centerVerdictHtml = `<div style="font-size: 12px; font-weight: 700; color: #15803d;">🟢 局部平衡，返回高度 ${curH}</div>`;
+    } else {
+      centerCalcHtml = '<div style="font-size: 11px; color: #94a3b8;">等待左右子树信息回传...</div>';
+      centerVerdictHtml = '<div style="font-size: 11.5px; font-weight: 600; color: #2563eb;">递归推演中</div>';
+    }
+
+    const flowSandbox = document.createElement('div');
+    flowSandbox.style.cssText =
+      'display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 8px; flex: 1; min-height: 0;';
+    flowSandbox.innerHTML = `
+      <!-- 左子树汇报 -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="font-size: 11px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 4px;">
+          <span>🍃</span> <span>左子树汇报 (Left)</span>
+        </div>
+        <div style="margin: 4px 0;">${leftHtml}</div>
+        <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">process(x.left)</div>
+      </div>
+
+      <!-- 中枢本层决策聚合 -->
+      <div style="background: ${isPruned ? '#fff1f2' : '#f8fafc'}; border: 1px solid ${isPruned ? '#fecdd3' : '#cbd5e1'}; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between; text-align: center;">
+        <div style="font-size: 11px; font-weight: 700; color: #1e293b; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          <span>⚖️</span> <span>本层后序判定 (${curVal})</span>
+        </div>
+        <div style="margin: 4px 0;">${centerCalcHtml}</div>
+        <div>${centerVerdictHtml}</div>
+      </div>
+
+      <!-- 右子树汇报 -->
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="font-size: 11px; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 4px;">
+          <span>🍃</span> <span>右子树汇报 (Right)</span>
+        </div>
+        <div style="margin: 4px 0;">${rightHtml}</div>
+        <div style="font-size: 10px; color: #94a3b8; font-family: monospace;">process(x.right)</div>
+      </div>
+    `;
+    container.appendChild(flowSandbox);
+
+    // 4. 向上交付动效指示条 (Upward Delivery Action)
+    const deliveryBar = document.createElement('div');
+    deliveryBar.style.cssText =
+      'background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 10.5px; color: #475569; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;';
+    const deliverySummary = isPruned
+      ? '<b style="color: #dc2626;">🚨 逐层击穿调用栈，直接返回 -1</b>'
+      : isEvaluated
+      ? `<b style="color: #16a34a;">✓ 交付本层结算：${isStage1 ? `Info(bal=${combined?.isBalanced ?? true}, h=${combined?.height ?? 1})` : `高度 h=${step.result ?? 1}`}</b>`
+      : '<span style="color: #64748b;">递归深入中，暂未向上交付</span>';
+    deliveryBar.innerHTML = `
+      <span>⬆️ <b>向上交付行为：</b>${deliverySummary}</span>
+      <span style="font-size: 10px; color: #94a3b8;">Tree DP Info Model</span>
+    `;
+    container.appendChild(deliveryBar);
   }
 }
 
 export const renderBalancedTreeCanvas = BalancedBinaryTreeCanvasAdapter.renderCanvas;
 export const renderBalancedCustomMetrics = BalancedBinaryTreeCanvasAdapter.renderCustomMetrics;
+
