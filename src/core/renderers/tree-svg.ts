@@ -17,6 +17,14 @@ export interface TreeNode {
 export interface RenderTreeSvgOptions {
   dimUnvisited?: boolean;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  /** 全画幅调用链合一树帧数据 (Stack Chain Flow & Multi-Depth Tier Badges) */
+  stackFrames?: {
+    depth: number;
+    nodeVal: number | null;
+    funcCall: string;
+    branch?: string;
+    isCurrent?: boolean;
+  }[];
 }
 
 export function renderTreeSVG(
@@ -38,6 +46,28 @@ export function renderTreeSVG(
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '280');
   svg.setAttribute('viewBox', '0 0 600 280');
+
+  // 构建调用栈帧速查表与父子调用连线集合
+  const stackNodeMap = new Map<number | string, { depth: number; isCurrent: boolean; funcCall: string }>();
+  const stackParentChildSet = new Set<string>();
+  if (options?.stackFrames && options.stackFrames.length > 0) {
+    for (let i = 0; i < options.stackFrames.length; i++) {
+      const f = options.stackFrames[i];
+      if (f.nodeVal != null) {
+        stackNodeMap.set(f.nodeVal, {
+          depth: f.depth + 1,
+          isCurrent: Boolean(f.isCurrent ?? (i === options.stackFrames.length - 1)),
+          funcCall: f.funcCall,
+        });
+      }
+      if (i > 0) {
+        const prev = options.stackFrames[i - 1];
+        if (prev.nodeVal != null && f.nodeVal != null) {
+          stackParentChildSet.add(`${prev.nodeVal}->${f.nodeVal}`);
+        }
+      }
+    }
+  }
 
   const hasStringId = (set?: Set<number | string>): boolean => {
     if (!set) return false;
@@ -62,16 +92,29 @@ export function renderTreeSVG(
     const isH = matchNode(highlight, primaryHasId, node);
     const isS = matchNode(secondaryHighlight, secondaryHasId, node);
     const isV = matchNode(visitedHighlight, visitedHasId, node);
-    const isUnvisited = Boolean(options?.dimUnvisited && !isH && !isS && !isV);
+    const stackInfo = (node.id !== undefined ? stackNodeMap.get(node.id) : undefined) ?? stackNodeMap.get(node.val);
+    const isUnvisited = Boolean(options?.dimUnvisited && !isH && !isS && !isV && !stackInfo);
     const nodeOpacity = isUnvisited ? '0.35' : '1';
 
     // 1. 左子树连线
     if (node.left) {
+      const isLeftInStack = stackParentChildSet.has(`${node.val}->${node.left.val}`);
+      if (isLeftInStack) {
+        // 调用链发光底色光晕
+        const glowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        glowLine.setAttribute('x1', String(x)); glowLine.setAttribute('y1', String(y));
+        glowLine.setAttribute('x2', String(x - spread)); glowLine.setAttribute('y2', String(y + lh));
+        glowLine.setAttribute('stroke', '#60a5fa'); glowLine.setAttribute('stroke-width', '5.5');
+        glowLine.setAttribute('opacity', '0.5');
+        svg.appendChild(glowLine);
+      }
+
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
       line.setAttribute('x2', String(x - spread)); line.setAttribute('y2', String(y + lh));
-      line.setAttribute('stroke', isH || isV ? '#94a3b8' : '#cbd5e1');
-      line.setAttribute('stroke-width', '2.5');
+      line.setAttribute('stroke', isLeftInStack ? '#2563eb' : (isH || isV ? '#94a3b8' : '#cbd5e1'));
+      line.setAttribute('stroke-width', isLeftInStack ? '3.5' : '2.5');
+      if (isLeftInStack) line.setAttribute('stroke-dasharray', '5,3');
       if (isUnvisited) line.setAttribute('opacity', '0.35');
       svg.appendChild(line);
       draw(node.left, x - spread, y + lh, spread / 2);
@@ -84,36 +127,69 @@ export function renderTreeSVG(
       // 动态空节点探针 (Left Null)
       const nx = x - spread;
       const ny = y + lh;
+      const nullFrame = options?.stackFrames?.find((f) => f.nodeVal == null && (f.branch === 'left' || f.isCurrent));
+      const isNullActive = Boolean(nullFrame?.isCurrent);
+      const probeDepth = nullFrame ? nullFrame.depth + 1 : undefined;
+
+      if (isNullActive) {
+        // 调用链发光底色光晕
+        const glowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        glowLine.setAttribute('x1', String(x)); glowLine.setAttribute('y1', String(y));
+        glowLine.setAttribute('x2', String(nx)); glowLine.setAttribute('y2', String(ny));
+        glowLine.setAttribute('stroke', '#60a5fa'); glowLine.setAttribute('stroke-width', '5.5');
+        glowLine.setAttribute('opacity', '0.5');
+        svg.appendChild(glowLine);
+      }
+
       const nullLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       nullLine.setAttribute('x1', String(x)); nullLine.setAttribute('y1', String(y));
       nullLine.setAttribute('x2', String(nx)); nullLine.setAttribute('y2', String(ny));
-      nullLine.setAttribute('stroke', '#3b82f6'); nullLine.setAttribute('stroke-width', '2');
-      nullLine.setAttribute('stroke-dasharray', '3,3');
+      nullLine.setAttribute('stroke', isNullActive ? '#2563eb' : '#3b82f6');
+      nullLine.setAttribute('stroke-width', isNullActive ? '3.5' : '2');
+      nullLine.setAttribute('stroke-dasharray', isNullActive ? '5,3' : '3,3');
       svg.appendChild(nullLine);
 
+      const nullLabel = probeDepth ? `d=${probeDepth} null:0` : 'null:0';
+      const boxWidth = probeDepth ? 62 : 44;
+
       const nullBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      nullBox.setAttribute('x', String(nx - 22)); nullBox.setAttribute('y', String(ny - 12));
-      nullBox.setAttribute('width', '44'); nullBox.setAttribute('height', '24');
-      nullBox.setAttribute('rx', '6'); nullBox.setAttribute('fill', '#eff6ff');
-      nullBox.setAttribute('stroke', '#3b82f6'); nullBox.setAttribute('stroke-width', '2');
+      nullBox.setAttribute('x', String(nx - boxWidth / 2)); nullBox.setAttribute('y', String(ny - 12));
+      nullBox.setAttribute('width', String(boxWidth)); nullBox.setAttribute('height', '24');
+      nullBox.setAttribute('rx', '6');
+      nullBox.setAttribute('fill', isNullActive ? '#fef3c7' : '#eff6ff');
+      nullBox.setAttribute('stroke', isNullActive ? '#f59e0b' : '#3b82f6');
+      nullBox.setAttribute('stroke-width', isNullActive ? '2.5' : '2');
       svg.appendChild(nullBox);
 
       const nullTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       nullTxt.setAttribute('x', String(nx)); nullTxt.setAttribute('y', String(ny + 4));
-      nullTxt.setAttribute('text-anchor', 'middle'); nullTxt.setAttribute('fill', '#1d4ed8');
+      nullTxt.setAttribute('text-anchor', 'middle');
+      nullTxt.setAttribute('fill', isNullActive ? '#b45309' : '#1d4ed8');
       nullTxt.setAttribute('font-family', "'JetBrains Mono', monospace");
       nullTxt.setAttribute('font-size', '11'); nullTxt.setAttribute('font-weight', '700');
-      nullTxt.textContent = 'null:0';
+      nullTxt.textContent = nullLabel;
       svg.appendChild(nullTxt);
     }
 
     // 2. 右子树连线
     if (node.right) {
+      const isRightInStack = stackParentChildSet.has(`${node.val}->${node.right.val}`);
+      if (isRightInStack) {
+        // 调用链发光底色光晕
+        const glowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        glowLine.setAttribute('x1', String(x)); glowLine.setAttribute('y1', String(y));
+        glowLine.setAttribute('x2', String(x + spread)); glowLine.setAttribute('y2', String(y + lh));
+        glowLine.setAttribute('stroke', '#60a5fa'); glowLine.setAttribute('stroke-width', '5.5');
+        glowLine.setAttribute('opacity', '0.5');
+        svg.appendChild(glowLine);
+      }
+
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
       line.setAttribute('x2', String(x + spread)); line.setAttribute('y2', String(y + lh));
-      line.setAttribute('stroke', isH || isV ? '#94a3b8' : '#cbd5e1');
-      line.setAttribute('stroke-width', '2.5');
+      line.setAttribute('stroke', isRightInStack ? '#2563eb' : (isH || isV ? '#94a3b8' : '#cbd5e1'));
+      line.setAttribute('stroke-width', isRightInStack ? '3.5' : '2.5');
+      if (isRightInStack) line.setAttribute('stroke-dasharray', '5,3');
       if (isUnvisited) line.setAttribute('opacity', '0.35');
       svg.appendChild(line);
       draw(node.right, x + spread, y + lh, spread / 2);
@@ -126,26 +202,47 @@ export function renderTreeSVG(
       // 动态空节点探针 (Right Null)
       const nx = x + spread;
       const ny = y + lh;
+      const nullFrame = options?.stackFrames?.find((f) => f.nodeVal == null && (f.branch === 'right' || f.isCurrent));
+      const isNullActive = Boolean(nullFrame?.isCurrent);
+      const probeDepth = nullFrame ? nullFrame.depth + 1 : undefined;
+
+      if (isNullActive) {
+        // 调用链发光底色光晕
+        const glowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        glowLine.setAttribute('x1', String(x)); glowLine.setAttribute('y1', String(y));
+        glowLine.setAttribute('x2', String(nx)); glowLine.setAttribute('y2', String(ny));
+        glowLine.setAttribute('stroke', '#60a5fa'); glowLine.setAttribute('stroke-width', '5.5');
+        glowLine.setAttribute('opacity', '0.5');
+        svg.appendChild(glowLine);
+      }
+
       const nullLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       nullLine.setAttribute('x1', String(x)); nullLine.setAttribute('y1', String(y));
       nullLine.setAttribute('x2', String(nx)); nullLine.setAttribute('y2', String(ny));
-      nullLine.setAttribute('stroke', '#3b82f6'); nullLine.setAttribute('stroke-width', '2');
-      nullLine.setAttribute('stroke-dasharray', '3,3');
+      nullLine.setAttribute('stroke', isNullActive ? '#2563eb' : '#3b82f6');
+      nullLine.setAttribute('stroke-width', isNullActive ? '3.5' : '2');
+      nullLine.setAttribute('stroke-dasharray', isNullActive ? '5,3' : '3,3');
       svg.appendChild(nullLine);
 
+      const nullLabel = probeDepth ? `d=${probeDepth} null:0` : 'null:0';
+      const boxWidth = probeDepth ? 62 : 44;
+
       const nullBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      nullBox.setAttribute('x', String(nx - 22)); nullBox.setAttribute('y', String(ny - 12));
-      nullBox.setAttribute('width', '44'); nullBox.setAttribute('height', '24');
-      nullBox.setAttribute('rx', '6'); nullBox.setAttribute('fill', '#eff6ff');
-      nullBox.setAttribute('stroke', '#3b82f6'); nullBox.setAttribute('stroke-width', '2');
+      nullBox.setAttribute('x', String(nx - boxWidth / 2)); nullBox.setAttribute('y', String(ny - 12));
+      nullBox.setAttribute('width', String(boxWidth)); nullBox.setAttribute('height', '24');
+      nullBox.setAttribute('rx', '6');
+      nullBox.setAttribute('fill', isNullActive ? '#fef3c7' : '#eff6ff');
+      nullBox.setAttribute('stroke', isNullActive ? '#f59e0b' : '#3b82f6');
+      nullBox.setAttribute('stroke-width', isNullActive ? '2.5' : '2');
       svg.appendChild(nullBox);
 
       const nullTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       nullTxt.setAttribute('x', String(nx)); nullTxt.setAttribute('y', String(ny + 4));
-      nullTxt.setAttribute('text-anchor', 'middle'); nullTxt.setAttribute('fill', '#1d4ed8');
+      nullTxt.setAttribute('text-anchor', 'middle');
+      nullTxt.setAttribute('fill', isNullActive ? '#b45309' : '#1d4ed8');
       nullTxt.setAttribute('font-family', "'JetBrains Mono', monospace");
       nullTxt.setAttribute('font-size', '11'); nullTxt.setAttribute('font-weight', '700');
-      nullTxt.textContent = 'null:0';
+      nullTxt.textContent = nullLabel;
       svg.appendChild(nullTxt);
     }
 
@@ -156,47 +253,78 @@ export function renderTreeSVG(
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '19');
     let fill = '#ffffff', stroke = '#64748b';
-    if (isH) {
+    if (stackInfo) {
+      if (stackInfo.isCurrent) {
+        fill = '#f59e0b'; stroke = '#d97706';
+        c.setAttribute('stroke-width', '3.5');
+        c.setAttribute('filter', 'drop-shadow(0 0 8px rgba(245,158,11,0.65))');
+      } else {
+        fill = '#38bdf8'; stroke = '#0284c7';
+        c.setAttribute('stroke-width', '3');
+        c.setAttribute('filter', 'drop-shadow(0 0 5px rgba(56,189,248,0.5))');
+      }
+    } else if (isH) {
       fill = highlightColor || '#0284c7'; stroke = highlightColor || '#0284c7';
+      c.setAttribute('stroke-width', '3.5');
+      c.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(245,158,11,0.35))');
     } else if (isS && secondaryColor) {
       fill = secondaryColor; stroke = secondaryColor;
+      c.setAttribute('stroke-width', '2.5');
     } else if (isV && visitedColor) {
       fill = visitedColor; stroke = visitedColor;
+      c.setAttribute('stroke-width', '2.5');
+    } else {
+      c.setAttribute('stroke-width', '2.5');
     }
-    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke); c.setAttribute('stroke-width', isH ? '3.5' : '2.5');
-    if (isH) {
-      c.setAttribute('filter', 'drop-shadow(0 2px 4px rgba(245,158,11,0.35))');
-    }
+    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke);
     gNode.appendChild(c);
 
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', String(x)); t.setAttribute('y', String(y + 5));
     t.setAttribute('text-anchor', 'middle');
-    t.setAttribute('fill', isH || isS || isV ? '#ffffff' : '#0f172a');
+    t.setAttribute('fill', stackInfo || isH || isS || isV ? '#ffffff' : '#0f172a');
     t.setAttribute('font-family', "'JetBrains Mono', monospace");
     t.setAttribute('font-size', '13');
     t.setAttribute('font-weight', '700');
     t.textContent = String(node.val);
     gNode.appendChild(t);
 
-    // 4. 高度/状态胶囊徽章 (Capsule Badge)
-    const label = (node.id !== undefined ? labels?.get(node.id) : undefined) ?? labels?.get(node.val);
-    if (label) {
-      const isDanger = label.includes('-1') || label.includes('剪枝') || label.includes('失衡');
-      const isSuccess = label.includes('h=') || label.includes('平衡');
-      const bgFill = isDanger ? '#fee2e2' : isSuccess ? '#dcfce7' : '#eff6ff';
-      const strokeColor = isDanger ? '#fca5a5' : isSuccess ? '#86efac' : '#bfdbfe';
-      const textColor = isDanger ? '#b91c1c' : isSuccess ? '#15803d' : '#1d4ed8';
+    // 4. 复合胶囊徽章 (Stack Depth Badge / Height Badge)
+    const baseLabel = (node.id !== undefined ? labels?.get(node.id) : undefined) ?? labels?.get(node.val);
+    let displayBadgeText = '';
+    let badgeBg = '#eff6ff';
+    let badgeStroke = '#bfdbfe';
+    let badgeTextFill = '#1d4ed8';
 
-      const textWidth = Math.max(34, label.length * 7.5 + 8);
+    if (stackInfo) {
+      // 处于调用栈链路上的节点：优先展示深度与活跃/等待状态
+      const statusText = stackInfo.isCurrent ? '⚡活跃' : '⏳等待';
+      displayBadgeText = baseLabel ? `d=${stackInfo.depth} ${statusText} · ${baseLabel}` : `d=${stackInfo.depth} ${statusText}`;
+      if (stackInfo.isCurrent) {
+        badgeBg = '#fef3c7'; badgeStroke = '#f59e0b'; badgeTextFill = '#b45309';
+      } else {
+        badgeBg = '#eff6ff'; badgeStroke = '#93c5fd'; badgeTextFill = '#1e40af';
+      }
+    } else if (baseLabel) {
+      // 已结算非栈节点：展示高度/状态徽章
+      displayBadgeText = baseLabel;
+      const isDanger = baseLabel.includes('-1') || baseLabel.includes('剪枝') || baseLabel.includes('失衡');
+      const isSuccess = baseLabel.includes('h=') || baseLabel.includes('平衡');
+      badgeBg = isDanger ? '#fee2e2' : isSuccess ? '#dcfce7' : '#eff6ff';
+      badgeStroke = isDanger ? '#fca5a5' : isSuccess ? '#86efac' : '#bfdbfe';
+      badgeTextFill = isDanger ? '#b91c1c' : isSuccess ? '#15803d' : '#1d4ed8';
+    }
+
+    if (displayBadgeText) {
+      const textWidth = Math.max(36, displayBadgeText.length * 7.2 + 10);
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('x', String(x - textWidth / 2));
       rect.setAttribute('y', String(y - 34));
       rect.setAttribute('width', String(textWidth));
       rect.setAttribute('height', '18');
       rect.setAttribute('rx', '9');
-      rect.setAttribute('fill', bgFill);
-      rect.setAttribute('stroke', strokeColor);
+      rect.setAttribute('fill', badgeBg);
+      rect.setAttribute('stroke', badgeStroke);
       rect.setAttribute('stroke-width', '1.5');
       gNode.appendChild(rect);
 
@@ -204,11 +332,11 @@ export function renderTreeSVG(
       lb.setAttribute('x', String(x));
       lb.setAttribute('y', String(y - 21));
       lb.setAttribute('text-anchor', 'middle');
-      lb.setAttribute('fill', textColor);
+      lb.setAttribute('fill', badgeTextFill);
       lb.setAttribute('font-family', "'JetBrains Mono', monospace");
-      lb.setAttribute('font-size', '10.5');
+      lb.setAttribute('font-size', '10');
       lb.setAttribute('font-weight', '700');
-      lb.textContent = label;
+      lb.textContent = displayBadgeText;
       gNode.appendChild(lb);
     }
 

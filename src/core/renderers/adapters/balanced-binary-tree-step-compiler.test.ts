@@ -306,7 +306,7 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
         'process(15)',
       ]);
 
-      // 2. 验证 renderCanvas 在默认 stack-depth 模式下挂载 3 棵树
+      // 2. 验证 stack-depth 模式下挂载 3 棵树
       const container = document.createElement('div');
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
       renderBalancedTreeCanvas(container, sampleD3);
@@ -320,38 +320,73 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(svgs.length).toBe(3);
     });
 
-    it('renderCanvas 支持在 stack-depth、split、data-tree 与 call-tree 四种视图模式间自由无缝切换', () => {
+    it('路线 F: 全画幅调用链合一树 (全挂一棵树上)', () => {
+      const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+      const steps = buildBalancedStage1Steps(root);
+      const depth3Steps = steps.filter((s) => s.treeStackFrames && s.treeStackFrames.length === 3);
+      const sampleD3 = depth3Steps[0];
+
+      const container = document.createElement('div');
+      // 默认模式即为 unified-tree
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'unified-tree';
+      renderBalancedTreeCanvas(container, sampleD3);
+
+      // 全画幅仅渲染 1 棵完整的宏伟二叉树 SVG
+      const svgs = container.querySelectorAll('svg');
+      expect(svgs.length).toBe(1);
+
+      // 验证这唯一的一棵树上同时挂载了全部调用栈深度徽标
+      expect(container.innerHTML).toContain('btn-subview-unified');
+      expect(container.innerHTML).toContain('d=1');
+      expect(container.innerHTML).toContain('d=2');
+      expect(container.innerHTML).toContain('d=3');
+      // 包含活跃光流连线
+      expect(container.innerHTML).toContain('stroke-dasharray="5,3"');
+
+      // 验证实体叶子节点 15 的全画幅调用链挂载 (d=1, d=2, d=3 ⚡活跃)
+      const step15 = steps.find((s) => s.current === 15 && s.treeStackFrames && s.treeStackFrames.length === 3);
+      if (step15) {
+        const c2 = document.createElement('div');
+        renderBalancedTreeCanvas(c2, step15);
+        expect(c2.querySelectorAll('svg').length).toBe(1);
+        expect(c2.innerHTML).toContain('d=1');
+        expect(c2.innerHTML).toContain('d=2');
+        expect(c2.innerHTML).toContain('d=3 ⚡活跃');
+      }
+    });
+
+    it('renderCanvas 支持在 unified-tree、stack-depth、split 与 call-tree 四种视图模式间自由无缝切换', () => {
       const root = buildTreeFromArr([3, 9, 20]);
       const steps = buildBalancedStage1Steps(root);
       const container = document.createElement('div');
       const midStep = steps[steps.length - 2];
 
-      // 1. 默认 stack-depth 模式
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+      // 1. 默认 unified-tree 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'unified-tree';
       renderBalancedTreeCanvas(container, midStep);
+      expect(container.innerHTML).toContain('btn-subview-unified');
       expect(container.innerHTML).toContain('btn-subview-stack');
       expect(container.innerHTML).toContain('btn-subview-split');
-      expect(container.innerHTML).toContain('btn-subview-data');
       expect(container.innerHTML).toContain('btn-subview-call');
+      expect(container.querySelectorAll('svg').length).toBe(1);
+
+      // 2. 切换至 stack-depth 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+      renderBalancedTreeCanvas(container, midStep);
       expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(1);
 
-      // 2. 切换至 split 模式
+      // 3. 切换至 split 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'split';
       renderBalancedTreeCanvas(container, midStep);
       expect(container.querySelectorAll('svg').length).toBeGreaterThanOrEqual(1);
 
-      // 3. 切换至 call-tree 模式
+      // 4. 切换至 call-tree 模式
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'call-tree';
       renderBalancedTreeCanvas(container, midStep);
       expect(container.querySelector('svg')).not.toBeNull();
 
-      // 4. 切换至 data-tree 模式
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
-      renderBalancedTreeCanvas(container, midStep);
-      expect(container.querySelector('svg')).not.toBeNull();
-
-      // 切回 stack-depth 默认
-      BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+      // 切回 unified-tree 默认
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'unified-tree';
     });
   });
 });

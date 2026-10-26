@@ -12,8 +12,8 @@ import { renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/
 import { RecursionTreeAdapter } from '../recursion-tree-adapter';
 
 export class BalancedBinaryTreeCanvasAdapter {
-  /** 当前 Card 1 复合子视图模式 (路线 E 递归深度多树分层 vs 路线 D 分屏 vs 路线 B 单树 vs 路线 C 递归展开树) */
-  public static activeSubView: 'stack-depth' | 'split' | 'data-tree' | 'call-tree' = 'stack-depth';
+  /** 当前 Card 1 复合子视图模式 (路线 F 全景调用链合一树 vs 路线 E 深度分层树 vs 路线 D 分屏 vs 路线 C 递归展开树) */
+  public static activeSubView: 'unified-tree' | 'stack-depth' | 'split' | 'call-tree' = 'unified-tree';
 
   /**
    * Card 1: 表现层画板渲染器 (Presentation Canvas Renderer)
@@ -80,24 +80,31 @@ export class BalancedBinaryTreeCanvasAdapter {
         toolbar.style.cssText =
           'display: flex; justify-content: flex-end; align-items: center; width: 100%; padding: 2px 6px; flex-shrink: 0; z-index: 10;';
         const curMode = BalancedBinaryTreeCanvasAdapter.activeSubView;
+        const isUnified = curMode === 'unified-tree';
         const isStack = curMode === 'stack-depth';
         const isSplit = curMode === 'split';
-        const isData = curMode === 'data-tree';
         const isCall = curMode === 'call-tree';
 
         toolbar.innerHTML = `
           <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
-            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 深度分层树</button>
+            <button id="btn-subview-unified" style="border: none; background: ${isUnified ? '#ffffff' : 'transparent'}; color: ${isUnified ? '#1d4ed8' : '#64748b'}; font-weight: ${isUnified ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isUnified ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 全景调用链树</button>
+            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 多树深度分屏</button>
             <button id="btn-subview-split" style="border: none; background: ${isSplit ? '#ffffff' : 'transparent'}; color: ${isSplit ? '#1d4ed8' : '#64748b'}; font-weight: ${isSplit ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isSplit ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌓 双视口分屏</button>
-            <button id="btn-subview-data" style="border: none; background: ${isData ? '#ffffff' : 'transparent'}; color: ${isData ? '#1d4ed8' : '#64748b'}; font-weight: ${isData ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isData ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 单一物理树</button>
             <button id="btn-subview-call" style="border: none; background: ${isCall ? '#ffffff' : 'transparent'}; color: ${isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 递归展开树</button>
           </div>
         `;
+        const btnUnified = toolbar.querySelector('#btn-subview-unified') as HTMLButtonElement | null;
         const btnStack = toolbar.querySelector('#btn-subview-stack') as HTMLButtonElement | null;
         const btnSplit = toolbar.querySelector('#btn-subview-split') as HTMLButtonElement | null;
-        const btnData = toolbar.querySelector('#btn-subview-data') as HTMLButtonElement | null;
         const btnCall = toolbar.querySelector('#btn-subview-call') as HTMLButtonElement | null;
 
+        if (btnUnified) {
+          btnUnified.onclick = (e) => {
+            e.stopPropagation();
+            BalancedBinaryTreeCanvasAdapter.activeSubView = 'unified-tree';
+            BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
+          };
+        }
         if (btnStack) {
           btnStack.onclick = (e) => {
             e.stopPropagation();
@@ -112,13 +119,6 @@ export class BalancedBinaryTreeCanvasAdapter {
             BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
           };
         }
-        if (btnData) {
-          btnData.onclick = (e) => {
-            e.stopPropagation();
-            BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
-            BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
-          };
-        }
         if (btnCall) {
           btnCall.onclick = (e) => {
             e.stopPropagation();
@@ -130,7 +130,27 @@ export class BalancedBinaryTreeCanvasAdapter {
       }
 
       // 2. 主绘图画板挂载区
-      if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'stack-depth') {
+      if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'unified-tree') {
+        // 路线 F：全画幅调用链合一树 (整棵树占满画板，挂载所有调用栈深度、光流连线与状态徽标)
+        const canvasBox = document.createElement('div');
+        canvasBox.style.cssText =
+          'flex: 1; width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative;';
+        container.appendChild(canvasBox);
+
+        TreeCanvasAdapter.renderTree(canvasBox, {
+          tree: step.tree,
+          current,
+          visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+          secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
+          primaryColor: '#f59e0b',
+          secondaryColor: '#38bdf8',
+          visitedColor: '#34d399',
+          labels: labels.size > 0 ? labels : undefined,
+          dimUnvisited: true,
+          nullProbe: step.nullProbe,
+          stackFrames: step.treeStackFrames,
+        });
+      } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'stack-depth') {
         // 路线 E：按递归深度显示 N 个树 (随调用栈动态增减)
         const frames = step.treeStackFrames && step.treeStackFrames.length > 0
           ? step.treeStackFrames

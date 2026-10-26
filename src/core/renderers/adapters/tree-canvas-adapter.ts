@@ -20,6 +20,13 @@ export interface TreeCanvasState {
   labels?: Map<number | string, string>;
   dimUnvisited?: boolean;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  stackFrames?: {
+    depth: number;
+    nodeVal: number | null;
+    funcCall: string;
+    branch?: string;
+    isCurrent?: boolean;
+  }[];
 }
 
 export class TreeCanvasAdapter {
@@ -41,6 +48,7 @@ export class TreeCanvasAdapter {
       labels,
       dimUnvisited,
       nullProbe,
+      stackFrames,
     } = state;
 
     const primarySet = new Set<number | string>(highlightedNodes);
@@ -70,6 +78,7 @@ export class TreeCanvasAdapter {
       {
         dimUnvisited,
         nullProbe,
+        stackFrames,
       },
     );
   }
