@@ -87,8 +87,8 @@ export class BalancedBinaryTreeCanvasAdapter {
 
         toolbar.innerHTML = `
           <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
-            <button id="btn-subview-unified" style="border: none; background: ${isUnified ? '#ffffff' : 'transparent'}; color: ${isUnified ? '#1d4ed8' : '#64748b'}; font-weight: ${isUnified ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isUnified ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 全景调用链树</button>
-            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 多树深度分屏</button>
+            <button id="btn-subview-unified" style="border: none; background: ${isUnified ? '#ffffff' : 'transparent'}; color: ${isUnified ? '#1d4ed8' : '#64748b'}; font-weight: ${isUnified ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isUnified ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 全景合一树 (合到一起展示)</button>
+            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 深度全展分屏 (固定全深度)</button>
             <button id="btn-subview-split" style="border: none; background: ${isSplit ? '#ffffff' : 'transparent'}; color: ${isSplit ? '#1d4ed8' : '#64748b'}; font-weight: ${isSplit ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isSplit ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌓 双视口分屏</button>
             <button id="btn-subview-call" style="border: none; background: ${isCall ? '#ffffff' : 'transparent'}; color: ${isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 递归展开树</button>
           </div>
@@ -151,43 +151,66 @@ export class BalancedBinaryTreeCanvasAdapter {
           stackFrames: step.treeStackFrames,
         });
       } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'stack-depth') {
-        // 路线 E：按递归深度显示 N 个树 (随调用栈动态增减)
-        const frames = step.treeStackFrames && step.treeStackFrames.length > 0
-          ? step.treeStackFrames
-          : [{ depth: 0, nodeVal: current, funcCall: 'dfs(root)', isCurrent: true }];
-        const N = frames.length;
+        // 路线 E/G：固定全深度多树全展 (固定全深度列展示，绝不随调用栈弹出动态增减或消失)
+        const getMaxTreeDepth = (node: any): number => {
+          if (!node) return 0;
+          return 1 + Math.max(getMaxTreeDepth(node.left), getMaxTreeDepth(node.right));
+        };
+        const totalDepths = Math.max(1, getMaxTreeDepth(step.tree));
+        const stackFrames = step.treeStackFrames || [];
+        const activeDepthMap = new Map<number, typeof stackFrames[0]>();
+        stackFrames.forEach((f) => activeDepthMap.set(f.depth + 1, f));
+
+        const depthLevels = Array.from({ length: totalDepths }, (_, i) => i + 1);
 
         const stackContainer = document.createElement('div');
         stackContainer.style.cssText =
           'flex: 1; width: 100%; height: 100%; min-height: 0; box-sizing: border-box; display: flex; gap: 8px; overflow-x: auto; padding: 2px; align-items: stretch;';
 
-        frames.forEach((frame, idx) => {
-          const isCurrent = frame.isCurrent ?? (idx === N - 1);
-          const minWidth = N <= 3 ? '0' : '260px';
+        depthLevels.forEach((lvl) => {
+          const frame = activeDepthMap.get(lvl);
+          const inStack = Boolean(frame);
+          const isCurrent = Boolean(frame?.isCurrent);
+          const curStackMax = stackFrames.length > 0 ? Math.max(...stackFrames.map((f) => f.depth + 1)) : 0;
+          const isPending = lvl > curStackMax && !step.visitedNodes?.length;
+
+          const minWidth = totalDepths <= 3 ? '0' : '260px';
           const frameCard = document.createElement('div');
           frameCard.style.cssText = `
             flex: 1 1 ${minWidth};
             min-width: ${minWidth};
-            border: 1px solid ${isCurrent ? '#93c5fd' : '#e2e8f0'};
+            border: 1px solid ${isCurrent ? '#93c5fd' : inStack ? '#bfdbfe' : '#e2e8f0'};
             border-radius: 8px;
             background: #ffffff;
             display: flex;
             flex-direction: column;
             min-height: 0;
             overflow: hidden;
-            box-shadow: ${isCurrent ? '0 2px 8px rgba(59, 130, 246, 0.12)' : 'none'};
+            box-shadow: ${isCurrent ? '0 2px 8px rgba(59, 130, 246, 0.15)' : 'none'};
             position: relative;
+            opacity: ${inStack ? '1' : '0.85'};
           `;
 
           // 纯净卡片顶部微标 (零 h1~h6 违规)
           const header = document.createElement('div');
-          header.style.cssText = `padding: 4px 8px; background: ${isCurrent ? '#eff6ff' : '#f8fafc'}; border-bottom: 1px solid ${isCurrent ? '#bfdbfe' : '#e2e8f0'}; font-size: 10.5px; font-weight: 700; color: ${isCurrent ? '#1d4ed8' : '#475569'}; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;`;
+          header.style.cssText = `padding: 4px 8px; background: ${isCurrent ? '#eff6ff' : inStack ? '#f0f9ff' : '#f8fafc'}; border-bottom: 1px solid ${isCurrent ? '#bfdbfe' : inStack ? '#bae6fd' : '#e2e8f0'}; font-size: 10.5px; font-weight: 700; color: ${isCurrent ? '#1d4ed8' : inStack ? '#0369a1' : '#64748b'}; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;`;
+
+          const funcText = frame?.funcCall ?? `第 ${lvl} 层`;
+          const statusText = isCurrent
+            ? '⚡ 活跃执行'
+            : inStack
+            ? '⏳ 等待回溯'
+            : isPending
+            ? '💤 待递归深入'
+            : '✅ 本层回溯已结算';
+          const statusColor = isCurrent ? '#2563eb' : inStack ? '#0284c7' : isPending ? '#94a3b8' : '#15803d';
+
           header.innerHTML = `
             <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="background: ${isCurrent ? '#3b82f6' : '#94a3b8'}; color: #ffffff; padding: 0 4px; border-radius: 3px; font-size: 9.5px; font-family: monospace;">d=${frame.depth + 1}</span>
-              <span style="font-family: monospace;">${frame.funcCall}</span>
+              <span style="background: ${isCurrent ? '#3b82f6' : inStack ? '#0284c7' : '#94a3b8'}; color: #ffffff; padding: 0 4px; border-radius: 3px; font-size: 9.5px; font-family: monospace;">d=${lvl}</span>
+              <span style="font-family: monospace;">${funcText}</span>
             </div>
-            <span style="font-size: 9.5px; color: ${isCurrent ? '#2563eb' : '#94a3b8'}; font-weight: 600;">${isCurrent ? '⚡ 活跃执行' : '⏳ 等待回溯'}</span>
+            <span style="font-size: 9.5px; color: ${statusColor}; font-weight: 600;">${statusText}</span>
           `;
           frameCard.appendChild(header);
 
@@ -196,17 +219,11 @@ export class BalancedBinaryTreeCanvasAdapter {
             'flex: 1; width: 100%; height: 100%; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;';
           frameCard.appendChild(canvasBox);
 
-          renderLivingDataTree(canvasBox, frame.nodeVal, isCurrent);
+          renderLivingDataTree(canvasBox, frame?.nodeVal ?? null, isCurrent);
           stackContainer.appendChild(frameCard);
         });
 
         container.appendChild(stackContainer);
-
-        if (N >= 4) {
-          setTimeout(() => {
-            stackContainer.scrollLeft = stackContainer.scrollWidth;
-          }, 0);
-        }
       } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'split' && step.callTree) {
         // 路线 D：双视口联动分屏模式 (左侧物理数据树 ⟷ 右侧递归展开树)
         const splitGrid = document.createElement('div');

@@ -88,7 +88,7 @@ export function renderTreeSVG(
     return set.has(node.val);
   };
 
-  const draw = (node: TreeNode, x: number, y: number, spread: number) => {
+  const draw = (node: TreeNode, x: number, y: number, spread: number, depth = 1) => {
     const isH = matchNode(highlight, primaryHasId, node);
     const isS = matchNode(secondaryHighlight, secondaryHasId, node);
     const isV = matchNode(visitedHighlight, visitedHasId, node);
@@ -117,7 +117,7 @@ export function renderTreeSVG(
       if (isLeftInStack) line.setAttribute('stroke-dasharray', '5,3');
       if (isUnvisited) line.setAttribute('opacity', '0.35');
       svg.appendChild(line);
-      draw(node.left, x - spread, y + lh, spread / 2);
+      draw(node.left, x - spread, y + lh, spread / 2, depth + 1);
     } else if (
       options?.nullProbe &&
       options.nullProbe.branch === 'left' &&
@@ -192,7 +192,7 @@ export function renderTreeSVG(
       if (isRightInStack) line.setAttribute('stroke-dasharray', '5,3');
       if (isUnvisited) line.setAttribute('opacity', '0.35');
       svg.appendChild(line);
-      draw(node.right, x + spread, y + lh, spread / 2);
+      draw(node.right, x + spread, y + lh, spread / 2, depth + 1);
     } else if (
       options?.nullProbe &&
       options.nullProbe.branch === 'right' &&
@@ -299,20 +299,26 @@ export function renderTreeSVG(
     if (stackInfo) {
       // 处于调用栈链路上的节点：优先展示深度与活跃/等待状态
       const statusText = stackInfo.isCurrent ? '⚡活跃' : '⏳等待';
-      displayBadgeText = baseLabel ? `d=${stackInfo.depth} ${statusText} · ${baseLabel}` : `d=${stackInfo.depth} ${statusText}`;
+      displayBadgeText = baseLabel ? `d=${depth} ${statusText} · ${baseLabel}` : `d=${depth} ${statusText}`;
       if (stackInfo.isCurrent) {
         badgeBg = '#fef3c7'; badgeStroke = '#f59e0b'; badgeTextFill = '#b45309';
       } else {
         badgeBg = '#eff6ff'; badgeStroke = '#93c5fd'; badgeTextFill = '#1e40af';
       }
     } else if (baseLabel) {
-      // 已结算非栈节点：展示高度/状态徽章
-      displayBadgeText = baseLabel;
+      // 已结算非栈节点：展示深度与高度/状态徽章，永远保留深度层级，绝不中途丢失深度
+      displayBadgeText = options?.stackFrames ? `d=${depth} · ${baseLabel}` : baseLabel;
       const isDanger = baseLabel.includes('-1') || baseLabel.includes('剪枝') || baseLabel.includes('失衡');
       const isSuccess = baseLabel.includes('h=') || baseLabel.includes('平衡');
       badgeBg = isDanger ? '#fee2e2' : isSuccess ? '#dcfce7' : '#eff6ff';
       badgeStroke = isDanger ? '#fca5a5' : isSuccess ? '#86efac' : '#bfdbfe';
       badgeTextFill = isDanger ? '#b91c1c' : isSuccess ? '#15803d' : '#1d4ed8';
+    } else if (options?.stackFrames && options.stackFrames.length > 0) {
+      // 未访问节点 (当启用了全景调用栈树时)：常驻展示该节点所属物理深度 d=N，绝不会一下多一个一下不见了！
+      displayBadgeText = `d=${depth}`;
+      badgeBg = '#f8fafc';
+      badgeStroke = '#cbd5e1';
+      badgeTextFill = '#64748b';
     }
 
     if (displayBadgeText) {
@@ -343,6 +349,6 @@ export function renderTreeSVG(
     svg.appendChild(gNode);
   };
 
-  draw(root, 300, 36, 120);
+  draw(root, 300, 36, 120, 1);
   container.appendChild(svg);
 }

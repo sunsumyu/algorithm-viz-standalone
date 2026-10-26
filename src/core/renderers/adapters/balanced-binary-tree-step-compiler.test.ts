@@ -343,6 +343,12 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       // 包含活跃光流连线
       expect(container.innerHTML).toContain('stroke-dasharray="5,3"');
 
+      // 验证全树所有节点均常驻挂载其物理深度 (d=1, d=2, d=3 绝不闪烁消失)
+      const allTextContents = Array.from(container.querySelectorAll('text')).map((t) => t.textContent || '');
+      expect(allTextContents.some((txt) => txt.includes('d=1'))).toBe(true);
+      expect(allTextContents.some((txt) => txt.includes('d=2'))).toBe(true);
+      expect(allTextContents.some((txt) => txt.includes('d=3'))).toBe(true);
+
       // 验证实体叶子节点 15 的全画幅调用链挂载 (d=1, d=2, d=3 ⚡活跃)
       const step15 = steps.find((s) => s.current === 15 && s.treeStackFrames && s.treeStackFrames.length === 3);
       if (step15) {
@@ -352,6 +358,19 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
         expect(c2.innerHTML).toContain('d=1');
         expect(c2.innerHTML).toContain('d=2');
         expect(c2.innerHTML).toContain('d=3 ⚡活跃');
+      }
+
+      // 验证在单步回溯至 depth 1 时，stack-depth 模式依然固定展示全量 3 层深度 (绝不一下多一个一下不见了)
+      const stepD1 = steps.find((s) => s.treeStackFrames && s.treeStackFrames.length === 1);
+      if (stepD1) {
+        const cStack = document.createElement('div');
+        BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
+        renderBalancedTreeCanvas(cStack, stepD1);
+        const stackSvgs = cStack.querySelectorAll('svg');
+        expect(stackSvgs.length).toBe(3);
+        expect(cStack.innerHTML).toContain('d=1');
+        expect(cStack.innerHTML).toContain('d=2');
+        expect(cStack.innerHTML).toContain('d=3');
       }
     });
 
