@@ -9,8 +9,12 @@
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { BalancedTree037Step, collectTreeValues } from './balanced-binary-tree-step-compiler';
 import { renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
+import { RecursionTreeAdapter } from '../recursion-tree-adapter';
 
 export class BalancedBinaryTreeCanvasAdapter {
+  /** 当前 Card 1 复合子视图模式 (路线 B 数据拓扑 vs 路线 C 递归展开树) */
+  public static activeSubView: 'data-tree' | 'call-tree' = 'data-tree';
+
   /**
    * Card 1: 表现层画板渲染器 (Presentation Canvas Renderer)
    */
@@ -46,18 +50,69 @@ export class BalancedBinaryTreeCanvasAdapter {
         }
       }
 
-      TreeCanvasAdapter.renderTree(container, {
-        tree: step.tree,
-        current,
-        visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
-        secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
-        primaryColor: '#f59e0b',
-        secondaryColor: '#38bdf8',
-        visitedColor: '#34d399',
-        labels: labels.size > 0 ? labels : undefined,
-        dimUnvisited: true,
-        nullProbe: step.nullProbe,
-      });
+      container.innerHTML = '';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.width = '100%';
+      container.style.height = '100%';
+      container.style.boxSizing = 'border-box';
+      container.style.position = 'relative';
+
+      // 1. 顶部子视图切换胶囊栏 (仅在具备 callTree 时展示自由切换)
+      if (step.callTree) {
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText =
+          'display: flex; justify-content: flex-end; align-items: center; width: 100%; padding: 2px 6px; flex-shrink: 0; z-index: 10;';
+        const isCall = BalancedBinaryTreeCanvasAdapter.activeSubView === 'call-tree';
+        toolbar.innerHTML = `
+          <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
+            <button id="btn-subview-data" style="border: none; background: ${!isCall ? '#ffffff' : 'transparent'}; color: ${!isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${!isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${!isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 拓扑生命树</button>
+            <button id="btn-subview-call" style="border: none; background: ${isCall ? '#ffffff' : 'transparent'}; color: ${isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 递归展开树</button>
+          </div>
+        `;
+        const btnData = toolbar.querySelector('#btn-subview-data') as HTMLButtonElement | null;
+        const btnCall = toolbar.querySelector('#btn-subview-call') as HTMLButtonElement | null;
+        if (btnData) {
+          btnData.onclick = (e) => {
+            e.stopPropagation();
+            BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
+            BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
+          };
+        }
+        if (btnCall) {
+          btnCall.onclick = (e) => {
+            e.stopPropagation();
+            BalancedBinaryTreeCanvasAdapter.activeSubView = 'call-tree';
+            BalancedBinaryTreeCanvasAdapter.renderCanvas(container, step);
+          };
+        }
+        container.appendChild(toolbar);
+      }
+
+      // 2. 主绘图画板挂载区
+      const canvasBox = document.createElement('div');
+      canvasBox.style.cssText =
+        'flex: 1; width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative;';
+      container.appendChild(canvasBox);
+
+      if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'call-tree' && step.callTree) {
+        // 路线 C：递归调用展开树渲染 (函数执行展开图谱)
+        RecursionTreeAdapter.renderRecursionTree(canvasBox, step.callTree, step.activeCallId);
+      } else {
+        // 路线 B：动态生命树渲染 (物理拓扑、null 探针与高度胶囊)
+        TreeCanvasAdapter.renderTree(canvasBox, {
+          tree: step.tree,
+          current,
+          visitedNodes: visitedNodes && visitedNodes.length > 0 ? visitedNodes : undefined,
+          secondaryHighlightedNodes: secondaryHighlightedNodes.length > 0 ? secondaryHighlightedNodes : [],
+          primaryColor: '#f59e0b',
+          secondaryColor: '#38bdf8',
+          visitedColor: '#34d399',
+          labels: labels.size > 0 ? labels : undefined,
+          dimUnvisited: true,
+          nullProbe: step.nullProbe,
+        });
+      }
     } else if ((step.extraData as any)?.treeNodes) {
       const treeNodes = (step.extraData as any).treeNodes;
       container.innerHTML = `

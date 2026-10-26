@@ -22,6 +22,7 @@ import {
 import {
   BinaryTreeStep,
   BinaryTreeTraversalCompiler,
+  RecursionTreeNode,
   TreeLogGrammar,
 } from './binary-tree-traversal-compiler';
 
@@ -37,6 +38,8 @@ export interface BalancedTree037Step extends Tree036Step {
   height?: number;
   heightMap?: Record<number, number>;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  callTree?: RecursionTreeNode | null;
+  activeCallId?: string;
   stackState?: number[];
   callStack?: string[];
   pruned?: boolean;
@@ -100,6 +103,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
         step.nullProbe = { ...currentNullProbe };
       }
     },
+    formatCallTag: (info) => (info.isBalanced ? `h=${info.height}` : `失衡(h=${info.height})`),
     onEmpty: (ctx) => {
       ctx.trace.addHeader('isBalanced(null)', 0, '<- 根调用特判');
       ctx.trace.addConditionHit('① root == null √ 命中 -> return true', 0);
@@ -443,6 +447,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
         step.nullProbe = { ...currentNullProbe };
       }
     },
+    formatCallTag: (h) => (h === -1 ? '🚨 -1 熔断' : `h=${h}`),
     onEmpty: (ctx) => {
       ctx.trace.addHeader('isBalanced(null)', 0, '<- 根调用特判');
       ctx.trace.addConditionHit('① check(null) == 0 != -1 √ 命中 -> return true', 0);

@@ -244,5 +244,67 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(container.innerHTML).toContain('opacity');
     });
   });
+
+  describe('路线 C: 递归调用展开树 (Recursive Call Tree) 与子视图切换契约', () => {
+    it('Stage 1 步骤必须具备动态生长的 callTree 拓扑快照与活跃帧 activeCallId', () => {
+      const root = buildTreeFromArr([3, 9, 20]);
+      const steps = buildBalancedStage1Steps(root);
+
+      expect(steps.length).toBeGreaterThan(4);
+
+      // 验证存在 callTree 的步骤
+      const stepsWithCallTree = steps.filter((s) => s.callTree);
+      expect(stepsWithCallTree.length).toBeGreaterThan(0);
+
+      // 验证根调用节点为 process(3)
+      const firstTree = stepsWithCallTree[0].callTree!;
+      expect(firstTree.val).toContain('process');
+      expect(firstTree.val).toContain('3');
+
+      // 验证最终完成步骤中 callTree 已经完整展开左右分支并打上返回值 tag
+      const lastStep = steps[steps.length - 1];
+      expect(lastStep.callTree).toBeDefined();
+      expect(lastStep.callTree!.children?.length).toBe(2);
+      expect(lastStep.callTree!.tag).toBeDefined();
+    });
+
+    it('Stage 2 剪枝场景下 callTree 必须正确标记 pruned 剪枝截断状态与 -1 熔断 tag', () => {
+      const root = buildTreeFromArr([1, 2, 2, 3, 3, null, null, 4, 4]);
+      const steps = buildBalancedStage2PruneSteps(root);
+
+      const prunedStep = steps.find((s) => {
+        if (!s.callTree) return false;
+        const checkPrune = (node: any): boolean => {
+          if (node.status === 'pruned' || (node.tag && node.tag.includes('-1'))) return true;
+          return (node.children || []).some(checkPrune);
+        };
+        return checkPrune(s.callTree);
+      });
+
+      expect(prunedStep, '剪枝用例推演中 callTree 必须包含 pruned 节点或 -1 熔断 tag').toBeDefined();
+    });
+
+    it('renderCanvas 支持在 data-tree 与 call-tree 子视图间自由无缝切换', () => {
+      const root = buildTreeFromArr([3, 9, 20]);
+      const steps = buildBalancedStage1Steps(root);
+      const container = document.createElement('div');
+      const midStep = steps[steps.length - 2];
+
+      // 1. 默认 data-tree 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
+      renderBalancedTreeCanvas(container, midStep);
+      expect(container.innerHTML).toContain('🌲 拓扑生命树');
+      expect(container.innerHTML).toContain('🌳 递归展开树');
+
+      // 2. 切换至 call-tree 模式
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'call-tree';
+      renderBalancedTreeCanvas(container, midStep);
+      // 应该挂载了自适应递归调用树（含控制按钮或 SVG）
+      expect(container.querySelector('svg')).not.toBeNull();
+
+      // 切回默认
+      BalancedBinaryTreeCanvasAdapter.activeSubView = 'data-tree';
+    });
+  });
 });
 

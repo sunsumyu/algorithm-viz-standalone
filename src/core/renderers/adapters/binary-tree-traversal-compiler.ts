@@ -62,6 +62,28 @@ export interface StaticQueueSnapshot {
   [key: string]: any;
 }
 
+/** 递归调用展开树节点契约 (RecursionTreeNode) - 严格对齐 RecursionTreeAdapter */
+export interface RecursionTreeNode {
+  id: string;
+  val: string;
+  edgeLabel?: string;
+  status?: 'active' | 'visited' | 'pending' | 'pruned' | 'return';
+  tag?: string;
+  children?: RecursionTreeNode[];
+}
+
+export function cloneRecursionTree(node: RecursionTreeNode | null): RecursionTreeNode | null {
+  if (!node) return null;
+  return {
+    id: node.id,
+    val: node.val,
+    edgeLabel: node.edgeLabel,
+    status: node.status,
+    tag: node.tag,
+    children: node.children ? node.children.map((c) => cloneRecursionTree(c)!) : [],
+  };
+}
+
 export interface BinaryTreeStep<TResult = any> extends StepBase {
   tree: TreeNode | null;
   current: number | null;
@@ -75,6 +97,8 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   metrics?: Record<string, any>;
   statusBadge?: { text: string; type: 'info' | 'success' | 'warning' | 'error' | 'danger' };
   callTrace?: CallTraceSnapshot;
+  callTree?: RecursionTreeNode | null;
+  activeCallId?: string;
   visitedNodes?: number[] | Set<number>;
 
   // 推演计算值
@@ -299,6 +323,9 @@ export interface TreeDfsSpec<TNode = TreeNode, TResult = any> {
 
   /** 步骤推入实时拦截器 (在步骤入列时实时调用，适合注入动态维护的快照如 heightMap / nullProbe) */
   onStepPush?: (step: BinaryTreeStep<TResult>, ctx: TreeDfsContext<TNode, TResult>) => void;
+
+  /** 自定义递归调用展开树节点返回值徽章格式化 (可选) */
+  formatCallTag?: (result: TResult) => string;
 }
 
 // =========================================================================
@@ -448,6 +475,23 @@ export class BinaryTreeTraversalCompiler {
     const nodeDepthMap = new Map<number, number>();
     const resultMap = new Map<number, TResult>();
 
+    // 路线 C：递归调用展开树实时追踪器 (Recursive Call Tree Tracker)
+    let callNodeIdCounter = 0;
+    const callTreeHolder: { root: RecursionTreeNode | null } = { root: null };
+    const callNodeStack: RecursionTreeNode[] = [];
+
+    const formatTag = (res: any): string => {
+      if (res === undefined || res === null) return '';
+      if (spec.formatCallTag) return spec.formatCallTag(res);
+      if (typeof res === 'object') {
+        if ('isBalanced' in res && 'height' in res) {
+          return res.isBalanced ? `h=${res.height}` : `失衡(h=${res.height})`;
+        }
+        return JSON.stringify(res);
+      }
+      return String(res);
+    };
+
     const ctx: TreeDfsContext<TNode, TResult> = {
       depth: 0,
       callStack,
@@ -469,6 +513,11 @@ export class BinaryTreeTraversalCompiler {
       if (step && !step.callStack) {
         step.callStack = [...callStack];
       }
+      // 路线 C：注入递归调用展开树与活跃调用节点快照
+      if (step && !step.callTree && callTreeHolder.root) {
+        step.callTree = cloneRecursionTree(callTreeHolder.root);
+        step.activeCallId = callNodeStack[callNodeStack.length - 1]?.id;
+      }
       if (spec.onStepPush) {
         spec.onStepPush(step, ctx);
       }
@@ -477,6 +526,14 @@ export class BinaryTreeTraversalCompiler {
 
     // 1. 空树入口守卫
     if (!spec.root) {
+      callTreeHolder.root = {
+        id: 'call-0',
+        val: `${funcName}(null)`,
+        status: 'return',
+        tag: formatTag(spec.onBaseNull(ctx).result),
+        children: [],
+      };
+
       if (spec.onEmpty) {
         const raw = spec.onEmpty(ctx);
         const enriched = raw.map((s) => {
@@ -554,8 +611,26 @@ export class BinaryTreeTraversalCompiler {
     }
 
     // 2. 递归主推演引擎
-    function dfs(node: TNode | null, currentDepth: number): TResult {
+    function dfs(node: TNode | null, currentDepth: number, branch?: string): TResult {
       ctx.depth = currentDepth;
+
+      const callId = `call-${++callNodeIdCounter}`;
+      const nodeTitle = node ? `${funcName}(${getNodeVal(node)})` : `${funcName}(null)`;
+      const currentCallNode: RecursionTreeNode = {
+        id: callId,
+        val: nodeTitle,
+        edgeLabel: branch,
+        status: 'active',
+        children: [],
+      };
+      if (!callTreeHolder.root) {
+        callTreeHolder.root = currentCallNode;
+      } else if (callNodeStack.length > 0) {
+        const parentCall = callNodeStack[callNodeStack.length - 1];
+        if (!parentCall.children) parentCall.children = [];
+        parentCall.children.push(currentCallNode);
+      }
+      callNodeStack.push(currentCallNode);
 
       // 判空基底
       if (!node) {
@@ -563,6 +638,9 @@ export class BinaryTreeTraversalCompiler {
         trace.addConditionHit('① node == null √ 命中基准', currentDepth);
         const nullMeta = spec.onBaseNull(ctx);
         trace.addReturnLeaf(`return ${JSON.stringify(nullMeta.result)}`, currentDepth);
+
+        currentCallNode.status = 'visited';
+        currentCallNode.tag = formatTag(nullMeta.result);
 
         pushStep({
           tree: cloneTree(spec.root as any),
@@ -581,6 +659,7 @@ export class BinaryTreeTraversalCompiler {
           ...nullMeta.customFields,
         }, currentDepth);
 
+        callNodeStack.pop();
         return nullMeta.result;
       }
 
@@ -745,7 +824,7 @@ export class BinaryTreeTraversalCompiler {
           }
         }
 
-        leftRes = dfs(left, currentDepth + 1);
+        leftRes = dfs(left, currentDepth + 1, 'L');
 
         // 左子树就绪步骤
         if (branchMode === 'both' && spec.afterLeft) {
@@ -775,6 +854,9 @@ export class BinaryTreeTraversalCompiler {
           const pruneMeta = spec.onPruneCheck(node, 'left', leftRes, ctx);
           if (pruneMeta.shouldPrune) {
             trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
+            currentCallNode.status = 'pruned';
+            currentCallNode.tag = formatTag(pruneMeta.result);
+
             pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
@@ -794,6 +876,7 @@ export class BinaryTreeTraversalCompiler {
             }, currentDepth);
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
+            callNodeStack.pop();
             return pruneMeta.result;
           }
         }
@@ -827,7 +910,7 @@ export class BinaryTreeTraversalCompiler {
           }
         }
 
-        rightRes = dfs(right, currentDepth + 1);
+        rightRes = dfs(right, currentDepth + 1, 'R');
 
         // 右子树就绪步骤
         if (branchMode === 'both' && spec.afterRight) {
@@ -858,6 +941,9 @@ export class BinaryTreeTraversalCompiler {
           const pruneMeta = spec.onPruneCheck(node, 'right', rightRes, ctx);
           if (pruneMeta.shouldPrune) {
             trace.addConditionHit(`✂ 剪枝触发，提前返回`, currentDepth);
+            currentCallNode.status = 'pruned';
+            currentCallNode.tag = formatTag(pruneMeta.result);
+
             pushStep({
               tree: cloneTree(spec.root as any),
               current: val,
@@ -877,6 +963,7 @@ export class BinaryTreeTraversalCompiler {
             }, currentDepth);
             resultMap.set(val, pruneMeta.result);
             callStack.pop();
+            callNodeStack.pop();
             return pruneMeta.result;
           }
         }
@@ -917,6 +1004,9 @@ export class BinaryTreeTraversalCompiler {
         );
       }
 
+      currentCallNode.status = 'return';
+      currentCallNode.tag = formatTag(combineMeta.result);
+
       pushStep({
         tree: cloneTree(spec.root as any),
         current: val,
@@ -942,10 +1032,14 @@ export class BinaryTreeTraversalCompiler {
 
       resultMap.set(val, combineMeta.result);
       callStack.pop();
+      callNodeStack.pop();
       return combineMeta.result;
     }
 
     const finalResult = dfs(spec.root, 0);
+    if (callTreeHolder.root) {
+      callTreeHolder.root.status = 'return';
+    }
 
     // 3. 最终收尾步
     trace.addFinalResult(`全树求解完毕: ${JSON.stringify(finalResult)}`, 0, undefined, String(finalResult));
