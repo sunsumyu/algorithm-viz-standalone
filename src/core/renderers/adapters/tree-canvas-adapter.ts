@@ -65,8 +65,21 @@ export class TreeCanvasAdapter {
 
     const secondarySet = new Set<number | string>(secondaryHighlightedNodes);
     if (secondaryNodeId != null) secondarySet.add(secondaryNodeId);
+    if (nullProbe && nullProbe.parentVal != null && primarySet.size === 0) {
+      secondarySet.add(nullProbe.parentVal);
+    }
 
     const visitedSet = new Set<number | string>(visitedNodes);
+
+    // 🚨 画布防断电兜底卫士 (Zero Visual Blackout Guard)
+    // 当非空树渲染时没有任何节点被高亮时，自动将根节点或探针父节点注入次级焦点，杜绝画布 100% 死灰断电
+    if (tree && primarySet.size === 0 && secondarySet.size === 0 && visitedSet.size === 0) {
+      if (nullProbe && nullProbe.parentVal != null) {
+        secondarySet.add(nullProbe.parentVal);
+      } else if (tree.val != null) {
+        secondarySet.add(tree.val);
+      }
+    }
 
     // 清空并挂载 SVG 容器
     container.style.display = 'flex';

@@ -50,6 +50,11 @@ export interface VBStep extends StepBase {
     inRange: boolean;
   };
 
+  /** 动态空节点探针 (Null-Probe Anchor) */
+  nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  /** 次级高亮聚焦节点列表 */
+  secondaryHighlightedNodes?: (number | string)[];
+
   /** Stage 3 显式栈专用 */
   stack?: (number | string)[];
 }
@@ -156,11 +161,19 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
     return steps;
   }
 
-  function inorder(node: TreeNode | null, depth: number): boolean {
+  function inorder(
+    node: TreeNode | null,
+    depth: number,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ): boolean {
     if (!isValid) return false;
 
     if (node === null) {
       trace.addHeader(`isValidBST(null)`, depth, '<- 空节点判空');
+      const nullProbe = parent ? { parentVal: parent.val, branch } : undefined;
+      const secondaryNodes = parent ? [parent.val] : [];
+
       steps.push({
         tree: cloneTree(workingTree),
         current: null,
@@ -168,10 +181,12 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         sequence: [...sequence],
         valid: true,
         invalidNode: null,
-        decision: '基底判空：进入 isValidBST(null)',
+        nullProbe,
+        secondaryHighlightedNodes: secondaryNodes,
+        decision: `基底判空：进入 isValidBST(null)${parent ? ` (考察节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}孩子)` : ''}`,
         phase: 'check',
         action: 'null-entry',
-        message: '递归进入空节点，执行基底判空检查 if (root == null)。',
+        message: `递归进入空节点，执行基底判空检查 if (root == null)${parent ? `。当前正处于节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}探针分支` : ''}。`,
         log: 'isValidBST(null) -> check null',
         codeLine: L.nullCheckHit,
         metrics: { '当前节点': 'null', '前驱 prev': prevVal ?? 'null' },
@@ -189,10 +204,12 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         sequence: [...sequence],
         valid: true,
         invalidNode: null,
-        decision: '基底返回：空节点返回 true',
+        nullProbe,
+        secondaryHighlightedNodes: secondaryNodes,
+        decision: `基底返回：空节点返回 true${parent ? ` (向父节点 ${parent.val} 返回)` : ''}`,
         phase: 'check',
         action: 'null-return',
-        message: '空子树不破坏二叉搜索树性质，返回 true。',
+        message: `空子树不破坏二叉搜索树性质，返回 true。`,
         log: 'return true from null',
         codeLine: L.nullReturn,
         metrics: { '当前节点': 'null', '返回值': 'true' },
@@ -266,7 +283,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       callTrace: trace.snapshot(),
     });
 
-    const leftValid = inorder(node.left, depth + 1);
+    const leftValid = inorder(node.left, depth + 1, node, 'left');
     if (!leftValid) {
       trace.addConditionHit(`左子树返回 false，短路返回 false`, depth);
       trace.addReturnLeaf(`return false`, depth);
@@ -407,7 +424,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       callTrace: trace.snapshot(),
     });
 
-    const rightValid = inorder(node.right, depth + 1);
+    const rightValid = inorder(node.right, depth + 1, node, 'right');
     if (!rightValid) {
       return false;
     }
@@ -521,7 +538,14 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
   let isValid = true;
   let invalidNode: number | null = null;
 
-  function check(node: TreeNode | null, minVal: number, maxVal: number, depth: number): boolean {
+  function check(
+    node: TreeNode | null,
+    minVal: number,
+    maxVal: number,
+    depth: number,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ): boolean {
     if (!isValid) return false;
 
     const minStr = minVal === -Infinity ? '-∞' : String(minVal);
@@ -529,6 +553,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
 
     if (node === null) {
       trace.addHeader(`check(null, ${minStr}, ${maxStr})`, depth, '<- 空节点判空');
+      const nullProbe = parent ? { parentVal: parent.val, branch } : undefined;
+      const secondaryNodes = parent ? [parent.val] : [];
+
       steps.push({
         tree: cloneTree(workingTree),
         current: null,
@@ -536,7 +563,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
         sequence: [...sequence],
         valid: true,
         invalidNode: null,
-        decision: `基底判空：进入 check(null, ${minStr}, ${maxStr})`,
+        nullProbe,
+        secondaryHighlightedNodes: secondaryNodes,
+        decision: `基底判空：进入 check(null, ${minStr}, ${maxStr})${parent ? ` (考察节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}孩子)` : ''}`,
         phase: 'check',
         action: 'null-check',
         boundary: { min: minStr, max: maxStr, inRange: true },
@@ -558,7 +587,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
         sequence: [...sequence],
         valid: true,
         invalidNode: null,
-        decision: '基底返回：空节点返回 true',
+        nullProbe,
+        secondaryHighlightedNodes: secondaryNodes,
+        decision: `基底返回：空节点返回 true${parent ? ` (向父节点 ${parent.val} 返回)` : ''}`,
         phase: 'check',
         action: 'null-return',
         boundary: { min: minStr, max: maxStr, inRange: true },
@@ -654,7 +685,7 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       callTrace: trace.snapshot(),
     });
 
-    const leftOk = check(node.left, minVal, node.val, depth + 1);
+    const leftOk = check(node.left, minVal, node.val, depth + 1, node, 'left');
     if (!leftOk) {
       return false;
     }
@@ -680,7 +711,7 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       callTrace: trace.snapshot(),
     });
 
-    const rightOk = check(node.right, node.val, maxVal, depth + 1);
+    const rightOk = check(node.right, node.val, maxVal, depth + 1, node, 'right');
     if (!rightOk) {
       return false;
     }

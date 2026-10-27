@@ -55,6 +55,10 @@ Advance complex implementations through discrete phases. Each phase requires ver
    Sequence comparisons append an `EOF` sentinel slot. Retain active pointers at boundaries rather than unmounting them. Output sanitized values (`null` rendered as `-`, never raw `undefined` or `NaN`).
 5. **Immutable Test Contracts**:
    Pre-existing test assertions are immutable. Turn failures green exclusively by fixing production code until `exit code 0`.
+6. **Zero Visual Blackout & Null-Probe Continuity**:
+   Base-case null checks (e.g. `root == null`, empty queues) must never strip visual focus and black out the canvas into 100% dead gray. Always bind the parent calling frame as `nullProbe: { parentVal, branch }` and maintain secondary focus, rendering dynamic `∅ null` dashed probes.
+7. **Strict Call-Return Unwind & Engine Normalization**:
+   When a recursive child frame returns, never teleport the highlight line directly to subsequent statements. Emit the caller invocation expression frame (`if (!isValidBST(root.left))`) to complete the caller-return lifecycle. All declarative algorithms pass through `StepNormalizationEngine.normalize` to enforce continuity automatically.
 
 ---
 

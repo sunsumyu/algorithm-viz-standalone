@@ -89,6 +89,12 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
    - 🔀 **深入分支调用帧**：高亮子调用语句并深入子树；
    - 🔄 **后序归约与返回帧**：子调用结果就绪，高亮计算并向父层返回。
 4. **测试契约先行**：单测断言步骤密度下限，强校验 `codeLine` 存在且覆盖核心生命周期行。
+5. **画布防断电与动态探针锚点法则（Zero Visual Blackout & Null-Probe Rule）**：
+   基底判空（如 `root == null` 或队列/数组判空）时严禁清空活跃节点导致画布 100% 死灰断电！必须绑定父级调用节点作为探针锚点（`nullProbe: { parentVal, branch }`）并注入次级高亮，动态渲染 `∅ null` 虚线探针。
+6. **调用返回现场帧严禁缺失（Strict Call-Return Unwind Frame）**：
+   递归子调用返回（`return true/false` 或计算值返回）时，严禁代码光标瞬移至后续物理语句！必须先回到调用方表达式语句（如 `if (!isValidBST(root.left))`），清晰呈现「子调用返回 ➔ 接收返回值 ➔ 恢复父现场 ➔ 继续向下执行」的完整执行流。
+7. **通用步进归一化引擎兜底（Universal Step Normalization Engine · USNE）**：
+   所有声明式算法在 `buildSteps()` 管道中全量挂载 `StepNormalizationEngine.normalize`，在核心层自动自愈画布断电与漏帧跳步缺陷。
 
 ## 测试契约不可篡改与安全隔离
 1. **测试断言不可篡改（Immutable Test Contracts）**：既有测试断言不可私自删改、注释或弱化为软断言。报错必须通过修改业务实现自愈。

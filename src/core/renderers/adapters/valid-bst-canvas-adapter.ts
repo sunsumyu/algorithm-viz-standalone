@@ -24,11 +24,15 @@ export function renderValidBstCanvas(container: HTMLElement, step: VBStep, _stag
     }
   }
 
+  const nullProbe = (step as any).nullProbe;
+  const secondaryList = (step as any).secondaryHighlightedNodes || step.sequence;
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
     current: primaryNode,
-    secondaryHighlightedNodes: step.sequence,
+    secondaryHighlightedNodes: secondaryList,
     visitedNodes: visitedNodes,
+    nullProbe: nullProbe,
     primaryColor: step.invalidNode !== null ? '#ef4444' : '#fbbf24',
     secondaryColor: '#60a5fa',
     visitedColor: '#34d399',

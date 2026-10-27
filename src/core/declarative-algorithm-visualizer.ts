@@ -18,6 +18,7 @@ import { Card1SubViewControlsAdapter } from './renderers/card1-subview-controls-
 import { SplitterEngine, SplitterStorage } from './splitter-engine';
 import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { registerAlgorithm } from './registry';
+import { StepNormalizationEngine } from './step-normalization-engine';
 
 const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
 
@@ -663,20 +664,28 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
    */
   protected buildSteps(): TStep[] {
     const inputs = this.getCurrentInputs();
+    let rawSteps: TStep[] = [];
 
     if (this.spec.stages && this.spec.stages.length > 0 && this.currentStageId) {
       const stage = this.spec.stages.find((s) => s.id === this.currentStageId);
       const stageFn = stage?.buildSteps || stage?.generateSteps;
       if (typeof stageFn === 'function') {
-        return stageFn(inputs, this.currentMode);
+        rawSteps = stageFn(inputs, this.currentMode) || [];
+      }
+    } else {
+      const stepFn = this.spec.buildSteps || this.spec.generateSteps;
+      if (typeof stepFn === 'function') {
+        rawSteps = stepFn(inputs, this.currentMode) || [];
       }
     }
 
-    const stepFn = this.spec.buildSteps || this.spec.generateSteps;
-    if (typeof stepFn === 'function') {
-      return stepFn(inputs, this.currentMode);
-    }
-    return [];
+    return StepNormalizationEngine.normalize(rawSteps, {
+      algorithmId: this.spec.id,
+      stageId: this.currentStageId,
+      currentMode: this.currentMode,
+      spec: this.spec,
+      codeLanguages: this.codeLanguages,
+    });
   }
 
   /**

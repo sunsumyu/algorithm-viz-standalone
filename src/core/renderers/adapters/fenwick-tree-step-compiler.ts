@@ -46,10 +46,10 @@ export function buildFenwickTreeSteps(
   steps.push({
     nums: [...currentNums],
     tree: [...tree],
-    curIdx: -1,
-    jumpPath: [],
+    curIdx: targetIdx,
+    jumpPath: [targetIdx],
     opType: 'idle',
-    decision: `主类入口：接收规模 n=${n} 的数据序列 A=[${currentNums.join(', ')}]，树状数组初始化完成`,
+    decision: `主类入口：接收规模 n=${n} 的数据序列 A=[${currentNums.join(', ')}]，准备在 Tree[${targetIdx}] 展开操作`,
     message: `准备演示 ${op === 'add' ? `单点增加 add(index=${targetIdx}, val=${val})` : `前缀和查询 query(index=${targetIdx})`}`,
     log: `init FenwickTree(n=${n})`,
     codeLine: lines.entry,

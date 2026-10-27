@@ -124,4 +124,19 @@ describe('ValidBstStepCompiler Deep Module Test Suite', () => {
       expect(s1[s1.length - 1].valid).toBe(sDirect[sDirect.length - 1].valid);
     });
   });
+
+  describe('Zero Blackout & Null-Probe 契约校验', () => {
+    it('在空节点判空与返回步骤中，必须具备 parentVal 探针与次级高亮，杜绝画布断电', () => {
+      const steps = buildVBSteps(validTree);
+      const nullSteps = steps.filter((s) => s.current === null && s.tree !== null);
+      expect(nullSteps.length).toBeGreaterThan(0);
+
+      for (const step of nullSteps) {
+        expect(step.nullProbe).toBeDefined();
+        expect(step.nullProbe?.parentVal).toBeDefined();
+        expect(['left', 'right']).toContain(step.nullProbe?.branch);
+        expect(step.secondaryHighlightedNodes).toContain(step.nullProbe?.parentVal);
+      }
+    });
+  });
 });

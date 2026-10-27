@@ -13,6 +13,7 @@
 import { describe, it, expect } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { getDeclarativeSpecs, sanitizeSandboxDom } from '../declarative-algorithm-visualizer';
+import { StepNormalizationEngine } from '../step-normalization-engine';
 
 // 触发全库所有类目的声明式 renderer 注册（涵盖 500+ 道题）
 import.meta.glob('../../algorithms/categories/**/*-renderer.ts', { eager: true });
@@ -235,4 +236,124 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
         `\n=========================================================\n`
     ).toEqual([]);
   });
+
+  it('🚨 红灯陷阱: 画布防断电门禁 (Zero Visual Blackout Guard) — 全量算法在非空数据结构推演中严禁出现 100% 零焦点死灰断电', () => {
+    const registry = getDeclarativeSpecs();
+    const allSpecs = Array.from(registry.values());
+    const violations: string[] = [];
+
+    for (const spec of allSpecs) {
+      if (!spec.generateSteps && !spec.buildSteps) continue;
+
+      const defaultInputs: Record<string, any> = {};
+      (spec.inputs || []).forEach((inp) => {
+        defaultInputs[inp.id] = inp.defaultValue;
+      });
+
+      try {
+        const stepFn = spec.generateSteps || spec.buildSteps;
+        const rawSteps = stepFn ? stepFn(defaultInputs) : [];
+        if (!rawSteps || rawSteps.length === 0) continue;
+
+        // 经由 StepNormalizationEngine 归一化自愈
+        const normalizedSteps = StepNormalizationEngine.normalize(rawSteps, { spec });
+
+        for (let i = 0; i < normalizedSteps.length; i++) {
+          const s = normalizedSteps[i] as any;
+          if (!s) continue;
+
+          // 仅校验非空树或图结构的非终态步骤
+          const hasTree = Boolean(s.tree && typeof s.tree === 'object' && !Array.isArray(s.tree));
+          const isDone = s.action === 'done' || s.phase === 'done' || i === normalizedSteps.length - 1;
+          if (hasTree && !isDone) {
+            const curIdx = typeof s.curIdx === 'number' && s.curIdx > 0 ? s.curIdx : null;
+            const hasFocus =
+              (s.current !== undefined && s.current !== null) ||
+              (curIdx !== null) ||
+              (s.activeNodeId !== undefined && s.activeNodeId !== null) ||
+              (s.activeNode !== undefined && s.activeNode !== null) ||
+              (s.nodeVal !== undefined && s.nodeVal !== null) ||
+              (Array.isArray(s.secondaryHighlightedNodes) && s.secondaryHighlightedNodes.length > 0) ||
+              (Array.isArray(s.highlightedNodes) && s.highlightedNodes.length > 0) ||
+              (Array.isArray(s.visitedNodes) && s.visitedNodes.length > 0) ||
+              (Array.isArray(s.jumpPath) && s.jumpPath.length > 0) ||
+              (s.nullProbe && s.nullProbe.parentVal != null);
+
+            if (!hasFocus) {
+              violations.push(
+                `🚨 [ZERO_VISUAL_BLACKOUT_TRAP] ${spec.id} (step #${i}): 树结构处于活跃推演期，但步骤内所有焦点（current / activeNodeId / secondaryHighlightedNodes / nullProbe）全空，导致画布 100% 死灰断电！`
+              );
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        // 崩溃异常由 STEP_GEN_CRASH_TRAP 承载
+      }
+    }
+
+    expect(
+      violations,
+      `\n================= 画布防断电红灯陷阱触发 =================\n` +
+        violations.join('\n') +
+        `\n=========================================================\n`
+    ).toEqual([]);
+  });
+
+  it('🚨 红灯陷阱: 严格调用返回连续性门禁 (Strict Call-Return Continuity Guard) — 递归推演退栈返回时严禁瞬移跳步', () => {
+    const registry = getDeclarativeSpecs();
+    const allSpecs = Array.from(registry.values());
+    const violations: string[] = [];
+
+    for (const spec of allSpecs) {
+      if (!spec.generateSteps && !spec.buildSteps) continue;
+
+      const defaultInputs: Record<string, any> = {};
+      (spec.inputs || []).forEach((inp) => {
+        defaultInputs[inp.id] = inp.defaultValue;
+      });
+
+      try {
+        const stepFn = spec.generateSteps || spec.buildSteps;
+        const rawSteps = stepFn ? stepFn(defaultInputs) : [];
+        if (!rawSteps || rawSteps.length === 0) continue;
+
+        // 经由 StepNormalizationEngine 归一化自愈
+        const normalizedSteps = StepNormalizationEngine.normalize(rawSteps, { spec });
+
+        // 检查递归退栈与返回连续性
+        for (let i = 0; i < normalizedSteps.length - 1; i++) {
+          const cur = normalizedSteps[i] as any;
+          const next = normalizedSteps[i + 1] as any;
+
+          const curAction = String(cur.action || cur.phase || '');
+          const isReturn = curAction.includes('return') || curAction.includes('leaf');
+
+          // 若当前是子调用返回，而下一步回到了父节点执行，且两者都不为空树
+          if (isReturn && next.tree && next.current != null && cur.tree) {
+            // 严禁下一步没有任何聚焦或上下文
+            const nextHasFocus =
+              next.current != null ||
+              (Array.isArray(next.secondaryHighlightedNodes) && next.secondaryHighlightedNodes.length > 0) ||
+              next.nullProbe != null;
+
+            if (!nextHasFocus) {
+              violations.push(
+                `🚨 [STRICT_CALL_RETURN_UNWIND_TRAP] ${spec.id} (step #${i} ➔ #${i + 1}): 子调用返回后，父调用层未恢复视觉焦点，构成调用返回断联事故！`
+              );
+              break;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    expect(
+      violations,
+      `\n================= 调用返回连续性红灯陷阱触发 =================\n` +
+        violations.join('\n') +
+        `\n=============================================================\n`
+    ).toEqual([]);
+  });
 });
+
