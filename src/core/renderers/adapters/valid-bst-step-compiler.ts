@@ -80,6 +80,70 @@ export function collectTreeValues(node: TreeNode | null): number[] {
   }
   return res;
 }
+// ============================================================
+// 指标构造辅助函数 (Stage Metrics Constructors)
+// 确保 Card 2 顶层 .dsp-metrics-grid 的每一个指标项均有饱满、实时的中文数值
+// ============================================================
+function makeStage1Metrics(
+  curVal: number | string | null,
+  prevVal: number | string | null,
+  statusText: string,
+  seqCount: number
+): Record<string, string | number> {
+  const curDisplay = curVal !== null ? (typeof curVal === 'number' ? `Node(${curVal})` : String(curVal)) : '—';
+  const prevDisplay = prevVal !== null ? (typeof prevVal === 'number' ? `Node(${prevVal})` : String(prevVal)) : 'null';
+  return {
+    cur: curDisplay,
+    '当前考察': curDisplay,
+    prev: prevDisplay,
+    '前驱 prev': prevDisplay,
+    status: statusText,
+    '单调性判定': statusText,
+    'seq-len': `${seqCount} 个`,
+    '已收集序列': `${seqCount} 个`,
+  };
+}
+
+function makeStage2Metrics(
+  curVal: number | string | null,
+  minVal: number | string,
+  maxVal: number | string,
+  statusText: string,
+  checkedCount: number
+): Record<string, string | number> {
+  const curDisplay = curVal !== null ? (typeof curVal === 'number' ? `Node(${curVal})` : String(curVal)) : '—';
+  const rangeDisplay = `(${minVal}, ${maxVal})`;
+  return {
+    cur: curDisplay,
+    '当前考察': curDisplay,
+    range: rangeDisplay,
+    '合法开区间': rangeDisplay,
+    status: statusText,
+    '区间定界判定': statusText,
+    checked: `${checkedCount} 个`,
+    '已检验节点': `${checkedCount} 个`,
+  };
+}
+
+function makeStage3Metrics(
+  curVal: number | string | null,
+  stackTopVal: number | string | null,
+  statusText: string,
+  seqCount: number
+): Record<string, string | number> {
+  const curDisplay = curVal !== null ? (typeof curVal === 'number' ? `Node(${curVal})` : String(curVal)) : '—';
+  const stackTopDisplay = stackTopVal !== null ? (typeof stackTopVal === 'number' ? `Node(${stackTopVal})` : String(stackTopVal)) : '空栈';
+  return {
+    cur: curDisplay,
+    '当前考察': curDisplay,
+    'stack-top': stackTopDisplay,
+    '显式栈顶': stackTopDisplay,
+    status: statusText,
+    '出栈单调性': statusText,
+    'seq-len': `${seqCount} 个`,
+    '已出栈序列': `${seqCount} 个`,
+  };
+}
 
 // ============================================================
 // Stage 1 Step Generator: 中序递归单调性校验 (Recursive Inorder Monotonicity)
@@ -100,7 +164,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
   // Step 0: 入口
   steps.push({
     tree: cloneTree(workingTree),
-    current: null,
+    current: workingTree ? workingTree.val : null,
     prev: null,
     sequence: [],
     valid: true,
@@ -111,9 +175,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
     message: workingTree
       ? `开始验证二叉搜索树，从根节点 ${workingTree.val} 启动中序遍历，维护前驱指针 prev = null。`
       : '空树，直接判定为有效 BST。',
-    log: workingTree ? `isValidBST(root: ${workingTree.val})` : 'root is null -> valid',
+    log: workingTree ? `算法启动：根节点 ${workingTree.val} 进入 isValidBST 校验` : '空树特判：直接返回 true',
     codeLine: L.entry,
-    metrics: { '当前状态': '准备中序遍历', '前驱 prev': 'null' },
+    metrics: makeStage1Metrics(null, null, '准备中序遍历', 0),
     statusBadge: { text: '算法启动', type: 'info' },
     callTrace: trace.snapshot(),
   });
@@ -134,9 +198,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'null-check',
       message: '树为空节点，命中基底条件 if (root == null)。',
-      log: 'root is null',
+      log: '空树判空命中 if (root == null)',
       codeLine: L.nullCheckHit,
-      metrics: { '当前节点': 'null', '判定结果': 'TRUE' },
+      metrics: makeStage1Metrics(null, null, '命中判空', 0),
       statusBadge: { text: '空节点', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -152,9 +216,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'valid',
       action: 'done',
       message: '✅ 空树默认满足二叉搜索树的所有定义，返回 true。',
-      log: 'return true',
+      log: '空树天然为有效 BST -> return true',
       codeLine: L.nullReturn,
-      metrics: { '判定结果': 'TRUE (合法 BST)' },
+      metrics: makeStage1Metrics(null, null, '全体验证通过', 0),
       statusBadge: { text: '合法 BST (true)', type: 'success' },
       callTrace: trace.snapshot(),
     });
@@ -187,9 +251,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         phase: 'check',
         action: 'null-entry',
         message: `递归进入空节点，执行基底判空检查 if (root == null)${parent ? `。当前正处于节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}探针分支` : ''}。`,
-        log: 'isValidBST(null) -> check null',
+        log: parent ? `探针进入空节点判空 (节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}孩子)` : '进入空节点判空',
         codeLine: L.nullCheckHit,
-        metrics: { '当前节点': 'null', '前驱 prev': prevVal ?? 'null' },
+        metrics: makeStage1Metrics(parent ? `∅(父:${parent.val})` : 'null', prevVal, '判空通过', sequence.length),
         statusBadge: { text: '空节点判空', type: 'info' },
         callTrace: trace.snapshot(),
       });
@@ -210,9 +274,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         phase: 'check',
         action: 'null-return',
         message: `空子树不破坏二叉搜索树性质，返回 true。`,
-        log: 'return true from null',
+        log: parent ? `空节点判空命中，向父节点 ${parent.val} 返回 true` : '空节点判空命中，返回 true',
         codeLine: L.nullReturn,
-        metrics: { '当前节点': 'null', '返回值': 'true' },
+        metrics: makeStage1Metrics(parent ? `∅(父:${parent.val})` : 'null', prevVal, '返回 true', sequence.length),
         statusBadge: { text: '返回 true', type: 'success' },
         callTrace: trace.snapshot(),
       });
@@ -236,9 +300,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'entry',
       message: `递归调用进入节点 ${node.val}，开始验证以 ${node.val} 为根的子树。`,
-      log: `isValidBST(${node.val}) entry`,
+      log: `递归深入节点 ${node.val} 调用现场`,
       codeLine: L.entry,
-      metrics: { '当前节点': node.val, '前驱 prev': prevVal ?? 'null' },
+      metrics: makeStage1Metrics(node.val, prevVal, sequence.length === 0 ? '首个中序' : '严格递增', sequence.length),
       statusBadge: { text: `进入节点 ${node.val}`, type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -256,9 +320,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'null-pass',
       message: `节点 ${node.val} 非空，跳过基底返回，继续向下执行。`,
-      log: `node ${node.val} != null -> continue`,
+      log: `节点 ${node.val} != null 判空通过，继续向左递归`,
       codeLine: L.nullCheckPass,
-      metrics: { '当前节点': node.val, '前驱 prev': prevVal ?? 'null' },
+      metrics: makeStage1Metrics(node.val, prevVal, '非空继续', sequence.length),
       statusBadge: { text: '非空继续', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -276,9 +340,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'recurse-left',
       message: `中序遍历左中右规则：先深入节点 ${node.val} 的左子树 (${node.left ? `左孩子 ${node.left.val}` : '左孩子为 null'})。`,
-      log: `recurse left of ${node.val}`,
+      log: `深入节点 ${node.val} 左子树：isValidBST(${node.left ? node.left.val : 'null'})`,
       codeLine: L.checkLeft,
-      metrics: { '当前节点': node.val, '递归方向': `深入左子树 (${node.left ? node.left.val : 'null'})` },
+      metrics: makeStage1Metrics(node.val, prevVal, '探测左子树', sequence.length),
       statusBadge: { text: '深入左子树', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -298,9 +362,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         phase: 'invalid',
         action: 'left-fail',
         message: `❌ 节点 ${node.val} 的左子树不合法，直接返回 false！`,
-        log: `node ${node.val} left branch failed -> return false`,
+        log: `节点 ${node.val} 左子树校验违规，向父层传递 false`,
         codeLine: L.leftReturnFalse,
-        metrics: { '当前节点': node.val, '左子树': 'FALSE', '返回值': 'false' },
+        metrics: makeStage1Metrics(node.val, prevVal, '左子树违规', sequence.length),
         statusBadge: { text: '左子树失败', type: 'danger' },
         callTrace: trace.snapshot(),
       });
@@ -319,9 +383,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'left-done',
       message: `节点 ${node.val} 的左子树全部满足 BST 性质，准备校验当前节点单调性。`,
-      log: `left of ${node.val} valid -> check cur`,
+      log: `节点 ${node.val} 左子树校验通过，恢复现场开始检查单调性`,
       codeLine: L.leftReturned,
-      metrics: { '当前节点': node.val, '左子树校验': '通过' },
+      metrics: makeStage1Metrics(node.val, prevVal, '左子树合格', sequence.length),
       statusBadge: { text: '左子树通过', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -341,9 +405,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         prevVal === null
           ? `前驱 prev 为 null（首个中序访问节点 ${node.val}），单调性校验直接通过。`
           : `比较当前节点 ${node.val} 与前驱 prev = ${prevVal}：要求严格递增 (${node.val} > ${prevVal})。`,
-      log: prevVal === null ? `first node: ${node.val}` : `compare: cur ${node.val} vs prev ${prevVal}`,
+      log: prevVal === null ? `首个中序访问节点 ${node.val}，无需比较` : `单调性比较：当前节点 ${node.val} vs 前驱 ${prevVal} (要求 >)`,
       codeLine: L.comparePrev,
-      metrics: { '当前节点': node.val, '前驱 prev': prevVal ?? 'null' },
+      metrics: makeStage1Metrics(node.val, prevVal, '单调性校验中', sequence.length),
       statusBadge: { text: `校验单调性 (${node.val})`, type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -368,9 +432,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
         phase: 'invalid',
         action: 'violation',
         message: `❌ 违规！节点 ${node.val} 未能严格大于前驱 prev (${prevVal})，破坏 BST 中序单调递增性！`,
-        log: `FAILED: node ${node.val} <= prev ${prevVal}`,
+        log: `单调性破坏！当前节点 ${node.val} <= 前驱 ${prevVal}，违规熔断！`,
         codeLine: L.prevViolation,
-        metrics: { '违规节点': node.val, '前驱 prev': prevVal, '判定': 'FALSE' },
+        metrics: makeStage1Metrics(node.val, prevVal, '违规破坏', sequence.length),
         statusBadge: { text: '单调性违规 (False)', type: 'danger' },
         callTrace: trace.snapshot(),
       });
@@ -397,9 +461,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'update-prev',
       message: `✅ 节点 ${node.val} 校验合格，已装入中序序列 [${sequence.join(', ')}]，更新 prev = ${node.val}。`,
-      log: `prev = ${node.val}, sequence = [${sequence.join(', ')}]`,
+      log: `更新前驱 prev = ${node.val}，已收集序列 [${sequence.join(', ')}]`,
       codeLine: L.updatePrev,
-      metrics: { '当前中序序列长度': sequence.length, '最新前驱 prev': node.val },
+      metrics: makeStage1Metrics(node.val, prevVal, '严格递增', sequence.length),
       statusBadge: { text: '单调递增正常', type: 'success' },
       callTrace: trace.snapshot(),
     });
@@ -417,9 +481,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'recurse-right',
       message: `中序遍历推进：继续探索节点 ${node.val} 的右子树 (${node.right ? `右孩子 ${node.right.val}` : '右孩子为 null'})。`,
-      log: `recurse right of ${node.val}`,
+      log: `深入节点 ${node.val} 右子树：isValidBST(${node.right ? node.right.val : 'null'})`,
       codeLine: L.checkRight,
-      metrics: { '当前节点': node.val, '递归方向': `深入右子树 (${node.right ? node.right.val : 'null'})` },
+      metrics: makeStage1Metrics(node.val, prevVal, '探测右子树', sequence.length),
       statusBadge: { text: '深入右子树', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -441,9 +505,9 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'check',
       action: 'node-success',
       message: `✅ 节点 ${node.val} 左右子树及自身单调性校验通过，向父调用返回 true。`,
-      log: `node ${node.val} valid BST -> return true`,
+      log: `节点 ${node.val} 左右子树与单调性均合格，向父层返回 true`,
       codeLine: L.returnRight,
-      metrics: { '当前节点': node.val, '子树结果': 'TRUE' },
+      metrics: makeStage1Metrics(node.val, prevVal, '子树合格', sequence.length),
       statusBadge: { text: '子树合格 (true)', type: 'success' },
       callTrace: trace.snapshot(),
     });
@@ -457,7 +521,7 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
     trace.addFinalResult(`🎉 全树中序遍历序列严格单调递增，成功判定为有效 BST！`, 0, undefined, 'true');
     steps.push({
       tree: cloneTree(workingTree),
-      current: null,
+      current: workingTree ? workingTree.val : null,
       prev: prevVal,
       sequence: [...sequence],
       valid: true,
@@ -466,8 +530,8 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
       phase: 'valid',
       action: 'done',
       message: `🎉 全树中序遍历序列严格单调递增：[${sequence.join(', ')}]，成功判定为有效二叉搜索树！`,
-      log: `SUCCESS: valid BST -> [${sequence.join(', ')}]`,
-      metrics: { '判定结果': 'TRUE (合法 BST)', '序列总长度': sequence.length },
+      log: `全树中序单调性校验通过：[${sequence.join(', ')}]，确认为有效 BST`,
+      metrics: makeStage1Metrics(null, prevVal, '全体验证通过', sequence.length),
       codeLine: L.doneValid,
       statusBadge: { text: '合法 BST (true)', type: 'success' },
       callTrace: trace.snapshot(),
@@ -482,11 +546,13 @@ export function buildVBSteps(root: TreeNode | null): VBStep[] {
 // ============================================================
 export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
   const steps: VBStep[] = [];
-  const L = VALID_BST_STAGE2_RANGE_LINES;
   const sequence: number[] = [];
-  const workingTree = cloneTree(root);
+  const L = VALID_BST_STAGE2_RANGE_LINES;
+
   const trace = new RecursiveCallTraceBuilder();
-  trace.addHeader(`check(${workingTree ? workingTree.val : 'null'}, -∞, +∞)`, 0, '<- 根区间定界');
+  const workingTree = cloneTree(root);
+  const rootText = workingTree ? `${workingTree.val}` : 'null';
+  trace.addHeader(`check(${rootText}, -∞, +∞)`, 0, '<- 根调用开始');
 
   steps.push({
     tree: cloneTree(workingTree),
@@ -495,16 +561,16 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
     sequence: [],
     valid: true,
     invalidNode: null,
-    decision: '算法启动：初始化上下界区间校验 check(root, -∞, +∞)',
+    decision: '算法启动：初始化 (min, max) 上下界定界校验',
     phase: 'init',
     action: 'init',
     boundary: { min: '-∞', max: '+∞', inRange: true },
     message: workingTree
       ? `启动区间定界法：根节点 ${workingTree.val} 的初始合法区间为 (-∞, +∞)。`
       : '空树，直接判定为有效 BST。',
-    log: workingTree ? `check(root: ${workingTree.val}, -inf, +inf)` : 'empty tree -> true',
+    log: workingTree ? `算法启动：根节点 ${workingTree.val}，初始开区间 (-∞, +∞)` : '空树特判：直接返回 true',
     codeLine: L.entry,
-    metrics: { '全局范围': '(-∞, +∞)', '剪枝策略': '自顶向下先序定界' },
+    metrics: makeStage2Metrics(workingTree ? workingTree.val : null, '-∞', '+∞', '准备区间定界', 0),
     statusBadge: { text: '先序定界就绪', type: 'info' },
     callTrace: trace.snapshot(),
   });
@@ -526,9 +592,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       action: 'done',
       boundary: { min: '-∞', max: '+∞', inRange: true },
       message: '✅ 空树是合法 BST，返回 true。',
-      log: 'empty tree -> return true',
+      log: '空树天然满足开区间约束 -> return true',
       codeLine: L.nullCheck,
-      metrics: { '判定结果': 'TRUE' },
+      metrics: makeStage2Metrics(null, '-∞', '+∞', '区间定界合格', 0),
       statusBadge: { text: '空树合格', type: 'success' },
       callTrace: trace.snapshot(),
     });
@@ -570,9 +636,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
         action: 'null-check',
         boundary: { min: minStr, max: maxStr, inRange: true },
         message: `空节点天然满足 (${minStr}, ${maxStr}) 约束，命中 if (node == null) return true。`,
-        log: `check(null, ${minStr}, ${maxStr}) -> true`,
+        log: parent ? `空节点深入判空 (节点 ${parent.val} 的${branch === 'left' ? '左' : '右'}孩子)` : '空节点判空',
         codeLine: L.nullCheck,
-        metrics: { '当前节点': 'null', '区间约束': `(${minStr}, ${maxStr})`, '返回值': 'true' },
+        metrics: makeStage2Metrics(parent ? `∅(父:${parent.val})` : 'null', minStr, maxStr, '判空合格', sequence.length),
         statusBadge: { text: '空节点合格', type: 'success' },
         callTrace: trace.snapshot(),
       });
@@ -594,9 +660,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
         action: 'null-return',
         boundary: { min: minStr, max: maxStr, inRange: true },
         message: '空节点回溯返回 true。',
-        log: 'return true',
+        log: parent ? `空节点命中，向父节点 ${parent.val} 返回 true` : '空节点命中，返回 true',
         codeLine: L.nullReturn,
-        metrics: { '当前节点': 'null', '判定结果': 'TRUE' },
+        metrics: makeStage2Metrics(parent ? `∅(父:${parent.val})` : 'null', minStr, maxStr, '返回 true', sequence.length),
         statusBadge: { text: '返回 true', type: 'success' },
         callTrace: trace.snapshot(),
       });
@@ -624,9 +690,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       message: inRange
         ? `节点 ${node.val} 满足 ${minStr} < ${node.val} < ${maxStr}，区间约束合格！`
         : `🚨 节点 ${node.val} 越界！违反约束：要求落在 (${minStr}, ${maxStr}) 内，立即先序剪枝！`,
-      log: `check node=${node.val} in (${minStr}, ${maxStr}) -> ${inRange}`,
+      log: `先序检验节点 ${node.val} 是否在开区间 (${minStr}, ${maxStr}) 内 -> ${inRange ? '合格' : '越界'}`,
       codeLine: inRange ? L.boundaryCheck : L.violation,
-      metrics: { '当前节点': node.val, '合法开区间': `(${minStr}, ${maxStr})`, '区间符合': inRange ? '合格' : '越界违规' },
+      metrics: makeStage2Metrics(node.val, minStr, maxStr, inRange ? '落入区间' : '越界违规', sequence.length),
       statusBadge: { text: inRange ? '区间合格' : '越界违规', type: inRange ? 'info' : 'danger' },
       callTrace: trace.snapshot(),
     });
@@ -652,9 +718,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
         action: 'violation',
         boundary: { min: minStr, max: maxStr, inRange: false },
         message: `❌ 节点 ${node.val} 超出开区间 (${minStr}, ${maxStr})，先序定界立即失败返回 false！`,
-        log: `FAILED: node ${node.val} out of range`,
+        log: `节点 ${node.val} 越界！超出合法开区间 (${minStr}, ${maxStr})，剪枝熔断！`,
         codeLine: L.violation,
-        metrics: { '违规节点': node.val, '当前范围': `(${minStr}, ${maxStr})`, '判定': 'FALSE' },
+        metrics: makeStage2Metrics(node.val, minStr, maxStr, '越界违规', sequence.length),
         statusBadge: { text: '区间定界失败 (False)', type: 'danger' },
         callTrace: trace.snapshot(),
       });
@@ -678,9 +744,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       action: 'recurse-left',
       boundary: { min: minStr, max: String(node.val), inRange: true },
       message: `向左递归：左子树的所有节点值必须严格落在 (${minStr}, ${node.val}) 内。`,
-      log: `recurse left in (${minStr}, ${node.val})`,
+      log: `深入左子树，收紧上界为 ${node.val}：(${minStr}, ${node.val})`,
       codeLine: L.recurseLeft,
-      metrics: { '当前节点': node.val, '左分支区间': `(${minStr}, ${node.val})` },
+      metrics: makeStage2Metrics(node.val, minStr, node.val, '向左定界', sequence.length),
       statusBadge: { text: '向左递归定界', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -704,9 +770,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       action: 'recurse-right',
       boundary: { min: String(node.val), max: maxStr, inRange: true },
       message: `向右递归：右子树的所有节点值必须严格落在 (${node.val}, ${maxStr}) 内。`,
-      log: `recurse right in (${node.val}, ${maxStr})`,
+      log: `深入右子树，收紧下界为 ${node.val}：(${node.val}, ${maxStr})`,
       codeLine: L.recurseRight,
-      metrics: { '当前节点': node.val, '右分支区间': `(${node.val}, ${maxStr})` },
+      metrics: makeStage2Metrics(node.val, node.val, maxStr, '向右定界', sequence.length),
       statusBadge: { text: '向右递归定界', type: 'info' },
       callTrace: trace.snapshot(),
     });
@@ -736,9 +802,9 @@ export function buildValidBstStage2RangeSteps(root: TreeNode | null): VBStep[] {
       action: 'done',
       boundary: { min: '-∞', max: '+∞', inRange: true },
       message: '🎉 所有节点均严格满足其祖先传递的开区间约束，成功判定为有效 BST！',
-      log: 'SUCCESS: all nodes satisfy range boundaries',
+      log: '所有节点均严格满足祖先传递的开区间约束，确认为有效 BST',
       codeLine: L.done,
-      metrics: { '判定结果': 'TRUE (合法 BST)' },
+      metrics: makeStage2Metrics(null, '-∞', '+∞', '区间定界合格', sequence.length),
       statusBadge: { text: '区间定界合格 (true)', type: 'success' },
       callTrace: trace.snapshot(),
     });
@@ -769,9 +835,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
       action: 'done',
       stack: [],
       message: '✅ 空树直接返回 true。',
-      log: 'empty tree -> return true',
+      log: '空树特判：直接返回 true',
       codeLine: L.nullCheck,
-      metrics: { '判定结果': 'TRUE' },
+      metrics: makeStage3Metrics(null, null, '全体验证通过', 0),
       statusBadge: { text: '空树合格', type: 'success' },
     });
     return steps;
@@ -797,9 +863,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
     action: 'init',
     stack: [],
     message: `使用显式数据结构 Stack<TreeNode> 模拟系统调用栈，彻底消除递归开销。`,
-    log: 'init explicit stack',
+    log: '算法启动：初始化显式栈 Stack<TreeNode> 模拟中序遍历',
     codeLine: L.initStack,
-    metrics: { '当前栈深': 0, '前驱 prev': 'null' },
+    metrics: makeStage3Metrics(workingTree.val, null, '显式栈就绪', 0),
     statusBadge: { text: '显式栈就绪', type: 'info' },
   });
 
@@ -819,9 +885,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
         action: 'push-left',
         stack: getStackVals(),
         message: `沿左侧链推进：节点 ${cur.val} 压栈，当前栈大小: ${stack.length}。`,
-        log: `push ${cur.val} to stack: [${getStackVals().join(', ')}]`,
+        log: `节点 ${cur.val} 压入显式栈，栈大小: ${stack.length}`,
         codeLine: L.pushLeftBranch,
-        metrics: { '压栈节点': cur.val, '栈内元素数': stack.length },
+        metrics: makeStage3Metrics(cur.val, cur.val, '沿左链压栈', sequence.length),
         statusBadge: { text: `压栈 ${cur.val}`, type: 'info' },
       });
       cur = cur.left;
@@ -841,9 +907,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
       action: 'pop-node',
       stack: getStackVals(),
       message: `从栈顶弹出节点 ${cur.val}，与前驱 prev = ${prevVal ?? 'null'} 进行严格大于检验。`,
-      log: `pop cur=${cur.val}, compare with prev=${prevVal}`,
+      log: `从栈顶弹出节点 ${cur.val}，与前驱 prev = ${prevVal ?? 'null'} 进行严格大于检验`,
       codeLine: L.popNode,
-      metrics: { '出栈节点': cur.val, '剩余栈大小': stack.length, '前驱 prev': prevVal ?? 'null' },
+      metrics: makeStage3Metrics(cur.val, stack.length > 0 ? stack[stack.length - 1].val : null, '出栈校验单调性', sequence.length),
       statusBadge: { text: `出栈 ${cur.val}`, type: 'info' },
     });
 
@@ -862,9 +928,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
         action: 'violation',
         stack: getStackVals(),
         message: `❌ 违规！节点 ${cur.val} 未能严格大于前驱 prev (${prevVal})，破坏 BST 中序单调递增性！`,
-        log: `FAILED: node ${cur.val} <= prev ${prevVal}`,
+        log: `单调性破坏！出栈节点 ${cur.val} <= 前驱 ${prevVal}，遍历终止`,
         codeLine: L.comparePrev,
-        metrics: { '违规节点': cur.val, '前驱 prev': prevVal, '判定': 'FALSE' },
+        metrics: makeStage3Metrics(cur.val, stack.length > 0 ? stack[stack.length - 1].val : null, '违规破坏', sequence.length),
         statusBadge: { text: '单调性破坏 (False)', type: 'danger' },
       });
       break;
@@ -885,9 +951,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
       action: 'update-prev',
       stack: getStackVals(),
       message: `节点 ${cur.val} 单调性合格，更新前驱，指针转向其右孩子 cur = cur.right。`,
-      log: `update prev=${cur.val}, sequence=[${sequence.join(', ')}]`,
+      log: `出栈节点 ${cur.val} 校验合格，更新前驱 prev = ${cur.val}，转向右孩子`,
       codeLine: L.turnRight,
-      metrics: { '已收集序列长度': sequence.length, '当前前驱 prev': prevVal },
+      metrics: makeStage3Metrics(cur.val, stack.length > 0 ? stack[stack.length - 1].val : null, '单调递增通过', sequence.length),
       statusBadge: { text: '单调递增正常', type: 'success' },
     });
 
@@ -907,9 +973,9 @@ export function buildValidBstStage3StackSteps(root: TreeNode | null): VBStep[] {
       action: 'done',
       stack: [],
       message: `🎉 显式栈中序遍历顺利结束，所有出栈节点严格单调递增：[${sequence.join(', ')}]，返回 true！`,
-      log: `SUCCESS: stack inorder valid BST`,
+      log: `显式栈中序遍历全部完成，所有节点严格单调递增：[${sequence.join(', ')}]`,
       codeLine: L.doneValid,
-      metrics: { '判定结果': 'TRUE (合法 BST)', '序列总长度': sequence.length },
+      metrics: makeStage3Metrics(null, null, '全体验证通过', sequence.length),
       statusBadge: { text: '显式栈合格 (true)', type: 'success' },
     });
   }
