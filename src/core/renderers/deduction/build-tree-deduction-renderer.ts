@@ -1,7 +1,10 @@
 /**
  * 从前序/后序与中序构造二叉树 (Construct Binary Tree · LeetCode 105 & 106 / Zuoshen Class 036 Code07)
  * 全景推演树渲染策略 (BuildTreeDeductionRenderer)
- * 遵循 Matt Pocock 深模块设计模式与 IDeductionTreeRenderer 统一顶层抽象
+ * 遵循 Matt Pocock 深模块设计模式与 Zero-Subbox 表现层契约：
+ *   - 彻底消灭粗暴的 ASCII 字符画 (├─── 等)
+ *   - 扁平化流式卡片，消灭多层白底套娃框
+ *   - 真实动态展开的递归分治调用树作为核心主角呈现
  */
 
 import { IDeductionTreeRenderer, StaticDeductionRenderOptions } from './types';
@@ -58,104 +61,120 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
       ? `inorder = [${inArr.join(', ')}], postorder = [${post.join(', ')}]`
       : `preorder = [${pre.join(', ')}], inorder = [${inArr.join(', ')}]`;
 
-    const header = DeductionBoardPrimitives.renderHeader({
-      title: '力扣 105 / 106. 从前序/后序与中序遍历构造二叉树 (Construct Binary Tree) · 全景推演树',
-      badge: isStage2
-        ? '后序+中序分治切分 / 左右子树严格长度对齐 / 镜像展开'
-        : '代码随想录 · 六步切分法 / 双向区间分治 / 零哈希显式栈',
-      descriptionHtml: `
-        二叉树重构经典分治命题：已知中序遍历和（前序/后序）遍历，恢复二叉树拓扑结构。<br/>
-        当前算例参数：<code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">${seqInfo}</code><br/>
-        <strong>《代码随想录》核心教学洞见——六步切分法：</strong><br/>
-        1. 递归终止判定（区间无效返回 null，单节点快速返回叶子）；<br/>
-        2. 取前序首元素 / 后序尾元素作为当前子树根节点值；<br/>
-        3. 实例化当前根节点 <code class="font-mono bg-amber-50 text-amber-700 px-1 py-0.5 rounded font-bold">new TreeNode(rootVal)</code>；<br/>
-        4. 在中序序列中定位根节点索引 inRoot，以其为界切分中序左、右两段；<br/>
-        5. 计算中序左子树长度 <code class="font-mono bg-blue-50 text-blue-700 px-1 py-0.5 rounded font-bold">leftLen = inRoot - inL</code>，联动切分前序/后序左、右两段；<br/>
-        6. 递归构建左右子树并挂载到 root.left / root.right，返回根节点。
-      `,
-      initialStateText: `根调用入口：buildTree(${isStage2 ? 'postorder, inorder' : 'preorder, inorder'}) ➔ 预建中序哈希表 inMap 提速至 O(1) 定位根，初始范围 [0..${inArr.length - 1}]。`,
-    });
+    // 1. 顶栏：契约与参数概览
+    const headerHtml = `
+      <div style="background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%); border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px 14px; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <div style="font-size: 13px; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 6px;">
+            <span>🌲 力扣 105 / 106. 从前序/后序与中序遍历构造二叉树 · 全景推演展板</span>
+          </div>
+          <span style="font-size: 10px; font-family: ui-monospace, monospace; font-weight: 700; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 9999px;">
+            ${isStage2 ? '后序 + 中序分治对齐' : '前序 + 中序分治对齐'}
+          </span>
+        </div>
+        <div style="font-size: 11px; color: #475569; line-height: 1.5; margin-bottom: 6px;">
+          二叉树重构经典分治命题：利用<strong>前序/后序锁定子树根</strong>，利用<strong>中序划定左右边界</strong>。左右子树节点总数守恒是双序列区间精准对齐的数学基石。
+        </div>
+        <div style="font-family: ui-monospace, monospace; font-size: 10.5px; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span>当前算例序列: <span style="color: #38bdf8; font-weight: 700;">${seqInfo}</span></span>
+          <span style="color: #34d399; font-weight: 700;">共 ${steps.length} 步推演</span>
+        </div>
+      </div>
+    `;
 
-    const baseCase = DeductionBoardPrimitives.renderBaseCases([
-      {
-        prefix: '├───',
-        label: '空区间越界基准 (Empty Range)',
-        valuesStr: 'pL > pR || iL > iR ➔ return null (当前子树为空，终止递归)',
-      },
-      {
-        prefix: '└───',
-        label: '单节点叶子快速构建 (Single Leaf Node)',
-        valuesStr: 'pL == pR ➔ return new TreeNode(val) (无孩子，直接返回叶节点)',
-      },
-    ]);
+    // 2. 六步切分法流向展板 (去除 ASCII 字符画，采用高质感数字阶梯药丸)
+    const stepsData = [
+      { num: '1', title: '基底判空', desc: 'pL > pR 或 iL > iR 判定区间无效，返回 null 终止递归', color: '#64748b', bg: '#f1f5f9' },
+      { num: '2', title: '锁定根节点', desc: isStage2 ? '取 postorder[pR] 末位为当前子树根' : '取 preorder[pL] 首位为当前子树根', color: '#d97706', bg: '#fef3c7' },
+      { num: '3', title: '中序定位切点', desc: '通过 inMap.get(rootVal) 瞬时定位根在中序中的索引 inRoot', color: '#0d9488', bg: '#ccfbf1' },
+      { num: '4', title: '计算节点跨度', desc: 'leftLen = inRoot - iL，左子树在中序与前/后序中节点数绝对守恒', color: '#2563eb', bg: '#dbeafe' },
+      { num: '5', title: '双序联动切分', desc: isStage2 ? '左后序 [postL..postL+len-1]，右后序 [postL+len..postR-1]' : '左前序 [pL+1..pL+len]，右前序 [pL+len+1..pR]', color: '#7c3aed', bg: '#ede9fe' },
+      { num: '6', title: '递归组装返回', desc: '挂载 root.left 与 root.right，并向父层返回当前子树根节点', color: '#059669', bg: '#d1fae5' },
+    ];
 
-    // 核心段落 1：基于当前真实输入序列展开的分治递归调用全景推演树
+    const sixStepsHtml = `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; box-sizing: border-box;">
+        <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>📐 《代码随想录》核心教学洞见 · 六步分治切分法规约</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+          ${stepsData
+            .map(
+              (s) => `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: ${s.bg}; color: ${s.color}; font-weight: 800; font-size: 10.5px; font-family: ui-monospace, monospace;">${s.num}</span>
+                <span style="font-size: 11px; font-weight: 700; color: #1e293b;">${s.title}</span>
+              </div>
+              <div style="font-size: 10px; color: #64748b; line-height: 1.4; padding-left: 24px;">${s.desc}</div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    `;
+
+    // 3. 核心主角：递归调用全景展开树 (Interactive Call Trace Tree)
     const traceHtml = fullSnapshot
       ? RecursiveCallTraceAdapter.renderHtml(fullSnapshot, {
-          title: `当前算例 (${seqInfo}) 完整递归分治推演调用树`,
+          title: `🌳 递归分治全景推演调用树 (全程 ${steps.length} 步 · 深度展开)`,
           theme: 'light',
-          maxHeight: '480px',
+          maxHeight: '440px',
         })
-      : '<div class="text-slate-500 italic p-3">暂无推演快照</div>';
+      : '<div style="color: #94a3b8; font-style: italic; padding: 12px;">暂无调用推演快照</div>';
 
-    const dynamicCallTreeRound = DeductionBoardPrimitives.renderOuterRound({
-      title: '全景分治推演调用展开树 (Divide-and-Conquer State DAG)',
-      subtitle: `基于当前输入序列实时展开 · 全程共 ${steps.length} 步推演`,
-      stepLinesHtml: traceHtml,
-    });
+    // 4. 四阶段演化阶梯卡片 (纯净展示，杜绝 ASCII 字符)
+    const stagesInfo = [
+      { stage: 'Stage 1', name: '前序+中序分治 (LC 105)', tag: 'preorder[pL] ➔ Root', desc: '首位定根，中序切分左长 leftLen，右子树跳过根与左段递归', color: '#1d4ed8', bg: '#eff6ff' },
+      { stage: 'Stage 2', name: '后序+中序分治 (LC 106)', tag: 'postorder[pR] ➔ Root', desc: '末位定根，左后序截取 leftLen，右后序排除末尾根对称递归', color: '#b45309', bg: '#fef3c7' },
+      { stage: 'Stage 3', name: '前序显式单调栈 ($O(N)$ 零哈希)', tag: 'Stack<TreeNode>', desc: '显式栈沿前序压左链，命中中序弹栈追溯拐点，右孩子重新入栈', color: '#6d28d9', bg: '#f5f3ff' },
+      { stage: 'Stage 4', name: '后序显式单调栈 ($O(N)$ 镜像)', tag: 'Reverse Mirror', desc: '后序逆序扫描压右链，命中中序逆序弹栈挂载左孩子，极致空间', color: '#047857', bg: '#ecfdf5' },
+    ];
 
-    const step1 = DeductionBoardPrimitives.renderInnerStep({
-      connector: '├───',
-      label: '阶段 1: 前序+中序分治切分递归构造 (LC 105 · Preorder + Inorder)',
-      badgeHtml: '<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-mono text-[9px]">preorder[pL] ➔ Root</span>',
-      detailLines: [
-        'rootVal = preorder[pL] ➔ 前序首位必为当前子树根节点',
-        'inRoot = inMap.get(rootVal), leftLen = inRoot - iL ➔ 中序定位根并算出左子树跨度',
-        'root.left = build(pL + 1, pL + leftLen, iL, inRoot - 1) ➔ 递归切分左子树',
-        'root.right = build(pL + leftLen + 1, pR, inRoot + 1, iR) ➔ 递归切分右子树',
-      ],
-      fillLine: '前序 [根|左子树|右子树] 与中序 [左子树|根|右子树] 严格保持左子树长度一致',
-    });
+    const evolutionHtml = `
+      <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; box-sizing: border-box;">
+        <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>🚀 构造二叉树从分治到迭代的四阶演化矩阵</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+          ${stagesInfo
+            .map(
+              (st) => `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                <span style="font-weight: 700; font-size: 11px; color: ${st.color};">${st.stage}: ${st.name}</span>
+                <span style="font-size: 9.5px; font-family: ui-monospace, monospace; background: ${st.bg}; color: ${st.color}; padding: 1px 5px; border-radius: 4px; font-weight: 700;">${st.tag}</span>
+              </div>
+              <div style="font-size: 10px; color: #64748b; line-height: 1.4;">${st.desc}</div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    `;
 
-    const step2 = DeductionBoardPrimitives.renderInnerStep({
-      connector: '├───',
-      label: '阶段 2: 后序+中序分治切分递归构造 (LC 106 · Postorder + Inorder)',
-      badgeHtml: '<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-mono text-[9px]">postorder[pR] ➔ Root</span>',
-      detailLines: [
-        'rootVal = postorder[pR] ➔ 后序末位必为当前子树根节点',
-        'inRoot = inMap.get(rootVal), leftLen = inRoot - iL ➔ 中序切分左子树 [iL..inRoot-1] 与右子树 [inRoot+1..iR]',
-        'root.left = build(postL, postL + leftLen - 1, iL, inRoot - 1) ➔ 切割后序左子树',
-        'root.right = build(postL + leftLen, postR - 1, inRoot + 1, iR) ➔ 切割后序右子树（扣除末位根）',
-      ],
-      fillLine: '后序 [左子树|右子树|根] 与中序 [左子树|根|右子树] 保持左子树长度 leftLen 严格对齐',
-    });
+    // 5. 底部复杂度与结论条
+    const footerHtml = `
+      <div style="background: #0f172a; border-radius: 10px; padding: 10px 14px; color: #f8fafc; font-size: 11px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+        <span style="font-family: ui-monospace, monospace;">
+          <span style="color: #38bdf8; font-weight: 700;">return root;</span> // 重构完成，返回二叉树物理根节点
+        </span>
+        <span style="color: #94a3b8; font-size: 10.5px;">
+          时间复杂度: <strong style="color: #34d399;">O(N)</strong> · 空间复杂度: <strong style="color: #34d399;">O(N)</strong>
+        </span>
+      </div>
+    `;
 
-    const step3 = DeductionBoardPrimitives.renderInnerStep({
-      connector: '└───',
-      label: '阶段 3: 迭代显式栈模拟前序重构 ($O(N)$ 零哈希表 · LC 105 迭代法)',
-      badgeHtml: '<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-mono text-[9px]">Deque<TreeNode> stack</span>',
-      detailLines: [
-        'stack.push(root) ➔ 遍历前序，沿左侧链连续入栈挂载为 left',
-        'while (stack.peek().val == inorder[inIdx]) stack.pop(), inIdx++ ➔ 匹配中序，逆序弹出追溯拐点',
-        'node.right = new TreeNode(preorder[i]), stack.push(node.right) ➔ 挂载拐点右孩子并重新深入',
-      ],
-      fillLine: '利用显式栈逆序还原调用栈深度，达到 O(N) 时间与 O(H) 空间的极致性能',
-    });
-
-    const round = DeductionBoardPrimitives.renderOuterRound({
-      title: '三级演化阶梯状态推演流 (From Basic to Advanced)',
-      subtitle: 'Programmer Carl Six-Step Slicing Progression',
-      stepLinesHtml: step1 + step2 + step3,
-    });
-
-    const finalReturn = DeductionBoardPrimitives.renderFinalReturn({
-      returnCode: 'return root; // 返回重建完成的完整二叉树根节点',
-      answerDescription: '重构完成，返回树根。时间复杂度 O(N)，空间复杂度 O(N)。前提是序列无重复元素。',
-    });
-
-    return DeductionBoardPrimitives.wrapBoard(
-      header + baseCase + dynamicCallTreeRound + round + finalReturn
-    );
+    return `
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; box-sizing: border-box; padding: 4px 2px;">
+        ${headerHtml}
+        ${sixStepsHtml}
+        ${traceHtml}
+        ${evolutionHtml}
+        ${footerHtml}
+      </div>
+    `;
   }
 }

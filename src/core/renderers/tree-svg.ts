@@ -18,6 +18,9 @@ export interface RenderTreeSvgOptions {
   dimUnvisited?: boolean;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
   initialDepth?: number;
+  viewBoxHeight?: number;
+  height?: string;
+  tightViewBox?: boolean;
   /** 全画幅调用链合一树帧数据 (Stack Chain Flow & Multi-Depth Tier Badges) */
   stackFrames?: {
     depth: number;
@@ -49,12 +52,25 @@ export function renderTreeSVG(
   };
   const treeH = getSubtreeHeight(root);
   const startY = treeH === 1 ? 70 : (treeH === 2 ? 48 : 36);
-  const viewBoxH = treeH === 1 ? 180 : (treeH === 2 ? 220 : 280);
+  
+  let viewBoxH = 280;
+  if (options?.viewBoxHeight !== undefined) {
+    viewBoxH = options.viewBoxHeight;
+  } else if (options?.tightViewBox) {
+    viewBoxH = treeH === 1 ? 160 : (treeH === 2 ? 200 : Math.max(220, (treeH - 1) * lh + 80));
+  }
 
+  const svgHeight = options?.height ?? '280';
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
-  svg.setAttribute('height', '280');
+  svg.setAttribute('height', svgHeight);
   svg.setAttribute('viewBox', `0 0 600 ${viewBoxH}`);
+  if (options?.height === '100%' || options?.tightViewBox) {
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.style.maxWidth = '100%';
+    svg.style.maxHeight = '100%';
+    svg.style.display = 'block';
+  }
 
   // 构建调用栈帧速查表与父子调用连线集合
   const stackNodeMap = new Map<number | string, { depth: number; isCurrent: boolean; funcCall: string }>();
@@ -256,9 +272,6 @@ export function renderTreeSVG(
     }
 
     // 3. 节点圆圈与文本组
-    const gNode = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    if (isUnvisited) gNode.setAttribute('opacity', nodeOpacity);
-
     const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     c.setAttribute('cx', String(x)); c.setAttribute('cy', String(y)); c.setAttribute('r', '19');
     let fill = '#ffffff', stroke = '#64748b';
@@ -285,9 +298,6 @@ export function renderTreeSVG(
     } else {
       c.setAttribute('stroke-width', '2.5');
     }
-    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke);
-    gNode.appendChild(c);
-
     const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     t.setAttribute('x', String(x)); t.setAttribute('y', String(y + 5));
     t.setAttribute('text-anchor', 'middle');
@@ -296,7 +306,14 @@ export function renderTreeSVG(
     t.setAttribute('font-size', '13');
     t.setAttribute('font-weight', '700');
     t.textContent = String(node.val);
-    gNode.appendChild(t);
+
+    if (isUnvisited) {
+      c.setAttribute('opacity', nodeOpacity);
+      t.setAttribute('opacity', nodeOpacity);
+    }
+    c.setAttribute('fill', fill); c.setAttribute('stroke', stroke);
+    svg.appendChild(c);
+    svg.appendChild(t);
 
     // 4. 复合胶囊徽章 (Stack Depth Badge / Height Badge)
     const baseLabel = (node.id !== undefined ? labels?.get(node.id) : undefined) ?? labels?.get(node.val);
@@ -342,7 +359,8 @@ export function renderTreeSVG(
       rect.setAttribute('fill', badgeBg);
       rect.setAttribute('stroke', badgeStroke);
       rect.setAttribute('stroke-width', '1.5');
-      gNode.appendChild(rect);
+      if (isUnvisited) rect.setAttribute('opacity', nodeOpacity);
+      svg.appendChild(rect);
 
       const lb = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       lb.setAttribute('x', String(x));
@@ -353,10 +371,9 @@ export function renderTreeSVG(
       lb.setAttribute('font-size', '10');
       lb.setAttribute('font-weight', '700');
       lb.textContent = displayBadgeText;
-      gNode.appendChild(lb);
+      if (isUnvisited) lb.setAttribute('opacity', nodeOpacity);
+      svg.appendChild(lb);
     }
-
-    svg.appendChild(gNode);
   };
 
   draw(root, 300, startY, 120, options?.initialDepth ?? 1);

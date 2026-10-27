@@ -21,6 +21,9 @@ export interface TreeCanvasState {
   dimUnvisited?: boolean;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
   initialDepth?: number;
+  height?: string;
+  viewBoxHeight?: number;
+  tightViewBox?: boolean;
   stackFrames?: {
     depth: number;
     nodeVal: number | null;
@@ -50,6 +53,9 @@ export class TreeCanvasAdapter {
       dimUnvisited,
       nullProbe,
       initialDepth,
+      height,
+      viewBoxHeight,
+      tightViewBox,
       stackFrames,
     } = state;
 
@@ -81,6 +87,9 @@ export class TreeCanvasAdapter {
         dimUnvisited,
         nullProbe,
         initialDepth,
+        height,
+        viewBoxHeight,
+        tightViewBox,
         stackFrames,
       },
     );

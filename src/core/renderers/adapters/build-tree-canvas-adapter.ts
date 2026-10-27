@@ -162,7 +162,7 @@ export class BuildTreeCanvasAdapter {
     treeContainer.style.display = 'flex';
     treeContainer.style.alignItems = 'center';
     treeContainer.style.justifyContent = 'center';
-    treeContainer.style.minHeight = '220px';
+    treeContainer.style.minHeight = '0';
     treeContainer.style.overflow = 'hidden';
 
     if (step.tree) {
@@ -181,6 +181,8 @@ export class BuildTreeCanvasAdapter {
         primaryColor: '#fbbf24',
         visitedColor: '#34d399',
         secondaryColor: '#60a5fa',
+        height: '100%',
+        tightViewBox: true,
       });
     } else {
       treeContainer.innerHTML = `
@@ -197,57 +199,77 @@ export class BuildTreeCanvasAdapter {
   }
 
   /**
-   * Card 2: 领域切分方程推导板与递归栈深监控 (Divide & Conquer Formulas & Stack Monitor)
+   * Card 2: 领域切分方程推导板与状态监控 (Divide & Conquer Formulas & State Monitor)
    */
   public static renderCustomMetrics(container: HTMLElement, step: BTStep): void {
     container.innerHTML = '';
-    container.style.padding = '10px';
+    container.style.padding = '8px 12px';
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
-    container.style.gap = '10px';
+    container.style.gap = '8px';
     container.style.height = '100%';
     container.style.overflowY = 'auto';
+    container.style.boxSizing = 'border-box';
 
     const isStackStage = step.stackState !== undefined;
     const isStage2 = step.postorder !== undefined && step.postorder.length > 0;
+    const seqName = isStage2 ? 'postorder' : 'preorder';
 
     // 1. 分治切分数学方程与实参代入板
     if (!isStackStage && step.rootVal != null) {
-      const leftPrePost = isStage2
-        ? `[${step.pL} .. ${step.pL + step.leftLen - 1}]`
-        : `[${step.pL + 1} .. ${step.pL + step.leftLen}]`;
-      const rightPrePost = isStage2
-        ? `[${step.pL + step.leftLen} .. ${step.pR - 1}]`
-        : `[${step.pL + step.leftLen + 1} .. ${step.pR}]`;
+      const isLeftValid = step.iL <= step.inRoot - 1;
+      const isRightValid = step.inRoot + 1 <= step.iR;
+      const leftLen = step.leftLen;
+
+      const leftPrePost = isLeftValid
+        ? (isStage2 ? `[${step.pL} .. ${step.pL + leftLen - 1}]` : `[${step.pL + 1} .. ${step.pL + leftLen}]`)
+        : '<span style="color: #94a3b8; font-style: italic;">∅ (空区间 · 返回 null)</span>';
+      const leftIn = isLeftValid
+        ? `[${step.iL} .. ${step.inRoot - 1}]`
+        : '<span style="color: #94a3b8; font-style: italic;">∅ (空区间 · 返回 null)</span>';
+
+      const rightPrePost = isRightValid
+        ? (isStage2 ? `[${step.pL + leftLen} .. ${step.pR - 1}]` : `[${step.pL + leftLen + 1} .. ${step.pR}]`)
+        : '<span style="color: #94a3b8; font-style: italic;">∅ (空区间 · 返回 null)</span>';
+      const rightIn = isRightValid
+        ? `[${step.inRoot + 1} .. ${step.iR}]`
+        : '<span style="color: #94a3b8; font-style: italic;">∅ (空区间 · 返回 null)</span>';
 
       const formulaCard = document.createElement('div');
-      formulaCard.style.padding = '4px 6px';
+      formulaCard.style.padding = '6px 8px';
       formulaCard.style.borderRadius = '8px';
-      formulaCard.style.background = 'transparent';
+      formulaCard.style.background = '#f8fafc';
+      formulaCard.style.border = '1px solid #e2e8f0';
       formulaCard.style.flexShrink = '0';
-      formulaCard.style.fontSize = '12px';
+      formulaCard.style.fontSize = '11px';
 
       formulaCard.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0;">
           <span style="font-weight: 700; color: #334155; font-size: 11px; display: flex; align-items: center; gap: 4px;">
             <span>📐 分治切分方程与实参代入</span>
           </span>
-          <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #0d9488; background: #f0fdf4; padding: 1px 5px; border-radius: 4px; border: 1px solid #bbf7d0;">
+          <span style="font-family: ui-monospace, monospace; font-size: 10px; color: #0d9488; background: #f0fdf4; padding: 1px 6px; border-radius: 4px; border: 1px solid #bbf7d0; font-weight: 700;">
             leftLen = inRoot - iL = ${step.inRoot} - ${step.iL} = ${step.leftLen}
           </span>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; font-family: ui-monospace, monospace;">
-          <div style="padding: 6px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;">
-            <div style="font-weight: 700; color: #1d4ed8; margin-bottom: 2px;">👈 左子树递归实参</div>
-            <div style="color: #475569; line-height: 1.3; font-size: 10.5px;">
-              <div>中序区间: <span style="font-weight: 700; color: #1d4ed8;">[${step.iL} .. ${step.inRoot - 1}]</span></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; font-family: ui-monospace, monospace;">
+          <div style="padding: 6px 8px; border-radius: 6px; background: #ffffff; border: 1px solid #bfdbfe; color: #1e3a8a;">
+            <div style="font-weight: 700; color: #1d4ed8; margin-bottom: 3px; display: flex; justify-content: space-between;">
+              <span>👈 左子树递归实参</span>
+              <span style="font-size: 10px; color: ${isLeftValid ? '#2563eb' : '#94a3b8'}; font-weight: 600;">${isLeftValid ? `跨度: ${leftLen}` : '基底'}</span>
+            </div>
+            <div style="color: #475569; line-height: 1.4; font-size: 10.5px;">
+              <div>中序区间: <span style="font-weight: 700; color: #1d4ed8;">${leftIn}</span></div>
               <div>${isStage2 ? '后序区间' : '前序区间'}: <span style="font-weight: 700; color: #1d4ed8;">${leftPrePost}</span></div>
             </div>
           </div>
-          <div style="padding: 6px; border-radius: 6px; background: #faf5ff; border: 1px solid #e9d5ff; color: #581c87;">
-            <div style="font-weight: 700; color: #7e22ce; margin-bottom: 2px;">👉 右子树递归实参</div>
-            <div style="color: #475569; line-height: 1.3; font-size: 10.5px;">
-              <div>中序区间: <span style="font-weight: 700; color: #7e22ce;">[${step.inRoot + 1} .. ${step.iR}]</span></div>
+          <div style="padding: 6px 8px; border-radius: 6px; background: #ffffff; border: 1px solid #e9d5ff; color: #581c87;">
+            <div style="font-weight: 700; color: #7e22ce; margin-bottom: 3px; display: flex; justify-content: space-between;">
+              <span>👉 右子树递归实参</span>
+              <span style="font-size: 10px; color: ${isRightValid ? '#7e22ce' : '#94a3b8'}; font-weight: 600;">${isRightValid ? `跨度: ${Math.max(0, step.iR - step.inRoot)}` : '基底'}</span>
+            </div>
+            <div style="color: #475569; line-height: 1.4; font-size: 10.5px;">
+              <div>中序区间: <span style="font-weight: 700; color: #7e22ce;">${rightIn}</span></div>
               <div>${isStage2 ? '后序区间' : '前序区间'}: <span style="font-weight: 700; color: #7e22ce;">${rightPrePost}</span></div>
             </div>
           </div>
@@ -256,7 +278,7 @@ export class BuildTreeCanvasAdapter {
       container.appendChild(formulaCard);
     }
 
-    // 2. 中部：Stage 1/2 递归调用栈追踪 VS Stage 3 显式遍历栈监控
+    // 2. 状态与调用追踪
     if (isStackStage) {
       const stackBox = document.createElement('div');
       stackBox.style.padding = '6px 8px';
@@ -272,7 +294,7 @@ export class BuildTreeCanvasAdapter {
           <span style="font-size: 10px; color: #64748b; font-weight: normal;">inIdx = ${step.inIdx ?? 0}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: ui-monospace, monospace;">
-          <span style="color: #64748b;">栈内元素 (栈底 ➔ 栈顶):</span>
+          <span style="color: #64748b;">栈内元素:</span>
           <div style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
             ${
               step.stackState && step.stackState.length > 0
@@ -295,16 +317,25 @@ export class BuildTreeCanvasAdapter {
         </div>
       `;
       container.appendChild(stackBox);
-    } else if (step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.flex = '1';
-      traceBox.style.minHeight = '140px';
-      traceBox.style.display = 'flex';
-      traceBox.style.flexDirection = 'column';
-      traceBox.style.overflow = 'hidden';
-      traceBox.style.background = 'transparent';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
-      container.appendChild(traceBox);
+    } else {
+      const activeBox = document.createElement('div');
+      activeBox.style.padding = '6px 8px';
+      activeBox.style.borderRadius = '8px';
+      activeBox.style.background = '#f8fafc';
+      activeBox.style.border = '1px solid #e2e8f0';
+      activeBox.style.flexShrink = '0';
+      activeBox.style.fontSize = '11px';
+
+      activeBox.innerHTML = `
+        <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 3px;">
+          <span>⚡ 递归执行帧活跃态</span>
+          <span style="font-size: 10px; color: #64748b; font-family: ui-monospace, monospace;">当前动作: ${step.action}</span>
+        </div>
+        <div style="color: #475569; font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5;">
+          ${step.message || step.log || '当前子树分治递归推进中...'}
+        </div>
+      `;
+      container.appendChild(activeBox);
     }
   }
 }
