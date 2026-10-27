@@ -17,6 +17,7 @@ export interface TreeNode {
 export interface RenderTreeSvgOptions {
   dimUnvisited?: boolean;
   nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  initialDepth?: number;
   /** 全画幅调用链合一树帧数据 (Stack Chain Flow & Multi-Depth Tier Badges) */
   stackFrames?: {
     depth: number;
@@ -42,10 +43,18 @@ export function renderTreeSVG(
   if (!root) { container.innerHTML = '<span style="color: #94a3b8; font-size: 13px; font-weight: 500;">（空树）</span>'; return; }
   container.innerHTML = '';
   const lh = 46;
+  const getSubtreeHeight = (n: TreeNode | null): number => {
+    if (!n) return 0;
+    return 1 + Math.max(getSubtreeHeight(n.left), getSubtreeHeight(n.right));
+  };
+  const treeH = getSubtreeHeight(root);
+  const startY = treeH === 1 ? 70 : (treeH === 2 ? 48 : 36);
+  const viewBoxH = treeH === 1 ? 180 : (treeH === 2 ? 220 : 280);
+
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
   svg.setAttribute('height', '280');
-  svg.setAttribute('viewBox', '0 0 600 280');
+  svg.setAttribute('viewBox', `0 0 600 ${viewBoxH}`);
 
   // 构建调用栈帧速查表与父子调用连线集合
   const stackNodeMap = new Map<number | string, { depth: number; isCurrent: boolean; funcCall: string }>();
@@ -299,7 +308,8 @@ export function renderTreeSVG(
     if (stackInfo) {
       // 处于调用栈链路上的节点：优先展示深度与活跃/等待状态
       const statusText = stackInfo.isCurrent ? '⚡活跃' : '⏳等待';
-      displayBadgeText = baseLabel ? `d=${depth} ${statusText} · ${baseLabel}` : `d=${depth} ${statusText}`;
+      const actualDepth = stackInfo.depth ?? depth;
+      displayBadgeText = baseLabel ? `d=${actualDepth} ${statusText} · ${baseLabel}` : `d=${actualDepth} ${statusText}`;
       if (stackInfo.isCurrent) {
         badgeBg = '#fef3c7'; badgeStroke = '#f59e0b'; badgeTextFill = '#b45309';
       } else {
@@ -349,6 +359,6 @@ export function renderTreeSVG(
     svg.appendChild(gNode);
   };
 
-  draw(root, 300, 36, 120, 1);
+  draw(root, 300, startY, 120, options?.initialDepth ?? 1);
   container.appendChild(svg);
 }

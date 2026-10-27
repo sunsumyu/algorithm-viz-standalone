@@ -13,9 +13,34 @@ import {
   BalancedBinaryTreeCanvasAdapter,
   renderBalancedTreeCanvas,
   renderBalancedCustomMetrics,
+  findSubtree,
 } from './balanced-binary-tree-canvas-adapter';
 
 describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)', () => {
+  it('findSubtree 正确提取特定节点专属子树，支持一层递归一个树', () => {
+    const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+    const sub3 = findSubtree(root, 3);
+    expect(sub3?.val).toBe(3);
+    expect(sub3?.left?.val).toBe(9);
+    expect(sub3?.right?.val).toBe(20);
+
+    const sub9 = findSubtree(root, 9);
+    expect(sub9?.val).toBe(9);
+    expect(sub9?.left).toBeNull();
+    expect(sub9?.right).toBeNull();
+
+    const sub20 = findSubtree(root, 20);
+    expect(sub20?.val).toBe(20);
+    expect(sub20?.left?.val).toBe(15);
+    expect(sub20?.right?.val).toBe(7);
+
+    const sub15 = findSubtree(root, 15);
+    expect(sub15?.val).toBe(15);
+    expect(sub15?.left).toBeNull();
+
+    expect(findSubtree(root, null)).toBeNull();
+  });
+
   it('collectTreeValues 正确收集树中有效节点值', () => {
     const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
     expect(collectTreeValues(root)).toEqual([3, 9, 20, 15, 7]);
@@ -306,7 +331,7 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
         'process(15)',
       ]);
 
-      // 2. 验证 stack-depth 模式下挂载 3 棵树
+      // 2. 验证 stack-depth 模式下一层递归一个树
       const container = document.createElement('div');
       BalancedBinaryTreeCanvasAdapter.activeSubView = 'stack-depth';
       renderBalancedTreeCanvas(container, sampleD3);
@@ -315,9 +340,28 @@ describe('BalancedBinaryTreeStepCompiler & CanvasAdapter (Deep Module Contracts)
       expect(container.innerHTML).toContain('d=1');
       expect(container.innerHTML).toContain('d=2');
       expect(container.innerHTML).toContain('d=3');
-      // 必须渲染了 3 棵完整的二叉树 SVG
+      // 必须渲染 3 棵专属沙盘 SVG
       const svgs = container.querySelectorAll('svg');
       expect(svgs.length).toBe(3);
+      // d=3 是空引用帧，必须渲染专门的 node == null 专属 SVG 沙盘
+      expect(container.innerHTML).toContain('node == null');
+
+      // 验证深入到节点 15 时，各层级严格只渲染本层对应子树 (一层递归一个树契约)
+      if (step15) {
+        const c15 = document.createElement('div');
+        renderBalancedTreeCanvas(c15, step15);
+        const svgs15 = c15.querySelectorAll('svg');
+        expect(svgs15.length).toBe(3);
+        // 第 1 棵 SVG 为以 3 为根的完整树
+        expect(svgs15[0].innerHTML).toContain('>3<');
+        // 第 2 棵 SVG 为以 20 为根的子树，绝不包含父级节点 3
+        expect(svgs15[1].innerHTML).toContain('>20<');
+        expect(svgs15[1].innerHTML).not.toContain('>3<');
+        // 第 3 棵 SVG 仅包含以 15 为根的独立叶子节点，绝无 20 或 3
+        expect(svgs15[2].innerHTML).toContain('>15<');
+        expect(svgs15[2].innerHTML).not.toContain('>20<');
+        expect(svgs15[2].innerHTML).not.toContain('>3<');
+      }
     });
 
     it('路线 F: 全画幅调用链合一树 (全挂一棵树上)', () => {

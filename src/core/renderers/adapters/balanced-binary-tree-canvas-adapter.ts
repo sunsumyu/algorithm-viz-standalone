@@ -11,9 +11,18 @@ import { BalancedTree037Step, collectTreeValues } from './balanced-binary-tree-s
 import { renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
 import { RecursionTreeAdapter } from '../recursion-tree-adapter';
 
+/** 递归检索以特定节点值为根的局部子树 */
+export function findSubtree(root: any, valOrId: number | string | null): any {
+  if (!root || valOrId == null) return null;
+  if (root.id === valOrId || root.val === valOrId) return root;
+  const left = findSubtree(root.left, valOrId);
+  if (left) return left;
+  return findSubtree(root.right, valOrId);
+}
+
 export class BalancedBinaryTreeCanvasAdapter {
-  /** 当前 Card 1 复合子视图模式 (路线 F 全景调用链合一树 vs 路线 E 深度分层树 vs 路线 D 分屏 vs 路线 C 递归展开树) */
-  public static activeSubView: 'unified-tree' | 'stack-depth' | 'split' | 'call-tree' = 'unified-tree';
+  /** 当前 Card 1 复合子视图模式 (路线 E 递归分层树 vs 路线 F 全景调用链合一树 vs 路线 D 分屏 vs 路线 C 递归展开树) */
+  public static activeSubView: 'stack-depth' | 'unified-tree' | 'split' | 'call-tree' = 'stack-depth';
 
   /**
    * Card 1: 表现层画板渲染器 (Presentation Canvas Renderer)
@@ -87,8 +96,8 @@ export class BalancedBinaryTreeCanvasAdapter {
 
         toolbar.innerHTML = `
           <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
-            <button id="btn-subview-unified" style="border: none; background: ${isUnified ? '#ffffff' : 'transparent'}; color: ${isUnified ? '#1d4ed8' : '#64748b'}; font-weight: ${isUnified ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isUnified ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 全景合一树 (合到一起展示)</button>
-            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 深度全展分屏 (固定全深度)</button>
+            <button id="btn-subview-stack" style="border: none; background: ${isStack ? '#ffffff' : 'transparent'}; color: ${isStack ? '#1d4ed8' : '#64748b'}; font-weight: ${isStack ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isStack ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🥞 递归分层树 (一层一树 · 推荐)</button>
+            <button id="btn-subview-unified" style="border: none; background: ${isUnified ? '#ffffff' : 'transparent'}; color: ${isUnified ? '#1d4ed8' : '#64748b'}; font-weight: ${isUnified ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isUnified ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 全景合一树 (整树全局态)</button>
             <button id="btn-subview-split" style="border: none; background: ${isSplit ? '#ffffff' : 'transparent'}; color: ${isSplit ? '#1d4ed8' : '#64748b'}; font-weight: ${isSplit ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isSplit ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌓 双视口分屏</button>
             <button id="btn-subview-call" style="border: none; background: ${isCall ? '#ffffff' : 'transparent'}; color: ${isCall ? '#1d4ed8' : '#64748b'}; font-weight: ${isCall ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isCall ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 递归展开树</button>
           </div>
@@ -219,7 +228,64 @@ export class BalancedBinaryTreeCanvasAdapter {
             'flex: 1; width: 100%; height: 100%; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center;';
           frameCard.appendChild(canvasBox);
 
-          renderLivingDataTree(canvasBox, frame?.nodeVal ?? null, isCurrent);
+          // 一层递归一个树：呈现当前层级专属子树
+          if (inStack && frame) {
+            if (frame.nodeVal == null) {
+              // 判空基底帧：绘制专属空节点 SVG 沙盘
+              canvasBox.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                  <svg width="100%" height="220" viewBox="0 0 300 160" style="max-height: 220px; display: block; margin: auto;">
+                    <rect x="50" y="45" width="200" height="66" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,4"/>
+                    <circle cx="85" cy="78" r="15" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+                    <text x="85" y="83" text-anchor="middle" font-size="13" font-weight="700" fill="#1d4ed8">∅</text>
+                    <text x="175" y="73" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="13.5" font-weight="700" fill="#1e40af">node == null</text>
+                    <text x="175" y="93" text-anchor="middle" font-size="11" font-weight="600" fill="#3b82f6">空节点基底 · return 0</text>
+                  </svg>
+                </div>
+              `;
+            } else {
+              // 非空节点帧：提取以当前帧参数 node 为根的独立子树进行渲染
+              const subTree = findSubtree(step.tree, frame.nodeVal);
+              if (subTree) {
+                TreeCanvasAdapter.renderTree(canvasBox, {
+                  tree: subTree,
+                  current: isCurrent ? frame.nodeVal : undefined,
+                  secondaryHighlightedNodes: !isCurrent ? [frame.nodeVal] : [],
+                  primaryColor: '#f59e0b',
+                  secondaryColor: '#38bdf8',
+                  visitedColor: '#34d399',
+                  labels: labels.size > 0 ? labels : undefined,
+                  dimUnvisited: false,
+                  initialDepth: lvl,
+                  nullProbe: (isCurrent && step.nullProbe?.parentVal === frame.nodeVal) ? step.nullProbe : undefined,
+                });
+              } else {
+                renderLivingDataTree(canvasBox, frame.nodeVal, isCurrent);
+              }
+            }
+          } else if (isPending) {
+            canvasBox.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                <svg width="100%" height="220" viewBox="0 0 300 160" style="max-height: 220px; display: block; margin: auto;">
+                  <rect x="50" y="45" width="200" height="66" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,4"/>
+                  <text x="150" y="74" text-anchor="middle" font-size="12" font-weight="600" fill="#64748b">💤 待递归深入第 ${lvl} 层</text>
+                  <text x="150" y="94" text-anchor="middle" font-size="10.5" font-weight="500" fill="#94a3b8">等待进入此深度子树</text>
+                </svg>
+              </div>
+            `;
+          } else {
+            canvasBox.innerHTML = `
+              <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                <svg width="100%" height="220" viewBox="0 0 300 160" style="max-height: 220px; display: block; margin: auto;">
+                  <rect x="50" y="45" width="200" height="66" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" stroke-dasharray="4,4"/>
+                  <circle cx="85" cy="78" r="14" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+                  <text x="85" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#15803d">✓</text>
+                  <text x="175" y="74" text-anchor="middle" font-size="12" font-weight="700" fill="#15803d">第 ${lvl} 层已结算返回</text>
+                  <text x="175" y="94" text-anchor="middle" font-size="10.5" font-weight="500" fill="#16a34a">计算完成 · 结果已交付父层</text>
+                </svg>
+              </div>
+            `;
+          }
           stackContainer.appendChild(frameCard);
         });
 
