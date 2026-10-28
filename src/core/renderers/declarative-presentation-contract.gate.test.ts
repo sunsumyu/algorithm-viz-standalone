@@ -14,6 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { JSDOM } from 'jsdom';
 import { getDeclarativeSpecs, sanitizeSandboxDom } from '../declarative-algorithm-visualizer';
 import { StepNormalizationEngine } from '../step-normalization-engine';
+import { ExecutionLogPresenter } from './execution-log-presenter';
 
 // 触发全库所有类目的声明式 renderer 注册（涵盖 500+ 道题）
 import.meta.glob('../../algorithms/categories/**/*-renderer.ts', { eager: true });
@@ -405,6 +406,53 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
       `\n================= Card 2 塞入推演树红灯陷阱触发 =================\n` +
         violations.join('\n') +
         `\n=================================================================\n`
+    ).toEqual([]);
+  });
+
+  it('🚨 红灯陷阱: 执行日志卡片内容 100% 对齐《不同路径》黄金标准 (Zero Crude English Debug Log Trap)', () => {
+    const registry = getDeclarativeSpecs();
+    const allSpecs = Array.from(registry.values());
+    const violations: string[] = [];
+
+    const CRUDE_ENGLISH_REGEX = /\b(done\s*stage[-_\s]*\d+|recurse\s+left:\s*\d+|recurse\s+right:\s*\d+|hit\s*target:\s*\d+|visit\s+\d+)\b/i;
+
+    for (const spec of allSpecs) {
+      const defaultInputs: Record<string, any> = {};
+      (spec.inputs || []).forEach((inp) => {
+        defaultInputs[inp.id] = inp.defaultValue;
+      });
+
+      try {
+        const stepFn = spec.generateSteps || spec.buildSteps;
+        const rawSteps = stepFn ? stepFn(defaultInputs) : [];
+        if (!rawSteps || rawSteps.length === 0) continue;
+
+        const testSteps = [rawSteps[0], rawSteps[Math.floor(rawSteps.length / 2)], rawSteps[rawSteps.length - 1]];
+
+        for (let i = 0; i < testSteps.length; i++) {
+          const step = testSteps[i];
+          if (!step) continue;
+
+          // 模拟 ExecutionLogPresenter 最终呈现文本
+          const renderedText = ExecutionLogPresenter.formatLogMessage(step, i);
+
+          if (CRUDE_ENGLISH_REGEX.test(renderedText)) {
+            violations.push(
+              `🚨 [CRUDE_ENGLISH_DEBUG_LOG_TRAP] ${spec.id} (step #${i}): 执行日志暴露了粗糙未经本地化的英文调试字串: "${renderedText}"！必须使用《不同路径》标准中文解说并带 Emoji！`
+            );
+            break;
+          }
+        }
+      } catch (e) {
+        // 步骤生成异常由 STEP_GEN_CRASH_TRAP 承载
+      }
+    }
+
+    expect(
+      violations,
+      `\n================= 执行日志粗糙英文调试字串红灯陷阱触发 =================\n` +
+        violations.join('\n') +
+        `\n=======================================================================\n`
     ).toEqual([]);
   });
 });

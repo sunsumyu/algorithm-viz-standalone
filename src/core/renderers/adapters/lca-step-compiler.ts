@@ -645,7 +645,9 @@ export function buildLcaStage2ParentMapSteps(root: TreeNode | null, pVal: number
       foundLCA !== null
         ? `✅ 查找完成！利用父指针哈希表与回溯集合，确定最近公共祖先为 【${foundLCA}】。`
         : '查找完成，未能通过父指针哈希表确定最近公共祖先。',
-    log: `done stage-2 lca=${foundLCA}`,
+    log: foundLCA !== null
+      ? `| 🏆 查找完成！利用父指针哈希表确定最近公共祖先为 Node(${foundLCA})`
+      : '| 🏆 查找完成，未能通过父指针哈希表确定最近公共祖先',
     codeLine: LCA_STAGE2_LINES.done,
     parentMap: { ...parentMap },
     visitedAncestors: [...visitedAncestors],
@@ -963,7 +965,9 @@ export function buildLcaStage3PathSteps(root: TreeNode | null, pVal: number, qVa
       lcaResult !== null
         ? `✅ 查找完成！目标节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先为 【${lcaResult}】。`
         : '查找完成，未能通过双路径比对确定最近公共祖先。',
-    log: `done stage-3 lca=${lcaResult}`,
+    log: lcaResult !== null
+      ? `| 🏆 查找完成！目标节点 p = ${pVal} 与 q = ${qVal} 的最近公共祖先为 Node(${lcaResult})`
+      : '| 🏆 查找完成，未能通过双路径比对确定最近公共祖先',
     codeLine: LCA_STAGE3_LINES.done,
     pathP: [...pathP],
     pathQ: [...pathQ],

@@ -60,6 +60,156 @@ export class ExecutionLogPresenter {
   }
 
   /**
+   * 格式化并归一化任意算法步骤的执行日志，100% 对齐《不同路径》(unique-paths) 黄金标准：
+   * 1. 始终以 "| " 开头；
+   * 2. 具备阶段语义 Emoji (📥, 🔍, 🎯, 🌿, 🔄, ⚡, 🔙, 🎬, 🏆, 🚧)；
+   * 3. 优先使用具备中文教育叙事性的 message/decision，彻底清洗英文生硬调试字串 (done stage, visit, recurse left, hit target 等)；
+   * 4. 纯英文兜底时自动进行高保真意图翻译。
+   */
+  public static formatLogMessage(st: StepLogEntry, idx: number): string {
+    if (!st) return `| 📝 步骤 #${idx + 1}`;
+
+    const rawLog = String(st.log || '').trim();
+    const rawMsg = String(st.message || st.msg || '').trim();
+    const rawDecision = String(st.decision || '').trim();
+
+    const hasChinese = (text: string) => /[\u4e00-\u9fa5]/.test(text);
+
+    // 检查 log 是否为粗糙的未本地化开发者调试字串
+    const isCrudeEnglish = (text: string) => {
+      if (!text) return true;
+      if (hasChinese(text)) return false;
+      return (
+        /^(visit|recurse|done|depth|step|check|hit|search|insert|delete|harvest|backtrack|call|enter|return|isLeaf|update)/i.test(text) ||
+        /^(root\s*==|node\s*==|already\s*exists|done\s*stage|target\s*<|target\s*>)/i.test(text)
+      );
+    };
+
+    let selectedText = '';
+
+    // 优先策略 1: 若 rawLog 已对齐标准 (以 "| " 开头且包含中文)，直接采纳
+    if (rawLog.startsWith('|') && hasChinese(rawLog)) {
+      selectedText = rawLog;
+    }
+    // 优先策略 2: 若 rawLog 是生硬英文，但 message 或 decision 包含丰富中文，果断采用中文解说
+    else if (isCrudeEnglish(rawLog) && hasChinese(rawMsg)) {
+      selectedText = rawMsg;
+    } else if (isCrudeEnglish(rawLog) && hasChinese(rawDecision)) {
+      selectedText = rawDecision;
+    }
+    // 优先策略 3: 正常取非空的 log -> message -> decision
+    else if (rawLog && (!isCrudeEnglish(rawLog) || (!rawMsg && !rawDecision))) {
+      selectedText = rawLog;
+    } else if (rawMsg) {
+      selectedText = rawMsg;
+    } else if (rawDecision) {
+      selectedText = rawDecision;
+    } else if (st.type) {
+      selectedText = `步骤 ${idx + 1}: ${st.type}`;
+    } else {
+      selectedText = `步骤 #${idx + 1}`;
+    }
+
+    // 清理英文调试短语（如仅有英文时）
+    if (!hasChinese(selectedText)) {
+      selectedText = this.translateEnglishLog(selectedText, st);
+    }
+
+    // 统一规范化为 《不同路径》 格式：以 "| " 开头并带 Emoji
+    return this.ensureStandardPrefix(selectedText, st);
+  }
+
+  private static ensureStandardPrefix(text: string, st: StepLogEntry): string {
+    let clean = text.replace(/^\|\s*/, '').trim();
+
+    // 提取或推断语义 Emoji
+    const emojiRegex = /^([\uD83C-\uDBFF\uDC00-\uDFFF\u2600-\u27BF\u2B50\u231A-\u23FA\u200D\uFE0F]+)/;
+    const match = clean.match(emojiRegex);
+    if (match) {
+      return `| ${clean}`;
+    }
+
+    // 根据 action / phase / type / 文本推断合适 Emoji
+    const action = String(st.action || st.phase || st.type || '').toLowerCase();
+    const str = clean.toLowerCase();
+
+    let emoji = '📝';
+    if (
+      action.includes('enter') ||
+      action.includes('init') ||
+      action.includes('call') ||
+      str.includes('进入') ||
+      str.includes('启动') ||
+      str.includes('开始') ||
+      str.includes('初始化')
+    ) {
+      emoji = '📥';
+    } else if (action.includes('found') || action.includes('match') || str.includes('命中') || str.includes('找到') || str.includes('目标')) {
+      emoji = '🎯';
+    } else if (action.includes('done') || action.includes('finish') || str.includes('完成') || str.includes('成功') || str.includes('结束')) {
+      emoji = '🏆';
+    } else if (action.includes('left') || str.includes('左')) {
+      emoji = '🌿';
+    } else if (action.includes('right') || str.includes('右')) {
+      emoji = '🌿';
+    } else if (action.includes('backtrack') || action.includes('unwind') || str.includes('回溯') || str.includes('退栈') || str.includes('返回')) {
+      emoji = '🔙';
+    } else if (action.includes('check') || str.includes('检查') || str.includes('比对') || str.includes('校验') || str.includes('探查')) {
+      emoji = '🔍';
+    } else if (action.includes('insert') || str.includes('插入') || str.includes('挂载')) {
+      emoji = '🌱';
+    } else if (action.includes('update') || action.includes('calc') || str.includes('转移') || str.includes('计算') || str.includes('更新')) {
+      emoji = '🔄';
+    } else if (str.includes('空') || str.includes('越界') || str.includes('阻断') || str.includes('null')) {
+      emoji = '🚧';
+    }
+
+    return `| ${emoji} ${clean}`;
+  }
+
+  private static translateEnglishLog(text: string, _st: StepLogEntry): string {
+    // 递归深入
+    if (/^recurse\s+left:?\s*(.*)$/i.test(text)) {
+      const target = text.replace(/^recurse\s+left:?\s*/i, '');
+      return `递归深入左子树 (${target || 'node.left'})`;
+    }
+    if (/^recurse\s+right:?\s*(.*)$/i.test(text)) {
+      const target = text.replace(/^recurse\s+right:?\s*/i, '');
+      return `递归深入右子树 (${target || 'node.right'})`;
+    }
+    // 节点访问/比对
+    if (/^(?:visit|check\s*node:?)\s*(.*)$/i.test(text)) {
+      const val = text.replace(/^(?:visit|check\s*node:?)\s*/i, '');
+      return `检查并比对当前节点 Node(${val})`;
+    }
+    // 命中目标
+    if (/^hit\s*target:?\s*(.*)$/i.test(text)) {
+      const val = text.replace(/^hit\s*target:?\s*/i, '');
+      return `命中目标节点 (${val})！返回对应子树`;
+    }
+    // 完成阶段
+    if (/^done\s*stage[-_\s]*(\d+)\s*(.*)$/i.test(text)) {
+      const match = text.match(/^done\s*stage[-_\s]*(\d+)\s*(.*)$/i);
+      const res = match?.[2] ? ` (${match[2]})` : '';
+      return `第 ${match?.[1] || ''} 阶段推演完成${res}`;
+    }
+    if (/^done\s*insert\s*(.*)$/i.test(text)) {
+      return `动态插入完成，树结构更新完毕`;
+    }
+    if (/^return\s*null/i.test(text)) {
+      return `到达空节点，返回 null`;
+    }
+    if (/^root\s*==\s*null/i.test(text)) {
+      return `根节点为空，直接返回`;
+    }
+    if (/^check\s*slot:?\s*(.*)$/i.test(text)) {
+      const val = text.replace(/^check\s*slot:?\s*/i, '');
+      return `探查可用插槽，当前位置 Node(${val})`;
+    }
+    return text;
+  }
+
+  /**
    * 渲染动态执行日志流 (逐帧渲染，自动高亮当前步与自动滚动)
    * 对齐 unique-paths 黄金标准的颜色、留白、边框与徽章层次
    */
@@ -79,28 +229,35 @@ export class ExecutionLogPresenter {
     if (!doc) return;
 
     const visibleSteps = steps.slice(0, currentIndex + 1);
-    const html = visibleSteps.map((st: any, idx: number) => {
-      const isCurrent = idx === currentIndex;
-      const logMsg = st.log || st.decision || st.message || st.msg || (st.type ? `步骤 ${idx + 1}: ${st.type}` : `步骤 #${idx + 1}`);
+    const html = visibleSteps
+      .map((st: any, idx: number) => {
+        const isCurrent = idx === currentIndex;
+        const logMsg = ExecutionLogPresenter.formatLogMessage(st, idx);
 
-      const baseStyle = isCurrent
-        ? 'padding: 3.5px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 3px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
-        : 'padding: 2.5px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
+        const baseStyle = isCurrent
+          ? 'padding: 3.5px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 3px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
+          : 'padding: 2.5px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
 
-      const safeMsg = String(logMsg)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+        const safeMsg = String(logMsg)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
 
-      return `
+        return `
         <div style="${baseStyle}">
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px;">${safeMsg}</span>
           <span style="color: #94a3b8; font-size: 10px; font-weight: normal; flex-shrink: 0;">#${idx + 1}</span>
         </div>
       `;
-    }).join('');
+      })
+      .join('');
 
-    container.innerHTML = html;
+    const finishLine =
+      currentIndex === steps.length - 1
+        ? `<div style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0 4px; color: #94a3b8; font-size: 10.5px; font-family: monospace;"><span>🏁 全部执行完成 (共 ${steps.length} 步)</span></div>`
+        : '';
+
+    container.innerHTML = html + finishLine;
     container.scrollTop = container.scrollHeight;
   }
 }
