@@ -89,6 +89,8 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
   const reverseSeq: Array<{ oldVal: number; newVal: number }> = [];
 
   const workingRoot = cloneTree(root);
+  const stampOrigId = (n: TreeNode | null) => { if (!n) return; n.id = `orig-${n.val}`; stampOrigId(n.left); stampOrigId(n.right); };
+  stampOrigId(workingRoot);
 
   if (!workingRoot) {
     trace.addHeader('convertBST(root=null)', 0, '空树特判');
@@ -145,7 +147,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       depth,
       branch,
       status: 'pending',
-      activeNodeVal: node.val, activeNodeId: node.id ?? `node-${node.val}`,
+      activeNodeVal: node.val, activeNodeId: `orig-${node.val}`,
       sum: 0,
       treeSnapshot: cloneTree(workingRoot),
       children,
@@ -379,6 +381,8 @@ export function buildBstToGstStage2Steps(root: TreeNode | null): BstToGstStep[] 
   const stack: TreeNode[] = [];
 
   const workingRoot = cloneTree(root);
+  const stampOrigId = (n: TreeNode | null) => { if (!n) return; n.id = `orig-${n.val}`; stampOrigId(n.left); stampOrigId(n.right); };
+  stampOrigId(workingRoot);
 
   if (!workingRoot) {
     steps.push({
@@ -543,6 +547,8 @@ export function buildBstToGstStage3Steps(root: TreeNode | null): BstToGstStep[] 
   const reverseSeq: Array<{ oldVal: number; newVal: number }> = [];
 
   const workingRoot = cloneTree(root);
+  const stampOrigId = (n: TreeNode | null) => { if (!n) return; n.id = `orig-${n.val}`; stampOrigId(n.left); stampOrigId(n.right); };
+  stampOrigId(workingRoot);
 
   if (!workingRoot) {
     steps.push({

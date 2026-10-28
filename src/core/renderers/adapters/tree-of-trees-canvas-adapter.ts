@@ -75,12 +75,12 @@ export class TreeOfTreesCanvasAdapter {
    * 3. 每个节点搭载完整尺寸的状态二叉树沙盘 (Full State Tree)。
    */
   private static computeBinaryTreeLayout(root: TreeOfTreesNode): { items: LayoutItem[]; rootItem: LayoutItem; totalW: number; totalH: number } {
-    const cardW = 324;
-    const cardH = 236;
-    const siblingGap = 44;
-    const singleBranchOffset = 185;
-    const levelH = cardH + 68;
-    const topPad = 42;
+    const cardW = 316;
+    const cardH = 220;
+    const siblingGap = 38;
+    const singleBranchOffset = 175;
+    const levelH = cardH + 54;
+    const topPad = 36;
 
     const allItems: LayoutItem[] = [];
 
@@ -163,13 +163,13 @@ export class TreeOfTreesCanvasAdapter {
 
     const rootItem = buildCompactItem(root);
 
-    // 归一化水平坐标，左起留白 60px
+    // 归一化水平坐标，左起留白 50px
     const minLeft = Math.min(...allItems.map((it) => it.x - it.width / 2));
-    const offsetX = 60 - minLeft;
+    const offsetX = 50 - minLeft;
     shiftSubtree(rootItem, offsetX);
 
-    const maxX = Math.max(...allItems.map((it) => it.x + it.width / 2)) + 60;
-    const maxY = Math.max(...allItems.map((it) => it.y + it.height)) + 60;
+    const maxX = Math.max(...allItems.map((it) => it.x + it.width / 2)) + 50;
+    const maxY = Math.max(...allItems.map((it) => it.y + it.height)) + 50;
 
     return {
       items: allItems,
@@ -180,8 +180,11 @@ export class TreeOfTreesCanvasAdapter {
   }
 
   /**
-   * 计算聚焦指定递归帧卡片（及其父连接上下文）的最佳相机缩放与位移
-   * 确保当前活跃树始终在视口中央清晰放大展示，关键节点数值与转折细节一目了然
+   * 智能上下文簇包围盒运镜算法 (Smart Context-Cluster Bounding-Box Camera)
+   * 核心设计：
+   * 1. 绝不仅放大单棵树导致前后断联！动态收集【上一棵树 (Parent) + 当前树 (Active) + 兄弟树 (Sibling) + 下一棵树 (Children)】组成三层上下文簇；
+   * 2. 边界自适应补偿：若当前在根节点则向下纳入孙节点层；若当前在叶节点则向上纳入祖父节点层，始终保证至少 3 层状态树完整同框；
+   * 3. 精确计算上下文簇的 2D 包围盒 [minX, minY, maxX, maxY]，自动算出能 100% 完整容纳这组关联树的最大清晰缩放比，杜绝上下左右被腰斩截断。
    */
   private static computeFocusCamera(
     targetItem: LayoutItem,
@@ -189,23 +192,58 @@ export class TreeOfTreesCanvasAdapter {
     totalW: number,
     totalH: number
   ): { scale: number; tx: number; ty: number } {
-    // 查找父卡片以微调视觉重心，使入向分支箭头（「右深入 ➔」/「左深入 ➔」）同时处于视野内
-    const parentItem = flatItems.find(
-      (it) => it.leftChild === targetItem || it.rightChild === targetItem
-    );
+    const cluster = new Set<LayoutItem>([targetItem]);
 
-    // 期望可视窗口容纳约 2.15 张卡片宽、1.95 张卡片高，使当前卡片占据画布核心约 48% 面积
-    const desiredVisibleW = targetItem.width * 2.15;
-    const desiredVisibleH = targetItem.height * 1.95;
-    const rawScale = Math.min(totalW / desiredVisibleW, totalH / desiredVisibleH);
-    const scale = Math.max(1.25, Math.min(2.6, rawScale));
+    const findParent = (child: LayoutItem): LayoutItem | undefined =>
+      flatItems.find((it) => it.leftChild === child || it.rightChild === child);
 
-    const centerX = parentItem
-      ? targetItem.x * 0.85 + parentItem.x * 0.15
-      : targetItem.x;
-    const centerY = parentItem
-      ? (targetItem.y + targetItem.height * 0.45) * 0.88 + (parentItem.y + parentItem.height) * 0.12
-      : targetItem.y + targetItem.height * 0.48;
+    const parentItem = findParent(targetItem);
+    if (parentItem) {
+      cluster.add(parentItem);
+      // 纳入同父兄弟树，保持父节点左右分支对称同框
+      if (parentItem.leftChild) cluster.add(parentItem.leftChild);
+      if (parentItem.rightChild) cluster.add(parentItem.rightChild);
+    }
+
+    // 纳入下一层子调用树（下一棵树）
+    if (targetItem.leftChild) cluster.add(targetItem.leftChild);
+    if (targetItem.rightChild) cluster.add(targetItem.rightChild);
+
+    // 边界补偿 1：若当前是叶子节点（无下一层子树），向上追加祖父节点以保持三层上下文视野
+    if (!targetItem.leftChild && !targetItem.rightChild && parentItem) {
+      const grandParent = findParent(parentItem);
+      if (grandParent) cluster.add(grandParent);
+    }
+
+    // 边界补偿 2：若当前是根节点（无上一层父树），向下追加孙节点层以保持三层前瞻视野
+    if (!parentItem) {
+      for (const ch of targetItem.children) {
+        if (ch.leftChild) cluster.add(ch.leftChild);
+        if (ch.rightChild) cluster.add(ch.rightChild);
+      }
+    }
+
+    const clusterArr = Array.from(cluster);
+    const padX = 42;
+    const padY = 34;
+
+    const minX = Math.min(...clusterArr.map((it) => it.x - it.width / 2)) - padX;
+    const maxX = Math.max(...clusterArr.map((it) => it.x + it.width / 2)) + padX;
+    const minY = Math.min(...clusterArr.map((it) => it.y)) - padY;
+    const maxY = Math.max(...clusterArr.map((it) => it.y + it.height)) + padY;
+
+    // 设定最小包围盒下限（至少容纳 2.6 张卡片宽、2.85 张卡片高），防止节点极少时过度放大只剩孤立单卡
+    const boxW = Math.max(targetItem.width * 2.6, maxX - minX);
+    const boxH = Math.max(targetItem.height * 2.85, maxY - minY);
+
+    const rawScale = Math.min(totalW / boxW, totalH / boxH);
+    const scale = Math.max(1.05, Math.min(1.75, rawScale));
+
+    // 几何中心微向当前活跃卡片倾斜 15%，确保上下文簇完整入画的同时视觉重心落在当前树
+    const boxCenterX = (minX + maxX) / 2;
+    const boxCenterY = (minY + maxY) / 2;
+    const centerX = boxCenterX * 0.85 + targetItem.x * 0.15;
+    const centerY = boxCenterY * 0.85 + (targetItem.y + targetItem.height / 2) * 0.15;
 
     return {
       scale,
@@ -217,17 +255,18 @@ export class TreeOfTreesCanvasAdapter {
   /**
    * 构造完整二叉树状态沙盘 SVG (Full Complete State Tree SVG)
    * 100% 像素级复刻 tree-svg.ts 完整二叉树几何与样式：
-   * - 完整圆节点 r=19、粗体 13px 数值标签、标准 2.5px 枝干连线
-   * - 当前活跃/转换节点采用翡翠绿 (#059669) + 琥珀暖光晕聚焦
-   * - 其余节点采用经典白底 + 板岩色描边 (#64748b)，彻底告别 6px 微缩缩略图
+   * - 完整圆节点 r=19、粗体 13.5px 数值标签、标准 2.5px 枝干连线
+   * - 当前活跃/转换节点采用翡翠绿 (#059669) + 光环聚焦
+   * - 已完成转换的节点采用薄荷绿底 (#ecfdf5) + 翠绿描边 (#10b981)
+   * - 未转换节点保持经典白底 + 板岩色描边 (#64748b)
    */
   private static buildFullStateTreeSvg(
     root: TreeNode | null,
     activeVal: number | null,
     activeNodeId?: string | number,
     valueTransition?: { oldVal: number; newVal: number },
-    boxW = 308,
-    boxH = 180
+    boxW = 300,
+    boxH = 166
   ): string {
     if (!root) {
       return `<text x="${boxW / 2}" y="${boxH / 2}" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8">（空树）</text>`;
@@ -253,8 +292,8 @@ export class TreeOfTreesCanvasAdapter {
     };
 
     const isNodeConverted = (n: TreeNode): boolean => {
-      if (n.id !== undefined && String(n.id).startsWith('node-')) {
-        const orig = Number(String(n.id).replace('node-', ''));
+      if (n.id !== undefined && String(n.id).startsWith('orig-')) {
+        const orig = Number(String(n.id).replace('orig-', ''));
         if (!Number.isNaN(orig) && n.val !== orig) {
           return true;
         }
