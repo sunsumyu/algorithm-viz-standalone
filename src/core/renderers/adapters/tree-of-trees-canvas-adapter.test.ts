@@ -15,6 +15,10 @@ import {
   cloneTreeOfTrees,
 } from './bst-to-gst-step-compiler';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
+import { StepNormalizationEngine } from '../../step-normalization-engine';
+import { TreeCanvasAdapter } from './tree-canvas-adapter';
+import { TreeDepthStepCompiler } from './tree-depth-step-compiler';
+import { buildTreeInvertSteps } from './tree-invert-step-compiler';
 
 describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
   let container: HTMLDivElement;
@@ -306,5 +310,45 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
     for (const s of scales) {
       expect(s).toBeCloseTo(firstScale, 5);
     }
+  });
+
+  it('全库所有二叉树算法通过共享 BinaryTreeOfTreesSynthesizer 与 TreeCanvasAdapter 自动拥有树上挂树视图', () => {
+    const root = buildTreeFromArr([3, 9, 20, null, null, 15, 7]);
+    const rawDepthSteps = TreeDepthStepCompiler.compileMaxDepthStage1Steps(root);
+    const normalizedDepthSteps = StepNormalizationEngine.normalize(rawDepthSteps, {
+      algorithmId: 'tree-depth',
+      stageId: 'stage-1',
+    });
+
+    expect(normalizedDepthSteps.length).toBeGreaterThan(4);
+    for (const st of normalizedDepthSteps as any[]) {
+      expect(st.treeOfTrees).toBeDefined();
+      expect(st.treeOfTrees.funcCall).toContain('maxDepth(3)');
+    }
+
+    const host = document.createElement('div');
+    host.id = 'dsp-sandbox-container';
+    document.body.appendChild(host);
+
+    const midStep = normalizedDepthSteps[2] as any;
+    TreeCanvasAdapter.renderTree(host, {
+      tree: midStep.tree,
+      current: midStep.current,
+    });
+
+    // 验证统一共享子视图切换栏与树上挂树全景卡片自动挂载
+    expect(host.querySelector('#btn-subview-tot')).not.toBeNull();
+    expect(host.querySelector('#btn-subview-single')).not.toBeNull();
+    expect(host.innerHTML).toContain('maxDepth(3)');
+    expect(host.innerHTML).toContain('maxDepth(20)');
+    expect(host.querySelector('#tot-main-group')).not.toBeNull();
+
+    // 验证翻转二叉树 (tree-invert) 每个递归节点也自动合成树上挂树快照
+    const invRoot = buildTreeFromArr([4, 2, 7, 1, 3, 6, 9]);
+    const invSteps = StepNormalizationEngine.normalize(buildTreeInvertSteps(invRoot), {
+      algorithmId: 'tree-invert',
+      stageId: 'stage-1',
+    });
+    expect((invSteps[0] as any).treeOfTrees?.funcCall).toContain('invertTree(4)');
   });
 });

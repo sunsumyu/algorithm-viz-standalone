@@ -20,6 +20,7 @@
 
 import { StepBase } from './step-visualizer';
 import { DeclarativeAlgorithmSpec } from './renderers/declarative-stage-presenter';
+import { BinaryTreeOfTreesSynthesizer } from './renderers/adapters/binary-tree-of-trees-synthesizer';
 
 export interface StepNormalizationContext {
   algorithmId?: string;
@@ -50,7 +51,13 @@ export class StepNormalizationEngine {
     // 阶段 3: 幽灵死锁帧过滤
     const finalSteps = this.purgeGhostSteps(unwindSynthesizedSteps);
 
-    return finalSteps as TStep[];
+    // 阶段 4: 全量二叉树算法「树上挂树 (Tree of Trees)」共享全景拓扑自动合成
+    const enrichedSteps = BinaryTreeOfTreesSynthesizer.enrichStepsWithTreeOfTrees(finalSteps, {
+      algorithmId: context?.algorithmId || context?.spec?.id,
+      stageId: context?.stageId,
+    });
+
+    return enrichedSteps as TStep[];
   }
 
   /**

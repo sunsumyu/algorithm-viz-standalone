@@ -5,9 +5,13 @@
  */
 
 import { TreeNode, renderTreeSVG } from '../tree-svg';
+import { TreeOfTreesNode } from './tree-of-trees-canvas-adapter';
+import { BinaryTreeOfTreesSynthesizer } from './binary-tree-of-trees-synthesizer';
 
 export interface TreeCanvasState {
   tree: TreeNode | null;
+  treeOfTrees?: TreeOfTreesNode | null;
+  disableTreeOfTrees?: boolean;
   current?: number | string | null;
   activeNodeId?: number | string | null;
   secondaryNodeId?: number | string | null;
@@ -81,30 +85,49 @@ export class TreeCanvasAdapter {
       }
     }
 
-    // 清空并挂载 SVG 容器
-    container.style.display = 'flex';
-    container.style.alignItems = 'center';
-    container.style.justifyContent = 'center';
+    const renderSingleTreeInto = (targetBox: HTMLElement) => {
+      targetBox.style.display = 'flex';
+      targetBox.style.alignItems = 'center';
+      targetBox.style.justifyContent = 'center';
 
-    renderTreeSVG(
-      container,
-      tree,
-      primarySet,
-      primaryColor,
-      secondarySet,
-      secondaryColor,
-      labels,
-      visitedSet,
-      visitedColor,
-      {
-        dimUnvisited,
-        nullProbe,
-        initialDepth,
-        height,
-        viewBoxHeight,
-        tightViewBox,
-        stackFrames,
-      },
-    );
+      renderTreeSVG(
+        targetBox,
+        tree,
+        primarySet,
+        primaryColor,
+        secondarySet,
+        secondaryColor,
+        labels,
+        visitedSet,
+        visitedColor,
+        {
+          dimUnvisited,
+          nullProbe,
+          initialDepth,
+          height,
+          viewBoxHeight,
+          tightViewBox,
+          stackFrames,
+        },
+      );
+    };
+
+    if (tree && !state.disableTreeOfTrees) {
+      const resolvedTot =
+        state.treeOfTrees ??
+        BinaryTreeOfTreesSynthesizer.getTreeOfTreesForTree(tree) ??
+        BinaryTreeOfTreesSynthesizer.buildFromTreeCanvasState(state);
+
+      if (resolvedTot) {
+        BinaryTreeOfTreesSynthesizer.renderWithSubViewToggle(
+          container,
+          resolvedTot,
+          renderSingleTreeInto
+        );
+        return;
+      }
+    }
+
+    renderSingleTreeInto(container);
   }
 }

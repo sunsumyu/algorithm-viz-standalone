@@ -22,6 +22,7 @@ export interface TreeOfTreesNode {
   activeNodeVal: number | null;
   activeNodeId?: string | number;
   sum: number;
+  footerText?: string;
   valueTransition?: { oldVal: number; newVal: number };
   treeSnapshot: TreeNode | null;
   children: TreeOfTreesNode[];
@@ -595,8 +596,8 @@ export class TreeOfTreesCanvasAdapter {
         fullTreeBoxH
       );
 
-      // 底部累加和转折
-      let footerText = `sum = ${node.sum}`;
+      // 底部状态与累加值转折
+      let footerText = node.footerText || `sum = ${node.sum}`;
       if (node.valueTransition) {
         footerText = `${node.valueTransition.oldVal} ➔ ${node.valueTransition.newVal} (sum=${node.sum})`;
       } else if (isPending) {

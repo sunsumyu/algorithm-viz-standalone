@@ -1,19 +1,25 @@
 /**
  * 把二叉搜索树转换为累加树画布适配器 (Convert BST to Greater Tree Canvas Adapter)
  * LeetCode 538 / LC 1038
- * 负责纯净树沙盘与降序累加序列流/显式调用栈/Morris 反向线索监控看板
+ * 负责纯净树沙盘（委托共享 TreeCanvasAdapter / BinaryTreeOfTreesSynthesizer）与降序累加序列流/显式调用栈/Morris 反向线索监控看板
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { TreeOfTreesCanvasAdapter } from './tree-of-trees-canvas-adapter';
+import { BinaryTreeOfTreesSynthesizer } from './binary-tree-of-trees-synthesizer';
 import { BstToGstStep } from './bst-to-gst-step-compiler';
 
 export class BstToGstCanvasAdapter {
-  /** 当前 Card 1 复合子视图模式 (树上挂树全景推演 vs 单树实时沙盘) */
-  public static activeSubView: 'tree-of-trees' | 'single-tree' = 'tree-of-trees';
+  /** 当前 Card 1 复合子视图模式（与全库二叉树共享单一事实来源） */
+  public static get activeSubView(): 'tree-of-trees' | 'single-tree' {
+    return BinaryTreeOfTreesSynthesizer.activeSubView;
+  }
+
+  public static set activeSubView(val: 'tree-of-trees' | 'single-tree') {
+    BinaryTreeOfTreesSynthesizer.activeSubView = val;
+  }
 
   /**
-   * Card 1: 纯粹的树形沙盘渲染 (Pure SVG Sandbox)
+   * Card 1: 纯粹的树形沙盘渲染 (100% 委托全库二叉树共享适配器 TreeCanvasAdapter)
    */
   public static renderCanvas(container: HTMLElement, step: BstToGstStep): void {
     if (!step.tree) {
@@ -29,73 +35,22 @@ export class BstToGstCanvasAdapter {
       return;
     }
 
-    container.innerHTML = '';
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.width = '100%';
-    container.style.height = '100%';
-    container.style.boxSizing = 'border-box';
-    container.style.position = 'relative';
+    const highlights =
+      step.highlightedNodes && step.highlightedNodes.length > 0
+        ? step.highlightedNodes
+        : step.currNewVal != null
+        ? [step.currNewVal]
+        : [];
 
-    // 1. 若具备 treeOfTrees 数据，渲染顶部子视图切换胶囊栏
-    if (step.treeOfTrees) {
-      const toolbar = document.createElement('div');
-      toolbar.style.cssText =
-        'display: flex; justify-content: flex-end; align-items: center; width: 100%; padding: 2px 6px; flex-shrink: 0; z-index: 10; margin-bottom: 4px;';
-      const curMode = BstToGstCanvasAdapter.activeSubView;
-      const isTot = curMode === 'tree-of-trees';
-      const isSingle = curMode === 'single-tree';
-
-      toolbar.innerHTML = `
-        <div style="display: inline-flex; background: #f1f5f9; padding: 2px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px;">
-          <button id="btn-subview-tot" style="border: none; background: ${isTot ? '#ffffff' : 'transparent'}; color: ${isTot ? '#1d4ed8' : '#64748b'}; font-weight: ${isTot ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isTot ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌳 树上挂树 (全景推演 · 推荐)</button>
-          <button id="btn-subview-single" style="border: none; background: ${isSingle ? '#ffffff' : 'transparent'}; color: ${isSingle ? '#1d4ed8' : '#64748b'}; font-weight: ${isSingle ? '700' : '500'}; padding: 2px 8px; border-radius: 4px; cursor: pointer; box-shadow: ${isSingle ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'}; font-size: 10.5px;">🌲 单树实时沙盘</button>
-        </div>
-      `;
-      const btnTot = toolbar.querySelector('#btn-subview-tot') as HTMLButtonElement | null;
-      const btnSingle = toolbar.querySelector('#btn-subview-single') as HTMLButtonElement | null;
-
-      if (btnTot) {
-        btnTot.onclick = (e) => {
-          e.stopPropagation();
-          BstToGstCanvasAdapter.activeSubView = 'tree-of-trees';
-          BstToGstCanvasAdapter.renderCanvas(container, step);
-        };
-      }
-      if (btnSingle) {
-        btnSingle.onclick = (e) => {
-          e.stopPropagation();
-          BstToGstCanvasAdapter.activeSubView = 'single-tree';
-          BstToGstCanvasAdapter.renderCanvas(container, step);
-        };
-      }
-      container.appendChild(toolbar);
-    }
-
-    const canvasBox = document.createElement('div');
-    canvasBox.style.cssText =
-      'flex: 1; width: 100%; height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative;';
-    container.appendChild(canvasBox);
-
-    if (BstToGstCanvasAdapter.activeSubView === 'tree-of-trees' && step.treeOfTrees) {
-      TreeOfTreesCanvasAdapter.render(canvasBox, step.treeOfTrees);
-    } else {
-      const highlights =
-        step.highlightedNodes && step.highlightedNodes.length > 0
-          ? step.highlightedNodes
-          : step.currNewVal != null
-          ? [step.currNewVal]
-          : [];
-
-      TreeCanvasAdapter.renderTree(canvasBox, {
-        tree: step.tree,
-        current: step.currNewVal ?? step.currOldVal,
-        highlightedNodes: highlights,
-        primaryColor: '#059669', // 翡翠绿当前累加节点
-        visitedColor: '#10b981', // 翡翠绿完工节点
-        secondaryColor: '#f59e0b', // 琥珀黄原值节点
-      });
-    }
+    TreeCanvasAdapter.renderTree(container, {
+      tree: step.tree,
+      treeOfTrees: step.treeOfTrees,
+      current: step.currNewVal ?? step.currOldVal,
+      highlightedNodes: highlights,
+      primaryColor: '#059669', // 翡翠绿当前累加节点
+      visitedColor: '#10b981', // 翡翠绿完工节点
+      secondaryColor: '#f59e0b', // 琥珀黄原值节点
+    });
   }
 
   /**

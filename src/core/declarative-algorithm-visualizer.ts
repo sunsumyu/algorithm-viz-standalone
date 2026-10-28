@@ -20,6 +20,7 @@ import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinat
 import { registerAlgorithm } from './registry';
 import { StepNormalizationEngine } from './step-normalization-engine';
 import { ExecutionLogPresenter } from './renderers/execution-log-presenter';
+import { BinaryTreeOfTreesSynthesizer } from './renderers/adapters/binary-tree-of-trees-synthesizer';
 
 const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
 
@@ -859,6 +860,12 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           is3DMode: this.is3DMode,
         });
         sanitizeSandboxDom(this.sandboxContainer);
+        if ((step as any)?.treeOfTrees && !this.sandboxContainer.querySelector('#btn-subview-tot')) {
+          BinaryTreeOfTreesSynthesizer.renderWithSubViewToggle(this.sandboxContainer, (step as any).treeOfTrees, (singleBox) => {
+            primaryRender(singleBox, step, { mode: this.currentMode, currentIndex: this.currentIndex, stageId: this.currentStageId, is3DMode: this.is3DMode });
+            sanitizeSandboxDom(singleBox);
+          });
+        }
       } catch (err) {
         this.renderPipelineError(this.sandboxContainer, err, '主视觉沙盘 (Card 1)');
       }
