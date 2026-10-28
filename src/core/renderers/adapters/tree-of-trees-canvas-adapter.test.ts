@@ -274,4 +274,37 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
     resetBtn.click();
     expect(getScale(box5)).toBe(1);
   });
+
+  it('全步骤连续推演时，缩放比例保持 100% 恒定连续，且焦点绝不在递归中途断流跳回根节点', () => {
+    const root = parseAndBuildBstToGstTree();
+    const steps = buildBstToGstStage1Steps(root);
+
+    const sandboxHost = document.createElement('div');
+    sandboxHost.id = 'dsp-sandbox-container';
+    document.body.appendChild(sandboxHost);
+
+    const scales: number[] = [];
+    for (let i = 0; i < steps.length; i++) {
+      sandboxHost.innerHTML = '';
+      const canvasBox = document.createElement('div');
+      sandboxHost.appendChild(canvasBox);
+      TreeOfTreesCanvasAdapter.render(canvasBox, steps[i].treeOfTrees!);
+
+      const tf = canvasBox.querySelector('#tot-main-group')?.getAttribute('transform') || '';
+      const m = tf.match(/scale\(([0-9.]+)\)/);
+      expect(m).not.toBeNull();
+      scales.push(Number(m![1]));
+
+      // 除最后一步全部结算 done 外，所有步骤均必须存在 ⚡ 活跃 节点，绝不丢失焦点
+      if (i < steps.length - 1) {
+        expect(canvasBox.innerHTML).toContain('⚡ 活跃');
+      }
+    }
+
+    // 断言从第 0 步到最后一步，默认跟随缩放比例 100% 恒定，绝不在两种缩放尺寸间跳变！
+    const firstScale = scales[0];
+    for (const s of scales) {
+      expect(s).toBeCloseTo(firstScale, 5);
+    }
+  });
 });

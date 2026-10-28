@@ -54,6 +54,8 @@ interface ViewState {
   autoFollow: boolean;
   /** 用户手动调整过的缩放比例（跨步骤持久记忆，绝不在下一步时重置回默认缩放） */
   userScale: number | null;
+  /** 上一步锁定的活跃调用节点 ID，确保中间过渡帧绝不丢失焦点或跳回根节点 */
+  lastActiveNodeId: string | null;
   isDragging: boolean;
   startX: number;
   startY: number;
@@ -92,6 +94,7 @@ export class TreeOfTreesCanvasAdapter {
         ty: 0,
         autoFollow: true,
         userScale: null,
+        lastActiveNodeId: null,
         isDragging: false,
         startX: 0,
         startY: 0,
@@ -213,11 +216,13 @@ export class TreeOfTreesCanvasAdapter {
   }
 
   /**
-   * 智能上下文簇包围盒运镜算法 (Smart Context-Cluster Bounding-Box Camera)
+   * 恒定比例三层上下文平滑运镜算法 (Constant-Scale Smooth Context Camera)
    * 核心设计：
-   * 1. 绝不仅放大单棵树导致前后断联！动态收集【上一棵树 (Parent) + 当前树 (Active) + 兄弟树 (Sibling) + 下一棵树 (Children)】组成三层上下文簇；
-   * 2. 边界自适应补偿：若当前在根节点则向下纳入孙节点层；若当前在叶节点则向上纳入祖父节点层，始终保证至少 3 层状态树完整同框；
-   * 3. 精确计算上下文簇的 2D 包围盒 [minX, minY, maxX, maxY]，自动算出能 100% 完整容纳这组关联树的最大清晰缩放比，杜绝上下左右被腰斩截断。
+   * 1. 缩放比例恒定连续（Zero Scale Jumping）：默认缩放比仅由画布总尺寸与单卡标准尺寸决定（固定容纳约 3.1 列宽 × 3.05 层高），
+   *    跨步骤推演时 scale 保持 100% 恒定连续，彻底杜绝因不同节点子树宽窄不同导致镜头在两种缩放尺寸间反复跳变；
+   * 2. 若用户手动调整过缩放比例 (userScale)，全程严格沿用 userScale；
+   * 3. 视口中心融合【上一棵父树 + 当前活跃树 + 下一棵子树】的直系三层重心（当前树权重 65% + 上下层直系亲属权重 35%），
+   *    实现如丝般顺滑的连续平移跟拍，同时确保上一棵树、当前树与下一棵树同框可见。
    */
   private static computeFocusCamera(
     targetItem: LayoutItem,
@@ -226,62 +231,46 @@ export class TreeOfTreesCanvasAdapter {
     totalH: number,
     userScale?: number | null
   ): { scale: number; tx: number; ty: number } {
-    const cluster = new Set<LayoutItem>([targetItem]);
+    const family: LayoutItem[] = [targetItem];
 
     const findParent = (child: LayoutItem): LayoutItem | undefined =>
       flatItems.find((it) => it.leftChild === child || it.rightChild === child);
 
     const parentItem = findParent(targetItem);
     if (parentItem) {
-      cluster.add(parentItem);
-      // 纳入同父兄弟树，保持父节点左右分支对称同框
-      if (parentItem.leftChild) cluster.add(parentItem.leftChild);
-      if (parentItem.rightChild) cluster.add(parentItem.rightChild);
+      family.push(parentItem);
     }
+    if (targetItem.leftChild) family.push(targetItem.leftChild);
+    if (targetItem.rightChild) family.push(targetItem.rightChild);
 
-    // 纳入下一层子调用树（下一棵树）
-    if (targetItem.leftChild) cluster.add(targetItem.leftChild);
-    if (targetItem.rightChild) cluster.add(targetItem.rightChild);
-
-    // 边界补偿 1：若当前是叶子节点（无下一层子树），向上追加祖父节点以保持三层上下文视野
+    // 边界补偿：叶子节点向上纳入祖父节点，根节点向下纳入孙节点，保持垂直三层视野连续
     if (!targetItem.leftChild && !targetItem.rightChild && parentItem) {
       const grandParent = findParent(parentItem);
-      if (grandParent) cluster.add(grandParent);
+      if (grandParent) family.push(grandParent);
     }
 
-    // 边界补偿 2：若当前是根节点（无上一层父树），向下追加孙节点层以保持三层前瞻视野
-    if (!parentItem) {
-      for (const ch of targetItem.children) {
-        if (ch.leftChild) cluster.add(ch.leftChild);
-        if (ch.rightChild) cluster.add(ch.rightChild);
-      }
-    }
-
-    const clusterArr = Array.from(cluster);
-    const padX = 42;
-    const padY = 34;
-
-    const minX = Math.min(...clusterArr.map((it) => it.x - it.width / 2)) - padX;
-    const maxX = Math.max(...clusterArr.map((it) => it.x + it.width / 2)) + padX;
-    const minY = Math.min(...clusterArr.map((it) => it.y)) - padY;
-    const maxY = Math.max(...clusterArr.map((it) => it.y + it.height)) + padY;
-
-    // 设定最小包围盒下限（至少容纳 2.6 张卡片宽、2.85 张卡片高），防止节点极少时过度放大只剩孤立单卡
-    const boxW = Math.max(targetItem.width * 2.6, maxX - minX);
-    const boxH = Math.max(targetItem.height * 2.85, maxY - minY);
-
-    const rawScale = Math.min(totalW / boxW, totalH / boxH);
-    // 若用户手动调整过缩放比例 (userScale)，严格记忆并沿用用户的缩放比例，绝不在下一步时重置回默认值
+    // 1. 恒定默认缩放比：仅取决于 (totalW, totalH, cardW, cardH)，在所有步骤间 100% 恒定不变，绝不随节点位置忽大忽小
+    const fixedWindowW = targetItem.width * 3.1;
+    const fixedWindowH = targetItem.height * 3.05;
+    const defaultScale = Math.max(
+      1.08,
+      Math.min(1.32, Math.min(totalW / fixedWindowW, totalH / fixedWindowH))
+    );
     const scale =
       userScale != null
         ? Math.max(0.4, Math.min(3.2, userScale))
-        : Math.max(1.05, Math.min(1.75, rawScale));
+        : defaultScale;
 
-    // 几何中心微向当前活跃卡片倾斜 15%，确保上下文簇完整入画的同时视觉重心落在当前树
-    const boxCenterX = (minX + maxX) / 2;
-    const boxCenterY = (minY + maxY) / 2;
-    const centerX = boxCenterX * 0.85 + targetItem.x * 0.15;
-    const centerY = boxCenterY * 0.85 + (targetItem.y + targetItem.height / 2) * 0.15;
+    // 2. 连续平滑重心：以当前活跃树为主锚点 (65%)，融合直系上下层父子树的几何中心 (35%)
+    const minX = Math.min(...family.map((it) => it.x - it.width / 2));
+    const maxX = Math.max(...family.map((it) => it.x + it.width / 2));
+    const minY = Math.min(...family.map((it) => it.y));
+    const maxY = Math.max(...family.map((it) => it.y + it.height));
+
+    const familyCenterX = (minX + maxX) / 2;
+    const familyCenterY = (minY + maxY) / 2;
+    const centerX = targetItem.x * 0.65 + familyCenterX * 0.35;
+    const centerY = (targetItem.y + targetItem.height / 2) * 0.65 + familyCenterY * 0.35;
 
     return {
       scale,
@@ -423,13 +412,28 @@ export class TreeOfTreesCanvasAdapter {
     const state = this.getViewState(container);
 
     // 1. 紧凑型二叉树轮廓布局度量
-    const { items: flatItems, totalW, totalH } = this.computeBinaryTreeLayout(rootNode);
+    const { items: flatItems, rootItem, totalW, totalH } = this.computeBinaryTreeLayout(rootNode);
 
-    // 1.5 自动聚焦与智能缩放：当开启 autoFollow 时，每步自动锁定当前活跃调用帧并放大至黄金清晰比例
+    // 1.5 连续焦点追踪与恒定缩放：
+    // 注意 flatItems 为后序遍历序列（根节点在末尾），回退查找 waiting 节点时必须取最大深度节点或延续上一步焦点，严禁 .pop() 误取根节点导致镜头跳回顶部！
+    const waitingItems = flatItems.filter((it) => it.node.status === 'waiting');
+    const deepestWaiting =
+      waitingItems.length > 0
+        ? waitingItems.reduce((a, b) => (b.node.depth >= a.node.depth ? b : a))
+        : undefined;
+    const rememberedItem = state.lastActiveNodeId
+      ? flatItems.find((it) => it.node.id === state.lastActiveNodeId)
+      : undefined;
+
     const activeItem =
       flatItems.find((it) => it.node.status === 'active') ||
-      flatItems.filter((it) => it.node.status === 'waiting').pop() ||
-      flatItems[0];
+      rememberedItem ||
+      deepestWaiting ||
+      rootItem;
+
+    if (activeItem) {
+      state.lastActiveNodeId = activeItem.node.id;
+    }
 
     if (state.autoFollow && activeItem) {
       const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH, state.userScale);

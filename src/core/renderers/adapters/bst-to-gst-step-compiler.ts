@@ -235,7 +235,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
     // 1. 递归右子树
     trace.addRecursePrep(`reverseInorder(node.right=${node.right ? node.right.val : 'null'})`, depth, '深入右分支');
     if (thisCall) {
-      thisCall.status = 'waiting';
+      thisCall.status = 'active';
     }
     steps.push({
       tree: cloneTree(workingRoot),
@@ -253,7 +253,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val],
     });
-    reverseInorder(node.right, depth + 1);
+    if (thisCall && node.right) { thisCall.status = 'waiting'; } reverseInorder(node.right, depth + 1);
 
     // 2. 访问当前节点：累加 sum 并更新 node.val
     if (thisCall) {
@@ -316,7 +316,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
     // 3. 递归左子树
     trace.addRecursePrep(`reverseInorder(node.left=${node.left ? node.left.val : 'null'})`, depth, '深入左分支');
     if (thisCall) {
-      thisCall.status = 'waiting';
+      thisCall.status = 'active';
     }
     steps.push({
       tree: cloneTree(workingRoot),
@@ -334,7 +334,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       stageId: 'stage-1',
       highlightedNodes: [sum],
     });
-    reverseInorder(node.left, depth + 1);
+    if (thisCall && node.left) { thisCall.status = 'waiting'; } reverseInorder(node.left, depth + 1);
 
     if (thisCall) {
       thisCall.status = 'done';
