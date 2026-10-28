@@ -51,6 +51,12 @@ export function cloneTree(node: TreeNode | null, visited = new Set<TreeNode>()):
 /** 树上挂树深度克隆 (Deep Clone TreeOfTrees) */
 export function cloneTreeOfTrees(node: TreeOfTreesNode | null): TreeOfTreesNode | null {
   if (!node) return null;
+  const l = cloneTreeOfTrees(node.leftChild || null);
+  const r = cloneTreeOfTrees(node.rightChild || null);
+  const children: TreeOfTreesNode[] = [];
+  if (l) children.push(l);
+  if (r) children.push(r);
+
   return {
     id: node.id,
     funcCall: node.funcCall,
@@ -61,7 +67,9 @@ export function cloneTreeOfTrees(node: TreeOfTreesNode | null): TreeOfTreesNode 
     sum: node.sum,
     valueTransition: node.valueTransition ? { ...node.valueTransition } : undefined,
     treeSnapshot: cloneTree(node.treeSnapshot),
-    children: (node.children || []).map((c) => cloneTreeOfTrees(c)!),
+    children: children.length > 0 ? children : (node.children || []).map((c) => cloneTreeOfTrees(c)!),
+    leftChild: l,
+    rightChild: r,
   };
 }
 
@@ -80,37 +88,23 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
   let sum = 0;
   const reverseSeq: Array<{ oldVal: number; newVal: number }> = [];
 
-  let callIdCounter = 0;
-  function createCallNode(
-    funcCall: string,
-    depth: number,
-    branch: 'root' | 'right' | 'left',
-    activeNodeVal: number | null,
-    treeSnapshot: TreeNode | null,
-    currentSum: number,
-    status: 'active' | 'waiting' | 'done' | 'base-null' = 'active'
-  ): TreeOfTreesNode {
-    return {
-      id: `call-${++callIdCounter}`,
-      funcCall,
-      depth,
-      branch,
-      status,
-      activeNodeVal,
-      sum: currentSum,
-      treeSnapshot: cloneTree(treeSnapshot),
-      children: [],
-    };
-  }
-
-  let motherTreeRoot: TreeOfTreesNode | null = null;
   const workingRoot = cloneTree(root);
 
   if (!workingRoot) {
     trace.addHeader('convertBST(root=null)', 0, '空树特判');
     trace.addConditionHit('root == null -> return null', 0, '树为空，直接返回 null');
     trace.addFinalResult('return null', 0, '空树退出', 'null');
-    motherTreeRoot = createCallNode('convertBST(root=null)', 0, 'root', null, null, 0, 'done');
+    const emptyTot: TreeOfTreesNode = {
+      id: 'call-null',
+      funcCall: 'reverseInorder(null)',
+      depth: 0,
+      branch: 'root',
+      status: 'done',
+      activeNodeVal: null,
+      sum: 0,
+      treeSnapshot: null,
+      children: [],
+    };
     steps.push({
       tree: null,
       currOldVal: null,
@@ -123,15 +117,53 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       log: 'empty tree -> return null',
       codeLine: BST_TO_GST_STAGE1_LINES.done,
       callTrace: trace.snapshot(),
-      treeOfTrees: cloneTreeOfTrees(motherTreeRoot),
+      treeOfTrees: emptyTot,
       stageId: 'stage-1',
     });
     return steps;
   }
 
+  // 1. 预先构建完整的二叉递归树拓扑 (Full Binary Recursion Tree Topology)
+  // 方便用户全景俯瞰、直观观察与全局静态分析
+  const callNodeMap = new Map<number, TreeOfTreesNode>();
+
+  function buildFullCallTree(
+    node: TreeNode | null,
+    depth: number,
+    branch: 'root' | 'right' | 'left'
+  ): TreeOfTreesNode | null {
+    if (!node) return null;
+    const lChild = buildFullCallTree(node.left, depth + 1, 'left');
+    const rChild = buildFullCallTree(node.right, depth + 1, 'right');
+    const children: TreeOfTreesNode[] = [];
+    if (lChild) children.push(lChild);
+    if (rChild) children.push(rChild);
+
+    const callNode: TreeOfTreesNode = {
+      id: `call-${node.val}`,
+      funcCall: `reverseInorder(${node.val})`,
+      depth,
+      branch,
+      status: 'pending',
+      activeNodeVal: node.val,
+      sum: 0,
+      treeSnapshot: cloneTree(workingRoot),
+      children,
+      leftChild: lChild,
+      rightChild: rChild,
+    };
+    callNodeMap.set(node.val, callNode);
+    return callNode;
+  }
+
+  const motherTreeRoot = buildFullCallTree(workingRoot, 0, 'root');
+
   // 初始化入口
   trace.addHeader(`convertBST(root=${workingRoot.val})`, 0, '初始化 sum=0，开启右-根-左反向中序');
-  motherTreeRoot = createCallNode(`convertBST(${workingRoot.val})`, 0, 'root', workingRoot.val, workingRoot, 0, 'active');
+  if (motherTreeRoot) {
+    motherTreeRoot.status = 'active';
+  }
+
   steps.push({
     tree: cloneTree(workingRoot),
     currOldVal: workingRoot.val,
@@ -149,21 +181,12 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
     highlightedNodes: [workingRoot.val],
   });
 
-  function reverseInorder(
-    node: TreeNode | null,
-    depth: number,
-    parentCall: TreeOfTreesNode | null,
-    branch: 'root' | 'right' | 'left'
-  ) {
+  function reverseInorder(node: TreeNode | null, depth: number) {
     if (!node) {
       trace.addHeader('reverseInorder(node=null)', depth, '空节点触底返回');
       trace.addConditionHit('node == null -> return', depth, '命中基底条件');
       trace.addReturnLeaf('return', depth, 'null');
 
-      const nullNode = createCallNode('reverseInorder(null)', depth, branch, null, workingRoot, sum, 'base-null');
-      if (parentCall) {
-        parentCall.children.push(nullNode);
-      }
       steps.push({
         tree: cloneTree(workingRoot),
         currOldVal: null,
@@ -179,19 +202,17 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
         treeOfTrees: cloneTreeOfTrees(motherTreeRoot),
         stageId: 'stage-1',
       });
-      nullNode.status = 'done';
       return;
+    }
+
+    const thisCall = callNodeMap.get(node.val);
+    if (thisCall) {
+      thisCall.status = 'active';
+      thisCall.treeSnapshot = cloneTree(workingRoot);
     }
 
     // 递归进入当前节点
     trace.addHeader(`reverseInorder(node=${node.val})`, depth, `进入节点 ${node.val}，先递归右子树`);
-    const thisCall = createCallNode(`reverseInorder(${node.val})`, depth, branch, node.val, workingRoot, sum, 'active');
-    if (parentCall) {
-      parentCall.children.push(thisCall);
-    } else if (!motherTreeRoot) {
-      motherTreeRoot = thisCall;
-    }
-
     steps.push({
       tree: cloneTree(workingRoot),
       currOldVal: node.val,
@@ -211,7 +232,9 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
 
     // 1. 递归右子树
     trace.addRecursePrep(`reverseInorder(node.right=${node.right ? node.right.val : 'null'})`, depth, '深入右分支');
-    thisCall.status = 'waiting';
+    if (thisCall) {
+      thisCall.status = 'waiting';
+    }
     steps.push({
       tree: cloneTree(workingRoot),
       currOldVal: node.val,
@@ -228,19 +251,23 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       stageId: 'stage-1',
       highlightedNodes: [node.val],
     });
-    reverseInorder(node.right, depth + 1, thisCall, 'right');
+    reverseInorder(node.right, depth + 1);
 
     // 2. 访问当前节点：累加 sum 并更新 node.val
-    thisCall.status = 'active';
+    if (thisCall) {
+      thisCall.status = 'active';
+    }
     const oldVal = node.val;
     sum += oldVal;
     node.val = sum;
     reverseSeq.push({ oldVal, newVal: sum });
 
-    thisCall.sum = sum;
-    thisCall.activeNodeVal = sum;
-    thisCall.valueTransition = { oldVal, newVal: sum };
-    thisCall.treeSnapshot = cloneTree(workingRoot);
+    if (thisCall) {
+      thisCall.sum = sum;
+      thisCall.activeNodeVal = sum;
+      thisCall.valueTransition = { oldVal, newVal: sum };
+      thisCall.treeSnapshot = cloneTree(workingRoot);
+    }
 
     trace.addUnwindCalc(
       `sum += ${oldVal} -> sum=${sum}, node.val=${sum}`,
@@ -286,7 +313,9 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
 
     // 3. 递归左子树
     trace.addRecursePrep(`reverseInorder(node.left=${node.left ? node.left.val : 'null'})`, depth, '深入左分支');
-    thisCall.status = 'waiting';
+    if (thisCall) {
+      thisCall.status = 'waiting';
+    }
     steps.push({
       tree: cloneTree(workingRoot),
       currOldVal: oldVal,
@@ -303,14 +332,16 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       stageId: 'stage-1',
       highlightedNodes: [sum],
     });
-    reverseInorder(node.left, depth + 1, thisCall, 'left');
+    reverseInorder(node.left, depth + 1);
 
-    thisCall.status = 'done';
-    thisCall.treeSnapshot = cloneTree(workingRoot);
+    if (thisCall) {
+      thisCall.status = 'done';
+      thisCall.treeSnapshot = cloneTree(workingRoot);
+    }
     trace.addReturnLeaf(`node=${sum} 子树转换完毕`, depth);
   }
 
-  reverseInorder(workingRoot, 0, motherTreeRoot, 'root');
+  reverseInorder(workingRoot, 0);
 
   // 完成
   trace.addFinalResult('return root', 0, `累加树转换全部完成，总累加和为 ${sum}`, String(sum));
