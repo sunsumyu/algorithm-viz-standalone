@@ -52,6 +52,8 @@ interface ViewState {
   tx: number;
   ty: number;
   autoFollow: boolean;
+  /** 用户手动调整过的缩放比例（跨步骤持久记忆，绝不在下一步时重置回默认缩放） */
+  userScale: number | null;
   isDragging: boolean;
   startX: number;
   startY: number;
@@ -59,11 +61,42 @@ interface ViewState {
 const viewStateMap = new WeakMap<HTMLElement, ViewState>();
 
 export class TreeOfTreesCanvasAdapter {
+  /**
+   * 解析持久化状态宿主节点：
+   * 即使上层适配器（如 BstToGstCanvasAdapter）在每一步重建内部 canvasBox 子容器，
+   * 也能向上溯源锚定持久化的 #dsp-sandbox-container / #dsp-deduction-container 或父容器，
+   * 确保用户的缩放比例 (userScale) 与视口状态跨步骤 100% 持久记忆。
+   */
+  private static resolveStateHost(container: HTMLElement): HTMLElement {
+    const persistentHost = container.closest(
+      '#dsp-sandbox-container, #dsp-deduction-container, .dsp-sandbox-wrap, .dsp-deduction-wrap'
+    ) as HTMLElement | null;
+    if (persistentHost) return persistentHost;
+    if (
+      container.parentElement &&
+      container.parentElement !== document.body &&
+      container.parentElement !== document.documentElement
+    ) {
+      return container.parentElement;
+    }
+    return container;
+  }
+
   private static getViewState(container: HTMLElement): ViewState {
-    let state = viewStateMap.get(container);
+    const host = this.resolveStateHost(container);
+    let state = viewStateMap.get(host);
     if (!state) {
-      state = { scale: 1, tx: 0, ty: 0, autoFollow: true, isDragging: false, startX: 0, startY: 0 };
-      viewStateMap.set(container, state);
+      state = {
+        scale: 1,
+        tx: 0,
+        ty: 0,
+        autoFollow: true,
+        userScale: null,
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+      };
+      viewStateMap.set(host, state);
     }
     return state;
   }
@@ -190,7 +223,8 @@ export class TreeOfTreesCanvasAdapter {
     targetItem: LayoutItem,
     flatItems: LayoutItem[],
     totalW: number,
-    totalH: number
+    totalH: number,
+    userScale?: number | null
   ): { scale: number; tx: number; ty: number } {
     const cluster = new Set<LayoutItem>([targetItem]);
 
@@ -237,7 +271,11 @@ export class TreeOfTreesCanvasAdapter {
     const boxH = Math.max(targetItem.height * 2.85, maxY - minY);
 
     const rawScale = Math.min(totalW / boxW, totalH / boxH);
-    const scale = Math.max(1.05, Math.min(1.75, rawScale));
+    // 若用户手动调整过缩放比例 (userScale)，严格记忆并沿用用户的缩放比例，绝不在下一步时重置回默认值
+    const scale =
+      userScale != null
+        ? Math.max(0.4, Math.min(3.2, userScale))
+        : Math.max(1.05, Math.min(1.75, rawScale));
 
     // 几何中心微向当前活跃卡片倾斜 15%，确保上下文簇完整入画的同时视觉重心落在当前树
     const boxCenterX = (minX + maxX) / 2;
@@ -394,7 +432,7 @@ export class TreeOfTreesCanvasAdapter {
       flatItems[0];
 
     if (state.autoFollow && activeItem) {
-      const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH);
+      const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH, state.userScale);
       state.scale = cam.scale;
       state.tx = cam.tx;
       state.ty = cam.ty;
@@ -592,10 +630,10 @@ export class TreeOfTreesCanvasAdapter {
         </text>
       `;
 
-      // 点击任意卡片可平滑聚焦放大至该卡片
+      // 点击任意卡片可平滑聚焦至该卡片（保留用户自定义缩放比例）
       cardG.addEventListener('click', (e) => {
         e.stopPropagation();
-        const cam = this.computeFocusCamera(item, flatItems, totalW, totalH);
+        const cam = this.computeFocusCamera(item, flatItems, totalW, totalH, state.userScale);
         state.scale = cam.scale;
         state.tx = cam.tx;
         state.ty = cam.ty;
@@ -609,7 +647,7 @@ export class TreeOfTreesCanvasAdapter {
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
 
-    // 5. 绑定平移、聚焦与以视口中心为锚点的缩放事件
+    // 5. 绑定平移、聚焦与以视口中心为锚点的缩放事件（持久化记住用户手动调整的缩放比例）
     const zoomAtCenter = (nextScale: number, smooth = true) => {
       const clamped = Math.max(0.4, Math.min(3.2, nextScale));
       const cx = totalW / 2;
@@ -617,6 +655,7 @@ export class TreeOfTreesCanvasAdapter {
       const worldX = (cx - state.tx) / state.scale;
       const worldY = (cy - state.ty) / state.scale;
       state.scale = clamped;
+      state.userScale = clamped;
       state.tx = cx - worldX * state.scale;
       state.ty = cy - worldY * state.scale;
       syncTransform(smooth);
@@ -632,7 +671,7 @@ export class TreeOfTreesCanvasAdapter {
         e.stopPropagation();
         state.autoFollow = true;
         if (activeItem) {
-          const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH);
+          const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH, state.userScale);
           state.scale = cam.scale;
           state.tx = cam.tx;
           state.ty = cam.ty;
@@ -644,14 +683,12 @@ export class TreeOfTreesCanvasAdapter {
     if (zoomInBtn) {
       zoomInBtn.onclick = (e) => {
         e.stopPropagation();
-        state.autoFollow = false;
         zoomAtCenter(state.scale * 1.2, true);
       };
     }
     if (zoomOutBtn) {
       zoomOutBtn.onclick = (e) => {
         e.stopPropagation();
-        state.autoFollow = false;
         zoomAtCenter(state.scale / 1.2, true);
       };
     }
@@ -659,6 +696,7 @@ export class TreeOfTreesCanvasAdapter {
       resetBtn.onclick = (e) => {
         e.stopPropagation();
         state.autoFollow = false;
+        state.userScale = null;
         state.scale = 1;
         state.tx = 0;
         state.ty = 0;
@@ -668,7 +706,6 @@ export class TreeOfTreesCanvasAdapter {
 
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
-      state.autoFollow = false;
       const factor = e.deltaY > 0 ? 0.9 : 1.1;
       zoomAtCenter(state.scale * factor, false);
     });
@@ -676,7 +713,6 @@ export class TreeOfTreesCanvasAdapter {
     svg.addEventListener('mousedown', (e) => {
       if (e.target instanceof SVGElement && e.target.closest('button')) return;
       state.isDragging = true;
-      state.autoFollow = false;
       state.startX = e.clientX - state.tx;
       state.startY = e.clientY - state.ty;
       svg.style.cursor = 'grabbing';
@@ -684,6 +720,7 @@ export class TreeOfTreesCanvasAdapter {
 
     window.addEventListener('mousemove', (e) => {
       if (!state.isDragging) return;
+      state.autoFollow = false;
       state.tx = e.clientX - state.startX;
       state.ty = e.clientY - state.startY;
       syncTransform(false);

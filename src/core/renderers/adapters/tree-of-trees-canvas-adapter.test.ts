@@ -227,4 +227,51 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
     expect(cloned?.valueTransition).toEqual(original.valueTransition);
     expect(cloned?.valueTransition).not.toBe(original.valueTransition);
   });
+
+  it('用户手动调整缩放比例后，在下一步（即使外层容器每次重建子 canvasBox）时严格记住并保持用户缩放比例，绝不重置回默认缩放', () => {
+    const root = parseAndBuildBstToGstTree();
+    const steps = buildBstToGstStage1Steps(root);
+
+    const sandboxHost = document.createElement('div');
+    sandboxHost.id = 'dsp-sandbox-container';
+    document.body.appendChild(sandboxHost);
+
+    // 模拟 BstToGstCanvasAdapter.renderCanvas 每一步清空 container 并新建 canvasBox 的真实生命周期
+    const renderStepInRecreatedBox = (stepIdx: number) => {
+      sandboxHost.innerHTML = '';
+      const canvasBox = document.createElement('div');
+      sandboxHost.appendChild(canvasBox);
+      TreeOfTreesCanvasAdapter.render(canvasBox, steps[stepIdx].treeOfTrees!);
+      return canvasBox;
+    };
+
+    // 第 1 步渲染
+    const box1 = renderStepInRecreatedBox(1);
+    const getScale = (el: HTMLElement) => {
+      const tf = el.querySelector('#tot-main-group')?.getAttribute('transform') || '';
+      const m = tf.match(/scale\(([0-9.]+)\)/);
+      return m ? Number(m[1]) : NaN;
+    };
+    const defaultScale = getScale(box1);
+    expect(defaultScale).toBeGreaterThanOrEqual(1.05);
+
+    // 用户点击两次缩小按钮 "－" 自定义缩放比例
+    const zoomOutBtn = box1.querySelector('#tot-zoom-out') as HTMLButtonElement;
+    zoomOutBtn.click();
+    zoomOutBtn.click();
+    const userAdjustedScale = getScale(box1);
+    expect(userAdjustedScale).toBeLessThan(defaultScale);
+
+    // 推进到下一步（第 2 步、第 5 步）：即使每次新建了 canvasBox，缩放比例也必须严格保持为 userAdjustedScale！
+    const box2 = renderStepInRecreatedBox(2);
+    expect(getScale(box2)).toBeCloseTo(userAdjustedScale, 4);
+
+    const box5 = renderStepInRecreatedBox(5);
+    expect(getScale(box5)).toBeCloseTo(userAdjustedScale, 4);
+
+    // 点击「⟲ 全景重置」后清除用户自定义缩放并回到 1.0 全景
+    const resetBtn = box5.querySelector('#tot-reset') as HTMLButtonElement;
+    resetBtn.click();
+    expect(getScale(box5)).toBe(1);
+  });
 });
