@@ -4,7 +4,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { BSTSStep } from './bst-search-step-compiler';
 
 export class BstSearchCanvasAdapter {
@@ -95,12 +94,25 @@ export class BstSearchCanvasAdapter {
     `;
     container.appendChild(pathBox);
 
-    // 3. 中间推演区：如果是 Stage 2 展示 Call Trace，其他 Stage 展示单向剪枝/槽位信息
-    if (step.stageId === 'stage-2' && step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText = 'flex:1; min-height:140px; max-height:240px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
-      container.appendChild(traceBox);
+    // 3. 中间推演区：如果是 Stage 2 展示 BST 判别条件，其他 Stage 展示单向剪枝/槽位信息
+    if (step.stageId === 'stage-2') {
+      const cmpBox = document.createElement('div');
+      cmpBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#eff6ff; border:1px solid #bfdbfe; flex-shrink:0; font-size:11px;';
+      const cur = step.current;
+      const target = step.val;
+      let cmpText = '等待深入';
+      if (cur !== null && cur !== undefined) {
+        if (target < cur) cmpText = `目标 ${target} < 当前 ${cur} ➔ 向左子树下潜 (searchBST(root.left))`;
+        else if (target > cur) cmpText = `目标 ${target} > 当前 ${cur} ➔ 向右子树下潜 (searchBST(root.right))`;
+        else cmpText = `目标 ${target} === 当前 ${cur} ➔ 精准命中，返回当前子树根节点！`;
+      }
+      cmpBox.innerHTML = `
+        <div style="font-weight:700; color:#1d4ed8; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
+          <span>🔍 BST 递归二分判别条件 (LC 700)</span>
+        </div>
+        <div style="font-family:ui-monospace,monospace; color:#1e40af; font-size:11px;">${cmpText}</div>
+      `;
+      container.appendChild(cmpBox);
     } else if (step.stageId === 'stage-3') {
       const insertBox = document.createElement('div');
       insertBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#faf5ff; border:1px solid #e9d5ff; flex-shrink:0; font-size:11px;';

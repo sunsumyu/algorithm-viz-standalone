@@ -62,6 +62,20 @@ Tauri + Vite 算法可视化桌面应用（586 个算法），前端 TypeScript�
    ```
    所有自省门禁以 Exit Code 0 为唯一通过判据。若退出码非 0，必须从控制台提取【红灯陷阱编号】与【纠偏指引】自愈修复生产代码，直至全绿方可宣布完成。
 
+## UI 表现层卡片分工与单一事实来源规范 (Card Hierarchy & Invariant Standards)
+1. **Card 1 拓扑沙盘 (60%~70% 黄金主角区)**：
+   - 承载算法主交互沙盘（SVG/Canvas 树、网格、图、数组切片）与 3D 拓扑；
+   - **推演树独占归属**：全景推演树与递归调用跟踪树（`RecursiveCallTraceAdapter`）**绝对严禁塞入 Card 2**！推演树必须由 Card 1 的子视图切换器（`btn-subview-deduction` / `Card1SubViewControlsAdapter` 挂载至 `#dsp-deduction-container`）在 Card 1 的全尺寸大画布展开。
+2. **Card 2 状态指标监视器 (高度 $\le 150\text{px}$ 紧凑辅助区)**：
+   - 严禁塞入任何形态的全景推演树、递归调用栈（`RecursiveCallTraceAdapter`）或纵向滚动的巨型盒子！
+   - 严格限定于：`.dsp-metrics-grid`（4格/6格关键 KPI）、轻量领域微型数据流（单调栈槽位、降序中序切片、DP 二元组、递归边界开区间判定卡）、实时决策解说卡（`dsp-live-text`）。
+3. **Card 3 代码控制台 (Dark Terminal)**：
+   - 1-based 严格行号联动，展示多语言源码与当前指令高亮。
+4. **Card 4 执行日志流 (ExecutionLogPresenter 唯一事实来源)**：
+   - 全库 658+ 道算法彻底统一委托 `ExecutionLogPresenter`（`src/core/renderers/execution-log-presenter.ts`）；
+   - 100% 对齐不同路径黄金基准：浅板色标题头、SVG 列表图标、`#log-count` 药丸徽标、平滑自动吸底滚动、当前活跃行蓝色背景（`#eff6ff`）+ 左侧 3px 鲜蓝边框（`border-blue-600`）、非活跃行板灰色文字与 `#N` 步骤计数。
+
+
 ## 浏览器可视化调试与视口规范
 进行浏览器端 UI 调试、Puppeteer 自动化交互或截图核验时，严格遵循 `browser-viewport-debugging` Skill：
 1. **显式全高清视口参数**：每次截图与视口设置必须显式指定：

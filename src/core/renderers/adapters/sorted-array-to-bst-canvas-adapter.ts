@@ -5,7 +5,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import {
   SortedArrayToBstStep,
   collectTreeValues,
@@ -245,18 +244,6 @@ export function renderSortedArrayToBstCustomMetrics(container: HTMLElement, step
     </div>
   `;
   container.appendChild(monitorBox);
-
-  // 渲染编译好的递归调用树跟踪沙盘
-  if (step.callTrace && step.callTrace.lines && step.callTrace.lines.length > 0) {
-    const traceWrap = document.createElement('div');
-    traceWrap.style.cssText = 'flex:1;min-height:120px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;background:#ffffff;';
-    traceWrap.innerHTML = RecursiveCallTraceAdapter.renderHtml(step.callTrace, {
-      maxHeight: '100%',
-      showTerminalHeader: true,
-      theme: 'light',
-    });
-    container.appendChild(traceWrap);
-  }
 }
 
 export const SortedArrayToBstCanvasAdapter = {

@@ -7,7 +7,7 @@
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { TreeNode } from '../../../algorithms/categories/tree/tree-template';
-import { RecursiveCallTraceAdapter, RecursiveCallTraceSnapshot } from './recursive-call-trace-adapter';
+import type { RecursiveCallTraceSnapshot } from './recursive-call-trace-adapter';
 
 export interface BottomLeftStepPresentation {
   tree: TreeNode | null;
@@ -99,17 +99,21 @@ export class BottomLeftCanvasAdapter {
     `;
     container.appendChild(statsRow);
 
-    // 2. 核心状态展示区：Stage 1 为递归推演栈，Stage 2/3 为 BFS 队列监视器
-    if (step.stageId === 'stage-1' && step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-        title: '🌲 先序先登 DFS 递归调用推演栈 (LC 513)',
-        theme: 'light',
-        maxHeight: '100%',
-        showTerminalHeader: true,
-      });
-      container.appendChild(traceBox);
+    // 2. 核心状态展示区：Stage 1 为深度判定卡，Stage 2/3 为 BFS 队列监视器
+    if (step.stageId === 'stage-1') {
+      const dfsCard = document.createElement('div');
+      dfsCard.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f0fdf4; border:1px solid #bbf7d0; flex-shrink:0; font-size:11px;';
+      const isNewDeepest = step.depth > step.maxDepth;
+      dfsCard.innerHTML = `
+        <div style="font-weight:700; color:#15803d; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+          <span>🌲 先序先登深度判定 (优先深入左子树)</span>
+          <span style="font-family:ui-monospace,monospace; font-size:10px; color:#16a34a;">depth: ${step.depth} vs maxDepth: ${step.maxDepth}</span>
+        </div>
+        <div style="font-family:ui-monospace,monospace; font-size:11px; color:#166534;">
+          ${isNewDeepest ? '✨ 当前深度突破历史最深！左子树节点率先登顶，锁定为左下角候选值。' : '当前深度未超过历史最深记录，继续下潜或回溯。'}
+        </div>
+      `;
+      container.appendChild(dfsCard);
     } else if (step.queueState && step.queueState.length >= 0) {
       const queueBox = document.createElement('div');
       queueBox.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; overflow-y:auto;';

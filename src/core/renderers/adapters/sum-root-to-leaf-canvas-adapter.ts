@@ -8,7 +8,6 @@ import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { TreeNode } from '../../../algorithms/categories/tree/tree-template';
 import { collectTreeValues } from './sum-root-to-leaf-step-compiler';
 import type { SumNumbersStep, TreeNodeData } from './sum-root-to-leaf-step-compiler';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 
 export function renderSumNumbersCanvas(container: HTMLElement, step: SumNumbersStep): void {
   const { nodes, currentNodeId, activePathNodeIds, completedPaths, totalSum, tree, queueState, stackState } = step;
@@ -150,17 +149,24 @@ export function renderSumNumbersCustomMetrics(container: HTMLElement, step: SumN
   `;
   container.appendChild(statsRow);
 
-  // 2. 核心状态展示区：Stage 1 为递归推演栈，Stage 2 为 BFS 队列，Stage 3 为显式双栈
-  if (step.stageId === 'stage-1' && step.callTrace) {
-    const traceBox = document.createElement('div');
-    traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-      title: '🌿 递归自顶向下累加推演栈 (LC 129)',
-      theme: 'light',
-      maxHeight: '100%',
-      showTerminalHeader: true,
-    });
-    container.appendChild(traceBox);
+  // 2. 核心状态展示区：Stage 1 为路径数值方程卡，Stage 2 为 BFS 队列，Stage 3 为显式双栈
+  if (step.stageId === 'stage-1') {
+    const formulaCard = document.createElement('div');
+    formulaCard.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f0fdf4; border:1px solid #bbf7d0; flex-shrink:0; font-size:11px;';
+    const pathVal = step.metrics?.['当前路径值'] ?? '—';
+    const pathsSummary = step.completedPaths && step.completedPaths.length > 0
+      ? ` · 已归约路径: ${step.completedPaths.map((p) => `${p.pathStr}=${p.value}`).join(', ')}`
+      : '';
+    formulaCard.innerHTML = `
+      <div style="font-weight:700; color:#15803d; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+        <span>🌿 路径数值累加方程 (LC 129)</span>
+        <span style="font-family:ui-monospace,monospace; font-size:10px; color:#16a34a;">preSum * 10 + val</span>
+      </div>
+      <div style="font-family:ui-monospace,monospace; font-size:11px; color:#166534;">
+        当前路径数值: <span style="font-weight:700; color:#059669;">${pathVal}</span>${pathsSummary}
+      </div>
+    `;
+    container.appendChild(formulaCard);
   } else if (step.stageId === 'stage-2') {
     const queueBox = document.createElement('div');
     queueBox.style.cssText = 'flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; overflow-y:auto;';

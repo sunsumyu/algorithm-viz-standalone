@@ -25,6 +25,7 @@ import {
 } from './declarative-stage-fragments';
 import type { DeclarativeAlgorithmSpec } from './declarative-stage-spec';
 import { DeductionRendererRegistry } from './deduction/deduction-renderer-registry';
+import { ExecutionLogPresenter } from './execution-log-presenter';
 
 export * from './declarative-stage-spec';
 export { renderMetricsHtml } from './declarative-stage-fragments';
@@ -176,24 +177,8 @@ ${renderStageStyles(ctx.viewId)}
       <!-- Card 3: 暗色代码终端 -->
       <div class="dsp-terminal-card" id="dsp-terminal-container"></div>
 
-      <!-- Card 4: 执行日志流 -->
-      <div class="dsp-log-card">
-        <div class="dsp-card-header">
-          <div class="dsp-card-title" style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #1e293b;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
-            </svg>
-            <span>执行日志</span>
-          </div>
-          <span id="log-count" style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; font-weight: 500;">0 条记录</span>
-        </div>
-        <div class="dsp-log-list" id="log-container"></div>
-      </div>
+      <!-- Card 4: 执行日志流 (委托全库统一顶层抽象 ExecutionLogPresenter) -->
+      ${ExecutionLogPresenter.renderCard4Html()}
     </section>
   </main>
 </div>

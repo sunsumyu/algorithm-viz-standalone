@@ -4,7 +4,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { PSStep, collectTreeValues } from './path-sum-step-compiler';
 
 export class PathSumCanvasAdapter {
@@ -80,20 +79,8 @@ export class PathSumCanvasAdapter {
             ${pathChips}
           </div>
         </div>
-        <div class="ps-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
       </div>
     `;
-    if (step.callTrace) {
-      const traceHost = container.querySelector('.ps-trace-host') as HTMLElement | null;
-      if (traceHost) {
-        RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-          title: '📜 代码随想录·显式回溯 traversal(cur, count) 调用追踪',
-          theme: 'light',
-          maxHeight: '100%',
-          showTerminalHeader: true,
-        });
-      }
-    }
   }
 
   /**
@@ -131,20 +118,8 @@ export class PathSumCanvasAdapter {
             ${pathChips}
           </div>
         </div>
-        <div class="ps-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
       </div>
     `;
-    if (step.callTrace) {
-      const traceHost = container.querySelector('.ps-trace-host') as HTMLElement | null;
-      if (traceHost) {
-        RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-          title: '📜 路径总和减法回溯推演栈',
-          theme: 'light',
-          maxHeight: '100%',
-          showTerminalHeader: true,
-        });
-      }
-    }
   }
 
   /**

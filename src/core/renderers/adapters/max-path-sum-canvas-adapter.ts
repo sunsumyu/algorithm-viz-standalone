@@ -8,7 +8,6 @@ import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { TreeNode } from '../../../algorithms/categories/tree/tree-template';
 import { collectTreeValues } from './max-path-sum-step-compiler';
 import type { PathSumStep } from './max-path-sum-step-compiler';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 
 export function renderMaxPathSumCanvas(container: HTMLElement, step: PathSumStep): void {
   if (step.tree) {
@@ -161,16 +160,31 @@ export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: Path
       </div>
     `;
     container.appendChild(stackBox);
-  } else if (step.callTrace) {
-    const traceBox = document.createElement('div');
-    traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-      title: '📜 递归调用推演与归约栈 (LC 124)',
-      theme: 'light',
-      maxHeight: '100%',
-      showTerminalHeader: true,
-    });
-    container.appendChild(traceBox);
+  } else {
+    const gainBox = document.createElement('div');
+    gainBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f0fdf4; border:1px solid #bbf7d0; flex-shrink:0; font-size:11px;';
+    const leftGain = Math.max(0, step.leftGain);
+    const rightGain = Math.max(0, step.rightGain);
+    const curVal = step.currentNode !== null ? step.currentNode : 0;
+    const archSum = curVal + leftGain + rightGain;
+    const returnGain = curVal + Math.max(leftGain, rightGain);
+    gainBox.innerHTML = `
+      <div style="font-weight:700; color:#15803d; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+        <span>📐 核心树形递归转移计算公式</span>
+        <span style="font-family:ui-monospace,monospace; font-size:10px; color:#16a34a;">LC 124 状态转移</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-family:ui-monospace,monospace; font-size:11px;">
+        <div style="background:#ffffff; border:1px solid #bbf7d0; border-radius:4px; padding:4px 6px;">
+          <span style="color:#64748b; font-size:10px;">当前拱桥和 (更新全局 Ans):</span>
+          <div style="font-weight:700; color:#16a34a; margin-top:1px;">val + max(0,L) + max(0,R) = ${step.currentNode !== null ? archSum : '—'}</div>
+        </div>
+        <div style="background:#ffffff; border:1px solid #bbf7d0; border-radius:4px; padding:4px 6px;">
+          <span style="color:#64748b; font-size:10px;">返回父级单边增益 (Return Gain):</span>
+          <div style="font-weight:700; color:#0284c7; margin-top:1px;">val + max(L, R) = ${step.currentNode !== null ? returnGain : '—'}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(gainBox);
   }
 
   // 4. 当前推演决策总结

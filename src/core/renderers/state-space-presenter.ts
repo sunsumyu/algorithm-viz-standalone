@@ -30,6 +30,7 @@ import { BuyingHaySandboxAdapter } from './adapters/buying-hay-sandbox-adapter';
 import { BoundedKnapsackSandboxAdapter } from './adapters/bounded-knapsack-sandbox-adapter';
 import { IntervalDpSandboxAdapter } from './adapters/interval-dp-sandbox-adapter';
 import { BitmaskDpSandboxAdapter } from './adapters/bitmask-dp-sandbox-adapter';
+import { ExecutionLogPresenter } from './execution-log-presenter';
 
 export interface StateSpacePresentationOptions {
   currentStage: string;
@@ -789,6 +790,7 @@ export class StateSpacePresenter {
 
   /**
    * 渲染动态执行日志流 (Step Log Stream)
+   * 委托全库单一事实来源 ExecutionLogPresenter，对齐《不同路径》黄金标准
    */
   public static renderStepLogStream(
     container: HTMLElement | null,
@@ -796,35 +798,7 @@ export class StateSpacePresenter {
     currentIndex: number,
     logCountEl?: HTMLElement | null
   ): void {
-    if (!container || !steps || steps.length === 0) return;
-    container.innerHTML = '';
-
-    if (logCountEl) {
-      logCountEl.textContent = `${currentIndex + 1} / ${steps.length} 记录`;
-    }
-
-    const doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
-    if (!doc) return;
-
-    const logList = doc.createElement('div');
-    logList.className = 'space-y-1 font-mono-code text-xs';
-
-    for (let idx = 0; idx <= currentIndex; idx++) {
-      const s = steps[idx];
-      const line = doc.createElement('div');
-      const isCurrent = idx === currentIndex;
-
-      line.className = isCurrent
-        ? 'px-2 py-1 rounded bg-blue-50 text-blue-900 font-bold border-l-2 border-blue-500 shadow-2xs flex items-center justify-between'
-        : 'px-2 py-0.5 text-slate-500 text-[11px] flex items-center justify-between hover:bg-slate-50 rounded transition';
-
-      const logText = s.log || s.decision || s.message || s.msg || (s.type ? `步骤 ${idx + 1}: ${s.type}` : `步骤 ${idx + 1}`);
-      line.innerHTML = `<span>${logText}</span><span class="text-[10px] text-slate-400 font-normal">#${idx + 1}</span>`;
-      logList.appendChild(line);
-    }
-
-    container.appendChild(logList);
-    container.scrollTop = container.scrollHeight;
+    ExecutionLogPresenter.renderStepLogs(container, steps, currentIndex, logCountEl);
   }
 
   /**

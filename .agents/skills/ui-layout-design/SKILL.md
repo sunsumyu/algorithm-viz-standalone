@@ -20,7 +20,13 @@ Core UI layout principles for visualization sandboxes, card hierarchy, responsiv
 - **扁平内嵌**：文字、日志、属性直接在卡片内排版，避免内部多余的独立 Card 或 Border 嵌套。
 - **单一语义标签**：使用单一简练专业标签（例如直接使用 `状态转移方程`，避免使用 `状态转移方程 (Transition Formula)` 这类中英冗余双语堆叠）。
 
-### 1.3 顶栏与侧边栏自适应弹性布局
+### 1.3 四卡片职责划分与单一事实来源 (Card Topology Law)
+- **Card 1 (主沙盘 60% ~ 70%)**：承载主算法沙盘与 3D 拓扑。**全景推演树 / 递归调用跟踪树（RecursiveCallTraceAdapter）独占归属 Card 1**！推演树严禁塞入 Card 2，必须通过 Card 1 的子视图切换器（`btn-subview-deduction` / `Card1SubViewControlsAdapter`）在大画布展开。
+- **Card 2 (状态监视器 高度 $\le 150\text{px}$)**：**绝对严禁塞入推演树或调用栈！** 严格限定于 4/6 格 KPI 网格、轻量微型数据流（单调栈槽位、切片条带、DP 二元组、边界开区间判定卡）与实时决策卡。
+- **Card 3 (代码终端)**：1-based 行号联动，多语言代码展示。
+- **Card 4 (执行日志流)**：统一委托 `ExecutionLogPresenter`（`src/core/renderers/execution-log-presenter.ts`），对齐不同路径黄金基准（浅板色表头、SVG 图标、`#log-count` 徽标、活跃行 `#eff6ff` + 3px 鲜蓝边框、平滑吸底滚动）。
+
+### 1.4 顶栏与侧边栏自适应弹性布局
 - 侧边栏展开时，右侧主内容区必须弹性自适应缩减（`flex-1; min-width: 0`），保持主操作按钮与内容始终在视口内可见。
 
 ---

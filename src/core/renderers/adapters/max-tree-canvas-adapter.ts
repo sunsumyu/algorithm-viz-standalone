@@ -7,7 +7,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { MaxTreeStep, collectTreeValues } from './max-tree-step-compiler';
 
 // ============================================================
@@ -193,23 +192,7 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: MaxTreeS
     container.appendChild(formulaCard);
   }
 
-  // 2. 递归调用推演跟踪栈
-  const traceBox = document.createElement('div');
-  traceBox.style.cssText =
-    'flex: 1; min-height: 140px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box;';
-  if (step.callTrace) {
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-      title: '📜 分治递归调用推演栈',
-      theme: 'light',
-      maxHeight: '100%',
-      showTerminalHeader: true,
-    });
-  } else {
-    traceBox.innerHTML = '<span style="color: #94a3b8; font-style: italic; font-size: 12px;">无活动调用栈</span>';
-  }
-  container.appendChild(traceBox);
-
-  // 3. 当前推演决策总结
+  // 2. 当前推演决策总结
   container.appendChild(renderDecisionSummary(step));
 }
 

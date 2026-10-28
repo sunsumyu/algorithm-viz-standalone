@@ -59,6 +59,10 @@ Advance complex implementations through discrete phases. Each phase requires ver
    Base-case null checks (e.g. `root == null`, empty queues) must never strip visual focus and black out the canvas into 100% dead gray. Always bind the parent calling frame as `nullProbe: { parentVal, branch }` and maintain secondary focus, rendering dynamic `∅ null` dashed probes.
 7. **Strict Call-Return Unwind & Engine Normalization**:
    When a recursive child frame returns, never teleport the highlight line directly to subsequent statements. Emit the caller invocation expression frame (`if (!isValidBST(root.left))`) to complete the caller-return lifecycle. All declarative algorithms pass through `StepNormalizationEngine.normalize` to enforce continuity automatically.
+8. **Card 1 vs Card 2 Topology Law (Zero Deduction Tree in Card 2)**:
+   全景推演树与递归调用跟踪树（`RecursiveCallTraceAdapter`）**绝对严禁塞入 Card 2**！推演树属于 Card 1，必须由 Card 1 子视图切换器（`btn-subview-deduction` / `Card1SubViewControlsAdapter` 挂载至 `#dsp-deduction-container`）在全尺寸大画布展开。Card 2 仅限 KPI 网格、微型数据流（单调栈槽位、切片条带、DP 二元组、开区间约束）与实时决策卡（高度 $\le 150\text{px}$）。
+9. **Card 4 ExecutionLogPresenter Single Source of Truth**:
+   所有算法 Card 4 执行日志流彻底统一委托 `ExecutionLogPresenter`，对齐不同路径黄金基准（浅板色表头、SVG 列表图标、`#log-count` 徽标、活跃行 `#eff6ff` + 3px 鲜蓝边框、平滑吸底滚动），严禁任何私自内联拼接非标 Card 4。
 
 ---
 

@@ -7,7 +7,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { InvertStep, collectTreeValues } from './tree-invert-step-compiler';
 
 /** Card 1: 树画布渲染 (Double Invariant Guard) */
@@ -200,21 +199,12 @@ export class TreeInvertCanvasAdapter {
           </div>
         </div>
 
-        <div class="tree-invert-trace-host" style="flex: 1; min-height: 140px; overflow: hidden;"></div>
+        <div style="background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #1e40af; line-height: 1.5;">
+          <span style="font-weight: 700; color: #1d4ed8;">⚡ 指针互换核心操作：</span>
+          <span>${step.current != null ? `当前节点 Node(${step.current}) 执行指针交换：swap(node.left, node.right)` : '整树翻转完毕，前序递归回溯终止。'}</span>
+        </div>
       </div>
     `;
-
-    if (step.callTrace) {
-      const traceHost = container.querySelector('.tree-invert-trace-host') as HTMLElement | null;
-      if (traceHost) {
-        RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-          title: '📜 翻转二叉树前序递归调用推演栈',
-          theme: 'light',
-          maxHeight: '100%',
-          showTerminalHeader: true,
-        });
-      }
-    }
   }
 
   static renderCustomMetricsStage2(container: HTMLElement, step: InvertStep): void {

@@ -5,10 +5,7 @@
  */
 
 import { StepBase } from '../../step-visualizer';
-import {
-  RecursiveCallTraceAdapter,
-  RecursiveCallTraceSnapshot,
-} from './recursive-call-trace-adapter';
+import type { RecursiveCallTraceSnapshot } from './recursive-call-trace-adapter';
 
 export interface GeneralTrieNodeSnapshot {
   id: number;
@@ -447,20 +444,7 @@ export class GeneralTrieCanvasAdapter {
       container.appendChild(staticCard);
     }
 
-    // 4. 调用链路树 (Figure 1 层次规范适配器)
-    if (step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-        title: '🌳 前缀树状态演进与调用链 (Call Trace)',
-        theme: 'light',
-        maxHeight: '100%',
-        showTerminalHeader: true,
-      });
-      container.appendChild(traceBox);
-    }
-
-    // 5. 当前推演决策总结
+    // 4. 当前推演决策总结
     if (step.decision) {
       const isDone = step.decision.includes('完成') || step.decision.includes('结束') || step.decision.includes('成功');
       const summaryBox = document.createElement('div');

@@ -19,6 +19,7 @@ import { SplitterEngine, SplitterStorage } from './splitter-engine';
 import { panelCollapseCoordinator } from './controllers/panel-collapse-coordinator';
 import { registerAlgorithm } from './registry';
 import { StepNormalizationEngine } from './step-normalization-engine';
+import { ExecutionLogPresenter } from './renderers/execution-log-presenter';
 
 const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
 
@@ -876,6 +877,13 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           currentIndex: this.currentIndex,
           stageId: this.currentStageId,
         });
+
+        // 顶层架构守门：全景推演树属于 Card 1 子视图，严禁挤入 Card 2 监视器！
+        // 彻底清除误植入 Card 2 的 RecursiveCallTrace 节点，捍卫 Card 2 纯净性
+        const traceEl = this.customMetricsContainer.querySelector('.tree-trace-container, [class*="tree-trace"], .call-trace-terminal');
+        if (traceEl) {
+          traceEl.remove();
+        }
       } catch (err) {
         this.renderPipelineError(this.customMetricsContainer, err, '辅助视觉 (Card 2)');
       }
@@ -1125,29 +1133,9 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       );
     }
 
-    // 3. 更新日志流 (严格对齐 StateSpacePresenter 标准树形日志模板)
+    // 3. 更新日志流 (委托全库统一顶层抽象 ExecutionLogPresenter，100% 对齐《不同路径》黄金标准)
     if (this.logContainer) {
-      const logs = this.steps.slice(0, this.currentIndex + 1).map((st: any, idx: number) => {
-        const isCurrent = idx === this.currentIndex;
-        const logMsg = st.log || st.msg || st.message || `步骤 #${idx + 1}`;
-
-        const baseStyle = isCurrent
-          ? 'padding: 3px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 2.5px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
-          : 'padding: 2px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
-
-        return `
-          <div style="${baseStyle}">
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px;">${logMsg}</span>
-            <span style="color: #94a3b8; font-size: 10px; font-weight: normal; flex-shrink: 0;">#${idx + 1}</span>
-          </div>
-        `;
-      });
-      this.logContainer.innerHTML = logs.join('');
-      this.logContainer.scrollTop = this.logContainer.scrollHeight;
-    }
-
-    if (this.logCountEl) {
-      this.logCountEl.textContent = `${this.currentIndex + 1} / ${this.steps.length} 记录`;
+      ExecutionLogPresenter.renderStepLogs(this.logContainer, this.steps, this.currentIndex, this.logCountEl);
     }
 
     // 4. 更新贯穿式 Scrubber 步数指示器与进度条

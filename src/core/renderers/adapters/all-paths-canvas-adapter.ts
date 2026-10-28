@@ -8,7 +8,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { AllPathsStep, collectTreeValues } from './all-paths-step-compiler';
 
 export function renderAllPathsCanvas(container: HTMLElement, step: AllPathsStep): void {
@@ -123,19 +122,6 @@ export function renderAllPathsCustomMetrics(container: HTMLElement, step: AllPat
     }
     pathStackCard.appendChild(pathSlots);
     stage1Box.appendChild(pathStackCard);
-
-    // 递归推演栈
-    if (step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-        title: '🌲 显式回溯 DFS 递归推演栈 (LC 257)',
-        theme: 'light',
-        maxHeight: '100%',
-        showTerminalHeader: true,
-      });
-      stage1Box.appendChild(traceBox);
-    }
     container.appendChild(stage1Box);
   } else if (step.stageId === 'stage-2') {
     // Stage 2: 纯函数不可变字符串参数流监控

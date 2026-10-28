@@ -8,7 +8,6 @@
 
 import { TreeNode } from '../../../algorithms/categories/tree/tree-template';
 import type { MergeTreesStep } from './merge-trees-step-compiler';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 
 export function renderMiniTreeSVG(
   container: HTMLElement,
@@ -392,18 +391,6 @@ export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesSt
     });
     qBox.appendChild(qRow);
     container.appendChild(qBox);
-  } else if (step.callTrace) {
-    const traceHost = document.createElement('div');
-    traceHost.className = 'merge-trees-trace-host';
-    traceHost.style.cssText =
-      'flex: 1; min-height: 140px; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; flex-direction: column; box-sizing: border-box;';
-    container.appendChild(traceHost);
-    RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-      title: '📜 递归 DFS 同步下潜调用推演栈',
-      theme: 'light',
-      maxHeight: '100%',
-      showTerminalHeader: true,
-    });
   }
 
   // 4. 底部：当前步骤决策动态解释

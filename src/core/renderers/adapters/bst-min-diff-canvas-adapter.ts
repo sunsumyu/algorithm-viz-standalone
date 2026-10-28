@@ -4,7 +4,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { BstMinDiffStep } from './bst-min-diff-step-compiler';
 
 export class BstMinDiffCanvasAdapter {
@@ -141,15 +140,6 @@ export class BstMinDiffCanvasAdapter {
       ${extraMetricHtml}
     `;
     container.appendChild(wrapper);
-
-    // 递归生命周期追踪 (Stage 1)
-    if (step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText =
-        'flex:1; min-height:160px; max-height:260px; overflow:hidden; display:flex; flex-direction:column;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
-      container.appendChild(traceBox);
-    }
 
     // 决策解说卡
     const decisionCard = document.createElement('div');

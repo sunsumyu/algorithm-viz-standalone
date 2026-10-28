@@ -4,7 +4,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { VBStep, collectTreeValues } from './valid-bst-step-compiler';
 
 // ============================================================
@@ -89,18 +88,6 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: VBStep):
     isValid ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'
   };">🧭 决策: ${step.decision}</div>`;
   container.appendChild(decisionBar);
-
-  // 3. 底部弹性容器挂载 RecursiveCallTraceAdapter (主角展现区)
-  const traceContainer = document.createElement('div');
-  traceContainer.style.cssText =
-    'flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; border-radius:8px; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.02);';
-  container.appendChild(traceContainer);
-
-  RecursiveCallTraceAdapter.render(traceContainer, step.callTrace || null, {
-    theme: 'light',
-    title: '🌳 中序递归调用推演跟踪树 (Inorder Call Trace)',
-    showTerminalHeader: true,
-  });
 }
 
 /**
@@ -125,17 +112,23 @@ export function renderStage2CustomMetrics(container: HTMLElement, step: VBStep):
   };">🧭 决策: ${step.decision}</div>`;
   container.appendChild(decisionBar);
 
-  // 2. 底部弹性容器挂载 RecursiveCallTraceAdapter
-  const traceContainer = document.createElement('div');
-  traceContainer.style.cssText =
-    'flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; border-radius:8px; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(0,0,0,0.02);';
-  container.appendChild(traceContainer);
-
-  RecursiveCallTraceAdapter.render(traceContainer, step.callTrace || null, {
-    theme: 'light',
-    title: '📐 先序定界递归推演跟踪树 (Boundary Range Trace)',
-    showTerminalHeader: true,
-  });
+  // 2. 开区间定界约束卡片
+  const boundaryCard = document.createElement('div');
+  boundaryCard.style.cssText = 'padding:8px 10px; border-radius:6px; background:#eff6ff; border:1px solid #bfdbfe; font-size:11px; display:flex; flex-direction:column; gap:4px;';
+  const minText = step.boundary?.min !== null && step.boundary?.min !== undefined ? `${step.boundary.min}` : '-∞';
+  const maxText = step.boundary?.max !== null && step.boundary?.max !== undefined ? `${step.boundary.max}` : '+∞';
+  const curValText = step.current !== null && step.current !== undefined ? `Node(${step.current})` : 'null';
+  boundaryCard.innerHTML = `
+    <div style="font-weight:700; color:#1d4ed8; display:flex; justify-content:space-between; align-items:center;">
+      <span>📐 先序开区间定界约束 (Boundary Range)</span>
+      <span style="font-family:ui-monospace,monospace; font-size:10px; color:${inRange ? '#16a34a' : '#ef4444'}; font-weight:700;">${inRange ? '✓ 区间合规' : '✗ 越界违背'}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; font-family:ui-monospace,monospace; font-size:11px; color:#1e40af;">
+      <span>允许范围: <strong>(${minText}, ${maxText})</strong></span>
+      <span>当前节点: <strong>${curValText}</strong></span>
+    </div>
+  `;
+  container.appendChild(boundaryCard);
 }
 
 /**

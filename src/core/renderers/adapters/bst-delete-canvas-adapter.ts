@@ -7,7 +7,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import { BSTDeleteStep, collectTreeValues } from './bst-delete-step-compiler';
 
 export class BstDeleteCanvasAdapter {
@@ -75,13 +74,8 @@ export class BstDeleteCanvasAdapter {
     `;
     container.appendChild(metricGrid);
 
-    // 2. 中部：结构化调用栈踪迹沙盘 (Stage 1 & 2) 或迭代状态沙盘 (Stage 3)
-    if (step.callTrace) {
-      const traceBox = document.createElement('div');
-      traceBox.style.cssText = 'flex:1; min-height:140px; max-height:240px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-      RecursiveCallTraceAdapter.render(traceBox, step.callTrace);
-      container.appendChild(traceBox);
-    } else {
+    // 2. 中部：状态监视器 (Stage 3 迭代双指针，Stage 1/2 递归分治判定)
+    if (step.stageId === 'stage-3') {
       const iterBox = document.createElement('div');
       iterBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f8fafc; border:1px solid #e2e8f0; font-size:11px; display:flex; flex-direction:column; gap:4px;';
       iterBox.innerHTML = `
@@ -92,6 +86,19 @@ export class BstDeleteCanvasAdapter {
         </div>
       `;
       container.appendChild(iterBox);
+    } else {
+      const caseBox = document.createElement('div');
+      caseBox.style.cssText = 'padding:8px 10px; border-radius:6px; background:#f0f9ff; border:1px solid #bae6fd; font-size:11px; display:flex; flex-direction:column; gap:4px;';
+      caseBox.innerHTML = `
+        <div style="font-weight:700; color:#0369a1; display:flex; justify-content:space-between; align-items:center;">
+          <span>🎯 BST 删除五大分支场景 (LC 450)</span>
+          <span style="font-family:ui-monospace,monospace; font-size:10px; color:#0284c7;">Action: ${step.action}</span>
+        </div>
+        <div style="font-family:ui-monospace,monospace; font-size:11px; color:#0c4a6e;">
+          ${step.successorVal != null || step.action === 'graft' ? '左右双全 ➔ 寻找右子树最左节点作为后继节点替代' : (step.action === 'replace' ? '单孩子/叶子 ➔ 节点缝接指针转移' : '二叉查找 ➔ 定位待删除节点 target')}
+        </div>
+      `;
+      container.appendChild(caseBox);
     }
 
     // 3. 底部推演决策卡片

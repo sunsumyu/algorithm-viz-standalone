@@ -4,7 +4,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import {
   SerializeStep,
   collectTreeValues,
@@ -122,20 +121,7 @@ export function renderSerializationCard2(container: HTMLElement, step: Serialize
   conveyorCard.appendChild(pillsBox);
   container.appendChild(conveyorCard);
 
-  // 3. 递归推演树 (Figure 1 拓扑规范适配器)
-  if (step.callTrace) {
-    const traceBox = document.createElement('div');
-    traceBox.style.cssText = 'flex:1; min-height:120px; overflow:hidden; display:flex; flex-direction:column; border-radius:6px; border:1px solid #e2e8f0;';
-    RecursiveCallTraceAdapter.render(traceBox, step.callTrace, {
-      title: '🌳 后序逆向建树推演跟踪树 (Call Trace)',
-      theme: 'light',
-      maxHeight: '100%',
-      showTerminalHeader: true,
-    });
-    container.appendChild(traceBox);
-  }
-
-  // 4. 当前推演决策总结
+  // 3. 当前推演决策总结
   const isDone = step.decision.includes('完成') || step.decision.includes('完毕') || step.statusBadge?.type === 'success';
   const summaryBox = document.createElement('div');
   summaryBox.style.cssText = `padding:8px 10px; border-radius:6px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${isDone ? '#f0fdf4' : '#f8fafc'}; border:1px solid ${isDone ? '#bbf7d0' : '#e2e8f0'};`;

@@ -8,7 +8,6 @@
 
 import { Tree036Step, renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
 import { BST_LCA_NODES } from './lowest-common-ancestor-bst-step-compiler';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 export function renderLcaBstCanvas(container: HTMLElement, step: Tree036Step): void {
   const treeNodes = (step.extraData as any)?.treeNodes || BST_LCA_NODES;
   const badges: Record<number, string> = {};
@@ -35,24 +34,46 @@ export function renderLcaBstCanvas(container: HTMLElement, step: Tree036Step): v
 export class LowestCommonAncestorBstCanvasAdapter {
   static renderCanvas = renderLcaBstCanvas;
 
-  /** Stage 1: 挂接全库标准统一顶层抽象 RecursiveCallTraceAdapter (单层主容器) */
+  /** Stage 1: 递归分流状态与单调判定看板 (全景推演树由 Card 1 子视图接管) */
   static renderStage1Metrics(container: HTMLElement, step: Tree036Step): void {
     if (!container) return;
     container.innerHTML = '';
     container.style.cssText =
       'width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 4px; display: flex; flex-direction: column;';
 
-    const traceBox = document.createElement('div');
-    traceBox.style.cssText =
-      'flex: 1; min-height: 0; width: 100%; overflow: hidden; display: flex; flex-direction: column;';
-    container.appendChild(traceBox);
+    const recurBox = document.createElement('div');
+    recurBox.style.cssText =
+      'flex: 1; min-height: 0; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; font-size: 11px; overflow-y: auto;';
 
-    const callTrace = (step.extraData as any)?.callTrace;
-    RecursiveCallTraceAdapter.render(traceBox, callTrace || null, {
-      theme: 'light',
-      title: 'BST 递归分流推演树 (LCA Call Trace)',
-      showTerminalHeader: true,
-    });
+    const p = step.metrics?.['目标 p'] ?? '?';
+    const q = step.metrics?.['目标 q'] ?? '?';
+    const curVal = step.activeNodeId ? `Node(${step.activeNodeId})` : '-';
+    const cmp = step.metrics?.['比较条件'] ?? step.metrics?.['数值比较'] ?? '单调性比较';
+    const direction = step.metrics?.['走向'] ?? '下潜递归分支';
+    const isLca = step.statusBadge?.type === 'success';
+
+    recurBox.innerHTML = `
+      <div style="font-weight: 700; color: #475569; display: flex; align-items: center; justify-content: space-between;">
+        <span>🌲 BST 递归单调分流监视器</span>
+        <span style="font-size: 10px; color: #2563eb; background: #eff6ff; padding: 1px 6px; border-radius: 4px; font-weight: 700;">分治定理</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+        <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <div style="color: #64748b; font-size: 10px;">目标节点 [p, q]</div>
+          <div style="font-weight: 700; color: #d97706; font-size: 12px;">[${p}, ${q}]</div>
+        </div>
+        <div style="background: #ffffff; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+          <div style="color: #64748b; font-size: 10px;">当前递归根节点</div>
+          <div style="font-weight: 700; color: #2563eb; font-size: 12px;">${curVal}</div>
+        </div>
+      </div>
+      <div style="background: #ffffff; padding: 7px 9px; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 3px;">
+        <div style="color: #64748b; font-size: 10px;">单调分流判别</div>
+        <div style="font-family: monospace; font-size: 11px; color: #0f172a; font-weight: 600;">${cmp}</div>
+        <div style="font-size: 10.5px; color: ${isLca ? '#047857' : '#2563eb'}; font-weight: 700;">➔ ${direction}</div>
+      </div>
+    `;
+    container.appendChild(recurBox);
   }
 
   /** Stage 2: 迭代常数空间指针移动状态看板 (扁平化呈现，消除文本复读) */

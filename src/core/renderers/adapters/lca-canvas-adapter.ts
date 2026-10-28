@@ -8,7 +8,6 @@
  */
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 import type { LCAStep } from './lca-step-compiler';
 
 export function renderLcaCanvas(
@@ -192,21 +191,12 @@ export function renderLcaStage1CustomMetrics(container: HTMLElement, step: LCASt
         </div>
       </div>
 
-      <div class="lca-trace-host" style="flex: 1; min-height: 140px; overflow: hidden;"></div>
+      <div style="background: #faf5ff; border: 1px dashed #d8b4fe; border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #581c87; line-height: 1.5;">
+        <span style="font-weight: 700; color: #7e22ce;">💡 LCA 后序判定法则：</span>
+        <span>${step.leftReturn != null && step.rightReturn != null ? '左右子树均返回非空节点，当前节点即为分叉最近公共祖先 LCA！' : (step.leftReturn != null ? '仅左子树返回非空结果，向父调用传递 left 节点。' : (step.rightReturn != null ? '仅右子树返回非空结果，向父调用传递 right 节点。' : '左右均为空，向父层返回 null。'))}</span>
+      </div>
     </div>
   `;
-
-  if (step.callTrace) {
-    const traceHost = container.querySelector('.lca-trace-host') as HTMLElement | null;
-    if (traceHost) {
-      RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-        title: '📜 最近公共祖先 (LCA) 后序递归推演栈',
-        theme: 'light',
-        maxHeight: '100%',
-        showTerminalHeader: true,
-      });
-    }
-  }
 }
 
 export class LcaCanvasAdapter {

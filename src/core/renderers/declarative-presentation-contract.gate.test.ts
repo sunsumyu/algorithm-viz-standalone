@@ -355,5 +355,57 @@ describe('🏆 声明式算法全量表现层契约死门禁 (Declarative Presen
         `\n=============================================================\n`
     ).toEqual([]);
   });
+
+  it('🚨 红灯陷阱: Card 2 绝无全景推演树 / 递归调用跟踪树 (Zero Deduction Tree / Call Trace in Card 2 Guard)', () => {
+    const registry = getDeclarativeSpecs();
+    const allSpecs = Array.from(registry.values());
+    const violations: string[] = [];
+
+    for (const spec of allSpecs) {
+      if (!spec.renderCustomMetrics) continue;
+
+      const defaultInputs: Record<string, any> = {};
+      (spec.inputs || []).forEach((inp) => {
+        defaultInputs[inp.id] = inp.defaultValue;
+      });
+
+      try {
+        const stepFn = spec.generateSteps || spec.buildSteps;
+        const rawSteps = stepFn ? stepFn(defaultInputs) : [];
+        if (!rawSteps || rawSteps.length === 0) continue;
+
+        const testSteps = [rawSteps[0], rawSteps[Math.floor(rawSteps.length / 2)], rawSteps[rawSteps.length - 1]];
+
+        for (let i = 0; i < testSteps.length; i++) {
+          const step = testSteps[i];
+          if (!step) continue;
+
+          const card2Container = doc.createElement('div');
+          card2Container.id = 'dsp-custom-metrics-container';
+
+          spec.renderCustomMetrics(card2Container, step, step.stageId || 'stage-1');
+
+          const illegalTrace = card2Container.querySelector(
+            '.tree-trace-container, [data-tree-trace], .terminal-content, .trace-tree'
+          );
+          if (illegalTrace) {
+            violations.push(
+              `🚨 [CARD2_DEDUCTION_TREE_TRAP] ${spec.id} (step #${i}): Card 2 内部违规塞入了全景推演树/调用跟踪树！推演树属于 Card 1 (通过 Card1SubViewControlsAdapter 切换呈现)，Card 2 仅限指标网格、微型数据流与实时决策卡！`
+            );
+            break;
+          }
+        }
+      } catch (e) {
+        // 步骤生成异常由 STEP_GEN_CRASH_TRAP 承载
+      }
+    }
+
+    expect(
+      violations,
+      `\n================= Card 2 塞入推演树红灯陷阱触发 =================\n` +
+        violations.join('\n') +
+        `\n=================================================================\n`
+    ).toEqual([]);
+  });
 });
 

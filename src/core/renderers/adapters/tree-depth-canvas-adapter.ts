@@ -8,9 +8,6 @@
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import {
-  RecursiveCallTraceAdapter,
-} from './recursive-call-trace-adapter';
-import {
   TDStep,
   MinDepthStep,
   TDStaticQueueState,
@@ -94,21 +91,8 @@ export class TreeDepthCanvasAdapter {
             ${depthBadges}
           </div>
         </div>
-        <div class="td-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
       </div>
     `;
-
-    if (step.callTrace) {
-      const traceHost = container.querySelector('.td-trace-host') as HTMLElement | null;
-      if (traceHost) {
-        RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-          title: '📜 递归调用推演与归约栈',
-          theme: 'light',
-          maxHeight: '100%',
-          showTerminalHeader: true,
-        });
-      }
-    }
   }
 
   /**
@@ -264,19 +248,8 @@ export class TreeDepthCanvasAdapter {
                   <span style="font-weight: 700; font-size: 11.5px; color: #2563eb;">${step.depth}</span>
                 </div>
               </div>
-              <div class="min-depth-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
             </div>
           `;
-
-          const traceHost = customMetricsContainer.querySelector('.min-depth-trace-host') as HTMLElement | null;
-          if (traceHost) {
-            RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-              title: '📜 递归调用推演与归约栈',
-              theme: 'light',
-              maxHeight: '100%',
-              showTerminalHeader: true,
-            });
-          }
         } else {
           // Stage 2 或 Stage 3：层序 BFS 队列或静态数组队列监视器
           let stateLabel = '递归调用深度';

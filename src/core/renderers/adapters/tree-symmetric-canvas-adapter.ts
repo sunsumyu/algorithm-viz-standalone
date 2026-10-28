@@ -5,7 +5,6 @@
 
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { TSStep, collectTreeValues } from './tree-symmetric-step-compiler';
-import { RecursiveCallTraceAdapter } from './recursive-call-trace-adapter';
 
 /** Card 1: 树画布渲染 */
 export function renderTreeSymmetricCanvasForStep(
@@ -176,27 +175,13 @@ export function renderTreeSymmetricMetricsShell(
   `;
 }
 
-/** Stage 1 指标与 Trace 完整渲染 */
+/** Stage 1 指标完整渲染 */
 export function renderStage1Metrics(container: HTMLElement, step: TSStep): void {
-  container.innerHTML = `
-    <div style="display: flex; flex-direction: column; height: 100%; gap: 6px; font-size: 11px;">
-      <div style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;">
-        ${renderStage1RecursionBufferHtml(step)}
-      </div>
-      <div class="ts-trace-host" style="flex: 1; min-height: 120px; overflow: hidden;"></div>
-    </div>
-  `;
-  if (step.callTrace) {
-    const traceHost = container.querySelector('.ts-trace-host') as HTMLElement | null;
-    if (traceHost) {
-      RecursiveCallTraceAdapter.render(traceHost, step.callTrace, {
-        title: '📜 镜像递归调用推演与归约栈',
-        theme: 'light',
-        maxHeight: '100%',
-        showTerminalHeader: true,
-      });
-    }
-  }
+  container.innerHTML = renderTreeSymmetricMetricsShell(
+    step,
+    renderStage1RecursionBufferHtml(step),
+    '递归深入：同步检验左子树外侧与右子树外侧，以及左子树内侧与右子树内侧。'
+  );
 }
 
 /** Stage 2 指标诊断面板渲染 */
