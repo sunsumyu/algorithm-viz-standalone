@@ -51,6 +51,7 @@ interface ViewState {
   scale: number;
   tx: number;
   ty: number;
+  autoFollow: boolean;
   isDragging: boolean;
   startX: number;
   startY: number;
@@ -61,52 +62,85 @@ export class TreeOfTreesCanvasAdapter {
   private static getViewState(container: HTMLElement): ViewState {
     let state = viewStateMap.get(container);
     if (!state) {
-      state = { scale: 1, tx: 0, ty: 0, isDragging: false, startX: 0, startY: 0 };
+      state = { scale: 1, tx: 0, ty: 0, autoFollow: true, isDragging: false, startX: 0, startY: 0 };
       viewStateMap.set(container, state);
     }
     return state;
   }
 
   /**
-   * 采用二叉树经典中序遍历几何排布，确保左孩子恒在左、右孩子恒在右
-   * 每个节点搭载完整尺寸的状态二叉树沙盘 (Full State Tree)
+   * 紧凑型二叉树轮廓布局算法 (Compact Contour Binary Tree Layout)
+   * 1. 基于左右子树每层轮廓线 (Level Contours) 动态紧缩水平间距，彻底消灭传统全局中序槽位造成的中间巨型空白断层；
+   * 2. 严格维持左孩子在左 (left.x < parent.x)、右孩子在右 (right.x > parent.x) 的真·二叉树几何拓扑；
+   * 3. 每个节点搭载完整尺寸的状态二叉树沙盘 (Full State Tree)。
    */
   private static computeBinaryTreeLayout(root: TreeOfTreesNode): { items: LayoutItem[]; rootItem: LayoutItem; totalW: number; totalH: number } {
-    const cardW = 310;
-    const cardH = 224;
-    const slotW = cardW + 44;
-    const levelH = cardH + 76;
+    const cardW = 324;
+    const cardH = 236;
+    const siblingGap = 44;
+    const singleBranchOffset = 185;
+    const levelH = cardH + 68;
     const topPad = 42;
 
-    // 1. 中序遍历收集节点并分配水平槽位索引 (Inorder Slot Index)
-    let slotIndex = 0;
-    const slotMap = new Map<TreeOfTreesNode, number>();
-
-    const assignSlots = (n: TreeOfTreesNode | null | undefined) => {
-      if (!n) return;
-      const l = n.leftChild || n.children.find((c) => c.branch === 'left');
-      const r = n.rightChild || n.children.find((c) => c.branch === 'right');
-      
-      assignSlots(l);
-      slotMap.set(n, slotIndex++);
-      assignSlots(r);
-    };
-
-    assignSlots(root);
-
-    // 2. 构造具有真实几何坐标的 LayoutItem
     const allItems: LayoutItem[] = [];
 
-    const buildItem = (n: TreeOfTreesNode): LayoutItem => {
-      const idx = slotMap.get(n) ?? 0;
-      const x = 60 + idx * slotW + cardW / 2;
-      const y = topPad + n.depth * levelH;
+    const shiftSubtree = (item: LayoutItem | null | undefined, dx: number) => {
+      if (!item || dx === 0) return;
+      item.x += dx;
+      shiftSubtree(item.leftChild, dx);
+      shiftSubtree(item.rightChild, dx);
+    };
 
+    const getContours = (
+      item: LayoutItem,
+      minMap = new Map<number, number>(),
+      maxMap = new Map<number, number>()
+    ): { minMap: Map<number, number>; maxMap: Map<number, number> } => {
+      const d = item.node.depth;
+      const leftEdge = item.x - item.width / 2;
+      const rightEdge = item.x + item.width / 2;
+      minMap.set(d, Math.min(minMap.get(d) ?? Infinity, leftEdge));
+      maxMap.set(d, Math.max(maxMap.get(d) ?? -Infinity, rightEdge));
+      if (item.leftChild) getContours(item.leftChild, minMap, maxMap);
+      if (item.rightChild) getContours(item.rightChild, minMap, maxMap);
+      return { minMap, maxMap };
+    };
+
+    const buildCompactItem = (n: TreeOfTreesNode): LayoutItem => {
       const lNode = n.leftChild || n.children.find((c) => c.branch === 'left');
       const rNode = n.rightChild || n.children.find((c) => c.branch === 'right');
 
-      const lItem = lNode ? buildItem(lNode) : null;
-      const rItem = rNode ? buildItem(rNode) : null;
+      const lItem = lNode ? buildCompactItem(lNode) : null;
+      const rItem = rNode ? buildCompactItem(rNode) : null;
+
+      let myX = 0;
+      if (lItem && rItem) {
+        const lContours = getContours(lItem);
+        const rContours = getContours(rItem);
+        let requiredShift = 0;
+        for (const [depth, lMax] of lContours.maxMap.entries()) {
+          const rMin = rContours.minMap.get(depth);
+          if (rMin !== undefined) {
+            const overlap = lMax + siblingGap - rMin;
+            if (overlap > requiredShift) {
+              requiredShift = overlap;
+            }
+          }
+        }
+        // 确保左右孩子自身中心点间距至少为 cardW + siblingGap
+        const minChildDist = cardW + siblingGap - (rItem.x - lItem.x);
+        if (minChildDist > requiredShift) {
+          requiredShift = minChildDist;
+        }
+        if (requiredShift > 0) {
+          shiftSubtree(rItem, requiredShift);
+        }
+        myX = (lItem.x + rItem.x) / 2;
+      } else if (lItem) {
+        myX = lItem.x + singleBranchOffset;
+      } else if (rItem) {
+        myX = rItem.x - singleBranchOffset;
+      }
 
       const children: LayoutItem[] = [];
       if (lItem) children.push(lItem);
@@ -114,8 +148,8 @@ export class TreeOfTreesCanvasAdapter {
 
       const item: LayoutItem = {
         node: n,
-        x,
-        y,
+        x: myX,
+        y: topPad + n.depth * levelH,
         width: cardW,
         height: cardH,
         children,
@@ -127,16 +161,56 @@ export class TreeOfTreesCanvasAdapter {
       return item;
     };
 
-    const rootItem = buildItem(root);
+    const rootItem = buildCompactItem(root);
 
-    const maxX = Math.max(...allItems.map((it) => it.x + it.width / 2)) + 80;
-    const maxY = Math.max(...allItems.map((it) => it.y + it.height)) + 80;
+    // 归一化水平坐标，左起留白 60px
+    const minLeft = Math.min(...allItems.map((it) => it.x - it.width / 2));
+    const offsetX = 60 - minLeft;
+    shiftSubtree(rootItem, offsetX);
+
+    const maxX = Math.max(...allItems.map((it) => it.x + it.width / 2)) + 60;
+    const maxY = Math.max(...allItems.map((it) => it.y + it.height)) + 60;
 
     return {
       items: allItems,
       rootItem,
-      totalW: Math.max(960, maxX),
-      totalH: Math.max(580, maxY),
+      totalW: Math.max(920, maxX),
+      totalH: Math.max(560, maxY),
+    };
+  }
+
+  /**
+   * 计算聚焦指定递归帧卡片（及其父连接上下文）的最佳相机缩放与位移
+   * 确保当前活跃树始终在视口中央清晰放大展示，关键节点数值与转折细节一目了然
+   */
+  private static computeFocusCamera(
+    targetItem: LayoutItem,
+    flatItems: LayoutItem[],
+    totalW: number,
+    totalH: number
+  ): { scale: number; tx: number; ty: number } {
+    // 查找父卡片以微调视觉重心，使入向分支箭头（「右深入 ➔」/「左深入 ➔」）同时处于视野内
+    const parentItem = flatItems.find(
+      (it) => it.leftChild === targetItem || it.rightChild === targetItem
+    );
+
+    // 期望可视窗口容纳约 2.15 张卡片宽、1.95 张卡片高，使当前卡片占据画布核心约 48% 面积
+    const desiredVisibleW = targetItem.width * 2.15;
+    const desiredVisibleH = targetItem.height * 1.95;
+    const rawScale = Math.min(totalW / desiredVisibleW, totalH / desiredVisibleH);
+    const scale = Math.max(1.25, Math.min(2.6, rawScale));
+
+    const centerX = parentItem
+      ? targetItem.x * 0.85 + parentItem.x * 0.15
+      : targetItem.x;
+    const centerY = parentItem
+      ? (targetItem.y + targetItem.height * 0.45) * 0.88 + (parentItem.y + parentItem.height) * 0.12
+      : targetItem.y + targetItem.height * 0.48;
+
+    return {
+      scale,
+      tx: totalW / 2 - centerX * scale,
+      ty: totalH / 2 - centerY * scale,
     };
   }
 
@@ -151,8 +225,9 @@ export class TreeOfTreesCanvasAdapter {
     root: TreeNode | null,
     activeVal: number | null,
     activeNodeId?: string | number,
-    boxW = 294,
-    boxH = 166
+    valueTransition?: { oldVal: number; newVal: number },
+    boxW = 308,
+    boxH = 180
   ): string {
     if (!root) {
       return `<text x="${boxW / 2}" y="${boxH / 2}" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8">（空树）</text>`;
@@ -164,8 +239,8 @@ export class TreeOfTreesCanvasAdapter {
       return 1 + Math.max(getSubtreeHeight(n.left), getSubtreeHeight(n.right));
     };
     const treeH = getSubtreeHeight(root);
-    const startY = treeH === 1 ? 70 : treeH === 2 ? 48 : 36;
-    const viewBoxH = treeH === 1 ? 140 : treeH === 2 ? 170 : Math.max(205, (treeH - 1) * lh + 68);
+    const startY = treeH === 1 ? 70 : treeH === 2 ? 48 : 38;
+    const viewBoxH = treeH === 1 ? 136 : treeH === 2 ? 166 : Math.max(198, (treeH - 1) * lh + 64);
 
     const lines: string[] = [];
     const nodes: string[] = [];
@@ -177,14 +252,25 @@ export class TreeOfTreesCanvasAdapter {
       return activeVal !== null && n.val === activeVal;
     };
 
+    const isNodeConverted = (n: TreeNode): boolean => {
+      if (n.id !== undefined && String(n.id).startsWith('node-')) {
+        const orig = Number(String(n.id).replace('node-', ''));
+        if (!Number.isNaN(orig) && n.val !== orig) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const draw = (n: TreeNode, x: number, y: number, spread: number) => {
       const isH = isNodeActive(n);
+      const isConv = !isH && isNodeConverted(n);
 
       if (n.left) {
         const lx = x - spread;
         const ly = y + lh;
         lines.push(
-          `<line x1="${x}" y1="${y}" x2="${lx}" y2="${ly}" stroke="${isH ? '#94a3b8' : '#cbd5e1'}" stroke-width="2.5" />`
+          `<line x1="${x}" y1="${y}" x2="${lx}" y2="${ly}" stroke="${isH ? '#10b981' : isConv ? '#94a3b8' : '#cbd5e1'}" stroke-width="${isH ? '3' : '2.5'}" />`
         );
         draw(n.left, lx, ly, spread / 2);
       }
@@ -193,21 +279,35 @@ export class TreeOfTreesCanvasAdapter {
         const rx = x + spread;
         const ry = y + lh;
         lines.push(
-          `<line x1="${x}" y1="${y}" x2="${rx}" y2="${ry}" stroke="${isH ? '#94a3b8' : '#cbd5e1'}" stroke-width="2.5" />`
+          `<line x1="${x}" y1="${y}" x2="${rx}" y2="${ry}" stroke="${isH ? '#10b981' : isConv ? '#94a3b8' : '#cbd5e1'}" stroke-width="${isH ? '3' : '2.5'}" />`
         );
         draw(n.right, rx, ry, spread / 2);
       }
 
-      const fill = isH ? '#059669' : '#ffffff';
-      const stroke = isH ? '#059669' : '#64748b';
+      const fill = isH ? '#059669' : isConv ? '#ecfdf5' : '#ffffff';
+      const stroke = isH ? '#047857' : isConv ? '#10b981' : '#64748b';
       const strokeW = isH ? '3.5' : '2.5';
-      const textFill = isH ? '#ffffff' : '#0f172a';
-      const filterAttr = isH ? 'filter="drop-shadow(0 2px 4px rgba(245,158,11,0.35))"' : '';
+      const textFill = isH ? '#ffffff' : isConv ? '#047857' : '#0f172a';
+      const filterAttr = isH ? 'filter="drop-shadow(0 2px 5px rgba(5,150,105,0.45))"' : '';
+
+      // 活跃节点外圈呼吸光环与原值➔新值悬浮胶囊标签
+      const activeRing = isH
+        ? `<circle cx="${x}" cy="${y}" r="23.5" fill="none" stroke="#6ee7b7" stroke-width="2" opacity="0.9"/>`
+        : '';
+      const transitionBadge =
+        isH && valueTransition
+          ? `<g transform="translate(${x}, ${y - 29})">
+               <rect x="-28" y="-8" width="56" height="15" rx="4" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.2"/>
+               <text x="0" y="2.8" text-anchor="middle" font-size="9.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="800" fill="#b45309">${valueTransition.oldVal}➔${valueTransition.newVal}</text>
+             </g>`
+          : '';
 
       nodes.push(`
         <g>
+          ${activeRing}
           <circle cx="${x}" cy="${y}" r="19" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" ${filterAttr}/>
-          <text x="${x}" y="${y + 5}" text-anchor="middle" fill="${textFill}" font-family="'JetBrains Mono', Consolas, monospace" font-size="13" font-weight="700">${n.val}</text>
+          <text x="${x}" y="${y + 5}" text-anchor="middle" fill="${textFill}" font-family="'JetBrains Mono', Consolas, monospace" font-size="13.5" font-weight="800">${n.val}</text>
+          ${transitionBadge}
         </g>
       `);
     };
@@ -215,7 +315,7 @@ export class TreeOfTreesCanvasAdapter {
     draw(root, 300, startY, 120);
 
     return `
-      <svg x="0" y="0" width="${boxW}" height="${boxH}" viewBox="55 4 490 ${viewBoxH}" preserveAspectRatio="xMidYMid meet">
+      <svg x="0" y="0" width="${boxW}" height="${boxH}" viewBox="68 4 464 ${viewBoxH}" preserveAspectRatio="xMidYMid meet">
         <g class="tot-full-tree-branches">${lines.join('')}</g>
         <g class="tot-full-tree-nodes">${nodes.join('')}</g>
       </svg>
@@ -245,8 +345,21 @@ export class TreeOfTreesCanvasAdapter {
 
     const state = this.getViewState(container);
 
-    // 1. 二叉树中序槽位空间度量
+    // 1. 紧凑型二叉树轮廓布局度量
     const { items: flatItems, totalW, totalH } = this.computeBinaryTreeLayout(rootNode);
+
+    // 1.5 自动聚焦与智能缩放：当开启 autoFollow 时，每步自动锁定当前活跃调用帧并放大至黄金清晰比例
+    const activeItem =
+      flatItems.find((it) => it.node.status === 'active') ||
+      flatItems.filter((it) => it.node.status === 'waiting').pop() ||
+      flatItems[0];
+
+    if (state.autoFollow && activeItem) {
+      const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH);
+      state.scale = cam.scale;
+      state.tx = cam.tx;
+      state.ty = cam.ty;
+    }
 
     // 2. 构建外层画板容器 DOM
     const wrapper = document.createElement('div');
@@ -256,12 +369,13 @@ export class TreeOfTreesCanvasAdapter {
     // 视口平移缩放控制工具栏
     const ctrlBar = document.createElement('div');
     ctrlBar.style.cssText =
-      'position: absolute; right: 10px; bottom: 10px; display: inline-flex; gap: 4px; z-index: 20; background: rgba(255, 255, 255, 0.92); padding: 3px 5px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.06);';
+      'position: absolute; right: 10px; bottom: 10px; display: inline-flex; gap: 4px; z-index: 20; background: rgba(255, 255, 255, 0.94); padding: 4px 6px; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.08);';
+    const isAuto = state.autoFollow;
     ctrlBar.innerHTML = `
-      <button id="tot-zoom-in" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 7px; font-size:11px; font-weight:700; cursor:pointer; color:#334155;">＋</button>
-      <button id="tot-zoom-out" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 7px; font-size:11px; font-weight:700; cursor:pointer; color:#334155;">－</button>
-      <button id="tot-focus" style="border:none; background:#ecfdf5; border-radius:4px; padding:2px 7px; font-size:10.5px; font-weight:600; cursor:pointer; color:#059669;">🎯 聚焦活跃</button>
-      <button id="tot-reset" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 7px; font-size:10.5px; font-weight:600; cursor:pointer; color:#1d4ed8;">⟲ 重置</button>
+      <button id="tot-zoom-in" title="放大" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer; color:#334155;">＋</button>
+      <button id="tot-zoom-out" title="缩小" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer; color:#334155;">－</button>
+      <button id="tot-focus" title="自动聚焦并放大当前活跃状态树" style="border:1px solid ${isAuto ? '#10b981' : 'transparent'}; background:${isAuto ? '#ecfdf5' : '#f1f5f9'}; border-radius:4px; padding:2px 8px; font-size:10.5px; font-weight:700; cursor:pointer; color:#059669;">🎯 聚焦活跃</button>
+      <button id="tot-reset" title="查看全景总览" style="border:none; background:#f1f5f9; border-radius:4px; padding:2px 8px; font-size:10.5px; font-weight:600; cursor:pointer; color:#1d4ed8;">⟲ 全景重置</button>
     `;
     wrapper.appendChild(ctrlBar);
 
@@ -295,11 +409,22 @@ export class TreeOfTreesCanvasAdapter {
 
     const mainG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     mainG.setAttribute('id', 'tot-main-group');
+    mainG.style.transition = state.isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
     mainG.setAttribute(
       'transform',
       `translate(${state.tx}, ${state.ty}) scale(${state.scale})`
     );
     svg.appendChild(mainG);
+
+    const syncTransform = (withTransition = false) => {
+      mainG.style.transition = withTransition
+        ? 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)'
+        : 'none';
+      mainG.setAttribute(
+        'transform',
+        `translate(${state.tx}, ${state.ty}) scale(${state.scale})`
+      );
+    };
 
     // 3. 绘制真·二叉树分支斜向枝干 (Diagonal Tree Connectors)
     const connectorsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -324,7 +449,7 @@ export class TreeOfTreesCanvasAdapter {
           : isChildDone
           ? 'url(#tot-arrow-green)'
           : 'url(#tot-arrow-gray)';
-        const strokeW = isChildActive ? '2.5' : '1.8';
+        const strokeW = isChildActive ? '2.8' : '1.8';
 
         // 平滑对角斜向贝塞尔曲线
         const midY = (pY + cY) / 2;
@@ -345,8 +470,8 @@ export class TreeOfTreesCanvasAdapter {
 
         const labelG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         labelG.innerHTML = `
-          <rect x="${labelX - 26}" y="${labelY - 8}" width="52" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" opacity="0.96"/>
-          <text x="${labelX}" y="${labelY + 3.5}" text-anchor="middle" font-size="9" font-family="'JetBrains Mono', Consolas, sans-serif" font-weight="700" fill="${isChildActive ? '#1d4ed8' : isChildDone ? '#047857' : '#64748b'}">${labelText}</text>
+          <rect x="${labelX - 28}" y="${labelY - 8}" width="56" height="16" rx="4" fill="#ffffff" stroke="${strokeColor}" stroke-width="1.2" opacity="0.96"/>
+          <text x="${labelX}" y="${labelY + 3.5}" text-anchor="middle" font-size="9.5" font-family="'JetBrains Mono', Consolas, sans-serif" font-weight="700" fill="${isChildActive ? '#1d4ed8' : isChildDone ? '#047857' : '#64748b'}">${labelText}</text>
         `;
         connectorsGroup.appendChild(labelG);
       }
@@ -368,7 +493,7 @@ export class TreeOfTreesCanvasAdapter {
       cardG.style.cursor = 'pointer';
 
       const borderColor = isActive ? '#2563eb' : isDone ? '#10b981' : isWaiting ? '#93c5fd' : '#cbd5e1';
-      const borderW = isActive ? '2.8' : isDone ? '1.8' : '1.2';
+      const borderW = isActive ? '3' : isDone ? '1.8' : '1.2';
       const borderDash = isWaiting ? 'stroke-dasharray="5,3"' : isPending ? 'stroke-dasharray="4,4"' : '';
       const headerBg = isActive ? '#eff6ff' : isDone ? '#ecfdf5' : isWaiting ? '#f0f9ff' : '#f8fafc';
       const titleColor = isActive ? '#1d4ed8' : isDone ? '#047857' : isWaiting ? '#0284c7' : '#64748b';
@@ -384,6 +509,7 @@ export class TreeOfTreesCanvasAdapter {
         node.treeSnapshot,
         node.activeNodeVal,
         node.activeNodeId,
+        node.valueTransition,
         fullTreeBoxW,
         fullTreeBoxH
       );
@@ -404,13 +530,13 @@ export class TreeOfTreesCanvasAdapter {
         <path d="M 0 10 Q 0 0 10 0 L ${w - 10} 0 Q ${w} 0 ${w} 10 L ${w} 26 L 0 26 Z" fill="${headerBg}"/>
         <line x1="0" y1="26" x2="${w}" y2="26" stroke="${isActive ? '#bfdbfe' : '#e2e8f0'}" stroke-width="1"/>
         
-        <text x="10" y="17" font-size="10.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="800" fill="${titleColor}">
+        <text x="10" y="17.5" font-size="11" font-family="'JetBrains Mono', Consolas, monospace" font-weight="800" fill="${titleColor}">
           d=${node.depth} · ${node.funcCall}
         </text>
         
         <!-- 状态徽章 -->
-        <rect x="${w - 58}" y="5" width="50" height="16" rx="4" fill="${statusPillBg}"/>
-        <text x="${w - 33}" y="16" text-anchor="middle" font-size="8.5" font-family="sans-serif" font-weight="700" fill="${statusPillColor}">
+        <rect x="${w - 60}" y="5" width="52" height="16" rx="4" fill="${statusPillBg}"/>
+        <text x="${w - 34}" y="16" text-anchor="middle" font-size="9" font-family="sans-serif" font-weight="700" fill="${statusPillColor}">
           ${statusPillText}
         </text>
 
@@ -422,10 +548,20 @@ export class TreeOfTreesCanvasAdapter {
 
         <!-- 卡片底栏：累加值监控条 -->
         <line x1="0" y1="${h - 24}" x2="${w}" y2="${h - 24}" stroke="#f1f5f9" stroke-width="1"/>
-        <text x="10" y="${h - 8}" font-size="9.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="700" fill="${isActive ? '#2563eb' : isDone ? '#059669' : '#64748b'}">
+        <text x="10" y="${h - 8}" font-size="10.5" font-family="'JetBrains Mono', Consolas, monospace" font-weight="800" fill="${isActive ? '#2563eb' : isDone ? '#059669' : '#64748b'}">
           💰 ${footerText}
         </text>
       `;
+
+      // 点击任意卡片可平滑聚焦放大至该卡片
+      cardG.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cam = this.computeFocusCamera(item, flatItems, totalW, totalH);
+        state.scale = cam.scale;
+        state.tx = cam.tx;
+        state.ty = cam.ty;
+        syncTransform(true);
+      });
 
       cardsGroup.appendChild(cardG);
     }
@@ -434,12 +570,17 @@ export class TreeOfTreesCanvasAdapter {
     wrapper.appendChild(svg);
     container.appendChild(wrapper);
 
-    // 5. 绑定平移、聚焦与滚轮缩放事件
-    const syncTransform = () => {
-      mainG.setAttribute(
-        'transform',
-        `translate(${state.tx}, ${state.ty}) scale(${state.scale})`
-      );
+    // 5. 绑定平移、聚焦与以视口中心为锚点的缩放事件
+    const zoomAtCenter = (nextScale: number, smooth = true) => {
+      const clamped = Math.max(0.4, Math.min(3.2, nextScale));
+      const cx = totalW / 2;
+      const cy = totalH / 2;
+      const worldX = (cx - state.tx) / state.scale;
+      const worldY = (cy - state.ty) / state.scale;
+      state.scale = clamped;
+      state.tx = cx - worldX * state.scale;
+      state.ty = cy - worldY * state.scale;
+      syncTransform(smooth);
     };
 
     const zoomInBtn = ctrlBar.querySelector('#tot-zoom-in') as HTMLButtonElement | null;
@@ -450,12 +591,13 @@ export class TreeOfTreesCanvasAdapter {
     if (focusBtn) {
       focusBtn.onclick = (e) => {
         e.stopPropagation();
-        const activeItem = flatItems.find((it) => it.node.status === 'active') || flatItems[0];
+        state.autoFollow = true;
         if (activeItem) {
-          state.scale = 1.15;
-          state.tx = totalW / 2 - activeItem.x * state.scale;
-          state.ty = totalH / 2 - (activeItem.y + activeItem.height / 2) * state.scale;
-          syncTransform();
+          const cam = this.computeFocusCamera(activeItem, flatItems, totalW, totalH);
+          state.scale = cam.scale;
+          state.tx = cam.tx;
+          state.ty = cam.ty;
+          syncTransform(true);
         }
       };
     }
@@ -463,37 +605,39 @@ export class TreeOfTreesCanvasAdapter {
     if (zoomInBtn) {
       zoomInBtn.onclick = (e) => {
         e.stopPropagation();
-        state.scale = Math.min(2.5, state.scale + 0.15);
-        syncTransform();
+        state.autoFollow = false;
+        zoomAtCenter(state.scale * 1.2, true);
       };
     }
     if (zoomOutBtn) {
       zoomOutBtn.onclick = (e) => {
         e.stopPropagation();
-        state.scale = Math.max(0.4, state.scale - 0.15);
-        syncTransform();
+        state.autoFollow = false;
+        zoomAtCenter(state.scale / 1.2, true);
       };
     }
     if (resetBtn) {
       resetBtn.onclick = (e) => {
         e.stopPropagation();
+        state.autoFollow = false;
         state.scale = 1;
         state.tx = 0;
         state.ty = 0;
-        syncTransform();
+        syncTransform(true);
       };
     }
 
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      state.scale = Math.max(0.4, Math.min(2.5, state.scale + delta));
-      syncTransform();
+      state.autoFollow = false;
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      zoomAtCenter(state.scale * factor, false);
     });
 
     svg.addEventListener('mousedown', (e) => {
       if (e.target instanceof SVGElement && e.target.closest('button')) return;
       state.isDragging = true;
+      state.autoFollow = false;
       state.startX = e.clientX - state.tx;
       state.startY = e.clientY - state.ty;
       svg.style.cursor = 'grabbing';
@@ -503,7 +647,7 @@ export class TreeOfTreesCanvasAdapter {
       if (!state.isDragging) return;
       state.tx = e.clientX - state.startX;
       state.ty = e.clientY - state.startY;
-      syncTransform();
+      syncTransform(false);
     });
 
     window.addEventListener('mouseup', () => {

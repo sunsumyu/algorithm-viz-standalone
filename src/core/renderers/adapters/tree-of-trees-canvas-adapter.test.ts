@@ -147,12 +147,33 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
     expect(lastStep.treeOfTrees?.leftChild?.treeSnapshot?.left?.val).toBe(36);
     expect(lastStep.treeOfTrees?.leftChild?.treeSnapshot?.left?.left?.val).toBe(0);
 
-    // 渲染完整母树并校验每个卡片内嵌完整尺寸二叉树 (r="19", #059669, #64748b)
+    // 渲染完整母树并校验每个卡片内嵌完整尺寸二叉树 (r="19", #059669, #64748b) 与原值➔新值悬浮标签
     TreeOfTreesCanvasAdapter.render(container, lastStep.treeOfTrees!);
     expect(container.innerHTML).toContain('r="19"');
     expect(container.innerHTML).toContain('#059669');
     expect(container.innerHTML).toContain('#64748b');
+    expect(container.innerHTML).toContain('4➔30');
     expect(container.querySelector('#tot-focus')).not.toBeNull();
+
+    // 验证自动聚焦与智能缩放：默认开启 autoFollow，在步骤推演中自动放大聚焦当前活跃树 (scale >= 1.25)
+    const activeMidStep = steps.find((s) => s.treeOfTrees?.rightChild?.status === 'active') || steps[2];
+    TreeOfTreesCanvasAdapter.render(container, activeMidStep.treeOfTrees!);
+    const mainGroup = container.querySelector('#tot-main-group');
+    expect(mainGroup).not.toBeNull();
+    const transformAttr = mainGroup?.getAttribute('transform') || '';
+    const scaleMatch = transformAttr.match(/scale\(([0-9.]+)\)/);
+    expect(scaleMatch).not.toBeNull();
+    expect(Number(scaleMatch![1])).toBeGreaterThanOrEqual(1.25);
+
+    // 点击「全景重置」切换为 1.0 全景视图，再点击「聚焦活跃」恢复智能放大聚焦
+    const resetBtn = container.querySelector('#tot-reset') as HTMLButtonElement;
+    resetBtn.click();
+    expect(mainGroup?.getAttribute('transform')).toContain('scale(1)');
+
+    const focusBtn = container.querySelector('#tot-focus') as HTMLButtonElement;
+    focusBtn.click();
+    const refocusedMatch = (mainGroup?.getAttribute('transform') || '').match(/scale\(([0-9.]+)\)/);
+    expect(Number(refocusedMatch![1])).toBeGreaterThanOrEqual(1.25);
 
     // 验证深度克隆完全隔离，不产生跨步骤引用污染
     expect(step0Tot).not.toBe(lastStep.treeOfTrees);
