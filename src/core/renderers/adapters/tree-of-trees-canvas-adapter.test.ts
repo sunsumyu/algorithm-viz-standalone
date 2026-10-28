@@ -131,6 +131,29 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
     expect(lastStep.treeOfTrees?.status).toBe('done');
     expect(lastStep.treeOfTrees?.rightChild?.status).toBe('done');
 
+    // 验证每一层递归节点都独立保留自身完成转换时刻的完整状态树，绝不被左子树回溯覆盖！
+    // 根节点 reverseInorder(4) 转换时刻：根=30，左孩子仍为原值 1，右孩子已变为 21
+    expect(lastStep.treeOfTrees?.treeSnapshot?.val).toBe(30);
+    expect(lastStep.treeOfTrees?.treeSnapshot?.left?.val).toBe(1);
+    expect(lastStep.treeOfTrees?.treeSnapshot?.right?.val).toBe(21);
+
+    // 右子调用 reverseInorder(6) 转换时刻：根仍为原值 4，右孩子已变为 21，其左孩子仍为原值 5
+    expect(lastStep.treeOfTrees?.rightChild?.treeSnapshot?.val).toBe(4);
+    expect(lastStep.treeOfTrees?.rightChild?.treeSnapshot?.right?.val).toBe(21);
+    expect(lastStep.treeOfTrees?.rightChild?.treeSnapshot?.right?.left?.val).toBe(5);
+
+    // 左子调用 reverseInorder(1) 转换时刻：根已为 30，左孩子已变为 36，其左孩子仍为原值 0
+    expect(lastStep.treeOfTrees?.leftChild?.treeSnapshot?.val).toBe(30);
+    expect(lastStep.treeOfTrees?.leftChild?.treeSnapshot?.left?.val).toBe(36);
+    expect(lastStep.treeOfTrees?.leftChild?.treeSnapshot?.left?.left?.val).toBe(0);
+
+    // 渲染完整母树并校验每个卡片内嵌完整尺寸二叉树 (r="19", #059669, #64748b)
+    TreeOfTreesCanvasAdapter.render(container, lastStep.treeOfTrees!);
+    expect(container.innerHTML).toContain('r="19"');
+    expect(container.innerHTML).toContain('#059669');
+    expect(container.innerHTML).toContain('#64748b');
+    expect(container.querySelector('#tot-focus')).not.toBeNull();
+
     // 验证深度克隆完全隔离，不产生跨步骤引用污染
     expect(step0Tot).not.toBe(lastStep.treeOfTrees);
   });

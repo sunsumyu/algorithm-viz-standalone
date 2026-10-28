@@ -1136,6 +1136,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     // 3. 更新日志流 (委托全库统一顶层抽象 ExecutionLogPresenter，100% 对齐《不同路径》黄金标准)
     if (this.logContainer) {
       ExecutionLogPresenter.renderStepLogs(this.logContainer, this.steps, this.currentIndex, this.logCountEl);
+      if (this.card1SubView === 'deduction' && anyStep?.treeOfTrees) { const dw = this.root?.querySelector('#dsp-deduction-container') as HTMLElement | null; if (dw) { import('./renderers/adapters/tree-of-trees-canvas-adapter').then(({ TreeOfTreesCanvasAdapter }) => TreeOfTreesCanvasAdapter.render(dw, anyStep.treeOfTrees)); } }
     }
 
     // 4. 更新贯穿式 Scrubber 步数指示器与进度条

@@ -75,6 +75,12 @@ export class StaticDeductionTreeAdapter {
     options: StaticDeductionRenderOptions
   ): Promise<void> {
     if (!container) return;
+    const stepAny = options.step as any;
+    if (stepAny?.treeOfTrees) {
+      const { TreeOfTreesCanvasAdapter } = await import('./adapters/tree-of-trees-canvas-adapter');
+      TreeOfTreesCanvasAdapter.render(container, stepAny.treeOfTrees);
+      return;
+    }
     if (!container.innerHTML || container.innerHTML.trim() === '') {
       container.innerHTML = this.getSkeletonHtml(options.modelId);
     }

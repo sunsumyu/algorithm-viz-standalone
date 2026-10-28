@@ -42,7 +42,7 @@ export function cloneTree(node: TreeNode | null, visited = new Set<TreeNode>()):
   if (!node || visited.has(node)) return null;
   visited.add(node);
   return {
-    val: node.val,
+    val: node.val, id: node.id ?? `node-${node.val}`,
     left: cloneTree(node.left, visited),
     right: cloneTree(node.right, visited),
   };
@@ -63,7 +63,7 @@ export function cloneTreeOfTrees(node: TreeOfTreesNode | null): TreeOfTreesNode 
     depth: node.depth,
     branch: node.branch,
     status: node.status,
-    activeNodeVal: node.activeNodeVal,
+    activeNodeVal: node.activeNodeVal, activeNodeId: node.activeNodeId,
     sum: node.sum,
     valueTransition: node.valueTransition ? { ...node.valueTransition } : undefined,
     treeSnapshot: cloneTree(node.treeSnapshot),
@@ -145,7 +145,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       depth,
       branch,
       status: 'pending',
-      activeNodeVal: node.val,
+      activeNodeVal: node.val, activeNodeId: node.id ?? `node-${node.val}`,
       sum: 0,
       treeSnapshot: cloneTree(workingRoot),
       children,
@@ -208,7 +208,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
     const thisCall = callNodeMap.get(node.val);
     if (thisCall) {
       thisCall.status = 'active';
-      thisCall.treeSnapshot = cloneTree(workingRoot);
+      if ((thisCall.status as string) !== 'done') { thisCall.treeSnapshot = cloneTree(workingRoot); }
     }
 
     // 递归进入当前节点
@@ -266,7 +266,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
       thisCall.sum = sum;
       thisCall.activeNodeVal = sum;
       thisCall.valueTransition = { oldVal, newVal: sum };
-      thisCall.treeSnapshot = cloneTree(workingRoot);
+      if ((thisCall.status as string) !== 'done') { thisCall.treeSnapshot = cloneTree(workingRoot); }
     }
 
     trace.addUnwindCalc(
@@ -336,7 +336,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
 
     if (thisCall) {
       thisCall.status = 'done';
-      thisCall.treeSnapshot = cloneTree(workingRoot);
+      if ((thisCall.status as string) !== 'done') { thisCall.treeSnapshot = cloneTree(workingRoot); }
     }
     trace.addReturnLeaf(`node=${sum} 子树转换完毕`, depth);
   }
@@ -347,7 +347,7 @@ export function buildBstToGstStage1Steps(root: TreeNode | null): BstToGstStep[] 
   trace.addFinalResult('return root', 0, `累加树转换全部完成，总累加和为 ${sum}`, String(sum));
   if (motherTreeRoot) {
     motherTreeRoot.status = 'done';
-    motherTreeRoot.treeSnapshot = cloneTree(workingRoot);
+    // 保留根节点完成累加转换时刻的独立状态树快照 ([30, 1, 21, 0, 2, 26, 15, 3, 8])
   }
   steps.push({
     tree: cloneTree(workingRoot),
