@@ -17,11 +17,11 @@ export { buildPartitionMinDiff063Steps };
 
 export const partitionMinimizeDifference063Visualizer = registerDeclarativeAlgorithm<PartitionMinDiffStep>({
   id: 'partition-minimize-difference-063',
-  name: '分割数组使差最小 (分桶折半搜索)',
+  name: '将数组分成两个数组并最小化数组和的差',
   category: 'graph',
   difficulty: '困难',
   description: '左程云 Class 063 Code04：选数约束下的折半搜索 Meet in the Middle，按选数个数 k 分桶 + 二分逼近目标半和 (LeetCode 2035)',
-  aliases: ['class063-code04', 'partition-minimize-difference-063', 'partition-minimize-diff-2035', 'partition-array-min-diff', 'leetcode-2035'],
+  aliases: ['class063-code04', 'partition-minimize-difference-063', 'partition-minimize-diff-2035', 'partition-array-min-diff', 'leetcode-2035', '2035', '分割数组使差最小' ],
   problemHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].problemHtml,
   analysisHtml: GRAPH_063_PROBLEMS['partition-minimize-difference-063'].complexityHtml,
   codeLanguages: PARTITION_MIN_DIFF_063_CODES,

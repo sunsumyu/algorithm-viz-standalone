@@ -9,6 +9,7 @@ import './styles/visualizer-theme.css';
 import './styles/shortcut-modal.css';
 import './styles/settings-modal.css';
 import './styles/activation-modal.css';
+import './styles/account-modal.css';
 import { pluginLoader } from './core/plugin-loader';
 import { setupTauriWindowControls } from './core/tauri-window-controls';
 import { algorithmVizPlugin } from './plugins/algorithm-viz/index';
@@ -22,6 +23,14 @@ import { setupRuntimeInspectionGuard } from './core/security/anti-devtools';
 import { setupClipboardWatermarkGuard } from './core/security/clipboard-watermark-guard';
 import { antiTheftEngine } from './core/security/anti-theft-interference-engine';
 import { clientActivationModal } from './core/security/client-activation-modal';
+import { accountModal } from './core/security/account-modal';
+import { usageTracker } from './core/security/usage-tracker';
+import { visibleWatermark } from './core/security/visible-watermark';
+import {
+  checkAndEnforceAuthorization,
+  resolveAuthorization,
+  applyAuthorizationSideEffects,
+} from './core/security/authorization-service';
 
 if (typeof window !== 'undefined') {
   (window as any).algorithmRegistry = algorithmRegistry;
@@ -30,7 +39,9 @@ if (typeof window !== 'undefined') {
   (window as unknown as { appSettingsModal: typeof appSettingsModal }).appSettingsModal = appSettingsModal;
   (window as unknown as { appSettingsRepo: typeof appSettingsRepo }).appSettingsRepo = appSettingsRepo;
   (window as any).clientActivationModal = clientActivationModal;
+  (window as any).accountModal = accountModal;
   (window as any).antiTheftEngine = antiTheftEngine;
+  (window as unknown as { usageTracker: typeof usageTracker }).usageTracker = usageTracker;
 }
 
 /**
@@ -41,6 +52,35 @@ async function main(): Promise<void> {
   setupRuntimeInspectionGuard();
   setupClipboardWatermarkGuard();
   antiTheftEngine.startPeriodicAudit(60000);
+
+  // 0.1 启动可见防截屏平铺水印与行为追踪（追踪身份在授权自检后绑定）
+  visibleWatermark.start();
+  usageTracker.track('APP_LAUNCH');
+
+  // 0.2 授权状态变化联动（登录 / 激活 / 兑换后由弹窗广播此事件）
+  if (typeof window !== 'undefined') {
+    window.addEventListener('auth:state-changed', () => {
+      void resolveAuthorization().then((state) => {
+        applyAuthorizationSideEffects(state);
+
+        // 受保护构建（内容协议 base）：授权从无到有时重载整页，
+        // 让浏览器重新发起内容 chunk 请求（此前 403 的失败模块图缓存必须刷新）。
+        // 兼容 Windows 形态 (http://apv.localhost/) 与 macOS/Linux 形态 (apv://localhost/)。
+        // sessionStorage 防循环重载；常规构建 baseURI 为文件相对路径，不触发。
+        const isProtectedBase =
+          document.baseURI.startsWith('http://apv.localhost/') ||
+          document.baseURI.startsWith('apv://localhost/');
+        if (
+          state.authorized &&
+          isProtectedBase &&
+          !sessionStorage.getItem('alg_viz_content_boot_reloaded')
+        ) {
+          sessionStorage.setItem('alg_viz_content_boot_reloaded', '1');
+          location.reload();
+        }
+      });
+    });
+  }
 
   const startTime = performance.now();
   console.log('[Main] Starting Algorithm Visualization Desktop App...');
@@ -59,9 +99,12 @@ async function main(): Promise<void> {
       console.warn('[Main] Window controls init warning:', err);
     });
 
-    // 3. 绑定标题栏授权徽章、全局设置与快捷键按钮点击事件
+    // 3. 绑定标题栏授权徽章、账号入口、全局设置与快捷键按钮点击事件
     const titlebarLicenseBadge = document.getElementById('titlebar-license-badge');
     titlebarLicenseBadge?.addEventListener('click', () => clientActivationModal.open());
+
+    const titlebarAccountBtn = document.getElementById('titlebar-account-btn');
+    titlebarAccountBtn?.addEventListener('click', () => void accountModal.open());
 
     const titlebarSettingsBtn = document.getElementById('titlebar-settings-btn');
     titlebarSettingsBtn?.addEventListener('click', () => appSettingsModal.open());
@@ -69,8 +112,8 @@ async function main(): Promise<void> {
     const titlebarShortcutsBtn = document.getElementById('titlebar-shortcuts-btn');
     titlebarShortcutsBtn?.addEventListener('click', () => shortcutManagerModal.open());
 
-    // 4. 离线授权凭证自检守护（未激活时阻断并引导激活）
-    await clientActivationModal.checkAndEnforceLicense();
+    // 4. 统一授权门禁自检（账号权益 ⊕ 离线激活码，未授权阻断并引导双通道认证）
+    await checkAndEnforceAuthorization();
 
     const totalTime = (performance.now() - startTime).toFixed(1);
     console.log(`[Main] Application ready in ${totalTime}ms (Total ${algorithmRegistry.getAllMetadata().length} algorithms active)`);

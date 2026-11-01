@@ -23,9 +23,9 @@ export {
 
 export const randomGenerator035Visualizer = registerDeclarativeAlgorithm<RandomGenStep>({
   id: 'random-generator-035',
-  aliases: ['class035', 'class035-code01', 'random-generator-035', 'random-generator', '470', 'leetcode-470'],
+  aliases: ['class035', 'class035-code01', 'random-generator-035', 'random-generator', '470', 'leetcode-470', '不均匀随机发生器向等概率转化模型' ],
   hasDeductionTree: true,
-  name: 'Class 035: 不均匀随机发生器向等概率转化模型 (Random Transformer)',
+  name: '用 Rand7() 实现 Rand10()',
   category: 'math',
   icon: '🎲',
   difficulty: 2,

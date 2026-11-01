@@ -18,8 +18,8 @@ export { STOCK_TRADING_CODES, generateStockSteps, renderStockCanvas };
 
 export const stockTradingStateMachineVisualizer = registerDeclarativeAlgorithm<StockStateStep>({
   id: 'stock-trading-state-machine',
-  aliases: ['class084-code01', 'stock-trading-state-machine', 'leetcode-309', 'best-time-stock-cooldown'],
-  name: '大厂高频真题: 股票交易全系列统一状态机 DP',
+  aliases: ['class084-code01', 'stock-trading-state-machine', 'leetcode-309', 'best-time-stock-cooldown', '买卖股票的最佳时机含冷冻期' ],
+  name: '股票交易全系列统一状态机 DP',
   category: 'dynamic-programming',
   icon: '📈',
   difficulty: 3,

@@ -106,7 +106,16 @@ export function renderInputsHtml(inputs: InputControlDef[] | undefined): string 
 /** 2. 预设案例下拉选框（统一走 Shared PresetCasePresenter 顶层抽象规约） */
 export function renderPresetSelectHtml(spec: DeclarativeAlgorithmSpec): string {
   const resolved = PresetCasePresenter.resolvePresets(spec.presets, spec.inputs);
-  return PresetCasePresenter.renderSelectHtml(resolved);
+  if (resolved.length === 0) return '';
+
+  // 诚实预选中：以 inputs 的 defaultValue 规约当前参数，精确命中某预设时默认高亮该案例；
+  // 未命中（自定义初始状态）时保持「选择案例...」占位符，杜绝下拉框虚报当前方案
+  const currentParams: Record<string, any> = {};
+  (spec.inputs || []).forEach((input) => {
+    currentParams[input.id] = input.defaultValue;
+  });
+  const matchIdx = PresetCasePresenter.findExactMatchingPresetIndex(resolved, currentParams);
+  return PresetCasePresenter.renderSelectHtml(resolved, matchIdx >= 0 ? { selectedIndex: matchIdx } : undefined);
 }
 
 /** 3. 顺推 / 逆推 方向切换器（像素级复用《不同路径》dir-tabs-container 模板） */

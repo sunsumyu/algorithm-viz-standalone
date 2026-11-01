@@ -21,6 +21,7 @@ import { registerAlgorithm } from './registry';
 import { StepNormalizationEngine } from './step-normalization-engine';
 import { ExecutionLogPresenter } from './renderers/execution-log-presenter';
 import { BinaryTreeOfTreesSynthesizer } from './renderers/adapters/binary-tree-of-trees-synthesizer';
+import { PanelBoundsEngine } from './renderers/panel-bounds-engine';
 
 const DECLARATIVE_SPECS = new Map<string, DeclarativeAlgorithmSpec<any>>();
 
@@ -96,6 +97,15 @@ export function sanitizeSandboxDom(sandboxContainer: HTMLElement | null): void {
   }
 }
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extends StepVisualizer<TStep> {
   protected codeLines: string[] = [];
   protected spec: DeclarativeAlgorithmSpec<TStep>;
@@ -104,6 +114,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
   protected sandboxContainer: HTMLElement | null = null;
   protected customMetricsContainer: HTMLElement | null = null;
   protected liveTextEl: HTMLElement | null = null;
+  protected monitorCardEl: HTMLElement | null = null;
   protected logContainer: HTMLElement | null = null;
   protected logCountEl: HTMLElement | null = null;
   protected metricElements: Map<string, HTMLElement> = new Map();
@@ -177,6 +188,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     this.sandboxContainer = this.root.querySelector('#dsp-sandbox-container');
     this.customMetricsContainer = this.root.querySelector('#dsp-custom-metrics-container');
     this.liveTextEl = this.root.querySelector('#dsp-live-text');
+    this.monitorCardEl = this.root.querySelector('.dsp-left-section .dsp-card:last-child');
     this.logContainer = this.root.querySelector('#log-container');
     this.logCountEl = this.root.querySelector('#log-count');
 
@@ -370,17 +382,29 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
     const leftSection = this.root.querySelector('.dsp-left-section') as HTMLElement | null;
     const monitorCard = this.root.querySelector('.dsp-left-section .dsp-card:last-child') as HTMLElement | null;
+    this.monitorCardEl = monitorCard;
 
     // 左右下方面板（Card 2 状态监控 & Card 4 执行日志）支持完全独立调整高度与各自记忆偏好
     const monitorHeightKey = 'dsp-monitor-card-height';
     const logHeightKey = 'dsp-log-card-height';
-    const defaultBottomHeight = 240;
 
-    const savedMonitorHeight = SplitterStorage.get(monitorHeightKey, this.spec.id, defaultBottomHeight) || defaultBottomHeight;
-    const savedLogHeight = SplitterStorage.get(logHeightKey, this.spec.id, defaultBottomHeight) || defaultBottomHeight;
+    const getMonitorMinHeight = () => this.computeMonitorCardNaturalHeight();
+    const initialMinHeight = getMonitorMinHeight();
+    const defaultBottomHeight = initialMinHeight;
+
+    const savedMonitorRaw = SplitterStorage.get(monitorHeightKey, this.spec.id);
+    const savedMonitorHeight = savedMonitorRaw !== null && Number.isFinite(savedMonitorRaw) && savedMonitorRaw > 0
+      ? Math.max(initialMinHeight, savedMonitorRaw)
+      : defaultBottomHeight;
+
+    const savedLogRaw = SplitterStorage.get(logHeightKey, this.spec.id);
+    const savedLogHeight = savedLogRaw !== null && Number.isFinite(savedLogRaw) && savedLogRaw >= 150
+      ? savedLogRaw
+      : 200;
 
     const setMonitorCardHeight = (size: number) => {
-      const clampedSize = Math.max(140, Math.round(size));
+      const minH = getMonitorMinHeight();
+      const clampedSize = Math.max(minH, Math.round(size));
       if (monitorCard) {
         monitorCard.style.height = `${clampedSize}px`;
         monitorCard.style.flex = `0 0 ${clampedSize}px`;
@@ -388,7 +412,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     };
 
     const setLogCardHeight = (size: number) => {
-      const clampedSize = Math.max(140, Math.round(size));
+      const clampedSize = Math.max(150, Math.round(size));
       if (logCard) {
         logCard.style.height = `${clampedSize}px`;
         logCard.style.flex = `0 0 ${clampedSize}px`;
@@ -408,7 +432,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           targetElement: monitorCard,
           containerElement: leftSection,
           defaultSize: defaultBottomHeight,
-          minSize: 140,
+          minSize: () => getMonitorMinHeight(),
           maxRatio: 0.60,
           scope: this.spec.id,
           invert: true,
@@ -419,7 +443,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           onResize: (size) => setMonitorCardHeight(size),
           onDragEnd: (size) => {
             setMonitorCardHeight(size);
-            SplitterStorage.set(monitorHeightKey, size, this.spec.id, true);
+            SplitterStorage.set(monitorHeightKey, size, this.spec.id, false);
           },
         });
       } catch (e) {
@@ -435,8 +459,8 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           direction: 'vertical',
           targetElement: logCard,
           containerElement: rightSection,
-          defaultSize: defaultBottomHeight,
-          minSize: 140,
+          defaultSize: 200,
+          minSize: 150,
           maxRatio: 0.60,
           scope: this.spec.id,
           invert: true,
@@ -447,7 +471,7 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           onResize: (size) => setLogCardHeight(size),
           onDragEnd: (size) => {
             setLogCardHeight(size);
-            SplitterStorage.set(logHeightKey, size, this.spec.id, true);
+            SplitterStorage.set(logHeightKey, size, this.spec.id, false);
           },
         });
       } catch (e) {
@@ -606,6 +630,23 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
 
   public getCurrentMode(): string | undefined {
     return this.currentMode;
+  }
+
+  /**
+   * 动态精确计算 Card 2 最小自然安全高度：
+   * 汇总标题栏、指标网格、领域自定义行（如中序序列流/开区间定界卡）与实时决策解说卡片的真实尺寸，
+   * 严格保证在用户拖拽调整面板高度时绝不挤压截断任何文字内容，且杜绝无意义空白。
+   */
+  public computeMonitorCardNaturalHeight(): number {
+    const card =
+      this.monitorCardEl ||
+      (this.root ? (this.root.querySelector('.dsp-left-section .dsp-card:last-child') as HTMLElement | null) : null);
+    const hasAux = Boolean(
+      (this.spec as any).auxVisualizer ||
+      (this.spec as any).hasCustomMetrics ||
+      this.spec.stages?.some((s) => (s as any).auxVisualizer)
+    );
+    return PanelBoundsEngine.computeNaturalHeight(card, { hasCustomMetrics: hasAux });
   }
 
   public setMode(mode: string): void {
@@ -860,7 +901,11 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           is3DMode: this.is3DMode,
         });
         sanitizeSandboxDom(this.sandboxContainer);
-        if ((step as any)?.treeOfTrees && !this.sandboxContainer.querySelector('#btn-subview-tot')) {
+        const hasTopLevelDeduction = Boolean(
+          (this.spec as any).hasDeductionTree ||
+          this.root?.querySelector('#btn-card1-view-deduction')
+        );
+        if (!hasTopLevelDeduction && (step as any)?.treeOfTrees && !this.sandboxContainer.querySelector('#btn-subview-tot')) {
           BinaryTreeOfTreesSynthesizer.renderWithSubViewToggle(this.sandboxContainer, (step as any).treeOfTrees, (singleBox) => {
             primaryRender(singleBox, step, { mode: this.currentMode, currentIndex: this.currentIndex, stageId: this.currentStageId, is3DMode: this.is3DMode });
             sanitizeSandboxDom(singleBox);
@@ -885,12 +930,24 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
           stageId: this.currentStageId,
         });
 
-        // 顶层架构守门：全景推演树属于 Card 1 子视图，严禁挤入 Card 2 监视器！
+        // 顶层架构守门 1：全景推演树属于 Card 1 子视图，严禁挤入 Card 2 监视器！
         // 彻底清除误植入 Card 2 的 RecursiveCallTrace 节点，捍卫 Card 2 纯净性
         const traceEl = this.customMetricsContainer.querySelector('.tree-trace-container, [class*="tree-trace"], .call-trace-terminal');
         if (traceEl) {
           traceEl.remove();
         }
+
+        // 顶层架构守门 2：决策/解说统一归口至 #dsp-live-text (SSOT)，清除辅助容器内误植的冗余决策卡片
+        const duplicateDecisionBars = this.customMetricsContainer.querySelectorAll('div, span');
+        duplicateDecisionBars.forEach((el) => {
+          const txt = (el.textContent || '').trim();
+          if (
+            (txt.startsWith('🧭 决策:') || txt.startsWith('⚡ 当前决策:') || txt.startsWith('🎯 决策:')) &&
+            el.children.length === 0
+          ) {
+            el.parentElement?.remove();
+          }
+        });
       } catch (err) {
         this.renderPipelineError(this.customMetricsContainer, err, '辅助视觉 (Card 2)');
       }
@@ -1122,16 +1179,38 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       });
     }
 
+    const decision = anyStep.decision;
     const msg = anyStep.message || anyStep.msg || anyStep.log || '';
-    if (this.liveTextEl && this.liveTextEl.style.display !== 'none' && msg) {
-      this.liveTextEl.textContent = `💡 ${msg}`;
+    if (this.liveTextEl && this.liveTextEl.style.display !== 'none') {
+      if (decision && msg && decision !== msg) {
+        this.liveTextEl.innerHTML = `<span style="font-weight: 700; color: #0284c7;">🧭 决策:</span> <strong>${escapeHtml(
+          decision
+        )}</strong> — <span style="color: #475569;">${escapeHtml(msg)}</span>`;
+      } else if (decision) {
+        this.liveTextEl.innerHTML = `<span style="font-weight: 700; color: #0284c7;">🧭 决策:</span> ${escapeHtml(
+          decision
+        )}`;
+      } else if (msg) {
+        this.liveTextEl.textContent = msg.startsWith('💡') || msg.startsWith('🧭') ? msg : `💡 ${msg}`;
+      }
+    }
+
+    // 动态防止卡片内容溢出被遮挡：当步骤渲染使 Card 2 产生新内容时，确保当前高度不小于最小自然高度
+    if (this.monitorCardEl) {
+      const hasAux = Boolean(
+        (this.spec as any).auxVisualizer ||
+        (this.spec as any).hasCustomMetrics ||
+        this.spec.stages?.some((s) => (s as any).auxVisualizer)
+      );
+      PanelBoundsEngine.ensureContentFitted(this.monitorCardEl, { hasCustomMetrics: hasAux });
     }
 
     // 2.5 驱动暗色代码终端行高亮与变量监控 (每一行都是一步，绝不跳步)
     if (this.codeTerminal) {
       const targetLine = anyStep.codeLine ?? anyStep.line;
       if (targetLine != null) {
-        this.codeTerminal.highlightLine(targetLine);
+        // 传入完整步骤上下文：ReturnStepDecorator 自动判定返回帧并挂载 ↩ 返回徽章（全库声明式算法统一生效）
+        this.codeTerminal.highlightLine(targetLine, anyStep);
       }
       // 保证代码框纯净，绝不将 Card 2 外部 metrics 泄露悬浮至代码终端内
       this.codeTerminal.updateVars(
@@ -1174,11 +1253,19 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
       if (lastStep.metrics['最终结果'] != null) return String(lastStep.metrics['最终结果']);
       if (lastStep.metrics['ans'] != null) return String(lastStep.metrics['ans']);
       if (lastStep.metrics['result'] != null) return String(lastStep.metrics['result']);
+      if (lastStep.metrics['final'] != null) return String(lastStep.metrics['final']);
+      if (lastStep.metrics['final-result'] != null) return String(lastStep.metrics['final-result']);
     }
     if (lastStep.ans != null) return String(lastStep.ans);
     if (lastStep.finalVal != null) return String(lastStep.finalVal);
+    if (lastStep.finalValue != null) return String(lastStep.finalValue);
+    if (lastStep.returnValue != null) return String(lastStep.returnValue);
+    if (lastStep.calcResult != null) return String(lastStep.calcResult);
+    if (lastStep.result != null) return String(lastStep.result);
+    if (typeof lastStep.valid === 'boolean') return String(lastStep.valid);
+    if (typeof lastStep.isValid === 'boolean') return String(lastStep.isValid);
     if (Array.isArray(lastStep.vars)) {
-      const ansVar = lastStep.vars.find((v: any) => v.name === 'ans' || v.name === 'result' || v.name === '最终结果');
+      const ansVar = lastStep.vars.find((v: any) => v.name === 'ans' || v.name === 'result' || v.name === '最终结果' || v.name === 'return' || v.name === 'valid');
       if (ansVar && ansVar.value != null) return String(ansVar.value);
     }
     return null;
@@ -1201,18 +1288,37 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (finalAns != null) {
       if (outputValEl) outputValEl.textContent = finalAns;
       if (playbackValEl) playbackValEl.textContent = finalAns;
-      if (playbackCapsule) playbackCapsule.style.display = 'inline-flex';
+
+      const isNegativeOutcome = finalAns === 'false' || finalAns === 'null' || finalAns === '-1';
 
       if (isCompleted) {
-        outputCapsule?.classList.add('is-accepted');
-        if (outputStatusEl) outputStatusEl.style.display = 'inline-block';
+        if (playbackCapsule) {
+          playbackCapsule.style.display = 'inline-flex';
+          playbackCapsule.classList.toggle('is-accepted', !isNegativeOutcome);
+          playbackCapsule.classList.toggle('is-rejected', isNegativeOutcome);
+        }
+        if (outputCapsule) {
+          outputCapsule.classList.toggle('is-accepted', !isNegativeOutcome);
+          outputCapsule.classList.toggle('is-rejected', isNegativeOutcome);
+        }
+        if (outputStatusEl) {
+          outputStatusEl.style.display = 'inline-block';
+          if (isNegativeOutcome) {
+            outputStatusEl.textContent = '✗ 判定结束: ' + finalAns;
+            outputStatusEl.className = 'dsp-output-badge-status badge-rejected';
+          } else {
+            outputStatusEl.textContent = '✓ Accepted';
+            outputStatusEl.className = 'dsp-output-badge-status';
+          }
+        }
       } else {
-        outputCapsule?.classList.remove('is-accepted');
+        if (playbackCapsule) playbackCapsule.style.display = 'none';
+        outputCapsule?.classList.remove('is-accepted', 'is-rejected');
         if (outputStatusEl) outputStatusEl.style.display = 'none';
       }
     } else {
       if (outputValEl) outputValEl.textContent = '—';
-      outputCapsule?.classList.remove('is-accepted');
+      outputCapsule?.classList.remove('is-accepted', 'is-rejected');
       if (outputStatusEl) outputStatusEl.style.display = 'none';
       if (playbackCapsule) playbackCapsule.style.display = 'none';
     }
@@ -1221,13 +1327,19 @@ export class DeclarativeAlgorithmVisualizer<TStep extends StepBase = any> extend
     if (isCompleted && finalAns != null && this.liveTextEl) {
       const anyStep = (this.steps[this.currentIndex] || {}) as any;
       const originalMsg = anyStep.decision || anyStep.message || anyStep.msg || '';
+      const isNegativeOutcome = finalAns === 'false' || finalAns === 'null' || finalAns === '-1';
+      const badgeText = isNegativeOutcome ? '✗ 求解完成' : '✓ Accepted';
+      const badgeBg = isNegativeOutcome ? '#ef4444' : '#22c55e';
+      const textColor = isNegativeOutcome ? '#991b1b' : '#166534';
+      const strongColor = isNegativeOutcome ? '#b91c1c' : '#15803d';
+
       this.liveTextEl.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="background: #22c55e; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 10px;">✓ Accepted</span>
-            <span style="font-weight: 700; color: #166534; font-size: 12px;">求解完成！最终返回值: <strong style="color: #15803d; font-size: 14px; text-decoration: underline;">${finalAns}</strong></span>
+            <span style="background: ${badgeBg}; color: #ffffff; padding: 1px 6px; border-radius: 4px; font-weight: 800; font-size: 10px;">${badgeText}</span>
+            <span style="font-weight: 700; color: ${textColor}; font-size: 12px;">算法执行完毕！最终返回值: <strong style="color: ${strongColor}; font-size: 14px; text-decoration: underline;">${finalAns}</strong></span>
           </div>
-          <span style="font-size: 11px; color: #15803d;">共 ${this.steps.length} 步 · ${originalMsg}</span>
+          <span style="font-size: 11px; color: ${textColor};">共 ${this.steps.length} 步 · ${originalMsg}</span>
         </div>
       `;
     }

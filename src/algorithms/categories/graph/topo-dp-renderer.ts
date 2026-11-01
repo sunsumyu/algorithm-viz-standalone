@@ -24,8 +24,8 @@ export { buildTopoDPSteps, renderTopoDPCanvas };
 
 const { template, Visualizer } = registerDeclarativeAlgorithm<TopoDPStep>({
   id: 'topo-dp',
-  aliases: ['parallel-courses-iii', 'leetcode-2050', 'class060-code03', 'topo-dp-cpm', 'parallel-courses-iii-060'],
-  name: '拓扑排序与动态规划 (Topological DP)',
+  aliases: ['parallel-courses-iii', 'leetcode-2050', 'class060-code03', 'topo-dp-cpm', 'parallel-courses-iii-060', '2050', '拓扑排序与动态规划' ],
+  name: '并行课程 III',
   category: 'graph',
   icon: '📈',
   difficulty: 3,

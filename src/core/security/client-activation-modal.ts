@@ -9,6 +9,7 @@
  */
 
 import { getMachineCode } from './machine-uid';
+import { usageTracker } from './usage-tracker';
 import {
   verifyLicenseCode,
   isLicenseActive,
@@ -308,6 +309,8 @@ export class ClientActivationModal {
       <div class="activation-help-tip">
         提示：复制上方设备机器码发送给授权方，即可获取对应的数字签名离线激活码。
       </div>
+
+      <div class="account-alt-link" id="activation-goto-account">👤 使用手机号注册 / 登录 (支持试用与按量付费) →</div>
     `;
 
     // 复制机器码事件
@@ -323,6 +326,13 @@ export class ClientActivationModal {
       } catch {
         alert(`请手动复制机器码: ${this.currentMachineCode}`);
       }
+    });
+
+    // 切换至账号注册登录通道
+    body.querySelector('#activation-goto-account')?.addEventListener('click', async () => {
+      const { accountModal } = await import('./account-modal');
+      this.close();
+      await accountModal.open({ blocking: this.isBlocking });
     });
 
     // 退出程序事件
@@ -354,6 +364,12 @@ export class ClientActivationModal {
         this.currentPayload = payload;
         this.isBlocking = false;
         this.updateTitlebarBadge(true, `已授权 (Tier ${payload.tier})`);
+
+        // 行为追踪与全局授权联动（同步执行，水印身份 / 追踪器身份即时刷新）
+        usageTracker.track('LICENSE_ACTIVATED', { detail: { identity: payload.user_id, tier: payload.tier } });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:state-changed'));
+        }
 
         this.showFeedback(feedbackBox, 'success', `✓ 激活成功！欢迎 ${payload.user_id}`);
 

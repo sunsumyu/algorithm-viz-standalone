@@ -113,7 +113,7 @@ export class CountCompleteTreeNodesCanvasAdapter {
       </div>
     `;
 
-    container.innerHTML = this.renderMetricsShell(
+    container.innerHTML = CountCompleteTreeNodesCanvasAdapter.renderMetricsShell(
       step,
       bufferHtml,
       '基准对照：朴素 DFS 遍历每一个节点，时间复杂度 O(N)。完全二叉树的几何性质可以彻底颠覆这一复杂度！'
@@ -151,7 +151,7 @@ export class CountCompleteTreeNodesCanvasAdapter {
       </div>
     `;
 
-    container.innerHTML = this.renderMetricsShell(
+    container.innerHTML = CountCompleteTreeNodesCanvasAdapter.renderMetricsShell(
       step,
       bufferHtml,
       '左神 Class 036 绝技：每层只需测一次右子树最左深度，两侧必有一侧为满树，直接 2^k 计入！总复杂度严格 O((logN)²)。'
@@ -198,7 +198,7 @@ export class CountCompleteTreeNodesCanvasAdapter {
       </div>
     `;
 
-    container.innerHTML = this.renderMetricsShell(
+    container.innerHTML = CountCompleteTreeNodesCanvasAdapter.renderMetricsShell(
       step,
       bufferHtml,
       'LeetCode 进阶：底层叶子编号 [2^(h-1), 2^h-1] 二分查找，每次利用二进制位 (mid & bits) 从根节点 O(logN) 寻路！'

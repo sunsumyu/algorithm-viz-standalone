@@ -28,7 +28,7 @@ export {
 export const reverseNodesInKGroupVisualizer = registerDeclarativeAlgorithm<KGroupStep>({
   id: 'reverse-nodes-in-k-group',
   aliases: ['class037-code01', 'reverse-k-group-037', 'reverse-nodes-in-k-group-25', 'leetcode-25', '25', 'reverse-k-group'],
-  name: 'Hard 21: K 个一组翻转链表 (Reverse Nodes in k-Group)',
+  name: 'K 个一组翻转链表',
   category: 'linked-list',
   icon: '🔁',
   difficulty: 3,

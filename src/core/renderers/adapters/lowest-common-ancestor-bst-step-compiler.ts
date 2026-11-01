@@ -7,6 +7,7 @@
  */
 
 import { TreeNode036, Tree036Step } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
+import { TreeNode } from '../tree-svg';
 import {
   LCA_BST_037_STAGE1_LINES,
   LCA_BST_037_STAGE2_LINES,
@@ -25,6 +26,34 @@ export const BST_LCA_NODES: TreeNode036[] = [
   { id: 8, val: 3, left: null, right: null, x: 115, y: 215 },
   { id: 9, val: 5, left: null, right: null, x: 165, y: 215 },
 ];
+
+/**
+ * 由 BST_LCA_NODES 构建核心 TreeNode 链接树 (保留原数字 id 供高亮按 id 精确匹配)。
+ * 挂载到 step.tree 后，StepNormalizationEngine 阶段 4 会自动合成树上挂树全景，
+ * Card 1 全景推演树子视图随之渲染图形化推演树而非文本讲义兜底。
+ */
+export function buildLinkedBstLcaTree(): TreeNode {
+  const nodeMap = new Map<number, TreeNode>(
+    BST_LCA_NODES.map((n) => [n.id, { val: n.val, id: n.id } as TreeNode])
+  );
+  for (const n of BST_LCA_NODES) {
+    const cur = nodeMap.get(n.id)!;
+    cur.left = n.left != null ? nodeMap.get(n.left) ?? null : null;
+    cur.right = n.right != null ? nodeMap.get(n.right) ?? null : null;
+  }
+  return nodeMap.get(1)!;
+}
+
+/** 为步骤序列批量挂载链接树与当前节点值 (供统一画布与全景推演消费) */
+function attachTreeContext(steps: Tree036Step[]): Tree036Step[] {
+  const linkedTree = buildLinkedBstLcaTree();
+  const idToVal = new Map(BST_LCA_NODES.map((n) => [n.id, n.val]));
+  for (const s of steps as any[]) {
+    s.tree = linkedTree;
+    s.current = s.activeNodeId != null ? idToVal.get(s.activeNodeId) ?? null : null;
+  }
+  return steps;
+}
 
 class LcaCallTrace {
   private lines: CallTraceLine[] = [];
@@ -101,6 +130,7 @@ export function buildLcaBstStage1RecursiveSteps(
   const qNode = valToNode.get(qVal);
 
   const trace = new LcaCallTrace();
+  let foundLCA: number | null = null;
 
   // 算法启动
   trace.addHeader(`lowestCommonAncestor(root = 6, p = ${pVal}, q = ${qVal})`, 0, '← 根调用入口');
@@ -122,16 +152,49 @@ export function buildLcaBstStage1RecursiveSteps(
     extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
   });
 
-  function recurse(cur: TreeNode036 | undefined, depth: number): TreeNode036 | undefined {
+  function recurse(
+    cur: TreeNode036 | undefined,
+    depth: number,
+    parent?: TreeNode036,
+    branch: 'left' | 'right' = 'left'
+  ): TreeNode036 | undefined {
+    // 递归推演五段式 ①: 函数入口帧 (带实参进入函数头，空子树挂探针锚点)
+    if (depth > 0) {
+      const label = cur ? `Node(${cur.val})` : 'null';
+      trace.addHeader(`lowestCommonAncestor(${branch === 'left' ? 'root.left' : 'root.right'} = ${label}, p = ${pVal}, q = ${qVal})`, depth);
+      steps.push({
+        codeLine: lines.entry,
+        decision: cur ? `深入调用帧: 携带实参进入节点 ${cur.val}` : `深入调用帧: 探测${branch === 'left' ? '左' : '右'}子树空槽位`,
+        message: cur
+          ? `进入 lowestCommonAncestor(节点 ${cur.val})，准备判空与单调性比较。`
+          : `父节点 ${parent?.val} 的${branch === 'left' ? '左' : '右'}孩子为空，进入空调用帧。`,
+        log: `lowestCommonAncestor(${label}, p = ${pVal}, q = ${qVal})`,
+        activeNodeId: cur?.id ?? null,
+        secondaryNodeId: pNode?.id ?? qNode?.id,
+        nullProbe: !cur && parent ? { parentVal: parent.val, parentId: parent.id, branch, phase: 'entry' } : undefined,
+        metrics: {
+          '当前数值': cur ? cur.val : 'null',
+          '目标 p': pVal,
+          '目标 q': qVal,
+          '目标区间': `[${minVal}, ${maxVal}]`,
+          '分叉节点 (LCA)': '推演中...',
+        },
+        statusBadge: { text: cur ? `访问节点 ${cur.val}` : '空调用探针', type: 'info' },
+        extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+      });
+    }
+
+    // 递归推演五段式 ②: 边界判空帧 (显式求值，空命中挂探针严禁画布断电)
     if (!cur) {
-      trace.addConditionHit(`root == null 命中 -> return null`, depth);
+      trace.addConditionHit(`① root == null 命中 -> return null`, depth);
       steps.push({
         codeLine: lines.nullCheck,
-        decision: `遇到空节点，向上回溯`,
-        message: `当前子树为空 (null)，说明目标不在当前分支，返回 null。`,
-        log: `lowestCommonAncestor(null) -> null`,
+        decision: `基底判空命中: ${parent?.val ?? '—'} 的${branch === 'left' ? '左' : '右'}子树为空`,
+        message: `root == null 判空命中，说明目标不在当前分支，向父调用返回 null。`,
+        log: `root is null -> return null`,
         activeNodeId: null,
         secondaryNodeId: pNode?.id ?? qNode?.id,
+        nullProbe: parent ? { parentVal: parent.val, parentId: parent.id, branch, phase: 'return' } : undefined,
         metrics: {
           '当前数值': 'null',
           '目标 p': pVal,
@@ -144,117 +207,224 @@ export function buildLcaBstStage1RecursiveSteps(
       });
       return undefined;
     }
+    trace.addConditionPass(`① root = Node(${cur.val}) ≠ null，判空通过`, depth);
+    steps.push({
+      codeLine: lines.nullCheck,
+      decision: `判空通过: root = 节点 ${cur.val} 非空`,
+      message: `root == null 不成立，当前节点 ${cur.val} 有效，继续单调性比较。`,
+      log: `root = ${cur.val} is not null -> proceed`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '当前数值': cur.val,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '目标区间': `[${minVal}, ${maxVal}]`,
+        '分叉节点 (LCA)': '推演中...',
+      },
+      statusBadge: { text: `判空通过 ${cur.val}`, type: 'info' },
+      extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+    });
 
-    if (depth > 0) {
-      trace.addHeader(`lowestCommonAncestor(root = ${cur.val}, p = ${pVal}, q = ${qVal})`, depth);
-      steps.push({
-        codeLine: lines.entry,
-        decision: `深入调用帧: 检查当前节点 ${cur.val}`,
-        message: `进入 lowestCommonAncestor(节点 ${cur.val})。对比节点值与目标区间 [${minVal}, ${maxVal}]。`,
-        log: `lowestCommonAncestor(root = ${cur.val}, p = ${pVal}, q = ${qVal})`,
-        activeNodeId: cur.id,
-        secondaryNodeId: pNode?.id ?? qNode?.id,
-        metrics: {
-          '当前数值': cur.val,
-          '目标 p': pVal,
-          '目标 q': qVal,
-          '目标区间': `[${minVal}, ${maxVal}]`,
-          '分叉节点 (LCA)': '推演中...',
-        },
-        statusBadge: { text: `访问节点 ${cur.val}`, type: 'info' },
-        extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
-      });
-    }
+    // 递归推演五段式 ③: 左单调性比较帧 (Line 3 显式求值)
+    const goLeftCond = cur.val > maxVal;
+    trace.addConditionPass(
+      goLeftCond
+        ? `② ${cur.val} > max(${pVal}, ${qVal}) = ${maxVal} 成立 -> 走左分支`
+        : `② ${cur.val} > max(${pVal}, ${qVal}) = ${maxVal} 不成立`,
+      depth
+    );
+    steps.push({
+      codeLine: lines.leftCompare,
+      decision: goLeftCond
+        ? `节点 ${cur.val} 同时大于 p(${pVal}) 与 q(${qVal})，左条件成立`
+        : `节点 ${cur.val} 不同时大于两目标，左条件不成立`,
+      message: `求值 root.val > p.val && root.val > q.val → ${cur.val} > ${pVal} && ${cur.val} > ${qVal} → ${goLeftCond}。`,
+      log: `if (${cur.val} > ${pVal} && ${cur.val} > ${qVal}) -> ${goLeftCond}`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '当前数值': cur.val,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '目标比较': `${cur.val} > ${maxVal} ? ${goLeftCond}`,
+        '走向': goLeftCond ? '向左递归 ⬅️' : '比较下一条件',
+        '分叉节点 (LCA)': '推演中...',
+      },
+      statusBadge: { text: goLeftCond ? `左条件成立` : `左条件不成立`, type: goLeftCond ? 'warning' : 'info' },
+      extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+    });
 
-    if (cur.val > maxVal) {
-      // 两个目标都在左子树
-      const nextLeftId: number | null | undefined = cur.left;
-      const nextNode: TreeNode036 | undefined = nextLeftId != null ? nodeMap.get(nextLeftId) : undefined;
-      trace.addConditionPass(`① ${cur.val} > max(${pVal}, ${qVal}) -> 递归左子树 lowestCommonAncestor(${nextNode?.val ?? 'null'})`, depth);
+    if (goLeftCond) {
+      // 递归推演五段式 ④: 深入分支调用帧 (Line 4)
+      const nextNode: TreeNode036 | undefined = cur.left != null ? nodeMap.get(cur.left) : undefined;
+      trace.addConditionPass(`③ 深入左子树 lowestCommonAncestor(${nextNode ? 'Node(' + nextNode.val + ')' : 'null'})`, depth);
       steps.push({
         codeLine: lines.goLeft,
-        decision: `节点 ${cur.val} 同时大于 p(${pVal}) 与 q(${qVal})，向左递归`,
-        message: `${cur.val} > ${pVal} 且 ${cur.val} > ${qVal}：两目标均在左子树中，进入 root.left (节点 ${nextNode ? nextNode.val : 'null'})`,
-        log: `lowestCommonAncestor(left = ${nextNode?.val ?? 'null'})`,
+        decision: `深入节点 ${cur.val} 的左子树`,
+        message: `执行 return lowestCommonAncestor(root.left, p, q)：两目标均在左子树，进入节点 ${nextNode ? nextNode.val : 'null'}。`,
+        log: `return lowestCommonAncestor(left = ${nextNode?.val ?? 'null'})`,
         activeNodeId: cur.id,
         secondaryNodeId: nextNode?.id,
         metrics: {
           '当前数值': cur.val,
           '目标 p': pVal,
           '目标 q': qVal,
-          '目标比较': `${cur.val} > ${maxVal}`,
-          '走向': '向左递归 ⬅️',
+          '走向': '⬅️ 深入左子树',
           '分叉节点 (LCA)': '推演中...',
         },
-        statusBadge: { text: `左转: ${nextNode?.val ?? nextLeftId}`, type: 'warning' },
+        statusBadge: { text: `深入左子树`, type: 'warning' },
         extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
       });
-      const res = recurse(nextNode, depth + 1);
-      trace.addReturnLeaf(`向上一层返回节点 ${res?.val}`, depth);
+      const res = recurse(nextNode, depth + 1, cur, 'left');
+      // 递归推演五段式 ⑤: 后序归约与返回帧 (子调用返回 -> 接收返回值 -> 恢复父现场 -> 向上传递)
+      trace.addReturnLeaf(`子调用返回 ${res ? 'Node(' + res.val + ')' : 'null'} -> 向上一层返回`, depth);
+      steps.push({
+        codeLine: lines.goLeft,
+        decision: `左子调用返回: ${res ? 'Node(' + res.val + ')' : 'null'}`,
+        message: `左子调用已返回 ${res ? 'Node(' + res.val + ')' : 'null'}，恢复节点 ${cur.val} 现场，将结果向上一层原样返回。`,
+        log: `leftRet = ${res ? res.val : 'null'} -> return`,
+        activeNodeId: cur.id,
+        secondaryNodeId: res?.id ?? pNode?.id ?? qNode?.id,
+        metrics: {
+          '当前数值': cur.val,
+          '目标 p': pVal,
+          '目标 q': qVal,
+          '左返回值': res ? `节点 ${res.val}` : 'null',
+          '分叉节点 (LCA)': foundLCA != null ? `节点 ${foundLCA}` : '推演中...',
+        },
+        statusBadge: { text: `返回归约`, type: 'info' },
+        extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+      });
       return res;
-    } else if (cur.val < minVal) {
-      // 两个目标都在右子树
-      const nextRightId: number | null | undefined = cur.right;
-      const nextNode: TreeNode036 | undefined = nextRightId != null ? nodeMap.get(nextRightId) : undefined;
-      trace.addConditionPass(`② ${cur.val} < min(${pVal}, ${qVal}) -> 递归右子树 lowestCommonAncestor(${nextNode?.val ?? 'null'})`, depth);
+    }
+
+    // 递归推演五段式 ③': 右单调性比较帧 (Line 6 显式求值，仅左条件失败时)
+    const goRightCond = cur.val < minVal;
+    trace.addConditionPass(
+      goRightCond
+        ? `② ${cur.val} < min(${pVal}, ${qVal}) = ${minVal} 成立 -> 走右分支`
+        : `② ${cur.val} < min(${pVal}, ${qVal}) = ${minVal} 不成立`,
+      depth
+    );
+    steps.push({
+      codeLine: lines.rightCompare,
+      decision: goRightCond
+        ? `节点 ${cur.val} 同时小于 p(${pVal}) 与 q(${qVal})，右条件成立`
+        : `节点 ${cur.val} 不同时小于两目标，右条件不成立`,
+      message: `求值 root.val < p.val && root.val < q.val → ${cur.val} < ${pVal} && ${cur.val} < ${qVal} → ${goRightCond}。`,
+      log: `if (${cur.val} < ${pVal} && ${cur.val} < ${qVal}) -> ${goRightCond}`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '当前数值': cur.val,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '目标比较': `${cur.val} < ${minVal} ? ${goRightCond}`,
+        '走向': goRightCond ? '向右递归 ➡️' : '分叉判定',
+        '分叉节点 (LCA)': '推演中...',
+      },
+      statusBadge: { text: goRightCond ? `右条件成立` : `右条件不成立`, type: goRightCond ? 'warning' : 'info' },
+      extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+    });
+
+    if (goRightCond) {
+      // 递归推演五段式 ④': 深入右分支调用帧 (Line 7)
+      const nextNode: TreeNode036 | undefined = cur.right != null ? nodeMap.get(cur.right) : undefined;
+      trace.addConditionPass(`③ 深入右子树 lowestCommonAncestor(${nextNode ? 'Node(' + nextNode.val + ')' : 'null'})`, depth);
       steps.push({
         codeLine: lines.goRight,
-        decision: `节点 ${cur.val} 同时小于 p(${pVal}) 与 q(${qVal})，向右递归`,
-        message: `${cur.val} < ${pVal} 且 ${cur.val} < ${qVal}：两目标均在右子树中，进入 root.right (节点 ${nextNode ? nextNode.val : 'null'})`,
-        log: `lowestCommonAncestor(right = ${nextNode?.val ?? 'null'})`,
+        decision: `深入节点 ${cur.val} 的右子树`,
+        message: `执行 return lowestCommonAncestor(root.right, p, q)：两目标均在右子树，进入节点 ${nextNode ? nextNode.val : 'null'}。`,
+        log: `return lowestCommonAncestor(right = ${nextNode?.val ?? 'null'})`,
         activeNodeId: cur.id,
         secondaryNodeId: nextNode?.id,
         metrics: {
           '当前数值': cur.val,
           '目标 p': pVal,
           '目标 q': qVal,
-          '目标比较': `${cur.val} < ${minVal}`,
-          '走向': '向右递归 ➡️',
+          '走向': '➡️ 深入右子树',
           '分叉节点 (LCA)': '推演中...',
         },
-        statusBadge: { text: `右转: ${nextNode?.val ?? nextRightId}`, type: 'warning' },
+        statusBadge: { text: `深入右子树`, type: 'warning' },
         extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
       });
-      const res = recurse(nextNode, depth + 1);
-      trace.addReturnLeaf(`向上一层返回节点 ${res?.val}`, depth);
-      return res;
-    } else {
-      // 分叉命中或当前节点即是其中之一
-      const isDirectMatch = cur.val === pVal || cur.val === qVal;
-      trace.addConditionHit(
-        isDirectMatch
-          ? `③ 当前节点 ${cur.val} 即为目标之一 -> return TreeNode(${cur.val}) (命中 LCA)`
-          : `③ ${minVal} <= ${cur.val} <= ${maxVal} 分叉点成立 -> return TreeNode(${cur.val}) (命中 LCA)`,
-        depth
-      );
-      trace.addFinalResult(`🎯 LCA 定位成功: 节点 ${cur.val}`, depth, `return root;`);
-
+      const res = recurse(nextNode, depth + 1, cur, 'right');
+      // 递归推演五段式 ⑤': 右子树后序归约与返回帧
+      trace.addReturnLeaf(`子调用返回 ${res ? 'Node(' + res.val + ')' : 'null'} -> 向上一层返回`, depth);
       steps.push({
-        codeLine: lines.splitFork,
-        decision: isDirectMatch
-          ? `当前节点 ${cur.val} 即为目标之一，命中 LCA！`
-          : `节点 ${cur.val} 介于 p(${pVal}) 与 q(${qVal}) 之间，分叉命中 LCA！`,
-        message: isDirectMatch
-          ? `节点 ${cur.val} 本身即为目标之一，另一目标在其子树中，根据 LCA 定义直接返回该节点！`
-          : `节点 ${cur.val} 满足 ${minVal} <= ${cur.val} <= ${maxVal}：目标在此首次分流，命中最近公共祖先！`,
-        log: `分叉点确定: lowestCommonAncestor = TreeNode(${cur.val})`,
+        codeLine: lines.goRight,
+        decision: `右子调用返回: ${res ? 'Node(' + res.val + ')' : 'null'}`,
+        message: `右子调用已返回 ${res ? 'Node(' + res.val + ')' : 'null'}，恢复节点 ${cur.val} 现场，将结果向上一层原样返回。`,
+        log: `rightRet = ${res ? res.val : 'null'} -> return`,
         activeNodeId: cur.id,
-        secondaryNodeId: pNode?.id ?? qNode?.id,
+        secondaryNodeId: res?.id ?? pNode?.id ?? qNode?.id,
         metrics: {
-          '分叉节点 (LCA)': `节点 ${cur.val}`,
+          '当前数值': cur.val,
           '目标 p': pVal,
           '目标 q': qVal,
-          '判定性质': isDirectMatch ? '当前节点为目标之一' : '数值分叉点',
+          '右返回值': res ? `节点 ${res.val}` : 'null',
+          '分叉节点 (LCA)': foundLCA != null ? `节点 ${foundLCA}` : '推演中...',
         },
-        statusBadge: { text: `命中 LCA: 节点 ${cur.val}`, type: 'success' },
+        statusBadge: { text: `返回归约`, type: 'info' },
         extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
       });
-      return cur;
+      return res;
     }
+
+    // 分叉命中帧 (Line 9: return root) — 首次分流处即 LCA
+    const isDirectMatch = cur.val === pVal || cur.val === qVal;
+    foundLCA = cur.val;
+    trace.addConditionHit(
+      isDirectMatch
+        ? `③ 当前节点 ${cur.val} 即为目标之一 -> return TreeNode(${cur.val}) (命中 LCA)`
+        : `③ ${minVal} <= ${cur.val} <= ${maxVal} 分叉点成立 -> return TreeNode(${cur.val}) (命中 LCA)`,
+      depth
+    );
+    trace.addFinalResult(`🎯 LCA 定位成功: 节点 ${cur.val}`, depth, `return root;`);
+    steps.push({
+      codeLine: lines.splitFork,
+      decision: isDirectMatch
+        ? `当前节点 ${cur.val} 即为目标之一，命中 LCA！`
+        : `节点 ${cur.val} 介于 p(${pVal}) 与 q(${qVal}) 之间，分叉命中 LCA！`,
+      message: isDirectMatch
+        ? `节点 ${cur.val} 本身即为目标之一，另一目标在其子树中，根据 LCA 定义直接返回该节点！`
+        : `节点 ${cur.val} 满足 ${minVal} <= ${cur.val} <= ${maxVal}：目标在此首次分流，命中最近公共祖先！`,
+      log: `分叉点确定: lowestCommonAncestor = TreeNode(${cur.val})`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '分叉节点 (LCA)': `节点 ${cur.val}`,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '判定性质': isDirectMatch ? '当前节点为目标之一' : '数值分叉点',
+      },
+      statusBadge: { text: `命中 LCA: 节点 ${cur.val}`, type: 'success' },
+      extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+    });
+    return cur;
   }
 
   recurse(nodes[0], 0);
-  return steps;
+
+  // 顶层返回完成帧 (根调用收到结果，算法闭合)
+  steps.push({
+    codeLine: lines.splitFork,
+    decision: `算法完成: 最近公共祖先 = ${foundLCA != null ? `节点 ${foundLCA}` : 'null'}`,
+    message: `根调用 lowestCommonAncestor 已返回最终结果${foundLCA != null ? ` Node(${foundLCA})` : ' null'}，全部递归帧闭合。`,
+    log: `全部执行完成: LCA = ${foundLCA != null ? `TreeNode(${foundLCA})` : 'null'}`,
+    activeNodeId: foundLCA != null ? (valToNode.get(foundLCA)?.id ?? null) : null,
+    secondaryNodeId: pNode?.id ?? qNode?.id,
+    metrics: {
+      '分叉节点 (LCA)': foundLCA != null ? `节点 ${foundLCA}` : 'null',
+      '目标 p': pVal,
+      '目标 q': qVal,
+      '判定性质': '递归闭合',
+    },
+    statusBadge: { text: `执行完成`, type: 'success' },
+    extraData: { treeNodes: nodes, callTrace: trace.snapshot() },
+  });
+  return attachTreeContext(steps);
 }
 
 // =========================================================================
@@ -321,75 +491,128 @@ export function buildLcaBstStage2IterativeSteps(
       extraData: { treeNodes: nodes },
     });
 
-    if (cur.val > maxVal) {
+    // 左单调性比较帧 (Line 3 显式求值——无论真假都必须独立成步，杜绝行号跳变)
+    const goLeftCond = cur.val > maxVal;
+    steps.push({
+      codeLine: lines.leftCompare,
+      decision: goLeftCond
+        ? `节点 ${cur.val} 同时大于 p(${pVal}) 与 q(${qVal})，左条件成立`
+        : `节点 ${cur.val} 不同时大于两目标，左条件不成立`,
+      message: `求值 root.val > p.val && root.val > q.val → ${cur.val} > ${pVal} && ${cur.val} > ${qVal} → ${goLeftCond}。`,
+      log: `if (${cur.val} > ${pVal} && ${cur.val} > ${qVal}) -> ${goLeftCond}`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '当前指针': `节点 ${cur.val}`,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '目标比较': `${cur.val} > ${maxVal} ? ${goLeftCond}`,
+        '走向': goLeftCond ? '⬅️ 左条件成立' : '比较下一条件',
+        '分叉节点 (LCA)': '查找中...',
+      },
+      statusBadge: { text: goLeftCond ? `左条件成立` : `左条件不成立`, type: goLeftCond ? 'warning' : 'info' },
+      extraData: { treeNodes: nodes },
+    });
+
+    if (goLeftCond) {
       const nextLeftId: number | null | undefined = cur.left;
       const nextNode: TreeNode036 | undefined = nextLeftId != null ? nodeMap.get(nextLeftId) : undefined;
       steps.push({
         codeLine: lines.goLeft,
-        decision: `当前节点 ${cur.val} > max(${pVal}, ${qVal})，指针移向 root.left`,
-        message: `两目标均在左子树，指针直接更新为 root.left (节点 ${nextNode ? nextNode.val : 'null'})。`,
+        decision: `指针移动: root = root.left`,
+        message: `两目标均在左子树，指针由节点 ${cur.val} 直接更新为 root.left (节点 ${nextNode ? nextNode.val : 'null'})，无递归栈开销。`,
         log: `root = root.left (${nextNode?.val ?? nextLeftId})`,
-        activeNodeId: cur.id,
-        secondaryNodeId: nextNode?.id,
+        activeNodeId: nextNode?.id ?? null,
+        secondaryNodeId: pNode?.id ?? qNode?.id,
+        nullProbe: !nextNode ? { parentVal: cur.val, parentId: cur.id, branch: 'left', phase: 'return' } : undefined,
         metrics: {
-          '当前指针': `节点 ${cur.val}`,
+          '当前指针': `节点 ${nextNode?.val ?? 'null'}`,
           '比较条件': `${cur.val} > ${maxVal}`,
           '下一指针': `节点 ${nextNode?.val ?? 'null'}`,
-          '走向': '⬅️ 移向左子树',
+          '走向': '⬅️ 已移向左子树',
           '分叉节点 (LCA)': '查找中...',
         },
         statusBadge: { text: `左移: ${nextNode?.val ?? nextLeftId}`, type: 'warning' },
         extraData: { treeNodes: nodes },
       });
       cur = nextNode;
-    } else if (cur.val < minVal) {
+      continue;
+    }
+
+    // 右单调性比较帧 (Line 5 else-if 显式求值)
+    const goRightCond = cur.val < minVal;
+    steps.push({
+      codeLine: lines.rightCompare,
+      decision: goRightCond
+        ? `节点 ${cur.val} 同时小于 p(${pVal}) 与 q(${qVal})，右条件成立`
+        : `节点 ${cur.val} 不同时小于两目标，右条件不成立`,
+      message: `求值 root.val < p.val && root.val < q.val → ${cur.val} < ${pVal} && ${cur.val} < ${qVal} → ${goRightCond}。`,
+      log: `else if (${cur.val} < ${pVal} && ${cur.val} < ${qVal}) -> ${goRightCond}`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '当前指针': `节点 ${cur.val}`,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '目标比较': `${cur.val} < ${minVal} ? ${goRightCond}`,
+        '走向': goRightCond ? '➡️ 右条件成立' : '分叉判定',
+        '分叉节点 (LCA)': '查找中...',
+      },
+      statusBadge: { text: goRightCond ? `右条件成立` : `右条件不成立`, type: goRightCond ? 'warning' : 'info' },
+      extraData: { treeNodes: nodes },
+    });
+
+    if (goRightCond) {
       const nextRightId: number | null | undefined = cur.right;
       const nextNode: TreeNode036 | undefined = nextRightId != null ? nodeMap.get(nextRightId) : undefined;
       steps.push({
         codeLine: lines.goRight,
-        decision: `当前节点 ${cur.val} < min(${pVal}, ${qVal})，指针移向 root.right`,
-        message: `两目标均在右子树，指针直接更新为 root.right (节点 ${nextNode ? nextNode.val : 'null'})。`,
+        decision: `指针移动: root = root.right`,
+        message: `两目标均在右子树，指针由节点 ${cur.val} 直接更新为 root.right (节点 ${nextNode ? nextNode.val : 'null'})，无递归栈开销。`,
         log: `root = root.right (${nextNode?.val ?? nextRightId})`,
-        activeNodeId: cur.id,
-        secondaryNodeId: nextNode?.id,
+        activeNodeId: nextNode?.id ?? null,
+        secondaryNodeId: pNode?.id ?? qNode?.id,
+        nullProbe: !nextNode ? { parentVal: cur.val, parentId: cur.id, branch: 'right', phase: 'return' } : undefined,
         metrics: {
-          '当前指针': `节点 ${cur.val}`,
+          '当前指针': `节点 ${nextNode?.val ?? 'null'}`,
           '比较条件': `${cur.val} < ${minVal}`,
           '下一指针': `节点 ${nextNode?.val ?? 'null'}`,
-          '走向': '➡️ 移向右子树',
+          '走向': '➡️ 已移向右子树',
           '分叉节点 (LCA)': '查找中...',
         },
         statusBadge: { text: `右移: ${nextNode?.val ?? nextRightId}`, type: 'warning' },
         extraData: { treeNodes: nodes },
       });
       cur = nextNode;
-    } else {
-      const isDirectMatch = cur.val === pVal || cur.val === qVal;
-      steps.push({
-        codeLine: lines.splitFork,
-        decision: isDirectMatch
-          ? `当前指针 ${cur.val} 即为目标之一，直接返回！`
-          : `指针节点 ${cur.val} 介于两目标之间，分叉命中 LCA！`,
-        message: isDirectMatch
-          ? `当前节点 ${cur.val} 自身即为目标，另一目标必在其子树内，直接 return root。`
-          : `满足 ${minVal} <= ${cur.val} <= ${maxVal}，两目标在此首次分岔，直接 return root！`,
-        log: `return root (节点 ${cur.val})`,
-        activeNodeId: cur.id,
-        secondaryNodeId: pNode?.id ?? qNode?.id,
-        metrics: {
-          '分叉节点 (LCA)': `节点 ${cur.val}`,
-          '目标 p': pVal,
-          '目标 q': qVal,
-          '判定性质': isDirectMatch ? '当前节点为目标之一' : '数值分叉点',
-        },
-        statusBadge: { text: `命中 LCA: 节点 ${cur.val}`, type: 'success' },
-        extraData: { treeNodes: nodes },
-      });
-      break;
+      continue;
     }
+
+    // 分叉命中帧 (Line 8: return root)
+    const isDirectMatch = cur.val === pVal || cur.val === qVal;
+    steps.push({
+      codeLine: lines.splitFork,
+      decision: isDirectMatch
+        ? `当前指针 ${cur.val} 即为目标之一，直接返回！`
+        : `指针节点 ${cur.val} 介于两目标之间，分叉命中 LCA！`,
+      message: isDirectMatch
+        ? `当前节点 ${cur.val} 自身即为目标，另一目标必在其子树内，直接 return root。`
+        : `满足 ${minVal} <= ${cur.val} <= ${maxVal}，两目标在此首次分岔，直接 return root！`,
+      log: `return root (节点 ${cur.val})`,
+      activeNodeId: cur.id,
+      secondaryNodeId: pNode?.id ?? qNode?.id,
+      metrics: {
+        '分叉节点 (LCA)': `节点 ${cur.val}`,
+        '目标 p': pVal,
+        '目标 q': qVal,
+        '判定性质': isDirectMatch ? '当前节点为目标之一' : '数值分叉点',
+      },
+      statusBadge: { text: `命中 LCA: 节点 ${cur.val}`, type: 'success' },
+      extraData: { treeNodes: nodes },
+    });
+    break;
   }
 
-  return steps;
+  return attachTreeContext(steps);
 }
 
 // 统一向后兼容函数

@@ -110,11 +110,60 @@ export function getTrailingText(target: HTMLElement, maxChars = 60): string {
 }
 
 /**
- * 从当前悬停元素提取后续下标表达式（如 arr[k][1], dp[i][j], s.charAt(l)）
+ * 提取元素前面的纯文本（用于识别 obj.prop 或 obj->prop 形式的成员访问前缀）
+ */
+export function getLeadingText(target: HTMLElement, maxChars = 40): string {
+  const lineTextEl = (target.closest?.('.code-line-text') || target.closest?.('.code-line')) as HTMLElement | null;
+
+  if (lineTextEl && typeof document !== 'undefined' && typeof document.createRange === 'function') {
+    try {
+      const range = document.createRange();
+      range.setStartBefore(lineTextEl);
+      range.setEndBefore(target);
+      const s = range.toString();
+      return s.length > maxChars ? s.slice(-maxChars) : s;
+    } catch {
+      // fallback below
+    }
+  }
+
+  let text = '';
+  function collectBefore(node: Node): void {
+    let curr: Node | null = node.previousSibling;
+    let parent: Node | null = node.parentNode;
+
+    while (text.length < maxChars) {
+      while (curr && text.length < maxChars) {
+        text = (curr.textContent || '') + text;
+        curr = curr.previousSibling;
+      }
+      if (text.length >= maxChars || !parent || parent === lineTextEl || parent.nodeName === 'BODY') {
+        break;
+      }
+      curr = parent.previousSibling;
+      parent = parent.parentNode;
+    }
+  }
+
+  collectBefore(target);
+  return text.length > maxChars ? text.slice(-maxChars) : text;
+}
+
+/**
+ * 从当前悬停元素提取后续下标表达式（如 arr[k][1], dp[i][j], s.charAt(l)）或成员属性表达式（如 root.val, prev.val, root.left）
  */
 export function extractSubscriptExpr(target: HTMLElement): string | null {
   const varName = target.dataset?.var || target.textContent?.trim() || '';
   if (!varName) return null;
+
+  // 0. 优先检测前置对象属性访问前缀: 如 root.val, prev.val, root.left, root->right
+  const leadingText = getLeadingText(target);
+  if (leadingText) {
+    const memberPrefix = leadingText.match(/([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(\.|->)\s*$/);
+    if (memberPrefix) {
+      return `${memberPrefix[1]}${memberPrefix[2]}${varName}`;
+    }
+  }
 
   const trailingText = getTrailingText(target);
   if (!trailingText) return null;
@@ -411,10 +460,10 @@ export function createHoverTooltipManager(
         hoverTooltip.style.display = 'block';
         hoverTooltip.style.opacity = '1';
 
-        let top = rect.top - (hoverTooltip.offsetHeight || 28) - 6;
+        let top = rect.top - (hoverTooltip.offsetHeight || 28) - 8;
         let left = rect.left;
-        if (top < 10) {
-          top = rect.bottom + 6;
+        if (top < 20) {
+          top = rect.bottom + 8;
         }
         if (typeof window !== 'undefined') {
           if (left + (hoverTooltip.offsetWidth || 150) > window.innerWidth - 10) {

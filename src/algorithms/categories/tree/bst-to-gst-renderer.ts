@@ -38,7 +38,7 @@ export {
 
 export const bstToGstVisualizer = registerDeclarativeAlgorithm<BstToGstStep>({
   id: 'bst-to-gst',
-  aliases: ['leetcode-538', 'leetcode-1038', 'convert-bst-to-greater-tree', 'binary-search-tree-to-greater-sum-tree'],
+  aliases: ['leetcode-538', 'leetcode-1038', 'convert-bst-to-greater-tree', 'binary-search-tree-to-greater-sum-tree', '1038', '从二叉搜索树到更大和树' ],
   name: '把二叉搜索树转换为累加树',
   category: 'tree',
   icon: '💰',

@@ -1,0 +1,21 @@
+{
+  "key_hex": "a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+  "pack_sha256": "564771d3560e6b64f58dc345e2677ddf7eedce6a9fb8fef9c0f8c62089fb4400",
+  "entries": [
+    {
+      "id": "assets/alpha.js",
+      "sha256": "2c88fd3a67f057b72b3830064ca88fd96d7feaac2493eaa4ea055a0b384afd32",
+      "bytes": 24
+    },
+    {
+      "id": "assets/beta.css",
+      "sha256": "8cec704d8f0538dc9cff247e4dfb15fa5945f7c3d16365f9d8d02599fa919cf7",
+      "bytes": 26
+    },
+    {
+      "id": "pages/gamma.js",
+      "sha256": "03741380b9e6492f5a2cd5e270013799badc66a311813ee34fc6652f44397faf",
+      "bytes": 39
+    }
+  ]
+}

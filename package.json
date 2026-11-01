@@ -23,6 +23,10 @@
     "meta:sync": "vite-node scripts/catalog-sync.ts",
     "audit:candidates": "vite-node scripts/audit-candidates.ts",
     "license:gen": "vite-node scripts/generate-license.ts",
+    "voucher:gen": "vite-node scripts/generate-voucher.ts",
+    "content:pack": "vite-node scripts/build-content-pack.ts",
+    "tauri:build:protected": "vite-node scripts/release-protected.ts",
+    "verify:protected": "vite-node scripts/verify-protected-build.ts",
     "leak:investigate": "vite-node scripts/leak-investigator.ts"
   },
   "devDependencies": {

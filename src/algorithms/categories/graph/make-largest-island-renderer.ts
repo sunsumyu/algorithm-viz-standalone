@@ -89,7 +89,7 @@ export function renderMakeLargestIslandCanvas(container: HTMLElement, step: MLIS
 
 export const makeLargestIslandVisualizer = registerDeclarativeAlgorithm({
   id: 'make-largest-island',
-  name: '最大人工岛 / 建造最大岛屿 (LC 827)',
+  name: '最大人工岛',
   aliases: ['making-a-large-island', 'build-largest-island', '建造最大岛屿', '827', 'leetcode-827', 'making-large-island-058', 'class058-code05'],
   category: 'graph',
   hasDeductionTree: true,

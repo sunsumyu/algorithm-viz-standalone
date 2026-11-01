@@ -18,8 +18,8 @@ export { buildMergeSortedLists038Steps };
 
 export const mergeSortedLists038Visualizer = registerDeclarativeAlgorithm<MergeSortedLists038Step>({
   id: 'merge-sorted-lists-038',
-  aliases: ['class038-code01', 'class007-code01', 'merge-two-sorted-lists', 'leetcode-21', 'merge-two-sorted-lists-21', '21', 'merge-sorted-lists'],
-  name: '有序链表合并 (Class 038)',
+  aliases: ['class038-code01', 'class007-code01', 'merge-two-sorted-lists', 'leetcode-21', 'merge-two-sorted-lists-21', '21', 'merge-sorted-lists', '有序链表合并' ],
+  name: '合并两个有序链表',
   category: 'linked-list',
   difficulty: 'easy',
   hasDeductionTree: true,

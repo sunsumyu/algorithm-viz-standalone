@@ -20,7 +20,7 @@ export {
 
 export const countSubmatricesAllOnes1504Visualizer = registerDeclarativeAlgorithm<SubmatrixStep>({
   id: 'count-submatrices-all-ones-1504',
-  name: 'Hard 26: 统计全 1 子矩形 (LeetCode 1504)',
+  name: '统计全 1 子矩形',
   aliases: [
     'count-submatrices-all-ones-053',
     'class053-code01',

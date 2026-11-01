@@ -15,6 +15,16 @@ import {
   cloneTreeOfTrees,
 } from './bst-to-gst-step-compiler';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
+import { buildVBSteps } from './valid-bst-step-compiler';
+import { buildBstModesStage1Steps } from './bst-modes-step-compiler';
+import { buildBalancedStage1Steps } from './balanced-binary-tree-step-compiler';
+import { buildBstMinDiffStage1Steps } from './bst-min-diff-step-compiler';
+import { buildBstSearchStage2RecursiveSteps } from './bst-search-step-compiler';
+import { buildLCASteps } from './lca-step-compiler';
+import { buildCountNodesDfsSteps } from './count-complete-tree-nodes-step-compiler';
+import { ZigzagStepCompiler } from './zigzag-step-compiler';
+import { LevelOrderStepCompiler } from './level-order-step-compiler';
+import { LEVEL_ORDER_STAGE1_LINES } from '../../../algorithms/categories/tree/binary-tree-level-stage-codes';
 import { StepNormalizationEngine } from '../../step-normalization-engine';
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
 import { TreeDepthStepCompiler } from './tree-depth-step-compiler';
@@ -350,5 +360,335 @@ describe('TreeOfTreesCanvasAdapter & StepCompiler Integration', () => {
       stageId: 'stage-1',
     });
     expect((invSteps[0] as any).treeOfTrees?.funcCall).toContain('invertTree(4)');
+  });
+
+  it('活跃面板独享双层光晕与呼吸光环，非活跃面板绝不挂光环，且尊重 prefers-reduced-motion', () => {
+    const lChild: TreeOfTreesNode = {
+      id: 'call-1',
+      funcCall: 'reverseInorder(1)',
+      depth: 1,
+      branch: 'left',
+      status: 'pending',
+      activeNodeVal: 1,
+      sum: 0,
+      treeSnapshot: buildTreeFromArr([4, 1, 6]),
+      children: [],
+    };
+    const rChild: TreeOfTreesNode = {
+      id: 'call-6',
+      funcCall: 'reverseInorder(6)',
+      depth: 1,
+      branch: 'right',
+      status: 'active',
+      activeNodeVal: 6,
+      sum: 6,
+      treeSnapshot: buildTreeFromArr([4, 1, 6]),
+      children: [],
+    };
+    const rootFrame: TreeOfTreesNode = {
+      id: 'call-4',
+      funcCall: 'reverseInorder(4)',
+      depth: 0,
+      branch: 'root',
+      status: 'waiting',
+      activeNodeVal: 4,
+      sum: 0,
+      treeSnapshot: buildTreeFromArr([4, 1, 6]),
+      children: [lChild, rChild],
+      leftChild: lChild,
+      rightChild: rChild,
+    };
+
+    TreeOfTreesCanvasAdapter.render(container, rootFrame);
+
+    // 1) 双层光晕：tot-active-glow 必须由锐核 + 柔晕两层 feDropShadow 叠加而成
+    const glowFilter = container.querySelector('#tot-active-glow');
+    expect(glowFilter).not.toBeNull();
+    // 大范围柔晕绝不被 filter region 裁剪：region 必须扩容至至少 -40% / 180%
+    expect(Number((glowFilter!.getAttribute('x') || '').replace('%', ''))).toBeLessThanOrEqual(-40);
+    expect(Number((glowFilter!.getAttribute('width') || '').replace('%', ''))).toBeGreaterThanOrEqual(180);
+    // 注：jsdom 片段解析会将 SVG 驼峰标签折为小写（浏览器保持 feDropShadow），故用大小写无关匹配
+    const shadowLayers = Array.from(glowFilter!.children).filter((el) =>
+      /^fedropshadow$/i.test(el.tagName)
+    );
+    expect(shadowLayers.length).toBe(2);
+
+    // 2) 光效独占活跃面板：全画布恰好 1 个外框矩形挂 url(#tot-active-glow)
+    const glowRects = Array.from(container.querySelectorAll('rect')).filter(
+      (r) => r.getAttribute('filter') === 'url(#tot-active-glow)'
+    );
+    expect(glowRects.length).toBe(1);
+
+    // 3) 呼吸光环：活跃面板独享 tot-breathing-ring，SMIL 动画 2s+ 周期持续往复
+    const rings = container.querySelectorAll('.tot-breathing-ring');
+    expect(rings.length).toBe(1);
+    const breathe = rings[0].querySelector('animate');
+    expect(breathe).not.toBeNull();
+    expect(breathe!.getAttribute('values')).toContain(';');
+    expect(breathe!.getAttribute('repeatCount')).toBe('indefinite');
+
+    // 4) 可达性：系统声明减少动效时，光环保留为静态但呼吸动画必须移除
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      TreeOfTreesCanvasAdapter.render(container, rootFrame);
+      const staticRings = container.querySelectorAll('.tot-breathing-ring');
+      expect(staticRings.length).toBe(1);
+      expect(staticRings[0].querySelector('animate')).toBeNull();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
+  it('叶子空调用渲染 ∅ 虚线探针与方向蚂蚁线，prev/cur 双指针与单调性比较弧线全程可见', () => {
+    // LeetCode 98 例 2：[5,1,4,null,null,3,6] — 3 位于 5 的右子树却 3<5，违规树
+    const root = buildTreeFromArr([5, 1, 4, null, null, 3, 6]);
+    const steps = StepNormalizationEngine.normalize(buildVBSteps(root), {
+      algorithmId: 'valid-bst',
+      stageId: 'stage-1',
+    }) as any[];
+
+    expect(steps.length).toBeGreaterThan(10);
+    expect(steps.every((s) => s.treeOfTrees)).toBe(true);
+
+    // --- 场景 1：叶子 1 的左空调用 — 活跃叶子帧独享 ∅ 探针 + 下行蚂蚁线 ---
+    const nullEntry = steps.find(
+      (s) => s.action === 'null-entry' && s.nullProbe?.parentVal === 1 && s.nullProbe?.branch === 'left'
+    );
+    expect(nullEntry).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, nullEntry.treeOfTrees);
+
+    const probes = container.querySelectorAll('.tot-null-probe');
+    expect(probes.length).toBe(1); // 仅活跃叶子帧持有探针，绝不全景扩散
+    expect(probes[0].getAttribute('stroke-dasharray')).toBeTruthy();
+    expect(container.textContent).toContain('∅');
+    expect(probes[0].querySelector('animate')).not.toBeNull(); // 呼吸脉冲
+    const flowLine = container.querySelector('.tot-null-flow');
+    expect(flowLine).not.toBeNull();
+    expect(flowLine!.querySelector('animate')!.getAttribute('values')).toBe('8;0'); // entry 相位：流向空槽
+
+    // --- 场景 2：null-return — 蚂蚁线反向上行（true 回流父帧）---
+    const nullReturn = steps.find(
+      (s) => s.action === 'null-return' && s.nullProbe?.parentVal === 1 && s.nullProbe?.branch === 'right'
+    );
+    expect(nullReturn).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, nullReturn.treeOfTrees);
+    expect(container.querySelector('.tot-null-flow')!.querySelector('animate')!.getAttribute('values')).toBe('0;8');
+
+    // --- 场景 3：compare(5) — prev=1 紫色虚线环 + cur 标签 + 比较弧线问询 ---
+    const compareStep = steps.find((s) => s.action === 'compare' && s.current === 5);
+    expect(compareStep).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, compareStep.treeOfTrees);
+    expect(container.querySelectorAll('.tot-null-probe').length).toBe(0); // 非空步骤零探针
+    expect(container.querySelectorAll('.tot-prev-marker').length).toBe(1);
+    expect(container.querySelectorAll('.tot-prev-tag').length).toBe(1);
+    expect(container.querySelectorAll('.tot-cur-tag').length).toBe(1);
+    expect(container.querySelectorAll('.tot-compare-arc').length).toBe(1);
+    expect(container.textContent).toContain('5 > 1 ?');
+
+    // --- 场景 4：violation(3 vs 5) — 弧线转红并给出 ✗ 判定 ---
+    const violationStep = steps.find((s) => s.action === 'violation');
+    expect(violationStep).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, violationStep.treeOfTrees);
+    expect(container.textContent).toContain('3 ≤ 5 ✗');
+
+    // --- 场景 5：reduced-motion — 探针保留为静态虚线，全部动画移除 ---
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      TreeOfTreesCanvasAdapter.render(container, nullEntry.treeOfTrees);
+      const staticProbes = container.querySelectorAll('.tot-null-probe');
+      expect(staticProbes.length).toBe(1);
+      expect(staticProbes[0].querySelector('animate')).toBeNull();
+      const staticFlow = container.querySelector('.tot-null-flow');
+      expect(staticFlow).not.toBeNull();
+      expect(staticFlow!.querySelector('animate')).toBeNull();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
+  it('活跃面板可见性保证：拖拽平移关闭跟随后推进步骤，活跃面板必须被最小平移拉回视口且缩放绝不被偷改', () => {
+    const root = buildTreeFromArr([10, 5, 15, 3, 7, 12, 18]);
+    const steps = StepNormalizationEngine.normalize(buildVBSteps(root), {
+      algorithmId: 'valid-bst',
+      stageId: 'stage-1',
+    }) as any[];
+
+    // 显式声明视口尺寸（jsdom 无布局引擎，clientWidth 默认 0）
+    Object.defineProperty(container, 'clientWidth', { value: 900, configurable: true });
+    Object.defineProperty(container, 'clientHeight', { value: 620, configurable: true });
+
+    const parseTf = (tf: string) => ({
+      tx: Number(tf.match(/translate\((-?[0-9.]+), (-?[0-9.]+)\)/)![1]),
+      ty: Number(tf.match(/translate\((-?[0-9.]+), (-?[0-9.]+)\)/)![2]),
+      scale: Number(tf.match(/scale\(([0-9.]+)\)/)![1]),
+    });
+    const getTf = () => container.querySelector('#tot-main-group')!.getAttribute('transform') || '';
+
+    // 1. 首步渲染（autoFollow 聚焦相机），随后模拟用户向左拖拽 800px（拖拽关闭 autoFollow）
+    TreeOfTreesCanvasAdapter.render(container, steps[0].treeOfTrees);
+    const svg = container.querySelector('svg')!;
+    const scaleBeforeDrag = parseTf(getTf()).scale;
+    svg.dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, clientX: 400, clientY: 300 })
+    );
+    window.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: -400, clientY: 300 }));
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    expect(parseTf(getTf()).tx).toBeLessThan(parseTf(getTf()).tx + 700); // 拖拽确实发生了大幅左移
+
+    // 2. 推进到深左侧活跃帧（isValidBST(3)）：拖拽视口下活跃面板必然滑出左侧，必须被拉回
+    const deepStep = steps.find((s) => (s.treeOfTrees as any)?.leftChild?.leftChild?.status === 'active');
+    expect(deepStep).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, deepStep.treeOfTrees);
+
+    // 3. 经 viewBox letterbox 因子 k 把活跃面板世界矩形映射到元素坐标，断言完全落在视口内
+    const [, , totalW, totalH] = (container.querySelector('svg')!.getAttribute('viewBox') || '')
+      .split(' ')
+      .map(Number);
+    const { tx, ty, scale } = parseTf(getTf());
+    // 缩放比例绝不被偷改：与拖拽前完全一致
+    expect(scale).toBe(scaleBeforeDrag);
+
+    const k = Math.min(900 / totalW, 620 / totalH);
+    const ox = (900 - totalW * k) / 2;
+    const oy = (620 - totalH * k) / 2;
+    const glowRect = Array.from(container.querySelectorAll('rect')).find(
+      (r) => r.getAttribute('filter') === 'url(#tot-active-glow)'
+    );
+    expect(glowRect).toBeDefined();
+    const cardTf = ((glowRect!.parentNode as Element).getAttribute('transform') || '').match(
+      /translate\((-?[0-9.]+), (-?[0-9.]+)\)/
+    )!;
+    const worldLeft = Number(cardTf[1]);
+    const worldTop = Number(cardTf[2]);
+    const cardW = Number(glowRect!.getAttribute('width'));
+    const cardH = Number(glowRect!.getAttribute('height'));
+    const screenLeft = (worldLeft * scale + tx) * k + ox;
+    const screenRight = screenLeft + cardW * scale * k;
+    const screenTop = (worldTop * scale + ty) * k + oy;
+    const screenBottom = screenTop + cardH * scale * k;
+    expect(screenLeft).toBeGreaterThanOrEqual(-0.5);
+    expect(screenRight).toBeLessThanOrEqual(900 + 0.5);
+    expect(screenTop).toBeGreaterThanOrEqual(-0.5);
+    expect(screenBottom).toBeLessThanOrEqual(620 + 0.5);
+
+    // 4. 最小平移性质：左滑出视口时恰好拉回到 12px 安全边距，绝不重新居中夸大位移
+    expect(screenLeft).toBeCloseTo(12, 0);
+  });
+
+  it('bst-modes 共享空调用探针：∅ 探针绑定调用帧面板，prev 指针跨方言统一可见', () => {
+    const root = buildTreeFromArr([2, 1, 3]);
+    const steps = StepNormalizationEngine.normalize(buildBstModesStage1Steps(root), {
+      algorithmId: 'bst-modes',
+      stageId: 'stage-1',
+    }) as any[];
+
+    // 编译器发射端契约：空基底步骤必须携带 nullProbe
+    const nullSteps = steps.filter((s) => s.currNodeVal === null && s.nullProbe);
+    expect(nullSteps.length).toBeGreaterThanOrEqual(4); // 叶子 1 与 3 各有左右两次空调用
+
+    // 取第一个 prev 已就位的空调用步（null-right of 1，prev=1）：探针必须落在调用帧面板内
+    const nullStep = nullSteps.find((s) => s.prevNodeVal !== null);
+    expect(nullStep).toBeDefined();
+    expect(nullStep.nullProbe.parentVal).toBe(1);
+    expect(nullStep.nullProbe.branch).toBe('right');
+    expect(nullStep.nullProbe.phase).toBe('entry');
+    expect(nullStep.nullProbe.parentId).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, nullStep.treeOfTrees);
+
+    // 全景唯一探针，且必须挂在携带双层光晕的调用帧卡片内部（修正 prev 帧误活跃的归属错位）
+    expect(container.querySelectorAll('.tot-null-probe').length).toBe(1);
+    const glowRect = Array.from(container.querySelectorAll('rect')).find(
+      (r) => r.getAttribute('filter') === 'url(#tot-active-glow)'
+    );
+    expect(glowRect).toBeDefined();
+    const callerCard = glowRect!.parentNode as Element;
+    expect(callerCard.querySelector('.tot-null-probe')).not.toBeNull();
+
+    // prev 指针跨方言（prevNodeVal）统一渲染，空调用期间 cur 为空不挂 cur 标签
+    expect(container.querySelectorAll('.tot-prev-marker').length).toBe(1);
+    expect(container.querySelectorAll('.tot-cur-tag').length).toBe(0);
+  });
+
+  it('bst-modes 重复值树：空调用探针必须按节点身份绑定真实调用帧，绝不误绑同值孪生帧', () => {
+    // 与真实用例同构：[2,1,2,1,null,null,2] 含 3 个值为 1 的节点——按值匹配必错绑
+    const root = buildTreeFromArr([2, 1, 2, 1, null, null, 2]);
+    const steps = StepNormalizationEngine.normalize(buildBstModesStage1Steps(root), {
+      algorithmId: 'bst-modes',
+      stageId: 'stage-1',
+    }) as any[];
+
+    // 深左侧 d=2 叶子节点 (node-4) 的右空调用（此刻 prev=1 已就位）：调用帧是 d=2 · inorderMode(1)，而非同值的 d=1 帧
+    const nullStep = steps.find(
+      (s) => s.currNodeVal === null && s.nullProbe?.parentVal === 1 && s.nullProbe?.branch === 'right' && s.nullProbe?.parentId
+    );
+    expect(nullStep).toBeDefined();
+    TreeOfTreesCanvasAdapter.render(container, nullStep.treeOfTrees);
+
+    // 活跃（发光）卡片必须是 d=2 调用帧：头部文本、活跃徽章、探针三者同框
+    const glowRect = Array.from(container.querySelectorAll('rect')).find(
+      (r) => r.getAttribute('filter') === 'url(#tot-active-glow)'
+    );
+    expect(glowRect).toBeDefined();
+    const callerCard = glowRect!.parentNode as Element;
+    expect(callerCard.textContent).toContain('d=2 · inorderMode(1)');
+    expect(callerCard.textContent).toContain('⚡ 活跃');
+    expect(callerCard.querySelector('.tot-null-probe')).not.toBeNull();
+
+    // prev 指针同样按身份锚定：prev 环必须落在发光调用帧面板内
+    expect(callerCard.querySelector('.tot-prev-marker')).not.toBeNull();
+  });
+
+  it('全家族扫描：所有已接入编译器的空调用步必须携带合法 nullProbe（家族级防回归网）', () => {
+    const t98 = buildTreeFromArr([5, 1, 4, null, null, 3, 6]);
+    const tSimple = buildTreeFromArr([2, 1, 3]);
+    const fixtures: Array<{ name: string; steps: any[] }> = [
+      { name: 'valid-bst', steps: buildVBSteps(t98) },
+      { name: 'bst-modes', steps: buildBstModesStage1Steps(tSimple) },
+      { name: 'tree-depth(maxDepth·共享框架)', steps: TreeDepthStepCompiler.compileMaxDepthStage1Steps(tSimple) },
+      { name: 'tree-invert', steps: buildTreeInvertSteps(tSimple) },
+      { name: 'balanced-binary-tree', steps: buildBalancedStage1Steps(tSimple) },
+      { name: 'bst-min-diff', steps: buildBstMinDiffStage1Steps(tSimple) },
+      { name: 'bst-search(stage2)', steps: buildBstSearchStage2RecursiveSteps(tSimple, 5) },
+      { name: 'lca', steps: buildLCASteps(tSimple, 1, 4) },
+      { name: 'count-complete', steps: buildCountNodesDfsSteps(tSimple) },
+      { name: 'zigzag(stage3)', steps: ZigzagStepCompiler.compileDfsSteps(tSimple) },
+      { name: 'level-order(stage4-dfs)', steps: LevelOrderStepCompiler.compileDfsSteps(tSimple, LEVEL_ORDER_STAGE1_LINES) },
+    ];
+
+    for (const { name, steps } of fixtures) {
+      const probeSteps = steps.filter((s: any) => s.nullProbe);
+      expect(
+        probeSteps.length,
+        `${name} 必须存在携带 nullProbe 的空调用步（发射端契约）`
+      ).toBeGreaterThan(0);
+      for (const s of probeSteps) {
+        const np = s.nullProbe;
+        expect(np.parentVal ?? np.parentId, `${name} 探针必须可定位调用帧`).toBeDefined();
+        expect(['left', 'right'], `${name} branch 必须合法`).toContain(np.branch);
+        if (np.phase !== undefined) {
+          expect(['entry', 'return'], `${name} phase 必须合法`).toContain(np.phase);
+        }
+      }
+    }
   });
 });

@@ -53,7 +53,7 @@ export function renderMaxPathSumCanvas(container: HTMLElement, step: PathSumStep
 export function renderMaxPathSumCustomMetrics(container: HTMLElement, step: PathSumStep): void {
   if (!container) return;
   container.innerHTML = '';
-  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
+  container.style.cssText = 'width:100%; flex:0 0 auto; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   // 1. 顶部 4 格 KPI 卡片
   const metricsGrid = document.createElement('div');

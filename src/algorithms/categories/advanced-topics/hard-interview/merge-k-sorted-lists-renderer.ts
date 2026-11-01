@@ -19,12 +19,12 @@ export { MERGE_K_LISTS_CODES, generateMergeKListsSteps, renderMergeKListsCanvas 
 
 export const mergeKSortedListsVisualizer = registerDeclarativeAlgorithm<MergeKListsStep>({
   id: 'merge-k-sorted-lists',
-  name: 'Hard 18: 合并 K 个升序链表 (Merge k Sorted Lists)',
+  name: '合并 K 个升序链表',
   category: 'heap',
   icon: '🔗',
   difficulty: 3,
   levelOrder: 18,
-  aliases: ['class015-code01', 'merge-k-sorted-lists', 'leetcode-23', 'merge-k-lists'],
+  aliases: ['class015-code01', 'merge-k-sorted-lists', 'leetcode-23', 'merge-k-lists', '23' ],
   learningGoal: '掌握小根堆多路归并算法模型，理解 O(N log K) 复杂度证明与多路数据流并发合并思想',
   metrics: [
     { id: 'heapTop', label: '小根堆堆顶 (Heap Top)', color: 'emerald' },

@@ -158,6 +158,8 @@ export class BalancedBinaryTreeCanvasAdapter {
           dimUnvisited: true,
           nullProbe: step.nullProbe,
           stackFrames: step.treeStackFrames,
+          // 全画幅合一树契约：唯一一棵完整 SVG，禁用 TreeOfTrees 卡片网格分流
+          disableTreeOfTrees: true,
         });
       } else if (BalancedBinaryTreeCanvasAdapter.activeSubView === 'stack-depth') {
         // 路线 E/G：固定全深度多树全展 (固定全深度列展示，绝不随调用栈弹出动态增减或消失)
@@ -258,6 +260,8 @@ export class BalancedBinaryTreeCanvasAdapter {
                   dimUnvisited: false,
                   initialDepth: lvl,
                   nullProbe: (isCurrent && step.nullProbe?.parentVal === frame.nodeVal) ? step.nullProbe : undefined,
+                  // 一层递归一个树契约：每层严格一棵专属 SVG，禁用卡片网格分流
+                  disableTreeOfTrees: true,
                 });
               } else {
                 renderLivingDataTree(canvasBox, frame.nodeVal, isCurrent);

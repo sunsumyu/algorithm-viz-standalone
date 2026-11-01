@@ -17,12 +17,12 @@ export { buildQuickPowerSteps };
 
 export const quickPowerVisualizer = registerDeclarativeAlgorithm<QuickPowerStep>({
   id: 'quick-power-098',
-  name: '二进制快速幂 (Quick Power)',
+  name: 'Pow(x, n)',
   category: 'math',
   icon: '⚡',
   difficulty: 2,
   levelOrder: 981,
-  aliases: ['class098-code01', 'quick-power', 'powx-n-50', 'leetcode-50'],
+  aliases: ['class098-code01', 'quick-power', 'powx-n-50', 'leetcode-50', '50', '二进制快速幂', '快速幂' ],
   learningGoal: '深刻理解指数二进制权值拆解与底数逐轮自乘平方的高效性',
   problemHtml: MATH_098_PROBLEMS.quickPower.html,
   analysisHtml: MATH_098_PROBLEMS.quickPower.html,

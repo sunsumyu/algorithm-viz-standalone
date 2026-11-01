@@ -114,8 +114,8 @@ export function buildPrefixSum2D050Steps(): PrefixSum2D050Step[] {
 
 export const prefixSum2D050Visualizer = registerDeclarativeAlgorithm<PrefixSum2D050Step>({
   id: 'prefix-sum-2d-050',
-  aliases: ['class050-code01', 'range-sum-query-2d', 'leetcode-304', 'prefix-sum-2d'],
-  name: '二维前缀和与区域检索 (Class 050)',
+  aliases: ['class050-code01', 'range-sum-query-2d', 'leetcode-304', 'prefix-sum-2d', '304', '二维前缀和与区域检索' ],
+  name: '二维区域和检索 - 矩阵不可变',
   category: 'array',
   difficulty: 'medium',
   learningGoal: '掌握二维几何容斥原理在矩阵建表与 O(1) 瞬时区域检索中的四角端点转化法则。',

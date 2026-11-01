@@ -52,8 +52,8 @@ export const TRIE_STAGE3_SUBARRAY_CODES: Record<string, string> = {
 
 export const trieXorMaxVisualizer = registerDeclarativeAlgorithm<BinaryTrieStep>({
   id: 'trie-xor-max-107',
-  name: '01-Trie 与异或最大值 (Class 107)',
-  aliases: ['class107-code01', 'trie-xor-max', 'trie-xor-max-107', 'maximum-xor', 'leetcode-421', 'luogu-p4551'],
+  name: '数组中两个数的最大异或值',
+  aliases: ['class107-code01', 'trie-xor-max', 'trie-xor-max-107', 'maximum-xor', 'leetcode-421', 'luogu-p4551', '421', '01-Trie 与异或最大值', '01-trie' ],
   hasDeductionTree: true,
   category: 'tree',
   icon: '🌲',

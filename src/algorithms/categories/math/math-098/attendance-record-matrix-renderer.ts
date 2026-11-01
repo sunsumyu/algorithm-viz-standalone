@@ -17,12 +17,12 @@ export { buildAttendanceSteps };
 
 export const attendanceRecordMatrixVisualizer = registerDeclarativeAlgorithm<AttendanceStep>({
   id: 'attendance-record-matrix-098',
-  name: '出勤记录 II 矩阵快速幂 (Attendance Record Matrix)',
+  name: '学生出勤记录 II',
   category: 'math',
   icon: '📋',
   difficulty: 3,
   levelOrder: 987,
-  aliases: ['class098-code07', 'attendance-record-matrix', 'student-attendance-record-ii-552', 'leetcode-552'],
+  aliases: ['class098-code07', 'attendance-record-matrix', 'student-attendance-record-ii-552', 'leetcode-552', '552', '出勤记录 II 矩阵快速幂' ],
   learningGoal: '掌握有限状态机 (DFA) 到 6×6 状态转移矩阵的构建与多重合法约束解析',
   problemHtml: MATH_098_PROBLEMS.attendanceRecord.html,
   analysisHtml: MATH_098_PROBLEMS.attendanceRecord.html,

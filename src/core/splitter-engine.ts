@@ -7,7 +7,8 @@
  * 3. 边界与比例约束：支持 minSize、maxSize、minRatio、maxRatio 安全限制。
  * 4. 防穿透防卡顿：使用 setPointerCapture / releasePointerCapture。
  * 5. 双击快速复原：双击分隔条手柄重置为默认尺寸并触发回调。
- * 6. 响应式监听：ResizeObserver 自动响应窗口大小变动。
+ * 6. 响应式等比缩放：ResizeObserver 监听容器尺寸变化，按用户当前调节的占比智能缩放面板，
+ *    严禁固定像素导致另一侧面板在窗口缩放时被挤压；minSize/maxSize/maxRatio 安全边界依然生效。
  */
 
 export type SplitterDirection = 'horizontal' | 'vertical';
@@ -22,8 +23,8 @@ export interface SplitterOptions {
   containerElement?: HTMLElement;            // 容器元素，默认 targetElement.parentElement
   defaultSize?: number;                      // 默认尺寸（像素）
   defaultRatio?: number;                     // 默认容器占比 (如 0.5 表示 50%)
-  minSize?: number;                          // 最小限制像素（默认 80）
-  maxSize?: number;                          // 最大限制像素
+  minSize?: number | (() => number);         // 最小限制像素或动态最小内容高度计算函数（默认 80）
+  maxSize?: number | (() => number);         // 最大限制像素或动态最大尺寸计算函数
   minRatio?: number;                         // 最小占用父容器比例 (如 0.1)
   maxRatio?: number;                         // 最大占用父容器比例 (如 0.75)
   scope?: string;                            // 作用域：'global' 或 页面标识 (如 'dp-min-cost-climbing-stairs')
@@ -117,7 +118,7 @@ export class SplitterEngine {
   private options: Required<Omit<SplitterOptions, 'onResize' | 'onDragEnd' | 'maxSize' | 'minRatio' | 'defaultSize' | 'defaultRatio'>> & {
     defaultSize?: number;
     defaultRatio?: number;
-    maxSize?: number;
+    maxSize?: number | (() => number);
     minRatio?: number;
     onResize?: (size: number) => void;
     onDragEnd?: (size: number) => void;
@@ -127,6 +128,7 @@ export class SplitterEngine {
   private resizeObserver: ResizeObserver | null = null;
   private currentSize: number;
   private currentBreakpoint: WindowBreakpoint;
+  private lastContainerLen = 0;
   private isDragging = false;
   private startCoord = 0;
   private startSize = 0;
@@ -162,14 +164,18 @@ export class SplitterEngine {
       onDragEnd: opts.onDragEnd,
     };
 
-    // 智能获取当前断点及专属尺寸
-    this.currentBreakpoint = SplitterStorage.getBreakpoint(this.getContainerDimension());
+    // 智能获取当前断点及专属尺寸 (垂直面板使用全局视口断点，避免容器高度被误判为 small 断点)
+    this.currentBreakpoint = SplitterStorage.getBreakpoint(
+      direction === 'horizontal' ? this.getContainerDimension() : undefined
+    );
     const initialDefault = this.computeDefaultSize();
     const saved = SplitterStorage.get(this.options.id, this.options.scope, initialDefault, this.currentBreakpoint);
     this.currentSize = saved !== null && Number.isFinite(saved) && saved > 0 ? this.clampSize(saved) : initialDefault;
 
     this.createDOM();
     this.applySize(this.currentSize);
+    // applySize 末尾会同步重测并更新基线，此处显式兜底确保初始基线为布局应用后的真实容器尺寸
+    this.lastContainerLen = this.getContainerDimension();
     this.setupEvents();
     this.setupResizeObserver();
   }
@@ -189,7 +195,7 @@ export class SplitterEngine {
       return this.clampSize(Math.round(containerLen * this.options.defaultRatio));
     }
     if (this.options.defaultSize !== undefined) {
-      if (this.currentBreakpoint === 'large' && containerLen >= 1600 && this.options.defaultSize < containerLen * 0.38) {
+      if (this.options.direction === 'horizontal' && this.currentBreakpoint === 'large' && containerLen >= 1600 && this.options.defaultSize < containerLen * 0.38) {
         return this.clampSize(Math.round(containerLen * 0.5));
       }
       return this.clampSize(this.options.defaultSize);
@@ -254,27 +260,27 @@ export class SplitterEngine {
     if (typeof ResizeObserver === 'undefined') return;
 
     this.resizeObserver = new ResizeObserver(() => {
-      if (!this.isDragging) {
-        const containerLen = this.getContainerDimension();
-        const newBp = SplitterStorage.getBreakpoint(containerLen);
+      if (this.isDragging) return;
 
-        if (newBp !== this.currentBreakpoint) {
-          // 断点发生改变（如从小窗口最大化到大窗口，或大窗口还原为小窗口）
-          this.currentBreakpoint = newBp;
-          const defaultForNewBp = this.computeDefaultSize();
-          const savedForNewBp = SplitterStorage.get(
-            this.options.id,
-            this.options.scope,
-            defaultForNewBp,
-            newBp
-          );
-          const targetSize = savedForNewBp !== null && Number.isFinite(savedForNewBp) && savedForNewBp > 0
-            ? this.clampSize(savedForNewBp)
-            : defaultForNewBp;
-          this.applySize(targetSize);
-        } else {
-          this.syncLayout();
-        }
+      const containerLen = this.getContainerDimension();
+      if (!Number.isFinite(containerLen) || containerLen <= 0) return;
+
+      const prevLen = this.lastContainerLen;
+      this.lastContainerLen = containerLen;
+
+      // 观测到的容器尺寸与基线一致：说明是引擎自身 applySize 的布局回声或无实质变化，直接放行
+      if (!Number.isFinite(prevLen) || prevLen <= 0 || Math.abs(containerLen - prevLen) < 1) return;
+
+      // 响应式等比缩放：保持用户当前调节的面板占比（窗口全屏 ⇄ 小窗口均按比例智能缩放）
+      this.currentBreakpoint = SplitterStorage.getBreakpoint(
+        this.options.direction === 'horizontal' ? containerLen : undefined
+      );
+      const scaledSize = this.clampSize(Math.round((this.currentSize * containerLen) / prevLen));
+      if (scaledSize !== this.currentSize) {
+        this.applySize(scaledSize);
+      } else {
+        // 尺寸已被 min/max 安全边界锚定，仅同步外部布局
+        this.syncLayout();
       }
     });
     this.resizeObserver.observe(this.options.containerElement);
@@ -348,12 +354,14 @@ export class SplitterEngine {
       ? (containerElement.clientWidth || window.innerWidth)
       : (containerElement.clientHeight || window.innerHeight);
 
-    let min = minSize;
+    const evaluatedMin = typeof minSize === 'function' ? minSize() : minSize;
+    let min = Number.isFinite(evaluatedMin) ? evaluatedMin : 80;
     if (minRatio !== undefined && containerLength > 0) {
       min = Math.max(min, containerLength * minRatio);
     }
 
-    let max = maxSize ?? (containerLength > 0 ? containerLength * maxRatio : 99999);
+    const evaluatedMax = typeof maxSize === 'function' ? maxSize() : maxSize;
+    let max = evaluatedMax ?? (containerLength > 0 ? containerLength * maxRatio : 99999);
     if (containerLength > 0 && maxRatio !== undefined) {
       max = Math.min(max, containerLength * maxRatio);
     }
@@ -408,6 +416,10 @@ export class SplitterEngine {
     }
 
     this.options.onResize?.(clamped);
+
+    // 同步重测容器并更新等比缩放基线：引擎自身 applySize 引发的布局回声将在观测器中
+    // 因「containerLen === 基线」被自然跳过，从机制上杜绝反馈循环，且不会吞掉后续真实缩放事件
+    this.lastContainerLen = this.getContainerDimension();
 
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       try {

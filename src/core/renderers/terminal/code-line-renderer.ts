@@ -13,6 +13,7 @@ import type { StepVar } from '../../interfaces';
 import { highlightTokens, escapeHtml } from '../../code-highlighter';
 import { VariableContextResolver, type ResolvedVariable } from '../../variable-context-resolver';
 import { CodePresentationModel } from '../../code-presentation-model';
+import { ReturnStepDecorator } from '../../return-step-decorator';
 import type { HighlightTarget } from '../dark-code-terminal-presenter';
 import { DarkCodeTerminalPresenter } from '../dark-code-terminal-presenter';
 
@@ -29,6 +30,130 @@ export interface CodeLineRendererState {
   codeFontSize: number;
   activeLineTarget: HighlightTarget | null | undefined;
   currentVarsMap: Map<string, ResolvedVariable>;
+  lastStepContext?: any;
+}
+
+const NON_CALL_KEYWORDS = new Set([
+  'if', 'else', 'elif', 'while', 'for', 'switch', 'catch', 'return', 'sizeof', 'typeof', 'new', 'delete',
+]);
+
+/**
+ * 从单行源码中提取所有真实函数调用表达式（自动跳过 if / while / for 等控制流关键字括号）
+ * 例如：
+ *   - "if (!isValidBST(root.left)) {" -> ["isValidBST(root.left)"]
+ *   - "if not self.isValidBST(root.left):" -> ["self.isValidBST(root.left)"]
+ *   - "return check(node.left, min, node.val) && check(node.right, node.val, max);"
+ *     -> ["check(node.left, min, node.val)", "check(node.right, node.val, max)"]
+ */
+export function extractFunctionCallsFromLine(rawLine: string): string[] {
+  const calls: string[] = [];
+  if (!rawLine) return calls;
+
+  const callHeaderRegex = /(?:(?:self|this)\s*(?:\.|->)\s*)?([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = callHeaderRegex.exec(rawLine)) !== null) {
+    const funcName = match[1];
+    if (NON_CALL_KEYWORDS.has(funcName)) {
+      continue;
+    }
+    const callStart = match.index;
+    const openParenIdx = match.index + match[0].length - 1;
+    let depth = 0;
+    let i = openParenIdx;
+    while (i < rawLine.length) {
+      if (rawLine[i] === '(') depth++;
+      else if (rawLine[i] === ')') {
+        depth--;
+        if (depth === 0) {
+          calls.push(rawLine.slice(callStart, i + 1).trim());
+          break;
+        }
+      }
+      i++;
+    }
+  }
+
+  return calls;
+}
+
+/**
+ * 解析当前步在活跃代码行上的局部高亮块目标 (focusTarget)
+ * 支持：
+ *   1. 显式 stepContext.focusTarget (字符串或多语言字典)
+ *   2. stepContext.focusMode === 'recursive-call'：自动提取并锁定该行内的递归函数调用表达式
+ *   3. stepContext.focusMode === 'condition'：自动提取并锁定 if (...) 内的条件判别表达式
+ */
+export function resolveInlineFocusTarget(
+  rawLine: string,
+  lang: string,
+  stepContext?: any
+): string | undefined {
+  if (!rawLine || !stepContext || typeof stepContext !== 'object') return undefined;
+
+  const explicitTarget = stepContext.focusTarget ?? stepContext.inlineFocus;
+  if (typeof explicitTarget === 'string' && explicitTarget.trim().length > 0) {
+    if (explicitTarget === '@recursive-call') {
+      // 转入下方自动提取递归调用
+    } else if (rawLine.includes(explicitTarget.trim())) {
+      return explicitTarget.trim();
+    }
+  } else if (explicitTarget && typeof explicitTarget === 'object') {
+    const langTarget =
+      explicitTarget[lang] ??
+      (lang === 'js' ? explicitTarget.javascript : undefined) ??
+      (lang === 'javascript' ? explicitTarget.js : undefined) ??
+      explicitTarget.java;
+    if (typeof langTarget === 'string' && rawLine.includes(langTarget.trim())) {
+      return langTarget.trim();
+    }
+  }
+
+  const focusMode = stepContext.focusMode || (explicitTarget === '@recursive-call' ? 'recursive-call' : undefined);
+  if (focusMode === 'recursive-call') {
+    const calls = extractFunctionCallsFromLine(rawLine);
+    if (calls.length === 1) {
+      return calls[0];
+    }
+    if (calls.length > 1) {
+      const hintText = `${stepContext.branch || ''} ${stepContext.action || ''} ${stepContext.decision || ''}`.toLowerCase();
+      if (hintText.includes('right') || hintText.includes('右')) {
+        const rightCall = calls.find((c) => c.toLowerCase().includes('right'));
+        if (rightCall) return rightCall;
+        return calls[calls.length - 1];
+      }
+      if (hintText.includes('left') || hintText.includes('左')) {
+        const leftCall = calls.find((c) => c.toLowerCase().includes('left'));
+        if (leftCall) return leftCall;
+        return calls[0];
+      }
+      return calls[0];
+    }
+  }
+
+  if (focusMode === 'condition') {
+    // 提取 if (...) 或 if ...: 的条件主体
+    const pyIfMatch = rawLine.match(/^\s*if\s+(.+):\s*$/);
+    if (pyIfMatch) {
+      return pyIfMatch[1].trim();
+    }
+    const cIfMatch = rawLine.match(/\bif\s*\(/);
+    if (cIfMatch && cIfMatch.index !== undefined) {
+      const openIdx = cIfMatch.index + cIfMatch[0].length - 1;
+      let depth = 0;
+      for (let i = openIdx; i < rawLine.length; i++) {
+        if (rawLine[i] === '(') depth++;
+        else if (rawLine[i] === ')') {
+          depth--;
+          if (depth === 0) {
+            return rawLine.slice(openIdx + 1, i).trim();
+          }
+        }
+      }
+    }
+  }
+
+  return undefined;
 }
 
 /**
@@ -109,16 +234,32 @@ export function updateInlineHint(
 ): void {
   const { codeWrapper, createEl } = deps;
   if (!codeWrapper) return;
+  if (stepContext !== undefined) {
+    state.lastStepContext = stepContext;
+  }
+  const effectiveStep = stepContext !== undefined ? stepContext : state.lastStepContext;
+
   codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
     if (typeof el.remove === 'function') el.remove();
     else if (el.parentElement) el.parentElement.removeChild(el);
   });
 
-  if (!activeLineEl || state.currentVarsMap.size === 0) return;
+  if (!activeLineEl) return;
   const rawLine = activeLineEl.dataset?.raw || activeLineEl.getAttribute?.('data-raw') || '';
   if (!rawLine) return;
 
-  const hintSummary = VariableContextResolver.formatInlineSummary(state.currentVarsMap, rawLine, stepContext);
+  const textEl = (activeLineEl.querySelector?.('.algo-code-line-text') || activeLineEl) as HTMLElement;
+  const focusTarget = resolveInlineFocusTarget(rawLine, state.currentLang, effectiveStep);
+  if (textEl && textEl !== activeLineEl) {
+    const hadFocus = Boolean(textEl.querySelector?.('.inline-token-focus')) || String(textEl.innerHTML || '').includes('inline-token-focus');
+    if (focusTarget || hadFocus) {
+      textEl.innerHTML = highlightTokens(rawLine, state.currentLang, focusTarget);
+    }
+  }
+
+  if (state.currentVarsMap.size === 0) return;
+
+  const hintSummary = VariableContextResolver.formatInlineSummary(state.currentVarsMap, rawLine, effectiveStep);
   if (!hintSummary) return;
 
   const hintEl = createEl('span');
@@ -127,7 +268,6 @@ export function updateInlineHint(
     'color: #38bdf8; opacity: 0.85; font-style: italic; font-size: 10.5px; margin-left: 14px; user-select: none; font-weight: 500; display: inline-flex; align-items: center;';
   hintEl.textContent = hintSummary;
 
-  const textEl = activeLineEl.querySelector?.('.algo-code-line-text') || activeLineEl;
   if (typeof textEl.appendChild === 'function') {
     textEl.appendChild(hintEl);
   }
@@ -135,15 +275,24 @@ export function updateInlineHint(
 
 /**
  * 高亮指定代码行（支持多态目标：数字、字符串、数组、区间、多语言字典）
+ * 当 stepContext 为返回帧（ReturnStepDecorator 判定）时，活跃行升级为紫色 return-line 并挂载 ↩ 返回徽章。
  */
 export function highlightLineInternal(
   target: HighlightTarget | null | undefined,
   deps: CodeLineRendererDeps,
   state: CodeLineRendererState,
+  stepContext?: unknown,
 ): void {
   state.activeLineTarget = target;
+  if (stepContext !== undefined) {
+    state.lastStepContext = stepContext;
+  }
+  const isReturn = ReturnStepDecorator.isReturnStep(state.lastStepContext);
   const { codeWrapper, codeModel, createEl } = deps;
   if (!codeWrapper) return;
+
+  // 跨步残留防护：先清除上一帧的全部返回徽章与 return-line 标记
+  ReturnStepDecorator.clearReturnBadges(codeWrapper);
 
   codeWrapper.querySelectorAll<HTMLElement>('.code-line').forEach((el) => {
     el.classList.remove('active', 'active-line', 'is-active', 'is-context');
@@ -151,6 +300,13 @@ export function highlightLineInternal(
     el.style.borderLeftColor = 'transparent';
     el.style.color = '#cbd5e1';
     el.style.fontWeight = 'normal';
+    const tEl = el.querySelector?.('.algo-code-line-text') as HTMLElement | null;
+    if (tEl && (tEl.querySelector?.('.inline-token-focus') || String(tEl.innerHTML || '').includes('inline-token-focus'))) {
+      const rLine = el.dataset?.raw || el.getAttribute?.('data-raw') || '';
+      if (rLine) {
+        tEl.innerHTML = highlightTokens(rLine, state.currentLang);
+      }
+    }
   });
 
   codeWrapper.querySelectorAll?.('.algo-code-inline-hint')?.forEach((el: any) => {
@@ -167,6 +323,11 @@ export function highlightLineInternal(
     lineEl.style.borderLeftColor = '#2563eb';
     lineEl.style.color = '#ffffff';
     lineEl.style.fontWeight = '700';
+    // 返回帧升级：紫色 return-line（CSS !important 覆盖蓝色底）+ 行首 ↩ 徽章
+    if (isReturn) {
+      lineEl.classList.add('return-line');
+      ReturnStepDecorator.applyReturnBadge(lineEl);
+    }
     updateInlineHint(lineEl, deps, state);
   };
 

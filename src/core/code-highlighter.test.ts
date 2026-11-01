@@ -71,4 +71,58 @@ describe('🛡️ CodeHighlighter Lexer & Inline Focus Unit Tests', () => {
     expect(html).toContain('data-var="i"');
     expect(html).toContain('data-var="j"');
   });
+
+  it('extractFunctionCallsFromLine and resolveInlineFocusTarget cleanly extract recursive calls across languages', async () => {
+    const { extractFunctionCallsFromLine, resolveInlineFocusTarget } = await import('./renderers/terminal/code-line-renderer');
+
+    // 1. Java: if (!isValidBST(root.left)) {
+    const javaLine = '        if (!isValidBST(root.left)) {';
+    expect(extractFunctionCallsFromLine(javaLine)).toEqual(['isValidBST(root.left)']);
+    expect(resolveInlineFocusTarget(javaLine, 'java', { focusMode: 'recursive-call' })).toBe('isValidBST(root.left)');
+
+    // 2. Python: if not self.isValidBST(root.left):
+    const pyLine = '        if not self.isValidBST(root.left):';
+    expect(extractFunctionCallsFromLine(pyLine)).toEqual(['self.isValidBST(root.left)']);
+    expect(resolveInlineFocusTarget(pyLine, 'python', { focusMode: 'recursive-call' })).toBe('self.isValidBST(root.left)');
+
+    // 3. JS: if (!inorder(node.left)) {
+    const jsLine = '        if (!inorder(node.left)) {';
+    expect(extractFunctionCallsFromLine(jsLine)).toEqual(['inorder(node.left)']);
+    expect(resolveInlineFocusTarget(jsLine, 'javascript', { focusMode: 'recursive-call' })).toBe('inorder(node.left)');
+
+    // 4. Return statement: return isValidBST(root.right);
+    const retLine = '        return isValidBST(root.right);';
+    expect(extractFunctionCallsFromLine(retLine)).toEqual(['isValidBST(root.right)']);
+    expect(resolveInlineFocusTarget(retLine, 'java', { focusMode: 'recursive-call' })).toBe('isValidBST(root.right)');
+
+    // 5. 渲染包含 inline-token-focus 胶囊
+    const focusedHtml = highlightTokens(javaLine, 'java', 'isValidBST(root.left)');
+    expect(focusedHtml).toContain('inline-token-focus');
+    expect(focusedHtml).toContain('isValidBST');
+  });
+
+  it('StepNormalizationEngine synthesizes two-stage recursive call highlight on if statements without modifying code', async () => {
+    const { buildVBSteps } = await import('./renderers/adapters/valid-bst-step-compiler');
+    const { StepNormalizationEngine } = await import('./step-normalization-engine');
+    const { buildTreeFromArr } = await import('../algorithms/categories/tree/tree-template');
+
+    const tree = buildTreeFromArr([5, 1, 4, null, null, 3, 6]);
+    const rawSteps = buildVBSteps(tree);
+    const normalized = StepNormalizationEngine.normalize(rawSteps, {
+      algorithmId: 'valid-bst',
+      stageId: 'stage-1',
+    });
+
+    // 寻找进入左子树的步骤，验证两段式高亮（arrive ➔ focusMode: recursive-call）
+    const arriveStep = (normalized as any[]).find((s) => s.action === 'recurse-left-arrive');
+    const callStep = (normalized as any[]).find((s) => s.action === 'recurse-left' && s.focusMode === 'recursive-call');
+
+    expect(arriveStep).toBeDefined();
+    expect(arriveStep.codeLine).toEqual({ java: 7, cpp: 8, python: 8, javascript: 7 });
+    expect(arriveStep.focusMode).toBeUndefined();
+
+    expect(callStep).toBeDefined();
+    expect(callStep.codeLine).toEqual({ java: 7, cpp: 8, python: 8, javascript: 7 });
+    expect(callStep.focusMode).toBe('recursive-call');
+  });
 });

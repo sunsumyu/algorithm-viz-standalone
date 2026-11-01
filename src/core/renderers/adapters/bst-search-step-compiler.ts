@@ -19,6 +19,7 @@ import {
   RecursiveCallTraceBuilder,
   RecursiveCallTraceSnapshot,
 } from './recursive-call-trace-adapter';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export interface BSTSStep extends StepBase {
   tree: TreeNode | null;
@@ -38,6 +39,8 @@ export interface BSTSStep extends StepBase {
   callTrace?: RecursiveCallTraceSnapshot;
   phase?: string;
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
+  /** 空调用探针：Stage 2 递归空基底步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 export function cloneTree(node: TreeNode | null): TreeNode | null {
@@ -326,7 +329,12 @@ export function buildBstSearchStage2RecursiveSteps(root: TreeNode | null, target
     callTrace: trace.snapshot(),
   });
 
-  function search(node: TreeNode | null, depth: number): TreeNode | null {
+  function search(
+    node: TreeNode | null,
+    depth: number,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ): TreeNode | null {
     if (!node) {
       trace.addHeader(`searchBST(null, ${targetVal})`, depth, '空节点判空');
       trace.addConditionHit('node == null -> return null', depth);
@@ -343,6 +351,9 @@ export function buildBstSearchStage2RecursiveSteps(root: TreeNode | null, target
         action: 'not-found',
         phase: 'base',
         stageId: 'stage-2',
+        nullProbe: parent
+          ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+          : undefined,
         message: '抵达空节点，返回 null。',
         log: '| 🚧 抵达空节点，递归基底返回 null',
         codeLine: BST_SEARCH_STAGE2_LINES.baseCheck,
@@ -425,7 +436,7 @@ export function buildBstSearchStage2RecursiveSteps(root: TreeNode | null, target
         callTrace: trace.snapshot(),
       });
 
-      const res = search(node.left, depth + 1);
+      const res = search(node.left, depth + 1, node, 'left');
       trace.addUnwindCalc(`左子树返回: ${res ? `Node(${res.val})` : 'null'}`, depth);
       return res;
     } else {
@@ -451,7 +462,7 @@ export function buildBstSearchStage2RecursiveSteps(root: TreeNode | null, target
         callTrace: trace.snapshot(),
       });
 
-      const res = search(node.right, depth + 1);
+      const res = search(node.right, depth + 1, node, 'right');
       trace.addUnwindCalc(`右子树返回: ${res ? `Node(${res.val})` : 'null'}`, depth);
       return res;
     }

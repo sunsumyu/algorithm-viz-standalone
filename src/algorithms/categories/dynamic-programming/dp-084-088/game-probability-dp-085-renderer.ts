@@ -17,10 +17,10 @@ export { buildGameDp085Steps };
 
 export const gameProbability085Visualizer = registerDeclarativeAlgorithm<GameDp085Step>({
   id: 'game-probability-dp-085',
-  name: '博弈概率 DP 与倒推状态 (Class 085)',
+  name: '石子游戏',
   category: 'dynamic-programming',
   difficulty: 'medium',
-  aliases: ['class085-game-dp', 'game-probability-dp', 'stone-game-877', 'leetcode-877'],
+  aliases: ['class085-game-dp', 'game-probability-dp', 'stone-game-877', 'leetcode-877', '877', '博弈概率 DP 与倒推状态' ],
   problemContent: DP_084_088_PROBLEMS.gameProbability085,
   sourceCodes: GAME_PROBABILITY_085_CODES,
   generateSteps: buildGameDp085Steps,

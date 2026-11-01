@@ -18,6 +18,7 @@ import {
   LCA_STAGE2_LINES,
   LCA_STAGE3_LINES,
 } from '../../../algorithms/categories/tree/lca-stage-codes';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export interface LCAStep {
   tree: TreeNode | null;
@@ -47,6 +48,9 @@ export interface LCAStep {
   pathP?: number[];
   pathQ?: number[];
   comparingIndex?: number;
+
+  /** 空调用探针：Stage 1 空基底帧绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 export const LCA_CODE_LINES = LCA_STAGE1_LINES;
@@ -110,7 +114,13 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
     return steps;
   }
 
-  function postOrder(node: TreeNode | null, depth: number, role: string): number | null {
+  function postOrder(
+    node: TreeNode | null,
+    depth: number,
+    role: string,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ): number | null {
     if (depth > 0) {
       // 递归子调用入口帧 (Line 2)
       const label = node ? `Node(${node.val})` : 'null';
@@ -126,6 +136,10 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         stageId: 'stage-1',
         decision: `递归进入：lowestCommonAncestor(${role}: ${label})`,
         action: 'enter',
+        nullProbe:
+          !node && parent
+            ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+            : undefined,
         message: `深入调用 lowestCommonAncestor 探索 ${role} (${label})。`,
         log: `enter lowestCommonAncestor(${role}: ${label})`,
         codeLine: L.entry,
@@ -154,6 +168,9 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
         stageId: 'stage-1',
         decision: '基底判空：当前节点为 null，向父调用返回 null',
         action: 'enter',
+        nullProbe: parent
+          ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'return' }
+          : undefined,
         message: '空子树，命中基底条件 root == null，返回 null。',
         log: 'node is null -> return null',
         codeLine: L.baseCheckHit,
@@ -248,7 +265,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       callTrace: trace.snapshot(),
     });
 
-    const leftRet = postOrder(node.left, depth + 1, '左子树');
+    const leftRet = postOrder(node.left, depth + 1, '左子树', node, 'left');
 
     // 左子树返回帧 (Line 4: 接收 left 返回值)
     trace.addUnwindCalc(`leftRet = ${leftRet !== null ? leftRet : 'null'}`, depth);
@@ -300,7 +317,7 @@ export function buildLCASteps(root: TreeNode | null, pVal: number, qVal: number)
       callTrace: trace.snapshot(),
     });
 
-    const rightRet = postOrder(node.right, depth + 1, '右子树');
+    const rightRet = postOrder(node.right, depth + 1, '右子树', node, 'right');
 
     // 右子树返回帧 (Line 5: 接收 right 返回值)
     trace.addUnwindCalc(`rightRet = ${rightRet !== null ? rightRet : 'null'}`, depth);

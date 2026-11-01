@@ -164,7 +164,7 @@ ${renderStageStyles(ctx.viewId)}
 
         ${metricsHtml ? `<div class="dsp-metrics-grid">${metricsHtml}</div>` : ''}
 
-        <div id="dsp-custom-metrics-container" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;"></div>
+        <div id="dsp-custom-metrics-container" style="display: flex; flex-direction: column; flex-shrink: 0; min-height: min-content; gap: 6px; box-sizing: border-box;"></div>
 
         <div class="dsp-live-text-card" id="dsp-live-text">
           💡 点击运行或单步调试开始观察算法状态。

@@ -56,7 +56,7 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: VBStep):
   if (!container) return;
   container.innerHTML = '';
   container.style.cssText =
-    'width:100%; height:100%; display:flex; flex-direction:column; gap:8px; padding:10px 12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
+    'width:100%; display:flex; flex-direction:column; gap:8px; padding:4px 0; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box;';
 
   const isDone = step.action === 'done';
   const isValid = step.valid;
@@ -78,16 +78,6 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: VBStep):
       : '<span style="color:#94a3b8; font-style:italic;">等待首个中序访问节点...</span>';
   seqRow.innerHTML = `<span style="font-weight:700; color:#475569; margin-right:4px;">中序序列流:</span> ${seqHtml}`;
   container.appendChild(seqRow);
-
-  // 2. 决策信息条
-  const decisionBar = document.createElement('div');
-  decisionBar.style.cssText = `padding:7px 10px; border-radius:8px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${
-    isValid ? (isDone ? '#f0fdf4' : '#f8fafc') : '#fff1f2'
-  }; border:1px solid ${isValid ? (isDone ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
-  decisionBar.innerHTML = `<div style="font-weight:700; color:${
-    isValid ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'
-  };">🧭 决策: ${step.decision}</div>`;
-  container.appendChild(decisionBar);
 }
 
 /**
@@ -97,22 +87,11 @@ export function renderStage2CustomMetrics(container: HTMLElement, step: VBStep):
   if (!container) return;
   container.innerHTML = '';
   container.style.cssText =
-    'width:100%; height:100%; display:flex; flex-direction:column; gap:8px; padding:10px 12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
+    'width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box;';
 
   const inRange = step.boundary?.inRange ?? true;
-  const isDone = step.action === 'done';
 
-  // 1. 决策信息条
-  const decisionBar = document.createElement('div');
-  decisionBar.style.cssText = `padding:7px 10px; border-radius:8px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${
-    inRange ? (isDone ? '#f0fdf4' : '#f8fafc') : '#fff1f2'
-  }; border:1px solid ${inRange ? (isDone ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
-  decisionBar.innerHTML = `<div style="font-weight:700; color:${
-    inRange ? (isDone ? '#15803d' : '#0284c7') : '#e11d48'
-  };">🧭 决策: ${step.decision}</div>`;
-  container.appendChild(decisionBar);
-
-  // 2. 开区间定界约束卡片
+  // 开区间定界约束卡片 (决策已统一收口至顶层 #dsp-live-text，坚决杜绝叠层重复消息框)
   const boundaryCard = document.createElement('div');
   boundaryCard.style.cssText = 'padding:8px 10px; border-radius:6px; background:#eff6ff; border:1px solid #bfdbfe; font-size:11px; display:flex; flex-direction:column; gap:4px;';
   const minText = step.boundary?.min !== null && step.boundary?.min !== undefined ? `${step.boundary.min}` : '-∞';
@@ -138,7 +117,7 @@ export function renderStage3CustomMetrics(container: HTMLElement, step: VBStep):
   if (!container) return;
   container.innerHTML = '';
   container.style.cssText =
-    'width:100%; height:100%; display:flex; flex-direction:column; gap:8px; padding:10px 12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
+    'width:100%; display:flex; flex-direction:column; gap:8px; padding:4px 0; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box;';
 
   const stackVals = step.stack || [];
 
@@ -181,16 +160,6 @@ export function renderStage3CustomMetrics(container: HTMLElement, step: VBStep):
       : '<span style="color:#94a3b8; font-style:italic;">等待出栈节点...</span>';
   seqRow.innerHTML = `<span style="font-weight:700; color:#475569; margin-right:4px;">已出栈中序序列:</span> ${seqHtml}`;
   container.appendChild(seqRow);
-
-  // 3. 决策信息条
-  const decisionBar = document.createElement('div');
-  decisionBar.style.cssText = `padding:7px 10px; border-radius:8px; font-size:11.5px; line-height:1.5; flex-shrink:0; background:${
-    step.valid ? (step.action === 'done' ? '#f0fdf4' : '#f8fafc') : '#fff1f2'
-  }; border:1px solid ${step.valid ? (step.action === 'done' ? '#bbf7d0' : '#e2e8f0') : '#fecdd3'};`;
-  decisionBar.innerHTML = `<div style="font-weight:700; color:${
-    step.valid ? (step.action === 'done' ? '#15803d' : '#0284c7') : '#e11d48'
-  };">🧭 决策: ${step.decision}</div>`;
-  container.appendChild(decisionBar);
 }
 
 /**

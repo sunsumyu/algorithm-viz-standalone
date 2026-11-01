@@ -34,7 +34,7 @@ export const trimBst037Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
       id: 'tree',
       label: '二叉树层序',
       type: 'text',
-      defaultValue: '3, 0, 4, null, 2, null, null',
+      defaultValue: '3, 0, 4, null, 2, null, null, 1',
       width: '140px',
     },
     {
@@ -55,7 +55,7 @@ export const trimBst037Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
   presets: [
     {
       label: '示例 1 (剪裁至 [1, 3])',
-      values: { tree: '3, 0, 4, null, 2, null, null', low: '1', high: '3' },
+      values: { tree: '3, 0, 4, null, 2, null, null, 1', low: '1', high: '3' },
     },
     {
       label: '剪裁全部 (区间无交集)',

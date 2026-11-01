@@ -24,6 +24,7 @@ import {
   DarkCodeTerminalConfig,
 } from './renderers/dark-code-terminal-presenter';
 import { PlaybackCoordinator } from './playback-coordinator';
+import { StepNormalizationEngine } from './step-normalization-engine';
 
 export interface StepBase {
   /** 语义锚点标识（如 'update', 'loop-outer', 'return'），优先用于代码高亮与多语言对齐 */
@@ -401,8 +402,14 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
   }
 
   protected async start(): Promise<void> {
-    // 生命周期防御：推导函数返回 null/undefined 时回退为空数组，避免 setTotalSteps(NaN)
-    this.steps = this.buildSteps() || [];
+    // 生命周期防御与顶层步进归一化管道：
+    // 全库所有 StepVisualizer 子类均自动享有画布防断电 (healVisualBlackouts)、
+    // 递归现场返回解帧 (synthesizeReturnUnwindFrames) 与幽灵停滞帧清理，杜绝局部跳步与黑屏
+    const rawSteps = this.buildSteps() || [];
+    this.steps = StepNormalizationEngine.normalize(rawSteps, {
+      algorithmId: this.algorithmId,
+      codeLanguages: this.codeLanguages,
+    });
     this.playbackCoordinator.setTotalSteps(this.steps.length, true);
     this.render();
     this.updateButtons();
@@ -429,9 +436,9 @@ export abstract class StepVisualizer<TStep extends StepBase> implements IVisuali
     const targetLine = (step as any).codeLine ?? (step as any).line;
     if (targetLine != null) {
       if (this.codeTerminal) {
-        this.codeTerminal.highlightLine(targetLine);
+        this.codeTerminal.highlightLine(targetLine, step);
       } else if (this.codePanel) {
-        this.codePanel.highlight(targetLine);
+        this.codePanel.highlight(targetLine, step);
       }
     }
     // 更新代码面板下方变量监视器（支持 step.vars 与 step.metrics 双向同步）

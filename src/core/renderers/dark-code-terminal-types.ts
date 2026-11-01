@@ -48,8 +48,8 @@ export interface DarkCodeTerminalConfig {
 }
 
 export interface DarkCodeTerminalInstance {
-  /** 高亮指定物理行或多行目标 */
-  highlightLine(target: HighlightTarget | null | undefined): void;
+  /** 高亮指定物理行或多行目标；传入 stepContext 时自动判定返回帧并挂载 ↩ 返回徽章 */
+  highlightLine(target: HighlightTarget | null | undefined, stepContext?: unknown): void;
   /** 同步更新变量监视面板与实时调试上下文 */
   updateVars(vars?: StepVar[], stepContext?: unknown): void;
   /** 手动切换编程语言 */

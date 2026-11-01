@@ -1,20 +1,35 @@
 /**
  * Trim BST Canvas Adapter (LeetCode 669 / Class 037 Code06)
  *
- * 遵循 Matt Pocock 深模块哲学与 Thin Domain Adapter 架构规范。
- * 纯表现层适配器：委托 renderTreeSvg 渲染二叉搜索树修剪前后拓扑。
+ * 统一深模块适配器：委托 TreeCanvasAdapter 渲染修剪前后拓扑与指针流动，
+ * 自动获得树上挂树子视图、空调用探针 (∅ 虚线) 与区间指针标签。
  */
 
-import { Tree036Step, renderTreeSvg } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
-import { TRIM_BST_NODES } from './trim-bst-step-compiler';
+import { Tree036Step } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
+import { TreeCanvasAdapter } from './tree-canvas-adapter';
 
 export function renderTrimBstCanvas(container: HTMLElement, step: Tree036Step): void {
-  const treeNodes = (step.extraData as any)?.treeNodes || TRIM_BST_NODES;
-  container.innerHTML = `
-    <div style="display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; min-height: 280px; box-sizing: border-box; padding: 8px;">
-      ${renderTreeSvg(treeNodes, step.activeNodeId, step.secondaryNodeId)}
-    </div>
-  `;
+  const current = typeof step.current === 'number' ? step.current : null;
+  const isPrune = step.statusBadge?.type === 'danger';
+
+  // 指针标签：当前考察节点标 root，被裁剪节点标 ✂️ (按节点 id 键控，防 id/val 错位)
+  const labels = new Map<number | string, string>();
+  const activeId = (step as any).activeNodeId;
+  if (current != null) labels.set(current, 'root');
+  if (activeId != null) labels.set(activeId, 'root');
+  const secondary = step.secondaryHighlightedNodes ?? [];
+  for (const v of secondary) labels.set(v, '✂️');
+
+  TreeCanvasAdapter.renderTree(container, {
+    tree: (step as any).tree ?? null,
+    current,
+    highlightedNodes: current != null ? [current] : [],
+    secondaryHighlightedNodes: secondary,
+    primaryColor: isPrune ? '#ef4444' : '#3b82f6',
+    secondaryColor: '#f59e0b',
+    labels: labels.size > 0 ? labels : undefined,
+    nullProbe: (step as any).nullProbe,
+  });
 }
 
 export class TrimBstCanvasAdapter {

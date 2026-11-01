@@ -24,6 +24,21 @@ export interface TreeOfTreesNode {
   sum: number;
   footerText?: string;
   valueTransition?: { oldVal: number; newVal: number };
+  /** 空调用探针（每步快照，仅活跃帧持有）：phase 区分进入/返回以翻转蚂蚁线方向；parentId 供重复值树精确锚定 */
+  nullProbeState?: {
+    parentVal: number | string;
+    parentId?: number | string;
+    branch: 'left' | 'right';
+    phase: 'entry' | 'return';
+  } | null;
+  /** prev/cur 双指针（每步快照，仅活跃帧持有）：compare 标记单调性比较弧线相位；id 字段供重复值树精确锚定 */
+  pointerState?: {
+    curVal: number | string | null;
+    prevVal: number | string | null;
+    curId?: number | string | null;
+    prevId?: number | string | null;
+    compare?: 'pending' | 'pass' | 'fail' | null;
+  } | null;
   treeSnapshot: TreeNode | null;
   children: TreeOfTreesNode[];
   leftChild?: TreeOfTreesNode | null;
@@ -35,6 +50,13 @@ export interface TreeOfTreesRenderOptions {
   primaryColor?: string;
   secondaryColor?: string;
   visitedColor?: string;
+}
+
+/** 面板内迷你状态树的指针/探针覆盖层配置 */
+interface FullStateTreeOverlay {
+  pointerState?: TreeOfTreesNode['pointerState'];
+  nullProbeState?: TreeOfTreesNode['nullProbeState'];
+  reducedMotion?: boolean;
 }
 
 interface LayoutItem {
@@ -281,6 +303,65 @@ export class TreeOfTreesCanvasAdapter {
   }
 
   /**
+   * 活跃面板可见性保证 (Bring Active Into View)
+   * 拖拽/全景重置会关闭 autoFollow，此后相机静止，活跃帧会随推演一步步走出视口。
+   * 本方法在每步渲染时兜底：活跃面板一旦滑出视口安全区，仅做最小平移 (tx/ty) 拉回，
+   * 绝不偷改缩放比例；面板大于视口的轴改为居中展示。
+   * 坐标映射注意：svg 为 width=100% + viewBox 等比 letterbox，世界坐标→元素像素存在因子 k，
+   * 可见性判定必须先折算 k 再比较，否则判定与真实渲染错位。
+   */
+  private static ensureActivePanelVisible(
+    activeItem: LayoutItem,
+    state: ViewState,
+    totalW: number,
+    totalH: number,
+    viewW: number,
+    viewH: number,
+    margin = 12
+  ): void {
+    if (viewW <= 0 || viewH <= 0 || totalW <= 0 || totalH <= 0) return;
+    const k = Math.min(viewW / totalW, viewH / totalH);
+    if (!Number.isFinite(k) || k <= 0) return;
+    const ox = (viewW - totalW * k) / 2;
+    const oy = (viewH - totalH * k) / 2;
+
+    const worldLeft = activeItem.x - activeItem.width / 2;
+    const worldRight = activeItem.x + activeItem.width / 2;
+    const worldTop = activeItem.y;
+    const worldBottom = activeItem.y + activeItem.height;
+    const toElemX = (wx: number) => (wx * state.scale + state.tx) * k + ox;
+    const toElemY = (wy: number) => (wy * state.scale + state.ty) * k + oy;
+
+    const left = toElemX(worldLeft);
+    const right = toElemX(worldRight);
+    const top = toElemY(worldTop);
+    const bottom = toElemY(worldBottom);
+    const w = right - left;
+    const h = bottom - top;
+
+    let dxElem = 0;
+    if (w >= viewW - margin * 2) {
+      dxElem = (viewW - w) / 2 - left; // 面板宽于视口：居中展示
+    } else if (left < margin) {
+      dxElem = margin - left;
+    } else if (right > viewW - margin) {
+      dxElem = viewW - margin - right;
+    }
+
+    let dyElem = 0;
+    if (h >= viewH - margin * 2) {
+      dyElem = (viewH - h) / 2 - top;
+    } else if (top < margin) {
+      dyElem = margin - top;
+    } else if (bottom > viewH - margin) {
+      dyElem = viewH - margin - bottom;
+    }
+
+    if (dxElem !== 0) state.tx += dxElem / k;
+    if (dyElem !== 0) state.ty += dyElem / k;
+  }
+
+  /**
    * 构造完整二叉树状态沙盘 SVG (Full Complete State Tree SVG)
    * 100% 像素级复刻 tree-svg.ts 完整二叉树几何与样式：
    * - 完整圆节点 r=19、粗体 13.5px 数值标签、标准 2.5px 枝干连线
@@ -294,7 +375,8 @@ export class TreeOfTreesCanvasAdapter {
     activeNodeId?: string | number,
     valueTransition?: { oldVal: number; newVal: number },
     boxW = 300,
-    boxH = 166
+    boxH = 166,
+    overlay?: FullStateTreeOverlay
   ): string {
     if (!root) {
       return `<text x="${boxW / 2}" y="${boxH / 2}" text-anchor="middle" font-size="12" font-weight="600" fill="#94a3b8">（空树）</text>`;
@@ -311,6 +393,9 @@ export class TreeOfTreesCanvasAdapter {
 
     const lines: string[] = [];
     const nodes: string[] = [];
+    // 记录每个节点的迷你树坐标与层级横距，供 ∅ 探针与指针覆盖层定位。
+    // 双键索引：原始节点 id（剥除 orig-/visited- 前缀）+ '#值'——重复值树必须按 id 精确锚定
+    const nodePos = new Map<string, { x: number; y: number; spread: number }>();
 
     const isNodeActive = (n: TreeNode): boolean => {
       if (activeNodeId !== undefined && n.id !== undefined) {
@@ -329,9 +414,18 @@ export class TreeOfTreesCanvasAdapter {
       return false;
     };
 
+    // 快照中被标记为 visited- 前缀的节点：翠绿常驻高亮（收尾帧防全盘暗灰，
+    // 颜色严格对齐最终帧高亮契约: rgba(16,185,129,α) / #10b981）
+    const isNodeVisitedMarked = (n: TreeNode): boolean =>
+      n.id !== undefined && String(n.id).startsWith('visited-');
+
     const draw = (n: TreeNode, x: number, y: number, spread: number) => {
       const isH = isNodeActive(n);
       const isConv = !isH && isNodeConverted(n);
+      const pos = { x, y, spread };
+      const rawId = n.id != null ? String(n.id).replace(/^(orig-|visited-)/, '') : '';
+      if (rawId) nodePos.set(rawId, pos);
+      nodePos.set(`#${n.val}`, pos);
 
       if (n.left) {
         const lx = x - spread;
@@ -351,10 +445,11 @@ export class TreeOfTreesCanvasAdapter {
         draw(n.right, rx, ry, spread / 2);
       }
 
-      const fill = isH ? '#059669' : isConv ? '#ecfdf5' : '#ffffff';
-      const stroke = isH ? '#047857' : isConv ? '#10b981' : '#64748b';
-      const strokeW = isH ? '3.5' : '2.5';
-      const textFill = isH ? '#ffffff' : isConv ? '#047857' : '#0f172a';
+      const isV = !isH && isNodeVisitedMarked(n);
+      const fill = isH ? '#059669' : isV ? 'rgba(16, 185, 129, 0.18)' : isConv ? '#ecfdf5' : '#ffffff';
+      const stroke = isH ? '#047857' : isV ? '#10b981' : isConv ? '#10b981' : '#64748b';
+      const strokeW = isH ? '3.5' : isV ? '2.8' : '2.5';
+      const textFill = isH ? '#ffffff' : isV ? '#047857' : isConv ? '#047857' : '#0f172a';
       const filterAttr = isH ? 'filter="drop-shadow(0 2px 5px rgba(5,150,105,0.45))"' : '';
 
       // 活跃节点外圈呼吸光环与原值➔新值悬浮胶囊标签
@@ -385,8 +480,115 @@ export class TreeOfTreesCanvasAdapter {
       <svg x="0" y="0" width="${boxW}" height="${boxH}" viewBox="68 4 464 ${viewBoxH}" preserveAspectRatio="xMidYMid meet">
         <g class="tot-full-tree-branches">${lines.join('')}</g>
         <g class="tot-full-tree-nodes">${nodes.join('')}</g>
+        ${this.buildPointerOverlay(nodePos, overlay)}
       </svg>
     `;
+  }
+
+  /**
+   * 指针与空探针覆盖层 (Pointer & Null-Probe Overlay)
+   * 遵循画布防断电与动态探针锚点法则：空调用绑定父帧锚点，动态渲染 ∅ null 虚线探针
+   * - ∅ 空探针：置于 parentVal 节点的缺失分支槽位，虚线幽灵圆 + 呼吸脉冲
+   * - 方向蚂蚁线：entry 相位执行流入空槽 (8;0)，return 相位 true 回流父帧 (0;8)
+   * - prev 前驱指针：紫色虚线环 + 左侧 prev 标签；cur 当前指针：右侧 cur 标签
+   * - 单调性比较弧线：compare 问询 (?) / update-prev 通过 (✓) / violation 违规 (✗)
+   */
+  private static buildPointerOverlay(
+    nodePos: Map<string, { x: number; y: number; spread: number }>,
+    overlay?: FullStateTreeOverlay
+  ): string {
+    const extras: string[] = [];
+    const ps = overlay?.pointerState;
+    const probe = overlay?.nullProbeState;
+    const reduced = overlay?.reducedMotion === true;
+    // 锚点解析：优先节点身份 (id)，值仅作回退——重复值树（众数题等）按值必错绑同值孪生节点
+    const resolveAnchor = (
+      id: number | string | null | undefined,
+      val: number | string | null | undefined
+    ): { x: number; y: number; spread: number } | undefined =>
+      (id != null && id !== '' ? nodePos.get(String(id)) : undefined) ??
+      (val !== null && val !== undefined && val !== '' ? nodePos.get(`#${val}`) : undefined);
+
+    // 1) ∅ 空探针与方向蚂蚁线（空调用步专属，仅活跃帧持有）
+    if (probe) {
+      const anchor = resolveAnchor(probe.parentId, probe.parentVal);
+      if (anchor) {
+        const px = anchor.x + (probe.branch === 'left' ? -anchor.spread : anchor.spread);
+        const py = anchor.y + 46;
+        // 蚂蚁线自父节点圆边缘出发，避免横穿节点主体
+        const ddx = px - anchor.x;
+        const ddy = py - anchor.y;
+        const dl = Math.hypot(ddx, ddy) || 1;
+        const sx = anchor.x + (ddx / dl) * 21;
+        const sy = anchor.y + (ddy / dl) * 21;
+        const flowAnim = reduced
+          ? ''
+          : `<animate attributeName="stroke-dashoffset" values="${probe.phase === 'entry' ? '8;0' : '0;8'}" dur="0.7s" repeatCount="indefinite"/>`;
+        extras.push(
+          `<line class="tot-null-flow" x1="${sx}" y1="${sy}" x2="${px}" y2="${py}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,4">${flowAnim}</line>`,
+          `<circle class="tot-null-probe" cx="${px}" cy="${py}" r="14" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,3">${reduced ? '' : '<animate attributeName="opacity" values="1;0.35;1" dur="1.6s" repeatCount="indefinite"/>'}</circle>`,
+          `<text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" font-weight="800" fill="#64748b" font-family="'JetBrains Mono', Consolas, monospace">∅</text>`
+        );
+      }
+    }
+
+    if (ps) {
+      // 2) prev 前驱指针：紫色虚线环 + 左侧标签
+      if (ps.prevVal !== null && ps.prevVal !== undefined && ps.prevVal !== '') {
+        const p = resolveAnchor(ps.prevId, ps.prevVal);
+        if (p) {
+          extras.push(
+            `<circle class="tot-prev-marker" cx="${p.x}" cy="${p.y}" r="23" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="5,3"/>`,
+            `<g class="tot-prev-tag"><rect x="${p.x - 58}" y="${p.y - 8}" width="34" height="15" rx="4" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.2"/><text x="${p.x - 41}" y="${p.y + 2.8}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#6d28d9" font-family="'JetBrains Mono', Consolas, monospace">prev</text></g>`
+          );
+        }
+      }
+
+      // 3) cur 当前指针：右侧绿色标签（节点本体已具翡翠绿高亮）
+      if (ps.curVal !== null && ps.curVal !== undefined && ps.curVal !== '') {
+        const c = resolveAnchor(ps.curId, ps.curVal);
+        if (c) {
+          extras.push(
+            `<g class="tot-cur-tag"><rect x="${c.x + 24}" y="${c.y - 8}" width="30" height="15" rx="4" fill="#ecfdf5" stroke="#059669" stroke-width="1.2"/><text x="${c.x + 39}" y="${c.y + 2.8}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#047857" font-family="'JetBrains Mono', Consolas, monospace">cur</text></g>`
+          );
+        }
+      }
+
+      // 4) 单调性比较弧线 prev ➔ cur（prev === cur 退化为单点时跳过）
+      if (
+        ps.compare &&
+        ps.prevVal !== null &&
+        ps.prevVal !== undefined &&
+        ps.curVal !== null &&
+        ps.curVal !== undefined &&
+        String(ps.prevVal) !== String(ps.curVal)
+      ) {
+        const a = resolveAnchor(ps.prevId, ps.prevVal);
+        const b = resolveAnchor(ps.curId, ps.curVal);
+        if (a && b) {
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          const ux = dx / len;
+          const uy = dy / len;
+          const sx = a.x + ux * 24;
+          const sy = a.y + uy * 24;
+          const ex = b.x - ux * 24;
+          const ey = b.y - uy * 24;
+          const mx = (sx + ex) / 2;
+          const my = Math.max(14, Math.min(sy, ey) - 28);
+          const isFail = ps.compare === 'fail';
+          const color = isFail ? '#dc2626' : '#8b5cf6';
+          const op = isFail ? '≤' : '>';
+          const mark = ps.compare === 'pass' ? '✓' : isFail ? '✗' : '?';
+          extras.push(
+            `<g class="tot-compare-arc"><path d="M ${sx} ${sy} Q ${mx} ${my} ${ex} ${ey}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="3,3"/><rect x="${mx - 34}" y="${my - 12}" width="68" height="16" rx="4" fill="#ffffff" stroke="${color}" stroke-width="1.2"/><text x="${mx}" y="${my}" text-anchor="middle" font-size="10" font-weight="800" fill="${isFail ? '#b91c1c' : '#6d28d9'}" font-family="'JetBrains Mono', Consolas, monospace">${ps.curVal} ${op} ${ps.prevVal} ${mark}</text></g>`
+          );
+        }
+      }
+    }
+
+    return extras.length > 0 ? `<g class="tot-pointer-overlay">${extras.join('')}</g>` : '';
   }
 
   /**
@@ -443,6 +645,19 @@ export class TreeOfTreesCanvasAdapter {
       state.ty = cam.ty;
     }
 
+    // 活跃面板可见性保证 (Bring Active Into View)：无论 autoFollow 与否（拖拽中除外），
+    // 活跃面板一旦滑出视口安全区，必须被最小平移拉回，绝不偷改用户缩放比例
+    if (activeItem && !state.isDragging) {
+      this.ensureActivePanelVisible(
+        activeItem,
+        state,
+        totalW,
+        totalH,
+        container.clientWidth,
+        container.clientHeight
+      );
+    }
+
     // 2. 构建外层画板容器 DOM
     const wrapper = document.createElement('div');
     wrapper.style.cssText =
@@ -483,8 +698,10 @@ export class TreeOfTreesCanvasAdapter {
       <filter id="tot-card-shadow" x="-8%" y="-8%" width="120%" height="125%">
         <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
       </filter>
-      <filter id="tot-active-glow" x="-15%" y="-15%" width="130%" height="130%">
-        <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#2563eb" flood-opacity="0.38"/>
+      <!-- 活跃面板双层光晕：内层锐核勾边 + 外层大范围柔晕，region 扩容避免裁剪 -->
+      <filter id="tot-active-glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#2563eb" flood-opacity="0.55"/>
+        <feDropShadow dx="0" dy="0" stdDeviation="13" flood-color="#2563eb" flood-opacity="0.35"/>
       </filter>
     `;
     svg.appendChild(defs);
@@ -560,6 +777,12 @@ export class TreeOfTreesCanvasAdapter {
     }
     mainG.appendChild(connectorsGroup);
 
+    // 3.5 光效可达性：系统声明减少动效时，呼吸光环退化为静态光环（保留辨识度、移除动画）
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // 4. 绘制每个递归层级挂载的完整二叉树状态卡片 (Full State Tree Cards)
     const cardsGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     for (const item of flatItems) {
@@ -593,7 +816,12 @@ export class TreeOfTreesCanvasAdapter {
         node.activeNodeId,
         node.valueTransition,
         fullTreeBoxW,
-        fullTreeBoxH
+        fullTreeBoxH,
+        {
+          pointerState: node.pointerState,
+          nullProbeState: node.nullProbeState,
+          reducedMotion: prefersReducedMotion,
+        }
       );
 
       // 底部状态与累加值转折
@@ -604,9 +832,17 @@ export class TreeOfTreesCanvasAdapter {
         footerText = '等待递归深入...';
       }
 
+      // 活跃面板呼吸光环：悬浮于外框外侧 5px 的全画布唯一动效元素，前注意通道锁定当前执行帧
+      const breathingRing = isActive
+        ? `<rect class="tot-breathing-ring" x="-5" y="-5" width="${w + 10}" height="${h + 10}" rx="15" fill="none" stroke="#2563eb" stroke-width="2" opacity="${prefersReducedMotion ? '0.35' : '0.75'}">
+            ${prefersReducedMotion ? '' : `<animate attributeName="opacity" values="0.75;0.08;0.75" dur="2.2s" repeatCount="indefinite"/>`}
+          </rect>`
+        : '';
+
       cardG.innerHTML = `
         <!-- 卡片外框与投影 -->
         <rect x="0" y="0" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${borderColor}" stroke-width="${borderW}" ${borderDash} filter="${isActive ? 'url(#tot-active-glow)' : 'url(#tot-card-shadow)'}"/>
+        ${breathingRing}
         
         <!-- 卡片顶栏 -->
         <path d="M 0 10 Q 0 0 10 0 L ${w - 10} 0 Q ${w} 0 ${w} 10 L ${w} 26 L 0 26 Z" fill="${headerBg}"/>
@@ -636,6 +872,8 @@ export class TreeOfTreesCanvasAdapter {
       `;
 
       // 点击任意卡片可平滑聚焦至该卡片（保留用户自定义缩放比例）
+      // 无头/Mock 环境（生命周期守卫测试的极简 DOM 桩）无 addEventListener，跳过交互绑定
+      if (typeof cardG.addEventListener === 'function')
       cardG.addEventListener('click', (e) => {
         e.stopPropagation();
         const cam = this.computeFocusCamera(item, flatItems, totalW, totalH, state.userScale);
@@ -709,12 +947,14 @@ export class TreeOfTreesCanvasAdapter {
       };
     }
 
+    if (typeof svg.addEventListener === 'function')
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
       const factor = e.deltaY > 0 ? 0.9 : 1.1;
       zoomAtCenter(state.scale * factor, false);
     });
 
+    if (typeof svg.addEventListener === 'function')
     svg.addEventListener('mousedown', (e) => {
       if (e.target instanceof SVGElement && e.target.closest('button')) return;
       state.isDragging = true;
@@ -723,6 +963,7 @@ export class TreeOfTreesCanvasAdapter {
       svg.style.cursor = 'grabbing';
     });
 
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function')
     window.addEventListener('mousemove', (e) => {
       if (!state.isDragging) return;
       state.autoFollow = false;
@@ -731,6 +972,7 @@ export class TreeOfTreesCanvasAdapter {
       syncTransform(false);
     });
 
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function')
     window.addEventListener('mouseup', () => {
       if (state.isDragging) {
         state.isDragging = false;

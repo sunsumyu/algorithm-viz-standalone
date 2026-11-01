@@ -27,12 +27,29 @@ export function renderLcaCanvas(
     secondaryNodes = Array.from(new Set([...targets, ...pNodes, ...qNodes]));
   }
 
+  // 构建 p/q 目标指针与当前访问/LCA 指针标签，与全景推演视图保持指针语义对齐
+  const currentFocus = step.lcaResult !== null ? step.lcaResult : step.current;
+  const labelParts = new Map<number | string, string[]>([
+    [step.p, ['p']],
+    [step.q, ['q']],
+  ]);
+  if (currentFocus != null) {
+    const parts = labelParts.get(currentFocus) ?? [];
+    parts.push(step.lcaResult !== null ? 'LCA' : 'cur');
+    labelParts.set(currentFocus, parts);
+  }
+  const labels = new Map(
+    Array.from(labelParts, ([val, parts]) => [val, parts.join('·')] as [number | string, string])
+  );
+
   TreeCanvasAdapter.renderTree(container, {
     tree: step.tree,
-    current: step.lcaResult !== null ? step.lcaResult : step.current,
+    current: currentFocus,
     secondaryHighlightedNodes: secondaryNodes,
     primaryColor: step.lcaResult !== null ? '#16a34a' : '#3b82f6',
     secondaryColor: '#fbbf24',
+    labels,
+    nullProbe: step.nullProbe,
   });
 
   const root = container.closest('#algo-lca-view') || container.parentElement;
@@ -193,10 +210,46 @@ export function renderLcaStage1CustomMetrics(container: HTMLElement, step: LCASt
 
       <div style="background: #faf5ff; border: 1px dashed #d8b4fe; border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #581c87; line-height: 1.5;">
         <span style="font-weight: 700; color: #7e22ce;">💡 LCA 后序判定法则：</span>
-        <span>${step.leftReturn != null && step.rightReturn != null ? '左右子树均返回非空节点，当前节点即为分叉最近公共祖先 LCA！' : (step.leftReturn != null ? '仅左子树返回非空结果，向父调用传递 left 节点。' : (step.rightReturn != null ? '仅右子树返回非空结果，向父调用传递 right 节点。' : '左右均为空，向父层返回 null。'))}</span>
+        <span>${renderLcaPostOrderRule(step)}</span>
       </div>
     </div>
   `;
+}
+
+/**
+ * 依据当前步执行相位输出后序判定法则：
+ * leftReturn/rightReturn 为 null 时存在二义性（「尚未探索」vs「探索完毕返回 null」），
+ * 必须由 action 相位驱动结论，严禁在探索阶段断言「左右均为空 -> 返回 null」。
+ */
+function renderLcaPostOrderRule(step: LCAStep): string {
+  switch (step.action) {
+    case 'enter':
+      return step.current == null
+        ? '空节点基底：直接向父层返回 null，递归触底。'
+        : '函数入口帧：先判空与命中检测 (root == p / q)，未命中再深入左右子树。';
+    case 'explore':
+      return '后序探索中：先深入左子树，接收其返回值后再深入右子树，最后在归并点判定 LCA。';
+    case 'hit-target':
+      return `🎯 命中目标节点 Node(${step.current})：当前节点即 p/q 本身，触发基底返回，直接向父层返回自身。`;
+    case 'left-done':
+      return step.leftReturn != null
+        ? `左子树已返回非空 Node(${step.leftReturn})：目标在左侧已锁定，继续探索右子树后再归并。`
+        : '左子树返回 null：目标不在左子树，继续探索右子树。';
+    case 'right-done':
+      return step.rightReturn != null
+        ? `右子树已返回非空 Node(${step.rightReturn})：左右返回值齐备，进入归并判定。`
+        : '右子树返回 null：结合左子树返回值进行归并判定。';
+    case 'merge':
+      return `归并判定：left = ${step.leftReturn ?? 'null'}，right = ${step.rightReturn ?? 'null'} —— 两侧均非空即当前节点为 LCA，否则向父层传递非空一侧 (left != null ? left : right)。`;
+    case 'done':
+      return `✅ 查找完成：最近公共祖先锁定为 Node(${step.lcaResult ?? '—'})，沿递归栈逐层返回。`;
+    default:
+      // 未知相位时的保守回退：仅描述已确凿的返回值，不作结论性断言
+      if (step.leftReturn != null && step.rightReturn != null) {
+        return '左右子树均返回非空节点，当前节点即为分叉最近公共祖先 LCA！';
+      }
+      return '后序归约进行中，等待左右子树返回值齐备后再判定。';
+  }
 }
 
 export class LcaCanvasAdapter {

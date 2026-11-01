@@ -8,6 +8,38 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as jsYaml from 'js-yaml';
+import { encodeToZeroWidth } from '../src/core/security/zero-width-watermark';
+
+/**
+ * 分发门禁：导出的单文件 HTML 不经过任何授权体系（无激活、无加密），
+ * 属于完全绕过防盗防线的分发通道，必须显式声明 `--allow-distribute` 才允许产出，
+ * 且强制注入可见水印与零宽盲水印（买家身份可追溯）。
+ */
+function parseExportCliArgs(): { allowDistribute: boolean; buyer: string } {
+  const argv = process.argv.slice(2);
+  let allowDistribute = false;
+  let buyer = process.env.ALGO_VIZ_EXPORT_BUYER?.trim() || '';
+  if (argv.includes('--allow-distribute')) allowDistribute = true;
+  const buyerIdx = argv.indexOf('--buyer');
+  if (buyerIdx >= 0 && argv[buyerIdx + 1]) buyer = argv[buyerIdx + 1].trim();
+  if (!buyer) buyer = `untracked-export:${new Date().toISOString().slice(0, 10)}`;
+  return { allowDistribute, buyer };
+}
+
+/** 构建注入导出 HTML 的双水印片段（可见平铺 + 零宽盲水印） */
+function buildWatermarkInjection(buyer: string): string {
+  const zw = encodeToZeroWidth(buyer);
+  const visibleTile = buyer.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `
+  <style>
+    #export-watermark-overlay{position:fixed;inset:0;pointer-events:none;z-index:2147483000;opacity:.06;
+      background-image:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='380'%20height='220'%3E%3Ctext%20x='190'%20y='110'%20transform='rotate(-24%20190%20110)'%20text-anchor='middle'%20fill='%23475569'%20font-size='13'%3E${encodeURIComponent(`离线演示版 · ${visibleTile}`)}%3C/text%3E%3C/svg%3E");
+      background-repeat:repeat;}
+  </style>
+  <div id="export-watermark-overlay" aria-hidden="true"></div>
+  <!-- export-trace:${zw} -->
+  <script>window.__EXPORT_BUYER__ = "${buyer.replace(/"/g, '\\"')}";</script>`;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +50,18 @@ if (!fs.existsSync(distStandaloneDir)) {
   fs.mkdirSync(distStandaloneDir, { recursive: true });
 }
 
+const { allowDistribute, buyer } = parseExportCliArgs();
+if (!allowDistribute) {
+  console.error('======================================================');
+  console.error('⛔ [Export Standalone] 已拦截：离线单文件导出不经过任何授权体系，');
+  console.error('   属于完全绕过防盗防线的分发通道，禁止静默产出。');
+  console.error('   如确需对外分发，请显式执行:');
+  console.error('     npm run export:standalone -- --allow-distribute --buyer <订单号或用户ID>');
+  console.error('   导出物将自动注入可见水印与零宽盲水印（泄露可溯源）。');
+  console.error('======================================================');
+  process.exit(1);
+}
+console.log(`[Export Standalone] 分发已授权，买家水印身份: ${buyer}`);
 console.log('[Export Standalone] 开始扫描模型规范并构建离线单文件可视化页面...');
 
 // 1. 读取所有 YAML 模型
@@ -123,6 +167,9 @@ targetTemplates.forEach((templateName) => {
 
   // 插入内联模型脚本
   html = html.replace('</head>', `${inlineModelScript}\n</head>`);
+
+  // 注入双水印（可见平铺 + 零宽盲水印），泄露可溯源
+  html = html.replace('</body>', `${buildWatermarkInjection(buyer)}\n</body>`);
 
   const outputPath = path.resolve(distStandaloneDir, templateName);
   fs.writeFileSync(outputPath, html, 'utf-8');

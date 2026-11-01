@@ -1,5 +1,6 @@
 import { highlightTokens } from '../code-highlighter';
 import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
+import { ReturnStepDecorator } from '../return-step-decorator';
 import { createHoverTooltipManager, type HoverTooltipHandle } from '../renderers/terminal/hover-tooltip-manager';
 
 export interface RightPanelTabOptions {
@@ -272,7 +273,8 @@ export class RightPanelTabCoordinator {
       this.bindHoverTooltip(container, language);
     }
 
-    // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复）
+    // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复；返回徽章清理委托共享深模块）
+    ReturnStepDecorator.clearReturnBadges(container);
     container.querySelectorAll('.code-line').forEach(el => {
       const htmlEl = el as HTMLElement;
       if (htmlEl.dataset.isDirty === 'true' && htmlEl.dataset.rawCode) {
@@ -283,8 +285,6 @@ export class RightPanelTabCoordinator {
       htmlEl.style.backgroundColor = '';
       htmlEl.style.borderLeftColor = '';
       htmlEl.style.fontWeight = '';
-      const oldIcon = htmlEl.querySelector('.code-return-icon');
-      if (oldIcon) oldIcon.remove();
     });
     // 清理全局行末变量注释
     container.querySelectorAll('.algo-code-inline-hint').forEach(el => el.remove());
@@ -306,14 +306,9 @@ export class RightPanelTabCoordinator {
         activeLineEl.dataset.isDirty = 'true';
       }
 
-      // 若为递归返回行，在代码行首部注入回溯指示图标 ↩
-      if (isReturn && !activeLineEl.querySelector('.code-return-icon')) {
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'code-return-icon';
-        iconSpan.classList?.add('code-return-icon');
-        iconSpan.textContent = '↩ ';
-        iconSpan.title = '递归返回至此行并完成赋值';
-        activeLineEl.prepend(iconSpan);
+      // 若为递归返回行，在代码行首部注入回溯返回徽章 ↩（委托共享深模块 ReturnStepDecorator）
+      if (isReturn) {
+        ReturnStepDecorator.applyReturnBadge(activeLineEl);
       }
 
       // 3. 注入行末幽灵变量提示 (基于 VariableContextResolver)

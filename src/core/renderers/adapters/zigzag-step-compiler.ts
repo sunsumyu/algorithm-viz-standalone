@@ -21,6 +21,7 @@ import {
   Tree036Step,
 } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
 import { BinaryTreeTraversalCompiler } from './binary-tree-traversal-compiler';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export interface ZigzagStep {
   tree: TreeNode | null;
@@ -53,6 +54,9 @@ export interface ZigzagStep {
   activeNodeId?: number | null;
   secondaryNodeId?: number | null;
   extraData?: Record<string, any>;
+
+  /** 空调用探针：Stage 3 DFS 空基底步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 const DEFAULT_TREE_NODES: TreeNode036[] = [
@@ -540,7 +544,12 @@ export class ZigzagStepCompiler {
       return steps;
     }
 
-    function dfs(node: TreeNode | null, level: number): void {
+    function dfs(
+      node: TreeNode | null,
+      level: number,
+      parent: TreeNode | null = null,
+      branch: 'left' | 'right' = 'left'
+    ): void {
       if (!node) {
         steps.push({
           tree: root,
@@ -555,6 +564,9 @@ export class ZigzagStepCompiler {
           metrics: ZigzagCanvasAdapter.makeMetrics(level, 0, result.length, level % 2 === 1),
           decision: '到达空节点 null，直接返回',
           action: 'base-case',
+          nullProbe: parent
+            ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+            : undefined,
           message: 'node 为 null，触发递归基（Base Case），返回上一层调用栈。',
           log: `dfs(null, ${level}) -> return`,
           codeLine: L.dfsBase,
@@ -645,7 +657,7 @@ export class ZigzagStepCompiler {
           codeLine: L.recurLeft,
         });
       }
-      dfs(node.left, level + 1);
+      dfs(node.left, level + 1, node, 'left');
 
       if (node.right) {
         steps.push({
@@ -666,7 +678,7 @@ export class ZigzagStepCompiler {
           codeLine: L.recurRight,
         });
       }
-      dfs(node.right, level + 1);
+      dfs(node.right, level + 1, node, 'right');
 
       callStack.pop();
     }

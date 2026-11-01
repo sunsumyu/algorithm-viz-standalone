@@ -43,6 +43,7 @@ const AUTHORIZED_CORE_COMPILERS = new Set([
   'two-pass-neighbor-step-compiler.ts',
   'two-sequence-greedy-step-compiler.ts',
   'resource-greedy-step-compiler.ts',
+  'grid-unique-paths-compiler.ts',
 ]);
 
 // 利用 Vite 零 DOM、零 Node 依赖的 import.meta.glob 加载当前目录策略源码

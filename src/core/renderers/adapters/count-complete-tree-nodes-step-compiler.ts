@@ -11,6 +11,7 @@ import {
   COUNT_NODES_STAGE2_LINES,
   COUNT_NODES_STAGE3_LINES,
 } from '../../../algorithms/categories/tree/tree-036-037/count-complete-tree-nodes-036-stage-codes';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 // ============================================================
 // 类型契约与状态定义 (Domain Step Contract)
@@ -27,6 +28,9 @@ export interface CountNodes036Step extends StepBase {
   codeLine?: HighlightTarget;
   metrics?: Record<string, string | number>;
   statusBadge?: { text: string; type: 'info' | 'warning' | 'success' | 'danger' };
+
+  /** 空调用探针：base-null 步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 
   /** Stage 1 DFS 递归状态 */
   dfsState?: {
@@ -149,6 +153,12 @@ export function buildCountNodesDfsSteps(root: TreeNode | null): CountNodes036Ste
         highlightedNodes: Array.from(visitedNodes),
         decision: `节点 ${node.val} 的左孩子为空，左子树计数 0`,
         action: 'base-null',
+        nullProbe: {
+          parentVal: node.val,
+          parentId: node.id ?? undefined,
+          branch: 'left',
+          phase: 'entry',
+        },
         message: `节点 ${node.val} 无左孩子 (node.left == null)，左侧子树贡献 0 个节点。`,
         log: `node ${node.val}.left == null -> 0`,
         codeLine: L.baseCase,
@@ -181,6 +191,12 @@ export function buildCountNodesDfsSteps(root: TreeNode | null): CountNodes036Ste
         highlightedNodes: Array.from(visitedNodes),
         decision: `节点 ${node.val} 的右孩子为空，右子树计数 0`,
         action: 'base-null',
+        nullProbe: {
+          parentVal: node.val,
+          parentId: node.id ?? undefined,
+          branch: 'right',
+          phase: 'entry',
+        },
         message: `节点 ${node.val} 无右孩子 (node.right == null)，右侧子树贡献 0 个节点。`,
         log: `node ${node.val}.right == null -> 0`,
         codeLine: L.baseCase,

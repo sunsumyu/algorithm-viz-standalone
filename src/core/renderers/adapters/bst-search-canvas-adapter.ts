@@ -29,7 +29,7 @@ export class BstSearchCanvasAdapter {
    */
   static renderCustomMetrics(container: HTMLElement, step: BSTSStep): void {
     container.innerHTML = '';
-    container.style.cssText = 'display:flex; flex-direction:column; gap:8px; padding:8px; height:100%; overflow-y:auto; font-family:system-ui, -apple-system, sans-serif;';
+    container.style.cssText = 'width:100%; flex:0 0 auto; display:flex; flex-direction:column; gap:8px; padding:8px; overflow-y:auto; font-family:system-ui, -apple-system, sans-serif;';
 
     // 1. 顶部 4 格核心指标网格
     const metricsGrid = document.createElement('div');

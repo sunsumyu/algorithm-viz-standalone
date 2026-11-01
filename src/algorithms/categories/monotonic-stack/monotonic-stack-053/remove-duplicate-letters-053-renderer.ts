@@ -17,10 +17,10 @@ export {
 
 export const removeDuplicateLetters053Visualizer = registerDeclarativeAlgorithm<Step053>({
   id: 'remove-duplicate-letters-053',
-  name: '去除重复字母 (Class 053 Code04)',
+  name: '去除重复字母',
   category: 'monotonic-stack',
   difficulty: 'medium',
-  aliases: ['remove-duplicate-letters', '316', '1081', '去除重复字母', 'class053-code04'],
+  aliases: ['remove-duplicate-letters', '316', '1081', '去除重复字母', 'class053-code04', 'leetcode-1081', '不同字符的最小子序列' ],
   hasDeductionTree: true,
   learningGoal:
     '掌握字符频次表与单调栈联动设计，理解栈内布尔去重集合与字典序贪心让位的双重约束。',

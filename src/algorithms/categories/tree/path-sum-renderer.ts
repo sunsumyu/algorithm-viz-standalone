@@ -48,7 +48,7 @@ export {
 
 export const pathSumVisualizer = registerDeclarativeAlgorithm<PSStep>({
   id: 'path-sum',
-  aliases: ['tree-037-path-sum-ii', 'leetcode-112', 'leetcode-113', 'path-sum-ii'],
+  aliases: ['tree-037-path-sum-ii', 'leetcode-112', 'leetcode-113', 'path-sum-ii', '路径总和', '路径总和 II' ],
   name: '路径总和与收集所有路径',
   category: 'tree',
   icon: '🪜',

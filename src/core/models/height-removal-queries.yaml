@@ -160,33 +160,35 @@ stages:
       forward:
         language: java
         source: |
-          // DFN 区间打平与前后缀最大深度状态表
-          // @step:entry 1. 初始化 DFN 向量与前后缀状态表
-          // @step:call_dfs 2. 启动先序扫描填充深度表
-          // @step:dfs_entry 3. 写入 deep[i] 与 size[i]
-          // @step:dfn_inc 4. 时间戳序列推进
-          // @step:record_dfn 5. 登记节点与 DFN 对应关系
-          // @step:dfs_left 6. 汇总左子树连续区间
-          // @step:dfs_right 7. 汇总右子树连续区间
-          // @step:init_maxleft 8. 填入前缀基底：maxLeft[1] = deep[1]
-          // @step:calc_maxleft 9. 前缀递推：maxLeft[i] = max(maxLeft[i-1], deep[i])
-          // @step:init_maxright 10. 填入后缀基底：maxRight[n] = deep[n]
-          // @step:calc_maxright 11. 后缀递推：maxRight[i] = max(maxRight[i+1], deep[i])
-          // @step:loop_queries 12. 查询区间匹配：定位 [dfn, dfn+size-1]
-          // @step:calc_ans 13. 前后缀极值查表：max(maxLeft[l], maxRight[r])
-          // @step:return 14. 状态表转移完成
-      reverse:
-        language: java
-        source: |
-          // 逆向暴力量测状态表
-          // @step:entry 1. 逆向测量状态初始化
-          // @step:call_dfs 2. 依次读取单次询问
-          // @step:init_ans 3. 动态掩码标记删除子树
-          // @step:calc_ans 4. 实时重算树高
-          // @step:dfs_entry 5. 逐层统计深度
-          // @step:dfs_null 6. 遇到标记阻断
-          // @step:return 7. 逆向矩阵收敛
-
+          // DFN 区间打平与前后缀最大深度状态表 (与名师讲义语义行对齐的权威实现)
+          class Solution {
+              private int dfnCnt = 0;
+              private int[] dfn = new int[100005];
+              private int[] deep = new int[100005];
+              private int[] size = new int[100005];
+              private int[] maxLeft = new int[100005];
+              private int[] maxRight = new int[100005];
+              public int[] treeQueries(TreeNode root, int[] queries) { // @step:entry
+                  dfs(root, 0); // @step:init
+                  maxLeft[1] = deep[1];
+                  for (int i = 2; i <= dfnCnt; i++) maxLeft[i] = Math.max(maxLeft[i - 1], deep[i]);
+                  maxRight[dfnCnt] = deep[dfnCnt];
+                  for (int i = dfnCnt - 1; i >= 1; i--) maxRight[i] = Math.max(maxRight[i + 1], deep[i]);
+                  int[] ans = new int[queries.length];
+                  for (int k = 0; k < queries.length; k++) {
+                      int i = dfn[queries[k]];
+                      ans[k] = Math.max(maxLeft[i - 1], maxRight[i + size[i]]); // @step:transfer
+                  }
+                  return ans; // @step:return
+              }
+              private void dfs(TreeNode node, int d) { // @step:guard
+                  if (node == null) return;
+                  int i = ++dfnCnt;
+                  dfn[node.val] = i; deep[i] = d; size[i] = 1;
+                  if (node.left != null) { dfs(node.left, d + 1); size[i] += size[dfn[node.left.val]]; }
+                  if (node.right != null) { dfs(node.right, d + 1); size[i] += size[dfn[node.right.val]]; }
+              }
+          }
   stage-4:
     name: 前后缀极值原地复用与常数空间压缩
     description: 优化数组申请，原地利用系统缓存行加速前缀与后缀最大值扫描，单次查询常数级最少指令

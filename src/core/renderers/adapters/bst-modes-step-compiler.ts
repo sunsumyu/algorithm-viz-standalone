@@ -40,6 +40,13 @@ export interface BstModesStep {
   highlightedNodes?: (number | string)[];
   stackVals?: number[];
   morrisThread?: { from: number; to: number; active: boolean };
+  /** 空调用探针（Stage 1 递归空基底步发射）：供树上挂树全景渲染 ∅ 虚线探针与方向蚂蚁线 */
+  nullProbe?: {
+    parentVal: number | string;
+    parentId?: number | string;
+    branch: 'left' | 'right';
+    phase: 'entry' | 'return';
+  };
 }
 
 /** 防环安全树克隆 (特别是 Morris 遍历中可能产生临时回路) */
@@ -117,7 +124,12 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
     highlightedNodes: root.id ? [root.id as string] : [root.val],
   });
 
-  function inorder(node: TreeNode | null, depth: number) {
+  function inorder(
+    node: TreeNode | null,
+    depth: number,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ) {
     if (!node) {
       trace.addHeader('inorder(node=null)', depth, '空节点触底返回');
       trace.addConditionHit('node == null -> return', depth, '命中基底条件');
@@ -134,6 +146,9 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
         inorderSeq: [...inorderSeq],
         visitedNodeIds: [...visitedNodeIds],
         action: 'visit',
+        nullProbe: parent
+          ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+          : undefined,
         decision: '到达空节点，直接返回上一层递归',
         message: '到达叶子下方的空子树，满足 node == null，返回父调用。',
         log: `depth ${depth}: node == null, return`,
@@ -190,10 +205,11 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
       stageId: 'stage-1',
       highlightedNodes: node.id ? [node.id as string] : [node.val],
     });
-    inorder(node.left, depth + 1);
+    inorder(node.left, depth + 1, node, 'left');
 
-    // 2. 访问当前节点：更新 count
+    // 2. 访问当前节点：严格一行一步展开（比较条件行 → count 分支体行）
     const isSame = prev !== null && prev.val === node.val;
+    const preCount = count;
     if (isSame) {
       count++;
     } else {
@@ -202,12 +218,39 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
     inorderSeq.push(node.val);
     if (node.id) visitedNodeIds.push(node.id as string);
 
+    // 2a. 比较条件行（count 保持旧值，光标落在判定语句本身）
+    steps.push({
+      tree: cloneTree(root),
+      currNodeVal: node.val,
+      currNodeId: node.id as string,
+      prevNodeVal: prev ? prev.val : null,
+      prevNodeId: prev?.id ? (prev.id as string) : null,
+      count: preCount,
+      maxCount,
+      modes: [...modes],
+      inorderSeq: [...inorderSeq],
+      visitedNodeIds: [...visitedNodeIds],
+      action: 'visit',
+      decision: `检验连续性: prev(${prev ? prev.val : 'null'}) ${isSame ? '==' : '!='} ${node.val}，走 ${isSame ? 'count++' : 'count = 1'} 分支`,
+      message: isSame
+        ? `前驱值 ${prev?.val} 与当前值 ${node.val} 相同，进入 count++ 分支。`
+        : prev === null
+          ? `前驱 prev 为 null（首个中序访问节点），进入 count = 1 分支。`
+          : `前驱值 ${prev?.val} 与当前值 ${node.val} 不同，进入 count = 1 分支。`,
+      log: `compare ${node.val} with prev (${prev ? prev.val : 'null'})`,
+      codeLine: BST_MODES_STAGE1_LINES.comparePrev,
+      callTrace: trace.snapshot(),
+      stageId: 'stage-1',
+      highlightedNodes: node.id ? [node.id as string] : [node.val],
+    });
+
     trace.addUnwindCalc(
       `countUpdate(${node.val})`,
       depth,
       isSame ? `与前驱相同: count 累加为 ${count}` : `与前驱不同: count 重置为 1`,
     );
 
+    // 2b. count 分支体行：count++(22) / count = 1(24)，多分支独立分行使光标精准跳入
     steps.push({
       tree: cloneTree(root),
       currNodeVal: node.val,
@@ -227,27 +270,28 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
         ? `访问节点 ${node.val}，与前驱相同，当前值连续出现频率上升至 ${count}。`
         : `访问节点 ${node.val}，新元素出现，频次从 1 开始统计。`,
       log: `visit ${node.val}: count = ${count} (prev = ${prev ? prev.val : 'null'})`,
-      codeLine: BST_MODES_STAGE1_LINES.countUpdate,
+      codeLine: isSame ? BST_MODES_STAGE1_LINES.countIncrement : BST_MODES_STAGE1_LINES.countReset,
       callTrace: trace.snapshot(),
       stageId: 'stage-1',
       highlightedNodes: node.id ? [node.id as string] : [node.val],
     });
 
-    // 比较 maxCount 更新众数集合
+    // 3. maxCount 判定与分支体（同样严格一行一步展开）
+    const preMaxCount = maxCount;
+    const preModes = [...modes];
+    let modeBranch: 'break' | 'tie' | 'none' = 'none';
     let actionDesc = '';
-    if (count > maxCount) {
-      maxCount = count;
-      modes = [node.val];
+    if (count > preMaxCount) {
+      modeBranch = 'break';
       actionDesc = `🌟 破纪录！count (${count}) > maxCount，重置众数集合 modes = [${node.val}]`;
-    } else if (count === maxCount) {
-      modes.push(node.val);
-      actionDesc = `🤝 并列最高！count (${count}) == maxCount，追加众数 modes = [${modes.join(', ')}]`;
+    } else if (count === preMaxCount) {
+      modeBranch = 'tie';
+      actionDesc = `🤝 并列最高！count (${count}) == maxCount，追加众数 modes = [${[...preModes, node.val].join(', ')}]`;
     } else {
-      actionDesc = `当前 count (${count}) < maxCount (${maxCount})，不改变众数列表`;
+      actionDesc = `当前 count (${count}) < maxCount (${preMaxCount})，不改变众数列表`;
     }
 
-    trace.addUnwindCalc(`maxCountUpdate`, depth, actionDesc);
-
+    // 3a. maxCount 判定行（maxCount/modes 保持旧值）
     steps.push({
       tree: cloneTree(root),
       currNodeVal: node.val,
@@ -255,19 +299,115 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
       prevNodeVal: prev ? prev.val : null,
       prevNodeId: prev?.id ? (prev.id as string) : null,
       count,
-      maxCount,
-      modes: [...modes],
+      maxCount: preMaxCount,
+      modes: preModes,
       inorderSeq: [...inorderSeq],
       visitedNodeIds: [...visitedNodeIds],
       action: 'visit',
-      decision: actionDesc,
-      message: actionDesc,
-      log: `modes update: maxCount = ${maxCount}, modes = [${modes.join(', ')}]`,
+      decision: `判定 count (${count}) vs maxCount (${preMaxCount})：${modeBranch === 'break' ? '大于，破纪录重置' : modeBranch === 'tie' ? '等于，并列追加' : '小于，无变更'}`,
+      message: `在节点 ${node.val} 处检验 count 与 maxCount 的关系，决定众数集合走向。`,
+      log: `check maxCount: count = ${count}, maxCount = ${preMaxCount}`,
       codeLine: BST_MODES_STAGE1_LINES.maxCountUpdate,
       callTrace: trace.snapshot(),
       stageId: 'stage-1',
       highlightedNodes: node.id ? [node.id as string] : [node.val],
     });
+
+    trace.addUnwindCalc(`maxCountUpdate`, depth, actionDesc);
+
+    // 3b. 破纪录分支体按行展开：27 maxCount=count → 28 modes.clear → 29 modes.add
+    // （旧众数集可见 → 清空瞬间可见 → 新众数安装，三段状态变更逐行对应）
+    if (modeBranch === 'break') {
+      maxCount = count;
+      const oldModesDesc = preModes.length > 0 ? `[${preModes.join(', ')}]` : '（空）';
+      // 27: maxCount = count（modes 仍为旧集）
+      steps.push({
+        tree: cloneTree(root),
+        currNodeVal: node.val,
+        currNodeId: node.id as string,
+        prevNodeVal: prev ? prev.val : null,
+        prevNodeId: prev?.id ? (prev.id as string) : null,
+        count,
+        maxCount,
+        modes: [...modes],
+        inorderSeq: [...inorderSeq],
+        visitedNodeIds: [...visitedNodeIds],
+        action: 'visit',
+        decision: `🌟 破纪录！maxCount 更新为 ${count}（原 ${preMaxCount}），旧众数集 ${oldModesDesc} 待清空`,
+        message: `频次 ${count} 超越原纪录 ${preMaxCount}，maxCount 率先更新，旧众数集即将重置。`,
+        log: `maxCount update: maxCount = ${maxCount} (modes = [${modes.join(', ')}] 待清空)`,
+        codeLine: BST_MODES_STAGE1_LINES.maxCountReset,
+        callTrace: trace.snapshot(),
+        stageId: 'stage-1',
+        highlightedNodes: node.id ? [node.id as string] : [node.val],
+      });
+      // 28: modes.clear()（旧众数集被清空的瞬间）
+      modes = [];
+      steps.push({
+        tree: cloneTree(root),
+        currNodeVal: node.val,
+        currNodeId: node.id as string,
+        prevNodeVal: prev ? prev.val : null,
+        prevNodeId: prev?.id ? (prev.id as string) : null,
+        count,
+        maxCount,
+        modes: [...modes],
+        inorderSeq: [...inorderSeq],
+        visitedNodeIds: [...visitedNodeIds],
+        action: 'visit',
+        decision: `旧众数集 ${oldModesDesc} 已清空，准备安装新众数`,
+        message: `原众数集合已让位清空，众数集合暂为空，等待新纪录值加入。`,
+        log: `modes cleared (旧集 ${oldModesDesc} -> [])`,
+        codeLine: BST_MODES_STAGE1_LINES.modesClear,
+        callTrace: trace.snapshot(),
+        stageId: 'stage-1',
+        highlightedNodes: node.id ? [node.id as string] : [node.val],
+      });
+      // 29: modes.add(node.val)（新众数安装）
+      modes = [node.val];
+      steps.push({
+        tree: cloneTree(root),
+        currNodeVal: node.val,
+        currNodeId: node.id as string,
+        prevNodeVal: prev ? prev.val : null,
+        prevNodeId: prev?.id ? (prev.id as string) : null,
+        count,
+        maxCount,
+        modes: [...modes],
+        inorderSeq: [...inorderSeq],
+        visitedNodeIds: [...visitedNodeIds],
+        action: 'visit',
+        decision: actionDesc,
+        message: actionDesc,
+        log: `modes update: maxCount = ${maxCount}, modes = [${modes.join(', ')}]`,
+        codeLine: BST_MODES_STAGE1_LINES.modesAdd,
+        callTrace: trace.snapshot(),
+        stageId: 'stage-1',
+        highlightedNodes: node.id ? [node.id as string] : [node.val],
+      });
+    } else if (modeBranch === 'tie') {
+      modes.push(node.val);
+      steps.push({
+        tree: cloneTree(root),
+        currNodeVal: node.val,
+        currNodeId: node.id as string,
+        prevNodeVal: prev ? prev.val : null,
+        prevNodeId: prev?.id ? (prev.id as string) : null,
+        count,
+        maxCount,
+        modes: [...modes],
+        inorderSeq: [...inorderSeq],
+        visitedNodeIds: [...visitedNodeIds],
+        action: 'visit',
+        decision: actionDesc,
+        message: actionDesc,
+        log: `modes update: maxCount = ${maxCount}, modes = [${modes.join(', ')}]`,
+        codeLine: BST_MODES_STAGE1_LINES.modesTieAdd,
+        callTrace: trace.snapshot(),
+        stageId: 'stage-1',
+        highlightedNodes: node.id ? [node.id as string] : [node.val],
+      });
+    }
 
     // 更新 prev 指针
     prev = node;
@@ -314,7 +454,7 @@ export function buildBstModesStage1Steps(root: TreeNode | null): BstModesStep[] 
       stageId: 'stage-1',
       highlightedNodes: node.id ? [node.id as string] : [node.val],
     });
-    inorder(node.right, depth + 1);
+    inorder(node.right, depth + 1, node, 'right');
 
     trace.addReturnLeaf(`node=${node.val} 子树遍历完成`, depth);
   }

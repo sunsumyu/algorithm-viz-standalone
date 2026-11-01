@@ -121,9 +121,9 @@ export class CodePanel {
     }
   }
 
-  /** 高亮单行或多语言高亮目标 */
-  public highlight(target: HighlightTarget | null | undefined): void {
-    this.terminal.highlightLine(target);
+  /** 高亮单行或多语言高亮目标；传入 stepContext 时自动判定返回帧并挂载 ↩ 返回徽章 */
+  public highlight(target: HighlightTarget | null | undefined, stepContext?: unknown): void {
+    this.terminal.highlightLine(target, stepContext);
   }
 
   /** 同步变量监视面板 */

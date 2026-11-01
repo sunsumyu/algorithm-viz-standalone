@@ -85,6 +85,7 @@ export const VALID_BST_STAGE1_CODE: Record<string, string[]> = {
 };
 
 export const VALID_BST_STAGE1_LINES = {
+  init: { java: 2, cpp: 2, python: 3, javascript: 2 },
   entry: { java: 3, cpp: 4, python: 5, javascript: 3 },
   nullCheckHit: { java: 4, cpp: 5, python: 6, javascript: 4 },
   nullCheckPass: { java: 4, cpp: 5, python: 6, javascript: 4 },

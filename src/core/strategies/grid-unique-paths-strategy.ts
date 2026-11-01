@@ -1,13 +1,11 @@
 import type { IAlgorithmStrategy, StageExecutionParams } from './algorithm-strategy';
 import type { IYamlAlgorithmModel } from '../interfaces';
 import { type UniversalStep } from '../universal-stage-engine';
-import { generateGridUniquePathsStage12 } from './grid-unique-paths-stage12';
-import { generateGridUniquePathsStage3 } from './grid-unique-paths-stage3';
-import { generateGridUniquePathsStage4 } from './grid-unique-paths-stage4';
+import { GridUniquePathsCompiler } from './grid-unique-paths-compiler';
 
 /**
- * 不同路径 (Unique Paths / Unique Paths II) 独立算法策略模块
- * 遵循策略模式 (Strategy Pattern)，封装 4 阶段推演逻辑
+ * 不同路径 (Unique Paths / Unique Paths II / Min Path Sum / Dungeon Game) 领域策略适配器
+ * 遵循策略模式 (Strategy Pattern) 与深模块哲学，入参提取与规约后全权委托给核心族群编译器 GridUniquePathsCompiler
  */
 export class GridUniquePathsStrategy implements IAlgorithmStrategy {
   public readonly modelId: string;
@@ -21,55 +19,6 @@ export class GridUniquePathsStrategy implements IAlgorithmStrategy {
   }
 
   public generateSteps(model: IYamlAlgorithmModel, params: StageExecutionParams): UniversalStep[] {
-    const { stage, m, n, direction, isMemo, stageVariant, anchorMap } = params;
-    const effectiveM = m ?? Number(model.params?.m?.default ?? model.defaultParams?.m ?? 3);
-    const effectiveN = n ?? Number(model.params?.n?.default ?? model.defaultParams?.n ?? 3);
-
-    switch (stage) {
-      case 1:
-      case 2:
-        return this.generateStage1or2(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', Boolean(isMemo), anchorMap, stageVariant);
-      case 3:
-        return this.generateStage3(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', anchorMap);
-      case 4:
-        return this.generateStage4(model, effectiveM, effectiveN, direction === 'reverse' ? 'reverse' : 'forward', (stageVariant === 'for' ? 'for' : 'if'), anchorMap);
-      default:
-        return [];
-    }
-  }
-
-
-
-  private generateStage1or2(
-    model: IYamlAlgorithmModel,
-    mVal: number,
-    nVal: number,
-    direction: 'forward' | 'reverse',
-    isMemo: boolean,
-    anchorMap?: Record<string, number>,
-    variant: string = 'terminal'
-  ): UniversalStep[] {
-    return generateGridUniquePathsStage12(model, mVal, nVal, direction, isMemo, anchorMap, variant);
-  }
-
-  private generateStage3(
-    model: IYamlAlgorithmModel,
-    mVal: number,
-    nVal: number,
-    direction: 'forward' | 'reverse',
-    anchorMap?: Record<string, number>
-  ): UniversalStep[] {
-    return generateGridUniquePathsStage3(model, mVal, nVal, direction, anchorMap);
-  }
-
-  private generateStage4(
-    model: IYamlAlgorithmModel,
-    mVal: number,
-    nVal: number,
-    direction: 'forward' | 'reverse',
-    variant: 'if' | 'for',
-    anchorMap?: Record<string, number>
-  ): UniversalStep[] {
-    return generateGridUniquePathsStage4(model, mVal, nVal, direction, variant, anchorMap);
+    return GridUniquePathsCompiler.compile(model, params);
   }
 }

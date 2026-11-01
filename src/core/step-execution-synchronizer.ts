@@ -70,6 +70,19 @@ export class StepExecutionSynchronizer {
 
     const type = stepContext?.type || '';
     const decision = stepContext?.decision || '';
+    const action = String((stepContext as any)?.action || '');
+    const focusMode = String((stepContext as any)?.focusMode || '');
+
+    // 0. 递归调用聚焦与返回求值动作相
+    if (focusMode === 'recursive-call' || (stepContext as any)?.focusTarget === '@recursive-call') {
+      return '[发起递归调用]';
+    }
+    if (
+      focusMode === 'condition' &&
+      (action.includes('done') || action.includes('unwind') || action.includes('return'))
+    ) {
+      return '[递归返回求值]';
+    }
 
     // 1. 显式步进自增相
     if (type === 'loop-step' || type === 'increment' || decision.includes('自增') || decision.includes('k++')) {
@@ -135,8 +148,16 @@ export class StepExecutionSynchronizer {
 
     const actionBadge = this.extractActionPhaseBadge(lineCode, stepContext);
 
-    // 1. 提取当前行声明或引用的变量
+    // 1. 提取当前行声明或引用的变量及成员属性 (如 root.left, root.right)
     const idents = new Set<string>();
+    const memberMatches = lineCode.match(/\b([A-Za-z_$][A-Za-z0-9_$]*(?:\.|->)(?:left|right))\b/g);
+    if (memberMatches) {
+      for (const mm of memberMatches) {
+        if (varsMap.has(mm)) {
+          idents.add(mm);
+        }
+      }
+    }
     const matches = lineCode.match(/\b([A-Za-z_$][A-Za-z0-9_$]*)\b/g);
     if (matches) {
       for (const m of matches) {

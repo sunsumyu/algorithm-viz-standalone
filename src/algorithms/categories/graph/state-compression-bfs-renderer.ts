@@ -22,14 +22,14 @@ import {
 
 const { Visualizer } = registerDeclarativeAlgorithm({
   id: 'state-compression-bfs',
-  name: '状态压缩 BFS (State Compression BFS)',
+  name: '状态压缩 BFS',
   category: 'graph',
   description: '状态空间扩维经典：位掩码 1<<k 记录收集状态、三维判重 visited[r][c][mask]、首次搜达目标必定为全局最优 (LeetCode 864)',
   icon: '🔑',
   difficulty: 3,
   levelOrder: 28,
   learningGoal: '掌握状态压缩 BFS 扩维思路、位运算判重与拾取机制及分层搜索最短性',
-  aliases: ['state-compression-bfs-064', 'class064-code06', '847', '864', 'state-bfs', 'shortestPathLength'],
+  aliases: ['state-compression-bfs-064', 'class064-code06', '847', '864', 'state-bfs', 'shortestPathLength', 'leetcode-847', 'leetcode-864', '访问所有节点的最短路径', '获取所有钥匙的最短路径' ],
   presets: [
     { label: '经典 3x3 钥匙收集迷宫', values: { preset: 'classic_3x3' } },
     { label: '线性网格走廊 (快速演示)', values: { preset: 'simple_line' } },

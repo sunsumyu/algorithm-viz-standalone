@@ -16,12 +16,12 @@ export {
 // 注册至全局算法注册表，接入统一顶层抽象容器
 registerAlgorithm({
   id: 'max-path-sum',
-  name: '二叉树最大路径和 (LeetCode 124)',
+  name: '二叉树最大路径和',
   viewId: 'max-path-sum',
   category: 'dynamic-programming',
   description: '左程云算法讲解078 Code02：LeetCode 124 二叉树中的最大路径和，经典树型 DP 单边增益汇报与拱顶路径合并。',
   icon: '🏔️',
-  aliases: ['class078-code02', 'leetcode-124', 'max-path-sum-tree', 'binary-tree-maximum-path-sum'],
+  aliases: ['class078-code02', 'leetcode-124', 'max-path-sum-tree', 'binary-tree-maximum-path-sum', '二叉树中的最大路径和' ],
   template: '<div id="max-path-sum" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
   Visualizer: UniversalStageVisualizer,
   difficulty: 3,

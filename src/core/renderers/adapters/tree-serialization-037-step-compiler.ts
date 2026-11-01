@@ -290,6 +290,7 @@ export function buildStage2LevelorderSteps(): SerializeStep[] {
 
 // =========================================================================
 // Stage 3: 中序序列化歧义判定反例 (Inorder Ambiguity Counterexample)
+// 严格一行一步：中序发射逐 token 独立成帧，两棵树各 5 帧输出 + 逐位比对 + Q.E.D.
 // =========================================================================
 export function buildStage3AmbiguitySteps(): SerializeStep[] {
   const steps: SerializeStep[] = [];
@@ -313,7 +314,7 @@ export function buildStage3AmbiguitySteps(): SerializeStep[] {
     constructedNodes: [1, 2],
     currentNode: '2',
     decision: '考察两棵完全不同的二叉树：树 A (1 的左孩子是 2) 与 树 B (2 的右孩子是 1)',
-    message: '核心悬念：即使严格补全所有空节点 "#"，中序遍历能否反序列化？',
+    message: '核心悬念：即使严格补全所有空节点 "#"，中序遍历能否反序列化？下面逐 token 展开两棵树的中序序列化。',
     log: 'Prove inorder ambiguity with counterexample',
     codeLine: lines.serEntry,
     statusBadge: { text: '反例推导', type: 'danger' },
@@ -321,40 +322,81 @@ export function buildStage3AmbiguitySteps(): SerializeStep[] {
     metrics: { '定理判定': '中序不可反序列化', '歧义冲突数': 2 },
   });
 
-  trace.addRecursePrep('• 树 A 补全 "#" 中序遍历输出: [#, 2, #, 1, #]', 0);
+  // 逐 token 中序发射 (严格一行一步：每个 "#" 与每个节点值各占一帧)
+  const emitInorderWalk = (
+    node: TreeNode | null,
+    tree: TreeNode,
+    label: string,
+    constructed: number[],
+    idxRef: { i: number }
+  ): void => {
+    if (!node) {
+      const i = idxRef.i++;
+      const tok = sharedTokens[i] ?? '#';
+      trace.addConditionPass(`• ${label} 中序输出 token[${i}] = "#" (空槽位标记)`, 0);
+      steps.push({
+        mode: 'serialize',
+        stageId: 'stage-3',
+        tree,
+        tokenStream: sharedTokens,
+        activeTokenIndex: i,
+        constructedNodes: constructed,
+        currentNode: '#',
+        decision: `${label}：递归进入空孩子，发射空标记 "#"`,
+        message: `${label} 中序序列化：当前子树为空，输出 token[${i}] = "#"。`,
+        log: `emit "#" (token[${i}])`,
+        codeLine: lines.serAppend,
+        statusBadge: { text: `${label} 发射 #`, type: 'warning' },
+        callTrace: trace.snapshot(),
+        metrics: { [`${label} 输出进度`]: sharedTokens.slice(0, i + 1).join(','), '当前 token': tok },
+      });
+      return;
+    }
+    emitInorderWalk(node.left, tree, label, constructed, idxRef);
+    const i = idxRef.i++;
+    const tok = sharedTokens[i] ?? String(node.val);
+    trace.addConditionPass(`• ${label} 中序输出 token[${i}] = "${node.val}" (访问节点)`, 0);
+    steps.push({
+      mode: 'serialize',
+      stageId: 'stage-3',
+      tree,
+      tokenStream: sharedTokens,
+      activeTokenIndex: i,
+      constructedNodes: constructed,
+      currentNode: String(node.val),
+      decision: `${label}：访问节点 ${node.val}，发射 token[${i}] = "${node.val}"`,
+      message: `${label} 中序序列化：左子树已处理完毕，访问当前节点 ${node.val}，输出 token[${i}]。`,
+      log: `emit "${node.val}" (token[${i}])`,
+      codeLine: lines.serAppend,
+      statusBadge: { text: `${label} 发射 ${node.val}`, type: 'warning' },
+      callTrace: trace.snapshot(),
+      metrics: { [`${label} 输出进度`]: sharedTokens.slice(0, i + 1).join(','), '当前 token': tok },
+    });
+    emitInorderWalk(node.right, tree, label, constructed, idxRef);
+  };
+
+  const idxA = { i: 0 };
+  emitInorderWalk(treeA, treeA!, '树 A', [1, 2], idxA);
+  const idxB = { i: 0 };
+  emitInorderWalk(treeB, treeB!, '树 B', [2, 1], idxB);
+
+  // 逐位比对帧 (两序列完全重合 -> 单射性崩溃)
+  trace.addConditionHit('• 逐位比对: # = #，2 = 2，# = #，1 = 1，# = # —— 两序列完全一致！', 0);
   steps.push({
     mode: 'serialize',
     stageId: 'stage-3',
     tree: treeA,
     tokenStream: sharedTokens,
-    activeTokenIndex: 2,
-    constructedNodes: [1, 2],
-    currentNode: '1',
-    decision: '对树 A 进行中序序列化：左(#) ➔ 中(2) ➔ 右(#) ➔ 根(1) ➔ 右(#) ➔ 输出 "#,2,#,1,#"',
-    message: '树 A 产生了 5 个标记字符。',
-    log: 'Tree A inorder tokens: #,2,#,1,#',
-    codeLine: lines.serAppend,
-    statusBadge: { text: '树 A 序列化', type: 'warning' },
-    callTrace: trace.snapshot(),
-    metrics: { '树 A 根节点': 1, '输出序列': '#,2,#,1,#' },
-  });
-
-  trace.addRecursePrep('• 树 B 补全 "#" 中序遍历输出: [#, 2, #, 1, #]', 0);
-  steps.push({
-    mode: 'serialize',
-    stageId: 'stage-3',
-    tree: treeB,
-    tokenStream: sharedTokens,
     activeTokenIndex: 4,
-    constructedNodes: [2, 1],
-    currentNode: '2',
-    decision: '对树 B 进行中序序列化：左(#) ➔ 根(2) ➔ 右子树左(#) ➔ 1 ➔ 右(#) ➔ 同样输出 "#,2,#,1,#"',
-    message: '树 B 也产生了完全相同的 5 个标记字符！',
-    log: 'Tree B inorder tokens: #,2,#,1,#',
+    constructedNodes: [1, 2],
+    currentNode: null,
+    decision: '逐位比对：树 A 与 树 B 的中序序列逐字符完全相同！',
+    message: '同一个中序字符串 "#,2,#,1,#" 同时对应两棵拓扑完全不同的二叉树，单射性崩溃。',
+    log: 'Two distinct trees share the identical inorder token stream.',
     codeLine: lines.serAppend,
-    statusBadge: { text: '树 B 序列化', type: 'warning' },
+    statusBadge: { text: '序列冲突', type: 'danger' },
     callTrace: trace.snapshot(),
-    metrics: { '树 B 根节点': 2, '输出序列': '#,2,#,1,#' },
+    metrics: { '树 A 输出': '#,2,#,1,#', '树 B 输出': '#,2,#,1,#', '比对结果': '完全一致' },
   });
 
   trace.addFinalResult('单射崩溃：同一个中序字符串对应两棵不同二叉树！', 0, '← 证明完毕');

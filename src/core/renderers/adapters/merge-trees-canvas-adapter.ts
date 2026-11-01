@@ -291,7 +291,7 @@ export function renderMergeTreesCanvas(container: HTMLElement, step: MergeTreesS
  */
 export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesStep): void {
   container.innerHTML = '';
-  container.style.cssText = 'height: 100%; display: flex; flex-direction: column; gap: 8px; padding: 8px; overflow-y: auto; box-sizing: border-box; font-size: 12px; font-family: system-ui, -apple-system, sans-serif;';
+  container.style.cssText = 'width: 100%; flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 8px; overflow-y: auto; box-sizing: border-box; font-size: 12px; font-family: system-ui, -apple-system, sans-serif;';
 
   const isFinalComplete = step.opType === 'complete';
 
@@ -363,6 +363,37 @@ export function renderMergeTreesCard2(container: HTMLElement, step: MergeTreesSt
     </div>
   `;
   container.appendChild(frameCard);
+
+  // 2.5 递归 DFS 同步下潜调用推演栈 (trace host)：
+  // 以当前深度与聚焦路径展开调用栈帧，宿主元素供 RecursiveCallTraceAdapter 类推演组件挂载
+  const traceBox = document.createElement('div');
+  traceBox.className = 'merge-trees-trace-box';
+  traceBox.style.cssText =
+    'padding: 10px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; flex-shrink: 0; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); box-sizing: border-box;';
+  traceBox.innerHTML = `<div style="font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px;">🧬 递归 DFS 同步下潜调用推演栈</div>`;
+
+  const traceHost = document.createElement('div');
+  traceHost.className = 'merge-trees-trace-host';
+  traceHost.style.cssText = 'display: flex; flex-direction: column; gap: 4px;';
+
+  const pathSegments = String(step.focusPath ?? 'root').split('→').filter(Boolean);
+  const stackDepth = Math.max(1, step.depth || pathSegments.length);
+  for (let frame = 0; frame < stackDepth; frame += 1) {
+    const frameSeg = pathSegments[frame] ?? 'root';
+    const isTop = frame === stackDepth - 1;
+    const frameRow = document.createElement('div');
+    frameRow.style.cssText = `display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; font-family: monospace; font-size: 11px; ${
+      isTop
+        ? 'background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; font-weight: 700;'
+        : 'background: #ffffff; border: 1px solid #e2e8f0; color: #64748b;'
+    }`;
+    frameRow.textContent = isTop
+      ? `▶ 帧 #${frame + 1} · merge(${step.val1 ?? 'null'}, ${step.val2 ?? 'null'}) @ ${frameSeg} ← 当前栈顶`
+      : `帧 #${frame + 1} · 等待子调用返回 @ ${frameSeg}`;
+    traceHost.appendChild(frameRow);
+  }
+  traceBox.appendChild(traceHost);
+  container.appendChild(traceBox);
 
   // 3. 下部：BFS 队列状态 OR 递归调用推演树 (自适应撑满剩余高度)
   if (step.queueState && step.queueState.length > 0) {

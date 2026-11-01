@@ -68,8 +68,8 @@ export function renderAsFarFromLandCanvas(container: HTMLElement, step: AsFarFro
 
 export const asFarFromLand062Visualizer = registerDeclarativeAlgorithm<AsFarFromLandStep>({
   id: 'as-far-from-land-062',
-  aliases: ['as-far-from-land', 'map-analysis-1162', 'leetcode-1162'],
-  name: '地图分析与多源广搜 (Class 062)',
+  aliases: ['as-far-from-land', 'map-analysis-1162', 'leetcode-1162', '1162', '地图分析与多源广搜' ],
+  name: '地图分析',
   category: 'graph',
   hasDeductionTree: true,
   icon: '🗺️',

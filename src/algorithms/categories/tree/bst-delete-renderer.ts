@@ -38,9 +38,9 @@ const parseInput = (inputs?: Record<string, any>) => {
 
 export const bstDeleteVisualizer = registerDeclarativeAlgorithm<BSTDeleteStep>({
   id: 'bst-delete',
-  name: '二叉搜索树中的删除',
+  name: '删除二叉搜索树中的节点',
   category: 'tree',
-  aliases: ['leetcode-450', 'delete-node-in-a-bst'],
+  aliases: ['leetcode-450', 'delete-node-in-a-bst', '450', '二叉搜索树中的删除' ],
   icon: '🗑️',
   hasDeductionTree: true,
   badge: { mode: '多阶段演化: 递归直接嫁接 · 递归后继值替换 · 双指针迭代', complexity: 'O(H) · O(1)' },

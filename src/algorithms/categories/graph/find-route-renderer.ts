@@ -22,14 +22,14 @@ import { renderFindRouteCanvas } from '../../../core/renderers/adapters/find-rou
 
 registerDeclarativeAlgorithm({
   id: 'find-route',
-  name: '寻找图中有效路径 (LC 1971)',
+  name: '寻找图中是否存在路径',
   category: 'graph',
   description: '使用广度优先搜索 (BFS) 与前驱节点映射判断无向图中两点连通性并重构路径',
   icon: '🧭',
   difficulty: 1,
   levelOrder: 20,
   learningGoal: '掌握无向图连通性判定与前驱记录回溯最短跳步路径',
-  aliases: ['1971', 'valid-path', 'validPath', 'find-path'],
+  aliases: ['1971', 'valid-path', 'validPath', 'find-path', '寻找图中有效路径' ],
   metrics: [
     { id: 'metric-cur-node', label: '当前出队点', color: '#2563eb' },
     { id: 'metric-queue', label: '队列内容', color: '#3b82f6' },

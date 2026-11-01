@@ -125,6 +125,18 @@ class MockElement {
   gridTemplateRows: '1fr 300px',
 });
 
+// Mock ResizeObserver：捕获回调以便测试中手动触发容器尺寸变化
+let resizeObserverCallback: (() => void) | null = null;
+class MockResizeObserver {
+  constructor(cb: () => void) {
+    resizeObserverCallback = cb;
+  }
+  observe(): void {}
+  disconnect(): void {}
+  unobserve(): void {}
+}
+(globalThis as any).ResizeObserver = MockResizeObserver;
+
 describe('SplitterStorage', () => {
   beforeEach(() => {
     mockLocalStorage.clear();
@@ -276,5 +288,129 @@ describe('SplitterEngine', () => {
     expect(engineLarge.getCurrentSize()).toBe(1024); // 2048 * 0.5
 
     engineLarge.destroy();
+  });
+
+  it('应该支持传入动态函数 minSize，确保面板拖拽时绝不挤压遮挡正常内容', () => {
+    const parent = new MockElement('div') as unknown as HTMLElement;
+    (parent as any).clientHeight = 800;
+    const target = new MockElement('div') as unknown as HTMLElement;
+    parent.appendChild(target as any);
+
+    let dynamicContentHeight = 246; // 模拟 Card 2 头部 + 4格KPI + 中序序列 + 决策卡的总内容高度
+
+    const engine = new SplitterEngine({
+      id: 'test-dynamic-min-height',
+      direction: 'vertical',
+      targetElement: target,
+      containerElement: parent,
+      defaultSize: 300,
+      minSize: () => dynamicContentHeight,
+      maxRatio: 0.6,
+      mode: 'flex',
+    });
+
+    // 当用户尝试拖拽缩小到 120px 时，应该被 clamp 拦截，不得低于当前内容的真实高度 246px
+    expect(engine.clampSize(120)).toBe(246);
+    expect(engine.clampSize(200)).toBe(246);
+    expect(engine.clampSize(250)).toBe(250);
+
+    // 当内容动态扩展为 280px 时，下限随之自适应联动
+    dynamicContentHeight = 280;
+    expect(engine.clampSize(246)).toBe(280);
+    expect(engine.clampSize(300)).toBe(300);
+
+    engine.destroy();
+  });
+
+  it('容器尺寸变化时必须按比例智能缩放，严禁固定像素导致另一侧面板被挤压', () => {
+    const parent = new MockElement('div') as unknown as HTMLElement;
+    (parent as any).clientWidth = 1920;
+    const target = new MockElement('div') as unknown as HTMLElement;
+    parent.appendChild(target as any);
+
+    const engine = new SplitterEngine({
+      id: 'test-proportional-resize',
+      direction: 'horizontal',
+      targetElement: target,
+      containerElement: parent,
+      defaultSize: 450,
+      minSize: 340,
+      maxRatio: 0.60,
+      mode: 'grid',
+    });
+
+    // 1920 宽容器 + defaultSize 450：大屏黄金规则升级为 50% = 960px
+    expect(engine.getCurrentSize()).toBe(960);
+
+    // 全屏 -> 中窗口：必须保持 50% 占比 (960 * 1200/1920 = 600)，而非固定 960px 挤压左侧
+    (parent as any).clientWidth = 1200;
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(600);
+
+    // 中窗口 -> 小窗口：继续等比 (600 * 800/1200 = 400)
+    (parent as any).clientWidth = 800;
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(400);
+
+    // 继续缩到极限：等比结果 300 低于 minSize 340，必须被安全下限拦截
+    (parent as any).clientWidth = 600;
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(340);
+
+    engine.destroy();
+  });
+
+  it('跨断点窗口变化同样按比例缩放，严禁跳载另一份固定像素记忆', () => {
+    const parent = new MockElement('div') as unknown as HTMLElement;
+    (parent as any).clientWidth = 1600;
+    const target = new MockElement('div') as unknown as HTMLElement;
+    parent.appendChild(target as any);
+
+    const engine = new SplitterEngine({
+      id: 'test-cross-breakpoint-ratio',
+      direction: 'horizontal',
+      targetElement: target,
+      containerElement: parent,
+      defaultSize: 450,
+      minSize: 340,
+      mode: 'grid',
+    });
+
+    // 大屏初始 50% = 800px；窗口 1600 -> 1200 跨断点，等比结果应为 600px
+    expect(engine.getCurrentSize()).toBe(800);
+    (parent as any).clientWidth = 1200;
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(600);
+
+    engine.destroy();
+  });
+
+  it('自身 applySize 引发的容器回弹不得触发循环缩放', () => {
+    const parent = new MockElement('div') as unknown as HTMLElement;
+    (parent as any).clientWidth = 1000;
+    const target = new MockElement('div') as unknown as HTMLElement;
+    parent.appendChild(target as any);
+
+    const engine = new SplitterEngine({
+      id: 'test-no-feedback-loop',
+      direction: 'horizontal',
+      targetElement: target,
+      containerElement: parent,
+      defaultSize: 400,
+      mode: 'flex',
+    });
+    expect(engine.getCurrentSize()).toBe(400);
+
+    // 外部调用 applySize（如拖拽结束恢复、setScope）：引擎自身引发的布局变化须被抑制，禁止观测器再放大/缩小一轮
+    engine.applySize(500);
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(500);
+
+    // 抑制只作用于紧跟的一次观测；后续真实外部变化仍须正常等比
+    (parent as any).clientWidth = 1200;
+    resizeObserverCallback?.();
+    expect(engine.getCurrentSize()).toBe(600);
+
+    engine.destroy();
   });
 });

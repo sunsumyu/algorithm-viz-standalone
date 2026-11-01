@@ -38,9 +38,9 @@ export {
 
 export const sortedArrayToBstVisualizer = registerDeclarativeAlgorithm<SortedArrayToBstStep>({
   id: 'sorted-array-to-bst',
-  name: '有序数组转二叉搜索树',
+  name: '将有序数组转换为二叉搜索树',
   category: 'tree',
-  aliases: ['leetcode-108', 'convert-sorted-array-to-binary-search-tree'],
+  aliases: ['leetcode-108', 'convert-sorted-array-to-binary-search-tree', '108', '有序数组转二叉搜索树' ],
   icon: '🔄',
   hasDeductionTree: true,
   badge: {

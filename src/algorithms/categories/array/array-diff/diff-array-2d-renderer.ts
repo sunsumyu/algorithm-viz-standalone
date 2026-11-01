@@ -17,12 +17,12 @@ export { buildDiff2DSteps };
 
 export const diffArray2DVisualizer = registerDeclarativeAlgorithm<Diff2DStep>({
   id: 'diff-array-2d-048',
-  name: '二维差分与二维前缀和 (2D Difference Array)',
+  name: '用邮票贴满网格图',
   category: 'array',
   icon: '🗺️',
   difficulty: 3,
   levelOrder: 481,
-  aliases: ['class048-code01', 'diff-array-2d', 'stamping-grid-2132', 'leetcode-2132', 'luogu-p3397'],
+  aliases: ['class048-code01', 'diff-array-2d', 'stamping-grid-2132', 'leetcode-2132', 'luogu-p3397', '2132', '二维差分与二维前缀和' ],
   learningGoal: '理解二维四角点容斥抵消机制，掌握高维差分向高维前缀和的闭环转化',
   problemHtml: ARRAY_DIFF_PROBLEMS.diff2D.html,
   analysisHtml: ARRAY_DIFF_PROBLEMS.diff2D.html,

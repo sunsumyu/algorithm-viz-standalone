@@ -95,7 +95,7 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
     const sixStepsHtml = `
       <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; box-sizing: border-box;">
         <div style="font-size: 12px; font-weight: 800; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-          <span>📐 《代码随想录》核心教学洞见 · 六步分治切分法规约</span>
+          <span>📐 《代码随想录》核心教学洞见 · 六步切分法分治规约</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
           ${stepsData
@@ -126,7 +126,7 @@ export class BuildTreeDeductionRenderer implements IDeductionTreeRenderer {
 
     // 4. 四阶段演化阶梯卡片 (纯净展示，杜绝 ASCII 字符)
     const stagesInfo = [
-      { stage: 'Stage 1', name: '前序+中序分治 (LC 105)', tag: 'preorder[pL] ➔ Root', desc: '首位定根，中序切分左长 leftLen，右子树跳过根与左段递归', color: '#1d4ed8', bg: '#eff6ff' },
+      { stage: 'Stage 1', name: '前序+中序分治 (LC 105)', tag: 'preorder[pL] ➔ Root', desc: '前序+中序分治切分递归构造：首位定根，中序切分左长 leftLen，右子树跳过根与左段递归', color: '#1d4ed8', bg: '#eff6ff' },
       { stage: 'Stage 2', name: '后序+中序分治 (LC 106)', tag: 'postorder[pR] ➔ Root', desc: '末位定根，左后序截取 leftLen，右后序排除末尾根对称递归', color: '#b45309', bg: '#fef3c7' },
       { stage: 'Stage 3', name: '前序显式单调栈 ($O(N)$ 零哈希)', tag: 'Stack<TreeNode>', desc: '显式栈沿前序压左链，命中中序弹栈追溯拐点，右孩子重新入栈', color: '#6d28d9', bg: '#f5f3ff' },
       { stage: 'Stage 4', name: '后序显式单调栈 ($O(N)$ 镜像)', tag: 'Reverse Mirror', desc: '后序逆序扫描压右链，命中中序逆序弹栈挂载左孩子，极致空间', color: '#047857', bg: '#ecfdf5' },

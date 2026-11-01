@@ -28,9 +28,9 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'str-str',
-  aliases: ['28', 'leetcode-28', 'implement-str-str', 'kmp-algorithm'],
+  aliases: ['28', 'leetcode-28', 'implement-str-str', 'kmp-algorithm', '实现strStr()', 'kmp' ],
   hasDeductionTree: true,
-  name: '实现strStr()（KMP算法）',
+  name: '找出字符串中第一个匹配项的下标',
   category: 'string',
   description: '用 KMP 算法在 haystack 中查找 needle 的首次位置',
   icon: '🔍',

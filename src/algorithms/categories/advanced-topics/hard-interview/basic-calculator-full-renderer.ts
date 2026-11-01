@@ -17,8 +17,8 @@ export { BASIC_CALCULATOR_CODES, generateCalculatorSteps, renderCalculatorSandbo
 
 export const basicCalculatorVisualizer = registerDeclarativeAlgorithm<CalculatorStep>({
   id: 'basic-calculator-full',
-  aliases: ['class039-calculator', 'basic-calculator', 'basic-calculator-full', 'leetcode-772'],
-  name: '大厂高频真题: 全功能表达式计算器 (Basic Calculator)',
+  aliases: ['class039-calculator', 'basic-calculator', 'basic-calculator-full', 'leetcode-772', '772', '全功能表达式计算器' ],
+  name: '基本计算器 III',
   category: 'stack',
   icon: '🧮',
   difficulty: 3,

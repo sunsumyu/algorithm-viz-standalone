@@ -18,9 +18,9 @@ export { buildTarjanBridgeSteps, TarjanBridgeCanvasAdapter };
 
 const { Visualizer } = registerDeclarativeAlgorithm<BridgeStep>({
   id: 'tarjan-bridge',
-  name: 'Tarjan 割点与桥 (Cut Vertices & Bridges)',
+  name: '查找集群内的关键连接',
   category: 'graph',
-  aliases: ['tarjan-bridge-cut', 'P3388', 'luogu-p3388', 'leetcode-1192'],
+  aliases: ['tarjan-bridge-cut', 'P3388', 'luogu-p3388', 'leetcode-1192', '1192', 'Tarjan 割点与桥' ],
   hasDeductionTree: true,
   icon: '🌉',
   difficulty: 3,

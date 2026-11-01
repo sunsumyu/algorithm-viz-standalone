@@ -50,7 +50,9 @@ export function parseTreeArray(raw: unknown, fallback: (number | null)[]): (numb
   if (text.length === 0) return fallback;
   try {
     const parsed: unknown = JSON.parse(text);
-    // JSON 合法但不是数组：视为非法输入，直接回退（不做词法兜底）
+    // JSON 合法但不是数组：视为非法输入，直接回退（不做词法兜底）；
+    // 例外：裸数字是单节点树的合法层序表达 (如 "2" -> [2])，不触发回退
+    if (typeof parsed === 'number' && Number.isFinite(parsed)) return [parsed];
     if (!Array.isArray(parsed)) return fallback;
     return parsed.map((v) => (v === null ? null : Number.isFinite(Number(v)) ? Number(v) : null));
   } catch {

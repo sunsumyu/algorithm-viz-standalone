@@ -38,7 +38,7 @@ export {
 
 export const bstMinDiffVisualizer = registerDeclarativeAlgorithm({
   id: 'bst-min-diff',
-  aliases: ['leetcode-530', 'leetcode-783', 'minimum-absolute-difference-in-bst'],
+  aliases: ['leetcode-530', 'leetcode-783', 'minimum-absolute-difference-in-bst', '783', '二叉搜索树节点最小距离' ],
   name: '二叉搜索树的最小绝对差',
   category: 'tree',
   icon: '📏',

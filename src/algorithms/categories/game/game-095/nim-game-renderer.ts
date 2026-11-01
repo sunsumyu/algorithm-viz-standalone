@@ -17,12 +17,12 @@ export { buildNimGameSteps };
 
 export const nimGameVisualizer = registerDeclarativeAlgorithm<NimGameStep>({
   id: 'nim-game-095',
-  name: '经典尼姆博弈 (Nim Game)',
+  name: 'Nim 游戏',
   category: 'game',
   icon: '🎲',
   difficulty: 3,
   levelOrder: 953,
-  aliases: ['class095-code03', 'nim-game', 'nim-game-292', 'leetcode-292', 'hdu-1850'],
+  aliases: ['class095-code03', 'nim-game', 'nim-game-292', 'leetcode-292', 'hdu-1850', '292', '经典尼姆博弈' ],
   learningGoal: '深刻理解 Bouton 异或和定理、必胜态转化与二进制平衡拆解',
   problemHtml: GAME_095_PROBLEMS.nimGame.html,
   analysisHtml: GAME_095_PROBLEMS.nimGame.html,

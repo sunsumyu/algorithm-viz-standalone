@@ -17,10 +17,10 @@ export { buildDigitDp079Steps };
 
 export const digitDp079Visualizer = registerDeclarativeAlgorithm<DigitDp079Step>({
   id: 'digit-dp-basic-079',
-  name: '数位 DP 基础模型 (Class 079)',
+  name: '数字 1 的个数',
   category: 'dynamic-programming',
   difficulty: 'hard',
-  aliases: ['class079-digit-dp', 'digit-dp-basic', 'count-digit-one-233', 'leetcode-233'],
+  aliases: ['class079-digit-dp', 'digit-dp-basic', 'count-digit-one-233', 'leetcode-233', '233', '数位 DP 基础模型' ],
   problemContent: DP_079_083_PROBLEMS.digitDp079,
   sourceCodes: DIGIT_DP_079_CODES,
   generateSteps: buildDigitDp079Steps,

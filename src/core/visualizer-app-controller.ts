@@ -20,6 +20,7 @@ import { PresetCasePresenter } from './renderers/preset-case-presenter';
 import { VisualizerParamSynchronizer } from './controllers/visualizer-param-synchronizer';
 import { StageNavigationCoordinator } from './controllers/stage-navigation-coordinator';
 import { RightPanelTabCoordinator } from './controllers/right-panel-tab-coordinator';
+import { ReturnStepDecorator } from './return-step-decorator';
 import { VisualizerInteractionBinder } from './controllers/visualizer-interaction-binder';
 import { PhysicsDebugHUD } from './controllers/physics-debug-hud';
 import { IntervalDpSandboxAdapter } from './renderers/adapters/interval-dp-sandbox-adapter';
@@ -371,8 +372,8 @@ export class VisualizerAppController {
       this.renderFullVisuals(step, index);
     }
 
-    // 3. 代码逐行高亮与行内局部表达式聚焦（统一依据 flowPhase 或回溯语义判定）
-    const isReturn = step.flowPhase === 'backtrack' || step.type === 'branch-return' || step.type === 'combine';
+    // 3. 代码逐行高亮与行内局部表达式聚焦（返回帧判定统一委托顶层抽象 ReturnStepDecorator）
+    const isReturn = ReturnStepDecorator.isReturnStep(step);
     const targetLine = step.line !== undefined ? step.line : (step as any).codeLine;
     this.updateCodeHighlight(targetLine, step.highlightText, isReturn, step);
 
@@ -802,7 +803,7 @@ export class VisualizerAppController {
         const currentStepObj = this.steps[curStep];
         if (currentStepObj) {
           const targetLine = currentStepObj.line !== undefined ? currentStepObj.line : (currentStepObj as any).codeLine;
-          this.updateCodeHighlight(targetLine, currentStepObj.highlightText);
+          this.updateCodeHighlight(targetLine, currentStepObj.highlightText, ReturnStepDecorator.isReturnStep(currentStepObj), currentStepObj);
         }
       }
     });

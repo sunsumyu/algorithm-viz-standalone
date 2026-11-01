@@ -79,8 +79,8 @@ export function renderValidPathCanvas(container: HTMLElement, step: ValidPathSte
 
 export const minimumCostValidPath062Visualizer = registerDeclarativeAlgorithm<ValidPathStep>({
   id: 'minimum-cost-valid-path-062',
-  aliases: ['minimum-cost-valid-path', 'valid-path-1368', 'leetcode-1368'],
-  name: '有效路径最小代价与0-1广搜 (Class 062)',
+  aliases: ['minimum-cost-valid-path', 'valid-path-1368', 'leetcode-1368', '1368', '有效路径最小代价与0-1广搜' ],
+  name: '使网格图至少有一条有效路径的最小代价',
   category: 'graph',
   hasDeductionTree: true,
   icon: '🧭',

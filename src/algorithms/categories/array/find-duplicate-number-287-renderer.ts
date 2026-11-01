@@ -25,7 +25,8 @@ export {
 
 export const findDuplicateNumber287Visualizer = registerDeclarativeAlgorithm<DuplicateNumberStep>({
   id: 'find-duplicate-number-287',
-  name: 'Hard 25: 寻找重复数 (LeetCode 287)',
+  name: '寻找重复数',
+  aliases: ['287', 'leetcode-287'],
   category: 'array',
   icon: '🔍',
   difficulty: 3,

@@ -22,7 +22,7 @@ import {
 
 const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
   id: 'eulerian-circuit',
-  name: '欧拉回路 (Eulerian Circuit - Hierholzer)',
+  name: '重新安排行程',
   viewId: 'algo-eulerian-circuit-view',
   category: 'graph',
   icon: '🔄',
@@ -78,12 +78,12 @@ const { template, Visualizer } = createDeclarativeVisualizer<EulerianStep>({
 
 registerAlgorithm({
   id: 'eulerian-circuit',
-  name: '欧拉回路 (Eulerian Circuit - Hierholzer)',
+  name: '重新安排行程',
   viewId: 'algo-eulerian-circuit-view',
   category: 'graph',
   description: '进阶图论经典：有向图欧拉回路求解、出入度平衡判定、当前弧优化删边与死胡同回溯压栈 (洛谷 P7771)',
   icon: '🔄',
-  aliases: ['eulerian-path', 'hierholzer', 'P7771', 'leetcode-332', 'class067'],
+  aliases: ['eulerian-path', 'hierholzer', 'P7771', 'leetcode-332', 'class067', '332', '欧拉回路' ],
   template,
   Visualizer,
   difficulty: 3,

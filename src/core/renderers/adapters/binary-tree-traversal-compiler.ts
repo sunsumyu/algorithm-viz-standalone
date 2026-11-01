@@ -15,6 +15,7 @@
 
 import { TreeNode, cloneTree } from '../../../algorithms/categories/tree/tree-template';
 import { HighlightTarget, StepBase } from '../../step-visualizer';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 import {
   CallTraceSnapshot,
   RecursiveCallTraceBuilder,
@@ -110,6 +111,8 @@ export interface BinaryTreeStep<TResult = any> extends StepBase {
   activeCallId?: string;
   treeStackFrames?: TreeStackFrame[];
   visitedNodes?: number[] | Set<number>;
+  /** 空调用探针：空基底步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针与方向蚂蚁线 */
+  nullProbe?: StepNullProbe;
 
   // 推演计算值
   result?: TResult;
@@ -629,7 +632,7 @@ export class BinaryTreeTraversalCompiler {
     }
 
     // 2. 递归主推演引擎
-    function dfs(node: TNode | null, currentDepth: number, branch?: string): TResult {
+    function dfs(node: TNode | null, currentDepth: number, branch?: string, parent?: TNode | null): TResult {
       ctx.depth = currentDepth;
 
       const callId = `call-${++callNodeIdCounter}`;
@@ -684,6 +687,15 @@ export class BinaryTreeTraversalCompiler {
           callTrace: trace.snapshot(),
           result: nullMeta.result,
           visitedNodes: [...visitedNodes],
+          // 空调用探针：绑定父帧锚点与分支，供树上挂树全景渲染 ∅ 虚线探针
+          nullProbe: parent
+            ? {
+                parentVal: getNodeVal(parent),
+                parentId: (parent as any).id,
+                branch: branch === 'R' || branch === '右子树' ? 'right' : 'left',
+                phase: 'entry',
+              }
+            : undefined,
           ...nullMeta.customFields,
         }, currentDepth);
 
@@ -857,7 +869,7 @@ export class BinaryTreeTraversalCompiler {
           }
         }
 
-        leftRes = dfs(left, currentDepth + 1, 'L');
+        leftRes = dfs(left, currentDepth + 1, 'L', node);
 
         // 左子树就绪步骤
         if (branchMode === 'both' && spec.afterLeft) {
@@ -944,7 +956,7 @@ export class BinaryTreeTraversalCompiler {
           }
         }
 
-        rightRes = dfs(right, currentDepth + 1, 'R');
+        rightRes = dfs(right, currentDepth + 1, 'R', node);
 
         // 右子树就绪步骤
         if (branchMode === 'both' && spec.afterRight) {

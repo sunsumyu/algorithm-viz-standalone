@@ -151,7 +151,16 @@ export const BST_MODES_STAGE1_LINES: Record<string, HighlightTarget> = {
   checkNull: { java: 19, cpp: 19, python: 11, javascript: 8 },
   leftRecurse: { java: 20, cpp: 20, python: 13, javascript: 9 },
   countUpdate: { java: 21, cpp: 21, python: 14, javascript: 10 },
-  maxCountUpdate: { java: 26, cpp: 26, python: 18, javascript: 15 },
+  // 严格一行一步展开：比较条件行 / count 双分支体行 / maxCount 判定行与双分支体行
+  comparePrev: { java: 21, cpp: 21, python: 13, javascript: 10 },
+  countIncrement: { java: 22, cpp: 22, python: 14, javascript: 11 },
+  countReset: { java: 24, cpp: 24, python: 16, javascript: 13 },
+  maxCountUpdate: { java: 26, cpp: 26, python: 17, javascript: 15 },
+  maxCountReset: { java: 27, cpp: 27, python: 18, javascript: 16 },
+  // 注：python/js 的众数重置为单行赋值（19/17），clear/add 两步均映射至该行；java/cpp 为三行结构
+  modesClear: { java: 28, cpp: 28, python: 19, javascript: 17 },
+  modesAdd: { java: 29, cpp: 29, python: 19, javascript: 17 },
+  modesTieAdd: { java: 31, cpp: 31, python: 21, javascript: 19 },
   updatePrev: { java: 33, cpp: 33, python: 22, javascript: 20 },
   rightRecurse: { java: 34, cpp: 34, python: 23, javascript: 21 },
   done: { java: 15, cpp: 15, python: 25, javascript: 24 },

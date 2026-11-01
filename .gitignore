@@ -28,3 +28,7 @@ tsconfig.tsbuildinfo
 .DS_Store
 Thumbs.db
 screenshots/
+
+# 内容资产管线产物（发布时由 content:pack 生成, 严禁入库）
+src-tauri/resources/content.apack
+src-tauri/resources/content_master_key.hex

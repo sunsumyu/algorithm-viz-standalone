@@ -4,7 +4,7 @@
 
 export const BIT_PROBLEMS = {
   bitTricks: {
-    title: '位运算核心神技 (Brian Kernighan & Bit Tricks)',
+    title: '位运算核心神技',
     source: '左神算法第30课 / 经典位运算精粹',
     timeComplexity: 'O(1)',
     spaceComplexity: 'O(1)',

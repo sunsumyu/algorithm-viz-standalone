@@ -228,36 +228,53 @@ export class ExecutionLogPresenter {
     const doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
     if (!doc) return;
 
+    // 清空历史条目，确保逐帧渲染幂等性，彻底杜绝步进与用例切换时的日志重复堆叠与死循环增长
+    container.innerHTML = '';
+
     const visibleSteps = steps.slice(0, currentIndex + 1);
-    const html = visibleSteps
-      .map((st: any, idx: number) => {
-        const isCurrent = idx === currentIndex;
-        const logMsg = ExecutionLogPresenter.formatLogMessage(st, idx);
+    visibleSteps.forEach((st: any, idx: number) => {
+      const isCurrent = idx === currentIndex;
+      const logMsg = ExecutionLogPresenter.formatLogMessage(st, idx);
 
-        const baseStyle = isCurrent
-          ? 'padding: 3.5px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 3px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
-          : 'padding: 2.5px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
+      const baseStyle = isCurrent
+        ? 'padding: 3.5px 8px; border-radius: 6px; background: #eff6ff; color: #1e3a8a; font-weight: 700; border-left: 3px solid #3b82f6; display: flex; align-items: center; justify-content: space-between; font-size: 11px; margin-bottom: 2px; font-family: monospace; box-shadow: 0 1px 2px rgba(59, 130, 246, 0.08);'
+        : 'padding: 2.5px 8px; border-radius: 4px; color: #64748b; font-size: 11px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; font-family: monospace;';
 
-        const safeMsg = String(logMsg)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;');
+      const safeMsg = String(logMsg)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 
-        return `
-        <div style="${baseStyle}">
+      // 元素对象组合（兼容真实 DOM 与极简 Mock 桩），对齐《不同路径》黄金基准样式
+      const line = doc.createElement('div');
+      line.className = isCurrent
+        ? 'border-blue-500 font-bold bg-blue-50 text-blue-900'
+        : 'text-slate-500';
+      if (typeof (line as any).setAttribute === 'function') {
+        (line as any).setAttribute('style', baseStyle);
+      } else if ((line as any).style) {
+        (line as any).style.cssText = baseStyle;
+      }
+      (line as any).innerHTML = `
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px;">${safeMsg}</span>
           <span style="color: #94a3b8; font-size: 10px; font-weight: normal; flex-shrink: 0;">#${idx + 1}</span>
-        </div>
-      `;
-      })
-      .join('');
+        `;
+      container.appendChild(line as any);
+    });
 
-    const finishLine =
-      currentIndex === steps.length - 1
-        ? `<div style="display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0 4px; color: #94a3b8; font-size: 10.5px; font-family: monospace;"><span>🏁 全部执行完成 (共 ${steps.length} 步)</span></div>`
-        : '';
+    if (currentIndex === steps.length - 1) {
+      const finishLine = doc.createElement('div');
+      finishLine.className = 'text-slate-400';
+      if (typeof (finishLine as any).setAttribute === 'function') {
+        (finishLine as any).setAttribute(
+          'style',
+          'display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 0 4px; color: #94a3b8; font-size: 10.5px; font-family: monospace;'
+        );
+      }
+      (finishLine as any).innerHTML = `<span>🏁 全部执行完成 (共 ${steps.length} 步)</span>`;
+      container.appendChild(finishLine as any);
+    }
 
-    container.innerHTML = html + finishLine;
     container.scrollTop = container.scrollHeight;
   }
 }

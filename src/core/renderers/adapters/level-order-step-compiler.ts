@@ -12,6 +12,7 @@ import {
   LevelOrderStaticQueueState,
   LevelOrderHashMapState,
 } from './level-order-canvas-adapter';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export interface LevelOrderStep {
   tree: TreeNode | null;
@@ -43,6 +44,9 @@ export interface LevelOrderStep {
   callStack?: string[];
   activeNodeId?: string;
   treeRoot?: any;
+
+  /** 空调用探针：Stage 4 DFS null-guard 步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 export interface DFSRecursionNode {
@@ -1210,7 +1214,14 @@ export class LevelOrderStepCompiler {
 
     let callCounter = 0;
 
-    function dfs(node: TreeNode | null, depth: number, parentId: string | null, direction: string): void {
+    function dfs(
+      node: TreeNode | null,
+      depth: number,
+      parentId: string | null,
+      direction: string,
+      parent: TreeNode | null = null,
+      branch: 'left' | 'right' = 'left'
+    ): void {
       callCounter++;
       const callId = `call-${callCounter}`;
       const nodeLabel = node ? `${node.val}` : 'null';
@@ -1269,6 +1280,9 @@ export class LevelOrderStepCompiler {
           metrics: LevelOrderCanvasAdapter.makeMetrics(depth, callStack.length, result.length),
           decision: `🛑 空节点拦截：node == null`,
           action: 'null-guard',
+          nullProbe: parent
+            ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+            : undefined,
           message: `node 为 null，触发基底条件，立即返回。`,
           log: `🛑 null guard -> return`,
           codeLine: L.nullGuard,
@@ -1383,7 +1397,7 @@ export class LevelOrderStepCompiler {
         codeLine: L.dfsLeft,
       });
 
-      dfs(node.left, depth + 1, callId, '左子树');
+      dfs(node.left, depth + 1, callId, '左子树', node, 'left');
 
       const rightLabel = node.right ? `${node.right.val}` : 'null';
       steps.push({
@@ -1405,7 +1419,7 @@ export class LevelOrderStepCompiler {
         codeLine: L.dfsRight,
       });
 
-      dfs(node.right, depth + 1, callId, '右子树');
+      dfs(node.right, depth + 1, callId, '右子树', node, 'right');
 
       treeNode.status = 'done';
       treeNode.tag = `✓`;

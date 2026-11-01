@@ -863,7 +863,9 @@ export const LCA_BST_037_STAGE1_CODES = {
 export const LCA_BST_037_STAGE1_LINES = {
   entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
   nullCheck: { java: 2, cpp: 2, python: 2, javascript: 2 },
+  leftCompare: { java: 3, cpp: 3, python: 3, javascript: 3 },
   goLeft: { java: 4, cpp: 4, python: 4, javascript: 4 },
+  rightCompare: { java: 6, cpp: 6, python: 5, javascript: 6 },
   goRight: { java: 7, cpp: 7, python: 6, javascript: 7 },
   splitFork: { java: 9, cpp: 9, python: 7, javascript: 9 },
 };
@@ -927,7 +929,9 @@ export const LCA_BST_037_STAGE2_CODES = {
 export const LCA_BST_037_STAGE2_LINES = {
   entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
   whileLoop: { java: 2, cpp: 2, python: 2, javascript: 2 },
+  leftCompare: { java: 3, cpp: 3, python: 3, javascript: 3 },
   goLeft: { java: 4, cpp: 4, python: 4, javascript: 4 },
+  rightCompare: { java: 5, cpp: 5, python: 5, javascript: 5 },
   goRight: { java: 6, cpp: 6, python: 6, javascript: 6 },
   splitFork: { java: 8, cpp: 8, python: 8, javascript: 8 },
   returnNull: { java: 11, cpp: 11, python: 9, javascript: 11 },
@@ -1391,9 +1395,11 @@ export const TRIM_BST_037_CODES = {
 
 export const TRIM_BST_037_LINES = {
   entry: { java: 1, cpp: 1, python: 1, javascript: 1 },
+  nullCheck: { java: 2, cpp: 2, python: 2, javascript: 2 },
   trimLow: { java: 3, cpp: 3, python: 3, javascript: 3 },
   trimHigh: { java: 4, cpp: 4, python: 4, javascript: 4 },
   trimBoth: { java: 5, cpp: 5, python: 5, javascript: 5 },
+  trimBothRight: { java: 6, cpp: 6, python: 6, javascript: 6 },
   returnRoot: { java: 7, cpp: 7, python: 7, javascript: 7 },
 };
 

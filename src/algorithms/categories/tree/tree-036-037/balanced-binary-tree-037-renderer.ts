@@ -40,8 +40,8 @@ export {
 
 export const balancedBinaryTree037Visualizer = registerDeclarativeAlgorithm<BalancedTree037Step>({
   id: 'tree-037-balanced-binary-tree',
-  aliases: ['balanced', 'leetcode-110', 'balanced-binary-tree'],
-  name: '判断平衡二叉树 (Class 037)',
+  aliases: ['balanced', 'leetcode-110', 'balanced-binary-tree', '110', '判断平衡二叉树' ],
+  name: '平衡二叉树',
   category: 'tree',
   icon: '⚖️',
   hasDeductionTree: true,

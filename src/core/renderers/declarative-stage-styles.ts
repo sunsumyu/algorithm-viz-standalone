@@ -317,7 +317,14 @@ export function renderStageStyles(viewId: string): string {
   #${viewId} .dsp-output-capsule.is-accepted {
     background: #f0fdf4 !important;
     border-color: #22c55e !important;
-    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15) !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25) !important;
+    animation: dsp-result-glow-green 1.4s ease-in-out infinite alternate;
+  }
+  #${viewId} .dsp-output-capsule.is-rejected {
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+    animation: dsp-result-glow-red 1.4s ease-in-out infinite alternate;
   }
   #${viewId} .dsp-output-label {
     font-size: 10px;
@@ -327,6 +334,9 @@ export function renderStageStyles(viewId: string): string {
   #${viewId} .dsp-output-capsule.is-accepted .dsp-output-label {
     color: #166534;
   }
+  #${viewId} .dsp-output-capsule.is-rejected .dsp-output-label {
+    color: #991b1b;
+  }
   #${viewId} .dsp-output-val {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -335,6 +345,9 @@ export function renderStageStyles(viewId: string): string {
   }
   #${viewId} .dsp-output-capsule.is-accepted .dsp-output-val {
     color: #15803d;
+  }
+  #${viewId} .dsp-output-capsule.is-rejected .dsp-output-val {
+    color: #b91c1c;
   }
   #${viewId} .dsp-output-badge-status {
     padding: 1px 5px;
@@ -346,12 +359,15 @@ export function renderStageStyles(viewId: string): string {
     line-height: 1.2;
     display: inline-block;
   }
+  #${viewId} .dsp-output-badge-status.badge-rejected {
+    background: #ef4444 !important;
+  }
   #${viewId} .dsp-playback-ans-capsule {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 1px 8px;
-    border-radius: 4px;
+    padding: 2px 10px;
+    border-radius: 6px;
     background: #f0fdf4;
     border: 1px solid #86efac;
     font-size: 11px;
@@ -359,6 +375,35 @@ export function renderStageStyles(viewId: string): string {
     color: #166534;
     margin-left: auto;
     white-space: nowrap;
+    transition: all 0.2s ease;
+  }
+  #${viewId} .dsp-playback-ans-capsule.is-accepted {
+    background: #f0fdf4 !important;
+    border-color: #22c55e !important;
+    color: #15803d !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
+    animation: dsp-playback-pop 0.35s ease-out, dsp-result-glow-green 1.4s ease-in-out infinite alternate;
+  }
+  #${viewId} .dsp-playback-ans-capsule.is-rejected {
+    background: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #b91c1c !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    animation: dsp-playback-pop 0.35s ease-out, dsp-result-glow-red 1.4s ease-in-out infinite alternate;
+  }
+
+  @keyframes dsp-result-glow-green {
+    0% { transform: scale(1); box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2); }
+    100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(34, 197, 94, 0.45); }
+  }
+  @keyframes dsp-result-glow-red {
+    0% { transform: scale(1); box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2); }
+    100% { transform: scale(1.05); box-shadow: 0 0 10px rgba(239, 68, 68, 0.45); }
+  }
+  @keyframes dsp-playback-pop {
+    0% { transform: scale(0.8); opacity: 0.3; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); }
   }
 
   @media (max-width: 1380px) {
@@ -433,7 +478,9 @@ export function renderStageStyles(viewId: string): string {
     height: 100% !important;
   }
   #${viewId} .dsp-left-section .dsp-card:last-child {
-    flex: 0 0 240px;
+    flex: 0 0 250px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
   }
   #${viewId} .dsp-left-section .dsp-card:last-child.algo-panel-collapsed,
   #${viewId} .dsp-right-section .dsp-log-card.algo-panel-collapsed {
@@ -611,9 +658,10 @@ export function renderStageStyles(viewId: string): string {
   #${viewId} #dsp-custom-metrics-container {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 0 0 auto;
     min-height: 0;
-    overflow: hidden;
+    gap: 6px;
+    box-sizing: border-box;
   }
   #${viewId} .dsp-card-header {
     display: flex;
@@ -806,7 +854,9 @@ export function renderStageStyles(viewId: string): string {
     color: #1e40af;
     line-height: 1.4;
     margin-top: 4px;
+    margin-bottom: 4px;
     flex-shrink: 0;
+    box-sizing: border-box;
   }
 
   /* Card 2 宿主与自定义指标卡片强约束 (顶层设计规范强制归一化，终结暗黑卡片突兀外露) */

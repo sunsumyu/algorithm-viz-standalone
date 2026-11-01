@@ -35,7 +35,7 @@ export {
 
 const { template } = createDeclarativeVisualizer<BambooStep>({
   id: 'cutting-bamboo',
-  name: '砍竹子 II (剪绳子 II)',
+  name: '砍竹子 II',
   category: 'greedy',
   icon: '🎋',
   badge: { mode: '贪心拆3与快速幂', complexity: 'O(log n) · O(1)' },
@@ -101,7 +101,7 @@ const { template } = createDeclarativeVisualizer<BambooStep>({
 export const cuttingBambooRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'cutting-bamboo',
-  name: '砍竹子 II (剪绳子 II)',
+  name: '砍竹子 II',
   viewId: 'algo-cutting-bamboo-view',
   category: 'greedy',
   description: '左程云算法讲解090 Code01：LeetCode 343 / 剑指 Offer 14-II 尽力拆 3 与快速幂取模运算',
@@ -111,5 +111,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 901,
   learningGoal: '掌握均值不等式与导数极值驻点离散化为拆 3 的数学本质',
-  aliases: ['class090-code01', 'cutting-bamboo-343', 'leetcode-343', 'integer-break-ii'],
+  aliases: ['class090-code01', 'cutting-bamboo-343', 'leetcode-343', 'integer-break-ii', '剪绳子 II', '整数拆分' ],
 });

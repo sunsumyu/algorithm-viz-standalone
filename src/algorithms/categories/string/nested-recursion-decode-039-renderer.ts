@@ -18,8 +18,8 @@ export { DECODE_039_CODES, DECODE_039_CODE_LINES, generateDecodeSteps, renderDec
 
 export const nestedRecursionDecode039Visualizer = registerDeclarativeAlgorithm<DecodeStep>({
   id: 'nested-recursion-decode-039',
-  aliases: ['class039-code02', 'decode-string', 'decode-string-039', 'leetcode-394'],
-  name: 'Class 039: 嵌套结构递归解法母题 (Decode String)',
+  aliases: ['class039-code02', 'decode-string', 'decode-string-039', 'leetcode-394', '394', '嵌套结构递归解法母题' ],
+  name: '字符串解码',
   category: 'string',
   icon: '🪆',
   difficulty: 2,

@@ -174,4 +174,97 @@ describe('AlgoSearchCatalog Deep Domain Model Guard', () => {
       expect(html).toBe('&lt;div&gt;Plain Text&lt;/div&gt;');
     });
   });
+
+  describe('粗匹配检索 (Fuzzy Search Contracts)', () => {
+    const fuzzyAlgorithms: AlgorithmMetadata[] = [
+      {
+        id: 'max-depth-binary-tree',
+        name: '二叉树的最大深度',
+        category: 'tree',
+        difficulty: 1,
+        levelOrder: 1,
+        description: '递归求二叉树最大深度。',
+        learningGoal: '掌握后序递归深度聚合。',
+        viewId: 'max-depth-view',
+        icon: '🌳',
+        aliases: ['104', 'leetcode-104', 'maximum-depth-of-binary-tree']
+      },
+      {
+        id: 'spiral-matrix-ii',
+        name: '螺旋矩阵 II',
+        category: 'array',
+        difficulty: 2,
+        levelOrder: 2,
+        description: '四边界顺时针模拟填充。',
+        learningGoal: '掌握边界收缩控制。',
+        viewId: 'spiral-view',
+        icon: '🌀',
+        aliases: ['59', 'leetcode-59']
+      }
+    ];
+
+    it('should match by leetcode number and slug aliases', () => {
+      const byNumber = algoSearchCatalog.search('104', fuzzyAlgorithms);
+      expect(byNumber.totalMatches).toBe(1);
+      expect(byNumber.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+
+      const bySlug = algoSearchCatalog.search('leetcode-104', fuzzyAlgorithms);
+      expect(bySlug.totalMatches).toBe(1);
+      expect(bySlug.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+    });
+
+    it('should fuzzy match CJK names with missing particles (subsequence)', () => {
+      // 官方名含「的」，用户输入省略虚词仍可粗匹配
+      const result = algoSearchCatalog.search('二叉树最大深度', fuzzyAlgorithms);
+      expect(result.totalMatches).toBe(1);
+      expect(result.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+    });
+
+    it('should match multi-token queries across fields in any order', () => {
+      const spaced = algoSearchCatalog.search('二叉树 深度', fuzzyAlgorithms);
+      expect(spaced.totalMatches).toBe(1);
+      expect(spaced.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+
+      const reordered = algoSearchCatalog.search('深度 二叉树', fuzzyAlgorithms);
+      expect(reordered.totalMatches).toBe(1);
+      expect(reordered.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+    });
+
+    it('should normalize roman numerals so arabic queries hit roman names', () => {
+      const result = algoSearchCatalog.search('螺旋矩阵2', fuzzyAlgorithms);
+      expect(result.totalMatches).toBe(1);
+      expect(result.matchedAlgorithms[0].id).toBe('spiral-matrix-ii');
+    });
+
+    it('should match camelCase identifiers via token splitting', () => {
+      // 真实目录中字段不含 maxDepth 字面量，仅别名含 maximum-depth-of-binary-tree
+      const result = algoSearchCatalog.search('maxDepth', fuzzyAlgorithms);
+      expect(result.totalMatches).toBe(1);
+      expect(result.matchedAlgorithms[0].id).toBe('max-depth-binary-tree');
+    });
+
+    it('should expand lc/leetcode+number shorthand to alias tokens', () => {
+      const result = algoSearchCatalog.search('lc59', fuzzyAlgorithms);
+      expect(result.totalMatches).toBe(1);
+      expect(result.matchedAlgorithms[0].id).toBe('spiral-matrix-ii');
+
+      const longForm = algoSearchCatalog.search('LC59', fuzzyAlgorithms);
+      expect(longForm.totalMatches).toBe(1);
+    });
+
+    it('should never fuzzy-match garbage queries', () => {
+      expect(algoSearchCatalog.search('xyz999_not_found', fuzzyAlgorithms).totalMatches).toBe(0);
+      expect(algoSearchCatalog.search('嚔嚞', fuzzyAlgorithms).totalMatches).toBe(0);
+    });
+
+    it('should highlight matched tokens when the full query is not a literal substring', () => {
+      const segments = algoSearchCatalog.splitHighlightSegments('二叉树的最大深度', '最大深度');
+      expect(segments.some((s) => s.isMatch && s.text === '最大深度')).toBe(true);
+
+      // 粗匹配查询（省略虚词）下逐词高亮，不抛错、不篡改原文
+      const fuzzySegments = algoSearchCatalog.splitHighlightSegments('二叉树的最大深度', '二叉树最大深度');
+      expect(fuzzySegments.map((s) => s.text).join('')).toBe('二叉树的最大深度');
+      expect(fuzzySegments.some((s) => s.isMatch)).toBe(true);
+    });
+  });
 });

@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
 import { TreeCanvasAdapter } from './tree-canvas-adapter';
+import { BinaryTreeOfTreesSynthesizer } from './binary-tree-of-trees-synthesizer';
 import {
   buildBstModesStage1Steps,
   buildBstModesStage2Steps,
@@ -77,6 +78,61 @@ describe('BSTModesStepCompiler (LC 501 · 二叉搜索树中的众数)', () => {
       expect(steps.length).toBe(1);
       expect(steps[0].modes).toEqual([]);
       expect(steps[0].maxCount).toBe(0);
+    });
+
+    it('严格一行一步：visit 块按行展开 compare→分支→maxCount 判定→分支体，分支行绝不静默跳过', () => {
+      // 中序访问序列 [1, 1, 2, 2, 2]，覆盖 count++(22)/count=1(24) 双分支与破纪录(27)/并列(31)/无变更三种 maxCount 分支
+      const root = buildTreeFromArr([2, 1, 2, 1, null, null, 2]);
+      const steps = buildBstModesStage1Steps(root);
+      const javaOf = (s: any) => (s.codeLine as Record<string, number>).java;
+      const visitSteps = steps.filter((s) => s.action === 'visit' && s.currNodeVal !== null);
+      const visitSeq = visitSteps.map(javaOf);
+
+      // 每次访问严格按行展开：compare(21) → 分支(22|24) → maxCount 判定(26) →
+      // 破纪录三连(27 maxCount=count → 28 modes.clear → 29 modes.add) | 并列(31) → updatePrev(33)
+      expect(visitSeq).toEqual([
+        21, 24, 26, 27, 28, 29, 33, // v1 = 1: prev=null → count=1(24) → 破纪录重置(27/28/29)
+        21, 22, 26, 27, 28, 29, 33, // v2 = 1: 相同 → count++(22) → 破纪录重置(27/28/29)
+        21, 24, 26, 33, // v3 = 2: 不同 → count=1(24) → count < maxCount 无变更（无分支体行）
+        21, 22, 26, 31, 33, // v4 = 2: 相同 → count++(22) → 并列追加(31)
+        21, 22, 26, 27, 28, 29, 33, // v5 = 2: 相同 → count++(22) → 破纪录重置(27/28/29)
+      ]);
+
+      // 状态推进精确锚定：count 恰在分支行变更，compare 行保持旧值
+      const v2Compare = visitSteps[7];
+      expect(javaOf(v2Compare)).toBe(21);
+      expect(v2Compare.count).toBe(1); // v1 结束后的旧值
+      const v2Branch = visitSteps[8];
+      expect(javaOf(v2Branch)).toBe(22);
+      expect(v2Branch.count).toBe(2); // 恰在本行累加
+      const v1Branch = visitSteps[1];
+      expect(javaOf(v1Branch)).toBe(24);
+      expect(v1Branch.count).toBe(1);
+      // 破纪录三连的状态可见性：maxCount 变更行保留旧众数集，清空行展示空集，安装行展示新集
+      const v1Record = visitSteps[3];
+      expect(javaOf(v1Record)).toBe(27);
+      expect(v1Record.maxCount).toBe(1);
+      expect(v1Record.modes).toEqual([]); // 旧集（此处本为空）
+      const v2Wipe = visitSteps[11];
+      expect(javaOf(v2Wipe)).toBe(28);
+      expect(v2Wipe.modes).toEqual([]); // [1] 被清空的瞬间
+      const v2Install = visitSteps[12];
+      expect(javaOf(v2Install)).toBe(29);
+      expect(v2Install.modes).toEqual([1]);
+      // v5 的清空是教学关键时刻：旧众数集 [1, 2] 可见 → 清空 → 安装 [2]
+      const v5Record = visitSteps[26];
+      expect(javaOf(v5Record)).toBe(27);
+      expect(v5Record.modes).toEqual([1, 2]); // 旧众数集仍可见
+      const v5Wipe = visitSteps[27];
+      expect(javaOf(v5Wipe)).toBe(28);
+      expect(v5Wipe.modes).toEqual([]); // 旧集 [1, 2] 被清空的瞬间
+      const v5Install = visitSteps[28];
+      expect(javaOf(v5Install)).toBe(29);
+      expect(v5Install.modes).toEqual([2]);
+      // 并列行(31)的状态
+      const v4Tie = visitSteps[21];
+      expect(javaOf(v4Tie)).toBe(31);
+      expect(v4Tie.modes).toEqual([1, 2]);
     });
   });
 
@@ -168,6 +224,11 @@ describe('BSTModesStepCompiler (LC 501 · 二叉搜索树中的众数)', () => {
       const parentNodeId = root?.right?.id as string;
       const childNodeId = root?.right?.left?.id as string;
 
+      // 本单测验证单树视图的高亮隔离：显式钉住子视图为单树，避免全景挂树 (Tree-of-Trees)
+      // 面板内的迷你树节点 circle 混入全局计数（commit 58b5508 起 renderTree 默认双视图挂载）
+      const prevSubView = BinaryTreeOfTreesSynthesizer.activeSubView;
+      BinaryTreeOfTreesSynthesizer.activeSubView = 'single-tree';
+
       const container = document.createElement('div');
       // 传入 childNodeId 作为 activeNodeId
       const state = {
@@ -176,19 +237,23 @@ describe('BSTModesStepCompiler (LC 501 · 二叉搜索树中的众数)', () => {
         highlightedNodes: [childNodeId],
         primaryColor: '#c026d3',
       };
-      TreeCanvasAdapter.renderTree(container, state);
+      try {
+        TreeCanvasAdapter.renderTree(container, state);
 
-      const circles = container.querySelectorAll('circle');
-      expect(circles.length).toBe(3); // 3 个节点
+        const circles = container.querySelectorAll('circle');
+        expect(circles.length).toBe(3); // 3 个节点
 
-      // 仅有 1 个 circle 具备 primaryColor 高亮，其余节点不具备
-      let highlightedCount = 0;
-      circles.forEach((c) => {
-        if (c.getAttribute('fill') === '#c026d3') {
-          highlightedCount++;
-        }
-      });
-      expect(highlightedCount).toBe(1);
+        // 仅有 1 个 circle 具备 primaryColor 高亮，其余节点不具备
+        let highlightedCount = 0;
+        circles.forEach((c) => {
+          if (c.getAttribute('fill') === '#c026d3') {
+            highlightedCount++;
+          }
+        });
+        expect(highlightedCount).toBe(1);
+      } finally {
+        BinaryTreeOfTreesSynthesizer.activeSubView = prevSubView;
+      }
     });
   });
 });

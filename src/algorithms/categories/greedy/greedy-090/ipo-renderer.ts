@@ -131,7 +131,7 @@ const { template } = createDeclarativeVisualizer<IPOStep>({
 export const ipoRenderer = UniversalStageVisualizer;
 registerAlgorithm({
   id: 'ipo-max-capital',
-  name: 'IPO 最大化资本 (LeetCode 502)',
+  name: 'IPO',
   viewId: 'algo-ipo-max-capital-view',
   category: 'greedy',
   description: '左程云算法讲解090 Code05：启动金小根堆 + 纯利润大根堆双堆协同滚雪球',
@@ -141,5 +141,5 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 905,
   learningGoal: '掌握双堆协同设计模式与超集支配单调扩张性质',
-  aliases: ['class090-code05', 'ipo', 'ipo-502', 'leetcode-502'],
+  aliases: ['class090-code05', 'ipo', 'ipo-502', 'leetcode-502', '502', 'IPO 最大化资本' ],
 });

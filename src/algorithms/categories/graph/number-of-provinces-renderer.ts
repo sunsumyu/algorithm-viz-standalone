@@ -31,9 +31,9 @@ const PRESET_MATRICES: Record<string, number[][]> = {
 
 registerDeclarativeAlgorithm({
   id: 'number-of-provinces',
-  name: '大厂高频真题: 省份数量 (Number of Provinces)',
+  name: '省份数量',
   category: 'graph',
-  aliases: ['leetcode-547', 'lc-547', 'friend-circles', 'class056-code02'],
+  aliases: ['leetcode-547', 'lc-547', 'friend-circles', 'class056-code02', '547' ],
   hasDeductionTree: true,
   learningGoal: '掌握并查集（Union-Find）在连通分量与网络合并中的核心应用，理解路径压缩优化机制',
   inputs: [

@@ -19,8 +19,8 @@ export { COUNT_OF_ATOMS_CODES, COUNT_OF_ATOMS_CODE_LINES, generateCountOfAtomsSt
 
 export const countOfAtoms039Visualizer = registerDeclarativeAlgorithm<AtomStep>({
   id: 'count-of-atoms-039',
-  aliases: ['class039-code03', 'count-atoms', 'count-of-atoms', 'leetcode-726', 'number-of-atoms'],
-  name: 'Class 039: 分子式中原子的数量 (Count of Atoms)',
+  aliases: ['class039-code03', 'count-atoms', 'count-of-atoms', 'leetcode-726', 'number-of-atoms', '726', '分子式中原子的数量' ],
+  name: '原子的数量',
   category: 'string',
   icon: '🧪',
   difficulty: 3,

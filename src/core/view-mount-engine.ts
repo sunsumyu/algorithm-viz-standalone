@@ -16,6 +16,8 @@ import { algorithmRegistry } from './algorithm-registry';
 import { addRecentAlgorithm } from './recent-algorithms';
 import { releaseAlgorithmChunk } from './security/chunk-lifecycle';
 import { antiTheftEngine } from './security/anti-theft-interference-engine';
+import { requireAlgorithmAccess } from './security/authorization-service';
+import { usageTracker } from './security/usage-tracker';
 
 export interface MountRequest {
   algorithmId: string;
@@ -51,6 +53,12 @@ export class ViewMountEngine {
         return null;
       }
 
+      // 0. 统一授权裁决：未授权阻断弹窗；按量付费模式在此自动扣次
+      const allowed = await requireAlgorithmAccess(entry.id);
+      if (!allowed) {
+        return null;
+      }
+
       // 1. 折叠主选择器（侧边栏 + 卡片网格）
       this.hideMainLayout();
 
@@ -59,6 +67,9 @@ export class ViewMountEngine {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('algo:recent-updated', { detail: { algorithmId: entry.id } }));
       }
+
+      // 2.1 行为追踪：算法打开事件（供泄露溯源与未来按量计费对账）
+      usageTracker.track('ALGORITHM_OPEN', { algorithmId: entry.id });
 
       // 3. 挂载算法视口
       const visualizer = await this.mount({

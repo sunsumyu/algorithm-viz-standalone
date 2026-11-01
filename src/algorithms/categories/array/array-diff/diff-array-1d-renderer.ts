@@ -18,12 +18,12 @@ export { buildDiff1DSteps };
 
 export const diffArray1DVisualizer = registerDeclarativeAlgorithm<Diff1DStep>({
   id: 'diff-array-1d-047',
-  name: '一维差分数组 (1D Difference Array)',
+  name: '航班预订统计',
   category: 'array',
   icon: '🎚️',
   difficulty: 2,
   levelOrder: 471,
-  aliases: ['class047-code01', 'diff-array-1d', 'corporate-flight-bookings-1109', 'leetcode-1109', 'luogu-p2367'],
+  aliases: ['class047-code01', 'diff-array-1d', 'corporate-flight-bookings-1109', 'leetcode-1109', 'luogu-p2367', '1109', '一维差分数组' ],
   learningGoal: '掌握差分与前缀和互为逆运算的数学本质，实现 O(1) 极速区间修改',
   problemHtml: ARRAY_DIFF_PROBLEMS.diff1D.html,
   analysisHtml: ARRAY_DIFF_PROBLEMS.diff1D.html,

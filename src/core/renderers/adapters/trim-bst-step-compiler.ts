@@ -1,212 +1,322 @@
 /**
  * Trim BST Step Compiler (LeetCode 669 / Class 037 Code06)
  *
- * 遵循 Matt Pocock 深模块哲学与 Thin Domain Adapter 架构规范。
- * 负责修剪二叉搜索树递归提升与单侧剪枝推演。
+ * 真实递归推演编译器 (严格一行一步 · 五段式生命周期):
+ *   入口帧 → 判空帧 → 左/右越界比较帧 → 深入帧 → 返回归约帧 → 指针重接帧 → returnRoot 帧 → 顶层闭合帧。
+ * 每帧携带工作树快照 (cloneStateDepTree) 与空调用探针 (StepNullProbe)，
+ * 供 USNE 自动合成树上挂树全景与统一画布防断电渲染。
  */
 
 import { TreeNode036, Tree036Step } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-shared';
 import { TRIM_BST_037_LINES } from '../../../algorithms/categories/tree/tree-036-037/tree-036-037-stage-codes';
+import { parseTreeArray } from '../../input-primitives';
+import { buildTreeFromArr } from '../../../algorithms/categories/tree/tree-template';
+import { cloneStateDepTree } from '../../strategies/tree-clone';
+import { RecursiveCallTraceBuilder } from './recursive-call-trace-adapter';
+import type { TreeNode } from '../tree-svg';
 
-// 经典用例: 根 3 -> 左 0 (右 2 -> 左 1), 右 4
-export const TRIM_BST_NODES: TreeNode036[] = [
-  { id: 1, val: 3, left: 2, right: 3 },
-  { id: 2, val: 0, left: null, right: 4 },
-  { id: 3, val: 4, left: null, right: null },
-  { id: 4, val: 2, left: 5, right: null },
-  { id: 5, val: 1, left: null, right: null },
-];
+// LC 669 官方示例树: 3 -> (0 -> (null, 2 -> (1, null)), 4)
+const DEFAULT_TREE = [3, 0, 4, null, 2, null, null, 1] as (number | null)[];
 
-export const TRIM_DISCARD_ALL_NODES: TreeNode036[] = [
-  { id: 1, val: 3, left: 2, right: 3, x: 200, y: 50 },
-  { id: 2, val: 0, left: null, right: null, x: 120, y: 120 },
-  { id: 3, val: 4, left: null, right: null, x: 280, y: 120 },
-];
-
-export const TRIM_SINGLE_NODE: TreeNode036[] = [
-  { id: 1, val: 2, left: null, right: null, x: 200, y: 100 },
-];
+function countKept(node: TreeNode | null): number {
+  if (!node) return 0;
+  return 1 + countKept(node.left) + countKept(node.right);
+}
 
 export function buildTrimBst037Steps(
   treeRaw?: string,
   lowInput?: number | string,
   highInput?: number | string
 ): Tree036Step[] {
-  const raw = (treeRaw || '').trim().replace(/\s+/g, '');
-  const low = (lowInput !== undefined && lowInput !== '' && !isNaN(Number(lowInput))) ? Number(lowInput) : 1;
-  const high = (highInput !== undefined && highInput !== '' && !isNaN(Number(highInput))) ? Number(highInput) : 3;
+  const low = lowInput !== undefined && lowInput !== '' && !isNaN(Number(lowInput)) ? Number(lowInput) : 1;
+  const high = highInput !== undefined && highInput !== '' && !isNaN(Number(highInput)) ? Number(highInput) : 3;
+  const arr = parseTreeArray(treeRaw, DEFAULT_TREE);
+  // 可变工作树：修剪重接直接发生在该实例上，每帧以 cloneStateDepTree 快照留档
+  const working = buildTreeFromArr(arr);
 
-  // 预设 2: 区间无交集 全部剪裁 (low >= 5)
-  if (low >= 5 || raw === '3,0,4') {
-    const steps: Tree036Step[] = [];
-    const tNodes = TRIM_DISCARD_ALL_NODES;
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.entry,
-      decision: `修剪 BST，目标区间 [${low}, ${high}]`,
-      message: `原树节点值均严格小于 low(${low})，根据 BST 单调性整树节点将全部裁剪出界`,
-      log: `trimBST(root: 3, low: ${low}, high: ${high})`,
-      activeNodeId: 1,
-      metrics: { '目标区间': `[${low}, ${high}]`, '当前根节点': 3 },
-      statusBadge: { text: '算法启动', type: 'info' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.trimLow,
-      decision: `根节点 3 < low(${low})，节点 3 及其左子树全部丢弃！`,
-      message: `3 < ${low}，节点 3 及更小的左孩子 0 全部丢弃，转向修剪右子树 trim(4)`,
-      log: `cur (3) < low (${low}) -> 丢弃根 3，转向 trim(root.right: 4)`,
-      activeNodeId: 1,
-      secondaryNodeId: 3,
-      metrics: { '裁剪根节点': 3, '提升右子树': '节点 4' },
-      statusBadge: { text: '✂️ 裁剪根 3', type: 'danger' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.trimLow,
-      decision: `节点 4 < low(${low})，节点 4 亦被丢弃！`,
-      message: `4 < ${low}，依然小于下界 ${low}！节点 4 丢弃，返回其右孩子 null`,
-      log: `cur (4) < low (${low}) -> 丢弃节点 4，return null`,
-      activeNodeId: 3,
-      metrics: { '裁剪节点': 4, '返回结果': 'null' },
-      statusBadge: { text: '✂️ 裁剪节点 4', type: 'danger' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.returnRoot,
-      decision: '整树修剪完毕，全树被剪空',
-      message: `所有节点均小于 ${low}，最终返回空树 null，最终保留节点数为 0`,
-      log: 'return root: null',
-      activeNodeId: null,
-      metrics: { '最终节点数': 0, '最终保留节点': '[]' },
-      statusBadge: { text: '裁剪为空树', type: 'success' },
-      extraData: { treeNodes: [] },
-    });
-
-    return steps;
-  }
-
-  // 预设 3: 单节点无修剪
-  if (raw === '2') {
-    const steps: Tree036Step[] = [];
-    const tNodes = TRIM_SINGLE_NODE;
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.entry,
-      decision: `修剪 BST，保留区间 [${low}, ${high}] 内的节点`,
-      message: `单节点 2 位于 [${low}, ${high}] 区间内`,
-      log: `trimBST(root: 2, low: ${low}, high: ${high})`,
-      activeNodeId: 1,
-      metrics: { '目标区间': `[${low}, ${high}]`, '单节点值': 2 },
-      statusBadge: { text: '算法启动', type: 'info' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.trimBoth,
-      decision: `节点 2 属于 [${low}, ${high}]，自身合规保留`,
-      message: `${low} <= 2 <= ${high}，左右子树为空无需递归，直接保留节点 2`,
-      log: '2 in range -> return node 2',
-      activeNodeId: 1,
-      metrics: { '节点 2 状态': '合规保留' },
-      statusBadge: { text: '保留节点 2', type: 'success' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    steps.push({
-      codeLine: TRIM_BST_037_LINES.returnRoot,
-      decision: '整树修剪完毕，返回根节点 2',
-      message: '修剪完毕，单节点 2 成功保留，最终节点数为 1',
-      log: 'return root: 2',
-      activeNodeId: 1,
-      metrics: { '最终节点数': 1, '最终保留节点': '[2]' },
-      statusBadge: { text: '修剪完成', type: 'success' },
-      extraData: { treeNodes: tNodes },
-    });
-
-    return steps;
-  }
-
-  // 预设 1: 经典修剪 (保留 1, 2, 3)
   const steps: Tree036Step[] = [];
-  const tNodes = TRIM_BST_NODES;
+  const trace = new RecursiveCallTraceBuilder();
+  const lines = TRIM_BST_037_LINES;
 
-  // Step 1: 入口
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.entry,
-    decision: `修剪 BST，保留区间 [${low}, ${high}] 内的节点`,
-    message: '修剪原理：利用 BST 特性，小于 low 的节点及其左子树一并丢弃，整树由其右子树替代；大于 high 亦然',
-    log: `trimBST(root: 3, low: ${low}, high: ${high})`,
-    activeNodeId: 1,
-    metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': 3 },
+  const pushStep = (partial: Record<string, any> & Pick<Tree036Step, 'decision' | 'message' | 'log'>): void => {
+    steps.push({
+      tree: cloneStateDepTree(working),
+      ...partial,
+    } as Tree036Step);
+  };
+
+  // 空树边界：入口 → 判空命中 → 闭合
+  if (!working) {
+    trace.addHeader(`trimBST(root: null, low: ${low}, high: ${high})`, 0, '<- 空树边界');
+    trace.addConditionHit('① root == null 命中 -> return null', 0);
+    trace.addFinalResult('最终结果: null (空树)', 0, 'return null;');
+    pushStep({
+      codeLine: lines.entry,
+      current: null,
+      decision: `修剪空树：无任何节点需要裁剪`,
+      message: `输入为空树，直接返回 null。`,
+      log: `trimBST(root: null, low: ${low}, high: ${high})`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '最终保留节点数': 0 },
+      statusBadge: { text: '空树边界', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+    pushStep({
+      codeLine: lines.nullCheck,
+      current: null,
+      decision: '基底判空命中：空树直接返回 null',
+      message: 'root == null 判空命中，返回 null，算法结束。',
+      log: 'root is null -> return null',
+      metrics: { '目标区间': `[${low}, ${high}]`, '最终保留节点数': 0 },
+      statusBadge: { text: '空树边界', type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+    return steps;
+  }
+
+  const rootText = `Node(${working.val})`;
+  trace.addHeader(`trimBST(root: ${rootText}, low: ${low}, high: ${high})`, 0, '<- 根调用开始');
+  pushStep({
+    codeLine: lines.entry,
+    current: working.val,
+    decision: `修剪 BST：保留区间 [${low}, ${high}] 内的所有节点`,
+    message: `修剪原理：小于 low 的节点连同其左子树整体丢弃、由修剪后的右子树提升替代；大于 high 亦然；区间内节点重接左右修剪后的子树。`,
+    log: `trimBST(root: ${working.val}, low: ${low}, high: ${high})`,
+    metrics: { '目标区间': `[${low}, ${high}]`, '当前根节点': working.val },
     statusBadge: { text: '算法启动', type: 'info' },
-    extraData: { treeNodes: tNodes },
+    callTrace: trace.snapshot(),
   });
 
-  // Step 2: 根节点 3 合规，递归检查左右
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.trimBoth,
-    decision: `根节点 3 在 [${low}, ${high}] 区间内，保留并递归左右子树`,
-    message: `${low} <= 3 <= ${high}，节点 3 自身保留，递归修剪左孩子 0 与右孩子 4`,
-    log: '3 in range -> root.left = trim(0), root.right = trim(4)',
-    activeNodeId: 1,
-    metrics: { '根节点 3': '合规保留', '待修剪子树': '左孩子 0, 右孩子 4' },
-    statusBadge: { text: '节点 3 保留', type: 'info' },
-    extraData: { treeNodes: tNodes },
-  });
+  function recurse(
+    node: TreeNode | null,
+    depth: number,
+    parent?: TreeNode,
+    branch: 'left' | 'right' = 'left'
+  ): TreeNode | null {
+    // 递归推演五段式 ①: 函数入口帧 (空子树挂探针锚点)
+    if (depth > 0) {
+      const label = node ? `Node(${node.val})` : 'null';
+      trace.addHeader(`trimBST(root: ${label}, low: ${low}, high: ${high})`, depth);
+      pushStep({
+        codeLine: lines.entry,
+        current: node ? node.val : null,
+        secondaryHighlightedNodes: !node && parent ? [parent.val] : undefined,
+        nullProbe: !node && parent ? { parentVal: parent.val, parentId: parent.id, branch, phase: 'entry' } : undefined,
+        decision: node ? `深入调用帧: 携带实参进入节点 ${node.val}` : `深入调用帧: 探测${branch === 'left' ? '左' : '右'}子树空槽位`,
+        message: node
+          ? `进入 trimBST(节点 ${node.val})，准备判空与区间单调性比较。`
+          : `父节点 ${parent?.val} 的${branch === 'left' ? '左' : '右'}孩子为空，进入空调用帧。`,
+        log: `trimBST(${label}, low: ${low}, high: ${high})`,
+        metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node ? node.val : 'null' },
+        statusBadge: { text: node ? `访问节点 ${node.val}` : '空调用探针', type: 'info' },
+        callTrace: trace.snapshot(),
+      });
+    }
 
-  // Step 3: 左孩子 0 < low，触发丢弃并提升右孩子 2
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.trimLow,
-    decision: `左节点 0 < low(${low})，节点 0 连同其左子树全部丢弃！`,
-    message: `0 < ${low}，根据 BST 性质，0 的左边必定更小！因此节点 0 彻底丢弃，直接将修剪后的右子树 (节点 2) 提升返回！`,
-    log: `cur (0) < low (${low}) -> 丢弃节点 0，转向 trim(root.right: 2)`,
-    activeNodeId: 2,
-    secondaryNodeId: 4,
-    metrics: { '被裁剪节点': 0, '提升候选': '节点 2' },
-    statusBadge: { text: '✂️ 裁剪节点 0', type: 'danger' },
-    extraData: { treeNodes: tNodes },
-  });
+    // 递归推演五段式 ②: 边界判空帧
+    if (!node) {
+      trace.addConditionHit('① root == null 命中 -> return null', depth);
+      pushStep({
+        codeLine: lines.nullCheck,
+        current: null,
+        secondaryHighlightedNodes: parent ? [parent.val] : undefined,
+        nullProbe: parent ? { parentVal: parent.val, parentId: parent.id, branch, phase: 'return' } : undefined,
+        decision: `基底判空命中: ${parent?.val ?? '—'} 的${branch === 'left' ? '左' : '右'}子树为空`,
+        message: 'root == null 判空命中，向父调用返回 null（空子树无需修剪）。',
+        log: 'root is null -> return null',
+        metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': 'null' },
+        statusBadge: { text: '空节点回溯', type: 'warning' },
+        callTrace: trace.snapshot(),
+      });
+      return null;
+    }
+    trace.addConditionPass(`① root = Node(${node.val}) ≠ null，判空通过`, depth);
+    pushStep({
+      codeLine: lines.nullCheck,
+      current: node.val,
+      decision: `判空通过: root = 节点 ${node.val} 非空`,
+      message: `root == null 不成立，继续考察节点 ${node.val} 与区间 [${low}, ${high}] 的单调关系。`,
+      log: `root = ${node.val} is not null -> proceed`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val },
+      statusBadge: { text: `判空通过 ${node.val}`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
 
-  // Step 4: 节点 2 在 [1, 3] 区间内，保留并挂载节点 1
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.trimBoth,
-    decision: `节点 2 在区间内保留，左孩子 1 亦在区间内保留`,
-    message: '节点 2 合规，其左孩子 1 亦合规。节点 2 成功作为 3 的新左孩子挂载！',
-    log: 'node 2 retained, left child 1 retained -> 3.left = 2',
-    activeNodeId: 4,
-    secondaryNodeId: 5,
-    metrics: { '新左子树': '3 -> left: 2 -> left: 1' },
-    statusBadge: { text: '节点 2, 1 保留', type: 'success' },
-    extraData: { treeNodes: tNodes },
-  });
+    // 递归推演五段式 ③: 左越界比较帧 (Line 3 显式求值)
+    const belowLow = node.val < low;
+    trace.addConditionPass(`② ${node.val} < low(${low}) ? ${belowLow}`, depth);
+    pushStep({
+      codeLine: lines.trimLow,
+      current: node.val,
+      decision: belowLow
+        ? `节点 ${node.val} < low(${low})，左越界条件成立`
+        : `节点 ${node.val} ≥ low(${low})，左越界条件不成立`,
+      message: `求值 root.val < low → ${node.val} < ${low} → ${belowLow}。${belowLow ? 'BST 性质：其整个左子树必然更小，本节点连同左子树整体丢弃！' : '节点不在下界左侧，继续考察上界。'}`,
+      log: `if (${node.val} < ${low}) -> ${belowLow}`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '左越界判定': `${node.val} < ${low} ? ${belowLow}` },
+      statusBadge: { text: belowLow ? `左越界成立` : `左越界不成立`, type: belowLow ? 'danger' : 'info' },
+      callTrace: trace.snapshot(),
+    });
 
-  // Step 5: 右孩子 4 > high，触发丢弃
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.trimHigh,
-    decision: `右节点 4 > high(${high})，节点 4 连同其右子树全部丢弃！`,
-    message: `4 > ${high}，根据 BST 性质，4 的右边只会更大！丢弃节点 4，返回其左子树 (null)。3.right 更新为 null`,
-    log: `cur (4) > high (${high}) -> 丢弃节点 4，return trim(4.left: null)`,
-    activeNodeId: 3,
-    metrics: { '被裁剪节点': 4, '3.right 最新状态': 'null' },
-    statusBadge: { text: '✂️ 裁剪节点 4', type: 'danger' },
-    extraData: { treeNodes: tNodes },
-  });
+    if (belowLow) {
+      // 递归推演五段式 ④: 深入右子树帧 (本节点将被丢弃，由修剪后的右子树提升替代)
+      trace.addConditionPass(`③ 丢弃节点 ${node.val} 及其左子树，深入 trimBST(root.right)`, depth);
+      pushStep({
+        codeLine: lines.trimLow,
+        current: node.val,
+        secondaryHighlightedNodes: [node.val],
+        decision: `丢弃节点 ${node.val}，深入其右子树`,
+        message: `执行 return trimBST(root.right, low, high)：节点 ${node.val} 连同左子树被裁剪，仅右子树有望提升替代。`,
+        log: `return trimBST(root.right = ${node.right ? node.right.val : 'null'})`,
+        metrics: { '目标区间': `[${low}, ${high}]`, '被裁剪节点': node.val, '走向': '深入右子树提升' },
+        statusBadge: { text: `✂️ 丢弃 ${node.val}`, type: 'danger' },
+        callTrace: trace.snapshot(),
+      });
+      const res = recurse(node.right, depth + 1, node, 'right');
+      // 递归推演五段式 ⑤: 返回归约帧 (子调用结果就绪，本节点已被剪除，结果向上提升)
+      trace.addReturnLeaf(`右子调用返回 ${res ? 'Node(' + res.val + ')' : 'null'} -> 节点 ${node.val} 被剪除，结果向上提升`, depth);
+      pushStep({
+        codeLine: lines.trimLow,
+        current: res ? res.val : null,
+        secondaryHighlightedNodes: [node.val],
+        decision: `右子调用返回: ${res ? 'Node(' + res.val + ')' : 'null'}`,
+        message: `节点 ${node.val} 确定被裁剪（父层指针即将重接剪除），右子树修剪结果 ${res ? 'Node(' + res.val + ')' : 'null'} 作为本层返回值向上提升。`,
+        log: `rightTrimmed = ${res ? res.val : 'null'} -> return (丢弃 ${node.val})`,
+        metrics: { '目标区间': `[${low}, ${high}]`, '被裁剪节点': node.val, '提升结果': res ? `节点 ${res.val}` : 'null' },
+        statusBadge: { text: `提升 ${res ? res.val : 'null'}`, type: 'warning' },
+        callTrace: trace.snapshot(),
+      });
+      return res;
+    }
 
-  // Step 6: 修剪完成
-  steps.push({
-    codeLine: TRIM_BST_037_LINES.returnRoot,
-    decision: '整树修剪完毕，返回新根节点 3',
-    message: '修剪后的二叉搜索树仅包含 [1, 2, 3]，满足 BST 性质且全部位于 [1, 3] 闭区间内！',
-    log: 'return root: 3 (left: 2 -> 1, right: null)',
-    activeNodeId: 1,
-    metrics: { '最终节点数': 3, '最终保留节点': '[1, 2, 3]' },
-    statusBadge: { text: '修剪完成', type: 'success' },
-    extraData: { treeNodes: tNodes },
-  });
+    // 递归推演五段式 ③': 右越界比较帧 (Line 4 显式求值)
+    const aboveHigh = node.val > high;
+    trace.addConditionPass(`② ${node.val} > high(${high}) ? ${aboveHigh}`, depth);
+    pushStep({
+      codeLine: lines.trimHigh,
+      current: node.val,
+      decision: aboveHigh
+        ? `节点 ${node.val} > high(${high})，右越界条件成立`
+        : `节点 ${node.val} ≤ high(${high})，右越界条件不成立`,
+      message: `求值 root.val > high → ${node.val} > ${high} → ${aboveHigh}。${aboveHigh ? 'BST 性质：其整个右子树必然更大，本节点连同右子树整体丢弃！' : '节点在区间内，进入指针重接阶段。'}`,
+      log: `if (${node.val} > ${high}) -> ${aboveHigh}`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '右越界判定': `${node.val} > ${high} ? ${aboveHigh}` },
+      statusBadge: { text: aboveHigh ? `右越界成立` : `右越界不成立`, type: aboveHigh ? 'danger' : 'info' },
+      callTrace: trace.snapshot(),
+    });
 
+    if (aboveHigh) {
+      // 递归推演五段式 ④': 深入左子树帧 (本节点将被丢弃，由修剪后的左子树提升替代)
+      trace.addConditionPass(`③ 丢弃节点 ${node.val} 及其右子树，深入 trimBST(root.left)`, depth);
+      pushStep({
+        codeLine: lines.trimHigh,
+        current: node.val,
+        secondaryHighlightedNodes: [node.val],
+        decision: `丢弃节点 ${node.val}，深入其左子树`,
+        message: `执行 return trimBST(root.left, low, high)：节点 ${node.val} 连同右子树被裁剪，仅左子树有望提升替代。`,
+        log: `return trimBST(root.left = ${node.left ? node.left.val : 'null'})`,
+        metrics: { '目标区间': `[${low}, ${high}]`, '被裁剪节点': node.val, '走向': '深入左子树提升' },
+        statusBadge: { text: `✂️ 丢弃 ${node.val}`, type: 'danger' },
+        callTrace: trace.snapshot(),
+      });
+      const res = recurse(node.left, depth + 1, node, 'left');
+      // 递归推演五段式 ⑤': 返回归约帧
+      trace.addReturnLeaf(`左子调用返回 ${res ? 'Node(' + res.val + ')' : 'null'} -> 节点 ${node.val} 被剪除，结果向上提升`, depth);
+      pushStep({
+        codeLine: lines.trimHigh,
+        current: res ? res.val : null,
+        secondaryHighlightedNodes: [node.val],
+        decision: `左子调用返回: ${res ? 'Node(' + res.val + ')' : 'null'}`,
+        message: `节点 ${node.val} 确定被裁剪（父层指针即将重接剪除），左子树修剪结果 ${res ? 'Node(' + res.val + ')' : 'null'} 作为本层返回值向上提升。`,
+        log: `leftTrimmed = ${res ? res.val : 'null'} -> return (丢弃 ${node.val})`,
+        metrics: { '目标区间': `[${low}, ${high}]`, '被裁剪节点': node.val, '提升结果': res ? `节点 ${res.val}` : 'null' },
+        statusBadge: { text: `提升 ${res ? res.val : 'null'}`, type: 'warning' },
+        callTrace: trace.snapshot(),
+      });
+      return res;
+    }
+
+    // 深入左子树帧 (Line 5: root.left = trimBST(root.left, low, high)；保留判定并入本帧叙述)
+    trace.addConditionPass(`③ ${low} <= ${node.val} <= ${high} 节点保留，开始重接左右子树`, depth);
+    pushStep({
+      codeLine: lines.trimBoth,
+      current: node.val,
+      decision: `节点 ${node.val} ∈ [${low}, ${high}] 合规保留，深入修剪其左子树`,
+      message: `当前节点 ${node.val} 在保留区间内，保留本节点。执行 root.left = trimBST(root.left, low, high)：左孩子 ${node.left ? node.left.val : 'null'} 进入修剪。`,
+      log: `keep ${node.val} -> root.left = trimBST(${node.left ? node.left.val : 'null'})`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '判定性质': '区间内保留', '走向': '⬅️ 修剪左子树' },
+      statusBadge: { text: `保留 ${node.val} · 修剪左子树`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+    const leftRes = recurse(node.left, depth + 1, node, 'left');
+    node.left = leftRes;
+    // 左指针重接归约帧 (快照已含重接后的拓扑)
+    trace.addReturnLeaf(`左子调用返回 ${leftRes ? 'Node(' + leftRes.val + ')' : 'null'} -> root.left = ${leftRes ? leftRes.val : 'null'}`, depth);
+    pushStep({
+      codeLine: lines.trimBoth,
+      current: node.val,
+      decision: `左指针重接完成: root.left = ${leftRes ? 'Node(' + leftRes.val + ')' : 'null'}`,
+      message: `左子树修剪完毕并回接：节点 ${node.val} 的左孩子更新为 ${leftRes ? 'Node(' + leftRes.val + ')' : 'null'}。`,
+      log: `root.left = ${leftRes ? leftRes.val : 'null'}`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '左孩子最新状态': leftRes ? `节点 ${leftRes.val}` : 'null' },
+      statusBadge: { text: `左重接完成`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    // 深入右子树帧 (Line 6: root.right = trimBST(root.right, low, high))
+    pushStep({
+      codeLine: lines.trimBothRight,
+      current: node.val,
+      decision: `深入修剪节点 ${node.val} 的右子树`,
+      message: `执行 root.right = trimBST(root.right, low, high)：右孩子 ${node.right ? node.right.val : 'null'} 进入修剪。`,
+      log: `root.right = trimBST(${node.right ? node.right.val : 'null'})`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '走向': '➡️ 修剪右子树' },
+      statusBadge: { text: `修剪右子树`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+    const rightRes = recurse(node.right, depth + 1, node, 'right');
+    node.right = rightRes;
+    // 右指针重接归约帧
+    trace.addReturnLeaf(`右子调用返回 ${rightRes ? 'Node(' + rightRes.val + ')' : 'null'} -> root.right = ${rightRes ? rightRes.val : 'null'}`, depth);
+    pushStep({
+      codeLine: lines.trimBothRight,
+      current: node.val,
+      decision: `右指针重接完成: root.right = ${rightRes ? 'Node(' + rightRes.val + ')' : 'null'}`,
+      message: `右子树修剪完毕并回接：节点 ${node.val} 的右孩子更新为 ${rightRes ? 'Node(' + rightRes.val + ')' : 'null'}。`,
+      log: `root.right = ${rightRes ? rightRes.val : 'null'}`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '右孩子最新状态': rightRes ? `节点 ${rightRes.val}` : 'null' },
+      statusBadge: { text: `右重接完成`, type: 'info' },
+      callTrace: trace.snapshot(),
+    });
+
+    // returnRoot 帧 (Line 7)
+    trace.addReturnLeaf(`return Node(${node.val}) — 本帧子树修剪完成`, depth);
+    pushStep({
+      codeLine: lines.returnRoot,
+      current: node.val,
+      decision: `return Node(${node.val})：本帧子树修剪完成`,
+      message: `节点 ${node.val} 连同其修剪后的子树整体向上返回。`,
+      log: `return root: ${node.val}`,
+      metrics: { '目标区间': `[${low}, ${high}]`, '当前节点': node.val, '本帧保留规模': countKept(node) },
+      statusBadge: { text: `返回 ${node.val}`, type: 'success' },
+      callTrace: trace.snapshot(),
+    });
+    return node;
+  }
+
+  const finalRoot = recurse(working, 0);
+
+  // 顶层闭合帧
+  const kept = countKept(finalRoot);
+  trace.addFinalResult(`最终保留 ${kept} 个节点，全部位于 [${low}, ${high}] 区间内`, 0, 'return root;');
+  pushStep({
+    codeLine: lines.returnRoot,
+    current: finalRoot ? finalRoot.val : null,
+    decision: `算法完成: 修剪后保留 ${kept} 个节点`,
+    message: `全部递归帧闭合。修剪后的二叉搜索树包含 ${kept} 个节点，满足 BST 性质且全部位于 [${low}, ${high}] 闭区间内。`,
+    log: `全部执行完成: 最终保留节点数 = ${kept}`,
+    metrics: { '目标区间': `[${low}, ${high}]`, '最终保留节点数': kept, '判定性质': '递归闭合' },
+    statusBadge: { text: `修剪完成 (保留 ${kept})`, type: 'success' },
+    callTrace: trace.snapshot(),
+  });
   return steps;
 }

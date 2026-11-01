@@ -159,6 +159,7 @@ src/
 | **顶层抽象合规检查** | `top-level-abstraction-compliance` | 运行 L0/L1/L2 顶层抽象与防伪实现门禁，阻断违规旧方言反弹 |
 | **UI 交互与去套娃规范** | `ui-layout-design` | 黄金画布 60%~70% 占比、消灭嵌套卡片与中英冗余、Splitter 边界保护 |
 | **浏览器调试与全高清截图** | `browser-viewport-debugging` | 强制 1920×1080 视口配置，杜绝 800×600 局促缩放与大面积空白留白 |
+| **二叉树演示单算法一致性审计** | `binary-tree-parity-audit` | 一次会话仅审计一个二叉树算法 (Kanban WIP=1)；统一 TreeCanvasAdapter/树上挂树/图形化推演 SSOT 基线，红灯：私有画布、文本墙兜底、步数密度不足、行号冻结 |
 
 ## 关键接缝
 - **AlgorithmMetadata ↔ AlgorithmManifest**：metadata 是 9 字段目录数据；manifest = metadata + template + Visualizer

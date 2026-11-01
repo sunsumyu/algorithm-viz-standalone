@@ -53,6 +53,13 @@ describe('ExecutionLogPresenter (Shared Card 4 Deep Module)', () => {
     expect(step1.textContent).toContain('步骤 2: 深入左子树');
     expect(step1.textContent).toContain('#2');
     expect(step1.getAttribute('style')).toContain('border-left: 3px solid #3b82f6');
+
+    // 严密防御: 步进到 Step 2 时，必须清空历史重新渲染，绝不追加堆叠产生 2 + 3 = 5 项
+    ExecutionLogPresenter.renderStepLogs(container, steps, 2, logCount);
+    expect(logCount.textContent).toBe('3 / 3 记录');
+    // 3 项日志 + 1 项全部完成横幅
+    expect(container.children.length).toBe(4);
+    expect(container.children[2].textContent).toContain('步骤 3: 命中基底返回');
   });
 
   it('formatLogMessage standardizes crude English debug logs into 《不同路径》 standard Chinese with emoji', () => {

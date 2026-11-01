@@ -32,9 +32,16 @@ function yamlPlugin(): Plugin {
 
 export default defineConfig(({ mode }) => {
   const isProd = mode === 'production';
+  // 内容资产协议开关（内容资产加密管线 · 服务裁决层）：
+  // 受保护发布流 `tauri:build:protected` 会注入 ALGO_VIZ_CONTENT_ORIGIN，
+  // 使全部产物资源指向 apv:// 内容协议（Rust 端按授权态解密分发）；
+  // 常规构建 / dev 模式不注入则保持相对路径，行为与历史版本完全一致。
+  const contentOrigin = (process.env.ALGO_VIZ_CONTENT_ORIGIN || '').trim();
+  const normalizedContentOrigin =
+    contentOrigin && !contentOrigin.endsWith('/') ? `${contentOrigin}/` : contentOrigin;
   return {
     root: '.',
-    base: './',
+    base: isProd && normalizedContentOrigin ? normalizedContentOrigin : './',
     plugins: [yamlPlugin()],
     resolve: {
       alias: {

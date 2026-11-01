@@ -55,7 +55,7 @@ export function renderAllPathsCanvas(container: HTMLElement, step: AllPathsStep)
 export function renderAllPathsCustomMetrics(container: HTMLElement, step: AllPathsStep): void {
   if (!container) return;
   container.innerHTML = '';
-  container.style.cssText = 'width:100%; height:100%; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
+  container.style.cssText = 'width:100%; flex:0 0 auto; display:flex; flex-direction:column; gap:10px; padding:12px; font-family:system-ui,-apple-system,sans-serif; font-size:12px; box-sizing:border-box; overflow:hidden;';
 
   // 1. 顶部 4 格关键指标
   const latestHarvested = step.metrics?.['最新收获路径'] as string | undefined;

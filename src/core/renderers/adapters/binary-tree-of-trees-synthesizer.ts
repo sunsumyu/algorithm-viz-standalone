@@ -14,6 +14,21 @@ import { TreeNode } from '../tree-svg';
 import { TreeOfTreesCanvasAdapter, TreeOfTreesNode } from './tree-of-trees-canvas-adapter';
 import type { TreeCanvasState } from './tree-canvas-adapter';
 
+/**
+ * 空调用探针共享契约 (Step Null Probe Contract)
+ * 各递归步骤编译器在空基底步发射，供树上挂树全景渲染 ∅ 虚线探针与方向蚂蚁线：
+ * - parentVal/parentId 定位调用帧（重复值树必须按 parentId 精确锚定，值仅作回退）
+ * - branch 标记探针落点（调用者的左/右空槽位）
+ * - phase 区分进入/返回以翻转蚂蚁线方向；action 命名（null-entry/null-return）亦可隐式推导
+ */
+export interface StepNullProbe {
+  parentVal: number | string;
+  parentId?: number | string;
+  branch: 'left' | 'right';
+  /** 可省略：缺省时由 action 命名（null-entry/null-return）推导，兜底 entry */
+  phase?: 'entry' | 'return';
+}
+
 /** 树实例 -> 预合成 TreeOfTreesNode 的弱引用映射表，供 TreeCanvasAdapter O(1) 无缝反查 */
 const treeInstanceToTotMap = new WeakMap<object, TreeOfTreesNode>();
 
@@ -268,10 +283,17 @@ function extractActiveValFromStep(step: any): number | string | null {
 function extractFooterSummary(step: any, nodeVal: number | null): string {
   if (!step || typeof step !== 'object') return `node = ${nodeVal ?? 'null'}`;
 
-  // 1. 若有结构化 metrics 字典，提取前 2 个关键指标
+  // 1. 若有结构化 metrics 字典，提取前 2 个关键指标（同值去重，消灭 cur/当前考察 类重复展示）
   if (step.metrics && typeof step.metrics === 'object') {
+    const seenVals = new Set<string>();
     const entries = Object.entries(step.metrics)
-      .filter(([k, v]) => !k.startsWith('metric-') && v !== undefined && v !== null && v !== '—' && v !== '-')
+      .filter(([k, v]) => {
+        if (k.startsWith('metric-') || v === undefined || v === null || v === '—' || v === '-') return false;
+        const valKey = String(v);
+        if (seenVals.has(valKey)) return false;
+        seenVals.add(valKey);
+        return true;
+      })
       .slice(0, 2);
     if (entries.length > 0) {
       return entries
@@ -480,7 +502,33 @@ export class BinaryTreeOfTreesSynthesizer {
         }
       }
 
-      const currentEntry = matchedEntry || lastActiveEntry;
+      // 空调用探针方言归一：优先编译器内联 phase，其次 action 命名约定（null-entry / null-return），兜底 entry
+      const probePhase: 'entry' | 'return' | null = step.nullProbe
+        ? (step.nullProbe.phase ??
+          (step.action === 'null-return' ? 'return' : 'entry'))
+        : null;
+
+      // 空调用步骤归属调用帧：探针语义上绑定 parentVal/parentId 对应的调用者。
+      // 重复值树（如众数题）中同值帧众多，必须优先按节点身份 (parentId→origId) 精确解析，值仅作回退，
+      // 修正空调用期间焦点回退导致 prev 帧误活跃、调用帧闪断为 done 的错位
+      let effectiveEntry = matchedEntry || lastActiveEntry;
+      if (probePhase && step.nullProbe) {
+        const np = step.nullProbe;
+        const caller =
+          (np.parentId != null && np.parentId !== ''
+            ? allEntries.find((e) => e.origId === String(np.parentId))
+            : undefined) ||
+          allEntries.find((e) => String(e.origVal) === String(np.parentVal));
+        if (caller) effectiveEntry = caller;
+      }
+
+      const currentEntry = effectiveEntry;
+
+      // 瞬态归零：∅ 探针与 prev/cur 指针是每步瞬态，仅活跃帧持有，必须清除全部帧的上一步残留
+      for (const entry of allEntries) {
+        entry.callNode.nullProbeState = null;
+        entry.callNode.pointerState = null;
+      }
 
       // 更新所有已访问/祖先/当前节点的状态
       for (const entry of allEntries) {
@@ -509,6 +557,45 @@ export class BinaryTreeOfTreesSynthesizer {
         : `orig-${currentEntry.origId}`;
       currentEntry.callNode.footerText = extractFooterSummary(step, currentEntry.origVal);
 
+      // 每步独立快照：空调用探针与 prev/cur 双指针状态（仅活跃帧持有；无此字段的算法方言防御性跳过）
+      if (probePhase && step.nullProbe) {
+        currentEntry.callNode.nullProbeState = {
+          parentVal: step.nullProbe.parentVal,
+          branch: step.nullProbe.branch,
+          phase: probePhase,
+        };
+      }
+      // 指针方言归一：valid-bst 系 (prev/current) 与 bst-modes 系 (prevNodeVal/currNodeVal) 统一消费
+      const prevDialect =
+        step.prev !== undefined
+          ? step.prev
+          : step.prevVal !== undefined
+            ? step.prevVal
+            : step.prevNodeVal;
+      const curDialect =
+        step.current !== undefined
+          ? step.current
+          : step.currVal !== undefined
+            ? step.currVal
+            : step.currNodeVal;
+      currentEntry.callNode.pointerState =
+        prevDialect !== undefined
+          ? {
+              curVal: curDialect ?? null,
+              prevVal: prevDialect ?? null,
+              curId: step.currNodeId ?? step.curId ?? null,
+              prevId: step.prevNodeId ?? step.prevId ?? null,
+              compare:
+                step.action === 'compare'
+                  ? 'pending'
+                  : step.action === 'violation'
+                    ? 'fail'
+                    : step.action === 'update-prev'
+                      ? 'pass'
+                      : null,
+            }
+          : null;
+
       if (isFinalStep) {
         for (const entry of allEntries) {
           if (entry.callNode.status !== 'pending') {
@@ -522,9 +609,18 @@ export class BinaryTreeOfTreesSynthesizer {
       const snapshotTot = cloneTreeOfTrees(motherRoot)!;
       step.treeOfTrees = snapshotTot;
       if (isBinaryTreeNode(step.tree)) {
+        if (treeInstanceToTotMap.has(step.tree)) {
+          // 共享树实例方言（如 LCA 全步复用同一 root 引用）：同一实例会被逐步重复绑定，
+          // 直接覆盖会使映射最终指向最后一步的终态快照，导致推演子视图全程冻结在终态。
+          // 为本步克隆出独立实例再绑定，保证渲染时按实例反查到的是当前步快照。
+          step.tree = cloneTreeNodeDeep(step.tree);
+        }
         this.bindTreeToTot(step.tree, snapshotTot);
       }
       if (isBinaryTreeNode(step.mergedTree)) {
+        if (treeInstanceToTotMap.has(step.mergedTree)) {
+          step.mergedTree = cloneTreeNodeDeep(step.mergedTree);
+        }
         this.bindTreeToTot(step.mergedTree, snapshotTot);
       }
     }

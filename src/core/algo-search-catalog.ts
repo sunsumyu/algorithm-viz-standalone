@@ -125,8 +125,9 @@ export class AlgoSearchCatalog {
   }
 
   /**
-   * 多维即时分词检索
-   * 匹配范围：算法名称 (name)、分类名称 (category name)、详细描述 (description)、学习目标 (learningGoal)
+   * 多维即时粗匹配检索 (Fuzzy Multi-Field Search)
+   * 匹配范围：算法名称 (name)、id、别名 (aliases)、分类名称 (category name)、详细描述 (description)、学习目标 (learningGoal)
+   * 粗匹配能力：分词 AND（乱序）、全角/罗马数字归一化、驼峰拆分、中文子序列（容忍虚词省略）
    */
   public search(query: string, algorithms?: AlgorithmMetadata[]): SearchCatalogResult {
     const rawList = algorithms || this.getOrderedAlgorithms();
@@ -142,14 +143,11 @@ export class AlgoSearchCatalog {
       };
     }
 
-    const matchedAlgorithms = rawList.filter((algo) => {
-      const catConfig = CATEGORY_CONFIG[algo.category];
-      const nameMatch = (algo.name || '').toLowerCase().includes(cleanQuery);
-      const descMatch = (algo.description || '').toLowerCase().includes(cleanQuery);
-      const catMatch = (catConfig?.name || algo.category || '').toLowerCase().includes(cleanQuery);
-      const goalMatch = (algo.learningGoal || '').toLowerCase().includes(cleanQuery);
-      return nameMatch || descMatch || catMatch || goalMatch;
-    });
+    const tokens = AlgoSearchCatalog.tokenizeQuery(query);
+    const matchedAlgorithms =
+      tokens.length === 0
+        ? []
+        : rawList.filter((algo) => tokens.every((token) => AlgoSearchCatalog.tokenMatches(token, algo)));
 
     const groups = this.groupCategories(matchedAlgorithms);
     return {
@@ -161,7 +159,85 @@ export class AlgoSearchCatalog {
   }
 
   /**
+   * 全角 → 半角、罗马数字 → 阿拉伯数字归一化
+   */
+  private static romanToInt(s: string): number {
+    const map: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 };
+    let n = 0;
+    for (let i = 0; i < s.length; i++) {
+      const v = map[s[i]] ?? 0;
+      const nv = map[s[i + 1]] ?? 0;
+      n += v < nv ? -v : v;
+    }
+    return n;
+  }
+
+  private static toHalfWidth(text: string): string {
+    return text.replace(/[\uff01-\uff5e]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+  }
+
+  private static normalizeText(text: string): string {
+    return AlgoSearchCatalog.toHalfWidth(text || '')
+      .toLowerCase()
+      .replace(/\b[ivxlcdm]+\b/g, (m) => String(AlgoSearchCatalog.romanToInt(m)))
+      .replace(/[^0-9a-z\u4e00-\u9fff]+/g, '');
+  }
+
+  /**
+   * 查询分词：空白与常用分隔符切分；保留原始大小写做驼峰拆分（maxDepth → max + Depth）；
+   * lc/leetcode+数字简写展开为 leetcode<N> 标记（lc77 / LC77 / leetcode77 → leetcode77）
+   */
+  private static tokenizeQuery(query: string): string[] {
+    const half = AlgoSearchCatalog.toHalfWidth(query || '');
+    const chunks = half.split(/[\s,，。；;、:：()（）\[\]【】#|'"]+/).filter(Boolean);
+    const tokens: string[] = [];
+    for (const chunk of chunks) {
+      const lcNum = chunk.match(/^(?:lc|leetcode)(\d+)$/i);
+      if (lcNum) {
+        tokens.push(`leetcode${lcNum[1]}`);
+        continue;
+      }
+      for (const part of chunk.split(/(?<=[a-z])(?=[A-Z])|(?<=[A-Za-z])(?=\d)|_+/)) {
+        if (AlgoSearchCatalog.normalizeText(part)) tokens.push(part);
+      }
+    }
+    return tokens;
+  }
+
+  /**
+   * 单标记 × 单算法匹配：任一字段命中即可；中文标记额外支持子序列粗匹配（容忍「的/之」等虚词省略）
+   */
+  private static tokenMatches(token: string, algo: AlgorithmMetadata): boolean {
+    const norm = AlgoSearchCatalog.normalizeText(token);
+    if (!norm) return true;
+    const catConfig = CATEGORY_CONFIG[algo.category];
+    const fields = [
+      algo.name,
+      algo.id,
+      ...(algo.aliases ?? []),
+      catConfig?.name ?? algo.category,
+      algo.description,
+      algo.learningGoal
+    ].map((field) => AlgoSearchCatalog.normalizeText(field ?? ''));
+
+    const isCjk = /[\u4e00-\u9fff]/.test(norm);
+    return fields.some(
+      (field) =>
+        field.includes(norm) || (isCjk && norm.length >= 2 && AlgoSearchCatalog.isSubsequence(norm, field))
+    );
+  }
+
+  private static isSubsequence(needle: string, haystack: string): boolean {
+    let i = 0;
+    for (let j = 0; j < haystack.length && i < needle.length; j++) {
+      if (haystack[j] === needle[i]) i++;
+    }
+    return i === needle.length;
+  }
+
+  /**
    * 将文本拆分为高亮与非高亮结构化片段
+   * 全查询为字面子串时精确高亮（既有契约）；否则回退按分词逐词高亮（粗匹配回显）
    */
   public splitHighlightSegments(text: string, query: string): HighlightSegment[] {
     if (!text) return [];
@@ -171,15 +247,56 @@ export class AlgoSearchCatalog {
     }
 
     const escaped = cleanQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'gi');
-    const parts = text.split(regex);
+    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    if (parts.some((p) => p.toLowerCase() === cleanQuery.toLowerCase())) {
+      return parts
+        .filter((p) => p.length > 0)
+        .map((part) => ({
+          text: part,
+          isMatch: part.toLowerCase() === cleanQuery.toLowerCase()
+        }));
+    }
 
-    return parts
-      .filter((p) => p.length > 0)
-      .map((part) => ({
-        text: part,
-        isMatch: part.toLowerCase() === cleanQuery.toLowerCase()
-      }));
+    const tokens = [...new Set(AlgoSearchCatalog.tokenizeQuery(cleanQuery))]
+      .filter((t) => AlgoSearchCatalog.normalizeText(t))
+      .sort((a, b) => b.length - a.length);
+    if (tokens.length === 0) {
+      return [{ text, isMatch: false }];
+    }
+
+    // 命中掩码：字面命中的词直接标记；中文词字面未命中时退化为子序列逐字标记
+    const lowerText = text.toLowerCase();
+    const mask = new Array<boolean>(text.length).fill(false);
+    const literallyFound = new Set<string>();
+    for (const token of tokens) {
+      const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let found = false;
+      for (const m of lowerText.matchAll(new RegExp(escapedToken, 'gi'))) {
+        for (let i = m.index; i < m.index + token.length; i++) mask[i] = true;
+        found = true;
+      }
+      if (found) literallyFound.add(token);
+    }
+    for (const token of tokens) {
+      if (literallyFound.has(token) || !/[\u4e00-\u9fff]/.test(token)) continue;
+      let i = 0;
+      for (let j = 0; j < text.length && i < token.length; j++) {
+        if (lowerText[j] === token.toLowerCase()[i]) {
+          mask[j] = true;
+          i++;
+        }
+      }
+    }
+
+    const segments: HighlightSegment[] = [];
+    for (let i = 0; i < text.length; i++) {
+      if (segments.length > 0 && segments[segments.length - 1].isMatch === mask[i]) {
+        segments[segments.length - 1].text += text[i];
+      } else {
+        segments.push({ text: text[i], isMatch: mask[i] });
+      }
+    }
+    return segments;
   }
 
   /**

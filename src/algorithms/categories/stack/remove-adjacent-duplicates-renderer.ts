@@ -25,7 +25,7 @@ export {
 
 const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
   id: 'remove-adjacent-duplicates',
-  name: '删除相邻重复项',
+  name: '删除字符串中的所有相邻重复项',
   category: 'stack',
   icon: '✨',
   badge: {
@@ -72,8 +72,8 @@ const { template, Visualizer } = createDeclarativeVisualizer<RADStep>({
 
 registerAlgorithm({
   id: 'remove-adjacent-duplicates',
-  aliases: ['remove-duplicates', 'remove-adjacent-duplicates-1047', 'leetcode-1047', '1047'],
-  name: '删除相邻重复项',
+  aliases: ['remove-duplicates', 'remove-adjacent-duplicates-1047', 'leetcode-1047', '1047', '删除相邻重复项' ],
+  name: '删除字符串中的所有相邻重复项',
   viewId: 'algo-remove-adjacent-duplicates-view',
   category: 'stack',
   hasDeductionTree: true,

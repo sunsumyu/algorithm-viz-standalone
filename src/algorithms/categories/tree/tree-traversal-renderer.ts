@@ -44,7 +44,7 @@ export {
 // ============================================================
 export const treeTraversalVisualizer = registerDeclarativeAlgorithm<TTStep>({
   id: 'tree-traversal',
-  aliases: ['class018-code01', 'binary-tree-traversal', 'preorder-inorder-postorder', 'leetcode-144', 'leetcode-94', 'leetcode-145', '144', '94', '145'],
+  aliases: ['class018-code01', 'binary-tree-traversal', 'preorder-inorder-postorder', 'leetcode-144', 'leetcode-94', 'leetcode-145', '144', '94', '145', '二叉树的中序遍历', '二叉树的前序遍历', '二叉树的后序遍历' ],
   name: '二叉树遍历',
   category: 'tree',
   icon: '🌲',

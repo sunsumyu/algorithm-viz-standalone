@@ -20,7 +20,7 @@ export { buildMinimalBatteryPowerSteps, renderMinimalBatteryPowerCanvas };
 
 const { template } = createDeclarativeVisualizer<MinimalBatteryPowerStep>({
   id: 'minimum-initial-energy-to-finish-tasks',
-  name: '最少初始能量 (Minimum Initial Energy)',
+  name: '完成所有任务的最少初始能量',
   category: 'greedy',
   icon: '🔋',
   difficulty: 3,
@@ -54,7 +54,7 @@ export const minimalBatteryPowerRenderer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'minimum-initial-energy-to-finish-tasks',
-  name: '最少初始能量 (Minimum Initial Energy)',
+  name: '完成所有任务的最少初始能量',
   viewId: 'algo-minimal-battery-power-view',
   category: 'greedy',
   icon: '🔋',
@@ -62,7 +62,7 @@ registerAlgorithm({
   levelOrder: 915,
   description: '每个任务包含实际消耗与启动门槛，按门槛与消耗之差降序排列，通过邻项微扰交换法证明全局最少初始能量。',
   learningGoal: '掌握按 minimum - actual 差值贪心降序排序的能量消耗与逆推模拟原理',
-  aliases: ['class091-code05', 'minimal-battery-power', 'minimum-initial-energy-1665', 'leetcode-1665'],
+  aliases: ['class091-code05', 'minimal-battery-power', 'minimum-initial-energy-1665', 'leetcode-1665', '1665', '最少初始能量' ],
   template,
   Visualizer: UniversalStageVisualizer,
 });

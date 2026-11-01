@@ -35,7 +35,7 @@ export {
 
 const { template, Visualizer } = createDeclarativeVisualizer<EatOrangesStep>({
   id: 'minimum-eat-oranges',
-  name: '吃橘子的最少天数 (Eat Oranges)',
+  name: '吃掉 N 个橘子的最少天数',
   category: 'greedy',
   icon: '🍊',
   badge: { mode: '贪心跨步+记忆化', complexity: 'O((log N)²) · O((log N)²)' },
@@ -104,7 +104,7 @@ export const MinimumEatOrangesVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'minimum-eat-oranges',
-  name: '吃橘子的最少天数 (Eat Oranges)',
+  name: '吃掉 N 个橘子的最少天数',
   viewId: 'algo-minimum-eat-oranges-view',
   category: 'greedy',
   description: '左程云算法讲解089 Code04：LeetCode 1553 吃掉N个橘子的最少天数，贪心跨步整除飞跃与记忆化剪枝',
@@ -114,5 +114,5 @@ registerAlgorithm({
   difficulty: 3,
   levelOrder: 893,
   learningGoal: '掌握贪心策略如何大幅压缩递归搜索状态空间，理解 (n%2+1) 跨步跳跃的数学本质',
-  aliases: ['class089-code03', 'minimum-eat-oranges-1553', 'leetcode-1553'],
+  aliases: ['class089-code03', 'minimum-eat-oranges-1553', 'leetcode-1553', '1553', '吃橘子的最少天数' ],
 });

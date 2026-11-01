@@ -16,12 +16,12 @@ export {
 // 注册至全局算法注册表，接入统一顶层抽象容器
 registerAlgorithm({
   id: 'largest-bst-subtree',
-  name: '最大 BST 子树 (LeetCode 333)',
+  name: '最大二叉搜索子树',
   viewId: 'largest-bst-subtree',
   category: 'dynamic-programming',
   description: '左程云算法讲解078 Code03：LeetCode 333 最大 BST 子树，经典树型 DP 四元组汇报：[maxBSTSize, size, min, max]，判定 BST 性质并汇聚最大节点数。',
   icon: '🔍',
-  aliases: ['class078-code03', 'largest-bst-subtree-333', 'leetcode-333'],
+  aliases: ['class078-code03', 'largest-bst-subtree-333', 'leetcode-333', '333', '最大 BST 子树' ],
   template: '<div id="largest-bst-subtree" class="view-container active" style="width: 100%; height: 100%; padding: 0;"></div>',
   Visualizer: UniversalStageVisualizer,
   difficulty: 2,

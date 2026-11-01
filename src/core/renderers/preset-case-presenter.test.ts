@@ -127,4 +127,33 @@ describe('PresetCasePresenter Shared Component', () => {
     expect(PresetCasePresenter.resolvePresets(undefined, undefined)).toEqual([]);
     expect(PresetCasePresenter.resolvePresets([], [])).toEqual([]);
   });
+
+  it('should preselect the matching preset option when selectedIndex is provided', () => {
+    const html = PresetCasePresenter.renderSelectHtml(dummyPresets, { selectedIndex: 1 });
+
+    // 占位符退化为不可选提示行，真实选中项落到匹配的预设案例上
+    expect(html).toContain('<option value="" disabled>');
+    expect(html).not.toContain('<option value="" disabled selected>');
+    expect(html).toContain('<option value="1" selected>');
+    expect(html).not.toContain('<option value="0" selected>');
+    expect(html).not.toContain('<option value="2" selected>');
+  });
+
+  it('should keep placeholder selected when selectedIndex is omitted or out of range', () => {
+    const omitted = PresetCasePresenter.renderSelectHtml(dummyPresets);
+    const outOfRange = PresetCasePresenter.renderSelectHtml(dummyPresets, { selectedIndex: 9 });
+
+    expect(omitted).toContain('<option value="" disabled selected>');
+    expect(outOfRange).toContain('<option value="" disabled selected>');
+    expect(outOfRange).not.toContain('<option value="0" selected>');
+  });
+
+  it('should find exact matching preset index and return -1 when nothing matches', () => {
+    expect(PresetCasePresenter.findExactMatchingPresetIndex(dummyPresets, { text1: 'abc', text2: 'abc' })).toBe(1);
+    expect(PresetCasePresenter.findExactMatchingPresetIndex(dummyPresets, { text1: 'xyz', text2: 'abc' })).toBe(-1);
+    expect(PresetCasePresenter.findExactMatchingPresetIndex(dummyPresets, undefined)).toBe(-1);
+    expect(PresetCasePresenter.findExactMatchingPresetIndex([], { text1: 'abc' })).toBe(-1);
+    // 缺失键的预设不参与精确匹配（keys.length === 0 时跳过）
+    expect(PresetCasePresenter.findExactMatchingPresetIndex([{ label: '空', values: {} }], { a: 1 })).toBe(-1);
+  });
 });

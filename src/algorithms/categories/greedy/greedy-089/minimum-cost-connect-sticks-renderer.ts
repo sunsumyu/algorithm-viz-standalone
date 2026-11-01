@@ -37,7 +37,7 @@ export {
 
 const { template, Visualizer } = createDeclarativeVisualizer<ConnectSticksStep>({
   id: 'minimum-cost-connect-sticks',
-  name: '连接棒材的最低费用 (Connect Sticks)',
+  name: '连接木棍的最低费用',
   category: 'greedy',
   icon: '🥢',
   badge: { mode: '小根堆+哈夫曼合并', complexity: 'O(N log N) · O(N)' },
@@ -106,7 +106,7 @@ export const MinimumCostConnectSticksVisualizer = UniversalStageVisualizer;
 
 registerAlgorithm({
   id: 'minimum-cost-connect-sticks',
-  name: '连接棒材的最低费用 (Connect Sticks)',
+  name: '连接木棍的最低费用',
   viewId: 'algo-minimum-cost-connect-sticks-view',
   category: 'greedy',
   description: '左程云算法讲解089 Code03：LeetCode 1167 / 洛谷 P1090 合并果子，小根堆贪心与最优哈夫曼树',
@@ -116,5 +116,5 @@ registerAlgorithm({
   difficulty: 2,
   levelOrder: 896,
   learningGoal: '掌握哈夫曼树在加权路径长度最小化中的核心应用，理解小根堆合并的贪心选择性',
-  aliases: ['class089-code06', 'minimum-cost-connect-sticks-1167', 'leetcode-1167', 'luogu-p1090', 'merge-fruits'],
+  aliases: ['class089-code06', 'minimum-cost-connect-sticks-1167', 'leetcode-1167', 'luogu-p1090', 'merge-fruits', '1167', '连接棒材的最低费用' ],
 });

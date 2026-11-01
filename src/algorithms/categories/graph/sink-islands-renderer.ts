@@ -84,8 +84,8 @@ export function renderSinkIslandsCanvas(container: HTMLElement, step: SinkStep):
 
 registerDeclarativeAlgorithm({
   id: 'sink-islands',
-  aliases: ['class058-code03', 'surrounded-regions-130'],
-  name: '沉没孤岛 (LC 130)',
+  aliases: ['class058-code03', 'surrounded-regions-130', '沉没孤岛' ],
+  name: '被围绕的区域',
   category: 'graph',
   hasDeductionTree: true,
   description: '两阶段 DFS：从边界出发标记边缘保护区，将内部所有未相连的孤岛淹没',

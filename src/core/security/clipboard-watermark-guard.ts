@@ -12,6 +12,7 @@
 import { injectWatermarkIntoText } from './zero-width-watermark';
 import { clientActivationModal } from './client-activation-modal';
 import { getStoredLicense, verifyLicenseCode } from './license-verifier';
+import { usageTracker } from './usage-tracker';
 
 let isGuardActive = false;
 let copyListener: ((e: ClipboardEvent) => void) | null = null;
@@ -71,6 +72,9 @@ export function handleClipboardCopy(
 
   const watermarkedText = injectWatermarkIntoText(selectedText, buyer);
   e.clipboardData.setData('text/plain', watermarkedText);
+
+  // 行为追踪：记录复制事件（仅记录长度特征，不记录内容，供泄露溯源对账）
+  usageTracker.track('COPY_TEXT', { detail: { length: selectedText.length } });
 
   // 异步二次解析最新持久化状态备用
   buyerResolver().catch(() => {});

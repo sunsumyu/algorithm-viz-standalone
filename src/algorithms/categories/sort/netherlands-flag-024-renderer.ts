@@ -21,12 +21,12 @@ export {
 
 export const netherlandsFlagVisualizer = registerDeclarativeAlgorithm<NetherlandsStep>({
   id: 'netherlands-flag-024',
-  name: '荷兰国旗问题与三向切分 (Class 024)',
+  name: '颜色分类',
   category: 'sort',
   icon: '🇳🇱',
   difficulty: 1,
   levelOrder: 24,
-  aliases: ['class024-code01', 'netherlands-flag-024', 'netherlands-flag', 'dutch-national-flag', 'sort-colors-75', 'sort-colors', '75', 'leetcode-75'],
+  aliases: ['class024-code01', 'netherlands-flag-024', 'netherlands-flag', 'dutch-national-flag', 'sort-colors-75', 'sort-colors', '75', 'leetcode-75', '荷兰国旗问题' ],
   hasDeductionTree: true,
   learningGoal: '深刻掌握荷兰国旗小于/等于/大于三向划分算法，理解随机快速排序 Partition 核心',
   problemHtml: `

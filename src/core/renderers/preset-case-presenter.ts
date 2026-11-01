@@ -18,6 +18,8 @@ export interface PresetSelectRenderOptions {
   placeholder?: string;
   maxWidth?: string;
   fontSize?: string;
+  /** 初始选中的预设案例索引；合法时占位符退化为不可选提示行，缺省或越界时保持占位符选中 */
+  selectedIndex?: number;
 }
 
 export class PresetCasePresenter {
@@ -91,6 +93,12 @@ export class PresetCasePresenter {
     const placeholder = options?.placeholder || this.DEFAULT_PLACEHOLDER;
     const maxWidth = options?.maxWidth || '95px';
     const fontSize = options?.fontSize || '11px';
+    const selectedIndex = options?.selectedIndex;
+    const hasInitialSelection =
+      typeof selectedIndex === 'number' &&
+      Number.isInteger(selectedIndex) &&
+      selectedIndex >= 0 &&
+      selectedIndex < presets.length;
 
     const optionsHtml = presets
       .map((p, idx) => {
@@ -100,7 +108,8 @@ export class PresetCasePresenter {
           .replace(/（.*）/, '')
           .trim();
         const descAttr = p.description ? ` title="${escapeAttr(p.description)}"` : '';
-        return `<option value="${idx}"${descAttr}>${escapeHtml(cleanLabel)}</option>`;
+        const selectedAttr = hasInitialSelection && idx === selectedIndex ? ' selected' : '';
+        return `<option value="${idx}"${selectedAttr}${descAttr}>${escapeHtml(cleanLabel)}</option>`;
       })
       .join('');
 
@@ -108,7 +117,7 @@ export class PresetCasePresenter {
       <div class="dsp-input-group dsp-preset-select-group">
         <label for="${selectId}" style="color:#64748b;">${escapeHtml(labelText)}</label>
         <select id="${selectId}" class="dsp-select dsp-preset-select" title="快速填入典型测试案例" style="max-width: ${maxWidth}; font-size: ${fontSize};">
-          <option value="" disabled selected>${escapeHtml(placeholder)}</option>
+          <option value="" disabled${hasInitialSelection ? '' : ' selected'}>${escapeHtml(placeholder)}</option>
           ${optionsHtml}
         </select>
       </div>
@@ -148,12 +157,7 @@ export class PresetCasePresenter {
         const input = root.querySelector(`#${key}`) as HTMLInputElement | HTMLSelectElement | null;
         if (input) {
           input.value = String(values[key]);
-          // 触发 input 事件以支持防抖监听器或关联联动
-          if (typeof Event !== 'undefined') {
-            try {
-              input.dispatchEvent(new Event('change', { bubbles: true }));
-            } catch {}
-          }
+
         }
       });
 
@@ -240,10 +244,18 @@ export class PresetCasePresenter {
   }
 
   /**
-   * 自动探测与当前参数最匹配的预设案例索引
+   * 自动探测与当前参数最匹配的预设案例索引（无匹配时回退基准案例 0，兼容既有调用方契约）
    */
   public static findMatchingPresetIndex(presets: PresetCaseDef[], currentParams?: Record<string, any>): number {
-    if (!presets || presets.length === 0 || !currentParams) return 0;
+    const matchIdx = this.findExactMatchingPresetIndex(presets, currentParams);
+    return matchIdx >= 0 ? matchIdx : 0;
+  }
+
+  /**
+   * 严格精确匹配探测：当前参数与某预设案例全键一致时返回其索引，否则返回 -1（供诚实预选中判断）
+   */
+  public static findExactMatchingPresetIndex(presets: PresetCaseDef[], currentParams?: Record<string, any>): number {
+    if (!presets || presets.length === 0 || !currentParams) return -1;
     const matchIdx = presets.findIndex((p) => {
       if (!p.values) return false;
       const keys = Object.keys(p.values);
@@ -257,7 +269,7 @@ export class PresetCasePresenter {
         return String(v1) === String(v2);
       });
     });
-    return matchIdx >= 0 ? matchIdx : 0;
+    return matchIdx;
   }
 
   /**

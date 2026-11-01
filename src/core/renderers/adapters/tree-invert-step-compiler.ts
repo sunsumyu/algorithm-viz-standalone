@@ -7,6 +7,7 @@ import { HighlightTarget, StepBase } from '../../step-visualizer';
 import { TreeNode, buildTreeFromArr as buildTree } from '../../../algorithms/categories/tree/tree-template';
 import { cloneStateDepTree } from '../../strategies/tree-clone';
 import { parseTreeArray } from '../../input-primitives';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 import {
   RecursiveCallTraceBuilder,
   RecursiveCallTraceSnapshot,
@@ -56,6 +57,9 @@ export interface InvertStep extends StepBase {
     r: number;
     cur: number | string | null;
   };
+
+  /** 空调用探针：null-base 步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 // 树快照统一委托 core/strategies/tree-clone.ts
@@ -139,7 +143,13 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
     return steps;
   }
 
-  function invert(node: TreeNode | null, depth: number, role: string): TreeNode | null {
+  function invert(
+    node: TreeNode | null,
+    depth: number,
+    role: string,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ): TreeNode | null {
     if (depth > 0) {
       const label = node ? `Node(${node.val})` : 'null';
       trace.addHeader(`invertTree(${role}: ${label})`, depth, `<- 深入 ${role}`);
@@ -173,6 +183,9 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
         invertedCount,
         isSwapping: false,
         action: 'null-base',
+        nullProbe: parent
+          ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+          : undefined,
         decision: `判空检查：节点为 null，触发基底条件直接返回 null`,
         message: `子树为空，命中递归基底，向父调用返回 null。`,
         log: `null node -> return null`,
@@ -247,7 +260,7 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       callTrace: trace.snapshot(),
     });
 
-    invert(node.left, depth + 1, '左子树');
+    invert(node.left, depth + 1, '左子树', node, 'left');
 
     // 递归翻转右子树 (Line 10 in Java: invertTree(root.right);)
     trace.addRecursePrep(`③ 递归翻转右子树 invertTree(${node.right ? 'Node(' + node.right.val + ')' : 'null'})`, depth);
@@ -268,7 +281,7 @@ export function buildTreeInvertSteps(root: TreeNode | null): InvertStep[] {
       callTrace: trace.snapshot(),
     });
 
-    invert(node.right, depth + 1, '右子树');
+    invert(node.right, depth + 1, '右子树', node, 'right');
 
     // 左右子树均已翻转完成，返回 root (Line 11 in Java: return root;)
     trace.addFinalResult(`④ Node(${node.val}) 左右子树翻转完毕，返回 root`, depth, undefined, `Node(${node.val})`);

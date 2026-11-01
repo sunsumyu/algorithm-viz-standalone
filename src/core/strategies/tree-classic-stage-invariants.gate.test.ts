@@ -505,6 +505,7 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       const steps = buildVBSteps(root);
 
       const javaLines = steps.map((s) => (s.codeLine as Record<string, number>)?.java);
+      expect(javaLines).toContain(2); // init (prev = null 初始化)
       expect(javaLines).toContain(3); // entry
       expect(javaLines).toContain(4); // nullCheckHit / nullCheckPass
       expect(javaLines).toContain(5); // nullReturn
@@ -513,9 +514,9 @@ describe('Tree Classic Stage Invariants Gatekeeper (经典二叉树与核心树�
       expect(javaLines).toContain(13); // updatePrev
       expect(javaLines).toContain(14); // checkRight / returnRight / doneValid
 
-      // 根节点前 5 步严格连续执行，杜绝静默跳步
+      // 根节点前 5 步严格连续执行且每步换行，杜绝静默跳步与同行冻结
       const firstLines = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
-      expect(firstLines).toEqual([3, 3, 4, 7, 3]);
+      expect(firstLines).toEqual([2, 3, 4, 7, 3]);
 
       const actions = steps.map((s) => s.action);
       expect(actions).toContain('init');

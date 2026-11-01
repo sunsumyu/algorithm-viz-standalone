@@ -180,19 +180,71 @@ export class StepNormalizationEngine {
    */
   private static synthesizeReturnUnwindFrames<TStep extends StepBase>(
     steps: TStep[],
-    _context?: StepNormalizationContext
+    context?: StepNormalizationContext
   ): TStep[] {
     const result: any[] = [];
 
     for (let i = 0; i < steps.length; i++) {
       const cur = steps[i] as any;
-      result.push(cur);
+      const prevInResult = result.length > 0 ? result[result.length - 1] : null;
+      const curAction = String(cur.action || cur.phase || '');
+
+      // 2.0 递归调用点二次高亮分化：
+      // 当执行流首次到达包含递归调用的语句行（如 if (!isValidBST(root.left)) 或 return isValidBST(root.right)）时，
+      // 先整行高亮该语句（第 1 次高亮），随后将行内高亮块（.inline-token-focus）移动至递归函数调用上（第 2 次高亮），
+      // 无需拆分或修改算法源码即可清晰呈现「到达语句 ➔ 聚焦调用递归函数 ➔ 进入子函数头」的完整过渡！
+      const isRecurseCallStep =
+        curAction === 'recurse-left' ||
+        curAction === 'recurse-right' ||
+        curAction === 'call-left' ||
+        curAction === 'call-right';
+      const alreadyOnSameLine =
+        prevInResult &&
+        cur.codeLine != null &&
+        JSON.stringify(prevInResult.codeLine) === JSON.stringify(cur.codeLine) &&
+        prevInResult.current === cur.current;
+
+      // 行内聚焦分化仅在提供算法上下文（可定位源码行内容）时启用；
+      // 无上下文调用（如 USNE 纯归一化）保持原步数，保障防断电等基础契约。
+      const inlineFocusEnabled = context?.algorithmId != null;
+      if (isRecurseCallStep && inlineFocusEnabled && cur.codeLine != null && !alreadyOnSameLine && !cur.focusMode) {
+        const branchLabel = curAction.includes('right') ? '右子树' : '左子树';
+        const arriveStep = {
+          ...cur,
+          action: `${curAction}-arrive`,
+          focusMode: undefined,
+          focusTarget: undefined,
+          decision: `到达${branchLabel}判断语句：准备求值内部递归调用`,
+          message: `执行流到达当前语句行，准备发起${branchLabel}递归调用。`,
+          statusBadge: { text: `到达${branchLabel}语句`, type: 'info' },
+        };
+        const focusCallStep = {
+          ...cur,
+          focusMode: 'recursive-call',
+          decision: `${cur.decision || `发起${branchLabel}递归调用`} (聚焦递归调用)`,
+          message: `🎯 高亮块移动至行内递归函数调用，压栈进入${branchLabel}子调用。${cur.message || ''}`,
+          statusBadge: { text: '聚焦递归调用', type: 'info' },
+        };
+        result.push(arriveStep);
+        result.push(focusCallStep);
+      } else {
+        if (
+          (curAction === 'left-done' || curAction === 'right-done' || curAction === 'return-unwind') &&
+          !cur.focusMode
+        ) {
+          result.push({
+            ...cur,
+            focusMode: 'condition',
+          });
+        } else {
+          result.push(cur);
+        }
+      }
 
       if (i >= steps.length - 1) continue;
       const next = steps[i + 1] as any;
 
       // 判断 cur 是否是子调用返回帧 (return true/false, return 0, null-return 等)
-      const curAction = String(cur.action || cur.phase || '');
       const curMsg = String(cur.message || cur.decision || '');
       const isCurReturn =
         curAction.includes('return') ||
@@ -229,6 +281,7 @@ export class StepNormalizationEngine {
             ),
             phase: 'recurse-return',
             action: 'return-unwind',
+            focusMode: 'condition',
             decision: `↩ 子调用完成并返回，恢复父节点 ${next.current} 执行现场`,
             message: `子树/子递归执行完毕，控制权安全返回至调用方。准备在节点 ${next.current} 推进后续逻辑。`,
             log: `return to node ${next.current}`,
@@ -262,12 +315,13 @@ export class StepNormalizationEngine {
 
       // 提取核心特征
       const sameLine = JSON.stringify(prev.codeLine) === JSON.stringify(cur.codeLine);
+      const sameFocus = prev.focusMode === cur.focusMode && prev.focusTarget === cur.focusTarget;
       const sameCurrent = prev.current === cur.current && prev.activeNodeId === cur.activeNodeId;
       const sameAction = prev.action === cur.action && prev.phase === cur.phase;
       const sameMsg = prev.message === cur.message && prev.decision === cur.decision;
 
-      // 若四者完全一致，判定为重复卡顿帧，予以跳过（保留终态）
-      if (sameLine && sameCurrent && sameAction && sameMsg && i < steps.length - 1) {
+      // 若完全一致，判定为重复卡顿帧，予以跳过（保留终态）
+      if (sameLine && sameFocus && sameCurrent && sameAction && sameMsg && i < steps.length - 1) {
         continue;
       }
 

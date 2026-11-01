@@ -367,7 +367,7 @@ class AlgoNavigationManager {
 
         <div class="drawer-search-bar">
           <span class="drawer-search-icon">🔍</span>
-          <input type="text" id="drawer-search-input" class="drawer-search-input" placeholder="搜索算法名称、分类或描述..." value="${algoSearchCatalog.escapeHtml(
+          <input type="text" id="drawer-search-input" class="drawer-search-input" placeholder="搜索名称、题号、别名或描述（支持粗匹配）..." value="${algoSearchCatalog.escapeHtml(
             this.drawerSearchQuery
           )}" autocomplete="off" />
           ${

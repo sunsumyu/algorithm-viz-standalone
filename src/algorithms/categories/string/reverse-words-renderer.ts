@@ -26,9 +26,9 @@ export {
 
 registerDeclarativeAlgorithm({
   id: 'reverse-words',
-  aliases: ['151', 'leetcode-151', 'reverse-words-in-a-string'],
+  aliases: ['151', 'leetcode-151', 'reverse-words-in-a-string', '翻转字符串里的单词' ],
   hasDeductionTree: true,
-  name: '翻转字符串里的单词（双指针）',
+  name: '反转字符串中的单词',
   category: 'string',
   description: '移除多余空格并倒序拼接单词',
   icon: '🔃',

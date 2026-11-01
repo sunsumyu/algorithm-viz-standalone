@@ -32,8 +32,8 @@ export {
 
 export const completenessBinaryTree036Visualizer = registerDeclarativeAlgorithm<Completeness036Step>({
   id: 'tree-036-completeness-binary-tree',
-  aliases: ['leetcode-958', 'completeness-of-binary-tree', 'tree-036-code05'],
-  name: '完全二叉树检验 (Class 036)',
+  aliases: ['leetcode-958', 'completeness-of-binary-tree', 'tree-036-code05', '958', '完全二叉树检验' ],
+  name: '二叉树的完全性检验',
   category: 'tree',
   icon: '🛡️',
   hasDeductionTree: true,

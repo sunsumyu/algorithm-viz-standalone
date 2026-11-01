@@ -143,8 +143,9 @@ export function renderSortedArrayToBstCustomMetrics(container: HTMLElement, step
   container.style.display = 'flex';
   container.style.flexDirection = 'column';
   container.style.gap = '8px';
-  container.style.height = '100%';
-  container.style.overflowY = 'auto';
+  // 高度回贴内容 (min-content)：严禁 height:100% 拉伸盒 —— 否则
+  // PanelBoundsEngine 的自然高度测量被盒高污染，Card 2 形成「只能拖大、永远拖不小」的单向棘轮
+  container.style.overflowY = 'visible';
 
   // Stage 3 显式三队列状态监控
   if (step.bfsQueues) {

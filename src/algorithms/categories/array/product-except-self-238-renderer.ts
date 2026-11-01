@@ -27,9 +27,9 @@ export {
 
 export const productExceptSelf238Visualizer = registerDeclarativeAlgorithm<ProductStep>({
   id: 'product-except-self-238',
-  aliases: ['product-except-self', '238', 'leetcode-238'],
+  aliases: ['product-except-self', '238', 'leetcode-238', '除自身以外数组的乘积' ],
   hasDeductionTree: true,
-  name: '除自身以外数组的乘积 (LeetCode 238)',
+  name: '除了自身以外数组的乘积',
   category: 'array',
   icon: '✖️',
   difficulty: 2,

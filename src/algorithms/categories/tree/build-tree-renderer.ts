@@ -65,6 +65,10 @@ export const buildTreeVisualizer = registerDeclarativeAlgorithm({
     'build-tree-2',
     'leetcode-106',
     'construct-binary-tree-from-inorder-and-postorder',
+  '105',
+  'leetcode-105',
+  '从中序与后序遍历序列构造二叉树',
+  '从前序与中序遍历序列构造二叉树',
   ],
   hasDeductionTree: true,
   inputs: [

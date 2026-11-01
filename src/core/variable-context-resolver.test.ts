@@ -511,6 +511,59 @@ describe('VariableContextResolver Deep Module Unit Tests', () => {
     expect(sumVar?.value).toBe('[0, 3, 5, 9, 10]');
     expect(sumVar?.detail).toContain('当前区间 [0..3] 总重量 = sum[4] - sum[0] = 10');
   });
+
+  it('resolves binary tree node context and member access expressions like root.val, root.left, prev.val', () => {
+    const tree = {
+      val: 5,
+      left: { val: 1, left: null, right: null },
+      right: { val: 4, left: { val: 3, left: null, right: null }, right: { val: 6, left: null, right: null } },
+    };
+    const step = {
+      tree,
+      current: 5,
+      prev: 1,
+      metrics: {
+        cur: 'Node(5)',
+        prev: 'Node(1)',
+      },
+    };
+
+    const varsMap = VariableContextResolver.resolve(step);
+
+    // root, node, cur 应被捕获为 5
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.value).toBe('5');
+    expect(VariableContextResolver.getVariable(varsMap, 'node')?.value).toBe('5');
+    expect(VariableContextResolver.getVariable(varsMap, 'cur')?.value).toBe('5');
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.detail).toContain('Node(5)');
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.detail).toContain('left = Node(1)');
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.detail).toContain('right = Node(4)');
+
+    // root.val 与 prev.val 应被精准求值
+    expect(VariableContextResolver.getVariable(varsMap, 'root.val')?.value).toBe('5');
+    expect(VariableContextResolver.getVariable(varsMap, 'root.left')?.value).toBe('1');
+    expect(VariableContextResolver.getVariable(varsMap, 'root.right')?.value).toBe('4');
+    expect(VariableContextResolver.getVariable(varsMap, 'prev')?.value).toBe('1');
+    expect(VariableContextResolver.getVariable(varsMap, 'prev.val')?.value).toBe('1');
+  });
+
+  it('resolves nullProbe base case with root=null without leaking stale parent values', () => {
+    const tree = { val: 5, left: null, right: null };
+    const nullStep = {
+      tree,
+      current: null,
+      prev: null,
+      nullProbe: { parentVal: 5, branch: 'left' },
+      action: 'null-entry',
+    };
+
+    const varsMap = VariableContextResolver.resolve(nullStep);
+
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.value).toBe('null');
+    expect(VariableContextResolver.getVariable(varsMap, 'node')?.value).toBe('null');
+    expect(VariableContextResolver.getVariable(varsMap, 'root.val')?.value).toBe('null');
+    expect(VariableContextResolver.getVariable(varsMap, 'root')?.detail).toContain('左孩子指针为空');
+    expect(VariableContextResolver.getVariable(varsMap, 'prev')?.value).toBe('null');
+  });
 });
 
 

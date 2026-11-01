@@ -50,7 +50,7 @@ impl AntiCdpGuard {
     }
 
     /// 执行启动期参数安全检查
-    /// 如果发现非法调试参数，生产环境下立即静默退出
+    /// 如果发现非法调试参数，生产环境下立即静默终止
     pub fn enforce_startup_guard() {
         let args = std::env::args().collect::<Vec<_>>();
         if Self::has_disallowed_args(&args) {
@@ -65,6 +65,18 @@ impl AntiCdpGuard {
                 std::process::exit(0);
             }
         }
+    }
+
+    /// 消毒 WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS 环境变量
+    ///
+    /// 攻击者可在启动 exe 前预设该环境变量注入 `--remote-debugging-port` 等 CDP 参数
+    /// （该向量绕过进程 argv 检查，因为 WebView2 直接读取环境变量）。
+    /// 此函数按空白分词逐 token 审计，剔除全部调试注入参数，保留其余合法参数。
+    pub fn sanitize_webview_env_args(raw: &str) -> String {
+        raw.split_whitespace()
+            .filter(|token| !Self::has_disallowed_args([token]))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 
@@ -108,5 +120,30 @@ mod tests {
     #[test]
     fn test_empty_and_whitespace_args() {
         assert!(!AntiCdpGuard::has_disallowed_args(vec!["", "   ", "---"]));
+    }
+
+    #[test]
+    fn test_sanitize_webview_env_args_removes_cdp_injection() {
+        // 攻击者注入 remote-debugging-port，合法参数必须保留
+        let injected = "CalculateNativeWinOcclusion --remote-debugging-port=9222 --disable-features=X";
+        let sanitized = AntiCdpGuard::sanitize_webview_env_args(injected);
+        assert!(!sanitized.contains("remote-debugging-port"));
+        assert!(sanitized.contains("CalculateNativeWinOcclusion"));
+        assert!(sanitized.contains("--disable-features=X"));
+        assert!(!AntiCdpGuard::has_disallowed_args(sanitized.split_whitespace()));
+    }
+
+    #[test]
+    fn test_sanitize_webview_env_args_strips_all_debug_variants() {
+        let injected = "--inspect --remote-allow-origins=* clean-flag --auto-open-devtools-for-tabs";
+        let sanitized = AntiCdpGuard::sanitize_webview_env_args(injected);
+        assert_eq!(sanitized, "clean-flag");
+    }
+
+    #[test]
+    fn test_sanitize_webview_env_args_passthrough_clean() {
+        let clean = "CalculateNativeWinOcclusion --disable-backgrounding-occluded-windows";
+        assert_eq!(AntiCdpGuard::sanitize_webview_env_args(clean), clean);
+        assert_eq!(AntiCdpGuard::sanitize_webview_env_args(""), "");
     }
 }

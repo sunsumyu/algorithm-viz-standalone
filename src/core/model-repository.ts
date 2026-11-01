@@ -526,18 +526,32 @@ export class AlgorithmModelRepository {
     const model = this.getModel(id);
     const compiled = YamlModelLoader.getCompiledStageConfig(model, stageKey, direction);
 
-    // 兜底桥接：若某阶段或其变体的 anchorMap 为空，自动通过 spec.semanticLines 注入
+    // 语义行权威桥接：spec.semanticLines 是名师讲义语义行的单一事实来源，
+    // 凡声明的语义键一律以桥接结果为准（覆盖阶段片段自解析的局部行号），
+    // 未声明的键保留阶段自解析值；空 anchorMap 时整体注入。
     const spec = DpStepEngine.get(id);
     if (spec && spec.semanticLines) {
-      const fallbackAnchorMap = bridgeSemanticLinesToAnchorMap(spec.semanticLines, 'java');
-      if (!compiled.anchorMap || Object.keys(compiled.anchorMap).length === 0) {
-        compiled.anchorMap = { ...fallbackAnchorMap, ...(compiled.anchorMap || {}) };
-      }
+      const authoritativeAnchorMap = bridgeSemanticLinesToAnchorMap(spec.semanticLines, 'java');
+      // 逐键钳制合并：权威锚点超出该阶段片段行数时保留阶段自解析原值，
+      // 保证 anchorMap 与所展示代码永不越界（守护契约）。
+      const applyAuthoritative = (
+        baseMap: Record<string, number> | undefined,
+        codeHtml?: string
+      ): Record<string, number> => {
+        const lineCount = codeHtml ? (codeHtml.match(/class="code-line"/g) || []).length : 0;
+        const merged: Record<string, number> = { ...(baseMap || {}) };
+        for (const [key, line] of Object.entries(authoritativeAnchorMap)) {
+          if (typeof line !== 'number') continue;
+          if (lineCount > 0 && line > lineCount) continue;
+          merged[key] = line;
+        }
+        return merged;
+      };
+
+      compiled.anchorMap = applyAuthoritative(compiled.anchorMap, compiled.codeHtml);
       if (compiled.variants) {
         for (const variant of Object.values(compiled.variants)) {
-          if (!variant.anchorMap || Object.keys(variant.anchorMap).length === 0) {
-            variant.anchorMap = { ...fallbackAnchorMap, ...(variant.anchorMap || {}) };
-          }
+          variant.anchorMap = applyAuthoritative(variant.anchorMap, variant.codeHtml);
         }
       }
     }

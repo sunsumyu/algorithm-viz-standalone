@@ -5,6 +5,7 @@
 
 import { HighlightTarget } from '../../../core/code-panel';
 import { snapshotGrid2D } from '../../../core/strategies/grid-snapshot';
+import { cloneStateDepTree } from '../../../core/strategies/tree-clone';
 
 export interface EffortTreeNode {
   id: string;
@@ -131,17 +132,6 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
   const nodeMap = new Map<string, EffortTreeNode>();
   nodeMap.set('0,0', treeRoot);
 
-  function cloneTree(n: EffortTreeNode): EffortTreeNode {
-    return {
-      id: n.id,
-      val: n.val,
-      edgeLabel: n.edgeLabel,
-      status: n.status,
-      tag: n.tag,
-      children: n.children ? n.children.map(cloneTree) : [],
-    };
-  }
-
   const lines = {
     entry: { cpp: 13, java: 12, python: 13, javascript: 9 },
     initDist: { cpp: 15, java: 14, python: 15, javascript: 11 },
@@ -212,7 +202,7 @@ export function buildPathMinEffortSteps(preset: string = 'classic_mountain_3x3')
       message,
       log,
       codeLine,
-      treeRoot: cloneTree(treeRoot),
+      treeRoot: cloneStateDepTree(treeRoot) as EffortTreeNode,
       activeNodeId: nodeMap.get(`${curR},${curC}`)?.id || 'node-0-0',
       metrics: {
         'metric-cur-coord': coordStr,

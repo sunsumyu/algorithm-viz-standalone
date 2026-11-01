@@ -21,7 +21,7 @@ export { buildHouseRobberIII037Steps, renderHouseRobberIIICanvas };
 
 export const houseRobberIII037Visualizer = registerDeclarativeAlgorithm<Tree036Step>({
   id: 'tree-037-house-robber-iii',
-  aliases: ['leetcode-337', 'house-robber-iii', 'tree-dp-house-robber', 'house-robber-3'],
+  aliases: ['leetcode-337', 'house-robber-iii', 'tree-dp-house-robber', 'house-robber-3', '337', '打家劫舍 III' ],
   name: '打家劫舍 III 树形DP (Class 037)',
   category: 'tree',
   icon: '💰',

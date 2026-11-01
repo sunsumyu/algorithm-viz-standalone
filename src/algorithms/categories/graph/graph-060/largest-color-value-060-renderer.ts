@@ -57,8 +57,8 @@ function renderColorFrequencyGrid(
 
 export const largestColorValue060Visualizer = registerDeclarativeAlgorithm<LargestColorStep>({
   id: 'largest-color-value-060',
-  aliases: ['largest-color-value', 'largest-path-value', 'leetcode-1857', 'class060-code06'],
-  name: '有向图最大颜色值 (LeetCode 1857 · 26维拓扑动规) (Class 060)',
+  aliases: ['largest-color-value', 'largest-path-value', 'leetcode-1857', 'class060-code06', '1857', '有向图最大颜色值' ],
+  name: '有向图中最大颜色值',
   category: 'graph',
   icon: '🎨',
   difficulty: 3,

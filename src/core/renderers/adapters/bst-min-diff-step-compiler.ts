@@ -15,6 +15,7 @@ import {
   BST_MIN_DIFF_STAGE2_LINES,
   BST_MIN_DIFF_STAGE3_LINES,
 } from '../../../algorithms/categories/tree/bst-min-diff-stage-codes';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export interface BstMinDiffStep {
   tree: TreeNode | null;
@@ -33,6 +34,8 @@ export interface BstMinDiffStep {
   highlightedNodes?: number[];
   stackVals?: number[];
   morrisThread?: { from: number; to: number; active: boolean };
+  /** 空调用探针：空基底步绑定父帧锚点，供树上挂树全景渲染 ∅ 虚线探针 */
+  nullProbe?: StepNullProbe;
 }
 
 export function cloneTree(node: TreeNode | null, visited = new Set<TreeNode>()): TreeNode | null {
@@ -104,7 +107,12 @@ export function buildBstMinDiffStage1Steps(root: TreeNode | null): BstMinDiffSte
     highlightedNodes: [root.val],
   });
 
-  function inorder(node: TreeNode | null, depth: number) {
+  function inorder(
+    node: TreeNode | null,
+    depth: number,
+    parent: TreeNode | null = null,
+    branch: 'left' | 'right' = 'left'
+  ) {
     if (!node) {
       trace.addHeader('inorder(node=null)', depth, '空节点触底返回');
       trace.addConditionHit('node == null -> return', depth, '命中基底条件');
@@ -117,6 +125,9 @@ export function buildBstMinDiffStage1Steps(root: TreeNode | null): BstMinDiffSte
         minDiff,
         inorderSeq: [...inorderSeq],
         action: 'visit',
+        nullProbe: parent
+          ? { parentVal: parent.val, parentId: parent.id ?? undefined, branch, phase: 'entry' }
+          : undefined,
         decision: '到达空节点，直接返回上一层递归',
         message: '到达空子树，满足基底条件 node == null，返回父调用。',
         log: `depth ${depth}: node == null, return`,
@@ -165,7 +176,7 @@ export function buildBstMinDiffStage1Steps(root: TreeNode | null): BstMinDiffSte
       stageId: 'stage-1',
       highlightedNodes: [node.val],
     });
-    inorder(node.left, depth + 1);
+    inorder(node.left, depth + 1, node, 'left');
 
     // 2. 访问当前节点：计算与前驱的差值
     let diff: number | null = null;
@@ -248,7 +259,7 @@ export function buildBstMinDiffStage1Steps(root: TreeNode | null): BstMinDiffSte
       stageId: 'stage-1',
       highlightedNodes: [node.val],
     });
-    inorder(node.right, depth + 1);
+    inorder(node.right, depth + 1, node, 'right');
 
     trace.addReturnLeaf(`node=${node.val} 子树遍历完成`, depth, `minDiff=${minDiff}`);
   }

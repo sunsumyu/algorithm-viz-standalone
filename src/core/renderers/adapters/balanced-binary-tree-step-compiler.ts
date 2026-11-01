@@ -26,6 +26,7 @@ import {
   TreeStackFrame,
   TreeLogGrammar,
 } from './binary-tree-traversal-compiler';
+import type { StepNullProbe } from './binary-tree-of-trees-synthesizer';
 
 export type { TreeStackFrame };
 
@@ -40,7 +41,7 @@ export interface BalancedTree037Step extends Tree036Step {
   isBalanced?: boolean;
   height?: number;
   heightMap?: Record<number, number>;
-  nullProbe?: { parentVal: number | string; branch: 'left' | 'right' };
+  nullProbe?: StepNullProbe;
   callTree?: RecursionTreeNode | null;
   activeCallId?: string;
   treeStackFrames?: TreeStackFrame[];
@@ -95,7 +96,7 @@ interface Info {
 export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037Step[] {
   const lines = BALANCED_TREE_037_STAGE1_LINES;
   const heightMap: Record<number, number> = {};
-  let currentNullProbe: { parentVal: number; branch: 'left' | 'right' } | undefined = undefined;
+  let currentNullProbe: StepNullProbe | undefined = undefined;
 
   return BinaryTreeTraversalCompiler.compileDfs<TreeNode, Info>({
     root,
@@ -272,7 +273,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     beforeLeft: (node, ctx) => {
-      currentNullProbe = !node.left ? { parentVal: node.val, branch: 'left' } : undefined;
+      currentNullProbe = !node.left ? { parentVal: node.val, parentId: node.id ?? undefined, branch: 'left' } : undefined;
       ctx.trace.addRecursePrep(`l = process(${node.left ? `Node(${node.left.val})` : 'null'})`, ctx.depth, '<- 索要左子树 Info');
       return {
         decision: `向 Node(${node.val}) 的左子树索要信息：调用 process(x.left)`,
@@ -296,7 +297,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
       };
     },
     beforeRight: (node, leftRes, ctx) => {
-      currentNullProbe = !node.right ? { parentVal: node.val, branch: 'right' } : undefined;
+      currentNullProbe = !node.right ? { parentVal: node.val, parentId: node.id ?? undefined, branch: 'right' } : undefined;
       ctx.trace.addRecursePrep(`r = process(${node.right ? `Node(${node.right.val})` : 'null'})`, ctx.depth, '<- 索要右子树 Info');
       return {
         decision: `向 Node(${node.val}) 的右子树索要信息：调用 process(x.right)`,
@@ -439,7 +440,7 @@ export function buildBalancedStage1Steps(root: TreeNode | null): BalancedTree037
 export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTree037Step[] {
   const lines = BALANCED_TREE_037_STAGE2_LINES;
   const heightMap: Record<number, number> = {};
-  let currentNullProbe: { parentVal: number; branch: 'left' | 'right' } | undefined = undefined;
+  let currentNullProbe: StepNullProbe | undefined = undefined;
 
   return BinaryTreeTraversalCompiler.compileDfs<TreeNode, number>({
     root,
@@ -592,7 +593,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       };
     },
     beforeLeft: (node, ctx) => {
-      currentNullProbe = !node.left ? { parentVal: node.val, branch: 'left' } : undefined;
+      currentNullProbe = !node.left ? { parentVal: node.val, parentId: node.id ?? undefined, branch: 'left' } : undefined;
       ctx.trace.addRecursePrep(`left = check(${node.left ? `Node(${node.left.val})` : 'null'})`, ctx.depth, '<- 探测左子树');
       return {
         decision: `考察节点 Node(${node.val}) 的左子树：调用 check(node.left)`,
@@ -677,7 +678,7 @@ export function buildBalancedStage2PruneSteps(root: TreeNode | null): BalancedTr
       return { shouldPrune: false, result: branchResult };
     },
     beforeRight: (node, left, ctx) => {
-      currentNullProbe = !node.right ? { parentVal: node.val, branch: 'right' } : undefined;
+      currentNullProbe = !node.right ? { parentVal: node.val, parentId: node.id ?? undefined, branch: 'right' } : undefined;
       ctx.trace.addRecursePrep(`right = check(${node.right ? `Node(${node.right.val})` : 'null'})`, ctx.depth, '<- 探测右子树');
       return {
         decision: `节点 Node(${node.val}) 左子树正常 (高 ${left})，继续考察右子树: check(node.right)`,

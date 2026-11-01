@@ -37,7 +37,7 @@ export {
 
 const { template, Visualizer } = registerDeclarativeAlgorithm<LSPStep>({
   id: 'limited-shortest-path',
-  name: '有限最短路 (LC 787)',
+  name: 'K 站中转内最便宜的航班',
   category: 'graph',
   description: 'Bellman-Ford 状态备份松弛：限制最多走 K+1 条边求解最便宜航班价格',
   icon: '✈️',
@@ -49,6 +49,7 @@ const { template, Visualizer } = registerDeclarativeAlgorithm<LSPStep>({
     'cheapest-flights-within-k-stops',
     'leetcode-787',
     'lc-787',
+  '有限最短路',
   ],
   inputs: [],
   presets: [

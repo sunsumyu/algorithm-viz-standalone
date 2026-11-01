@@ -159,7 +159,7 @@ export function renderMaxTreeCanvas(container: HTMLElement, step: MaxTreeStep): 
  */
 export function renderStage1CustomMetrics(container: HTMLElement, step: MaxTreeStep): void {
   container.innerHTML = '';
-  container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
+  container.style.cssText = 'width: 100%; flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
 
   // 1. 分治极值方程推导板
   if (step.range && step.maxIdx != null) {
@@ -201,7 +201,7 @@ export function renderStage1CustomMetrics(container: HTMLElement, step: MaxTreeS
  */
 export function renderStage2CustomMetrics(container: HTMLElement, step: MaxTreeStep): void {
   container.innerHTML = '';
-  container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
+  container.style.cssText = 'width: 100%; flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
 
   // 1. 单调栈槽监视器
   const stackBox = document.createElement('div');
@@ -262,7 +262,7 @@ export function renderStage2CustomMetrics(container: HTMLElement, step: MaxTreeS
  */
 export function renderStage3CustomMetrics(container: HTMLElement, step: MaxTreeStep): void {
   container.innerHTML = '';
-  container.style.cssText = 'width: 100%; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
+  container.style.cssText = 'width: 100%; flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; font-size: 12px; font-family: system-ui, -apple-system, sans-serif; overflow: hidden; box-sizing: border-box;';
 
   // 1. 任务队列状态监视器
   const taskBox = document.createElement('div');

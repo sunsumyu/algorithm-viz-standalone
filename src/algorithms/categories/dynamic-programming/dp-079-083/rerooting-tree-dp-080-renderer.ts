@@ -18,10 +18,10 @@ export { buildRerooting080Steps };
 
 export const rerootingTreeDp080Visualizer = registerDeclarativeAlgorithm<Rerooting080Step>({
   id: 'rerooting-tree-dp-080',
-  name: '换根 DP 专题 (Class 080)',
+  name: '树中距离之和',
   category: 'dynamic-programming',
   difficulty: 'hard',
-  aliases: ['class080-rerooting-dp', 'rerooting-tree-dp', 'sum-of-distances-in-tree-834', 'leetcode-834'],
+  aliases: ['class080-rerooting-dp', 'rerooting-tree-dp', 'sum-of-distances-in-tree-834', 'leetcode-834', '834', '换根 DP 专题' ],
   problemContent: DP_079_083_PROBLEMS.rerootingDp080,
   sourceCodes: REROOTING_TREE_DP_080_CODES,
   generateSteps: buildRerooting080Steps,

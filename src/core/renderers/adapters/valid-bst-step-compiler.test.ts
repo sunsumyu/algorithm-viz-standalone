@@ -32,9 +32,10 @@ describe('ValidBstStepCompiler Deep Module Test Suite', () => {
       expect(javaLines).toContain(13); // updatePrev
       expect(javaLines).toContain(14); // checkRight
 
-      // 验证首 5 步严格连续执行 [3, 3, 4, 7, 3]
+      // 验证首 5 步严格连续执行 [2, 3, 4, 7, 3]
+      // （init 步对齐 VALID_BST_STAGE1_LINES.init = java 2：初始化高亮 count = 0; 行）
       const firstLines = steps.slice(0, 5).map((s) => (s.codeLine as Record<string, number>)?.java);
-      expect(firstLines).toEqual([3, 3, 4, 7, 3]);
+      expect(firstLines).toEqual([2, 3, 4, 7, 3]);
 
       const last = steps[steps.length - 1];
       expect(last.valid).toBe(true);

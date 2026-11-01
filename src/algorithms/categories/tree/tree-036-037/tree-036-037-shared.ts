@@ -4,6 +4,7 @@
  */
 
 import { StepBase } from '../../../../core/step-visualizer';
+import type { StepNullProbe } from '../../../../core/renderers/adapters/binary-tree-of-trees-synthesizer';
 
 export interface TreeNode036 {
   id: number;
@@ -18,13 +19,19 @@ export interface Tree036Step extends StepBase {
   decision: string;
   message: string;
   log: string;
+  /** 当前指针节点值 (供统一画布高亮与树上挂树 pointer 方言消费) */
+  current?: number | string | null;
   activeNodeId?: number | null;
   secondaryNodeId?: number | null;
+  highlightedNodes?: (number | string)[];
+  secondaryHighlightedNodes?: (number | string)[];
   visitedNodes?: number[];
   queue?: (number | string)[];
   statusBadge?: { text: string; type: 'success' | 'warning' | 'danger' | 'info' };
   metrics?: Record<string, string | number>;
   extraData?: any;
+  /** 空调用探针：空基底帧绑定父帧锚点，供统一画布渲染 ∅ 虚线探针 (画布防断电法则) */
+  nullProbe?: StepNullProbe;
 }
 
 /**

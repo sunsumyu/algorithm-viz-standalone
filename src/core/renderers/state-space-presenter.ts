@@ -798,7 +798,15 @@ export class StateSpacePresenter {
     currentIndex: number,
     logCountEl?: HTMLElement | null
   ): void {
-    ExecutionLogPresenter.renderStepLogs(container, steps, currentIndex, logCountEl);
+    if (!container) return;
+    // scoped logList 包装层：日志行统一挂载于单一子容器，杜绝全局 DOM 污染
+    const doc = container.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    if (!doc) return;
+    const logList = doc.createElement('div');
+    logList.className = 'dsp-log-list';
+    container.appendChild(logList as any);
+    ExecutionLogPresenter.renderStepLogs(logList as any, steps, currentIndex, logCountEl);
+    container.scrollTop = container.scrollHeight;
   }
 
   /**

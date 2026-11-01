@@ -302,10 +302,10 @@ public static mount(
     currentVarsMap,
   };
 
-  const hl = (target: HighlightTarget | null | undefined) => {
+  const hl = (target: HighlightTarget | null | undefined, stepContext?: unknown) => {
     rendererState.activeLineTarget = target;
     activeLineTarget = target;
-    highlightLineImpl(target, rendererDeps, rendererState);
+    highlightLineImpl(target, rendererDeps, rendererState, stepContext);
   };
 
   // ── 5. Tab 切换（内联，逻辑极简） ───────────────────────
@@ -408,7 +408,7 @@ public static mount(
   // ── 10. 返回实例 ─────────────────────────────────────────
   return {
     codeModel,
-    highlightLine: (target) => hl(target),
+    highlightLine: (target, stepContext?) => hl(target, stepContext),
     updateVars: (vars?: StepVar[], stepContext?: unknown) => {
       currentStepContext = stepContext;
       const s = stepContext as Record<string, any> | undefined;

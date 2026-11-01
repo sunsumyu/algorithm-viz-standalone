@@ -148,8 +148,8 @@ export class VariableContextResolver {
     j: '二重循环指针 / 列指针',
     l: '滑动窗口 / 区间左边界指针',
     r: '滑动窗口 / 区间右边界指针',
-    left: '区间左边界指针',
-    right: '区间右边界指针',
+    left: '左指针 (视算法语境: 区间左边界 / 树左子树指针)',
+    right: '右指针 (视算法语境: 区间右边界 / 树右子树指针)',
     mid: '折半二分中点位置',
     len: '当前有效区间 / 窗口长度',
     size: '当前窗口尺寸 / 堆有效大小',
@@ -580,6 +580,223 @@ export class VariableContextResolver {
 
     // 6. 分组背包与硬币栈多态上下文智能推导 (piles, team, t, preSum, m, n)
     this.deriveKnapsackGroupContext(s, varsMap);
+
+    // 7. 二叉树与递归节点状态智能推导 (root, node, cur, root.val, root.left, root.right, prev.val)
+    this.deriveBinaryTreeContext(s, varsMap);
+  }
+
+  /**
+   * 在二叉树结构中按节点值或 id 查找对应 TreeNode 实例
+   */
+  private static findTreeNode(node: any, targetVal: unknown): any {
+    if (!node || typeof node !== 'object' || targetVal === null || targetVal === undefined) {
+      return null;
+    }
+    if (
+      node.val === targetVal ||
+      String(node.val) === String(targetVal) ||
+      (node.id !== undefined && String(node.id) === String(targetVal))
+    ) {
+      return node;
+    }
+    return this.findTreeNode(node.left, targetVal) || this.findTreeNode(node.right, targetVal);
+  }
+
+  /**
+   * 二叉树与递归上下文智能推导：
+   * 解决二叉树算法中步骤字段为 current/activeNodeId 而代码形参为 root/node/cur 导致的变量悬停断流，
+   * 并支持 root.val / root.left / root.right / prev.val 等属性访问求值与空节点 (nullProbe) 同步。
+   */
+  private static deriveBinaryTreeContext(s: Record<string, any>, varsMap: Map<string, ResolvedVariable>): void {
+    const hasTreeProp =
+      ('tree' in s && (s.tree === null || (typeof s.tree === 'object' && !Array.isArray(s.tree)))) ||
+      ('treeRoot' in s && s.treeRoot && typeof s.treeRoot === 'object') ||
+      Boolean(s.nullProbe);
+
+    if (!hasTreeProp) return;
+
+    const treeRoot = s.tree || s.treeRoot;
+    const actionStr = String(s.action || s.phase || '').toLowerCase();
+    const isNullProbeStep =
+      (s.current === null || s.current === undefined) &&
+      (Boolean(s.nullProbe) || actionStr.includes('null') || treeRoot === null);
+
+    const nodeVarNames = ['root', 'node', 'cur', 'curr', 'current'];
+
+    if (isNullProbeStep) {
+      const parentInfo =
+        s.nullProbe && s.nullProbe.parentVal != null
+          ? `：父节点 Node(${s.nullProbe.parentVal}) 的${s.nullProbe.branch === 'left' ? '左' : '右'}孩子指针为空`
+          : '';
+      const nullDetail = `当前递归节点为空 (null)${parentInfo}`;
+      for (const name of nodeVarNames) {
+        varsMap.set(name, {
+          name,
+          value: 'null',
+          type: 'object',
+          raw: null,
+          detail: nullDetail,
+        });
+      }
+      for (const prefix of ['root', 'node', 'cur', 'curr']) {
+        for (const prop of ['val', 'left', 'right']) {
+          varsMap.set(`${prefix}.${prop}`, {
+            name: `${prefix}.${prop}`,
+            value: 'null',
+            type: 'object',
+            raw: null,
+            detail: `${prefix} 当前为 null`,
+          });
+          varsMap.set(`${prefix}->${prop}`, {
+            name: `${prefix}->${prop}`,
+            value: 'null',
+            type: 'object',
+            raw: null,
+            detail: `${prefix} 当前为 nullptr`,
+          });
+        }
+      }
+    } else {
+      const curNodeVal =
+        s.current ?? s.currNewVal ?? s.currOldVal ?? s.nodeVal ?? s.activeNodeId ?? s.activeNode;
+      if (curNodeVal !== undefined && curNodeVal !== null) {
+        const matchedNode = this.findTreeNode(treeRoot, curNodeVal);
+        const valStr = String(matchedNode ? matchedNode.val : curNodeVal);
+        const leftValStr = matchedNode
+          ? matchedNode.left != null
+            ? String(matchedNode.left.val)
+            : 'null'
+          : undefined;
+        const rightValStr = matchedNode
+          ? matchedNode.right != null
+            ? String(matchedNode.right.val)
+            : 'null'
+          : undefined;
+
+        const nodeDetail = matchedNode
+          ? `当前二叉树节点 Node(${valStr}) [val = ${valStr}, left = ${
+              leftValStr === 'null' ? 'null' : `Node(${leftValStr})`
+            }, right = ${rightValStr === 'null' ? 'null' : `Node(${rightValStr})`}]`
+          : `当前考察树节点 Node(${valStr})`;
+
+        for (const name of nodeVarNames) {
+          varsMap.set(name, {
+            name,
+            value: valStr,
+            type: 'object',
+            raw: matchedNode ?? curNodeVal,
+            detail: nodeDetail,
+          });
+        }
+
+        for (const prefix of ['root', 'node', 'cur', 'curr']) {
+          varsMap.set(`${prefix}.val`, {
+            name: `${prefix}.val`,
+            value: valStr,
+            type: 'number',
+            raw: Number(valStr),
+            detail: `节点 Node(${valStr}) 的值: ${prefix}.val = ${valStr}`,
+          });
+          varsMap.set(`${prefix}->val`, {
+            name: `${prefix}->val`,
+            value: valStr,
+            type: 'number',
+            raw: Number(valStr),
+            detail: `节点 Node(${valStr}) 的值: ${prefix}->val = ${valStr}`,
+          });
+
+          if (leftValStr !== undefined) {
+            const leftDetail = `节点 Node(${valStr}) 的左孩子: ${
+              leftValStr === 'null' ? 'null (空子树)' : `Node(${leftValStr})`
+            }`;
+            varsMap.set(`${prefix}.left`, {
+              name: `${prefix}.left`,
+              value: leftValStr,
+              type: leftValStr === 'null' ? 'object' : 'number',
+              raw: matchedNode?.left ?? null,
+              detail: leftDetail,
+            });
+            varsMap.set(`${prefix}->left`, {
+              name: `${prefix}->left`,
+              value: leftValStr,
+              type: leftValStr === 'null' ? 'object' : 'number',
+              raw: matchedNode?.left ?? null,
+              detail: leftDetail,
+            });
+          }
+
+          if (rightValStr !== undefined) {
+            const rightDetail = `节点 Node(${valStr}) 的右孩子: ${
+              rightValStr === 'null' ? 'null (空子树)' : `Node(${rightValStr})`
+            }`;
+            varsMap.set(`${prefix}.right`, {
+              name: `${prefix}.right`,
+              value: rightValStr,
+              type: rightValStr === 'null' ? 'object' : 'number',
+              raw: matchedNode?.right ?? null,
+              detail: rightDetail,
+            });
+            varsMap.set(`${prefix}->right`, {
+              name: `${prefix}->right`,
+              value: rightValStr,
+              type: rightValStr === 'null' ? 'object' : 'number',
+              raw: matchedNode?.right ?? null,
+              detail: rightDetail,
+            });
+          }
+        }
+      }
+    }
+
+    // 处理前驱指针 prev 及 prev.val
+    if ('prev' in s) {
+      if (s.prev === null || s.prev === undefined) {
+        varsMap.set('prev', {
+          name: 'prev',
+          value: 'null',
+          type: 'object',
+          raw: null,
+          detail: '中序遍历前驱节点指针 (当前为 null，尚无前驱)',
+        });
+        varsMap.set('prev.val', {
+          name: 'prev.val',
+          value: 'null',
+          type: 'object',
+          raw: null,
+          detail: '前驱指针 prev 当前为 null',
+        });
+        varsMap.set('prev->val', {
+          name: 'prev->val',
+          value: 'null',
+          type: 'object',
+          raw: null,
+          detail: '前驱指针 prev 当前为 nullptr',
+        });
+      } else {
+        const pStr = String(s.prev);
+        varsMap.set('prev', {
+          name: 'prev',
+          value: pStr,
+          type: 'object',
+          raw: s.prev,
+          detail: `中序遍历前驱节点 Node(${pStr}) (prev.val = ${pStr})`,
+        });
+        varsMap.set('prev.val', {
+          name: 'prev.val',
+          value: pStr,
+          type: 'number',
+          raw: s.prev,
+          detail: `前驱节点的值: prev.val = ${pStr}`,
+        });
+        varsMap.set('prev->val', {
+          name: 'prev->val',
+          value: pStr,
+          type: 'number',
+          raw: s.prev,
+          detail: `前驱节点的值: prev->val = ${pStr}`,
+        });
+      }
+    }
   }
 
   /**
@@ -1007,7 +1224,7 @@ export class VariableContextResolver {
     this.syncAliasGroup(varsMap, tableAliases);
 
     // 语义组 4: 顶点 / 当前节点 / 出发点 (Graph Vertex / Current Node)
-    const vertexAliases = ['u', 'curNode', 'cur', 'node', 'curr', 'uNode', 'from'];
+    const vertexAliases = ['u', 'curNode', 'cur', 'current', 'node', 'curr', 'root', 'uNode', 'from'];
     this.syncAliasGroup(varsMap, vertexAliases);
 
     // 语义组 5: 目标节点 / 下一节点 / 邻居 (Target Node / Neighbor)
@@ -1867,6 +2084,19 @@ export class VariableContextResolver {
     if (typeof val === 'string') {
       const isQuoted = (val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"));
       const cleanVal = isQuoted ? val.slice(1, -1) : val;
+      if (cleanVal === 'null' || cleanVal === 'nullptr' || cleanVal === 'None') {
+        return { name, value: 'null', type: 'object', raw: null };
+      }
+      const nodeMatch = cleanVal.match(/^Node\((-?\d+)\)$/);
+      if (nodeMatch) {
+        return {
+          name,
+          value: nodeMatch[1],
+          type: 'number',
+          raw: Number(nodeMatch[1]),
+          detail: `树节点 ${cleanVal}`,
+        };
+      }
       const isNumeric = /^-?\d+(\.\d+)?$/.test(cleanVal);
       return {
         name,

@@ -17,12 +17,12 @@ export { buildDominoSteps };
 
 export const dominoTrominoMatrixVisualizer = registerDeclarativeAlgorithm<DominoStep>({
   id: 'domino-tromino-matrix-098',
-  name: '多米诺与托米诺平铺矩阵快速幂',
+  name: '多米诺和托米诺平铺',
   category: 'math',
   icon: '🀄',
   difficulty: 3,
   levelOrder: 985,
-  aliases: ['class098-code05', 'domino-tromino', 'domino-tromino-790', 'leetcode-790'],
+  aliases: ['class098-code05', 'domino-tromino', 'domino-tromino-790', 'leetcode-790', '790', '多米诺与托米诺平铺矩阵快速幂' ],
   learningGoal: '通过几何骨牌覆盖推导出线性递推式，并转化为 3×3 矩阵快速幂加速',
   problemHtml: MATH_098_PROBLEMS.dominoTromino.html,
   analysisHtml: MATH_098_PROBLEMS.dominoTromino.html,

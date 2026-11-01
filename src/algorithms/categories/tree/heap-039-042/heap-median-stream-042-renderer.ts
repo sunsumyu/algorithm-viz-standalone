@@ -94,9 +94,9 @@ export function buildMedianStream042Steps(): MedianStream042Step[] {
 
 export const heapMedianStream042Visualizer = registerDeclarativeAlgorithm<MedianStream042Step>({
   id: 'heap-median-stream-042',
-  aliases: ['class042-code02', 'heap-median-stream', 'heap-median-stream-042', 'find-median-from-data-stream-295', 'find-median-from-data-stream', 'leetcode-295', 'median-finder', 'dual-heap'],
+  aliases: ['class042-code02', 'heap-median-stream', 'heap-median-stream-042', 'find-median-from-data-stream-295', 'find-median-from-data-stream', 'leetcode-295', 'median-finder', 'dual-heap', '295', '对顶堆与数据流中位数', '对顶堆' ],
   hasDeductionTree: true,
-  name: '对顶堆与数据流中位数 (Class 042)',
+  name: '数据流的中位数',
   category: 'tree',
   difficulty: 'hard',
   problemContent: HEAP_039_042_PROBLEMS.heapMedianStream042,

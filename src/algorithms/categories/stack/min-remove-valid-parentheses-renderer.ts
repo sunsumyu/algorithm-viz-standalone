@@ -16,7 +16,7 @@ export { type ParenthesesStep, MIN_REMOVE_PARENTHESES_CODES, buildMinRemoveSteps
 export const minRemoveValidParenthesesVisualizer = registerDeclarativeAlgorithm<ParenthesesStep>({
   id: 'min-remove-valid-parentheses',
   aliases: ['min-remove-parentheses', 'min-remove-valid-parentheses-1249', 'leetcode-1249', '1249'],
-  name: 'Hard 28: 移除无效的括号 (LeetCode 1249)',
+  name: '移除无效的括号',
   category: 'stack',
   hasDeductionTree: true,
   icon: '🧹',

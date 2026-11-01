@@ -17,12 +17,12 @@ export { buildTribonacciSteps };
 
 export const tribonacciMatrixVisualizer = registerDeclarativeAlgorithm<TribonacciStep>({
   id: 'tribonacci-matrix-power-098',
-  name: '泰波那契数矩阵快速幂 (Tribonacci Matrix)',
+  name: '第 N 个泰波那契数',
   category: 'math',
   icon: '🔺',
   difficulty: 3,
   levelOrder: 984,
-  aliases: ['class098-code04', 'tribonacci-matrix', 'tribonacci-number-1137', 'leetcode-1137'],
+  aliases: ['class098-code04', 'tribonacci-matrix', 'tribonacci-number-1137', 'leetcode-1137', '1137', '泰波那契数矩阵快速幂' ],
   learningGoal: '掌握高阶线性齐次递推数列与 3×3 状态转移矩阵快速幂构建方法',
   problemHtml: MATH_098_PROBLEMS.tribonacciMatrix.html,
   analysisHtml: MATH_098_PROBLEMS.tribonacciMatrix.html,

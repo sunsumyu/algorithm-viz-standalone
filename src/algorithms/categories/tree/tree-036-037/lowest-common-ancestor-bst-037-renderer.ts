@@ -51,7 +51,7 @@ export const lowestCommonAncestorBst037Visualizer = registerDeclarativeAlgorithm
       label: 'BST 层序',
       type: 'text',
       defaultValue: '6, 2, 8, 0, 4, 7, 9, null, null, 3, 5',
-      width: '180px',
+      width: '260px',
     },
     {
       id: 'p',
