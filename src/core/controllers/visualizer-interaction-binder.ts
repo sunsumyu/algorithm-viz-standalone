@@ -42,7 +42,7 @@ export function extractCleanCodeFromContainer(codeBox: HTMLElement | null): stri
       }
       // 次优方案：克隆该行，移除所有行号、悬停徽章、返回图标、幽灵变量提示等附带装饰
       const clone = el.cloneNode(true) as HTMLElement;
-      clone.querySelectorAll('.code-line-num, .algo-code-line-number, .algo-code-inline-hint, .code-return-icon, .hover-var-badge').forEach((n) => n.remove());
+      clone.querySelectorAll('.code-line-num, .algo-code-line-number, .algo-code-inline-hint, .code-return-icon, .code-recursion-entry-icon, .hover-var-badge').forEach((n) => n.remove());
       const textEl = clone.querySelector('.code-line-text, .algo-code-line-text') || clone;
       lines.push(textEl.textContent || '');
     });

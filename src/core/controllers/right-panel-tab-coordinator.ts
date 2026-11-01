@@ -1,6 +1,7 @@
 import { highlightTokens } from '../code-highlighter';
 import { VariableContextResolver, type ResolvedVariable } from '../variable-context-resolver';
 import { ReturnStepDecorator } from '../return-step-decorator';
+import { RecursionEntryStepDecorator } from '../recursion-entry-step-decorator';
 import { createHoverTooltipManager, type HoverTooltipHandle } from '../renderers/terminal/hover-tooltip-manager';
 
 export interface RightPanelTabOptions {
@@ -273,15 +274,16 @@ export class RightPanelTabCoordinator {
       this.bindHoverTooltip(container, language);
     }
 
-    // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复；返回徽章清理委托共享深模块）
+    // 1. 清理上一高亮行与局部聚焦状态（基于纯文本源码单向恢复；返回/进入徽章清理委托共享深模块）
     ReturnStepDecorator.clearReturnBadges(container);
+    RecursionEntryStepDecorator.clearRecursionEntryBadges(container);
     container.querySelectorAll('.code-line').forEach(el => {
       const htmlEl = el as HTMLElement;
       if (htmlEl.dataset.isDirty === 'true' && htmlEl.dataset.rawCode) {
         htmlEl.innerHTML = highlightTokens(htmlEl.dataset.rawCode, language);
         delete htmlEl.dataset.isDirty;
       }
-      htmlEl.classList.remove('active', 'active-line', 'is-active', 'return-line');
+      htmlEl.classList.remove('active', 'active-line', 'is-active', 'return-line', 'call-line');
       htmlEl.style.backgroundColor = '';
       htmlEl.style.borderLeftColor = '';
       htmlEl.style.fontWeight = '';
@@ -298,6 +300,11 @@ export class RightPanelTabCoordinator {
       if (isReturn) {
         activeLineEl.classList.add('return-line');
       }
+      // 进入递归压栈帧：与返回帧严格互斥（返回帧优先），绿色 call-line 标记
+      const isEntry = !isReturn && RecursionEntryStepDecorator.isRecursionEntryStep(stepContext);
+      if (isEntry) {
+        activeLineEl.classList.add('call-line');
+      }
 
       // 2. 若存在行内目标子串，通过纯文本 Lexer 重新生成带聚焦状态的 HTML（单向数据流，零 DOM 破坏）
       const rawCode = activeLineEl.dataset.rawCode;
@@ -309,6 +316,11 @@ export class RightPanelTabCoordinator {
       // 若为递归返回行，在代码行首部注入回溯返回徽章 ↩（委托共享深模块 ReturnStepDecorator）
       if (isReturn) {
         ReturnStepDecorator.applyReturnBadge(activeLineEl);
+      }
+
+      // 若为进入递归压栈行，在代码行首部注入 ↘ 进入徽章（委托共享深模块 RecursionEntryStepDecorator）
+      if (isEntry) {
+        RecursionEntryStepDecorator.applyRecursionEntryBadge(activeLineEl);
       }
 
       // 3. 注入行末幽灵变量提示 (基于 VariableContextResolver)

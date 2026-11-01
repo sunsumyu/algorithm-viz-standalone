@@ -198,6 +198,36 @@
   color: #f5f3ff !important;
   box-shadow: inset 0 0 12px rgba(139, 92, 246, 0.2);
 }
+/* 进入递归压栈帧：绿色 call-line（与紫色返回帧对称互斥） */
+.code-line.active-line.call-line {
+  background-color: rgba(16, 185, 129, 0.24) !important;
+  border-left-color: #10b981 !important;
+  color: #ecfdf5 !important;
+  box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.code-recursion-entry-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  margin-right: 7px;
+  margin-top: 1px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #047857 0%, #10b981 60%, #34d399 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35), 0 1px 5px rgba(4, 120, 87, 0.45);
+  animation: entry-dive 0.9s ease infinite alternate;
+  user-select: none;
+}
+@keyframes entry-dive {
+  from { transform: translateY(0) translateX(0); opacity: 0.85; box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35), 0 1px 5px rgba(4, 120, 87, 0.45); }
+  to { transform: translateY(2px) translateX(2px); opacity: 1; box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.6), 0 0 10px rgba(16, 185, 129, 0.75); }
+}
 .code-return-icon {
   display: inline-flex;
   align-items: center;
@@ -878,8 +908,8 @@ input[type="number"]::-webkit-outer-spin-button {
   box-sizing: border-box;
 }
 
-[id^="algo-"][id$="-view"] .algo-code-line span:not(.inline-token-focus):not(.algo-code-inline-hint):not(.code-return-icon),
-[id^="algo-"][id$="-view"] .code-line span:not(.inline-token-focus):not(.algo-code-inline-hint):not(.code-return-icon) {
+[id^="algo-"][id$="-view"] .algo-code-line span:not(.inline-token-focus):not(.algo-code-inline-hint):not(.code-return-icon):not(.code-recursion-entry-icon),
+[id^="algo-"][id$="-view"] .code-line span:not(.inline-token-focus):not(.algo-code-inline-hint):not(.code-return-icon):not(.code-recursion-entry-icon) {
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;

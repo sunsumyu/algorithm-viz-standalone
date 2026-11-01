@@ -14,6 +14,7 @@ import { highlightTokens, escapeHtml } from '../../code-highlighter';
 import { VariableContextResolver, type ResolvedVariable } from '../../variable-context-resolver';
 import { CodePresentationModel } from '../../code-presentation-model';
 import { ReturnStepDecorator } from '../../return-step-decorator';
+import { RecursionEntryStepDecorator } from '../../recursion-entry-step-decorator';
 import type { HighlightTarget } from '../dark-code-terminal-presenter';
 import { DarkCodeTerminalPresenter } from '../dark-code-terminal-presenter';
 
@@ -288,11 +289,14 @@ export function highlightLineInternal(
     state.lastStepContext = stepContext;
   }
   const isReturn = ReturnStepDecorator.isReturnStep(state.lastStepContext);
+  // 进入递归压栈帧：与返回帧严格互斥（返回帧优先），挂载 ↘ 徽章
+  const isEntry = !isReturn && RecursionEntryStepDecorator.isRecursionEntryStep(state.lastStepContext);
   const { codeWrapper, codeModel, createEl } = deps;
   if (!codeWrapper) return;
 
-  // 跨步残留防护：先清除上一帧的全部返回徽章与 return-line 标记
+  // 跨步残留防护：先清除上一帧的全部返回/进入徽章与 return-line/call-line 标记
   ReturnStepDecorator.clearReturnBadges(codeWrapper);
+  RecursionEntryStepDecorator.clearRecursionEntryBadges(codeWrapper);
 
   codeWrapper.querySelectorAll<HTMLElement>('.code-line').forEach((el) => {
     el.classList.remove('active', 'active-line', 'is-active', 'is-context');
@@ -327,6 +331,11 @@ export function highlightLineInternal(
     if (isReturn) {
       lineEl.classList.add('return-line');
       ReturnStepDecorator.applyReturnBadge(lineEl);
+    }
+    // 进入递归压栈帧升级：绿色 call-line + 行首 ↘ 徽章（与返回帧互斥）
+    if (isEntry) {
+      lineEl.classList.add('call-line');
+      RecursionEntryStepDecorator.applyRecursionEntryBadge(lineEl);
     }
     updateInlineHint(lineEl, deps, state);
   };
